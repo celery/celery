@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Clock Service - celery.beat &mdash; Celery v2.1.1 documentation</title>
+    <title>Clock Service - celery.beat &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Backends - celery.backends" href="celery.backends.html" />
     <link rel="prev" title="Thread Pool Support EXPERIMENTAL - celery.concurrency.threads" href="celery.concurrency.threads.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.concurrency.threads.html" title="Thread Pool Support EXPERIMENTAL - celery.concurrency.threads"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -67,7 +67,7 @@
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>thread</strong> &#8211; Run threaded instead of as a separate process.
-Default is <tt class="xref docutils literal"><span class="pre">False</span></tt>.</li>
+Default is <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt>.</li>
 </ul>
 </td>
 </tr>
@@ -181,7 +181,7 @@ kwargs, options).</p>
 
 <dl class="class">
 <dt id="celery.beat.Scheduler">
-<em class="property">class </em><tt class="descclassname">celery.beat.</tt><tt class="descname">Scheduler</tt><big>(</big><em>schedule=None</em>, <em>logger=None</em>, <em>max_interval=None</em>, <em>lazy=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.beat.Scheduler" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.beat.</tt><tt class="descname">Scheduler</tt><big>(</big><em>schedule=None</em>, <em>logger=None</em>, <em>max_interval=None</em>, <em>app=None</em>, <em>Publisher=None</em>, <em>lazy=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.beat.Scheduler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Scheduler for periodic tasks.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -218,12 +218,6 @@ kwargs, options).</p>
 <dt id="celery.beat.Scheduler.Entry">
 <tt class="descname">Entry</tt><a class="headerlink" href="#celery.beat.Scheduler.Entry" title="Permalink to this definition">¶</a></dt>
 <dd><p>alias of <a class="reference internal" href="#celery.beat.ScheduleEntry" title="celery.beat.ScheduleEntry"><tt class="xref py py-class docutils literal"><span class="pre">ScheduleEntry</span></tt></a></p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.beat.Scheduler.Publisher">
-<tt class="descname">Publisher</tt><a class="headerlink" href="#celery.beat.Scheduler.Publisher" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">TaskPublisher</span></tt></p>
 </dd></dl>
 
 <dl class="method">
@@ -308,7 +302,7 @@ kwargs, options).</p>
 
 <dl class="class">
 <dt id="celery.beat.Service">
-<em class="property">class </em><tt class="descclassname">celery.beat.</tt><tt class="descname">Service</tt><big>(</big><em>logger=None</em>, <em>max_interval=300</em>, <em>schedule={}</em>, <em>schedule_filename='celerybeat-schedule'</em>, <em>scheduler_cls=None</em><big>)</big><a class="headerlink" href="#celery.beat.Service" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.beat.</tt><tt class="descname">Service</tt><big>(</big><em>logger=None</em>, <em>max_interval=None</em>, <em>schedule=None</em>, <em>schedule_filename=None</em>, <em>scheduler_cls=None</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.beat.Service" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="celery.beat.Service.get_scheduler">
 <tt class="descname">get_scheduler</tt><big>(</big><em>lazy=False</em><big>)</big><a class="headerlink" href="#celery.beat.Service.get_scheduler" title="Permalink to this definition">¶</a></dt>
@@ -395,14 +389,14 @@ kwargs, options).</p>
         <li class="right" >
           <a href="celery.concurrency.threads.html" title="Thread Pool Support EXPERIMENTAL - celery.concurrency.threads"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

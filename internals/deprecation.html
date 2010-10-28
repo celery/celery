@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Celery Deprecation Timeline &mdash; Celery v2.1.1 documentation</title>
+    <title>Celery Deprecation Timeline &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../index.html" />
     <link rel="up" title="Internals" href="index.html" />
     <link rel="next" title="Internals: The worker" href="worker.html" />
     <link rel="prev" title="Internals" href="index.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="index.html" title="Internals"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internals</a> &raquo;</li> 
       </ul>
     </div>  
@@ -57,7 +57,7 @@
 <span id="deprecation-timeline"></span><h1>Celery Deprecation Timeline<a class="headerlink" href="#celery-deprecation-timeline" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference external" href="#removals-for-version-2-0" id="id1">Removals for version 2.0</a></li>
+<li><a class="reference internal" href="#removals-for-version-2-0" id="id1">Removals for version 2.0</a></li>
 </ul>
 </div>
 <div class="section" id="removals-for-version-2-0">
@@ -78,34 +78,34 @@
 </tr>
 </thead>
 <tbody valign="top">
-<tr><td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_AMQP_CONSUMER_QUEUES</span></tt></p>
+<tr><td><p class="first last"><cite>CELERY_AMQP_CONSUMER_QUEUES</cite></p>
 </td>
-<td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt></p>
-</td>
-</tr>
-<tr><td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_AMQP_CONSUMER_QUEUES</span></tt></p>
-</td>
-<td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt></p>
+<td><p class="first last"><cite>CELERY_QUEUES</cite></p>
 </td>
 </tr>
-<tr><td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_AMQP_EXCHANGE</span></tt></p>
+<tr><td><p class="first last"><cite>CELERY_AMQP_CONSUMER_QUEUES</cite></p>
 </td>
-<td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_DEFAULT_EXCHANGE</span></tt></p>
-</td>
-</tr>
-<tr><td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_AMQP_EXCHANGE_TYPE</span></tt></p>
-</td>
-<td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_DEFAULT_AMQP_EXCHANGE_TYPE</span></tt></p>
+<td><p class="first last"><cite>CELERY_QUEUES</cite></p>
 </td>
 </tr>
-<tr><td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_AMQP_CONSUMER_ROUTING_KEY</span></tt></p>
+<tr><td><p class="first last"><cite>CELERY_AMQP_EXCHANGE</cite></p>
 </td>
-<td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt></p>
+<td><p class="first last"><cite>CELERY_DEFAULT_EXCHANGE</cite></p>
 </td>
 </tr>
-<tr><td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_AMQP_PUBLISHER_ROUTING_KEY</span></tt></p>
+<tr><td><p class="first last"><cite>CELERY_AMQP_EXCHANGE_TYPE</cite></p>
 </td>
-<td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_DEFAULT_ROUTING_KEY</span></tt></p>
+<td><p class="first last"><cite>CELERY_DEFAULT_AMQP_EXCHANGE_TYPE</cite></p>
+</td>
+</tr>
+<tr><td><p class="first last"><cite>CELERY_AMQP_CONSUMER_ROUTING_KEY</cite></p>
+</td>
+<td><p class="first last"><cite>CELERY_QUEUES</cite></p>
+</td>
+</tr>
+<tr><td><p class="first last"><cite>CELERY_AMQP_PUBLISHER_ROUTING_KEY</cite></p>
+</td>
+<td><p class="first last"><cite>CELERY_DEFAULT_ROUTING_KEY</cite></p>
 </td>
 </tr>
 </tbody>
@@ -114,8 +114,8 @@
 </li>
 <li><p class="first"><span class="target" id="index-0"></span><tt class="xref std std-envvar docutils literal"><span class="pre">CELERY_LOADER</span></tt> definitions without class name.</p>
 <blockquote>
-<p>E.g. <tt class="docutils literal"><span class="pre">celery.loaders.default</span></tt>, needs to include the class name:
-<tt class="docutils literal"><span class="pre">celery.loaders.default.Loader</span></tt>.</p>
+<p>E.g. <cite>celery.loaders.default</cite>, needs to include the class name:
+<cite>celery.loaders.default.Loader</cite>.</p>
 </blockquote>
 </li>
 <li><dl class="first docutils">
@@ -124,7 +124,7 @@
 </dd>
 </dl>
 </li>
-<li><p class="first">The module <tt class="xref py py-mod docutils literal"><span class="pre">celery.task.rest</span></tt>; use <a class="reference internal" href="../userguide/remote-tasks.html#module-celery.task.http"><tt class="xref py py-mod docutils literal"><span class="pre">celery.task.http</span></tt></a> instead.</p>
+<li><p class="first">The module <tt class="xref py py-mod docutils literal"><span class="pre">celery.task.rest</span></tt>; use <a class="reference internal" href="../userguide/remote-tasks.html#module-celery.task.http" title="celery.task.http"><tt class="xref py py-mod docutils literal"><span class="pre">celery.task.http</span></tt></a> instead.</p>
 </li>
 </ul>
 </div>
@@ -181,13 +181,13 @@
         <li class="right" >
           <a href="index.html" title="Internals"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" >Internals</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

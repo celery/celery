@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Remote Management of Workers - celery.task.control &mdash; Celery v2.1.1 documentation</title>
+    <title>Remote Management of Workers - celery.task.control &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="HTTP Callback Tasks - celery.task.http" href="celery.task.http.html" />
     <link rel="prev" title="Configuration - celery.conf" href="celery.conf.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.conf.html" title="Configuration - celery.conf"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,9 +55,58 @@
             
   <div class="section" id="remote-management-of-workers-celery-task-control">
 <h1>Remote Management of Workers - celery.task.control<a class="headerlink" href="#remote-management-of-workers-celery-task-control" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.task.control"></span><dl class="function">
-<dt id="celery.task.control.broadcast">
-<tt class="descclassname">celery.task.control.</tt><tt class="descname">broadcast</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.control.broadcast" title="Permalink to this definition">¶</a></dt>
+<span class="target" id="module-celery.task.control"></span><dl class="class">
+<dt id="celery.task.control.Control">
+<em class="property">class </em><tt class="descclassname">celery.task.control.</tt><tt class="descname">Control</tt><big>(</big><em>app</em><big>)</big><a class="headerlink" href="#celery.task.control.Control" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="class">
+<dt id="celery.task.control.Control.Mailbox">
+<em class="property">class </em><tt class="descname">Mailbox</tt><big>(</big><em>namespace</em>, <em>type='direct'</em>, <em>connection=None</em><big>)</big><a class="headerlink" href="#celery.task.control.Control.Mailbox" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.task.control.Control.Mailbox.Node">
+<tt class="descname">Node</tt><big>(</big><em>hostname=None</em>, <em>state=None</em>, <em>channel=None</em>, <em>handlers=None</em><big>)</big><a class="headerlink" href="#celery.task.control.Control.Mailbox.Node" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Control.Mailbox.abcast">
+<tt class="descname">abcast</tt><big>(</big><em>command</em>, <em>kwargs={}</em><big>)</big><a class="headerlink" href="#celery.task.control.Control.Mailbox.abcast" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Control.Mailbox.call">
+<tt class="descname">call</tt><big>(</big><em>destination</em>, <em>command</em>, <em>kwargs={}</em>, <em>timeout=None</em>, <em>callback=None</em>, <em>channel=None</em><big>)</big><a class="headerlink" href="#celery.task.control.Control.Mailbox.call" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Control.Mailbox.cast">
+<tt class="descname">cast</tt><big>(</big><em>destination</em>, <em>command</em>, <em>kwargs={}</em><big>)</big><a class="headerlink" href="#celery.task.control.Control.Mailbox.cast" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Control.Mailbox.get_queue">
+<tt class="descname">get_queue</tt><big>(</big><em>hostname</em><big>)</big><a class="headerlink" href="#celery.task.control.Control.Mailbox.get_queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Control.Mailbox.get_reply_queue">
+<tt class="descname">get_reply_queue</tt><big>(</big><em>ticket</em><big>)</big><a class="headerlink" href="#celery.task.control.Control.Mailbox.get_reply_queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Control.Mailbox.multi_call">
+<tt class="descname">multi_call</tt><big>(</big><em>command</em>, <em>kwargs={}</em>, <em>timeout=1</em>, <em>limit=None</em>, <em>callback=None</em>, <em>channel=None</em><big>)</big><a class="headerlink" href="#celery.task.control.Control.Mailbox.multi_call" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.task.control.Control.Mailbox.node_cls">
+<tt class="descname">node_cls</tt><a class="headerlink" href="#celery.task.control.Control.Mailbox.node_cls" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#celery.task.control.Control.Mailbox.Node" title="celery.task.control.Control.Mailbox.Node"><tt class="xref py py-class docutils literal"><span class="pre">Node</span></tt></a></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Control.broadcast">
+<tt class="descclassname">Control.</tt><tt class="descname">broadcast</tt><big>(</big><em>command</em>, <em>arguments=None</em>, <em>destination=None</em>, <em>connection=None</em>, <em>connect_timeout=None</em>, <em>reply=False</em>, <em>timeout=1</em>, <em>limit=None</em>, <em>callback=None</em><big>)</big><a class="headerlink" href="#celery.task.control.Control.broadcast" title="Permalink to this definition">¶</a></dt>
 <dd><p>Broadcast a control command to the celery workers.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -66,8 +115,8 @@
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>command</strong> &#8211; Name of command to send.</li>
 <li><strong>arguments</strong> &#8211; Keyword arguments for the command.</li>
-<li><strong>destination</strong> &#8211; If set, a list of the hosts to send the command to,
-when empty broadcast to all workers.</li>
+<li><strong>destination</strong> &#8211; If set, a list of the hosts to send the
+command to, when empty broadcast to all workers.</li>
 <li><strong>connection</strong> &#8211; Custom broker connection to use, if not set,
 a connection will be established automatically.</li>
 <li><strong>connect_timeout</strong> &#8211; Timeout for new connection if a custom
@@ -84,9 +133,9 @@ received.</li>
 </table>
 </dd></dl>
 
-<dl class="function">
-<dt id="celery.task.control.discard_all">
-<tt class="descclassname">celery.task.control.</tt><tt class="descname">discard_all</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.control.discard_all" title="Permalink to this definition">¶</a></dt>
+<dl class="method">
+<dt id="celery.task.control.Control.discard_all">
+<tt class="descclassname">Control.</tt><tt class="descname">discard_all</tt><big>(</big><em>connection=None</em>, <em>connect_timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.control.Control.discard_all" title="Permalink to this definition">¶</a></dt>
 <dd><p>Discard all waiting tasks.</p>
 <p>This will ignore all tasks waiting for execution, and they will
 be deleted from the messaging server.</p>
@@ -100,74 +149,14 @@ be deleted from the messaging server.</p>
 </table>
 </dd></dl>
 
-<dl class="function">
-<dt id="celery.task.control.flatten_reply">
-<tt class="descclassname">celery.task.control.</tt><tt class="descname">flatten_reply</tt><big>(</big><em>reply</em><big>)</big><a class="headerlink" href="#celery.task.control.flatten_reply" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="celery.task.control.inspect">
-<em class="property">class </em><tt class="descclassname">celery.task.control.</tt><tt class="descname">inspect</tt><big>(</big><em>destination=None</em>, <em>timeout=1</em>, <em>callback=None</em><big>)</big><a class="headerlink" href="#celery.task.control.inspect" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
-<dt id="celery.task.control.inspect.active">
-<tt class="descname">active</tt><big>(</big><em>safe=False</em><big>)</big><a class="headerlink" href="#celery.task.control.inspect.active" title="Permalink to this definition">¶</a></dt>
+<dl class="method">
+<dt id="celery.task.control.Control.inspect">
+<tt class="descclassname">Control.</tt><tt class="descname">inspect</tt><big>(</big><em>destination=None</em>, <em>timeout=1</em>, <em>callback=None</em><big>)</big><a class="headerlink" href="#celery.task.control.Control.inspect" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="celery.task.control.inspect.add_consumer">
-<tt class="descname">add_consumer</tt><big>(</big><em>queue</em>, <em>exchange=None</em>, <em>exchange_type='direct'</em>, <em>routing_key=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.control.inspect.add_consumer" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.task.control.inspect.cancel_consumer">
-<tt class="descname">cancel_consumer</tt><big>(</big><em>queue</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.control.inspect.cancel_consumer" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.task.control.inspect.disable_events">
-<tt class="descname">disable_events</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.inspect.disable_events" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.task.control.inspect.enable_events">
-<tt class="descname">enable_events</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.inspect.enable_events" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.task.control.inspect.ping">
-<tt class="descname">ping</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.inspect.ping" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.task.control.inspect.registered_tasks">
-<tt class="descname">registered_tasks</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.inspect.registered_tasks" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.task.control.inspect.reserved">
-<tt class="descname">reserved</tt><big>(</big><em>safe=False</em><big>)</big><a class="headerlink" href="#celery.task.control.inspect.reserved" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.task.control.inspect.revoked">
-<tt class="descname">revoked</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.inspect.revoked" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.task.control.inspect.scheduled">
-<tt class="descname">scheduled</tt><big>(</big><em>safe=False</em><big>)</big><a class="headerlink" href="#celery.task.control.inspect.scheduled" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.task.control.inspect.stats">
-<tt class="descname">stats</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.inspect.stats" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.task.control.ping">
-<tt class="descclassname">celery.task.control.</tt><tt class="descname">ping</tt><big>(</big><em>destination=None</em>, <em>timeout=1</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.control.ping" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.task.control.Control.ping">
+<tt class="descclassname">Control.</tt><tt class="descname">ping</tt><big>(</big><em>destination=None</em>, <em>timeout=1</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.control.Control.ping" title="Permalink to this definition">¶</a></dt>
 <dd><p>Ping workers.</p>
 <p>Returns answer from alive workers.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -175,8 +164,8 @@ be deleted from the messaging server.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>destination</strong> &#8211; If set, a list of the hosts to send the command to,
-when empty broadcast to all workers.</li>
+<li><strong>destination</strong> &#8211; If set, a list of the hosts to send the
+command to, when empty broadcast to all workers.</li>
 <li><strong>connection</strong> &#8211; Custom broker connection to use, if not set,
 a connection will be established automatically.</li>
 <li><strong>connect_timeout</strong> &#8211; Timeout for new connection if a custom
@@ -191,9 +180,9 @@ connection is not provided.</li>
 </table>
 </dd></dl>
 
-<dl class="function">
-<dt id="celery.task.control.rate_limit">
-<tt class="descclassname">celery.task.control.</tt><tt class="descname">rate_limit</tt><big>(</big><em>task_name</em>, <em>rate_limit</em>, <em>destination=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.control.rate_limit" title="Permalink to this definition">¶</a></dt>
+<dl class="method">
+<dt id="celery.task.control.Control.rate_limit">
+<tt class="descclassname">Control.</tt><tt class="descname">rate_limit</tt><big>(</big><em>task_name</em>, <em>rate_limit</em>, <em>destination=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.control.Control.rate_limit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set rate limit for task by type.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -202,10 +191,11 @@ connection is not provided.</li>
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>task_name</strong> &#8211; Type of task to change rate limit for.</li>
 <li><strong>rate_limit</strong> &#8211; The rate limit as tasks per second, or a rate limit
-string (<tt class="docutils literal"><span class="pre">&quot;100/m&quot;</span></tt>, etc. see <a class="reference internal" href="celery.task.base.html#celery.task.base.Task.rate_limit" title="celery.task.base.Task.rate_limit"><tt class="xref py py-attr docutils literal"><span class="pre">celery.task.base.Task.rate_limit</span></tt></a>
-for more information).</li>
-<li><strong>destination</strong> &#8211; If set, a list of the hosts to send the command to,
-when empty broadcast to all workers.</li>
+string (<cite>&#8220;100/m&#8221;</cite>, etc.
+see <tt class="xref py py-attr docutils literal"><span class="pre">celery.task.base.Task.rate_limit</span></tt> for
+more information).</li>
+<li><strong>destination</strong> &#8211; If set, a list of the hosts to send the
+command to, when empty broadcast to all workers.</li>
 <li><strong>connection</strong> &#8211; Custom broker connection to use, if not set,
 a connection will be established automatically.</li>
 <li><strong>connect_timeout</strong> &#8211; Timeout for new connection if a custom
@@ -220,20 +210,20 @@ connection is not provided.</li>
 </table>
 </dd></dl>
 
-<dl class="function">
-<dt id="celery.task.control.revoke">
-<tt class="descclassname">celery.task.control.</tt><tt class="descname">revoke</tt><big>(</big><em>task_id</em>, <em>destination=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.control.revoke" title="Permalink to this definition">¶</a></dt>
+<dl class="method">
+<dt id="celery.task.control.Control.revoke">
+<tt class="descclassname">Control.</tt><tt class="descname">revoke</tt><big>(</big><em>task_id</em>, <em>destination=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.control.Control.revoke" title="Permalink to this definition">¶</a></dt>
 <dd><p>Revoke a task by id.</p>
-<p>If a task is revoked, the workers will ignore the task and not execute
-it after all.</p>
+<p>If a task is revoked, the workers will ignore the task and
+not execute it after all.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>task_id</strong> &#8211; Id of the task to revoke.</li>
-<li><strong>destination</strong> &#8211; If set, a list of the hosts to send the command to,
-when empty broadcast to all workers.</li>
+<li><strong>destination</strong> &#8211; If set, a list of the hosts to send the
+command to, when empty broadcast to all workers.</li>
 <li><strong>connection</strong> &#8211; Custom broker connection to use, if not set,
 a connection will be established automatically.</li>
 <li><strong>connect_timeout</strong> &#8211; Timeout for new connection if a custom
@@ -247,6 +237,73 @@ connection is not provided.</li>
 </tbody>
 </table>
 </dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.task.control.Inspect">
+<em class="property">class </em><tt class="descclassname">celery.task.control.</tt><tt class="descname">Inspect</tt><big>(</big><em>control</em>, <em>destination=None</em>, <em>timeout=1</em>, <em>callback=None</em><big>)</big><a class="headerlink" href="#celery.task.control.Inspect" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.task.control.Inspect.active">
+<tt class="descname">active</tt><big>(</big><em>safe=False</em><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.active" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.add_consumer">
+<tt class="descname">add_consumer</tt><big>(</big><em>queue</em>, <em>exchange=None</em>, <em>exchange_type='direct'</em>, <em>routing_key=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.add_consumer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.cancel_consumer">
+<tt class="descname">cancel_consumer</tt><big>(</big><em>queue</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.cancel_consumer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.disable_events">
+<tt class="descname">disable_events</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.disable_events" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.enable_events">
+<tt class="descname">enable_events</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.enable_events" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.ping">
+<tt class="descname">ping</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.ping" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.registered_tasks">
+<tt class="descname">registered_tasks</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.registered_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.reserved">
+<tt class="descname">reserved</tt><big>(</big><em>safe=False</em><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.reserved" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.revoked">
+<tt class="descname">revoked</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.revoked" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.scheduled">
+<tt class="descname">scheduled</tt><big>(</big><em>safe=False</em><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.scheduled" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.stats">
+<tt class="descname">stats</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.stats" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.task.control.flatten_reply">
+<tt class="descclassname">celery.task.control.</tt><tt class="descname">flatten_reply</tt><big>(</big><em>reply</em><big>)</big><a class="headerlink" href="#celery.task.control.flatten_reply" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </div>
 
@@ -301,13 +358,13 @@ connection is not provided.</li>
         <li class="right" >
           <a href="celery.conf.html" title="Configuration - celery.conf"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

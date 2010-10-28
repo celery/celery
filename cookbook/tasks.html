@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Creating Tasks &mdash; Celery v2.1.1 documentation</title>
+    <title>Creating Tasks &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../index.html" />
     <link rel="up" title="Cookbook" href="index.html" />
     <link rel="next" title="Running celeryd as a daemon" href="daemonizing.html" />
     <link rel="prev" title="Cookbook" href="index.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="index.html" title="Cookbook"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Cookbook</a> &raquo;</li> 
       </ul>
     </div>  
@@ -57,7 +57,7 @@
 <span id="cookbook-tasks"></span><h1>Creating Tasks<a class="headerlink" href="#creating-tasks" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference external" href="#ensuring-a-task-is-only-executed-one-at-a-time" id="id1">Ensuring a task is only executed one at a time</a></li>
+<li><a class="reference internal" href="#ensuring-a-task-is-only-executed-one-at-a-time" id="id1">Ensuring a task is only executed one at a time</a></li>
 </ul>
 </div>
 <div class="section" id="ensuring-a-task-is-only-executed-one-at-a-time">
@@ -65,9 +65,9 @@
 <p>You can accomplish this by using a lock.</p>
 <p>In this example we&#8217;ll be using the cache framework to set a lock that is
 accessible for all workers.</p>
-<p>It&#8217;s part of an imaginary RSS feed importer called <tt class="docutils literal"><span class="pre">djangofeeds</span></tt>.
+<p>It&#8217;s part of an imaginary RSS feed importer called <cite>djangofeeds</cite>.
 The task takes a feed URL as a single argument, and imports that feed into
-a Django model called <tt class="docutils literal"><span class="pre">Feed</span></tt>. We ensure that it&#8217;s not possible for two or
+a Django model called <cite>Feed</cite>. We ensure that it&#8217;s not possible for two or
 more workers to import the same feed at the same time by setting a cache key
 consisting of the md5sum of the feed URL.</p>
 <p>The cache key expires after some time in case something unexpected happens
@@ -164,13 +164,13 @@ consisting of the md5sum of the feed URL.</p>
         <li class="right" >
           <a href="index.html" title="Cookbook"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" >Cookbook</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

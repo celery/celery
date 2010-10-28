@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celeryev: Curses Event Viewer - celery.bin.celeryev &mdash; Celery v2.1.1 documentation</title>
+    <title>celeryev: Curses Event Viewer - celery.bin.celeryev &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celeryctl - celery.bin.celeryctl" href="celery.bin.celeryctl.html" />
     <link rel="prev" title="Celery Periodic Task Server - celery.bin.celerybeat" href="celery.bin.celerybeat.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.bin.celerybeat.html" title="Celery Periodic Task Server - celery.bin.celerybeat"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,25 +55,44 @@
             
   <div class="section" id="celeryev-curses-event-viewer-celery-bin-celeryev">
 <h1>celeryev: Curses Event Viewer - celery.bin.celeryev<a class="headerlink" href="#celeryev-curses-event-viewer-celery-bin-celeryev" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.bin.celeryev"></span><dl class="function">
-<dt id="celery.bin.celeryev.main">
-<tt class="descclassname">celery.bin.celeryev.</tt><tt class="descname">main</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryev.main" title="Permalink to this definition">¶</a></dt>
+<span class="target" id="module-celery.bin.celeryev"></span><dl class="class">
+<dt id="celery.bin.celeryev.EvCommand">
+<em class="property">class </em><tt class="descclassname">celery.bin.celeryev.</tt><tt class="descname">EvCommand</tt><big>(</big><em>app=None</em>, <em>get_app=None</em><big>)</big><a class="headerlink" href="#celery.bin.celeryev.EvCommand" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.bin.celeryev.EvCommand.get_options">
+<tt class="descname">get_options</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryev.EvCommand.get_options" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="celery.bin.celeryev.parse_options">
-<tt class="descclassname">celery.bin.celeryev.</tt><tt class="descname">parse_options</tt><big>(</big><em>arguments</em><big>)</big><a class="headerlink" href="#celery.bin.celeryev.parse_options" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parse the available options to <tt class="docutils literal"><span class="pre">celeryev</span></tt>.</p>
+<dl class="method">
+<dt id="celery.bin.celeryev.EvCommand.run">
+<tt class="descname">run</tt><big>(</big><em>dump=False</em>, <em>camera=None</em>, <em>frequency=1.0</em>, <em>maxrate=None</em>, <em>loglevel='INFO'</em>, <em>logfile=None</em>, <em>prog_name='celeryev'</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryev.EvCommand.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryev.EvCommand.run_evcam">
+<tt class="descname">run_evcam</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryev.EvCommand.run_evcam" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryev.EvCommand.run_evdump">
+<tt class="descname">run_evdump</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryev.EvCommand.run_evdump" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryev.EvCommand.run_evtop">
+<tt class="descname">run_evtop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryev.EvCommand.run_evtop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryev.EvCommand.set_process_status">
+<tt class="descname">set_process_status</tt><big>(</big><em>prog</em>, <em>info=''</em><big>)</big><a class="headerlink" href="#celery.bin.celeryev.EvCommand.set_process_status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="function">
-<dt id="celery.bin.celeryev.run_celeryev">
-<tt class="descclassname">celery.bin.celeryev.</tt><tt class="descname">run_celeryev</tt><big>(</big><em>dump=False</em>, <em>camera=None</em>, <em>frequency=1.0</em>, <em>maxrate=None</em>, <em>loglevel=30</em>, <em>logfile=None</em>, <em>prog_name='celeryev'</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryev.run_celeryev" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="celery.bin.celeryev.set_process_status">
-<tt class="descclassname">celery.bin.celeryev.</tt><tt class="descname">set_process_status</tt><big>(</big><em>prog</em>, <em>info=''</em><big>)</big><a class="headerlink" href="#celery.bin.celeryev.set_process_status" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.bin.celeryev.main">
+<tt class="descclassname">celery.bin.celeryev.</tt><tt class="descname">main</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryev.main" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </div>
@@ -129,13 +148,13 @@
         <li class="right" >
           <a href="celery.bin.celerybeat.html" title="Celery Periodic Task Server - celery.bin.celerybeat"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

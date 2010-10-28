@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Backend: AMQP - celery.backends.amqp &mdash; Celery v2.1.1 documentation</title>
+    <title>Backend: AMQP - celery.backends.amqp &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Backend: MongoDB - celery.backends.mongodb" href="celery.backends.mongodb.html" />
     <link rel="prev" title="Backend: Memcache - celery.backends.cache" href="celery.backends.cache.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.backends.cache.html" title="Backend: Memcache - celery.backends.cache"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -59,12 +59,17 @@
 <span class="target" id="module-celery.backends.amqp"></span><p>celery.backends.amqp</p>
 <dl class="class">
 <dt id="celery.backends.amqp.AMQPBackend">
-<em class="property">class </em><tt class="descclassname">celery.backends.amqp.</tt><tt class="descname">AMQPBackend</tt><big>(</big><em>connection=None</em>, <em>exchange=None</em>, <em>exchange_type=None</em>, <em>persistent=None</em>, <em>serializer=None</em>, <em>auto_delete=None</em>, <em>expires=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.backends.amqp.</tt><tt class="descname">AMQPBackend</tt><big>(</big><em>connection=None</em>, <em>exchange=None</em>, <em>exchange_type=None</em>, <em>persistent=None</em>, <em>serializer=None</em>, <em>auto_delete=True</em>, <em>expires=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend" title="Permalink to this definition">¶</a></dt>
 <dd><p>AMQP backend. Publish results by sending messages to the broker
 using the task id as routing key.</p>
 <p><strong>NOTE:</strong> Results published using this backend is read-once only.
 After the result has been read, the result is deleted. (however, it&#8217;s
 still cached locally by the backend instance).</p>
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.channel">
+<tt class="descname">channel</tt><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.channel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.close">
 <tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.close" title="Permalink to this definition">¶</a></dt>
@@ -131,16 +136,6 @@ still cached locally by the backend instance).</p>
 <em class="property">exception </em><tt class="descclassname">celery.backends.amqp.</tt><tt class="descname">AMQResultWarning</tt><a class="headerlink" href="#celery.backends.amqp.AMQResultWarning" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="class">
-<dt id="celery.backends.amqp.ResultConsumer">
-<em class="property">class </em><tt class="descclassname">celery.backends.amqp.</tt><tt class="descname">ResultConsumer</tt><big>(</big><em>connection</em>, <em>task_id</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.ResultConsumer" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="celery.backends.amqp.ResultPublisher">
-<em class="property">class </em><tt class="descclassname">celery.backends.amqp.</tt><tt class="descname">ResultPublisher</tt><big>(</big><em>connection</em>, <em>task_id</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.ResultPublisher" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </div>
 
 
@@ -194,14 +189,14 @@ still cached locally by the backend instance).</p>
         <li class="right" >
           <a href="celery.backends.cache.html" title="Backend: Memcache - celery.backends.cache"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Loader Base Classes - celery.loaders.base &mdash; Celery v2.1.1 documentation</title>
+    <title>Loader Base Classes - celery.loaders.base &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Default Loader - celery.loaders.default" href="celery.loaders.default.html" />
     <link rel="prev" title="Loaders - celery.loaders" href="celery.loaders.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.loaders.html" title="Loaders - celery.loaders"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -57,7 +57,7 @@
 <h1>Loader Base Classes - celery.loaders.base<a class="headerlink" href="#loader-base-classes-celery-loaders-base" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.loaders.base"></span><dl class="class">
 <dt id="celery.loaders.base.BaseLoader">
-<em class="property">class </em><tt class="descclassname">celery.loaders.base.</tt><tt class="descname">BaseLoader</tt><a class="headerlink" href="#celery.loaders.base.BaseLoader" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.loaders.base.</tt><tt class="descname">BaseLoader</tt><big>(</big><em>app=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.loaders.base.BaseLoader" title="Permalink to this definition">¶</a></dt>
 <dd><p>The base class for loaders.</p>
 <p>Loaders handles to following things:</p>
 <blockquote>
@@ -80,6 +80,11 @@
 </li>
 </ul>
 </blockquote>
+<dl class="method">
+<dt id="celery.loaders.base.BaseLoader.cmdline_config_parser">
+<tt class="descname">cmdline_config_parser</tt><big>(</big><em>args</em>, <em>namespace='celery'</em>, <em>re_type=&lt;_sre.SRE_Pattern object at 0x10298c780&gt;</em>, <em>extra_types={'json': &lt;function &lt;lambda&gt; at 0x10358b140&gt;}</em>, <em>override_types={'dict': 'json'</em>, <em>'list': 'json'</em>, <em>'tuple': 'json'}</em><big>)</big><a class="headerlink" href="#celery.loaders.base.BaseLoader.cmdline_config_parser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="attribute">
 <dt id="celery.loaders.base.BaseLoader.conf">
 <tt class="descname">conf</tt><a class="headerlink" href="#celery.loaders.base.BaseLoader.conf" title="Permalink to this definition">¶</a></dt>
@@ -94,11 +99,7 @@
 <dl class="method">
 <dt id="celery.loaders.base.BaseLoader.import_from_cwd">
 <tt class="descname">import_from_cwd</tt><big>(</big><em>module</em>, <em>imp=None</em><big>)</big><a class="headerlink" href="#celery.loaders.base.BaseLoader.import_from_cwd" title="Permalink to this definition">¶</a></dt>
-<dd><p>Import module, but make sure it finds modules
-located in the current directory.</p>
-<p>Modules located in the current directory has
-precedence over modules located in <tt class="docutils literal"><span class="pre">sys.path</span></tt>.</p>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.loaders.base.BaseLoader.import_module">
@@ -116,6 +117,11 @@ precedence over modules located in <tt class="docutils literal"><span class="pre
 <dd></dd></dl>
 
 <dl class="method">
+<dt id="celery.loaders.base.BaseLoader.mail_admins">
+<tt class="descname">mail_admins</tt><big>(</big><em>subject</em>, <em>message</em>, <em>fail_silently=False</em>, <em>sender=None</em>, <em>to=None</em>, <em>host=None</em>, <em>port=None</em>, <em>user=None</em>, <em>password=None</em><big>)</big><a class="headerlink" href="#celery.loaders.base.BaseLoader.mail_admins" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.loaders.base.BaseLoader.on_process_cleanup">
 <tt class="descname">on_process_cleanup</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.loaders.base.BaseLoader.on_process_cleanup" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method is called after a task is executed.</p>
@@ -130,7 +136,8 @@ precedence over modules located in <tt class="docutils literal"><span class="pre
 <dl class="method">
 <dt id="celery.loaders.base.BaseLoader.on_worker_init">
 <tt class="descname">on_worker_init</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.loaders.base.BaseLoader.on_worker_init" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method is called when the worker (<tt class="docutils literal"><span class="pre">celeryd</span></tt>) starts.</p>
+<dd><p>This method is called when the worker (<strong class="program">celeryd</strong>)
+starts.</p>
 </dd></dl>
 
 </dd></dl>
@@ -188,13 +195,13 @@ precedence over modules located in <tt class="docutils literal"><span class="pre
         <li class="right" >
           <a href="celery.loaders.html" title="Loaders - celery.loaders"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

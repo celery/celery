@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Signals - celery.signals &mdash; Celery v2.1.1 documentation</title>
+    <title>Signals - celery.signals &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Exceptions - celery.exceptions" href="celery.exceptions.html" />
     <link rel="prev" title="Periodic Task Schedule Behaviors - celery.schedules" href="celery.schedules.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.schedules.html" title="Periodic Task Schedule Behaviors - celery.schedules"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -57,10 +57,10 @@
 <span id="signals"></span><h1>Signals - celery.signals<a class="headerlink" href="#signals-celery-signals" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference external" href="#basics" id="id2">Basics</a></li>
-<li><a class="reference external" href="#signal-ref" id="id3">Signals</a><ul>
-<li><a class="reference external" href="#task-signals" id="id4">Task Signals</a></li>
-<li><a class="reference external" href="#worker-signals" id="id5">Worker Signals</a></li>
+<li><a class="reference internal" href="#basics" id="id2">Basics</a></li>
+<li><a class="reference internal" href="#signal-ref" id="id3">Signals</a><ul>
+<li><a class="reference internal" href="#task-signals" id="id4">Task Signals</a></li>
+<li><a class="reference internal" href="#worker-signals" id="id5">Worker Signals</a></li>
 </ul>
 </li>
 </ul>
@@ -81,8 +81,8 @@ to perform actions as they trigger.</p>
 </div>
 <p>Some signals also have a sender which you can filter by. For example the
 <a class="reference internal" href="#celery.signals.task_sent" title="celery.signals.task_sent"><tt class="xref py py-data docutils literal"><span class="pre">task_sent</span></tt></a> signal uses the task name as a sender, so you can
-connect your handler to be called only when tasks with name <tt class="docutils literal"><span class="pre">&quot;tasks.add&quot;</span></tt>
-has been sent by providing the <tt class="docutils literal"><span class="pre">sender</span></tt> argument to
+connect your handler to be called only when tasks with name <cite>&#8220;tasks.add&#8221;</cite>
+has been sent by providing the <cite>sender</cite> argument to
 <a class="reference internal" href="../internals/reference/celery.utils.dispatch.signal.html#celery.utils.dispatch.signal.Signal.connect" title="celery.utils.dispatch.signal.Signal.connect"><tt class="xref py py-class docutils literal"><span class="pre">connect</span></tt></a>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">task_sent</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">task_sent_handler</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="s">&quot;tasks.add&quot;</span><span class="p">)</span>
 </pre></div>
@@ -295,13 +295,13 @@ the task, not in the worker.</p>
         <li class="right" >
           <a href="celery.schedules.html" title="Periodic Task Schedule Behaviors - celery.schedules"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

@@ -8,6 +8,7 @@
 .. toctree::
     :maxdepth: 2
 
+    celery.app
     celery.decorators
     celery.task.base
     celery.task.sets

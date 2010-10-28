@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Backends - celery.backends &mdash; Celery v2.1.1 documentation</title>
+    <title>Backends - celery.backends &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Backend: Base - celery.backends.base" href="celery.backends.base.html" />
     <link rel="prev" title="Clock Service - celery.beat" href="celery.beat.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.beat.html" title="Clock Service - celery.beat"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,34 +56,10 @@
             
   <div class="section" id="backends-celery-backends">
 <h1>Backends - celery.backends<a class="headerlink" href="#backends-celery-backends" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.backends"></span><dl class="attribute">
-<dt id="celery.backends.DefaultBackend">
-<tt class="descclassname">celery.backends.</tt><tt class="descname">DefaultBackend</tt><a class="headerlink" href="#celery.backends.DefaultBackend" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="data">
-<dt id="celery.backends.default_backend">
-<tt class="descclassname">celery.backends.</tt><tt class="descname">default_backend</tt><a class="headerlink" href="#celery.backends.default_backend" title="Permalink to this definition">¶</a></dt>
-<dd><p>An instance of <a class="reference internal" href="#celery.backends.DefaultBackend" title="celery.backends.DefaultBackend"><tt class="xref py py-class docutils literal"><span class="pre">DefaultBackend</span></tt></a>.</p>
-</dd></dl>
-
-<p>alias of <tt class="xref py py-class docutils literal"><span class="pre">AMQPBackend</span></tt></p>
-</dd></dl>
-
-<dl class="function">
+<span class="target" id="module-celery.backends"></span><dl class="function">
 <dt id="celery.backends.get_backend_cls">
-<tt class="descclassname">celery.backends.</tt><tt class="descname">get_backend_cls</tt><big>(</big><em>backend</em><big>)</big><a class="headerlink" href="#celery.backends.get_backend_cls" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.backends.</tt><tt class="descname">get_backend_cls</tt><big>(</big><em>backend</em>, <em>loader=None</em><big>)</big><a class="headerlink" href="#celery.backends.get_backend_cls" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get backend class by name/alias</p>
-</dd></dl>
-
-<dl class="data">
-<dt id="celery.backends.get_default_backend_cls">
-<tt class="descclassname">celery.backends.</tt><tt class="descname">get_default_backend_cls</tt><a class="headerlink" href="#celery.backends.get_default_backend_cls" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="class">
-<dt>
-<em class="property">class </em><tt class="descclassname">celery.backends.</tt><tt class="descname">DefaultBackend</tt></dt>
-<dd><p>The default backend class used for storing task results and status,
-specified in the <tt class="docutils literal"><span class="pre">CELERY_RESULT_BACKEND</span></tt> setting.</p>
-</dd></dl>
-
 </dd></dl>
 
 </div>
@@ -139,14 +115,14 @@ specified in the <tt class="docutils literal"><span class="pre">CELERY_RESULT_BA
         <li class="right" >
           <a href="celery.beat.html" title="Clock Service - celery.beat"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

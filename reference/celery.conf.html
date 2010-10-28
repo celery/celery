@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Configuration - celery.conf &mdash; Celery v2.1.1 documentation</title>
+    <title>Configuration - celery.conf &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Remote Management of Workers - celery.task.control" href="celery.task.control.html" />
     <link rel="prev" title="Task Information and Utilities - celery.task" href="celery.task.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.task.html" title="Task Information and Utilities - celery.task"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -57,13 +57,13 @@
 <h1>Configuration - celery.conf<a class="headerlink" href="#configuration-celery-conf" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference external" href="#queues" id="id1">Queues</a></li>
-<li><a class="reference external" href="#sending-e-mails" id="id2">Sending E-Mails</a></li>
-<li><a class="reference external" href="#execution" id="id3">Execution</a></li>
-<li><a class="reference external" href="#broker" id="id4">Broker</a></li>
-<li><a class="reference external" href="#celerybeat" id="id5">Celerybeat</a></li>
-<li><a class="reference external" href="#celerymon" id="id6">Celerymon</a></li>
-<li><a class="reference external" href="#celeryd" id="id7">Celeryd</a></li>
+<li><a class="reference internal" href="#queues" id="id1">Queues</a></li>
+<li><a class="reference internal" href="#sending-e-mails" id="id2">Sending E-Mails</a></li>
+<li><a class="reference internal" href="#execution" id="id3">Execution</a></li>
+<li><a class="reference internal" href="#broker" id="id4">Broker</a></li>
+<li><a class="reference internal" href="#celerybeat" id="id5">Celerybeat</a></li>
+<li><a class="reference internal" href="#celerymon" id="id6">Celerymon</a></li>
+<li><a class="reference internal" href="#celeryd" id="id7">Celeryd</a></li>
 </ul>
 </div>
 <div class="section" id="queues">
@@ -95,8 +95,8 @@
 <dl class="data">
 <dt id="celery.conf.DEFAULT_DELIVERY_MODE">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">DEFAULT_DELIVERY_MODE</tt><a class="headerlink" href="#celery.conf.DEFAULT_DELIVERY_MODE" title="Permalink to this definition">¶</a></dt>
-<dd><p>Default delivery mode (<tt class="docutils literal"><span class="pre">&quot;persistent&quot;</span></tt> or <tt class="docutils literal"><span class="pre">&quot;non-persistent&quot;</span></tt>).
-Default is <tt class="docutils literal"><span class="pre">&quot;persistent&quot;</span></tt>.</p>
+<dd><p>Default delivery mode (<cite>&#8220;persistent&#8221;</cite> or <cite>&#8220;non-persistent&#8221;</cite>).
+Default is <cite>&#8220;persistent&#8221;</cite>.</p>
 </dd></dl>
 
 <dl class="data">
@@ -118,59 +118,59 @@ to the AMQP server.</p>
 <dd><p>Name prefix for the queue used when listening for
 broadcast messages. The workers hostname will be appended
 to the prefix to create the final queue name.</p>
-<p>Default is <tt class="docutils literal"><span class="pre">&quot;celeryctl&quot;</span></tt>.</p>
+<p>Default is <cite>&#8220;celeryctl&#8221;</cite>.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.BROADCAST_EXCHANGE">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">BROADCAST_EXCHANGE</tt><a class="headerlink" href="#celery.conf.BROADCAST_EXCHANGE" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name of the exchange used for broadcast messages.</p>
-<p>Default is <tt class="docutils literal"><span class="pre">&quot;celeryctl&quot;</span></tt>.</p>
+<p>Default is <cite>&#8220;celeryctl&#8221;</cite>.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.BROADCAST_EXCHANGE_TYPE">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">BROADCAST_EXCHANGE_TYPE</tt><a class="headerlink" href="#celery.conf.BROADCAST_EXCHANGE_TYPE" title="Permalink to this definition">¶</a></dt>
-<dd><p>Exchange type used for broadcast messages. Default is <tt class="docutils literal"><span class="pre">&quot;fanout&quot;</span></tt>.</p>
+<dd><p>Exchange type used for broadcast messages. Default is <cite>&#8220;fanout&#8221;</cite>.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.EVENT_QUEUE">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">EVENT_QUEUE</tt><a class="headerlink" href="#celery.conf.EVENT_QUEUE" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name of queue used to listen for event messages. Default is
-<tt class="docutils literal"><span class="pre">&quot;celeryevent&quot;</span></tt>.</p>
+<cite>&#8220;celeryevent&#8221;</cite>.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.EVENT_EXCHANGE">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">EVENT_EXCHANGE</tt><a class="headerlink" href="#celery.conf.EVENT_EXCHANGE" title="Permalink to this definition">¶</a></dt>
-<dd><p>Exchange used to send event messages. Default is <tt class="docutils literal"><span class="pre">&quot;celeryevent&quot;</span></tt>.</p>
+<dd><p>Exchange used to send event messages. Default is <cite>&#8220;celeryevent&#8221;</cite>.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.EVENT_EXCHANGE_TYPE">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">EVENT_EXCHANGE_TYPE</tt><a class="headerlink" href="#celery.conf.EVENT_EXCHANGE_TYPE" title="Permalink to this definition">¶</a></dt>
-<dd><p>Exchange type used for the event exchange. Default is <tt class="docutils literal"><span class="pre">&quot;topic&quot;</span></tt>.</p>
+<dd><p>Exchange type used for the event exchange. Default is <cite>&#8220;topic&#8221;</cite>.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.EVENT_ROUTING_KEY">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">EVENT_ROUTING_KEY</tt><a class="headerlink" href="#celery.conf.EVENT_ROUTING_KEY" title="Permalink to this definition">¶</a></dt>
-<dd><p>Routing key used for events. Default is <tt class="docutils literal"><span class="pre">&quot;celeryevent&quot;</span></tt>.</p>
+<dd><p>Routing key used for events. Default is <cite>&#8220;celeryevent&#8221;</cite>.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.EVENT_SERIALIZER">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">EVENT_SERIALIZER</tt><a class="headerlink" href="#celery.conf.EVENT_SERIALIZER" title="Permalink to this definition">¶</a></dt>
 <dd><p>Type of serialization method used to serialize events. Default is
-<tt class="docutils literal"><span class="pre">&quot;json&quot;</span></tt>.</p>
+<cite>&#8220;json&#8221;</cite>.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.RESULT_EXCHANGE">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">RESULT_EXCHANGE</tt><a class="headerlink" href="#celery.conf.RESULT_EXCHANGE" title="Permalink to this definition">¶</a></dt>
 <dd><p>Exchange used by the AMQP result backend to publish task results.
-Default is <tt class="docutils literal"><span class="pre">&quot;celeryresult&quot;</span></tt>.</p>
+Default is <cite>&#8220;celeryresult&#8221;</cite>.</p>
 </dd></dl>
 
 </div>
@@ -179,13 +179,13 @@ Default is <tt class="docutils literal"><span class="pre">&quot;celeryresult&quo
 <dl class="data">
 <dt id="celery.conf.CELERY_SEND_TASK_ERROR_EMAILS">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">CELERY_SEND_TASK_ERROR_EMAILS</tt><a class="headerlink" href="#celery.conf.CELERY_SEND_TASK_ERROR_EMAILS" title="Permalink to this definition">¶</a></dt>
-<dd><p>If set to <tt class="xref docutils literal"><span class="pre">True</span></tt>, errors in tasks will be sent to <a class="reference internal" href="#celery.conf.ADMINS" title="celery.conf.ADMINS"><tt class="xref py py-data docutils literal"><span class="pre">ADMINS</span></tt></a> by e-mail.</p>
+<dd><p>If set to <cite>True</cite>, errors in tasks will be sent to <a class="reference internal" href="#celery.conf.ADMINS" title="celery.conf.ADMINS"><tt class="xref py py-data docutils literal"><span class="pre">ADMINS</span></tt></a> by e-mail.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.ADMINS">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">ADMINS</tt><a class="headerlink" href="#celery.conf.ADMINS" title="Permalink to this definition">¶</a></dt>
-<dd><p>List of <tt class="docutils literal"><span class="pre">(name,</span> <span class="pre">email_address)</span></tt> tuples for the admins that should
+<dd><p>List of <cite>(name, email_address)</cite> tuples for the admins that should
 receive error e-mails.</p>
 </dd></dl>
 
@@ -193,13 +193,13 @@ receive error e-mails.</p>
 <dt id="celery.conf.SERVER_EMAIL">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">SERVER_EMAIL</tt><a class="headerlink" href="#celery.conf.SERVER_EMAIL" title="Permalink to this definition">¶</a></dt>
 <dd><p>The e-mail address this worker sends e-mails from.
-Default is <tt class="docutils literal"><span class="pre">&quot;celery&#64;localhost&quot;</span></tt>.</p>
+Default is <cite>&#8220;celery&#64;localhost&#8221;</cite>.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.MAIL_HOST">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">MAIL_HOST</tt><a class="headerlink" href="#celery.conf.MAIL_HOST" title="Permalink to this definition">¶</a></dt>
-<dd><p>The mail server to use. Default is <tt class="docutils literal"><span class="pre">&quot;localhost&quot;</span></tt>.</p>
+<dd><p>The mail server to use. Default is <cite>&#8220;localhost&#8221;</cite>.</p>
 </dd></dl>
 
 <dl class="data">
@@ -217,7 +217,7 @@ Default is <tt class="docutils literal"><span class="pre">&quot;celery&#64;local
 <dl class="data">
 <dt id="celery.conf.MAIL_PORT">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">MAIL_PORT</tt><a class="headerlink" href="#celery.conf.MAIL_PORT" title="Permalink to this definition">¶</a></dt>
-<dd><p>The port the mail server is listening on. Default is <tt class="docutils literal"><span class="pre">25</span></tt>.</p>
+<dd><p>The port the mail server is listening on. Default is <cite>25</cite>.</p>
 </dd></dl>
 
 </div>
@@ -232,8 +232,8 @@ Default is <tt class="docutils literal"><span class="pre">&quot;celery&#64;local
 <dl class="data">
 <dt id="celery.conf.EAGER_PROPAGATES_EXCEPTIONS">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">EAGER_PROPAGATES_EXCEPTIONS</tt><a class="headerlink" href="#celery.conf.EAGER_PROPAGATES_EXCEPTIONS" title="Permalink to this definition">¶</a></dt>
-<dd><p>If set to <tt class="xref docutils literal"><span class="pre">True</span></tt>, <a class="reference internal" href="celery.execute.html#celery.execute.apply" title="celery.execute.apply"><tt class="xref py py-func docutils literal"><span class="pre">celery.execute.apply()</span></tt></a> will re-raise task exceptions.
-It&#8217;s the same as always running apply with <tt class="docutils literal"><span class="pre">throw=True</span></tt>.</p>
+<dd><p>If set to <cite>True</cite>, <a class="reference internal" href="celery.execute.html#celery.execute.apply" title="celery.execute.apply"><tt class="xref py py-func docutils literal"><span class="pre">celery.execute.apply()</span></tt></a> will re-raise task exceptions.
+It&#8217;s the same as always running apply with <cite>throw=True</cite>.</p>
 </dd></dl>
 
 <dl class="data">
@@ -265,7 +265,7 @@ after the task is executed.</p>
 <dl class="data">
 <dt id="celery.conf.STORE_ERRORS_EVEN_IF_IGNORED">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">STORE_ERRORS_EVEN_IF_IGNORED</tt><a class="headerlink" href="#celery.conf.STORE_ERRORS_EVEN_IF_IGNORED" title="Permalink to this definition">¶</a></dt>
-<dd><p>If enabled, task errors will be stored even though <tt class="docutils literal"><span class="pre">Task.ignore_result</span></tt>
+<dd><p>If enabled, task errors will be stored even though <cite>Task.ignore_result</cite>
 is enabled.</p>
 </dd></dl>
 
@@ -279,11 +279,10 @@ result cache.</p>
 <dl class="data">
 <dt id="celery.conf.TASK_SERIALIZER">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">TASK_SERIALIZER</tt><a class="headerlink" href="#celery.conf.TASK_SERIALIZER" title="Permalink to this definition">¶</a></dt>
-<dd><p>A string identifying the default serialization
-method to use. Can be <tt class="docutils literal"><span class="pre">pickle</span></tt> (default),
-<tt class="docutils literal"><span class="pre">json</span></tt>, <tt class="docutils literal"><span class="pre">yaml</span></tt>, or any custom serialization methods that have
-been registered with <tt class="xref py py-mod docutils literal"><span class="pre">carrot.serialization.registry</span></tt>.</p>
-<p>Default is <tt class="docutils literal"><span class="pre">pickle</span></tt>.</p>
+<dd><p>A string identifying the default serialization method to use.</p>
+<p>Can be <cite>pickle</cite> (default), <cite>json</cite>, <cite>yaml</cite>, <cite>msgpack</cite> or any custom
+serialization methods that have been registered with
+<tt class="xref py py-mod docutils literal"><span class="pre">kombu.serialization.registry</span></tt>.</p>
 </dd></dl>
 
 <dl class="data">
@@ -302,8 +301,8 @@ been registered with <tt class="xref py py-mod docutils literal"><span class="pr
 <dt id="celery.conf.SEND_EVENTS">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">SEND_EVENTS</tt><a class="headerlink" href="#celery.conf.SEND_EVENTS" title="Permalink to this definition">¶</a></dt>
 <dd><p>If set, celery will send events that can be captured by monitors like
-<tt class="docutils literal"><span class="pre">celerymon</span></tt>.
-Default is: <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
+<cite>celerymon</cite>.
+Default is: <cite>False</cite>.</p>
 </dd></dl>
 
 <dl class="data">
@@ -316,7 +315,7 @@ rate limit defined. (Default: <tt class="xref py py-const xref docutils literal"
 <dl class="data">
 <dt id="celery.conf.DISABLE_RATE_LIMITS">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">DISABLE_RATE_LIMITS</tt><a class="headerlink" href="#celery.conf.DISABLE_RATE_LIMITS" title="Permalink to this definition">¶</a></dt>
-<dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt> all rate limits will be disabled and all tasks will be executed
+<dd><p>If <cite>True</cite> all rate limits will be disabled and all tasks will be executed
 as soon as possible.</p>
 </dd></dl>
 
@@ -335,8 +334,8 @@ it&#8217;s lost.</p>
 <tt class="descclassname">celery.conf.</tt><tt class="descname">BROKER_CONNECTION_MAX_RETRIES</tt><a class="headerlink" href="#celery.conf.BROKER_CONNECTION_MAX_RETRIES" title="Permalink to this definition">¶</a></dt>
 <dd><p>Maximum number of retries before we give up re-establishing a connection
 to the broker.</p>
-<p>If this is set to <tt class="docutils literal"><span class="pre">0</span></tt> or <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt>, we will retry forever.</p>
-<p>Default is <tt class="docutils literal"><span class="pre">100</span></tt> retries.</p>
+<p>If this is set to <cite>0</cite> or <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt>, we will retry forever.</p>
+<p>Default is <cite>100</cite> retries.</p>
 </dd></dl>
 
 </div>
@@ -346,7 +345,7 @@ to the broker.</p>
 <dt id="celery.conf.CELERYBEAT_LOG_LEVEL">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYBEAT_LOG_LEVEL</tt><a class="headerlink" href="#celery.conf.CELERYBEAT_LOG_LEVEL" title="Permalink to this definition">¶</a></dt>
 <dd><p>Default log level for celerybeat.
-Default is: <tt class="docutils literal"><span class="pre">INFO</span></tt>.</p>
+Default is: <cite>INFO</cite>.</p>
 </dd></dl>
 
 <dl class="data">
@@ -360,7 +359,7 @@ Default is: <tt class="xref py py-const xref docutils literal"><span class="pre"
 <dt id="celery.conf.CELERYBEAT_SCHEDULE_FILENAME">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYBEAT_SCHEDULE_FILENAME</tt><a class="headerlink" href="#celery.conf.CELERYBEAT_SCHEDULE_FILENAME" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name of the persistent schedule database file.
-Default is: <tt class="docutils literal"><span class="pre">celerybeat-schedule</span></tt>.</p>
+Default is: <cite>celerybeat-schedule</cite>.</p>
 </dd></dl>
 
 <dl class="data">
@@ -382,7 +381,7 @@ at maximum).</p>
 <dt id="celery.conf.CELERYMON_LOG_LEVEL">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYMON_LOG_LEVEL</tt><a class="headerlink" href="#celery.conf.CELERYMON_LOG_LEVEL" title="Permalink to this definition">¶</a></dt>
 <dd><p>Default log level for celerymon.
-Default is: <tt class="docutils literal"><span class="pre">INFO</span></tt>.</p>
+Default is: <cite>INFO</cite>.</p>
 </dd></dl>
 
 <dl class="data">
@@ -430,7 +429,7 @@ Default is: <tt class="xref py py-const xref docutils literal"><span class="pre"
 <dt id="celery.conf.CELERYD_CONCURRENCY">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYD_CONCURRENCY</tt><a class="headerlink" href="#celery.conf.CELERYD_CONCURRENCY" title="Permalink to this definition">¶</a></dt>
 <dd><p>The number of concurrent worker processes.
-If set to <tt class="docutils literal"><span class="pre">0</span></tt> (the default), the total number of available CPUs/cores
+If set to <cite>0</cite> (the default), the total number of available CPUs/cores
 will be used.</p>
 </dd></dl>
 
@@ -439,35 +438,35 @@ will be used.</p>
 <tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYD_PREFETCH_MULTIPLIER</tt><a class="headerlink" href="#celery.conf.CELERYD_PREFETCH_MULTIPLIER" title="Permalink to this definition">¶</a></dt>
 <dd><p>The number of concurrent workers is multipled by this number to yield
 the wanted AMQP QoS message prefetch count.
-Default is: <tt class="docutils literal"><span class="pre">4</span></tt></p>
+Default is: <cite>4</cite></p>
 </dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.CELERYD_POOL">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYD_POOL</tt><a class="headerlink" href="#celery.conf.CELERYD_POOL" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name of the task pool class used by the worker.
-Default is <tt class="docutils literal"><span class="pre">&quot;celery.concurrency.processes.TaskPool&quot;</span></tt>.</p>
+Default is <cite>&#8220;celery.concurrency.processes.TaskPool&#8221;</cite>.</p>
 </dd></dl>
 
 <dl class="data">
-<dt id="celery.conf.CELERYD_LISTENER">
-<tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYD_LISTENER</tt><a class="headerlink" href="#celery.conf.CELERYD_LISTENER" title="Permalink to this definition">¶</a></dt>
-<dd><p>Name of the listener class used by the worker.
-Default is <tt class="docutils literal"><span class="pre">&quot;celery.worker.listener.CarrotListener&quot;</span></tt>.</p>
+<dt id="celery.conf.CELERYD_CONSUMER">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYD_CONSUMER</tt><a class="headerlink" href="#celery.conf.CELERYD_CONSUMER" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of the consumer class used by the worker.
+Default is <cite>&#8220;celery.worker.consumer.Consumer&#8221;</cite>.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.CELERYD_MEDIATOR">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYD_MEDIATOR</tt><a class="headerlink" href="#celery.conf.CELERYD_MEDIATOR" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name of the mediator class used by the worker.
-Default is <tt class="docutils literal"><span class="pre">&quot;celery.worker.controllers.Mediator&quot;</span></tt>.</p>
+Default is <cite>&#8220;celery.worker.controllers.Mediator&#8221;</cite>.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.CELERYD_ETA_SCHEDULER">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYD_ETA_SCHEDULER</tt><a class="headerlink" href="#celery.conf.CELERYD_ETA_SCHEDULER" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name of the ETA scheduler class used by the worker.
-Default is <tt class="docutils literal"><span class="pre">&quot;celery.worker.controllers.ScheduleController&quot;</span></tt>.</p>
+Default is <cite>&#8220;celery.worker.controllers.ScheduleController&#8221;</cite>.</p>
 </dd></dl>
 
 </div>
@@ -524,13 +523,13 @@ Default is <tt class="docutils literal"><span class="pre">&quot;celery.worker.co
         <li class="right" >
           <a href="celery.task.html" title="Task Information and Utilities - celery.task"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

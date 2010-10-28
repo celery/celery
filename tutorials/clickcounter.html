@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tutorial: Creating a click counter using carrot and celery &mdash; Celery v2.1.1 documentation</title>
+    <title>Tutorial: Creating a click counter using Kombu and celery &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../index.html" />
     <link rel="up" title="Tutorials" href="index.html" />
     <link rel="next" title="Frequently Asked Questions" href="../faq.html" />
     <link rel="prev" title="Using Celery with Redis/Database as the messaging queue." href="otherqueues.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="otherqueues.html" title="Using Celery with Redis/Database as the messaging queue."
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials</a> &raquo;</li> 
       </ul>
     </div>  
@@ -53,16 +53,16 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="tutorial-creating-a-click-counter-using-carrot-and-celery">
-<span id="tut-clickcounter"></span><h1>Tutorial: Creating a click counter using carrot and celery<a class="headerlink" href="#tutorial-creating-a-click-counter-using-carrot-and-celery" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="tutorial-creating-a-click-counter-using-kombu-and-celery">
+<span id="tut-clickcounter"></span><h1>Tutorial: Creating a click counter using Kombu and celery<a class="headerlink" href="#tutorial-creating-a-click-counter-using-kombu-and-celery" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference external" href="#introduction" id="id1">Introduction</a></li>
-<li><a class="reference external" href="#the-model" id="id2">The model</a></li>
-<li><a class="reference external" href="#using-carrot-to-send-clicks-as-messages" id="id3">Using carrot to send clicks as messages</a></li>
-<li><a class="reference external" href="#view-and-urls" id="id4">View and URLs</a></li>
-<li><a class="reference external" href="#creating-the-periodic-task" id="id5">Creating the periodic task</a></li>
-<li><a class="reference external" href="#finishing" id="id6">Finishing</a></li>
+<li><a class="reference internal" href="#introduction" id="id1">Introduction</a></li>
+<li><a class="reference internal" href="#the-model" id="id2">The model</a></li>
+<li><a class="reference internal" href="#using-kombu-to-send-clicks-as-messages" id="id3">Using Kombu to send clicks as messages</a></li>
+<li><a class="reference internal" href="#view-and-urls" id="id4">View and URLs</a></li>
+<li><a class="reference internal" href="#creating-the-periodic-task" id="id5">Creating the periodic task</a></li>
+<li><a class="reference internal" href="#finishing" id="id6">Finishing</a></li>
 </ul>
 </div>
 <div class="section" id="introduction">
@@ -73,17 +73,17 @@ a click in the DB and forwards you to the real destination.</p>
 you are likely to bump into problems. One database write for every click is
 not good if you have millions of clicks a day.</p>
 <p>So what can you do? In this tutorial we will send the individual clicks as
-messages using <tt class="docutils literal"><span class="pre">carrot</span></tt>, and then process them later with a <tt class="docutils literal"><span class="pre">celery</span></tt>
-periodic task.</p>
-<p>Celery and carrot is excellent in tandem, and while this might not be
+messages using <cite>kombu</cite>, and then process them later with a Celery periodic
+task.</p>
+<p>Celery and Kombu is excellent in tandem, and while this might not be
 the perfect example, you&#8217;ll at least see one example how of they can be used
 to solve a task.</p>
 </div>
 <div class="section" id="the-model">
 <h2><a class="toc-backref" href="#id2">The model</a><a class="headerlink" href="#the-model" title="Permalink to this headline">¶</a></h2>
-<p>The model is simple, <tt class="docutils literal"><span class="pre">Click</span></tt> has the URL as primary key and a number of
-clicks for that URL. Its manager, <tt class="docutils literal"><span class="pre">ClickManager</span></tt> implements the
-<tt class="docutils literal"><span class="pre">increment_clicks</span></tt> method, which takes a URL and by how much to increment
+<p>The model is simple, <cite>Click</cite> has the URL as primary key and a number of
+clicks for that URL. Its manager, <cite>ClickManager</cite> implements the
+<cite>increment_clicks</cite> method, which takes a URL and by how much to increment
 its count by.</p>
 <p><em>clickmuncher/models.py</em>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
@@ -120,24 +120,24 @@ its count by.</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="using-carrot-to-send-clicks-as-messages">
-<h2><a class="toc-backref" href="#id3">Using carrot to send clicks as messages</a><a class="headerlink" href="#using-carrot-to-send-clicks-as-messages" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="using-kombu-to-send-clicks-as-messages">
+<h2><a class="toc-backref" href="#id3">Using Kombu to send clicks as messages</a><a class="headerlink" href="#using-kombu-to-send-clicks-as-messages" title="Permalink to this headline">¶</a></h2>
 <p>The model is normal django stuff, nothing new there. But now we get on to
 the messaging. It has been a tradition for me to put the projects messaging
-related code in its own <tt class="docutils literal"><span class="pre">messaging.py</span></tt> module, and I will continue to do so
+related code in its own <cite>messaging.py</cite> module, and I will continue to do so
 here so maybe you can adopt this practice. In this module we have two
 functions:</p>
 <ul>
-<li><p class="first"><tt class="docutils literal"><span class="pre">send_increment_clicks</span></tt></p>
+<li><p class="first"><cite>send_increment_clicks</cite></p>
 <p>This function sends a simple message to the broker. The message body only
 contains the URL we want to increment as plain-text, so the exchange and
-routing key play a role here. We use an exchange called <tt class="docutils literal"><span class="pre">clicks</span></tt>, with a
-routing key of <tt class="docutils literal"><span class="pre">increment_click</span></tt>, so any consumer binding a queue to
+routing key play a role here. We use an exchange called <cite>clicks</cite>, with a
+routing key of <cite>increment_click</cite>, so any consumer binding a queue to
 this exchange using this routing key will receive these messages.</p>
 </li>
-<li><p class="first"><tt class="docutils literal"><span class="pre">process_clicks</span></tt></p>
+<li><p class="first"><cite>process_clicks</cite></p>
 <p>This function processes all currently gathered clicks sent using
-<tt class="docutils literal"><span class="pre">send_increment_clicks</span></tt>. Instead of issuing one database query for every
+<cite>send_increment_clicks</cite>. Instead of issuing one database query for every
 click it processes all of the messages first, calculates the new click count
 and issues one update per URL. A message that has been received will not be
 deleted from the broker until it has been acknowledged by the receiver, so
@@ -145,16 +145,19 @@ if the receiver dies in the middle of processing the message, it will be
 re-sent at a later point in time. This guarantees delivery and we respect
 this feature here by not acknowledging the message until the clicks has
 actually been written to disk.</p>
-<p><strong>Note</strong>: This could probably be optimized further with
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This could probably be optimized further with
 some hand-written SQL, but it will do for now. Let&#8217;s say it&#8217;s an exercise
 left for the picky reader, albeit a discouraged one if you can survive
 without doing it.</p>
+</div>
 </li>
 </ul>
 <p>On to the code...</p>
 <p><em>clickmuncher/messaging.py</em>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.messaging</span> <span class="kn">import</span> <span class="n">establish_connection</span>
-<span class="kn">from</span> <span class="nn">carrot.messaging</span> <span class="kn">import</span> <span class="n">Publisher</span><span class="p">,</span> <span class="n">Consumer</span>
+<span class="kn">from</span> <span class="nn">kombu.compat</span> <span class="kn">import</span> <span class="n">Publisher</span><span class="p">,</span> <span class="n">Consumer</span>
 <span class="kn">from</span> <span class="nn">clickmuncher.models</span> <span class="kn">import</span> <span class="n">Click</span>
 
 
@@ -216,7 +219,7 @@ The interface is as follows, if you have a link to <a class="reference external"
 would want to count the clicks for, you replace the URL with:</p>
 <blockquote>
 <a class="reference external" href="http://mysite/clickmuncher/count/?u=http://google.com">http://mysite/clickmuncher/count/?u=http://google.com</a></blockquote>
-<p>and the <tt class="docutils literal"><span class="pre">count</span></tt> view will send off an increment message and forward you to
+<p>and the <cite>count</cite> view will send off an increment message and forward you to
 that site.</p>
 <p><em>clickmuncher/views.py</em>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">HttpResponseRedirect</span>
@@ -255,8 +258,8 @@ that site.</p>
         <span class="n">process_clicks</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>We subclass from <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.PeriodicTask" title="celery.task.base.PeriodicTask"><tt class="xref py py-class docutils literal"><span class="pre">celery.task.base.PeriodicTask</span></tt></a>, set the <tt class="docutils literal"><span class="pre">run_every</span></tt>
-attribute and in the body of the task just call the <tt class="docutils literal"><span class="pre">process_clicks</span></tt>
+<p>We subclass from <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.PeriodicTask" title="celery.task.base.PeriodicTask"><tt class="xref py py-class docutils literal"><span class="pre">celery.task.base.PeriodicTask</span></tt></a>, set the <cite>run_every</cite>
+attribute and in the body of the task just call the <cite>process_clicks</cite>
 function we wrote earlier.</p>
 </div>
 <div class="section" id="finishing">
@@ -321,13 +324,13 @@ mailing-list or come join us in the #celery IRC channel at Freenode:
         <li class="right" >
           <a href="otherqueues.html" title="Using Celery with Redis/Database as the messaging queue."
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" >Tutorials</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

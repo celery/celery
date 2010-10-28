@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Serialization Tools - celery.serialization &mdash; Celery v2.1.1 documentation</title>
+    <title>Serialization Tools - celery.serialization &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Datastructures - celery.datastructures" href="celery.datastructures.html" />
     <link rel="prev" title="Tracing Execution - celery.execute.trace" href="celery.execute.trace.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.execute.trace.html" title="Tracing Execution - celery.execute.trace"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -73,25 +73,7 @@
 </tr>
 </tbody>
 </table>
-<dl class="attribute">
-<dt id="celery.serialization.UnpickleableExceptionWrapper.exc_module">
-<tt class="descname">exc_module</tt><a class="headerlink" href="#celery.serialization.UnpickleableExceptionWrapper.exc_module" title="Permalink to this definition">¶</a></dt>
-<dd><p>The module of the original exception.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.serialization.UnpickleableExceptionWrapper.exc_cls_name">
-<tt class="descname">exc_cls_name</tt><a class="headerlink" href="#celery.serialization.UnpickleableExceptionWrapper.exc_cls_name" title="Permalink to this definition">¶</a></dt>
-<dd><p>The name of the original exception class.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.serialization.UnpickleableExceptionWrapper.exc_args">
-<tt class="descname">exc_args</tt><a class="headerlink" href="#celery.serialization.UnpickleableExceptionWrapper.exc_args" title="Permalink to this definition">¶</a></dt>
-<dd><p>The arguments for the original exception.</p>
-</dd></dl>
-
-<p>Example</p>
+<p><strong>Example</strong></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
 <span class="gp">... </span>    <span class="n">something_raising_unpickleable_exc</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
@@ -101,6 +83,24 @@
 <span class="gp">... </span>    <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span> <span class="c"># Works fine.</span>
 </pre></div>
 </div>
+<dl class="attribute">
+<dt id="celery.serialization.UnpickleableExceptionWrapper.exc_args">
+<tt class="descname">exc_args</tt><a class="headerlink" href="#celery.serialization.UnpickleableExceptionWrapper.exc_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>The arguments for the original exception.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.serialization.UnpickleableExceptionWrapper.exc_cls_name">
+<tt class="descname">exc_cls_name</tt><a class="headerlink" href="#celery.serialization.UnpickleableExceptionWrapper.exc_cls_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the original exception class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.serialization.UnpickleableExceptionWrapper.exc_module">
+<tt class="descname">exc_module</tt><a class="headerlink" href="#celery.serialization.UnpickleableExceptionWrapper.exc_module" title="Permalink to this definition">¶</a></dt>
+<dd><p>The module of the original exception.</p>
+</dd></dl>
+
 <dl class="classmethod">
 <dt id="celery.serialization.UnpickleableExceptionWrapper.from_exception">
 <em class="property">classmethod </em><tt class="descname">from_exception</tt><big>(</big><em>exc</em><big>)</big><a class="headerlink" href="#celery.serialization.UnpickleableExceptionWrapper.from_exception" title="Permalink to this definition">¶</a></dt>
@@ -123,9 +123,9 @@
 <dt id="celery.serialization.find_nearest_pickleable_exception">
 <tt class="descclassname">celery.serialization.</tt><tt class="descname">find_nearest_pickleable_exception</tt><big>(</big><em>exc</em><big>)</big><a class="headerlink" href="#celery.serialization.find_nearest_pickleable_exception" title="Permalink to this definition">¶</a></dt>
 <dd><p>With an exception instance, iterate over its super classes (by mro)
-and find the first super exception that is pickleable. It does
+and find the first super exception that is pickleable.  It does
 not go below <tt class="xref py py-exc docutils literal"><span class="pre">Exception</span></tt> (i.e. it skips <tt class="xref py py-exc docutils literal"><span class="pre">Exception</span></tt>,
-<tt class="xref py py-class docutils literal"><span class="pre">BaseException</span></tt> and <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt>). If that happens
+<tt class="xref py py-class docutils literal"><span class="pre">BaseException</span></tt> and <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt>).  If that happens
 you should use <tt class="xref py py-exc docutils literal"><span class="pre">UnpickleableException</span></tt> instead.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -162,6 +162,12 @@ if it is it returns <tt class="xref py py-const xref docutils literal"><span cla
 <dt id="celery.serialization.subclass_exception">
 <tt class="descclassname">celery.serialization.</tt><tt class="descname">subclass_exception</tt><big>(</big><em>name</em>, <em>parent</em>, <em>module</em><big>)</big><a class="headerlink" href="#celery.serialization.subclass_exception" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="data">
+<dt id="celery.serialization.unwanted_base_classes">
+<tt class="descclassname">celery.serialization.</tt><tt class="descname">unwanted_base_classes</tt><a class="headerlink" href="#celery.serialization.unwanted_base_classes" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of base classes we probably don&#8217;t want to reduce to.</p>
+</dd></dl>
 
 </div>
 
@@ -216,14 +222,14 @@ if it is it returns <tt class="xref py py-const xref docutils literal"><span cla
         <li class="right" >
           <a href="celery.execute.trace.html" title="Tracing Execution - celery.execute.trace"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

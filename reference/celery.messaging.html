@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Messaging - celery.messaging &mdash; Celery v2.1.1 documentation</title>
+    <title>Messaging - celery.messaging &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Contrib: Abortable tasks - celery.contrib.abortable" href="celery.contrib.abortable.html" />
     <link rel="prev" title="Task States - celery.states" href="celery.states.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.states.html" title="Task States - celery.states"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -56,131 +56,25 @@
   <div class="section" id="messaging-celery-messaging">
 <h1>Messaging - celery.messaging<a class="headerlink" href="#messaging-celery-messaging" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.messaging"></span><p>Sending and Receiving Messages</p>
-<dl class="class">
-<dt id="celery.messaging.BroadcastConsumer">
-<em class="property">class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">BroadcastConsumer</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.BroadcastConsumer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Consume broadcast commands</p>
-<dl class="method">
-<dt id="celery.messaging.BroadcastConsumer.consume">
-<tt class="descname">consume</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.BroadcastConsumer.consume" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.messaging.BroadcastConsumer.verify_exclusive">
-<tt class="descname">verify_exclusive</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.messaging.BroadcastConsumer.verify_exclusive" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.messaging.BroadcastPublisher">
-<em class="property">class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">BroadcastPublisher</tt><big>(</big><em>connection</em>, <em>exchange=None</em>, <em>routing_key=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.BroadcastPublisher" title="Permalink to this definition">¶</a></dt>
-<dd><p>Publish broadcast commands</p>
-<dl class="attribute">
-<dt id="celery.messaging.BroadcastPublisher.ReplyTo">
-<tt class="descname">ReplyTo</tt><a class="headerlink" href="#celery.messaging.BroadcastPublisher.ReplyTo" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <a class="reference internal" href="#celery.messaging.ControlReplyConsumer" title="celery.messaging.ControlReplyConsumer"><tt class="xref py py-class docutils literal"><span class="pre">ControlReplyConsumer</span></tt></a></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.messaging.BroadcastPublisher.send">
-<tt class="descname">send</tt><big>(</big><em>type</em>, <em>arguments</em>, <em>destination=None</em>, <em>reply_ticket=None</em><big>)</big><a class="headerlink" href="#celery.messaging.BroadcastPublisher.send" title="Permalink to this definition">¶</a></dt>
-<dd><p>Send broadcast command.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.messaging.ConsumerSet">
-<em class="property">class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">ConsumerSet</tt><big>(</big><em>connection</em>, <em>from_dict=None</em>, <em>consumers=None</em>, <em>callbacks=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.messaging.ConsumerSet" title="Permalink to this definition">¶</a></dt>
-<dd><p>ConsumerSet with an optional decode error callback.</p>
-<p>For more information see <tt class="xref py py-class docutils literal"><span class="pre">carrot.messaging.ConsumerSet</span></tt>.</p>
-<dl class="attribute">
-<dt id="celery.messaging.ConsumerSet.on_decode_error">
-<tt class="descname">on_decode_error</tt><a class="headerlink" href="#celery.messaging.ConsumerSet.on_decode_error" title="Permalink to this definition">¶</a></dt>
-<dd><p>Callback called if a message had decoding errors.
-The callback is called with the signature:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">callback</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">exception</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.messaging.ControlReplyConsumer">
-<em class="property">class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">ControlReplyConsumer</tt><big>(</big><em>connection</em>, <em>ticket</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.ControlReplyConsumer" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
-<dt id="celery.messaging.ControlReplyConsumer.collect">
-<tt class="descname">collect</tt><big>(</big><em>limit=None</em>, <em>timeout=1</em>, <em>callback=None</em><big>)</big><a class="headerlink" href="#celery.messaging.ControlReplyConsumer.collect" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.messaging.ControlReplyPublisher">
-<em class="property">class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">ControlReplyPublisher</tt><big>(</big><em>connection</em>, <em>exchange=None</em>, <em>routing_key=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.ControlReplyPublisher" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="celery.messaging.EventConsumer">
-<em class="property">class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">EventConsumer</tt><big>(</big><em>connection</em>, <em>queue=None</em>, <em>exchange=None</em>, <em>routing_key=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.EventConsumer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Consume events</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.messaging.EventPublisher">
-<em class="property">class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">EventPublisher</tt><big>(</big><em>connection</em>, <em>exchange=None</em>, <em>routing_key=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.EventPublisher" title="Permalink to this definition">¶</a></dt>
-<dd><p>Publish events</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.messaging.TaskConsumer">
-<em class="property">class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">TaskConsumer</tt><big>(</big><em>connection</em>, <em>queue=None</em>, <em>exchange=None</em>, <em>routing_key=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.TaskConsumer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Consume tasks</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.messaging.TaskPublisher">
-<em class="property">class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">TaskPublisher</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.TaskPublisher" title="Permalink to this definition">¶</a></dt>
-<dd><p>Publish tasks.</p>
-<dl class="method">
-<dt id="celery.messaging.TaskPublisher.declare">
-<tt class="descname">declare</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.messaging.TaskPublisher.declare" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.messaging.TaskPublisher.delay_task">
-<tt class="descname">delay_task</tt><big>(</big><em>task_name</em>, <em>task_args=None</em>, <em>task_kwargs=None</em>, <em>countdown=None</em>, <em>eta=None</em>, <em>task_id=None</em>, <em>taskset_id=None</em>, <em>exchange=None</em>, <em>exchange_type=None</em>, <em>expires=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.TaskPublisher.delay_task" title="Permalink to this definition">¶</a></dt>
-<dd><p>Delay task for execution by the celery nodes.</p>
-</dd></dl>
-
-</dd></dl>
-
 <dl class="function">
 <dt id="celery.messaging.establish_connection">
-<tt class="descclassname">celery.messaging.</tt><tt class="descname">establish_connection</tt><big>(</big><em>hostname=None</em>, <em>userid=None</em>, <em>password=None</em>, <em>virtual_host=None</em>, <em>port=None</em>, <em>ssl=None</em>, <em>insist=None</em>, <em>connect_timeout=None</em>, <em>backend_cls=None</em>, <em>defaults=&lt;module 'celery.conf' from '/opt/devel/celery/celery/conf.py'&gt;</em><big>)</big><a class="headerlink" href="#celery.messaging.establish_connection" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.messaging.</tt><tt class="descname">establish_connection</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.establish_connection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Establish a connection to the message broker.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="celery.messaging.extract_msg_options">
-<tt class="descclassname">celery.messaging.</tt><tt class="descname">extract_msg_options</tt><big>(</big><em>d</em><big>)</big><a class="headerlink" href="#celery.messaging.extract_msg_options" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
 <dt id="celery.messaging.get_consumer_set">
 <tt class="descclassname">celery.messaging.</tt><tt class="descname">get_consumer_set</tt><big>(</big><em>connection</em>, <em>queues=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.messaging.get_consumer_set" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the <tt class="xref py py-class docutils literal"><span class="pre">carrot.messaging.ConsumerSet`</span></tt> for a queue
+<dd><p>Get the <tt class="xref py py-class docutils literal"><span class="pre">kombu.messaging.Consumer</span></tt> for a queue
 configuration.</p>
-<p>Defaults to the queues in <tt class="xref py py-const docutils literal"><span class="pre">CELERY_QUEUES</span></tt>.</p>
+<p>Defaults to the queues in <a class="reference internal" href="../configuration.html#std:setting-CELERY_QUEUES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_QUEUES</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="celery.messaging.with_connection">
 <tt class="descclassname">celery.messaging.</tt><tt class="descname">with_connection</tt><big>(</big><em>fun</em><big>)</big><a class="headerlink" href="#celery.messaging.with_connection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Decorator for providing default message broker connection for functions
-supporting the <tt class="docutils literal"><span class="pre">connection</span></tt> and <tt class="docutils literal"><span class="pre">connect_timeout</span></tt> keyword
+supporting the <cite>connection</cite> and <cite>connect_timeout</cite> keyword
 arguments.</p>
 </dd></dl>
 
@@ -237,13 +131,13 @@ arguments.</p>
         <li class="right" >
           <a href="celery.states.html" title="Task States - celery.states"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

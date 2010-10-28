@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Celery 1.0 has been released! &mdash; Celery v2.1.1 documentation</title>
+    <title>Celery 1.0 has been released! &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../../index.html" /> 
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../../index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -34,7 +34,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.1 documentation</a> &raquo;</li> 
+        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -72,11 +72,11 @@ API will be deprecated; so, for example, if we decided to remove a function
 that existed in Celery 1.0:</p>
 <ul class="simple">
 <li>Celery 1.2 will contain a backwards-compatible replica of the function which
-will raise a <tt class="docutils literal"><span class="pre">PendingDeprecationWarning</span></tt>.
+will raise a <cite>PendingDeprecationWarning</cite>.
 This warning is silent by default; you need to explicitly turn on display
 of these warnings.</li>
 <li>Celery 1.4 will contain the backwards-compatible replica, but the warning
-will be promoted to a full-fledged <tt class="docutils literal"><span class="pre">DeprecationWarning</span></tt>. This warning
+will be promoted to a full-fledged <cite>DeprecationWarning</cite>. This warning
 is loud by default, and will likely be quite annoying.</li>
 <li>Celery 1.6 will remove the feature outright.</li>
 </ul>
@@ -123,15 +123,15 @@ activity, so your workers won&#8217;t be bored by having nothing to do.</p>
 <ul>
 <li><p class="first">New periodic task service.</p>
 <blockquote>
-<p>Periodic tasks are no longer dispatched by <tt class="docutils literal"><span class="pre">celeryd</span></tt>, but instead by a
-separate service called <tt class="docutils literal"><span class="pre">celerybeat</span></tt>. This is an optimized, centralized
+<p>Periodic tasks are no longer dispatched by <cite>celeryd</cite>, but instead by a
+separate service called <cite>celerybeat</cite>. This is an optimized, centralized
 service dedicated to your periodic tasks, which means you don&#8217;t have to
 worry about deadlocks or race conditions any more. But that does mean you
 have to make sure only one instance of this service is running at any one
 time.</p>
 </blockquote>
-<p><strong>TIP:</strong> If you&#8217;re only running a single <tt class="docutils literal"><span class="pre">celeryd</span></tt> server, you can embed
-<tt class="docutils literal"><span class="pre">celerybeat</span></tt> inside it. Just add the <tt class="docutils literal"><span class="pre">--beat</span></tt> argument.</p>
+<p><strong>TIP:</strong> If you&#8217;re only running a single <cite>celeryd</cite> server, you can embed
+<cite>celerybeat</cite> inside it. Just add the <cite>&#8211;beat</cite> argument.</p>
 </li>
 <li><p class="first">Broadcast commands</p>
 <blockquote>
@@ -152,11 +152,11 @@ routing support in AMQP.</p>
 </li>
 <li><p class="first">Platform agnostic message format.</p>
 <p>The message format has been standardized and is now using the ISO-8601 format
-for dates instead of Python <tt class="docutils literal"><span class="pre">datetime</span></tt> objects. This means you can write task
-consumers in other languages than Python (<tt class="docutils literal"><span class="pre">eceleryd</span></tt> anyone?)</p>
+for dates instead of Python <cite>datetime</cite> objects. This means you can write task
+consumers in other languages than Python (<cite>eceleryd</cite> anyone?)</p>
 </li>
 <li><p class="first">Timely</p>
-<p>Periodic tasks are now scheduled on the clock, i.e. <tt class="docutils literal"><span class="pre">timedelta(hours=1)</span></tt>
+<p>Periodic tasks are now scheduled on the clock, i.e. <cite>timedelta(hours=1)</cite>
 means every hour at :00 minutes, not every hour from the server starts.
 To revert to the previous behavior you have the option to enable
 <tt class="xref py py-attr docutils literal"><span class="pre">PeriodicTask.relative</span></tt>.</p>
@@ -169,8 +169,8 @@ the <a class="reference external" href="http://ask.github.com/celery/changelog.h
 upgrading from a previous version of Celery, so be sure to read the entire
 change set before you continue.</p>
 <p><strong>TIP:</strong> If you install the <tt class="xref py py-mod docutils literal"><span class="pre">setproctitle</span></tt> module you can see which
-task each worker process is currently executing in <tt class="docutils literal"><span class="pre">ps</span></tt> listings.
-Just install it using pip: <tt class="docutils literal"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">setproctitle</span></tt>.</p>
+task each worker process is currently executing in <cite>ps</cite> listings.
+Just install it using pip: <cite>pip install setproctitle</cite>.</p>
 </div>
 <div class="section" id="resources">
 <h2>Resources<a class="headerlink" href="#resources" title="Permalink to this headline">¶</a></h2>
@@ -226,12 +226,12 @@ Just install it using pip: <tt class="docutils literal"><span class="pre">pip</s
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.1 documentation</a> &raquo;</li> 
+        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

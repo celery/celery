@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>App: Periodic Task Scheduler - celery.apps.beat &mdash; Celery v2.1.1 documentation</title>
+    <title>App: Periodic Task Scheduler - celery.apps.beat &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Base Command - celery.bin.base" href="celery.bin.base.html" />
     <link rel="prev" title="App: Worker Node - celery.apps.worker" href="celery.apps.worker.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.apps.worker.html" title="App: Worker Node - celery.apps.worker"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -57,10 +57,10 @@
 <h1>App: Periodic Task Scheduler - celery.apps.beat<a class="headerlink" href="#app-periodic-task-scheduler-celery-apps-beat" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.apps.beat"></span><dl class="class">
 <dt id="celery.apps.beat.Beat">
-<em class="property">class </em><tt class="descclassname">celery.apps.beat.</tt><tt class="descname">Beat</tt><big>(</big><em>loglevel=None</em>, <em>logfile=None</em>, <em>schedule=None</em>, <em>max_interval=None</em>, <em>scheduler_cls=None</em>, <em>defaults=None</em>, <em>socket_timeout=30</em>, <em>redirect_stdouts=None</em>, <em>redirect_stdouts_level=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.apps.beat.Beat" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.apps.beat.</tt><tt class="descname">Beat</tt><big>(</big><em>loglevel=None</em>, <em>logfile=None</em>, <em>schedule=None</em>, <em>max_interval=None</em>, <em>scheduler_cls=None</em>, <em>app=None</em>, <em>socket_timeout=30</em>, <em>redirect_stdouts=None</em>, <em>redirect_stdouts_level=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.apps.beat.Beat" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="class">
 <dt id="celery.apps.beat.Beat.Service">
-<em class="property">class </em><tt class="descname">Service</tt><big>(</big><em>logger=None</em>, <em>max_interval=300</em>, <em>schedule={'celery.backend_cleanup': {'task': 'celery.backend_cleanup'</em>, <em>'schedule': &lt;crontab: 00 04 * (m/h/d)&gt;}}</em>, <em>schedule_filename='celerybeat-schedule'</em>, <em>scheduler_cls=None</em><big>)</big><a class="headerlink" href="#celery.apps.beat.Beat.Service" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descname">Service</tt><big>(</big><em>logger=None</em>, <em>max_interval=None</em>, <em>schedule=None</em>, <em>schedule_filename=None</em>, <em>scheduler_cls=None</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.apps.beat.Beat.Service" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="celery.apps.beat.Beat.Service.get_scheduler">
 <tt class="descname">get_scheduler</tt><big>(</big><em>lazy=False</em><big>)</big><a class="headerlink" href="#celery.apps.beat.Beat.Service.get_scheduler" title="Permalink to this definition">¶</a></dt>
@@ -102,7 +102,7 @@
 <dl class="method">
 <dt id="celery.apps.beat.Beat.install_sync_handler">
 <tt class="descclassname">Beat.</tt><tt class="descname">install_sync_handler</tt><big>(</big><em>beat</em><big>)</big><a class="headerlink" href="#celery.apps.beat.Beat.install_sync_handler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Install a <tt class="docutils literal"><span class="pre">SIGTERM</span></tt> + <tt class="docutils literal"><span class="pre">SIGINT</span></tt> handler that saves
+<dd><p>Install a <cite>SIGTERM</cite> + <cite>SIGINT</cite> handler that saves
 the celerybeat schedule.</p>
 </dd></dl>
 
@@ -191,13 +191,13 @@ the celerybeat schedule.</p>
         <li class="right" >
           <a href="celery.apps.worker.html" title="App: Worker Node - celery.apps.worker"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

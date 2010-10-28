@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Task Message Protocol &mdash; Celery v2.1.1 documentation</title>
+    <title>Task Message Protocol &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../index.html" />
     <link rel="up" title="Internals" href="index.html" />
     <link rel="next" title="List of Worker Events" href="events.html" />
     <link rel="prev" title="Internals: The worker" href="worker.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="worker.html" title="Internals: The worker"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internals</a> &raquo;</li> 
       </ul>
     </div>  
@@ -57,9 +57,9 @@
 <span id="internals-task-message-protocol"></span><h1>Task Message Protocol<a class="headerlink" href="#task-message-protocol" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference external" href="#message-format" id="id1">Message format</a></li>
-<li><a class="reference external" href="#example-message" id="id2">Example message</a></li>
-<li><a class="reference external" href="#serialization" id="id3">Serialization</a></li>
+<li><a class="reference internal" href="#message-format" id="id1">Message format</a></li>
+<li><a class="reference internal" href="#example-message" id="id2">Example message</a></li>
+<li><a class="reference internal" href="#serialization" id="id3">Serialization</a></li>
 </ul>
 </div>
 <div class="section" id="message-format">
@@ -67,28 +67,28 @@
 <ul>
 <li><dl class="first docutils">
 <dt>task</dt>
-<dd><p class="first"><tt class="docutils literal"><span class="pre">string</span></tt></p>
+<dd><p class="first"><cite>string</cite></p>
 <p class="last">Name of the task. <strong>required</strong></p>
 </dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>id</dt>
-<dd><p class="first"><tt class="docutils literal"><span class="pre">string</span></tt></p>
+<dd><p class="first"><cite>string</cite></p>
 <p class="last">Unique id of the task (UUID). <strong>required</strong></p>
 </dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>args</dt>
-<dd><p class="first"><tt class="docutils literal"><span class="pre">list</span></tt></p>
+<dd><p class="first"><cite>list</cite></p>
 <p class="last">List of arguments. Will be an empty list if not provided.</p>
 </dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>kwargs</dt>
-<dd><p class="first"><tt class="docutils literal"><span class="pre">dictionary</span></tt></p>
+<dd><p class="first"><cite>dictionary</cite></p>
 <p class="last">Dictionary of keyword arguments. Will be an empty dictionary if not
 provided.</p>
 </dd>
@@ -96,15 +96,15 @@ provided.</p>
 </li>
 <li><dl class="first docutils">
 <dt>retries</dt>
-<dd><p class="first"><tt class="docutils literal"><span class="pre">int</span></tt></p>
+<dd><p class="first"><cite>int</cite></p>
 <p class="last">Current number of times this task has been retried.
-Defaults to <tt class="docutils literal"><span class="pre">0</span></tt> if not specified.</p>
+Defaults to <cite>0</cite> if not specified.</p>
 </dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>eta</dt>
-<dd><p class="first"><tt class="docutils literal"><span class="pre">string</span></tt> (ISO 8601)</p>
+<dd><p class="first"><cite>string</cite> (ISO 8601)</p>
 <p class="last">Estimated time of arrival. This is the date and time in ISO 8601
 format. If not provided the message is not scheduled, but will be
 executed asap.</p>
@@ -113,7 +113,7 @@ executed asap.</p>
 </li>
 <li><dl class="first docutils">
 <dt>expires (introduced after v2.0.2)</dt>
-<dd><p class="first"><tt class="docutils literal"><span class="pre">string</span></tt> (ISO 8601)</p>
+<dd><p class="first"><cite>string</cite> (ISO 8601)</p>
 <p class="last">Expiration date. This is the date and time in ISO 8601 format.
 If not provided the message will never expire. The message
 will be expired when the message is received and the expiration date
@@ -125,7 +125,7 @@ has been exceeded.</p>
 </div>
 <div class="section" id="example-message">
 <h2><a class="toc-backref" href="#id2">Example message</a><a class="headerlink" href="#example-message" title="Permalink to this headline">¶</a></h2>
-<p>This is an example invocation of the <tt class="docutils literal"><span class="pre">celery.task.PingTask</span></tt> task in JSON
+<p>This is an example invocation of the <cite>celery.task.PingTask</cite> task in JSON
 format:</p>
 <div class="highlight-javascript"><div class="highlight"><pre><span class="p">{</span><span class="s2">&quot;task&quot;</span><span class="o">:</span> <span class="s2">&quot;celery.task.PingTask&quot;</span><span class="p">,</span>
  <span class="s2">&quot;args&quot;</span><span class="o">:</span> <span class="p">[],</span>
@@ -138,7 +138,7 @@ format:</p>
 <div class="section" id="serialization">
 <h2><a class="toc-backref" href="#id3">Serialization</a><a class="headerlink" href="#serialization" title="Permalink to this headline">¶</a></h2>
 <p>The protocol supports several serialization formats using the
-<tt class="docutils literal"><span class="pre">content_type</span></tt> message header.</p>
+<cite>content_type</cite> message header.</p>
 <p>The MIME-types supported by default are shown in the following table.</p>
 <blockquote>
 <table border="1" class="docutils">
@@ -221,13 +221,13 @@ format:</p>
         <li class="right" >
           <a href="worker.html" title="Internals: The worker"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" >Internals</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celeryd - celery.bin.celeryd &mdash; Celery v2.1.1 documentation</title>
+    <title>celeryd - celery.bin.celeryd &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Celery Periodic Task Server - celery.bin.celerybeat" href="celery.bin.celerybeat.html" />
     <link rel="prev" title="Base Command - celery.bin.base" href="celery.bin.base.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.bin.base.html" title="Base Command - celery.bin.base"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -66,14 +66,14 @@ is the number of CPUs available on your system.</p>
 <dl class="cmdoption">
 <dt id="cmdoption-celeryd-f">
 <tt class="descname">-f</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--logfile</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-f" title="Permalink to this definition">¶</a></dt>
-<dd><p>Path to log file. If no logfile is specified, <tt class="docutils literal"><span class="pre">stderr</span></tt> is used.</p>
+<dd><p>Path to log file. If no logfile is specified, <cite>stderr</cite> is used.</p>
 </dd></dl>
 
 <dl class="cmdoption">
 <dt id="cmdoption-celeryd-l">
 <tt class="descname">-l</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--loglevel</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-l" title="Permalink to this definition">¶</a></dt>
-<dd><p>Logging level, choose between <tt class="docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="docutils literal"><span class="pre">INFO</span></tt>, <tt class="docutils literal"><span class="pre">WARNING</span></tt>,
-<tt class="docutils literal"><span class="pre">ERROR</span></tt>, <tt class="docutils literal"><span class="pre">CRITICAL</span></tt>, or <tt class="docutils literal"><span class="pre">FATAL</span></tt>.</p>
+<dd><p>Logging level, choose between <cite>DEBUG</cite>, <cite>INFO</cite>, <cite>WARNING</cite>,
+<cite>ERROR</cite>, <cite>CRITICAL</cite>, or <cite>FATAL</cite>.</p>
 </dd></dl>
 
 <dl class="cmdoption">
@@ -85,7 +85,7 @@ is the number of CPUs available on your system.</p>
 <dl class="cmdoption">
 <dt id="cmdoption-celeryd-B">
 <tt class="descname">-B</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--beat</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-B" title="Permalink to this definition">¶</a></dt>
-<dd><p>Also run the <tt class="docutils literal"><span class="pre">celerybeat</span></tt> periodic task scheduler. Please note that
+<dd><p>Also run the <cite>celerybeat</cite> periodic task scheduler. Please note that
 there must only be one instance of this service.</p>
 </dd></dl>
 
@@ -94,7 +94,7 @@ there must only be one instance of this service.</p>
 <tt class="descname">-Q</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--queues</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-Q" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of queues to enable for this worker, separated by comma.
 By default all configured queues are enabled.
-Example: <tt class="docutils literal"><span class="pre">-Q</span> <span class="pre">video,image</span></tt></p>
+Example: <cite>-Q video,image</cite></p>
 </dd></dl>
 
 <dl class="cmdoption">
@@ -107,15 +107,21 @@ Example: -I foo.tasks,bar.tasks</p>
 <dl class="cmdoption">
 <dt id="cmdoption-celeryd-s">
 <tt class="descname">-s</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--schedule</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-s" title="Permalink to this definition">¶</a></dt>
-<dd><p>Path to the schedule database if running with the <tt class="docutils literal"><span class="pre">-B</span></tt> option.
-Defaults to <tt class="docutils literal"><span class="pre">celerybeat-schedule</span></tt>. The extension &#8220;.db&#8221; will be
+<dd><p>Path to the schedule database if running with the <cite>-B</cite> option.
+Defaults to <cite>celerybeat-schedule</cite>. The extension &#8221;.db&#8221; will be
 appended to the filename.</p>
+</dd></dl>
+
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd--scheduler">
+<tt class="descname">--scheduler</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd--scheduler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scheduler class to use. Default is celery.beat.PersistentScheduler</p>
 </dd></dl>
 
 <dl class="cmdoption">
 <dt id="cmdoption-celeryd-E">
 <tt class="descname">-E</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--events</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-E" title="Permalink to this definition">¶</a></dt>
-<dd><p>Send events that can be captured by monitors like <tt class="docutils literal"><span class="pre">celerymon</span></tt>.</p>
+<dd><p>Send events that can be captured by monitors like <cite>celerymon</cite>.</p>
 </dd></dl>
 
 <dl class="cmdoption">
@@ -147,7 +153,7 @@ terminated and replaced by a new worker.</p>
 
 <dl class="class">
 <dt id="celery.bin.celeryd.WorkerCommand">
-<em class="property">class </em><tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">WorkerCommand</tt><big>(</big><em>defaults=None</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.WorkerCommand" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">WorkerCommand</tt><big>(</big><em>app=None</em>, <em>get_app=None</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.WorkerCommand" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="celery.bin.celeryd.WorkerCommand.get_options">
 <tt class="descname">get_options</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryd.WorkerCommand.get_options" title="Permalink to this definition">¶</a></dt>
@@ -223,13 +229,13 @@ terminated and replaced by a new worker.</p>
         <li class="right" >
           <a href="celery.bin.base.html" title="Base Command - celery.bin.base"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

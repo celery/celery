@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Broker Installation &mdash; Celery v2.1.1 documentation</title>
+    <title>Broker Installation &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../index.html" />
     <link rel="up" title="Getting Started" href="index.html" />
     <link rel="next" title="First steps with Celery" href="first-steps-with-celery.html" />
     <link rel="prev" title="Introduction" href="introduction.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="introduction.html" title="Introduction"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Getting Started</a> &raquo;</li> 
       </ul>
     </div>  
@@ -57,11 +57,11 @@
 <span id="id1"></span><h1>Broker Installation<a class="headerlink" href="#broker-installation" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference external" href="#installing-rabbitmq" id="id4">Installing RabbitMQ</a></li>
-<li><a class="reference external" href="#setting-up-rabbitmq" id="id5">Setting up RabbitMQ</a></li>
-<li><a class="reference external" href="#installing-rabbitmq-on-os-x" id="id6">Installing RabbitMQ on OS X</a><ul>
-<li><a class="reference external" href="#configuring-the-system-hostname" id="id7">Configuring the system hostname</a></li>
-<li><a class="reference external" href="#starting-stopping-the-rabbitmq-server" id="id8">Starting/Stopping the RabbitMQ server</a></li>
+<li><a class="reference internal" href="#installing-rabbitmq" id="id4">Installing RabbitMQ</a></li>
+<li><a class="reference internal" href="#setting-up-rabbitmq" id="id5">Setting up RabbitMQ</a></li>
+<li><a class="reference internal" href="#installing-rabbitmq-on-os-x" id="id6">Installing RabbitMQ on OS X</a><ul>
+<li><a class="reference internal" href="#configuring-the-system-hostname" id="id7">Configuring the system hostname</a></li>
+<li><a class="reference internal" href="#starting-stopping-the-rabbitmq-server" id="id8">Starting/Stopping the RabbitMQ server</a></li>
 </ul>
 </li>
 </ul>
@@ -69,10 +69,10 @@
 <div class="section" id="installing-rabbitmq">
 <span id="id2"></span><h2><a class="toc-backref" href="#id4">Installing RabbitMQ</a><a class="headerlink" href="#installing-rabbitmq" title="Permalink to this headline">¶</a></h2>
 <p>See <a class="reference external" href="http://www.rabbitmq.com/install.html">Installing RabbitMQ</a> over at RabbitMQ&#8217;s website. For Mac OS X
-see <a class="reference external" href="#installing-rabbitmq-on-os-x">Installing RabbitMQ on OS X</a>.</p>
+see <a class="reference internal" href="#installing-rabbitmq-on-os-x">Installing RabbitMQ on OS X</a>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p>If you&#8217;re getting <tt class="docutils literal"><span class="pre">nodedown</span></tt> errors after installing and using
+<p>If you&#8217;re getting <cite>nodedown</cite> errors after installing and using
 <strong class="program">rabbitmqctl</strong> then this blog post can help you identify
 the source of the problem:</p>
 <blockquote class="last">
@@ -95,19 +95,19 @@ $ rabbitmqctl set_permissions -p myvhost myuser ".*" ".*" ".*"</pre>
 <span id="rabbitmq-osx-installation"></span><h2><a class="toc-backref" href="#id6">Installing RabbitMQ on OS X</a><a class="headerlink" href="#installing-rabbitmq-on-os-x" title="Permalink to this headline">¶</a></h2>
 <p>The easiest way to install RabbitMQ on Snow Leopard is using <a class="reference external" href="http://github.com/mxcl/homebrew/">Homebrew</a>; the new
 and shiny package management system for OS X.</p>
-<p>In this example we&#8217;ll install homebrew into <tt class="docutils literal"><span class="pre">/lol</span></tt>, but you can
+<p>In this example we&#8217;ll install homebrew into <tt class="file docutils literal"><span class="pre">/lol</span></tt>, but you can
 choose whichever destination, even in your home directory if you want, as one of
 the strengths of homebrew is that it&#8217;s relocateable.</p>
 <p>Homebrew is actually a <a class="reference external" href="http://git-scm.org">git</a> repository, so to install homebrew, you first need to
 install git. Download and install from the disk image at
 <a class="reference external" href="http://code.google.com/p/git-osx-installer/downloads/list?can=3">http://code.google.com/p/git-osx-installer/downloads/list?can=3</a></p>
 <p>When git is installed you can finally clone the repo, storing it at the
-<tt class="docutils literal"><span class="pre">/lol</span></tt> location:</p>
+<tt class="file docutils literal"><span class="pre">/lol</span></tt> location:</p>
 <div class="highlight-python"><pre>$ git clone git://github.com/mxcl/homebrew /lol</pre>
 </div>
 <p>Brew comes with a simple utility called <strong class="program">brew</strong>, used to install, remove and
 query packages. To use it you first have to add it to <span class="target" id="index-0"></span><tt class="xref std std-envvar docutils literal"><span class="pre">PATH</span></tt>, by
-adding the following line to the end of your <tt class="docutils literal"><span class="pre">~/.profile</span></tt>:</p>
+adding the following line to the end of your <tt class="file docutils literal"><span class="pre">~/.profile</span></tt>:</p>
 <div class="highlight-python"><pre>export PATH="/lol/bin:/lol/sbin:$PATH"</pre>
 </div>
 <p>Save your profile and reload it:</p>
@@ -124,11 +124,11 @@ to communicate with nodes.</p>
 <p>Use the <strong class="program">scutil</strong> command to permanently set your hostname:</p>
 <div class="highlight-python"><pre>sudo scutil --set HostName myhost.local</pre>
 </div>
-<p>Then add that hostname to <tt class="docutils literal"><span class="pre">/etc/hosts</span></tt> so it&#8217;s possible to resolve it
+<p>Then add that hostname to <tt class="file docutils literal"><span class="pre">/etc/hosts</span></tt> so it&#8217;s possible to resolve it
 back into an IP address:</p>
 <div class="highlight-python"><pre>127.0.0.1       localhost myhost myhost.local</pre>
 </div>
-<p>If you start the rabbitmq server, your rabbit node should now be <tt class="docutils literal"><span class="pre">rabbit&#64;myhost</span></tt>,
+<p>If you start the rabbitmq server, your rabbit node should now be <cite>rabbit&#64;myhost</cite>,
 as verified by <strong class="program">rabbitmqctl</strong>:</p>
 <div class="highlight-python"><pre>$ sudo rabbitmqctl status
 Status of node rabbit@myhost ...
@@ -143,8 +143,8 @@ Status of node rabbit@myhost ...
 ...done.</pre>
 </div>
 <p>This is especially important if your DHCP server gives you a hostname
-starting with an IP address, (e.g. <tt class="docutils literal"><span class="pre">23.10.112.31.comcast.net</span></tt>), because
-then RabbitMQ will try to use <tt class="docutils literal"><span class="pre">rabbit&#64;23</span></tt>, which is an illegal hostname.</p>
+starting with an IP address, (e.g. <cite>23.10.112.31.comcast.net</cite>), because
+then RabbitMQ will try to use <cite>rabbit&#64;23</cite>, which is an illegal hostname.</p>
 </div>
 <div class="section" id="starting-stopping-the-rabbitmq-server">
 <span id="rabbitmq-osx-start-stop"></span><h3><a class="toc-backref" href="#id8">Starting/Stopping the RabbitMQ server</a><a class="headerlink" href="#starting-stopping-the-rabbitmq-server" title="Permalink to this headline">¶</a></h3>
@@ -159,7 +159,7 @@ then RabbitMQ will try to use <tt class="docutils literal"><span class="pre">rab
 <strong class="program">rabbitmqctl</strong> command:</p>
 <div class="highlight-python"><pre>$ sudo rabbitmqctl stop</pre>
 </div>
-<p>When the server is running, you can continue reading <a class="reference external" href="#setting-up-rabbitmq">Setting up RabbitMQ</a>.</p>
+<p>When the server is running, you can continue reading <a class="reference internal" href="#setting-up-rabbitmq">Setting up RabbitMQ</a>.</p>
 </div>
 </div>
 </div>
@@ -215,13 +215,13 @@ then RabbitMQ will try to use <tt class="docutils literal"><span class="pre">rab
         <li class="right" >
           <a href="introduction.html" title="Introduction"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" >Getting Started</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

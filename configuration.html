@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Configuration and defaults &mdash; Celery v2.1.1 documentation</title>
+    <title>Configuration and defaults &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="index.html" />
     <link rel="next" title="Cookbook" href="cookbook/index.html" />
     <link rel="prev" title="Monitoring Guide" href="userguide/monitoring.html" /> 
   </head>
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="userguide/monitoring.html" title="Monitoring Guide"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery v2.1.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.2.0a2 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -58,27 +58,27 @@
 module and make sure it is available on the Python path.</p>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference external" href="#example-configuration-file" id="id5">Example configuration file</a></li>
-<li><a class="reference external" href="#configuration-directives" id="id6">Configuration Directives</a><ul>
-<li><a class="reference external" href="#concurrency-settings" id="id7">Concurrency settings</a></li>
-<li><a class="reference external" href="#task-result-backend-settings" id="id8">Task result backend settings</a></li>
-<li><a class="reference external" href="#database-backend-settings" id="id9">Database backend settings</a></li>
-<li><a class="reference external" href="#amqp-backend-settings" id="id10">AMQP backend settings</a></li>
-<li><a class="reference external" href="#cache-backend-settings" id="id11">Cache backend settings</a></li>
-<li><a class="reference external" href="#tokyo-tyrant-backend-settings" id="id12">Tokyo Tyrant backend settings</a></li>
-<li><a class="reference external" href="#redis-backend-settings" id="id13">Redis backend settings</a></li>
-<li><a class="reference external" href="#mongodb-backend-settings" id="id14">MongoDB backend settings</a></li>
-<li><a class="reference external" href="#message-routing" id="id15">Message Routing</a></li>
-<li><a class="reference external" href="#broker-settings" id="id16">Broker Settings</a></li>
-<li><a class="reference external" href="#task-execution-settings" id="id17">Task execution settings</a></li>
-<li><a class="reference external" href="#worker-celeryd" id="id18">Worker: celeryd</a></li>
-<li><a class="reference external" href="#error-e-mails" id="id19">Error E-Mails</a></li>
-<li><a class="reference external" href="#events" id="id20">Events</a></li>
-<li><a class="reference external" href="#broadcast-commands" id="id21">Broadcast Commands</a></li>
-<li><a class="reference external" href="#logging" id="id22">Logging</a></li>
-<li><a class="reference external" href="#custom-component-classes-advanced" id="id23">Custom Component Classes (advanced)</a></li>
-<li><a class="reference external" href="#periodic-task-server-celerybeat" id="id24">Periodic Task Server: celerybeat</a></li>
-<li><a class="reference external" href="#monitor-server-celerymon" id="id25">Monitor Server: celerymon</a></li>
+<li><a class="reference internal" href="#example-configuration-file" id="id5">Example configuration file</a></li>
+<li><a class="reference internal" href="#configuration-directives" id="id6">Configuration Directives</a><ul>
+<li><a class="reference internal" href="#concurrency-settings" id="id7">Concurrency settings</a></li>
+<li><a class="reference internal" href="#task-result-backend-settings" id="id8">Task result backend settings</a></li>
+<li><a class="reference internal" href="#database-backend-settings" id="id9">Database backend settings</a></li>
+<li><a class="reference internal" href="#amqp-backend-settings" id="id10">AMQP backend settings</a></li>
+<li><a class="reference internal" href="#cache-backend-settings" id="id11">Cache backend settings</a></li>
+<li><a class="reference internal" href="#tokyo-tyrant-backend-settings" id="id12">Tokyo Tyrant backend settings</a></li>
+<li><a class="reference internal" href="#redis-backend-settings" id="id13">Redis backend settings</a></li>
+<li><a class="reference internal" href="#mongodb-backend-settings" id="id14">MongoDB backend settings</a></li>
+<li><a class="reference internal" href="#message-routing" id="id15">Message Routing</a></li>
+<li><a class="reference internal" href="#broker-settings" id="id16">Broker Settings</a></li>
+<li><a class="reference internal" href="#task-execution-settings" id="id17">Task execution settings</a></li>
+<li><a class="reference internal" href="#worker-celeryd" id="id18">Worker: celeryd</a></li>
+<li><a class="reference internal" href="#error-e-mails" id="id19">Error E-Mails</a></li>
+<li><a class="reference internal" href="#events" id="id20">Events</a></li>
+<li><a class="reference internal" href="#broadcast-commands" id="id21">Broadcast Commands</a></li>
+<li><a class="reference internal" href="#logging" id="id22">Logging</a></li>
+<li><a class="reference internal" href="#custom-component-classes-advanced" id="id23">Custom Component Classes (advanced)</a></li>
+<li><a class="reference internal" href="#periodic-task-server-celerybeat" id="id24">Periodic Task Server: celerybeat</a></li>
+<li><a class="reference internal" href="#monitor-server-celerymon" id="id25">Monitor Server: celerymon</a></li>
 </ul>
 </li>
 </ul>
@@ -236,16 +236,16 @@ the <a class="reference internal" href="#std:setting-CELERY_RESULT_ENGINE_OPTION
 </div>
 <div class="section" id="celery-result-exchange">
 <span id="std:setting-CELERY_RESULT_EXCHANGE"></span><h4>CELERY_RESULT_EXCHANGE<a class="headerlink" href="#celery-result-exchange" title="Permalink to this headline">¶</a></h4>
-<p>Name of the exchange to publish results in.  Default is <tt class="docutils literal"><span class="pre">&quot;celeryresults&quot;</span></tt>.</p>
+<p>Name of the exchange to publish results in.  Default is <cite>&#8220;celeryresults&#8221;</cite>.</p>
 </div>
 <div class="section" id="celery-result-exchange-type">
 <span id="std:setting-CELERY_RESULT_EXCHANGE_TYPE"></span><h4>CELERY_RESULT_EXCHANGE_TYPE<a class="headerlink" href="#celery-result-exchange-type" title="Permalink to this headline">¶</a></h4>
-<p>The exchange type of the result exchange.  Default is to use a <tt class="docutils literal"><span class="pre">direct</span></tt>
+<p>The exchange type of the result exchange.  Default is to use a <cite>direct</cite>
 exchange.</p>
 </div>
 <div class="section" id="celery-result-serializer">
 <span id="std:setting-CELERY_RESULT_SERIALIZER"></span><h4>CELERY_RESULT_SERIALIZER<a class="headerlink" href="#celery-result-serializer" title="Permalink to this headline">¶</a></h4>
-<p>Result message serialization format.  Default is <tt class="docutils literal"><span class="pre">&quot;pickle&quot;</span></tt>. See
+<p>Result message serialization format.  Default is <cite>&#8220;pickle&#8221;</cite>. See
 <a class="reference internal" href="userguide/executing.html#executing-serializers"><em>Serializers</em></a>.</p>
 </div>
 <div class="section" id="celery-result-persistent">
@@ -322,18 +322,18 @@ setting:</p>
 <p class="first admonition-title">Note</p>
 <p>The Redis backend requires the <tt class="xref py py-mod docutils literal"><span class="pre">redis</span></tt> library:
 <a class="reference external" href="http://pypi.python.org/pypi/redis/0.5.5">http://pypi.python.org/pypi/redis/0.5.5</a></p>
-<p>To install the redis package use <tt class="docutils literal"><span class="pre">pip</span></tt> or <tt class="docutils literal"><span class="pre">easy_install</span></tt>:</p>
+<p>To install the redis package use <cite>pip</cite> or <cite>easy_install</cite>:</p>
 <div class="last highlight-python"><pre>$ pip install redis</pre>
 </div>
 </div>
 <p>This backend requires the following configuration directives to be set.</p>
 <div class="section" id="redis-host">
 <span id="std:setting-REDIS_HOST"></span><h4>REDIS_HOST<a class="headerlink" href="#redis-host" title="Permalink to this headline">¶</a></h4>
-<p>Hostname of the Redis database server. e.g. <tt class="docutils literal"><span class="pre">&quot;localhost&quot;</span></tt>.</p>
+<p>Hostname of the Redis database server. e.g. <cite>&#8220;localhost&#8221;</cite>.</p>
 </div>
 <div class="section" id="redis-port">
 <span id="std:setting-REDIS_PORT"></span><h4>REDIS_PORT<a class="headerlink" href="#redis-port" title="Permalink to this headline">¶</a></h4>
-<p>Port to the Redis database server. e.g. <tt class="docutils literal"><span class="pre">6379</span></tt>.</p>
+<p>Port to the Redis database server. e.g. <cite>6379</cite>.</p>
 </div>
 <div class="section" id="redis-db">
 <span id="std:setting-REDIS_DB"></span><h4>REDIS_DB<a class="headerlink" href="#redis-db" title="Permalink to this headline">¶</a></h4>
@@ -423,8 +423,8 @@ Defaults to &#8220;celery_taskmeta&#8221;.</p>
 <span id="std:setting-CELERY_QUEUES"></span><h4>CELERY_QUEUES<a class="headerlink" href="#celery-queues" title="Permalink to this headline">¶</a></h4>
 <p>The mapping of queues the worker consumes from.  This is a dictionary
 of queue name/options.  See <a class="reference internal" href="userguide/routing.html#guide-routing"><em>Routing Tasks</em></a> for more information.</p>
-<p>The default is a queue/exchange/binding key of <tt class="docutils literal"><span class="pre">&quot;celery&quot;</span></tt>, with
-exchange type <tt class="docutils literal"><span class="pre">direct</span></tt>.</p>
+<p>The default is a queue/exchange/binding key of <cite>&#8220;celery&#8221;</cite>, with
+exchange type <cite>direct</cite>.</p>
 <p>You don&#8217;t have to care about this unless you want custom routing facilities.</p>
 </div>
 <div class="section" id="celery-routes">
@@ -442,7 +442,7 @@ in order.  See <a class="reference internal" href="userguide/routing.html#router
 <div class="section" id="celery-default-queue">
 <span id="std:setting-CELERY_DEFAULT_QUEUE"></span><h4>CELERY_DEFAULT_QUEUE<a class="headerlink" href="#celery-default-queue" title="Permalink to this headline">¶</a></h4>
 <p>The queue used by default, if no custom queue is specified.  This queue must
-be listed in <a class="reference internal" href="#std:setting-CELERY_QUEUES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_QUEUES</span></tt></a>.  The default is: <tt class="docutils literal"><span class="pre">celery</span></tt>.</p>
+be listed in <a class="reference internal" href="#std:setting-CELERY_QUEUES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_QUEUES</span></tt></a>.  The default is: <cite>celery</cite>.</p>
 <div class="admonition-see-also admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last"><a class="reference internal" href="userguide/routing.html#routing-changing-default-queue"><em>Changing the name of the default queue</em></a></p>
@@ -451,21 +451,21 @@ be listed in <a class="reference internal" href="#std:setting-CELERY_QUEUES"><tt
 <div class="section" id="celery-default-exchange">
 <span id="std:setting-CELERY_DEFAULT_EXCHANGE"></span><h4>CELERY_DEFAULT_EXCHANGE<a class="headerlink" href="#celery-default-exchange" title="Permalink to this headline">¶</a></h4>
 <p>Name of the default exchange to use when no custom exchange is
-specified.  The default is: <tt class="docutils literal"><span class="pre">celery</span></tt>.</p>
+specified.  The default is: <cite>celery</cite>.</p>
 </div>
 <div class="section" id="celery-default-exchange-type">
 <span id="std:setting-CELERY_DEFAULT_EXCHANGE_TYPE"></span><h4>CELERY_DEFAULT_EXCHANGE_TYPE<a class="headerlink" href="#celery-default-exchange-type" title="Permalink to this headline">¶</a></h4>
 <p>Default exchange type used when no custom exchange is specified.
-The default is: <tt class="docutils literal"><span class="pre">direct</span></tt>.</p>
+The default is: <cite>direct</cite>.</p>
 </div>
 <div class="section" id="celery-default-routing-key">
 <span id="std:setting-CELERY_DEFAULT_ROUTING_KEY"></span><h4>CELERY_DEFAULT_ROUTING_KEY<a class="headerlink" href="#celery-default-routing-key" title="Permalink to this headline">¶</a></h4>
 <p>The default routing key used when sending tasks.
-The default is: <tt class="docutils literal"><span class="pre">celery</span></tt>.</p>
+The default is: <cite>celery</cite>.</p>
 </div>
 <div class="section" id="celery-default-delivery-mode">
 <span id="std:setting-CELERY_DEFAULT_DELIVERY_MODE"></span><h4>CELERY_DEFAULT_DELIVERY_MODE<a class="headerlink" href="#celery-default-delivery-mode" title="Permalink to this headline">¶</a></h4>
-<p>Can be <tt class="docutils literal"><span class="pre">transient</span></tt> or <tt class="docutils literal"><span class="pre">persistent</span></tt>.  The default is to send
+<p>Can be <cite>transient</cite> or <cite>persistent</cite>.  The default is to send
 persistent messages.</p>
 </div>
 </div>
@@ -473,7 +473,7 @@ persistent messages.</p>
 <span id="conf-broker-connection"></span><h3><a class="toc-backref" href="#id16">Broker Settings</a><a class="headerlink" href="#broker-settings" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="broker-backend">
 <span id="std:setting-BROKER_BACKEND"></span><h4>BROKER_BACKEND<a class="headerlink" href="#broker-backend" title="Permalink to this headline">¶</a></h4>
-<p>The messaging backend to use. Default is <tt class="docutils literal"><span class="pre">&quot;amqplib&quot;</span></tt>.</p>
+<p>The messaging backend to use. Default is <cite>&#8220;amqplib&#8221;</cite>.</p>
 </div>
 <div class="section" id="broker-host">
 <span id="std:setting-BROKER_HOST"></span><h4>BROKER_HOST<a class="headerlink" href="#broker-host" title="Permalink to this headline">¶</a></h4>
@@ -494,7 +494,7 @@ selected backend.</p>
 </div>
 <div class="section" id="broker-vhost">
 <span id="std:setting-BROKER_VHOST"></span><h4>BROKER_VHOST<a class="headerlink" href="#broker-vhost" title="Permalink to this headline">¶</a></h4>
-<p>Virtual host.  Default is <tt class="docutils literal"><span class="pre">&quot;/&quot;</span></tt>.</p>
+<p>Virtual host.  Default is <cite>&#8220;/&#8221;</cite>.</p>
 </div>
 <div class="section" id="broker-use-ssl">
 <span id="std:setting-BROKER_USE_SSL"></span><h4>BROKER_USE_SSL<a class="headerlink" href="#broker-use-ssl" title="Permalink to this headline">¶</a></h4>
@@ -527,7 +527,7 @@ to the AMQP broker.</p>
 <div class="section" id="celery-always-eager">
 <span id="std:setting-CELERY_ALWAYS_EAGER"></span><h4>CELERY_ALWAYS_EAGER<a class="headerlink" href="#celery-always-eager" title="Permalink to this headline">¶</a></h4>
 <p>If this is <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt>, all tasks will be executed locally by blocking
-until it is finished.  <tt class="docutils literal"><span class="pre">apply_async</span></tt> and <tt class="docutils literal"><span class="pre">Task.delay</span></tt> will return
+until it is finished.  <cite>apply_async</cite> and <cite>Task.delay</cite> will return
 a <a class="reference internal" href="reference/celery.result.html#celery.result.EagerResult" title="celery.result.EagerResult"><tt class="xref py py-class docutils literal"><span class="pre">EagerResult</span></tt></a> which emulates the behavior of
 <a class="reference internal" href="reference/celery.result.html#celery.result.AsyncResult" title="celery.result.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">AsyncResult</span></tt></a>, except the result has already
 been evaluated.</p>
@@ -536,9 +536,9 @@ instead.</p>
 </div>
 <div class="section" id="celery-eager-propagates-exceptions">
 <span id="std:setting-CELERY_EAGER_PROPAGATES_EXCEPTIONS"></span><h4>CELERY_EAGER_PROPAGATES_EXCEPTIONS<a class="headerlink" href="#celery-eager-propagates-exceptions" title="Permalink to this headline">¶</a></h4>
-<p>If this is <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt>, eagerly executed tasks (using <tt class="docutils literal"><span class="pre">.apply</span></tt>, or with
+<p>If this is <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt>, eagerly executed tasks (using <cite>.apply</cite>, or with
 <a class="reference internal" href="#std:setting-CELERY_ALWAYS_EAGER"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ALWAYS_EAGER</span></tt></a> on), will raise exceptions.</p>
-<p>It&#8217;s the same as always running <tt class="docutils literal"><span class="pre">apply</span></tt> with <tt class="docutils literal"><span class="pre">throw=True</span></tt>.</p>
+<p>It&#8217;s the same as always running <cite>apply</cite> with <cite>throw=True</cite>.</p>
 </div>
 <div class="section" id="celery-ignore-result">
 <span id="std:setting-CELERY_IGNORE_RESULT"></span><h4>CELERY_IGNORE_RESULT<a class="headerlink" href="#celery-ignore-result" title="Permalink to this headline">¶</a></h4>
@@ -557,7 +557,7 @@ stored task tombstones will be deleted.</p>
 <p>For the moment this only works with the database, cache, redis and MongoDB
 backends. For the AMQP backend see
 <a class="reference internal" href="#std:setting-CELERY_AMQP_TASK_RESULT_EXPIRES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_AMQP_TASK_RESULT_EXPIRES</span></tt></a>.</p>
-<p class="last">When using the database or MongoDB backends, <tt class="docutils literal"><span class="pre">celerybeat</span></tt> must be
+<p class="last">When using the database or MongoDB backends, <cite>celerybeat</cite> must be
 running for the results to be expired.</p>
 </div>
 </div>
@@ -578,8 +578,8 @@ need to report which task is currently running.</p>
 <div class="section" id="celery-task-serializer">
 <span id="std:setting-CELERY_TASK_SERIALIZER"></span><h4>CELERY_TASK_SERIALIZER<a class="headerlink" href="#celery-task-serializer" title="Permalink to this headline">¶</a></h4>
 <p>A string identifying the default serialization method to use.  Can be
-<tt class="docutils literal"><span class="pre">pickle</span></tt> (default), <tt class="docutils literal"><span class="pre">json</span></tt>, <tt class="docutils literal"><span class="pre">yaml</span></tt>, or any custom serialization
-methods that have been registered with <tt class="xref py py-mod docutils literal"><span class="pre">carrot.serialization.registry</span></tt>.</p>
+<cite>pickle</cite> (default), <cite>json</cite>, <cite>yaml</cite>, <cite>msgpack</cite> or any custom serialization
+methods that have been registered with <tt class="xref py py-mod docutils literal"><span class="pre">kombu.serialization.registry</span></tt>.</p>
 <div class="admonition-see-also admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last"><a class="reference internal" href="userguide/executing.html#executing-serializers"><em>Serializers</em></a>.</p>
@@ -645,15 +645,15 @@ e.g. clean up before the hard time limit comes.</p>
 <div class="section" id="celery-store-errors-even-if-ignored">
 <span id="std:setting-CELERY_STORE_ERRORS_EVEN_IF_IGNORED"></span><h4>CELERY_STORE_ERRORS_EVEN_IF_IGNORED<a class="headerlink" href="#celery-store-errors-even-if-ignored" title="Permalink to this headline">¶</a></h4>
 <p>If set, the worker stores all task errors in the result store even if
-<a class="reference internal" href="reference/celery.task.base.html#celery.task.base.Task.ignore_result" title="celery.task.base.Task.ignore_result"><tt class="xref py py-attr docutils literal"><span class="pre">Task.ignore_result</span></tt></a> is on.</p>
+<tt class="xref py py-attr docutils literal"><span class="pre">Task.ignore_result</span></tt> is on.</p>
 </div>
 <div class="section" id="celeryd-state-db">
 <span id="std:setting-CELERYD_STATE_DB"></span><h4>CELERYD_STATE_DB<a class="headerlink" href="#celeryd-state-db" title="Permalink to this headline">¶</a></h4>
 <p>Name of the file used to stores persistent worker state (like revoked tasks).
-Can be a relative or absolute path, but be aware that the suffix <tt class="docutils literal"><span class="pre">.db</span></tt>
+Can be a relative or absolute path, but be aware that the suffix <cite>.db</cite>
 may be appended to the file name (depending on Python version).</p>
 <p>Can also be set via the <em class="xref std std-option">--statedb</em> argument to
-<a class="reference internal" href="reference/celery.bin.celeryd.html#module-celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a>.</p>
+<a class="reference internal" href="reference/celery.bin.celeryd.html#module-celery.bin.celeryd" title="celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a>.</p>
 <p>Not enabled by default.</p>
 </div>
 <div class="section" id="celeryd-eta-scheduler-precision">
@@ -668,7 +668,7 @@ be 1 second. If you need near millisecond precision you can set this to 0.1.</p>
 <span id="conf-error-mails"></span><h3><a class="toc-backref" href="#id19">Error E-Mails</a><a class="headerlink" href="#error-e-mails" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="celery-send-task-error-emails">
 <span id="std:setting-CELERYD_SEND_TASK_ERROR_EMAILS"></span><h4>CELERY_SEND_TASK_ERROR_EMAILS<a class="headerlink" href="#celery-send-task-error-emails" title="Permalink to this headline">¶</a></h4>
-<p>The default value for the <tt class="docutils literal"><span class="pre">Task.send_error_emails</span></tt> attribute, which if
+<p>The default value for the <cite>Task.send_error_emails</cite> attribute, which if
 set to <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> means errors occuring during task execution will be
 sent to <a class="reference internal" href="#std:setting-ADMINS"><tt class="xref std std-setting docutils literal"><span class="pre">ADMINS</span></tt></a> by e-mail.</p>
 </div>
@@ -678,7 +678,7 @@ sent to <a class="reference internal" href="#std:setting-ADMINS"><tt class="xref
 </div>
 <div class="section" id="admins">
 <span id="std:setting-ADMINS"></span><h4>ADMINS<a class="headerlink" href="#admins" title="Permalink to this headline">¶</a></h4>
-<p>List of <tt class="docutils literal"><span class="pre">(name,</span> <span class="pre">email_address)</span></tt> tuples for the admins that should
+<p>List of <cite>(name, email_address)</cite> tuples for the admins that should
 receive error e-mails.</p>
 </div>
 <div class="section" id="server-email">
@@ -688,7 +688,7 @@ Default is <a class="reference external" href="mailto:celery&#37;&#52;&#48;local
 </div>
 <div class="section" id="mail-host">
 <span id="std:setting-MAIL_HOST"></span><h4>MAIL_HOST<a class="headerlink" href="#mail-host" title="Permalink to this headline">¶</a></h4>
-<p>The mail server to use.  Default is <tt class="docutils literal"><span class="pre">&quot;localhost&quot;</span></tt>.</p>
+<p>The mail server to use.  Default is <cite>&#8220;localhost&#8221;</cite>.</p>
 </div>
 <div class="section" id="mail-host-user">
 <span id="std:setting-MAIL_HOST_USER"></span><h4>MAIL_HOST_USER<a class="headerlink" href="#mail-host-user" title="Permalink to this headline">¶</a></h4>
@@ -700,7 +700,7 @@ Default is <a class="reference external" href="mailto:celery&#37;&#52;&#48;local
 </div>
 <div class="section" id="mail-port">
 <span id="std:setting-MAIL_PORT"></span><h4>MAIL_PORT<a class="headerlink" href="#mail-port" title="Permalink to this headline">¶</a></h4>
-<p>The port the mail server is listening on.  Default is <tt class="docutils literal"><span class="pre">25</span></tt>.</p>
+<p>The port the mail server is listening on.  Default is <cite>25</cite>.</p>
 </div>
 <div class="section" id="example-e-mail-configuration">
 <span id="conf-example-error-mail-config"></span><h4>Example E-Mail configuration<a class="headerlink" href="#example-e-mail-configuration" title="Permalink to this headline">¶</a></h4>
@@ -731,30 +731,30 @@ Default is <a class="reference external" href="mailto:celery&#37;&#52;&#48;local
 <span id="conf-events"></span><h3><a class="toc-backref" href="#id20">Events</a><a class="headerlink" href="#events" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="celery-send-events">
 <span id="std:setting-CELERY_SEND_EVENTS"></span><h4>CELERY_SEND_EVENTS<a class="headerlink" href="#celery-send-events" title="Permalink to this headline">¶</a></h4>
-<p>Send events so the worker can be monitored by tools like <tt class="docutils literal"><span class="pre">celerymon</span></tt>.</p>
+<p>Send events so the worker can be monitored by tools like <cite>celerymon</cite>.</p>
 </div>
 <div class="section" id="celery-event-queue">
 <span id="std:setting-CELERY_EVENT_QUEUE"></span><h4>CELERY_EVENT_QUEUE<a class="headerlink" href="#celery-event-queue" title="Permalink to this headline">¶</a></h4>
 <p>Name of the queue to consume event messages from. Default is
-<tt class="docutils literal"><span class="pre">&quot;celeryevent&quot;</span></tt>.</p>
+<cite>&#8220;celeryevent&#8221;</cite>.</p>
 </div>
 <div class="section" id="celery-event-exchange">
 <span id="std:setting-CELERY_EVENT_EXCHANGE"></span><h4>CELERY_EVENT_EXCHANGE<a class="headerlink" href="#celery-event-exchange" title="Permalink to this headline">¶</a></h4>
-<p>Name of the exchange to send event messages to.  Default is <tt class="docutils literal"><span class="pre">&quot;celeryevent&quot;</span></tt>.</p>
+<p>Name of the exchange to send event messages to.  Default is <cite>&#8220;celeryevent&#8221;</cite>.</p>
 </div>
 <div class="section" id="celery-event-exchange-type">
 <span id="std:setting-CELERY_EVENT_EXCHANGE_TYPE"></span><h4>CELERY_EVENT_EXCHANGE_TYPE<a class="headerlink" href="#celery-event-exchange-type" title="Permalink to this headline">¶</a></h4>
-<p>The exchange type of the event exchange.  Default is to use a <tt class="docutils literal"><span class="pre">&quot;direct&quot;</span></tt>
+<p>The exchange type of the event exchange.  Default is to use a <cite>&#8220;direct&#8221;</cite>
 exchange.</p>
 </div>
 <div class="section" id="celery-event-routing-key">
 <span id="std:setting-CELERY_EVENT_ROUTING_KEY"></span><h4>CELERY_EVENT_ROUTING_KEY<a class="headerlink" href="#celery-event-routing-key" title="Permalink to this headline">¶</a></h4>
-<p>Routing key used when sending event messages.  Default is <tt class="docutils literal"><span class="pre">&quot;celeryevent&quot;</span></tt>.</p>
+<p>Routing key used when sending event messages.  Default is <cite>&#8220;celeryevent&#8221;</cite>.</p>
 </div>
 <div class="section" id="celery-event-serializer">
 <span id="std:setting-CELERY_EVENT_SERIALIZER"></span><h4>CELERY_EVENT_SERIALIZER<a class="headerlink" href="#celery-event-serializer" title="Permalink to this headline">¶</a></h4>
 <p>Message serialization format used when sending event messages.
-Default is <tt class="docutils literal"><span class="pre">&quot;json&quot;</span></tt>. See <a class="reference internal" href="userguide/executing.html#executing-serializers"><em>Serializers</em></a>.</p>
+Default is <cite>&#8220;json&#8221;</cite>. See <a class="reference internal" href="userguide/executing.html#executing-serializers"><em>Serializers</em></a>.</p>
 </div>
 </div>
 <div class="section" id="broadcast-commands">
@@ -764,16 +764,16 @@ Default is <tt class="docutils literal"><span class="pre">&quot;json&quot;</span
 <p>Name prefix for the queue used when listening for broadcast messages.
 The workers hostname will be appended to the prefix to create the final
 queue name.</p>
-<p>Default is <tt class="docutils literal"><span class="pre">&quot;celeryctl&quot;</span></tt>.</p>
+<p>Default is <cite>&#8220;celeryctl&#8221;</cite>.</p>
 </div>
 <div class="section" id="celery-broadcast-exchange">
 <span id="std:setting-CELERY_BROADCASTS_EXCHANGE"></span><h4>CELERY_BROADCAST_EXCHANGE<a class="headerlink" href="#celery-broadcast-exchange" title="Permalink to this headline">¶</a></h4>
 <p>Name of the exchange used for broadcast messages.</p>
-<p>Default is <tt class="docutils literal"><span class="pre">&quot;celeryctl&quot;</span></tt>.</p>
+<p>Default is <cite>&#8220;celeryctl&#8221;</cite>.</p>
 </div>
 <div class="section" id="celery-broadcast-exchange-type">
 <span id="std:setting-CELERY_BROADCAST_EXCHANGE_TYPE"></span><h4>CELERY_BROADCAST_EXCHANGE_TYPE<a class="headerlink" href="#celery-broadcast-exchange-type" title="Permalink to this headline">¶</a></h4>
-<p>Exchange type used for broadcast messages.  Default is <tt class="docutils literal"><span class="pre">&quot;fanout&quot;</span></tt>.</p>
+<p>Exchange type used for broadcast messages.  Default is <cite>&#8220;fanout&#8221;</cite>.</p>
 </div>
 </div>
 <div class="section" id="logging">
@@ -781,28 +781,28 @@ queue name.</p>
 <div class="section" id="celeryd-log-file">
 <span id="std:setting-CELERYD_LOG_FILE"></span><h4>CELERYD_LOG_FILE<a class="headerlink" href="#celeryd-log-file" title="Permalink to this headline">¶</a></h4>
 <p>The default file name the worker daemon logs messages to.  Can be overridden
-using the <em class="xref std std-option">--logfile</em> option to <a class="reference internal" href="reference/celery.bin.celeryd.html#module-celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a>.</p>
-<p>The default is <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> (<tt class="docutils literal"><span class="pre">stderr</span></tt>)</p>
+using the <em class="xref std std-option">--logfile</em> option to <a class="reference internal" href="reference/celery.bin.celeryd.html#module-celery.bin.celeryd" title="celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a>.</p>
+<p>The default is <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> (<cite>stderr</cite>)</p>
 </div>
 <div class="section" id="celeryd-log-level">
 <span id="std:setting-CELERYD_LOG_LEVEL"></span><h4>CELERYD_LOG_LEVEL<a class="headerlink" href="#celeryd-log-level" title="Permalink to this headline">¶</a></h4>
 <p>Worker log level, can be one of <tt class="xref py py-const docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="xref py py-const docutils literal"><span class="pre">INFO</span></tt>, <tt class="xref py py-const docutils literal"><span class="pre">WARNING</span></tt>,
 <tt class="xref py py-const docutils literal"><span class="pre">ERROR</span></tt> or <tt class="xref py py-const docutils literal"><span class="pre">CRITICAL</span></tt>.</p>
 <p>Can also be set via the <em class="xref std std-option">--loglevel</em> argument to
-<a class="reference internal" href="reference/celery.bin.celeryd.html#module-celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a>.</p>
+<a class="reference internal" href="reference/celery.bin.celeryd.html#module-celery.bin.celeryd" title="celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a>.</p>
 <p>See the <tt class="xref py py-mod docutils literal"><span class="pre">logging</span></tt> module for more information.</p>
 </div>
 <div class="section" id="celeryd-log-format">
 <span id="std:setting-CELERYD_LOG_FORMAT"></span><h4>CELERYD_LOG_FORMAT<a class="headerlink" href="#celeryd-log-format" title="Permalink to this headline">¶</a></h4>
 <p>The format to use for log messages.</p>
-<p>Default is <tt class="docutils literal"><span class="pre">[%(asctime)s:</span> <span class="pre">%(levelname)s/%(processName)s]</span> <span class="pre">%(message)s</span></tt></p>
+<p>Default is <cite>[%(asctime)s: %(levelname)s/%(processName)s] %(message)s</cite></p>
 <p>See the Python <tt class="xref py py-mod docutils literal"><span class="pre">logging</span></tt> module for more information about log
 formats.</p>
 </div>
 <div class="section" id="celeryd-task-log-format">
 <span id="std:setting-CELERYD_TASK_LOG_FORMAT"></span><h4>CELERYD_TASK_LOG_FORMAT<a class="headerlink" href="#celeryd-task-log-format" title="Permalink to this headline">¶</a></h4>
 <p>The format to use for log messages logged in tasks.  Can be overridden using
-the <em class="xref std std-option">--loglevel</em> option to <a class="reference internal" href="reference/celery.bin.celeryd.html#module-celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a>.</p>
+the <em class="xref std std-option">--loglevel</em> option to <a class="reference internal" href="reference/celery.bin.celeryd.html#module-celery.bin.celeryd" title="celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a>.</p>
 <p>Default is:</p>
 <div class="highlight-python"><pre>[%(asctime)s: %(levelname)s/%(processName)s]
     [%(task_name)s(%(task_id)s)] %(message)s</pre>
@@ -812,14 +812,14 @@ formats.</p>
 </div>
 <div class="section" id="celery-redirect-stdouts">
 <span id="std:setting-CELERY_REDIRECT_STDOUTS"></span><h4>CELERY_REDIRECT_STDOUTS<a class="headerlink" href="#celery-redirect-stdouts" title="Permalink to this headline">¶</a></h4>
-<p>If enabled <tt class="docutils literal"><span class="pre">stdout</span></tt> and <tt class="docutils literal"><span class="pre">stderr</span></tt> will be redirected
+<p>If enabled <cite>stdout</cite> and <cite>stderr</cite> will be redirected
 to the current logger.</p>
 <p>Enabled by default.
 Used by <strong class="program">celeryd</strong> and <strong class="program">celerybeat</strong>.</p>
 </div>
 <div class="section" id="celery-redirect-stdouts-level">
 <span id="std:setting-CELERY_REDIRECT_STDOUTS_LEVEL"></span><h4>CELERY_REDIRECT_STDOUTS_LEVEL<a class="headerlink" href="#celery-redirect-stdouts-level" title="Permalink to this headline">¶</a></h4>
-<p>The loglevel output to <tt class="docutils literal"><span class="pre">stdout</span></tt> and <tt class="docutils literal"><span class="pre">stderr</span></tt> is logged as.
+<p>The loglevel output to <cite>stdout</cite> and <cite>stderr</cite> is logged as.
 Can be one of <tt class="xref py py-const docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="xref py py-const docutils literal"><span class="pre">INFO</span></tt>, <tt class="xref py py-const docutils literal"><span class="pre">WARNING</span></tt>,
 <tt class="xref py py-const docutils literal"><span class="pre">ERROR</span></tt> or <tt class="xref py py-const docutils literal"><span class="pre">CRITICAL</span></tt>.</p>
 <p>Default is <tt class="xref py py-const docutils literal"><span class="pre">WARNING</span></tt>.</p>
@@ -832,10 +832,10 @@ Can be one of <tt class="xref py py-const docutils literal"><span class="pre">DE
 <p>Name of the task pool class used by the worker.
 Default is <a class="reference internal" href="internals/reference/celery.concurrency.processes.html#celery.concurrency.processes.TaskPool" title="celery.concurrency.processes.TaskPool"><tt class="xref py py-class docutils literal"><span class="pre">celery.concurrency.processes.TaskPool</span></tt></a>.</p>
 </div>
-<div class="section" id="celeryd-listener">
-<span id="std:setting-CELERYD_LISTENER"></span><h4>CELERYD_LISTENER<a class="headerlink" href="#celeryd-listener" title="Permalink to this headline">¶</a></h4>
-<p>Name of the listener class used by the worker.
-Default is <a class="reference internal" href="internals/reference/celery.worker.listener.html#celery.worker.listener.CarrotListener" title="celery.worker.listener.CarrotListener"><tt class="xref py py-class docutils literal"><span class="pre">celery.worker.listener.CarrotListener</span></tt></a>.</p>
+<div class="section" id="celeryd-consumer">
+<span id="std:setting-CELERYD_CONSUMER"></span><h4>CELERYD_CONSUMER<a class="headerlink" href="#celeryd-consumer" title="Permalink to this headline">¶</a></h4>
+<p>Name of the consumer class used by the worker.
+Default is <a class="reference internal" href="internals/reference/celery.worker.consumer.html#celery.worker.consumer.Consumer" title="celery.worker.consumer.Consumer"><tt class="xref py py-class docutils literal"><span class="pre">celery.worker.consumer.Consumer</span></tt></a></p>
 </div>
 <div class="section" id="celeryd-mediator">
 <span id="std:setting-CELERYD_MEDIATOR"></span><h4>CELERYD_MEDIATOR<a class="headerlink" href="#celeryd-mediator" title="Permalink to this headline">¶</a></h4>
@@ -852,41 +852,41 @@ Default is <tt class="xref py py-class docutils literal"><span class="pre">celer
 <span id="conf-celerybeat"></span><h3><a class="toc-backref" href="#id24">Periodic Task Server: celerybeat</a><a class="headerlink" href="#periodic-task-server-celerybeat" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="celerybeat-schedule">
 <span id="std:setting-CELERYBEAT_SCHEDULE"></span><h4>CELERYBEAT_SCHEDULE<a class="headerlink" href="#celerybeat-schedule" title="Permalink to this headline">¶</a></h4>
-<p>The periodic task schedule used by <a class="reference internal" href="reference/celery.bin.celerybeat.html#module-celery.bin.celerybeat"><tt class="xref py py-mod docutils literal"><span class="pre">celerybeat</span></tt></a>.
+<p>The periodic task schedule used by <a class="reference internal" href="reference/celery.bin.celerybeat.html#module-celery.bin.celerybeat" title="celery.bin.celerybeat"><tt class="xref py py-mod docutils literal"><span class="pre">celerybeat</span></tt></a>.
 See <a class="reference internal" href="userguide/periodic-tasks.html#beat-entries"><em>Entries</em></a>.</p>
 </div>
 <div class="section" id="celerybeat-scheduler">
 <span id="std:setting-CELERYBEAT_SCHEDULER"></span><h4>CELERYBEAT_SCHEDULER<a class="headerlink" href="#celerybeat-scheduler" title="Permalink to this headline">¶</a></h4>
 <p>The default scheduler class.  Default is
-<tt class="docutils literal"><span class="pre">&quot;celery.beat.PersistentScheduler&quot;</span></tt>.</p>
+<cite>&#8220;celery.beat.PersistentScheduler&#8221;</cite>.</p>
 <p>Can also be set via the <em class="xref std std-option">-S</em> argument to
-<a class="reference internal" href="reference/celery.bin.celerybeat.html#module-celery.bin.celerybeat"><tt class="xref py py-mod docutils literal"><span class="pre">celerybeat</span></tt></a>.</p>
+<a class="reference internal" href="reference/celery.bin.celerybeat.html#module-celery.bin.celerybeat" title="celery.bin.celerybeat"><tt class="xref py py-mod docutils literal"><span class="pre">celerybeat</span></tt></a>.</p>
 </div>
 <div class="section" id="celerybeat-schedule-filename">
 <span id="std:setting-CELERYBEAT_SCHEDULE_FILENAME"></span><h4>CELERYBEAT_SCHEDULE_FILENAME<a class="headerlink" href="#celerybeat-schedule-filename" title="Permalink to this headline">¶</a></h4>
-<p>Name of the file used by <tt class="docutils literal"><span class="pre">PersistentScheduler</span></tt> to store the last run times
+<p>Name of the file used by <cite>PersistentScheduler</cite> to store the last run times
 of periodic tasks.  Can be a relative or absolute path, but be aware that the
-suffix <tt class="docutils literal"><span class="pre">.db</span></tt> may be appended to the file name (depending on Python version).</p>
+suffix <cite>.db</cite> may be appended to the file name (depending on Python version).</p>
 <p>Can also be set via the <em class="xref std std-option">--schedule</em> argument to
-<a class="reference internal" href="reference/celery.bin.celerybeat.html#module-celery.bin.celerybeat"><tt class="xref py py-mod docutils literal"><span class="pre">celerybeat</span></tt></a>.</p>
+<a class="reference internal" href="reference/celery.bin.celerybeat.html#module-celery.bin.celerybeat" title="celery.bin.celerybeat"><tt class="xref py py-mod docutils literal"><span class="pre">celerybeat</span></tt></a>.</p>
 </div>
 <div class="section" id="celerybeat-max-loop-interval">
 <span id="std:setting-CELERYBEAT_MAX_LOOP_INTERVAL"></span><h4>CELERYBEAT_MAX_LOOP_INTERVAL<a class="headerlink" href="#celerybeat-max-loop-interval" title="Permalink to this headline">¶</a></h4>
-<p>The maximum number of seconds <a class="reference internal" href="reference/celery.bin.celerybeat.html#module-celery.bin.celerybeat"><tt class="xref py py-mod docutils literal"><span class="pre">celerybeat</span></tt></a> can sleep
+<p>The maximum number of seconds <a class="reference internal" href="reference/celery.bin.celerybeat.html#module-celery.bin.celerybeat" title="celery.bin.celerybeat"><tt class="xref py py-mod docutils literal"><span class="pre">celerybeat</span></tt></a> can sleep
 between checking the schedule.  Default is 300 seconds (5 minutes).</p>
 </div>
 <div class="section" id="celerybeat-log-file">
 <span id="std:setting-CELERYBEAT_LOG_FILE"></span><h4>CELERYBEAT_LOG_FILE<a class="headerlink" href="#celerybeat-log-file" title="Permalink to this headline">¶</a></h4>
 <p>The default file name to log messages to.  Can be overridden using
-the <cite>&#8211;logfile`</cite> option to <a class="reference internal" href="reference/celery.bin.celerybeat.html#module-celery.bin.celerybeat"><tt class="xref py py-mod docutils literal"><span class="pre">celerybeat</span></tt></a>.</p>
-<p>The default is <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> (<tt class="docutils literal"><span class="pre">stderr</span></tt>).</p>
+the <cite>&#8211;logfile</cite> option to <a class="reference internal" href="reference/celery.bin.celerybeat.html#module-celery.bin.celerybeat" title="celery.bin.celerybeat"><tt class="xref py py-mod docutils literal"><span class="pre">celerybeat</span></tt></a>.</p>
+<p>The default is <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> (<cite>stderr</cite>).</p>
 </div>
 <div class="section" id="celerybeat-log-level">
 <span id="std:setting-CELERYBEAT_LOG_LEVEL"></span><h4>CELERYBEAT_LOG_LEVEL<a class="headerlink" href="#celerybeat-log-level" title="Permalink to this headline">¶</a></h4>
 <p>Logging level. Can be any of <tt class="xref py py-const docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="xref py py-const docutils literal"><span class="pre">INFO</span></tt>, <tt class="xref py py-const docutils literal"><span class="pre">WARNING</span></tt>,
 <tt class="xref py py-const docutils literal"><span class="pre">ERROR</span></tt>, or <tt class="xref py py-const docutils literal"><span class="pre">CRITICAL</span></tt>.</p>
 <p>Can also be set via the <em class="xref std std-option">--loglevel</em> argument to
-<a class="reference internal" href="reference/celery.bin.celerybeat.html#module-celery.bin.celerybeat"><tt class="xref py py-mod docutils literal"><span class="pre">celerybeat</span></tt></a>.</p>
+<a class="reference internal" href="reference/celery.bin.celerybeat.html#module-celery.bin.celerybeat" title="celery.bin.celerybeat"><tt class="xref py py-mod docutils literal"><span class="pre">celerybeat</span></tt></a>.</p>
 <p>See the <tt class="xref py py-mod docutils literal"><span class="pre">logging</span></tt> module for more information.</p>
 </div>
 </div>
@@ -895,8 +895,8 @@ the <cite>&#8211;logfile`</cite> option to <a class="reference internal" href="r
 <div class="section" id="celerymon-log-file">
 <span id="std:setting-CELERYMON_LOG_FILE"></span><h4>CELERYMON_LOG_FILE<a class="headerlink" href="#celerymon-log-file" title="Permalink to this headline">¶</a></h4>
 <p>The default file name to log messages to.  Can be overridden using
-the <em class="xref std std-option">--logfile</em> argument to <tt class="docutils literal"><span class="pre">celerymon</span></tt>.</p>
-<p>The default is <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> (<tt class="docutils literal"><span class="pre">stderr</span></tt>)</p>
+the <em class="xref std std-option">--logfile</em> argument to <cite>celerymon</cite>.</p>
+<p>The default is <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> (<cite>stderr</cite>)</p>
 </div>
 <div class="section" id="celerymon-log-level">
 <span id="std:setting-CELERYMON_LOG_LEVEL"></span><h4>CELERYMON_LOG_LEVEL<a class="headerlink" href="#celerymon-log-level" title="Permalink to this headline">¶</a></h4>
@@ -959,12 +959,12 @@ the <em class="xref std std-option">--logfile</em> argument to <tt class="docuti
         <li class="right" >
           <a href="userguide/monitoring.html" title="Monitoring Guide"
              >previous</a> |</li>
-        <li><a href="index.html">Celery v2.1.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.2.0a2 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

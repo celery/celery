@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Worker Controller Threads - celery.worker.controllers &mdash; Celery v2.1.1 documentation</title>
+    <title>Worker Controller Threads - celery.worker.controllers &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Token Bucket (rate limiting) - celery.worker.buckets" href="celery.worker.buckets.html" />
     <link rel="prev" title="Executable Jobs - celery.worker.job" href="celery.worker.job.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.worker.job.html" title="Executable Jobs - celery.worker.job"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -58,20 +58,53 @@
 <h1>Worker Controller Threads - celery.worker.controllers<a class="headerlink" href="#worker-controller-threads-celery-worker-controllers" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.worker.controllers"></span><p>Worker Controller Threads</p>
 <dl class="class">
-<dt id="celery.worker.controllers.Mediator">
-<em class="property">class </em><tt class="descclassname">celery.worker.controllers.</tt><tt class="descname">Mediator</tt><big>(</big><em>ready_queue</em>, <em>callback</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#celery.worker.controllers.Mediator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Thread continuously sending tasks in the queue to the pool.</p>
+<dt id="celery.worker.controllers.Autoscaler">
+<em class="property">class </em><tt class="descclassname">celery.worker.controllers.</tt><tt class="descname">Autoscaler</tt><big>(</big><em>pool</em>, <em>max_concurrency</em>, <em>min_concurrency=0</em>, <em>keepalive=30</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#celery.worker.controllers.Autoscaler" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="celery.worker.controllers.Autoscaler.processes">
+<tt class="descname">processes</tt><a class="headerlink" href="#celery.worker.controllers.Autoscaler.processes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="attribute">
-<dt id="celery.worker.controllers.Mediator.ready_queue">
-<tt class="descname">ready_queue</tt><a class="headerlink" href="#celery.worker.controllers.Mediator.ready_queue" title="Permalink to this definition">¶</a></dt>
-<dd><p>The task queue, a <tt class="xref py py-class docutils literal"><span class="pre">Queue.Queue</span></tt> instance.</p>
+<dt id="celery.worker.controllers.Autoscaler.qty">
+<tt class="descname">qty</tt><a class="headerlink" href="#celery.worker.controllers.Autoscaler.qty" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.controllers.Autoscaler.run">
+<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.controllers.Autoscaler.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.controllers.Autoscaler.scale">
+<tt class="descname">scale</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.controllers.Autoscaler.scale" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.controllers.Autoscaler.scale_down">
+<tt class="descname">scale_down</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#celery.worker.controllers.Autoscaler.scale_down" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.controllers.Autoscaler.scale_up">
+<tt class="descname">scale_up</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#celery.worker.controllers.Autoscaler.scale_up" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.controllers.Autoscaler.stop">
+<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.controllers.Autoscaler.stop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
+<dl class="class">
+<dt id="celery.worker.controllers.Mediator">
+<em class="property">class </em><tt class="descclassname">celery.worker.controllers.</tt><tt class="descname">Mediator</tt><big>(</big><em>ready_queue</em>, <em>callback</em>, <em>logger=None</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.worker.controllers.Mediator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Thread continuously moving tasks in the ready queue to the pool.</p>
 <dl class="attribute">
 <dt id="celery.worker.controllers.Mediator.callback">
 <tt class="descname">callback</tt><a class="headerlink" href="#celery.worker.controllers.Mediator.callback" title="Permalink to this definition">¶</a></dt>
-<dd><p>The callback used to process tasks retrieved from the
-<a class="reference internal" href="#celery.worker.controllers.Mediator.ready_queue" title="celery.worker.controllers.Mediator.ready_queue"><tt class="xref py py-attr docutils literal"><span class="pre">ready_queue</span></tt></a>.</p>
+<dd><p>Callback called when a task is obtained.</p>
 </dd></dl>
 
 <dl class="method">
@@ -79,10 +112,17 @@
 <tt class="descname">move</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.controllers.Mediator.move" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="attribute">
+<dt id="celery.worker.controllers.Mediator.ready_queue">
+<tt class="descname">ready_queue</tt><a class="headerlink" href="#celery.worker.controllers.Mediator.ready_queue" title="Permalink to this definition">¶</a></dt>
+<dd><p>The task queue, a <tt class="xref py py-class docutils literal"><span class="pre">Queue</span></tt> instance.</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="celery.worker.controllers.Mediator.run">
 <tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.controllers.Mediator.run" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Move tasks forver or until <a class="reference internal" href="#celery.worker.controllers.Mediator.stop" title="celery.worker.controllers.Mediator.stop"><tt class="xref py py-meth docutils literal"><span class="pre">stop()</span></tt></a> is called.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.controllers.Mediator.stop">
@@ -145,14 +185,14 @@
         <li class="right" >
           <a href="celery.worker.job.html" title="Executable Jobs - celery.worker.job"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

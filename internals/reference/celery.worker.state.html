@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Worker State - celery.worker.state &mdash; Celery v2.1.1 documentation</title>
+    <title>Worker State - celery.worker.state &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Multiprocessing Pool Support - celery.concurrency.processes" href="celery.concurrency.processes.html" />
     <link rel="prev" title="Remote Control Command Registry - celery.worker.control.registry" href="celery.worker.control.registry.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.worker.control.registry.html" title="Remote Control Command Registry - celery.worker.control.registry"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -92,26 +92,34 @@
 </dd></dl>
 
 <dl class="data">
+<dt id="celery.worker.state.REVOKES_MAX">
+<tt class="descclassname">celery.worker.state.</tt><tt class="descname">REVOKES_MAX</tt><a class="headerlink" href="#celery.worker.state.REVOKES_MAX" title="Permalink to this definition">¶</a></dt>
+<dd><p>maximum number of revokes to keep in memory.</p>
+</dd></dl>
+
+<dl class="data">
 <dt id="celery.worker.state.REVOKE_EXPIRES">
 <tt class="descclassname">celery.worker.state.</tt><tt class="descname">REVOKE_EXPIRES</tt><a class="headerlink" href="#celery.worker.state.REVOKE_EXPIRES" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="data">
+<dd><p>how many seconds a revoke will be active before
+being expired when the max limit has been exceeded.</p>
+</dd></dl>
+
+<dl class="data">
 <dt id="celery.worker.state.active_requests">
 <tt class="descclassname">celery.worker.state.</tt><tt class="descname">active_requests</tt><a class="headerlink" href="#celery.worker.state.active_requests" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>set of currently active <a class="reference internal" href="celery.worker.job.html#celery.worker.job.TaskRequest" title="celery.worker.job.TaskRequest"><tt class="xref py py-class docutils literal"><span class="pre">TaskRequest</span></tt></a>&#8216;s.</p>
+</dd></dl>
 
-<p>Set of currently active <a class="reference internal" href="celery.worker.job.html#celery.worker.job.TaskRequest" title="celery.worker.job.TaskRequest"><tt class="xref py py-class docutils literal"><span class="pre">TaskRequest</span></tt></a>&#8216;s.</p>
 <dl class="data">
-<dt id="celery.worker.state.total_count">
-<tt class="descclassname">celery.worker.state.</tt><tt class="descname">total_count</tt><a class="headerlink" href="#celery.worker.state.total_count" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt id="celery.worker.state.reserved_requests">
+<tt class="descclassname">celery.worker.state.</tt><tt class="descname">reserved_requests</tt><a class="headerlink" href="#celery.worker.state.reserved_requests" title="Permalink to this definition">¶</a></dt>
+<dd><p>set of all reserved <a class="reference internal" href="celery.worker.job.html#celery.worker.job.TaskRequest" title="celery.worker.job.TaskRequest"><tt class="xref py py-class docutils literal"><span class="pre">TaskRequest</span></tt></a>&#8216;s.</p>
+</dd></dl>
 
-<p>Count of tasks executed by the worker, sorted by type.</p>
 <dl class="data">
 <dt id="celery.worker.state.revoked">
 <tt class="descclassname">celery.worker.state.</tt><tt class="descname">revoked</tt><a class="headerlink" href="#celery.worker.state.revoked" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<p>The list of currently revoked tasks. (PERSISTENT if statedb set).</p>
+<dd><p>the list of currently revoked tasks.  Persistent if statedb set.</p>
 </dd></dl>
 
 <dl class="function">
@@ -124,6 +132,18 @@
 <dt id="celery.worker.state.task_ready">
 <tt class="descclassname">celery.worker.state.</tt><tt class="descname">task_ready</tt><big>(</big><em>request</em><big>)</big><a class="headerlink" href="#celery.worker.state.task_ready" title="Permalink to this definition">¶</a></dt>
 <dd><p>Updates global state when a task is ready.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.worker.state.task_reserved">
+<tt class="descclassname">celery.worker.state.</tt><tt class="descname">task_reserved</tt><big>(</big><em>request</em><big>)</big><a class="headerlink" href="#celery.worker.state.task_reserved" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates global state when a task has been reserved.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.worker.state.total_count">
+<tt class="descclassname">celery.worker.state.</tt><tt class="descname">total_count</tt><a class="headerlink" href="#celery.worker.state.total_count" title="Permalink to this definition">¶</a></dt>
+<dd><p>count of tasks executed by the worker, sorted by type.</p>
 </dd></dl>
 
 </div>
@@ -179,14 +199,14 @@
         <li class="right" >
           <a href="celery.worker.control.registry.html" title="Remote Control Command Registry - celery.worker.control.registry"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Base Command - celery.bin.base &mdash; Celery v2.1.1 documentation</title>
+    <title>Base Command - celery.bin.base &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celeryd - celery.bin.celeryd" href="celery.bin.celeryd.html" />
     <link rel="prev" title="App: Periodic Task Scheduler - celery.apps.beat" href="celery.apps.beat.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.apps.beat.html" title="App: Periodic Task Scheduler - celery.apps.beat"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -57,7 +57,7 @@
 <h1>Base Command - celery.bin.base<a class="headerlink" href="#base-command-celery-bin-base" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.bin.base"></span><dl class="class">
 <dt id="celery.bin.base.Command">
-<em class="property">class </em><tt class="descclassname">celery.bin.base.</tt><tt class="descname">Command</tt><big>(</big><em>defaults=None</em><big>)</big><a class="headerlink" href="#celery.bin.base.Command" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.bin.base.</tt><tt class="descname">Command</tt><big>(</big><em>app=None</em>, <em>get_app=None</em><big>)</big><a class="headerlink" href="#celery.bin.base.Command" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="attribute">
 <dt id="celery.bin.base.Command.Parser">
 <tt class="descname">Parser</tt><a class="headerlink" href="#celery.bin.base.Command.Parser" title="Permalink to this definition">¶</a></dt>
@@ -75,8 +75,18 @@
 <dd></dd></dl>
 
 <dl class="method">
+<dt id="celery.bin.base.Command.get_cls_by_name">
+<tt class="descname">get_cls_by_name</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#celery.bin.base.Command.get_cls_by_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.bin.base.Command.get_options">
 <tt class="descname">get_options</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.base.Command.get_options" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.base.Command.handle_argv">
+<tt class="descname">handle_argv</tt><big>(</big><em>prog_name</em>, <em>argv</em><big>)</big><a class="headerlink" href="#celery.bin.base.Command.handle_argv" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -86,8 +96,23 @@
 </dd></dl>
 
 <dl class="method">
+<dt id="celery.bin.base.Command.parse_preload_options">
+<tt class="descname">parse_preload_options</tt><big>(</big><em>args</em><big>)</big><a class="headerlink" href="#celery.bin.base.Command.parse_preload_options" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.base.Command.process_cmdline_config">
+<tt class="descname">process_cmdline_config</tt><big>(</big><em>argv</em><big>)</big><a class="headerlink" href="#celery.bin.base.Command.process_cmdline_config" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.bin.base.Command.run">
 <tt class="descname">run</tt><big>(</big><em>*args</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.bin.base.Command.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.base.Command.setup_app_from_commandline">
+<tt class="descname">setup_app_from_commandline</tt><big>(</big><em>argv</em><big>)</big><a class="headerlink" href="#celery.bin.base.Command.setup_app_from_commandline" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -150,13 +175,13 @@
         <li class="right" >
           <a href="celery.apps.beat.html" title="App: Periodic Task Scheduler - celery.apps.beat"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

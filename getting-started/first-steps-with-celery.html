@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>First steps with Celery &mdash; Celery v2.1.1 documentation</title>
+    <title>First steps with Celery &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../index.html" />
     <link rel="up" title="Getting Started" href="index.html" />
     <link rel="next" title="Resources" href="resources.html" />
     <link rel="prev" title="Broker Installation" href="broker-installation.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="broker-installation.html" title="Broker Installation"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Getting Started</a> &raquo;</li> 
       </ul>
     </div>  
@@ -57,11 +57,11 @@
 <span id="tut-celery"></span><h1>First steps with Celery<a class="headerlink" href="#first-steps-with-celery" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference external" href="#creating-a-simple-task" id="id1">Creating a simple task</a></li>
-<li><a class="reference external" href="#configuration" id="id2">Configuration</a></li>
-<li><a class="reference external" href="#running-the-celery-worker-server" id="id3">Running the celery worker server</a></li>
-<li><a class="reference external" href="#executing-the-task" id="id4">Executing the task</a></li>
-<li><a class="reference external" href="#where-to-go-from-here" id="id5">Where to go from here</a></li>
+<li><a class="reference internal" href="#creating-a-simple-task" id="id1">Creating a simple task</a></li>
+<li><a class="reference internal" href="#configuration" id="id2">Configuration</a></li>
+<li><a class="reference internal" href="#running-the-celery-worker-server" id="id3">Running the celery worker server</a></li>
+<li><a class="reference internal" href="#executing-the-task" id="id4">Executing the task</a></li>
+<li><a class="reference internal" href="#where-to-go-from-here" id="id5">Where to go from here</a></li>
 </ul>
 </div>
 <div class="section" id="creating-a-simple-task">
@@ -131,7 +131,7 @@ do.  For all of the options available, see <a class="reference internal" href=".
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p>You can also specify modules to import using the <em class="xref std std-option">-I</em> option to
-<a class="reference internal" href="../reference/celery.bin.celeryd.html#module-celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a>:</p>
+<a class="reference internal" href="../reference/celery.bin.celeryd.html#module-celery.bin.celeryd" title="celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a>:</p>
 <div class="highlight-python"><pre>$ celeryd -l info -I tasks,handlers</pre>
 </div>
 <p class="last">This can be a single, or a comma separated list of task modules to import
@@ -155,8 +155,8 @@ for more information).</p>
 <div class="section" id="executing-the-task">
 <span id="celerytut-executing-task"></span><h2><a class="toc-backref" href="#id4">Executing the task</a><a class="headerlink" href="#executing-the-task" title="Permalink to this headline">¶</a></h2>
 <p>Whenever we want to execute our task, we use the
-<a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.delay" title="celery.task.base.Task.delay"><tt class="xref py py-meth docutils literal"><span class="pre">delay()</span></tt></a> method of the task class.</p>
-<p>This is a handy shortcut to the <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.apply_async" title="celery.task.base.Task.apply_async"><tt class="xref py py-meth docutils literal"><span class="pre">apply_async()</span></tt></a>
+<tt class="xref py py-meth docutils literal"><span class="pre">delay()</span></tt> method of the task class.</p>
+<p>This is a handy shortcut to the <tt class="xref py py-meth docutils literal"><span class="pre">apply_async()</span></tt>
 method which gives greater control of the task execution (see
 <a class="reference internal" href="../userguide/executing.html#guide-executing"><em>Executing Tasks</em></a>).</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">tasks</span> <span class="kn">import</span> <span class="n">add</span>
@@ -193,8 +193,8 @@ by holding on to the <a class="reference internal" href="../reference/celery.res
 <span class="go">True</span>
 </pre></div>
 </div>
-<p>If the task raises an exception, the return value of <tt class="docutils literal"><span class="pre">result.successful()</span></tt>
-will be <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt>, and <tt class="docutils literal"><span class="pre">result.result</span></tt> will contain the exception instance
+<p>If the task raises an exception, the return value of <cite>result.successful()</cite>
+will be <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt>, and <cite>result.result</cite> will contain the exception instance
 raised by the task.</p>
 </div>
 <div class="section" id="where-to-go-from-here">
@@ -255,13 +255,13 @@ raised by the task.</p>
         <li class="right" >
           <a href="broker-installation.html" title="Broker Installation"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" >Getting Started</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

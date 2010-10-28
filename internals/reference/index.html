@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Internal Module Reference &mdash; Celery v2.1.1 documentation</title>
+    <title>Internal Module Reference &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,10 +22,10 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../../index.html" />
     <link rel="up" title="Internals" href="../index.html" />
     <link rel="next" title="Multiprocessing Worker - celery.worker" href="celery.worker.html" />
-    <link rel="prev" title="Module Index" href="../moduleindex.html" /> 
+    <link rel="prev" title="“The Big Instance” Refactor" href="../app-overview.html" /> 
   </head>
   <body>
     <div class="related">
@@ -41,9 +41,9 @@
           <a href="celery.worker.html" title="Multiprocessing Worker - celery.worker"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="../moduleindex.html" title="Module Index"
+          <a href="../app-overview.html" title="“The Big Instance” Refactor"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Internals</a> &raquo;</li> 
       </ul>
     </div>  
@@ -59,16 +59,16 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Release:</th><td class="field-body">2.1</td>
+<tr class="field"><th class="field-name">Release:</th><td class="field-body">2.2</td>
 </tr>
-<tr class="field"><th class="field-name">Date:</th><td class="field-body">October 14, 2010</td>
+<tr class="field"><th class="field-name">Date:</th><td class="field-body">October 28, 2010</td>
 </tr>
 </tbody>
 </table>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="celery.worker.html">Multiprocessing Worker - celery.worker</a></li>
-<li class="toctree-l1"><a class="reference internal" href="celery.worker.listener.html">Worker Message Listener - celery.worker.listener</a></li>
+<li class="toctree-l1"><a class="reference internal" href="celery.worker.consumer.html">Worker Message Consumer - celery.worker.consumer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.worker.job.html">Executable Jobs - celery.worker.job</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.worker.controllers.html">Worker Controller Threads - celery.worker.controllers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.worker.buckets.html">Token Bucket (rate limiting) - celery.worker.buckets</a></li>
@@ -103,7 +103,6 @@
 <li class="toctree-l1"><a class="reference internal" href="celery.utils.html">Utilities - celery.utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.utils.term.html">Terminal Utilities - celery.utils.term</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.utils.timeutils.html">Time and Date Utilities - celery.utils.timeutils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="celery.utils.info.html">Debugging Info - celery.utils.info</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.utils.compat.html">Python Compatibility - celery.utils.compat</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.utils.mail.html">Sending E-mail - celery.utils.mail</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.utils.patch.html">Compatibility Patches - celery.utils.patch</a></li>
@@ -126,8 +125,8 @@
   <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
 </a></p>
   <h4>Previous topic</h4>
-  <p class="topless"><a href="../moduleindex.html"
-                        title="previous chapter">Module Index</a></p>
+  <p class="topless"><a href="../app-overview.html"
+                        title="previous chapter">&#8220;The Big Instance&#8221; Refactor</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="celery.worker.html"
                         title="next chapter">Multiprocessing Worker - celery.worker</a></p>
@@ -166,15 +165,15 @@
           <a href="celery.worker.html" title="Multiprocessing Worker - celery.worker"
              >next</a> |</li>
         <li class="right" >
-          <a href="../moduleindex.html" title="Module Index"
+          <a href="../app-overview.html" title="“The Big Instance” Refactor"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

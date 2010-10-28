@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Monitoring Guide &mdash; Celery v2.1.1 documentation</title>
+    <title>Monitoring Guide &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Configuration and defaults" href="../configuration.html" />
     <link rel="prev" title="Routing Tasks" href="routing.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="routing.html" title="Routing Tasks"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -57,36 +57,36 @@
 <span id="guide-monitoring"></span><h1>Monitoring Guide<a class="headerlink" href="#monitoring-guide" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference external" href="#introduction" id="id2">Introduction</a></li>
-<li><a class="reference external" href="#workers" id="id3">Workers</a><ul>
-<li><a class="reference external" href="#celeryctl-management-utility" id="id4">celeryctl: Management Utility</a><ul>
-<li><a class="reference external" href="#commands" id="id5">Commands</a></li>
-<li><a class="reference external" href="#specifying-destination-nodes" id="id6">Specifying destination nodes</a></li>
+<li><a class="reference internal" href="#introduction" id="id2">Introduction</a></li>
+<li><a class="reference internal" href="#workers" id="id3">Workers</a><ul>
+<li><a class="reference internal" href="#celeryctl-management-utility" id="id4">celeryctl: Management Utility</a><ul>
+<li><a class="reference internal" href="#commands" id="id5">Commands</a></li>
+<li><a class="reference internal" href="#specifying-destination-nodes" id="id6">Specifying destination nodes</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#django-admin-monitor" id="id7">Django Admin Monitor</a><ul>
-<li><a class="reference external" href="#starting-the-monitor" id="id8">Starting the monitor</a></li>
-<li><a class="reference external" href="#shutter-frequency" id="id9">Shutter frequency</a></li>
-<li><a class="reference external" href="#using-outside-of-django" id="id10">Using outside of Django</a></li>
+<li><a class="reference internal" href="#django-admin-monitor" id="id7">Django Admin Monitor</a><ul>
+<li><a class="reference internal" href="#starting-the-monitor" id="id8">Starting the monitor</a></li>
+<li><a class="reference internal" href="#shutter-frequency" id="id9">Shutter frequency</a></li>
+<li><a class="reference internal" href="#using-outside-of-django" id="id10">Using outside of Django</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#celeryev-curses-monitor" id="id11">celeryev: Curses Monitor</a></li>
-<li><a class="reference external" href="#celerymon-web-monitor" id="id12">celerymon: Web monitor</a></li>
+<li><a class="reference internal" href="#celeryev-curses-monitor" id="id11">celeryev: Curses Monitor</a></li>
+<li><a class="reference internal" href="#celerymon-web-monitor" id="id12">celerymon: Web monitor</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#rabbitmq" id="id13">RabbitMQ</a><ul>
-<li><a class="reference external" href="#inspecting-queues" id="id14">Inspecting queues</a></li>
+<li><a class="reference internal" href="#rabbitmq" id="id13">RabbitMQ</a><ul>
+<li><a class="reference internal" href="#inspecting-queues" id="id14">Inspecting queues</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#munin" id="id15">Munin</a></li>
-<li><a class="reference external" href="#events" id="id16">Events</a><ul>
-<li><a class="reference external" href="#snapshots" id="id17">Snapshots</a><ul>
-<li><a class="reference external" href="#custom-camera" id="id18">Custom Camera</a></li>
+<li><a class="reference internal" href="#munin" id="id15">Munin</a></li>
+<li><a class="reference internal" href="#events" id="id16">Events</a><ul>
+<li><a class="reference internal" href="#snapshots" id="id17">Snapshots</a><ul>
+<li><a class="reference internal" href="#custom-camera" id="id18">Custom Camera</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#event-reference" id="id19">Event Reference</a><ul>
-<li><a class="reference external" href="#task-events" id="id20">Task Events</a></li>
-<li><a class="reference external" href="#worker-events" id="id21">Worker Events</a></li>
+<li><a class="reference internal" href="#event-reference" id="id19">Event Reference</a><ul>
+<li><a class="reference internal" href="#task-events" id="id20">Task Events</a></li>
+<li><a class="reference internal" href="#worker-events" id="id21">Worker Events</a></li>
 </ul>
 </li>
 </ul>
@@ -105,7 +105,7 @@ features related to monitoring, like events and broadcast commands.</p>
 <span id="monitoring-celeryctl"></span><h3><a class="toc-backref" href="#id4">celeryctl: Management Utility</a><a class="headerlink" href="#celeryctl-management-utility" title="Permalink to this headline">¶</a></h3>
 <p class="versionadded">
 <span class="versionmodified">New in version 2.1.</span></p>
-<p><a class="reference internal" href="../reference/celery.bin.celeryctl.html#module-celery.bin.celeryctl"><tt class="xref py py-mod docutils literal"><span class="pre">celeryctl</span></tt></a> is a command line utility to inspect
+<p><a class="reference internal" href="../reference/celery.bin.celeryctl.html#module-celery.bin.celeryctl" title="celery.bin.celeryctl"><tt class="xref py py-mod docutils literal"><span class="pre">celeryctl</span></tt></a> is a command line utility to inspect
 and manage worker nodes (and to some degree tasks).</p>
 <p>To list all the commands avaialble do:</p>
 <div class="highlight-python"><pre>$ celeryctl help</pre>
@@ -145,7 +145,7 @@ task doesn&#8217;t use a custom result backend.</p>
 <dd><div class="first highlight-python"><pre>$ celeryctl inspect scheduled</pre>
 </div>
 <p class="last">These are tasks reserved by the worker because they have the
-<tt class="docutils literal"><span class="pre">eta</span></tt> or <tt class="docutils literal"><span class="pre">countdown</span></tt> argument set.</p>
+<cite>eta</cite> or <cite>countdown</cite> argument set.</p>
 </dd>
 </dl>
 </li>
@@ -197,7 +197,7 @@ with an eta).</p>
 </ul>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">All <tt class="docutils literal"><span class="pre">inspect</span></tt> commands supports a <tt class="docutils literal"><span class="pre">--timeout</span></tt> argument,
+<p class="last">All <cite>inspect</cite> commands supports a <cite>&#8211;timeout</cite> argument,
 This is the number of seconds to wait for responses.
 You may have to increase this timeout if you&#8217;re getting empty responses
 due to latency.</p>
@@ -207,7 +207,7 @@ due to latency.</p>
 <span id="celeryctl-inspect-destination"></span><h4><a class="toc-backref" href="#id6">Specifying destination nodes</a><a class="headerlink" href="#specifying-destination-nodes" title="Permalink to this headline">¶</a></h4>
 <p>By default the inspect commands operates on all workers.
 You can specify a single, or a list of workers by using the
-<tt class="docutils literal"><span class="pre">--destination</span></tt> argument:</p>
+<cite>&#8211;destination</cite> argument:</p>
 <div class="highlight-python"><pre>$ celeryctl inspect -d w1,w2 reserved</pre>
 </div>
 </div>
@@ -239,8 +239,8 @@ intervals, storing them in your database (See <a class="reference internal" href
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Tip:</th><td class="field-body">You can enable events when the worker starts using the <tt class="docutils literal"><span class="pre">-E</span></tt> argument
-to <a class="reference internal" href="../reference/celery.bin.celeryd.html#module-celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a>.</td>
+<tr class="field"><th class="field-name">Tip:</th><td class="field-body">You can enable events when the worker starts using the <cite>-E</cite> argument
+to <a class="reference internal" href="../reference/celery.bin.celeryd.html#module-celery.bin.celeryd" title="celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a>.</td>
 </tr>
 </tbody>
 </table>
@@ -255,25 +255,25 @@ or shutting down worker nodes.</p>
 <span id="monitoring-django-frequency"></span><h4><a class="toc-backref" href="#id9">Shutter frequency</a><a class="headerlink" href="#shutter-frequency" title="Permalink to this headline">¶</a></h4>
 <p>By default the camera takes a snapshot every second, if this is too frequent
 or you want to have higher precision, then you can change this using the
-<tt class="docutils literal"><span class="pre">--frequency</span></tt> argument.  This is a float describing how often, in seconds,
+<cite>&#8211;frequency</cite> argument.  This is a float describing how often, in seconds,
 it should wake up to check if there are any new events:</p>
 <div class="highlight-python"><pre>$ python manage.py celerycam --frequency=3.0</pre>
 </div>
-<p>The camera also supports rate limiting using the <tt class="docutils literal"><span class="pre">--maxrate</span></tt> argument.
+<p>The camera also supports rate limiting using the <cite>&#8211;maxrate</cite> argument.
 While the frequency controls how often the camera thread wakes up,
 the rate limit controls how often it will actually take a snapshot.</p>
 <p>The rate limits can be specified in seconds, minutes or hours
-by appending <tt class="docutils literal"><span class="pre">/s</span></tt>, <tt class="docutils literal"><span class="pre">/m</span></tt> or <tt class="docutils literal"><span class="pre">/h</span></tt> to the value.
-Example: <tt class="docutils literal"><span class="pre">--maxrate=100/m</span></tt>, means &#8220;hundred writes a minute&#8221;.</p>
+by appending <cite>/s</cite>, <cite>/m</cite> or <cite>/h</cite> to the value.
+Example: <cite>&#8211;maxrate=100/m</cite>, means &#8220;hundred writes a minute&#8221;.</p>
 <p>The rate limit is off by default, which means it will take a snapshot
-for every <tt class="docutils literal"><span class="pre">--frequency</span></tt> seconds.</p>
+for every <cite>&#8211;frequency</cite> seconds.</p>
 <p>The events also expire after some time, so the database doesn&#8217;t fill up.
 Successful tasks are deleted after 1 day, failed tasks after 3 days,
 and tasks in other states after 5 days.</p>
 </div>
 <div class="section" id="using-outside-of-django">
 <span id="monitoring-nodjango"></span><h4><a class="toc-backref" href="#id10">Using outside of Django</a><a class="headerlink" href="#using-outside-of-django" title="Permalink to this headline">¶</a></h4>
-<p><tt class="docutils literal"><span class="pre">django-celery</span></tt> also installs the <strong class="program">djcelerymon</strong> program. This
+<p><cite>django-celery</cite> also installs the <strong class="program">djcelerymon</strong> program. This
 can be used by non-Django users, and runs both a webserver and a snapshot
 camera in the same process.</p>
 <p><strong>Installing</strong></p>
@@ -289,11 +289,11 @@ and sets up the Django environment using the same settings:</p>
 <div class="highlight-python"><pre>$ djcelerymon</pre>
 </div>
 <p>Database tables will be created the first time the monitor is run.
-By default an <tt class="docutils literal"><span class="pre">sqlite3</span></tt> database file named
+By default an <cite>sqlite3</cite> database file named
 <tt class="file docutils literal"><span class="pre">djcelerymon.db</span></tt> is used, so make sure this file is writeable by the
 user running the monitor.</p>
 <p>If you want to store the events in a different database, e.g. MySQL,
-then you can configure the <tt class="docutils literal"><span class="pre">DATABASE*</span></tt> settings directly in your Celery
+then you can configure the <cite>DATABASE*</cite> settings directly in your Celery
 config module.  See <a class="reference external" href="http://docs.djangoproject.com/en/dev/ref/settings/#databases">http://docs.djangoproject.com/en/dev/ref/settings/#databases</a>
 for more information about the database options avaialble.</p>
 <p>You will also be asked to create a superuser (and you need to create one
@@ -319,28 +319,28 @@ Quit the server with CONTROL-C.</pre>
 <p>Now that the service is started you can visit the monitor
 at <a class="reference external" href="http://127.0.0.1:8000">http://127.0.0.1:8000</a>, and log in using the user you created.</p>
 <p>For a list of the command line options supported by <strong class="program">djcelerymon</strong>,
-please see <tt class="docutils literal"><span class="pre">djcelerymon</span> <span class="pre">--help</span></tt>.</p>
+please see <cite>djcelerymon &#8211;help</cite>.</p>
 </div>
 </div>
 <div class="section" id="celeryev-curses-monitor">
 <span id="monitoring-celeryev"></span><h3><a class="toc-backref" href="#id11">celeryev: Curses Monitor</a><a class="headerlink" href="#celeryev-curses-monitor" title="Permalink to this headline">¶</a></h3>
 <p class="versionadded">
 <span class="versionmodified">New in version 2.0.</span></p>
-<p><a class="reference internal" href="../reference/celery.bin.celeryev.html#module-celery.bin.celeryev"><tt class="xref py py-mod docutils literal"><span class="pre">celeryev</span></tt></a> is a simple curses monitor displaying
+<p><a class="reference internal" href="../reference/celery.bin.celeryev.html#module-celery.bin.celeryev" title="celery.bin.celeryev"><tt class="xref py py-mod docutils literal"><span class="pre">celeryev</span></tt></a> is a simple curses monitor displaying
 task and worker history.  You can inspect the result and traceback of tasks,
 and it also supports some management commands like rate limiting and shutting
 down workers.</p>
 <div class="figure">
 <img alt="../images/celeryevshotsm.jpg" src="../images/celeryevshotsm.jpg" />
 </div>
-<p><a class="reference internal" href="../reference/celery.bin.celeryev.html#module-celery.bin.celeryev"><tt class="xref py py-mod docutils literal"><span class="pre">celeryev</span></tt></a> is also used to start snapshot cameras (see
+<p><a class="reference internal" href="../reference/celery.bin.celeryev.html#module-celery.bin.celeryev" title="celery.bin.celeryev"><tt class="xref py py-mod docutils literal"><span class="pre">celeryev</span></tt></a> is also used to start snapshot cameras (see
 <a class="reference internal" href="#monitoring-snapshots"><em>Snapshots</em></a>:</p>
 <div class="highlight-python"><pre>$ celeryev --camera=&lt;camera-class&gt; --frequency=1.0</pre>
 </div>
 <p>and it includes a tool to dump events to stdout:</p>
 <div class="highlight-python"><pre>$ celeryev --dump</pre>
 </div>
-<p>For a complete list of options use <tt class="docutils literal"><span class="pre">--help</span></tt>:</p>
+<p>For a complete list of options use <cite>&#8211;help</cite>:</p>
 <div class="highlight-python"><pre>$ celeryev --help</pre>
 </div>
 </div>
@@ -372,10 +372,10 @@ queue lenghts, the memory usage of each queue, as well
 as manage users, virtual hosts and their permissions.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">The default virtual host (<tt class="docutils literal"><span class="pre">&quot;/&quot;</span></tt>) is used in these
+<p class="last">The default virtual host (<cite>&#8220;/&#8221;</cite>) is used in these
 examples, if you use a custom virtual host you have to add
-the <tt class="docutils literal"><span class="pre">-p</span></tt> argument to the command, e.g:
-<tt class="docutils literal"><span class="pre">rabbitmqctl</span> <span class="pre">list_queues</span> <span class="pre">-p</span> <span class="pre">my_vhost</span> <span class="pre">....</span></tt></p>
+the <cite>-p</cite> argument to the command, e.g:
+<cite>rabbitmqctl list_queues -p my_vhost ....</cite></p>
 </div>
 <div class="section" id="inspecting-queues">
 <span id="monitoring-rmq-queues"></span><h3><a class="toc-backref" href="#id14">Inspecting queues</a><a class="headerlink" href="#inspecting-queues" title="Permalink to this headline">¶</a></h3>
@@ -383,11 +383,11 @@ the <tt class="docutils literal"><span class="pre">-p</span></tt> argument to th
 <div class="highlight-python"><pre>$ rabbitmqctl list_queues name messages messages_ready \
                           messages_unacknowlged</pre>
 </div>
-<p>Here <tt class="docutils literal"><span class="pre">messages_ready</span></tt> is the number of messages ready
-for delivery (sent but not received), <tt class="docutils literal"><span class="pre">messages_unacknowledged</span></tt>
+<p>Here <cite>messages_ready</cite> is the number of messages ready
+for delivery (sent but not received), <cite>messages_unacknowledged</cite>
 is the number of messages that has been received by a worker but
 not acknowledged yet (meaning it is in progress, or has been reserved).
-<tt class="docutils literal"><span class="pre">messages</span></tt> is the sum of ready and unacknowledged messages combined.</p>
+<cite>messages</cite> is the sum of ready and unacknowledged messages combined.</p>
 <p>Finding the number of workers currently consuming from a queue:</p>
 <div class="highlight-python"><pre>$ rabbitmqctl list_queues name consumers</pre>
 </div>
@@ -398,7 +398,7 @@ not acknowledged yet (meaning it is in progress, or has been reserved).
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Tip:</th><td class="field-body">Adding the <tt class="docutils literal"><span class="pre">-q</span></tt> option to <a class="reference external" href="http://www.rabbitmq.com/man/rabbitmqctl.1.man.html">rabbitmqctl(1)</a> makes the output
+<tr class="field"><th class="field-name">Tip:</th><td class="field-body">Adding the <cite>-q</cite> option to <a class="reference external" href="http://www.rabbitmq.com/man/rabbitmqctl.1.man.html">rabbitmqctl(1)</a> makes the output
 easier to parse.</td>
 </tr>
 </tbody>
@@ -416,13 +416,13 @@ maintaining a Celery cluster.</p>
 </blockquote>
 </li>
 <li><p class="first">celery_tasks: Monitors the number of times each task type has
-been executed (requires <tt class="docutils literal"><span class="pre">celerymon</span></tt>).</p>
+been executed (requires <cite>celerymon</cite>).</p>
 <blockquote>
 <p><a class="reference external" href="http://exchange.munin-monitoring.org/plugins/celery_tasks-2/details">http://exchange.munin-monitoring.org/plugins/celery_tasks-2/details</a></p>
 </blockquote>
 </li>
 <li><p class="first">celery_task_states: Monitors the number of tasks in each state
-(requires <tt class="docutils literal"><span class="pre">celerymon</span></tt>).</p>
+(requires <cite>celerymon</cite>).</p>
 <blockquote>
 <p><a class="reference external" href="http://exchange.munin-monitoring.org/plugins/celery_tasks/details">http://exchange.munin-monitoring.org/plugins/celery_tasks/details</a></p>
 </blockquote>
@@ -446,7 +446,7 @@ what should happen every time the state is captured;  You can
 write it to a database, send it by e-mail or something else entirely.</p>
 <p><strong class="program">celeryev</strong> is then used to take snapshots with the camera,
 for example if you want to capture state every 2 seconds using the
-camera <tt class="docutils literal"><span class="pre">myapp.Camera</span></tt> you run <strong class="program">celeryev</strong> with the following
+camera <cite>myapp.Camera</cite> you run <strong class="program">celeryev</strong> with the following
 arguments:</p>
 <div class="highlight-python"><pre>$ celeryev -c myapp.Camera --frequency=2.0</pre>
 </div>
@@ -470,10 +470,10 @@ arguments:</p>
             <span class="n">state</span><span class="o">.</span><span class="n">event_count</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">task_count</span><span class="p">))</span>
 </pre></div>
 </div>
-<p>See the API reference for <a class="reference internal" href="../reference/celery.events.state.html#module-celery.events.state"><tt class="xref py py-mod docutils literal"><span class="pre">celery.events.state</span></tt></a> to read more
+<p>See the API reference for <a class="reference internal" href="../reference/celery.events.state.html#module-celery.events.state" title="celery.events.state"><tt class="xref py py-mod docutils literal"><span class="pre">celery.events.state</span></tt></a> to read more
 about state objects.</p>
-<p>Now you can use this cam with <tt class="docutils literal"><span class="pre">celeryev</span></tt> by specifying
-it with the <tt class="docutils literal"><span class="pre">-c</span></tt> option:</p>
+<p>Now you can use this cam with <cite>celeryev</cite> by specifying
+it with the <cite>-c</cite> option:</p>
 <div class="highlight-python"><pre>$ celeryev -c myapp.DumpCam --frequency=2.0</pre>
 </div>
 <p>Or you can use it programatically like this:</p>
@@ -501,18 +501,18 @@ it with the <tt class="docutils literal"><span class="pre">-c</span></tt> option
 <div class="section" id="task-events">
 <span id="event-reference-task"></span><h4><a class="toc-backref" href="#id20">Task Events</a><a class="headerlink" href="#task-events" title="Permalink to this headline">¶</a></h4>
 <ul>
-<li><p class="first"><tt class="docutils literal"><span class="pre">task-received(uuid,</span> <span class="pre">name,</span> <span class="pre">args,</span> <span class="pre">kwargs,</span> <span class="pre">retries,</span> <span class="pre">eta,</span> <span class="pre">hostname,</span>
-<span class="pre">timestamp)</span></tt></p>
+<li><p class="first"><cite>task-received(uuid, name, args, kwargs, retries, eta, hostname,
+timestamp)</cite></p>
 <blockquote>
 <p>Sent when the worker receives a task.</p>
 </blockquote>
 </li>
-<li><p class="first"><tt class="docutils literal"><span class="pre">task-started(uuid,</span> <span class="pre">hostname,</span> <span class="pre">timestamp)</span></tt></p>
+<li><p class="first"><cite>task-started(uuid, hostname, timestamp)</cite></p>
 <blockquote>
 <p>Sent just before the worker executes the task.</p>
 </blockquote>
 </li>
-<li><p class="first"><tt class="docutils literal"><span class="pre">task-succeeded(uuid,</span> <span class="pre">result,</span> <span class="pre">runtime,</span> <span class="pre">hostname,</span> <span class="pre">timestamp)</span></tt></p>
+<li><p class="first"><cite>task-succeeded(uuid, result, runtime, hostname, timestamp)</cite></p>
 <blockquote>
 <p>Sent if the task executed successfully.</p>
 <p>Runtime is the time it took to execute the task using the pool.
@@ -520,21 +520,20 @@ it with the <tt class="docutils literal"><span class="pre">-c</span></tt> option
 pool result handler callback is called).</p>
 </blockquote>
 </li>
-<li><p class="first"><tt class="docutils literal"><span class="pre">task-failed(uuid,</span> <span class="pre">exception,</span> <span class="pre">traceback,</span> <span class="pre">hostname,</span> <span class="pre">timestamp)</span></tt></p>
+<li><p class="first"><cite>task-failed(uuid, exception, traceback, hostname, timestamp)</cite></p>
 <blockquote>
 <p>Sent if the execution of the task failed.</p>
 </blockquote>
 </li>
-<li><p class="first"><tt class="docutils literal"><span class="pre">task-revoked(uuid)</span></tt></p>
+<li><p class="first"><cite>task-revoked(uuid)</cite></p>
 <blockquote>
 <p>Sent if the task has been revoked (Note that this is likely
 to be sent by more than one worker).</p>
 </blockquote>
 </li>
-<li><p class="first"><tt class="docutils literal"><span class="pre">task-retried(uuid,</span> <span class="pre">exception,</span> <span class="pre">traceback,</span> <span class="pre">hostname,</span> <span class="pre">delay,</span> <span class="pre">timestamp)</span></tt></p>
+<li><p class="first"><cite>task-retried(uuid, exception, traceback, hostname, timestamp)</cite></p>
 <blockquote>
-<p>Sent if the task failed, but will be retried in the future.
-(<strong>NOT IMPLEMENTED</strong>)</p>
+<p>Sent if the task failed, but will be retried in the future.</p>
 </blockquote>
 </li>
 </ul>
@@ -542,18 +541,18 @@ to be sent by more than one worker).</p>
 <div class="section" id="worker-events">
 <span id="event-reference-worker"></span><h4><a class="toc-backref" href="#id21">Worker Events</a><a class="headerlink" href="#worker-events" title="Permalink to this headline">¶</a></h4>
 <ul>
-<li><p class="first"><tt class="docutils literal"><span class="pre">worker-online(hostname,</span> <span class="pre">timestamp)</span></tt></p>
+<li><p class="first"><cite>worker-online(hostname, timestamp)</cite></p>
 <blockquote>
 <p>The worker has connected to the broker and is online.</p>
 </blockquote>
 </li>
-<li><p class="first"><tt class="docutils literal"><span class="pre">worker-heartbeat(hostname,</span> <span class="pre">timestamp)</span></tt></p>
+<li><p class="first"><cite>worker-heartbeat(hostname, timestamp)</cite></p>
 <blockquote>
 <p>Sent every minute, if the worker has not sent a heartbeat in 2 minutes,
 it is considered to be offline.</p>
 </blockquote>
 </li>
-<li><p class="first"><tt class="docutils literal"><span class="pre">worker-offline(hostname,</span> <span class="pre">timestamp)</span></tt></p>
+<li><p class="first"><cite>worker-offline(hostname, timestamp)</cite></p>
 <blockquote>
 <p>The worker has disconnected from the broker.</p>
 </blockquote>
@@ -615,13 +614,13 @@ it is considered to be offline.</p>
         <li class="right" >
           <a href="routing.html" title="Routing Tasks"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Logging - celery.log &mdash; Celery v2.1.1 documentation</title>
+    <title>Logging - celery.log &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Event Snapshots - celery.events.snapshot" href="celery.events.snapshot.html" />
     <link rel="prev" title="Message Routers - celery.routes" href="celery.routes.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.routes.html" title="Message Routers - celery.routes"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -64,6 +64,78 @@
 <dt id="celery.log.ColorFormatter.format">
 <tt class="descname">format</tt><big>(</big><em>record</em><big>)</big><a class="headerlink" href="#celery.log.ColorFormatter.format" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.log.ColorFormatter.formatException">
+<tt class="descname">formatException</tt><big>(</big><em>ei</em><big>)</big><a class="headerlink" href="#celery.log.ColorFormatter.formatException" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.log.Logging">
+<em class="property">class </em><tt class="descclassname">celery.log.</tt><tt class="descname">Logging</tt><big>(</big><em>app</em><big>)</big><a class="headerlink" href="#celery.log.Logging" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.log.Logging.get_default_logger">
+<tt class="descname">get_default_logger</tt><big>(</big><em>loglevel=None</em>, <em>name='celery'</em><big>)</big><a class="headerlink" href="#celery.log.Logging.get_default_logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get default logger instance.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>loglevel</strong> &#8211; Initial log level.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.log.Logging.get_task_logger">
+<tt class="descname">get_task_logger</tt><big>(</big><em>loglevel=None</em>, <em>name=None</em><big>)</big><a class="headerlink" href="#celery.log.Logging.get_task_logger" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.log.Logging.redirect_stdouts_to_logger">
+<tt class="descname">redirect_stdouts_to_logger</tt><big>(</big><em>logger</em>, <em>loglevel=None</em><big>)</big><a class="headerlink" href="#celery.log.Logging.redirect_stdouts_to_logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Redirect <tt class="xref py py-class docutils literal"><span class="pre">sys.stdout</span></tt> and <tt class="xref py py-class docutils literal"><span class="pre">sys.stderr</span></tt> to a
+logging instance.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>logger</strong> &#8211; The <tt class="xref py py-class docutils literal"><span class="pre">logging.Logger</span></tt> instance to redirect to.</li>
+<li><strong>loglevel</strong> &#8211; The loglevel redirected messages will be logged as.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.log.Logging.setup_logger">
+<tt class="descname">setup_logger</tt><big>(</big><em>loglevel=None</em>, <em>logfile=None</em>, <em>format=None</em>, <em>colorize=None</em>, <em>name='celery'</em>, <em>root=True</em>, <em>app=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.log.Logging.setup_logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup the <tt class="xref py py-mod docutils literal"><span class="pre">multiprocessing</span></tt> logger.</p>
+<p>If <cite>logfile</cite> is not specified, then <cite>sys.stderr</cite> is used.</p>
+<p>Returns logger object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.log.Logging.setup_logging_subsystem">
+<tt class="descname">setup_logging_subsystem</tt><big>(</big><em>loglevel=None</em>, <em>logfile=None</em>, <em>format=None</em>, <em>colorize=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.log.Logging.setup_logging_subsystem" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.log.Logging.setup_task_logger">
+<tt class="descname">setup_task_logger</tt><big>(</big><em>loglevel=None</em>, <em>logfile=None</em>, <em>format=None</em>, <em>colorize=None</em>, <em>task_kwargs=None</em>, <em>app=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.log.Logging.setup_task_logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup the task logger.</p>
+<p>If <cite>logfile</cite> is not specified, then <cite>sys.stderr</cite> is used.</p>
+<p>Returns logger object.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -105,7 +177,7 @@ are ignored.</p>
 <dl class="method">
 <dt id="celery.log.LoggingProxy.isatty">
 <tt class="descname">isatty</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.log.LoggingProxy.isatty" title="Permalink to this definition">¶</a></dt>
-<dd><p>Always returns <tt class="xref docutils literal"><span class="pre">False</span></tt>. Just here for file support.</p>
+<dd><p>Always returns <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt>. Just here for file support.</p>
 </dd></dl>
 
 <dl class="method">
@@ -116,7 +188,7 @@ are ignored.</p>
 <dl class="method">
 <dt id="celery.log.LoggingProxy.writelines">
 <tt class="descname">writelines</tt><big>(</big><em>sequence</em><big>)</big><a class="headerlink" href="#celery.log.LoggingProxy.writelines" title="Permalink to this definition">¶</a></dt>
-<dd><p><tt class="docutils literal"><span class="pre">writelines(sequence_of_strings)</span> <span class="pre">-&gt;</span> <span class="pre">None</span></tt>.</p>
+<dd><p><cite>writelines(sequence_of_strings) -&gt; None</cite>.</p>
 <p>Write the strings to the file.</p>
 <p>The sequence can be any iterable object producing strings.
 This is equivalent to calling <a class="reference internal" href="#celery.log.LoggingProxy.write" title="celery.log.LoggingProxy.write"><tt class="xref py py-meth docutils literal"><span class="pre">write()</span></tt></a> for each string.</p>
@@ -128,76 +200,6 @@ This is equivalent to calling <a class="reference internal" href="#celery.log.Lo
 <dt id="celery.log.SilenceRepeated">
 <em class="property">class </em><tt class="descclassname">celery.log.</tt><tt class="descname">SilenceRepeated</tt><big>(</big><em>action</em>, <em>max_iterations=10</em><big>)</big><a class="headerlink" href="#celery.log.SilenceRepeated" title="Permalink to this definition">¶</a></dt>
 <dd><p>Only log action every n iterations.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.log.emergency_error">
-<tt class="descclassname">celery.log.</tt><tt class="descname">emergency_error</tt><big>(</big><em>logfile</em>, <em>message</em><big>)</big><a class="headerlink" href="#celery.log.emergency_error" title="Permalink to this definition">¶</a></dt>
-<dd><p>Emergency error logging, for when there&#8217;s no standard file
-descriptors open because the process has been daemonized or for
-some other reason.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.log.get_default_logger">
-<tt class="descclassname">celery.log.</tt><tt class="descname">get_default_logger</tt><big>(</big><em>loglevel=None</em>, <em>name='celery'</em><big>)</big><a class="headerlink" href="#celery.log.get_default_logger" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get default logger instance.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>loglevel</strong> &#8211; Initial log level.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.log.get_task_logger">
-<tt class="descclassname">celery.log.</tt><tt class="descname">get_task_logger</tt><big>(</big><em>loglevel=None</em>, <em>name=None</em><big>)</big><a class="headerlink" href="#celery.log.get_task_logger" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="celery.log.redirect_stdouts_to_logger">
-<tt class="descclassname">celery.log.</tt><tt class="descname">redirect_stdouts_to_logger</tt><big>(</big><em>logger</em>, <em>loglevel=None</em><big>)</big><a class="headerlink" href="#celery.log.redirect_stdouts_to_logger" title="Permalink to this definition">¶</a></dt>
-<dd><p>Redirect <tt class="xref py py-class docutils literal"><span class="pre">sys.stdout</span></tt> and <tt class="xref py py-class docutils literal"><span class="pre">sys.stderr</span></tt> to a
-logging instance.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>logger</strong> &#8211; The <tt class="xref py py-class docutils literal"><span class="pre">logging.Logger</span></tt> instance to redirect to.</li>
-<li><strong>loglevel</strong> &#8211; The loglevel redirected messages will be logged as.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.log.setup_logger">
-<tt class="descclassname">celery.log.</tt><tt class="descname">setup_logger</tt><big>(</big><em>loglevel=30</em>, <em>logfile=None</em>, <em>format='</em><span class="optional">[</span>, <em>%(asctime)s: %(levelname)s/%(processName)s</em><span class="optional">]</span>, <em>%(message)s'</em>, <em>colorize=True</em>, <em>name='celery'</em>, <em>root=True</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.log.setup_logger" title="Permalink to this definition">¶</a></dt>
-<dd><p>Setup the <tt class="docutils literal"><span class="pre">multiprocessing</span></tt> logger. If <tt class="docutils literal"><span class="pre">logfile</span></tt> is not specified,
-then <tt class="docutils literal"><span class="pre">stderr</span></tt> is used.</p>
-<p>Returns logger object.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.log.setup_logging_subsystem">
-<tt class="descclassname">celery.log.</tt><tt class="descname">setup_logging_subsystem</tt><big>(</big><em>loglevel=30</em>, <em>logfile=None</em>, <em>format='</em><span class="optional">[</span>, <em>%(asctime)s: %(levelname)s/%(processName)s</em><span class="optional">]</span>, <em>%(message)s'</em>, <em>colorize=True</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.log.setup_logging_subsystem" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="celery.log.setup_task_logger">
-<tt class="descclassname">celery.log.</tt><tt class="descname">setup_task_logger</tt><big>(</big><em>loglevel=30</em>, <em>logfile=None</em>, <em>format='</em><span class="optional">[</span>, <em>%(asctime)s: %(levelname)s/%(processName)s</em><span class="optional">]</span><span class="optional">[</span>, <em>%(task_name)s(%(task_id)s)</em><span class="optional">]</span>, <em>%(message)s'</em>, <em>colorize=True</em>, <em>task_kwargs=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.log.setup_task_logger" title="Permalink to this definition">¶</a></dt>
-<dd><p>Setup the task logger. If <tt class="docutils literal"><span class="pre">logfile</span></tt> is not specified, then
-<tt class="docutils literal"><span class="pre">stderr</span></tt> is used.</p>
-<p>Returns logger object.</p>
 </dd></dl>
 
 </div>
@@ -253,14 +255,14 @@ then <tt class="docutils literal"><span class="pre">stderr</span></tt> is used.<
         <li class="right" >
           <a href="celery.routes.html" title="Message Routers - celery.routes"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

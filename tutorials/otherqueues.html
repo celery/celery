@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Using Celery with Redis/Database as the messaging queue. &mdash; Celery v2.1.1 documentation</title>
+    <title>Using Celery with Redis/Database as the messaging queue. &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,9 +22,9 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../index.html" />
     <link rel="up" title="Tutorials" href="index.html" />
-    <link rel="next" title="Tutorial: Creating a click counter using carrot and celery" href="clickcounter.html" />
+    <link rel="next" title="Tutorial: Creating a click counter using Kombu and celery" href="clickcounter.html" />
     <link rel="prev" title="Tutorials" href="index.html" /> 
   </head>
   <body>
@@ -38,12 +38,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="clickcounter.html" title="Tutorial: Creating a click counter using carrot and celery"
+          <a href="clickcounter.html" title="Tutorial: Creating a click counter using Kombu and celery"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Tutorials"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,39 +55,36 @@
             
   <div class="section" id="using-celery-with-redis-database-as-the-messaging-queue">
 <span id="tut-otherqueues"></span><h1>Using Celery with Redis/Database as the messaging queue.<a class="headerlink" href="#using-celery-with-redis-database-as-the-messaging-queue" title="Permalink to this headline">¶</a></h1>
-<p>There&#8217;s a plug-in for celery that enables the use of Redis or an SQL database
-as the messaging queue. This is not part of celery itself, but exists as
-an extension to <a class="reference external" href="http://pypi.python.org/pypi/carrot">carrot</a>.</p>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference external" href="#installation" id="id2">Installation</a></li>
-<li><a class="reference external" href="#redis" id="id3">Redis</a><ul>
-<li><a class="reference external" href="#configuration" id="id4">Configuration</a></li>
+<li><a class="reference internal" href="#installation" id="id4">Installation</a></li>
+<li><a class="reference internal" href="#redis" id="id5">Redis</a><ul>
+<li><a class="reference internal" href="#configuration" id="id6">Configuration</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#database" id="id5">Database</a><ul>
-<li><a class="reference external" href="#otherqueues-database-conf" id="id6">Configuration</a></li>
-<li><a class="reference external" href="#important-notes" id="id7">Important notes</a></li>
+<li><a class="reference internal" href="#django-database" id="id7">Django Database</a><ul>
+<li><a class="reference internal" href="#id1" id="id8">Configuration</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#otherqueues-django" id="id9">Django Database</a><ul>
+<li><a class="reference internal" href="#id3" id="id10">Configuration</a></li>
 </ul>
 </li>
 </ul>
 </div>
 <div class="section" id="installation">
-<span id="otherqueues-installation"></span><h2><a class="toc-backref" href="#id2">Installation</a><a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
-<p>You need to install the <a class="reference external" href="http://pypi.python.org/pypi/ghettoq">ghettoq</a> library:</p>
-<div class="highlight-python"><pre>$ pip install -U ghettoq</pre>
-</div>
+<span id="otherqueues-installation"></span><h2><a class="toc-backref" href="#id4">Installation</a><a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="redis">
-<span id="otherqueues-redis"></span><h2><a class="toc-backref" href="#id3">Redis</a><a class="headerlink" href="#redis" title="Permalink to this headline">¶</a></h2>
+<span id="otherqueues-redis"></span><h2><a class="toc-backref" href="#id5">Redis</a><a class="headerlink" href="#redis" title="Permalink to this headline">¶</a></h2>
 <p>For the Redis support you have to install the Python redis client:</p>
 <div class="highlight-python"><pre>$ pip install -U redis</pre>
 </div>
 <div class="section" id="configuration">
-<span id="otherqueues-redis-conf"></span><h3><a class="toc-backref" href="#id4">Configuration</a><a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h3>
-<p>Configuration is easy, set the carrot backend, and configure the location of
+<span id="otherqueues-redis-conf"></span><h3><a class="toc-backref" href="#id6">Configuration</a><a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h3>
+<p>Configuration is easy, set the transport, and configure the location of
 your Redis database:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">CARROT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;ghettoq.taproot.Redis&quot;</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">BROKER_BACKEND</span> <span class="o">=</span> <span class="s">&quot;redis&quot;</span>
 
 <span class="n">BROKER_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>  <span class="c"># Maps to redis host.</span>
 <span class="n">BROKER_PORT</span> <span class="o">=</span> <span class="mi">6379</span>         <span class="c"># Maps to redis port.</span>
@@ -96,20 +93,63 @@ your Redis database:</p>
 </div>
 </div>
 </div>
-<div class="section" id="database">
-<span id="otherqueues-database"></span><h2><a class="toc-backref" href="#id5">Database</a><a class="headerlink" href="#database" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="otherqueues-database-conf">
-<span id="id1"></span><h3><a class="toc-backref" href="#id6">Configuration</a><a class="headerlink" href="#otherqueues-database-conf" title="Permalink to this headline">¶</a></h3>
-<p>The database backend uses the Django <tt class="docutils literal"><span class="pre">DATABASE_*</span></tt> settings for database
-configuration values.</p>
+<div class="section" id="django-database">
+<span id="otherqueues-sqlalchemy"></span><h2><a class="toc-backref" href="#id7">Django Database</a><a class="headerlink" href="#django-database" title="Permalink to this headline">¶</a></h2>
+<p id="otherqueues-sqlalchemy-conf">For the SQLAlchemy database transport support you have to install the
+<cite>kombu-sqlalchemy</cite> library:</p>
+<div class="highlight-python"><pre>$ pip install -U kombu-sqlalchemy</pre>
+</div>
+<div class="section" id="id1">
+<h3><a class="toc-backref" href="#id8">Configuration</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<p>This transport uses only the <a class="reference internal" href="../configuration.html#std:setting-BROKER_HOST"><tt class="xref std std-setting docutils literal"><span class="pre">BROKER_HOST</span></tt></a> setting, which have to be
+an SQLAlchemy database URI.</p>
 <ol class="arabic">
-<li><p class="first">Set your carrot backend:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">CARROT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;ghettoq.taproot.Database&quot;</span>
+<li><p class="first">Set your broker transport:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">BROKER_BACKEND</span> <span class="o">=</span> <span class="s">&quot;sqlakombu.transport.Transport&quot;</span>
 </pre></div>
 </div>
 </li>
-<li><p class="first">Add <tt class="xref py py-mod docutils literal"><span class="pre">ghettoq</span></tt> to <tt class="docutils literal"><span class="pre">INSTALLED_APPS</span></tt>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">INSTALLED_APPS</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;ghettoq&quot;</span><span class="p">,</span> <span class="p">)</span>
+<li><p class="first">Configure the database URI:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">BROKER_HOST</span> <span class="o">=</span> <span class="s">&quot;sqlite://celerydb.sqlite&quot;</span>
+</pre></div>
+</div>
+</li>
+</ol>
+<p>Please see <a class="reference external" href="http://www.sqlalchemy.org/docs/dbengine.html#supported-databases">SQLAlchemy: Supported Databases</a> for a table of supported databases.
+Some other <a class="reference external" href="http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments">SQLAlchemy Connection String</a>, examples:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># sqlite (filename)</span>
+<span class="n">BROKER_HOST</span> <span class="o">=</span> <span class="s">&quot;sqlite:///celerydb.sqlite&quot;</span>
+
+<span class="c"># mysql</span>
+<span class="n">BROKER_HOST</span> <span class="o">=</span> <span class="s">&quot;mysql://scott:tiger@localhost/foo&quot;</span>
+
+<span class="c"># postgresql</span>
+<span class="n">BROKER_HOST</span> <span class="o">=</span> <span class="s">&quot;postgresql://scott:tiger@localhost/mydatabase&quot;</span>
+
+<span class="c"># oracle</span>
+<span class="n">BROKER_HOST</span> <span class="o">=</span> <span class="s">&quot;oracle://scott:tiger@127.0.0.1:1521/sidname&quot;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="otherqueues-django">
+<span id="id2"></span><h2><a class="toc-backref" href="#id9">Django Database</a><a class="headerlink" href="#otherqueues-django" title="Permalink to this headline">¶</a></h2>
+<p id="otherqueues-django-conf">For the Django database transport support you have to install the
+<cite>django-kombu</cite> library:</p>
+<div class="highlight-python"><pre>$ pip install -U django-kombu</pre>
+</div>
+<div class="section" id="id3">
+<h3><a class="toc-backref" href="#id10">Configuration</a><a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<p>The database backend uses the Django <cite>DATABASE_*</cite> settings for database
+configuration values.</p>
+<ol class="arabic">
+<li><p class="first">Set your broker transport:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">BROKER_BACKEND</span> <span class="o">=</span> <span class="s">&quot;djkombu.transport.DatabaseTransport&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Add <tt class="xref py py-mod docutils literal"><span class="pre">djkombu</span></tt> to <cite>INSTALLED_APPS</cite>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">INSTALLED_APPS</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;djkombu&quot;</span><span class="p">,</span> <span class="p">)</span>
 </pre></div>
 </div>
 </li>
@@ -129,30 +169,10 @@ you should read the Django database settings reference:
 <ol class="arabic">
 <li><p class="first">Sync your database schema.</p>
 <blockquote>
-<p>When using Django:</p>
-<div class="highlight-python"><pre>$ python manage.py syncdb</pre>
-</div>
+<p>$ python manage.py syncdb</p>
 </blockquote>
 </li>
 </ol>
-</div>
-<div class="section" id="important-notes">
-<span id="otherqueues-notes"></span><h3><a class="toc-backref" href="#id7">Important notes</a><a class="headerlink" href="#important-notes" title="Permalink to this headline">¶</a></h3>
-<p>These message queues does not have the concept of exchanges and routing keys,
-there&#8217;s only the queue entity. As a result of this you need to set the
-name of the exchange to be the same as the queue:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_DEFAULT_EXCHANGE</span> <span class="o">=</span> <span class="s">&quot;tasks&quot;</span>
-</pre></div>
-</div>
-<p>or in a custom queue-mapping:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_QUEUES</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s">&quot;tasks&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s">&quot;exchange&quot;</span><span class="p">:</span> <span class="s">&quot;tasks&quot;</span><span class="p">},</span>
-    <span class="s">&quot;feeds&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s">&quot;exchange&quot;</span><span class="p">:</span> <span class="s">&quot;feeds&quot;</span><span class="p">},</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<p>This isn&#8217;t a problem if you use the default queue setting, as the default is
-already using the same name for queue/exchange.</p>
 </div>
 </div>
 </div>
@@ -170,7 +190,7 @@ already using the same name for queue/exchange.</p>
                         title="previous chapter">Tutorials</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="clickcounter.html"
-                        title="next chapter">Tutorial: Creating a click counter using carrot and celery</a></p>
+                        title="next chapter">Tutorial: Creating a click counter using Kombu and celery</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../sources/tutorials/otherqueues.txt"
@@ -203,18 +223,18 @@ already using the same name for queue/exchange.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="clickcounter.html" title="Tutorial: Creating a click counter using carrot and celery"
+          <a href="clickcounter.html" title="Tutorial: Creating a click counter using Kombu and celery"
              >next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Tutorials"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" >Tutorials</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Routing Tasks &mdash; Celery v2.1.1 documentation</title>
+    <title>Routing Tasks &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Monitoring Guide" href="monitoring.html" />
     <link rel="prev" title="HTTP Callback Tasks (Webhooks)" href="remote-tasks.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="remote-tasks.html" title="HTTP Callback Tasks (Webhooks)"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -64,32 +64,32 @@ respective documentation for more information, or contact the
 </div>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference external" href="#basics" id="id5">Basics</a><ul>
-<li><a class="reference external" href="#automatic-routing" id="id6">Automatic routing</a><ul>
-<li><a class="reference external" href="#changing-the-name-of-the-default-queue" id="id7">Changing the name of the default queue</a></li>
-<li><a class="reference external" href="#how-the-queues-are-defined" id="id8">How the queues are defined</a></li>
+<li><a class="reference internal" href="#basics" id="id5">Basics</a><ul>
+<li><a class="reference internal" href="#automatic-routing" id="id6">Automatic routing</a><ul>
+<li><a class="reference internal" href="#changing-the-name-of-the-default-queue" id="id7">Changing the name of the default queue</a></li>
+<li><a class="reference internal" href="#how-the-queues-are-defined" id="id8">How the queues are defined</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#manual-routing" id="id9">Manual routing</a></li>
+<li><a class="reference internal" href="#manual-routing" id="id9">Manual routing</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#amqp-primer" id="id10">AMQP Primer</a><ul>
-<li><a class="reference external" href="#messages" id="id11">Messages</a></li>
-<li><a class="reference external" href="#producers-consumers-and-brokers" id="id12">Producers, consumers and brokers</a></li>
-<li><a class="reference external" href="#exchanges-queues-and-routing-keys" id="id13">Exchanges, queues and routing keys.</a></li>
-<li><a class="reference external" href="#exchange-types" id="id14">Exchange types</a><ul>
-<li><a class="reference external" href="#direct-exchanges" id="id15">Direct exchanges</a></li>
-<li><a class="reference external" href="#topic-exchanges" id="id16">Topic exchanges</a></li>
+<li><a class="reference internal" href="#amqp-primer" id="id10">AMQP Primer</a><ul>
+<li><a class="reference internal" href="#messages" id="id11">Messages</a></li>
+<li><a class="reference internal" href="#producers-consumers-and-brokers" id="id12">Producers, consumers and brokers</a></li>
+<li><a class="reference internal" href="#exchanges-queues-and-routing-keys" id="id13">Exchanges, queues and routing keys.</a></li>
+<li><a class="reference internal" href="#exchange-types" id="id14">Exchange types</a><ul>
+<li><a class="reference internal" href="#direct-exchanges" id="id15">Direct exchanges</a></li>
+<li><a class="reference internal" href="#topic-exchanges" id="id16">Topic exchanges</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#related-api-commands" id="id17">Related API commands</a></li>
-<li><a class="reference external" href="#hands-on-with-the-api" id="id18">Hands-on with the API</a></li>
+<li><a class="reference internal" href="#related-api-commands" id="id17">Related API commands</a></li>
+<li><a class="reference internal" href="#hands-on-with-the-api" id="id18">Hands-on with the API</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#id2" id="id19">Routing Tasks</a><ul>
-<li><a class="reference external" href="#defining-queues" id="id20">Defining queues</a></li>
-<li><a class="reference external" href="#specifying-task-destination" id="id21">Specifying task destination</a></li>
-<li><a class="reference external" href="#routers" id="id22">Routers</a></li>
+<li><a class="reference internal" href="#id2" id="id19">Routing Tasks</a><ul>
+<li><a class="reference internal" href="#defining-queues" id="id20">Defining queues</a></li>
+<li><a class="reference internal" href="#specifying-task-destination" id="id21">Specifying task destination</a></li>
+<li><a class="reference internal" href="#routers" id="id22">Routers</a></li>
 </ul>
 </li>
 </ul>
@@ -103,16 +103,16 @@ respective documentation for more information, or contact the
 <p>With this setting on, a named queue that is not already defined in
 <a class="reference internal" href="../configuration.html#std:setting-CELERY_QUEUES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_QUEUES</span></tt></a> will be created automatically.  This makes it easy to
 perform simple routing tasks.</p>
-<p>Say you have two servers, <tt class="docutils literal"><span class="pre">x</span></tt>, and <tt class="docutils literal"><span class="pre">y</span></tt> that handles regular tasks,
-and one server <tt class="docutils literal"><span class="pre">z</span></tt>, that only handles feed related tasks.  You can use this
+<p>Say you have two servers, <cite>x</cite>, and <cite>y</cite> that handles regular tasks,
+and one server <cite>z</cite>, that only handles feed related tasks.  You can use this
 configuration:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_ROUTES</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;feed.tasks.import_feed&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s">&quot;queue&quot;</span><span class="p">:</span> <span class="s">&quot;feeds&quot;</span><span class="p">}}</span>
 </pre></div>
 </div>
 <p>With this route enabled import feed tasks will be routed to the
-<tt class="docutils literal"><span class="pre">&quot;feeds&quot;</span></tt> queue, while all other tasks will be routed to the default queue
-(named <tt class="docutils literal"><span class="pre">&quot;celery&quot;</span></tt> for historic reasons).</p>
-<p>Now you can start server <tt class="docutils literal"><span class="pre">z</span></tt> to only process the feeds queue like this:</p>
+<cite>&#8220;feeds&#8221;</cite> queue, while all other tasks will be routed to the default queue
+(named <cite>&#8220;celery&#8221;</cite> for historic reasons).</p>
+<p>Now you can start server <cite>z</cite> to only process the feeds queue like this:</p>
 <div class="highlight-python"><pre>(z)$ celeryd -Q feeds</pre>
 </div>
 <p>You can specify as many queues as you want, so you can make this server
@@ -134,21 +134,21 @@ configuration:</p>
 <p>The point with this feature is to hide the complex AMQP protocol for users
 with only basic needs. However &#8211; you may still be interested in how these queues
 are declared.</p>
-<p>A queue named <tt class="docutils literal"><span class="pre">&quot;video&quot;</span></tt> will be created with the following settings:</p>
+<p>A queue named <cite>&#8220;video&#8221;</cite> will be created with the following settings:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;exchange&quot;</span><span class="p">:</span> <span class="s">&quot;video&quot;</span><span class="p">,</span>
  <span class="s">&quot;exchange_type&quot;</span><span class="p">:</span> <span class="s">&quot;direct&quot;</span><span class="p">,</span>
  <span class="s">&quot;routing_key&quot;</span><span class="p">:</span> <span class="s">&quot;video&quot;</span><span class="p">}</span>
 </pre></div>
 </div>
-<p>The non-AMQP backends like <tt class="docutils literal"><span class="pre">ghettoq</span></tt> does not support exchanges, so they
+<p>The non-AMQP backends like <cite>ghettoq</cite> does not support exchanges, so they
 require the exchange to have the same name as the queue. Using this design
 ensures it will work for them as well.</p>
 </div>
 </div>
 <div class="section" id="manual-routing">
 <span id="routing-manual"></span><h3><a class="toc-backref" href="#id9">Manual routing</a><a class="headerlink" href="#manual-routing" title="Permalink to this headline">¶</a></h3>
-<p>Say you have two servers, <tt class="docutils literal"><span class="pre">x</span></tt>, and <tt class="docutils literal"><span class="pre">y</span></tt> that handles regular tasks,
-and one server <tt class="docutils literal"><span class="pre">z</span></tt>, that only handles feed related tasks, you can use this
+<p>Say you have two servers, <cite>x</cite>, and <cite>y</cite> that handles regular tasks,
+and one server <cite>z</cite>, that only handles feed related tasks, you can use this
 configuration:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_DEFAULT_QUEUE</span> <span class="o">=</span> <span class="s">&quot;default&quot;</span>
 <span class="n">CELERY_QUEUES</span> <span class="o">=</span> <span class="p">{</span>
@@ -168,7 +168,7 @@ configuration:</p>
 exchange/type/binding_key, if you don&#8217;t set exchange or exchange type, they
 will be taken from the <a class="reference internal" href="../configuration.html#std:setting-CELERY_DEFAULT_EXCHANGE"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_DEFAULT_EXCHANGE</span></tt></a> and
 <a class="reference internal" href="../configuration.html#std:setting-CELERY_DEFAULT_EXCHANGE_TYPE"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_DEFAULT_EXCHANGE_TYPE</span></tt></a> settings.</p>
-<p>To route a task to the <tt class="docutils literal"><span class="pre">feed_tasks</span></tt> queue, you can add an entry in the
+<p>To route a task to the <cite>feed_tasks</cite> queue, you can add an entry in the
 <a class="reference internal" href="../configuration.html#std:setting-CELERY_ROUTES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ROUTES</span></tt></a> setting:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_ROUTES</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s">&quot;feeds.tasks.import_feed&quot;</span><span class="p">:</span> <span class="p">{</span>
@@ -178,7 +178,7 @@ will be taken from the <a class="reference internal" href="../configuration.html
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>You can also override this using the <tt class="docutils literal"><span class="pre">routing_key</span></tt> argument to
+<p>You can also override this using the <cite>routing_key</cite> argument to
 <a class="reference internal" href="../reference/celery.execute.html#celery.execute.apply_async" title="celery.execute.apply_async"><tt class="xref py py-func docutils literal"><span class="pre">apply_async()</span></tt></a>, or <a class="reference internal" href="../reference/celery.execute.html#celery.execute.send_task" title="celery.execute.send_task"><tt class="xref py py-func docutils literal"><span class="pre">send_task()</span></tt></a>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">feeds.tasks</span> <span class="kn">import</span> <span class="n">import_feed</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">import_feed</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;http://cnn.com/rss&quot;</span><span class="p">],</span>
@@ -186,11 +186,11 @@ will be taken from the <a class="reference internal" href="../configuration.html
 <span class="gp">... </span>                        <span class="n">routing_key</span><span class="o">=</span><span class="s">&quot;feed.import&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>To make server <tt class="docutils literal"><span class="pre">z</span></tt> consume from the feed queue exclusively you can
-start it with the <tt class="docutils literal"><span class="pre">-Q</span></tt> option:</p>
+<p>To make server <cite>z</cite> consume from the feed queue exclusively you can
+start it with the <cite>-Q</cite> option:</p>
 <div class="highlight-python"><pre>(z)$ celeryd -Q feed_tasks --hostname=z.example.com</pre>
 </div>
-<p>Servers <tt class="docutils literal"><span class="pre">x</span></tt> and <tt class="docutils literal"><span class="pre">y</span></tt> must be configured to consume from the default queue:</p>
+<p>Servers <cite>x</cite> and <cite>y</cite> must be configured to consume from the default queue:</p>
 <div class="highlight-python"><pre>(x)$ celeryd -Q default --hostname=x.example.com
 (y)$ celeryd -Q default --hostname=y.example.com</pre>
 </div>
@@ -270,7 +270,7 @@ different messaging scenarios.</li>
 <li>Bind the queue to the exchange.</li>
 </ol>
 <p>Celery automatically creates the entities necessary for the queues in
-<a class="reference internal" href="../configuration.html#std:setting-CELERY_QUEUES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_QUEUES</span></tt></a> to work (except if the queue&#8217;s <tt class="docutils literal"><span class="pre">auto_declare</span></tt>
+<a class="reference internal" href="../configuration.html#std:setting-CELERY_QUEUES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_QUEUES</span></tt></a> to work (except if the queue&#8217;s <cite>auto_declare</cite>
 setting is set to <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt>).</p>
 <p>Here&#8217;s an example queue configuration with three queues;
 One for video, one for images and one default queue for everything else:</p>
@@ -294,31 +294,31 @@ One for video, one for images and one default queue for everything else:</p>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">In Celery the <tt class="docutils literal"><span class="pre">routing_key</span></tt> is the key used to send the message,
-while <tt class="docutils literal"><span class="pre">binding_key</span></tt> is the key the queue is bound with.  In the AMQP API
+<p class="last">In Celery the <cite>routing_key</cite> is the key used to send the message,
+while <cite>binding_key</cite> is the key the queue is bound with.  In the AMQP API
 they are both referred to as the routing key.</p>
 </div>
 </div>
 <div class="section" id="exchange-types">
 <span id="amqp-exchange-types"></span><h3><a class="toc-backref" href="#id14">Exchange types</a><a class="headerlink" href="#exchange-types" title="Permalink to this headline">¶</a></h3>
 <p>The exchange type defines how the messages are routed through the exchange.
-The exchange types defined in the standard are <tt class="docutils literal"><span class="pre">direct</span></tt>, <tt class="docutils literal"><span class="pre">topic</span></tt>,
-<tt class="docutils literal"><span class="pre">fanout</span></tt> and <tt class="docutils literal"><span class="pre">headers</span></tt>.  Also non-standard exchange types are available
+The exchange types defined in the standard are <cite>direct</cite>, <cite>topic</cite>,
+<cite>fanout</cite> and <cite>headers</cite>.  Also non-standard exchange types are available
 as plugins to RabbitMQ, like the <a class="reference external" href="http://github.com/squaremo/rabbitmq-lvc-plugin">last-value-cache plug-in</a> by Michael
 Bridgen.</p>
 <div class="section" id="direct-exchanges">
 <span id="amqp-exchange-type-direct"></span><h4><a class="toc-backref" href="#id15">Direct exchanges</a><a class="headerlink" href="#direct-exchanges" title="Permalink to this headline">¶</a></h4>
 <p>Direct exchanges match by exact routing keys, so a queue bound by
-the routing key <tt class="docutils literal"><span class="pre">video</span></tt> only receives messages with that routing key.</p>
+the routing key <cite>video</cite> only receives messages with that routing key.</p>
 </div>
 <div class="section" id="topic-exchanges">
 <span id="amqp-exchange-type-topic"></span><h4><a class="toc-backref" href="#id16">Topic exchanges</a><a class="headerlink" href="#topic-exchanges" title="Permalink to this headline">¶</a></h4>
 <p>Topic exchanges matches routing keys using dot-separated words, and the
-wildcard characters: <tt class="docutils literal"><span class="pre">*</span></tt> (matches a single word), and <tt class="docutils literal"><span class="pre">#</span></tt> (matches
+wildcard characters: <cite>*</cite> (matches a single word), and <cite>#</cite> (matches
 zero or more words).</p>
-<p>With routing keys like <tt class="docutils literal"><span class="pre">usa.news</span></tt>, <tt class="docutils literal"><span class="pre">usa.weather</span></tt>, <tt class="docutils literal"><span class="pre">norway.news</span></tt> and
-<tt class="docutils literal"><span class="pre">norway.weather</span></tt>, bindings could be <tt class="docutils literal"><span class="pre">*.news</span></tt> (all news), <tt class="docutils literal"><span class="pre">usa.#</span></tt> (all
-items in the USA) or <tt class="docutils literal"><span class="pre">usa.weather</span></tt> (all USA weather items).</p>
+<p>With routing keys like <cite>usa.news</cite>, <cite>usa.weather</cite>, <cite>norway.news</cite> and
+<cite>norway.weather</cite>, bindings could be <cite>*.news</cite> (all news), <cite>usa.#</cite> (all
+items in the USA) or <cite>usa.weather</cite> (all USA weather items).</p>
 </div>
 </div>
 <div class="section" id="related-api-commands">
@@ -352,7 +352,7 @@ when there are no more queues using it.</li>
 <tt class="descclassname">queue.</tt><tt class="descname">declare</tt><big>(</big><em>queue_name</em>, <em>passive</em>, <em>durable</em>, <em>exclusive</em>, <em>auto_delete</em><big>)</big><a class="headerlink" href="#queue.declare" title="Permalink to this definition">¶</a></dt>
 <dd><p>Declares a queue by name.</p>
 <p>Exclusive queues can only be consumed from by the current connection.
-Exclusive also implies <tt class="docutils literal"><span class="pre">auto_delete</span></tt>.</p>
+Exclusive also implies <cite>auto_delete</cite>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -389,17 +389,17 @@ be the one to create it.</p>
 It&#8217;s used for command-line access to the AMQP API, enabling access to
 administration tasks like creating/deleting queues and exchanges, purging
 queues or sending messages.</p>
-<p>You can write commands directly in the arguments to <tt class="docutils literal"><span class="pre">camqadm</span></tt>, or just start
+<p>You can write commands directly in the arguments to <cite>camqadm</cite>, or just start
 with no arguments to start it in shell-mode:</p>
 <div class="highlight-python"><pre>$ camqadm
 -&gt; connecting to amqp://guest@localhost:5672/.
 -&gt; connected.
 1&gt;</pre>
 </div>
-<p>Here <tt class="docutils literal"><span class="pre">1&gt;</span></tt> is the prompt.  The number 1, is the number of commands you
-have executed so far.  Type <tt class="docutils literal"><span class="pre">help</span></tt> for a list of commands available.
+<p>Here <cite>1&gt;</cite> is the prompt.  The number 1, is the number of commands you
+have executed so far.  Type <cite>help</cite> for a list of commands available.
 It also supports autocompletion, so you can start typing a command and then
-hit the <tt class="docutils literal"><span class="pre">tab</span></tt> key to show a list of possible matches.</p>
+hit the <cite>tab</cite> key to show a list of possible matches.</p>
 <p>Let&#8217;s create a queue we can send messages to:</p>
 <div class="highlight-python"><pre>1&gt; exchange.declare testexchange direct
 ok.
@@ -408,17 +408,17 @@ ok. queue:testqueue messages:0 consumers:0.
 3&gt; queue.bind testqueue testexchange testkey
 ok.</pre>
 </div>
-<p>This created the direct exchange <tt class="docutils literal"><span class="pre">testexchange</span></tt>, and a queue
-named <tt class="docutils literal"><span class="pre">testqueue</span></tt>.  The queue is bound to the exchange using
-the routing key <tt class="docutils literal"><span class="pre">testkey</span></tt>.</p>
-<p>From now on all messages sent to the exchange <tt class="docutils literal"><span class="pre">testexchange</span></tt> with routing
-key <tt class="docutils literal"><span class="pre">testkey</span></tt> will be moved to this queue.  We can send a message by
-using the <tt class="docutils literal"><span class="pre">basic.publish</span></tt> command:</p>
+<p>This created the direct exchange <cite>testexchange</cite>, and a queue
+named <cite>testqueue</cite>.  The queue is bound to the exchange using
+the routing key <cite>testkey</cite>.</p>
+<p>From now on all messages sent to the exchange <cite>testexchange</cite> with routing
+key <cite>testkey</cite> will be moved to this queue.  We can send a message by
+using the <cite>basic.publish</cite> command:</p>
 <div class="highlight-python"><pre>4&gt; basic.publish "This is a message!" testexchange testkey
 ok.</pre>
 </div>
 <p>Now that the message is sent we can retrieve it again.  We use the
-<tt class="docutils literal"><span class="pre">basic.get</span></tt> command here, which pops a single message off the queue,
+<cite>basic.get</cite> command here, which pops a single message off the queue,
 this command is not recommended for production as it implies polling, any
 real application would declare consumers instead.</p>
 <p>Pop a message off the queue:</p>
@@ -439,8 +439,8 @@ another consumer.</p>
 every received message has a unique delivery tag,
 This tag is used to acknowledge the message.  Also note that
 delivery tags are not unique across connections, so in another client
-the delivery tag <tt class="docutils literal"><span class="pre">1</span></tt> might point to a different message than in this channel.</p>
-<p>You can acknowledge the message we received using <tt class="docutils literal"><span class="pre">basic.ack</span></tt>:</p>
+the delivery tag <cite>1</cite> might point to a different message than in this channel.</p>
+<p>You can acknowledge the message we received using <cite>basic.ack</cite>:</p>
 <div class="highlight-python"><pre>6&gt; basic.ack 1
 ok.</pre>
 </div>
@@ -492,7 +492,7 @@ in <a class="reference internal" href="../configuration.html#std:setting-CELERY_
 <ol class="arabic simple">
 <li>The <a class="reference internal" href="#routers"><em>Routers</em></a> defined in <a class="reference internal" href="../configuration.html#std:setting-CELERY_ROUTES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ROUTES</span></tt></a>.</li>
 <li>The routing arguments to <a class="reference internal" href="../reference/celery.execute.html#celery.execute.apply_async" title="celery.execute.apply_async"><tt class="xref py py-func docutils literal"><span class="pre">apply_async()</span></tt></a>.</li>
-<li>Routing related attributes defined on the <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task" title="celery.task.base.Task"><tt class="xref py py-class docutils literal"><span class="pre">Task</span></tt></a>
+<li>Routing related attributes defined on the <tt class="xref py py-class docutils literal"><span class="pre">Task</span></tt>
 itself.</li>
 </ol>
 <p>It is considered best practice to not hard-code these settings, but rather
@@ -504,7 +504,7 @@ as task attributes.</p>
 <span id="id4"></span><h3><a class="toc-backref" href="#id22">Routers</a><a class="headerlink" href="#routers" title="Permalink to this headline">¶</a></h3>
 <p>A router is a class that decides the routing options for a task.</p>
 <p>All you need to define a new router is to create a class with a
-<tt class="docutils literal"><span class="pre">route_for_task</span></tt> method:</p>
+<cite>route_for_task</cite> method:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyRouter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="nf">route_for_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
@@ -515,7 +515,7 @@ as task attributes.</p>
         <span class="k">return</span> <span class="bp">None</span>
 </pre></div>
 </div>
-<p>If you return the <tt class="docutils literal"><span class="pre">queue</span></tt> key, it will expand with the defined settings of
+<p>If you return the <cite>queue</cite> key, it will expand with the defined settings of
 that queue in <a class="reference internal" href="../configuration.html#std:setting-CELERY_QUEUES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_QUEUES</span></tt></a>:</p>
 <div class="highlight-python"><pre>{"queue": "video", "routing_key": "video.compress"}
 
@@ -599,13 +599,13 @@ returning a true value, and use that as the final route for the task.</p>
         <li class="right" >
           <a href="remote-tasks.html" title="HTTP Callback Tasks (Webhooks)"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

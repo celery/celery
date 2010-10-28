@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Token Bucket (rate limiting) - celery.worker.buckets &mdash; Celery v2.1.1 documentation</title>
+    <title>Token Bucket (rate limiting) - celery.worker.buckets &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Worker Heartbeats - celery.worker.heartbeat" href="celery.worker.heartbeat.html" />
     <link rel="prev" title="Worker Controller Threads - celery.worker.controllers" href="celery.worker.controllers.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.worker.controllers.html" title="Worker Controller Threads - celery.worker.controllers"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -93,14 +93,14 @@
 <dt id="celery.worker.buckets.TaskBucket">
 <em class="property">class </em><tt class="descclassname">celery.worker.buckets.</tt><tt class="descname">TaskBucket</tt><big>(</big><em>task_registry</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.TaskBucket" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is a collection of token buckets, each task type having
-its own token bucket. If the task type doesn&#8217;t have a rate limit,
+its own token bucket.  If the task type doesn&#8217;t have a rate limit,
 it will have a plain <tt class="xref py py-class docutils literal"><span class="pre">Queue</span></tt> object instead of a
 <a class="reference internal" href="#celery.worker.buckets.TokenBucketQueue" title="celery.worker.buckets.TokenBucketQueue"><tt class="xref py py-class docutils literal"><span class="pre">TokenBucketQueue</span></tt></a>.</p>
 <p>The <a class="reference internal" href="#celery.worker.buckets.TaskBucket.put" title="celery.worker.buckets.TaskBucket.put"><tt class="xref py py-meth docutils literal"><span class="pre">put()</span></tt></a> operation forwards the task to its appropriate bucket,
 while the <a class="reference internal" href="#celery.worker.buckets.TaskBucket.get" title="celery.worker.buckets.TaskBucket.get"><tt class="xref py py-meth docutils literal"><span class="pre">get()</span></tt></a> operation iterates over the buckets and retrieves
 the first available item.</p>
-<p>Say we have three types of tasks in the registry: <tt class="docutils literal"><span class="pre">celery.ping</span></tt>,
-<tt class="docutils literal"><span class="pre">feed.refresh</span></tt> and <tt class="docutils literal"><span class="pre">video.compress</span></tt>, the TaskBucket will consist
+<p>Say we have three types of tasks in the registry: <cite>celery.ping</cite>,
+<cite>feed.refresh</cite> and <cite>video.compress</cite>, the TaskBucket will consist
 of the following items:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;celery.ping&quot;</span><span class="p">:</span> <span class="n">TokenBucketQueue</span><span class="p">(</span><span class="n">fill_rate</span><span class="o">=</span><span class="mi">300</span><span class="p">),</span>
  <span class="s">&quot;feed.refresh&quot;</span><span class="p">:</span> <span class="n">Queue</span><span class="p">(),</span>
@@ -108,7 +108,7 @@ of the following items:</p>
 </pre></div>
 </div>
 <p>The get operation will iterate over these until one of the buckets
-is able to return an item. The underlying datastructure is a <tt class="docutils literal"><span class="pre">dict</span></tt>,
+is able to return an item.  The underlying datastructure is a <cite>dict</cite>,
 so the order is ignored here.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -127,19 +127,21 @@ type class for a given task name.</li>
 <tt class="descname">add_bucket_for_type</tt><big>(</big><em>task_name</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.TaskBucket.add_bucket_for_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a bucket for a task type.</p>
 <p>Will read the tasks rate limit and create a <a class="reference internal" href="#celery.worker.buckets.TokenBucketQueue" title="celery.worker.buckets.TokenBucketQueue"><tt class="xref py py-class docutils literal"><span class="pre">TokenBucketQueue</span></tt></a>
-if it has one. If the task doesn&#8217;t have a rate limit a regular Queue
-will be used.</p>
+if it has one.  If the task doesn&#8217;t have a rate limit
+<a class="reference internal" href="#celery.worker.buckets.FastQueue" title="celery.worker.buckets.FastQueue"><tt class="xref py py-class docutils literal"><span class="pre">FastQueue</span></tt></a> will be used instead.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.buckets.TaskBucket.clear">
 <tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.buckets.TaskBucket.clear" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Delete the data in all of the buckets.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.buckets.TaskBucket.empty">
 <tt class="descname">empty</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.buckets.TaskBucket.empty" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Returns <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if all of the buckets are empty.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.buckets.TaskBucket.get">
@@ -169,7 +171,8 @@ consume tokens from it.</p>
 <dl class="attribute">
 <dt id="celery.worker.buckets.TaskBucket.items">
 <tt class="descname">items</tt><a class="headerlink" href="#celery.worker.buckets.TaskBucket.items" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Flattens the data in all of the buckets into a single list.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.buckets.TaskBucket.put">
@@ -217,7 +220,8 @@ operations.</p>
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>fill_rate</strong> &#8211; The rate in tokens/second that the bucket will
 be refilled.</li>
-<li><strong>capacity</strong> &#8211; Maximum number of tokens in the bucket. Default is 1.</li>
+<li><strong>capacity</strong> &#8211; Maximum number of tokens in the bucket.
+Default is 1.</li>
 </ul>
 </td>
 </tr>
@@ -232,17 +236,19 @@ be refilled.</li>
 <dl class="method">
 <dt id="celery.worker.buckets.TokenBucketQueue.clear">
 <tt class="descclassname">TokenBucketQueue.</tt><tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.buckets.TokenBucketQueue.clear" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Delete all data in the queue.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.buckets.TokenBucketQueue.empty">
 <tt class="descclassname">TokenBucketQueue.</tt><tt class="descname">empty</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.buckets.TokenBucketQueue.empty" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Returns <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if the queue is empty.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.buckets.TokenBucketQueue.expected_time">
 <tt class="descclassname">TokenBucketQueue.</tt><tt class="descname">expected_time</tt><big>(</big><em>tokens=1</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.TokenBucketQueue.expected_time" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the expected time in seconds when a new token should be
+<dd><p>Returns the expected time in seconds of when a new token should be
 available.</p>
 </dd></dl>
 
@@ -256,14 +262,14 @@ available.</p>
 <tbody valign="top">
 <tr class="field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
 <li><strong>RateLimitExceeded</strong> &#8211; If a token could not be consumed from the
-token bucket (consuming from the queue too fast).</li>
+token bucket (consuming from the queue
+too fast).</li>
 <li><strong>Queue.Empty</strong> &#8211; If an item is not immediately available.</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
-<p>Also see <tt class="xref py py-meth docutils literal"><span class="pre">Queue.Queue.get()</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -276,26 +282,26 @@ token bucket (consuming from the queue too fast).</li>
 <tbody valign="top">
 <tr class="field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
 <li><strong>RateLimitExceeded</strong> &#8211; If a token could not be consumed from the
-token bucket (consuming from the queue too fast).</li>
+token bucket (consuming from the queue
+too fast).</li>
 <li><strong>Queue.Empty</strong> &#8211; If an item is not immediately available.</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
-<p>Also see <tt class="xref py py-meth docutils literal"><span class="pre">Queue.Queue.get_nowait()</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.worker.buckets.TokenBucketQueue.items">
 <tt class="descclassname">TokenBucketQueue.</tt><tt class="descname">items</tt><a class="headerlink" href="#celery.worker.buckets.TokenBucketQueue.items" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Underlying data.  Do not modify.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.buckets.TokenBucketQueue.put">
 <tt class="descclassname">TokenBucketQueue.</tt><tt class="descname">put</tt><big>(</big><em>item</em>, <em>block=True</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.TokenBucketQueue.put" title="Permalink to this definition">¶</a></dt>
-<dd><p>Put an item into the queue.</p>
-<p>Also see <tt class="xref py py-meth docutils literal"><span class="pre">Queue.Queue.put()</span></tt>.</p>
+<dd><p>Put an item onto the queue.</p>
 </dd></dl>
 
 <dl class="method">
@@ -311,14 +317,12 @@ token bucket (consuming from the queue too fast).</li>
 </tr>
 </tbody>
 </table>
-<p>Also see <tt class="xref py py-meth docutils literal"><span class="pre">Queue.Queue.put_nowait()</span></tt></p>
 </dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.buckets.TokenBucketQueue.qsize">
 <tt class="descclassname">TokenBucketQueue.</tt><tt class="descname">qsize</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.buckets.TokenBucketQueue.qsize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the size of the queue.</p>
-<p>See <tt class="xref py py-meth docutils literal"><span class="pre">Queue.Queue.qsize()</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -391,14 +395,14 @@ that evaluates lazily.</p>
         <li class="right" >
           <a href="celery.worker.controllers.html" title="Worker Controller Threads - celery.worker.controllers"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

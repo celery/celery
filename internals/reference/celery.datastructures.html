@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Datastructures - celery.datastructures &mdash; Celery v2.1.1 documentation</title>
+    <title>Datastructures - celery.datastructures &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Message Routers - celery.routes" href="celery.routes.html" />
     <link rel="prev" title="Serialization Tools - celery.serialization" href="celery.serialization.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.serialization.html" title="Serialization Tools - celery.serialization"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -60,6 +60,32 @@
 <dt id="celery.datastructures.AttributeDict">
 <em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">AttributeDict</tt><a class="headerlink" href="#celery.datastructures.AttributeDict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dict subclass with attribute access.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.datastructures.AttributeDictMixin">
+<em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">AttributeDictMixin</tt><a class="headerlink" href="#celery.datastructures.AttributeDictMixin" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="celery.datastructures.DictAttribute">
+<em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">DictAttribute</tt><big>(</big><em>obj</em><big>)</big><a class="headerlink" href="#celery.datastructures.DictAttribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dict interface using attributes.</p>
+<dl class="method">
+<dt id="celery.datastructures.DictAttribute.get">
+<tt class="descname">get</tt><big>(</big><em>key</em>, <em>default=None</em><big>)</big><a class="headerlink" href="#celery.datastructures.DictAttribute.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.datastructures.DictAttribute.iteritems">
+<tt class="descname">iteritems</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.datastructures.DictAttribute.iteritems" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.datastructures.DictAttribute.setdefault">
+<tt class="descname">setdefault</tt><big>(</big><em>key</em>, <em>default</em><big>)</big><a class="headerlink" href="#celery.datastructures.DictAttribute.setdefault" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -87,7 +113,7 @@
 <dl class="attribute">
 <dt id="celery.datastructures.ExceptionInfo.traceback">
 <tt class="descname">traceback</tt><a class="headerlink" href="#celery.datastructures.ExceptionInfo.traceback" title="Permalink to this definition">¶</a></dt>
-<dd><p>A traceback from the point when <a class="reference internal" href="#celery.datastructures.ExceptionInfo.exception" title="celery.datastructures.ExceptionInfo.exception"><tt class="xref py py-attr docutils literal"><span class="pre">exception</span></tt></a> was raised.</p>
+<dd><p>A traceback form the point when <a class="reference internal" href="#celery.datastructures.ExceptionInfo.exception" title="celery.datastructures.ExceptionInfo.exception"><tt class="xref py py-attr docutils literal"><span class="pre">exception</span></tt></a> was raised.</p>
 </dd></dl>
 
 </dd></dl>
@@ -96,7 +122,7 @@
 <dt id="celery.datastructures.LimitedSet">
 <em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">LimitedSet</tt><big>(</big><em>maxlen=None</em>, <em>expires=None</em><big>)</big><a class="headerlink" href="#celery.datastructures.LimitedSet" title="Permalink to this definition">¶</a></dt>
 <dd><p>Kind-of Set with limitations.</p>
-<p>Good for when you need to test for membership (<tt class="docutils literal"><span class="pre">a</span> <span class="pre">in</span> <span class="pre">set</span></tt>),
+<p>Good for when you need to test for membership (<cite>a in set</cite>),
 but the list might become to big, so you want to limit it so it doesn&#8217;t
 consume too much resources.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -161,6 +187,44 @@ deleting expired members.</li>
 </dd></dl>
 
 <dl class="class">
+<dt id="celery.datastructures.MultiDictView">
+<em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">MultiDictView</tt><big>(</big><em>*dicts</em><big>)</big><a class="headerlink" href="#celery.datastructures.MultiDictView" title="Permalink to this definition">¶</a></dt>
+<dd><p>View for one more more dicts.</p>
+<ul class="simple">
+<li>When getting a key, the dicts are searched in order.</li>
+<li>When setting a key, the key is added to the first dict.</li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">d1</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;x&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="s">&quot;}</span><span class="gp">&gt;&gt;&gt; </span>
+<span class="n">d2</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;x&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s">&quot;y&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;z&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">MultiDictView</span><span class="p">([</span><span class="n">d1</span><span class="p">,</span> <span class="n">d2</span><span class="p">])</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">]</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span> <span class="n">x</span><span class="p">[</span><span class="s">&quot;y&quot;</span><span class="p">]</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="celery.datastructures.MultiDictView.get">
+<tt class="descname">get</tt><big>(</big><em>key</em>, <em>default=None</em><big>)</big><a class="headerlink" href="#celery.datastructures.MultiDictView.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.datastructures.MultiDictView.setdefault">
+<tt class="descname">setdefault</tt><big>(</big><em>key</em>, <em>default</em><big>)</big><a class="headerlink" href="#celery.datastructures.MultiDictView.setdefault" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.datastructures.MultiDictView.update">
+<tt class="descname">update</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.datastructures.MultiDictView.update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="celery.datastructures.PositionQueue">
 <em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">PositionQueue</tt><big>(</big><em>length</em><big>)</big><a class="headerlink" href="#celery.datastructures.PositionQueue" title="Permalink to this definition">¶</a></dt>
 <dd><p>A positional queue of a specific length, with slots that are either
@@ -171,18 +235,12 @@ is considered <a class="reference internal" href="#celery.datastructures.Positio
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>length</strong> &#8211; see <a class="reference internal" href="#celery.datastructures.PositionQueue.length" title="celery.datastructures.PositionQueue.length"><tt class="xref py py-attr docutils literal"><span class="pre">length</span></tt></a>.</li>
+<li><strong>length</strong> &#8211; Number of items to fill.</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
-<dl class="attribute">
-<dt id="celery.datastructures.PositionQueue.length">
-<tt class="descname">length</tt><a class="headerlink" href="#celery.datastructures.PositionQueue.length" title="Permalink to this definition">¶</a></dt>
-<dd><p>The number of items required for the queue to be considered full.</p>
-</dd></dl>
-
 <dl class="class">
 <dt id="celery.datastructures.PositionQueue.UnfilledPosition">
 <em class="property">class </em><tt class="descname">UnfilledPosition</tt><big>(</big><em>position</em><big>)</big><a class="headerlink" href="#celery.datastructures.PositionQueue.UnfilledPosition" title="Permalink to this definition">¶</a></dt>
@@ -192,13 +250,19 @@ is considered <a class="reference internal" href="#celery.datastructures.Positio
 <dl class="attribute">
 <dt id="celery.datastructures.PositionQueue.filled">
 <tt class="descclassname">PositionQueue.</tt><tt class="descname">filled</tt><a class="headerlink" href="#celery.datastructures.PositionQueue.filled" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the filled slots as a list.</p>
+<dd><p>All filled slots as a list.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="celery.datastructures.PositionQueue.full">
 <tt class="descclassname">PositionQueue.</tt><tt class="descname">full</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.datastructures.PositionQueue.full" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if all of the slots has been filled.</p>
+<dd><p>Returns <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if all of the slots has been filled.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.datastructures.PositionQueue.length">
+<tt class="descclassname">PositionQueue.</tt><tt class="descname">length</tt><a class="headerlink" href="#celery.datastructures.PositionQueue.length" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of items required for the queue to be considered full.</p>
 </dd></dl>
 
 </dd></dl>
@@ -210,22 +274,22 @@ is considered <a class="reference internal" href="#celery.datastructures.Positio
 <p>Please note that the final value is not synchronized, this means
 that you should not update the value by using a previous value, the only
 reliable operations are increment and decrement.</p>
-<p>Example</p>
-<blockquote>
+<p>Example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">max_clients</span> <span class="o">=</span> <span class="n">SharedCounter</span><span class="p">(</span><span class="n">initial_value</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="go"># Thread one</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">max_clients</span> <span class="o">+=</span> <span class="mi">1</span> <span class="c"># OK (safe)</span>
+
+<span class="go"># Thread two</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">max_clients</span> <span class="o">-=</span> <span class="mi">3</span> <span class="c"># OK (safe)</span>
+
+<span class="go"># Main thread</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">client</span> <span class="o">&gt;=</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_clients</span><span class="p">):</span> <span class="c"># Max clients now at 8</span>
+<span class="gp">... </span>   <span class="n">wait</span><span class="p">()</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">max_client</span> <span class="o">=</span> <span class="n">max_clients</span> <span class="o">+</span> <span class="mi">10</span> <span class="c"># NOT OK (unsafe)</span>
 </pre></div>
 </div>
-<p># Thread one
-&gt;&gt;&gt; max_clients += 1 # OK (safe)</p>
-<p># Thread two
-&gt;&gt;&gt; max_clients -= 3 # OK (safe)</p>
-<p># Main thread
-&gt;&gt;&gt; if client &gt;= int(max_clients): # Max clients now at 8
-...    wait()</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">max_client</span> <span class="o">=</span> <span class="n">max_clients</span> <span class="o">+</span> <span class="mi">10</span> <span class="c"># NOT OK (unsafe)</span>
-</pre></div>
-</div>
-</blockquote>
 <dl class="method">
 <dt id="celery.datastructures.SharedCounter.decrement">
 <tt class="descname">decrement</tt><big>(</big><em>n=1</em><big>)</big><a class="headerlink" href="#celery.datastructures.SharedCounter.decrement" title="Permalink to this definition">¶</a></dt>
@@ -247,46 +311,56 @@ reliable operations are increment and decrement.</p>
 <p>See <a class="reference external" href="http://en.wikipedia.org/wiki/Token_Bucket">http://en.wikipedia.org/wiki/Token_Bucket</a>
 Most of this code was stolen from an entry in the ASPN Python Cookbook:
 <a class="reference external" href="http://code.activestate.com/recipes/511490/">http://code.activestate.com/recipes/511490/</a></p>
+<div class="admonition-thread-safety admonition ">
+<p class="first admonition-title">Thread safety</p>
+<p class="last">This implementation is not thread safe.</p>
+</div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>fill_rate</strong> &#8211; see <a class="reference internal" href="#celery.datastructures.TokenBucket.fill_rate" title="celery.datastructures.TokenBucket.fill_rate"><tt class="xref py py-attr docutils literal"><span class="pre">fill_rate</span></tt></a>.</li>
-<li><strong>capacity</strong> &#8211; see <a class="reference internal" href="#celery.datastructures.TokenBucket.capacity" title="celery.datastructures.TokenBucket.capacity"><tt class="xref py py-attr docutils literal"><span class="pre">capacity</span></tt></a>.</li>
+<li><strong>fill_rate</strong> &#8211; Refill rate in tokens/second.</li>
+<li><strong>capacity</strong> &#8211; Max number of tokens.  Default is 1.</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
-<dl class="attribute">
-<dt id="celery.datastructures.TokenBucket.fill_rate">
-<tt class="descname">fill_rate</tt><a class="headerlink" href="#celery.datastructures.TokenBucket.fill_rate" title="Permalink to this definition">¶</a></dt>
-<dd><p>The rate in tokens/second that the bucket will be refilled.</p>
+<dl class="method">
+<dt id="celery.datastructures.TokenBucket.can_consume">
+<tt class="descname">can_consume</tt><big>(</big><em>tokens=1</em><big>)</big><a class="headerlink" href="#celery.datastructures.TokenBucket.can_consume" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if <cite>tokens</cite> number of tokens can be consumed
+from the bucket.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.datastructures.TokenBucket.capacity">
 <tt class="descname">capacity</tt><a class="headerlink" href="#celery.datastructures.TokenBucket.capacity" title="Permalink to this definition">¶</a></dt>
-<dd><p>Maximum number of tokens in the bucket. Default is <tt class="docutils literal"><span class="pre">1</span></tt>.</p>
+<dd><p>Maximum number of tokensin the bucket.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.datastructures.TokenBucket.expected_time">
+<tt class="descname">expected_time</tt><big>(</big><em>tokens=1</em><big>)</big><a class="headerlink" href="#celery.datastructures.TokenBucket.expected_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the expected time in seconds when a new token should be
+available.</p>
+<div class="admonition-warning admonition ">
+<p class="first admonition-title">Warning</p>
+<p class="last">This consumes a token from the bucket.</p>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.datastructures.TokenBucket.fill_rate">
+<tt class="descname">fill_rate</tt><a class="headerlink" href="#celery.datastructures.TokenBucket.fill_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>The rate in tokens/second that the bucket will be refilled</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.datastructures.TokenBucket.timestamp">
 <tt class="descname">timestamp</tt><a class="headerlink" href="#celery.datastructures.TokenBucket.timestamp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Timestamp of the last time a token was taken out of the bucket.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.datastructures.TokenBucket.can_consume">
-<tt class="descname">can_consume</tt><big>(</big><em>tokens=1</em><big>)</big><a class="headerlink" href="#celery.datastructures.TokenBucket.can_consume" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.datastructures.TokenBucket.expected_time">
-<tt class="descname">expected_time</tt><big>(</big><em>tokens=1</em><big>)</big><a class="headerlink" href="#celery.datastructures.TokenBucket.expected_time" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the expected time in seconds when a new token should be
-available. <em>Note: consumes a token from the bucket</em></p>
 </dd></dl>
 
 </dd></dl>
@@ -361,14 +435,14 @@ available. <em>Note: consumes a token from the bucket</em></p>
         <li class="right" >
           <a href="celery.serialization.html" title="Serialization Tools - celery.serialization"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

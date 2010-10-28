@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Contrib: Abortable tasks - celery.contrib.abortable &mdash; Celery v2.1.1 documentation</title>
+    <title>Contrib: Abortable tasks - celery.contrib.abortable &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Events - celery.events" href="celery.events.html" />
     <link rel="prev" title="Messaging - celery.messaging" href="celery.messaging.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.messaging.html" title="Messaging - celery.messaging"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -57,8 +57,8 @@
 <h1>Contrib: Abortable tasks - celery.contrib.abortable<a class="headerlink" href="#contrib-abortable-tasks-celery-contrib-abortable" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference external" href="#abortable-tasks-overview" id="id1">Abortable tasks overview</a><ul>
-<li><a class="reference external" href="#usage-example" id="id2">Usage example</a></li>
+<li><a class="reference internal" href="#abortable-tasks-overview" id="id1">Abortable tasks overview</a><ul>
+<li><a class="reference internal" href="#usage-example" id="id2">Usage example</a></li>
 </ul>
 </li>
 </ul>
@@ -118,9 +118,9 @@ objects that should support abortion by producers.</p>
     <span class="o">...</span>
 </pre></div>
 </div>
-<p>After the <tt class="docutils literal"><span class="pre">async_result.abort()</span></tt> call, the task execution is not
+<p>After the <cite>async_result.abort()</cite> call, the task execution is not
 aborted immediately. In fact, it is not guaranteed to abort at all. Keep
-checking the <tt class="docutils literal"><span class="pre">async_result</span></tt> status, or call <tt class="docutils literal"><span class="pre">async_result.wait()</span></tt> to
+checking the <cite>async_result</cite> status, or call <cite>async_result.wait()</cite> to
 have it block until the task is finished.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -131,10 +131,10 @@ database backends.</p>
 </div>
 <dl class="class">
 <dt id="celery.contrib.abortable.AbortableAsyncResult">
-<em class="property">class </em><tt class="descclassname">celery.contrib.abortable.</tt><tt class="descname">AbortableAsyncResult</tt><big>(</big><em>task_id</em>, <em>backend=None</em><big>)</big><a class="headerlink" href="#celery.contrib.abortable.AbortableAsyncResult" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.contrib.abortable.</tt><tt class="descname">AbortableAsyncResult</tt><big>(</big><em>task_id</em>, <em>backend=None</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.contrib.abortable.AbortableAsyncResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represents a abortable result.</p>
-<p>Specifically, this gives the <tt class="docutils literal"><span class="pre">AsyncResult</span></tt> a <a class="reference internal" href="#celery.contrib.abortable.AbortableAsyncResult.abort" title="celery.contrib.abortable.AbortableAsyncResult.abort"><tt class="xref py py-meth docutils literal"><span class="pre">abort()</span></tt></a> method,
-which sets the state of the underlying Task to <tt class="docutils literal"><span class="pre">&quot;ABORTED&quot;</span></tt>.</p>
+<p>Specifically, this gives the <cite>AsyncResult</cite> a <a class="reference internal" href="#celery.contrib.abortable.AbortableAsyncResult.abort" title="celery.contrib.abortable.AbortableAsyncResult.abort"><tt class="xref py py-meth docutils literal"><span class="pre">abort()</span></tt></a> method,
+which sets the state of the underlying Task to <cite>&#8220;ABORTED&#8221;</cite>.</p>
 <dl class="method">
 <dt id="celery.contrib.abortable.AbortableAsyncResult.abort">
 <tt class="descname">abort</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.contrib.abortable.AbortableAsyncResult.abort" title="Permalink to this definition">¶</a></dt>
@@ -238,13 +238,13 @@ often (for performance).</p>
         <li class="right" >
           <a href="celery.messaging.html" title="Messaging - celery.messaging"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>

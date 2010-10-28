@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Executing Tasks &mdash; Celery v2.1.1 documentation</title>
+    <title>Executing Tasks &mdash; Celery v2.2.0a2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.1',
+        VERSION:     '2.2.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Workers Guide" href="workers.html" />
     <link rel="prev" title="Tasks" href="tasks.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="tasks.html" title="Tasks"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -57,35 +57,35 @@
 <span id="guide-executing"></span><h1>Executing Tasks<a class="headerlink" href="#executing-tasks" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference external" href="#basics" id="id1">Basics</a></li>
-<li><a class="reference external" href="#eta-and-countdown" id="id2">ETA and countdown</a></li>
-<li><a class="reference external" href="#expiration" id="id3">Expiration</a></li>
-<li><a class="reference external" href="#serializers" id="id4">Serializers</a></li>
-<li><a class="reference external" href="#connections-and-connection-timeouts" id="id5">Connections and connection timeouts.</a></li>
-<li><a class="reference external" href="#routing-options" id="id6">Routing options</a></li>
-<li><a class="reference external" href="#amqp-options" id="id7">AMQP options</a></li>
+<li><a class="reference internal" href="#basics" id="id1">Basics</a></li>
+<li><a class="reference internal" href="#eta-and-countdown" id="id2">ETA and countdown</a></li>
+<li><a class="reference internal" href="#expiration" id="id3">Expiration</a></li>
+<li><a class="reference internal" href="#serializers" id="id4">Serializers</a></li>
+<li><a class="reference internal" href="#connections-and-connection-timeouts" id="id5">Connections and connection timeouts.</a></li>
+<li><a class="reference internal" href="#routing-options" id="id6">Routing options</a></li>
+<li><a class="reference internal" href="#amqp-options" id="id7">AMQP options</a></li>
 </ul>
 </div>
 <div class="section" id="basics">
 <span id="executing-basics"></span><h2><a class="toc-backref" href="#id1">Basics</a><a class="headerlink" href="#basics" title="Permalink to this headline">¶</a></h2>
 <p>Executing tasks is done with <tt class="xref py py-meth docutils literal"><span class="pre">apply_async()</span></tt>,
 and the shortcut: <tt class="xref py py-meth docutils literal"><span class="pre">delay()</span></tt>.</p>
-<p><tt class="docutils literal"><span class="pre">delay</span></tt> is simple and convenient, as it looks like calling a regular
+<p><cite>delay</cite> is simple and convenient, as it looks like calling a regular
 function:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">Task</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">,</span> <span class="n">kwarg1</span><span class="o">=</span><span class="s">&quot;x&quot;</span><span class="p">,</span> <span class="n">kwarg2</span><span class="o">=</span><span class="s">&quot;y&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The same using <tt class="docutils literal"><span class="pre">apply_async</span></tt> is written like this:</p>
+<p>The same using <cite>apply_async</cite> is written like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">Task</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">],</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s">&quot;kwarg1&quot;</span><span class="p">:</span> <span class="s">&quot;x&quot;</span><span class="p">,</span> <span class="s">&quot;kwarg2&quot;</span><span class="p">:</span> <span class="s">&quot;y&quot;</span><span class="p">})</span>
 </pre></div>
 </div>
-<p>While <tt class="docutils literal"><span class="pre">delay</span></tt> is convenient, it doesn&#8217;t give you as much control as using
-<tt class="docutils literal"><span class="pre">apply_async</span></tt>.  With <tt class="docutils literal"><span class="pre">apply_async</span></tt> you can override the execution options
-available as attributes on the <tt class="docutils literal"><span class="pre">Task</span></tt> class (see <a class="reference internal" href="tasks.html#task-options"><em>Task options</em></a>).
+<p>While <cite>delay</cite> is convenient, it doesn&#8217;t give you as much control as using
+<cite>apply_async</cite>.  With <cite>apply_async</cite> you can override the execution options
+available as attributes on the <cite>Task</cite> class (see <a class="reference internal" href="tasks.html#task-options"><em>Task options</em></a>).
 In addition you can set countdown/eta, task expiry, provide a custom broker
 connection and more.</p>
 <p>Let&#8217;s go over these in more detail.  All the examples uses a simple task,
-called <tt class="docutils literal"><span class="pre">add</span></tt>, taking two positional arguments and returning the sum:</p>
+called <cite>add</cite>, taking two positional arguments and returning the sum:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span>
 <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
@@ -107,7 +107,7 @@ task class:</p>
 <div class="section" id="eta-and-countdown">
 <span id="executing-eta"></span><h2><a class="toc-backref" href="#id2">ETA and countdown</a><a class="headerlink" href="#eta-and-countdown" title="Permalink to this headline">¶</a></h2>
 <p>The ETA (estimated time of arrival) lets you set a specific date and time that
-is the earliest time at which your task will be executed.  <tt class="docutils literal"><span class="pre">countdown</span></tt> is
+is the earliest time at which your task will be executed.  <cite>countdown</cite> is
 a shortcut to set eta by seconds into the future.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">add</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span> <span class="n">countdown</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>    <span class="c"># this takes at least 3 seconds to return</span>
@@ -121,7 +121,7 @@ in the queue, or heavy network latency.  To make sure your tasks
 are executed in a timely manner you should monitor queue lenghts. Use
 Munin, or similar tools, to receive alerts, so appropiate action can be
 taken to ease the workload.  See <a class="reference internal" href="monitoring.html#monitoring-munin"><em>Munin</em></a>.</p>
-<p>While <tt class="docutils literal"><span class="pre">countdown</span></tt> is an integer, <tt class="docutils literal"><span class="pre">eta</span></tt> must be a <tt class="xref py py-class docutils literal"><span class="pre">datetime</span></tt>
+<p>While <cite>countdown</cite> is an integer, <cite>eta</cite> must be a <tt class="xref py py-class docutils literal"><span class="pre">datetime</span></tt>
 object, specifying an exact date and time (including millisecond precision,
 and timezone information):</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
@@ -133,7 +133,7 @@ and timezone information):</p>
 </div>
 <div class="section" id="expiration">
 <span id="executing-expiration"></span><h2><a class="toc-backref" href="#id3">Expiration</a><a class="headerlink" href="#expiration" title="Permalink to this headline">¶</a></h2>
-<p>The <tt class="docutils literal"><span class="pre">expires</span></tt> argument defines an optional expiry time,
+<p>The <cite>expires</cite> argument defines an optional expiry time,
 either as seconds after task publish, or a specific date and time using
 :class:~datetime.datetime`:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="c"># Task expires after one minute from now.</span>
@@ -153,10 +153,9 @@ the task as <a class="reference internal" href="tasks.html#std:state-REVOKED"><t
 <p>Data transferred between clients and workers needs to be serialized.
 The default serializer is <tt class="xref py py-mod docutils literal"><span class="pre">pickle</span></tt>, but you can
 change this globally or for each individual task.
-There is built-in support for <tt class="xref py py-mod docutils literal"><span class="pre">pickle</span></tt>, <tt class="docutils literal"><span class="pre">JSON</span></tt>, <tt class="docutils literal"><span class="pre">YAML</span></tt>
-and <tt class="docutils literal"><span class="pre">msgpack</span></tt>, and you can also add your own custom serializers by registering
-them into the Carrot serializer registry (see
-<a class="reference external" href="http://packages.python.org/carrot/introduction.html#serialization-of-data">Carrot: Serialization of Data</a>).</p>
+There is built-in support for <tt class="xref py py-mod docutils literal"><span class="pre">pickle</span></tt>, <cite>JSON</cite>, <cite>YAML</cite>
+and <cite>msgpack</cite>, and you can also add your own custom serializers by registering
+them into the Kombu serializer registry (see <a class="reference external" href="http://packages.python.org/kombu/introduction.html#serialization-of-data">Kombu: Serialization of Data</a>).</p>
 <p>Each option has its advantages and disadvantages.</p>
 <dl class="docutils">
 <dt>json &#8211; JSON is supported in many programming languages, is now</dt>
@@ -202,12 +201,12 @@ be available for the worker.</p>
 to use when sending a task:</p>
 <blockquote>
 <ol class="arabic simple">
-<li>The <tt class="docutils literal"><span class="pre">serializer</span></tt> argument to <tt class="docutils literal"><span class="pre">apply_async</span></tt></li>
-<li>The tasks <tt class="docutils literal"><span class="pre">serializer</span></tt> attribute</li>
+<li>The <cite>serializer</cite> argument to <cite>apply_async</cite></li>
+<li>The tasks <cite>serializer</cite> attribute</li>
 <li>The default <a class="reference internal" href="../configuration.html#std:setting-CELERY_TASK_SERIALIZER"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TASK_SERIALIZER</span></tt></a> setting.</li>
 </ol>
 </blockquote>
-<p><em>Using the ``serializer`` argument to ``apply_async``</em>:</p>
+<p><em>Using the `serializer` argument to `apply_async`</em>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span> <span class="n">serializer</span><span class="o">=</span><span class="s">&quot;json&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -215,7 +214,7 @@ to use when sending a task:</p>
 <div class="section" id="connections-and-connection-timeouts">
 <span id="executing-connections"></span><h2><a class="toc-backref" href="#id5">Connections and connection timeouts.</a><a class="headerlink" href="#connections-and-connection-timeouts" title="Permalink to this headline">¶</a></h2>
 <p>Currently there is no support for broker connection pools, so
-<tt class="docutils literal"><span class="pre">apply_async</span></tt> establishes and closes a new connection every time
+<cite>apply_async</cite> establishes and closes a new connection every time
 it is called.  This is something you need to be aware of when sending
 more than one task at a time.</p>
 <p>You handle the connection manually by creating a
@@ -242,7 +241,7 @@ See <a class="reference internal" href="tasksets.html#sets-taskset"><em>Task Set
 </div>
 <p>The connection timeout is the number of seconds to wait before giving up
 on establishing the connection.  You can set this by using the
-<tt class="docutils literal"><span class="pre">connect_timeout</span></tt> argument to <tt class="docutils literal"><span class="pre">apply_async</span></tt>:</p>
+<cite>connect_timeout</cite> argument to <cite>apply_async</cite>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">add</span><span class="o">.</span><span class="n">apply_async</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span> <span class="n">connect_timeout</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -260,10 +259,10 @@ routing key. Let&#8217;s look at an example:</p>
 process video, others process images, and some gather collective intelligence
 about its users.  Some of these tasks are more important, so we want to make
 sure the high priority tasks get sent to dedicated nodes.</p>
-<p>For the sake of this example we have a single exchange called <tt class="docutils literal"><span class="pre">tasks</span></tt>.
+<p>For the sake of this example we have a single exchange called <cite>tasks</cite>.
 There are different types of exchanges, each type interpreting the routing
 key in different ways, implementing different messaging scenarios.</p>
-<p>The most common types used with Celery are <tt class="docutils literal"><span class="pre">direct</span></tt> and <tt class="docutils literal"><span class="pre">topic</span></tt>.</p>
+<p>The most common types used with Celery are <cite>direct</cite> and <cite>topic</cite>.</p>
 <ul>
 <li><p class="first">direct</p>
 <blockquote>
@@ -273,15 +272,15 @@ key in different ways, implementing different messaging scenarios.</p>
 <li><p class="first">topic</p>
 <blockquote>
 <p>In the topic exchange the routing key is made up of words separated by
-dots (<tt class="docutils literal"><span class="pre">.</span></tt>).  Words can be matched by the wild cards <tt class="docutils literal"><span class="pre">*</span></tt> and <tt class="docutils literal"><span class="pre">#</span></tt>,
-where <tt class="docutils literal"><span class="pre">*</span></tt> matches one exact word, and <tt class="docutils literal"><span class="pre">#</span></tt> matches one or many words.</p>
-<p>For example, <tt class="docutils literal"><span class="pre">*.stock.#</span></tt> matches the routing keys <tt class="docutils literal"><span class="pre">usd.stock</span></tt> and
-<tt class="docutils literal"><span class="pre">euro.stock.db</span></tt> but not <tt class="docutils literal"><span class="pre">stock.nasdaq</span></tt>.</p>
+dots (<cite>.</cite>).  Words can be matched by the wild cards <cite>*</cite> and <cite>#</cite>,
+where <cite>*</cite> matches one exact word, and <cite>#</cite> matches one or many words.</p>
+<p>For example, <cite>*.stock.#</cite> matches the routing keys <cite>usd.stock</cite> and
+<cite>euro.stock.db</cite> but not <cite>stock.nasdaq</cite>.</p>
 </blockquote>
 </li>
 </ul>
-<p>We create three queues, <tt class="docutils literal"><span class="pre">video</span></tt>, <tt class="docutils literal"><span class="pre">image</span></tt> and <tt class="docutils literal"><span class="pre">lowpri</span></tt> that binds to
-the <tt class="docutils literal"><span class="pre">tasks</span></tt> exchange.  For the queues we use the following binding keys:</p>
+<p>We create three queues, <cite>video</cite>, <cite>image</cite> and <cite>lowpri</cite> that binds to
+the <cite>tasks</cite> exchange.  For the queues we use the following binding keys:</p>
 <div class="highlight-python"><pre>video: video.#
 image: image.#
 lowpri: misc.#</pre>
@@ -300,8 +299,8 @@ listen to different queues:</p>
 </pre></div>
 </div>
 <p>Later, if the crop task is consuming a lot of resources,
-we can bind new workers to handle just the <tt class="docutils literal"><span class="pre">&quot;image.crop&quot;</span></tt> task,
-by creating a new queue that binds to <tt class="docutils literal"><span class="pre">&quot;image.crop</span></tt>&#8220;.</p>
+we can bind new workers to handle just the <cite>&#8220;image.crop&#8221;</cite> task,
+by creating a new queue that binds to <cite>&#8220;image.crop</cite>&#8221;.</p>
 <div class="admonition-see-also admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last">To find out more about routing, please see <a class="reference internal" href="routing.html#guide-routing"><em>Routing Tasks</em></a>.</p>
@@ -324,7 +323,7 @@ if the task cannot be routed to a worker immediately.</p>
 <ul class="simple">
 <li>priority</li>
 </ul>
-<p>A number between <tt class="docutils literal"><span class="pre">0</span></tt> and <tt class="docutils literal"><span class="pre">9</span></tt>, where <tt class="docutils literal"><span class="pre">0</span></tt> is the highest priority.</p>
+<p>A number between <cite>0</cite> and <cite>9</cite>, where <cite>0</cite> is the highest priority.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">RabbitMQ does not yet support AMQP priorities.</p>
@@ -383,13 +382,13 @@ if the task cannot be routed to a worker immediately.</p>
         <li class="right" >
           <a href="tasks.html" title="Tasks"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
 </html>
