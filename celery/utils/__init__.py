@@ -2,7 +2,6 @@ from __future__ import generators
 
 import os
 import sys
-import time
 import operator
 import importlib
 import logging

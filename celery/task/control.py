@@ -1,7 +1,6 @@
 from kombu.pidbox import Mailbox
 
 from celery.app import app_or_default
-from celery.utils import gen_unique_id
 
 
 def flatten_reply(reply):

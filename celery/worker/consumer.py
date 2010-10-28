@@ -293,8 +293,8 @@ class Consumer(object):
     def on_control(self, message, message_data):
         try:
             self.pidbox_node.handle_message(message, message_data)
-        except KeyError:
-            self.logger.error("No such control command: %s" % command)
+        except KeyError, exc:
+            self.logger.error("No such control command: %s" % exc)
 
     def apply_eta_task(self, task):
         state.task_reserved(task)

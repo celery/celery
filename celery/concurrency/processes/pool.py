@@ -558,7 +558,6 @@ class Pool(object):
         raise
 
     def _worker_active(self, worker):
-        jobs = []
         for job in self._cache.values():
             if worker.pid in job.worker_pids():
                 return True

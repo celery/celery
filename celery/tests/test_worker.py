@@ -16,7 +16,6 @@ from celery.utils import gen_unique_id
 from celery.worker import WorkController
 from celery.worker.buckets import FastQueue
 from celery.worker.job import TaskRequest
-from celery.worker import consumer
 from celery.worker.consumer import Consumer as MainConsumer
 from celery.worker.consumer import QoS, RUN
 
@@ -266,6 +265,7 @@ class test_Consumer(unittest.TestCase):
         l.event_dispatcher = MockEventDispatcher()
         l.pidbox_node = MockNode()
 
+        from celery.worker import consumer
         prev, consumer.to_timestamp = consumer.to_timestamp, to_timestamp
         try:
             l.receive_message(m.decode(), m)

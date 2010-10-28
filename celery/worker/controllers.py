@@ -25,7 +25,7 @@ class Autoscaler(threading.Thread):
         self.max_concurrency = max_concurrency
         self.min_concurrency = min_concurrency
         self.keepalive = keepalive
-        self.logger = logger or log.get_default_logger()
+        self.logger = logger
         self._last_action = None
         self._shutdown = threading.Event()
         self._stopped = threading.Event()
@@ -56,7 +56,6 @@ class Autoscaler(threading.Thread):
             try:
                 self.pool.shrink(n)
             except Exception, exc:
-                import traceback
                 traceback.print_stack()
                 self.logger.error("Autoscaler: scale_down: %r" % (exc, ))
 

@@ -1,5 +1,4 @@
 import sys
-import platform
 
 from celery import platforms
 from celery.bin.base import Command, Option

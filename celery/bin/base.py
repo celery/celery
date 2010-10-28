@@ -4,7 +4,6 @@ import sys
 from optparse import OptionParser, make_option as Option
 
 import celery
-from celery.utils import import_from_cwd
 
 
 class Command(object):
