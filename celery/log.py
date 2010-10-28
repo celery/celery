@@ -35,14 +35,15 @@ class ColorFormatter(logging.Formatter):
     def formatException(self, ei):
         r = logging.Formatter.formatException(self, ei)
         if type(r) in [types.StringType]:
-            r = r.decode("utf-8", "replace") # Convert to unicode
+            r = r.decode("utf-8", "replace")    # Convert to unicode
         return r
 
     def format(self, record):
         levelname = record.levelname
 
         if self.use_color and levelname in COLORS:
-            record.msg = unicode(colored().names[COLORS[levelname]](record.msg))
+            record.msg = unicode(colored().names[COLORS[levelname]](
+                            record.msg))
 
         # Very ugly, but have to make sure processName is supported
         # by foreign logger instances.

@@ -26,7 +26,6 @@ class Control(control.Control):
     Mailbox = MockMailbox
 
 
-
 def with_mock_broadcast(fun):
 
     @wraps(fun)

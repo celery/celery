@@ -95,7 +95,6 @@ class test_lookup_route(unittest.TestCase):
                                        route)
         self.assertNotIn("queue", route)
 
-
     @with_queues(foo=a_queue, bar=b_queue)
     def test_lookup_paths_traversed(self):
         R = routes.prepare(({"celery.xaza": {"queue": "bar"}},

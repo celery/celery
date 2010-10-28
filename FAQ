@@ -367,65 +367,18 @@ Results can also be disabled globally using the
 Can I use Celery with ActiveMQ/STOMP?
 -------------------------------------
 
-**Answer**: Yes, but this is somewhat experimental for now.
-It is working ok in a test configuration, but it has not
-been tested in production. If you have any problems
-using STOMP with Celery, please report an issue here::
+**Answer**: No.  It used to be supported by Carrot,
+but is not currently supported in Kombu.
 
-    http://github.com/ask/celery/issues/
+.. _faq-non-amqp-missing-features:
 
-The STOMP carrot backend requires the `stompy`_ library::
+What features are not supported when not using an AMQP broker?
+--------------------------------------------------------------
 
-    $ pip install stompy
-    $ cd python-stomp
-    $ sudo python setup.py install
-    $ cd ..
+This is an incomplete list of features not available when
+using the virtual transports:
 
-.. _`stompy`: http://pypi.python.org/pypi/stompy
-
-In this example we will use a queue called `celery` which we created in
-the ActiveMQ web admin interface.
-
-**Note**: When using ActiveMQ the queue name needs to have `"/queue/"`
-prepended to it. i.e. the queue `celery` becomes `/queue/celery`.
-
-Since STOMP doesn't have exchanges and the routing capabilities of AMQP,
-you need to set `exchange` name to the same as the queue name. This is
-a minor inconvenience since carrot needs to maintain the same interface
-for both AMQP and STOMP.
-
-Use the following settings in your :file:`celeryconfig.py`/
-django :file:`settings.py`:
-
-.. code-block:: python
-
-    # Use the stomp carrot backend.
-    CARROT_BACKEND = "stomp"
-
-    # STOMP hostname and port settings.
-    BROKER_HOST = "localhost"
-    BROKER_PORT = 61613
-
-    # The queue name to use (the exchange *must* be set to the
-    # same as the queue name when using STOMP)
-    CELERY_DEFAULT_QUEUE = "/queue/celery"
-    CELERY_DEFAULT_EXCHANGE = "/queue/celery" 
-
-    CELERY_QUEUES = {
-        "/queue/celery": {"exchange": "/queue/celery"}
-    }
-
-.. _faq-stomp-missing-features:
-
-What features are not supported when using ghettoq/STOMP?
----------------------------------------------------------
-
-This is a (possible incomplete) list of features not available when
-using the STOMP backend:
-
-    * routing keys
-
-    * exchange types (direct, topic, headers, etc)
+    * The `header` exchange type.
 
     * immediate
 

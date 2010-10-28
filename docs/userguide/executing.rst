@@ -123,8 +123,7 @@ The default serializer is :mod:`pickle`, but you can
 change this globally or for each individual task.
 There is built-in support for :mod:`pickle`, `JSON`, `YAML`
 and `msgpack`, and you can also add your own custom serializers by registering
-them into the Carrot serializer registry (see
-`Kombu: Serialization of Data`_).
+them into the Kombu serializer registry (see `Kombu: Serialization of Data`_).
 
 .. _`Kombu: Serialization of Data`:
     http://packages.python.org/kombu/introduction.html#serialization-of-data

@@ -214,7 +214,7 @@ class Consumer(object):
         pidbox_state = AttributeDict(app=self.app,
                                      logger=logger,
                                      hostname=self.hostname,
-                                     listener=self, # pre 2.2
+                                     listener=self,     # pre 2.2
                                      consumer=self)
         self.pidbox_node = self.app.control.mailbox.Node(self.hostname,
                                                          state=pidbox_state,
@@ -279,7 +279,8 @@ class Consumer(object):
             except OverflowError, exc:
                 self.logger.error(
                     "Couldn't convert eta %s to timestamp: %r. Task: %r" % (
-                        task.eta, exc, task.info(safe=True)), exc_info=sys.exc_info())
+                        task.eta, exc, task.info(safe=True)),
+                    exc_info=sys.exc_info())
                 task.acknowledge()
             else:
                 self.qos.increment()

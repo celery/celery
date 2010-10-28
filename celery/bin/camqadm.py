@@ -131,8 +131,8 @@ class AMQShell(cmd.Cmd):
     :keyword connect: Function used to connect to the server, must return
         connection object.
 
-    :keyword silent: If :const:`True`, the commands won't have annoying output not
-        relevant when running in non-shell mode.
+    :keyword silent: If :const:`True`, the commands won't have annoying
+                     output not relevant when running in non-shell mode.
 
 
     .. attribute: builtins

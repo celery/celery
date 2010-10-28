@@ -108,7 +108,6 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None):
     if SIG_SOFT_TIMEOUT is not None:
         signal.signal(SIG_SOFT_TIMEOUT, soft_timeout_sighandler)
 
-
     completed = 0
     while maxtasks is None or (maxtasks and completed < maxtasks):
         try:

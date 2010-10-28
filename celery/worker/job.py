@@ -553,4 +553,3 @@ class TaskRequest(object):
                    "Task %s[%s] has already been executed" % (
                        self.task_name, self.task_id))
         self.executed = True
-

@@ -6,7 +6,7 @@ import socket
 import sys
 import warnings
 
-from carrot.utils import partition
+from kombu.utils import partition
 
 from celery import __version__
 from celery import platforms

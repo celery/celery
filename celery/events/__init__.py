@@ -28,7 +28,7 @@ def Event(type, **fields):
 class EventDispatcher(object):
     """Send events as messages.
 
-    :param connection: Carrot connection.
+    :param connection: Connection to the broker.
 
     :keyword hostname: Hostname to identify ourselves as,
         by default uses the hostname returned by :func:`socket.gethostname`.
@@ -101,7 +101,7 @@ class EventDispatcher(object):
 class EventReceiver(object):
     """Capture events.
 
-    :param connection: Carrot connection.
+    :param connection: Connection to the broker.
     :keyword handlers: Event handlers.
 
     :attr:`handlers` is a dict of event types and their handlers,

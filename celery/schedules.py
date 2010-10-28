@@ -54,7 +54,7 @@ class schedule(object):
 
 class crontab_parser(object):
     """Parser for crontab expressions. Any expression of the form 'groups'
-    (see BNF grammar below) is accepted and expanded to a set of numbers. 
+    (see BNF grammar below) is accepted and expanded to a set of numbers.
     These numbers represent the units of time that the crontab needs to
     run on::
 

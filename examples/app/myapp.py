@@ -16,6 +16,7 @@ from celery import Celery
 celery = Celery("myapp")
 celery.conf.update(BROKER_HOST="localhost")
 
+
 @celery.task(accept_magic_kwargs=False)
 def add(x, y, **kwargs):
     print("add id: %r %r %r" % (add.request.id, add.request.args,

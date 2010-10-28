@@ -320,7 +320,6 @@ def textindent(t, indent=0):
         return "\n".join(" " * indent + p for p in t.split("\n"))
 
 
-
 def import_from_cwd(module, imp=None):
     """Import module, but make sure it finds modules
     located in the current directory.

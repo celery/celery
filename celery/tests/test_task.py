@@ -761,7 +761,7 @@ class test_crontab_is_due(unittest.TestCase):
     def test_every_hour_execution_is_due(self):
         due, remaining = HourlyPeriodic().is_due(datetime(2010, 5, 10, 6, 30))
         self.assertTrue(due)
-        self.assertEquals(remaining, 60*60)
+        self.assertEquals(remaining, 60 * 60)
 
     @patch_crontab_nowfun(HourlyPeriodic, datetime(2010, 5, 10, 10, 29))
     def test_every_hour_execution_is_not_due(self):
@@ -774,14 +774,14 @@ class test_crontab_is_due(unittest.TestCase):
         due, remaining = QuarterlyPeriodic().is_due(
                             datetime(2010, 5, 10, 6, 30))
         self.assertTrue(due)
-        self.assertEquals(remaining, 15*60)
+        self.assertEquals(remaining, 15 * 60)
 
     @patch_crontab_nowfun(QuarterlyPeriodic, datetime(2010, 5, 10, 10, 30))
     def test_second_quarter_execution_is_due(self):
         due, remaining = QuarterlyPeriodic().is_due(
                             datetime(2010, 5, 10, 6, 30))
         self.assertTrue(due)
-        self.assertEquals(remaining, 15*60)
+        self.assertEquals(remaining, 15 * 60)
 
     @patch_crontab_nowfun(QuarterlyPeriodic, datetime(2010, 5, 10, 10, 14))
     def test_first_quarter_execution_is_not_due(self):
@@ -801,23 +801,22 @@ class test_crontab_is_due(unittest.TestCase):
     def test_daily_execution_is_due(self):
         due, remaining = DailyPeriodic().is_due(datetime(2010, 5, 9, 7, 30))
         self.assertTrue(due)
-        self.assertEquals(remaining, 24*60*60)
+        self.assertEquals(remaining, 24 * 60 * 60)
 
     @patch_crontab_nowfun(DailyPeriodic, datetime(2010, 5, 10, 10, 30))
     def test_daily_execution_is_not_due(self):
         due, remaining = DailyPeriodic().is_due(datetime(2010, 5, 10, 7, 30))
         self.assertFalse(due)
-        self.assertEquals(remaining, 21*60*60)
+        self.assertEquals(remaining, 21 * 60 * 60)
 
     @patch_crontab_nowfun(WeeklyPeriodic, datetime(2010, 5, 6, 7, 30))
     def test_weekly_execution_is_due(self):
         due, remaining = WeeklyPeriodic().is_due(datetime(2010, 4, 30, 7, 30))
         self.assertTrue(due)
-        self.assertEquals(remaining, 7*24*60*60)
+        self.assertEquals(remaining, 7 * 24 * 60 * 60)
 
     @patch_crontab_nowfun(WeeklyPeriodic, datetime(2010, 5, 7, 10, 30))
     def test_weekly_execution_is_not_due(self):
         due, remaining = WeeklyPeriodic().is_due(datetime(2010, 5, 6, 7, 30))
         self.assertFalse(due)
-        self.assertEquals(remaining, 6*24*60*60 - 3*60*60)
-
+        self.assertEquals(remaining, 6 * 24 * 60 * 60 - 3 * 60 * 60)

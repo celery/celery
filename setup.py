@@ -129,7 +129,7 @@ except ImportError:
 install_requires.extend([
     "python-dateutil",
     "anyjson",
-    "kombu>=0.9.0",
+    "kombu>=0.9.1",
     "pyparsing",
 ])
 

@@ -107,7 +107,8 @@ class BaseAsyncResult(object):
     @property
     def result(self):
         """When the task has been executed, this contains the return value.
-        If the task raised an exception, this will be the exception instance."""
+        If the task raised an exception, this will be the exception
+        instance."""
         return self.backend.get_result(self.task_id)
 
     @property

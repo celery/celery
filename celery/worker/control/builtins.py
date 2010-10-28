@@ -172,6 +172,7 @@ def pool_grow(panel, n=1, **kwargs):
     panel.listener.pool.grow(n)
     return {"ok": "spawned worker processes"}
 
+
 @Panel.register
 def pool_shrink(panel, n=1, **kwargs):
     panel.listener.pool.shrink(n)
