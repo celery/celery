@@ -55,29 +55,6 @@
             
   <div class="section" id="messaging-celery-messaging">
 <h1>Messaging - celery.messaging<a class="headerlink" href="#messaging-celery-messaging" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.messaging"></span><p>Sending and Receiving Messages</p>
-<dl class="function">
-<dt id="celery.messaging.establish_connection">
-<tt class="descclassname">celery.messaging.</tt><tt class="descname">establish_connection</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.establish_connection" title="Permalink to this definition">¶</a></dt>
-<dd><p>Establish a connection to the message broker.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.messaging.get_consumer_set">
-<tt class="descclassname">celery.messaging.</tt><tt class="descname">get_consumer_set</tt><big>(</big><em>connection</em>, <em>queues=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.messaging.get_consumer_set" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the <tt class="xref py py-class docutils literal"><span class="pre">kombu.messaging.Consumer</span></tt> for a queue
-configuration.</p>
-<p>Defaults to the queues in <a class="reference internal" href="../configuration.html#std:setting-CELERY_QUEUES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_QUEUES</span></tt></a>.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.messaging.with_connection">
-<tt class="descclassname">celery.messaging.</tt><tt class="descname">with_connection</tt><big>(</big><em>fun</em><big>)</big><a class="headerlink" href="#celery.messaging.with_connection" title="Permalink to this definition">¶</a></dt>
-<dd><p>Decorator for providing default message broker connection for functions
-supporting the <cite>connection</cite> and <cite>connect_timeout</cite> keyword
-arguments.</p>
-</dd></dl>
-
 </div>
 
 

@@ -7,11 +7,6 @@
 .. contents::
     :local:
 
-.. _otherqueues-installation:
-
-Installation
-============
-
 .. _otherqueues-redis:
 
 Redis
@@ -37,12 +32,12 @@ your Redis database::
 
 .. _otherqueues-sqlalchemy:
 
-Django Database
-===============
+SQLAlchemy
+==========
 
 .. _otherqueues-sqlalchemy-conf:
 
-For the SQLAlchemy database transport support you have to install the
+For the SQLAlchemy transport you have to install the
 `kombu-sqlalchemy` library::
 
     $ pip install -U kombu-sqlalchemy

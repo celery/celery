@@ -57,31 +57,27 @@
 <span id="tut-otherqueues"></span><h1>Using Celery with Redis/Database as the messaging queue.<a class="headerlink" href="#using-celery-with-redis-database-as-the-messaging-queue" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference internal" href="#installation" id="id4">Installation</a></li>
-<li><a class="reference internal" href="#redis" id="id5">Redis</a><ul>
-<li><a class="reference internal" href="#configuration" id="id6">Configuration</a></li>
+<li><a class="reference internal" href="#redis" id="id3">Redis</a><ul>
+<li><a class="reference internal" href="#configuration" id="id4">Configuration</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#sqlalchemy" id="id5">SQLAlchemy</a><ul>
+<li><a class="reference internal" href="#id1" id="id6">Configuration</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#django-database" id="id7">Django Database</a><ul>
-<li><a class="reference internal" href="#id1" id="id8">Configuration</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#otherqueues-django" id="id9">Django Database</a><ul>
-<li><a class="reference internal" href="#id3" id="id10">Configuration</a></li>
+<li><a class="reference internal" href="#id2" id="id8">Configuration</a></li>
 </ul>
 </li>
 </ul>
-</div>
-<div class="section" id="installation">
-<span id="otherqueues-installation"></span><h2><a class="toc-backref" href="#id4">Installation</a><a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="redis">
-<span id="otherqueues-redis"></span><h2><a class="toc-backref" href="#id5">Redis</a><a class="headerlink" href="#redis" title="Permalink to this headline">¶</a></h2>
+<span id="otherqueues-redis"></span><h2><a class="toc-backref" href="#id3">Redis</a><a class="headerlink" href="#redis" title="Permalink to this headline">¶</a></h2>
 <p>For the Redis support you have to install the Python redis client:</p>
 <div class="highlight-python"><pre>$ pip install -U redis</pre>
 </div>
 <div class="section" id="configuration">
-<span id="otherqueues-redis-conf"></span><h3><a class="toc-backref" href="#id6">Configuration</a><a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h3>
+<span id="otherqueues-redis-conf"></span><h3><a class="toc-backref" href="#id4">Configuration</a><a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h3>
 <p>Configuration is easy, set the transport, and configure the location of
 your Redis database:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">BROKER_BACKEND</span> <span class="o">=</span> <span class="s">&quot;redis&quot;</span>
@@ -93,14 +89,14 @@ your Redis database:</p>
 </div>
 </div>
 </div>
-<div class="section" id="django-database">
-<span id="otherqueues-sqlalchemy"></span><h2><a class="toc-backref" href="#id7">Django Database</a><a class="headerlink" href="#django-database" title="Permalink to this headline">¶</a></h2>
-<p id="otherqueues-sqlalchemy-conf">For the SQLAlchemy database transport support you have to install the
+<div class="section" id="sqlalchemy">
+<span id="otherqueues-sqlalchemy"></span><h2><a class="toc-backref" href="#id5">SQLAlchemy</a><a class="headerlink" href="#sqlalchemy" title="Permalink to this headline">¶</a></h2>
+<p id="otherqueues-sqlalchemy-conf">For the SQLAlchemy transport you have to install the
 <cite>kombu-sqlalchemy</cite> library:</p>
 <div class="highlight-python"><pre>$ pip install -U kombu-sqlalchemy</pre>
 </div>
 <div class="section" id="id1">
-<h3><a class="toc-backref" href="#id8">Configuration</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id6">Configuration</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <p>This transport uses only the <a class="reference internal" href="../configuration.html#std:setting-BROKER_HOST"><tt class="xref std std-setting docutils literal"><span class="pre">BROKER_HOST</span></tt></a> setting, which have to be
 an SQLAlchemy database URI.</p>
 <ol class="arabic">
@@ -132,14 +128,14 @@ Some other <a class="reference external" href="http://www.sqlalchemy.org/docs/db
 </div>
 </div>
 </div>
-<div class="section" id="otherqueues-django">
-<span id="id2"></span><h2><a class="toc-backref" href="#id9">Django Database</a><a class="headerlink" href="#otherqueues-django" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="django-database">
+<span id="otherqueues-django"></span><h2><a class="toc-backref" href="#id7">Django Database</a><a class="headerlink" href="#django-database" title="Permalink to this headline">¶</a></h2>
 <p id="otherqueues-django-conf">For the Django database transport support you have to install the
 <cite>django-kombu</cite> library:</p>
 <div class="highlight-python"><pre>$ pip install -U django-kombu</pre>
 </div>
-<div class="section" id="id3">
-<h3><a class="toc-backref" href="#id10">Configuration</a><a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id2">
+<h3><a class="toc-backref" href="#id8">Configuration</a><a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
 <p>The database backend uses the Django <cite>DATABASE_*</cite> settings for database
 configuration values.</p>
 <ol class="arabic">
