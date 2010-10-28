@@ -67,7 +67,7 @@ Commands
         $ celeryctl inspect scheduled
 
     These are tasks reserved by the worker because they have the
-    ``eta`` or ``countdown`` argument set.
+    `eta` or `countdown` argument set.
 
 * **inspect reserved**: List reserved tasks
     ::
@@ -106,7 +106,7 @@ Commands
 
 .. note::
 
-    All ``inspect`` commands supports a ``--timeout`` argument,
+    All `inspect` commands supports a `--timeout` argument,
     This is the number of seconds to wait for responses.
     You may have to increase this timeout if you're getting empty responses
     due to latency.
@@ -118,7 +118,7 @@ Specifying destination nodes
 
 By default the inspect commands operates on all workers.
 You can specify a single, or a list of workers by using the
-``--destination`` argument::
+`--destination` argument::
 
     $ celeryctl inspect -d w1,w2 reserved
 
@@ -161,7 +161,7 @@ If you haven't already enabled the sending of events you need to do so::
 
     $ python manage.py celeryctl inspect enable_events
 
-:Tip: You can enable events when the worker starts using the ``-E`` argument
+:Tip: You can enable events when the worker starts using the `-E` argument
       to :mod:`~celery.bin.celeryd`.
 
 Now that the camera has been started, and events have been enabled
@@ -179,21 +179,21 @@ Shutter frequency
 
 By default the camera takes a snapshot every second, if this is too frequent
 or you want to have higher precision, then you can change this using the
-``--frequency`` argument.  This is a float describing how often, in seconds,
+`--frequency` argument.  This is a float describing how often, in seconds,
 it should wake up to check if there are any new events::
 
     $ python manage.py celerycam --frequency=3.0
 
-The camera also supports rate limiting using the ``--maxrate`` argument.
+The camera also supports rate limiting using the `--maxrate` argument.
 While the frequency controls how often the camera thread wakes up,
 the rate limit controls how often it will actually take a snapshot.
 
 The rate limits can be specified in seconds, minutes or hours
-by appending ``/s``, ``/m`` or ``/h`` to the value.
-Example: ``--maxrate=100/m``, means "hundred writes a minute".
+by appending `/s`, `/m` or `/h` to the value.
+Example: `--maxrate=100/m`, means "hundred writes a minute".
 
 The rate limit is off by default, which means it will take a snapshot
-for every ``--frequency`` seconds.
+for every `--frequency` seconds.
 
 The events also expire after some time, so the database doesn't fill up.
 Successful tasks are deleted after 1 day, failed tasks after 3 days,
@@ -204,7 +204,7 @@ and tasks in other states after 5 days.
 Using outside of Django
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-``django-celery`` also installs the :program:`djcelerymon` program. This
+`django-celery` also installs the :program:`djcelerymon` program. This
 can be used by non-Django users, and runs both a webserver and a snapshot
 camera in the same process.
 
@@ -226,12 +226,12 @@ and sets up the Django environment using the same settings::
     $ djcelerymon
 
 Database tables will be created the first time the monitor is run.
-By default an ``sqlite3`` database file named
+By default an `sqlite3` database file named
 :file:`djcelerymon.db` is used, so make sure this file is writeable by the
 user running the monitor.
 
 If you want to store the events in a different database, e.g. MySQL,
-then you can configure the ``DATABASE*`` settings directly in your Celery
+then you can configure the `DATABASE*` settings directly in your Celery
 config module.  See http://docs.djangoproject.com/en/dev/ref/settings/#databases
 for more information about the database options avaialble.
 
@@ -260,7 +260,7 @@ Now that the service is started you can visit the monitor
 at http://127.0.0.1:8000, and log in using the user you created.
 
 For a list of the command line options supported by :program:`djcelerymon`,
-please see ``djcelerymon --help``.
+please see `djcelerymon --help`.
 
 .. _monitoring-celeryev:
 
@@ -286,7 +286,7 @@ and it includes a tool to dump events to stdout::
 
     $ celeryev --dump
 
-For a complete list of options use ``--help``::
+For a complete list of options use `--help`::
 
     $ celeryev --help
 
@@ -322,10 +322,10 @@ as manage users, virtual hosts and their permissions.
 
 .. note::
 
-    The default virtual host (``"/"``) is used in these
+    The default virtual host (`"/"`) is used in these
     examples, if you use a custom virtual host you have to add
-    the ``-p`` argument to the command, e.g:
-    ``rabbitmqctl list_queues -p my_vhost ....``
+    the `-p` argument to the command, e.g:
+    `rabbitmqctl list_queues -p my_vhost ....`
 
 .. _`rabbitmqctl(1)`: http://www.rabbitmq.com/man/rabbitmqctl.1.man.html
 
@@ -341,11 +341,11 @@ Finding the number of tasks in a queue::
                               messages_unacknowlged
 
 
-Here ``messages_ready`` is the number of messages ready
-for delivery (sent but not received), ``messages_unacknowledged``
+Here `messages_ready` is the number of messages ready
+for delivery (sent but not received), `messages_unacknowledged`
 is the number of messages that has been received by a worker but
 not acknowledged yet (meaning it is in progress, or has been reserved).
-``messages`` is the sum of ready and unacknowledged messages combined.
+`messages` is the sum of ready and unacknowledged messages combined.
 
 
 Finding the number of workers currently consuming from a queue::
@@ -356,7 +356,7 @@ Finding the amount of memory allocated to a queue::
 
     $ rabbitmqctl list_queues name memory
 
-:Tip: Adding the ``-q`` option to `rabbitmqctl(1)`_ makes the output
+:Tip: Adding the `-q` option to `rabbitmqctl(1)`_ makes the output
       easier to parse.
 
 
@@ -373,12 +373,12 @@ maintaining a Celery cluster.
     http://github.com/ask/rabbitmq-munin
 
 * celery_tasks: Monitors the number of times each task type has
-  been executed (requires ``celerymon``).
+  been executed (requires `celerymon`).
 
     http://exchange.munin-monitoring.org/plugins/celery_tasks-2/details
 
 * celery_task_states: Monitors the number of tasks in each state
-  (requires ``celerymon``).
+  (requires `celerymon`).
 
     http://exchange.munin-monitoring.org/plugins/celery_tasks/details
 
@@ -412,7 +412,7 @@ write it to a database, send it by e-mail or something else entirely.
 
 :program:`celeryev` is then used to take snapshots with the camera,
 for example if you want to capture state every 2 seconds using the
-camera ``myapp.Camera`` you run :program:`celeryev` with the following
+camera `myapp.Camera` you run :program:`celeryev` with the following
 arguments::
 
     $ celeryev -c myapp.Camera --frequency=2.0
@@ -446,8 +446,8 @@ Here is an example camera, dumping the snapshot to screen:
 See the API reference for :mod:`celery.events.state` to read more
 about state objects.
 
-Now you can use this cam with ``celeryev`` by specifying
-it with the ``-c`` option::
+Now you can use this cam with `celeryev` by specifying
+it with the `-c` option::
 
     $ celeryev -c myapp.DumpCam --frequency=2.0
 
@@ -481,16 +481,16 @@ This list contains the events sent by the worker, and their arguments.
 Task Events
 ~~~~~~~~~~~
 
-* ``task-received(uuid, name, args, kwargs, retries, eta, hostname,
-  timestamp)``
+* `task-received(uuid, name, args, kwargs, retries, eta, hostname,
+  timestamp)`
 
     Sent when the worker receives a task.
 
-* ``task-started(uuid, hostname, timestamp)``
+* `task-started(uuid, hostname, timestamp)`
 
     Sent just before the worker executes the task.
 
-* ``task-succeeded(uuid, result, runtime, hostname, timestamp)``
+* `task-succeeded(uuid, result, runtime, hostname, timestamp)`
 
     Sent if the task executed successfully.
 
@@ -498,16 +498,16 @@ Task Events
     (Starting from the task is sent to the worker pool, and ending when the
     pool result handler callback is called).
 
-* ``task-failed(uuid, exception, traceback, hostname, timestamp)``
+* `task-failed(uuid, exception, traceback, hostname, timestamp)`
 
     Sent if the execution of the task failed.
 
-* ``task-revoked(uuid)``
+* `task-revoked(uuid)`
 
     Sent if the task has been revoked (Note that this is likely
     to be sent by more than one worker).
 
-* ``task-retried(uuid, exception, traceback, hostname, timestamp)``
+* `task-retried(uuid, exception, traceback, hostname, timestamp)`
 
     Sent if the task failed, but will be retried in the future.
 
@@ -516,15 +516,15 @@ Task Events
 Worker Events
 ~~~~~~~~~~~~~
 
-* ``worker-online(hostname, timestamp)``
+* `worker-online(hostname, timestamp)`
 
     The worker has connected to the broker and is online.
 
-* ``worker-heartbeat(hostname, timestamp)``
+* `worker-heartbeat(hostname, timestamp)`
 
     Sent every minute, if the worker has not sent a heartbeat in 2 minutes,
     it is considered to be offline.
 
-* ``worker-offline(hostname, timestamp)``
+* `worker-offline(hostname, timestamp)`
 
     The worker has disconnected from the broker.

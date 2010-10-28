@@ -43,6 +43,7 @@ _default_context = {"logfile": None,
                     "is_eager": False,
                     "delivery_info": None}
 
+
 def _unpickle_task(name):
     return tasks[name]
 
@@ -64,9 +65,9 @@ class TaskType(type):
     """Metaclass for tasks.
 
     Automatically registers the task in the task registry, except
-    if the ``abstract`` attribute is set.
+    if the `abstract` attribute is set.
 
-    If no ``name`` attribute is provided, the name is automatically
+    If no `name` attribute is provided, the name is automatically
     set to the name of the module it was defined in, and the class name.
 
     """
@@ -105,7 +106,7 @@ class BaseTask(object):
     """A celery task.
 
     All subclasses of :class:`Task` must define the :meth:`run` method,
-    which is the actual method the ``celery`` daemon executes.
+    which is the actual method the `celery` daemon executes.
 
     The :meth:`run` method can take use of the default keyword arguments,
     as listed in the :meth:`run` documentation.
@@ -113,177 +114,128 @@ class BaseTask(object):
     The resulting class is callable, which if called will apply the
     :meth:`run` method.
 
-    .. attribute:: app
-
-        The application instance associated with this task class.
-
-    .. attribute:: name
-
-        Name of the task.
-
-    .. attribute:: abstract
-
-        If :const:`True` the task is an abstract base class.
-
-    .. attribute:: type
-
-        The type of task, currently unused.
-
-    .. attribute:: queue
-
-        Select a destination queue for this task. The queue needs to exist
-        in :setting:`CELERY_QUEUES`. The ``routing_key``, ``exchange`` and
-        ``exchange_type`` attributes will be ignored if this is set.
-
-    .. attribute:: routing_key
-
-        Override the global default ``routing_key`` for this task.
-
-    .. attribute:: exchange
-
-        Override the global default ``exchange`` for this task.
-
-    .. attribute:: exchange_type
-
-        Override the global default exchange type for this task.
-
-    .. attribute:: delivery_mode
-
-        Override the global default delivery mode for this task.
-        By default this is set to ``2`` (persistent). You can change this
-        to ``1`` to get non-persistent behavior, which means the messages
-        are lost if the broker is restarted.
-
-    .. attribute:: mandatory
-
-        Mandatory message routing. An exception will be raised if the task
-        can't be routed to a queue.
-
-    .. attribute:: immediate:
-
-        Request immediate delivery. An exception will be raised if the task
-        can't be routed to a worker immediately.
-
-    .. attribute:: priority:
-
-        The message priority. A number from ``0`` to ``9``, where ``0``
-        is the highest. Note that RabbitMQ doesn't support priorities yet.
-
-    .. attribute:: max_retries
-
-        Maximum number of retries before giving up.
-        If set to :const:`None`, it will never stop retrying.
-
-    .. attribute:: default_retry_delay
-
-        Default time in seconds before a retry of the task should be
-        executed. Default is a 3 minute delay.
-
-    .. attribute:: rate_limit
-
-        Set the rate limit for this task type, Examples: :const:`None` (no
-        rate limit), ``"100/s"`` (hundred tasks a second), ``"100/m"``
-        (hundred tasks a minute), ``"100/h"`` (hundred tasks an hour)
-
-    .. attribute:: ignore_result
-
-        Don't store the return value of this task.
-
-    .. attribute:: store_errors_even_if_ignored
-
-        If true, errors will be stored even if the task is configured
-        to ignore results.
-
-    .. attribute:: send_error_emails
-
-        If true, an e-mail will be sent to the admins whenever
-        a task of this type raises an exception.
-
-    .. attribute:: error_whitelist
-
-        List of exception types to send error e-mails for.
-
-    .. attribute:: serializer
-
-        The name of a serializer that has been registered with
-        :mod:`kombu.serialization.registry`. Example: ``"json"``.
-
-    .. attribute:: backend
-
-        The result store backend used for this task.
-
-    .. attribute:: autoregister
-
-        If :const:`True` the task is automatically registered in the task
-        registry, which is the default behaviour.
-
-    .. attribute:: track_started
-
-        If :const:`True` the task will report its status as "started"
-        when the task is executed by a worker.
-        The default value is ``False`` as the normal behaviour is to not
-        report that level of granularity. Tasks are either pending,
-        finished, or waiting to be retried.
-
-        Having a "started" status can be useful for when there are long
-        running tasks and there is a need to report which task is
-        currently running.
-
-        The global default can be overridden with the
-        :setting:`CELERY_TRACK_STARTED` setting.
-
-    .. attribute:: acks_late
-
-        If set to :const:`True` messages for this task will be acknowledged
-        **after** the task has been executed, not *just before*, which is
-        the default behavior.
-
-        Note that this means the task may be executed twice if the worker
-        crashes in the middle of execution, which may be acceptable for some
-        applications.
-
-        The global default can be overriden by the :setting:`CELERY_ACKS_LATE`
-        setting.
-
-    .. attribute:: expires
-
-        Default task expiry time in seconds or a :class:`~datetime.datetime`.
-
     """
     __metaclass__ = TaskType
 
+    MaxRetriesExceededError = MaxRetriesExceededError
+
+    #: The application instance associated with this task class.
     app = None
+
+    #: Name of the task.
     name = None
+
+    #: If :const:`True` the task is an abstract base class.
     abstract = True
-    autoregister = True
-    type = "regular"
+
+    #: If disabled the worker will not forward magic keyword arguments.
     accept_magic_kwargs = True
+
+    #: Current request context (when task is executed).
     request = Context()
 
+    #: Destination queue.  The queue needs to exist
+    #: in :setting:`CELERY_QUEUES`.  The `routing_key`, `exchange` and
+    #: `exchange_type` attributes will be ignored if this is set.
     queue = None
+
+    #: Overrides the apps default `routing_key` for this task.
     routing_key = None
+
+    #: Overrides the apps default `exchange` for this task.
     exchange = None
+
+    #: Overrides the apps default exchange type for this task.
     exchange_type = None
+
+    #: Override the apps default delivery mode for this task.  Default is
+    #: `"persistent"`, but you can change this to `"transient"`, which means
+    #: messages will be lost if the broker is restarted.  Consult your broker
+    #: manual for any additional delivery modes.
     delivery_mode = None
-    immediate = False
+
+    #: Mandatory message routing.
     mandatory = False
+
+    #: Request immediate delivery.
+    immediate = False
+
+    #: Default message priority.  A number between 0 to 9, where 0 is the
+    #: highest.  Note that RabbitMQ does not support priorities.
     priority = None
 
-    ignore_result = False
-    store_errors_even_if_ignored = False
-    send_error_emails = False
-    error_whitelist = ()
-    disable_error_emails = False                            # FIXME
+    #: Maximum number of retries before giving up.  If set to :const:`None`,
+    #: it will **never** stop retrying.
     max_retries = 3
+
+    #: Default time in seconds before a retry of the task should be
+    #: executed.  3 minutes by default.
     default_retry_delay = 3 * 60
-    serializer = "pickle"
+
+    #: Rate limit for this task type.  Examples: :const:`None` (no rate
+    #: limit), `"100/s"` (hundred tasks a second), `"100/m"` (hundred tasks
+    #: a minute),`"100/h"` (hundred tasks an hour)
     rate_limit = None
+
+    #: If enabled the worker will not store task state and return values
+    #: for this task.  Defaults to the :setting:`CELERY_IGNORE_RESULT`
+    #: setting.
+    ignore_result = False
+
+    #: When enabled errors will be stored even if the task is otherwise
+    #: configured to ignore results.
+    store_errors_even_if_ignored = False
+
+    #: If enabled an e-mail will be sent to :setting:`ADMINS` whenever a task
+    #: of this type fails.
+    send_error_emails = False
+
+    disable_error_emails = False                            # FIXME
+
+    #: List of exception types to send error e-mails for.
+    error_whitelist = ()
+
+    #: The name of a serializer that has been registered with
+    #: :mod:`kombu.serialization.registry`.  Default is `"pickle"`.
+    serializer = "pickle"
+
+    #: The result store backend used for this task.
     backend = None
+
+    #: If disabled the task will not be automatically registered
+    #: in the task registry.
+    autoregister = True
+
+    #: If enabled the task will report its status as "started" when the task
+    #: is executed by a worker.  Disabled by default as the normal behaviour
+    #: is to not report that level of granularity.  Tasks are either pending,
+    #: finished, or waiting to be retried.
+    #:
+    #: Having a "started" status can be useful for when there are long
+    #: running tasks and there is a need to report which task is currently
+    #: running.
+    #:
+    #: The application default can be overridden using the
+    #: :setting:`CELERY_TRACK_STARTED` setting.
     track_started = False
+
+    #: When enabled  messages for this task will be acknowledged **after**
+    #: the task has been executed, and not *just before* which is the
+    #: default behavior.
+    #:
+    #: Please note that this means the task may be executed twice if the
+    #: worker crashes mid execution (which may be acceptable for some
+    #: applications).
+    #:
+    #: The application default can be overriden with the
+    #: :setting:`CELERY_ACKS_LATE` setting.
     acks_late = False
+
+    #: Default task expiry time.
     expires = None
 
-    MaxRetriesExceededError = MaxRetriesExceededError
+    #: The type of task *(no longer used)*.
+    type = "regular"
 
     def __call__(self, *args, **kwargs):
         return self.run(*args, **kwargs)
@@ -298,18 +250,21 @@ class BaseTask(object):
         automatically passed by the worker if the function/method
         supports them:
 
-            * task_id
-            * task_name
-            * task_retries
-            * task_is_eager
-            * logfile
-            * loglevel
-            * delivery_info
+            * `task_id`
+            * `task_name`
+            * `task_retries
+            * `task_is_eager`
+            * `logfile`
+            * `loglevel`
+            * `delivery_info`
 
-        Additional standard keyword arguments may be added in the future.
         To take these default arguments, the task can either list the ones
         it wants explicitly or just take an arbitrary list of keyword
         arguments (\*\*kwargs).
+
+        Magic keyword arguments can be disabled using the
+        :attr:`accept_magic_kwargs` flag.  The information can then
+        be found in the :attr:`request` attribute.
 
         """
         raise NotImplementedError("Tasks must define the run method.")
@@ -341,11 +296,11 @@ class BaseTask(object):
 
         :rtype :class:`~celery.app.amqp.TaskPublisher`:
 
-        Please be sure to close the AMQP connection when you're done
-        with this object, i.e.:
+        Please be sure to close the AMQP connection after you're done
+        with this object.  Example::
 
             >>> publisher = self.get_publisher()
-            >>> # do something with publisher
+            >>> # ... do something with publisher
             >>> publisher.connection.close()
 
         """
@@ -361,12 +316,12 @@ class BaseTask(object):
 
     @classmethod
     def get_consumer(self, connection=None, connect_timeout=None):
-        """Get a celery task message consumer.
+        """Get message consumer.
 
         :rtype :class:`~celery.app.amqp.TaskConsumer`:
 
         Please be sure to close the AMQP connection when you're done
-        with this object. i.e.:
+        with this object.  Example::
 
             >>> consumer = self.get_consumer()
             >>> # do something with consumer
@@ -380,8 +335,8 @@ class BaseTask(object):
 
     @classmethod
     def delay(self, *args, **kwargs):
-        """Shortcut to :meth:`apply_async`, with star arguments,
-        but doesn't support the extra options.
+        """Shortcut to :meth:`apply_async` giving star arguments, but without
+        options.
 
         :param \*args: positional arguments passed on to the task.
         :param \*\*kwargs: keyword arguments passed on to the task.
@@ -399,74 +354,78 @@ class BaseTask(object):
         """Run a task asynchronously by the celery daemon(s).
 
         :keyword args: The positional arguments to pass on to the
-            task (a :class:`list` or :class:`tuple`).
+                       task (a :class:`list` or :class:`tuple`).
 
         :keyword kwargs: The keyword arguments to pass on to the
-            task (a :class:`dict`)
+                         task (a :class:`dict`)
 
         :keyword countdown: Number of seconds into the future that the
-            task should execute. Defaults to immediate delivery (Do not
-            confuse that with the ``immediate`` setting, they are
-            unrelated).
+                            task should execute. Defaults to immediate
+                            delivery (do not confuse with the
+                            `immediate` flag, as they are unrelated).
 
-        :keyword eta: A :class:`~datetime.datetime` object that describes
-            the absolute time and date of when the task should execute.
-            May not be specified if ``countdown`` is also supplied. (Do
-            not confuse this with the ``immediate`` setting, they are
-            unrelated).
+        :keyword eta: A :class:`~datetime.datetime` object describing
+                      the absolute time and date of when the task should
+                      be executed.  May not be specified if `countdown`
+                      is also supplied.  (Do not confuse this with the
+                      `immediate` flag, as they are unrelated).
 
         :keyword expires: Either a :class:`int`, describing the number of
-            seconds, or a :class:`~datetime.datetime` object that
-            describes the absolute time and date of when the task should
-            expire. The task will not be executed after the
-            expiration time.
+                          seconds, or a :class:`~datetime.datetime` object
+                          that describes the absolute time and date of when
+                          the task should expire.  The task will not be
+                          executed after the expiration time.
 
         :keyword connection: Re-use existing broker connection instead
-            of establishing a new one. The ``connect_timeout`` argument
-            is not respected if this is set.
+                             of establishing a new one.  The `connect_timeout`
+                             argument is not respected if this is set.
 
-        :keyword connect_timeout: The timeout in seconds, before we give
-            up on establishing a connection to the AMQP server.
+        :keyword connect_timeout: The timeout in seconds, before we give up
+                                  on establishing a connection to the AMQP
+                                  server.
 
         :keyword routing_key: The routing key used to route the task to a
-            worker server. Defaults to the tasks
-            :attr:`routing_key` attribute.
+                              worker server.  Defaults to the
+                              :attr:`routing_key` attribute.
 
         :keyword exchange: The named exchange to send the task to.
-            Defaults to the tasks :attr:`exchange` attribute.
+                           Defaults to the :attr:`exchange` attribute.
 
-        :keyword exchange_type: The exchange type to initalize the
-            exchange if not already declared. Defaults to the tasks
-            :attr:`exchange_type` attribute.
+        :keyword exchange_type: The exchange type to initalize the exchange
+                                if not already declared.  Defaults to the
+                                :attr:`exchange_type` attribute.
 
-        :keyword immediate: Request immediate delivery. Will raise an
-            exception if the task cannot be routed to a worker
-            immediately.  (Do not confuse this parameter with
-            the ``countdown`` and ``eta`` settings, as they are
-            unrelated). Defaults to the tasks :attr:`immediate` attribute.
+        :keyword immediate: Request immediate delivery.  Will raise an
+                            exception if the task cannot be routed to a worker
+                            immediately.  (Do not confuse this parameter with
+                            the `countdown` and `eta` settings, as they are
+                            unrelated).  Defaults to the :attr:`immediate`
+                            attribute.
 
         :keyword mandatory: Mandatory routing. Raises an exception if
-            there's no running workers able to take on this task.
-            Defaults to the tasks :attr:`mandatory` attribute.
+                            there's no running workers able to take on this
+                            task.  Defaults to the :attr:`mandatory`
+                            attribute.
 
         :keyword priority: The task priority, a number between 0 and 9.
-            Defaults to the tasks :attr:`priority` attribute.
+                           Defaults to the :attr:`priority` attribute.
 
         :keyword serializer: A string identifying the default
-            serialization method to use. Defaults to the
-            ``CELERY_TASK_SERIALIZER`` setting. Can be ``pickle``,
-            ``json``, ``yaml``, or any custom serialization method
-            that has been registered with
-            :mod:`kombu.serialization.registry`.  Defaults to the tasks
-            :attr:`serializer` attribute.
+                             serialization method to use.  Can be `pickle`,
+                             `json`, `yaml`, `msgpack` or any custom
+                             serialization method that has been registered
+                             with :mod:`kombu.serialization.registry`.
+                             Defaults to the :attr:`serializer` attribute.
 
         :keyword compression: A string identifying the compression method
-            to use.  Defaults to the :setting:`CELERY_MESSAGE_COMPRESSION`
-            setting.  Can be one of ``zlib``, ``bzip2``, or any custom
-            compression methods registered with
-            :func:`kombu.compression.register`.  **Only supported by Kombu.**
+                              to use.  Can be one of ``zlib``, ``bzip2``,
+                              or any custom compression methods registered with
+                              :func:`kombu.compression.register`. Defaults to
+                              the :setting:`CELERY_MESSAGE_COMPRESSION`
+                              setting.
 
-        **Note**: If the ``CELERY_ALWAYS_EAGER`` setting is set, it will
+        .. note::
+            If the :setting:`CELERY_ALWAYS_EAGER` setting is set, it will
             be replaced by a local :func:`apply` call instead.
 
         """
@@ -507,38 +466,41 @@ class BaseTask(object):
         :param args: Positional arguments to retry with.
         :param kwargs: Keyword arguments to retry with.
         :keyword exc: Optional exception to raise instead of
-            :exc:`~celery.exceptions.MaxRetriesExceededError` when the max
-            restart limit has been exceeded.
+                      :exc:`~celery.exceptions.MaxRetriesExceededError`
+                      when the max restart limit has been exceeded.
         :keyword countdown: Time in seconds to delay the retry for.
         :keyword eta: Explicit time and date to run the retry at
-        (must be a :class:`~datetime.datetime` instance).
+                      (must be a :class:`~datetime.datetime` instance).
         :keyword \*\*options: Any extra options to pass on to
-            meth:`apply_async`. See :func:`celery.execute.apply_async`.
-        :keyword throw: If this is ``False``, do not raise the
-            :exc:`~celery.exceptions.RetryTaskError` exception,
-            that tells the worker to mark the task as being retried.
-            Note that this means the task will be marked as failed
-            if the task raises an exception, or successful if it
-            returns.
+                              meth:`apply_async`.
+        :keyword throw: If this is :const:`False`, do not raise the
+                        :exc:`~celery.exceptions.RetryTaskError` exception,
+                        that tells the worker to mark the task as being
+                        retried.  Note that this means the task will be
+                        marked as failed if the task raises an exception,
+                        or successful if it returns.
 
         :raises celery.exceptions.RetryTaskError: To tell the worker that
             the task has been re-sent for retry. This always happens,
-            unless the ``throw`` keyword argument has been explicitly set
-            to ``False``, and is considered normal operation.
+            unless the `throw` keyword argument has been explicitly set
+            to :const:`False`, and is considered normal operation.
 
-        Example
+        **Example**
 
-            >>> class TwitterPostStatusTask(Task):
-            ...
-            ...     def run(self, username, password, message, **kwargs):
-            ...         twitter = Twitter(username, password)
-            ...         try:
-            ...             twitter.post_status(message)
-            ...         except twitter.FailWhale, exc:
-            ...             # Retry in 5 minutes.
-            ...             self.retry([username, password, message],
-            ...                        kwargs,
-            ...                        countdown=60 * 5, exc=exc)
+        .. code-block:: python
+
+            >>> @task
+            >>> def tweet(auth, message):
+            ...     twitter = Twitter(oauth=auth)
+            ...     try:
+            ...         twitter.post_status_update(message)
+            ...     except twitter.FailWhale, exc:
+            ...         # Retry in 5 minutes.
+            ...         return tweet.retry(countdown=60 * 5, exc=exc)
+
+        Although the task will never return above as `retry` raises an
+        exception to notify the worker, we use `return` in front of the retry
+        to convey that the rest of the block will not be executed.
 
         """
         request = self.request
@@ -555,7 +517,7 @@ class BaseTask(object):
         options["retries"] = request.retries + 1
         options["task_id"] = request.id
         options["countdown"] = options.get("countdown",
-                                        self.default_retry_delay)
+                                           self.default_retry_delay)
         max_exc = exc or self.MaxRetriesExceededError(
                 "Can't retry %s[%s] args:%s kwargs:%s" % (
                     self.name, options["task_id"], args, kwargs))
@@ -584,12 +546,11 @@ class BaseTask(object):
 
         :param args: positional arguments passed on to the task.
         :param kwargs: keyword arguments passed on to the task.
-        :keyword throw: Re-raise task exceptions. Defaults to
-            the :setting:`CELERY_EAGER_PROPAGATES_EXCEPTIONS` setting.
+        :keyword throw: Re-raise task exceptions.  Defaults to
+                        the :setting:`CELERY_EAGER_PROPAGATES_EXCEPTIONS`
+                        setting.
 
         :rtype :class:`celery.result.EagerResult`:
-
-        See :func:`celery.execute.apply`.
 
         """
         args = args or []
@@ -664,7 +625,7 @@ class BaseTask(object):
         :param kwargs: Original keyword arguments for the retried task.
 
         :keyword einfo: :class:`~celery.datastructures.ExceptionInfo`
-        instance, containing the traceback.
+                        instance, containing the traceback.
 
         The return value of this handler is ignored.
 
@@ -680,10 +641,10 @@ class BaseTask(object):
         :param task_id: Unique id of the task.
         :param args: Original arguments for the task that failed.
         :param kwargs: Original keyword arguments for the task
-            that failed.
+                       that failed.
 
         :keyword einfo: :class:`~celery.datastructures.ExceptionInfo`
-        instance, containing the traceback (if any).
+                        instance, containing the traceback (if any).
 
         The return value of this handler is ignored.
 
@@ -699,10 +660,10 @@ class BaseTask(object):
         :param task_id: Unique id of the failed task.
         :param args: Original arguments for the task that failed.
         :param kwargs: Original keyword arguments for the task
-            that failed.
+                       that failed.
 
         :keyword einfo: :class:`~celery.datastructures.ExceptionInfo`
-            instance, containing the traceback.
+                        instance, containing the traceback.
 
         The return value of this handler is ignored.
 
@@ -736,7 +697,7 @@ class BaseTask(object):
         wrapper.execute_using_pool(pool, loglevel, logfile)
 
     def __repr__(self):
-        """repr(task)"""
+        """`repr(task)`"""
         try:
             kind = self.__class__.mro()[1].__name__
         except (AttributeError, IndexError):            # pragma: no cover
@@ -745,8 +706,8 @@ class BaseTask(object):
 
     @classmethod
     def subtask(cls, *args, **kwargs):
-        """Returns a :class:`~celery.task.sets.subtask` object for
-        this task that wraps arguments and execution options
+        """Returns :class:`~celery.task.sets.subtask` object for
+        this task, wrapping arguments and execution options
         for a single task invocation."""
         return subtask(cls, *args, **kwargs)
 
@@ -873,7 +834,7 @@ class PeriodicTask(Task):
         return timedelta_seconds(delta)
 
     def is_due(self, last_run_at):
-        """Returns tuple of two items ``(is_due, next_time_to_run)``,
+        """Returns tuple of two items `(is_due, next_time_to_run)`,
         where next time to run is in seconds.
 
         See :meth:`celery.schedules.schedule.is_due` for more information.

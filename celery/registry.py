@@ -1,12 +1,12 @@
 """celery.registry"""
 import inspect
+
 from UserDict import UserDict
 
 from celery.exceptions import NotRegistered
 
 
 class TaskRegistry(UserDict):
-    """Site registry for tasks."""
 
     NotRegistered = NotRegistered
 
@@ -36,7 +36,7 @@ class TaskRegistry(UserDict):
         """Unregister task by name.
 
         :param name: name of the task to unregister, or a
-            :class:`celery.task.base.Task` with a valid ``name`` attribute.
+            :class:`celery.task.base.Task` with a valid `name` attribute.
 
         :raises celery.exceptions.NotRegistered: if the task has not
             been registered.

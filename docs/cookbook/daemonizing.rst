@@ -20,7 +20,7 @@ start-stop-daemon (Debian/Ubuntu/++)
 See the `contrib/debian/init.d/`_ directory in the celery distribution, this
 directory contains init scripts for celeryd and celerybeat.
 
-These scripts are configured in ``/etc/default/celeryd``.
+These scripts are configured in :file:`/etc/default/celeryd`.
 
 .. _`contrib/debian/init.d/`:
     http://github.com/ask/celery/tree/master/contrib/debian/
@@ -30,7 +30,7 @@ These scripts are configured in ``/etc/default/celeryd``.
 Init script: celeryd
 --------------------
 
-:Usage: ``/etc/init.d/celeryd {start|stop|force-reload|restart|try-restart|status}``
+:Usage: `/etc/init.d/celeryd {start|stop|force-reload|restart|try-restart|status}`
 :Configuration file: /etc/default/celeryd
 
 To configure celeryd you probably need to at least tell it where to chdir
@@ -43,7 +43,7 @@ Example configuration
 
 This is an example configuration for a Python project.
 
-``/etc/default/celeryd``::
+:file:`/etc/default/celeryd`:
 
     # Where to chdir at start.
     CELERYD_CHDIR="/opt/Myproject/"
@@ -59,7 +59,7 @@ This is an example configuration for a Python project.
 Example Django configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This is an example configuration for those using ``django-celery``::
+This is an example configuration for those using `django-celery`::
 
     # Where the Django project is.
     CELERYD_CHDIR="/opt/Project/"
@@ -76,7 +76,7 @@ Available options
 ~~~~~~~~~~~~~~~~~~
 
 * CELERYD_OPTS
-    Additional arguments to celeryd, see ``celeryd --help`` for a list.
+    Additional arguments to celeryd, see `celeryd --help` for a list.
 
 * CELERYD_CHDIR
     Path to chdir at start. Default is to stay in the current directory.
@@ -91,7 +91,7 @@ Available options
     Log level to use for celeryd. Default is INFO.
 
 * CELERYD
-    Path to the celeryd program. Default is ``celeryd``.
+    Path to the celeryd program. Default is `celeryd`.
     You can point this to an virtualenv, or even use manage.py for django.
 
 * CELERYD_USER
@@ -104,7 +104,7 @@ Available options
 
 Init script: celerybeat
 -----------------------
-:Usage: ``/etc/init.d/celerybeat {start|stop|force-reload|restart|try-restart|status}``
+:Usage: `/etc/init.d/celerybeat {start|stop|force-reload|restart|try-restart|status}`
 :Configuration file: /etc/default/celerybeat or /etc/default/celeryd
 
 .. _debian-initd-celerybeat-example:
@@ -114,7 +114,7 @@ Example configuration
 
 This is an example configuration for a Python project:
 
-``/etc/default/celeryd``::
+`/etc/default/celeryd`::
 
     # Where to chdir at start.
     CELERYD_CHDIR="/opt/Myproject/"
@@ -133,7 +133,7 @@ This is an example configuration for a Python project:
 Example Django configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This is an example configuration for those using ``django-celery``::
+This is an example configuration for those using `django-celery`::
 
     # Where the Django project is.
     CELERYD_CHDIR="/opt/Project/"
@@ -156,7 +156,7 @@ Available options
 ~~~~~~~~~~~~~~~~~
 
 * CELERYBEAT_OPTS
-    Additional arguments to celerybeat, see ``celerybeat --help`` for a
+    Additional arguments to celerybeat, see `celerybeat --help` for a
     list.
 
 * CELERYBEAT_PIDFILE
@@ -169,7 +169,7 @@ Available options
     Log level to use for celeryd. Default is INFO.
 
 * CELERYBEAT
-    Path to the celeryd program. Default is ``celeryd``.
+    Path to the celeryd program. Default is `celeryd`.
     You can point this to an virtualenv, or even use manage.py for django.
 
 * CELERYBEAT_USER
@@ -193,14 +193,14 @@ This can reveal hints as to why the service won't start.
 Also you will see the commands generated, so you can try to run the celeryd
 command manually to read the resulting error output.
 
-For example my ``sh -x`` output does this::
+For example my `sh -x` output does this::
 
     ++ start-stop-daemon --start --chdir /opt/Opal/release/opal --quiet \
         --oknodo --background --make-pidfile --pidfile /var/run/celeryd.pid \
         --exec /opt/Opal/release/opal/manage.py celeryd -- --time-limit=300 \
         -f /var/log/celeryd.log -l INFO
 
-Run the celeryd command after ``--exec`` (without the ``--``) to show the
+Run the celeryd command after `--exec` (without the `--`) to show the
 actual resulting output::
 
     $ /opt/Opal/release/opal/manage.py celeryd --time-limit=300 \

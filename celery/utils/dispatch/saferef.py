@@ -72,7 +72,7 @@ class BoundMethodWeakref(object):
 
         class attribute pointing to all live
         BoundMethodWeakref objects indexed by the class's
-        ``calculate_key(target)`` method applied to the target
+        `calculate_key(target)` method applied to the target
         objects. This weak value dictionary is used to
         short-circuit creation so that multiple references
         to the same (object, function) pair produce the
@@ -110,7 +110,7 @@ class BoundMethodWeakref(object):
         """Return a weak-reference-like instance for a bound method
 
         :param target: the instance-method target for the weak
-            reference, must have ``im_self`` and ``im_func`` attributes
+            reference, must have `im_self` and `im_func` attributes
             and be reconstructable via::
 
                 target.im_func.__get__(target.im_self)
@@ -153,7 +153,7 @@ class BoundMethodWeakref(object):
     def calculate_key(cls, target):
         """Calculate the reference key for this reference
 
-        Currently this is a two-tuple of the ``id()``'s of the
+        Currently this is a two-tuple of the `id()`'s of the
         target object and the target function respectively.
         """
         return id(target.im_self), id(target.im_func)
@@ -223,7 +223,7 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):
         """Return a weak-reference-like instance for a bound method
 
         :param target: the instance-method target for the weak
-            reference, must have ``im_self`` and ``im_func`` attributes
+            reference, must have `im_self` and `im_func` attributes
             and be reconstructable via::
 
                 target.im_func.__get__(target.im_self)

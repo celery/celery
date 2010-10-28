@@ -253,7 +253,7 @@ class State(object):
     def tasks_by_timestamp(self, limit=None):
         """Get tasks by timestamp.
 
-        Returns a list of ``(uuid, task)`` tuples.
+        Returns a list of `(uuid, task)` tuples.
 
         """
         return self._sort_tasks_by_time(self.tasks.items()[:limit])
@@ -266,7 +266,7 @@ class State(object):
     def tasks_by_type(self, name, limit=None):
         """Get all tasks by type.
 
-        Returns a list of ``(uuid, task)`` tuples.
+        Returns a list of `(uuid, task)` tuples.
 
         """
         return self._sort_tasks_by_time([(uuid, task)
@@ -276,7 +276,7 @@ class State(object):
     def tasks_by_worker(self, hostname, limit=None):
         """Get all tasks by worker.
 
-        Returns a list of ``(uuid, task)`` tuples.
+        Returns a list of `(uuid, task)` tuples.
 
         """
         return self._sort_tasks_by_time([(uuid, task)

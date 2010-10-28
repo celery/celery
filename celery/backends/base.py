@@ -77,9 +77,9 @@ class BaseBackend(object):
         If the task raises an exception, this exception
         will be re-raised by :func:`wait_for`.
 
-        If ``timeout`` is not ``None``, this raises the
+        If `timeout` is not :const:`None`, this raises the
         :class:`celery.exceptions.TimeoutError` exception if the operation
-        takes longer than ``timeout`` seconds.
+        takes longer than `timeout` seconds.
 
         """
 

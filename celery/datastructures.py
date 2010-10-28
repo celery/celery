@@ -3,6 +3,7 @@ from __future__ import generators
 import time
 import traceback
 
+from itertools import chain
 from UserList import UserList
 from Queue import Queue, Empty as QueueEmpty
 
@@ -28,6 +29,7 @@ class AttributeDict(dict, AttributeDictMixin):
 
 
 class DictAttribute(object):
+    """Dict interface using attributes."""
 
     def __init__(self, obj):
         self.obj = obj
@@ -61,19 +63,79 @@ class DictAttribute(object):
         return vars(self.obj).iteritems()
 
 
+class MultiDictView(AttributeDictMixin):
+    """View for one more more dicts.
+
+    * When getting a key, the dicts are searched in order.
+    * When setting a key, the key is added to the first dict.
+
+    >>> d1 = {"x": 3"}
+    >>> d2 = {"x": 1, "y": 2, "z": 3}
+    >>> x = MultiDictView([d1, d2])
+
+    >>> x["x"]
+    3
+
+    >>>  x["y"]
+    2
+
+    """
+    dicts = None
+
+    def __init__(self, *dicts):
+        self.__dict__["dicts"] = dicts
+
+    def __getitem__(self, key):
+        for d in self.__dict__["dicts"]:
+            try:
+                return d[key]
+            except KeyError:
+                pass
+        raise KeyError(key)
+
+    def __setitem__(self, key, value):
+        self.__dict__["dicts"][0][key] = value
+
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def setdefault(self, key, default):
+        try:
+            return self[key]
+        except KeyError:
+            self[key] = default
+            return default
+
+    def update(self, *args, **kwargs):
+        return self.__dict__["dicts"][0].update(*args, **kwargs)
+
+    def __contains__(self, key):
+        for d in self.__dict__["dicts"]:
+            if key in d:
+                return True
+        return False
+
+    def __repr__(self):
+        return repr(dict(iter(self)))
+
+    def __iter__(self):
+        return chain(*[d.iteritems() for d in self.__dict__["dicts"]])
+
+
 class PositionQueue(UserList):
     """A positional queue of a specific length, with slots that are either
     filled or unfilled. When all of the positions are filled, the queue
     is considered :meth:`full`.
 
-    :param length: see :attr:`length`.
-
-
-    .. attribute:: length
-
-        The number of items required for the queue to be considered full.
+    :param length: Number of items to fill.
 
     """
+
+    #: The number of items required for the queue to be considered full.
+    length = None
 
     class UnfilledPosition(object):
         """Describes an unfilled slot."""
@@ -88,16 +150,16 @@ class PositionQueue(UserList):
         self.data = map(self.UnfilledPosition, xrange(length))
 
     def full(self):
-        """Returns ``True`` if all of the slots has been filled."""
+        """Returns :const:`True` if all of the slots has been filled."""
         return len(self) >= self.length
 
     def __len__(self):
-        """``len(self)`` -> number of slots filled with real values."""
+        """`len(self)` -> number of slots filled with real values."""
         return len(self.filled)
 
     @property
     def filled(self):
-        """Returns the filled slots as a list."""
+        """All filled slots as a list."""
         return [slot for slot in self.data
                     if not isinstance(slot, self.UnfilledPosition)]
 
@@ -108,15 +170,13 @@ class ExceptionInfo(object):
     :param exc_info: The exception tuple info as returned by
         :func:`traceback.format_exception`.
 
-    .. attribute:: exception
-
-        The original exception.
-
-    .. attribute:: traceback
-
-        A traceback from the point when :attr:`exception` was raised.
-
     """
+
+    #: The original exception.
+    exception = None
+
+    #: A traceback form the point when :attr:`exception` was raised.
+    traceback = None
 
     def __init__(self, exc_info):
         type_, exception, tb = exc_info
@@ -163,7 +223,7 @@ class SharedCounter(object):
     that you should not update the value by using a previous value, the only
     reliable operations are increment and decrement.
 
-    Example
+    Example::
 
         >>> max_clients = SharedCounter(initial_value=10)
 
@@ -176,7 +236,6 @@ class SharedCounter(object):
         # Main thread
         >>> if client >= int(max_clients): # Max clients now at 8
         ...    wait()
-
 
         >>> max_client = max_clients + 10 # NOT OK (unsafe)
 
@@ -201,17 +260,17 @@ class SharedCounter(object):
         return self._value
 
     def __iadd__(self, y):
-        """``self += y``"""
+        """`self += y`"""
         self._modify_queue.put(y * +1)
         return self
 
     def __isub__(self, y):
-        """``self -= y``"""
+        """`self -= y`"""
         self._modify_queue.put(y * -1)
         return self
 
     def __int__(self):
-        """``int(self) -> int``"""
+        """`int(self) -> int`"""
         return self._update_value()
 
     def __repr__(self):
@@ -221,12 +280,12 @@ class SharedCounter(object):
 class LimitedSet(object):
     """Kind-of Set with limitations.
 
-    Good for when you need to test for membership (``a in set``),
+    Good for when you need to test for membership (`a in set`),
     but the list might become to big, so you want to limit it so it doesn't
     consume too much resources.
 
     :keyword maxlen: Maximum number of members before we start
-        deleting expired members.
+                     deleting expired members.
     :keyword expires: Time in seconds, before a membership expires.
 
     """
@@ -316,22 +375,23 @@ class TokenBucket(object):
     Most of this code was stolen from an entry in the ASPN Python Cookbook:
     http://code.activestate.com/recipes/511490/
 
-    :param fill_rate: see :attr:`fill_rate`.
-    :keyword capacity: see :attr:`capacity`.
+    .. admonition:: Thread safety
 
-    .. attribute:: fill_rate
+        This implementation is not thread safe.
 
-        The rate in tokens/second that the bucket will be refilled.
-
-    .. attribute:: capacity
-
-        Maximum number of tokens in the bucket. Default is ``1``.
-
-    .. attribute:: timestamp
-
-        Timestamp of the last time a token was taken out of the bucket.
+    :param fill_rate: Refill rate in tokens/second.
+    :keyword capacity: Max number of tokens.  Default is 1.
 
     """
+
+    #: The rate in tokens/second that the bucket will be refilled
+    fill_rate = None
+
+    #: Maximum number of tokensin the bucket.
+    capacity = 1
+
+    #: Timestamp of the last time a token was taken out of the bucket.
+    timestamp = None
 
     def __init__(self, fill_rate, capacity=1):
         self.capacity = float(capacity)
@@ -340,6 +400,8 @@ class TokenBucket(object):
         self.timestamp = time.time()
 
     def can_consume(self, tokens=1):
+        """Returns :const:`True` if `tokens` number of tokens can be consumed
+        from the bucket."""
         if tokens <= self._get_tokens():
             self._tokens -= tokens
             return True
@@ -347,7 +409,13 @@ class TokenBucket(object):
 
     def expected_time(self, tokens=1):
         """Returns the expected time in seconds when a new token should be
-        available. *Note: consumes a token from the bucket*"""
+        available.
+
+        .. admonition:: Warning
+
+            This consumes a token from the bucket.
+
+        """
         _tokens = self._get_tokens()
         tokens = max(tokens, _tokens)
         return (tokens - _tokens) / self.fill_rate

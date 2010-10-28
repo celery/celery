@@ -78,9 +78,9 @@ class TaskPool(object):
     def apply_async(self, target, args=None, kwargs=None, callbacks=None,
             errbacks=None, accept_callback=None, timeout_callback=None,
             **compat):
-        """Equivalent of the :func:``apply`` built-in function.
+        """Equivalent of the :func:`apply` built-in function.
 
-        All ``callbacks`` and ``errbacks`` should complete immediately since
+        All `callbacks` and `errbacks` should complete immediately since
         otherwise the thread which handles the result will get blocked.
 
         """
@@ -101,6 +101,12 @@ class TaskPool(object):
                                       timeout_callback=timeout_callback,
                                       error_callback=on_worker_error,
                                       waitforslot=self.putlocks)
+
+    def grow(self, n=1):
+        return self._pool.grow(n)
+
+    def shrink(self, n=1):
+        return self._pool.shrink(n)
 
     def on_worker_error(self, errbacks, exc):
         einfo = ExceptionInfo((exc.__class__, exc, None))

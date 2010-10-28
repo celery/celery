@@ -112,7 +112,7 @@ def kwdict(kwargs):
 
 
 def first(predicate, iterable):
-    """Returns the first element in ``iterable`` that ``predicate`` returns a
+    """Returns the first element in `iterable` that `predicate` returns a
     :const:`True` value for."""
     for item in iterable:
         if predicate(item):
@@ -139,7 +139,7 @@ def firstmethod(method):
 
 
 def chunks(it, n):
-    """Split an iterator into chunks with ``n`` elements each.
+    """Split an iterator into chunks with `n` elements each.
 
     Examples
 
@@ -206,8 +206,8 @@ def fun_takes_kwargs(fun, kwlist=[]):
     """With a function, and a list of keyword arguments, returns arguments
     in the list which the function takes.
 
-    If the object has an ``argspec`` attribute that is used instead
-    of using the :meth:`inspect.getargspec`` introspection.
+    If the object has an `argspec` attribute that is used instead
+    of using the :meth:`inspect.getargspec` introspection.
 
     :param fun: The function to inspect arguments of.
     :param kwlist: The list of keyword arguments.
@@ -243,7 +243,7 @@ def get_cls_by_name(name, aliases={}, imp=None):
         celery.concurrency.processes.TaskPool
                                     ^- class name
 
-    If ``aliases`` is provided, a dict containing short name/long name
+    If `aliases` is provided, a dict containing short name/long name
     mappings, the name is looked up in the aliases first.
 
     Examples:
@@ -326,7 +326,7 @@ def import_from_cwd(module, imp=None):
     located in the current directory.
 
     Modules located in the current directory has
-    precedence over modules located in ``sys.path``.
+    precedence over modules located in `sys.path`.
     """
     if imp is None:
         imp = importlib.import_module
@@ -341,4 +341,3 @@ def import_from_cwd(module, imp=None):
             sys.path.remove(cwd)
         except ValueError:
             pass
-

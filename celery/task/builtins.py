@@ -26,7 +26,7 @@ class PingTask(Task):
     name = "celery.ping"
 
     def run(self, **kwargs):
-        """:returns: the string ``"pong"``."""
+        """:returns: the string `"pong"`."""
         return "pong"
 
 
@@ -53,7 +53,7 @@ class ExecuteRemoteTask(Task):
     is an internal component of.
 
     The object must be pickleable, so you can't use lambdas or functions
-    defined in the REPL (that is the python shell, or ``ipython``).
+    defined in the REPL (that is the python shell, or :program:`ipython`).
 
     """
     name = "celery.execute_remote"

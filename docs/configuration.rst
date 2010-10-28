@@ -202,14 +202,14 @@ The time in seconds of which the task result queues should expire.
 CELERY_RESULT_EXCHANGE
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Name of the exchange to publish results in.  Default is ``"celeryresults"``.
+Name of the exchange to publish results in.  Default is `"celeryresults"`.
 
 .. setting:: CELERY_RESULT_EXCHANGE_TYPE
 
 CELERY_RESULT_EXCHANGE_TYPE
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The exchange type of the result exchange.  Default is to use a ``direct``
+The exchange type of the result exchange.  Default is to use a `direct`
 exchange.
 
 .. setting:: CELERY_RESULT_SERIALIZER
@@ -217,7 +217,7 @@ exchange.
 CELERY_RESULT_SERIALIZER
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Result message serialization format.  Default is ``"pickle"``. See
+Result message serialization format.  Default is `"pickle"`. See
 :ref:`executing-serializers`.
 
 .. setting:: CELERY_RESULT_PERSISTENT
@@ -326,7 +326,7 @@ Redis backend settings
     The Redis backend requires the :mod:`redis` library:
     http://pypi.python.org/pypi/redis/0.5.5
 
-    To install the redis package use ``pip`` or ``easy_install``::
+    To install the redis package use `pip` or `easy_install`::
 
         $ pip install redis
 
@@ -337,14 +337,14 @@ This backend requires the following configuration directives to be set.
 REDIS_HOST
 ~~~~~~~~~~
 
-Hostname of the Redis database server. e.g. ``"localhost"``.
+Hostname of the Redis database server. e.g. `"localhost"`.
 
 .. setting:: REDIS_PORT
 
 REDIS_PORT
 ~~~~~~~~~~
 
-Port to the Redis database server. e.g. ``6379``.
+Port to the Redis database server. e.g. `6379`.
 
 .. setting:: REDIS_DB
 
@@ -437,8 +437,8 @@ CELERY_QUEUES
 The mapping of queues the worker consumes from.  This is a dictionary
 of queue name/options.  See :ref:`guide-routing` for more information.
 
-The default is a queue/exchange/binding key of ``"celery"``, with
-exchange type ``direct``.
+The default is a queue/exchange/binding key of `"celery"`, with
+exchange type `direct`.
 
 You don't have to care about this unless you want custom routing facilities.
 
@@ -466,7 +466,7 @@ CELERY_DEFAULT_QUEUE
 ~~~~~~~~~~~~~~~~~~~~
 
 The queue used by default, if no custom queue is specified.  This queue must
-be listed in :setting:`CELERY_QUEUES`.  The default is: ``celery``.
+be listed in :setting:`CELERY_QUEUES`.  The default is: `celery`.
 
 .. seealso::
 
@@ -478,7 +478,7 @@ CELERY_DEFAULT_EXCHANGE
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Name of the default exchange to use when no custom exchange is
-specified.  The default is: ``celery``.
+specified.  The default is: `celery`.
 
 .. setting:: CELERY_DEFAULT_EXCHANGE_TYPE
 
@@ -486,7 +486,7 @@ CELERY_DEFAULT_EXCHANGE_TYPE
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Default exchange type used when no custom exchange is specified.
-The default is: ``direct``.
+The default is: `direct`.
 
 .. setting:: CELERY_DEFAULT_ROUTING_KEY
 
@@ -494,14 +494,14 @@ CELERY_DEFAULT_ROUTING_KEY
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The default routing key used when sending tasks.
-The default is: ``celery``.
+The default is: `celery`.
 
 .. setting:: CELERY_DEFAULT_DELIVERY_MODE
 
 CELERY_DEFAULT_DELIVERY_MODE
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Can be ``transient`` or ``persistent``.  The default is to send
+Can be `transient` or `persistent`.  The default is to send
 persistent messages.
 
 .. _conf-broker-connection:
@@ -514,7 +514,7 @@ Broker Settings
 BROKER_BACKEND
 ~~~~~~~~~~~~~~
 
-The messaging backend to use. Default is ``"amqplib"``.
+The messaging backend to use. Default is `"amqplib"`.
 
 .. setting:: BROKER_HOST
 
@@ -550,7 +550,7 @@ Password to connect with.
 BROKER_VHOST
 ~~~~~~~~~~~~
 
-Virtual host.  Default is ``"/"``.
+Virtual host.  Default is `"/"`.
 
 .. setting:: BROKER_USE_SSL
 
@@ -604,7 +604,7 @@ CELERY_ALWAYS_EAGER
 ~~~~~~~~~~~~~~~~~~~
 
 If this is :const:`True`, all tasks will be executed locally by blocking
-until it is finished.  ``apply_async`` and ``Task.delay`` will return
+until it is finished.  `apply_async` and `Task.delay` will return
 a :class:`~celery.result.EagerResult` which emulates the behavior of
 :class:`~celery.result.AsyncResult`, except the result has already
 been evaluated.
@@ -617,10 +617,10 @@ instead.
 CELERY_EAGER_PROPAGATES_EXCEPTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If this is :const:`True`, eagerly executed tasks (using ``.apply``, or with
+If this is :const:`True`, eagerly executed tasks (using `.apply`, or with
 :setting:`CELERY_ALWAYS_EAGER` on), will raise exceptions.
 
-It's the same as always running ``apply`` with ``throw=True``.
+It's the same as always running `apply` with `throw=True`.
 
 .. setting:: CELERY_IGNORE_RESULT
 
@@ -648,7 +648,7 @@ A built-in periodic task will delete the results after this time
     backends. For the AMQP backend see
     :setting:`CELERY_AMQP_TASK_RESULT_EXPIRES`.
 
-    When using the database or MongoDB backends, ``celerybeat`` must be
+    When using the database or MongoDB backends, `celerybeat` must be
     running for the results to be expired.
 
 
@@ -678,7 +678,7 @@ CELERY_TASK_SERIALIZER
 ~~~~~~~~~~~~~~~~~~~~~~
 
 A string identifying the default serialization method to use.  Can be
-``pickle`` (default), ``json``, ``yaml``, or any custom serialization
+`pickle` (default), `json`, `yaml`, `msgpack` or any custom serialization
 methods that have been registered with :mod:`kombu.serialization.registry`.
 
 .. seealso::
@@ -784,7 +784,7 @@ CELERYD_STATE_DB
 ~~~~~~~~~~~~~~~~
 
 Name of the file used to stores persistent worker state (like revoked tasks).
-Can be a relative or absolute path, but be aware that the suffix ``.db``
+Can be a relative or absolute path, but be aware that the suffix `.db`
 may be appended to the file name (depending on Python version).
 
 Can also be set via the :option:`--statedb` argument to
@@ -813,7 +813,7 @@ Error E-Mails
 CELERY_SEND_TASK_ERROR_EMAILS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The default value for the ``Task.send_error_emails`` attribute, which if
+The default value for the `Task.send_error_emails` attribute, which if
 set to :const:`True` means errors occuring during task execution will be
 sent to :setting:`ADMINS` by e-mail.
 
@@ -829,7 +829,7 @@ A whitelist of exceptions to send error e-mails for.
 ADMINS
 ~~~~~~
 
-List of ``(name, email_address)`` tuples for the admins that should
+List of `(name, email_address)` tuples for the admins that should
 receive error e-mails.
 
 .. setting:: SERVER_EMAIL
@@ -845,7 +845,7 @@ Default is celery@localhost.
 MAIL_HOST
 ~~~~~~~~~
 
-The mail server to use.  Default is ``"localhost"``.
+The mail server to use.  Default is `"localhost"`.
 
 .. setting:: MAIL_HOST_USER
 
@@ -866,7 +866,7 @@ Password (if required) to log on to the mail server with.
 MAIL_PORT
 ~~~~~~~~~
 
-The port the mail server is listening on.  Default is ``25``.
+The port the mail server is listening on.  Default is `25`.
 
 .. _conf-example-error-mail-config:
 
@@ -906,7 +906,7 @@ Events
 CELERY_SEND_EVENTS
 ~~~~~~~~~~~~~~~~~~
 
-Send events so the worker can be monitored by tools like ``celerymon``.
+Send events so the worker can be monitored by tools like `celerymon`.
 
 .. setting:: CELERY_EVENT_QUEUE
 
@@ -914,21 +914,21 @@ CELERY_EVENT_QUEUE
 ~~~~~~~~~~~~~~~~~~
 
 Name of the queue to consume event messages from. Default is
-``"celeryevent"``.
+`"celeryevent"`.
 
 .. setting:: CELERY_EVENT_EXCHANGE
 
 CELERY_EVENT_EXCHANGE
 ~~~~~~~~~~~~~~~~~~~~~
 
-Name of the exchange to send event messages to.  Default is ``"celeryevent"``.
+Name of the exchange to send event messages to.  Default is `"celeryevent"`.
 
 .. setting:: CELERY_EVENT_EXCHANGE_TYPE
 
 CELERY_EVENT_EXCHANGE_TYPE
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The exchange type of the event exchange.  Default is to use a ``"direct"``
+The exchange type of the event exchange.  Default is to use a `"direct"`
 exchange.
 
 .. setting:: CELERY_EVENT_ROUTING_KEY
@@ -936,7 +936,7 @@ exchange.
 CELERY_EVENT_ROUTING_KEY
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Routing key used when sending event messages.  Default is ``"celeryevent"``.
+Routing key used when sending event messages.  Default is `"celeryevent"`.
 
 .. setting:: CELERY_EVENT_SERIALIZER
 
@@ -944,7 +944,7 @@ CELERY_EVENT_SERIALIZER
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Message serialization format used when sending event messages.
-Default is ``"json"``. See :ref:`executing-serializers`.
+Default is `"json"`. See :ref:`executing-serializers`.
 
 .. _conf-broadcast:
 
@@ -960,7 +960,7 @@ Name prefix for the queue used when listening for broadcast messages.
 The workers hostname will be appended to the prefix to create the final
 queue name.
 
-Default is ``"celeryctl"``.
+Default is `"celeryctl"`.
 
 .. setting:: CELERY_BROADCASTS_EXCHANGE
 
@@ -969,14 +969,14 @@ CELERY_BROADCAST_EXCHANGE
 
 Name of the exchange used for broadcast messages.
 
-Default is ``"celeryctl"``.
+Default is `"celeryctl"`.
 
 .. setting:: CELERY_BROADCAST_EXCHANGE_TYPE
 
 CELERY_BROADCAST_EXCHANGE_TYPE
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Exchange type used for broadcast messages.  Default is ``"fanout"``.
+Exchange type used for broadcast messages.  Default is `"fanout"`.
 
 .. _conf-logging:
 
@@ -991,7 +991,7 @@ CELERYD_LOG_FILE
 The default file name the worker daemon logs messages to.  Can be overridden
 using the :option:`--logfile` option to :mod:`~celery.bin.celeryd`.
 
-The default is :const:`None` (``stderr``)
+The default is :const:`None` (`stderr`)
 
 .. setting:: CELERYD_LOG_LEVEL
 
@@ -1013,7 +1013,7 @@ CELERYD_LOG_FORMAT
 
 The format to use for log messages.
 
-Default is ``[%(asctime)s: %(levelname)s/%(processName)s] %(message)s``
+Default is `[%(asctime)s: %(levelname)s/%(processName)s] %(message)s`
 
 See the Python :mod:`logging` module for more information about log
 formats.
@@ -1039,7 +1039,7 @@ formats.
 CELERY_REDIRECT_STDOUTS
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-If enabled ``stdout`` and ``stderr`` will be redirected
+If enabled `stdout` and `stderr` will be redirected
 to the current logger.
 
 Enabled by default.
@@ -1050,7 +1050,7 @@ Used by :program:`celeryd` and :program:`celerybeat`.
 CELERY_REDIRECT_STDOUTS_LEVEL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The loglevel output to ``stdout`` and ``stderr`` is logged as.
+The loglevel output to `stdout` and `stderr` is logged as.
 Can be one of :const:`DEBUG`, :const:`INFO`, :const:`WARNING`,
 :const:`ERROR` or :const:`CRITICAL`.
 
@@ -1112,7 +1112,7 @@ CELERYBEAT_SCHEDULER
 ~~~~~~~~~~~~~~~~~~~~
 
 The default scheduler class.  Default is
-``"celery.beat.PersistentScheduler"``.
+`"celery.beat.PersistentScheduler"`.
 
 Can also be set via the :option:`-S` argument to
 :mod:`~celery.bin.celerybeat`.
@@ -1122,9 +1122,9 @@ Can also be set via the :option:`-S` argument to
 CELERYBEAT_SCHEDULE_FILENAME
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Name of the file used by ``PersistentScheduler`` to store the last run times
+Name of the file used by `PersistentScheduler` to store the last run times
 of periodic tasks.  Can be a relative or absolute path, but be aware that the
-suffix ``.db`` may be appended to the file name (depending on Python version).
+suffix `.db` may be appended to the file name (depending on Python version).
 
 Can also be set via the :option:`--schedule` argument to
 :mod:`~celery.bin.celerybeat`.
@@ -1143,9 +1143,9 @@ CELERYBEAT_LOG_FILE
 ~~~~~~~~~~~~~~~~~~~
 
 The default file name to log messages to.  Can be overridden using
-the `--logfile`` option to :mod:`~celery.bin.celerybeat`.
+the `--logfile` option to :mod:`~celery.bin.celerybeat`.
 
-The default is :const:`None` (``stderr``).
+The default is :const:`None` (`stderr`).
 
 .. setting:: CELERYBEAT_LOG_LEVEL
 
@@ -1171,9 +1171,9 @@ CELERYMON_LOG_FILE
 ~~~~~~~~~~~~~~~~~~
 
 The default file name to log messages to.  Can be overridden using
-the :option:`--logfile` argument to ``celerymon``.
+the :option:`--logfile` argument to `celerymon`.
 
-The default is :const:`None` (``stderr``)
+The default is :const:`None` (`stderr`)
 
 .. setting:: CELERYMON_LOG_LEVEL
 

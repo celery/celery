@@ -1,19 +1,18 @@
 import threading
+
 from time import time, sleep
 
 
 class Heart(threading.Thread):
-    """Thread sending heartbeats at an interval.
+    """Thread sending heartbeats at regular intervals.
 
     :param eventer: Event dispatcher used to send the event.
     :keyword interval: Time in seconds between heartbeats.
-        Default is 2 minutes.
-
-    .. attribute:: bpm
-
-        Beats per minute.
+                       Default is 2 minutes.
 
     """
+
+    #: Beats per minute.
     bpm = 0.5
 
     def __init__(self, eventer, interval=None):
@@ -64,6 +63,6 @@ class Heart(threading.Thread):
             return
         self._state = "CLOSE"
         self._shutdown.set()
-        self._stopped.wait()            # block until this thread is done
+        self._stopped.wait()            # blocks until this thread is done
         if self.isAlive():
             self.join(1e100)

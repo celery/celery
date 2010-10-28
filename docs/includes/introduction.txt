@@ -35,7 +35,7 @@ the `django-celery`_, `celery-pylons`_ and `Flask-Celery`_ add-on packages.
 .. _`Pylons`: http://pylonshq.com/
 .. _`Flask`: http://flask.pocoo.org/
 .. _`django-celery`: http://pypi.python.org/pypi/django-celery
-.. _`celery-pylons`: http://bitbucket.org/ianschenck/celery-pylons
+.. _`celery-pylons`: http://pypi.python.org/pypi/celery-pylons
 .. _`Flask-Celery`: http://github.com/ask/flask-celery/
 .. _`operate with other languages using webhooks`:
     http://ask.github.com/celery/userguide/remote-tasks.html
@@ -53,7 +53,7 @@ This is a high level overview of the architecture.
 .. image:: http://cloud.github.com/downloads/ask/celery/Celery-Overview-v4.jpg
 
 The broker delivers tasks to the worker servers.
-A worker server is a networked machine running ``celeryd``.  This can be one or
+A worker server is a networked machine running `celeryd`.  This can be one or
 more machines depending on the workload.
 
 The result of the task can be stored for later retrieval (called its
@@ -102,7 +102,7 @@ Features
     |                 | while the queue is temporarily overloaded).        |
     +-----------------+----------------------------------------------------+
     | Concurrency     | Tasks are executed in parallel using the           |
-    |                 | ``multiprocessing`` module.                        |
+    |                 | `multiprocessing` module.                          |
     +-----------------+----------------------------------------------------+
     | Scheduling      | Supports recurring tasks like cron, or specifying  |
     |                 | an exact date or countdown for when after the task |
@@ -189,23 +189,23 @@ is hosted at Github.
 Installation
 ============
 
-You can install ``celery`` either via the Python Package Index (PyPI)
+You can install Celery either via the Python Package Index (PyPI)
 or from source.
 
-To install using ``pip``,::
+To install using `pip`,::
 
-    $ pip install celery
+    $ pip install Celery
 
-To install using ``easy_install``,::
+To install using `easy_install`,::
 
-    $ easy_install celery
+    $ easy_install Celery
 
 .. _celery-installing-from-source:
 
 Downloading and installing from source
 --------------------------------------
 
-Download the latest version of ``celery`` from
+Download the latest version of Celery from
 http://pypi.python.org/pypi/celery/
 
 You can install it by doing the following,::

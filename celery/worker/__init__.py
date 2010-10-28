@@ -1,8 +1,3 @@
-"""
-
-The Multiprocessing Worker Server
-
-"""
 import socket
 import logging
 import traceback
@@ -23,10 +18,13 @@ RUN = 0x1
 CLOSE = 0x2
 TERMINATE = 0x3
 
+#: List of signals to reset when a child process starts.
 WORKER_SIGRESET = frozenset(["SIGTERM",
                              "SIGHUP",
                              "SIGTTIN",
                              "SIGTTOU"])
+
+#: List of signals to ignore when a child process starts.
 WORKER_SIGIGNORE = frozenset(["SIGINT"])
 
 
@@ -50,65 +48,46 @@ def process_initializer(app, hostname):
 
 
 class WorkController(object):
-    """Executes tasks waiting in the task queue.
+    """Unmanaged worker instance."""
 
-    :param concurrency: see :attr:`concurrency`.
-    :param logfile: see :attr:`logfile`.
-    :param loglevel: see :attr:`loglevel`.
-    :param embed_clockservice: see :attr:`embed_clockservice`.
-    :param send_events: see :attr:`send_events`.
+    #: The number of simultaneous processes doing work (default:
+    #: :setting:`CELERYD_CONCURRENCY`)
+    concurrency = None
 
-    .. attribute:: concurrency
-
-        The number of simultaneous processes doing work (default:
-        ``conf.CELERYD_CONCURRENCY``)
-
-    .. attribute:: loglevel
-
-        The loglevel used (default: :const:`logging.INFO`)
-
-    .. attribute:: logfile
-
-        The logfile used, if no logfile is specified it uses ``stderr``
-        (default: `celery.conf.CELERYD_LOG_FILE`).
-
-    .. attribute:: embed_clockservice
-
-        If :const:`True`, celerybeat is embedded, running in the main worker
-        process as a thread.
-
-    .. attribute:: send_events
-
-        Enable the sending of monitoring events, these events can be captured
-        by monitors (celerymon).
-
-    .. attribute:: logger
-
-        The :class:`logging.Logger` instance used for logging.
-
-    .. attribute:: pool
-
-        The :class:`multiprocessing.Pool` instance used.
-
-    .. attribute:: ready_queue
-
-        The :class:`Queue.Queue` that holds tasks ready for immediate
-        processing.
-
-    .. attribute:: schedule_controller
-
-        Instance of :class:`celery.worker.controllers.ScheduleController`.
-
-    .. attribute:: mediator
-
-        Instance of :class:`celery.worker.controllers.Mediator`.
-
-    .. attribute:: consumer
-
-        Instance of :class:`celery.worker.consumer.Consumer`.
-
-    """
+    #: The loglevel used (default: :const:`logging.INFO`)
     loglevel = logging.ERROR
+
+    #: The logfile used, if no logfile is specified it uses `stderr`
+    #: (default: :setting:`CELERYD_LOG_FILE`).
+    logfile = None
+
+    #: If :const:`True`, celerybeat is embedded, running in the main worker
+    #: process as a thread.
+    embed_clockservice = None
+
+    #: Enable the sending of monitoring events, these events can be captured
+    #: by monitors (celerymon).
+    send_events = False
+
+    #: The :class:`logging.Logger` instance used for logging.
+    logger = None
+
+    #: The pool instance used.
+    pool = None
+
+    #: The internal queue object that holds tasks ready for immediate
+    #: processing.
+    ready_queue = None
+
+    #: Instance of :class:`celery.worker.controllers.ScheduleController`.
+    schedule_controller = None
+
+    #: Instance of :class:`celery.worker.controllers.Mediator`.
+    mediator = None
+
+    #: Consumer instance.
+    consumer = None
+
     _state = None
     _running = 0
 
@@ -120,7 +99,8 @@ class WorkController(object):
             task_soft_time_limit=None, max_tasks_per_child=None,
             pool_putlocks=None, db=None, prefetch_multiplier=None,
             eta_scheduler_precision=None, queues=None,
-            disable_rate_limits=None, app=None):
+            disable_rate_limits=None, autoscale=None,
+            autoscaler_cls=None, scheduler_cls=None, app=None):
 
         self.app = app_or_default(app)
         conf = self.app.conf
@@ -138,8 +118,11 @@ class WorkController(object):
         self.mediator_cls = mediator_cls or conf.CELERYD_MEDIATOR
         self.eta_scheduler_cls = eta_scheduler_cls or \
                                     conf.CELERYD_ETA_SCHEDULER
+        self.autoscaler_cls = autoscaler_cls or \
+                                    conf.CELERYD_AUTOSCALER
         self.schedule_filename = schedule_filename or \
                                     conf.CELERYBEAT_SCHEDULE_FILENAME
+        self.scheduler_cls = scheduler_cls or conf.CELERYBEAT_SCHEDULER
         self.hostname = hostname or socket.gethostname()
         self.embed_clockservice = embed_clockservice
         self.ready_callback = ready_callback
@@ -178,7 +161,13 @@ class WorkController(object):
         self.logger.debug("Instantiating thread components...")
 
         # Threads + Pool + Consumer
-        self.pool = instantiate(self.pool_cls, self.concurrency,
+        self.autoscaler = None
+        max_concurrency = None
+        min_concurrency = concurrency
+        if autoscale:
+            max_concurrency, min_concurrency = autoscale
+
+        self.pool = instantiate(self.pool_cls, min_concurrency,
                                 logger=self.logger,
                                 initializer=process_initializer,
                                 initargs=(self.app, self.hostname),
@@ -186,6 +175,12 @@ class WorkController(object):
                                 timeout=self.task_time_limit,
                                 soft_timeout=self.task_soft_time_limit,
                                 putlocks=self.pool_putlocks)
+
+        if autoscale:
+            self.autoscaler = instantiate(self.autoscaler_cls, self.pool,
+                                          max_concurrency=max_concurrency,
+                                          min_concurrency=min_concurrency,
+                                          logger=self.logger)
 
         self.mediator = None
         if not disable_rate_limits:
@@ -202,7 +197,8 @@ class WorkController(object):
         if self.embed_clockservice:
             self.beat = beat.EmbeddedService(app=self.app,
                                 logger=self.logger,
-                                schedule_filename=self.schedule_filename)
+                                schedule_filename=self.schedule_filename,
+                                scheduler_cls=self.scheduler_cls)
 
         prefetch_count = self.concurrency * self.prefetch_multiplier
         self.consumer = instantiate(self.consumer_cls,
@@ -224,6 +220,7 @@ class WorkController(object):
                                         self.mediator,
                                         self.scheduler,
                                         self.beat,
+                                        self.autoscaler,
                                         self.consumer))
 
     def start(self):
@@ -257,7 +254,6 @@ class WorkController(object):
         self._shutdown(warm=False)
 
     def _shutdown(self, warm=True):
-        """Gracefully shutdown the worker server."""
         what = (warm and "stopping" or "terminating").capitalize()
 
         if self._state != RUN or self._running != len(self.components):

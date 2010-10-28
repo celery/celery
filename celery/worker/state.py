@@ -3,30 +3,29 @@ import shelve
 from celery.utils.compat import defaultdict
 from celery.datastructures import LimitedSet
 
-# Maximum number of revokes to keep in memory.
+#: maximum number of revokes to keep in memory.
 REVOKES_MAX = 10000
 
-# How many seconds a revoke will be active before
-# being expired when the max limit has been exceeded.
-REVOKE_EXPIRES = 3600                       # One hour.
+#: how many seconds a revoke will be active before
+#: being expired when the max limit has been exceeded.
+REVOKE_EXPIRES = 3600
 
-"""
-.. data:: active_requests
+#: set of all reserved :class:`~celery.worker.job.TaskRequest`'s.
+reserved_requests = set()
 
-Set of currently active :class:`~celery.worker.job.TaskRequest`'s.
-
-.. data:: total_count
-
-Count of tasks executed by the worker, sorted by type.
-
-.. data:: revoked
-
-The list of currently revoked tasks. (PERSISTENT if statedb set).
-
-"""
+#: set of currently active :class:`~celery.worker.job.TaskRequest`'s.
 active_requests = set()
+
+#: count of tasks executed by the worker, sorted by type.
 total_count = defaultdict(lambda: 0)
+
+#: the list of currently revoked tasks.  Persistent if statedb set.
 revoked = LimitedSet(maxlen=REVOKES_MAX, expires=REVOKE_EXPIRES)
+
+
+def task_reserved(request):
+    """Updates global state when a task has been reserved."""
+    reserved_requests.add(request)
 
 
 def task_accepted(request):
@@ -38,6 +37,7 @@ def task_accepted(request):
 def task_ready(request):
     """Updates global state when a task is ready."""
     active_requests.discard(request)
+    reserved_requests.discard(request)
 
 
 class Persistent(object):
@@ -47,10 +47,6 @@ class Persistent(object):
     def __init__(self, filename):
         self.filename = filename
         self._load()
-
-    def _load(self):
-        self.merge(self.db)
-        self.close()
 
     def save(self):
         self.sync(self.db).sync()
@@ -73,6 +69,10 @@ class Persistent(object):
         if self._open:
             self._open.close()
             self._open = None
+
+    def _load(self):
+        self.merge(self.db)
+        self.close()
 
     @property
     def db(self):

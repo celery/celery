@@ -5,7 +5,7 @@
 
 .. cmdoption:: -s, --schedule
 
-    Path to the schedule database. Defaults to ``celerybeat-schedule``.
+    Path to the schedule database. Defaults to `celerybeat-schedule`.
     The extension ".db" will be appended to the filename.
 
 .. cmdoption:: -S, --scheduler
@@ -14,12 +14,12 @@
 
 .. cmdoption:: -f, --logfile
 
-    Path to log file. If no logfile is specified, ``stderr`` is used.
+    Path to log file. If no logfile is specified, `stderr` is used.
 
 .. cmdoption:: -l, --loglevel
 
-    Logging level, choose between ``DEBUG``, ``INFO``, ``WARNING``,
-    ``ERROR``, ``CRITICAL``, or ``FATAL``.
+    Logging level, choose between `DEBUG`, `INFO`, `WARNING`,
+    `ERROR`, `CRITICAL`, or `FATAL`.
 
 """
 from celery.bin.base import Command, Option

@@ -2,14 +2,14 @@
 a805d4bd
 This module fixes a bug with pickling and relative imports in Python < 2.6.
 
-The problem is with pickling an e.g. ``exceptions.KeyError`` instance.
-As SQLAlchemy has its own ``exceptions`` module, pickle will try to
-lookup ``KeyError`` in the wrong module, resulting in this exception::
+The problem is with pickling an e.g. `exceptions.KeyError` instance.
+As SQLAlchemy has its own `exceptions` module, pickle will try to
+lookup :exc:`KeyError` in the wrong module, resulting in this exception::
 
     cPickle.PicklingError: Can't pickle <type 'exceptions.KeyError'>:
         attribute lookup exceptions.KeyError failed
 
-doing ``import exceptions`` just before the dump in ``sqlalchemy.types``
+doing `import exceptions` just before the dump in `sqlalchemy.types`
 reveals the source of the bug::
 
     EXCEPTIONS: <module 'sqlalchemy.exc' from '/var/lib/hudson/jobs/celery/

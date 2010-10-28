@@ -16,28 +16,28 @@ Basics
 Executing tasks is done with :meth:`~celery.task.Base.Task.apply_async`,
 and the shortcut: :meth:`~celery.task.Base.Task.delay`.
 
-``delay`` is simple and convenient, as it looks like calling a regular
+`delay` is simple and convenient, as it looks like calling a regular
 function:
 
 .. code-block:: python
 
     Task.delay(arg1, arg2, kwarg1="x", kwarg2="y")
 
-The same using ``apply_async`` is written like this:
+The same using `apply_async` is written like this:
 
 .. code-block:: python
 
     Task.apply_async(args=[arg1, arg2], kwargs={"kwarg1": "x", "kwarg2": "y"})
 
 
-While ``delay`` is convenient, it doesn't give you as much control as using
-``apply_async``.  With ``apply_async`` you can override the execution options
-available as attributes on the ``Task`` class (see :ref:`task-options`).
+While `delay` is convenient, it doesn't give you as much control as using
+`apply_async`.  With `apply_async` you can override the execution options
+available as attributes on the `Task` class (see :ref:`task-options`).
 In addition you can set countdown/eta, task expiry, provide a custom broker
 connection and more.
 
 Let's go over these in more detail.  All the examples uses a simple task,
-called ``add``, taking two positional arguments and returning the sum:
+called `add`, taking two positional arguments and returning the sum:
 
 .. code-block:: python
 
@@ -62,7 +62,7 @@ ETA and countdown
 =================
 
 The ETA (estimated time of arrival) lets you set a specific date and time that
-is the earliest time at which your task will be executed.  ``countdown`` is
+is the earliest time at which your task will be executed.  `countdown` is
 a shortcut to set eta by seconds into the future.
 
 .. code-block:: python
@@ -79,7 +79,7 @@ are executed in a timely manner you should monitor queue lenghts. Use
 Munin, or similar tools, to receive alerts, so appropiate action can be
 taken to ease the workload.  See :ref:`monitoring-munin`.
 
-While ``countdown`` is an integer, ``eta`` must be a :class:`~datetime.datetime`
+While `countdown` is an integer, `eta` must be a :class:`~datetime.datetime`
 object, specifying an exact date and time (including millisecond precision,
 and timezone information):
 
@@ -95,7 +95,7 @@ and timezone information):
 Expiration
 ==========
 
-The ``expires`` argument defines an optional expiry time,
+The `expires` argument defines an optional expiry time,
 either as seconds after task publish, or a specific date and time using
 :class:~datetime.datetime`:
 
@@ -121,8 +121,8 @@ Serializers
 Data transferred between clients and workers needs to be serialized.
 The default serializer is :mod:`pickle`, but you can
 change this globally or for each individual task.
-There is built-in support for :mod:`pickle`, ``JSON``, ``YAML``
-and ``msgpack``, and you can also add your own custom serializers by registering
+There is built-in support for :mod:`pickle`, `JSON`, `YAML`
+and `msgpack`, and you can also add your own custom serializers by registering
 them into the Carrot serializer registry (see
 `Kombu: Serialization of Data`_).
 
@@ -182,12 +182,12 @@ be available for the worker.
 The client uses the following order to decide which serializer
 to use when sending a task:
 
-    1. The ``serializer`` argument to ``apply_async``
-    2. The tasks ``serializer`` attribute
+    1. The `serializer` argument to `apply_async`
+    2. The tasks `serializer` attribute
     3. The default :setting:`CELERY_TASK_SERIALIZER` setting.
 
 
-*Using the ``serializer`` argument to ``apply_async``*:
+*Using the `serializer` argument to `apply_async`*:
 
 .. code-block:: python
 
@@ -199,7 +199,7 @@ Connections and connection timeouts.
 ====================================
 
 Currently there is no support for broker connection pools, so 
-``apply_async`` establishes and closes a new connection every time
+`apply_async` establishes and closes a new connection every time
 it is called.  This is something you need to be aware of when sending
 more than one task at a time.
 
@@ -231,7 +231,7 @@ publisher:
 
 The connection timeout is the number of seconds to wait before giving up
 on establishing the connection.  You can set this by using the
-``connect_timeout`` argument to ``apply_async``:
+`connect_timeout` argument to `apply_async`:
 
 .. code-block:: python
 
@@ -258,11 +258,11 @@ process video, others process images, and some gather collective intelligence
 about its users.  Some of these tasks are more important, so we want to make
 sure the high priority tasks get sent to dedicated nodes.
 
-For the sake of this example we have a single exchange called ``tasks``.
+For the sake of this example we have a single exchange called `tasks`.
 There are different types of exchanges, each type interpreting the routing
 key in different ways, implementing different messaging scenarios.
 
-The most common types used with Celery are ``direct`` and ``topic``.
+The most common types used with Celery are `direct` and `topic`.
 
 * direct
 
@@ -271,14 +271,14 @@ The most common types used with Celery are ``direct`` and ``topic``.
 * topic
 
     In the topic exchange the routing key is made up of words separated by
-    dots (``.``).  Words can be matched by the wild cards ``*`` and ``#``,
-    where ``*`` matches one exact word, and ``#`` matches one or many words.
+    dots (`.`).  Words can be matched by the wild cards `*` and `#`,
+    where `*` matches one exact word, and `#` matches one or many words.
 
-    For example, ``*.stock.#`` matches the routing keys ``usd.stock`` and
-    ``euro.stock.db`` but not ``stock.nasdaq``.
+    For example, `*.stock.#` matches the routing keys `usd.stock` and
+    `euro.stock.db` but not `stock.nasdaq`.
 
-We create three queues, ``video``, ``image`` and ``lowpri`` that binds to
-the ``tasks`` exchange.  For the queues we use the following binding keys::
+We create three queues, `video`, `image` and `lowpri` that binds to
+the `tasks` exchange.  For the queues we use the following binding keys::
 
     video: video.#
     image: image.#
@@ -301,8 +301,8 @@ listen to different queues:
 
 
 Later, if the crop task is consuming a lot of resources,
-we can bind new workers to handle just the ``"image.crop"`` task,
-by creating a new queue that binds to ``"image.crop``".
+we can bind new workers to handle just the `"image.crop"` task,
+by creating a new queue that binds to `"image.crop`".
 
 .. seealso::
 
@@ -329,7 +329,7 @@ Not supported by :mod:`amqplib`.
 
 * priority
 
-A number between ``0`` and ``9``, where ``0`` is the highest priority.
+A number between `0` and `9`, where `0` is the highest priority.
 
 .. note::
 

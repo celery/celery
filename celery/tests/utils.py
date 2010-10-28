@@ -169,7 +169,7 @@ def skip(reason):
 
 
 def skip_if(predicate, reason):
-    """Skip test if predicate is ``True``."""
+    """Skip test if predicate is :const:`True`."""
 
     def _inner(fun):
         return predicate and skip(reason)(fun) or fun
@@ -178,7 +178,7 @@ def skip_if(predicate, reason):
 
 
 def skip_unless(predicate, reason):
-    """Skip test if predicate is ``False``."""
+    """Skip test if predicate is :const:`False`."""
     return skip_if(not predicate, reason)
 
 
@@ -218,7 +218,7 @@ def mask_modules(*modnames):
 
 @contextmanager
 def override_stdouts():
-    """Override ``sys.stdout`` and ``sys.stderr`` with ``StringIO``."""
+    """Override `sys.stdout` and `sys.stderr` with `StringIO`."""
     prev_out, prev_err = sys.stdout, sys.stderr
     mystdout, mystderr = StringIO(), StringIO()
     sys.stdout = sys.__stdout__ = mystdout

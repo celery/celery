@@ -101,19 +101,19 @@ Deprecations
 Removed deprecations
 ====================
 
-* ``celery.utils.timedelta_seconds``
+* `celery.utils.timedelta_seconds`
     Use: :func:`celery.utils.timeutils.timedelta_seconds`
 
-* ``celery.utils.defaultdict``
+* `celery.utils.defaultdict`
     Use: :func:`celery.utils.compat.defaultdict`
 
-* ``celery.utils.all``
+* `celery.utils.all`
     Use: :func:`celery.utils.compat.all`
 
-* ``celery.task.apply_async``
+* `celery.task.apply_async`
     Use app.send_task
 
-* ``celery.task.tasks``
+* `celery.task.tasks`
     Use :data:`celery.registry.tasks`
 
 Aliases (Pending deprecation)

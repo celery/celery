@@ -9,7 +9,7 @@
 celery
 ------
 
-* IRC logs from ``#celery`` (Freenode):
+* IRC logs from `#celery` (Freenode):
     http://botland.oebfare.com/logger/celery/
 
 .. _links-amqp:

@@ -111,7 +111,7 @@ class Beat(object):
                                info=" ".join(sys.argv[arg_start:]))
 
     def install_sync_handler(self, beat):
-        """Install a ``SIGTERM`` + ``SIGINT`` handler that saves
+        """Install a `SIGTERM` + `SIGINT` handler that saves
         the celerybeat schedule."""
 
         def _sync(signum, frame):

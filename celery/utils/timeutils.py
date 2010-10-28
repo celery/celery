@@ -65,7 +65,7 @@ def remaining(start, ends_in, now=None, relative=True):
     :param ends_in: The end delta as a :class:`~datetime.timedelta`.
     :keyword relative: If set to :const:`False`, the end time will be
         calculated using :func:`delta_resolution` (i.e. rounded to the
-        resolution of ``ends_in``).
+        resolution of `ends_in`).
     :keyword now: Function returning the current time and date,
         defaults to :func:`datetime.now`.
 
@@ -79,7 +79,7 @@ def remaining(start, ends_in, now=None, relative=True):
 
 
 def rate(rate):
-    """Parses rate strings, such as ``"100/m"`` or ``"2/h"``
+    """Parses rate strings, such as `"100/m"` or `"2/h"`
     and converts them to seconds."""
     if rate:
         if isinstance(rate, basestring):
@@ -118,7 +118,7 @@ def humanize_seconds(secs, prefix=""):
 
 
 def maybe_iso8601(dt):
-    """``Either datetime | str -> datetime or None -> None``"""
+    """`Either datetime | str -> datetime or None -> None`"""
     if not dt:
         return
     if isinstance(dt, datetime):

@@ -31,8 +31,8 @@ Example connecting to the :data:`task_sent` signal:
 
 Some signals also have a sender which you can filter by. For example the
 :data:`task_sent` signal uses the task name as a sender, so you can
-connect your handler to be called only when tasks with name ``"tasks.add"``
-has been sent by providing the ``sender`` argument to
+connect your handler to be called only when tasks with name `"tasks.add"`
+has been sent by providing the `sender` argument to
 :class:`~celery.utils.dispatch.signal.Signal.connect`:
 
 .. code-block:: python

@@ -39,11 +39,11 @@ API will be deprecated; so, for example, if we decided to remove a function
 that existed in Celery 1.0:
 
 * Celery 1.2 will contain a backwards-compatible replica of the function which
-  will raise a ``PendingDeprecationWarning``.
+  will raise a `PendingDeprecationWarning`.
   This warning is silent by default; you need to explicitly turn on display
   of these warnings.
 * Celery 1.4 will contain the backwards-compatible replica, but the warning
-  will be promoted to a full-fledged ``DeprecationWarning``. This warning
+  will be promoted to a full-fledged `DeprecationWarning`. This warning
   is loud by default, and will likely be quite annoying.
 * Celery 1.6 will remove the feature outright.
 
@@ -89,15 +89,15 @@ What's new?
 
 * New periodic task service.
 
-    Periodic tasks are no longer dispatched by ``celeryd``, but instead by a
-    separate service called ``celerybeat``. This is an optimized, centralized
+    Periodic tasks are no longer dispatched by `celeryd`, but instead by a
+    separate service called `celerybeat`. This is an optimized, centralized
     service dedicated to your periodic tasks, which means you don't have to
     worry about deadlocks or race conditions any more. But that does mean you
     have to make sure only one instance of this service is running at any one
     time.
 
-  **TIP:** If you're only running a single ``celeryd`` server, you can embed
-  ``celerybeat`` inside it. Just add the ``--beat`` argument.
+  **TIP:** If you're only running a single `celeryd` server, you can embed
+  `celerybeat` inside it. Just add the `--beat` argument.
 
 
 * Broadcast commands
@@ -120,12 +120,12 @@ What's new?
 * Platform agnostic message format.
 
   The message format has been standardized and is now using the ISO-8601 format
-  for dates instead of Python ``datetime`` objects. This means you can write task
-  consumers in other languages than Python (``eceleryd`` anyone?)
+  for dates instead of Python `datetime` objects. This means you can write task
+  consumers in other languages than Python (`eceleryd` anyone?)
 
 * Timely
 
-  Periodic tasks are now scheduled on the clock, i.e. ``timedelta(hours=1)``
+  Periodic tasks are now scheduled on the clock, i.e. `timedelta(hours=1)`
   means every hour at :00 minutes, not every hour from the server starts.
   To revert to the previous behavior you have the option to enable
   :attr:`PeriodicTask.relative`.
@@ -140,8 +140,8 @@ change set before you continue.
 .. _`changelog`: http://ask.github.com/celery/changelog.html
 
 **TIP:** If you install the :mod:`setproctitle` module you can see which
-task each worker process is currently executing in ``ps`` listings.
-Just install it using pip: ``pip install setproctitle``.
+task each worker process is currently executing in `ps` listings.
+Just install it using pip: `pip install setproctitle`.
 
 Resources
 =========

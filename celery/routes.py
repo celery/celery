@@ -5,13 +5,13 @@ _first_route = firstmethod("route_for_task")
 
 
 def merge(a, b):
-    """Like ``dict(a, **b)`` except it will keep values from ``a``,
-    if the value in ``b`` is :const:`None`."""
+    """Like `dict(a, **b)` except it will keep values from `a`, if the value
+    in `b` is :const:`None`."""
     return dict(a, **dict((k, v) for k, v in b.iteritems() if v is not None))
 
 
 class MapRoute(object):
-    """Makes a router out of a :class:`dict`."""
+    """Creates a router out of a :class:`dict`."""
 
     def __init__(self, map):
         self.map = map
@@ -75,7 +75,7 @@ class Router(object):
 
 
 def prepare(routes):
-    """Expand ROUTES setting."""
+    """Expands the :setting:`CELERY_ROUTES` setting."""
 
     def expand_route(route):
         if isinstance(route, dict):

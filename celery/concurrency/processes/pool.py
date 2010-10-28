@@ -81,8 +81,8 @@ def soft_timeout_sighandler(signum, frame):
 
 
 def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None):
-    assert maxtasks is None or (type(maxtasks) == int and maxtasks > 0)
     pid = os.getpid()
+    assert maxtasks is None or (type(maxtasks) == int and maxtasks > 0)
     put = outqueue.put
     get = inqueue.get
 
@@ -107,6 +107,7 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None):
 
     if SIG_SOFT_TIMEOUT is not None:
         signal.signal(SIG_SOFT_TIMEOUT, soft_timeout_sighandler)
+
 
     completed = 0
     while maxtasks is None or (maxtasks and completed < maxtasks):
@@ -136,7 +137,6 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None):
 
         completed += 1
     debug('worker exiting after %d tasks' % completed)
-
 
 #
 # Class representing a process pool
@@ -527,6 +527,44 @@ class Pool(object):
             return True
         return False
 
+    def shrink(self, n=1):
+        for i, worker in enumerate(self._iterinactive()):
+            self._processes -= 1
+            if self._putlock:
+                self._putlock._initial_value -= 1
+                self._putlock.acquire()
+            worker.terminate()
+            if i == n - 1:
+                return
+        raise ValueError("Can't shrink pool. All processes busy!")
+
+    def grow(self, n=1):
+        for i in xrange(n):
+            #assert len(self._pool) == self._processes
+            self._processes += 1
+            if self._putlock:
+                cond = self._putlock._Semaphore__cond
+                cond.acquire()
+                try:
+                    self._putlock._initial_value += 1
+                    self._putlock._Semaphore__value += 1
+                    cond.notify()
+                finally:
+                    cond.release()
+
+    def _iterinactive(self):
+        for worker in self._pool:
+            if not self._worker_active(worker):
+                yield worker
+        raise
+
+    def _worker_active(self, worker):
+        jobs = []
+        for job in self._cache.values():
+            if worker.pid in job.worker_pids():
+                return True
+        return False
+
     def _repopulate_pool(self):
         """Bring the number of pool processes up to the specified number,
         for use after reaping workers which have exited.
@@ -541,8 +579,8 @@ class Pool(object):
     def _maintain_pool(self):
         """"Clean up any exited workers and start replacements for them.
         """
-        if self._join_exited_workers():
-            self._repopulate_pool()
+        self._join_exited_workers()
+        self._repopulate_pool()
 
     def _setup_queues(self):
         from multiprocessing.queues import SimpleQueue

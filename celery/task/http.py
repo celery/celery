@@ -106,8 +106,8 @@ class HttpDispatch(object):
     """Make task HTTP request and collect the task result.
 
     :param url: The URL to request.
-    :param method: HTTP method used. Currently supported methods are ``GET``
-        and ``POST``.
+    :param method: HTTP method used. Currently supported methods are `GET`
+        and `POST`.
     :param task_kwargs: Task keyword arguments.
     :param logger: Logger used for user/system feedback.
 
@@ -151,7 +151,7 @@ class HttpDispatchTask(BaseTask):
 
     :keyword url: The URL location of the HTTP callback task.
     :keyword method: Method to use when dispatching the callback. Usually
-        ``GET`` or ``POST``.
+        `GET` or `POST`.
     :keyword \*\*kwargs: Keyword arguments to pass on to the HTTP callback.
 
     .. attribute:: url

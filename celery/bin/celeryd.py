@@ -10,12 +10,12 @@
 
 .. cmdoption:: -f, --logfile
 
-    Path to log file. If no logfile is specified, ``stderr`` is used.
+    Path to log file. If no logfile is specified, `stderr` is used.
 
 .. cmdoption:: -l, --loglevel
 
-    Logging level, choose between ``DEBUG``, ``INFO``, ``WARNING``,
-    ``ERROR``, ``CRITICAL``, or ``FATAL``.
+    Logging level, choose between `DEBUG`, `INFO`, `WARNING`,
+    `ERROR`, `CRITICAL`, or `FATAL`.
 
 .. cmdoption:: -n, --hostname
 
@@ -23,14 +23,14 @@
 
 .. cmdoption:: -B, --beat
 
-    Also run the ``celerybeat`` periodic task scheduler. Please note that
+    Also run the `celerybeat` periodic task scheduler. Please note that
     there must only be one instance of this service.
 
 .. cmdoption:: -Q, --queues
 
     List of queues to enable for this worker, separated by comma.
     By default all configured queues are enabled.
-    Example: ``-Q video,image``
+    Example: `-Q video,image`
 
 .. cmdoption:: -I, --include
 
@@ -39,13 +39,17 @@
 
 .. cmdoption:: -s, --schedule
 
-    Path to the schedule database if running with the ``-B`` option.
-    Defaults to ``celerybeat-schedule``. The extension ".db" will be
+    Path to the schedule database if running with the `-B` option.
+    Defaults to `celerybeat-schedule`. The extension ".db" will be
     appended to the filename.
+
+.. cmdoption:: --scheduler
+
+    Scheduler class to use. Default is celery.beat.PersistentScheduler
 
 .. cmdoption:: -E, --events
 
-    Send events that can be captured by monitors like ``celerymon``.
+    Send events that can be captured by monitors like `celerymon`.
 
 .. cmdoption:: --purge, --discard
 
@@ -114,7 +118,11 @@ class WorkerCommand(Command):
                      "option. The extension '.db' will be appended to the "
                     "filename. Default: %s" % (
                         conf.CELERYBEAT_SCHEDULE_FILENAME, )),
-
+            Option('--scheduler',
+                default=None,
+                action="store", dest="scheduler_cls",
+                help="Scheduler class. Default is "
+                     "celery.beat.PersistentScheduler"),
             Option('-S', '--statedb', default=conf.CELERYD_STATE_DB,
                 action="store", dest="db",
                 help="Path to the state database. The extension '.db' will "
@@ -150,6 +158,11 @@ class WorkerCommand(Command):
                 help="Optional file used to store the workers pid. "
                      "The worker will not start if this file already exists "
                      "and the pid is still alive."),
+            Option('--autoscale', default=None,
+                help="Enable autoscaling by providing "
+                     "max_concurrency,min_concurrency. Example: "
+                     "--autoscale=10,3 (always keep 3 processes, "
+                     "but grow to 10 if necessary)."),
         )
 
 

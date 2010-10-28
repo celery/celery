@@ -30,7 +30,7 @@ Entries
 To schedule a task periodically you have to add an entry to the
 :setting:`CELERYBEAT_SCHEDULE` setting.
 
-Example: Run the ``tasks.add`` task every 30 seconds.
+Example: Run the `tasks.add` task every 30 seconds.
 
 .. code-block:: python
 
@@ -46,7 +46,7 @@ Example: Run the ``tasks.add`` task every 30 seconds.
 
 
 Using a :class:`~datetime.timedelta` for the schedule means the task will
-be executed 30 seconds after ``celerybeat`` starts, and then every 30 seconds
+be executed 30 seconds after `celerybeat` starts, and then every 30 seconds
 after the last run.  A crontab like schedule also exists, see the section
 on `Crontab schedules`_.
 
@@ -55,11 +55,11 @@ on `Crontab schedules`_.
 Available Fields
 ----------------
 
-* ``task``
+* `task`
 
     The name of the task to execute.
 
-* ``schedule``
+* `schedule`
 
     The frequency of execution.
 
@@ -68,28 +68,28 @@ Available Fields
     You can also define your own custom schedule types, by extending the
     interface of :class:`~celery.schedules.schedule`.
 
-* ``args``
+* `args`
 
     Positional arguments (:class:`list` or :class:`tuple`).
 
-* ``kwargs``
+* `kwargs`
 
     Keyword arguments (:class:`dict`).
 
-* ``options``
+* `options`
 
     Execution options (:class:`dict`).
 
     This can be any argument supported by :meth:`~celery.execute.apply_async`,
-    e.g. ``exchange``, ``routing_key``, ``expires``, and so on.
+    e.g. `exchange`, `routing_key`, `expires`, and so on.
 
-* ``relative``
+* `relative`
 
     By default :class:`~datetime.timedelta` schedules are scheduled
     "by the clock". This means the frequency is rounded to the nearest
     second, minute, hour or day depending on the period of the timedelta.
 
-    If ``relative`` is true the frequency is not rounded and will be
+    If `relative` is true the frequency is not rounded and will be
     relative to the time when :program:`celerybeat` was started.
 
 .. _beat-crontab:
@@ -99,7 +99,7 @@ Crontab schedules
 
 If you want more control over when the task is executed, for
 example, a particular time of day or day of the week, you can use
-the ``crontab`` schedule type:
+the `crontab` schedule type:
 
 .. code-block:: python
 
@@ -165,13 +165,13 @@ To start the :program:`celerybeat` service::
 
     $ celerybeat
 
-You can also start ``celerybeat`` with ``celeryd`` by using the ``-B`` option,
+You can also start `celerybeat` with `celeryd` by using the `-B` option,
 this is convenient if you only intend to use one worker node::
 
     $ celeryd -B
 
 Celerybeat needs to store the last run times of the tasks in a local database
-file (named ``celerybeat-schedule`` by default), so it needs access to
+file (named `celerybeat-schedule` by default), so it needs access to
 write in the current directory, or alternatively you can specify a custom
 location for this file::
 
@@ -187,15 +187,15 @@ location for this file::
 Using custom scheduler classes
 ------------------------------
 
-Custom scheduler classes can be specified on the command line (the ``-S``
+Custom scheduler classes can be specified on the command line (the `-S`
 argument).  The default scheduler is :class:`celery.beat.PersistentScheduler`,
 which is simply keeping track of the last run times in a local database file
 (a :mod:`shelve`).
 
-``django-celery`` also ships with a scheduler that stores the schedule in the
+`django-celery` also ships with a scheduler that stores the schedule in the
 Django database::
 
     $ celerybeat -S djcelery.schedulers.DatabaseScheduler
 
-Using ``django-celery``'s scheduler you can add, modify and remove periodic
+Using `django-celery`'s scheduler you can add, modify and remove periodic
 tasks from the Django Admin.

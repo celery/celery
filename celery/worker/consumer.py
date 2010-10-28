@@ -25,7 +25,7 @@ up and running.
 
 * So for each message received the :meth:`~Consumer.receive_message`
   method is called, this checks the payload of the message for either
-  a ``task`` key or a ``control`` key.
+  a `task` key or a `control` key.
 
   If the message is a task, it verifies the validity of the message
   converts it to a :class:`celery.worker.job.TaskRequest`, and sends
@@ -40,9 +40,9 @@ up and running.
   are acknowledged immediately and logged, so the message is not resent
   again, and again.
 
-* If the task has an ETA/countdown, the task is moved to the ``eta_schedule``
+* If the task has an ETA/countdown, the task is moved to the `eta_schedule`
   so the :class:`timer2.Timer` can schedule it at its
-  deadline. Tasks without an eta are moved immediately to the ``ready_queue``,
+  deadline. Tasks without an eta are moved immediately to the `ready_queue`,
   so they can be picked up by the :class:`~celery.worker.controllers.Mediator`
   to be sent to the pool.
 
@@ -80,6 +80,7 @@ from celery.events import EventDispatcher
 from celery.exceptions import NotRegistered
 from celery.utils import noop
 from celery.utils.timer2 import to_timestamp
+from celery.worker import state
 from celery.worker.job import TaskRequest, InvalidTaskError
 from celery.worker.control.registry import Panel
 from celery.worker.heartbeat import Heart
@@ -256,7 +257,7 @@ class Consumer(object):
     def on_task(self, task):
         """Handle received task.
 
-        If the task has an ``eta`` we enter it into the ETA schedule,
+        If the task has an `eta` we enter it into the ETA schedule,
         otherwise we move it the ready queue for immediate processing.
 
         """
@@ -285,6 +286,7 @@ class Consumer(object):
                 self.eta_schedule.apply_at(eta,
                                            self.apply_eta_task, (task, ))
         else:
+            state.task_reserved(task)
             self.ready_queue.put(task)
 
     def on_control(self, message, message_data):
@@ -294,6 +296,7 @@ class Consumer(object):
             self.logger.error("No such control command: %s" % command)
 
     def apply_eta_task(self, task):
+        state.task_reserved(task)
         self.ready_queue.put(task)
         self.qos.decrement_eventually()
 

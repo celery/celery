@@ -11,41 +11,41 @@ Message format
 ==============
 
 * task
-    ``string``
+    `string`
 
     Name of the task. **required**
 
 * id
-    ``string``
+    `string`
 
     Unique id of the task (UUID). **required**
 
 * args
-    ``list``
+    `list`
 
     List of arguments. Will be an empty list if not provided.
 
 * kwargs
-    ``dictionary``
+    `dictionary`
 
     Dictionary of keyword arguments. Will be an empty dictionary if not
     provided.
 
 * retries
-    ``int``
+    `int`
 
     Current number of times this task has been retried.
-    Defaults to ``0`` if not specified.
+    Defaults to `0` if not specified.
 
 * eta
-    ``string`` (ISO 8601)
+    `string` (ISO 8601)
 
     Estimated time of arrival. This is the date and time in ISO 8601
     format. If not provided the message is not scheduled, but will be
     executed asap.
 
 * expires (introduced after v2.0.2)
-    ``string`` (ISO 8601)
+    `string` (ISO 8601)
 
     Expiration date. This is the date and time in ISO 8601 format.
     If not provided the message will never expire. The message
@@ -55,7 +55,7 @@ Message format
 Example message
 ===============
 
-This is an example invocation of the ``celery.task.PingTask`` task in JSON
+This is an example invocation of the `celery.task.PingTask` task in JSON
 format:
 
 .. code-block:: javascript
@@ -70,7 +70,7 @@ Serialization
 =============
 
 The protocol supports several serialization formats using the
-``content_type`` message header.
+`content_type` message header.
 
 The MIME-types supported by default are shown in the following table.
 

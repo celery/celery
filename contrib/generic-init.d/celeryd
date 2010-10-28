@@ -51,8 +51,8 @@
 #       nodes, to start
 #
 #   * CELERYD_OPTS
-#       Additional arguments to celeryd-multi, see ``celeryd-multi --help``
-#       and ``celeryd --help`` for help.
+#       Additional arguments to celeryd-multi, see `celeryd-multi --help`
+#       and `celeryd --help` for help.
 #
 #   * CELERYD_CHDIR
 #       Path to chdir at start. Default is to stay in the current directory.
@@ -67,7 +67,7 @@
 #       Log level to use for celeryd. Default is INFO.
 #
 #   * CELERYD
-#       Path to the celeryd program. Default is ``celeryd``.
+#       Path to the celeryd program. Default is `celeryd`.
 #       You can point this to an virtualenv, or even use manage.py for django.
 #
 #   * CELERYD_USER
