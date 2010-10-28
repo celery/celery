@@ -38,7 +38,7 @@ _exchanges_declared = set()
 
 
 def extract_msg_options(options, keep=MSG_OPTIONS):
-    return dict((name, options.get(name) for name in keep))
+    return dict((name, options.get(name)) for name in keep)
 
 
 class Queues(UserDict):
