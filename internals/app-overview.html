@@ -1,0 +1,520 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>“The Big Instance” Refactor &mdash; Celery v2.2.0a2 documentation</title>
+    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.2.0a2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v2.2.0a2 documentation" href="../index.html" />
+    <link rel="up" title="Internals" href="index.html" />
+    <link rel="next" title="Internal Module Reference" href="reference/index.html" />
+    <link rel="prev" title="Module Index" href="moduleindex.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reference/index.html" title="Internal Module Reference"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="moduleindex.html" title="Module Index"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Internals</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="the-big-instance-refactor">
+<h1>&#8220;The Big Instance&#8221; Refactor<a class="headerlink" href="#the-big-instance-refactor" title="Permalink to this headline">¶</a></h1>
+<p>The <cite>app</cite> branch is a work-in-progress to remove
+the use of a global configuration in Celery.</p>
+<p>Celery can now be instantiated, which means several
+instances of Celery may exist in the same process space.
+Also, large parts can be customized without resorting to monkey
+patching.</p>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>Creating a Celery instance:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery</span> <span class="kn">import</span> <span class="n">Celery</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">celery</span> <span class="o">=</span> <span class="n">Celery</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">celery</span><span class="o">.</span><span class="n">config_from_object</span><span class="p">(</span><span class="s">&quot;celeryconfig&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">celery</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">from_envvar</span><span class="p">(</span><span class="s">&quot;CELERY_CONFIG_MODULE&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Creating tasks:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@celery.task</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+</pre></div>
+</div>
+<p>Creating custom Task subclasses:</p>
+<div class="highlight-python"><pre>Task = celery.create_task_cls()
+
+class DebugTask(Task):
+    abstract = True
+
+    def on_failure(self, \*args, \*\*kwargs):
+        import pdb
+        pdb.set_trace()
+
+@celery.task(base=DebugTask)
+def add(x, y):
+    return x + y</pre>
+</div>
+<p>Starting a worker:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">worker</span> <span class="o">=</span> <span class="n">celery</span><span class="o">.</span><span class="n">Worker</span><span class="p">(</span><span class="n">loglevel</span><span class="o">=</span><span class="s">&quot;INFO&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Getting access to the configuration:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">celery</span><span class="o">.</span><span class="n">conf</span><span class="o">.</span><span class="n">CELERY_ALWAYS_EAGER</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="n">celery</span><span class="o">.</span><span class="n">conf</span><span class="p">[</span><span class="s">&quot;CELERY_ALWAYS_EAGER&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+</pre></div>
+</div>
+<p>Controlling workers:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">celery</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">inspect</span><span class="p">()</span><span class="o">.</span><span class="n">active</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">celery</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">rate_limit</span><span class="p">(</span><span class="n">add</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;100/m&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">celery</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;shutdown&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">celery</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">discard_all</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Other interesting attributes:</p>
+<div class="highlight-python"><pre># Establish broker connection.
+&gt;&gt;&gt; celery.broker_connection()
+
+# AMQP Specific features.
+&gt;&gt;&gt; celery.amqp
+&gt;&gt;&gt; celery.amqp.Router
+&gt;&gt;&gt; celery.amqp.get_queues()
+&gt;&gt;&gt; celery.amqp.get_task_consumer()
+
+# Loader
+&gt;&gt;&gt; celery.loader
+
+# Default backend
+&gt;&gt;&gt; celery.backend</pre>
+</div>
+<p>As you can probably see, this really opens up another
+dimension of customization abilities.</p>
+</div>
+<div class="section" id="deprecations">
+<h2>Deprecations<a class="headerlink" href="#deprecations" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">celery.task.ping
+celery.task.builtins.PingTask</p>
+<p>Inferior to the ping remote control command.
+Will be removed in Celery 2.3.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="removed-deprecations">
+<h2>Removed deprecations<a class="headerlink" href="#removed-deprecations" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><dl class="first docutils">
+<dt><cite>celery.utils.timedelta_seconds</cite></dt>
+<dd><p class="first last">Use: <a class="reference internal" href="reference/celery.utils.timeutils.html#celery.utils.timeutils.timedelta_seconds" title="celery.utils.timeutils.timedelta_seconds"><tt class="xref py py-func docutils literal"><span class="pre">celery.utils.timeutils.timedelta_seconds()</span></tt></a></p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><cite>celery.utils.defaultdict</cite></dt>
+<dd><p class="first last">Use: <tt class="xref py py-func docutils literal"><span class="pre">celery.utils.compat.defaultdict()</span></tt></p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><cite>celery.utils.all</cite></dt>
+<dd><p class="first last">Use: <tt class="xref py py-func docutils literal"><span class="pre">celery.utils.compat.all()</span></tt></p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><cite>celery.task.apply_async</cite></dt>
+<dd><p class="first last">Use app.send_task</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><cite>celery.task.tasks</cite></dt>
+<dd><p class="first last">Use <tt class="xref py py-data docutils literal"><span class="pre">celery.registry.tasks</span></tt></p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="aliases-pending-deprecation">
+<h2>Aliases (Pending deprecation)<a class="headerlink" href="#aliases-pending-deprecation" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><dl class="first docutils">
+<dt>celery.task.base</dt>
+<dd><ul class="first last simple">
+<li>.Task -&gt; {app.create_task_cls}</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>celery.task.sets</dt>
+<dd><ul class="first last simple">
+<li>.TaskSet -&gt; {app.TaskSet}</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>celery.decorators</dt>
+<dd><ul class="first last simple">
+<li>.task -&gt; {app.task}</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>celery.execute</dt>
+<dd><ul class="first last simple">
+<li>.apply_async -&gt; {task.apply_async}</li>
+<li>.apply -&gt; {task.apply}</li>
+<li>.send_task -&gt; {app.send_task}</li>
+<li>.delay_task -&gt; no alternative</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>celery.log</dt>
+<dd><ul class="first last simple">
+<li>.get_default_logger -&gt; {app.log.get_default_logger}</li>
+<li>.setup_logger -&gt; {app.log.setup_logger}</li>
+<li>.get_task_logger -&gt; {app.log.get_task_logger}</li>
+<li>.setup_task_logger -&gt; {app.log.setup_task_logger}</li>
+<li>.setup_logging_subsystem -&gt; {app.log.setup_logging_subsystem}</li>
+<li>.redirect_stdouts_to_logger -&gt; {app.log.redirect_stdouts_to_logger}</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>celery.messaging</dt>
+<dd><ul class="first last simple">
+<li>.establish_connection -&gt; {app.broker_connection}</li>
+<li>.with_connection -&gt; {app.with_connection}</li>
+<li>.get_consumer_set -&gt; {app.amqp.get_task_consumer}</li>
+<li>.TaskPublisher -&gt; {app.amqp.TaskPublisher}</li>
+<li>.TaskConsumer -&gt; {app.amqp.TaskConsumer}</li>
+<li>.ConsumerSet -&gt; {app.amqp.ConsumerSet}</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p class="first">celery.conf.* -&gt; {app.conf}</p>
+<blockquote>
+<p><strong>NOTE</strong>: All configuration keys are now named the same
+as in the configuration. So the key &#8220;CELERY_ALWAYS_EAGER&#8221;
+is accessed as:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">app</span><span class="o">.</span><span class="n">conf</span><span class="o">.</span><span class="n">CELERY_ALWAYS_EAGER</span>
+</pre></div>
+</div>
+<p>instead of:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery</span> <span class="kn">import</span> <span class="n">conf</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">conf</span><span class="o">.</span><span class="n">ALWAYS_EAGER</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>.get_queues -&gt; {app.amqp.get_queues}</li>
+</ul>
+</blockquote>
+</li>
+<li><dl class="first docutils">
+<dt>celery.task.control</dt>
+<dd><ul class="first last simple">
+<li>.broadcast -&gt; {app.control.broadcast}</li>
+<li>.rate_limit -&gt; {app.control.rate_limit}</li>
+<li>.ping -&gt; {app.control.ping}</li>
+<li>.revoke -&gt; {app.control.revoke}</li>
+<li>.discard_all -&gt; {app.control.discard_all}</li>
+<li>.inspect -&gt; {app.control.inspect}</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>celery.utils.info</dt>
+<dd><ul class="first last simple">
+<li>.humanize_seconds -&gt; celery.utils.timeutils.humanize_seconds</li>
+<li>.textindent -&gt; celery.utils.textindent</li>
+<li>.get_broker_info -&gt; {app.amqp.get_broker_info}</li>
+<li>.format_broker_info -&gt; {app.amqp.format_broker_info}</li>
+<li>.format_queues -&gt; {app.amqp.format_queues}</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="default-app-usage">
+<h2>Default App Usage<a class="headerlink" href="#default-app-usage" title="Permalink to this headline">¶</a></h2>
+<p>To be backward compatible, it must be possible
+to use all the classes/functions without passing
+an explicit app instance.</p>
+<p>This is achieved by having all app-dependent objects
+use <tt class="xref py py-data docutils literal"><span class="pre">default_app</span></tt> if the app instance
+is missing.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.app</span> <span class="kn">import</span> <span class="n">app_or_default</span>
+
+<span class="k">class</span> <span class="nc">SomeClass</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">app_or_default</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The problem with this approach is that there is a chance
+that the app instance is lost along the way, and everything
+seems to be working normally. Testing app instance leaks
+is hard. The environment variable <span class="target" id="index-0"></span><tt class="xref std std-envvar docutils literal"><span class="pre">CELERY_TRACE_APP</span></tt>
+can be used, when this is enabled <a class="reference internal" href="../reference/celery.app.html#celery.app.app_or_default" title="celery.app.app_or_default"><tt class="xref py py-func docutils literal"><span class="pre">celery.app.app_or_default()</span></tt></a>
+will raise an exception whenever it has to go back to the default app
+instance.</p>
+<div class="section" id="app-dependency-tree">
+<h3>App Dependency Tree<a class="headerlink" href="#app-dependency-tree" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><dl class="first docutils">
+<dt>{app}</dt>
+<dd><ul class="first last">
+<li><p class="first">celery.loaders.base.BaseLoader</p>
+</li>
+<li><p class="first">celery.backends.base.BaseBackend</p>
+</li>
+<li><dl class="first docutils">
+<dt>{app.TaskSet}</dt>
+<dd><ul class="first last simple">
+<li>celery.task.sets.TaskSet (app.TaskSet)</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>[app.TaskSetResult]</dt>
+<dd><ul class="first last simple">
+<li>celery.result.TaskSetResult (app.TaskSetResult)</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>{app.AsyncResult}</dt>
+<dd><ul class="first last simple">
+<li>celery.result.BaseAsyncResult / celery.result.AsyncResult</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>celery.bin.celeryd.WorkerCommand</dt>
+<dd><ul class="first last">
+<li><dl class="first docutils">
+<dt>celery.apps.worker.Worker</dt>
+<dd><ul class="first last">
+<li><dl class="first docutils">
+<dt>celery.worker.WorkerController</dt>
+<dd><ul class="first last">
+<li><dl class="first docutils">
+<dt>celery.worker.consumer.Consumer</dt>
+<dd><ul class="first last">
+<li><p class="first">celery.worker.job.TaskRequest</p>
+</li>
+<li><p class="first">celery.events.EventDispatcher</p>
+</li>
+<li><dl class="first docutils">
+<dt>celery.worker.control.ControlDispatch</dt>
+<dd><ul class="first last simple">
+<li>celery.woker.control.registry.Panel</li>
+<li>celery.pidbox.BroadcastPublisher</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p class="first">celery.pidbox.BroadcastConsumer</p>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p class="first">celery.worker.controllers.Mediator</p>
+</li>
+<li><p class="first">celery.beat.EmbeddedService</p>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>celery.bin.celeryev.run_celeryev</dt>
+<dd><ul class="first last">
+<li><dl class="first docutils">
+<dt>celery.events.snapshot.evcam</dt>
+<dd><ul class="first last simple">
+<li>celery.events.snapshot.Polaroid</li>
+<li>celery.events.EventReceiver</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>celery.events.cursesmon.evtop</dt>
+<dd><ul class="first last simple">
+<li>celery.events.EventReceiver</li>
+<li>celery.events.cursesmon.CursesMonitor</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>celery.events.dumper</dt>
+<dd><ul class="first last simple">
+<li>celery.events.EventReceiver</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>celery.bin.celeryctl.celeryctl</dt>
+<dd><ul class="first last simple">
+<li>celery.bin.celeryctl.Command</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p class="first">celery.bin.caqmadm.AMQPAdmin</p>
+</li>
+<li><dl class="first docutils">
+<dt>celery.bin.celerybeat.BeatCommand</dt>
+<dd><ul class="first last">
+<li><dl class="first docutils">
+<dt>celery.apps.beat.Beat</dt>
+<dd><ul class="first last">
+<li><dl class="first docutils">
+<dt>celery.beat.Service</dt>
+<dd><ul class="first last simple">
+<li>celery.beat.Scheduler</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="moduleindex.html"
+                        title="previous chapter">Module Index</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="reference/index.html"
+                        title="next chapter">Internal Module Reference</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/internals/app-overview.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reference/index.html" title="Internal Module Reference"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="moduleindex.html" title="Module Index"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Internals</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+    </div>
+  </body>
+</html>
