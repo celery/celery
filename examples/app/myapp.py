@@ -9,6 +9,11 @@ Usage:
    >>> add.delay(16, 16).get()
    32
 
+
+You can also specify the app to use with celeryd::
+
+    $ celeryd -l info --app=myapp.celery
+
 """
 from celery import Celery
 
@@ -17,11 +22,8 @@ celery = Celery("myapp")
 celery.conf.update(BROKER_HOST="localhost")
 
 
-@celery.task(accept_magic_kwargs=False)
+@celery.task
 def add(x, y, **kwargs):
-    print("add id: %r %r %r" % (add.request.id, add.request.args,
-        add.request.kwargs))
-    print("kwargs: %r" % (kwargs, ))
     return x + y
 
 if __name__ == "__main__":
