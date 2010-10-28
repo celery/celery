@@ -4,7 +4,7 @@
 
 .. image:: http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png
 
-:Version: 2.2.0a1
+:Version: 2.2.0a2
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/ask/celery/
@@ -194,23 +194,23 @@ is hosted at Github.
 Installation
 ============
 
-You can install `celery` either via the Python Package Index (PyPI)
+You can install Celery either via the Python Package Index (PyPI)
 or from source.
 
 To install using `pip`,::
 
-    $ pip install celery
+    $ pip install Celery
 
 To install using `easy_install`,::
 
-    $ easy_install celery
+    $ easy_install Celery
 
 .. _celery-installing-from-source:
 
 Downloading and installing from source
 --------------------------------------
 
-Download the latest version of `celery` from
+Download the latest version of Celery from
 http://pypi.python.org/pypi/celery/
 
 You can install it by doing the following,::
