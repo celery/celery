@@ -103,7 +103,9 @@ class Logging(object):
     def _detect_handler(self, logfile=None):
         """Create log handler with either a filename, an open stream
         or :const:`None` (stderr)."""
-        if not logfile or hasattr(logfile, "write"):
+        if logfile is None:
+            logfile = sys.__stderr__
+        if hasattr(logfile, "write"):
             return logging.StreamHandler(logfile)
         return logging.FileHandler(logfile)
 
@@ -140,7 +142,8 @@ class Logging(object):
         return self.get_default_logger(name=name)
 
     def setup_task_logger(self, loglevel=None, logfile=None, format=None,
-            colorize=None, task_kwargs=None, app=None, **kwargs):
+            colorize=None, task_kwargs=None, propagate=False, app=None,
+            **kwargs):
         """Setup the task logger.
 
         If `logfile` is not specified, then `sys.stderr` is used.
@@ -159,6 +162,8 @@ class Logging(object):
         task_kwargs.setdefault("task_name", "-?-")
         logger = self._setup_logger(self.get_task_logger(loglevel, task_name),
                                     logfile, format, colorize, **kwargs)
+        logger.propagate = int(propagate)    # this is an int for some reason.
+                                             # better to not question why.
         return LoggerAdapter(logger, task_kwargs)
 
     def redirect_stdouts_to_logger(self, logger, loglevel=None):

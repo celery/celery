@@ -270,7 +270,8 @@ class BaseTask(object):
         raise NotImplementedError("Tasks must define the run method.")
 
     @classmethod
-    def get_logger(self, loglevel=None, logfile=None, **kwargs):
+    def get_logger(self, loglevel=None, logfile=None, propagate=False,
+            **kwargs):
         """Get task-aware logger object.
 
         See :func:`celery.log.setup_task_logger`.
@@ -282,6 +283,7 @@ class BaseTask(object):
             logfile = self.request.logfile
         return self.app.log.setup_task_logger(loglevel=loglevel,
                                               logfile=logfile,
+                                              propagate=propagate,
                                               task_kwargs=self.request.kwargs)
 
     @classmethod
