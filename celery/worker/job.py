@@ -376,7 +376,6 @@ class TaskRequest(object):
         self._set_executed_bit()
 
         args = self._get_tracer_args(loglevel, logfile)
-        self.time_start = time.time()
         result = pool.apply_async(execute_and_trace,
                                   args=args,
                                   kwargs={"hostname": self.hostname},
@@ -387,6 +386,8 @@ class TaskRequest(object):
         return result
 
     def on_accepted(self):
+        """Handler called when task is accepted by worker pool."""
+        self.time_start = time.time()
         state.task_accepted(self)
         if not self.task.acks_late:
             self.acknowledge()
