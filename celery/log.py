@@ -93,6 +93,8 @@ def setup_logging_subsystem(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
 def _detect_handler(logfile=None):
     """Create log handler with either a filename, an open stream
     or ``None`` (stderr)."""
+    if logfile is None:
+        logfile = sys.__stderr__
     if not logfile or hasattr(logfile, "write"):
         return logging.StreamHandler(logfile)
     return logging.FileHandler(logfile)
@@ -128,7 +130,7 @@ def setup_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
 
 def setup_task_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
         format=conf.CELERYD_TASK_LOG_FORMAT, colorize=conf.CELERYD_LOG_COLOR,
-        task_kwargs=None, **kwargs):
+        task_kwargs=None, propagate=False, **kwargs):
     """Setup the task logger. If ``logfile`` is not specified, then
     ``stderr`` is used.
 
@@ -142,12 +144,13 @@ def setup_task_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
     task_kwargs.setdefault("task_name", "-?-")
     logger = _setup_logger(get_task_logger(loglevel, task_name),
                             logfile, format, colorize, **kwargs)
+    logger.propagate = int(propagate)   # this is an int for some reason.
+                                        # better to just not question why.
     return LoggerAdapter(logger, task_kwargs)
 
 
 def _setup_logger(logger, logfile, format, colorize,
         formatter=ColorFormatter, **kwargs):
-
     if logger.handlers:                 # already configured
         return logger
 
