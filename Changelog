@@ -19,18 +19,47 @@ Fixes
 * AMQP result backend: Delete result queue after having successfully polled
   the result.
 
-* ``task.queue`` attribute and ``queue`` argument to ``apply_async``
+* `task.queue` attribute and `queue` argument to `apply_async`
   was not working.
 
-* celeryd: Now sends the ``task-retried`` event for retried tasks.
+* Fixed bug with task log messages being output twice when logging to stderr.
+
+    * Default logfile is now `sys.__stderr__` instead of `sys.stderr`, so
+      the messages are not being redirected back to the stderr logger.
+
+    * In addition task loggers now disable `propagate` by default.
+      You can re-enable this by using the `propagate` argument to
+      `task.get_logger`.
+
+* celeryd: Now sends the `task-retried` event for retried tasks.
 
 * Logging should now handle utf-8 correctly.
 
-* celeryd: Added ``exc_info`` error logging messages.
+* celeryd: Added `exc_info` error logging messages.
 
     This is used by tools like `django-sentry`_ to provide more context.
 
 .. _`django-sentry`: http://github.com/dcramer/django-sentry
+
+* The `time_start` for a task is now set when the task is acknowledged, not
+  when it is sent to the pool.
+
+    See Issue #233.
+
+* Fixed Sunday issue with the crontab scheduler.
+
+* Fixed a race condition where Timer.enter is called twice before the thread actually runs.
+
+* The `mail_admins` method is now in the loader, so it can be overriden.
+  (django-celery now uses the Django mail admins mechanism)).
+
+* celeryd: Added --scheduler option to be used in combination with -B.
+
+    See Issue #229.
+
+* Tasks Userguide: Added section about decorating tasks (Issue #224).
+
+* Now links to celery-pylons on PyPI instead of on Bitbucket.
 
 * celeryd: Now honors ignore result for
   :exc:`~celery.exceptions.WorkerLostError` and timeout errors.
@@ -39,6 +68,12 @@ Fixes
   when using logging setup signals.
 
 * celeryd: All log messages now includes ``exc_info``.
+
+* ETA scheduler now uses a `not_empty` condition to wait for new tasks
+  instead of a sleep polling loop
+
+* celeryd now shows the total runtime for a task in the task succeeded
+  log message.
 
 .. _version-2.1.1:
 
