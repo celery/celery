@@ -323,7 +323,7 @@ class test_TaskRequest(unittest.TestCase):
         x = tw.success_msg % {"name": tw.task_name,
                               "id": tw.task_id,
                               "return_value": 10,
-                              "runtime": 0.1376}
+                              "runtime": 0.3641}
         self.assertTrue(x)
         x = tw.error_msg % {"name": tw.task_name,
                            "id": tw.task_id,

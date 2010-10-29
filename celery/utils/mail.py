@@ -1,3 +1,4 @@
+import sys
 import smtplib
 import warnings
 
@@ -5,6 +6,8 @@ try:
     from email.mime.text import MIMEText
 except ImportError:
     from email.MIMEText import MIMEText
+
+supports_timeout = sys.version_info > (2, 5)
 
 
 class SendmailWarning(UserWarning):
@@ -37,23 +40,31 @@ class Message(object):
 
 class Mailer(object):
 
-    def __init__(self, host="localhost", port=0, user=None, password=None):
+    def __init__(self, host="localhost", port=0, user=None, password=None,
+            timeout=2):
         self.host = host
         self.port = port
         self.user = user
         self.password = password
+        self.timeout = timeout
 
-    def send(self, message, fail_silently=False):
-        try:
-            client = smtplib.SMTP(self.host, self.port)
+    def send(self, message):
+        if supports_timeout:
+            self._send(message, timeout=self.timeout)
+        else:
+            import socket
+            old_timeout = socket.getdefaulttimeout()
+            socket.setdefaulttimeout(self.timeout)
+            try:
+                self._send(message)
+            finally:
+                socket.setdefaulttimeout(old_timeout)
 
-            if self.user and self.password:
-                client.login(self.user, self.password)
+    def _send(self, message, **kwargs):
+        client = smtplib.SMTP(self.host, self.port, **kwargs)
 
-            client.sendmail(message.sender, message.to, str(message))
-            client.quit()
-        except Exception, exc:
-            if not fail_silently:
-                raise
-            warnings.warn(SendmailWarning(
-                "E-mail could not be sent: %r %r" % (exc, message)))
+        if self.user and self.password:
+            client.login(self.user, self.password)
+
+        client.sendmail(message.sender, message.to, str(message))
+        client.quit()
