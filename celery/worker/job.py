@@ -199,16 +199,18 @@ class TaskRequest(object):
 
     """
     # Logging output
-    success_msg = "Task %(name)s[%(id)s] processed: %(return_value)s"
-    error_msg = """
+    success_msg = """\
+        Task %(name)s[%(id)s] succeeded in %(runtime)ss: %(return_value)s
+    """
+    error_msg = """\
         Task %(name)s[%(id)s] raised exception: %(exc)s\n%(traceback)s
     """
-    retry_msg = """
+    retry_msg = """\
         Task %(name)s[%(id)s] retry: %(exc)s
     """
 
     # E-mails
-    email_subject = """
+    email_subject = """\
         [celery@%(hostname)s] Error: Task %(name)s (%(id)s): %(exc)s
     """
     email_body = TASK_ERROR_EMAIL_BODY
@@ -429,7 +431,8 @@ class TaskRequest(object):
         msg = self.success_msg.strip() % {
                 "id": self.task_id,
                 "name": self.task_name,
-                "return_value": self.repr_result(ret_value)}
+                "return_value": self.repr_result(ret_value),
+                "runtime": runtime}
         self.logger.info(msg)
 
     def repr_result(self, result, maxlen=46):
