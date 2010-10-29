@@ -158,8 +158,7 @@ class Timer(Thread):
         try:
             delay = self.scheduler.next()
             if delay is None:
-                print("WAITING FOR ENTRY")
-                self.not_empty.wait()
+                self.not_empty.wait(1.0)
             return delay
         finally:
             self.not_empty.release()
