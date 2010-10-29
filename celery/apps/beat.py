@@ -5,7 +5,6 @@ import traceback
 from celery import __version__
 from celery import beat
 from celery import platforms
-from celery.log import emergency_error
 from celery.utils import get_full_cls_name, info, LOG_LEVELS
 from celery.utils.info import humanize_seconds
 from celery.utils import term

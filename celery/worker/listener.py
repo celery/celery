@@ -276,7 +276,8 @@ class CarrotListener(object):
             except OverflowError, exc:
                 self.logger.error(
                     "Couldn't convert eta %s to timestamp: %r. Task: %r" % (
-                        task.eta, exc, task.info(safe=True)), exc_info=sys.exc_info())
+                        task.eta, exc, task.info(safe=True)),
+                        exc_info=sys.exc_info())
                 task.acknowledge()
             else:
                 self.qos.increment()
