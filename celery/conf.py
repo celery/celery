@@ -101,10 +101,6 @@ BROADCAST_EXCHANGE_TYPE = conf.CELERY_BROADCAST_EXCHANGE_TYPE
 
 # :--- Event queue settings                         <-   --   --- - ----- -- #
 
-EVENT_QUEUE = conf.CELERY_EVENT_QUEUE
-EVENT_EXCHANGE = conf.CELERY_EVENT_EXCHANGE
-EVENT_EXCHANGE_TYPE = conf.CELERY_EVENT_EXCHANGE_TYPE
-EVENT_ROUTING_KEY = conf.CELERY_EVENT_ROUTING_KEY
 EVENT_SERIALIZER = conf.CELERY_EVENT_SERIALIZER
 
 # :--- AMQP Backend settings                        <-   --   --- - ----- -- #
