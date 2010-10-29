@@ -31,7 +31,15 @@ Fixes
       You can re-enable this by using the `propagate` argument to
       `task.get_logger`.
 
+* A 2 second timeout for sending error e-mails has been added.
+
+    The mail server used should have as little latency as possible,
+    as the sending of error e-mails is currently blocking the worker.
+    Preferably the mailserver should be local.
+
 * celeryd: Now sends the `task-retried` event for retried tasks.
+
+   This means retried tasks will show as RETRY in the event monitors.
 
 * Logging should now handle utf-8 correctly.
 
