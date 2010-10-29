@@ -180,7 +180,7 @@ class Timer(Thread):
             self.running = False
 
     def enter(self, entry, eta, priority=None):
-        if not self.running:
+        if not self.running and not self.is_alive():
             self.start()
         return self.schedule.enter(entry, eta, priority)
 
