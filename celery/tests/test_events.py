@@ -3,12 +3,12 @@ import unittest2 as unittest
 from celery import events
 
 
-class MockPublisher(object):
+class MockProducer(object):
 
     def __init__(self, *args, **kwargs):
         self.sent = []
 
-    def send(self, msg, *args, **kwargs):
+    def publish(self, msg, *args, **kwargs):
         self.sent.append(msg)
 
     def close(self):
@@ -32,12 +32,12 @@ class TestEvent(unittest.TestCase):
 class TestEventDispatcher(unittest.TestCase):
 
     def test_send(self):
-        publisher = MockPublisher()
+        producer = MockProducer()
         eventer = events.EventDispatcher(object(), enabled=False)
-        eventer.publisher = publisher
+        eventer.publisher = producer
         eventer.enabled = True
         eventer.send("World War II", ended=True)
-        self.assertTrue(publisher.has_event("World War II"))
+        self.assertTrue(producer.has_event("World War II"))
 
 
 class TestEventReceiver(unittest.TestCase):

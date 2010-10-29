@@ -59,8 +59,8 @@ class EventDispatcher(object):
         conf = self.app.conf
         self.enabled = True
         self.publisher = Producer(self.connection.channel(),
-                                  exchange=event_exchange,
-                                  serializer=conf.CELERY_EVENT_SERIALIZER)
+                                 exchange=event_exchange,
+                                 serializer=conf.CELERY_EVENT_SERIALIZER)
 
     def disable(self):
         self.enabled = False
