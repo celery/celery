@@ -117,12 +117,12 @@ class QoS(object):
 
     def increment(self):
         """Increment the current prefetch count value by one."""
-        if int(self.value):
+        if int(self.value) > 0:
             return self.set(self.value.increment())
 
     def decrement(self):
         """Decrement the current prefetch count value by one."""
-        if int(self.value):
+        if int(self.value) > 1:
             return self.set(self.value.decrement())
 
     def decrement_eventually(self):
