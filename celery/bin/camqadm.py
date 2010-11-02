@@ -318,7 +318,7 @@ class AMQShell(cmd.Cmd):
     def _reconnect(self):
         """Re-establish connection to the AMQP server."""
         self.conn = self.connect(self.conn)
-        self.chan = self.conn.create_backend().channel
+        self.chan = self.conn.channel()
         self.needs_reconnect = False
 
     @property
