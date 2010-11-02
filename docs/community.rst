@@ -56,6 +56,14 @@ http://botland.oebfare.com/logger/celery/
 News
 ====
 
+What's your favorite Django app?
+--------------------------------
+http://jacobian.org/writing/favorite-apps/
+
+10 Tools That Make Django Better
+--------------------------------
+http://iamseb.com/seb/2010/10/10-django-tools/
+
 Celery, RabbitMQ and sending messages directly.
 -----------------------------------------------
 http://blog.timc3.com/2010/10/17/celery-rabbitmq-and-sending-messages-directly/
