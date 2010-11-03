@@ -56,13 +56,33 @@ http://botland.oebfare.com/logger/celery/
 News
 ====
 
+Celery Tips
+-----------
+http://ericholscher.com/blog/2010/nov/2/celery-tips/
+
 What's your favorite Django app?
 --------------------------------
 http://jacobian.org/writing/favorite-apps/
 
+Virtualenv Tips
+---------------
+http://ericholscher.com/blog/2010/nov/1/virtualenv-tips/
+
 10 Tools That Make Django Better
 --------------------------------
 http://iamseb.com/seb/2010/10/10-django-tools/
+
+Distributed Task Locking in Celery
+----------------------------------
+http://www.loose-bits.com/2010_10_10_archive.html
+
+Celery — распределенные очереди задач на Python (Russian)
+---------------------------------------------------------
+http://www.bitbybit.ru/article/216
+
+Подробнее о Celery (Russian)
+----------------------------
+http://vorushin.ru/blog/34-celery-described/
 
 Celery, RabbitMQ and sending messages directly.
 -----------------------------------------------
@@ -75,6 +95,10 @@ http://blog.avelino.us/2010/10/cron-dentro-do-django-com-celery.html
 RabbitMQとCeleryを使ってDjangoでジョブキューしてみる (Japanese)
 ---------------------------------------------------------------
 http://d.hatena.ne.jp/yuku_t/
+
+Kaninchen & Schlangen: RabbitMQ & Python (German)
+-------------------------------------------------
+http://www.scribd.com/doc/37562923/Kaninchen-Schlangen-RabbitMQ-Python
 
 Celery - Eine asynchrone Task Queue (nicht nur) für Django (German)
 -------------------------------------------------------------------
@@ -91,6 +115,10 @@ http://www.slideshare.net/shawnrider/massaging-the-pony-message-queues-and-you
 "Large problems, Mostly Solved" (Djangocon 2010)
 ------------------------------------------------
 http://www.slideshare.net/ericholscher/large-problems
+
+A Simple Celery with Django How-To
+----------------------------------
+http://shawnmilo.blogspot.com/2010/07/simple-celery-with-django-how-to.html
 
 Django and asynchronous jobs
 ----------------------------
