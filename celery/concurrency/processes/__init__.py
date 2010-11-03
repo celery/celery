@@ -13,14 +13,10 @@ from celery.utils.functional import partial
 from celery.concurrency.processes.pool import Pool, RUN
 
 
-def pingback(i):
-    return i
-
-
 class TaskPool(object):
     """Process Pool for processing tasks in parallel.
 
-    :param limit: see :attr:`limit`.
+    :param processes: see :attr:`processes`.
     :param logger: see :attr:`logger`.
 
 
@@ -35,18 +31,11 @@ class TaskPool(object):
     """
     Pool = Pool
 
-    def __init__(self, limit, logger=None, initializer=None,
-            maxtasksperchild=None, timeout=None, soft_timeout=None,
-            putlocks=True, initargs=()):
-        self.limit = limit
-        self.logger = logger or log.get_default_logger()
-        self.initializer = initializer
-        self.initargs = initargs
-        self.maxtasksperchild = maxtasksperchild
-        self.timeout = timeout
-        self.soft_timeout = soft_timeout
+    def __init__(self, processes=None, putlocks=True, logger=None, **options):
+        self.processes = processes
         self.putlocks = putlocks
-        self.initargs = initargs
+        self.logger = logger or log.get_default_logger()
+        self.options = options
         self._pool = None
 
     def start(self):
@@ -55,12 +44,7 @@ class TaskPool(object):
         Will pre-fork all workers so they're ready to accept tasks.
 
         """
-        self._pool = self.Pool(processes=self.limit,
-                               initializer=self.initializer,
-                               initargs=self.initargs,
-                               timeout=self.timeout,
-                               soft_timeout=self.soft_timeout,
-                               maxtasksperchild=self.maxtasksperchild)
+        self._pool = self.Pool(processes=self.processes, **self.options)
 
     def stop(self):
         """Gracefully stop the pool."""
@@ -136,8 +120,8 @@ class TaskPool(object):
 
     @property
     def info(self):
-        return {"max-concurrency": self.limit,
+        return {"max-concurrency": self.processes,
                 "processes": [p.pid for p in self._pool._pool],
-                "max-tasks-per-child": self.maxtasksperchild,
+                "max-tasks-per-child": self._pool._maxtasksperchild,
                 "put-guarded-by-semaphore": self.putlocks,
-                "timeouts": (self.soft_timeout, self.timeout)}
+                "timeouts": (self._pool.soft_timeout, self._pool.timeout)}

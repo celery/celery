@@ -22,16 +22,16 @@ def do_work(target, args=(), kwargs={}, callback=None,
 
 class TaskPool(object):
 
-    def __init__(self, limit, logger=None, **kwargs):
-        self.limit = limit
+    def __init__(self, processes, logger=None, **kwargs):
+        self.processes = processes
         self.logger = logger or log.get_default_logger()
         self._pool = None
 
     def start(self):
-        self._pool = ThreadPool(self.limit)
+        self._pool = ThreadPool(self.processes)
 
     def stop(self):
-        self._pool.dismissWorkers(self.limit, do_join=True)
+        self._pool.dismissWorkers(self.processes, do_join=True)
 
     def apply_async(self, target, args=None, kwargs=None, callbacks=None,
             errbacks=None, accept_callback=None, **compat):

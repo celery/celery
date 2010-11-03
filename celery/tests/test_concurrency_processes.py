@@ -98,10 +98,6 @@ class test_TaskPool(unittest.TestCase):
         pool.terminate()
         self.assertTrue(_pool.terminated)
 
-    def test_pingback(self):
-        for i in xrange(10):
-            self.assertEqual(mp.pingback(i), i)
-
     def test_on_worker_error(self):
         scratch = [None]
 
@@ -169,8 +165,13 @@ class test_TaskPool(unittest.TestCase):
 
     def test_info(self):
         pool = TaskPool(10)
-        procs = [Object(pid=i) for i in range(pool.limit)]
-        pool._pool = Object(_pool=procs)
+        procs = [Object(pid=i) for i in range(pool.processes)]
+        pool._pool = Object(_pool=procs,
+                            _maxtasksperchild=None,
+                            timeout=10,
+                            soft_timeout=5)
         info = pool.info
-        self.assertEqual(info["max-concurrency"], pool.limit)
-        self.assertEqual(len(info["processes"]), pool.limit)
+        self.assertEqual(info["max-concurrency"], pool.processes)
+        self.assertEqual(len(info["processes"]), pool.processes)
+        self.assertIsNone(info["max-tasks-per-child"])
+        self.assertEqual(info["timeouts"], (5, 10))
