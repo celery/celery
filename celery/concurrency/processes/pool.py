@@ -555,7 +555,7 @@ class Pool(object):
         for worker in self._pool:
             if not self._worker_active(worker):
                 yield worker
-        raise
+        raise StopIteration()
 
     def _worker_active(self, worker):
         for job in self._cache.values():
