@@ -20,7 +20,7 @@ class CursesMonitor(object):
     keymap = {}
     win = None
     screen_width = None
-    screen_delay = 0.1
+    screen_delay = 10
     selected_task = None
     selected_position = 0
     selected_str = "Selected: "
@@ -357,7 +357,7 @@ class CursesMonitor(object):
         curses.endwin()
 
     def nap(self):
-        curses.napms(int(self.screen_delay * 1000))
+        curses.napms(self.screen_delay)
 
     @property
     def tasks(self):
