@@ -102,7 +102,8 @@ class TaskPublisher(messaging.Publisher):
 
     def delay_task(self, task_name, task_args=None, task_kwargs=None,
             countdown=None, eta=None, task_id=None, taskset_id=None,
-            expires=None, exchange=None, exchange_type=None, **kwargs):
+            expires=None, exchange=None, exchange_type=None,
+            event_dispatcher=None, **kwargs):
         """Delay task for execution by the celery nodes."""
 
         task_id = task_id or gen_unique_id()
@@ -122,14 +123,18 @@ class TaskPublisher(messaging.Publisher):
             now = now or datetime.now()
             expires = now + timedelta(seconds=expires)
 
+        retries = kwargs.get("retries", 0)
+        eta = eta and eta.isoformat()
+        expires = expires and expires.isoformat()
+
         message_data = {
             "task": task_name,
             "id": task_id,
             "args": task_args or [],
             "kwargs": task_kwargs or {},
-            "retries": kwargs.get("retries", 0),
-            "eta": eta and eta.isoformat(),
-            "expires": expires and expires.isoformat(),
+            "retries": retries,
+            "eta": eta,
+            "expires": expires,
         }
 
         if taskset_id:
@@ -146,6 +151,14 @@ class TaskPublisher(messaging.Publisher):
                   **extract_msg_options(kwargs))
         signals.task_sent.send(sender=task_name, **message_data)
 
+        if event_dispatcher:
+            event_dispatcher.send("task-sent", uuid=task_id,
+                                               name=task_name,
+                                               args=repr(task_args),
+                                               kwargs=repr(task_kwargs),
+                                               retries=retries,
+                                               eta=eta,
+                                               expires=expires)
         return task_id
 
 

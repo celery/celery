@@ -37,6 +37,7 @@ class BaseApp(object):
         self._control = None
         self._loader = None
         self._log = None
+        self._events = None
         self.set_as_current = set_as_current
         self.on_init()
 
@@ -314,3 +315,10 @@ class BaseApp(object):
             from celery.log import Logging
             self._log = Logging(app=self)
         return self._log
+
+    @property
+    def events(self):
+        if self._events is None:
+            from celery.events import Events
+            self._events = Events(app=self)
+        return self._events

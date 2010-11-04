@@ -66,6 +66,7 @@ class Task(Element):
                      name=None,
                      state=states.PENDING,
                      received=False,
+                     sent=False,
                      started=False,
                      succeeded=False,
                      failed=False,
@@ -110,6 +111,10 @@ class Task(Element):
         if keep is not None:
             fields = dict((key, fields[key]) for key in keep)
             super(Task, self).update(fields)
+
+    def on_sent(self, timestamp=None, **fields):
+        self.sent = timestamp
+        self.update(states.PENDING, timestamp, fields)
 
     def on_received(self, timestamp=None, **fields):
         self.received = timestamp

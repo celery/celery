@@ -4,7 +4,6 @@ from datetime import datetime
 
 from celery.app import app_or_default
 from celery.datastructures import LocalCache
-from celery.events import EventReceiver
 
 
 TASK_NAMES = LocalCache(0xFFF)
@@ -57,7 +56,7 @@ def evdump(app=None):
     app = app_or_default(app)
     dumper = Dumper()
     conn = app.broker_connection()
-    recv = EventReceiver(conn, app=app, handlers={"*": dumper.on_event})
+    recv = app.events.Receiver(conn, handlers={"*": dumper.on_event})
     try:
         recv.capture()
     except (KeyboardInterrupt, SystemExit):

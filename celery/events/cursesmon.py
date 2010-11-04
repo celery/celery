@@ -10,8 +10,6 @@ from textwrap import wrap
 
 from celery import states
 from celery.app import app_or_default
-from celery.events import EventReceiver
-from celery.events.state import State
 from celery.utils import abbr, abbrtask
 
 
@@ -387,13 +385,13 @@ class DisplayThread(threading.Thread):
 def evtop(app=None):
     sys.stderr.write("-> evtop: starting capture...\n")
     app = app_or_default(app)
-    state = State()
+    state = app.events.State()
     display = CursesMonitor(state, app=app)
     display.init_screen()
     refresher = DisplayThread(display)
     refresher.start()
     conn = app.broker_connection()
-    recv = EventReceiver(conn, app=app, handlers={"*": state.event})
+    recv = app.events.Receiver(conn, handlers={"*": state.event})
     try:
         recv.capture(limit=None)
     except Exception:

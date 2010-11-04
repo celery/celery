@@ -39,15 +39,25 @@ class EventDispatcher(object):
     :keyword enabled: Set to :const:`False` to not actually publish any events,
         making :meth:`send` a noop operation.
 
+    :keyword channel: Can be used instead of `connection` to specify
+        an exact channel to use when sending events.
+
+    :keyword buffer_while_offline: If enabled events will be buffered
+       while the connection is down. :meth:`flush` must be called
+       as soon as the connection is re-established.
+
     You need to :meth:`close` this after use.
 
     """
 
-    def __init__(self, connection, hostname=None, enabled=True, app=None):
+    def __init__(self, connection=None, hostname=None, enabled=True,
+            channel=None, buffer_while_offline=True, app=None):
         self.app = app_or_default(app)
         self.connection = connection
+        self.channel = channel
         self.hostname = hostname or socket.gethostname()
         self.enabled = enabled
+        self.buffer_while_offline = buffer_while_offline
         self._lock = threading.Lock()
         self.publisher = None
         self._outbound_buffer = deque()
@@ -58,14 +68,16 @@ class EventDispatcher(object):
     def enable(self):
         conf = self.app.conf
         self.enabled = True
-        self.publisher = Producer(self.connection.channel(),
-                                 exchange=event_exchange,
-                                 serializer=conf.CELERY_EVENT_SERIALIZER)
+        channel = self.channel or self.connection.channel()
+        self.publisher = Producer(channel,
+                                  exchange=event_exchange,
+                                  serializer=conf.CELERY_EVENT_SERIALIZER)
 
     def disable(self):
         self.enabled = False
         if self.publisher is not None:
-            self.publisher.channel.close()
+            if not self.channel:  # close auto channel.
+                self.publisher.channel.close()
             self.publisher = None
 
     def send(self, type, **fields):
@@ -85,6 +97,8 @@ class EventDispatcher(object):
                 self.publisher.publish(event,
                                        routing_key=type.replace("-", "."))
             except Exception, exc:
+                if not self.buffer_while_offline:
+                    raise
                 self._outbound_buffer.append((event, exc))
         finally:
             self._lock.release()
@@ -176,3 +190,28 @@ class EventReceiver(object):
     def _receive(self, message_data, message):
         type = message_data.pop("type").lower()
         self.process(type, create_event(type, message_data))
+
+
+
+class Events(object):
+
+    def __init__(self, app):
+        self.app = app
+
+    def Receiver(self, connection, handlers=None, routing_key="#"):
+        return EventReceiver(connection,
+                             handlers=handlers,
+                             routing_key=routing_key,
+                             app=self.app)
+
+    def Dispatcher(self, connection=None, hostname=None, enabled=True,
+            channel=None, buffer_while_offline=True):
+        return EventDispatcher(connection,
+                               hostname=hostname,
+                               enabled=enabled,
+                               channel=channel,
+                               app=self.app)
+
+    def State(self):
+        from celery.events.state import State as _State
+        return _State()

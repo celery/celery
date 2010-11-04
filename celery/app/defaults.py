@@ -83,6 +83,7 @@ NAMESPACES = {
         "RESULT_PERSISTENT": Option(False, type="bool"),
         "SEND_EVENTS": Option(False, type="bool"),
         "SEND_TASK_ERROR_EMAILS": Option(False, type="bool"),
+        "SEND_TASK_SENT_EVENT": Option(False, type="bool"),
         "STORE_ERRORS_EVEN_IF_IGNORED": Option(False, type="bool"),
         "TASK_RESULT_EXPIRES": Option(timedelta(days=1), type="int"),
         "AMQP_TASK_RESULT_EXPIRES": Option(type="int"),

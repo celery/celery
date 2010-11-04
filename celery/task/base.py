@@ -432,12 +432,13 @@ class BaseTask(object):
 
         """
         router = self.app.amqp.Router(queues)
+        conf = self.app.conf
 
-        if self.app.conf.CELERY_ALWAYS_EAGER:
+        if conf.CELERY_ALWAYS_EAGER:
             return self.apply(args, kwargs, task_id=task_id)
 
         options.setdefault("compression",
-                           self.app.conf.CELERY_MESSAGE_COMPRESSION)
+                           conf.CELERY_MESSAGE_COMPRESSION)
         options = dict(extract_exec_options(self), **options)
         options = router.route(options, self.name, args, kwargs)
         exchange = options.get("exchange")
@@ -447,11 +448,17 @@ class BaseTask(object):
         publish = publisher or self.get_publisher(connection,
                                                   exchange=exchange,
                                                   exchange_type=exchange_type)
+        evd = None
+        if conf.CELERY_SEND_TASK_SENT_EVENT:
+            evd = self.app.events.Dispatcher(channel=publish.channel,
+                                             buffer_while_offline=False)
+
         try:
             task_id = publish.delay_task(self.name, args, kwargs,
                                          task_id=task_id,
                                          countdown=countdown,
                                          eta=eta, expires=expires,
+                                         event_dispatcher=evd,
                                          **options)
         finally:
             if not publisher:

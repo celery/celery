@@ -76,7 +76,6 @@ import warnings
 
 from celery.app import app_or_default
 from celery.datastructures import AttributeDict, SharedCounter
-from celery.events import EventDispatcher
 from celery.exceptions import NotRegistered
 from celery.utils import noop
 from celery.utils.timer2 import to_timestamp
@@ -413,8 +412,7 @@ class Consumer(object):
         # Flush events sent while connection was down.
         if self.event_dispatcher:
             self.event_dispatcher.flush()
-        self.event_dispatcher = EventDispatcher(self.connection,
-                                                app=self.app,
+        self.event_dispatcher = self.app.events.Dispatcher(self.connection,
                                                 hostname=self.hostname,
                                                 enabled=self.send_events)
         self.restart_heartbeat()

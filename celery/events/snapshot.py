@@ -2,8 +2,6 @@ from celery.utils import timer2
 
 from celery.app import app_or_default
 from celery.datastructures import TokenBucket
-from celery.events import EventReceiver
-from celery.events.state import State
 from celery.utils import instantiate, LOG_LEVELS
 from celery.utils.dispatch import Signal
 from celery.utils.timeutils import rate
@@ -82,12 +80,12 @@ def evcam(camera, freq=1.0, maxrate=None, loglevel=0,
     logger.info(
         "-> evcam: Taking snapshots with %s (every %s secs.)\n" % (
             camera, freq))
-    state = State()
+    state = app.events.State()
     cam = instantiate(camera, state, app=app,
                       freq=freq, maxrate=maxrate, logger=logger)
     cam.install()
     conn = app.broker_connection()
-    recv = EventReceiver(conn, app=app, handlers={"*": state.event})
+    recv = app.events.Receiver(conn, handlers={"*": state.event})
     try:
         try:
             recv.capture(limit=None)
