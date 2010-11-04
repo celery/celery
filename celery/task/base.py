@@ -8,7 +8,7 @@ from celery.execute import apply_async, apply
 from celery.log import setup_task_logger
 from celery.messaging import TaskPublisher, TaskConsumer
 from celery.messaging import establish_connection as _establish_connection
-from celery.registry import tasks
+from celery.registry import tasks, _unpickle_task
 from celery.result import BaseAsyncResult, EagerResult
 from celery.schedules import maybe_schedule
 from celery.utils.timeutils import timedelta_seconds
@@ -27,10 +27,6 @@ Please use the CELERYBEAT_SCHEDULE setting instead:
     }
 
 """
-
-
-def _unpickle_task(name):
-    return tasks[name]
 
 
 class TaskType(type):
@@ -465,7 +461,8 @@ class Task(object):
         :param task_id: Task id to get result for.
 
         """
-        return BaseAsyncResult(task_id, backend=self.backend)
+        return BaseAsyncResult(task_id, backend=self.backend,
+                                        task_name=self.name)
 
     def update_state(self, task_id, state, meta=None):
         """Update task state.

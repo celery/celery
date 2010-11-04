@@ -10,7 +10,12 @@ from celery.backends import default_backend
 from celery.datastructures import PositionQueue
 from celery.exceptions import TimeoutError
 from celery.messaging import with_connection
+from celery.registry import _unpickle_task
 from celery.utils import any, all
+
+
+def _unpickle_result(task_id, task_name):
+    return _unpickle_task(task_name).AsyncResult(task_id)
 
 
 class BaseAsyncResult(object):
@@ -31,9 +36,16 @@ class BaseAsyncResult(object):
 
     TimeoutError = TimeoutError
 
-    def __init__(self, task_id, backend):
+    def __init__(self, task_id, backend, task_name=None):
         self.task_id = task_id
         self.backend = backend
+        self.task_name = task_name
+
+    def __reduce__(self):
+        if self.task_name:
+            return (_unpickle_result, (self.task_id, self.task_name))
+        else:
+            return (self.__class__, (self.task_id, self.backend))
 
     def forget(self):
         """Forget about (and possibly remove the result of) this task."""
@@ -183,8 +195,9 @@ class AsyncResult(BaseAsyncResult):
 
     """
 
-    def __init__(self, task_id, backend=None):
-        super(AsyncResult, self).__init__(task_id, backend or default_backend)
+    def __init__(self, task_id, backend=None, task_name=None):
+        super(AsyncResult, self).__init__(task_id, backend or default_backend,
+                                          task_name=task_name)
 
 
 class TaskSetResult(object):

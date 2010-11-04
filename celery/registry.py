@@ -76,3 +76,7 @@ class TaskRegistry(UserDict):
 
 """
 tasks = TaskRegistry()
+
+
+def _unpickle_task(name):
+    return tasks[name]
