@@ -9,6 +9,7 @@ Celery Application.
 
 """
 import os
+import threading
 
 from inspect import getargspec
 
@@ -16,10 +17,12 @@ from celery import registry
 from celery.app import base
 from celery.utils.functional import wraps
 
+_tls = threading.local()
+
 # Apps with the :attr:`~celery.app.base.BaseApp.set_as_current` attribute
 # sets this, so it will always contain the last instantiated app,
 # and is the default app returned by :func:`app_or_default`.
-_current_app = None
+_tls.current_app = None
 
 
 class App(base.BaseApp):
@@ -39,8 +42,7 @@ class App(base.BaseApp):
 
     def on_init(self):
         if self.set_as_current:
-            global _current_app
-            _current_app = self
+            _tls.current_app = self
 
     def create_task_cls(self):
         """Creates a base task class using default configuration
@@ -127,6 +129,9 @@ class App(base.BaseApp):
             return inner_create_task_cls()(*args)
         return inner_create_task_cls(**options)
 
+    def __reduce__(self):
+        return (app_or_default, ())
+
 #: The "default" loader is the default loader used by old applications.
 default_loader = os.environ.get("CELERY_LOADER") or "default"
 
@@ -159,7 +164,6 @@ else:
         is no active app.
 
         """
-        global _current_app
         if app is None:
-            return _current_app or default_app
+            return _tls.current_app or default_app
         return app
