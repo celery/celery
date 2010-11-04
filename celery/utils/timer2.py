@@ -91,16 +91,18 @@ class Schedule(object):
         # localize variable access
         nowfun = time
         pop = heapq.heappop
+        q = self._queue
+        max_interval = self.max_interval
 
         while 1:
-            if self._queue:
-                eta, priority, entry = verify = self._queue[0]
+            if q:
+                eta, priority, entry = verify = q[0]
                 now = nowfun()
 
                 if now < eta:
-                    yield min(eta - now, self.max_interval), None
+                    yield min(eta - now, max_interval), None
                 else:
-                    event = pop(self._queue)
+                    event = pop(q)
 
                     if event is verify:
                         if not entry.cancelled:
