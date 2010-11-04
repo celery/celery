@@ -146,6 +146,9 @@ class EventPublisher(Publisher):
     exchange_type = conf.EVENT_EXCHANGE_TYPE
     routing_key = conf.EVENT_ROUTING_KEY
     serializer = conf.EVENT_SERIALIZER
+    auto_delete = not conf.EVENT_PERSISTENT
+    delivery_mode = conf.EVENT_PERSISTENT and 2 or 1
+    durable = conf.EVENT_PERSISTENT
 
 
 class EventConsumer(Consumer):
@@ -154,6 +157,8 @@ class EventConsumer(Consumer):
     exchange = conf.EVENT_EXCHANGE
     exchange_type = conf.EVENT_EXCHANGE_TYPE
     routing_key = conf.EVENT_ROUTING_KEY
+    auto_delete = not conf.EVENT_PERSISTENT
+    durable = conf.EVENT_PERSISTENT
     no_ack = True
 
 
