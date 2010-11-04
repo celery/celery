@@ -103,8 +103,9 @@ class EventReceiver(object):
     """
     handlers = {}
 
-    def __init__(self, connection, handlers=None):
+    def __init__(self, connection, handlers=None, wakeup=True):
         self.connection = connection
+        self.wakeup = wakeup
         if handlers is not None:
             self.handlers = handlers
 
@@ -128,6 +129,9 @@ class EventReceiver(object):
         """
         consumer = self.consumer()
         consumer.consume()
+        if self.wakeup:
+            from celery.task.control import broadcast
+            broadcast("heartbeat")
         try:
             for iteration in count(0):
                 if limit and iteration > limit:
