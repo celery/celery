@@ -6,7 +6,7 @@ from celery.app import app_or_default
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
 from celery.execute.trace import TaskTrace
-from celery.registry import tasks
+from celery.registry import tasks, _unpickle_task
 from celery.result import EagerResult
 from celery.schedules import maybe_schedule
 from celery.utils import mattrgetter, gen_unique_id, fun_takes_kwargs
@@ -42,10 +42,6 @@ _default_context = {"logfile": None,
                     "retries": 0,
                     "is_eager": False,
                     "delivery_info": None}
-
-
-def _unpickle_task(name):
-    return tasks[name]
 
 
 class Context(threading.local):
@@ -609,7 +605,8 @@ class BaseTask(object):
         :param task_id: Task id to get result for.
 
         """
-        return self.app.AsyncResult(task_id, backend=self.backend)
+        return self.app.AsyncResult(task_id, backend=self.backend,
+                                             task_name=self.name)
 
     def update_state(self, task_id=None, state=None, meta=None):
         """Update task state.

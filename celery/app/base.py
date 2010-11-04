@@ -116,10 +116,11 @@ class BaseApp(object):
         return self.with_default_connection(_do_publish)(
                 connection=connection, connect_timeout=connect_timeout)
 
-    def AsyncResult(self, task_id, backend=None):
+    def AsyncResult(self, task_id, backend=None, task_name=None):
         """Create :class:`celery.result.BaseAsyncResult` instance."""
         from celery.result import BaseAsyncResult
         return BaseAsyncResult(task_id, app=self,
+                               task_name=task_name,
                                backend=backend or self.backend)
 
     def TaskSetResult(self, taskset_id, results, **kwargs):

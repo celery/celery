@@ -9,7 +9,12 @@ from celery import states
 from celery.app import app_or_default
 from celery.datastructures import PositionQueue
 from celery.exceptions import TimeoutError
+from celery.registry import _unpickle_task
 from celery.utils.compat import any, all
+
+
+def _unpickle_result(task_id, task_name):
+    return _unpickle_task(task_name).AsyncResult(task_id)
 
 
 class BaseAsyncResult(object):
@@ -29,10 +34,18 @@ class BaseAsyncResult(object):
     #: The task result backend to use.
     backend = None
 
-    def __init__(self, task_id, backend, app=None):
+    def __init__(self, task_id, backend, task_name=None, app=None):
         self.task_id = task_id
         self.backend = backend
+        self.task_name = task_name
         self.app = app_or_default(app)
+
+    def __reduce__(self):
+        if self.task_name:
+            return (_unpickle_result, (self.task_id, self.task_name))
+        else:
+            return (self.__class__, (self.task_id, self.backend,
+                                     None, self.app))
 
     def forget(self):
         """Forget about (and possibly remove the result of) this task."""
@@ -172,10 +185,12 @@ class AsyncResult(BaseAsyncResult):
     #: Task result store backend to use.
     backend = None
 
-    def __init__(self, task_id, backend=None, app=None):
+    def __init__(self, task_id, backend=None, task_name=None, app=None):
         app = app_or_default(app)
         backend = backend or app.backend
-        super(AsyncResult, self).__init__(task_id, backend, app=app)
+        super(AsyncResult, self).__init__(task_id, backend,
+                                          task_name=task_name, app=app)
+
 
 
 class TaskSetResult(object):
@@ -200,6 +215,13 @@ class TaskSetResult(object):
         self.taskset_id = taskset_id
         self.subtasks = subtasks
         self.app = app_or_default(app)
+
+    def __reduce__(self):
+        return (self.__class__, (self.taskset_id, self.subtasks))
+
+    @classmethod
+    def _unpickle(cls, taskset_id, subtasks):
+        return cls(taskset_id, subtasks)
 
     def itersubtasks(self):
         """Taskset subtask iterator.
@@ -357,7 +379,7 @@ class TaskSetResult(object):
     def restore(self, taskset_id, backend=None):
         """Restore previously saved taskset result."""
         if backend is None:
-            backend = self.app.backend
+            backend = app_or_default().backend
         return backend.restore_taskset(taskset_id)
 
     @property
