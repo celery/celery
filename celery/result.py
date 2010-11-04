@@ -216,13 +216,6 @@ class TaskSetResult(object):
         self.subtasks = subtasks
         self.app = app_or_default(app)
 
-    def __reduce__(self):
-        return (self.__class__, (self.taskset_id, self.subtasks))
-
-    @classmethod
-    def _unpickle(cls, taskset_id, subtasks):
-        return cls(taskset_id, subtasks)
-
     def itersubtasks(self):
         """Taskset subtask iterator.
 
