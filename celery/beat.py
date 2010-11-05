@@ -73,8 +73,11 @@ class ScheduleEntry(object):
         self.args = args
         self.kwargs = kwargs
         self.options = options
-        self.last_run_at = last_run_at or datetime.now()
+        self.last_run_at = last_run_at or self._default_now()
         self.total_run_count = total_run_count or 0
+
+    def _default_now(self):
+        return datetime.now()
 
     def next(self, last_run_at=None):
         """Returns a new instance of the same class, but with
