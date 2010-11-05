@@ -168,7 +168,7 @@ class Control(object):
 
     def broadcast(self, command, arguments=None, destination=None,
             connection=None, connect_timeout=None, reply=False, timeout=1,
-            limit=None, callback=None):
+            limit=None, callback=None, channel=None):
         """Broadcast a control command to the celery workers.
 
         :param command: Name of command to send.
@@ -186,14 +186,19 @@ class Control(object):
             received.
 
         """
-        def _do_broadcast(connection=None, connect_timeout=None):
+        def _do_broadcast(connection=None, connect_timeout=None,
+                          channel=None):
             return self.mailbox(connection)._broadcast(command, arguments,
                                                        destination, reply,
                                                        timeout, limit,
-                                                       callback)
+                                                       callback,
+                                                       channel=channel)
 
-        return self.app.with_default_connection(_do_broadcast)(
-                connection=connection, connect_timeout=connect_timeout)
+        if channel:
+            return _do_broadcast(connection, connect_timeout, channel)
+        else:
+            return self.app.with_default_connection(_do_broadcast)(
+                    connection=connection, connect_timeout=connect_timeout)
 
 
 _default_control = Control(app_or_default())
