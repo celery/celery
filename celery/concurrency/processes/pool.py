@@ -567,7 +567,6 @@ class Pool(object):
         """Bring the number of pool processes up to the specified number,
         for use after reaping workers which have exited.
         """
-        debug('repopulating pool')
         for i in range(self._processes - len(self._pool)):
             if self._state != RUN:
                 return
