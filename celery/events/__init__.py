@@ -163,29 +163,48 @@ class EventReceiver(object):
         consumer.register_callback(self._receive)
         return consumer
 
-    def capture(self, limit=None, timeout=None):
+    def itercapture(self, limit=None, timeout=None, wakeup=True):
+        consumer = self.consumer()
+        consumer.consume()
+        if wakeup:
+            self.wakeup_workers(channel=consumer.channel)
+
+        yield consumer
+
+        try:
+            self.drain_events(limit=limit, timeout=timeout)
+        finally:
+            consumer.cancel()
+            consumer.channel.close()
+
+    def capture(self, limit=None, timeout=None, wakeup=True):
         """Open up a consumer capturing events.
 
         This has to run in the main process, and it will never
         stop unless forced via :exc:`KeyboardInterrupt` or :exc:`SystemExit`.
 
         """
-        consumer = self.consumer()
-        consumer.consume()
-        try:
-            for iteration in count(0):
-                if limit and iteration > limit:
-                    break
-                try:
-                    self.connection.drain_events(timeout=timeout)
-                except socket.timeout:
-                    if timeout:
-                        raise
-                except socket.error:
-                    pass
-        finally:
-            consumer.cancel()
-            consumer.channel.close()
+        list(self.itercapture(limit=limit,
+                              timeout=timeout,
+                              wakeup=wakeup))
+
+
+    def wakeup_workers(self, channel=None):
+        self.app.control.broadcast("heartbeat",
+                                   connection=self.connection,
+                                   channel=channel)
+
+    def drain_events(self, limit=None, timeout=None):
+        for iteration in count(0):
+            if limit and iteration > limit:
+                break
+            try:
+                self.connection.drain_events(timeout=timeout)
+            except socket.timeout:
+                if timeout:
+                    raise
+            except socket.error:
+                pass
 
     def _receive(self, message_data, message):
         type = message_data.pop("type").lower()

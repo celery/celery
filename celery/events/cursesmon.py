@@ -17,7 +17,7 @@ class CursesMonitor(object):
     keymap = {}
     win = None
     screen_width = None
-    screen_delay = 0.1
+    screen_delay = 10
     selected_task = None
     selected_position = 0
     selected_str = "Selected: "
@@ -305,7 +305,7 @@ class CursesMonitor(object):
         if self.workers:
             win.addstr(my - 4, x, self.online_str, curses.A_BOLD)
             win.addstr(my - 4, x + len(self.online_str),
-                    ", ".join(self.workers), curses.A_NORMAL)
+                    ", ".join(sorted(self.workers)), curses.A_NORMAL)
         else:
             win.addstr(my - 4, x, "No workers discovered.")
 
@@ -356,7 +356,7 @@ class CursesMonitor(object):
         curses.endwin()
 
     def nap(self):
-        curses.napms(int(self.screen_delay * 1000))
+        curses.napms(self.screen_delay)
 
     @property
     def tasks(self):
@@ -386,14 +386,16 @@ def evtop(app=None):
     sys.stderr.write("-> evtop: starting capture...\n")
     app = app_or_default(app)
     state = app.events.State()
+    conn = app.broker_connection()
+    recv = app.events.Receiver(conn, handlers={"*": state.event})
+    capture = recv.itercapture()
+    consumer = capture.next()
     display = CursesMonitor(state, app=app)
     display.init_screen()
     refresher = DisplayThread(display)
     refresher.start()
-    conn = app.broker_connection()
-    recv = app.events.Receiver(conn, handlers={"*": state.event})
     try:
-        recv.capture(limit=None)
+        capture.next()
     except Exception:
         refresher.shutdown = True
         refresher.join()

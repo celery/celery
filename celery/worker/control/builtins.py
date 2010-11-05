@@ -41,6 +41,13 @@ def disable_events(panel):
 
 
 @Panel.register
+def heartbeat(panel):
+    panel.logger.debug("Heartbeat requested by remote.")
+    dispatcher = panel.listener.event_dispatcher
+    dispatcher.send("worker-heartbeat")
+
+
+@Panel.register
 def set_loglevel(panel, loglevel=None):
     if loglevel is not None:
         if not isinstance(loglevel, int):
