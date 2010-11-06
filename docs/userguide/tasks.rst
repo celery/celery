@@ -645,7 +645,7 @@ This way the task won't be registered, but any task subclassing it will be.
 
 When tasks are sent, we don't send any actual function code, just the name
 of the task to execute.  When the worker then receives the message it can look
-up th ename in its task registry to find the execution code.
+up the name in its task registry to find the execution code.
 
 This means that your workers should always be updated with the same software
 as the client.  This is a drawback, but the alternative is a technical
