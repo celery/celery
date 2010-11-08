@@ -134,7 +134,7 @@ install_requires.extend([
 ])
 
 py_version = sys.version_info
-if sys.version_info < (2, 6):
+if sys.version_info < (2, 6) and not sys.platform.startswith("java"):
     install_requires.append("multiprocessing")
 if sys.version_info < (2, 5):
     install_requires.append("uuid")
