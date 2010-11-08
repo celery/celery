@@ -63,30 +63,16 @@ class DictAttribute(object):
         return vars(self.obj).iteritems()
 
 
-class MultiDictView(AttributeDictMixin):
-    """View for one more more dicts.
+class ConfigurationView(AttributeDictMixin):
+    changes = None
+    defaults = None
 
-    * When getting a key, the dicts are searched in order.
-    * When setting a key, the key is added to the first dict.
-
-    >>> d1 = {"x": 3"}
-    >>> d2 = {"x": 1, "y": 2, "z": 3}
-    >>> x = MultiDictView([d1, d2])
-
-    >>> x["x"]
-    3
-
-    >>>  x["y"]
-    2
-
-    """
-    dicts = None
-
-    def __init__(self, *dicts):
-        self.__dict__["dicts"] = dicts
+    def __init__(self, changes, defaults):
+        self.__dict__["changes"] = changes
+        self.__dict__["defaults"] = defaults
 
     def __getitem__(self, key):
-        for d in self.__dict__["dicts"]:
+        for d in self.__dict__["changes"], self.__dict__["defaults"]:
             try:
                 return d[key]
             except KeyError:
@@ -94,7 +80,7 @@ class MultiDictView(AttributeDictMixin):
         raise KeyError(key)
 
     def __setitem__(self, key, value):
-        self.__dict__["dicts"][0][key] = value
+        self.__dict__["changes"][key] = value
 
     def get(self, key, default=None):
         try:
@@ -110,10 +96,10 @@ class MultiDictView(AttributeDictMixin):
             return default
 
     def update(self, *args, **kwargs):
-        return self.__dict__["dicts"][0].update(*args, **kwargs)
+        return self.__dict__["changes"].update(*args, **kwargs)
 
     def __contains__(self, key):
-        for d in self.__dict__["dicts"]:
+        for d in self.__dict__["changes"], self.__dict__["defaults"]:
             if key in d:
                 return True
         return False
@@ -122,7 +108,8 @@ class MultiDictView(AttributeDictMixin):
         return repr(dict(iter(self)))
 
     def __iter__(self):
-        return chain(*[d.iteritems() for d in self.__dict__["dicts"]])
+        return chain(*[d.iteritems() for d in (self.__dict__["changes"],
+                                               self.__dict__["defaults"])])
 
 
 class PositionQueue(UserList):

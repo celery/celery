@@ -40,9 +40,12 @@ class App(base.BaseApp):
 
     """
 
+    def set_current(self):
+        _tls.current_app = self
+
     def on_init(self):
         if self.set_as_current:
-            _tls.current_app = self
+            self.set_current()
 
     def create_task_cls(self):
         """Creates a base task class using default configuration
@@ -129,6 +132,20 @@ class App(base.BaseApp):
             return inner_create_task_cls()(*args)
         return inner_create_task_cls(**options)
 
+    def __reduce__(self):
+        return (_unpickle_app, (self.__class__,
+                                self.main,
+                                self.conf.changes,
+                                self.loader_cls,
+                                self.backend_cls))
+
+
+def _unpickle_app(cls, main, changes, loader, backend, set_as_current):
+    app = cls(main, loader=loader, backend=backend,
+                    set_as_current=False)
+    app.conf.update(changes)
+    return app
+
 
 #: The "default" loader is the default loader used by old applications.
 default_loader = os.environ.get("CELERY_LOADER") or "default"
@@ -141,12 +158,11 @@ if os.environ.get("CELERY_TRACE_APP"):
     def app_or_default(app=None):
         from traceback import print_stack
         from multiprocessing import current_process
-        global _current_app
         if app is None:
-            if _current_app:
+            if _tls.current_app:
                 print("-- RETURNING TO CURRENT APP --")
                 print_stack()
-                return _current_app
+                return _tls.current_app
             if current_process()._name == "MainProcess":
                 raise Exception("DEFAULT APP")
             print("-- RETURNING TO DEFAULT APP --")

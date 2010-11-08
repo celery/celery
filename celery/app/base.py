@@ -15,7 +15,7 @@ from datetime import timedelta
 
 from celery import routes
 from celery.app.defaults import DEFAULTS
-from celery.datastructures import MultiDictView
+from celery.datastructures import ConfigurationView
 from celery.utils import noop, isatty
 from celery.utils.functional import wraps
 
@@ -252,7 +252,7 @@ class BaseApp(object):
         return backend_cls(app=self)
 
     def _get_config(self):
-        return self.post_config_merge(MultiDictView(
+        return self.post_config_merge(ConfigurationView(
                     self.pre_config_merge(self.loader.conf), DEFAULTS))
 
     @property

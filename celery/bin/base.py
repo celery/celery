@@ -30,8 +30,8 @@ class Command(object):
     Parser = OptionParser
 
     def __init__(self, app=None, get_app=None):
-        from celery.app import app_or_default
-        self.app = app_or_default(app)
+        #from celery.app import app_or_default
+        #self.app = app_or_default(app)
         self.get_app = get_app or self._get_default_app
 
     def usage(self):
@@ -79,7 +79,7 @@ class Command(object):
             os.environ["CELERY_CONFIG_MODULE"] = config_module
         if app:
             self.app = self.get_cls_by_name(app)
-        elif not self.app:
+        else:
             self.app = self.get_app(loader=loader)
         if self.enable_config_from_cmdline:
             argv = self.process_cmdline_config(argv)
