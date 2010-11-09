@@ -56,6 +56,10 @@ http://botland.oebfare.com/logger/celery/
 News
 ====
 
+Django and Celery - Death to Cron
+---------------------------------
+http://tensixtyone.com/django-and-celery-death-to-cron
+
 Celery Tips
 -----------
 http://ericholscher.com/blog/2010/nov/2/celery-tips/

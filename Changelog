@@ -24,7 +24,7 @@
 * celeryev cursesmon: Set screen_delay to 10ms, so the screen refreshes more
   often.
 
-* Fixed pickling errors when pickling `AsyncResult`s on older Python
+* Fixed pickling errors when pickling :class:`AsyncResult` on older Python
   versions.
 
 * celeryd: prefetch count was decremented by eta tasks even if there
