@@ -5,11 +5,36 @@
 .. contents::
     :local:
 
+.. _version-2.1.3:
+
+2.1.3
+=====
+:release-date: 2010-11-09 17:00 PM CEST
+
+.. _v213-fixes:
+
+* Fixed deadlocks in `timer2` which could lead to `djcelerymon`/`celeryev -c`
+  hanging.
+
+* `EventReceiver`: now sends heartbeat request to find workers.
+
+    This means :program:`celeryev` and friends finds workers immediately
+    at startup.
+
+* celeryev cursesmon: Set screen_delay to 10ms, so the screen refreshes more
+  often.
+
+* Fixed pickling errors when pickling `AsyncResult`s on older Python
+  versions.
+
+* celeryd: prefetch count was decremented by eta tasks even if there
+  were no active prefetch limits.
+
 .. _version-2.1.2:
 
 2.1.2
 =====
-:release-data: TBA
+:release-date: 2010-10-29 15:00 PM CEST
 
 .. _v212-fixes:
 
