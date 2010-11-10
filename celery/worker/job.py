@@ -26,7 +26,7 @@ EMAIL_SIGNATURE_SEP = "-- "
 
 #: format string for the body of an error e-mail.
 TASK_ERROR_EMAIL_BODY = """
-Task %%(name)s with id %%(id)s raised exception:\n%%(exc)s
+Task %%(name)s with id %%(id)s raised exception:\n%%(exc)r
 
 
 Task was called with args: %%(args)s kwargs: %%(kwargs)s.
