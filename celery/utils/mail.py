@@ -1,6 +1,5 @@
 import sys
 import smtplib
-import warnings
 
 try:
     from email.mime.text import MIMEText

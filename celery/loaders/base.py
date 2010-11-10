@@ -1,5 +1,6 @@
 import importlib
 import re
+import warnings
 
 import anyjson
 
@@ -117,10 +118,18 @@ class BaseLoader(object):
             sender=None, to=None, host=None, port=None,
             user=None, password=None):
         from celery.utils import mail
-        message = mail.Message(sender=sender, to=to,
-                               subject=subject, body=message)
-        mailer = mail.Mailer(host, port, user, password)
-        mailer.send(message, fail_silently=fail_silently)
+        try:
+            message = mail.Message(sender=sender, to=to,
+                                    subject=subject, body=message)
+            mailer = mail.Mailer(host, port, user, password)
+            mailer.send(message)
+        except Exception, exc:
+            if not fail_silently:
+                raise
+            warnings.warn(mail.SendmailWarning(
+                "Mail could not be sent: %r %r" % (
+                    exc, {"To": to, "Subject": subject})))
+
 
     @property
     def conf(self):
