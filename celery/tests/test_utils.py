@@ -32,26 +32,6 @@ class test_chunks(unittest.TestCase):
             [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]])
 
 
-class test_gen_unique_id(unittest.TestCase):
-
-    def test_gen_unique_id_without_ctypes(self):
-        old_utils = sys.modules.pop("celery.utils")
-
-        def with_ctypes_masked(_val):
-            from celery.utils import ctypes, gen_unique_id
-
-            self.assertIsNone(ctypes)
-            uuid = gen_unique_id()
-            self.assertTrue(uuid)
-            self.assertIsInstance(uuid, basestring)
-
-        try:
-            context = mask_modules("ctypes")
-            execute_context(context, with_ctypes_masked)
-        finally:
-            sys.modules["celery.utils"] = old_utils
-
-
 class test_utils(unittest.TestCase):
 
     def test_get_full_cls_name(self):
