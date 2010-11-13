@@ -159,7 +159,7 @@ if os.environ.get("CELERY_TRACE_APP"):
         from traceback import print_stack
         from multiprocessing import current_process
         if app is None:
-            if _tls.current_app:
+            if getattr(_tls, "current_app", None):
                 print("-- RETURNING TO CURRENT APP --")
                 print_stack()
                 return _tls.current_app
@@ -179,5 +179,5 @@ else:
 
         """
         if app is None:
-            return _tls.current_app or default_app
+            return getattr(_tls, "current_app", None) or default_app
         return app
