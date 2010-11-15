@@ -433,6 +433,7 @@ class test_Consumer(unittest.TestCase):
         l = _Consumer(self.ready_queue, self.eta_schedule, self.logger,
                       send_events=False, init_callback=init_callback)
         l.task_consumer = MockConsumer()
+        l.broadcast_consumer = MockConsumer()
         l.qos = _QoS()
         l.connection = BrokerConnection()
 
@@ -451,6 +452,7 @@ class test_Consumer(unittest.TestCase):
                       send_events=False, init_callback=init_callback)
         l.qos = _QoS()
         l.task_consumer = MockConsumer()
+        l.broadcast_consumer = MockConsumer()
         l.connection = BrokerConnection()
 
         def raises_socket_error(limit=None):
