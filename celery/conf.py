@@ -97,6 +97,7 @@ _DEFAULTS = {
     "SERVER_EMAIL": "celery@localhost",
     "EMAIL_HOST": "localhost",
     "EMAIL_PORT": 25,
+    "EMAIL_TIMEOUT": 2,
     "ADMINS": (),
 }
 

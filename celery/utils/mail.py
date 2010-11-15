@@ -38,7 +38,7 @@ class Message(object):
 class Mailer(object):
 
     def __init__(self, host="localhost", port=0, user=None, password=None,
-            timeout=2):
+            timeout=None):
         self.host = host
         self.port = port
         self.user = user
@@ -81,7 +81,8 @@ def mail_admins(subject, message, fail_silently=False):
     try:
         mailer = Mailer(conf.EMAIL_HOST, conf.EMAIL_PORT,
                         conf.EMAIL_HOST_USER,
-                        conf.EMAIL_HOST_PASSWORD)
+                        conf.EMAIL_HOST_PASSWORD,
+                        conf.EMAIL_TIMEOUT)
         mailer.send(message)
     except Exception, exc:
         if not fail_silently:
