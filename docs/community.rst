@@ -56,6 +56,10 @@ http://botland.oebfare.com/logger/celery/
 News
 ====
 
+Building a Django App Server with Chef
+--------------------------------------
+http://ericholscher.com/blog/2010/nov/11/building-django-app-server-chef-part-4/
+
 Introducció a Celery (Catalan)
 ------------------------------
 http://trespams.com/2010/11/13/introduccio-celery/
