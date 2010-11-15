@@ -226,7 +226,8 @@ class BaseApp(object):
                                 host=self.conf.EMAIL_HOST,
                                 port=self.conf.EMAIL_PORT,
                                 user=self.conf.EMAIL_HOST_USER,
-                                password=self.conf.EMAIL_HOST_PASSWORD)
+                                password=self.conf.EMAIL_HOST_PASSWORD,
+                                timeout=self.conf.EMAIL_TIMEOUT)
 
     def either(self, default_key, *values):
         """Fallback to the value of a configuration key if none of the

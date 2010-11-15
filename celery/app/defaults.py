@@ -132,6 +132,7 @@ NAMESPACES = {
         "PORT": Option(25, type="int"),
         "HOST_USER": Option(None),
         "HOST_PASSWORD": Option(None),
+        "TIMEOUT": Option(2, type="int"),
     },
     "SERVER_EMAIL": Option("celery@localhost"),
     "ADMINS": Option((), type="tuple"),

@@ -116,12 +116,12 @@ class BaseLoader(object):
 
     def mail_admins(self, subject, message, fail_silently=False,
             sender=None, to=None, host=None, port=None,
-            user=None, password=None):
+            user=None, password=None, timeout=None):
         from celery.utils import mail
         try:
             message = mail.Message(sender=sender, to=to,
                                     subject=subject, body=message)
-            mailer = mail.Mailer(host, port, user, password)
+            mailer = mail.Mailer(host, port, user, password, timeout)
             mailer.send(message)
         except Exception, exc:
             if not fail_silently:
@@ -129,7 +129,6 @@ class BaseLoader(object):
             warnings.warn(mail.SendmailWarning(
                 "Mail could not be sent: %r %r" % (
                     exc, {"To": to, "Subject": subject})))
-
 
     @property
     def conf(self):
