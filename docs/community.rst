@@ -56,6 +56,9 @@ http://botland.oebfare.com/logger/celery/
 News
 ====
 
+Introducció a Celery (Catalan)
+http://trespams.com/2010/11/13/introduccio-celery/
+
 Django and Celery - Death to Cron
 ---------------------------------
 http://tensixtyone.com/django-and-celery-death-to-cron
