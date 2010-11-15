@@ -64,7 +64,7 @@ class test_TokenBucketQueue(unittest.TestCase):
         time_start = time.time()
         [x.put(str(i)) for i in xrange(20)]
         for i in xrange(20):
-            sys.stderr.write("x")
+            sys.stderr.write(".")
             x.wait()
         self.assertGreater(time.time() - time_start, 1.5)
 
@@ -220,7 +220,7 @@ class test_TaskBucket(unittest.TestCase):
         # 20 items should take at least one second to complete
         time_start = time.time()
         for i, job in enumerate(jobs):
-            sys.stderr.write("i")
+            sys.stderr.write(".")
             self.assertEqual(b.get(), job)
         self.assertGreater(time.time() - time_start, 1.5)
 
@@ -260,7 +260,7 @@ class test_TaskBucket(unittest.TestCase):
 
             [b.put(job) for job in jobs]
             for i, job in enumerate(jobs):
-                sys.stderr.write("0")
+                sys.stderr.write(".")
                 self.assertTrue(b.get(), job)
             self.assertEqual(i + 1, len(jobs))
         finally:
