@@ -4,6 +4,7 @@ from __future__ import generators
 
 import atexit
 import heapq
+import os
 import sys
 import traceback
 import warnings
@@ -126,6 +127,8 @@ class Schedule(object):
         events = list(self._queue)
         return map(heapq.heappop, [events] * len(events))
 
+TRACE_THREAD = os.environ.get("TIMER2_TRACE_THREAD")
+
 
 class Timer(Thread):
     Entry = Entry
@@ -133,6 +136,7 @@ class Timer(Thread):
     running = False
     on_tick = None
     _timer_count = count(1).next
+    _started_by = {}
 
     def __init__(self, schedule=None, on_error=None, on_tick=None, **kwargs):
         self.schedule = schedule or Schedule(on_error=on_error)
@@ -145,6 +149,12 @@ class Timer(Thread):
         self.not_empty = Condition(self.mutex)
         self.setDaemon(True)
         self.setName("Timer-%s" % (self._timer_count(), ))
+
+    if TRACE_THREAD:
+        def start(self, *args, **kwargs):
+            import traceback
+            self._started_by[self.ident] = traceback.format_stack()
+            return Thread.start(self, *args, **kwargs)
 
     def apply_entry(self, entry):
         try:
@@ -192,6 +202,8 @@ class Timer(Thread):
             self._stopped.wait()
             self.join(1e100)
             self.running = False
+            if TRACE_THREAD:
+                self._started_by.pop(self.ident, None)
 
     def ensure_started(self):
         if not self.running and not self.is_alive():
