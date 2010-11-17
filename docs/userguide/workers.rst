@@ -27,7 +27,7 @@ For a full list of available command line options see
 
 You can also start multiple workers on the same machine. If you do so
 be sure to give a unique name to each individual worker by specifying a
-hostname with the `--hostname|-n` argument::
+host name with the `--hostname|-n` argument::
 
     $ celeryd --loglevel=INFO --concurrency=10 -n worker1.example.com
     $ celeryd --loglevel=INFO --concurrency=10 -n worker2.example.com
@@ -181,7 +181,7 @@ to the number of destination hosts.
 .. seealso::
 
     The :program:`celeryctl` program is used to execute remote control
-    commands from the commandline.  It supports all of the commands
+    commands from the command line.  It supports all of the commands
     listed below.  See :ref:`monitoring-celeryctl` for more information.
 
 .. _worker-broadcast-fun:

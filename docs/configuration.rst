@@ -297,7 +297,7 @@ This backend requires the following configuration directives to be set:
 TT_HOST
 ~~~~~~~
 
-Hostname of the Tokyo Tyrant server.
+Host name of the Tokyo Tyrant server.
 
 .. setting:: TT_PORT
 
@@ -337,7 +337,7 @@ This backend requires the following configuration directives to be set.
 REDIS_HOST
 ~~~~~~~~~~
 
-Hostname of the Redis database server. e.g. `"localhost"`.
+Host name of the Redis database server. e.g. `"localhost"`.
 
 .. setting:: REDIS_PORT
 
@@ -389,7 +389,7 @@ CELERY_MONGODB_BACKEND_SETTINGS
 This is a dict supporting the following keys:
 
 * host
-    Hostname of the MongoDB server. Defaults to "localhost".
+    Host name of the MongoDB server. Defaults to "localhost".
 
 * port
     The port the MongoDB server is listening to. Defaults to 27017.
@@ -557,7 +557,7 @@ Virtual host.  Default is `"/"`.
 BROKER_USE_SSL
 ~~~~~~~~~~~~~~
 
-Use SSL to conenct to the broker.  Off by defalt.  This may not be supported
+Use SSL to connect to the broker.  Off by default.  This may not be supported
 by all transports.
 
 .. setting:: BROKER_CONNECTION_TIMEOUT
@@ -814,7 +814,7 @@ CELERY_SEND_TASK_ERROR_EMAILS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The default value for the `Task.send_error_emails` attribute, which if
-set to :const:`True` means errors occuring during task execution will be
+set to :const:`True` means errors occurring during task execution will be
 sent to :setting:`ADMINS` by e-mail.
 
 .. setting:: CELERY_TASK_ERROR_WHITELIST
@@ -822,14 +822,14 @@ sent to :setting:`ADMINS` by e-mail.
 CELERY_TASK_ERROR_WHITELIST
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A whitelist of exceptions to send error e-mails for.
+A white list of exceptions to send error e-mails for.
 
 .. setting:: ADMINS
 
 ADMINS
 ~~~~~~
 
-List of `(name, email_address)` tuples for the admins that should
+List of `(name, email_address)` tuples for the administrators that should
 receive error e-mails.
 
 .. setting:: SERVER_EMAIL
@@ -852,7 +852,7 @@ The mail server to use.  Default is `"localhost"`.
 MAIL_HOST_USER
 ~~~~~~~~~~~~~~
 
-Username (if required) to log on to the mail server with.
+User name (if required) to log on to the mail server with.
 
 .. setting:: MAIL_HOST_PASSWORD
 
@@ -957,7 +957,7 @@ CELERY_BROADCAST_QUEUE
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Name prefix for the queue used when listening for broadcast messages.
-The workers hostname will be appended to the prefix to create the final
+The workers host name will be appended to the prefix to create the final
 queue name.
 
 Default is `"celeryctl"`.
@@ -1050,7 +1050,7 @@ Used by :program:`celeryd` and :program:`celerybeat`.
 CELERY_REDIRECT_STDOUTS_LEVEL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The loglevel output to `stdout` and `stderr` is logged as.
+The log level output to `stdout` and `stderr` is logged as.
 Can be one of :const:`DEBUG`, :const:`INFO`, :const:`WARNING`,
 :const:`ERROR` or :const:`CRITICAL`.
 

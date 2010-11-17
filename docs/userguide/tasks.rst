@@ -56,11 +56,11 @@ the task being executed, and contains the following attributes:
           An integer starting at `0`.
 
 :is_eager: Set to :const:`True` if the task is executed locally in
-           the client, kand not by a worker.
+           the client, and not by a worker.
 
 :logfile: The file the worker logs to.  See `Logging`_.
 
-:loglevel: The current loglevel used.
+:loglevel: The current log level used.
 
 :delivery_info: Additional message delivery information. This is a mapping
                 containing the exchange and routing key used to deliver this
@@ -101,7 +101,7 @@ There are several logging levels available, and the workers `loglevel`
 setting decides whether or not they will be written to the log file.
 
 Of course, you can also simply use `print` as anything written to standard
-out/-err will be written to the logfile as well.
+out/-err will be written to the log file as well.
 
 .. _task-retry:
 
@@ -181,7 +181,7 @@ General
 .. attribute:: Task.abstract
 
     Abstract classes are not registered, but are used as the
-    superclass when making new task types by subclassing.
+    base class for new task types.
 
 .. attribute:: Task.max_retries
 
@@ -229,8 +229,8 @@ General
 
 .. attribute:: Task.error_whitelist
 
-    If the sending of error e-emails is enabled for this task, then
-    this is a whitelist of exceptions to actually send e-mails about.
+    If the sending of error e-mails is enabled for this task, then
+    this is a white list of exceptions to actually send e-mails about.
 
 .. attribute:: Task.serializer
 
@@ -257,7 +257,7 @@ General
     crashes in the middle of execution, which may be acceptable for some
     applications.
 
-    The global default can be overriden by the :setting:`CELERY_ACKS_LATE`
+    The global default can be overridden by the :setting:`CELERY_ACKS_LATE`
     setting.
 
 .. _task-track-started:
@@ -272,8 +272,8 @@ General
     when there are long running tasks and there is a need to report which
     task is currently running.
 
-    The hostname and pid of the worker executing the task
-    will be avaiable in the state metadata (e.g. `result.info["pid"]`)
+    The host name and process id of the worker executing the task
+    will be available in the state metadata (e.g. `result.info["pid"]`)
 
     The global default can be overridden by the
     :setting:`CELERY_TRACK_STARTED` setting.
@@ -545,7 +545,7 @@ FAILURE
 
 Task execution resulted in failure.
 
-:metadata: `result` contains the exception occured, and `traceback`
+:metadata: `result` contains the exception occurred, and `traceback`
            contains the backtrace of the stack at the point when the
            exception was raised.
 :propagates: Yes
@@ -577,7 +577,7 @@ Custom states
 You can easily define your own states, all you need is a unique name.
 The name of the state is usually an uppercase string.  As an example
 you could have a look at :mod:`abortable tasks <~celery.contrib.abortable>`
-wich defines its own custom :state:`ABORTED` state.
+which defines its own custom :state:`ABORTED` state.
 
 Use :meth:`Task.update_state <celery.task.base.BaseTask.update_state>` to
 update a tasks state::
@@ -641,7 +641,8 @@ task as :attr:`~celery.task.base.BaseTask.abstract`:
     class MyTask(Task):
         abstract = True
 
-This way the task won't be registered, but any task subclassing it will be.
+This way the task won't be registered, but any task inheriting from
+it will be.
 
 When tasks are sent, we don't send any actual function code, just the name
 of the task to execute.  When the worker then receives the message it can look
@@ -830,13 +831,13 @@ The ancient async sayings tells us that “asserting the world is the
 responsibility of the task”.  What this means is that the world view may
 have changed since the task was requested, so the task is responsible for
 making sure the world is how it should be;  If you have a task
-that reindexes a search engine, and the search engine should only be reindexed
-at maximum every 5 minutes, then it must be the tasks responsibility to assert
-that, not the callers.
+that re-indexes a search engine, and the search engine should only be
+re-indexed at maximum every 5 minutes, then it must be the tasks
+responsibility to assert that, not the callers.
 
-Another gotcha is Django model objects.  They shouldn't be passed on as arguments
-to tasks.  It's almost always better to re-fetch the object from the
-database when the task is running instead,  as using old data may lead
+Another gotcha is Django model objects.  They shouldn't be passed on as
+arguments to tasks.  It's almost always better to re-fetch the object from
+the database when the task is running instead,  as using old data may lead
 to race conditions.
 
 Imagine the following scenario where you have an article and a task

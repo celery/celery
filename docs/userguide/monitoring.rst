@@ -30,7 +30,7 @@ celeryctl: Management Utility
 :mod:`~celery.bin.celeryctl` is a command line utility to inspect
 and manage worker nodes (and to some degree tasks).
 
-To list all the commands avaialble do::
+To list all the commands available do::
 
     $ celeryctl help
 
@@ -205,7 +205,7 @@ Using outside of Django
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 `django-celery` also installs the :program:`djcelerymon` program. This
-can be used by non-Django users, and runs both a webserver and a snapshot
+can be used by non-Django users, and runs both a web server and a snapshot
 camera in the same process.
 
 **Installing**
@@ -220,8 +220,8 @@ or using :program:`easy_install`::
 
 **Running**
 
-:program:`djcelerymon` reads configuration from your Celery config module,
-and sets up the Django environment using the same settings::
+:program:`djcelerymon` reads configuration from your Celery configuration
+module, and sets up the Django environment using the same settings::
 
     $ djcelerymon
 
@@ -233,7 +233,7 @@ user running the monitor.
 If you want to store the events in a different database, e.g. MySQL,
 then you can configure the `DATABASE*` settings directly in your Celery
 config module.  See http://docs.djangoproject.com/en/dev/ref/settings/#databases
-for more information about the database options avaialble.
+for more information about the database options available.
 
 You will also be asked to create a superuser (and you need to create one
 to be able to log into the admin later)::
@@ -282,7 +282,7 @@ down workers.
 
     $ celeryev --camera=<camera-class> --frequency=1.0
 
-and it includes a tool to dump events to stdout::
+and it includes a tool to dump events to :file:`stdout`::
 
     $ celeryev --dump
 
@@ -317,7 +317,7 @@ RabbitMQ can be monitored.
 
 RabbitMQ ships with the `rabbitmqctl(1)`_ command,
 with this you can list queues, exchanges, bindings,
-queue lenghts, the memory usage of each queue, as well
+queue lengths, the memory usage of each queue, as well
 as manage users, virtual hosts and their permissions.
 
 .. note::
@@ -365,10 +365,10 @@ Finding the amount of memory allocated to a queue::
 Munin
 =====
 
-This is a list of known Munin plugins that can be useful when
+This is a list of known Munin plug-ins that can be useful when
 maintaining a Celery cluster.
 
-* rabbitmq-munin: Munin-plugins for RabbitMQ.
+* rabbitmq-munin: Munin plug-ins for RabbitMQ.
 
     http://github.com/ask/rabbitmq-munin
 
@@ -451,7 +451,7 @@ it with the `-c` option::
 
     $ celeryev -c myapp.DumpCam --frequency=2.0
 
-Or you can use it programatically like this::
+Or you can use it programmatically like this::
 
     from celery.events import EventReceiver
     from celery.messaging import establish_connection

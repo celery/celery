@@ -102,7 +102,7 @@ functionality.
     >>> res.get()
     100
 
-The output of :program:`celeryd` (or the logfile if enabled) should show the
+The output of :program:`celeryd` (or the log file if enabled) should show the
 task being executed::
 
     [INFO/MainProcess] Task celery.task.http.HttpDispatchTask
