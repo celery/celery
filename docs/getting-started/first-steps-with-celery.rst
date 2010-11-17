@@ -15,9 +15,10 @@ Creating a simple task
 In this tutorial we are creating a simple task that adds two
 numbers.  Tasks are defined in normal Python modules.
 
-By convention we will call our moudule :file:`tasks.py`, and it looks
+By convention we will call our module :file:`tasks.py`, and it looks
+like this:
 
-**:file:`tasks.py`:**
+:file: `tasks.py`
 
 .. code-block:: python
 
@@ -29,7 +30,7 @@ By convention we will call our moudule :file:`tasks.py`, and it looks
 
 
 All Celery tasks are classes that inherits from the
-:class:`~clery.task.base.Task` class.  In this example we're using a
+:class:`~celery.task.base.Task` class.  In this example we're using a
 decorator that wraps the add function in an appropriate class for us
 automatically.
 
