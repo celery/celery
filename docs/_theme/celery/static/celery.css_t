@@ -30,6 +30,14 @@ div.document {
     margin: 0 auto;
 }
 
+div.deck {
+    font-size: 18px;
+}
+
+p.developmentversion {
+    color: red;
+}
+
 div.related {
     width: {{ page_width - 20 }}px;
     padding: 5px 10px;
