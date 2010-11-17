@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -6,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>timer2 - celery.utils.timer2 &mdash; Celery v2.2.0a2 documentation</title>
+    <title>timer2 - celery.utils.timer2 &mdash; Celery v2.2.0a4 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.2.0a2',
+        VERSION:     '2.2.0a4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +21,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0a2 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.2.0a4 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Signal Dispatch - celery.utils.dispatch" href="celery.utils.dispatch.html" />
     <link rel="prev" title="functools compat - celery.utils.functional" href="celery.utils.functional.html" /> 
@@ -43,7 +42,7 @@
         <li class="right" >
           <a href="celery.utils.functional.html" title="functools compat - celery.utils.functional"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a4 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -54,7 +53,19 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="timer2-celery-utils-timer2">
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://celeryproject.org/docs/internals/reference/celery.utils.timer2.html">2.1</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="timer2-celery-utils-timer2">
 <h1>timer2 - celery.utils.timer2<a class="headerlink" href="#timer2-celery-utils-timer2" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.utils.timer2"></span><p>timer2 - Scheduler for Python functions.</p>
 <dl class="class">
@@ -125,7 +136,7 @@
 
 <dl class="class">
 <dt id="celery.utils.timer2.Timer">
-<em class="property">class </em><tt class="descclassname">celery.utils.timer2.</tt><tt class="descname">Timer</tt><big>(</big><em>schedule=None</em>, <em>precision=None</em>, <em>on_error=None</em>, <em>on_tick=None</em><big>)</big><a class="headerlink" href="#celery.utils.timer2.Timer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.utils.timer2.</tt><tt class="descname">Timer</tt><big>(</big><em>schedule=None</em>, <em>on_error=None</em>, <em>on_tick=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.timer2.Timer" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="class">
 <dt id="celery.utils.timer2.Timer.Entry">
 <em class="property">class </em><tt class="descname">Entry</tt><big>(</big><em>fun</em>, <em>args=None</em>, <em>kwargs=None</em><big>)</big><a class="headerlink" href="#celery.utils.timer2.Timer.Entry" title="Permalink to this definition">¶</a></dt>
@@ -144,6 +155,11 @@
 <dl class="method">
 <dt id="celery.utils.timer2.Timer.apply_at">
 <tt class="descclassname">Timer.</tt><tt class="descname">apply_at</tt><big>(</big><em>eta</em>, <em>fun</em>, <em>args=()</em>, <em>kwargs={}</em>, <em>priority=0</em><big>)</big><a class="headerlink" href="#celery.utils.timer2.Timer.apply_at" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.utils.timer2.Timer.apply_entry">
+<tt class="descclassname">Timer.</tt><tt class="descname">apply_entry</tt><big>(</big><em>entry</em><big>)</big><a class="headerlink" href="#celery.utils.timer2.Timer.apply_entry" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -167,6 +183,11 @@
 <dd></dd></dl>
 
 <dl class="method">
+<dt id="celery.utils.timer2.Timer.ensure_started">
+<tt class="descclassname">Timer.</tt><tt class="descname">ensure_started</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.timer2.Timer.ensure_started" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.utils.timer2.Timer.enter">
 <tt class="descclassname">Timer.</tt><tt class="descname">enter</tt><big>(</big><em>entry</em>, <em>eta</em>, <em>priority=None</em><big>)</big><a class="headerlink" href="#celery.utils.timer2.Timer.enter" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -179,6 +200,11 @@
 <dl class="method">
 <dt id="celery.utils.timer2.Timer.exit_after">
 <tt class="descclassname">Timer.</tt><tt class="descname">exit_after</tt><big>(</big><em>msecs</em>, <em>priority=10</em><big>)</big><a class="headerlink" href="#celery.utils.timer2.Timer.exit_after" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.utils.timer2.Timer.next">
+<tt class="descclassname">Timer.</tt><tt class="descname">next</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.timer2.Timer.next" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -256,7 +282,7 @@
         <li class="right" >
           <a href="celery.utils.functional.html" title="functools compat - celery.utils.functional"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a4 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

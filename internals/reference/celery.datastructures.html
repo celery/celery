@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -6,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Datastructures - celery.datastructures &mdash; Celery v2.2.0a2 documentation</title>
+    <title>Datastructures - celery.datastructures &mdash; Celery v2.2.0a4 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.2.0a2',
+        VERSION:     '2.2.0a4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +21,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0a2 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.2.0a4 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Message Routers - celery.routes" href="celery.routes.html" />
     <link rel="prev" title="Serialization Tools - celery.serialization" href="celery.serialization.html" /> 
@@ -43,7 +42,7 @@
         <li class="right" >
           <a href="celery.serialization.html" title="Serialization Tools - celery.serialization"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a4 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -54,7 +53,19 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="datastructures-celery-datastructures">
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://celeryproject.org/docs/internals/reference/celery.datastructures.html">2.1</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="datastructures-celery-datastructures">
 <h1>Datastructures - celery.datastructures<a class="headerlink" href="#datastructures-celery-datastructures" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.datastructures"></span><dl class="class">
 <dt id="celery.datastructures.AttributeDict">
@@ -66,6 +77,26 @@
 <dt id="celery.datastructures.AttributeDictMixin">
 <em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">AttributeDictMixin</tt><a class="headerlink" href="#celery.datastructures.AttributeDictMixin" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="class">
+<dt id="celery.datastructures.ConfigurationView">
+<em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">ConfigurationView</tt><big>(</big><em>changes</em>, <em>defaults</em><big>)</big><a class="headerlink" href="#celery.datastructures.ConfigurationView" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.datastructures.ConfigurationView.get">
+<tt class="descname">get</tt><big>(</big><em>key</em>, <em>default=None</em><big>)</big><a class="headerlink" href="#celery.datastructures.ConfigurationView.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.datastructures.ConfigurationView.setdefault">
+<tt class="descname">setdefault</tt><big>(</big><em>key</em>, <em>default</em><big>)</big><a class="headerlink" href="#celery.datastructures.ConfigurationView.setdefault" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.datastructures.ConfigurationView.update">
+<tt class="descname">update</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.datastructures.ConfigurationView.update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
 
 <dl class="class">
 <dt id="celery.datastructures.DictAttribute">
@@ -184,44 +215,6 @@ deleting expired members.</li>
 <em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">LocalCache</tt><big>(</big><em>limit=None</em><big>)</big><a class="headerlink" href="#celery.datastructures.LocalCache" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dictionary with a finite number of keys.</p>
 <p>Older items expires first.</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.datastructures.MultiDictView">
-<em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">MultiDictView</tt><big>(</big><em>*dicts</em><big>)</big><a class="headerlink" href="#celery.datastructures.MultiDictView" title="Permalink to this definition">¶</a></dt>
-<dd><p>View for one more more dicts.</p>
-<ul class="simple">
-<li>When getting a key, the dicts are searched in order.</li>
-<li>When setting a key, the key is added to the first dict.</li>
-</ul>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">d1</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;x&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="s">&quot;}</span><span class="gp">&gt;&gt;&gt; </span>
-<span class="n">d2</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;x&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s">&quot;y&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;z&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">MultiDictView</span><span class="p">([</span><span class="n">d1</span><span class="p">,</span> <span class="n">d2</span><span class="p">])</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">]</span>
-<span class="go">3</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span> <span class="n">x</span><span class="p">[</span><span class="s">&quot;y&quot;</span><span class="p">]</span>
-<span class="go">2</span>
-</pre></div>
-</div>
-<dl class="method">
-<dt id="celery.datastructures.MultiDictView.get">
-<tt class="descname">get</tt><big>(</big><em>key</em>, <em>default=None</em><big>)</big><a class="headerlink" href="#celery.datastructures.MultiDictView.get" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.datastructures.MultiDictView.setdefault">
-<tt class="descname">setdefault</tt><big>(</big><em>key</em>, <em>default</em><big>)</big><a class="headerlink" href="#celery.datastructures.MultiDictView.setdefault" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.datastructures.MultiDictView.update">
-<tt class="descname">update</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.datastructures.MultiDictView.update" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="class">
@@ -435,7 +428,7 @@ available.</p>
         <li class="right" >
           <a href="celery.serialization.html" title="Serialization Tools - celery.serialization"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0a4 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

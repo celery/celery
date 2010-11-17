@@ -1,4 +1,3 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -6,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Events - celery.events &mdash; Celery v2.2.0a2 documentation</title>
+    <title>Events - celery.events &mdash; Celery v2.2.0a4 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.0a2',
+        VERSION:     '2.2.0a4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0a2 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0a4 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="In-memory Representation of Cluster State - celery.events.state" href="celery.events.state.html" />
     <link rel="prev" title="Contrib: Abortable tasks - celery.contrib.abortable" href="celery.contrib.abortable.html" /> 
@@ -43,7 +42,7 @@
         <li class="right" >
           <a href="celery.contrib.abortable.html" title="Contrib: Abortable tasks - celery.contrib.abortable"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a4 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -53,7 +52,19 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="events-celery-events">
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://celeryproject.org/docs/reference/celery.events.html">2.1</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="events-celery-events">
 <h1>Events - celery.events<a class="headerlink" href="#events-celery-events" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.events"></span><dl class="function">
 <dt id="celery.events.Event">
@@ -64,7 +75,7 @@
 
 <dl class="class">
 <dt id="celery.events.EventDispatcher">
-<em class="property">class </em><tt class="descclassname">celery.events.</tt><tt class="descname">EventDispatcher</tt><big>(</big><em>connection</em>, <em>hostname=None</em>, <em>enabled=True</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.events.EventDispatcher" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.events.</tt><tt class="descname">EventDispatcher</tt><big>(</big><em>connection=None</em>, <em>hostname=None</em>, <em>enabled=True</em>, <em>channel=None</em>, <em>buffer_while_offline=True</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.events.EventDispatcher" title="Permalink to this definition">¶</a></dt>
 <dd><p>Send events as messages.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -76,6 +87,11 @@
 by default uses the hostname returned by <tt class="xref py py-func docutils literal"><span class="pre">socket.gethostname()</span></tt>.</li>
 <li><strong>enabled</strong> &#8211; Set to <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt> to not actually publish any events,
 making <a class="reference internal" href="#celery.events.EventDispatcher.send" title="celery.events.EventDispatcher.send"><tt class="xref py py-meth docutils literal"><span class="pre">send()</span></tt></a> a noop operation.</li>
+<li><strong>channel</strong> &#8211; Can be used instead of <cite>connection</cite> to specify
+an exact channel to use when sending events.</li>
+<li><strong>buffer_while_offline</strong> &#8211; If enabled events will be buffered
+while the connection is down. <a class="reference internal" href="#celery.events.EventDispatcher.flush" title="celery.events.EventDispatcher.flush"><tt class="xref py py-meth docutils literal"><span class="pre">flush()</span></tt></a> must be called
+as soon as the connection is re-established.</li>
 </ul>
 </td>
 </tr>
@@ -125,7 +141,7 @@ making <a class="reference internal" href="#celery.events.EventDispatcher.send" 
 
 <dl class="class">
 <dt id="celery.events.EventReceiver">
-<em class="property">class </em><tt class="descclassname">celery.events.</tt><tt class="descname">EventReceiver</tt><big>(</big><em>connection</em>, <em>handlers=None</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.events.EventReceiver" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.events.</tt><tt class="descname">EventReceiver</tt><big>(</big><em>connection</em>, <em>handlers=None</em>, <em>routing_key='#'</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.events.EventReceiver" title="Permalink to this definition">¶</a></dt>
 <dd><p>Capture events.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -144,7 +160,7 @@ the special handler <cite>&#8220;*&#8221;</cite> captures all events that doesn&
 handler.</p>
 <dl class="method">
 <dt id="celery.events.EventReceiver.capture">
-<tt class="descname">capture</tt><big>(</big><em>limit=None</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.events.EventReceiver.capture" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">capture</tt><big>(</big><em>limit=None</em>, <em>timeout=None</em>, <em>wakeup=True</em><big>)</big><a class="headerlink" href="#celery.events.EventReceiver.capture" title="Permalink to this definition">¶</a></dt>
 <dd><p>Open up a consumer capturing events.</p>
 <p>This has to run in the main process, and it will never
 stop unless forced via <tt class="xref py py-exc docutils literal"><span class="pre">KeyboardInterrupt</span></tt> or <tt class="xref py py-exc docutils literal"><span class="pre">SystemExit</span></tt>.</p>
@@ -153,6 +169,22 @@ stop unless forced via <tt class="xref py py-exc docutils literal"><span class="
 <dl class="method">
 <dt id="celery.events.EventReceiver.consumer">
 <tt class="descname">consumer</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.EventReceiver.consumer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create event consumer.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This creates a new channel that needs to be closed
+by calling <cite>consumer.channel.close()</cite>.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.events.EventReceiver.drain_events">
+<tt class="descname">drain_events</tt><big>(</big><em>limit=None</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.events.EventReceiver.drain_events" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.EventReceiver.itercapture">
+<tt class="descname">itercapture</tt><big>(</big><em>limit=None</em>, <em>timeout=None</em>, <em>wakeup=True</em><big>)</big><a class="headerlink" href="#celery.events.EventReceiver.itercapture" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -161,6 +193,31 @@ stop unless forced via <tt class="xref py py-exc docutils literal"><span class="
 <dd><p>Process the received event by dispatching it to the appropriate
 handler.</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="celery.events.EventReceiver.wakeup_workers">
+<tt class="descname">wakeup_workers</tt><big>(</big><em>channel=None</em><big>)</big><a class="headerlink" href="#celery.events.EventReceiver.wakeup_workers" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.events.Events">
+<em class="property">class </em><tt class="descclassname">celery.events.</tt><tt class="descname">Events</tt><big>(</big><em>app</em><big>)</big><a class="headerlink" href="#celery.events.Events" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.events.Events.Dispatcher">
+<tt class="descname">Dispatcher</tt><big>(</big><em>connection=None</em>, <em>hostname=None</em>, <em>enabled=True</em>, <em>channel=None</em>, <em>buffer_while_offline=True</em><big>)</big><a class="headerlink" href="#celery.events.Events.Dispatcher" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.Events.Receiver">
+<tt class="descname">Receiver</tt><big>(</big><em>connection</em>, <em>handlers=None</em>, <em>routing_key='#'</em><big>)</big><a class="headerlink" href="#celery.events.Events.Receiver" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.Events.State">
+<tt class="descname">State</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.Events.State" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -222,7 +279,7 @@ handler.</p>
         <li class="right" >
           <a href="celery.contrib.abortable.html" title="Contrib: Abortable tasks - celery.contrib.abortable"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0a2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0a4 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
