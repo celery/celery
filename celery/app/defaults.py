@@ -98,6 +98,7 @@ NAMESPACES = {
         "CONCURRENCY": Option(0, type="int"),
         "ETA_SCHEDULER": Option("celery.utils.timer2.Timer"),
         "ETA_SCHEDULER_PRECISION": Option(1.0, type="float"),
+        "FORCE_HIJACK_ROOT_LOGGER": Option(False, type="bool"),
         "CONSUMER": Option("celery.worker.consumer.Consumer"),
         "LOG_FORMAT": Option(DEFAULT_PROCESS_LOG_FMT),
         "LOG_COLOR": Option(type="bool"),
@@ -126,7 +127,6 @@ NAMESPACES = {
         "LOG_FILE": Option(),
         "LOG_FORMAT": Option(DEFAULT_LOG_FMT),
     },
-
     "EMAIL": {
         "HOST": Option("localhost"),
         "PORT": Option(25, type="int"),
