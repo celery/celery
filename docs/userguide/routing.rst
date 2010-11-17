@@ -280,9 +280,9 @@ Exchange types
 --------------
 
 The exchange type defines how the messages are routed through the exchange.
-The exchange types defined in the standard are ``direct``, ``topic``,
-``fanout`` and ``headers``.  Also non-standard exchange types are available
-as plugins to RabbitMQ, like the `last-value-cache plug-in`_ by Michael
+The exchange types defined in the standard are `direct`, `topic`,
+`fanout` and `headers`.  Also non-standard exchange types are available
+as plug-ins to RabbitMQ, like the `last-value-cache plug-in`_ by Michael
 Bridgen.
 
 .. _`last-value-cache plug-in`:
@@ -375,10 +375,10 @@ with no arguments to start it in shell-mode::
     -> connected.
     1>
 
-Here ``1>`` is the prompt.  The number 1, is the number of commands you
-have executed so far.  Type ``help`` for a list of commands available.
-It also supports autocompletion, so you can start typing a command and then
-hit the ``tab`` key to show a list of possible matches.
+Here `1>` is the prompt.  The number 1, is the number of commands you
+have executed so far.  Type `help` for a list of commands available.
+It also supports auto-completion, so you can start typing a command and then
+hit the `tab` key to show a list of possible matches.
 
 Let's create a queue we can send messages to::
 
