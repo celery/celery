@@ -38,7 +38,10 @@
 #   DJANGO_SETTINGS_MODULE="settings"
 #
 #   # Path to celeryd
-#   CELERYEV="/opt/Project/manage.py celeryev"
+#   CELERYEV="/opt/Project/manage.py"
+#
+#   # Extra arguments to manage.py
+#   CELERYEV_OPTS="celeryev"
 #
 #   # Camera class to use (required)
 #   CELERYEV_CAM = "djcelery.snapshot.Camera"
