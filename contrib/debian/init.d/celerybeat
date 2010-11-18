@@ -39,10 +39,10 @@
 #   CELERYD="/opt/Project/manage.py celeryd"
 #
 #   # Path to celerybeat
-#   CELERYBEAT="/opt/Project/manage.py celerybeat"
+#   CELERYBEAT="/opt/Project/manage.py"
 #
 #   # Extra arguments to celerybeat
-#   CELERYBEAT_OPTS="--schedule=/var/run/celerybeat-schedule"
+#   CELERYBEAT_OPTS="celerybeat --schedule=/var/run/celerybeat-schedule"
 #
 # AVAILABLE OPTIONS
 # =================
