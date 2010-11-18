@@ -622,6 +622,17 @@ If this is :const:`True`, eagerly executed tasks (using `.apply`, or with
 
 It's the same as always running `apply` with `throw=True`.
 
+.. setting:: CELERY_EAGER_RERAISES_EXCEPTIONS
+
+CELERY_EAGER_RERAISES_EXCEPTIONS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If this is :const:`True`, eagerly executed tasks (using `.apply`, or with
+:setting:`CELERY_ALWAYS_EAGER` on), will re-raise exceptions with a full
+application traceback.
+
+It's the same as always running `apply` with `reraise_exceptions=True`.
+
 .. setting:: CELERY_IGNORE_RESULT
 
 CELERY_IGNORE_RESULT

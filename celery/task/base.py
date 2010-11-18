@@ -554,6 +554,9 @@ class BaseTask(object):
         :keyword throw: Re-raise task exceptions.  Defaults to
                         the :setting:`CELERY_EAGER_PROPAGATES_EXCEPTIONS`
                         setting.
+        :keyword reraise: Re-raise task exceptions with a full traceback. 
+                        Defaults to the
+                        :setting:`CELERY_EAGER_PROPAGATES_EXCEPTIONS` setting.
 
         :rtype :class:`celery.result.EagerResult`:
 
@@ -564,6 +567,8 @@ class BaseTask(object):
         retries = options.get("retries", 0)
         throw = self.app.either("CELERY_EAGER_PROPAGATES_EXCEPTIONS",
                                 options.pop("throw", None))
+        reraise = self.app.either("CELERY_EAGER_RERAISES_EXCEPTIONS",
+                                options.pop("reraise", None))
 
         # Make sure we get the task instance, not class.
         task = tasks[self.name]
@@ -590,7 +595,7 @@ class BaseTask(object):
 
         trace = TaskTrace(task.name, task_id, args, kwargs,
                           task=task, request=request)
-        retval = trace.execute()
+        retval = trace.execute(reraise=reraise)
         if isinstance(retval, ExceptionInfo):
             if throw:
                 raise retval.exception

@@ -69,6 +69,7 @@ NAMESPACES = {
         "DEFAULT_EXCHANGE_TYPE": Option("direct"),
         "DEFAULT_DELIVERY_MODE": Option(2, type="string"),
         "EAGER_PROPAGATES_EXCEPTIONS": Option(False, type="bool"),
+        "EAGER_RERAISES_EXCEPTIONS": Option(False, type="bool"),
         "EVENT_SERIALIZER": Option("json"),
         "IMPORTS": Option((), type="tuple"),
         "IGNORE_RESULT": Option(False, type="bool"),

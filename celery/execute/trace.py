@@ -22,7 +22,7 @@ class TraceInfo(object):
             self.strtb = "\n".join(traceback.format_exception(*exc_info))
 
     @classmethod
-    def trace(cls, fun, args, kwargs):
+    def trace(cls, fun, args, kwargs, reraise=False):
         """Trace the execution of a function, calling the appropiate callback
         if the function raises retry, an failure or returned successfully."""
         try:
@@ -32,8 +32,12 @@ class TraceInfo(object):
         except RetryTaskError, exc:
             return cls(states.RETRY, retval=exc, exc_info=sys.exc_info())
         except Exception, exc:
+            if reraise:
+                raise
             return cls(states.FAILURE, retval=exc, exc_info=sys.exc_info())
         except:
+            if reraise:
+                raise
             # For Python2.4 where raising strings are still allowed.
             return cls(states.FAILURE, retval=None, exc_info=sys.exc_info())
 
@@ -57,13 +61,13 @@ class TaskTrace(object):
     def __call__(self):
         return self.execute()
 
-    def execute(self):
+    def execute(self, reraise=False):
         self.task.request.update(self.request, args=self.args,
                                                kwargs=self.kwargs)
         signals.task_prerun.send(sender=self.task, task_id=self.task_id,
                                  task=self.task, args=self.args,
                                  kwargs=self.kwargs)
-        retval = self._trace()
+        retval = self._trace(reraise)
 
         signals.task_postrun.send(sender=self.task, task_id=self.task_id,
                                   task=self.task, args=self.args,
@@ -71,8 +75,9 @@ class TaskTrace(object):
         self.task.request.clear()
         return retval
 
-    def _trace(self):
-        trace = TraceInfo.trace(self.task, self.args, self.kwargs)
+    def _trace(self, reraise=False):
+        trace = TraceInfo.trace(self.task, self.args, self.kwargs,
+                reraise=reraise)
         self.status = trace.status
         self.strtb = trace.strtb
         self.handle_after_return(trace.status, trace.retval,
