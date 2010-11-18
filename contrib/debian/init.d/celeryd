@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 # ============================================
 #  celeryd - Starts the Celery worker daemon.
 # ============================================
@@ -64,7 +64,9 @@
 #
 #   * CELERYD_GROUP
 #       Group to run celeryd as. Default is current user.
-
+#
+#   * VIRTUALENV
+#       Full path to the virtualenv environment to activate. Default is none.
 
 ### BEGIN INIT INFO
 # Provides:          celeryd
@@ -108,7 +110,6 @@ fi
 if [ -n "$CELERYD_GROUP" ]; then
     DAEMON_OPTS="$DAEMON_OPTS --group $CELERYD_GROUP"
 fi
-
 if [ -n "$CELERYD_CHDIR" ]; then
     DAEMON_OPTS="$DAEMON_OPTS --chdir $CELERYD_CHDIR"
 fi
@@ -157,6 +158,9 @@ start_worker () {
                            $* \
                            --pidfile $CELERYD_PID_FILE
                            --exec $CELERYD -- $CELERYD_OPTS"
+    if [ -n "$VIRTUALENV" ]; then
+        cmd="source $VIRTUALENV/bin/activate && $cmd"
+    fi
     if $cmd; then
         log_end_msg 0
     else

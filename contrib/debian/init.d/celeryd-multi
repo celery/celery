@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 
 ### BEGIN INIT INFO
 # Provides:          celeryd-multi
@@ -111,6 +111,9 @@ start_worker () {
                                     --make-pidfile $* \
                                     --pidfile $CELERYD_PID_FILE \
                                     --exec $CELERYD --"
+    if [ -n "$VIRTUALENV" ]; then
+        cmd="source $VIRTUALENV/bin/activate && $cmd"
+    fi
     for wname in `celeryd-multi names $WORKERS $CELERYD_OPTS`; do
         log_daemon_msg "Starting celery task worker" "$wname"
         startcmd=`celeryd-multi get "$wname" $WORKERS --cmd="$cmd" $CELERYD_OPTS`
