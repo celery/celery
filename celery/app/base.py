@@ -84,7 +84,7 @@ class BaseApp(object):
     def send_task(self, name, args=None, kwargs=None, countdown=None,
             eta=None, task_id=None, publisher=None, connection=None,
             connect_timeout=None, result_cls=None, expires=None,
-            **options):
+            queues=None, **options):
         """Send task by name.
 
         :param name: Name of task to execute (e.g. `"tasks.add"`).
@@ -95,7 +95,12 @@ class BaseApp(object):
         :meth:`~celery.task.base.BaseTask.apply_async`.
 
         """
+        router = self.amqp.Router(queues)
         result_cls = result_cls or self.AsyncResult
+
+        options.setdefault("compression",
+                           self.conf.CELERY_MESSAGE_COMPRESSION)
+        options = router.route(options, name, args, kwargs)
         exchange = options.get("exchange")
         exchange_type = options.get("exchange_type")
 
