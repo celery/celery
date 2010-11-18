@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 # =========================================================
 #  celerybeat - Starts the Celery periodic task scheduler.
 # =========================================================
@@ -69,7 +69,9 @@
 #
 #   * CELERYBEAT_GROUP
 #       Group to run celeryd as. Default is current user.
-
+#
+#   * VIRTUALENV
+#       Full path to the virtualenv environment to activate. Default is none.
 
 ### BEGIN INIT INFO
 # Provides:          celerybeat
@@ -165,6 +167,9 @@ start_worker () {
                            $* \
                            --pidfile $CELERYBEAT_PID_FILE
                            --exec $CELERYBEAT -- $CELERYBEAT_OPTS"
+    if [ -n "$VIRTUALENV" ]; then
+        source $VIRTUALENV/bin/activate
+    fi
     if $cmd; then
         log_end_msg 0
     else

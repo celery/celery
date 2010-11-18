@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 # ============================================
 #  celeryd - Starts the Celery worker daemon.
 # ============================================
@@ -73,7 +73,9 @@
 #
 #   * CELERYEV_GROUP
 #       Group to run celeryev as. Default is current user.
-
+#
+#   * VIRTUALENV
+#       Full path to the virtualenv environment to activate. Default is none.
 
 ### BEGIN INIT INFO
 # Provides:          celeryev
@@ -179,6 +181,9 @@ start_evcam () {
                            $* \
                            --pidfile $CELERYEV_PID_FILE
                            --exec $CELERYEV -- $CELERYEV_OPTS"
+    if [ -n "$VIRTUALENV" ]; then
+        source $VIRTUALENV/bin/activate
+    fi
     if $cmd; then
         log_end_msg 0
     else
