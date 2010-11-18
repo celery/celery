@@ -106,6 +106,11 @@ if [ -n "$2" ]; then
     CELERYD_OPTS="$CELERYD_OPTS $2"
 fi
 
+# Append the Django settings module to use, if specified
+if [ -n "$DJANGO_SETTINGS_MODULE" ]; then
+    CELERYD_OPTS="$CELERYD_OPTS --settings=$DJANGO_SETTINGS_MODULE"
+fi
+
 # Extra start-stop-daemon options, like user/group.
 if [ -n "$CELERYD_USER" ]; then
     DAEMON_OPTS="$DAEMON_OPTS --chuid $CELERYD_USER"

@@ -110,6 +110,11 @@ if [ -n "$2" ]; then
     CELERYBEAT_OPTS="$CELERYBEAT_OPTS $2"
 fi
 
+# Append the Django settings module to use, if specified
+if [ -n "$DJANGO_SETTINGS_MODULE" ]; then
+    CELERYBEAT_OPTS="$CELERYBEAT_OPTS --settings=$DJANGO_SETTINGS_MODULE"
+fi
+
 # Extra start-stop-daemon options, like user/group.
 if [ -n "$CELERYBEAT_USER" ]; then
     DAEMON_OPTS="$DAEMON_OPTS --chuid $CELERYBEAT_USER"

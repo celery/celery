@@ -123,6 +123,11 @@ if [ -n "$2" ]; then
     CELERYEV_OPTS="$CELERYEV_OPTS $2"
 fi
 
+# Append the Django settings module to use, if specified
+if [ -n "$DJANGO_SETTINGS_MODULE" ]; then
+    CELERYEV_OPTS="$CELERYEV_OPTS --settings=$DJANGO_SETTINGS_MODULE"
+fi
+
 # Extra start-stop-daemon options, like user/group.
 if [ -n "$CELERYEV_USER" ]; then
     DAEMON_OPTS="$DAEMON_OPTS --chuid $CELERYEV_USER"
