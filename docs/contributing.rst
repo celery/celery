@@ -141,6 +141,8 @@ been made on your bug. In the event you've turned this feature off, you
 should check back on occasion to ensure you don't miss any questions a
 developer trying to fix the bug might ask.
 
+.. _`GitHub`: http://github.com
+
 .. _issue-trackers:
 
 Issue Trackers
@@ -208,7 +210,7 @@ is following the conventions.
             Short description.
             """
 
-.. `PEP-257`: http://www.python.org/dev/peps/pep-0257/
+.. _`PEP-257`: http://www.python.org/dev/peps/pep-0257/
 
 * Lines should not exceed 78 columns.
 

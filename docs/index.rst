@@ -15,6 +15,7 @@ Contents:
     configuration
     cookbook/index
     community
+    contributing
     tutorials/index
     faq
     reference/index
