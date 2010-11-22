@@ -30,11 +30,12 @@ Prefetch limit
 The prefetch limit is a limit for how many tasks a worker can reserve
 in advance.  If this is set to zero, the worker will keep consuming
 messages *ad infinitum*, not respecting that there may be other
-available worker nodes that may even be able to process them sooner.
+available worker nodes (that may be able to process them sooner),
+or that the messages may not fit in memory.
 
-In the worker the initial prefetch count is set by multiplying
+The workers initial prefetch count is set by multiplying
 the :setting:`CELERYD_PREFETCH_MULTIPLIER` setting by the number
-of child worker processes.
+of child worker processes.  The default is 4 messages per child process.
 
 If you have many expensive tasks with a long duration you would want
 the multiplier value to be 1, which means it will only reserve one
