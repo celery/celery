@@ -1,0 +1,351 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Contributing &mdash; Celery v2.2.0a4 documentation</title>
+    <link rel="stylesheet" href="static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="static/issuetracker.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '2.2.0a4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="static/jquery.js"></script>
+    <script type="text/javascript" src="static/underscore.js"></script>
+    <script type="text/javascript" src="static/doctools.js"></script>
+    <link rel="top" title="Celery v2.2.0a4 documentation" href="index.html" />
+    <link rel="next" title="Tutorials" href="tutorials/index.html" />
+    <link rel="prev" title="Community Resources" href="community.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tutorials/index.html" title="Tutorials"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="community.html" title="Community Resources"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Celery v2.2.0a4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://celeryproject.org/docs/contributing.html">2.1</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="contributing">
+<span id="id1"></span><h1>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h1>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#community-code-of-conduct" id="id5">Community Code of Conduct</a><ul>
+<li><a class="reference internal" href="#be-considerate" id="id6">Be considerate.</a></li>
+<li><a class="reference internal" href="#be-respectful" id="id7">Be respectful.</a></li>
+<li><a class="reference internal" href="#be-collaborative" id="id8">Be collaborative.</a></li>
+<li><a class="reference internal" href="#when-you-disagree-consult-others" id="id9">When you disagree, consult others.</a></li>
+<li><a class="reference internal" href="#when-you-are-unsure-ask-for-help" id="id10">When you are unsure, ask for help.</a></li>
+<li><a class="reference internal" href="#step-down-considerately" id="id11">Step down considerately.</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#reporting-a-bug" id="id12">Reporting a Bug</a><ul>
+<li><a class="reference internal" href="#issue-trackers" id="id13">Issue Trackers</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#coding-style" id="id14">Coding Style</a></li>
+</ul>
+</div>
+<div class="section" id="community-code-of-conduct">
+<span id="id2"></span><h2><a class="toc-backref" href="#id5">Community Code of Conduct</a><a class="headerlink" href="#community-code-of-conduct" title="Permalink to this headline">¶</a></h2>
+<p>The goal is to maintain a diverse community that is pleasant for everyone.
+That is why we would greatly appreciate it if everyone contributing to and
+interacting with the community also followed this Code of Conduct.</p>
+<p>The Code of Conduct covers our behavior as members of the community,
+in any forum, mailing list, wiki, website, Internet relay chat (IRC), public
+meeting or private correspondence.</p>
+<p>The Code of Conduct is heavily based on the <a class="reference external" href="http://www.ubuntu.com/community/conduct">Ubuntu Code of Conduct</a>, and
+the <a class="reference external" href="http://docs.pylonshq.com/community/conduct.html">Pylons Code of Conduct</a>.</p>
+<div class="section" id="be-considerate">
+<h3><a class="toc-backref" href="#id6">Be considerate.</a><a class="headerlink" href="#be-considerate" title="Permalink to this headline">¶</a></h3>
+<p>Your work will be used by other people, and you in turn will depend on the
+work of others.  Any decision you take will affect users and colleagues, and
+we expect you to take those consequences into account when making decisions.
+Even if it&#8217;s not obvious at the time, our contributions to Ubuntu will impact
+the work of others.  For example, changes to code, infrastructure, policy,
+documentation and translations during a release may negatively impact
+others work.</p>
+</div>
+<div class="section" id="be-respectful">
+<h3><a class="toc-backref" href="#id7">Be respectful.</a><a class="headerlink" href="#be-respectful" title="Permalink to this headline">¶</a></h3>
+<p>The Celery community and its members treat one another with respect.  Everyone
+can make a valuable contribution to Celery.  We may not always agree, but
+disagreement is no excuse for poor behavior and poor manners.  We might all
+experience some frustration now and then, but we cannot allow that frustration
+to turn into a personal attack.  It&#8217;s important to remember that a community
+where people feel uncomfortable or threatened is not a productive one.  We
+expect members of the Celery community to be respectful when dealing with
+other contributors as well as with people outside the Celery project and with
+users of Celery.</p>
+</div>
+<div class="section" id="be-collaborative">
+<h3><a class="toc-backref" href="#id8">Be collaborative.</a><a class="headerlink" href="#be-collaborative" title="Permalink to this headline">¶</a></h3>
+<p>Collaboration is central to Celery and to the larger free software community.
+We should always be open to collaboration.  Your work should be done
+transparently and patches from Celery should be given back to the community
+when they are made, not just when the distribution releases.  If you wish
+to work on new code for existing upstream projects, at least keep those
+projects informed of your ideas and progress.  It many not be possible to
+get consensus from upstream, or even from your colleagues about the correct
+implementation for an idea, so don&#8217;t feel obliged to have that agreement
+before you begin, but at least keep the outside world informed of your work,
+and publish your work in a way that allows outsiders to test, discuss and
+contribute to your efforts.</p>
+</div>
+<div class="section" id="when-you-disagree-consult-others">
+<h3><a class="toc-backref" href="#id9">When you disagree, consult others.</a><a class="headerlink" href="#when-you-disagree-consult-others" title="Permalink to this headline">¶</a></h3>
+<p>Disagreements, both political and technical, happen all the time and
+the Celery community is no exception.  It is important that we resolve
+disagreements and differing views constructively and with the help of the
+community and community process.  If you really want to go a different
+way, then we encourage you to make a derivative distribution or alternate
+set of packages that still build on the work we&#8217;ve done to utilize as common
+of a core as possible.</p>
+</div>
+<div class="section" id="when-you-are-unsure-ask-for-help">
+<h3><a class="toc-backref" href="#id10">When you are unsure, ask for help.</a><a class="headerlink" href="#when-you-are-unsure-ask-for-help" title="Permalink to this headline">¶</a></h3>
+<p>Nobody knows everything, and nobody is expected to be perfect.  Asking
+questions avoids many problems down the road, and so questions are
+encouraged.  Those who are asked questions should be responsive and helpful.
+However, when asking a question, care must be taken to do so in an appropriate
+forum.</p>
+</div>
+<div class="section" id="step-down-considerately">
+<h3><a class="toc-backref" href="#id11">Step down considerately.</a><a class="headerlink" href="#step-down-considerately" title="Permalink to this headline">¶</a></h3>
+<p>Developers on every project come and go and Celery is no different.  When you
+leave or disengage from the project, in whole or in part, we ask that you do
+so in a way that minimizes disruption to the project.  This means you should
+tell people you are leaving and take the proper steps to ensure that others
+can pick up where you leave off.</p>
+</div>
+</div>
+<div class="section" id="reporting-a-bug">
+<span id="reporting-bugs"></span><h2><a class="toc-backref" href="#id12">Reporting a Bug</a><a class="headerlink" href="#reporting-a-bug" title="Permalink to this headline">¶</a></h2>
+<p>Bugs can always be described to the <a class="reference internal" href="getting-started/resources.html#mailing-list"><em>Mailing list</em></a>, but the best
+way to report an issue and to ensure a timely response is to use the
+issue tracker.</p>
+<ol class="arabic simple">
+<li>Create a GitHub account.</li>
+</ol>
+<p>You need to <a class="reference external" href="https://github.com/signup/free">create a GitHub account</a> to be able to create new issues
+and participate in the discussion.</p>
+<ol class="arabic simple" start="2">
+<li>Determine if your bug is really a bug.</li>
+</ol>
+<p>You should not file a bug if you are requesting support.  For that you can use
+the <a class="reference internal" href="getting-started/resources.html#mailing-list"><em>Mailing list</em></a>, or <a class="reference internal" href="getting-started/resources.html#irc-channel"><em>IRC</em></a>.</p>
+<ol class="arabic simple" start="3">
+<li>Make sure your bug hasn&#8217;t already been reported.</li>
+</ol>
+<p>Search through the appropriate Issue tracker.  If a bug like yours was found,
+check if you have new information that could be reported to help
+the developers fix the bug.</p>
+<ol class="arabic simple" start="4">
+<li>Collect information about the bug.</li>
+</ol>
+<p>To have the best chance of having a bug fixed, we need to be able to easily
+reproduce the conditions that caused it.  Most of the time this information
+will be from a Python traceback message, though some bugs might be in design,
+spelling or other errors on the website/docs/code.</p>
+<p>If the error is from a Python traceback, include it in the bug report.</p>
+<p>We also need to know what platform you&#8217;re running (Windows, OSX, Linux, etc),
+the version of your Python interpreter, and the version of Celery, and related
+packages that you were running when the bug occurred.</p>
+<ol class="arabic simple" start="5">
+<li>Submit the bug.</li>
+</ol>
+<p>By default <a class="reference external" href="http://github.com">GitHub</a> will email you to let you know when new comments have
+been made on your bug. In the event you&#8217;ve turned this feature off, you
+should check back on occasion to ensure you don&#8217;t miss any questions a
+developer trying to fix the bug might ask.</p>
+<div class="section" id="issue-trackers">
+<span id="id3"></span><h3><a class="toc-backref" href="#id13">Issue Trackers</a><a class="headerlink" href="#issue-trackers" title="Permalink to this headline">¶</a></h3>
+<p>Bugs for a package in the Celery ecosystem should be reported to the relevant
+issue tracker.</p>
+<ul class="simple">
+<li>Celery: <a class="reference external" href="http://github.com/ask/celery/issues/">http://github.com/ask/celery/issues/</a></li>
+<li>Django-Celery: <a class="reference external" href="http://github.com/ask/django-celery/issues">http://github.com/ask/django-celery/issues</a></li>
+<li>Flask-Celery: <a class="reference external" href="http://github.com/ask/flask-celery/issues">http://github.com/ask/flask-celery/issues</a></li>
+<li>Celery-Pylons: <a class="reference external" href="http://bitbucket.org/ianschenck/celery-pylons/issues">http://bitbucket.org/ianschenck/celery-pylons/issues</a></li>
+<li>Kombu: <a class="reference external" href="http://github.com/ask/kombu/issues">http://github.com/ask/kombu/issues</a></li>
+<li>Carrot: <a class="reference external" href="http://github.com/ask/carrot/issues">http://github.com/ask/carrot/issues</a></li>
+<li>Ghettoq: <a class="reference external" href="http://github.com/ask/ghettoq/issues">http://github.com/ask/ghettoq/issues</a></li>
+</ul>
+<p>If you are unsure of the origin of the bug you can ask the
+<a class="reference internal" href="getting-started/resources.html#mailing-list"><em>Mailing list</em></a>, or just use the Celery issue tracker.</p>
+</div>
+</div>
+<div class="section" id="coding-style">
+<span id="id4"></span><h2><a class="toc-backref" href="#id14">Coding Style</a><a class="headerlink" href="#coding-style" title="Permalink to this headline">¶</a></h2>
+<p>You should probably be able to pick up the coding style
+from surrounding code, but it is a good idea to be aware of the
+following conventions.</p>
+<ul class="simple">
+<li>All Python code must follow the <a class="reference external" href="http://www.python.org/dev/peps/pep-0008/">PEP-8</a> guidelines.</li>
+</ul>
+<p><a class="reference external" href="http://pypi.python.org/pypi/pep8">pep8.py</a> is an utility you can use to verify that your code
+is following the conventions.</p>
+<ul>
+<li><p class="first">Docstrings must follow the <a class="reference external" href="http://www.python.org/dev/peps/pep-0257/">PEP-257</a> conventions, and use the following
+style.</p>
+<blockquote>
+<p>Do this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Short description.</span>
+
+<span class="sd">    More details.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+<p>or:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Short description.&quot;&quot;&quot;</span>
+</pre></div>
+</div>
+<p>but not this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Short description.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</blockquote>
+</li>
+</ul>
+<ul>
+<li><p class="first">Lines should not exceed 78 columns.</p>
+</li>
+<li><p class="first">Import order</p>
+<blockquote>
+<ul class="simple">
+<li>Python standard library (<cite>import xxx</cite>)</li>
+<li>Python standard library (&#8216;from xxx import`)</li>
+<li>Third party packages.</li>
+<li>Other modules from the current package.</li>
+</ul>
+<p>or in case of code using Django:</p>
+<ul class="simple">
+<li>Python standard library (<cite>import xxx</cite>)</li>
+<li>Python standard library (&#8216;from xxx import`)</li>
+<li>Third party packages.</li>
+<li>Django packages.</li>
+<li>Other modules from the current package.</li>
+</ul>
+<p>Within these sections imports should be sorted by name.</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">deque</span>
+<span class="kn">from</span> <span class="nn">Queue</span> <span class="kn">import</span> <span class="n">Queue</span><span class="p">,</span> <span class="n">Empty</span>
+
+<span class="kn">from</span> <span class="nn">celery.datastructures</span> <span class="kn">import</span> <span class="n">TokenBucket</span>
+<span class="kn">from</span> <span class="nn">celery.utils</span> <span class="kn">import</span> <span class="n">timeutils</span>
+<span class="kn">from</span> <span class="nn">celery.utils.compat</span> <span class="kn">import</span> <span class="nb">all</span><span class="p">,</span> <span class="n">izip_longest</span><span class="p">,</span> <span class="n">chain_from_iterable</span>
+</pre></div>
+</div>
+</blockquote>
+</li>
+<li><p class="first">Wildcard imports must not be used (<cite>from xxx import *</cite>).</p>
+</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="community.html"
+                        title="previous chapter">Community Resources</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="tutorials/index.html"
+                        title="next chapter">Tutorials</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="sources/contributing.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tutorials/index.html" title="Tutorials"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="community.html" title="Community Resources"
+             >previous</a> |</li>
+        <li><a href="index.html">Celery v2.2.0a4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+    </div>
+  </body>
+</html>

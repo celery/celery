@@ -1,0 +1,179 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Optimizing &mdash; Celery v2.2.0a4 documentation</title>
+    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.2.0a4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v2.2.0a4 documentation" href="../index.html" />
+    <link rel="up" title="User Guide" href="index.html" />
+    <link rel="next" title="Configuration and defaults" href="../configuration.html" />
+    <link rel="prev" title="Monitoring Guide" href="monitoring.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../configuration.html" title="Configuration and defaults"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="monitoring.html" title="Monitoring Guide"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v2.2.0a4 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://celeryproject.org/docs/userguide/optimizing.html">2.1</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="optimizing">
+<span id="id1"></span><h1>Optimizing<a class="headerlink" href="#optimizing" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>The default configuration, like any good default, is full of compromises.
+It is not tweaked to be optimal for any single use case, but tries to
+find middle ground that works <em>well enough</em> for most situations.</p>
+<p>There are key optimizations to be done if your application is mainly
+processing lots of short tasks, and also if you have fewer but very
+long tasks.</p>
+</div>
+<div class="section" id="worker-settings">
+<span id="optimizing-worker-settings"></span><h2>Worker Settings<a class="headerlink" href="#worker-settings" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="prefetch-limit">
+<span id="optimizing-prefetch-limit"></span><h3>Prefetch limit<a class="headerlink" href="#prefetch-limit" title="Permalink to this headline">¶</a></h3>
+<p><em>Prefetch</em> is a term inherited from AMQP, and it is often misunderstood.</p>
+<p>The prefetch limit is a limit for how many tasks a worker can reserve
+in advance.  If this is set to zero, the worker will keep consuming
+messages <em>ad infinitum</em>, not respecting that there may be other
+available worker nodes (that may be able to process them sooner),
+or that the messages may not fit in memory.</p>
+<p>The workers initial prefetch count is set by multiplying
+the <a class="reference internal" href="../configuration.html#std:setting-CELERYD_PREFETCH_MULTIPLIER"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYD_PREFETCH_MULTIPLIER</span></tt></a> setting by the number
+of child worker processes.  The default is 4 messages per child process.</p>
+<p>If you have many expensive tasks with a long duration you would want
+the multiplier value to be 1, which means it will only reserve one
+unacknowledged task per worker process at a time.</p>
+<p>However &#8211; If you have lots of short tasks, and throughput/roundtrip latency
+is important to you, then you want this number to be large.  Say 64, or 128
+for example, as the worker is able to process a lot more tasks/s if the
+messages have already been prefetched in memory.  You may have to experiment
+to find the best value.</p>
+<p>If you have a combination of both very long and short tasks, then the best
+option is to use two worker nodes that is configured individually, and route
+the tasks accordingly (see <a class="reference internal" href="routing.html#guide-routing"><em>Routing Tasks</em></a>).</p>
+</div>
+</div>
+<div class="section" id="scenario-1-lots-of-short-tasks">
+<h2>Scenario 1: Lots of short tasks<a class="headerlink" href="#scenario-1-lots-of-short-tasks" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERYD_PREFETCH_MULTIPLIER</span> <span class="o">=</span> <span class="mi">128</span>
+<span class="n">CELERY_DISABLE_RATE_LIMITS</span> <span class="o">=</span> <span class="bp">True</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="scenario-2-expensive-tasks">
+<h2>Scenario 2: Expensive tasks<a class="headerlink" href="#scenario-2-expensive-tasks" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERYD_PREFETCH_MULTIPLIER</span> <span class="o">=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="monitoring.html"
+                        title="previous chapter">Monitoring Guide</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../configuration.html"
+                        title="next chapter">Configuration and defaults</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/userguide/optimizing.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../configuration.html" title="Configuration and defaults"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="monitoring.html" title="Monitoring Guide"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v2.2.0a4 documentation</a> &raquo;</li>
+          <li><a href="index.html" >User Guide</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+    </div>
+  </body>
+</html>
