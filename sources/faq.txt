@@ -27,7 +27,7 @@ These are some common use cases:
 
 * Running something in the background. For example, to finish the web request
   as soon as possible, then update the users page incrementally.
-  This gives the user the impression of good performane and "snappiness", even
+  This gives the user the impression of good performance and "snappiness", even
   though the real work might actually take some time.
 
 * Running something after the web request has finished.
@@ -112,7 +112,7 @@ language has an AMQP client, there shouldn't be much work to create a worker
 in your language.  A Celery worker is just a program connecting to the broker
 to process messages.
 
-Also, there's another way to be language indepedent, and that is to use REST
+Also, there's another way to be language independent, and that is to use REST
 tasks, instead of your tasks being functions, they're URLs. With this
 information you can even create simple web servers that enable preloading of
 code. See: `User Guide: Remote Tasks`_.
@@ -137,7 +137,7 @@ You can do that by adding the following to your :file:`my.cnf`::
     [mysqld]
     transaction-isolation = READ-COMMITTED
 
-For more information about InnoDBs transaction model see `MySQL - The InnoDB
+For more information about InnoDB`s transaction model see `MySQL - The InnoDB
 Transaction Model and Locking`_ in the MySQL user manual.
 
 (Thanks to Honza Kral and Anton Tsigularov for this solution)
@@ -203,7 +203,7 @@ One reason that the queue is never emptied could be that you have a stale
 worker process taking the messages hostage. This could happen if celeryd
 wasn't properly shut down.
 
-When a message is recieved by a worker the broker waits for it to be
+When a message is received by a worker the broker waits for it to be
 acknowledged before marking the message as processed. The broker will not
 re-send that message to another consumer until the consumer is shut down
 properly.
@@ -232,7 +232,7 @@ task manually:
     >>> from myapp.tasks import MyPeriodicTask
     >>> MyPeriodicTask.delay()
 
-Watch celeryds logfile to see if it's able to find the task, or if some
+Watch celeryd`s log file to see if it's able to find the task, or if some
 other error is happening.
 
 .. _faq-periodic-task-does-not-run:
@@ -268,7 +268,7 @@ as they are actually executed. After the worker has received a task, it will
 take some time until it is actually executed, especially if there are a lot
 of tasks already waiting for execution. Messages that are not acknowledged are
 held on to by the worker until it closes the connection to the broker (AMQP
-server). When that connection is closed (e.g because the worker was stopped)
+server). When that connection is closed (e.g. because the worker was stopped)
 the tasks will be re-sent by the broker to the next available worker (or the
 same worker when it has been restarted), so to properly purge the queue of
 waiting tasks you have to stop all the workers, and then discard the tasks
@@ -320,10 +320,10 @@ http://www.rabbitmq.com/faq.html#node-runs-out-of-memory
     If you're still running an older version of RabbitMQ and experience
     crashes, then please upgrade!
 
-Some common Celery misconfigurations can eventually lead to a crash
-on older version of RabbitMQ. Even if it doesn't crash, these
-misconfigurations can still consume a lot of resources, so it is very
-important that you are aware of them.
+Misconfiguration of Celery can eventually lead to a crash
+on older version of RabbitMQ. Even if it doesn't crash, this
+can still consume a lot of resources, so it is very
+important that you are aware of the common pitfalls.
 
 * Events.
 
@@ -498,17 +498,17 @@ Why aren't my remote control commands received by all workers?
 --------------------------------------------------------------
 
 **Answer**: To receive broadcast remote control commands, every worker node
-uses its hostname to create a unique queue name to listen to,
-so if you have more than one worker with the same hostname, the
-control commands will be recieved in round-robin between them.
+uses its host name to create a unique queue name to listen to,
+so if you have more than one worker with the same host name, the
+control commands will be received in round-robin between them.
 
-To work around this you can explicitly set the hostname for every worker
+To work around this you can explicitly set the host name for every worker
 using the :option:`--hostname` argument to :mod:`~celery.bin.celeryd`::
 
     $ celeryd --hostname=$(hostname).1
     $ celeryd --hostname=$(hostname).2
 
-etc, etc.
+etc., etc...
 
 .. _faq-task-routing:
 
@@ -550,7 +550,7 @@ RabbitMQ doesn't implement them yet.
 The usual way to prioritize work in Celery, is to route high priority tasks
 to different servers. In the real world this may actually work better than per message
 priorities. You can use this in combination with rate limiting to achieve a
-highly performant system.
+highly responsive system.
 
 .. _faq-acks_late-vs-retry:
 
@@ -562,7 +562,7 @@ to use both.
 
 `Task.retry` is used to retry tasks, notably for expected errors that
 is catchable with the `try:` block. The AMQP transaction is not used
-for these errors: **if the task raises an exception it is still acked!**.
+for these errors: **if the task raises an exception it is still acknowledged!**.
 
 The `acks_late` setting would be used when you need the task to be
 executed again if the worker (for some reason) crashes mid-execution.
@@ -617,7 +617,7 @@ Or to schedule a periodic task at a specific time, use the
 
     @periodic_task(run_every=crontab(hours=7, minute=30, day_of_week="mon"))
     def every_monday_morning():
-        print("This is run every monday morning at 7:30")
+        print("This is run every Monday morning at 7:30")
 
 .. _faq-safe-worker-shutdown:
 
@@ -671,7 +671,7 @@ services instead.
 
 .. _faq-windows-django-settings:
 
-`django-celery` can’t find settings?
+`django-celery` can't find settings?
 --------------------------------------
 
 **Answer**: You need to specify the :option:`--settings` argument to

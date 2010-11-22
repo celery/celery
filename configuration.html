@@ -23,7 +23,7 @@
     <script type="text/javascript" src="static/doctools.js"></script>
     <link rel="top" title="Celery v2.2.0a4 documentation" href="index.html" />
     <link rel="next" title="Cookbook" href="cookbook/index.html" />
-    <link rel="prev" title="Monitoring Guide" href="userguide/monitoring.html" /> 
+    <link rel="prev" title="Optimizing" href="userguide/optimizing.html" /> 
   </head>
   <body>
     <div class="related">
@@ -39,7 +39,7 @@
           <a href="cookbook/index.html" title="Cookbook"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="userguide/monitoring.html" title="Monitoring Guide"
+          <a href="userguide/optimizing.html" title="Optimizing"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">Celery v2.2.0a4 documentation</a> &raquo;</li> 
       </ul>
@@ -312,7 +312,7 @@ setting:</p>
 <p>This backend requires the following configuration directives to be set:</p>
 <div class="section" id="tt-host">
 <span id="std:setting-TT_HOST"></span><h4>TT_HOST<a class="headerlink" href="#tt-host" title="Permalink to this headline">¶</a></h4>
-<p>Hostname of the Tokyo Tyrant server.</p>
+<p>Host name of the Tokyo Tyrant server.</p>
 </div>
 <div class="section" id="tt-port">
 <span id="std:setting-TT_PORT"></span><h4>TT_PORT<a class="headerlink" href="#tt-port" title="Permalink to this headline">¶</a></h4>
@@ -340,7 +340,7 @@ setting:</p>
 <p>This backend requires the following configuration directives to be set.</p>
 <div class="section" id="redis-host">
 <span id="std:setting-REDIS_HOST"></span><h4>REDIS_HOST<a class="headerlink" href="#redis-host" title="Permalink to this headline">¶</a></h4>
-<p>Hostname of the Redis database server. e.g. <cite>&#8220;localhost&#8221;</cite>.</p>
+<p>Host name of the Redis database server. e.g. <cite>&#8220;localhost&#8221;</cite>.</p>
 </div>
 <div class="section" id="redis-port">
 <span id="std:setting-REDIS_PORT"></span><h4>REDIS_PORT<a class="headerlink" href="#redis-port" title="Permalink to this headline">¶</a></h4>
@@ -378,7 +378,7 @@ setting:</p>
 <ul>
 <li><dl class="first docutils">
 <dt>host</dt>
-<dd><p class="first last">Hostname of the MongoDB server. Defaults to &#8220;localhost&#8221;.</p>
+<dd><p class="first last">Host name of the MongoDB server. Defaults to &#8220;localhost&#8221;.</p>
 </dd>
 </dl>
 </li>
@@ -509,7 +509,7 @@ selected backend.</p>
 </div>
 <div class="section" id="broker-use-ssl">
 <span id="std:setting-BROKER_USE_SSL"></span><h4>BROKER_USE_SSL<a class="headerlink" href="#broker-use-ssl" title="Permalink to this headline">¶</a></h4>
-<p>Use SSL to conenct to the broker.  Off by defalt.  This may not be supported
+<p>Use SSL to connect to the broker.  Off by default.  This may not be supported
 by all transports.</p>
 </div>
 <div class="section" id="broker-connection-timeout">
@@ -680,16 +680,16 @@ be 1 second. If you need near millisecond precision you can set this to 0.1.</p>
 <div class="section" id="celery-send-task-error-emails">
 <span id="std:setting-CELERYD_SEND_TASK_ERROR_EMAILS"></span><h4>CELERY_SEND_TASK_ERROR_EMAILS<a class="headerlink" href="#celery-send-task-error-emails" title="Permalink to this headline">¶</a></h4>
 <p>The default value for the <cite>Task.send_error_emails</cite> attribute, which if
-set to <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> means errors occuring during task execution will be
+set to <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> means errors occurring during task execution will be
 sent to <a class="reference internal" href="#std:setting-ADMINS"><tt class="xref std std-setting docutils literal"><span class="pre">ADMINS</span></tt></a> by e-mail.</p>
 </div>
 <div class="section" id="celery-task-error-whitelist">
 <span id="std:setting-CELERY_TASK_ERROR_WHITELIST"></span><h4>CELERY_TASK_ERROR_WHITELIST<a class="headerlink" href="#celery-task-error-whitelist" title="Permalink to this headline">¶</a></h4>
-<p>A whitelist of exceptions to send error e-mails for.</p>
+<p>A white list of exceptions to send error e-mails for.</p>
 </div>
 <div class="section" id="admins">
 <span id="std:setting-ADMINS"></span><h4>ADMINS<a class="headerlink" href="#admins" title="Permalink to this headline">¶</a></h4>
-<p>List of <cite>(name, email_address)</cite> tuples for the admins that should
+<p>List of <cite>(name, email_address)</cite> tuples for the administrators that should
 receive error e-mails.</p>
 </div>
 <div class="section" id="server-email">
@@ -703,7 +703,7 @@ Default is <a class="reference external" href="mailto:celery&#37;&#52;&#48;local
 </div>
 <div class="section" id="mail-host-user">
 <span id="std:setting-MAIL_HOST_USER"></span><h4>MAIL_HOST_USER<a class="headerlink" href="#mail-host-user" title="Permalink to this headline">¶</a></h4>
-<p>Username (if required) to log on to the mail server with.</p>
+<p>User name (if required) to log on to the mail server with.</p>
 </div>
 <div class="section" id="mail-host-password">
 <span id="std:setting-MAIL_HOST_PASSWORD"></span><h4>MAIL_HOST_PASSWORD<a class="headerlink" href="#mail-host-password" title="Permalink to this headline">¶</a></h4>
@@ -773,7 +773,7 @@ Default is <cite>&#8220;json&#8221;</cite>. See <a class="reference internal" hr
 <div class="section" id="celery-broadcast-queue">
 <span id="std:setting-CELERY_BROADCAST_QUEUE"></span><h4>CELERY_BROADCAST_QUEUE<a class="headerlink" href="#celery-broadcast-queue" title="Permalink to this headline">¶</a></h4>
 <p>Name prefix for the queue used when listening for broadcast messages.
-The workers hostname will be appended to the prefix to create the final
+The workers host name will be appended to the prefix to create the final
 queue name.</p>
 <p>Default is <cite>&#8220;celeryctl&#8221;</cite>.</p>
 </div>
@@ -830,7 +830,7 @@ Used by <strong class="program">celeryd</strong> and <strong class="program">cel
 </div>
 <div class="section" id="celery-redirect-stdouts-level">
 <span id="std:setting-CELERY_REDIRECT_STDOUTS_LEVEL"></span><h4>CELERY_REDIRECT_STDOUTS_LEVEL<a class="headerlink" href="#celery-redirect-stdouts-level" title="Permalink to this headline">¶</a></h4>
-<p>The loglevel output to <cite>stdout</cite> and <cite>stderr</cite> is logged as.
+<p>The log level output to <cite>stdout</cite> and <cite>stderr</cite> is logged as.
 Can be one of <tt class="xref py py-const docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="xref py py-const docutils literal"><span class="pre">INFO</span></tt>, <tt class="xref py py-const docutils literal"><span class="pre">WARNING</span></tt>,
 <tt class="xref py py-const docutils literal"><span class="pre">ERROR</span></tt> or <tt class="xref py py-const docutils literal"><span class="pre">CRITICAL</span></tt>.</p>
 <p>Default is <tt class="xref py py-const docutils literal"><span class="pre">WARNING</span></tt>.</p>
@@ -928,8 +928,8 @@ the <em class="xref std std-option">--logfile</em> argument to <cite>celerymon</
   <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
 </a></p>
   <h4>Previous topic</h4>
-  <p class="topless"><a href="userguide/monitoring.html"
-                        title="previous chapter">Monitoring Guide</a></p>
+  <p class="topless"><a href="userguide/optimizing.html"
+                        title="previous chapter">Optimizing</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="cookbook/index.html"
                         title="next chapter">Cookbook</a></p>
@@ -968,7 +968,7 @@ the <em class="xref std std-option">--logfile</em> argument to <cite>celerymon</
           <a href="cookbook/index.html" title="Cookbook"
              >next</a> |</li>
         <li class="right" >
-          <a href="userguide/monitoring.html" title="Monitoring Guide"
+          <a href="userguide/optimizing.html" title="Optimizing"
              >previous</a> |</li>
         <li><a href="index.html">Celery v2.2.0a4 documentation</a> &raquo;</li> 
       </ul>

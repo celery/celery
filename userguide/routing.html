@@ -315,7 +315,7 @@ they are both referred to as the routing key.</p>
 <p>The exchange type defines how the messages are routed through the exchange.
 The exchange types defined in the standard are <cite>direct</cite>, <cite>topic</cite>,
 <cite>fanout</cite> and <cite>headers</cite>.  Also non-standard exchange types are available
-as plugins to RabbitMQ, like the <a class="reference external" href="http://github.com/squaremo/rabbitmq-lvc-plugin">last-value-cache plug-in</a> by Michael
+as plug-ins to RabbitMQ, like the <a class="reference external" href="http://github.com/squaremo/rabbitmq-lvc-plugin">last-value-cache plug-in</a> by Michael
 Bridgen.</p>
 <div class="section" id="direct-exchanges">
 <span id="amqp-exchange-type-direct"></span><h4><a class="toc-backref" href="#id15">Direct exchanges</a><a class="headerlink" href="#direct-exchanges" title="Permalink to this headline">¶</a></h4>
@@ -409,7 +409,7 @@ with no arguments to start it in shell-mode:</p>
 </div>
 <p>Here <cite>1&gt;</cite> is the prompt.  The number 1, is the number of commands you
 have executed so far.  Type <cite>help</cite> for a list of commands available.
-It also supports autocompletion, so you can start typing a command and then
+It also supports auto-completion, so you can start typing a command and then
 hit the <cite>tab</cite> key to show a list of possible matches.</p>
 <p>Let&#8217;s create a queue we can send messages to:</p>
 <div class="highlight-python"><pre>1&gt; exchange.declare testexchange direct

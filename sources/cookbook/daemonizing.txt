@@ -33,8 +33,8 @@ Init script: celeryd
 :Usage: `/etc/init.d/celeryd {start|stop|force-reload|restart|try-restart|status}`
 :Configuration file: /etc/default/celeryd
 
-To configure celeryd you probably need to at least tell it where to chdir
-when it starts (to find your celeryconfig).
+To configure celeryd you probably need to at least tell it where to change
+directory to when it starts (to find your `celeryconfig`).
 
 .. _debian-initd-celeryd-example:
 
@@ -79,13 +79,14 @@ Available options
     Additional arguments to celeryd, see `celeryd --help` for a list.
 
 * CELERYD_CHDIR
-    Path to chdir at start. Default is to stay in the current directory.
+    Path to change directory to at start. Default is to stay in the current
+    directory.
 
 * CELERYD_PID_FILE
-    Full path to the pidfile. Default is /var/run/celeryd.pid.
+    Full path to the PID file. Default is /var/run/celeryd.pid.
 
 * CELERYD_LOG_FILE
-    Full path to the celeryd logfile. Default is /var/log/celeryd.log
+    Full path to the celeryd log file. Default is /var/log/celeryd.log
 
 * CELERYD_LOG_LEVEL
     Log level to use for celeryd. Default is INFO.
@@ -160,10 +161,10 @@ Available options
     list.
 
 * CELERYBEAT_PIDFILE
-    Full path to the pidfile. Default is /var/run/celeryd.pid.
+    Full path to the PID file. Default is /var/run/celeryd.pid.
 
 * CELERYBEAT_LOGFILE
-    Full path to the celeryd logfile. Default is /var/log/celeryd.log
+    Full path to the celeryd log file. Default is /var/log/celeryd.log
 
 * CELERYBEAT_LOG_LEVEL
     Log level to use for celeryd. Default is INFO.

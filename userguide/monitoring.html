@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Celery v2.2.0a4 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
-    <link rel="next" title="Configuration and defaults" href="../configuration.html" />
+    <link rel="next" title="Optimizing" href="optimizing.html" />
     <link rel="prev" title="Routing Tasks" href="routing.html" /> 
   </head>
   <body>
@@ -37,7 +37,7 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../configuration.html" title="Configuration and defaults"
+          <a href="optimizing.html" title="Optimizing"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="routing.html" title="Routing Tasks"
@@ -118,7 +118,7 @@ features related to monitoring, like events and broadcast commands.</p>
 <span class="versionmodified">New in version 2.1.</span></p>
 <p><a class="reference internal" href="../reference/celery.bin.celeryctl.html#module-celery.bin.celeryctl" title="celery.bin.celeryctl"><tt class="xref py py-mod docutils literal"><span class="pre">celeryctl</span></tt></a> is a command line utility to inspect
 and manage worker nodes (and to some degree tasks).</p>
-<p>To list all the commands avaialble do:</p>
+<p>To list all the commands available do:</p>
 <div class="highlight-python"><pre>$ celeryctl help</pre>
 </div>
 <p>or to get help for a specific command do:</p>
@@ -285,7 +285,7 @@ and tasks in other states after 5 days.</p>
 <div class="section" id="using-outside-of-django">
 <span id="monitoring-nodjango"></span><h4><a class="toc-backref" href="#id10">Using outside of Django</a><a class="headerlink" href="#using-outside-of-django" title="Permalink to this headline">¶</a></h4>
 <p><cite>django-celery</cite> also installs the <strong class="program">djcelerymon</strong> program. This
-can be used by non-Django users, and runs both a webserver and a snapshot
+can be used by non-Django users, and runs both a web server and a snapshot
 camera in the same process.</p>
 <p><strong>Installing</strong></p>
 <p>Using <strong class="program">pip</strong>:</p>
@@ -295,8 +295,8 @@ camera in the same process.</p>
 <div class="highlight-python"><pre>$ easy_install -U django-celery</pre>
 </div>
 <p><strong>Running</strong></p>
-<p><strong class="program">djcelerymon</strong> reads configuration from your Celery config module,
-and sets up the Django environment using the same settings:</p>
+<p><strong class="program">djcelerymon</strong> reads configuration from your Celery configuration
+module, and sets up the Django environment using the same settings:</p>
 <div class="highlight-python"><pre>$ djcelerymon</pre>
 </div>
 <p>Database tables will be created the first time the monitor is run.
@@ -306,7 +306,7 @@ user running the monitor.</p>
 <p>If you want to store the events in a different database, e.g. MySQL,
 then you can configure the <cite>DATABASE*</cite> settings directly in your Celery
 config module.  See <a class="reference external" href="http://docs.djangoproject.com/en/dev/ref/settings/#databases">http://docs.djangoproject.com/en/dev/ref/settings/#databases</a>
-for more information about the database options avaialble.</p>
+for more information about the database options available.</p>
 <p>You will also be asked to create a superuser (and you need to create one
 to be able to log into the admin later):</p>
 <div class="highlight-python"><pre>Creating table auth_permission
@@ -348,7 +348,7 @@ down workers.</p>
 <a class="reference internal" href="#monitoring-snapshots"><em>Snapshots</em></a>:</p>
 <div class="highlight-python"><pre>$ celeryev --camera=&lt;camera-class&gt; --frequency=1.0</pre>
 </div>
-<p>and it includes a tool to dump events to stdout:</p>
+<p>and it includes a tool to dump events to <tt class="file docutils literal"><span class="pre">stdout</span></tt>:</p>
 <div class="highlight-python"><pre>$ celeryev --dump</pre>
 </div>
 <p>For a complete list of options use <cite>&#8211;help</cite>:</p>
@@ -379,7 +379,7 @@ Celery with a Django project.  See <a class="reference internal" href="#monitori
 RabbitMQ can be monitored.</p>
 <p>RabbitMQ ships with the <a class="reference external" href="http://www.rabbitmq.com/man/rabbitmqctl.1.man.html">rabbitmqctl(1)</a> command,
 with this you can list queues, exchanges, bindings,
-queue lenghts, the memory usage of each queue, as well
+queue lengths, the memory usage of each queue, as well
 as manage users, virtual hosts and their permissions.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -418,10 +418,10 @@ easier to parse.</td>
 </div>
 <div class="section" id="munin">
 <span id="monitoring-munin"></span><h2><a class="toc-backref" href="#id15">Munin</a><a class="headerlink" href="#munin" title="Permalink to this headline">¶</a></h2>
-<p>This is a list of known Munin plugins that can be useful when
+<p>This is a list of known Munin plug-ins that can be useful when
 maintaining a Celery cluster.</p>
 <ul>
-<li><p class="first">rabbitmq-munin: Munin-plugins for RabbitMQ.</p>
+<li><p class="first">rabbitmq-munin: Munin plug-ins for RabbitMQ.</p>
 <blockquote>
 <p><a class="reference external" href="http://github.com/ask/rabbitmq-munin">http://github.com/ask/rabbitmq-munin</a></p>
 </blockquote>
@@ -487,7 +487,7 @@ about state objects.</p>
 it with the <cite>-c</cite> option:</p>
 <div class="highlight-python"><pre>$ celeryev -c myapp.DumpCam --frequency=2.0</pre>
 </div>
-<p>Or you can use it programatically like this:</p>
+<p>Or you can use it programmatically like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.events</span> <span class="kn">import</span> <span class="n">EventReceiver</span>
 <span class="kn">from</span> <span class="nn">celery.messaging</span> <span class="kn">import</span> <span class="n">establish_connection</span>
 <span class="kn">from</span> <span class="nn">celery.events.state</span> <span class="kn">import</span> <span class="n">State</span>
@@ -586,8 +586,8 @@ it is considered to be offline.</p>
   <p class="topless"><a href="routing.html"
                         title="previous chapter">Routing Tasks</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="../configuration.html"
-                        title="next chapter">Configuration and defaults</a></p>
+  <p class="topless"><a href="optimizing.html"
+                        title="next chapter">Optimizing</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../sources/userguide/monitoring.txt"
@@ -620,7 +620,7 @@ it is considered to be offline.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../configuration.html" title="Configuration and defaults"
+          <a href="optimizing.html" title="Optimizing"
              >next</a> |</li>
         <li class="right" >
           <a href="routing.html" title="Routing Tasks"

@@ -167,13 +167,13 @@ An integer starting at <cite>0</cite>.</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name">is_eager:</th><td class="field-body"><p class="first">Set to <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if the task is executed locally in
-the client, kand not by a worker.</p>
+the client, and not by a worker.</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name">logfile:</th><td class="field-body"><p class="first">The file the worker logs to.  See <a class="reference internal" href="#logging">Logging</a>.</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name">loglevel:</th><td class="field-body"><p class="first">The current loglevel used.</p>
+<tr class="field"><th class="field-name">loglevel:</th><td class="field-body"><p class="first">The current log level used.</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name">delivery_info:</th><td class="field-body"><dl class="first docutils">
@@ -213,7 +213,7 @@ the worker log:</p>
 <p>There are several logging levels available, and the workers <cite>loglevel</cite>
 setting decides whether or not they will be written to the log file.</p>
 <p>Of course, you can also simply use <cite>print</cite> as anything written to standard
-out/-err will be written to the logfile as well.</p>
+out/-err will be written to the log file as well.</p>
 </div>
 <div class="section" id="retrying-a-task-if-something-fails">
 <span id="task-retry"></span><h2><a class="toc-backref" href="#id9">Retrying a task if something fails</a><a class="headerlink" href="#retrying-a-task-if-something-fails" title="Permalink to this headline">¶</a></h2>
@@ -272,7 +272,7 @@ automatically generated using the module and class name.  See
 <dt id="Task.abstract">
 <tt class="descclassname">Task.</tt><tt class="descname">abstract</tt><a class="headerlink" href="#Task.abstract" title="Permalink to this definition">¶</a></dt>
 <dd><p>Abstract classes are not registered, but are used as the
-superclass when making new task types by subclassing.</p>
+base class for new task types.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -332,8 +332,8 @@ See <a class="reference internal" href="../configuration.html#conf-error-mails">
 <dl class="attribute">
 <dt id="Task.error_whitelist">
 <tt class="descclassname">Task.</tt><tt class="descname">error_whitelist</tt><a class="headerlink" href="#Task.error_whitelist" title="Permalink to this definition">¶</a></dt>
-<dd><p>If the sending of error e-emails is enabled for this task, then
-this is a whitelist of exceptions to actually send e-mails about.</p>
+<dd><p>If the sending of error e-mails is enabled for this task, then
+this is a white list of exceptions to actually send e-mails about.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -363,7 +363,7 @@ the default behavior.</p>
 <p>Note that this means the task may be executed twice if the worker
 crashes in the middle of execution, which may be acceptable for some
 applications.</p>
-<p>The global default can be overriden by the <a class="reference internal" href="../configuration.html#std:setting-CELERY_ACKS_LATE"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ACKS_LATE</span></tt></a>
+<p>The global default can be overridden by the <a class="reference internal" href="../configuration.html#std:setting-CELERY_ACKS_LATE"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ACKS_LATE</span></tt></a>
 setting.</p>
 </dd></dl>
 
@@ -377,8 +377,8 @@ report that level of granularity. Tasks are either pending, finished,
 or waiting to be retried.  Having a &#8220;started&#8221; status can be useful for
 when there are long running tasks and there is a need to report which
 task is currently running.</p>
-<p>The hostname and pid of the worker executing the task
-will be avaiable in the state metadata (e.g. <cite>result.info[&#8220;pid&#8221;]</cite>)</p>
+<p>The host name and process id of the worker executing the task
+will be available in the state metadata (e.g. <cite>result.info[&#8220;pid&#8221;]</cite>)</p>
 <p>The global default can be overridden by the
 <a class="reference internal" href="../configuration.html#std:setting-CELERY_TRACK_STARTED"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TRACK_STARTED</span></tt></a> setting.</p>
 </dd></dl>
@@ -624,7 +624,7 @@ the task.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">metadata:</th><td class="field-body"><cite>result</cite> contains the exception occured, and <cite>traceback</cite>
+<tr class="field"><th class="field-name">metadata:</th><td class="field-body"><cite>result</cite> contains the exception occurred, and <cite>traceback</cite>
 contains the backtrace of the stack at the point when the
 exception was raised.</td>
 </tr>
@@ -667,7 +667,7 @@ when the exceptions was raised.</td>
 <p>You can easily define your own states, all you need is a unique name.
 The name of the state is usually an uppercase string.  As an example
 you could have a look at <tt class="xref py py-mod docutils literal"><span class="pre">abortable</span> <span class="pre">tasks</span></tt>
-wich defines its own custom <tt class="xref std std-state docutils literal"><span class="pre">ABORTED</span></tt> state.</p>
+which defines its own custom <tt class="xref std std-state docutils literal"><span class="pre">ABORTED</span></tt> state.</p>
 <p>Use <tt class="xref py py-meth docutils literal"><span class="pre">Task.update_state</span></tt> to
 update a tasks state:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="nd">@celery.task</span>
@@ -719,7 +719,8 @@ task as <tt class="xref py py-attr docutils literal"><span class="pre">abstract<
     <span class="n">abstract</span> <span class="o">=</span> <span class="bp">True</span>
 </pre></div>
 </div>
-<p>This way the task won&#8217;t be registered, but any task subclassing it will be.</p>
+<p>This way the task won&#8217;t be registered, but any task inheriting from
+it will be.</p>
 <p>When tasks are sent, we don&#8217;t send any actual function code, just the name
 of the task to execute.  When the worker then receives the message it can look
 up the name in its task registry to find the execution code.</p>
@@ -857,12 +858,12 @@ run in a timely manner.</p>
 responsibility of the task”.  What this means is that the world view may
 have changed since the task was requested, so the task is responsible for
 making sure the world is how it should be;  If you have a task
-that reindexes a search engine, and the search engine should only be reindexed
-at maximum every 5 minutes, then it must be the tasks responsibility to assert
-that, not the callers.</p>
-<p>Another gotcha is Django model objects.  They shouldn&#8217;t be passed on as arguments
-to tasks.  It&#8217;s almost always better to re-fetch the object from the
-database when the task is running instead,  as using old data may lead
+that re-indexes a search engine, and the search engine should only be
+re-indexed at maximum every 5 minutes, then it must be the tasks
+responsibility to assert that, not the callers.</p>
+<p>Another gotcha is Django model objects.  They shouldn&#8217;t be passed on as
+arguments to tasks.  It&#8217;s almost always better to re-fetch the object from
+the database when the task is running instead,  as using old data may lead
 to race conditions.</p>
 <p>Imagine the following scenario where you have an article and a task
 that automatically expands some abbreviations in it:</p>

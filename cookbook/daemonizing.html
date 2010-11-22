@@ -108,8 +108,8 @@ directory contains init scripts for celeryd and celerybeat.</p>
 </tr>
 </tbody>
 </table>
-<p>To configure celeryd you probably need to at least tell it where to chdir
-when it starts (to find your celeryconfig).</p>
+<p>To configure celeryd you probably need to at least tell it where to change
+directory to when it starts (to find your <cite>celeryconfig</cite>).</p>
 <div class="section" id="example-configuration">
 <span id="debian-initd-celeryd-example"></span><h4><a class="toc-backref" href="#id7">Example configuration</a><a class="headerlink" href="#example-configuration" title="Permalink to this headline">¶</a></h4>
 <p>This is an example configuration for a Python project.</p>
@@ -147,19 +147,20 @@ export DJANGO_SETTINGS_MODULE="settings"</pre>
 </li>
 <li><dl class="first docutils">
 <dt>CELERYD_CHDIR</dt>
-<dd><p class="first last">Path to chdir at start. Default is to stay in the current directory.</p>
+<dd><p class="first last">Path to change directory to at start. Default is to stay in the current
+directory.</p>
 </dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>CELERYD_PID_FILE</dt>
-<dd><p class="first last">Full path to the pidfile. Default is /var/run/celeryd.pid.</p>
+<dd><p class="first last">Full path to the PID file. Default is /var/run/celeryd.pid.</p>
 </dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>CELERYD_LOG_FILE</dt>
-<dd><p class="first last">Full path to the celeryd logfile. Default is /var/log/celeryd.log</p>
+<dd><p class="first last">Full path to the celeryd log file. Default is /var/log/celeryd.log</p>
 </dd>
 </dl>
 </li>
@@ -254,13 +255,13 @@ list.</p>
 </li>
 <li><dl class="first docutils">
 <dt>CELERYBEAT_PIDFILE</dt>
-<dd><p class="first last">Full path to the pidfile. Default is /var/run/celeryd.pid.</p>
+<dd><p class="first last">Full path to the PID file. Default is /var/run/celeryd.pid.</p>
 </dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>CELERYBEAT_LOGFILE</dt>
-<dd><p class="first last">Full path to the celeryd logfile. Default is /var/log/celeryd.log</p>
+<dd><p class="first last">Full path to the celeryd log file. Default is /var/log/celeryd.log</p>
 </dd>
 </dl>
 </li>

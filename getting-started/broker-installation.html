@@ -71,7 +71,7 @@
 <li><a class="reference internal" href="#installing-rabbitmq" id="id4">Installing RabbitMQ</a></li>
 <li><a class="reference internal" href="#setting-up-rabbitmq" id="id5">Setting up RabbitMQ</a></li>
 <li><a class="reference internal" href="#installing-rabbitmq-on-os-x" id="id6">Installing RabbitMQ on OS X</a><ul>
-<li><a class="reference internal" href="#configuring-the-system-hostname" id="id7">Configuring the system hostname</a></li>
+<li><a class="reference internal" href="#configuring-the-system-host-name" id="id7">Configuring the system host name</a></li>
 <li><a class="reference internal" href="#starting-stopping-the-rabbitmq-server" id="id8">Starting/Stopping the RabbitMQ server</a></li>
 </ul>
 </li>
@@ -106,13 +106,13 @@ $ rabbitmqctl set_permissions -p myvhost myuser ".*" ".*" ".*"</pre>
 <span id="rabbitmq-osx-installation"></span><h2><a class="toc-backref" href="#id6">Installing RabbitMQ on OS X</a><a class="headerlink" href="#installing-rabbitmq-on-os-x" title="Permalink to this headline">¶</a></h2>
 <p>The easiest way to install RabbitMQ on Snow Leopard is using <a class="reference external" href="http://github.com/mxcl/homebrew/">Homebrew</a>; the new
 and shiny package management system for OS X.</p>
-<p>In this example we&#8217;ll install homebrew into <tt class="file docutils literal"><span class="pre">/lol</span></tt>, but you can
+<p>In this example we&#8217;ll install Homebrew into <tt class="file docutils literal"><span class="pre">/lol</span></tt>, but you can
 choose whichever destination, even in your home directory if you want, as one of
-the strengths of homebrew is that it&#8217;s relocateable.</p>
-<p>Homebrew is actually a <a class="reference external" href="http://git-scm.org">git</a> repository, so to install homebrew, you first need to
+the strengths of Homebrew is that it&#8217;s relocatable.</p>
+<p>Homebrew is actually a <a class="reference external" href="http://git-scm.org">git</a> repository, so to install Homebrew, you first need to
 install git. Download and install from the disk image at
 <a class="reference external" href="http://code.google.com/p/git-osx-installer/downloads/list?can=3">http://code.google.com/p/git-osx-installer/downloads/list?can=3</a></p>
-<p>When git is installed you can finally clone the repo, storing it at the
+<p>When git is installed you can finally clone the repository, storing it at the
 <tt class="file docutils literal"><span class="pre">/lol</span></tt> location:</p>
 <div class="highlight-python"><pre>$ git clone git://github.com/mxcl/homebrew /lol</pre>
 </div>
@@ -127,15 +127,15 @@ adding the following line to the end of your <tt class="file docutils literal"><
 <p>Finally, we can install rabbitmq using <strong class="program">brew</strong>:</p>
 <div class="highlight-python"><pre>$ brew install rabbitmq</pre>
 </div>
-<div class="section" id="configuring-the-system-hostname">
-<span id="rabbitmq-osx-system-hostname"></span><h3><a class="toc-backref" href="#id7">Configuring the system hostname</a><a class="headerlink" href="#configuring-the-system-hostname" title="Permalink to this headline">¶</a></h3>
-<p>If you&#8217;re using a DHCP server that is giving you a random hostname, you need
-to permanently configure the hostname. This is because RabbitMQ uses the hostname
+<div class="section" id="configuring-the-system-host-name">
+<span id="rabbitmq-osx-system-hostname"></span><h3><a class="toc-backref" href="#id7">Configuring the system host name</a><a class="headerlink" href="#configuring-the-system-host-name" title="Permalink to this headline">¶</a></h3>
+<p>If you&#8217;re using a DHCP server that is giving you a random host name, you need
+to permanently configure the host name. This is because RabbitMQ uses the host name
 to communicate with nodes.</p>
-<p>Use the <strong class="program">scutil</strong> command to permanently set your hostname:</p>
+<p>Use the <strong class="program">scutil</strong> command to permanently set your host name:</p>
 <div class="highlight-python"><pre>sudo scutil --set HostName myhost.local</pre>
 </div>
-<p>Then add that hostname to <tt class="file docutils literal"><span class="pre">/etc/hosts</span></tt> so it&#8217;s possible to resolve it
+<p>Then add that host name to <tt class="file docutils literal"><span class="pre">/etc/hosts</span></tt> so it&#8217;s possible to resolve it
 back into an IP address:</p>
 <div class="highlight-python"><pre>127.0.0.1       localhost myhost myhost.local</pre>
 </div>
@@ -153,9 +153,9 @@ Status of node rabbit@myhost ...
 {running_nodes,[rabbit@myhost]}]
 ...done.</pre>
 </div>
-<p>This is especially important if your DHCP server gives you a hostname
+<p>This is especially important if your DHCP server gives you a host name
 starting with an IP address, (e.g. <cite>23.10.112.31.comcast.net</cite>), because
-then RabbitMQ will try to use <cite>rabbit&#64;23</cite>, which is an illegal hostname.</p>
+then RabbitMQ will try to use <cite>rabbit&#64;23</cite>, which is an illegal host name.</p>
 </div>
 <div class="section" id="starting-stopping-the-rabbitmq-server">
 <span id="rabbitmq-osx-start-stop"></span><h3><a class="toc-backref" href="#id8">Starting/Stopping the RabbitMQ server</a><a class="headerlink" href="#starting-stopping-the-rabbitmq-server" title="Permalink to this headline">¶</a></h3>

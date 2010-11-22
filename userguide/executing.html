@@ -129,8 +129,8 @@ a shortcut to set eta by seconds into the future.</p>
 specified date and time, but not necessarily at that exact time.
 Possible reasons for broken deadlines may include many items waiting
 in the queue, or heavy network latency.  To make sure your tasks
-are executed in a timely manner you should monitor queue lenghts. Use
-Munin, or similar tools, to receive alerts, so appropiate action can be
+are executed in a timely manner you should monitor queue lengths. Use
+Munin, or similar tools, to receive alerts, so appropriate action can be
 taken to ease the workload.  See <a class="reference internal" href="monitoring.html#monitoring-munin"><em>Munin</em></a>.</p>
 <p>While <cite>countdown</cite> is an integer, <cite>eta</cite> must be a <tt class="xref py py-class docutils literal"><span class="pre">datetime</span></tt>
 object, specifying an exact date and time (including millisecond precision,
@@ -173,9 +173,9 @@ them into the Kombu serializer registry (see <a class="reference external" href=
 <dd><p class="first">a standard part of Python (since 2.6), and is fairly fast to decode
 using the modern Python libraries such as <tt class="xref py py-mod docutils literal"><span class="pre">cjson</span></tt> or <tt class="xref py py-mod docutils literal"><span class="pre">simplejson</span></tt>.</p>
 <p>The primary disadvantage to JSON is that it limits you to the following
-data types: strings, unicode, floats, boolean, dictionaries, and lists.
+data types: strings, Unicode, floats, boolean, dictionaries, and lists.
 Decimals and dates are notably missing.</p>
-<p>Also, binary data will be transferred using base64 encoding, which will
+<p>Also, binary data will be transferred using Base64 encoding, which will
 cause the transferred data to be around 34% larger than an encoding which
 supports native binary types.</p>
 <p>However, if your data fits inside the above constraints and you need

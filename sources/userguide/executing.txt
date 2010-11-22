@@ -75,8 +75,8 @@ The task is guaranteed to be executed at some time *after* the
 specified date and time, but not necessarily at that exact time.
 Possible reasons for broken deadlines may include many items waiting
 in the queue, or heavy network latency.  To make sure your tasks
-are executed in a timely manner you should monitor queue lenghts. Use
-Munin, or similar tools, to receive alerts, so appropiate action can be
+are executed in a timely manner you should monitor queue lengths. Use
+Munin, or similar tools, to receive alerts, so appropriate action can be
 taken to ease the workload.  See :ref:`monitoring-munin`.
 
 While `countdown` is an integer, `eta` must be a :class:`~datetime.datetime`
@@ -135,10 +135,10 @@ json -- JSON is supported in many programming languages, is now
     using the modern Python libraries such as :mod:`cjson` or :mod:`simplejson`.
 
     The primary disadvantage to JSON is that it limits you to the following
-    data types: strings, unicode, floats, boolean, dictionaries, and lists.
+    data types: strings, Unicode, floats, boolean, dictionaries, and lists.
     Decimals and dates are notably missing.
 
-    Also, binary data will be transferred using base64 encoding, which will
+    Also, binary data will be transferred using Base64 encoding, which will
     cause the transferred data to be around 34% larger than an encoding which
     supports native binary types.
 

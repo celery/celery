@@ -106,7 +106,7 @@ the `crontab` schedule type:
     from celery.schedules import crontab
 
     CELERYBEAT_SCHEDULE = {
-        # Executes every monday morning at 7:30 A.M
+        # Executes every Monday morning at 7:30 A.M
         "every-monday-morning": {
             "task": "tasks.add",
             "schedule": crontab(hour=7, minute=30, day_of_week=1),
@@ -131,7 +131,7 @@ The syntax of these crontab expressions are very flexible.  Some examples:
 +-------------------------------------+--------------------------------------------+
 | crontab(minute="\*/15")             | Execute every 15 minutes.                  |
 +-------------------------------------+--------------------------------------------+
-| crontab(day_of_week="sunday")       | Execute every minute (!) at sundays.       |
+| crontab(day_of_week="sunday")       | Execute every minute (!) at Sundays.       |
 +-------------------------------------+--------------------------------------------+
 | crontab(minute="*",                 | Same as previous.                          |
 |         hour="*",                   |                                            |
@@ -139,20 +139,20 @@ The syntax of these crontab expressions are very flexible.  Some examples:
 +-------------------------------------+--------------------------------------------+
 | crontab(minute="\*/10",             | Execute every ten minutes, but only        |
 |         hour="3,17,22",             | between 3-4 am, 5-6 pm and 10-11 pm on     |
-|         day_of_week="thu,fri")      | thursdays or fridays.                      |
+|         day_of_week="thu,fri")      | Thursdays or Fridays.                      |
 +-------------------------------------+--------------------------------------------+
 | crontab(minute=0, hour="\*/2,\*/3") | Execute every even hour, and every hour    |
-|                                     | divisable by three. This means:            |
+|                                     | divisible by three. This means:            |
 |                                     | at every hour *except*: 1am,               |
 |                                     | 5am, 7am, 11am, 1pm, 5pm, 7pm,             |
 |                                     | 11pm                                       |
 +-------------------------------------+--------------------------------------------+
-| crontab(minute=0, hour="\*/5")      | Execute hour divisable by 5. This means    |
+| crontab(minute=0, hour="\*/5")      | Execute hour divisible by 5. This means    |
 |                                     | that it is triggered at 3pm, not 5pm       |
 |                                     | (since 3pm equals the 24-hour clock        |
-|                                     | value of "15", which is divisable by 5).   |
+|                                     | value of "15", which is divisible by 5).   |
 +-------------------------------------+--------------------------------------------+
-| crontab(minute=0, hour="\*/3,8-17") | Execute every hour divisable by 3, and     |
+| crontab(minute=0, hour="\*/3,8-17") | Execute every hour divisible by 3, and     |
 |                                     | every hour during office hours (8am-5pm).  |
 +-------------------------------------+--------------------------------------------+
 

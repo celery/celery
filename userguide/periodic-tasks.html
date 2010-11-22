@@ -166,7 +166,7 @@ the <cite>crontab</cite> schedule type:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.schedules</span> <span class="kn">import</span> <span class="n">crontab</span>
 
 <span class="n">CELERYBEAT_SCHEDULE</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="c"># Executes every monday morning at 7:30 A.M</span>
+    <span class="c"># Executes every Monday morning at 7:30 A.M</span>
     <span class="s">&quot;every-monday-morning&quot;</span><span class="p">:</span> <span class="p">{</span>
         <span class="s">&quot;task&quot;</span><span class="p">:</span> <span class="s">&quot;tasks.add&quot;</span><span class="p">,</span>
         <span class="s">&quot;schedule&quot;</span><span class="p">:</span> <span class="n">crontab</span><span class="p">(</span><span class="n">hour</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">day_of_week</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
@@ -206,7 +206,7 @@ the <cite>crontab</cite> schedule type:</p>
 <td>Execute every 15 minutes.</td>
 </tr>
 <tr><td>crontab(day_of_week=&#8221;sunday&#8221;)</td>
-<td>Execute every minute (!) at sundays.</td>
+<td>Execute every minute (!) at Sundays.</td>
 </tr>
 <tr><td><dl class="first last docutils">
 <dt>crontab(minute=&#8221;*&#8221;,</dt>
@@ -224,23 +224,23 @@ day_of_week=&#8221;thu,fri&#8221;)</dd>
 </td>
 <td>Execute every ten minutes, but only
 between 3-4 am, 5-6 pm and 10-11 pm on
-thursdays or fridays.</td>
+Thursdays or Fridays.</td>
 </tr>
 <tr><td>crontab(minute=0, hour=&#8221;*/2,*/3&#8221;)</td>
 <td>Execute every even hour, and every hour
-divisable by three. This means:
+divisible by three. This means:
 at every hour <em>except</em>: 1am,
 5am, 7am, 11am, 1pm, 5pm, 7pm,
 11pm</td>
 </tr>
 <tr><td>crontab(minute=0, hour=&#8221;*/5&#8221;)</td>
-<td>Execute hour divisable by 5. This means
+<td>Execute hour divisible by 5. This means
 that it is triggered at 3pm, not 5pm
 (since 3pm equals the 24-hour clock
-value of &#8220;15&#8221;, which is divisable by 5).</td>
+value of &#8220;15&#8221;, which is divisible by 5).</td>
 </tr>
 <tr><td>crontab(minute=0, hour=&#8221;*/3,8-17&#8221;)</td>
-<td>Execute every hour divisable by 3, and
+<td>Execute every hour divisible by 3, and
 every hour during office hours (8am-5pm).</td>
 </tr>
 </tbody>

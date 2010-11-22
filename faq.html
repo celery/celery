@@ -122,7 +122,7 @@
 <li><a class="reference internal" href="#windows" id="id42">Windows</a><ul>
 <li><a class="reference internal" href="#celeryd-keeps-spawning-processes-at-startup" id="id43">celeryd keeps spawning processes at startup</a></li>
 <li><a class="reference internal" href="#the-b-beat-option-to-celeryd-doesn-t-work" id="id44">The <cite>-B</cite> / <cite>&#8211;beat</cite> option to celeryd doesn&#8217;t work?</a></li>
-<li><a class="reference internal" href="#django-celery-cant-find-settings" id="id45"><cite>django-celery</cite> can’t find settings?</a></li>
+<li><a class="reference internal" href="#django-celery-can-t-find-settings" id="id45"><cite>django-celery</cite> can&#8217;t find settings?</a></li>
 </ul>
 </li>
 </ul>
@@ -137,7 +137,7 @@ describing why you would use a queue in a web context.</p>
 <ul class="simple">
 <li>Running something in the background. For example, to finish the web request
 as soon as possible, then update the users page incrementally.
-This gives the user the impression of good performane and &#8220;snappiness&#8221;, even
+This gives the user the impression of good performance and &#8220;snappiness&#8221;, even
 though the real work might actually take some time.</li>
 <li>Running something after the web request has finished.</li>
 <li>Making sure something is done, by executing it asynchronously and using
@@ -193,7 +193,7 @@ if you need to.</p>
 language has an AMQP client, there shouldn&#8217;t be much work to create a worker
 in your language.  A Celery worker is just a program connecting to the broker
 to process messages.</p>
-<p>Also, there&#8217;s another way to be language indepedent, and that is to use REST
+<p>Also, there&#8217;s another way to be language independent, and that is to use REST
 tasks, instead of your tasks being functions, they&#8217;re URLs. With this
 information you can even create simple web servers that enable preloading of
 code. See: <a class="reference external" href="http://ask.github.com/celery/userguide/remote-tasks.html">User Guide: Remote Tasks</a>.</p>
@@ -210,7 +210,7 @@ You can do that by adding the following to your <tt class="file docutils literal
 <span class="n">transaction</span><span class="o">-</span><span class="n">isolation</span> <span class="o">=</span> <span class="n">READ</span><span class="o">-</span><span class="n">COMMITTED</span>
 </pre></div>
 </div>
-<p>For more information about InnoDBs transaction model see <a class="reference external" href="http://dev.mysql.com/doc/refman/5.1/en/innodb-transaction-model.html">MySQL - The InnoDB
+<p>For more information about InnoDB`s transaction model see <a class="reference external" href="http://dev.mysql.com/doc/refman/5.1/en/innodb-transaction-model.html">MySQL - The InnoDB
 Transaction Model and Locking</a> in the MySQL user manual.</p>
 <p>(Thanks to Honza Kral and Anton Tsigularov for this solution)</p>
 </div>
@@ -256,7 +256,7 @@ queue, and there are two consumers processing them.</p>
 <p>One reason that the queue is never emptied could be that you have a stale
 worker process taking the messages hostage. This could happen if celeryd
 wasn&#8217;t properly shut down.</p>
-<p>When a message is recieved by a worker the broker waits for it to be
+<p>When a message is received by a worker the broker waits for it to be
 acknowledged before marking the message as processed. The broker will not
 re-send that message to another consumer until the consumer is shut down
 properly.</p>
@@ -279,7 +279,7 @@ task manually:</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">MyPeriodicTask</span><span class="o">.</span><span class="n">delay</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>Watch celeryds logfile to see if it&#8217;s able to find the task, or if some
+<p>Watch celeryd`s log file to see if it&#8217;s able to find the task, or if some
 other error is happening.</p>
 </div>
 <div class="section" id="why-won-t-my-periodic-task-run">
@@ -305,7 +305,7 @@ as they are actually executed. After the worker has received a task, it will
 take some time until it is actually executed, especially if there are a lot
 of tasks already waiting for execution. Messages that are not acknowledged are
 held on to by the worker until it closes the connection to the broker (AMQP
-server). When that connection is closed (e.g because the worker was stopped)
+server). When that connection is closed (e.g. because the worker was stopped)
 the tasks will be re-sent by the broker to the next available worker (or the
 same worker when it has been restarted), so to properly purge the queue of
 waiting tasks you have to stop all the workers, and then discard the tasks
@@ -347,10 +347,10 @@ errors. RabbitMQ 2.1 or higher is recommended for Celery.</p>
 <p class="last">If you&#8217;re still running an older version of RabbitMQ and experience
 crashes, then please upgrade!</p>
 </div>
-<p>Some common Celery misconfigurations can eventually lead to a crash
-on older version of RabbitMQ. Even if it doesn&#8217;t crash, these
-misconfigurations can still consume a lot of resources, so it is very
-important that you are aware of them.</p>
+<p>Misconfiguration of Celery can eventually lead to a crash
+on older version of RabbitMQ. Even if it doesn&#8217;t crash, this
+can still consume a lot of resources, so it is very
+important that you are aware of the common pitfalls.</p>
 <ul class="simple">
 <li>Events.</li>
 </ul>
@@ -480,15 +480,15 @@ Also, a common pattern is to use callback tasks:</p>
 <div class="section" id="why-aren-t-my-remote-control-commands-received-by-all-workers">
 <span id="faq-node-not-receiving-broadcast-commands"></span><h3><a class="toc-backref" href="#id34">Why aren&#8217;t my remote control commands received by all workers?</a><a class="headerlink" href="#why-aren-t-my-remote-control-commands-received-by-all-workers" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: To receive broadcast remote control commands, every worker node
-uses its hostname to create a unique queue name to listen to,
-so if you have more than one worker with the same hostname, the
-control commands will be recieved in round-robin between them.</p>
-<p>To work around this you can explicitly set the hostname for every worker
+uses its host name to create a unique queue name to listen to,
+so if you have more than one worker with the same host name, the
+control commands will be received in round-robin between them.</p>
+<p>To work around this you can explicitly set the host name for every worker
 using the <em class="xref std std-option">--hostname</em> argument to <a class="reference internal" href="reference/celery.bin.celeryd.html#module-celery.bin.celeryd" title="celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a>:</p>
 <div class="highlight-python"><pre>$ celeryd --hostname=$(hostname).1
 $ celeryd --hostname=$(hostname).2</pre>
 </div>
-<p>etc, etc.</p>
+<p>etc., etc...</p>
 </div>
 <div class="section" id="can-i-send-some-tasks-to-only-some-servers">
 <span id="faq-task-routing"></span><h3><a class="toc-backref" href="#id35">Can I send some tasks to only some servers?</a><a class="headerlink" href="#can-i-send-some-tasks-to-only-some-servers" title="Permalink to this headline">¶</a></h3>
@@ -517,7 +517,7 @@ RabbitMQ doesn&#8217;t implement them yet.</p>
 <p>The usual way to prioritize work in Celery, is to route high priority tasks
 to different servers. In the real world this may actually work better than per message
 priorities. You can use this in combination with rate limiting to achieve a
-highly performant system.</p>
+highly responsive system.</p>
 </div>
 <div class="section" id="should-i-use-retry-or-acks-late">
 <span id="faq-acks-late-vs-retry"></span><h3><a class="toc-backref" href="#id38">Should I use retry or acks_late?</a><a class="headerlink" href="#should-i-use-retry-or-acks-late" title="Permalink to this headline">¶</a></h3>
@@ -525,7 +525,7 @@ highly performant system.</p>
 to use both.</p>
 <p><cite>Task.retry</cite> is used to retry tasks, notably for expected errors that
 is catchable with the <cite>try:</cite> block. The AMQP transaction is not used
-for these errors: <strong>if the task raises an exception it is still acked!</strong>.</p>
+for these errors: <strong>if the task raises an exception it is still acknowledged!</strong>.</p>
 <p>The <cite>acks_late</cite> setting would be used when you need the task to be
 executed again if the worker (for some reason) crashes mid-execution.
 It&#8217;s important to note that the worker is not known to crash, and if
@@ -564,7 +564,7 @@ is required.</p>
 
 <span class="nd">@periodic_task</span><span class="p">(</span><span class="n">run_every</span><span class="o">=</span><span class="n">crontab</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">day_of_week</span><span class="o">=</span><span class="s">&quot;mon&quot;</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">every_monday_morning</span><span class="p">():</span>
-    <span class="k">print</span><span class="p">(</span><span class="s">&quot;This is run every monday morning at 7:30&quot;</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;This is run every Monday morning at 7:30&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -603,8 +603,8 @@ You have to start celeryd with the command:</p>
 <p><strong>Answer</strong>: That&#8217;s right. Run <cite>celerybeat</cite> and <cite>celeryd</cite> as separate
 services instead.</p>
 </div>
-<div class="section" id="django-celery-cant-find-settings">
-<span id="faq-windows-django-settings"></span><h3><a class="toc-backref" href="#id45"><cite>django-celery</cite> can’t find settings?</a><a class="headerlink" href="#django-celery-cant-find-settings" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="django-celery-can-t-find-settings">
+<span id="faq-windows-django-settings"></span><h3><a class="toc-backref" href="#id45"><cite>django-celery</cite> can&#8217;t find settings?</a><a class="headerlink" href="#django-celery-can-t-find-settings" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: You need to specify the <em class="xref std std-option">--settings</em> argument to
 <strong class="program">manage.py</strong>:</p>
 <div class="highlight-python"><pre>$ python manage.py celeryd start --settings=settings</pre>

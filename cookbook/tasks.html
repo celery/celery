@@ -80,7 +80,7 @@ accessible for all workers.</p>
 The task takes a feed URL as a single argument, and imports that feed into
 a Django model called <cite>Feed</cite>. We ensure that it&#8217;s not possible for two or
 more workers to import the same feed at the same time by setting a cache key
-consisting of the md5sum of the feed URL.</p>
+consisting of the MD5 checksum of the feed URL.</p>
 <p>The cache key expires after some time in case something unexpected happens
 (you never know, right?)</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">Task</span>
@@ -108,7 +108,7 @@ consisting of the md5sum of the feed URL.</p>
         <span class="n">release_lock</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">cache</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">lock_id</span><span class="p">)</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Importing feed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">feed_url</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">aquire_lock</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">acquire_lock</span><span class="p">():</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">feed</span> <span class="o">=</span> <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">import_feed</span><span class="p">(</span><span class="n">feed_url</span><span class="p">)</span>
             <span class="k">finally</span><span class="p">:</span>
