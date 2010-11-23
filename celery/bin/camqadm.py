@@ -75,7 +75,8 @@ class Spec(object):
             False
 
         """
-        arg_name, arg_type = self.args[index]
+        arg_info = self.args[index]
+        arg_type = arg_info[1]
         # Might be a custom way to coerce the string value,
         # so look in the coercion map.
         return COERCE.get(arg_type, arg_type)(value)
