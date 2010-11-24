@@ -123,7 +123,7 @@ The syntax of these crontab expressions are very flexible.  Some examples:
 +-------------------------------------+--------------------------------------------+
 | crontab(minute=0, hour=0)           | Execute daily at midnight.                 |
 +-------------------------------------+--------------------------------------------+
-| crontab(minute=0,                   | Execute every three hours---at midnight,   |
+| crontab(minute=0, hour="*/3")       | Execute every three hours:                 |
 |                                     | 3am, 6am, 9am, noon, 3pm, 6pm, 9pm.        |
 +-------------------------------------+--------------------------------------------+
 | crontab(minute=0,                   | Same as previous.                          |
