@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 # ============================================
 #  celeryd - Starts the Celery worker daemon.
 # ============================================
@@ -35,7 +35,10 @@
 #   DJANGO_SETTINGS_MODULE="settings"
 #
 #   # Path to celeryd
-#   CELERYD="/opt/Project/manage.py celeryd"
+#   CELERYD="/opt/Project/manage.py"
+#
+#   # Extra arguments to manage.py
+#   CELERYD_OPTS="celeryd"
 #
 # AVAILABLE OPTIONS
 # =================
@@ -64,7 +67,9 @@
 #
 #   * CELERYD_GROUP
 #       Group to run celeryd as. Default is current user.
-
+#
+#   * VIRTUALENV
+#       Full path to the virtualenv environment to activate. Default is none.
 
 ### BEGIN INIT INFO
 # Provides:          celeryd
@@ -99,6 +104,11 @@ CELERYD_OPTS="$CELERYD_OPTS -f $CELERYD_LOG_FILE -l $CELERYD_LOG_LEVEL"
 
 if [ -n "$2" ]; then
     CELERYD_OPTS="$CELERYD_OPTS $2"
+fi
+
+# Append the Django settings module to use, if specified
+if [ -n "$DJANGO_SETTINGS_MODULE" ]; then
+    CELERYD_OPTS="$CELERYD_OPTS --settings=$DJANGO_SETTINGS_MODULE"
 fi
 
 # Extra start-stop-daemon options, like user/group.
@@ -157,6 +167,9 @@ start_worker () {
                            $* \
                            --pidfile $CELERYD_PID_FILE
                            --exec $CELERYD -- $CELERYD_OPTS"
+    if [ -n "$VIRTUALENV" ]; then
+        source $VIRTUALENV/bin/activate
+    fi
     if $cmd; then
         log_end_msg 0
     else

@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 # =========================================================
 #  celerybeat - Starts the Celery periodic task scheduler.
 # =========================================================
@@ -39,10 +39,10 @@
 #   CELERYD="/opt/Project/manage.py celeryd"
 #
 #   # Path to celerybeat
-#   CELERYBEAT="/opt/Project/manage.py celerybeat"
+#   CELERYBEAT="/opt/Project/manage.py"
 #
 #   # Extra arguments to celerybeat
-#   CELERYBEAT_OPTS="--schedule=/var/run/celerybeat-schedule"
+#   CELERYBEAT_OPTS="celerybeat --schedule=/var/run/celerybeat-schedule"
 #
 # AVAILABLE OPTIONS
 # =================
@@ -69,7 +69,9 @@
 #
 #   * CELERYBEAT_GROUP
 #       Group to run celeryd as. Default is current user.
-
+#
+#   * VIRTUALENV
+#       Full path to the virtualenv environment to activate. Default is none.
 
 ### BEGIN INIT INFO
 # Provides:          celerybeat
@@ -106,6 +108,11 @@ CELERYBEAT_OPTS="$CELERYBEAT_OPTS -f $CELERYBEAT_LOG_FILE -l $CELERYBEAT_LOG_LEV
 
 if [ -n "$2" ]; then
     CELERYBEAT_OPTS="$CELERYBEAT_OPTS $2"
+fi
+
+# Append the Django settings module to use, if specified
+if [ -n "$DJANGO_SETTINGS_MODULE" ]; then
+    CELERYBEAT_OPTS="$CELERYBEAT_OPTS --settings=$DJANGO_SETTINGS_MODULE"
 fi
 
 # Extra start-stop-daemon options, like user/group.
@@ -165,6 +172,9 @@ start_worker () {
                            $* \
                            --pidfile $CELERYBEAT_PID_FILE
                            --exec $CELERYBEAT -- $CELERYBEAT_OPTS"
+    if [ -n "$VIRTUALENV" ]; then
+        source $VIRTUALENV/bin/activate
+    fi
     if $cmd; then
         log_end_msg 0
     else
