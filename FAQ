@@ -299,6 +299,48 @@ If you need to specify a custom result backend you should use
     >>> result = BaseAsyncResult(task_id, backend=...)
     >>> result.get()
 
+.. _faq-security:
+
+Security
+========
+
+Isn't using `pickle` a security concern?
+----------------------------------------
+
+**Answer**: Yes, indeed it is.
+
+You are right to have a security concern, as this can indeed be a real issue.
+It is essential that you protect against unauthorized
+access to your broker, databases and other services transmitting pickled
+data.
+
+For the task messages you can set the :setting:`CELERY_TASK_SERIALIZER`
+setting to "json" or "yaml" instead of pickle. There is
+currently no alternative solution for task results (but writing a
+custom result backend using JSON is a simple task)
+
+Note that this is not just something you should be aware of with Celery, for
+example also Django uses pickle for its cache client.
+
+Can messages be encrypted?
+--------------------------
+
+**Answer**: Some AMQP brokers supports using SSL (including RabbitMQ).
+You can enable this using the :setting:`BROKER_USE_SSL` setting.
+
+It is also possible to add additional encryption and security to messages,
+if you have a need for this then you should contact the :ref:`mailing-list`.
+
+Is it safe to run :program:`celeryd` as root?
+---------------------------------------------
+
+**Answer**: No!
+
+We're not currently aware of any security issues, but it would
+be incredibly naive to assume that they don't exist, so running
+the Celery services (:program:`celeryd`, :program:`celerybeat`,
+:program:`celeryev`, etc) as an unprivileged user is recommended.
+
 .. _faq-brokers:
 
 Brokers
@@ -307,7 +349,7 @@ Brokers
 Why is RabbitMQ crashing?
 -------------------------
 
-RabbitMQ will crash if it runs out of memory. This will be fixed in a
+**Answer:** RabbitMQ will crash if it runs out of memory. This will be fixed in a
 future release of RabbitMQ. please refer to the RabbitMQ FAQ:
 http://www.rabbitmq.com/faq.html#node-runs-out-of-memory
 
