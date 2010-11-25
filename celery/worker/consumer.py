@@ -306,8 +306,15 @@ class Consumer(object):
 
         # Handle task
         if message_data.get("task"):
+            def ack():
+                try:
+                    message.ack()
+                except self.connection_errors, exc:
+                    self.logger.critical(
+                            "Couldn't ack %r: message:%r reason:%r" % (
+                                message.delivery_tag, message_data, exc))
             try:
-                task = TaskRequest.from_message(message, message_data,
+                task = TaskRequest.from_message(message, message_data, ack,
                                                 app=self.app,
                                                 logger=self.logger,
                                                 hostname=self.hostname,

@@ -258,7 +258,7 @@ class TaskRequest(object):
             self._store_errors = self.task.store_errors_even_if_ignored
 
     @classmethod
-    def from_message(cls, message, message_data, **kw):
+    def from_message(cls, message, message_data, on_ack=noop, **kw):
         """Create request from a task message.
 
         :raises UnknownTaskError: if the message does not describe a task,
@@ -280,7 +280,7 @@ class TaskRequest(object):
                    retries=message_data.get("retries", 0),
                    eta=maybe_iso8601(message_data.get("eta")),
                    expires=maybe_iso8601(message_data.get("expires")),
-                   on_ack=message.ack,
+                   on_ack=on_ack,
                    delivery_info=delivery_info,
                    **kw)
 
