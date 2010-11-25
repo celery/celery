@@ -237,7 +237,7 @@ class CarrotListener(object):
             self.reset_connection()
             try:
                 self.consume_messages()
-            except (socket.error, AMQPConnectionException, IOError):
+            except (socket.error, AMQPConnectionException, IOError, OSError):
                 self.logger.error("CarrotListener: Connection to broker lost."
                                 + " Trying to re-establish connection...")
 
@@ -300,8 +300,16 @@ class CarrotListener(object):
 
         # Handle task
         if message_data.get("task"):
+            def ack():
+                try:
+                    message.ack()
+                except (socket.error, AMQPConnectionException,
+                        IOError, OSError), exc:
+                    self.logger.critical(
+                            "Couldn't ack %r: message:%r reason:%r" % (
+                                message.delivery_tag, message_data, exc))
             try:
-                task = TaskRequest.from_message(message, message_data,
+                task = TaskRequest.from_message(message, message_data, ack,
                                                 logger=self.logger,
                                                 hostname=self.hostname,
                                                 eventer=self.event_dispatcher)

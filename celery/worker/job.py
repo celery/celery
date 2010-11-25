@@ -266,8 +266,8 @@ class TaskRequest(object):
         return False
 
     @classmethod
-    def from_message(cls, message, message_data, logger=None, eventer=None,
-            hostname=None):
+    def from_message(cls, message, message_data, on_ack=noop, logger=None,
+            eventer=None, hostname=None):
         """Create a :class:`TaskRequest` from a task message sent by
         :class:`celery.messaging.TaskPublisher`.
 
@@ -293,7 +293,7 @@ class TaskRequest(object):
             raise InvalidTaskError("Task kwargs must be a dictionary.")
 
         return cls(task_name, task_id, args, kwdict(kwargs),
-                   retries=retries, on_ack=message.ack,
+                   retries=retries, on_ack=on_ack,
                    delivery_info=delivery_info, logger=logger,
                    eventer=eventer, hostname=hostname,
                    eta=eta, expires=expires)
