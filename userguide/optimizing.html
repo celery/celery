@@ -68,14 +68,12 @@
 <span id="id1"></span><h1>Optimizing<a class="headerlink" href="#optimizing" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="introduction">
 <h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
-<p>The default configuration, like any good default, is full of compromises.
-It is not tweaked to be optimal for any single use case, but tries to
-find middle ground that works <em>well enough</em> for most situations.</p>
-<p>There are key optimizations to be done if your application is mainly
-processing lots of short tasks, and also if you have fewer but very
-long tasks.</p>
-<p>Optimization here does not necessarily mean optimizing for runtime, but also
-optimizing resource usage and ensuring responsiveness at times of high load.</p>
+<p>The default configuration makes a lot of compromises.  It&#8217;s not optimal for
+any single case, but works well enough for most situations.</p>
+<p>There are optimizations that can be applied based on specific use cases.</p>
+<p>Optimizations can apply to different properties of the running environment,
+be it the time tasks take to execute, the amount of memory used, or
+responsiveness at times of high load.</p>
 </div>
 <div class="section" id="ensuring-operations">
 <h2>Ensuring Operations<a class="headerlink" href="#ensuring-operations" title="Permalink to this headline">¶</a></h2>
@@ -83,22 +81,23 @@ optimizing resource usage and ensuring responsiveness at times of high load.</p>
 back-of-the-envelope calculations by asking the question;</p>
 <blockquote>
 ❝ How much water flows out of the Mississippi River in a day? ❞</blockquote>
-<p>The point of this exercise[*] is to demonstrate that there is a limit
-to how much data a system can process in a timely manner, and teaches
-back of the envelope calculations as a means to plan for this ahead of time.</p>
-<p>This is very relevant to Celery; If a task takes 10 minutes to complete,
-and there are 10 new tasks coming in every minute, then this means
-the queue will <em>never be processed</em>.  This is why it&#8217;s very important
+<p>The point of this exercise[*] is to show that there is a limit
+to how much data a system can process in a timely manner.
+Back of the envelope calculations can be used as a means to plan for this
+ahead of time.</p>
+<p>In Celery; If a task takes 10 minutes to complete,
+and there are 10 new tasks coming in every minute, the queue will never
+be empty.  This is why it&#8217;s very important
 that you monitor queue lengths!</p>
-<p>One way to do this is by <a class="reference internal" href="monitoring.html#monitoring-munin"><em>using Munin</em></a>.
-You should set up alerts, so you are notified as soon as any queue has
-reached an unacceptable size, this way you can take appropriate action like
-adding new worker nodes, or revoking unnecessary tasks.</p>
+<p>A way to do this is by <a class="reference internal" href="monitoring.html#monitoring-munin"><em>using Munin</em></a>.
+You should set up alerts, that will notify you as soon as any queue has
+reached an unacceptable size.  This way you can take appropriate action
+like adding new worker nodes, or revoking unnecessary tasks.</p>
 <table class="docutils footnote" frame="void" id="id2" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
 <tr><td class="label">[*]</td><td>The chapter is available to read for free here:
-<a class="reference external" href="http://books.google.com/books?id=kse_7qbWbjsC&amp;pg=PA67">The back of the envelope</a>.  This book is a classic text, highly
+<a class="reference external" href="http://books.google.com/books?id=kse_7qbWbjsC&amp;pg=PA67">The back of the envelope</a>.  The book is a classic text. Highly
 recommended.</td></tr>
 </tbody>
 </table>
@@ -109,34 +108,34 @@ recommended.</td></tr>
 <span id="optimizing-prefetch-limit"></span><h3>Prefetch Limits<a class="headerlink" href="#prefetch-limits" title="Permalink to this headline">¶</a></h3>
 <p><em>Prefetch</em> is a term inherited from AMQP that is often misunderstood
 by users.</p>
-<p>The prefetch limit is a <strong>limit</strong> for the number of messages (tasks) a worker
-can reserve in advance.  If this is set to zero, the worker will keep
-consuming messages <em>ad infinitum</em>, not respecting that there may be other
+<p>The prefetch limit is a <strong>limit</strong> for the number of tasks (messages) a worker
+can reserve for itself.  If it is zero, the worker will keep
+consuming messages, not respecting that there may be other
 available worker nodes that may be able to process them sooner[#],
 or that the messages may not even fit in memory.</p>
-<p>The workers initial prefetch count is set by multiplying
-the <a class="reference internal" href="../configuration.html#std:setting-CELERYD_PREFETCH_MULTIPLIER"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYD_PREFETCH_MULTIPLIER</span></tt></a> setting by the number
-of child worker processes[#].  The default is 4 messages per child process.</p>
-<p>If you have many expensive tasks with a long duration you would want
+<p>The workers&#8217; default prefetch count is the
+<a class="reference internal" href="../configuration.html#std:setting-CELERYD_PREFETCH_MULTIPLIER"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYD_PREFETCH_MULTIPLIER</span></tt></a> setting multiplied by the number
+of child worker processes[#].</p>
+<p>If you have many tasks with a long duration you want
 the multiplier value to be 1, which means it will only reserve one
-unacknowledged task per worker process at a time.</p>
-<p>However &#8211; If you have lots of short tasks, and throughput/roundtrip latency
-is important to you, then you want this number to be large.  Say 64, or 128
-for example, as the worker is able to process a lot more <em>tasks/s</em> if the
-messages have already been prefetched in memory.  You may have to experiment
-to find the best value that works for you.</p>
-<p>If you have a combination of both very long and short tasks, then the best
-option is to use two worker nodes that is configured individually, and route
-the tasks accordingly (see <a class="reference internal" href="routing.html#guide-routing"><em>Routing Tasks</em></a>).</p>
+task per worker process at a time.</p>
+<p>However &#8211; If you have many short-running tasks, and throughput/roundtrip
+latency[#] is important to you, this number should be large. The worker is
+able to process more tasks per second if the messages have already been
+prefetched, and is available in memory.  You may have to experiment to find
+the best value that works for you.  Values like 50 or 150 might make sense in
+these circumstances. Say 64, or 128.</p>
+<p>If you have a combination of long- and short-running tasks, the best option
+is to use two worker nodes that are configured separatly, and route
+the tasks according to the run-time. (see <a class="reference internal" href="routing.html#guide-routing"><em>Routing Tasks</em></a>).</p>
 <table class="docutils footnote" frame="void" id="id3" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label">[†]</td><td>RabbitMQ and other brokers will deliver the messages in round-robin,
-so this doesn&#8217;t apply to an active system.  But if there is no prefetch
+<tr><td class="label">[†]</td><td>RabbitMQ and other brokers deliver messages round-robin,
+so this doesn&#8217;t apply to an active system.  If there is no prefetch
 limit and you restart the cluster, there will be timing delays between
-nodes starting, so if there are 3 offline nodes and one active node,
-then all messages will be delivered to the active node while the others
-are offline.</td></tr>
+nodes starting. If there are 3 offline nodes and one active node,
+all messages will be delivered to the active node.</td></tr>
 </tbody>
 </table>
 <table class="docutils footnote" frame="void" id="id4" rules="none">
@@ -152,14 +151,14 @@ are offline.</td></tr>
 <p>When using early acknowledgement (default), a prefetch multiplier of 1
 means the worker will reserve at most one extra task for every active
 worker process.</p>
-<p>Often when users ask if it&#8217;s possible to disable &#8220;prefetching of tasks&#8221;,
-what they really want is to have a worker only reserve as many tasks
-as there are child processes at a time.</p>
-<p>Sadly, this requirement is not possible without enabling late
+<p>When users ask if it&#8217;s possible to disable &#8220;prefetching of tasks&#8221;, often
+what they really want is to have a worker only reserve as many tasks as there
+are child processes.</p>
+<p>But this is not possible without enabling late acknowledgements
 acknowledgements; A task that has been started, will be
 retried if the worker crashes mid execution so the task must be <a class="reference external" href="http://en.wikipedia.org/wiki/Reentrant_(subroutine)">reentrant</a>
 (see also notes at <a class="reference internal" href="../faq.html#faq-acks-late-vs-retry"><em>Should I use retry or acks_late?</em></a>).</p>
-<p>You can enable this behavior by using the following configuration:</p>
+<p>You can enable this behavior by using the following configuration options:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_ACKS_LATE</span> <span class="o">=</span> <span class="bp">True</span>
 <span class="n">CELERYD_PREFETCH_MULTIPLIER</span> <span class="o">=</span> <span class="mi">1</span>
 </pre></div>
@@ -167,9 +166,10 @@ retried if the worker crashes mid execution so the task must be <a class="refere
 </div>
 <div class="section" id="rate-limits">
 <h3>Rate Limits<a class="headerlink" href="#rate-limits" title="Permalink to this headline">¶</a></h3>
-<p>The subsystem responsible for enforcing rate limits introduces extra
-complexity, so if you&#8217;re not using rate limits it may be a good idea to
-disable them completely.</p>
+<p>The system responsible for enforcing rate limits introduces some overhead,
+so if you&#8217;re not using rate limits it may be a good idea to
+disable them completely.  This will disable one thread, and it won&#8217;t
+spend as many CPU cycles when the queue is inactive.</p>
 <p>Set the <a class="reference internal" href="../configuration.html#std:setting-CELERY_DISABLE_RATE_LIMITS"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_DISABLE_RATE_LIMITS</span></tt></a> setting to disable
 the rate limit subsystem:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_DISABLE_RATE_LIMITS</span> <span class="o">=</span> <span class="bp">True</span>
