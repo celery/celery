@@ -896,6 +896,8 @@ george@vandelay.com and kramer@vandelay.com:
     # EMAIL_HOST_USER = "servers"
     # EMAIL_HOST_PASSWORD = "s3cr3t"
 
+    EMAIL_TIMEOUT = 2   # two seconds is the default
+
 .. _conf-events:
 
 Events
