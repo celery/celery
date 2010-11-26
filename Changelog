@@ -13,6 +13,9 @@
 
 .. _v214-fixes:
 
+Fixes
+-----
+
 * Error email body now uses `repr(exception)` instead of `str(exception)`,
   as the latter could result in Unicode decode errors (Issue #245).
 
@@ -26,7 +29,13 @@
 
 * `celeryd`: The broadcast consumer is now closed if the connection is reset.
 
+* `celeryd`: Now properly handles errors occurring while trying to acknowledge
+  the message.
+
 .. _v214-documentation:
+
+Documentation
+-------------
 
 * Adding :ref:`contributing`.
 
@@ -35,7 +44,6 @@
 * Added :ref:`faq-security` section to the FAQ.
 
 * Periodic Task User Guide: Fixed typo in crontab example table (Issue #239).
-
 
 .. _version-2.1.3:
 
