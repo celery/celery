@@ -13,6 +13,69 @@
 :status: in-progress
 :branch: master
 
+2.1.4
+=====
+:release-data: TBA
+
+.. _v214-fixes:
+
+Fixes
+-----
+
+* Error email body now uses `repr(exception)` instead of `str(exception)`,
+  as the latter could result in Unicode decode errors (Issue #245).
+
+* Error e-mail timeout value is now configurable by using the
+  :setting:`EMAIL_TIMEOUT` setting.
+
+* `celeryev`: Now works on Windows (but the curses monitor won't work without
+  having curses).
+
+* Unit test output no longer emits non-standard characters.
+
+* `celeryd`: The broadcast consumer is now closed if the connection is reset.
+
+* `celeryd`: Now properly handles errors occurring while trying to acknowledge
+  the message.
+
+.. _v214-documentation:
+
+Documentation
+-------------
+
+* Adding :ref:`contributing`.
+
+* Added :ref:`guide-optimizing`.
+
+* Added :ref:`faq-security` section to the FAQ.
+
+* Periodic Task User Guide: Fixed typo in crontab example table (Issue #239).
+
+.. _version-2.1.3:
+
+2.1.3
+=====
+:release-date: 2010-11-09 17:00 PM CEST
+
+.. _v213-fixes:
+
+* Fixed deadlocks in `timer2` which could lead to `djcelerymon`/`celeryev -c`
+  hanging.
+
+* `EventReceiver`: now sends heartbeat request to find workers.
+
+    This means :program:`celeryev` and friends finds workers immediately
+    at startup.
+
+* celeryev cursesmon: Set screen_delay to 10ms, so the screen refreshes more
+  often.
+
+* Fixed pickling errors when pickling :class:`AsyncResult` on older Python
+  versions.
+
+* celeryd: prefetch count was decremented by eta tasks even if there
+  were no active prefetch limits.
+
 
 .. _version-2.1.2:
 
