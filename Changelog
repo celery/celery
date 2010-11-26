@@ -13,6 +13,161 @@
 :status: in-progress
 :branch: master
 
+.. _v210-important:
+
+Important Notes
+---------------
+
+* Carrot has been replaced with `Kombu`_
+
+    Kombu is the next generation messaging framework for Python.
+
+    It fixes a lot of obvious flaws with Carrot that was impossible
+    to fix without breaking backward compatibility, and also it adds,
+
+    * First-class support for virtual transports; Redis, Django ORM,
+      SQLAlchemy, Beanstalk, MongoDB and CouchDB.
+    * consistent error handling with introspection,
+    * the ability to ensure that an operation is performed by gracefully
+      handling connection and channel errors,
+    * message compression (zlib, bzip2, or custom compression schemes).
+
+    This means that `ghettoq` is no longer needed as the
+    functionality it provided is already available in Celery by default.
+    The virtual transports are also more feature complete with support
+    for exchanges (direct and topic).  The Redis transport even supports
+    fanout exchanges which means it handles remote control commands.
+
+.. _`Kombu`: http://pypi.python.org/pypi/kombu
+
+* The magic keyword arguments are now available as `task.request`.
+
+    Tasks can choose not to accept magic keyword arguments by setting
+    `task.accept_magic_kwargs=False`.
+
+    Available request keys:
+
+    =====================================  ===================================
+    **Magic Keyword Argument**             **Replace with**
+    =====================================  ===================================
+    `kwargs["task_id"]`                    `self.request.id`
+    `kwargs["delivery_info"]`              `self.request.delivery_info`
+    `kwargs["task_retries"]`               `self.request.retries`
+    `kwargs["logfile"]`                    `self.request.logfile`
+    `kwargs["loglevel"]`                   `self.request.loglevel`
+    `kwargs["task_is_eager`                `self.request.is_eager`
+    **NEW**                                `self.request.args`
+    **NEW**                                `self.request.kwargs`
+    =====================================  ===================================
+
+    The following methods now automatically uses the current context, so you
+    don't have to pass kwargs manually anymore:
+
+        * task.retry
+        * task.get_logger
+        * task.update_state
+
+* `celeryd`: Now supports Autoscaling of child worker processes.
+
+    The :option:`--autoscale` option can be used to configure the minimum
+    and maximum number of child worker processes::
+
+        --autoscale=AUTOSCALE
+             Enable autoscaling by providing
+             max_concurrency,min_concurrency.  Example:
+               --autoscale=10,3 (always keep 3 processes, but grow to
+              10 if necessary).
+
+* Events are now transient and is using a topic exchange (instead of direct).
+
+    The `CELERYD_EVENT_EXCHANGE`, `CELERYD_EVENT_ROUTING_KEY`,
+    `CELERYD_EVENT_EXCHANGE_TYPE` settings are no longer in use.
+
+    This means events will not be stored until there is a consumer, and the
+    events will be gone as soon as the consumer stops.  Also it means there
+    can be multiple monitors running at the same time.
+
+    The routing key of an event is the type of event (e.g. `worker.started`,
+    `worker.heartbeat`, `task.succeeded`, etc.  This means a consumer can
+    filter on specific types, to only be alerted of the events it cares about.
+
+    Each consumer will create a unique queue, meaning it is in effect a
+    broadcast exchange.
+
+    This opens up a lot of possibilities, for example the workers could listen
+    for worker events, to know what workers are in the neighborhood, and even
+    restart workers when they go down (or use this information to optimize
+    tasks/autoscaling).
+
+    The event exchange has been renamed from "celeryevent" to "celeryev" so it
+    does not collide with older versions.
+
+* `celeryd` now starts without configuration, and configuration can be
+  specified directly on the command line.
+
+  Configuration options must appear after the last argument, separated
+  by two dashes::
+
+      $ celeryd -l info -I tasks -- broker.host=localhost broker.vhost=/app
+
+* Configuration is now an alias to the original configuration, so changes
+  to the original will reflect Celery at runtime.
+
+* `celery.conf` has been deprecated, and modifying `celery.conf.ALWAYS_EAGER`
+  will no longer have any effect.
+
+    The default configuration is now available in the
+    :mod:`celery.app.defaults` module.  The available configuration options
+    and their types can now be introspected.
+
+* Remote control commands are now provided by `kombu.pidbox`, the generic
+  process mailbox.
+
+* `celery.worker.listener` has been renamed to `celery.worker.consumer`,
+  and `.CarrotListener` is now `.Consumer`.
+
+* Previously deprecated modules `celery.models` and
+  `celery.management.commands` has now been removed as per the deprecation
+  timeline.
+
+
+
+.. _v220-news:
+
+News
+----
+
+* Added support for message compression using the
+  :setting:`CELERY_MESSAGE_COMPRESSION` setting, or the `compression` argument
+  to `apply_async`.  This can also be set using routers.
+
+* `TaskSetResult.join_native`: Backend-optimized version of `join()`.
+
+    If available, this version uses the backends ability to retrieve
+    multiple results at once, unlike `join()` which fetches the results
+    one by one.
+
+    So far only supported by the AMQP result backend. Support for memcached
+    and Redis will be added later.
+
+* `celerybeat`: Now has built-in daemonization support using the `--detach``
+   option.
+
+* Added :setting:`CELERY_SEND_TASK_SENT_EVENT` setting.
+
+    If enabled an event will be sent out with every task, so monitors can
+    track tasks before the workers receive them.
+
+* `celerybeat`: Now reuses the connection.
+
+* The configuration module and loader to use can now be specified on
+  the command line.
+
+    For example::
+
+        $ celeryd --config=celeryconfig.py --loader=myloader.Loader
+
+
 2.1.4
 =====
 :release-data: TBA
