@@ -4,28 +4,10 @@ import sys
 from optparse import OptionParser, BadOptionError, make_option as Option
 
 from celery import __version__
+from celery.bin.base import daemon_options
 from celery.platforms import create_daemon_context
 
-OPTION_LIST = (
-        Option('-f', '--logfile', default=None,
-               action="store", dest="logfile",
-               help="Path to the logfile"),
-        Option('--pidfile', default="celeryd.pid",
-               action="store", dest="pidfile",
-               help="Path to the pidfile."),
-        Option('--uid', default=None,
-               action="store", dest="uid",
-               help="Effective user id to run as when detached."),
-        Option('--gid', default=None,
-               action="store", dest="gid",
-               help="Effective group id to run as when detached."),
-        Option('--umask', default=0,
-               action="store", type="int", dest="umask",
-               help="Umask of the process when detached."),
-        Option('--workdir', default=None,
-               action="store", dest="working_directory",
-               help="Directory to change to when detached."),
-)
+OPTION_LIST = daemon_options(default_pidfile="celeryd.pid")
 
 
 class detached(object):

@@ -111,3 +111,26 @@ class Command(object):
 
     def _get_default_app(self, *args, **kwargs):
         return celery.Celery(*args, **kwargs)
+
+
+def daemon_options(default_pidfile, default_logfile=None):
+    return (
+        Option('-f', '--logfile', default=default_logfile,
+               action="store", dest="logfile",
+               help="Path to the logfile"),
+        Option('--pidfile', default=default_pidfile,
+               action="store", dest="pidfile",
+               help="Path to the pidfile."),
+        Option('--uid', default=None,
+               action="store", dest="uid",
+               help="Effective user id to run as when detached."),
+        Option('--gid', default=None,
+               action="store", dest="gid",
+               help="Effective group id to run as when detached."),
+        Option('--umask', default=0,
+               action="store", type="int", dest="umask",
+               help="Umask of the process when detached."),
+        Option('--workdir', default=None,
+               action="store", dest="working_directory",
+               help="Directory to change to when detached."),
+)

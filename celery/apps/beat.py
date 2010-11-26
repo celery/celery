@@ -1,3 +1,4 @@
+import atexit
 import socket
 import sys
 import traceback
@@ -27,7 +28,7 @@ class Beat(object):
     def __init__(self, loglevel=None, logfile=None, schedule=None,
             max_interval=None, scheduler_cls=None, app=None,
             socket_timeout=30, redirect_stdouts=None,
-            redirect_stdouts_level=None, **kwargs):
+            redirect_stdouts_level=None, pidfile=None, **kwargs):
         """Starts the celerybeat task scheduler."""
         self.app = app = app_or_default(app)
 
@@ -42,6 +43,7 @@ class Beat(object):
                                  app.conf.CELERY_REDIRECT_STDOUTS)
         self.redirect_stdouts_level = (redirect_stdouts_level or
                                        app.conf.CELERY_REDIRECT_STDOUTS_LEVEL)
+        self.pidfile = pidfile
 
         if not isinstance(self.loglevel, int):
             self.loglevel = LOG_LEVELS[self.loglevel.upper()]
@@ -65,6 +67,9 @@ class Beat(object):
 
     def start_scheduler(self, logger=None):
         c = self.colored
+        if self.pidfile:
+            pidlock = platforms.create_pidlock(self.pidfile).acquire()
+            atexit.register(pidlock.release)
         beat = self.Service(app=self.app,
                             logger=logger,
                             max_interval=self.max_interval,
