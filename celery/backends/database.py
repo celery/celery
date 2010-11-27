@@ -58,11 +58,11 @@ class DatabaseBackend(BaseDictBackend):
         session = self.ResultSession()
         try:
             task = session.query(Task).filter(Task.task_id == task_id).first()
-            if not task:
+            if task is None:
+                from celery import states
                 task = Task(task_id)
-                session.add(task)
-                session.flush()
-                session.commit()
+                task.status = states.PENDING
+
             return task.to_dict()
         finally:
             session.close()
