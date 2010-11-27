@@ -74,6 +74,8 @@ import socket
 import sys
 import warnings
 
+from Queue import Empty, Queue
+
 from celery.app import app_or_default
 from celery.datastructures import AttributeDict, SharedCounter
 from celery.exceptions import NotRegistered
@@ -86,6 +88,22 @@ from celery.worker.heartbeat import Heart
 
 RUN = 0x1
 CLOSE = 0x2
+
+
+class MethodQueue(Queue):
+
+    def delegate(self, fun, *args, **kwargs):
+        self.put_nowait((fun, args, kwargs))
+
+    def drain(self):
+        while 1:
+            try:
+                m = self.get_nowait()
+            except Empty:
+                break
+            else:
+                method, margs, mkwargs = m
+                method(*margs, **mkwargs)
 
 
 class QoS(object):
@@ -211,6 +229,8 @@ class Consumer(object):
         self.event_dispatcher = None
         self.heart = None
         self.pool = pool
+        self.method_queue = MethodQueue()
+        self.pool.method_queue = self.method_queue; # FIXME Ahg ahg ahg.
         pidbox_state = AttributeDict(app=self.app,
                                      logger=logger,
                                      hostname=self.hostname,
@@ -440,7 +460,11 @@ class Consumer(object):
 
     def _mainloop(self):
         while 1:
-            yield self.connection.drain_events()
+            self.method_queue.drain()
+            try:
+                yield self.connection.drain_events(timeout=0.1)
+            except socket.timeout:
+                pass
 
     def _open_connection(self):
         """Open connection.  May retry opening the connection if configuration
