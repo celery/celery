@@ -161,7 +161,10 @@ class BaseDictBackend(BaseBackend):
 
     def get_status(self, task_id):
         """Get the status of a task."""
-        return self.get_task_meta(task_id)["status"]
+        task_meta = self.get_task_meta(task_id)
+        if task_meta is None:
+            return states.PENDING
+        return task_meta['status']
 
     def get_traceback(self, task_id):
         """Get the traceback for a failed task."""
@@ -180,7 +183,7 @@ class BaseDictBackend(BaseBackend):
             return self._cache[task_id]
 
         meta = self._get_task_meta_for(task_id)
-        if cache and meta.get("status") == states.SUCCESS:
+        if cache and meta and meta.get("status") == states.SUCCESS:
             self._cache[task_id] = meta
         return meta
 
