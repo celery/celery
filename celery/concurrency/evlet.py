@@ -1,120 +1,44 @@
-
-import threading
-
 from eventlet import GreenPile, GreenPool
 from eventlet import hubs
-from eventlet import spawn_n
-from eventlet.greenthread import sleep
-from Queue import Empty, Queue as LightQueue
+from eventlet import spawn
+from eventlet.queue import LightQueue
 
-from celery import log
-from celery.utils.functional import partial
-from celery.datastructures import ExceptionInfo
-
-RUN = 0x1
-CLOSE = 0x2
-TERMINATE = 0x3
+from celery.concurrency.base import apply_target, BasePool
 
 
-accept_lock = threading.Lock()
+class TaskPool(BasePool):
 
+    def _forever_wait_for_pile(self):
+        avail = self._avail
+        pile = self._pile
 
-def do_work(target, args=(), kwargs={}, callback=None,
-        accept_callback=None, method_queue=None):
-    method_queue.delegate(accept_callback)
-    callback(target(*args, **kwargs))
-
-
-class Waiter(threading.Thread):
-
-    def __init__(self, inqueue, limit):
-        self.inqueue = inqueue
-        self.limit = limit
-        self._state = None
-        threading.Thread.__init__(self)
-
-    def run(self):
-        hubs.use_hub()
-        pool = GreenPool(self.limit)
-        pile = GreenPile(pool)
-        self._state = RUN
-        inqueue = self.inqueue
-
-        def get_from_queue_forever():
-            while self._state == RUN:
-                try:
-                    print("+INQUEUE GET")
-                    m = inqueue.get_nowait()
-                    print("-INQUEUE GET")
-                except Empty:
-                    sleep(0.3)
-                else:
-                    print("+SPAWN")
-                    pile.spawn(*m)
-                    print("-SPAWN")
-
-        def wait_for_pile_forever():
-            while self._state == RUN:
-                print("+CALLING PILE NEXT")
+        while self.active:
+            try:
+                avail.queue.clear()
                 pile.next()
-                print("-CALLING PILE NEXT")
+            except StopIteration:
+                avail.get(block=True)  # wait for task
 
-        spawn_n(get_from_queue_forever)
-        spawn_n(wait_for_pile_forever)
+    def on_start(self):
+        hubs.use_hub()
+        self._avail = LightQueue()
+        self._pool = GreenPool(self.limit)
+        self._pile = GreenPile(self._pool)
 
-        while self._state == RUN:
-            sleep(0.1)
+        spawn(self._forever_wait_for_pile)
 
+    def on_stop(self):
+        if self._pool is not None:
+            self._pool.waitall()
 
+    def on_apply(self, target, args=None, kwargs=None, callback=None,
+            accept_callback=None, **_):
+        self._pile.spawn(apply_target, target, args, kwargs,
+                         callback, accept_callback)
+        self._avail.put(1)  # notify waiters of new tasks.
 
-class TaskPool(object):
-    _state = None
-
-    def __init__(self, limit, logger=None, **kwargs):
-        self.limit = limit
-        self.logger = logger or log.get_default_logger()
-        self._pool = None
-
-    def start(self):
-        self._state = RUN
-        self._out = LightQueue()
-        self._waiter = Waiter(self._out, self.limit)
-        self._waiter.start()
-
-    def stop(self):
-        self._state = CLOSE
-        self._pool.pool.waitall()
-        self._waiter._state = TERMINATE
-        self._state = TERMINATE
-
-    def apply_async(self, target, args=None, kwargs=None, callbacks=None,
-            errbacks=None, accept_callback=None, **compat):
-        if self._state != RUN:
-            return
-        args = args or []
-        kwargs = kwargs or {}
-        callbacks = callbacks or []
-        errbacks = errbacks or []
-
-        on_ready = partial(self.on_ready, callbacks, errbacks)
-
-        self.logger.debug("GreenPile: Spawn %s (args:%s kwargs:%s)" % (
-            target, args, kwargs))
-
-        print("+OUTQUEUE.PUT")
-        self._out.put((do_work, target, args, kwargs,
-                      on_ready, accept_callback, self.method_queue))
-        print("-OUTQUEUE.PUT")
-
-
-    def on_ready(self, callbacks, errbacks, ret_value):
-        """What to do when a worker task is ready and its return value has
-        been collected."""
-
-        if isinstance(ret_value, ExceptionInfo):
-            if isinstance(ret_value.exception, (
-                    SystemExit, KeyboardInterrupt)): # pragma: no cover
-                raise ret_value.exception
-            [errback(ret_value) for errback in errbacks]
-        else:
-            [callback(ret_value) for callback in callbacks]
+    @classmethod
+    def on_import(cls):
+        import eventlet
+        eventlet.monkey_patch()
+TaskPool.on_import()
