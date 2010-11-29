@@ -4,6 +4,7 @@ import traceback
 from multiprocessing.util import Finalize
 
 from celery import beat
+from celery import concurrency as _concurrency
 from celery import registry
 from celery import platforms
 from celery import signals
@@ -114,7 +115,8 @@ class WorkController(object):
         if send_events is None:
             send_events = conf.CELERY_SEND_EVENTS
         self.send_events = send_events
-        self.pool_cls = pool_cls or conf.CELERYD_POOL
+        self.pool_cls = _concurrency.get_implementation(
+                            pool_cls or conf.CELERYD_POOL)
         self.consumer_cls = consumer_cls or conf.CELERYD_CONSUMER
         self.mediator_cls = mediator_cls or conf.CELERYD_MEDIATOR
         self.eta_scheduler_cls = eta_scheduler_cls or \
