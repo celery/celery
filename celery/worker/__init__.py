@@ -153,7 +153,7 @@ class WorkController(object):
             Finalize(persistence, persistence.save, exitpriority=5)
 
         # Queues
-        if disable_rate_limits:
+        if self.disable_rate_limits:
             self.ready_queue = FastQueue()
             self.ready_queue.put = self.process_task
         else:
@@ -184,15 +184,29 @@ class WorkController(object):
                                           logger=self.logger)
 
         self.mediator = None
-        if not disable_rate_limits:
+        if not self.disable_rate_limits:
             self.mediator = instantiate(self.mediator_cls, self.ready_queue,
                                         app=self.app,
                                         callback=self.process_task,
                                         logger=self.logger)
-        self.scheduler = instantiate(self.eta_scheduler_cls,
-                                     precision=eta_scheduler_precision,
-                                     on_error=self.on_timer_error,
-                                     on_tick=self.on_timer_tick)
+
+        class DummyTimer(object):
+
+            def start(self):
+                pass
+
+            def stop(self):
+                pass
+
+            def clear(self):
+                pass
+
+
+        #self.scheduler = instantiate(self.eta_scheduler_cls,
+        #                        precision=eta_scheduler_precision,
+        #                        on_error=self.on_timer_error,
+        #                        on_tick=self.on_timer_tick)
+        self.scheduler = DummyTimer()
 
         self.beat = None
         if self.embed_clockservice:
