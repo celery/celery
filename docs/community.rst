@@ -56,6 +56,10 @@ http://botland.oebfare.com/logger/celery/
 News
 ====
 
+Celery: Mini Tutorial (Catalan)
+-------------------------------
+http://trespams.com/2010/11/28/celery-mini-tutorial/
+
 Building a Django App Server with Chef
 --------------------------------------
 http://ericholscher.com/blog/2010/nov/11/building-django-app-server-chef-part-4/
