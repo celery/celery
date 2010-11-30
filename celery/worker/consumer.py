@@ -249,6 +249,8 @@ class Consumer(object):
         self.logger.debug("Consumer: Ready to accept tasks!")
 
         while 1:
+            if not self.connection:
+                break
             if self.qos.prev != self.qos.next:
                 self.qos.update()
             self.connection.drain_events()
@@ -436,7 +438,7 @@ class Consumer(object):
 
     def restart_heartbeat(self):
         self.heart = Heart(self.event_dispatcher)
-        #self.heart.start()
+        self.heart.start()
 
     def _mainloop(self):
         while 1:

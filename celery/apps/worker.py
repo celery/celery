@@ -43,7 +43,7 @@ class Worker(object):
             max_tasks_per_child=None, queues=None, events=False, db=None,
             include=None, app=None, pidfile=None,
             redirect_stdouts=None, redirect_stdouts_level=None,
-            autoscale=None, scheduler_cls=None, **kwargs):
+            autoscale=None, scheduler_cls=None, pool=None, **kwargs):
         self.app = app = app_or_default(app)
         self.concurrency = (concurrency or
                             app.conf.CELERYD_CONCURRENCY or
@@ -68,6 +68,7 @@ class Worker(object):
                                  app.conf.CELERY_REDIRECT_STDOUTS)
         self.redirect_stdouts_level = (redirect_stdouts_level or
                                        app.conf.CELERY_REDIRECT_STDOUTS_LEVEL)
+        self.pool = (pool or app.conf.CELERYD_POOL)
         self.db = db
         self.use_queues = queues or []
         self.queues = None
@@ -207,7 +208,8 @@ class Worker(object):
                                 max_tasks_per_child=self.max_tasks_per_child,
                                 task_time_limit=self.task_time_limit,
                                 task_soft_time_limit=self.task_soft_time_limit,
-                                autoscale=self.autoscale)
+                                autoscale=self.autoscale,
+                                pool_cls=self.pool)
         self.install_platform_tweaks(worker)
         worker.start()
 
@@ -257,7 +259,6 @@ def install_worker_int_handler(worker):
             install_worker_int_again_handler(worker)
             worker.logger.warn("celeryd: Warm shutdown (%s)" % (
                 process_name))
-            worker.stop()
         raise SystemExit()
 
     platforms.install_signal_handler("SIGINT", _stop)
@@ -270,8 +271,7 @@ def install_worker_int_again_handler(worker):
         if process_name == "MainProcess":
             worker.logger.warn("celeryd: Cold shutdown (%s)" % (
                 process_name))
-            worker.terminate()
-        raise SystemExit()
+        raise SystemTerminate()
 
     platforms.install_signal_handler("SIGINT", _stop)
 

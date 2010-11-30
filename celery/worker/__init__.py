@@ -9,6 +9,7 @@ from celery import registry
 from celery import platforms
 from celery import signals
 from celery.app import app_or_default
+from celery.exceptions import SystemTerminate
 from celery.log import SilenceRepeated
 from celery.utils import noop, instantiate
 
@@ -192,23 +193,10 @@ class WorkController(object):
                                         callback=self.process_task,
                                         logger=self.logger)
 
-        class DummyTimer(object):
-
-            def start(self):
-                pass
-
-            def stop(self):
-                pass
-
-            def clear(self):
-                pass
-
-
-        #self.scheduler = instantiate(self.eta_scheduler_cls,
-        #                        precision=eta_scheduler_precision,
-        #                        on_error=self.on_timer_error,
-        #                        on_tick=self.on_timer_tick)
-        self.scheduler = DummyTimer()
+        self.scheduler = instantiate(self.eta_scheduler_cls,
+                                precision=eta_scheduler_precision,
+                                on_error=self.on_timer_error,
+                                on_tick=self.on_timer_tick)
 
         self.beat = None
         if self.embed_clockservice:
@@ -248,7 +236,7 @@ class WorkController(object):
             self.logger.debug("Starting thread %s..." % (
                                     component.__class__.__name__))
             self._running = i + 1
-            component.start()
+            self.pool.blocking(component.start)
 
     def process_task(self, wrapper):
         """Process task by sending it to the pool of workers."""
@@ -259,16 +247,20 @@ class WorkController(object):
             except Exception, exc:
                 self.logger.critical("Internal error %s: %s\n%s" % (
                                 exc.__class__, exc, traceback.format_exc()))
+        except SystemTerminate:
+            self.terminate()
+            raise SystemExit()
         except (SystemExit, KeyboardInterrupt):
             self.stop()
+            raise SystemExit()
 
     def stop(self):
         """Graceful shutdown of the worker server."""
-        self._shutdown(warm=True)
+        self.pool.blocking(self._shutdown, warm=True)
 
     def terminate(self):
         """Not so graceful shutdown of the worker server."""
-        self._shutdown(warm=False)
+        self.pool.blocking(self._shutdown, warm=False)
 
     def _shutdown(self, warm=True):
         what = (warm and "stopping" or "terminating").capitalize()
