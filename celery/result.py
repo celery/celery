@@ -355,6 +355,11 @@ class TaskSetResult(object):
                         time.time() >= time_start + timeout):
                     raise TimeoutError("join operation timed out.")
 
+    def iter_native(self, timeout=None):
+        backend = self.subtasks[0].backend
+        ids = [subtask.task_id for subtask in self.subtasks]
+        return backend.get_many(ids, timeout=timeout)
+
     def join_native(self, timeout=None, propagate=True):
         """Backend optimized version of :meth:`join`.
 
@@ -368,9 +373,9 @@ class TaskSetResult(object):
         """
         backend = self.subtasks[0].backend
         results = PositionQueue(length=self.total)
-        ids = [subtask.task_id for subtask in self.subtasks]
 
-        states = backend.get_many(ids, timeout=timeout)
+        ids = [subtask.task_id for subtask in self.subtasks]
+        states = dict(backend.get_many(ids, timeout=timeout))
 
         for task_id, meta in states.items():
             index = self.subtasks.index(task_id)

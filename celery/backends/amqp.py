@@ -207,7 +207,6 @@ class AMQPBackend(BaseDictBackend):
             consumer = self._create_consumer(bindings, channel)
             consumer.consume()
             ids = set(task_ids)
-            results = {}
             cached_ids = set()
             for task_id in ids:
                 try:
@@ -216,21 +215,20 @@ class AMQPBackend(BaseDictBackend):
                     pass
                 else:
                     if cached["status"] in states.READY_STATES:
-                        results[task_id] = cached
+                        yield task_id, cached
                         cached_ids.add(task_id)
             ids ^= cached_ids
             try:
                 while ids:
                     r = self.drain_events(consumer, timeout=timeout)
-                    results.update(r)
                     ids ^= set(r.keys())
+                    for ready_id, ready_meta in r.items():
+                        yield ready_id, ready_meta
             finally:
                 consumer.cancel()
         finally:
             channel.close()
             conn.release()
-
-    return results
 
     def close(self):
         if self._pool is not None:
