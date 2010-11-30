@@ -103,6 +103,9 @@ class BasePool(object):
                 traceback.format_exc(), ),
                 exc_info=sys.exc_info())
 
+    def blocking(self, fun, *args, **kwargs):
+        return fun(*args, **kwargs)
+
     def _get_info(self):
         return {}
 

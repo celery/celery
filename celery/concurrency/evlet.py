@@ -19,6 +19,9 @@ class TaskPool(BasePool):
         self._pool.spawn(apply_target, target, args, kwargs,
                          callback, accept_callback)
 
+    def blocking(self, fun, *args, **kwargs):
+        return spawn(fun, *args, **kwargs).wait()
+
     @classmethod
     def on_import(cls):
         import eventlet
