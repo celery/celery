@@ -440,10 +440,6 @@ class Consumer(object):
         self.heart = Heart(self.event_dispatcher)
         self.heart.start()
 
-    def _mainloop(self):
-        while 1:
-            yield self.connection.drain_events()
-
     def _open_connection(self):
         """Open connection.  May retry opening the connection if configuration
         allows that."""
