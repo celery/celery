@@ -154,7 +154,8 @@ class AMQPBackend(BaseDictBackend):
                 payload = self._cache[task_id] = result.payload
                 return payload
             elif task_id in self._cache:
-                return self._cache[task_id]     # use previously received state.
+                # use previously received state.
+                return self._cache[task_id]
             return {"status": states.PENDING, "result": None}
         finally:
             channel.close()

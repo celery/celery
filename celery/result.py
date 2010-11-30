@@ -192,7 +192,6 @@ class AsyncResult(BaseAsyncResult):
                                           task_name=task_name, app=app)
 
 
-
 class TaskSetResult(object):
     """Working with :class:`~celery.task.sets.TaskSet` results.
 
@@ -382,7 +381,6 @@ class TaskSetResult(object):
             results[index] = meta["result"]
 
         return list(results)
-
 
     def save(self, backend=None):
         """Save taskset result for later retrieval using :meth:`restore`.

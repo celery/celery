@@ -4,7 +4,6 @@ import unittest2 as unittest
 from itertools import cycle
 
 from celery.concurrency import processes as mp
-from celery.concurrency.base import BasePool
 from celery.datastructures import ExceptionInfo
 from celery.utils import noop
 

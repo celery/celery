@@ -81,7 +81,6 @@ class BasePool(object):
                              error_callback=on_worker_error,
                              waitforslot=self.putlocks)
 
-
     def on_ready(self, callbacks, errbacks, ret_value):
         """What to do when a worker task is ready and its return value has
         been collected."""
@@ -121,5 +120,3 @@ class BasePool(object):
     @property
     def active(self):
         return self._state == self.RUN
-
-

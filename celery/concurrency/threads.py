@@ -1,4 +1,3 @@
-import threading
 from threadpool import ThreadPool, WorkRequest
 
 from celery.concurrency.base import apply_target, BasePool

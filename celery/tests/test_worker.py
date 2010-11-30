@@ -517,7 +517,6 @@ class test_WorkController(unittest.TestCase):
         self.assertRaises(KeyboardInterrupt, worker.process_task, task)
         self.assertEqual(worker._state, worker.TERMINATE)
 
-
     def test_process_task_raise_regular(self):
         worker = self.worker
         worker.pool = MockPool(raise_regular=True)

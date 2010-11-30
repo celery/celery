@@ -1,11 +1,8 @@
 import pickle
-import sys
 import unittest2 as unittest
 
 from celery import utils
 from celery.utils import promise, mpromise, maybe_promise
-
-from celery.tests.utils import execute_context, mask_modules
 
 
 def double(x):

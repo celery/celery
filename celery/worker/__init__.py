@@ -250,7 +250,6 @@ class WorkController(object):
             self.stop()
             raise exc
 
-
     def process_task(self, wrapper):
         """Process task by sending it to the pool of workers."""
         try:

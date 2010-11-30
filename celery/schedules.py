@@ -251,7 +251,7 @@ class crontab(schedule):
     def remaining_estimate(self, last_run_at):
         """Returns when the periodic task should run next as a timedelta."""
         weekday = last_run_at.isoweekday()
-        if weekday == 7: # Sunday is day 0, not day 7.
+        if weekday == 7:    # Sunday is day 0, not day 7.
             weekday = 0
 
         execute_this_hour = (weekday in self.day_of_week and

@@ -18,10 +18,13 @@ from eventlet import Timeout
 from eventlet.green import urllib2
 
 # http://daringfireball.net/2009/11/liberal_regex_for_matching_urls
-url_regex = re.compile(r'\b(([\w-]+://?|www[.])[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))')
+url_regex = re.compile(
+    r'\b(([\w-]+://?|www[.])[^\s()<>]+ (?:\([\w\d]+\)|([^[:punct:]\s]|/)))')
+
 
 def domain(url):
     return urlparse.urlsplit(url)[1].split(":")[0]
+
 
 @task
 def crawl(url):
