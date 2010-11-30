@@ -232,11 +232,19 @@ class WorkController(object):
         """Starts the workers main loop."""
         self._state = RUN
 
-        for i, component in enumerate(self.components):
-            self.logger.debug("Starting thread %s..." % (
-                                    component.__class__.__name__))
-            self._running = i + 1
-            self.pool.blocking(component.start)
+        try:
+            for i, component in enumerate(self.components):
+                self.logger.debug("Starting thread %s..." % (
+                                        component.__class__.__name__))
+                self._running = i + 1
+                self.pool.blocking(component.start)
+        except SystemTerminate:
+            self.terminate()
+            raise SystemExit()
+        except (SystemExit, KeyboardInterrupt), exc:
+            self.stop()
+            raise exc
+
 
     def process_task(self, wrapper):
         """Process task by sending it to the pool of workers."""
@@ -250,16 +258,20 @@ class WorkController(object):
         except SystemTerminate:
             self.terminate()
             raise SystemExit()
-        except (SystemExit, KeyboardInterrupt):
+        except (SystemExit, KeyboardInterrupt), exc:
             self.stop()
-            raise SystemExit()
+            raise exc
 
-    def stop(self):
+    def stop(self, in_sighandler=False):
         """Graceful shutdown of the worker server."""
+        if in_sighandler and not self.pool.signal_safe:
+            return
         self.pool.blocking(self._shutdown, warm=True)
 
-    def terminate(self):
+    def terminate(self, in_sighandler=False):
         """Not so graceful shutdown of the worker server."""
+        if in_sighandler and not self.pool.signal_safe:
+            return
         self.pool.blocking(self._shutdown, warm=False)
 
     def _shutdown(self, warm=True):

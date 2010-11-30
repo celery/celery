@@ -7,6 +7,8 @@ from celery.concurrency.base import apply_target, BasePool
 class TaskPool(BasePool):
     Pool = GreenPool
 
+    signal_safe = False
+
     def on_start(self):
         self._pool = self.Pool(self.limit)
 
@@ -25,5 +27,7 @@ class TaskPool(BasePool):
     @classmethod
     def on_import(cls):
         import eventlet
+        import eventlet.debug
         eventlet.monkey_patch()
+        eventlet.debug.hub_prevent_multiple_readers(False)
 TaskPool.on_import()

@@ -18,6 +18,8 @@ class BasePool(object):
     CLOSE = 0x2
     TERMINATE = 0x3
 
+    signal_safe = True
+
     _state = None
     _pool = None
 

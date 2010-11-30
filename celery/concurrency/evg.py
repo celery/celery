@@ -5,9 +5,12 @@ from celery.concurrency.base import apply_target, BasePool
 
 
 class TaskPool(BasePool):
+    Pool = Pool
+
+    signal_safe = False
 
     def on_start(self):
-        self._pool = Pool(self.limit)
+        self._pool = self.Pool(self.limit)
 
     def on_stop(self):
         if self._pool is not None:
