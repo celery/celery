@@ -82,9 +82,6 @@ class WorkController(object):
     #: processing.
     ready_queue = None
 
-    #: Instance of :class:`celery.worker.controllers.ScheduleController`.
-    schedule_controller = None
-
     #: Instance of :class:`celery.worker.controllers.Mediator`.
     mediator = None
 
@@ -122,6 +119,7 @@ class WorkController(object):
         self.mediator_cls = mediator_cls or conf.CELERYD_MEDIATOR
         self.eta_scheduler_cls = eta_scheduler_cls or \
                                     conf.CELERYD_ETA_SCHEDULER
+
         self.autoscaler_cls = autoscaler_cls or \
                                     conf.CELERYD_AUTOSCALER
         self.schedule_filename = schedule_filename or \
@@ -179,6 +177,10 @@ class WorkController(object):
                                 timeout=self.task_time_limit,
                                 soft_timeout=self.task_soft_time_limit,
                                 putlocks=self.pool_putlocks)
+        if not self.eta_scheduler_cls:
+            # Default Timer is set by the pool, as e.g. eventlet
+            # needs a custom implementation.
+            self.eta_scheduler_cls = self.pool.Timer
 
         if autoscale:
             self.autoscaler = instantiate(self.autoscaler_cls, self.pool,

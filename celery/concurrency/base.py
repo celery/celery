@@ -4,6 +4,7 @@ import traceback
 from celery import log
 from celery.datastructures import ExceptionInfo
 from celery.utils.functional import partial
+from celery.utils import timer2
 
 
 def apply_target(target, args=(), kwargs={}, callback=None,
@@ -17,6 +18,8 @@ class BasePool(object):
     RUN = 0x1
     CLOSE = 0x2
     TERMINATE = 0x3
+
+    Timer = timer2.Timer
 
     signal_safe = True
 
