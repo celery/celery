@@ -52,6 +52,9 @@ def process_initializer(app, hostname):
 
 class WorkController(object):
     """Unmanaged worker instance."""
+    RUN = RUN
+    CLOSE = CLOSE
+    TERMINATE = TERMINATE
 
     #: The number of simultaneous processes doing work (default:
     #: :setting:`CELERYD_CONCURRENCY`)
@@ -232,7 +235,7 @@ class WorkController(object):
 
     def start(self):
         """Starts the workers main loop."""
-        self._state = RUN
+        self._state = self.RUN
 
         try:
             for i, component in enumerate(self.components):
@@ -279,11 +282,11 @@ class WorkController(object):
     def _shutdown(self, warm=True):
         what = (warm and "stopping" or "terminating").capitalize()
 
-        if self._state != RUN or self._running != len(self.components):
+        if self._state != self.RUN or self._running != len(self.components):
             # Not fully started, can safely exit.
             return
 
-        self._state = CLOSE
+        self._state = self.CLOSE
         signals.worker_shutdown.send(sender=self)
 
         for component in reversed(self.components):
@@ -295,7 +298,7 @@ class WorkController(object):
             stop()
 
         self.consumer.close_connection()
-        self._state = TERMINATE
+        self._state = self.TERMINATE
 
     def on_timer_error(self, exc_info):
         _, exc, _ = exc_info

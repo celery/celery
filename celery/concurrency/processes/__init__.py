@@ -54,7 +54,7 @@ class TaskPool(BasePool):
         return self._pool.shrink(n)
 
     def _get_info(self):
-        return {"max-concurrency": self.processes,
+        return {"max-concurrency": self.limit,
                 "processes": [p.pid for p in self._pool._pool],
                 "max-tasks-per-child": self._pool._maxtasksperchild,
                 "put-guarded-by-semaphore": self.putlocks,

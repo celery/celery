@@ -4,6 +4,7 @@ import unittest2 as unittest
 from itertools import cycle
 
 from celery.concurrency import processes as mp
+from celery.concurrency.base import BasePool
 from celery.datastructures import ExceptionInfo
 from celery.utils import noop
 
@@ -165,13 +166,12 @@ class test_TaskPool(unittest.TestCase):
 
     def test_info(self):
         pool = TaskPool(10)
-        procs = [Object(pid=i) for i in range(pool.processes)]
+        procs = [Object(pid=i) for i in range(pool.limit)]
         pool._pool = Object(_pool=procs,
                             _maxtasksperchild=None,
                             timeout=10,
                             soft_timeout=5)
         info = pool.info
-        self.assertEqual(info["max-concurrency"], pool.processes)
-        self.assertEqual(len(info["processes"]), pool.processes)
+        self.assertEqual(info["max-concurrency"], pool.limit)
         self.assertIsNone(info["max-tasks-per-child"])
         self.assertEqual(info["timeouts"], (5, 10))

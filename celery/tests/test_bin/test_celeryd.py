@@ -221,10 +221,10 @@ class test_signal_handlers(unittest.TestCase):
         terminated = False
         logger = get_logger()
 
-        def stop(self):
+        def stop(self, in_sighandler=False):
             self.stopped = True
 
-        def terminate(self):
+        def terminate(self, in_sighandler=False):
             self.terminated = True
 
     def psig(self, fun, *args, **kwargs):

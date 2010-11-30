@@ -27,7 +27,7 @@ class TestTaskPool(unittest.TestCase):
 
     def test_attrs(self):
         p = TaskPool(2)
-        self.assertEqual(p.processes, 2)
+        self.assertEqual(p.limit, 2)
         self.assertIsInstance(p.logger, logging.Logger)
         self.assertIsNone(p._pool)
 
