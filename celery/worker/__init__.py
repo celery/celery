@@ -148,6 +148,11 @@ class WorkController(object):
         self.db = db or conf.CELERYD_STATE_DB
         self.disable_rate_limits = disable_rate_limits or \
                                 conf.CELERY_DISABLE_RATE_LIMITS
+
+        # FIXME
+        # For some reason disable rate limits does not work currently,
+        # needs to be fixed for v2.2.0.
+        self.disable_rate_limits = False
         self.queues = queues
 
         self._finalize = Finalize(self, self.stop, exitpriority=1)

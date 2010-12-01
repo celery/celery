@@ -4,7 +4,7 @@
 
 .. image:: http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png
 
-:Version: 2.2.0a5
+:Version: 2.2.0a6
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/ask/celery/
@@ -270,7 +270,7 @@ Wiki
 
 http://wiki.github.com/ask/celery/
 
-.. _contributing:
+.. _contributing-short:
 
 Contributing
 ============
@@ -280,6 +280,8 @@ Development of `celery` happens at Github: http://github.com/ask/celery
 You are highly encouraged to participate in the development
 of `celery`. If you don't like Github (for some reason) you're welcome
 to send regular patches.
+
+See also the Contributing section in the Documentation.
 
 .. _license:
 
