@@ -50,10 +50,4 @@ To open several URLs at once you can do:
 
 This is a simple recursive web crawler.  It will only crawl
 URLs for the current host name.  Please see comments in the
-:file:`webcrawler.py` file.
-
-
-
-
-
-
+`webcrawler.py` file.
