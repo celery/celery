@@ -34,10 +34,6 @@ class App(base.BaseApp):
                       backend class to use. Default is the value of the
                       :setting:`CELERY_RESULT_BACKEND` setting.
 
-    .. seealso::
-
-        The app base class; :class:`~celery.app.base.BaseApp`.
-
     """
 
     def set_current(self):
