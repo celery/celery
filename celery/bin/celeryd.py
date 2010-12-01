@@ -96,11 +96,12 @@ class WorkerCommand(Command):
             Option('-c', '--concurrency',
                 default=conf.CELERYD_CONCURRENCY,
                 action="store", dest="concurrency", type="int",
-                help="Number of child processes processing the queue."),
+                help="Number of worker threads/processes"),
             Option('-P', '--pool',
                 default=conf.CELERYD_POOL,
                 action="store", dest="pool", type="str",
-                help="Pool implementation: processes|eventlet|gevent"),
+                help="Pool implementation: "
+                     "processes (default), eventlet or gevent."),
             Option('--purge', '--discard', default=False,
                 action="store_true", dest="discard",
                 help="Discard all waiting tasks before the server is"
