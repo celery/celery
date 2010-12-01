@@ -1,18 +1,15 @@
 """Recursive webcrawler example.
 
-One problem with this solution is that it does not remember
-urls it has already seen.
-
 For asynchronous DNS lookups install the `dnspython` package:
 
     $ pip install dnspython
 
-If the `pybloom` module is installed it will use a Bloom Filter
+Requires the `pybloom` module for the bloom filter which is used
 to ensure a lower chance of recrawling an URL it has already seen.
 
 Since the bloom filter is not shared, but only passed as an argument
 to each subtask, it would be much better to have this as a centralized
-service.
+service.  Redis sets could also be a practical solution.
 
 A BloomFilter with a capacity of 100_000 members and an error rate
 of 0.001 is 2.8MB pickled, but if compressed with zlib it only takes
@@ -35,20 +32,7 @@ from celery.task.sets import TaskSet
 from eventlet import Timeout
 from eventlet.green import urllib2
 
-try:
-    from pybloom import BloomFilter
-except ImportError:
-    # Dummy object used if pybloom is not installed.
-    class BloomFilter(object):
-
-        def __init__(self, **kwargs):
-            pass
-
-        def add(self, member):
-            pass
-
-        def __contains__(self, member):
-            return False
+from pybloom import BloomFilter
 
 # http://daringfireball.net/2009/11/liberal_regex_for_matching_urls
 url_regex = re.compile(
