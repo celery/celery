@@ -3,7 +3,24 @@
 One problem with this solution is that it does not remember
 urls it has already seen.
 
-To add support for this a bloom filter or redis sets can be used.
+For asynchronous DNS lookups install the `dnspython` package:
+
+    $ pip install dnspython
+
+If the `pybloom` module is installed it will use a Bloom Filter
+to ensure a lower chance of recrawling an URL it has already seen.
+
+Since the bloom filter is not shared, but only passed as an argument
+to each subtask, it would be much better to have this as a centralized
+service.
+
+A BloomFilter with a capacity of 100_000 members and an error rate
+of 0.001 is 2.8MB pickled, but if compressed with zlib it only takes
+up 2.9kB(!).
+
+We don't have to do compression manually, just set the tasks compression
+to "zlib", and the serializer to "pickle".
+
 
 """
 
@@ -14,28 +31,55 @@ import time
 import urlparse
 
 from celery.decorators import task
+from celery.task.sets import TaskSet
 from eventlet import Timeout
 from eventlet.green import urllib2
 
+try:
+    from pybloom import BloomFilter
+except ImportError:
+    # Dummy object used if pybloom is not installed.
+    class BloomFilter(object):
+
+        def __init__(self, **kwargs):
+            pass
+
+        def add(self, member):
+            pass
+
+        def __contains__(self, member):
+            return False
+
 # http://daringfireball.net/2009/11/liberal_regex_for_matching_urls
 url_regex = re.compile(
-    r'\b(([\w-]+://?|www[.])[^\s()<>]+ (?:\([\w\d]+\)|([^[:punct:]\s]|/)))')
+    r'\b(([\w-]+://?|www[.])[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))')
 
 
 def domain(url):
+    """Returns the domain part of an URL."""
     return urlparse.urlsplit(url)[1].split(":")[0]
 
 
-@task
-def crawl(url):
+@task(ignore_result=True, serializer="pickle", compression="zlib")
+def crawl(url, seen=None):
     print("crawling: %r" % (url, ))
-    location = domain(url)
-    data = ''
+    if not seen:
+        seen = BloomFilter(capacity=50000, error_rate=0.0001)
+
     with Timeout(5, False):
-        data = urllib2.urlopen(url).read()
+        try:
+            data = urllib2.urlopen(url).read()
+        except (urllib2.HTTPError, IOError):
+            return
+
+    location = domain(url)
+    wanted_urls = []
     for url_match in url_regex.finditer(data):
-        new_url = url_match.group(0)
-        # Don't destroy the internet
-        if location in domain(new_url):
-            crawl.delay(new_url)
-            time.sleep(0.3)
+        url = url_match.group(0)
+        # To not destroy the internet, we only fetch URLs on the same domain.
+        if url not in seen and location in domain(url):
+            wanted_urls.append(url)
+            seen.add(url)
+
+    subtasks = TaskSet(crawl.subtask((url, seen)) for url in wanted_urls)
+    subtasks.apply_async()
