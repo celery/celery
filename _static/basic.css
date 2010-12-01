@@ -1,6 +1,12 @@
-/**
- * Sphinx stylesheet -- basic theme
- * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/*
+ * basic.css
+ * ~~~~~~~~~
+ *
+ * Sphinx stylesheet -- basic theme.
+ *
+ * :copyright: Copyright 2007-2010 by the Sphinx team, see AUTHORS.
+ * :license: BSD, see LICENSE for details.
+ *
  */
 
 /* -- main layout ----------------------------------------------------------- */
@@ -127,6 +133,10 @@ span.linkdescr {
 
 /* -- general index --------------------------------------------------------- */
 
+table.indextable {
+    width: 100%;
+}
+
 table.indextable td {
     text-align: left;
     vertical-align: top;
@@ -150,6 +160,20 @@ img.toggler {
     margin-right: 3px;
     margin-top: 3px;
     cursor: pointer;
+}
+
+div.modindex-jumpbox {
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    margin: 1em 0 1em 0;
+    padding: 0.4em;
+}
+
+div.genindex-jumpbox {
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    margin: 1em 0 1em 0;
+    padding: 0.4em;
 }
 
 /* -- general body styles --------------------------------------------------- */
@@ -187,6 +211,19 @@ div.body td {
 p.rubric {
     margin-top: 30px;
     font-weight: bold;
+}
+
+.align-left {
+    text-align: left;
+}
+
+.align-center {
+    clear: both;
+    text-align: center;
+}
+
+.align-right {
+    text-align: right;
 }
 
 /* -- sidebars -------------------------------------------------------------- */
@@ -252,7 +289,7 @@ table.docutils {
 }
 
 table.docutils td, table.docutils th {
-    padding: 1px 8px 1px 0;
+    padding: 1px 8px 1px 5px;
     border-top: 0;
     border-left: 0;
     border-right: 0;
@@ -272,7 +309,36 @@ th {
     padding-right: 5px;
 }
 
+table.citation {
+    border-left: solid 1px gray;
+    margin-left: 1px;
+}
+
+table.citation td {
+    border-bottom: none;
+}
+
 /* -- other body styles ----------------------------------------------------- */
+
+ol.arabic {
+    list-style: decimal;
+}
+
+ol.loweralpha {
+    list-style: lower-alpha;
+}
+
+ol.upperalpha {
+    list-style: upper-alpha;
+}
+
+ol.lowerroman {
+    list-style: lower-roman;
+}
+
+ol.upperroman {
+    list-style: upper-roman;
+}
 
 dl {
     margin-bottom: 15px;
@@ -292,7 +358,7 @@ dd {
     margin-left: 30px;
 }
 
-dt:target, .highlight {
+dt:target, .highlighted {
     background-color: #fbe54e;
 }
 
@@ -344,6 +410,18 @@ dl.glossary dt {
     margin-left: 1.5em;
 }
 
+.guilabel, .menuselection {
+    font-family: sans-serif;
+}
+
+.accelerator {
+    text-decoration: underline;
+}
+
+.classifier {
+    font-style: oblique;
+}
+
 /* -- code displays --------------------------------------------------------- */
 
 pre {
@@ -382,6 +460,20 @@ tt.xref, a tt {
 
 h1 tt, h2 tt, h3 tt, h4 tt, h5 tt, h6 tt {
     background-color: transparent;
+}
+
+.viewcode-link {
+    float: right;
+}
+
+.viewcode-back {
+    float: right;
+    font-family: sans-serif;
+}
+
+div.viewcode-block:target {
+    margin: -1px -10px;
+    padding: 0 10px;
 }
 
 /* -- math display ---------------------------------------------------------- */
