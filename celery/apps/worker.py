@@ -12,7 +12,7 @@ from celery import __version__
 from celery import platforms
 from celery import signals
 from celery.app import app_or_default
-from celery.exceptions import ImproperlyConfigured
+from celery.exceptions import ImproperlyConfigured, SystemTerminate
 from celery.utils import get_full_cls_name, LOG_LEVELS, isatty
 from celery.utils import term
 from celery.worker import WorkController
@@ -43,7 +43,7 @@ class Worker(object):
             max_tasks_per_child=None, queues=None, events=False, db=None,
             include=None, app=None, pidfile=None,
             redirect_stdouts=None, redirect_stdouts_level=None,
-            autoscale=None, scheduler_cls=None, **kwargs):
+            autoscale=None, scheduler_cls=None, pool=None, **kwargs):
         self.app = app = app_or_default(app)
         self.concurrency = (concurrency or
                             app.conf.CELERYD_CONCURRENCY or
@@ -68,6 +68,7 @@ class Worker(object):
                                  app.conf.CELERY_REDIRECT_STDOUTS)
         self.redirect_stdouts_level = (redirect_stdouts_level or
                                        app.conf.CELERY_REDIRECT_STDOUTS_LEVEL)
+        self.pool = (pool or app.conf.CELERYD_POOL)
         self.db = db
         self.use_queues = queues or []
         self.queues = None
@@ -207,7 +208,8 @@ class Worker(object):
                                 max_tasks_per_child=self.max_tasks_per_child,
                                 task_time_limit=self.task_time_limit,
                                 task_soft_time_limit=self.task_soft_time_limit,
-                                autoscale=self.autoscale)
+                                autoscale=self.autoscale,
+                                pool_cls=self.pool)
         self.install_platform_tweaks(worker)
         worker.start()
 
@@ -257,7 +259,7 @@ def install_worker_int_handler(worker):
             install_worker_int_again_handler(worker)
             worker.logger.warn("celeryd: Warm shutdown (%s)" % (
                 process_name))
-            worker.stop()
+            worker.stop(in_sighandler=True)
         raise SystemExit()
 
     platforms.install_signal_handler("SIGINT", _stop)
@@ -270,8 +272,8 @@ def install_worker_int_again_handler(worker):
         if process_name == "MainProcess":
             worker.logger.warn("celeryd: Cold shutdown (%s)" % (
                 process_name))
-            worker.terminate()
-        raise SystemExit()
+            worker.terminate(in_sighandler=True)
+        raise SystemTerminate()
 
     platforms.install_signal_handler("SIGINT", _stop)
 
@@ -283,7 +285,7 @@ def install_worker_term_handler(worker):
         if process_name == "MainProcess":
             worker.logger.warn("celeryd: Warm shutdown (%s)" % (
                 process_name))
-            worker.stop()
+            worker.stop(in_sighandler=True)
         raise SystemExit()
 
     platforms.install_signal_handler("SIGTERM", _stop)
@@ -295,7 +297,7 @@ def install_worker_restart_handler(worker):
         """Signal handler restarting the current python program."""
         worker.logger.warn("Restarting celeryd (%s)" % (
             " ".join(sys.argv)))
-        worker.stop()
+        worker.stop(in_sighandler=True)
         os.execv(sys.executable, [sys.executable] + sys.argv)
 
     platforms.install_signal_handler("SIGHUP", restart_worker_sig_handler)

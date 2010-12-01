@@ -1,7 +1,7 @@
 import os
 import sys
 
-from optparse import OptionParser, BadOptionError, make_option as Option
+from optparse import OptionParser, BadOptionError
 
 from celery import __version__
 from celery.bin.base import daemon_options

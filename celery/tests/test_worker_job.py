@@ -10,6 +10,7 @@ from kombu.transport.base import Message
 
 from celery import states
 from celery.app import app_or_default
+from celery.concurrency.base import BasePool
 from celery.datastructures import ExceptionInfo
 from celery.decorators import task as task_dec
 from celery.exceptions import RetryTaskError, NotRegistered
@@ -408,7 +409,7 @@ class test_TaskRequest(unittest.TestCase):
         tid = gen_unique_id()
         tw = TaskRequest(mytask.name, tid, [4], {"f": "x"})
 
-        class MockPool(object):
+        class MockPool(BasePool):
             target = None
             args = None
             kwargs = None

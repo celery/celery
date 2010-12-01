@@ -63,6 +63,5 @@ class Heart(threading.Thread):
             return
         self._state = "CLOSE"
         self._shutdown.set()
-        self._stopped.wait()            # blocks until this thread is done
         if self.isAlive():
             self.join(1e100)

@@ -131,13 +131,14 @@ class Schedule(object):
 
 class Timer(Thread):
     Entry = Entry
+    Schedule = Schedule
 
     running = False
     on_tick = None
     _timer_count = count(1).next
 
     def __init__(self, schedule=None, on_error=None, on_tick=None, **kwargs):
-        self.schedule = schedule or Schedule(on_error=on_error)
+        self.schedule = schedule or self.Schedule(on_error=on_error)
         self.on_tick = on_tick or self.on_tick
 
         Thread.__init__(self)

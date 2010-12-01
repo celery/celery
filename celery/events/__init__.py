@@ -13,6 +13,7 @@ from celery.utils import gen_unique_id
 
 event_exchange = Exchange("celeryev", type="topic")
 
+
 def create_event(type, fields):
     std = {"type": type,
            "timestamp": fields.get("timestamp") or time.time()}
@@ -156,7 +157,6 @@ class EventReceiver(object):
             by calling `consumer.channel.close()`.
 
         """
-        conf = self.app.conf
         consumer = Consumer(self.connection.channel(),
                             queues=[self.queue],
                             no_ack=True)
@@ -188,7 +188,6 @@ class EventReceiver(object):
                               timeout=timeout,
                               wakeup=wakeup))
 
-
     def wakeup_workers(self, channel=None):
         self.app.control.broadcast("heartbeat",
                                    connection=self.connection,
@@ -209,7 +208,6 @@ class EventReceiver(object):
     def _receive(self, message_data, message):
         type = message_data.pop("type").lower()
         self.process(type, create_event(type, message_data))
-
 
 
 class Events(object):

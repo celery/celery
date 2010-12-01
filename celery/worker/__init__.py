@@ -4,10 +4,12 @@ import traceback
 from multiprocessing.util import Finalize
 
 from celery import beat
+from celery import concurrency as _concurrency
 from celery import registry
 from celery import platforms
 from celery import signals
 from celery.app import app_or_default
+from celery.exceptions import SystemTerminate
 from celery.log import SilenceRepeated
 from celery.utils import noop, instantiate
 
@@ -50,6 +52,9 @@ def process_initializer(app, hostname):
 
 class WorkController(object):
     """Unmanaged worker instance."""
+    RUN = RUN
+    CLOSE = CLOSE
+    TERMINATE = TERMINATE
 
     #: The number of simultaneous processes doing work (default:
     #: :setting:`CELERYD_CONCURRENCY`)
@@ -79,9 +84,6 @@ class WorkController(object):
     #: The internal queue object that holds tasks ready for immediate
     #: processing.
     ready_queue = None
-
-    #: Instance of :class:`celery.worker.controllers.ScheduleController`.
-    schedule_controller = None
 
     #: Instance of :class:`celery.worker.controllers.Mediator`.
     mediator = None
@@ -114,11 +116,13 @@ class WorkController(object):
         if send_events is None:
             send_events = conf.CELERY_SEND_EVENTS
         self.send_events = send_events
-        self.pool_cls = pool_cls or conf.CELERYD_POOL
+        self.pool_cls = _concurrency.get_implementation(
+                            pool_cls or conf.CELERYD_POOL)
         self.consumer_cls = consumer_cls or conf.CELERYD_CONSUMER
         self.mediator_cls = mediator_cls or conf.CELERYD_MEDIATOR
         self.eta_scheduler_cls = eta_scheduler_cls or \
                                     conf.CELERYD_ETA_SCHEDULER
+
         self.autoscaler_cls = autoscaler_cls or \
                                     conf.CELERYD_AUTOSCALER
         self.schedule_filename = schedule_filename or \
@@ -153,7 +157,7 @@ class WorkController(object):
             Finalize(persistence, persistence.save, exitpriority=5)
 
         # Queues
-        if disable_rate_limits:
+        if self.disable_rate_limits:
             self.ready_queue = FastQueue()
             self.ready_queue.put = self.process_task
         else:
@@ -176,6 +180,10 @@ class WorkController(object):
                                 timeout=self.task_time_limit,
                                 soft_timeout=self.task_soft_time_limit,
                                 putlocks=self.pool_putlocks)
+        if not self.eta_scheduler_cls:
+            # Default Timer is set by the pool, as e.g. eventlet
+            # needs a custom implementation.
+            self.eta_scheduler_cls = self.pool.Timer
 
         if autoscale:
             self.autoscaler = instantiate(self.autoscaler_cls, self.pool,
@@ -184,15 +192,16 @@ class WorkController(object):
                                           logger=self.logger)
 
         self.mediator = None
-        if not disable_rate_limits:
+        if not self.disable_rate_limits:
             self.mediator = instantiate(self.mediator_cls, self.ready_queue,
                                         app=self.app,
                                         callback=self.process_task,
                                         logger=self.logger)
+
         self.scheduler = instantiate(self.eta_scheduler_cls,
-                                     precision=eta_scheduler_precision,
-                                     on_error=self.on_timer_error,
-                                     on_tick=self.on_timer_tick)
+                                precision=eta_scheduler_precision,
+                                on_error=self.on_timer_error,
+                                on_tick=self.on_timer_tick)
 
         self.beat = None
         if self.embed_clockservice:
@@ -226,13 +235,20 @@ class WorkController(object):
 
     def start(self):
         """Starts the workers main loop."""
-        self._state = RUN
+        self._state = self.RUN
 
-        for i, component in enumerate(self.components):
-            self.logger.debug("Starting thread %s..." % (
-                                    component.__class__.__name__))
-            self._running = i + 1
-            component.start()
+        try:
+            for i, component in enumerate(self.components):
+                self.logger.debug("Starting thread %s..." % (
+                                        component.__class__.__name__))
+                self._running = i + 1
+                self.pool.blocking(component.start)
+        except SystemTerminate:
+            self.terminate()
+            raise SystemExit()
+        except (SystemExit, KeyboardInterrupt), exc:
+            self.stop()
+            raise exc
 
     def process_task(self, wrapper):
         """Process task by sending it to the pool of workers."""
@@ -243,25 +259,33 @@ class WorkController(object):
             except Exception, exc:
                 self.logger.critical("Internal error %s: %s\n%s" % (
                                 exc.__class__, exc, traceback.format_exc()))
-        except (SystemExit, KeyboardInterrupt):
+        except SystemTerminate:
+            self.terminate()
+            raise SystemExit()
+        except (SystemExit, KeyboardInterrupt), exc:
             self.stop()
+            raise exc
 
-    def stop(self):
+    def stop(self, in_sighandler=False):
         """Graceful shutdown of the worker server."""
-        self._shutdown(warm=True)
+        if in_sighandler and not self.pool.signal_safe:
+            return
+        self.pool.blocking(self._shutdown, warm=True)
 
-    def terminate(self):
+    def terminate(self, in_sighandler=False):
         """Not so graceful shutdown of the worker server."""
-        self._shutdown(warm=False)
+        if in_sighandler and not self.pool.signal_safe:
+            return
+        self.pool.blocking(self._shutdown, warm=False)
 
     def _shutdown(self, warm=True):
         what = (warm and "stopping" or "terminating").capitalize()
 
-        if self._state != RUN or self._running != len(self.components):
+        if self._state != self.RUN or self._running != len(self.components):
             # Not fully started, can safely exit.
             return
 
-        self._state = CLOSE
+        self._state = self.CLOSE
         signals.worker_shutdown.send(sender=self)
 
         for component in reversed(self.components):
@@ -273,7 +297,7 @@ class WorkController(object):
             stop()
 
         self.consumer.close_connection()
-        self._state = TERMINATE
+        self._state = self.TERMINATE
 
     def on_timer_error(self, exc_info):
         _, exc, _ = exc_info

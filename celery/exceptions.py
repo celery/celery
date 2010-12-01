@@ -9,6 +9,10 @@ Task of kind %s is not registered, please make sure it's imported.
 """.strip()
 
 
+class SystemTerminate(SystemExit):
+    pass
+
+
 class QueueNotFound(KeyError):
     """Task routed to a queue not in CELERY_QUEUES."""
     pass

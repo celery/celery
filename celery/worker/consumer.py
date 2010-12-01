@@ -246,13 +246,14 @@ class Consumer(object):
         self.logger.debug("Consumer: Starting message consumer...")
         self.task_consumer.consume()
         self.broadcast_consumer.consume()
-        wait_for_message = self._mainloop().next
         self.logger.debug("Consumer: Ready to accept tasks!")
 
         while 1:
+            if not self.connection:
+                break
             if self.qos.prev != self.qos.next:
                 self.qos.update()
-            wait_for_message()
+            self.connection.drain_events()
 
     def on_task(self, task):
         """Handle received task.
@@ -313,6 +314,7 @@ class Consumer(object):
                     self.logger.critical(
                             "Couldn't ack %r: message:%r reason:%r" % (
                                 message.delivery_tag, message_data, exc))
+
             try:
                 task = TaskRequest.from_message(message, message_data, ack,
                                                 app=self.app,
@@ -437,10 +439,6 @@ class Consumer(object):
     def restart_heartbeat(self):
         self.heart = Heart(self.event_dispatcher)
         self.heart.start()
-
-    def _mainloop(self):
-        while 1:
-            yield self.connection.drain_events()
 
     def _open_connection(self):
         """Open connection.  May retry opening the connection if configuration

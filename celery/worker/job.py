@@ -430,7 +430,7 @@ class TaskRequest(object):
         if self.task.acks_late:
             self.acknowledge()
 
-        runtime = time.time() - self.time_start
+        runtime = self.time_start and (time.time() - self.time_start) or 0
         self.send_event("task-succeeded", uuid=self.task_id,
                         result=repr(ret_value), runtime=runtime)
 

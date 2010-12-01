@@ -87,6 +87,7 @@ NAMESPACES = {
         "STORE_ERRORS_EVEN_IF_IGNORED": Option(False, type="bool"),
         "TASK_RESULT_EXPIRES": Option(timedelta(days=1), type="int"),
         "AMQP_TASK_RESULT_EXPIRES": Option(type="int"),
+        "AMQP_TASK_RESULT_CONNECTION_MAX": Option(type="int", default=1),
         "TASK_ERROR_WHITELIST": Option((), type="tuple"),
         "TASK_SERIALIZER": Option("pickle"),
         "TRACK_STARTED": Option(False, type="bool"),
@@ -96,7 +97,7 @@ NAMESPACES = {
     "CELERYD": {
         "AUTOSCALER": Option("celery.worker.controllers.Autoscaler"),
         "CONCURRENCY": Option(0, type="int"),
-        "ETA_SCHEDULER": Option("celery.utils.timer2.Timer"),
+        "ETA_SCHEDULER": Option(None, type="str"),
         "ETA_SCHEDULER_PRECISION": Option(1.0, type="float"),
         "FORCE_HIJACK_ROOT_LOGGER": Option(False, type="bool"),
         "CONSUMER": Option("celery.worker.consumer.Consumer"),
