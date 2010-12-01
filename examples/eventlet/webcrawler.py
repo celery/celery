@@ -5,7 +5,7 @@ For asynchronous DNS lookups install the `dnspython` package:
     $ pip install dnspython
 
 Requires the `pybloom` module for the bloom filter which is used
-to ensure a lower chance of recrawling an URL it has already seen.
+to ensure a lower chance of recrawling an URL previously seen.
 
 Since the bloom filter is not shared, but only passed as an argument
 to each subtask, it would be much better to have this as a centralized
