@@ -6,9 +6,9 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Periodic Tasks &mdash; Celery v2.2.0a6 documentation</title>
-    <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -18,9 +18,9 @@
         HAS_SOURCE:  true
       };
     </script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Celery v2.2.0a6 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Sets of tasks, Subtasks and Callbacks" href="tasksets.html" />
@@ -68,20 +68,20 @@
 <span id="guide-beat"></span><h1>Periodic Tasks<a class="headerlink" href="#periodic-tasks" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference internal" href="#introduction" id="id3">Introduction</a></li>
-<li><a class="reference internal" href="#entries" id="id4">Entries</a><ul>
-<li><a class="reference internal" href="#available-fields" id="id5">Available Fields</a></li>
+<li><a class="reference internal" href="#introduction" id="id1">Introduction</a></li>
+<li><a class="reference internal" href="#entries" id="id2">Entries</a><ul>
+<li><a class="reference internal" href="#available-fields" id="id3">Available Fields</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#crontab-schedules" id="id6">Crontab schedules</a></li>
-<li><a class="reference internal" href="#starting-celerybeat" id="id7">Starting celerybeat</a><ul>
-<li><a class="reference internal" href="#using-custom-scheduler-classes" id="id8">Using custom scheduler classes</a></li>
+<li><a class="reference internal" href="#crontab-schedules" id="id4">Crontab schedules</a></li>
+<li><a class="reference internal" href="#starting-celerybeat" id="id5">Starting celerybeat</a><ul>
+<li><a class="reference internal" href="#using-custom-scheduler-classes" id="id6">Using custom scheduler classes</a></li>
 </ul>
 </li>
 </ul>
 </div>
 <div class="section" id="introduction">
-<h2><a class="toc-backref" href="#id3">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id1">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
 <p><strong class="program">celerybeat</strong> is a scheduler.  It kicks off tasks at regular intervals,
 which are then executed by the worker nodes available in the cluster.</p>
 <p>By default the entries are taken from the <a class="reference internal" href="../configuration.html#std:setting-CELERYBEAT_SCHEDULE"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYBEAT_SCHEDULE</span></tt></a> setting,
@@ -93,7 +93,7 @@ a centralized approach means the schedule does not have to be synchronized,
 and the service can operate without using locks.</p>
 </div>
 <div class="section" id="entries">
-<span id="beat-entries"></span><h2><a class="toc-backref" href="#id4">Entries</a><a class="headerlink" href="#entries" title="Permalink to this headline">¶</a></h2>
+<span id="beat-entries"></span><h2><a class="toc-backref" href="#id2">Entries</a><a class="headerlink" href="#entries" title="Permalink to this headline">¶</a></h2>
 <p>To schedule a task periodically you have to add an entry to the
 <a class="reference internal" href="../configuration.html#std:setting-CELERYBEAT_SCHEDULE"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYBEAT_SCHEDULE</span></tt></a> setting.</p>
 <p>Example: Run the <cite>tasks.add</cite> task every 30 seconds.</p>
@@ -113,7 +113,7 @@ be executed 30 seconds after <cite>celerybeat</cite> starts, and then every 30 s
 after the last run.  A crontab like schedule also exists, see the section
 on <a class="reference internal" href="#crontab-schedules">Crontab schedules</a>.</p>
 <div class="section" id="available-fields">
-<span id="beat-entry-fields"></span><h3><a class="toc-backref" href="#id5">Available Fields</a><a class="headerlink" href="#available-fields" title="Permalink to this headline">¶</a></h3>
+<span id="beat-entry-fields"></span><h3><a class="toc-backref" href="#id3">Available Fields</a><a class="headerlink" href="#available-fields" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first"><cite>task</cite></p>
 <blockquote>
@@ -159,7 +159,7 @@ relative to the time when <strong class="program">celerybeat</strong> was starte
 </div>
 </div>
 <div class="section" id="crontab-schedules">
-<span id="beat-crontab"></span><h2><a class="toc-backref" href="#id6">Crontab schedules</a><a class="headerlink" href="#crontab-schedules" title="Permalink to this headline">¶</a></h2>
+<span id="beat-crontab"></span><h2><a class="toc-backref" href="#id4">Crontab schedules</a><a class="headerlink" href="#crontab-schedules" title="Permalink to this headline">¶</a></h2>
 <p>If you want more control over when the task is executed, for
 example, a particular time of day or day of the week, you can use
 the <cite>crontab</cite> schedule type:</p>
@@ -191,7 +191,7 @@ the <cite>crontab</cite> schedule type:</p>
 <tr><td>crontab(minute=0, hour=0)</td>
 <td>Execute daily at midnight.</td>
 </tr>
-<tr><td>crontab(minute=0, hour=&#8221;<a href="#id1"><span class="problematic" id="id2">*</span></a>/3&#8221;)</td>
+<tr><td>crontab(minute=0, hour=&#8221;*/3&#8221;)</td>
 <td>Execute every three hours:
 3am, 6am, 9am, noon, 3pm, 6pm, 9pm.</td>
 </tr>
@@ -247,7 +247,7 @@ every hour during office hours (8am-5pm).</td>
 </table>
 </div>
 <div class="section" id="starting-celerybeat">
-<span id="beat-starting"></span><h2><a class="toc-backref" href="#id7">Starting celerybeat</a><a class="headerlink" href="#starting-celerybeat" title="Permalink to this headline">¶</a></h2>
+<span id="beat-starting"></span><h2><a class="toc-backref" href="#id5">Starting celerybeat</a><a class="headerlink" href="#starting-celerybeat" title="Permalink to this headline">¶</a></h2>
 <p>To start the <strong class="program">celerybeat</strong> service:</p>
 <div class="highlight-python"><pre>$ celerybeat</pre>
 </div>
@@ -266,7 +266,7 @@ location for this file:</p>
 <p class="last">To daemonize celerybeat see <a class="reference internal" href="../cookbook/daemonizing.html#daemonizing"><em>Running celeryd as a daemon</em></a>.</p>
 </div>
 <div class="section" id="using-custom-scheduler-classes">
-<span id="beat-custom-schedulers"></span><h3><a class="toc-backref" href="#id8">Using custom scheduler classes</a><a class="headerlink" href="#using-custom-scheduler-classes" title="Permalink to this headline">¶</a></h3>
+<span id="beat-custom-schedulers"></span><h3><a class="toc-backref" href="#id6">Using custom scheduler classes</a><a class="headerlink" href="#using-custom-scheduler-classes" title="Permalink to this headline">¶</a></h3>
 <p>Custom scheduler classes can be specified on the command line (the <cite>-S</cite>
 argument).  The default scheduler is <a class="reference internal" href="../internals/reference/celery.beat.html#celery.beat.PersistentScheduler" title="celery.beat.PersistentScheduler"><tt class="xref py py-class docutils literal"><span class="pre">celery.beat.PersistentScheduler</span></tt></a>,
 which is simply keeping track of the last run times in a local database file
@@ -297,7 +297,7 @@ tasks from the Django Admin.</p>
                         title="next chapter">Sets of tasks, Subtasks and Callbacks</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../_sources/userguide/periodic-tasks.txt"
+    <li><a href="../sources/userguide/periodic-tasks.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
