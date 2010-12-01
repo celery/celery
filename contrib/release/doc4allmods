@@ -8,7 +8,7 @@ SKIP_FILES="celery.bin.rst
             celery.contrib.batches.rst
             celery.task.schedules.rst
             celery.models.rst
-            celery.concurrency.rst
+            celery.app.base.rst
             celery.apps.rst
             celery.db.rst
             celery.db.a805d4bd.rst

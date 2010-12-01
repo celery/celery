@@ -1,3 +1,10 @@
+import os
+
+from gevent import monkey
+
+if not os.environ.get("GEVENT_NOPATCH"):
+    monkey.patch_all()
+
 from gevent import Greenlet
 from gevent.pool import Pool
 
@@ -24,8 +31,3 @@ class TaskPool(BasePool):
     def blocking(self, fun, *args, **kwargs):
         Greenlet.spawn(fun, *args, **kwargs).get()
 
-    @classmethod
-    def on_import(cls):
-        from gevent import monkey
-        monkey.patch_all()
-TaskPool.on_import()

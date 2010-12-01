@@ -18,8 +18,12 @@
     celery.worker.control.builtins
     celery.worker.control.registry
     celery.worker.state
+    celery.concurrency
     celery.concurrency.processes
     celery.concurrency.processes.pool
+    celery.concurrency.evlet
+    celery.concurrency.evg
+    celery.concurrency.base
     celery.concurrency.threads
     celery.beat
     celery.backends

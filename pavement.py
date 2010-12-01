@@ -69,9 +69,6 @@ def verifyindex(options):
 
 
 @task
-@cmdopts([
-    ("noerror", "E", "Ignore errors"),
-])
 def flakes(options):
     noerror = getattr(options, "noerror", False)
     sh("""find celery -name '*.py' | xargs pyflakes | perl -mstrict -nle'

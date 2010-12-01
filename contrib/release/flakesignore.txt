@@ -30,4 +30,4 @@ celery/utils/functional.py:(.+?) redefinition of unused 'update_wrapper'
 celery/utils/functional.py:(.+?) redefinition of unused 'wraps'
 celery/utils/mail.py:(.+?) redefinition of unused 'MIMEText'
 celery/utils/__init__.py:(.+?) 'gen_unique_id' imported but unused
-
+celery/events/cursesmon.py:(.+?): local variable 'consumer' is assigned to but never used

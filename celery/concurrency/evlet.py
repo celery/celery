@@ -1,11 +1,14 @@
+import os
 import sys
 
 from time import time
 
 import eventlet
 import eventlet.debug
-eventlet.monkey_patch()
-eventlet.debug.hub_prevent_multiple_readers(False)
+
+if not os.environ.get("EVENTLET_NOPATCH"):
+    eventlet.monkey_patch()
+    eventlet.debug.hub_prevent_multiple_readers(False)
 
 from eventlet import GreenPool
 from eventlet.greenthread import spawn, spawn_after_local

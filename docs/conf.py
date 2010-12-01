@@ -3,6 +3,10 @@
 import sys
 import os
 
+# eventlet/gevent should not monkey patch anything.
+os.environ["GEVENT_NOPATCH"] = "yes"
+os.environ["EVENTLET_NOPATCH"] = "yes"
+
 this = os.path.dirname(os.path.abspath(__file__))
 
 # If your extensions are in another directory, add it here. If the directory

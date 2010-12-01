@@ -7,6 +7,8 @@ config = os.environ.setdefault("CELERY_TEST_CONFIG_MODULE",
 
 os.environ["CELERY_CONFIG_MODULE"] = config
 os.environ["CELERY_LOADER"] = "default"
+os.environ["EVENTLET_NOPATCH"] = "yes"
+os.environ["GEVENT_NOPATCH"] = "yes"
 
 
 def teardown():
