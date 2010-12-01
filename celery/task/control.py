@@ -70,6 +70,9 @@ class Inspect(object):
     def cancel_consumer(self, queue, **kwargs):
         return self._request("cancel_consumer", queue=queue, **kwargs)
 
+    def worker_queues(self):
+        return self._request("worker_queues")
+
 
 class Control(object):
     Mailbox = Mailbox
