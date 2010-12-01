@@ -1,0 +1,264 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Eventlet Pool Support - celery.concurrency.evlet &mdash; Celery v2.2.0a6 documentation</title>
+    <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.2.0a6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
+    <script type="text/javascript" src="../../static/doctools.js"></script>
+    <link rel="top" title="Celery v2.2.0a6 documentation" href="../../index.html" />
+    <link rel="up" title="Internal Module Reference" href="index.html" />
+    <link rel="next" title="gevent Pool Support - celery.concurrency.evg" href="celery.concurrency.evg.html" />
+    <link rel="prev" title="extended multiprocessing.pool - celery.concurrency.processes.pool" href="celery.concurrency.processes.pool.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.concurrency.evg.html" title="gevent Pool Support - celery.concurrency.evg"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.concurrency.processes.pool.html" title="extended multiprocessing.pool - celery.concurrency.processes.pool"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Celery v2.2.0a6 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://celeryproject.org/docs/internals/reference/celery.concurrency.evlet.html">2.1</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="eventlet-pool-support-celery-concurrency-evlet">
+<h1>Eventlet Pool Support - celery.concurrency.evlet<a class="headerlink" href="#eventlet-pool-support-celery-concurrency-evlet" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-celery.concurrency.evlet"></span><dl class="class">
+<dt id="celery.concurrency.evlet.Schedule">
+<em class="property">class </em><tt class="descclassname">celery.concurrency.evlet.</tt><tt class="descname">Schedule</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.evlet.Schedule" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.concurrency.evlet.Schedule.clear">
+<tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evlet.Schedule.clear" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.evlet.Schedule.enter">
+<tt class="descname">enter</tt><big>(</big><em>entry</em>, <em>eta=None</em>, <em>priority=0</em><big>)</big><a class="headerlink" href="#celery.concurrency.evlet.Schedule.enter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.concurrency.evlet.Schedule.queue">
+<tt class="descname">queue</tt><a class="headerlink" href="#celery.concurrency.evlet.Schedule.queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.concurrency.evlet.TaskPool">
+<em class="property">class </em><tt class="descclassname">celery.concurrency.evlet.</tt><tt class="descname">TaskPool</tt><big>(</big><em>limit=None</em>, <em>putlocks=True</em>, <em>logger=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.concurrency.evlet.TaskPool" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="celery.concurrency.evlet.TaskPool.Pool">
+<tt class="descname">Pool</tt><a class="headerlink" href="#celery.concurrency.evlet.TaskPool.Pool" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">GreenPool</span></tt></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.concurrency.evlet.TaskPool.Timer">
+<em class="property">class </em><tt class="descname">Timer</tt><big>(</big><em>schedule=None</em>, <em>on_error=None</em>, <em>on_tick=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.evlet.TaskPool.Timer" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="class">
+<dt id="celery.concurrency.evlet.TaskPool.Timer.Schedule">
+<em class="property">class </em><tt class="descname">Schedule</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.evlet.TaskPool.Timer.Schedule" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.concurrency.evlet.TaskPool.Timer.Schedule.clear">
+<tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evlet.TaskPool.Timer.Schedule.clear" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.evlet.TaskPool.Timer.Schedule.enter">
+<tt class="descname">enter</tt><big>(</big><em>entry</em>, <em>eta=None</em>, <em>priority=0</em><big>)</big><a class="headerlink" href="#celery.concurrency.evlet.TaskPool.Timer.Schedule.enter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.concurrency.evlet.TaskPool.Timer.Schedule.queue">
+<tt class="descname">queue</tt><a class="headerlink" href="#celery.concurrency.evlet.TaskPool.Timer.Schedule.queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.evlet.TaskPool.Timer.ensure_started">
+<tt class="descclassname">TaskPool.Timer.</tt><tt class="descname">ensure_started</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evlet.TaskPool.Timer.ensure_started" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.evlet.TaskPool.Timer.start">
+<tt class="descclassname">TaskPool.Timer.</tt><tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evlet.TaskPool.Timer.start" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.evlet.TaskPool.Timer.stop">
+<tt class="descclassname">TaskPool.Timer.</tt><tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evlet.TaskPool.Timer.stop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.evlet.TaskPool.blocking">
+<tt class="descclassname">TaskPool.</tt><tt class="descname">blocking</tt><big>(</big><em>fun</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.evlet.TaskPool.blocking" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.evlet.TaskPool.on_apply">
+<tt class="descclassname">TaskPool.</tt><tt class="descname">on_apply</tt><big>(</big><em>target</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>callback=None</em>, <em>accept_callback=None</em>, <em>**_</em><big>)</big><a class="headerlink" href="#celery.concurrency.evlet.TaskPool.on_apply" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.evlet.TaskPool.on_start">
+<tt class="descclassname">TaskPool.</tt><tt class="descname">on_start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evlet.TaskPool.on_start" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.evlet.TaskPool.on_stop">
+<tt class="descclassname">TaskPool.</tt><tt class="descname">on_stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evlet.TaskPool.on_stop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.concurrency.evlet.Timer">
+<em class="property">class </em><tt class="descclassname">celery.concurrency.evlet.</tt><tt class="descname">Timer</tt><big>(</big><em>schedule=None</em>, <em>on_error=None</em>, <em>on_tick=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.evlet.Timer" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="class">
+<dt id="celery.concurrency.evlet.Timer.Schedule">
+<em class="property">class </em><tt class="descname">Schedule</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.evlet.Timer.Schedule" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.concurrency.evlet.Timer.Schedule.clear">
+<tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evlet.Timer.Schedule.clear" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.evlet.Timer.Schedule.enter">
+<tt class="descname">enter</tt><big>(</big><em>entry</em>, <em>eta=None</em>, <em>priority=0</em><big>)</big><a class="headerlink" href="#celery.concurrency.evlet.Timer.Schedule.enter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.concurrency.evlet.Timer.Schedule.queue">
+<tt class="descname">queue</tt><a class="headerlink" href="#celery.concurrency.evlet.Timer.Schedule.queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.evlet.Timer.ensure_started">
+<tt class="descclassname">Timer.</tt><tt class="descname">ensure_started</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evlet.Timer.ensure_started" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.evlet.Timer.start">
+<tt class="descclassname">Timer.</tt><tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evlet.Timer.start" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.evlet.Timer.stop">
+<tt class="descclassname">Timer.</tt><tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evlet.Timer.stop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="celery.concurrency.processes.pool.html"
+                        title="previous chapter">extended multiprocessing.pool - celery.concurrency.processes.pool</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="celery.concurrency.evg.html"
+                        title="next chapter">gevent Pool Support - celery.concurrency.evg</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../sources/internals/reference/celery.concurrency.evlet.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.concurrency.evg.html" title="gevent Pool Support - celery.concurrency.evg"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.concurrency.processes.pool.html" title="extended multiprocessing.pool - celery.concurrency.processes.pool"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Celery v2.2.0a6 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+    </div>
+  </body>
+</html>
