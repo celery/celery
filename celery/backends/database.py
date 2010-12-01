@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from celery import states
 from celery.backends.base import BaseDictBackend
 from celery.db.models import Task, TaskSet
 from celery.db.session import ResultSession
@@ -59,10 +60,9 @@ class DatabaseBackend(BaseDictBackend):
         try:
             task = session.query(Task).filter(Task.task_id == task_id).first()
             if task is None:
-                from celery import states
                 task = Task(task_id)
                 task.status = states.PENDING
-
+                task.result = None
             return task.to_dict()
         finally:
             session.close()
