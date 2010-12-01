@@ -200,7 +200,7 @@ class AMQPBackend(BaseDictBackend):
             finally:
                 consumer.cancel()
         finally:
-            channel.release()
+            channel.close()
             conn.release()
 
     def get_many(self, task_ids, timeout=None):
