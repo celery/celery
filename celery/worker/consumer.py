@@ -346,7 +346,9 @@ class Consumer(object):
     def maybe_conn_error(self, fun):
         try:
             fun()
-        except self.connection_errors:
+        except (AttributeError, ) + \
+                self.connection_errors + \
+                self.channel_errors:
             pass
 
     def close_connection(self):
