@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
-import simplejson
+import anyjson
 import sys
 from celery.tests.utils import unittest
 from celery.tests.utils import StringIO
@@ -339,7 +339,7 @@ class test_TaskRequest(unittest.TestCase):
     def test_from_message(self):
         body = {"task": mytask.name, "id": gen_unique_id(),
                 "args": [2], "kwargs": {u"æØåveéðƒeæ": "bar"}}
-        m = Message(None, body=simplejson.dumps(body), backend="foo",
+        m = Message(None, body=anyjson.serialize(body), backend="foo",
                           content_type="application/json",
                           content_encoding="utf-8")
         tw = TaskRequest.from_message(m, m.decode())
@@ -355,7 +355,7 @@ class test_TaskRequest(unittest.TestCase):
     def test_from_message_nonexistant_task(self):
         body = {"task": "cu.mytask.doesnotexist", "id": gen_unique_id(),
                 "args": [2], "kwargs": {u"æØåveéðƒeæ": "bar"}}
-        m = Message(None, body=simplejson.dumps(body), backend="foo",
+        m = Message(None, body=anyjson.serialize(body), backend="foo",
                           content_type="application/json",
                           content_encoding="utf-8")
         self.assertRaises(NotRegistered, TaskRequest.from_message,

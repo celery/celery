@@ -20,8 +20,8 @@ class TestPickle(unittest.TestCase):
         exc = None
         try:
             raise RegularException("RegularException raised")
-        except RegularException, exc:
-            pass
+        except RegularException, exc_:
+            exc = exc_
 
         pickled = pickle.dumps({"exception": exc})
         unpickled = pickle.loads(pickled)
@@ -36,8 +36,8 @@ class TestPickle(unittest.TestCase):
         try:
             raise ArgOverrideException("ArgOverrideException raised",
                     status_code=100)
-        except ArgOverrideException, exc:
-            pass
+        except ArgOverrideException, exc_:
+            exc = exc_
 
         pickled = pickle.dumps({"exception": exc})
         unpickled = pickle.loads(pickled)

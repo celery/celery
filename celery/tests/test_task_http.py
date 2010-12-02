@@ -3,7 +3,10 @@ from __future__ import generators
 
 import logging
 from celery.tests.utils import unittest
-from urllib import addinfourl
+try:
+    from urllib import addinfourl
+except ImportError:  # py3k
+    from urllib.request import addinfourl
 try:
     from contextlib import contextmanager
 except ImportError:

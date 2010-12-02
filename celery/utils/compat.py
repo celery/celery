@@ -1,5 +1,16 @@
 from __future__ import generators
 
+############## py3k #########################################################
+try:
+    from UserList import UserList
+except ImportError:
+    from collections import UserList
+
+try:
+    from UserDict import UserDict
+except ImportError:
+    from collections import UserDict
+
 ############## urlparse.parse_qsl ###########################################
 
 try:
@@ -45,10 +56,12 @@ from operator import eq as _eq
 
 class _Link(object):
     """Doubly linked list."""
-    __slots__ = 'prev', 'next', 'key', '__weakref__'
+    # next can't be lowercase because 2to3 thinks it's a generator
+    # and renames it to __next__.
+    __slots__ = 'PREV', 'NEXT', 'key', '__weakref__'
 
 
-class OrderedDict(dict, MutableMapping):
+class CompatOrderedDict(dict, MutableMapping):
     """Dictionary that remembers insertion order"""
     # An inherited dict maps keys to values.
     # The inherited dict provides __getitem__, __len__, __contains__, and get.
@@ -80,18 +93,18 @@ class OrderedDict(dict, MutableMapping):
             raise TypeError("expected at most 1 arguments, got %d" % (
                                 len(args)))
         try:
-            self.__root
+            self._root
         except AttributeError:
             # sentinel node for the doubly linked list
-            self.__root = root = _Link()
-            root.prev = root.next = root
+            self._root = root = _Link()
+            root.PREV = root.NEXT = root
             self.__map = {}
         self.update(*args, **kwds)
 
     def clear(self):
         "od.clear() -> None.  Remove all items from od."
-        root = self.__root
-        root.prev = root.next = root
+        root = self._root
+        root.PREV = root.NEXT = root
         self.__map.clear()
         dict.clear(self)
 
@@ -102,10 +115,10 @@ class OrderedDict(dict, MutableMapping):
         # key/value pair.
         if key not in self:
             self.__map[key] = link = _Link()
-            root = self.__root
-            last = root.prev
-            link.prev, link.next, link.key = last, root, key
-            last.next = root.prev = weakref.proxy(link)
+            root = self._root
+            last = root.PREV
+            link.PREV, link.NEXT, link.key = last, root, key
+            last.NEXT = root.PREV = weakref.proxy(link)
         dict.__setitem__(self, key, value)
 
     def __delitem__(self, key):
@@ -115,34 +128,34 @@ class OrderedDict(dict, MutableMapping):
         # predecessor and successor nodes.
         dict.__delitem__(self, key)
         link = self.__map.pop(key)
-        link.prev.next = link.next
-        link.next.prev = link.prev
+        link.PREV.NEXT = link.NEXT
+        link.NEXT.PREV = link.PREV
 
     def __iter__(self):
         """od.__iter__() <==> iter(od)"""
         # Traverse the linked list in order.
-        root = self.__root
-        curr = root.next
+        root = self._root
+        curr = root.NEXT
         while curr is not root:
             yield curr.key
-            curr = curr.next
+            curr = curr.NEXT
 
     def __reversed__(self):
         """od.__reversed__() <==> reversed(od)"""
         # Traverse the linked list in reverse order.
-        root = self.__root
-        curr = root.prev
+        root = self._root
+        curr = root.PREV
         while curr is not root:
             yield curr.key
-            curr = curr.prev
+            curr = curr.PREV
 
     def __reduce__(self):
         """Return state information for pickling"""
         items = [[k, self[k]] for k in self]
-        tmp = self.__map, self.__root
-        del(self.__map, self.__root)
+        tmp = self.__map, self._root
+        del(self.__map, self._root)
         inst_dict = vars(self).copy()
-        self.__map, self.__root = tmp
+        self.__map, self._root = tmp
         if inst_dict:
             return (self.__class__, (items,), inst_dict)
         return self.__class__, (items,)
@@ -242,6 +255,11 @@ class OrderedDict(dict, MutableMapping):
 
     def __ne__(self, other):
         return not (self == other)
+
+try:
+    from collections import OrderedDict
+except ImportError:
+    OrderedDict = CompatOrderedDict
 
 ############## collections.defaultdict ######################################
 

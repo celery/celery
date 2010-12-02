@@ -1,6 +1,6 @@
 from celery.tests.utils import unittest
 
-import simplejson
+import anyjson
 
 from celery.app import app_or_default
 from celery.task import Task
@@ -84,7 +84,8 @@ class test_subtask(unittest.TestCase):
         s.args = list(s.args)                   # tuples are not preserved
                                                 # but this doesn't matter.
         self.assertEqual(s,
-                         subtask(simplejson.loads(simplejson.dumps(s))))
+                         subtask(anyjson.deserialize(
+                             anyjson.serialize(s))))
 
 
 class test_TaskSet(unittest.TestCase):

@@ -4,10 +4,9 @@ import time
 import traceback
 
 from itertools import chain
-from UserList import UserList
 from Queue import Queue, Empty as QueueEmpty
 
-from celery.utils.compat import OrderedDict
+from celery.utils.compat import OrderedDict, UserList
 
 
 class AttributeDictMixin(object):

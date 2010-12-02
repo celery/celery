@@ -1,11 +1,10 @@
 import warnings
 
-from UserList import UserList
-
 from celery import registry
 from celery.app import app_or_default
 from celery.datastructures import AttributeDict
 from celery.utils import gen_unique_id
+from celery.utils.compat import UserList
 
 TASKSET_DEPRECATION_TEXT = """\
 Using this invocation of TaskSet is deprecated and will be removed

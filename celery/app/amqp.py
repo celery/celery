@@ -9,12 +9,11 @@ AMQ related functionality.
 
 """
 from datetime import datetime, timedelta
-from UserDict import UserDict
-
 
 from celery import routes
 from celery import signals
 from celery.utils import gen_unique_id, textindent
+from celery.utils.compat import UserDict
 
 from kombu import compat as messaging
 from kombu import BrokerConnection

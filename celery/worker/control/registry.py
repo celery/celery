@@ -1,4 +1,4 @@
-from UserDict import UserDict
+from celery.utils.compat import UserDict
 
 
 class Panel(UserDict):

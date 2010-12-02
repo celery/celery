@@ -53,6 +53,9 @@ class promise(object):
             return -cmp(rhs, self())
         return cmp(self(), rhs)
 
+    def __eq__(self, rhs):
+        return self() == rhs
+
     def __deepcopy__(self, memo):
         memo[id(self)] = self
         return self

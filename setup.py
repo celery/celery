@@ -5,6 +5,18 @@ import sys
 import codecs
 import platform
 
+extra = {}
+tests_require = {"nose", "nose-cover3"}
+if sys.version_info >= (3, 0):
+    extra.update(use_2to3=True)
+elif sys.version_info <= (2, 6):
+    tests_require.append("unittest2")
+elif sys.version_info <= (2, 5):
+    tests_require.append("simplejson")
+
+if sys.version_info < (2, 4):
+    raise Exception("Celery requires Python 2.4 or higher.")
+
 try:
     from setuptools import setup, find_packages, Command
     from setuptools.command.test import test
@@ -175,7 +187,7 @@ setup(
              "bin/celeryev"],
     zip_safe=False,
     install_requires=install_requires,
-    tests_require=['nose', 'nose-cover3', 'unittest2', 'simplejson'],
+    tests_require=tests_require,
     cmdclass={"install": upgrade_and_install,
               "upgrade": upgrade,
               "test": mytest,
@@ -202,4 +214,5 @@ setup(
         'console_scripts': console_scripts,
     },
     long_description=long_description,
+    **extra
 )
