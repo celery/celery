@@ -188,6 +188,7 @@ class CursesMonitor(object):
             return
 
         def alert_callback(mx, my, xs):
+            my, mx = self.win.getmaxyx()
             y = count(xs).next
             task = self.state.tasks[self.selected_task]
             info = task.info(extra=["state"])
@@ -196,16 +197,27 @@ class CursesMonitor(object):
             for key, value in infoitems:
                 if key is None:
                     continue
+                value = str(value)
                 curline = y()
                 keys = key + ": "
                 self.win.addstr(curline, 3, keys, curses.A_BOLD)
-                wrapped = wrap(str(value), mx - 2)
+                wrapped = wrap(value, mx - 2)
                 if len(wrapped) == 1:
-                    self.win.addstr(curline, len(keys) + 3, wrapped[0])
+                    self.win.addstr(curline, len(keys) + 3,
+                            abbr(wrapped[0],
+                                 self.screen_width - (len(keys) + 3)))
                 else:
                     for subline in wrapped:
-                        self.win.addstr(y(), 3, " " * 4 + subline,
+                        nexty = y()
+                        if nexty >= my - 1:
+                            subline = " " * 4 + "[...]"
+                        elif nexty >= my:
+                            break
+                        self.win.addstr(nexty, 3,
+                                abbr(" " * 4 + subline, self.screen_width - 4),
                                 curses.A_NORMAL)
+
+
 
         return self.alert(alert_callback,
                 "Task details for %s" % self.selected_task)
@@ -297,7 +309,16 @@ class CursesMonitor(object):
                     info["result"] = abbr(info["result"], 16)
                 info = " ".join("%s=%s" % (key, value)
                             for key, value in info.items())
-            win.addstr(my - 5, x + len(self.selected_str), info)
+                detail = "... -> key i"
+            infowin = abbr(info,
+                           self.screen_width - len(self.selected_str) - 2,
+                           detail)
+            win.addstr(my - 5, x + len(self.selected_str), infowin)
+            # Make ellipsis bold
+            if detail in infowin:
+                detailpos = len(infowin) - len(detail)
+                win.addstr(my - 5, x + len(self.selected_str) + detailpos,
+                        detail, curses.A_BOLD)
         else:
             win.addstr(my - 5, x, "No task selected", curses.A_NORMAL)
 
