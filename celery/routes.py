@@ -43,7 +43,7 @@ class Router(object):
             route = self.lookup_route(task, args, kwargs)
             if route:
                 # Also expand "queue" keys in route.
-                return merge(options, self.expand_destination(route))
+                return merge(self.expand_destination(route), options)
         return options
 
     def expand_destination(self, route):
