@@ -77,6 +77,7 @@ from __future__ import generators
 
 import socket
 import sys
+import traceback
 import warnings
 
 from carrot.connection import AMQPConnectionException
@@ -293,7 +294,12 @@ class CarrotListener(object):
 
     def on_control(self, control):
         """Handle received remote control command."""
-        return self.control_dispatch.dispatch_from_message(control)
+        try:
+            self.control_dispatch.dispatch_from_message(control)
+        except Exception, exc:
+            self.logger.error(
+                "Error occurred while handling control command: %r\n%s" % (
+                    exc, traceback.format_exc()))
 
     def receive_message(self, message_data, message):
         """The callback called when a new message is received. """
