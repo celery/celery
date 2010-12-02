@@ -167,15 +167,30 @@ News
 
         $ celeryd --config=celeryconfig.py --loader=myloader.Loader
 
+.. _version-2.1.4:
 
 2.1.4
 =====
-:release-data: TBA
+:release-date: 2010-12-03 12:00 PM CEST
 
 .. _v214-fixes:
 
 Fixes
 -----
+
+* Execution options to `apply_async` now takes precedence over options
+  returned by active routers.  This was a regression introduced recently
+  (Issue #244).
+
+* `celeryev` curses monitor: Long arguments are now truncated so curses
+  doesn't crash with out of bounds errors.  (Issue #235).
+
+* `celeryd`: Channel errors occurring while handling control commands no
+  longer crash the worker but are instead logged with severity error.
+
+* SQLAlchemy database backend: Fixed a race condition occurring when
+  the client wrote the pending state.  Just like the Django database backend,
+  it does no longer save the pending state (Issue #261 + Issue #262).
 
 * Error email body now uses `repr(exception)` instead of `str(exception)`,
   as the latter could result in Unicode decode errors (Issue #245).
@@ -203,8 +218,6 @@ Documentation
 * Added :ref:`guide-optimizing`.
 
 * Added :ref:`faq-security` section to the FAQ.
-
-* Periodic Task User Guide: Fixed typo in crontab example table (Issue #239).
 
 .. _version-2.1.3:
 
