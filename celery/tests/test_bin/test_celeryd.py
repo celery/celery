@@ -1,7 +1,8 @@
 import logging
 import os
 import sys
-import unittest2 as unittest
+from celery.tests.utils import unittest
+from celery.tests.utils import StringIO
 
 from multiprocessing import get_logger, current_process
 from StringIO import StringIO

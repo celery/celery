@@ -2,7 +2,7 @@ import sys
 import time
 import logging
 import itertools
-import unittest2 as unittest
+from celery.tests.utils import unittest
 
 from celery.concurrency.processes import TaskPool
 from celery.datastructures import ExceptionInfo

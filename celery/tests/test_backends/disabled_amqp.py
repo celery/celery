@@ -1,5 +1,5 @@
 import sys
-import unittest2 as unittest
+from celery.tests.utils import unittest
 
 from celery import states
 from celery.utils import gen_unique_id

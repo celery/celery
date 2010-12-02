@@ -1,4 +1,4 @@
-import unittest2 as unittest
+from celery.tests.utils import unittest
 
 from celery.app.amqp import MSG_OPTIONS, extract_msg_options
 

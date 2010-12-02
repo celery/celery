@@ -1,5 +1,5 @@
 import time
-import unittest2 as unittest
+from celery.tests.utils import unittest
 import celery.utils.timer2 as timer2
 
 from celery.tests.utils import skip_if_quick

@@ -1,5 +1,5 @@
-import unittest2 as unittest
-from StringIO import StringIO
+from celery.tests.utils import unittest
+from celery.tests.utils import StringIO
 from datetime import datetime, timedelta
 
 from pyparsing import ParseException

@@ -2,9 +2,8 @@
 import logging
 import simplejson
 import sys
-import unittest2 as unittest
-
-from StringIO import StringIO
+from celery.tests.utils import unittest
+from celery.tests.utils import StringIO
 
 from kombu.transport.base import Message
 

@@ -1,5 +1,5 @@
 import pickle
-import unittest2 as unittest
+from celery.tests.utils import unittest
 
 from celery import utils
 from celery.utils import promise, mpromise, maybe_promise

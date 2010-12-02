@@ -1,9 +1,21 @@
 from __future__ import generators
 
+try:
+    import unittest
+    unittest.skip
+except AttributeError:
+    import unittest2 as unittest
+
 import os
 import sys
-import __builtin__
-from StringIO import StringIO
+try:
+    import __builtin__ as builtins
+except ImportError:    # py3k
+    import builtins
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 from nose import SkipTest
 
@@ -203,7 +215,7 @@ def mask_modules(*modnames):
 
     """
 
-    realimport = __builtin__.__import__
+    realimport = builtins.__import__
 
     def myimp(name, *args, **kwargs):
         if name in modnames:
@@ -211,9 +223,9 @@ def mask_modules(*modnames):
         else:
             return realimport(name, *args, **kwargs)
 
-    __builtin__.__import__ = myimp
+    builtins.__import__ = myimp
     yield True
-    __builtin__.__import__ = realimport
+    builtins.__import__ = realimport
 
 
 @contextmanager

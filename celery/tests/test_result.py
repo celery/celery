@@ -1,6 +1,6 @@
 from __future__ import generators
 
-import unittest2 as unittest
+from celery.tests.utils import unittest
 
 from celery import states
 from celery.app import app_or_default

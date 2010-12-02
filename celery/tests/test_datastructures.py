@@ -1,5 +1,5 @@
 import sys
-import unittest2 as unittest
+from celery.tests.utils import unittest
 from Queue import Queue
 
 from celery.datastructures import PositionQueue, ExceptionInfo, LocalCache

@@ -1,6 +1,6 @@
 import sys
 import types
-import unittest2 as unittest
+from celery.tests.utils import unittest
 
 from celery.serialization import subclass_exception
 from celery.serialization import find_nearest_pickleable_exception as fnpe

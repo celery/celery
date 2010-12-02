@@ -2,7 +2,7 @@ from __future__ import generators
 
 import sys
 import time
-import unittest2 as unittest
+from celery.tests.utils import unittest
 
 from itertools import chain, izip
 

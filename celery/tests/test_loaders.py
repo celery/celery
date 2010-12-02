@@ -1,6 +1,6 @@
 import os
 import sys
-import unittest2 as unittest
+from celery.tests.utils import unittest
 
 from celery import task
 from celery import loaders

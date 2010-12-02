@@ -2,9 +2,9 @@ from __future__ import generators
 
 import sys
 import logging
-import unittest2 as unittest
+from celery.tests.utils import unittest
 from tempfile import mktemp
-from StringIO import StringIO
+from celery.tests.utils import StringIO
 
 try:
     from contextlib import contextmanager

@@ -1,4 +1,4 @@
-import unittest2 as unittest
+from celery.tests.utils import unittest
 
 from celery.worker import state
 

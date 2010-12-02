@@ -2,13 +2,13 @@
 from __future__ import generators
 
 import logging
-import unittest2 as unittest
+from celery.tests.utils import unittest
 from urllib import addinfourl
 try:
     from contextlib import contextmanager
 except ImportError:
     from celery.tests.utils import fallback_contextmanager as contextmanager
-from StringIO import StringIO
+from celery.tests.utils import StringIO
 
 from anyjson import serialize
 

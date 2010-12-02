@@ -1,4 +1,4 @@
-import unittest2 as unittest
+from celery.tests.utils import unittest
 
 from celery.task.builtins import ExecuteRemoteTask
 from celery.task.builtins import PingTask, DeleteExpiredTaskMetaTask

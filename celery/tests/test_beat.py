@@ -1,5 +1,5 @@
 import logging
-import unittest2 as unittest
+from celery.tests.utils import unittest
 
 from datetime import datetime, timedelta
 

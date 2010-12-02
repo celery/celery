@@ -1,5 +1,5 @@
 import sys
-import unittest2 as unittest
+from celery.tests.utils import unittest
 
 from itertools import cycle
 

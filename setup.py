@@ -37,7 +37,7 @@ def with_dist_not_in_path(fun):
             dist_module = sys.modules.pop("celery", None)
             try:
                 import celery as existing_module
-            except ImportError, exc:
+            except ImportError:
                 pass
             else:
                 kwargs["celery"] = existing_module

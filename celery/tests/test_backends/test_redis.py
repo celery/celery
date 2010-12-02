@@ -1,6 +1,6 @@
 import sys
 import socket
-import unittest2 as unittest
+from celery.tests.utils import unittest
 
 from nose import SkipTest
 

@@ -5,7 +5,7 @@ import signal
 import socket
 import sys
 import traceback
-import unittest2 as unittest
+from celery.tests.utils import unittest
 
 from itertools import count
 
