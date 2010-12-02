@@ -72,6 +72,7 @@ from __future__ import generators
 
 import socket
 import sys
+import traceback
 import warnings
 
 from celery.app import app_or_default
@@ -296,6 +297,10 @@ class Consumer(object):
             self.pidbox_node.handle_message(message, message_data)
         except KeyError, exc:
             self.logger.error("No such control command: %s" % exc)
+        except Exception, exc:
+            self.logger.error(
+                "Error occurred while handling control command: %r\n%r" % (
+                    exc, traceback.format_exc()))
 
     def apply_eta_task(self, task):
         state.task_reserved(task)
