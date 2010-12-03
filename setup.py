@@ -6,7 +6,7 @@ import codecs
 import platform
 
 extra = {}
-tests_require = {"nose", "nose-cover3"}
+tests_require = ["nose", "nose-cover3"]
 if sys.version_info >= (3, 0):
     extra.update(use_2to3=True)
 elif sys.version_info <= (2, 6):
