@@ -30,6 +30,9 @@ Fixes
   the client wrote the pending state.  Just like the Django database backend,
   it does no longer save the pending state (Issue #261 + Issue #262).
 
+* `task.apply`: `propagate=True` now raises exceptions from the original
+  frame, keeping the same stacktrace (Issue #256).
+
 * Error email body now uses `repr(exception)` instead of `str(exception)`,
   as the latter could result in Unicode decode errors (Issue #245).
 
@@ -45,6 +48,8 @@ Fixes
 
 * `celeryd`: Now properly handles errors occurring while trying to acknowledge
   the message.
+
+* Happy holidays :)
 
 .. _v214-documentation:
 
