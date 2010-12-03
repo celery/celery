@@ -226,6 +226,8 @@ class BroadcastPublisher(Publisher):
 class BroadcastConsumer(Consumer):
     """Consume broadcast commands"""
     queue = conf.BROADCAST_QUEUE
+    durable = conf.COMMAND_PERSISTENT
+    auto_delete = conf.COMMAND_AUTO_DELETE
     exchange = conf.BROADCAST_EXCHANGE
     exchange_type = conf.BROADCAST_EXCHANGE_TYPE
     no_ack = True
