@@ -82,7 +82,7 @@ class TaskTrace(object):
 
     def _trace(self):
         trace = TraceInfo.trace(self.task, self.args, self.kwargs,
-                propagate=self.propagate)
+                                propagate=self.propagate)
         self.status = trace.status
         self.strtb = trace.strtb
         self.handle_after_return(trace.status, trace.retval,

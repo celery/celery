@@ -440,13 +440,6 @@ class TestTaskApply(unittest.TestCase):
         finally:
             RaisingTask.app.conf.CELERY_EAGER_PROPAGATES_EXCEPTIONS = False
 
-    def test_apply_with_CELERY_EAGER_RERAISES_EXCEPTIONS(self):
-        RaisingTask.app.conf.CELERY_EAGER_RERAISES_EXCEPTIONS = True
-        try:
-            self.assertRaises(KeyError, RaisingTask.apply)
-        finally:
-            RaisingTask.app.conf.CELERY_EAGER_RERAISES_EXCEPTIONS = False
-
     def test_apply(self):
         IncrementCounterTask.count = 0
 
