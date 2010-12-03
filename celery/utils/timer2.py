@@ -152,7 +152,6 @@ class Timer(Thread):
 
     if TRACE_THREAD:
         def start(self, *args, **kwargs):
-            import traceback
             self._started_by[self.ident] = traceback.format_stack()
             return Thread.start(self, *args, **kwargs)
 
