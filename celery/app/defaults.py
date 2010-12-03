@@ -99,7 +99,7 @@ NAMESPACES = {
         "CONCURRENCY": Option(0, type="int"),
         "ETA_SCHEDULER": Option(None, type="str"),
         "ETA_SCHEDULER_PRECISION": Option(1.0, type="float"),
-        "FORCE_HIJACK_ROOT_LOGGER": Option(False, type="bool"),
+        "HIJACK_ROOT_LOGGER": Option(True, type="bool"),
         "CONSUMER": Option("celery.worker.consumer.Consumer"),
         "LOG_FORMAT": Option(DEFAULT_PROCESS_LOG_FMT),
         "LOG_COLOR": Option(type="bool"),

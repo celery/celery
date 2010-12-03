@@ -93,7 +93,7 @@ class Logging(object):
         if not receivers:
             root = logging.getLogger()
 
-            if self.app.conf.CELERYD_FORCE_HIJACK_ROOT_LOGGER:
+            if self.app.conf.CELERYD_HIJACK_ROOT_LOGGER:
                 root.handlers = []
 
             mp = mputil.get_logger()
@@ -138,7 +138,7 @@ class Logging(object):
         format = format or self.format
         colorize = self.app.either("CELERYD_LOG_COLOR", colorize)
 
-        if not root or self.app.conf.CELERYD_FORCE_HIJACK_ROOT_LOGGER:
+        if not root or self.app.conf.CELERYD_HIJACK_ROOT_LOGGER:
             return self._setup_logger(self.get_default_logger(loglevel, name),
                                       logfile, format, colorize, **kwargs)
         self.setup_logging_subsystem(loglevel, logfile,
