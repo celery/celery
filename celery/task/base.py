@@ -589,11 +589,9 @@ class BaseTask(object):
             kwargs.update(extend_with)
 
         trace = TaskTrace(task.name, task_id, args, kwargs,
-                          task=task, request=request)
+                          task=task, request=request, propagate=throw)
         retval = trace.execute()
         if isinstance(retval, ExceptionInfo):
-            if throw:
-                raise retval.exception
             retval = retval.exception
         return EagerResult(task_id, retval, trace.status,
                            traceback=trace.strtb)

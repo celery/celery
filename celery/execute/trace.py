@@ -22,9 +22,13 @@ class TraceInfo(object):
             self.strtb = "\n".join(traceback.format_exception(*exc_info))
 
     @classmethod
-    def trace(cls, fun, args, kwargs):
+    def trace(cls, fun, args, kwargs, propagate=False):
         """Trace the execution of a function, calling the appropiate callback
-        if the function raises retry, an failure or returned successfully."""
+        if the function raises retry, an failure or returned successfully.
+
+        :keyword propagate: If true, errors will propagate to the caller.
+
+        """
         try:
             return cls(states.SUCCESS, retval=fun(*args, **kwargs))
         except (SystemExit, KeyboardInterrupt):
@@ -32,16 +36,20 @@ class TraceInfo(object):
         except RetryTaskError, exc:
             return cls(states.RETRY, retval=exc, exc_info=sys.exc_info())
         except Exception, exc:
+            if propagate:
+                raise
             return cls(states.FAILURE, retval=exc, exc_info=sys.exc_info())
         except:
             # For Python2.4 where raising strings are still allowed.
+            if propagate:
+                raise
             return cls(states.FAILURE, retval=None, exc_info=sys.exc_info())
 
 
 class TaskTrace(object):
 
     def __init__(self, task_name, task_id, args, kwargs, task=None,
-            request=None, **_):
+            request=None, propagate=None, **_):
         self.task_id = task_id
         self.task_name = task_name
         self.args = args
@@ -50,6 +58,7 @@ class TaskTrace(object):
         self.request = request or {}
         self.status = states.PENDING
         self.strtb = None
+        self.propagate = propagate
         self._trace_handlers = {states.FAILURE: self.handle_failure,
                                 states.RETRY: self.handle_retry,
                                 states.SUCCESS: self.handle_success}
@@ -72,7 +81,8 @@ class TaskTrace(object):
         return retval
 
     def _trace(self):
-        trace = TraceInfo.trace(self.task, self.args, self.kwargs)
+        trace = TraceInfo.trace(self.task, self.args, self.kwargs,
+                propagate=self.propagate)
         self.status = trace.status
         self.strtb = trace.strtb
         self.handle_after_return(trace.status, trace.retval,
