@@ -84,7 +84,7 @@ def setup_logging_subsystem(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
         if not receivers:
             root = logging.getLogger()
 
-            if conf.CELERYD_FORCE_HIJACK_ROOT_LOGGER:
+            if conf.CELERYD_HIJACK_ROOT_LOGGER:
                 root.handlers = []
 
             mp = mputil.get_logger()
@@ -126,7 +126,7 @@ def setup_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
     Returns logger object.
 
     """
-    if not root or conf.CELERYD_FORCE_HIJACK_ROOT_LOGGER:
+    if not root or conf.CELERYD_HIJACK_ROOT_LOGGER:
         return _setup_logger(get_default_logger(loglevel, name),
                              logfile, format, colorize, **kwargs)
     setup_logging_subsystem(loglevel, logfile, format, colorize, **kwargs)
