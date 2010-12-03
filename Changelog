@@ -11,6 +11,23 @@
 =====
 :release-date: 2010-12-03 12:00 PM CEST
 
+.. _v214-important:
+
+* Celery programs now hijacks the root logger by default (Issue #250).
+
+    In 2.1 logging behavior was changed to not configure logging if it was
+    already configured.  The problem is that some libraries does not play
+    nice and hijack the root logger, or use `logging.basicConfig` -- resulting
+    in users not getting any output or logs.
+
+    So instead we now always hijack the root logger, but if you want the
+    previous behavior you can disable the :setting:`CELERYD_HIJACK_ROOT_LOGGER`
+    setting:
+
+    .. code-block:: python
+
+        CELERYD_HIJACK_ROOT_LOGGER = False
+
 .. _v214-fixes:
 
 Fixes
