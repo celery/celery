@@ -95,9 +95,9 @@ class TaskPublisher(messaging.Publisher):
     auto_declare = False
 
     def declare(self):
-        if self.exchange not in _exchanges_declared:
+        if self.exchange.name not in _exchanges_declared:
             super(TaskPublisher, self).declare()
-            _exchanges_declared.add(self.exchange)
+            _exchanges_declared.add(self.exchange.name)
 
     def delay_task(self, task_name, task_args=None, task_kwargs=None,
             countdown=None, eta=None, task_id=None, taskset_id=None,
