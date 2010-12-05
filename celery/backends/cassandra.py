@@ -15,7 +15,7 @@ from datetime import datetime
 
 from celery.backends.base import BaseDictBackend
 from celery.exceptions import ImproperlyConfigured
-from celery.serialization import pickle
+from celery.utils.serialization import pickle
 from celery import states
 
 

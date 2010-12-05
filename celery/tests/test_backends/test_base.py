@@ -2,10 +2,11 @@ import sys
 import types
 from celery.tests.utils import unittest
 
-from celery.serialization import subclass_exception
-from celery.serialization import find_nearest_pickleable_exception as fnpe
-from celery.serialization import UnpickleableExceptionWrapper
-from celery.serialization import get_pickleable_exception as gpe
+from celery.utils.serialization import subclass_exception
+from celery.utils.serialization import \
+        find_nearest_pickleable_exception as fnpe
+from celery.utils.serialization import UnpickleableExceptionWrapper
+from celery.utils.serialization import get_pickleable_exception as gpe
 
 from celery import states
 from celery.backends.base import BaseBackend, KeyValueStoreBackend

@@ -9,7 +9,7 @@ except ImportError:
 from celery import states
 from celery.backends.base import BaseDictBackend
 from celery.exceptions import ImproperlyConfigured
-from celery.serialization import pickle
+from celery.utils.serialization import pickle
 
 
 class Bunch:

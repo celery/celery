@@ -239,25 +239,6 @@ class TestCeleryTasks(unittest.TestCase):
     def test_ping(self):
         self.assertEqual(task.ping(), 'pong')
 
-    @with_eager_tasks
-    def test_execute_remote(self):
-        self.assertEqual(task.execute_remote(return_True, ["foo"]).get(),
-                         True)
-
-    @with_eager_tasks
-    def test_dmap(self):
-        import operator
-        res = task.dmap(operator.add, zip(xrange(10), xrange(10)))
-        self.assertEqual(sum(res), sum(operator.add(x, x)
-                                    for x in xrange(10)))
-
-    @with_eager_tasks
-    def test_dmap_async(self):
-        import operator
-        res = task.dmap_async(operator.add, zip(xrange(10), xrange(10)))
-        self.assertEqual(sum(res.get()), sum(operator.add(x, x)
-                                            for x in xrange(10)))
-
     def assertNextTaskDataEqual(self, consumer, presult, task_name,
             test_eta=False, **kwargs):
         next_task = consumer.fetch()

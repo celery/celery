@@ -12,13 +12,13 @@ from celery.app import app_or_default
 from celery.concurrency.base import BasePool
 from celery.decorators import task as task_dec
 from celery.decorators import periodic_task as periodic_task_dec
-from celery.serialization import pickle
 from celery.utils import gen_unique_id
 from celery.worker import WorkController
 from celery.worker.buckets import FastQueue
 from celery.worker.job import TaskRequest
 from celery.worker.consumer import Consumer as MainConsumer
 from celery.worker.consumer import QoS, RUN
+from celery.utils.serialization import pickle
 
 from celery.tests.compat import catch_warnings
 from celery.tests.utils import execute_context

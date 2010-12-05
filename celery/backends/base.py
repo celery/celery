@@ -3,8 +3,8 @@ import time
 
 from celery import states
 from celery.exceptions import TimeoutError, TaskRevokedError
-from celery.serialization import pickle, get_pickled_exception
-from celery.serialization import get_pickleable_exception
+from celery.utils.serialization import pickle, get_pickled_exception
+from celery.utils.serialization import get_pickleable_exception
 from celery.datastructures import LocalCache
 
 

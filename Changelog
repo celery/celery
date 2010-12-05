@@ -130,7 +130,14 @@ Important Notes
   `celery.management.commands` has now been removed as per the deprecation
   timeline.
 
+* Removed `celery.task.RemoteExecuteTask` and accompanying functions:
+  `dmap`, `dmap_async`, and `execute_remote`.
 
+    Executing arbitrary code using pickle is a potential security issue if
+    someone gains unrestricted access to the message broker.
+
+    If you really need this functionality, then you can simply add this
+    manually.
 
 .. _v220-news:
 

@@ -1,6 +1,6 @@
 from celery.tests.utils import unittest
 
-from celery.serialization import pickle
+from celery.utils.serialization import pickle
 
 
 class RegularException(Exception):
