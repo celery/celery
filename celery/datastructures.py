@@ -1,3 +1,13 @@
+"""
+celery.datastructures
+=====================
+
+Custom data structures.
+
+:copyright: (c) 2009 - 2010 by Ask Solem.
+:license: BSD, see LICENSE for more details.
+
+"""
 from __future__ import generators
 
 import time
@@ -10,8 +20,14 @@ from celery.utils.compat import OrderedDict, UserList
 
 
 class AttributeDictMixin(object):
+    """Adds attribute access to mappings.
+
+    `d.key -> d[key]`
+
+    """
 
     def __getattr__(self, key):
+        """`d.key -> d[key]`"""
         try:
             return self[key]
         except KeyError:
@@ -19,6 +35,7 @@ class AttributeDictMixin(object):
                     self.__class__.__name__, key))
 
     def __setattr__(self, key, value):
+        """`d[key] = value -> d.key = value`"""
         self[key] = value
 
 
@@ -28,7 +45,11 @@ class AttributeDict(dict, AttributeDictMixin):
 
 
 class DictAttribute(object):
-    """Dict interface using attributes."""
+    """Dict interface to attributes.
+
+    `obj[k] -> obj.k`
+
+    """
 
     def __init__(self, obj):
         self.obj = obj
