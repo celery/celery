@@ -99,7 +99,7 @@ class TaskType(type):
 
 
 class BaseTask(object):
-    """A celery task.
+    """A Celery task.
 
     All subclasses of :class:`Task` must define the :meth:`run` method,
     which is the actual method the `celery` daemon executes.
