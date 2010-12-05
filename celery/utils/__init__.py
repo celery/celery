@@ -306,7 +306,7 @@ def abbrtask(S, max):
         return "???"
     if len(S) > max:
         module, _, cls = rpartition(S, ".")
-        module = abbr(module, max - len(cls), False)
+        module = abbr(module, max - len(cls) - 3, False)
         return module + "[.]" + cls
     return S
 
