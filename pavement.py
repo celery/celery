@@ -155,3 +155,18 @@ def releaseok(options):
 @needs("releaseok", "removepyc", "upload_docs")
 def release(options):
     pass
+
+
+@task
+def coreloc(options):
+    sh("xargs sloccount < contrib/release/core-modules.txt")
+
+
+@task
+def testloc(options):
+    sh("sloccount celery/tests")
+
+
+@task
+def loc(options):
+    sh("sloccount celery")
