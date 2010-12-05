@@ -7,11 +7,18 @@ import time
 from datetime import datetime
 from itertools import count
 from textwrap import wrap
+from math import ceil
 
 from celery import states
 from celery.app import app_or_default
 from celery.utils import abbr, abbrtask
 
+BORDER_SPACING = 4
+UUID_WIDTH = 36
+STATE_WIDTH = 8
+TIMESTAMP_WIDTH = 8
+MIN_WORKER_WIDTH = 15
+MIN_TASK_WIDTH = 16
 
 class CursesMonitor(object):
     keymap = {}
@@ -43,21 +50,35 @@ class CursesMonitor(object):
                           "L": self.selection_rate_limit}
         self.keymap = dict(default_keymap, **self.keymap)
 
-    def format_row(self, uuid, worker, task, timestamp, state):
-        my, mx = self.win.getmaxyx()
-        mx = mx - 3
-        uuid_max = 36
-        if mx < 88:
-            uuid_max = mx - 52 - 2
-        uuid = abbr(uuid, uuid_max).ljust(uuid_max)
-        worker = abbr(worker, 16).ljust(16)
-        task = abbrtask(task, 16).ljust(16)
-        state = abbr(state, 8).ljust(8)
-        timestamp = timestamp.ljust(8)
+    def format_row(self, uuid, task, worker, timestamp, state):
+        mx = self.display_width
+        detail_width = mx - 1 - STATE_WIDTH - 1 - TIMESTAMP_WIDTH # include spacing
+        uuid_space = detail_width - 1 - MIN_TASK_WIDTH - 1 - MIN_WORKER_WIDTH # include spacing
+
+        if uuid_space < UUID_WIDTH:
+            uuid_width = uuid_space
+        else:
+            uuid_width = UUID_WIDTH
+
+        detail_width = detail_width - uuid_width - 1
+        task_width = int(ceil(detail_width / 2.0))
+        worker_width = detail_width - task_width - 1
+
+        uuid = abbr(uuid, uuid_width).ljust(uuid_width)
+        worker = abbr(worker, worker_width).ljust(worker_width)
+        task = abbrtask(task, task_width).ljust(task_width)
+        state = abbr(state, STATE_WIDTH).ljust(STATE_WIDTH)
+        timestamp = timestamp.ljust(TIMESTAMP_WIDTH)
+
         row = "%s %s %s %s %s " % (uuid, worker, task, timestamp, state)
         if self.screen_width is None:
             self.screen_width = len(row[:mx])
         return row[:mx]
+
+    @property
+    def display_width(self):
+         _, mx = self.win.getmaxyx()
+         return mx - BORDER_SPACING
 
     def find_position(self):
         if not self.tasks:
@@ -283,7 +304,7 @@ class CursesMonitor(object):
                     lineno = y()
                     win.addstr(lineno, x, line, attr)
                     if state_color:
-                        win.addstr(lineno, len(line) - len(task.state) + 1,
+                        win.addstr(lineno, len(line) - STATE_WIDTH + BORDER_SPACING - 1,
                                 task.state, state_color | attr)
                     if task.ready:
                         task.visited = time.time()
