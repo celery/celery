@@ -95,7 +95,7 @@ Important Notes
     broadcast exchange.
 
     This opens up a lot of possibilities, for example the workers could listen
-    for worker events, to know what workers are in the neighborhood, and even
+    for worker events to know what workers are in the neighborhood, and even
     restart workers when they go down (or use this information to optimize
     tasks/autoscaling).
 
@@ -147,8 +147,8 @@ News
     multiple results at once, unlike `join()` which fetches the results
     one by one.
 
-    So far only supported by the AMQP result backend. Support for memcached
-    and Redis will be added later.
+    So far only supported by the AMQP result backend.  Support for memcached
+    and Redis may be added later.
 
 * `celerybeat`: Now has built-in daemonization support using the `--detach``
    option.

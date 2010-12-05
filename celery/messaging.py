@@ -8,7 +8,7 @@ from celery.app import app_or_default
 
 default_app = app_or_default()
 TaskPublisher = default_app.amqp.TaskPublisher
-ConsumerSet = default_app.amqp.ConsumerSet
+ConsumerSet = default_app.amqp.Consumer
 TaskConsumer = default_app.amqp.TaskConsumer
 
 
