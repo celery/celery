@@ -345,7 +345,7 @@ Here `messages_ready` is the number of messages ready
 for delivery (sent but not received), `messages_unacknowledged`
 is the number of messages that has been received by a worker but
 not acknowledged yet (meaning it is in progress, or has been reserved).
-`messages` is the sum of ready and unacknowledged messages combined.
+`messages` is the sum of ready and unacknowledged messages.
 
 
 Finding the number of workers currently consuming from a queue::
