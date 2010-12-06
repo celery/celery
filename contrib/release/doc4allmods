@@ -12,6 +12,7 @@ SKIP_FILES="celery.bin.rst
             celery.apps.rst
             celery.db.rst
             celery.messaging.rst
+            celery.execute.rst
             celery.db.a805d4bd.rst
             celery.db.dfd042c7.rst"
 
