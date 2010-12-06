@@ -1,5 +1,5 @@
 ==============================================
- Built-in Task Classes - celery.task.builtins
+ celery.task.builtins
 ==============================================
 
 .. contents::

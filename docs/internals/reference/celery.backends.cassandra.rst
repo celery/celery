@@ -1,5 +1,5 @@
 ================================================
- Backend: Cassandra - celery.backends.cassandra
+ celery.backends.cassandra
 ================================================
 
 .. contents::

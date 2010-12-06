@@ -1,5 +1,5 @@
 ===========================================
- Loader Base Classes - celery.loaders.base
+ celery.loaders.base
 ===========================================
 
 .. contents::

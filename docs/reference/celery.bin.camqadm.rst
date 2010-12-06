@@ -1,5 +1,5 @@
 ===========================================================
- caqmadm: AMQP API Command-line Shell - celery.bin.camqadm
+ celery.bin.camqadm
 ===========================================================
 
 .. contents::

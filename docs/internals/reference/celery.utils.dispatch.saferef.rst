@@ -1,5 +1,5 @@
 ==========================================================
- Signals: Safe References - celery.utils.dispatch.saferef
+ celery.utils.dispatch.saferef
 ==========================================================
 
 .. contents::

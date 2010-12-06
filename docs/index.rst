@@ -18,9 +18,13 @@ Contents:
     contributing
     tutorials/index
     faq
+
+.. toctree::
+    :maxdepth: 1
+
+    changelog
     reference/index
     internals/index
-    changelog
     links
 
 

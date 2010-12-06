@@ -1,4 +1,12 @@
 """
+celery.states
+=============
+
+Built-in Task States.
+
+:copyright: (c) 2009 - 2010 by Ask Solem.
+:license: BSD, see LICENSE for more details.
+
 
 .. _states:
 
@@ -46,11 +54,15 @@ ALL_STATES
 
 Set of all possible states.
 
+
+Misc.
+-----
+
 """
 
-## State precedence.
-# None represents the precedence of an unknown state.
-# Lower index means higher precedence.
+#: State precedence.
+#: None represents the precedence of an unknown state.
+#: Lower index means higher precedence.
 PRECEDENCE = ["SUCCESS",
               "FAILURE",
               None,

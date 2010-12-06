@@ -1,5 +1,5 @@
 =======================================================
- Worker Controller Threads - celery.worker.controllers
+ celery.worker.controllers
 =======================================================
 
 .. contents::

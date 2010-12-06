@@ -1,5 +1,5 @@
 ===================================================
-Celery Periodic Task Server - celery.bin.celerybeat
+ celery.bin.celerybeat
 ===================================================
 
 .. contents::

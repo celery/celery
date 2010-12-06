@@ -1,5 +1,5 @@
 =====================================================
- celeryev: Curses Event Viewer - celery.bin.celeryev
+ celery.bin.celeryev
 =====================================================
 
 .. contents::

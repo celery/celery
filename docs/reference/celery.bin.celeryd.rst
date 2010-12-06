@@ -1,5 +1,5 @@
 ==========================================
- celeryd - celery.bin.celeryd
+ celery.bin.celeryd
 ==========================================
 
 .. contents::

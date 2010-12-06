@@ -1,5 +1,5 @@
 ======================================================
- Token Bucket (rate limiting) - celery.worker.buckets
+ celery.worker.buckets
 ======================================================
 
 .. contents::

@@ -1,5 +1,5 @@
 ===================================================================
- Thread Pool Support **EXPERIMENTAL** - celery.concurrency.threads
+ celery.concurrency.threads‡ (**minefield**)
 ===================================================================
 
 .. contents::

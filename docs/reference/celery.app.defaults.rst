@@ -1,5 +1,5 @@
 ===============================================================
- Default configuration and introspection - celery.app.defaults
+ celery.app.defaults
 ===============================================================
 
 .. contents::

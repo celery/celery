@@ -1,5 +1,5 @@
 ===============================================
-Backend: Tokyo Tyrant - celery.backends.tyrant
+ celery.backends.tyrant
 ===============================================
 
 .. contents::

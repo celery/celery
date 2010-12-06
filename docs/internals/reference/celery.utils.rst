@@ -1,5 +1,5 @@
 ==========================
- Utilities - celery.utils
+ celery.utils
 ==========================
 
 .. contents::

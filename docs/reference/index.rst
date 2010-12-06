@@ -11,12 +11,11 @@
     celery.app
     celery.app.amqp
     celery.app.defaults
-    celery.decorators
+    celery.task
     celery.task.base
     celery.task.sets
     celery.result
     celery.task
-    celery.conf
     celery.task.control
     celery.task.http
     celery.schedules

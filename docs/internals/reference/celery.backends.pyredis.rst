@@ -1,5 +1,5 @@
 ==========================================
- Backend: Redis - celery.backends.pyredis
+ celery.backends.pyredis
 ==========================================
 
 .. contents::

@@ -1,5 +1,5 @@
 ==================================
- Concurrency - celery.concurrency
+ celery.concurrency
 ==================================
 
 .. contents::

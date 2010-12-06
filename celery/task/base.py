@@ -125,7 +125,8 @@ class BaseTask(object):
     abstract = True
 
     #: If disabled the worker will not forward magic keyword arguments.
-    accept_magic_kwargs = True
+    #: Depracted and scheduled for removal in v3.0.
+    accept_magic_kwargs = False
 
     #: Current request context (when task is executed).
     request = Context()
@@ -248,7 +249,7 @@ class BaseTask(object):
 
             * `task_id`
             * `task_name`
-            * `task_retries
+            * `task_retries`
             * `task_is_eager`
             * `logfile`
             * `loglevel`
@@ -316,14 +317,17 @@ class BaseTask(object):
     def get_consumer(self, connection=None, connect_timeout=None):
         """Get message consumer.
 
-        :rtype :class:`~celery.app.amqp.TaskConsumer`:
+        :rtype :class:`kombu.messaging.Consumer`:
 
-        Please be sure to close the AMQP connection when you're done
-        with this object.  Example::
+        .. warning::
 
-            >>> consumer = self.get_consumer()
-            >>> # do something with consumer
-            >>> consumer.connection.close()
+            Please be sure to close the AMQP connection when you're done
+            with this object.  Example::
+
+                >>> consumer = self.get_consumer()
+                >>> # do something with consumer
+                >>> consumer.close()
+                >>> consumer.connection.close()
 
         """
         connection = connection or self.establish_connection(connect_timeout)
@@ -720,7 +724,7 @@ class BaseTask(object):
         return self.__class__.__name__
 
 
-def create_task_cls(app):
+def create_task_cls(app, **kwargs):
     apps = [app]
 
     class Task(BaseTask):
@@ -737,11 +741,13 @@ def create_task_cls(app):
         ignore_result = app.conf.CELERY_IGNORE_RESULT
         store_errors_even_if_ignored = \
                 app.conf.CELERY_STORE_ERRORS_EVEN_IF_IGNORED
+        accept_magic_kwargs = kwargs.get("accept_magic_kwargs", False)
 
     return Task
 
 
-Task = create_task_cls(app_or_default())
+Task = create_task_cls(app_or_default(), accept_magic_kwargs=True)
+
 
 
 class PeriodicTask(Task):

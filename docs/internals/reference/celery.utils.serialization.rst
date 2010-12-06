@@ -1,11 +1,11 @@
 ============================================
- Serialization Tools - celery.serialization
+ celery.utils.serialization
 ============================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.serialization
+.. currentmodule:: celery.utils.serialization
 
-.. automodule:: celery.serialization
+.. automodule:: celery.utils.serialization
     :members:
     :undoc-members:

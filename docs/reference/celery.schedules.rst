@@ -1,5 +1,5 @@
 =====================================================
- Periodic Task Schedule Behaviors - celery.schedules
+ celery.schedules
 =====================================================
 
 .. contents::

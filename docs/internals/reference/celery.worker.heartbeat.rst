@@ -1,5 +1,5 @@
 =============================================
- Worker Heartbeats - celery.worker.heartbeat
+ celery.worker.heartbeat
 =============================================
 
 .. contents::

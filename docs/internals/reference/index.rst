@@ -6,7 +6,7 @@
 :Date: |today|
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
     celery.worker
     celery.worker.consumer
@@ -14,9 +14,6 @@
     celery.worker.controllers
     celery.worker.buckets
     celery.worker.heartbeat
-    celery.worker.control
-    celery.worker.control.builtins
-    celery.worker.control.registry
     celery.worker.state
     celery.concurrency
     celery.concurrency.processes
@@ -36,7 +33,6 @@
     celery.backends.cassandra
     celery.backends.tyrant
     celery.execute.trace
-    celery.serialization
     celery.datastructures
     celery.routes
     celery.log
@@ -52,6 +48,7 @@
     celery.utils.mail
     celery.utils.patch
     celery.utils.functional
+    celery.utils.serialization
     celery.utils.timer2
     celery.utils.dispatch
     celery.utils.dispatch.signal

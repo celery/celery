@@ -1,5 +1,5 @@
 ==========================================
- Event Dumper Tool - celery.events.dumper
+ celery.events.dumper
 ==========================================
 
 .. contents::

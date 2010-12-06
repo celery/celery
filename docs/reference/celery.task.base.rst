@@ -1,5 +1,5 @@
 ===================================
- Defining Tasks - celery.task.base
+ celery.task.base
 ===================================
 
 .. contents::
@@ -7,4 +7,4 @@
 .. currentmodule:: celery.task.base
 
 .. automodule:: celery.task.base
-    :members: Task, PeriodicTask, TaskType
+    :members: create_task_cls, BaseTask, PeriodicTask, TaskType

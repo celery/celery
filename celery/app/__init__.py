@@ -105,6 +105,7 @@ class App(base.BaseApp):
         def inner_create_task_cls(**options):
 
             def _create_task_cls(fun):
+                options.setdefault("accept_magic_kwargs", False)
                 base = options.pop("base", None) or self.create_task_cls()
 
                 @wraps(fun, assigned=("__module__", "__name__"))
@@ -125,7 +126,7 @@ class App(base.BaseApp):
             return _create_task_cls
 
         if len(args) == 1 and callable(args[0]):
-            return inner_create_task_cls()(*args)
+            return inner_create_task_cls(**options)(*args)
         return inner_create_task_cls(**options)
 
     def __reduce__(self):

@@ -1,5 +1,5 @@
 ===========================
-Backends - celery.backends
+ celery.backends
 ===========================
 
 .. contents::
