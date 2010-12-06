@@ -212,6 +212,8 @@ class BroadcastPublisher(Publisher):
 
     exchange = conf.BROADCAST_EXCHANGE
     exchange_type = conf.BROADCAST_EXCHANGE_TYPE
+    durable = conf.BROADCAST_PERSISTENT
+    auto_delete = not durable
 
     def send(self, type, arguments, destination=None, reply_ticket=None):
         """Send broadcast command."""
@@ -226,10 +228,10 @@ class BroadcastPublisher(Publisher):
 class BroadcastConsumer(Consumer):
     """Consume broadcast commands"""
     queue = conf.BROADCAST_QUEUE
-    durable = conf.COMMAND_PERSISTENT
-    auto_delete = conf.COMMAND_AUTO_DELETE
     exchange = conf.BROADCAST_EXCHANGE
     exchange_type = conf.BROADCAST_EXCHANGE_TYPE
+    durable = conf.BROADCAST_PERSISTENT
+    auto_delete = not durable
     no_ack = True
 
     def __init__(self, *args, **kwargs):

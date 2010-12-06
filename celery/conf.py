@@ -87,8 +87,7 @@ _DEFAULTS = {
     "CELERY_EVENT_ROUTING_KEY": "celeryevent",
     "CELERY_EVENT_PERSISTENT": True,
     "CELERY_EVENT_SERIALIZER": "json",
-    "CELERY_COMMAND_PERSISTENT": True,
-    "CELERY_COMMAND_AUTO_DELETE": False,
+    "CELERY_BROADCAST_PERSISTENT": True,
     "CELERY_RESULT_EXCHANGE": "celeryresults",
     "CELERY_RESULT_EXCHANGE_TYPE": "direct",
     "CELERY_RESULT_SERIALIZER": "pickle",
@@ -246,6 +245,7 @@ def prepare(m, source=settings, defaults=_DEFAULTS):
     m.BROADCAST_QUEUE = _get("CELERY_BROADCAST_QUEUE")
     m.BROADCAST_EXCHANGE = _get("CELERY_BROADCAST_EXCHANGE")
     m.BROADCAST_EXCHANGE_TYPE = _get("CELERY_BROADCAST_EXCHANGE_TYPE")
+    m.BROADCAST_PERSISTENT = _get("CELERY_BROADCAST_PERSISTENT")
 
     # :--- Event queue settings                     <-   --   --- - ----- -- #
 
@@ -255,11 +255,6 @@ def prepare(m, source=settings, defaults=_DEFAULTS):
     m.EVENT_ROUTING_KEY = _get("CELERY_EVENT_ROUTING_KEY")
     m.EVENT_PERSISTENT = _get("CELERY_EVENT_PERSISTENT")
     m.EVENT_SERIALIZER = _get("CELERY_EVENT_SERIALIZER")
-    
-    # :--- Command queue settings                     <-   --   --- - ----- -- #
-    
-    m.COMMAND_PERSISTENT = _get("CELERY_COMMAND_PERSISTENT")
-    m.COMMAND_AUTO_DELETE = _get("CELERY_COMMAND_AUTO_DELETE")
 
     # :--- AMQP Backend settings                    <-   --   --- - ----- -- #
 
