@@ -14,6 +14,7 @@ from celery.app import app_or_default
 from celery.utils import abbr, abbrtask
 
 BORDER_SPACING = 4
+LEFT_BORDER_OFFSET = 3
 UUID_WIDTH = 36
 STATE_WIDTH = 8
 TIMESTAMP_WIDTH = 8
@@ -77,8 +78,13 @@ class CursesMonitor(object):
 
     @property
     def display_width(self):
-         _, mx = self.win.getmaxyx()
-         return mx - BORDER_SPACING
+        _, mx = self.win.getmaxyx()
+        return mx - BORDER_SPACING
+
+    @property
+    def display_height(self):
+        my, _ = self.win.getmaxyx()
+        return my - 10
 
     def find_position(self):
         if not self.tasks:
@@ -273,10 +279,30 @@ class CursesMonitor(object):
         return self.alert(alert_callback,
                 "Task Result for %s" % self.selected_task)
 
+    def display_task_row(self, lineno, task):
+        state_color = self.state_colors.get(task.state)
+        attr = curses.A_NORMAL
+        if task.uuid== self.selected_task:
+            attr = curses.A_STANDOUT
+        timestamp = datetime.fromtimestamp(
+                        task.timestamp or time.time())
+        timef = timestamp.strftime("%H:%M:%S")
+        line = self.format_row(task.uuid, task.name,
+                               task.worker.hostname,
+                               timef, task.state)
+        self.win.addstr(lineno, LEFT_BORDER_OFFSET, line, attr)
+
+        if state_color:
+            self.win.addstr(lineno, len(line) - STATE_WIDTH + BORDER_SPACING - 1,
+                            task.state, state_color | attr)
+        if task.ready:
+            task.visited = time.time()
+
+
     def draw(self):
         win = self.win
         self.handle_keypress()
-        x = 3
+        x = LEFT_BORDER_OFFSET
         y = blank_line = count(2).next
         my, mx = win.getmaxyx()
         win.erase()
@@ -289,25 +315,13 @@ class CursesMonitor(object):
                 curses.A_BOLD | curses.A_UNDERLINE)
         tasks = self.tasks
         if tasks:
-            for uuid, task in tasks:
+            for row, (uuid, task) in enumerate(tasks):
+                if row > self.display_height:
+                    break
+
                 if task.uuid:
-                    state_color = self.state_colors.get(task.state)
-                    attr = curses.A_NORMAL
-                    if task.uuid == self.selected_task:
-                        attr = curses.A_STANDOUT
-                    timestamp = datetime.fromtimestamp(
-                                    task.timestamp or time.time())
-                    timef = timestamp.strftime("%H:%M:%S")
-                    line = self.format_row(uuid, task.name,
-                                           task.worker.hostname,
-                                           timef, task.state)
                     lineno = y()
-                    win.addstr(lineno, x, line, attr)
-                    if state_color:
-                        win.addstr(lineno, len(line) - STATE_WIDTH + BORDER_SPACING - 1,
-                                task.state, state_color | attr)
-                    if task.ready:
-                        task.visited = time.time()
+                    self.display_task_row(lineno, task)
 
         # -- Footer
         blank_line()
