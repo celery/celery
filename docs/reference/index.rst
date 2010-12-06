@@ -6,7 +6,7 @@
 :Date: |today|
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
     celery.app
     celery.app.amqp
@@ -30,7 +30,6 @@
     celery.loaders.base
     celery.registry
     celery.states
-    celery.messaging
     celery.contrib.abortable
     celery.events
     celery.events.state
