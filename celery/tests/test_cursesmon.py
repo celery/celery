@@ -1,4 +1,4 @@
-from celery.tests.utils import unittest
+import unittest2 as unittest
 
 from celery.events import cursesmon
 
