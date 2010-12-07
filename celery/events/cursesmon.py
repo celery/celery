@@ -77,6 +77,16 @@ class CursesMonitor(object):
         return row[:mx]
 
     @property
+    def screen_width(self):
+        _, mx = self.win.getmaxyx()
+        return mx
+
+    @property
+    def screen_height(self):
+        my, _ = self.win.getmaxyx()
+        return my
+
+    @property
     def display_width(self):
         _, mx = self.win.getmaxyx()
         return mx - BORDER_SPACING
@@ -376,9 +386,14 @@ class CursesMonitor(object):
                 curses.A_DIM)
 
         # Help
-        win.addstr(my - 2, x, self.help_title, curses.A_BOLD)
-        win.addstr(my - 2, x + len(self.help_title), self.help, curses.A_DIM)
+        self.safe_add_str(my - 2, x, self.help_title, curses.A_BOLD)
+        self.safe_add_str(my - 2, x + len(self.help_title), self.help, curses.A_DIM)
         win.refresh()
+
+    def safe_add_str(self, y, x, string, *args, **kwargs):
+        if x + len(string) > self.screen_width:
+            string = string[:self.screen_width - x]
+        self.win.addstr(y, x, string, *args, **kwargs)
 
     def init_screen(self):
         self.win = curses.initscr()
