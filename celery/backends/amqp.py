@@ -148,6 +148,7 @@ class AMQPBackend(BaseDictBackend):
         channel = conn.channel()
         try:
             binding = self._create_binding(task_id)(channel)
+            binding.declare()
             result = binding.get()
             if result:
                 try:
