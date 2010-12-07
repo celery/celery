@@ -258,18 +258,17 @@ class WorkController(object):
     def process_task(self, wrapper):
         """Process task by sending it to the pool of workers."""
         try:
-            try:
-                wrapper.task.execute(wrapper, self.pool,
-                    self.loglevel, self.logfile)
-            except Exception, exc:
-                self.logger.critical("Internal error %s: %s\n%s" % (
-                                exc.__class__, exc, traceback.format_exc()))
+            wrapper.task.execute(wrapper, self.pool,
+                                 self.loglevel, self.logfile)
         except SystemTerminate:
             self.terminate()
             raise SystemExit()
         except (SystemExit, KeyboardInterrupt), exc:
             self.stop()
             raise exc
+        except Exception, exc:
+            self.logger.critical("Internal error %s: %s\n%s" % (
+                            exc.__class__, exc, traceback.format_exc()))
 
     def stop(self, in_sighandler=False):
         """Graceful shutdown of the worker server."""
