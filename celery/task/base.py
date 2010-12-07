@@ -17,18 +17,6 @@ from celery.task import sets
 TaskSet = sets.TaskSet
 subtask = sets.subtask
 
-PERIODIC_DEPRECATION_TEXT = """\
-Periodic task classes has been deprecated and will be removed
-in celery v3.0.
-
-Please use the CELERYBEAT_SCHEDULE setting instead:
-
-    CELERYBEAT_SCHEDULE = {
-        name: dict(task=task_name, schedule=run_every,
-                   args=(), kwargs={}, options={}, relative=False)
-    }
-
-"""
 extract_exec_options = mattrgetter("queue", "routing_key",
                                    "exchange", "immediate",
                                    "mandatory", "priority",
@@ -811,6 +799,7 @@ class PeriodicTask(Task):
     ignore_result = True
     type = "periodic"
     relative = False
+    options = None
 
     def __init__(self):
         app = app_or_default()
@@ -819,9 +808,6 @@ class PeriodicTask(Task):
                     "Periodic tasks must have a run_every attribute")
         self.run_every = maybe_schedule(self.run_every, self.relative)
 
-        # Periodic task classes is pending deprecation.
-        warnings.warn(PendingDeprecationWarning(PERIODIC_DEPRECATION_TEXT))
-
         # For backward compatibility, add the periodic task to the
         # configuration schedule instead.
         app.conf.CELERYBEAT_SCHEDULE[self.name] = {
@@ -829,7 +815,7 @@ class PeriodicTask(Task):
                 "schedule": self.run_every,
                 "args": (),
                 "kwargs": {},
-                "options": {},
+                "options": self.options or {},
                 "relative": self.relative,
         }
 
