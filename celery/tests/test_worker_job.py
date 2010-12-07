@@ -11,7 +11,7 @@ from celery import states
 from celery.app import app_or_default
 from celery.concurrency.base import BasePool
 from celery.datastructures import ExceptionInfo
-from celery.decorators import task as task_dec
+from celery.task import task as task_dec
 from celery.exceptions import RetryTaskError, NotRegistered
 from celery.log import setup_logger
 from celery.result import AsyncResult
@@ -37,7 +37,7 @@ def on_ack():
     scratch["ACK"] = True
 
 
-@task_dec()
+@task_dec(accept_magic_kwargs=True)
 def mytask(i, **kwargs):
     return i ** i
 
@@ -54,13 +54,13 @@ class MyTaskIgnoreResult(Task):
         return i ** i
 
 
-@task_dec()
+@task_dec(accept_magic_kwargs=True)
 def mytask_some_kwargs(i, logfile):
     some_kwargs_scratchpad["logfile"] = logfile
     return i ** i
 
 
-@task_dec()
+@task_dec(accept_magic_kwargs=True)
 def mytask_raising(i, **kwargs):
     raise KeyError(i)
 

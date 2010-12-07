@@ -1,4 +1,4 @@
-from celery.decorators import task
+from celery.task import task
 
 
 @task

@@ -1,6 +1,6 @@
 from django.conf.urls.defaults import *
 
-from celery.task.builtins import PingTask
+from celery.task import PingTask
 from djcelery import views as celery_views
 
 # Uncomment the next two lines to enable the admin:

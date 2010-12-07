@@ -219,7 +219,18 @@ class BaseApp(object):
         if isinstance(c.CELERY_TASK_RESULT_EXPIRES, int):
             c["CELERY_TASK_RESULT_EXPIRES"] = timedelta(
                     seconds=c.CELERY_TASK_RESULT_EXPIRES)
+
+        # Install backend cleanup periodic task.
+        if c.CELERY_TASK_RESULT_EXPIRES:
+            from celery.schedules import crontab
+            c.CELERYBEAT_SCHEDULE.setdefault("celery.backend_cleanup",
+                    dict(task="celery.backend_cleanup",
+                         schedule=crontab(minute="00", hour="04",
+                                          day_of_week="*"),
+                         options={"expires": 12 * 3600}))
+
         return c
+
 
     def mail_admins(self, subject, body, fail_silently=False):
         """Send an e-mail to the admins in conf.ADMINS."""

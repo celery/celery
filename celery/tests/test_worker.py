@@ -10,8 +10,8 @@ from celery.utils.timer2 import Timer
 
 from celery.app import app_or_default
 from celery.concurrency.base import BasePool
-from celery.decorators import task as task_dec
-from celery.decorators import periodic_task as periodic_task_dec
+from celery.task import task as task_dec
+from celery.task import periodic_task as periodic_task_dec
 from celery.utils import gen_unique_id
 from celery.worker import WorkController
 from celery.worker.buckets import FastQueue

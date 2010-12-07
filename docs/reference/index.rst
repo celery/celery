@@ -21,7 +21,6 @@
     celery.schedules
     celery.signals
     celery.exceptions
-    celery.task.builtins
     celery.loaders
     celery.loaders.app
     celery.loaders.default

@@ -27,7 +27,7 @@ import re
 import time
 import urlparse
 
-from celery.decorators import task
+from celery.task import task
 from celery.task.sets import TaskSet
 from eventlet import Timeout
 from eventlet.green import urllib2
