@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import sys
 import threading
 import warnings
@@ -10,12 +11,30 @@ from celery.registry import tasks, _unpickle_task
 from celery.result import EagerResult
 from celery.schedules import maybe_schedule
 from celery.utils import mattrgetter, gen_unique_id, fun_takes_kwargs
+from celery.utils.functional import wraps
 from celery.utils.timeutils import timedelta_seconds
 
 from celery.task import sets
 
-TaskSet = sets.TaskSet
-subtask = sets.subtask
+IMPORT_DEPRECATION_TEXT = """
+Importing %(symbol)s from `celery.task.base` is deprecated,
+and is scheduled for removal in 2.4.
+
+Please use `from celery.task import %(symbol)s` instead.
+
+"""
+
+def __deprecated_import(fun):
+
+    @wraps(fun)
+    def _inner(*args, **kwargs):
+        warnings.warn(DeprecationWarning(
+            IMPORT_DEPRECATION_TEXT % {"symbol": fun.__name__, }))
+        return fun(*args, **kwargs)
+
+    return _inner
+TaskSet = __deprecated_import(sets.TaskSet)  # ✟
+subtask = __deprecated_import(sets.subtask)  # ✟
 
 extract_exec_options = mattrgetter("queue", "routing_key",
                                    "exchange", "immediate",
