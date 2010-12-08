@@ -478,5 +478,6 @@ class Consumer(object):
         conninfo = {}
         if self.connection:
             conninfo = self.app.amqp.get_broker_info(self.connection)
+            conninfo.pop("password", None)  # don't send password.
         return {"broker": conninfo,
                 "prefetch_count": self.qos.next}
