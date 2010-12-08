@@ -140,7 +140,7 @@ class TaskSet(UserList):
                               DeprecationWarning)
 
         self.app = app_or_default(app)
-        self.data = list(tasks)
+        self.data = list(tasks or [])
         self.total = len(self.tasks)
         self.Publisher = Publisher or self.app.amqp.TaskPublisher
 

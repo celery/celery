@@ -31,3 +31,13 @@ celery/utils/functional.py:(.+?) redefinition of unused 'wraps'
 celery/utils/mail.py:(.+?) redefinition of unused 'MIMEText'
 celery/utils/__init__.py:(.+?) 'gen_unique_id' imported but unused
 celery/events/cursesmon.py:(.+?): local variable 'consumer' is assigned to but never used
+celery/tests/test_task_http.py:(.+?): redefinition of unused 'addinfourl' from line 7
+celery/tests/utils.py:(.+?): 'unittest' imported but unused
+celery/tests/utils.py:(.+?): redefinition of unused 'builtins' from line 12
+celery/tests/utils.py:(.+?): redefinition of unused 'StringIO' from line 16
+celery/utils/compat.py:(.+?): redefinition of unused 'UserList' from line 5
+celery/utils/compat.py:(.+?): 'UserList' imported but unused
+celery/utils/compat.py:(.+?): redefinition of unused 'UserDict' from line 10
+celery/utils/compat.py:(.+?): 'UserDict' imported but unused
+celery/utils/compat.py:(.+?): redefinition of unused 'OrderedDict' from line 260
+

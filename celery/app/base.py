@@ -231,7 +231,6 @@ class BaseApp(object):
 
         return c
 
-
     def mail_admins(self, subject, body, fail_silently=False):
         """Send an e-mail to the admins in conf.ADMINS."""
         if not self.conf.ADMINS:

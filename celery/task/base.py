@@ -24,6 +24,7 @@ Please use `from celery.task import %(symbol)s` instead.
 
 """
 
+
 def __deprecated_import(fun):
 
     @wraps(fun)

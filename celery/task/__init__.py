@@ -97,5 +97,3 @@ def ping():  # ✞
         "The ping task has been deprecated and will be removed in Celery "
         "v2.3.  Please use inspect.ping instead."))
     return PingTask.apply_async().get()
-
-

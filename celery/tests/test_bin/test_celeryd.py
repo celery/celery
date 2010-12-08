@@ -1,11 +1,8 @@
 import logging
 import os
 import sys
-from celery.tests.utils import unittest
-from celery.tests.utils import StringIO
 
 from multiprocessing import get_logger, current_process
-from StringIO import StringIO
 
 from celery import Celery
 from celery import platforms
@@ -19,6 +16,8 @@ from celery.utils.functional import wraps
 
 from celery.tests.compat import catch_warnings
 from celery.tests.utils import execute_context
+from celery.tests.utils import unittest
+from celery.tests.utils import StringIO
 
 
 patch.ensure_process_aware_logger()
