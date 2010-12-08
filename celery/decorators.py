@@ -3,7 +3,7 @@
 celery.decorators✞
 ==================
 
-Depreacted decorators, use `celery.task.task`,
+Deprecated decorators, use `celery.task.task`,
 and `celery.task.periodic_task` instead.
 
 The new decorators does not support magic keyword arguments.
