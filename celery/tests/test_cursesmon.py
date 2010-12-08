@@ -44,7 +44,7 @@ class TestCursesDisplay(unittest.TestCase):
         self.win.x, self.win.y = 80, 24
         row = self.monitor.format_row("UUID", "TASK",
                                       "WORKER", "TIME", "STATE")
-        self.assertEqual('UUID                      WORKER'
+        self.assertEqual('UUID                      WORKER          '
                          'TASK             TIME     STATE   ',
                          row)
 
@@ -58,7 +58,7 @@ class TestCursesDisplay(unittest.TestCase):
             'SUCCESS')
         self.assertEqual(136, len(row))
         self.assertEqual('783da208-77d0-40ca-b3d6-37dd6dbb55d3 '
-                         'workerworkerworkerworkerworkerworker...'
-                         'task.task.task.task.task.task.task.[.]tas'
+                         'workerworkerworkerworkerworkerworker... '
+                         'task.task.task.task.task.task.task.[.]tas '
                          '21:13:20 SUCCESS ',
                          row)
