@@ -58,8 +58,6 @@ celery.worker.control
 
 * celery.worker.registry
 
-* celery.worker.builtins
-
 
 Tasks
 =====
@@ -81,9 +79,6 @@ celery.task.http
 
 celery.task.control
 -------------------
-
-celery.task.builtins
---------------------
 
 Execution
 =========

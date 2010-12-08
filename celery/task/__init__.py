@@ -1,8 +1,4 @@
-"""
-
-Working with tasks and task sets.
-
-"""
+# -*- coding: utf-8 -*-
 import warnings
 
 from celery.app import app_or_default
@@ -79,7 +75,19 @@ def periodic_task(*args, **options):
     return task(**dict({"base": PeriodicTask}, **options))
 
 
-def ping():
+@task(name="celery.backend_cleanup")
+def backend_cleanup():
+    backend_cleanup.backend.cleanup()
+
+
+class PingTask(Task):  # ✞
+    name = "celery.ping"
+
+    def run(self, **kwargs):
+        return "pong"
+
+
+def ping():  # ✞
     """Deprecated and scheduled for removal in Celery 2.3.
 
     Please use :meth:`celery.task.control.ping` instead.
@@ -88,5 +96,6 @@ def ping():
     warnings.warn(DeprecationWarning(
         "The ping task has been deprecated and will be removed in Celery "
         "v2.3.  Please use inspect.ping instead."))
-    from celery.task.builtins import PingTask
     return PingTask.apply_async().get()
+
+

@@ -1,6 +1,6 @@
 import urllib2
 
-from celery.decorators import task
+from celery.task import task
 
 
 @task(ignore_result=True)

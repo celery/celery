@@ -93,7 +93,7 @@ Deprecations
 ============
 
 * celery.task.ping
-  celery.task.builtins.PingTask
+  celery.task.PingTask
 
   Inferior to the ping remote control command.
   Will be removed in Celery 2.3.
@@ -125,7 +125,7 @@ Aliases (Pending deprecation)
 * celery.task.sets
     * .TaskSet -> {app.TaskSet}
 
-* celery.decorators
+* celery.decorators / celery.task
     * .task -> {app.task}
 
 * celery.execute

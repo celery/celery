@@ -4,7 +4,7 @@ from kombu.pidbox import Mailbox
 
 from celery.app import app_or_default
 from celery.task import control
-from celery.task.builtins import PingTask
+from celery.task import PingTask
 from celery.utils import gen_unique_id
 from celery.utils.functional import wraps
 

@@ -422,64 +422,19 @@ This makes more sense from the reusable app perspective anyway.
 Decorating tasks
 ================
 
-Using decorators with tasks requires extra steps because of the magic keyword
-arguments.
-
-If you have the following task and decorator:
+When using other decorators you must make sure that the `task`
+decorator is applied last:
 
 .. code-block:: python
 
-    from celery.utils.functional import wraps
-
-    def decorator(task):
-
-        @wraps(task)
-        def _decorated(*args, **kwargs):
-            print("inside decorator")
-            return task(*args, **kwargs)
-
-
-    @decorator
     @task
+    @decorator2
+    @decorator1
     def add(x, y):
         return x + y
 
-Then the worker will see that the task is accepting keyword arguments,
-while it really doesn't, resulting in an error.
 
-The workaround is to either have your task accept arbitrary keyword
-arguments:
-
-.. code-block:: python
-
-    @decorator
-    @task
-    def add(x, y, **kwargs):
-        return x + y
-
-or patch the decorator to preserve the original signature:
-
-.. code-block:: python
-
-    from inspect import getargspec
-    from celery.utils.functional import wraps
-
-    def decorator(task):
-
-        @wraps(task)
-        def _decorated(*args, **kwargs):
-            print("in decorator")
-            return task(*args, **kwargs)
-        _decorated.argspec = inspect.getargspec(task)
-
-Also note the use of :func:`~celery.utils.functional.wraps` here,
-this is necessary to keep the original function name and docstring.
-
-.. note::
-
-    The magic keyword arguments will be deprecated in the future,
-    replaced by the `task.request` attribute in 2.2, and the
-    keyword arguments will be removed in 3.0.
+Which means the `@task` decorator must be the top statement.
 
 .. _task-states:
 
@@ -1022,7 +977,7 @@ blog/tasks.py
 .. code-block:: python
 
     from akismet import Akismet
-    from celery.decorators import task
+    from celery.task import task
 
     from django.core.exceptions import ImproperlyConfigured
     from django.contrib.sites.models import Site

@@ -9,9 +9,9 @@ from celery.utils.timer2 import Timer
 
 from celery.app import app_or_default
 from celery.datastructures import AttributeDict
-from celery.decorators import task
+from celery.task import task
 from celery.registry import tasks
-from celery.task.builtins import PingTask
+from celery.task import PingTask
 from celery.utils import gen_unique_id
 from celery.worker.buckets import FastQueue
 from celery.worker.job import TaskRequest

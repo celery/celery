@@ -120,7 +120,7 @@ time limit kills it:
 
 .. code-block:: python
 
-    from celery.decorators import task
+    from celery.task import task
     from celery.exceptions import SoftTimeLimitExceeded
 
     @task()
