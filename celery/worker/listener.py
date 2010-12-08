@@ -494,5 +494,6 @@ class CarrotListener(object):
         conninfo = {}
         if self.connection:
             conninfo = get_broker_info(self.connection)
+            conninfo.pop("password", None)  # don't send password.
         return {"broker": conninfo,
                 "prefetch_count": self.qos.next}
