@@ -30,4 +30,3 @@ class TaskPool(BasePool):
 
     def blocking(self, fun, *args, **kwargs):
         Greenlet.spawn(fun, *args, **kwargs).get()
-

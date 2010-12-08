@@ -20,6 +20,7 @@ TIMESTAMP_WIDTH = 8
 MIN_WORKER_WIDTH = 15
 MIN_TASK_WIDTH = 16
 
+
 class CursesMonitor(object):
     keymap = {}
     win = None
@@ -52,8 +53,10 @@ class CursesMonitor(object):
 
     def format_row(self, uuid, task, worker, timestamp, state):
         mx = self.display_width
-        detail_width = mx - 1 - STATE_WIDTH - 1 - TIMESTAMP_WIDTH # include spacing
-        uuid_space = detail_width - 1 - MIN_TASK_WIDTH - 1 - MIN_WORKER_WIDTH # include spacing
+
+        # include spacing
+        detail_width = mx - 1 - STATE_WIDTH - 1 - TIMESTAMP_WIDTH
+        uuid_space = detail_width - 1 - MIN_TASK_WIDTH - 1 - MIN_WORKER_WIDTH
 
         if uuid_space < UUID_WIDTH:
             uuid_width = uuid_space
@@ -77,8 +80,8 @@ class CursesMonitor(object):
 
     @property
     def display_width(self):
-         _, mx = self.win.getmaxyx()
-         return mx - BORDER_SPACING
+        _, mx = self.win.getmaxyx()
+        return mx - BORDER_SPACING
 
     def find_position(self):
         if not self.tasks:
@@ -238,8 +241,6 @@ class CursesMonitor(object):
                                 abbr(" " * 4 + subline, self.screen_width - 4),
                                 curses.A_NORMAL)
 
-
-
         return self.alert(alert_callback,
                 "Task details for %s" % self.selected_task)
 
@@ -304,7 +305,8 @@ class CursesMonitor(object):
                     lineno = y()
                     win.addstr(lineno, x, line, attr)
                     if state_color:
-                        win.addstr(lineno, len(line) - STATE_WIDTH + BORDER_SPACING - 1,
+                        win.addstr(lineno,
+                                len(line) - STATE_WIDTH + BORDER_SPACING - 1,
                                 task.state, state_color | attr)
                     if task.ready:
                         task.visited = time.time()

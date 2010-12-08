@@ -1,7 +1,6 @@
 from celery.tests.utils import unittest
 
 from celery.task.builtins import PingTask, DeleteExpiredTaskMetaTask
-from celery.utils.serialization import pickle
 
 
 def some_func(i):

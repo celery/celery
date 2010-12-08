@@ -2,10 +2,12 @@ from celery.tests.utils import unittest
 
 from celery.events import cursesmon
 
+
 class MockWindow(object):
 
     def getmaxyx(self):
         return self.y, self.x
+
 
 class TestCursesDisplay(unittest.TestCase):
 
@@ -22,7 +24,8 @@ class TestCursesDisplay(unittest.TestCase):
             'workerworkerworkerworkerworkerworkerworkerworker',
             '21:13:20',
             'SUCCESS')
-        self.assertEqual('783da208-77d0-40ca-b3d6-37dd6dbb55d3 workerworker... task.task.[.]tas 21:13:20 SUCCESS ',
+        self.assertEqual('783da208-77d0-40ca-b3d6-37dd6dbb55d3 '
+                         'workerworker... task.task.[.]tas 21:13:20 SUCCESS ',
                          row)
 
     def test_format_row_with_truncated_uuid(self):
@@ -33,14 +36,16 @@ class TestCursesDisplay(unittest.TestCase):
             'workerworkerworkerworkerworkerworkerworkerworker',
             '21:13:20',
             'SUCCESS')
-        self.assertEqual('783da208-77d0-40ca-b3d... workerworker... task.task.[.]tas 21:13:20 SUCCESS ',
+        self.assertEqual('783da208-77d0-40ca-b3d... workerworker... '
+                         'task.task.[.]tas 21:13:20 SUCCESS ',
                          row)
 
     def test_format_title_row(self):
         self.win.x, self.win.y = 80, 24
         row = self.monitor.format_row("UUID", "TASK",
                                       "WORKER", "TIME", "STATE")
-        self.assertEqual('UUID                      WORKER          TASK             TIME     STATE   ',
+        self.assertEqual('UUID                      WORKER'
+                         'TASK             TIME     STATE   ',
                          row)
 
     def test_format_row_for_wide_screen_with_short_uuid(self):
@@ -52,5 +57,8 @@ class TestCursesDisplay(unittest.TestCase):
             '21:13:20',
             'SUCCESS')
         self.assertEqual(136, len(row))
-        self.assertEqual('783da208-77d0-40ca-b3d6-37dd6dbb55d3 workerworkerworkerworkerworkerworker... task.task.task.task.task.task.task.[.]tas 21:13:20 SUCCESS ',
+        self.assertEqual('783da208-77d0-40ca-b3d6-37dd6dbb55d3 '
+                         'workerworkerworkerworkerworkerworker...'
+                         'task.task.task.task.task.task.task.[.]tas'
+                         '21:13:20 SUCCESS ',
                          row)

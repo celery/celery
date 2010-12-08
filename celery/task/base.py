@@ -732,10 +732,7 @@ def create_task_cls(app, **kwargs):
         accept_magic_kwargs = kwargs.get("accept_magic_kwargs", False)
 
     return Task
-
-
 Task = create_task_cls(app_or_default(), accept_magic_kwargs=True)
-
 
 
 class PeriodicTask(Task):
