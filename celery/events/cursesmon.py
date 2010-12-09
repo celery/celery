@@ -29,7 +29,6 @@ class CursesMonitor(object):
     selected_task = None
     selected_position = 0
     selected_str = "Selected: "
-    limit = 20
     foreground = curses.COLOR_BLACK
     background = curses.COLOR_WHITE
     online_str = "Workers online: "
@@ -95,6 +94,10 @@ class CursesMonitor(object):
     def display_height(self):
         my, _ = self.win.getmaxyx()
         return my - 10
+
+    @property
+    def limit(self):
+        return self.display_height
 
     def find_position(self):
         if not self.tasks:
@@ -335,7 +338,7 @@ class CursesMonitor(object):
 
         # -- Footer
         blank_line()
-        win.hline(my - 6, x, curses.ACS_HLINE, self.screen_width)
+        win.hline(my - 6, x, curses.ACS_HLINE, self.screen_width - 4)
 
         # Selected Task Info
         if self.selected_task:
