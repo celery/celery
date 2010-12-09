@@ -316,5 +316,10 @@ class BaseApp(object):
 
     @cached_property
     def events(self):
+        """Sending/receiving events.
+
+        See :class:`~celery.events.Events`.
+
+        """
         from celery.events import Events
         return Events(app=self)

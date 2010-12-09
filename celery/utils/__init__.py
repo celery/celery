@@ -396,9 +396,13 @@ class cached_property(object):
     def __delete__(self, obj):
         if not obj:
             return self
-        if self.__del is not None:
-            self.__del(obj)
-        del(obj.__dict__[self.__name__])
+        try:
+            del(obj.__dict__[self.__name__])
+        except KeyError:
+            pass
+        else:
+            if self.__del is not None:
+                self.__del(obj)
 
     def setter(self, fset):
         return self.__class__(self.__get, fset, self.__del)
