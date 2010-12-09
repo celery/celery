@@ -310,7 +310,3 @@ def install_HUP_not_supported_handler(worker):
             "Restarting with HUP is unstable on this platform!")
 
     platforms.install_signal_handler("SIGHUP", warn_on_HUP_handler)
-
-
-def run_worker(*args, **kwargs):
-    return Worker(*args, **kwargs).run()

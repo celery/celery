@@ -196,14 +196,6 @@ class test_funs(unittest.TestCase):
         self.assertEqual(opts.concurrency, 512)
 
     @disable_stdouts
-    def test_run_worker(self):
-        p, cd.Worker = cd.Worker, Worker
-        try:
-            cd.run_worker(discard=True)
-        finally:
-            cd.Worker = p
-
-    @disable_stdouts
     def test_main(self):
         p, cd.Worker = cd.Worker, Worker
         s, sys.argv = sys.argv, ["celeryd", "--discard"]
