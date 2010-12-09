@@ -43,7 +43,7 @@ class TestLoaderBase(unittest.TestCase):
 
     def test_conf_property(self):
         self.assertEqual(self.loader.conf["foo"], "bar")
-        self.assertEqual(self.loader._conf_cache["foo"], "bar")
+        self.assertEqual(self.loader.__dict__["conf"]["foo"], "bar")
         self.assertEqual(self.loader.conf["foo"], "bar")
 
     def test_import_default_modules(self):

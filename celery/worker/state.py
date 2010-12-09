@@ -1,5 +1,6 @@
 import shelve
 
+from celery.utils import cached_property
 from celery.utils.compat import defaultdict
 from celery.datastructures import LimitedSet
 
@@ -42,7 +43,7 @@ def task_ready(request):
 
 class Persistent(object):
     storage = shelve
-    _open = None
+    _is_open = False
 
     def __init__(self, filename):
         self.filename = filename
@@ -66,16 +67,15 @@ class Persistent(object):
         return self.storage.open(self.filename)
 
     def close(self):
-        if self._open:
-            self._open.close()
-            self._open = None
+        if self._is_open:
+            self.db.close()
+            self._is_open = False
 
     def _load(self):
         self.merge(self.db)
         self.close()
 
-    @property
+    @cached_property
     def db(self):
-        if self._open is None:
-            self._open = self.open()
-        return self._open
+        self._is_open = True
+        return self.open()

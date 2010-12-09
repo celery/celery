@@ -12,6 +12,7 @@ from celery import states
 from celery.backends.base import BaseDictBackend
 from celery.exceptions import TimeoutError
 from celery.utils import timeutils
+from celery.utils import cached_property
 
 
 def repair_uuid(s):
@@ -248,12 +249,6 @@ class AMQPBackend(BaseDictBackend):
             self._pool.close()
             self._pool = None
 
-    @property
-    def pool(self):
-        if not self._pool:
-            self._pool = self.app.broker_connection().Pool(self.connection_max)
-        return self._pool
-
     def reload_task_result(self, task_id):
         raise NotImplementedError(
                 "reload_task_result is not supported by this backend.")
@@ -272,3 +267,7 @@ class AMQPBackend(BaseDictBackend):
         """Get the result of a taskset."""
         raise NotImplementedError(
                 "restore_taskset is not supported by this backend.")
+
+    @cached_property
+    def pool(self):
+        return self.app.broker_connection().Pool(self.connection_max)

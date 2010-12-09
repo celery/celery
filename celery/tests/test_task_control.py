@@ -104,10 +104,10 @@ class test_Broadcast(unittest.TestCase):
     def setUp(self):
         self.app = app_or_default()
         self.control = Control(app=self.app)
-        self.app._control = self.control
+        self.app.control = self.control
 
     def tearDown(self):
-        self.app._control = None
+        del(self.app.control)
 
     def test_discard_all(self):
         self.control.discard_all()

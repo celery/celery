@@ -77,7 +77,7 @@ class MutableURL(object):
     """
     def __init__(self, url):
         self.parts = urlparse(url)
-        self._query = dict(parse_qsl(self.parts[4]))
+        self.query = dict(parse_qsl(self.parts[4]))
 
     def __str__(self):
         scheme, netloc, path, params, query, fragment = self.parts
@@ -92,14 +92,6 @@ class MutableURL(object):
 
     def __repr__(self):
         return "<%s: %s>" % (self.__class__.__name__, str(self))
-
-    def _get_query(self):
-        return self._query
-
-    def _set_query(self, query):
-        self._query = query
-
-    query = property(_get_query, _set_query)
 
 
 class HttpDispatch(object):

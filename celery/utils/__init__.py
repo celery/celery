@@ -342,3 +342,66 @@ def import_from_cwd(module, imp=None):
             sys.path.remove(cwd)
         except ValueError:
             pass
+
+
+class cached_property(object):
+    """Property descriptor that caches the return value
+    of the get function.
+
+    *Examples*
+
+    .. code-block:: python
+
+        @cached_property
+        def connection(self):
+            return Connection()
+
+        @connection.setter  # Prepares stored value
+        def connection(self, value):
+            if value is None:
+                raise TypeError("Connection must be a connection")
+            return value
+
+        @connection.deleter
+        def connection(self):
+            # Additional action to do at del(self.attr)
+            print("Next access will give a new connection")
+
+    """
+
+    def __init__(self, fget=None, fset=None, fdel=None, doc=None):
+        self.__get = fget
+        self.__set = fset
+        self.__del = fdel
+        self.__doc__ = doc or fget.__doc__
+        self.__name__ = fget.__name__
+        self.__module__ = fget.__module__
+
+    def __get__(self, obj, type=None):
+        if not obj:
+            return self
+        try:
+            return obj.__dict__[self.__name__]
+        except KeyError:
+            value = obj.__dict__[self.__name__] = self.__get(obj)
+            return value
+
+    def __set__(self, obj, value):
+        if not obj:
+            return self
+        if self.__set is not None:
+            value = self.__set(obj, value)
+        obj.__dict__[self.__name__] = value
+
+    def __delete__(self, obj):
+        if not obj:
+            return self
+        if self.__del is not None:
+            self.__del(obj)
+        del(obj.__dict__[self.__name__])
+
+    def setter(self, fset):
+        return self.__class__(self.__get, fset, self.__del)
+
+    def deleter(self, fdel):
+        return self.__class__(self.__get, self.__set, fdel)

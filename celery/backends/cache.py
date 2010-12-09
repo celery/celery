@@ -4,6 +4,7 @@ from kombu.utils import partition
 
 from celery.backends.base import KeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured
+from celery.utils import cached_property
 from celery.utils import timeutils
 from celery.datastructures import LocalCache
 
@@ -48,7 +49,6 @@ backends = {"memcache": get_best_memcache,
 
 
 class CacheBackend(KeyValueStoreBackend):
-    _client = None
 
     def __init__(self, expires=None, backend=None, options={}, **kwargs):
         super(CacheBackend, self).__init__(self, **kwargs)
@@ -80,8 +80,6 @@ class CacheBackend(KeyValueStoreBackend):
     def delete(self, key):
         return self.client.delete(key)
 
-    @property
+    @cached_property
     def client(self):
-        if self._client is None:
-            self._client = self.Client(self.servers, **self.options)
-        return self._client
+        return self.Client(self.servers, **self.options)

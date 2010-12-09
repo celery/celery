@@ -9,6 +9,7 @@ import sys
 import threading
 import traceback
 import multiprocessing
+
 from datetime import datetime
 
 from celery import platforms
@@ -16,7 +17,7 @@ from celery import registry
 from celery.app import app_or_default
 from celery.log import SilenceRepeated
 from celery.schedules import maybe_schedule
-from celery.utils import instantiate
+from celery.utils import cached_property, instantiate
 from celery.utils.compat import UserDict
 from celery.utils.timeutils import humanize_seconds
 
@@ -132,9 +133,6 @@ class Scheduler(UserDict):
     """
     Entry = ScheduleEntry
 
-    _connection = None
-    _publisher = None
-
     def __init__(self, schedule=None, logger=None, max_interval=None,
             app=None, Publisher=None, lazy=False, **kwargs):
         UserDict.__init__(self)
@@ -164,18 +162,6 @@ class Scheduler(UserDict):
                 self.logger.debug("%s sent. id->%s" % (entry.task,
                                                        result.task_id))
         return next_time_to_run
-
-    @property
-    def connection(self):
-        if self._connection is None:
-            self._connection = self.app.broker_connection()
-        return self._connection
-
-    @property
-    def publisher(self):
-        if self._publisher is None:
-            self._publisher = self.Publisher(connection=self.connection)
-        return self._publisher
 
     def tick(self):
         """Run a tick, that is one iteration of the scheduler.
@@ -262,6 +248,14 @@ class Scheduler(UserDict):
     def get_schedule(self):
         return self.data
 
+    @cached_property
+    def connection(self):
+        return self.app.broker_connection()
+
+    @cached_property
+    def publisher(self):
+        return self.Publisher(connection=self.connection)
+
     @property
     def schedule(self):
         return self.get_schedule()
@@ -317,7 +311,6 @@ class Service(object):
         self.schedule_filename = schedule_filename or \
                                     self.app.conf.CELERYBEAT_SCHEDULE_FILENAME
 
-        self._scheduler = None
         self._shutdown = threading.Event()
         self._stopped = threading.Event()
         silence = self.max_interval < 60 and 10 or 1
@@ -366,11 +359,9 @@ class Service(object):
             scheduler.update_from_dict(self.schedule)
         return scheduler
 
-    @property
+    @cached_property
     def scheduler(self):
-        if self._scheduler is None:
-            self._scheduler = self.get_scheduler()
-        return self._scheduler
+        return self.get_scheduler()
 
 
 class _Threaded(threading.Thread):

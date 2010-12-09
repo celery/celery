@@ -4,7 +4,7 @@ import warnings
 
 import anyjson
 
-from celery.utils import import_from_cwd as _import_from_cwd
+from celery.utils import cached_property, import_from_cwd as _import_from_cwd
 
 BUILTIN_MODULES = ["celery.task"]
 
@@ -25,7 +25,6 @@ class BaseLoader(object):
         * What modules are imported to find tasks?
 
     """
-    _conf_cache = None
     worker_initialized = False
     override_backends = {}
     configured = False
@@ -130,9 +129,7 @@ class BaseLoader(object):
                 "Mail could not be sent: %r %r" % (
                     exc, {"To": to, "Subject": subject})))
 
-    @property
+    @cached_property
     def conf(self):
         """Loader configuration."""
-        if not self._conf_cache:
-            self._conf_cache = self.read_configuration()
-        return self._conf_cache
+        return self.read_configuration()

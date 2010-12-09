@@ -16,7 +16,7 @@ from datetime import timedelta
 from celery import routes
 from celery.app.defaults import DEFAULTS
 from celery.datastructures import ConfigurationView
-from celery.utils import noop, isatty
+from celery.utils import noop, isatty, cached_property
 from celery.utils.functional import wraps
 
 
@@ -31,13 +31,6 @@ class BaseApp(object):
         self.main = main
         self.loader_cls = loader or "app"
         self.backend_cls = backend
-        self._amqp = None
-        self._backend = None
-        self._conf = None
-        self._control = None
-        self._loader = None
-        self._log = None
-        self._events = None
         self.set_as_current = set_as_current
         self.on_init()
 
@@ -55,7 +48,7 @@ class BaseApp(object):
             >>> celery.config_from_object(celeryconfig)
 
         """
-        self._conf = None
+        del(self.conf)
         return self.loader.config_from_object(obj, silent=silent)
 
     def config_from_envvar(self, variable_name, silent=False):
@@ -68,7 +61,7 @@ class BaseApp(object):
             >>> celery.config_from_envvar("CELERY_CONFIG_MODULE")
 
         """
-        self._conf = None
+        del(self.conf)
         return self.loader.config_from_envvar(variable_name, silent=silent)
 
     def config_from_cmdline(self, argv, namespace="celery"):
@@ -271,71 +264,57 @@ class BaseApp(object):
         return self.post_config_merge(ConfigurationView(
                     self.pre_config_merge(self.loader.conf), DEFAULTS))
 
-    @property
+    @cached_property
     def amqp(self):
         """Sending/receiving messages.
 
         See :class:`~celery.app.amqp.AMQP`.
 
         """
-        if self._amqp is None:
-            from celery.app.amqp import AMQP
-            self._amqp = AMQP(self)
-        return self._amqp
+        from celery.app.amqp import AMQP
+        return AMQP(self)
 
-    @property
+    @cached_property
     def backend(self):
         """Storing/retreiving task state.
 
         See :class:`~celery.backend.base.BaseBackend`.
 
         """
-        if self._backend is None:
-            self._backend = self._get_backend()
-        return self._backend
+        return self._get_backend()
 
-    @property
+    @cached_property
     def loader(self):
         """Current loader."""
-        if self._loader is None:
-            from celery.loaders import get_loader_cls
-            self._loader = get_loader_cls(self.loader_cls)(app=self)
-        return self._loader
+        from celery.loaders import get_loader_cls
+        return get_loader_cls(self.loader_cls)(app=self)
 
-    @property
+    @cached_property
     def conf(self):
         """Current configuration (dict and attribute access)."""
-        if self._conf is None:
-            self._conf = self._get_config()
-        return self._conf
+        return self._get_config()
 
-    @property
+    @cached_property
     def control(self):
         """Controlling worker nodes.
 
         See :class:`~celery.task.control.Control`.
 
         """
-        if self._control is None:
-            from celery.task.control import Control
-            self._control = Control(app=self)
-        return self._control
+        from celery.task.control import Control
+        return Control(app=self)
 
-    @property
+    @cached_property
     def log(self):
         """Logging utilities.
 
         See :class:`~celery.log.Logging`.
 
         """
-        if self._log is None:
-            from celery.log import Logging
-            self._log = Logging(app=self)
-        return self._log
+        from celery.log import Logging
+        return Logging(app=self)
 
-    @property
+    @cached_property
     def events(self):
-        if self._events is None:
-            from celery.events import Events
-            self._events = Events(app=self)
-        return self._events
+        from celery.events import Events
+        return Events(app=self)
