@@ -95,7 +95,7 @@ NAMESPACES = {
         "REDIRECT_STDOUTS_LEVEL": Option("WARNING"),
     },
     "CELERYD": {
-        "AUTOSCALER": Option("celery.worker.controllers.Autoscaler"),
+        "AUTOSCALER": Option("celery.worker.autoscale.Autoscaler"),
         "CONCURRENCY": Option(0, type="int"),
         "ETA_SCHEDULER": Option(None, type="str"),
         "ETA_SCHEDULER_PRECISION": Option(1.0, type="float"),
