@@ -125,7 +125,3 @@ class Beat(object):
 
         platforms.install_signal_handler("SIGTERM", _sync)
         platforms.install_signal_handler("SIGINT", _sync)
-
-
-def run_celerybeat(*args, **kwargs):
-    return Beat(*args, **kwargs).run()

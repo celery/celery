@@ -108,13 +108,6 @@ class test_div(unittest.TestCase):
         finally:
             MockBeat.running = False
 
-    def test_run_celerybeat(self):
-        try:
-            beatapp.run_celerybeat()
-            self.assertTrue(MockBeat.running)
-        finally:
-            MockBeat.running = False
-
     def test_parse_options(self):
         cmd = celerybeat_bin.BeatCommand()
         cmd.app = app_or_default()
