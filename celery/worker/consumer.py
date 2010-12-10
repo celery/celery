@@ -220,8 +220,9 @@ class Consumer(object):
         self.pidbox_node = self.app.control.mailbox.Node(self.hostname,
                                                          state=pidbox_state,
                                                          handlers=Panel.data)
-        self.connection_errors = \
-                self.app.broker_connection().connection_errors
+        conninfo = self.app.broker_connection()
+        self.connection_errors = conninfo.connection_errors
+        self.channel_errors = conninfo.channel_errors
         self.queues = queues
 
     def start(self):
