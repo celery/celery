@@ -50,7 +50,6 @@ class Worker(object):
                             multiprocessing.cpu_count())
         self.loglevel = loglevel or app.conf.CELERYD_LOG_LEVEL
         self.logfile = logfile or app.conf.CELERYD_LOG_FILE
-        app.conf.CELERYD_LOG_COLOR = not self.logfile and isatty(sys.stderr)
 
         self.hostname = hostname or socket.gethostname()
         self.discard = discard
