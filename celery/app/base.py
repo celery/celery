@@ -16,7 +16,7 @@ from datetime import timedelta
 from celery import routes
 from celery.app.defaults import DEFAULTS
 from celery.datastructures import ConfigurationView
-from celery.utils import noop, isatty, cached_property
+from celery.utils import instantiate, isatty, cached_property, maybe_promise
 from celery.utils.functional import wraps
 
 
@@ -26,11 +26,23 @@ class BaseApp(object):
     IS_OSX = SYSTEM == "Darwin"
     IS_WINDOWS = SYSTEM == "Windows"
 
+    amqp_cls = "celery.app.amqp.AMQP"
+    backend_cls = None
+    events_cls = "celery.events.Events"
+    loader_cls = "app"
+    log_cls = "celery.log.Logging"
+    control_cls = "celery.task.control.Control"
+
     def __init__(self, main=None, loader=None, backend=None,
+            amqp=None, events=None, log=None, control=None,
             set_as_current=True):
         self.main = main
-        self.loader_cls = loader or "app"
-        self.backend_cls = backend
+        self.amqp_cls = amqp or self.amqp_cls
+        self.backend_cls = backend or self.backend_cls
+        self.events_cls = events or self.events_cls
+        self.loader_cls = loader or self.loader_cls
+        self.log_cls = log or self.log_cls
+        self.control_cls = control or self.control_cls
         self.set_as_current = set_as_current
         self.on_init()
 
@@ -174,12 +186,13 @@ class BaseApp(object):
             timeout = kwargs.get("connect_timeout")
             kwargs["connection"] = conn = connection or \
                     self.broker_connection(connect_timeout=timeout)
-            close_connection = not connection and conn.close or noop
+            close_connection = not connection and conn.close or None
 
             try:
                 return fun(*args, **kwargs)
             finally:
-                close_connection()
+                if close_connection:
+                    close_connection()
         return _inner
 
     def pre_config_merge(self, c):
@@ -207,13 +220,14 @@ class BaseApp(object):
         if c.get("CELERYD_LOG_COLOR") is None:
             c["CELERYD_LOG_COLOR"] = not c.CELERYD_LOG_FILE and \
                                         isatty(sys.stderr)
-            if self.IS_WINDOWS:  # windows console doesn't support ANSI colors
-                c["CELERYD_LOG_COLOR"] = False
+        if self.IS_WINDOWS:  # windows console doesn't support ANSI colors
+            c["CELERYD_LOG_COLOR"] = False
         if isinstance(c.CELERY_TASK_RESULT_EXPIRES, int):
             c["CELERY_TASK_RESULT_EXPIRES"] = timedelta(
                     seconds=c.CELERY_TASK_RESULT_EXPIRES)
 
         # Install backend cleanup periodic task.
+        c.CELERYBEAT_SCHEDULE = maybe_promise(c.CELERYBEAT_SCHEDULE)
         if c.CELERY_TASK_RESULT_EXPIRES:
             from celery.schedules import crontab
             c.CELERYBEAT_SCHEDULE.setdefault("celery.backend_cleanup",
@@ -229,13 +243,14 @@ class BaseApp(object):
         if not self.conf.ADMINS:
             return
         to = [admin_email for _, admin_email in self.conf.ADMINS]
-        self.loader.mail_admins(subject, body, fail_silently,
-                                to=to, sender=self.conf.SERVER_EMAIL,
-                                host=self.conf.EMAIL_HOST,
-                                port=self.conf.EMAIL_PORT,
-                                user=self.conf.EMAIL_HOST_USER,
-                                password=self.conf.EMAIL_HOST_PASSWORD,
-                                timeout=self.conf.EMAIL_TIMEOUT)
+        return self.loader.mail_admins(subject, body, fail_silently,
+                                       to=to,
+                                       sender=self.conf.SERVER_EMAIL,
+                                       host=self.conf.EMAIL_HOST,
+                                       port=self.conf.EMAIL_PORT,
+                                       user=self.conf.EMAIL_HOST_USER,
+                                       password=self.conf.EMAIL_HOST_PASSWORD,
+                                       timeout=self.conf.EMAIL_TIMEOUT)
 
     def either(self, default_key, *values):
         """Fallback to the value of a configuration key if none of the
@@ -271,8 +286,7 @@ class BaseApp(object):
         See :class:`~celery.app.amqp.AMQP`.
 
         """
-        from celery.app.amqp import AMQP
-        return AMQP(self)
+        return instantiate(self.amqp_cls, app=self)
 
     @cached_property
     def backend(self):
@@ -282,12 +296,6 @@ class BaseApp(object):
 
         """
         return self._get_backend()
-
-    @cached_property
-    def loader(self):
-        """Current loader."""
-        from celery.loaders import get_loader_cls
-        return get_loader_cls(self.loader_cls)(app=self)
 
     @cached_property
     def conf(self):
@@ -301,18 +309,7 @@ class BaseApp(object):
         See :class:`~celery.task.control.Control`.
 
         """
-        from celery.task.control import Control
-        return Control(app=self)
-
-    @cached_property
-    def log(self):
-        """Logging utilities.
-
-        See :class:`~celery.log.Logging`.
-
-        """
-        from celery.log import Logging
-        return Logging(app=self)
+        return instantiate(self.control_cls, app=self)
 
     @cached_property
     def events(self):
@@ -321,5 +318,19 @@ class BaseApp(object):
         See :class:`~celery.events.Events`.
 
         """
-        from celery.events import Events
-        return Events(app=self)
+        return instantiate(self.events_cls, app=self)
+
+    @cached_property
+    def loader(self):
+        """Current loader."""
+        from celery.loaders import get_loader_cls
+        return get_loader_cls(self.loader_cls)(app=self)
+
+    @cached_property
+    def log(self):
+        """Logging utilities.
+
+        See :class:`~celery.log.Logging`.
+
+        """
+        return instantiate(self.log_cls, app=self)

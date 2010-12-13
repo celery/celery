@@ -183,6 +183,7 @@ class TaskPublisher(messaging.Publisher):
                                           type=exchange_type,
                                           durable=self.durable,
                                           auto_delete=self.auto_delete)
+            _exchanges_declared.add(exchange)
         self.send(message_data, exchange=exchange,
                   **extract_msg_options(kwargs))
         signals.task_sent.send(sender=task_name, **message_data)

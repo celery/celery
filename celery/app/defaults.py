@@ -1,5 +1,7 @@
 from datetime import timedelta
 
+from celery.utils import promise
+
 DEFAULT_PROCESS_LOG_FMT = """
     [%(asctime)s: %(levelname)s/%(processName)s] %(message)s
 """.strip()
@@ -116,7 +118,7 @@ NAMESPACES = {
         "TASK_TIME_LIMIT": Option(type="int"),
     },
     "CELERYBEAT": {
-        "SCHEDULE": Option({}, type="dict"),
+        "SCHEDULE": Option(promise(lambda: {}), type="dict"),
         "SCHEDULER": Option("celery.beat.PersistentScheduler"),
         "SCHEDULE_FILENAME": Option("celerybeat-schedule"),
         "MAX_LOOP_INTERVAL": Option(5 * 60, type="int"),

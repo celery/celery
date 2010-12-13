@@ -212,7 +212,7 @@ class EventReceiver(object):
 
 class Events(object):
 
-    def __init__(self, app):
+    def __init__(self, app=None):
         self.app = app
 
     def Receiver(self, connection, handlers=None, routing_key="#"):

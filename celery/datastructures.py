@@ -131,6 +131,12 @@ class ConfigurationView(AttributeDictMixin):
         return chain(*[d.iteritems() for d in (self.__dict__["changes"],
                                                self.__dict__["defaults"])])
 
+    def iteritems(self):
+        return iter(self)
+
+    def iter(self):
+        return tuple(iter(self))
+
 
 class PositionQueue(UserList):
     """A positional queue of a specific length, with slots that are either

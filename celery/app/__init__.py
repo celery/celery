@@ -130,15 +130,24 @@ class App(base.BaseApp):
         return inner_create_task_cls(**options)
 
     def __reduce__(self):
+        # Reduce only pickles the configuration changes,
+        # so the default configuration doesn't have to be passed
+        # between processes.
         return (_unpickle_app, (self.__class__,
                                 self.main,
                                 self.conf.changes,
                                 self.loader_cls,
-                                self.backend_cls))
+                                self.backend_cls,
+                                self.amqp_cls,
+                                self.events_cls,
+                                self.log_cls,
+                                self.control_cls))
 
 
-def _unpickle_app(cls, main, changes, loader, backend, set_as_current):
-    app = cls(main, loader=loader, backend=backend,
+def _unpickle_app(cls, main, changes, loader, backend, amqp,
+                  events, log, control):
+    app = cls(main, loader=loader, backend=backend, amqp=amqp,
+                    events=events, log=log, control=control,
                     set_as_current=False)
     app.conf.update(changes)
     return app
@@ -148,9 +157,15 @@ def _unpickle_app(cls, main, changes, loader, backend, set_as_current):
 default_loader = os.environ.get("CELERY_LOADER") or "default"
 
 #: Global fallback app instance.
-default_app = App(loader=default_loader, set_as_current=False)
+_default_app = None
 
-if os.environ.get("CELERY_TRACE_APP"):
+def _get_default_app():
+    global _default_app
+    if _default_app is None:
+        _default_app = App(loader=default_loader, set_as_current=False)
+    return _default_app
+
+if os.environ.get("CELERY_TRACE_APP"):  # pragma: no cover
 
     def app_or_default(app=None):
         from traceback import print_stack
@@ -164,7 +179,7 @@ if os.environ.get("CELERY_TRACE_APP"):
                 raise Exception("DEFAULT APP")
             print("-- RETURNING TO DEFAULT APP --")
             print_stack()
-            return default_app
+            return _get_default_app()
         return app
 else:
     def app_or_default(app=None):
@@ -176,5 +191,5 @@ else:
 
         """
         if app is None:
-            return getattr(_tls, "current_app", None) or default_app
+            return getattr(_tls, "current_app", None) or _get_default_app()
         return app

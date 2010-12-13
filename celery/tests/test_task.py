@@ -240,7 +240,7 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertEqual(task.ping(), 'pong')
 
     def assertNextTaskDataEqual(self, consumer, presult, task_name,
-            test_eta=False, **kwargs):
+            test_eta=False, test_expires=False, **kwargs):
         next_task = consumer.fetch()
         task_data = next_task.decode()
         self.assertEqual(task_data["id"], presult.task_id)
@@ -249,6 +249,10 @@ class TestCeleryTasks(unittest.TestCase):
         if test_eta:
             self.assertIsInstance(task_data.get("eta"), basestring)
             to_datetime = parse_iso8601(task_data.get("eta"))
+            self.assertIsInstance(to_datetime, datetime)
+        if test_expires:
+            self.assertIsInstance(task_data.get("expires"), basestring)
+            to_datetime = parse_iso8601(task_data.get("expires"))
             self.assertIsInstance(to_datetime, datetime)
         for arg_name, arg_value in kwargs.items():
             self.assertEqual(task_kwargs.get(arg_name), arg_value)
@@ -303,15 +307,16 @@ class TestCeleryTasks(unittest.TestCase):
 
         # With eta.
         presult2 = t1.apply_async(kwargs=dict(name="George Costanza"),
-                                  eta=datetime.now() + timedelta(days=1))
+                                  eta=datetime.now() + timedelta(days=1),
+                                  expires=datetime.now() + timedelta(days=2))
         self.assertNextTaskDataEqual(consumer, presult2, t1.name,
-                name="George Costanza", test_eta=True)
+                name="George Costanza", test_eta=True, test_expires=True)
 
         # With countdown.
         presult2 = t1.apply_async(kwargs=dict(name="George Costanza"),
-                                  countdown=10)
+                                  countdown=10, expires=12)
         self.assertNextTaskDataEqual(consumer, presult2, t1.name,
-                name="George Costanza", test_eta=True)
+                name="George Costanza", test_eta=True, test_expires=True)
 
         # Discarding all tasks.
         consumer.discard_all()
