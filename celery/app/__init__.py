@@ -157,13 +157,7 @@ def _unpickle_app(cls, main, changes, loader, backend, amqp,
 default_loader = os.environ.get("CELERY_LOADER") or "default"
 
 #: Global fallback app instance.
-_default_app = None
-
-def _get_default_app():
-    global _default_app
-    if _default_app is None:
-        _default_app = App(loader=default_loader, set_as_current=False)
-    return _default_app
+default_app = App(loader=default_loader, set_as_current=False)
 
 if os.environ.get("CELERY_TRACE_APP"):  # pragma: no cover
 
@@ -179,7 +173,7 @@ if os.environ.get("CELERY_TRACE_APP"):  # pragma: no cover
                 raise Exception("DEFAULT APP")
             print("-- RETURNING TO DEFAULT APP --")
             print_stack()
-            return _get_default_app()
+            return default_app
         return app
 else:
     def app_or_default(app=None):
@@ -191,5 +185,5 @@ else:
 
         """
         if app is None:
-            return getattr(_tls, "current_app", None) or _get_default_app()
+            return getattr(_tls, "current_app", None) or default_app
         return app
