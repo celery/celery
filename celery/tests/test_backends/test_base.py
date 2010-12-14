@@ -61,6 +61,10 @@ class test_BaseBackend_interface(unittest.TestCase):
         self.assertRaises(NotImplementedError,
                 b.get_traceback, "SOMExx-N0nex1stant-IDxx-")
 
+    def test_forget(self):
+        self.assertRaises(NotImplementedError,
+                b.forget, "SOMExx-N0nex1stant-IDxx-")
+
 
 class test_exception_pickle(unittest.TestCase):
 
@@ -116,6 +120,9 @@ class KVBackend(KeyValueStoreBackend):
     def set(self, key, value):
         self.db[key] = value
 
+    def delete(self, key):
+        self.db.pop(key, None)
+
 
 class DictBackend(BaseDictBackend):
 
@@ -155,7 +162,7 @@ class test_BaseDictBackend(unittest.TestCase):
 
     def test_reload_task_result(self):
         self.b._cache = {}
-        self.b.reload_taskset_result("task-exists")
+        self.b.reload_task_result("task-exists")
         self.b._cache["task-exists"] = {"result": "task"}
 
 
@@ -164,11 +171,13 @@ class test_KeyValueStoreBackend(unittest.TestCase):
     def setUp(self):
         self.b = KVBackend()
 
-    def test_get_store_result(self):
+    def test_get_store_delete_result(self):
         tid = gen_unique_id()
         self.b.mark_as_done(tid, "Hello world")
         self.assertEqual(self.b.get_result(tid), "Hello world")
         self.assertEqual(self.b.get_status(tid), states.SUCCESS)
+        self.b.forget(tid)
+        self.assertEqual(self.b.get_status(tid), states.PENDING)
 
     def test_get_missing_meta(self):
         self.assertIsNone(self.b.get_result("xxx-missing"))
@@ -195,3 +204,11 @@ class test_KeyValueStoreBackend_interface(unittest.TestCase):
 
     def test_cleanup(self):
         self.assertFalse(KeyValueStoreBackend().cleanup())
+
+    def test_delete(self):
+        self.assertRaises(NotImplementedError, KeyValueStoreBackend().delete,
+                "a")
+
+    def test_forget(self):
+        self.assertRaises(NotImplementedError, KeyValueStoreBackend().forget,
+                "a")
