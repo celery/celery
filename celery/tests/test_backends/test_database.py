@@ -11,6 +11,8 @@ from celery.db.models import Task, TaskSet
 from celery.result import AsyncResult
 from celery.utils import gen_unique_id
 
+from celery.tests.utils import execute_context, mask_modules
+
 
 class SomeClass(object):
 
@@ -19,6 +21,14 @@ class SomeClass(object):
 
 
 class test_DatabaseBackend(unittest.TestCase):
+
+    def test_missing_SQLAlchemy_raises_ImproperlyConfigured(self):
+
+        def with_SQLAlchemy_masked(_val):
+            from celery.backends.database import _sqlalchemy_installed
+            self.assertRaises(ImproperlyConfigured, _sqlalchemy_installed)
+
+        execute_context(mask_modules("sqlalchemy"), with_SQLAlchemy_masked)
 
     def test_missing_dburi_raises_ImproperlyConfigured(self):
         conf = app_or_default().conf
