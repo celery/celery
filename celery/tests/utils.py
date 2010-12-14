@@ -12,10 +12,8 @@ try:
     import __builtin__ as builtins
 except ImportError:    # py3k
     import builtins
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+
+from celery.utils.compat import StringIO
 
 from nose import SkipTest
 

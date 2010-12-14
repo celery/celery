@@ -5,12 +5,16 @@ import sys
 import operator
 import importlib
 import logging
+import threading
+import traceback
 
 from inspect import getargspec
 from itertools import islice
+from pprint import pprint
 
 from kombu.utils import gen_unique_id, rpartition
 
+from celery.utils.compat import StringIO
 from celery.utils.functional import partial
 
 
@@ -409,3 +413,33 @@ class cached_property(object):
 
     def deleter(self, fdel):
         return self.__class__(self.__get, self.__set, fdel)
+
+
+def cry():
+    """Return stacktrace of all active threads.
+
+    From https://gist.github.com/737056
+
+    """
+    tmap = {}
+    main_thread = None
+    # get a map of threads by their ID so we can print their names
+    # during the traceback dump
+    for t in threading.enumerate():
+        if t.ident:
+            tmap[t.ident] = t
+        else:
+            main_thread = t
+
+    out = StringIO()
+    for tid, frame in sys._current_frames().iteritems():
+        thread = tmap.get(tid, main_thread)
+        out.write("%s\n" % (thread.getName(), ))
+        out.write("=================================================\n")
+        traceback.print_stack(frame, file=out)
+        out.write("=================================================\n")
+        out.write("LOCAL VARIABLES\n")
+        out.write("=================================================\n")
+        pprint(frame.f_locals, stream=out)
+        out.write("\n\n")
+    return out.getvalue()

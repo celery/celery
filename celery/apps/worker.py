@@ -13,7 +13,7 @@ from celery import platforms
 from celery import signals
 from celery.app import app_or_default
 from celery.exceptions import ImproperlyConfigured, SystemTerminate
-from celery.utils import get_full_cls_name, LOG_LEVELS, isatty
+from celery.utils import get_full_cls_name, LOG_LEVELS, isatty, cry
 from celery.utils import term
 from celery.worker import WorkController
 
@@ -231,6 +231,7 @@ class Worker(object):
                 install_worker_restart_handler(worker)
         install_worker_term_handler(worker)
         install_worker_int_handler(worker)
+        install_cry_handler(worker.logger)
         signals.worker_init.send(sender=worker)
 
     def osx_proxy_detection_workaround(self):
@@ -301,6 +302,15 @@ def install_worker_restart_handler(worker):
         os.execv(sys.executable, [sys.executable] + sys.argv)
 
     platforms.install_signal_handler("SIGHUP", restart_worker_sig_handler)
+
+
+def install_cry_handler(logger):
+
+    def cry_handler(signum, frame):
+        """Signal handler logging the stacktrace of all active threads."""
+        logger.error("\n" + cry())
+
+    platforms.install_signal_handler("SIGUSR1", cry_handler)
 
 
 def install_HUP_not_supported_handler(worker):
