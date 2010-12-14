@@ -128,14 +128,16 @@ class ConfigurationView(AttributeDictMixin):
         return repr(dict(iter(self)))
 
     def __iter__(self):
-        return chain(*[d.iteritems() for d in (self.__dict__["changes"],
-                                               self.__dict__["defaults"])])
+        # defaults must be first in the stream, so values in
+        # in changes takes precedence.
+        return chain(*[d.iteritems() for d in (self.__dict__["defaults"],
+                                               self.__dict__["changes"])])
 
     def iteritems(self):
         return iter(self)
 
-    def iter(self):
-        return tuple(iter(self))
+    def items(self):
+        return tuple(self.iteritems())
 
 
 class PositionQueue(UserList):
