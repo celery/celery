@@ -263,7 +263,7 @@ class test_Worker(unittest.TestCase):
             controller.hup_not_supported_installed = True
 
         class Controller(object):
-            pass
+            logger = logging.getLogger("celery.tests")
 
         prev = cd.install_HUP_not_supported_handler
         cd.install_HUP_not_supported_handler = install_HUP_nosupport
@@ -284,12 +284,15 @@ class test_Worker(unittest.TestCase):
         def install_worker_restart_handler(worker):
             restart_worker_handler_installed[0] = True
 
+        class Controller(object):
+            logger = logging.getLogger("celery.tests")
+
         prev = cd.install_worker_restart_handler
         cd.install_worker_restart_handler = install_worker_restart_handler
         try:
             worker = self.Worker()
             worker.app.IS_OSX = False
-            worker.install_platform_tweaks(object())
+            worker.install_platform_tweaks(Controller())
             self.assertTrue(restart_worker_handler_installed[0])
         finally:
             cd.install_worker_restart_handler = prev
@@ -436,6 +439,18 @@ class test_signal_handlers(unittest.TestCase):
         self.assertRaises(SystemExit, handlers["SIGTERM"],
                           "SIGTERM", object())
         self.assertTrue(worker.stopped)
+
+    def test_worker_cry_handler(self):
+
+        class Logger(object):
+            _errors = []
+
+            def error(self, msg, *args, **kwargs):
+                self._errors.append(msg)
+        logger = Logger()
+        handlers = self.psig(cd.install_cry_handler, logger)
+        self.assertIsNone(handlers["SIGUSR1"]("SIGUSR1", object()))
+        self.assertTrue(Logger._errors)
 
     @disable_stdouts
     def test_worker_term_handler_only_stop_MainProcess(self):
