@@ -122,7 +122,7 @@ class test_default_logger(unittest.TestCase):
                                    root=False)
 
         def with_wrap_logger(sio):
-            p = LoggingProxy(logger)
+            p = LoggingProxy(logger, loglevel=logging.ERROR)
             p.close()
             p.write("foo")
             self.assertNotIn("foo", sio.getvalue())

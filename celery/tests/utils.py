@@ -63,11 +63,13 @@ def execute_context(context, fun):
     exc_info = (None, None, None)
     retval = None
     try:
-        retval = fun(val)
-    except:
-        exc_info = sys.exc_info()
-    context.__exit__(*exc_info)
-    return retval
+        try:
+            return fun(val)
+        except:
+            exc_info = sys.exc_info()
+            raise
+    finally:
+        context.__exit__(*exc_info)
 
 
 try:

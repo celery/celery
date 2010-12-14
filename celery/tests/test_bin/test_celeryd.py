@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import warnings
 
 from multiprocessing import get_logger, current_process
 
@@ -108,18 +109,10 @@ class test_Worker(unittest.TestCase):
     def test_run(self):
         self.Worker().run()
         self.Worker(discard=True).run()
-
         worker = self.Worker()
         worker.init_loader()
-        worker.settings.DEBUG = True
+        worker.run()
 
-        def with_catch_warnings(log):
-            worker.run()
-            self.assertIn("memory leak", log[0].message.args[0])
-
-        context = catch_warnings(record=True)
-        execute_context(context, with_catch_warnings)
-        worker.settings.DEBUG = False
 
     @disable_stdouts
     def test_purge_messages(self):
@@ -162,7 +155,6 @@ class test_Worker(unittest.TestCase):
         worker2 = self.Worker(autoscale="10")
         self.assertListEqual(worker2.autoscale, [10, 0])
 
-    @disable_stdouts
     def test_include_argument(self):
         worker1 = self.Worker(include="some.module")
         self.assertListEqual(worker1.include, ["some.module"])
@@ -178,8 +170,8 @@ class test_Worker(unittest.TestCase):
         worker1 = self.Worker(loglevel=0xFFFF)
         self.assertEqual(worker1.loglevel, 0xFFFF)
 
-    @disable_stdouts
     def test_warns_if_running_as_privileged_user(self):
+        warnings.resetwarnings()
 
         def geteuid():
             return 0
@@ -190,7 +182,7 @@ class test_Worker(unittest.TestCase):
                 worker = self.Worker()
                 worker.run()
                 self.assertTrue(log)
-                self.assertIn("supervisor privileges is not encouraged",
+                self.assertIn("superuser privileges is not encouraged",
                               log[0].message.args[0])
             context = catch_warnings(record=True)
             execute_context(context, with_catch_warnings)

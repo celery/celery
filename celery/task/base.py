@@ -725,7 +725,7 @@ class BaseTask(object):
         """Returns :class:`~celery.task.sets.subtask` object for
         this task, wrapping arguments and execution options
         for a single task invocation."""
-        return subtask(cls, *args, **kwargs)
+        return sets.subtask(cls, *args, **kwargs)
 
     @property
     def __name__(self):
