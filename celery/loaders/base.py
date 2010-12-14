@@ -83,8 +83,8 @@ class BaseLoader(object):
 
             ## find key/value
             # ns.key=value|ns_key=value (case insensitive)
-            key, value = arg.replace('.', '_').split('=', 1)
-            key = key.upper()
+            key, value = arg.split('=', 1)
+            key = key.upper().replace(".", "_")
 
             ## find namespace.
             # .key=value|_key=value expands to default namespace.

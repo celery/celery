@@ -4,12 +4,15 @@ import sys
 
 from multiprocessing import get_logger, current_process
 
+from kombu.tests.utils import redirect_stdouts
+
 from celery import Celery
 from celery import platforms
 from celery import signals
 from celery.app import app_or_default
 from celery.apps import worker as cd
-from celery.bin.celeryd import WorkerCommand, main as celeryd_main
+from celery.bin.celeryd import WorkerCommand, windows_main, \
+                               main as celeryd_main
 from celery.exceptions import ImproperlyConfigured
 from celery.utils import patch
 from celery.utils.functional import wraps
@@ -311,6 +314,12 @@ class test_Worker(unittest.TestCase):
 
 
 class test_funs(unittest.TestCase):
+
+    @redirect_stdouts
+    def test_windows_main(self, stdout, stderr):
+        windows_main()
+        self.assertIn("celeryd command does not work on Windows",
+                      stderr.getvalue())
 
     @disable_stdouts
     def test_set_process_status(self):

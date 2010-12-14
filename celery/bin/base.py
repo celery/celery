@@ -80,6 +80,7 @@ class Command(object):
             self.app = self.get_cls_by_name(app)
         else:
             self.app = self.get_app(loader=loader)
+        print("SETUP")
         if self.enable_config_from_cmdline:
             argv = self.process_cmdline_config(argv)
         return argv
