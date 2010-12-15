@@ -100,14 +100,14 @@ class EventDispatcher(object):
             except Exception, exc:
                 if not self.buffer_while_offline:
                     raise
-                self._outbound_buffer.append((event, exc))
+                self._outbound_buffer.append((type, fields, exc))
         finally:
             self._lock.release()
 
     def flush(self):
         while self._outbound_buffer:
-            event, _ = self._outbound_buffer.popleft()
-            self.publisher.send(event)
+            type, fields, _ = self._outbound_buffer.popleft()
+            self.send(type, **fields)
 
     def close(self):
         """Close the event dispatcher."""
@@ -129,13 +129,13 @@ class EventReceiver(object):
     handlers = {}
 
     def __init__(self, connection, handlers=None, routing_key="#",
-            app=None):
+            node_id=None, app=None):
         self.app = app_or_default(app)
         self.connection = connection
         if handlers is not None:
             self.handlers = handlers
         self.routing_key = routing_key
-        self.node_id = gen_unique_id()
+        self.node_id = node_id or gen_unique_id()
         self.queue = Queue("%s.%s" % ("celeryev", self.node_id),
                            exchange=event_exchange,
                            routing_key=self.routing_key,
@@ -195,7 +195,7 @@ class EventReceiver(object):
 
     def drain_events(self, limit=None, timeout=None):
         for iteration in count(0):
-            if limit and iteration > limit:
+            if limit and iteration >= limit:
                 break
             try:
                 self.connection.drain_events(timeout=timeout)
@@ -215,10 +215,12 @@ class Events(object):
     def __init__(self, app=None):
         self.app = app
 
-    def Receiver(self, connection, handlers=None, routing_key="#"):
+    def Receiver(self, connection, handlers=None, routing_key="#",
+            node_id=None):
         return EventReceiver(connection,
                              handlers=handlers,
                              routing_key=routing_key,
+                             node_id=node_id,
                              app=self.app)
 
     def Dispatcher(self, connection=None, hostname=None, enabled=True,

@@ -85,6 +85,9 @@ class test_Worker(unittest.TestCase):
         worker.on_heartbeat(timestamp=None)
         self.assertEqual(worker.heartbeats, [])
 
+    def test_repr(self):
+        self.assertTrue(repr(Worker(hostname="foo")))
+
 
 class test_Task(unittest.TestCase):
 
@@ -118,6 +121,26 @@ class test_Task(unittest.TestCase):
         self.assertFalse(task.ready)
         task.on_succeeded(timestamp=time())
         self.assertTrue(task.ready)
+
+    def test_sent(self):
+        task = Task(uuid="abcdefg",
+                    name="tasks.add")
+        task.on_sent(timestamp=time())
+        self.assertEqual(task.state, states.PENDING)
+
+    def test_merge(self):
+        task = Task()
+        task.on_failed(timestamp=time())
+        task.on_started(timestamp=time())
+        task.on_received(timestamp=time(), name="tasks.add", args=(2, 2))
+        self.assertEqual(task.state, states.FAILURE)
+        self.assertEqual(task.name, "tasks.add")
+        self.assertTupleEqual(task.args, (2, 2))
+        task.on_retried(timestamp=time())
+        self.assertEqual(task.state, states.RETRY)
+
+    def test_repr(self):
+        self.assertTrue(repr(Task(uuid="xxx", name="tasks.add")))
 
 
 class test_State(unittest.TestCase):
@@ -220,6 +243,20 @@ class test_State(unittest.TestCase):
 
         s.freeze_while(work, clear_after=True)
         self.assertFalse(s.event_count)
+
+        s2 = State()
+        r = ev_snapshot(s2)
+        r.play()
+        s2.freeze_while(work, clear_after=False)
+        self.assertTrue(s2.event_count)
+
+    def test_clear_tasks(self):
+        s = State()
+        r = ev_snapshot(s)
+        r.play()
+        self.assertTrue(s.tasks)
+        s.clear_tasks(ready=False)
+        self.assertFalse(s.tasks)
 
     def test_clear(self):
         r = ev_snapshot(State())
