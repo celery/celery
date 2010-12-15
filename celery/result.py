@@ -431,7 +431,7 @@ class TaskSetResult(object):
         Example::
 
             >>> result.save()
-            >>> result = TaskSetResult.restore(task_id)
+            >>> result = TaskSetResult.restore(taskset_id)
 
         """
         if backend is None:

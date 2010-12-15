@@ -99,11 +99,11 @@ A task set takes a list of :class:`~celery.task.sets.subtask`'s::
     ... ])
 
     >>> result = job.apply_async()
-
-    >>> result.ready()  # has all subtasks completed?
+    
+    >>> result.ready()  # have all subtasks completed?
     True
-    >>> result.successful() # was all subtasks successful?
-
+    >>> result.successful() # were all subtasks successful?
+    True
     >>> result.join()
     [4, 8, 16, 32, 64]
 
