@@ -289,7 +289,7 @@ class BaseTask(object):
         return self.app.log.setup_task_logger(loglevel=loglevel,
                                               logfile=logfile,
                                               propagate=propagate,
-                                              task_kwargs=self.request.kwargs)
+                            task_kwargs=self.request.get("kwargs"))
 
     @classmethod
     def establish_connection(self, connect_timeout=None):

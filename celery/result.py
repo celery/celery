@@ -412,15 +412,15 @@ class EagerResult(BaseAsyncResult):
     """Result that we know has already been executed."""
     TimeoutError = TimeoutError
 
-    def __init__(self, task_id, ret_value, status, traceback=None):
+    def __init__(self, task_id, ret_value, state, traceback=None):
         self.task_id = task_id
         self._result = ret_value
-        self._status = status
+        self._state = state
         self._traceback = traceback
 
     def successful(self):
         """Returns :const:`True` if the task executed without failure."""
-        return self.status == states.SUCCESS
+        return self.state == states.SUCCESS
 
     def ready(self):
         """Returns :const:`True` if the task has been executed."""
@@ -428,23 +428,21 @@ class EagerResult(BaseAsyncResult):
 
     def wait(self, timeout=None):
         """Wait until the task has been executed and return its result."""
-        if self.status == states.SUCCESS:
+        if self.state == states.SUCCESS:
             return self.result
-        elif self.status in states.PROPAGATE_STATES:
+        elif self.state in states.PROPAGATE_STATES:
             raise self.result
 
     def revoke(self):
-        self._status = states.REVOKED
+        self._state = states.REVOKED
+
+    def __repr__(self):
+        return "<EagerResult: %s>" % self.task_id
 
     @property
     def result(self):
         """The tasks return value"""
         return self._result
-
-    @property
-    def status(self):
-        """The tasks status (alias to :attr:`state`)."""
-        return self._status
 
     @property
     def state(self):
@@ -456,5 +454,8 @@ class EagerResult(BaseAsyncResult):
         """The traceback if the task failed."""
         return self._traceback
 
-    def __repr__(self):
-        return "<EagerResult: %s>" % self.task_id
+    @property
+    def status(self):
+        """The tasks status (alias to :attr:`state`)."""
+        return self._state
+
