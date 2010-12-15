@@ -113,19 +113,20 @@ class BaseLoader(object):
 
         return dict(map(getarg, args))
 
-    def mail_admins(self, subject, message, fail_silently=False,
+    def mail_admins(self, subject, body, fail_silently=False,
             sender=None, to=None, host=None, port=None,
             user=None, password=None, timeout=None):
-        from celery.utils import mail
         try:
-            message = mail.Message(sender=sender, to=to,
-                                    subject=subject, body=message)
-            mailer = mail.Mailer(host, port, user, password, timeout)
+            message = self.mail.Message(sender=sender, to=to,
+                                        subject=subject, body=body)
+            mailer = self.mail.Mailer(host=host, port=port,
+                                      user=user, password=password,
+                                      timeout=timeout)
             mailer.send(message)
         except Exception, exc:
             if not fail_silently:
                 raise
-            warnings.warn(mail.SendmailWarning(
+            warnings.warn(self.mail.SendmailWarning(
                 "Mail could not be sent: %r %r" % (
                     exc, {"To": to, "Subject": subject})))
 
@@ -133,3 +134,8 @@ class BaseLoader(object):
     def conf(self):
         """Loader configuration."""
         return self.read_configuration()
+
+    @cached_property
+    def mail(self):
+        from celery.utils import mail
+        return mail

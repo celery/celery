@@ -3,6 +3,7 @@ import os
 from celery.datastructures import DictAttribute
 from celery.exceptions import ImproperlyConfigured
 from celery.loaders.base import BaseLoader
+from celery.utils import get_cls_by_name
 
 
 ERROR_ENVVAR_NOT_SET = (
@@ -29,8 +30,8 @@ class AppLoader(BaseLoader):
     def config_from_object(self, obj, silent=False):
         if isinstance(obj, basestring):
             try:
-                obj = self.import_from_cwd(obj)
-            except ImportError:
+                obj = get_cls_by_name(obj, imp=self.import_from_cwd)
+            except (ImportError, AttributeError):
                 if silent:
                     return False
                 raise
