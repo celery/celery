@@ -592,6 +592,25 @@ class test_crontab_parser(unittest.TestCase):
     def test_parse_errors_on_negative_number(self):
         self.assertRaises(ParseException, crontab_parser(60).parse, '-20')
 
+    def test_expand_cronspec_eats_iterables(self):
+        self.assertEqual(crontab._expand_cronspec(iter([1, 2, 3]), 100),
+                         set([1, 2, 3]))
+
+    def test_expand_cronspec_invalid_type(self):
+        self.assertRaises(TypeError, crontab._expand_cronspec, object(), 100)
+
+    def test_repr(self):
+        self.assertIn("*", repr(crontab("*")))
+
+    def test_eq(self):
+        self.assertEqual(crontab(day_of_week="1, 2"),
+                         crontab(day_of_week="1-2"))
+        self.assertEqual(crontab(minute="1", hour="2", day_of_week="5"),
+                         crontab(minute="1", hour="2", day_of_week="5"))
+        self.assertNotEqual(crontab(minute="1"), crontab(minute="2"))
+        self.assertFalse(object() == crontab(minute="1"))
+        self.assertFalse(crontab(minute="1") == object())
+
 
 class test_crontab_remaining_estimate(unittest.TestCase):
 
