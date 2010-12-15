@@ -35,6 +35,16 @@ class test_App(unittest.TestCase):
         self.app = Celery()
         self.app.conf.update(test_config)
 
+    def test_task(self):
+        app = Celery("foozibari")
+
+        def fun():
+            pass
+
+        fun.__module__ = "__main__"
+        task = app.task(fun)
+        self.assertEqual(task.name, app.main + ".fun")
+
     def test_TaskSet(self):
         ts = self.app.TaskSet()
         self.assertListEqual(ts.tasks, [])

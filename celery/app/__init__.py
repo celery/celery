@@ -105,6 +105,7 @@ class App(base.BaseApp):
         def inner_create_task_cls(**options):
 
             def _create_task_cls(fun):
+                options["app"] = self
                 options.setdefault("accept_magic_kwargs", False)
                 base = options.pop("base", None) or self.create_task_cls()
 
