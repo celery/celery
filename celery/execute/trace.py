@@ -9,6 +9,7 @@ from celery.datastructures import ExceptionInfo
 
 
 class TraceInfo(object):
+
     def __init__(self, status=states.PENDING, retval=None, exc_info=None):
         self.status = status
         self.retval = retval
@@ -39,7 +40,7 @@ class TraceInfo(object):
             if propagate:
                 raise
             return cls(states.FAILURE, retval=exc, exc_info=sys.exc_info())
-        except:
+        except:  # pragma: no cover
             # For Python2.4 where raising strings are still allowed.
             if propagate:
                 raise
