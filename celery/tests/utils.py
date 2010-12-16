@@ -8,6 +8,7 @@ except AttributeError:
 
 import os
 import sys
+import time
 try:
     import __builtin__ as builtins
 except ImportError:    # py3k
@@ -122,18 +123,20 @@ def with_environ(env_name, env_value):
         return _patch_environ
     return _envpatched
 
+def sleepdeprived(module=time):
 
-def sleepdeprived(fun):
+    def _sleepdeprived(fun):
 
-    @wraps(fun)
-    def _sleepdeprived(*args, **kwargs):
-        import time
-        old_sleep = time.sleep
-        time.sleep = noop
-        try:
-            return fun(*args, **kwargs)
-        finally:
-            time.sleep = old_sleep
+        @wraps(fun)
+        def __sleepdeprived(*args, **kwargs):
+            old_sleep = module.sleep
+            module.sleep = noop
+            try:
+                return fun(*args, **kwargs)
+            finally:
+                module.sleep = old_sleep
+
+        return __sleepdeprived
 
     return _sleepdeprived
 

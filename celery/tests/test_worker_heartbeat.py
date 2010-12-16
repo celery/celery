@@ -58,7 +58,6 @@ class TestHeart(unittest.TestCase):
         heart.run()
         self.assertEqual(heart._state, "RUN")
         self.assertTrue(heart._shutdown.isSet())
-        self.assertTrue(heart._stopped.isSet())
 
     def test_run(self):
         eventer = MockDispatcher()
@@ -71,8 +70,6 @@ class TestHeart(unittest.TestCase):
         self.assertIn("worker-heartbeat", eventer.sent)
         self.assertIn("worker-offline", eventer.sent)
 
-        self.assertTrue(heart._stopped.isSet())
-
         heart.stop()
         heart.stop()
         self.assertEqual(heart._state, "CLOSE")
@@ -82,9 +79,8 @@ class TestHeart(unittest.TestCase):
         for i in range(10):
             heart.run()
 
-    def test_run_stopped_is_set_even_if_send_breaks(self):
+    def test_run_exception(self):
         eventer = MockDispatcherRaising()
         heart = Heart(eventer, interval=1)
         heart._shutdown.set()
         self.assertRaises(Exception, heart.run)
-        self.assertTrue(heart._stopped.isSet())

@@ -173,7 +173,7 @@ class test_QoS(unittest.TestCase):
         def qos(self, prefetch_size=0, prefetch_count=0, apply_global=False):
             self.prefetch_count = prefetch_count
 
-    def test_decrement(self):
+    def test_increment_decrement(self):
         consumer = self.MockConsumer()
         qos = QoS(consumer, 10, app_or_default().log.get_default_logger())
         qos.update()
@@ -185,6 +185,13 @@ class test_QoS(unittest.TestCase):
         qos.decrement_eventually()
         self.assertEqual(int(qos.value), 8)
         self.assertEqual(consumer.prefetch_count, 9)
+
+        # Does not decrement 0 value
+        qos.value._value = 0
+        qos.decrement()
+        self.assertEqual(int(qos.value), 0)
+        qos.increment()
+        self.assertEqual(int(qos.value), 0)
 
 
 class test_Consumer(unittest.TestCase):
@@ -198,6 +205,18 @@ class test_Consumer(unittest.TestCase):
     def tearDown(self):
         self.eta_schedule.stop()
 
+    def test_info(self):
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+                           send_events=False)
+        l.qos = QoS(l.task_consumer, 10, l.logger)
+        info = l.info
+        self.assertEqual(info["prefetch_count"], 10)
+        self.assertFalse(info["broker"])
+
+        l.connection = app_or_default().broker_connection()
+        info = l.info
+        self.assertTrue(info["broker"])
+
     def test_connection(self):
         l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
                            send_events=False)
@@ -205,6 +224,12 @@ class test_Consumer(unittest.TestCase):
         l.reset_connection()
         self.assertIsInstance(l.connection, BrokerConnection)
 
+        l._state = RUN
+        l.event_dispatcher = None
+        l.stop_consumers(close=False)
+        self.assertTrue(l.connection)
+
+        l._state = RUN
         l.stop_consumers()
         self.assertIsNone(l.connection)
         self.assertIsNone(l.task_consumer)
@@ -322,6 +347,94 @@ class test_Consumer(unittest.TestCase):
         self.assertEqual(in_bucket.task_name, foo_task.name)
         self.assertEqual(in_bucket.execute(), 2 * 4 * 8)
         self.assertTrue(self.eta_schedule.empty())
+
+    def test_start_connection_error(self):
+
+        class MockConsumer(MainConsumer):
+            iterations = 0
+
+            def consume_messages(self):
+                if not self.iterations:
+                    self.iterations = 1
+                    raise KeyError("foo")
+                raise SyntaxError("bar")
+
+        l = MockConsumer(self.ready_queue, self.eta_schedule, self.logger,
+                             send_events=False)
+        l.connection_errors = (KeyError, )
+        self.assertRaises(SyntaxError, l.start)
+        l.heart.stop()
+
+    def test_consume_messages(self):
+        app = app_or_default()
+
+        class Connection(app.broker_connection().__class__):
+            obj = None
+
+            def drain_events(self, **kwargs):
+                self.obj.connection = None
+
+        class Consumer(object):
+            consuming = False
+            prefetch_count = 0
+
+            def consume(self):
+                self.consuming = True
+
+            def qos(self, prefetch_size=0, prefetch_count=0,
+                            apply_global=False):
+                self.prefetch_count = prefetch_count
+
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+                             send_events=False)
+        l.connection = Connection()
+        l.connection.obj = l
+        l.task_consumer = Consumer()
+        l.broadcast_consumer = Consumer()
+        l.qos = QoS(l.task_consumer, 10, l.logger)
+
+        l.consume_messages()
+        l.consume_messages()
+        self.assertTrue(l.task_consumer.consuming)
+        self.assertTrue(l.broadcast_consumer.consuming)
+        self.assertEqual(l.task_consumer.prefetch_count, 10)
+
+        l.qos.decrement()
+        l.consume_messages()
+        self.assertEqual(l.task_consumer.prefetch_count, 9)
+
+    def test_maybe_conn_error(self):
+
+        def raises(error):
+
+            def fun():
+                raise error
+
+            return fun
+
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+                             send_events=False)
+        l.connection_errors = (KeyError, )
+        l.channel_errors = (SyntaxError, )
+        l.maybe_conn_error(raises(AttributeError("foo")))
+        l.maybe_conn_error(raises(KeyError("foo")))
+        l.maybe_conn_error(raises(SyntaxError("foo")))
+        self.assertRaises(IndexError, l.maybe_conn_error,
+                raises(IndexError("foo")))
+
+
+    def test_apply_eta_task(self):
+        from celery.worker import state
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+                             send_events=False)
+        l.qos = QoS(None, 10, l.logger)
+
+        task = object()
+        qos = l.qos.next
+        l.apply_eta_task(task)
+        self.assertIn(task, state.reserved_requests)
+        self.assertEqual(l.qos.next, qos - 1)
+        self.assertIs(self.ready_queue.get_nowait(), task)
 
     def test_receieve_message_eta_isoformat(self):
 
