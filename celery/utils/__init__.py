@@ -189,12 +189,6 @@ def is_iterable(obj):
     return True
 
 
-def mitemgetter(*items):
-    """Like :func:`operator.itemgetter` but returns :const:`None`
-    on missing items instead of raising :exc:`KeyError`."""
-    return lambda container: map(container.get, items)
-
-
 def mattrgetter(*attrs):
     """Like :func:`operator.itemgetter` but returns :const:`None` on missing
     attributes instead of raising :exc:`AttributeError`."""
@@ -382,7 +376,7 @@ class cached_property(object):
         self.__module__ = fget.__module__
 
     def __get__(self, obj, type=None):
-        if not obj:
+        if obj is None:
             return self
         try:
             return obj.__dict__[self.__name__]
@@ -391,14 +385,14 @@ class cached_property(object):
             return value
 
     def __set__(self, obj, value):
-        if not obj:
+        if obj is None:
             return self
         if self.__set is not None:
             value = self.__set(obj, value)
         obj.__dict__[self.__name__] = value
 
     def __delete__(self, obj):
-        if not obj:
+        if obj is None:
             return self
         try:
             del(obj.__dict__[self.__name__])
