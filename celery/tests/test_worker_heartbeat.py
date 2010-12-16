@@ -4,12 +4,18 @@ from celery.worker.heartbeat import Heart
 
 
 class MockDispatcher(object):
+    shutdown_event = None
+    next_iter = False
 
     def __init__(self):
         self.sent = []
 
     def send(self, msg):
         self.sent.append(msg)
+        if self.shutdown_event:
+            if self.next_iter:
+                self.shutdown_event.set()
+            self.next_iter = True
 
 
 class MockDispatcherRaising(object):
@@ -19,7 +25,40 @@ class MockDispatcherRaising(object):
             raise Exception("foo")
 
 
+class MockHeart(Heart):
+    _alive = True
+    _joined = False
+
+    def isAlive(self):
+        return self._alive
+
+    def join(self, timeout=None):
+        self._joined = True
+
+
 class TestHeart(unittest.TestCase):
+
+    def test_stop(self):
+        eventer = MockDispatcher()
+        h = MockHeart(eventer, interval=1)
+        h._state = "RUN"
+        h.stop()
+        self.assertTrue(h._joined)
+
+        h2 = MockHeart(eventer, interval=1)
+        h2._alive = False
+        h2._state = "RUN"
+        h2.stop()
+        self.assertFalse(h2._joined)
+
+    def test_run_manages_cycle(self):
+        eventer = MockDispatcher()
+        heart = Heart(eventer, interval=1)
+        eventer.shutdown_event = heart._shutdown
+        heart.run()
+        self.assertEqual(heart._state, "RUN")
+        self.assertTrue(heart._shutdown.isSet())
+        self.assertTrue(heart._stopped.isSet())
 
     def test_run(self):
         eventer = MockDispatcher()

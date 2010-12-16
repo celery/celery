@@ -167,13 +167,13 @@ def ping(panel, **kwargs):
 
 @Panel.register
 def pool_grow(panel, n=1, **kwargs):
-    panel.listener.pool.grow(n)
+    panel.consumer.pool.grow(n)
     return {"ok": "spawned worker processes"}
 
 
 @Panel.register
 def pool_shrink(panel, n=1, **kwargs):
-    panel.listener.pool.shrink(n)
+    panel.consumer.pool.shrink(n)
     return {"ok": "terminated worker processes"}
 
 

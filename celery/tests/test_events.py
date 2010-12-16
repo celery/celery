@@ -138,7 +138,7 @@ class TestEventReceiver(unittest.TestCase):
         connection = self.app.broker_connection()
         try:
             r = self.app.events.Receiver(connection, node_id="celery.tests")
-            it = r.itercapture(timeout=0.0001)
+            it = r.itercapture(timeout=0.0001, wakeup=False)
             consumer = it.next()
             self.assertTrue(consumer.queues)
             self.assertEqual(consumer.callbacks[0], r._receive)
