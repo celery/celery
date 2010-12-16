@@ -2,6 +2,7 @@ import sys
 import types
 from celery.tests.utils import unittest
 
+from celery.utils import serialization
 from celery.utils.serialization import subclass_exception
 from celery.utils.serialization import \
         find_nearest_pickleable_exception as fnpe
@@ -25,6 +26,15 @@ Unpickleable = subclass_exception("Unpickleable", KeyError, "foo.module")
 Impossible = subclass_exception("Impossible", object, "foo.module")
 Lookalike = subclass_exception("Lookalike", wrapobject, "foo.module")
 b = BaseBackend()
+
+
+class test_serialization(unittest.TestCase):
+
+    def test_create_exception_cls(self):
+        self.assertTrue(serialization.create_exception_cls("FooError", "m"))
+        self.assertTrue(serialization.create_exception_cls("FooError",
+                                                            "m",
+                                                            KeyError))
 
 
 class test_BaseBackend_interface(unittest.TestCase):

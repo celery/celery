@@ -31,6 +31,12 @@ class test_chunks(unittest.TestCase):
 
 class test_utils(unittest.TestCase):
 
+    def test_maybe_iso8601_datetime(self):
+        from celery.utils.timeutils import maybe_iso8601
+        from datetime import datetime
+        now = datetime.now()
+        self.assertIs(maybe_iso8601(now), now)
+
     def test_get_full_cls_name(self):
         Class = type("Fox", (object, ), {"__module__": "quick.brown"})
         self.assertEqual(utils.get_full_cls_name(Class), "quick.brown.Fox")
@@ -87,6 +93,33 @@ class test_utils(unittest.TestCase):
     def test_get_cls_by_name__instance_returns_instance(self):
         instance = object()
         self.assertIs(utils.get_cls_by_name(instance), instance)
+
+    def test_truncate_text(self):
+        self.assertEqual(utils.truncate_text("ABCDEFGHI", 3), "ABC...")
+        self.assertEqual(utils.truncate_text("ABCDEFGHI", 10), "ABCDEFGHI")
+
+    def test_abbr(self):
+        self.assertEqual(utils.abbr(None, 3), "???")
+        self.assertEqual(utils.abbr("ABCDEFGHI", 6), "ABC...")
+        self.assertEqual(utils.abbr("ABCDEFGHI", 20), "ABCDEFGHI")
+        self.assertEqual(utils.abbr("ABCDEFGHI", 6, None), "ABCDEF")
+
+    def test_abbrtask(self):
+        self.assertEqual(utils.abbrtask(None, 3), "???")
+        self.assertEqual(utils.abbrtask("feeds.tasks.refresh", 10),
+                                        "[.]refresh")
+        self.assertEqual(utils.abbrtask("feeds.tasks.refresh", 30),
+                                        "feeds.tasks.refresh")
+
+    def test_cached_property(self):
+
+        def fun(obj):
+            return fun.value
+
+        x =  utils.cached_property(fun)
+        self.assertIs(x.__get__(None), x)
+        self.assertIs(x.__set__(None, None), x)
+        self.assertIs(x.__delete__(None), x)
 
 
 class test_promise(unittest.TestCase):

@@ -20,7 +20,7 @@ TIME_UNITS = (("day", 60 * 60 * 24, lambda n: int(math.ceil(n))),
               ("second", 1, lambda n: "%.2f" % n))
 
 
-def timedelta_seconds(delta):
+def timedelta_seconds(delta):  # pragma: no cover
     """Convert :class:`datetime.timedelta` to seconds.
 
     Doesn't account for negative values.
