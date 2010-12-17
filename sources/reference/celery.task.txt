@@ -1,11 +1,13 @@
-==============================================
- Task Information and Utilities - celery.task
-==============================================
+=====================================================
+ celery.task
+=====================================================
 
 .. contents::
     :local:
 .. currentmodule:: celery.task
 
 .. automodule:: celery.task
-    :members:
-    :undoc-members:
+
+    .. autofunction:: task
+
+    .. autofunction:: periodic_task

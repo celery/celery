@@ -1,5 +1,5 @@
 =================================
- App Loader - celery.loaders.app
+ celery.loaders.app
 =================================
 
 .. contents::

@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Task Result - celery.result &mdash; Celery v2.2.0a6 documentation</title>
+    <title>celery.result &mdash; Celery v2.2.0b1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.0a6',
+        VERSION:     '2.2.0b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,10 +21,10 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0a6 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0b1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
-    <link rel="next" title="Task Information and Utilities - celery.task" href="celery.task.html" />
-    <link rel="prev" title="Executing Tasks - celery.execute" href="celery.execute.html" /> 
+    <link rel="next" title="celery.task" href="celery.task.html" />
+    <link rel="prev" title="celery.task.sets" href="celery.task.sets.html" /> 
   </head>
   <body>
     <div class="related">
@@ -37,12 +37,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.task.html" title="Task Information and Utilities - celery.task"
+          <a href="celery.task.html" title="celery.task"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="celery.execute.html" title="Executing Tasks - celery.execute"
+          <a href="celery.task.sets.html" title="celery.task.sets"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0a6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -64,8 +64,8 @@
         
 
 </div>
-    <div class="section" id="task-result-celery-result">
-<h1>Task Result - celery.result<a class="headerlink" href="#task-result-celery-result" title="Permalink to this headline">¶</a></h1>
+    <div class="section" id="celery-result">
+<h1>celery.result<a class="headerlink" href="#celery-result" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.result"></span><dl class="class">
 <dt id="celery.result.AsyncResult">
 <em class="property">class </em><tt class="descclassname">celery.result.</tt><tt class="descname">AsyncResult</tt><big>(</big><em>task_id</em>, <em>backend=None</em>, <em>task_name=None</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.result.AsyncResult" title="Permalink to this definition">¶</a></dt>
@@ -252,7 +252,7 @@ be re-raised.</p>
 
 <dl class="class">
 <dt id="celery.result.EagerResult">
-<em class="property">class </em><tt class="descclassname">celery.result.</tt><tt class="descname">EagerResult</tt><big>(</big><em>task_id</em>, <em>ret_value</em>, <em>status</em>, <em>traceback=None</em><big>)</big><a class="headerlink" href="#celery.result.EagerResult" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.result.</tt><tt class="descname">EagerResult</tt><big>(</big><em>task_id</em>, <em>ret_value</em>, <em>state</em>, <em>traceback=None</em><big>)</big><a class="headerlink" href="#celery.result.EagerResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Result that we know has already been executed.</p>
 <dl class="exception">
 <dt id="celery.result.EagerResult.TimeoutError">
@@ -314,7 +314,7 @@ be re-raised.</p>
 <em class="property">class </em><tt class="descclassname">celery.result.</tt><tt class="descname">TaskSetResult</tt><big>(</big><em>taskset_id</em>, <em>subtasks</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Working with <a class="reference internal" href="celery.task.sets.html#celery.task.sets.TaskSet" title="celery.task.sets.TaskSet"><tt class="xref py py-class docutils literal"><span class="pre">TaskSet</span></tt></a> results.</p>
 <p>An instance of this class is returned by
-<cite>TaskSet</cite>&#8216;s <a class="reference internal" href="celery.task.html#celery.task.TaskSet.apply_async" title="celery.task.TaskSet.apply_async"><tt class="xref py py-meth docutils literal"><span class="pre">apply_async()</span></tt></a>.  It enables
+<cite>TaskSet</cite>&#8216;s <tt class="xref py py-meth docutils literal"><span class="pre">apply_async()</span></tt>.  It enables
 inspection of the subtasks state and return values as a single entity.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -536,11 +536,11 @@ waiting for execution.</td>
   <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
 </a></p>
   <h4>Previous topic</h4>
-  <p class="topless"><a href="celery.execute.html"
-                        title="previous chapter">Executing Tasks - celery.execute</a></p>
+  <p class="topless"><a href="celery.task.sets.html"
+                        title="previous chapter">celery.task.sets</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="celery.task.html"
-                        title="next chapter">Task Information and Utilities - celery.task</a></p>
+                        title="next chapter">celery.task</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../sources/reference/celery.result.txt"
@@ -573,12 +573,12 @@ waiting for execution.</td>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.task.html" title="Task Information and Utilities - celery.task"
+          <a href="celery.task.html" title="celery.task"
              >next</a> |</li>
         <li class="right" >
-          <a href="celery.execute.html" title="Executing Tasks - celery.execute"
+          <a href="celery.task.sets.html" title="celery.task.sets"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0a6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

@@ -1,5 +1,5 @@
 =========================================
- Default Loader - celery.loaders.default
+ celery.loaders.default
 =========================================
 
 .. contents::

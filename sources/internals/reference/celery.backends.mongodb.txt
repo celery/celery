@@ -1,5 +1,5 @@
 ============================================
- Backend: MongoDB - celery.backends.mongodb
+ celery.backends.mongodb
 ============================================
 
 .. contents::

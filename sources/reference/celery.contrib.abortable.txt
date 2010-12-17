@@ -1,5 +1,5 @@
 =======================================================
- Contrib: Abortable tasks - celery.contrib.abortable
+ celery.contrib.abortable
 =======================================================
 
 .. contents::

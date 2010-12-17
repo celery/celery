@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Task Sets, Subtasks and Callbacks - celery.task.sets &mdash; Celery v2.2.0a6 documentation</title>
+    <title>celery.task.sets &mdash; Celery v2.2.0b1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.0a6',
+        VERSION:     '2.2.0b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,10 +21,10 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0a6 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0b1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
-    <link rel="next" title="Executing Tasks - celery.execute" href="celery.execute.html" />
-    <link rel="prev" title="Defining Tasks - celery.task.base" href="celery.task.base.html" /> 
+    <link rel="next" title="celery.result" href="celery.result.html" />
+    <link rel="prev" title="celery.task.base" href="celery.task.base.html" /> 
   </head>
   <body>
     <div class="related">
@@ -37,12 +37,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.execute.html" title="Executing Tasks - celery.execute"
+          <a href="celery.result.html" title="celery.result"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="celery.task.base.html" title="Defining Tasks - celery.task.base"
+          <a href="celery.task.base.html" title="celery.task.base"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0a6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -64,8 +64,8 @@
         
 
 </div>
-    <div class="section" id="task-sets-subtasks-and-callbacks-celery-task-sets">
-<h1>Task Sets, Subtasks and Callbacks - celery.task.sets<a class="headerlink" href="#task-sets-subtasks-and-callbacks-celery-task-sets" title="Permalink to this headline">¶</a></h1>
+    <div class="section" id="celery-task-sets">
+<h1>celery.task.sets<a class="headerlink" href="#celery-task-sets" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.task.sets"></span><dl class="class">
 <dt id="celery.task.sets.TaskSet">
 <em class="property">class </em><tt class="descclassname">celery.task.sets.</tt><tt class="descname">TaskSet</tt><big>(</big><em>task=None</em>, <em>tasks=None</em>, <em>app=None</em>, <em>Publisher=None</em><big>)</big><a class="headerlink" href="#celery.task.sets.TaskSet" title="Permalink to this definition">¶</a></dt>
@@ -145,7 +145,7 @@ pass tasks around as callbacks.</p>
 <li><strong>args</strong> &#8211; Positional arguments to apply.</li>
 <li><strong>kwargs</strong> &#8211; Keyword arguments to apply.</li>
 <li><strong>options</strong> &#8211; Additional options to
-<a class="reference internal" href="celery.execute.html#celery.execute.apply_async" title="celery.execute.apply_async"><tt class="xref py py-func docutils literal"><span class="pre">celery.execute.apply_async()</span></tt></a>.</li>
+<tt class="xref py py-func docutils literal"><span class="pre">celery.execute.apply_async()</span></tt>.</li>
 </ul>
 </td>
 </tr>
@@ -196,10 +196,10 @@ instead.</p>
 </a></p>
   <h4>Previous topic</h4>
   <p class="topless"><a href="celery.task.base.html"
-                        title="previous chapter">Defining Tasks - celery.task.base</a></p>
+                        title="previous chapter">celery.task.base</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="celery.execute.html"
-                        title="next chapter">Executing Tasks - celery.execute</a></p>
+  <p class="topless"><a href="celery.result.html"
+                        title="next chapter">celery.result</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../sources/reference/celery.task.sets.txt"
@@ -232,12 +232,12 @@ instead.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.execute.html" title="Executing Tasks - celery.execute"
+          <a href="celery.result.html" title="celery.result"
              >next</a> |</li>
         <li class="right" >
-          <a href="celery.task.base.html" title="Defining Tasks - celery.task.base"
+          <a href="celery.task.base.html" title="celery.task.base"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0a6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

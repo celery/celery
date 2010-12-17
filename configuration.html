@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Configuration and defaults &mdash; Celery v2.2.0a6 documentation</title>
+    <title>Configuration and defaults &mdash; Celery v2.2.0b1 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '2.2.0a6',
+        VERSION:     '2.2.0b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0a6 documentation" href="index.html" />
+    <link rel="top" title="Celery v2.2.0b1 documentation" href="index.html" />
     <link rel="next" title="Cookbook" href="cookbook/index.html" />
     <link rel="prev" title="Optimizing" href="userguide/optimizing.html" /> 
   </head>
@@ -41,7 +41,7 @@
         <li class="right" >
           <a href="userguide/optimizing.html" title="Optimizing"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery v2.2.0a6 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.2.0b1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -562,7 +562,7 @@ you can set <a class="reference internal" href="#std:setting-CELERY_STORE_ERRORS
 <p>Time (in seconds, or a <tt class="xref py py-class docutils literal"><span class="pre">timedelta</span></tt> object) for when after
 stored task tombstones will be deleted.</p>
 <p>A built-in periodic task will delete the results after this time
-(<a class="reference internal" href="reference/celery.task.builtins.html#celery.task.builtins.backend_cleanup" title="celery.task.builtins.backend_cleanup"><tt class="xref py py-class docutils literal"><span class="pre">celery.task.builtins.backend_cleanup</span></tt></a>).</p>
+(<tt class="xref py py-class docutils literal"><span class="pre">celery.task.backend_cleanup</span></tt>).</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p>For the moment this only works with the database, cache, redis and MongoDB
@@ -641,7 +641,7 @@ be killed and replaced with a new one when this is exceeded.</p>
 raised when this is exceeded.  The task can catch this to
 e.g. clean up before the hard time limit comes.</p>
 <p>Example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">task</span>
 <span class="kn">from</span> <span class="nn">celery.exceptions</span> <span class="kn">import</span> <span class="n">SoftTimeLimitExceeded</span>
 
 <span class="nd">@task</span><span class="p">()</span>
@@ -970,7 +970,7 @@ the <em class="xref std std-option">--logfile</em> argument to <cite>celerymon</
         <li class="right" >
           <a href="userguide/optimizing.html" title="Optimizing"
              >previous</a> |</li>
-        <li><a href="index.html">Celery v2.2.0a6 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.2.0b1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

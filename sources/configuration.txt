@@ -640,7 +640,7 @@ Time (in seconds, or a :class:`~datetime.timedelta` object) for when after
 stored task tombstones will be deleted.
 
 A built-in periodic task will delete the results after this time
-(:class:`celery.task.builtins.backend_cleanup`).
+(:class:`celery.task.backend_cleanup`).
 
 .. note::
 
@@ -760,7 +760,7 @@ Example:
 
 .. code-block:: python
 
-    from celery.decorators import task
+    from celery.task import task
     from celery.exceptions import SoftTimeLimitExceeded
 
     @task()

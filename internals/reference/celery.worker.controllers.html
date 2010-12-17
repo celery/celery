@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Worker Controller Threads - celery.worker.controllers &mdash; Celery v2.2.0a6 documentation</title>
+    <title>celery.worker.controllers &mdash; Celery v2.2.0b1 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.2.0a6',
+        VERSION:     '2.2.0b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,10 +21,10 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0a6 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.2.0b1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
-    <link rel="next" title="Token Bucket (rate limiting) - celery.worker.buckets" href="celery.worker.buckets.html" />
-    <link rel="prev" title="Executable Jobs - celery.worker.job" href="celery.worker.job.html" /> 
+    <link rel="next" title="celery.worker.buckets" href="celery.worker.buckets.html" />
+    <link rel="prev" title="celery.worker.job" href="celery.worker.job.html" /> 
   </head>
   <body>
     <div class="related">
@@ -37,12 +37,12 @@
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.worker.buckets.html" title="Token Bucket (rate limiting) - celery.worker.buckets"
+          <a href="celery.worker.buckets.html" title="celery.worker.buckets"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="celery.worker.job.html" title="Executable Jobs - celery.worker.job"
+          <a href="celery.worker.job.html" title="celery.worker.job"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.0a6 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0b1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -65,53 +65,13 @@
         
 
 </div>
-    <div class="section" id="worker-controller-threads-celery-worker-controllers">
-<h1>Worker Controller Threads - celery.worker.controllers<a class="headerlink" href="#worker-controller-threads-celery-worker-controllers" title="Permalink to this headline">¶</a></h1>
+    <div class="section" id="celery-worker-controllers">
+<h1>celery.worker.controllers<a class="headerlink" href="#celery-worker-controllers" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.worker.controllers"></span><p>Worker Controller Threads</p>
-<dl class="class">
-<dt id="celery.worker.controllers.Autoscaler">
-<em class="property">class </em><tt class="descclassname">celery.worker.controllers.</tt><tt class="descname">Autoscaler</tt><big>(</big><em>pool</em>, <em>max_concurrency</em>, <em>min_concurrency=0</em>, <em>keepalive=30</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#celery.worker.controllers.Autoscaler" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="attribute">
-<dt id="celery.worker.controllers.Autoscaler.processes">
-<tt class="descname">processes</tt><a class="headerlink" href="#celery.worker.controllers.Autoscaler.processes" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="celery.worker.controllers.Autoscaler.qty">
-<tt class="descname">qty</tt><a class="headerlink" href="#celery.worker.controllers.Autoscaler.qty" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.controllers.Autoscaler.run">
-<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.controllers.Autoscaler.run" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.controllers.Autoscaler.scale">
-<tt class="descname">scale</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.controllers.Autoscaler.scale" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.controllers.Autoscaler.scale_down">
-<tt class="descname">scale_down</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#celery.worker.controllers.Autoscaler.scale_down" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.controllers.Autoscaler.scale_up">
-<tt class="descname">scale_up</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#celery.worker.controllers.Autoscaler.scale_up" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.controllers.Autoscaler.stop">
-<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.controllers.Autoscaler.stop" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
 <dl class="class">
 <dt id="celery.worker.controllers.Mediator">
 <em class="property">class </em><tt class="descclassname">celery.worker.controllers.</tt><tt class="descname">Mediator</tt><big>(</big><em>ready_queue</em>, <em>callback</em>, <em>logger=None</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.worker.controllers.Mediator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Thread continuously moving tasks in the ready queue to the pool.</p>
+<dd><p>Thread continuously moving tasks from the ready queue into the pool.</p>
 <dl class="attribute">
 <dt id="celery.worker.controllers.Mediator.callback">
 <tt class="descname">callback</tt><a class="headerlink" href="#celery.worker.controllers.Mediator.callback" title="Permalink to this definition">¶</a></dt>
@@ -155,10 +115,10 @@
 </a></p>
   <h4>Previous topic</h4>
   <p class="topless"><a href="celery.worker.job.html"
-                        title="previous chapter">Executable Jobs - celery.worker.job</a></p>
+                        title="previous chapter">celery.worker.job</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="celery.worker.buckets.html"
-                        title="next chapter">Token Bucket (rate limiting) - celery.worker.buckets</a></p>
+                        title="next chapter">celery.worker.buckets</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../../sources/internals/reference/celery.worker.controllers.txt"
@@ -191,12 +151,12 @@
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.worker.buckets.html" title="Token Bucket (rate limiting) - celery.worker.buckets"
+          <a href="celery.worker.buckets.html" title="celery.worker.buckets"
              >next</a> |</li>
         <li class="right" >
-          <a href="celery.worker.job.html" title="Executable Jobs - celery.worker.job"
+          <a href="celery.worker.job.html" title="celery.worker.job"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.0a6 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0b1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

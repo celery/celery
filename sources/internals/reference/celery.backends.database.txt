@@ -1,5 +1,5 @@
 =========================================================
- Backend: SQLAlchemy Database - celery.backends.database
+ celery.backends.database
 =========================================================
 
 .. contents::

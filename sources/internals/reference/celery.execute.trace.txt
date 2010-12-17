@@ -1,5 +1,5 @@
 ==========================================
- Tracing Execution - celery.execute.trace
+ celery.execute.trace
 ==========================================
 
 .. contents::

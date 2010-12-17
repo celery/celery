@@ -1,5 +1,5 @@
 ===============================================
- Base Pool Interface - celery.concurrency.base
+ celery.concurrency.base
 ===============================================
 
 .. contents::

@@ -1,5 +1,5 @@
 ===========================================
- Backend: Memcache - celery.backends.cache
+ celery.backends.cache
 ===========================================
 
 .. contents::

@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.app.amqp &mdash; Celery v2.2.0a6 documentation</title>
+    <title>celery.app.amqp &mdash; Celery v2.2.0b1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.0a6',
+        VERSION:     '2.2.0b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,9 +21,9 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0a6 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0b1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
-    <link rel="next" title="Default configuration and introspection - celery.app.defaults" href="celery.app.defaults.html" />
+    <link rel="next" title="celery.app.defaults" href="celery.app.defaults.html" />
     <link rel="prev" title="celery.app" href="celery.app.html" /> 
   </head>
   <body>
@@ -37,12 +37,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.app.defaults.html" title="Default configuration and introspection - celery.app.defaults"
+          <a href="celery.app.defaults.html" title="celery.app.defaults"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="celery.app.html" title="celery.app"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0a6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -115,43 +115,55 @@ Default is <tt class="xref py py-class docutils literal"><span class="pre">kombu
 
 <dl class="method">
 <dt id="celery.app.amqp.AMQP.ConsumerSet">
-<tt class="descname">ConsumerSet</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.app.amqp.AMQP.ConsumerSet" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">ConsumerSet</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.app.amqp.AMQP.ConsumerSet" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.app.amqp.AMQP.Queues">
 <tt class="descname">Queues</tt><big>(</big><em>queues</em><big>)</big><a class="headerlink" href="#celery.app.amqp.AMQP.Queues" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Create new <a class="reference internal" href="#celery.app.amqp.Queues" title="celery.app.amqp.Queues"><tt class="xref py py-class docutils literal"><span class="pre">Queues</span></tt></a> instance, using queue defaults
+from the current configuration.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.app.amqp.AMQP.Router">
 <tt class="descname">Router</tt><big>(</big><em>queues=None</em>, <em>create_missing=None</em><big>)</big><a class="headerlink" href="#celery.app.amqp.AMQP.Router" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Returns the current task router.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.app.amqp.AMQP.TaskConsumer">
 <tt class="descname">TaskConsumer</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.app.amqp.AMQP.TaskConsumer" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Returns consumer for a single task queue.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.app.amqp.AMQP.TaskPublisher">
 <tt class="descname">TaskPublisher</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.app.amqp.AMQP.TaskPublisher" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Returns publisher used to send tasks.</p>
+<p>You should use <cite>app.send_task</cite> instead.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.app.amqp.AMQP.get_task_consumer">
 <tt class="descname">get_task_consumer</tt><big>(</big><em>connection</em>, <em>queues=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.app.amqp.AMQP.get_task_consumer" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Return consumer configured to consume from all known task
+queues.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.app.amqp.AMQP.get_default_queue">
 <tt class="descname">get_default_queue</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.app.amqp.AMQP.get_default_queue" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Returns <cite>(queue_name, queue_options)</cite> tuple for the queue
+configured to be default (<a class="reference internal" href="../configuration.html#std:setting-CELERY_DEFAULT_QUEUE"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_DEFAULT_QUEUE</span></tt></a>).</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.app.amqp.AMQP.get_broker_info">
 <tt class="descname">get_broker_info</tt><big>(</big><em>broker_connection=None</em><big>)</big><a class="headerlink" href="#celery.app.amqp.AMQP.get_broker_info" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Returns information about the current broker connection
+as a <cite>dict</cite>.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.app.amqp.AMQP.format_broker_info">
@@ -167,15 +179,47 @@ Default is <tt class="xref py py-class docutils literal"><span class="pre">kombu
 <dl class="class">
 <dt id="celery.app.amqp.Queues">
 <em class="property">class </em><tt class="descclassname">celery.app.amqp.</tt><tt class="descname">Queues</tt><big>(</big><em>queues</em><big>)</big><a class="headerlink" href="#celery.app.amqp.Queues" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<dd><p>Queue name⇒ declaration mapping.</p>
+<p>Celery will consult this mapping to find the options
+for any queue by name.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>queues</strong> &#8211; Initial mapping.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
 <dt id="celery.app.amqp.Queues.add">
 <tt class="descname">add</tt><big>(</big><em>queue</em>, <em>exchange=None</em>, <em>routing_key=None</em>, <em>exchange_type='direct'</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.app.amqp.Queues.add" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Add new queue.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>queue</strong> &#8211; Name of the queue.</li>
+<li><strong>exchange</strong> &#8211; Name of the exchange.</li>
+<li><strong>routing_key</strong> &#8211; Binding key.</li>
+<li><strong>exchange_type</strong> &#8211; Type of exchange.</li>
+<li><strong>**options</strong> &#8211; Additional declaration options.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.app.amqp.Queues.options">
 <tt class="descname">options</tt><big>(</big><em>exchange</em>, <em>routing_key</em>, <em>exchange_type='direct'</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.app.amqp.Queues.options" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Creates new option mapping for queue, with required
+keys present.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.app.amqp.Queues.format">
@@ -186,12 +230,32 @@ Default is <tt class="xref py py-class docutils literal"><span class="pre">kombu
 <dl class="method">
 <dt id="celery.app.amqp.Queues.select_subset">
 <tt class="descname">select_subset</tt><big>(</big><em>wanted</em>, <em>create_missing=True</em><big>)</big><a class="headerlink" href="#celery.app.amqp.Queues.select_subset" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Select subset of the currently defined queues.</p>
+<p>Does not return anything: queues not in <cite>wanted</cite> will
+be discarded in-place.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>wanted</strong> &#8211; List of wanted queue names.</li>
+<li><strong>create_missing</strong> &#8211; By default any unknown queues will be
+added automatically, but if disabled
+the occurrence of unknown queues
+in <cite>wanted</cite> will raise <tt class="xref py py-exc docutils literal"><span class="pre">KeyError</span></tt>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="classmethod">
 <dt id="celery.app.amqp.Queues.with_defaults">
 <em class="property">classmethod </em><tt class="descname">with_defaults</tt><big>(</big><em>queues</em>, <em>default_exchange</em>, <em>default_exchange_type</em><big>)</big><a class="headerlink" href="#celery.app.amqp.Queues.with_defaults" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Alternate constructor that adds default exchange and
+exchange type information to queues that does not have any.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -209,7 +273,7 @@ Default is <tt class="xref py py-class docutils literal"><span class="pre">kombu
 <dl class="method">
 <dt id="celery.app.amqp.TaskPublisher.delay_task">
 <tt class="descname">delay_task</tt><big>(</big><em>task_name</em>, <em>task_args=None</em>, <em>task_kwargs=None</em>, <em>countdown=None</em>, <em>eta=None</em>, <em>task_id=None</em>, <em>taskset_id=None</em>, <em>expires=None</em>, <em>exchange=None</em>, <em>exchange_type=None</em>, <em>event_dispatcher=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.app.amqp.TaskPublisher.delay_task" title="Permalink to this definition">¶</a></dt>
-<dd><p>Delay task for execution by the celery nodes.</p>
+<dd><p>Send task message.</p>
 </dd></dl>
 
 </dd></dl>
@@ -230,7 +294,7 @@ Default is <tt class="xref py py-class docutils literal"><span class="pre">kombu
                         title="previous chapter">celery.app</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="celery.app.defaults.html"
-                        title="next chapter">Default configuration and introspection - celery.app.defaults</a></p>
+                        title="next chapter">celery.app.defaults</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../sources/reference/celery.app.amqp.txt"
@@ -263,12 +327,12 @@ Default is <tt class="xref py py-class docutils literal"><span class="pre">kombu
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.app.defaults.html" title="Default configuration and introspection - celery.app.defaults"
+          <a href="celery.app.defaults.html" title="celery.app.defaults"
              >next</a> |</li>
         <li class="right" >
           <a href="celery.app.html" title="celery.app"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0a6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

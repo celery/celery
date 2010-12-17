@@ -1,5 +1,5 @@
 =============================================================
- gevent Pool Support - celery.concurrency.evg
+ celery.concurrency.evg† (*experimental*)
 =============================================================
 
 .. contents::

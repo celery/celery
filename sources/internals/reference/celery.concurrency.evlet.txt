@@ -1,5 +1,5 @@
 =============================================================
- Eventlet Pool Support - celery.concurrency.evlet
+ celery.concurrency.evlet† (*experimental*)
 =============================================================
 
 .. contents::

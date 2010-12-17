@@ -1,5 +1,5 @@
 =====================================
-Backend: Base - celery.backends.base
+ celery.backends.base
 =====================================
 
 .. contents::

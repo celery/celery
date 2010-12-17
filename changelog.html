@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Change history &mdash; Celery v2.2.0a6 documentation</title>
+    <title>Change history &mdash; Celery v2.2.0b1 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '2.2.0a6',
+        VERSION:     '2.2.0b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,9 +21,9 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0a6 documentation" href="index.html" />
-    <link rel="next" title="Interesting Links" href="links.html" />
-    <link rel="prev" title="Platform Specific - celery.platforms" href="internals/reference/celery.platforms.html" /> 
+    <link rel="top" title="Celery v2.2.0b1 documentation" href="index.html" />
+    <link rel="next" title="API Reference" href="reference/index.html" />
+    <link rel="prev" title="Frequently Asked Questions" href="faq.html" /> 
   </head>
   <body>
     <div class="related">
@@ -36,12 +36,12 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="links.html" title="Interesting Links"
+          <a href="reference/index.html" title="API Reference"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="internals/reference/celery.platforms.html" title="Platform Specific - celery.platforms"
+          <a href="faq.html" title="Frequently Asked Questions"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery v2.2.0a6 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.2.0b1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -71,7 +71,7 @@
 <li><a class="reference internal" href="#news" id="id68">News</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#id2" id="id69">2.1.4</a><ul>
+<li><a class="reference internal" href="#version-2-1-4" id="id69">2.1.4</a><ul>
 <li><a class="reference internal" href="#fixes" id="id70">Fixes</a></li>
 <li><a class="reference internal" href="#documentation" id="id71">Documentation</a></li>
 </ul>
@@ -190,7 +190,7 @@
 <tbody valign="top">
 <tr class="field"><th class="field-name">release-date:</th><td class="field-body">TBA</td>
 </tr>
-<tr class="field"><th class="field-name">status:</th><td class="field-body">in-progress</td>
+<tr class="field"><th class="field-name">status:</th><td class="field-body">FREEZE</td>
 </tr>
 <tr class="field"><th class="field-name">branch:</th><td class="field-body">master</td>
 </tr>
@@ -317,7 +317,7 @@ filter on specific types, to only be alerted of the events it cares about.</p>
 <p>Each consumer will create a unique queue, meaning it is in effect a
 broadcast exchange.</p>
 <p>This opens up a lot of possibilities, for example the workers could listen
-for worker events, to know what workers are in the neighborhood, and even
+for worker events to know what workers are in the neighborhood, and even
 restart workers when they go down (or use this information to optimize
 tasks/autoscaling).</p>
 <p>The event exchange has been renamed from &#8220;celeryevent&#8221; to &#8220;celeryev&#8221; so it
@@ -352,6 +352,15 @@ and <cite>.CarrotListener</cite> is now <cite>.Consumer</cite>.</p>
 <cite>celery.management.commands</cite> has now been removed as per the deprecation
 timeline.</p>
 </li>
+<li><p class="first">Removed <cite>celery.task.RemoteExecuteTask</cite> and accompanying functions:
+<cite>dmap</cite>, <cite>dmap_async</cite>, and <cite>execute_remote</cite>.</p>
+<blockquote>
+<p>Executing arbitrary code using pickle is a potential security issue if
+someone gains unrestricted access to the message broker.</p>
+<p>If you really need this functionality, then you can simply add this
+manually.</p>
+</blockquote>
+</li>
 </ul>
 </div>
 <div class="section" id="news">
@@ -366,8 +375,8 @@ to <cite>apply_async</cite>.  This can also be set using routers.</p>
 <p>If available, this version uses the backends ability to retrieve
 multiple results at once, unlike <cite>join()</cite> which fetches the results
 one by one.</p>
-<p>So far only supported by the AMQP result backend. Support for memcached
-and Redis will be added later.</p>
+<p>So far only supported by the AMQP result backend.  Support for memcached
+and Redis may be added later.</p>
 </blockquote>
 </li>
 <li><dl class="first docutils">
@@ -395,19 +404,29 @@ the command line.</p>
 </ul>
 </div>
 </div>
-<div class="section" id="id2">
-<h2><a class="toc-backref" href="#id69">2.1.4</a><a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="version-2-1-4">
+<span id="id2"></span><h2><a class="toc-backref" href="#id69">2.1.4</a><a class="headerlink" href="#version-2-1-4" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">release-data:</th><td class="field-body">TBA</td>
+<tr class="field"><th class="field-name">release-date:</th><td class="field-body">2010-12-03 12:00 PM CEST</td>
 </tr>
 </tbody>
 </table>
 <div class="section" id="fixes">
 <span id="v214-fixes"></span><h3><a class="toc-backref" href="#id70">Fixes</a><a class="headerlink" href="#fixes" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
+<li>Execution options to <cite>apply_async</cite> now takes precedence over options
+returned by active routers.  This was a regression introduced recently
+(<a class="issue-closed reference-issue reference external" href="http://github.com/ask/celery/issues/244">Issue #244</a>).</li>
+<li><cite>celeryev</cite> curses monitor: Long arguments are now truncated so curses
+doesn&#8217;t crash with out of bounds errors.  (<a class="issue-closed reference-issue reference external" href="http://github.com/ask/celery/issues/235">Issue #235</a>).</li>
+<li><cite>celeryd</cite>: Channel errors occurring while handling control commands no
+longer crash the worker but are instead logged with severity error.</li>
+<li>SQLAlchemy database backend: Fixed a race condition occurring when
+the client wrote the pending state.  Just like the Django database backend,
+it does no longer save the pending state (<a class="issue-closed reference-issue reference external" href="http://github.com/ask/celery/issues/261">Issue #261</a> + <a class="issue-closed reference-issue reference external" href="http://github.com/ask/celery/issues/262">Issue #262</a>).</li>
 <li>Error email body now uses <cite>repr(exception)</cite> instead of <cite>str(exception)</cite>,
 as the latter could result in Unicode decode errors (<a class="issue-closed reference-issue reference external" href="http://github.com/ask/celery/issues/245">Issue #245</a>).</li>
 <li>Error e-mail timeout value is now configurable by using the
@@ -426,7 +445,6 @@ the message.</li>
 <li>Adding <a class="reference internal" href="contributing.html#contributing"><em>Contributing</em></a>.</li>
 <li>Added <em class="xref std std-ref">guide-optimizing</em>.</li>
 <li>Added <a class="reference internal" href="faq.html#faq-security"><em>Security</em></a> section to the FAQ.</li>
-<li>Periodic Task User Guide: Fixed typo in crontab example table (<a class="issue-closed reference-issue reference external" href="http://github.com/ask/celery/issues/239">Issue #239</a>).</li>
 </ul>
 </div>
 </div>
@@ -872,7 +890,7 @@ def setup_logging(**kwargs):
 </li>
 <li><p class="first">celeryd: now emits a warning if running as the root user (euid is 0).</p>
 </li>
-<li><p class="first"><a class="reference internal" href="reference/celery.messaging.html#celery.messaging.establish_connection" title="celery.messaging.establish_connection"><tt class="xref py py-func docutils literal"><span class="pre">celery.messaging.establish_connection()</span></tt></a>: Ability to override defaults
+<li><p class="first"><tt class="xref py py-func docutils literal"><span class="pre">celery.messaging.establish_connection()</span></tt>: Ability to override defaults
 used using keyword argument &#8220;defaults&#8221;.</p>
 </li>
 <li><p class="first">celeryd: Now uses <cite>multiprocessing.freeze_support()</cite> so that it should work
@@ -956,7 +974,7 @@ the first time it was run (using crontab schedule instead of
 </li>
 <li><dl class="first docutils">
 <dt>Renamed <cite>celery.task.builtins.DeleteExpiredTaskMetaTask</cite></dt>
-<dd><p class="first last">-&gt; <a class="reference internal" href="reference/celery.task.builtins.html#celery.task.builtins.backend_cleanup" title="celery.task.builtins.backend_cleanup"><tt class="xref py py-class docutils literal"><span class="pre">celery.task.builtins.backend_cleanup</span></tt></a></p>
+<dd><p class="first last">-&gt; <tt class="xref py py-class docutils literal"><span class="pre">celery.task.builtins.backend_cleanup</span></tt></p>
 </dd>
 </dl>
 </li>
@@ -1233,7 +1251,7 @@ in <a class="reference internal" href="configuration.html#std:setting-CELERY_QUE
 <li><p class="first">Worker crashed if the value of <a class="reference internal" href="configuration.html#std:setting-CELERY_TASK_ERROR_WHITELIST"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TASK_ERROR_WHITELIST</span></tt></a> was
 not an iterable</p>
 </li>
-<li><p class="first"><a class="reference internal" href="reference/celery.execute.html#celery.execute.apply" title="celery.execute.apply"><tt class="xref py py-func docutils literal"><span class="pre">apply()</span></tt></a>: Make sure <cite>kwargs[&#8220;task_id&#8221;]</cite> is
+<li><p class="first"><tt class="xref py py-func docutils literal"><span class="pre">apply()</span></tt>: Make sure <cite>kwargs[&#8220;task_id&#8221;]</cite> is
 always set.</p>
 </li>
 <li><p class="first"><cite>AsyncResult.traceback</cite>: Now returns <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt>, instead of raising
@@ -2136,7 +2154,7 @@ it&#8217;s a queue name in <a class="reference internal" href="configuration.htm
 router that doesn&#8217;t return <cite>None</cite> is the route to use. The message options
 is then merged with the found route settings, where the routers settings
 have priority.</p>
-<p>Example if <a class="reference internal" href="reference/celery.execute.html#celery.execute.apply_async" title="celery.execute.apply_async"><tt class="xref py py-func docutils literal"><span class="pre">apply_async()</span></tt></a> has these arguments:</p>
+<p>Example if <tt class="xref py py-func docutils literal"><span class="pre">apply_async()</span></tt> has these arguments:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">Task</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">immediate</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">exchange</span><span class="o">=</span><span class="s">&quot;video&quot;</span><span class="p">,</span>
 <span class="gp">... </span>                 <span class="n">routing_key</span><span class="o">=</span><span class="s">&quot;video.compress&quot;</span><span class="p">)</span>
 </pre></div>
@@ -2379,7 +2397,7 @@ from the sources using setup.py</p>
 </li>
 <li><p class="first">Running unit tests: <span class="target" id="index-3"></span><tt class="xref std std-envvar docutils literal"><span class="pre">NOSE_VERBOSE</span></tt> environment var now enables verbose output from Nose.</p>
 </li>
-<li><p class="first"><a class="reference internal" href="reference/celery.execute.html#celery.execute.apply" title="celery.execute.apply"><tt class="xref py py-func docutils literal"><span class="pre">celery.execute.apply()</span></tt></a>: Pass log file/log level arguments as task kwargs.</p>
+<li><p class="first"><tt class="xref py py-func docutils literal"><span class="pre">celery.execute.apply()</span></tt>: Pass log file/log level arguments as task kwargs.</p>
 <blockquote>
 <p>See <a class="issue-closed reference-issue reference external" href="http://github.com/ask/celery/issues/110">issue #110</a>.</p>
 </blockquote>
@@ -2854,11 +2872,11 @@ as the settings module name, but the following should work:</p>
 <li><p class="first">Execution: <cite>.messaging.TaskPublisher.send_task</cite> now
 incorporates all the functionality apply_async previously did.</p>
 <blockquote>
-<p>Like converting countdowns to eta, so <a class="reference internal" href="reference/celery.execute.html#celery.execute.apply_async" title="celery.execute.apply_async"><tt class="xref py py-func docutils literal"><span class="pre">celery.execute.apply_async()</span></tt></a> is
+<p>Like converting countdowns to eta, so <tt class="xref py py-func docutils literal"><span class="pre">celery.execute.apply_async()</span></tt> is
 now simply a convenient front-end to
 <tt class="xref py py-meth docutils literal"><span class="pre">celery.messaging.TaskPublisher.send_task()</span></tt>, using
 the task classes default options.</p>
-<p>Also <a class="reference internal" href="reference/celery.execute.html#celery.execute.send_task" title="celery.execute.send_task"><tt class="xref py py-func docutils literal"><span class="pre">celery.execute.send_task()</span></tt></a> has been
+<p>Also <tt class="xref py py-func docutils literal"><span class="pre">celery.execute.send_task()</span></tt> has been
 introduced, which can apply tasks using just the task name (useful
 if the client does not have the destination task in its task registry).</p>
 <p>Example:</p>
@@ -3592,7 +3610,7 @@ detaching.</p>
 </li>
 <li><dl class="first docutils">
 <dt>New signals introduced: <cite>task_sent</cite>, <cite>task_prerun</cite> and</dt>
-<dd><p class="first last"><cite>task_postrun</cite>, see <tt class="xref py py-mod docutils literal"><span class="pre">celery.signals</span></tt> for more information.</p>
+<dd><p class="first last"><cite>task_postrun</cite>, see <a class="reference internal" href="reference/celery.signals.html#module-celery.signals" title="celery.signals"><tt class="xref py py-mod docutils literal"><span class="pre">celery.signals</span></tt></a> for more information.</p>
 </dd>
 </dl>
 </li>
@@ -4423,11 +4441,11 @@ the name change request is in <cite>docs/name_change_request.txt</cite>.</p>
   <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
 </a></p>
   <h4>Previous topic</h4>
-  <p class="topless"><a href="internals/reference/celery.platforms.html"
-                        title="previous chapter">Platform Specific - celery.platforms</a></p>
+  <p class="topless"><a href="faq.html"
+                        title="previous chapter">Frequently Asked Questions</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="links.html"
-                        title="next chapter">Interesting Links</a></p>
+  <p class="topless"><a href="reference/index.html"
+                        title="next chapter">API Reference</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="sources/changelog.txt"
@@ -4460,12 +4478,12 @@ the name change request is in <cite>docs/name_change_request.txt</cite>.</p>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="links.html" title="Interesting Links"
+          <a href="reference/index.html" title="API Reference"
              >next</a> |</li>
         <li class="right" >
-          <a href="internals/reference/celery.platforms.html" title="Platform Specific - celery.platforms"
+          <a href="faq.html" title="Frequently Asked Questions"
              >previous</a> |</li>
-        <li><a href="index.html">Celery v2.2.0a6 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.2.0b1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

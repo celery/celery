@@ -5,11 +5,6 @@
     .. contents::
         :local:
 
-    Functions
-    ---------
-
-    .. autofunction:: app_or_default
-
     Application
     -----------
 
@@ -54,3 +49,9 @@
 
         .. automethod:: either
         .. automethod:: merge
+
+    Functions
+    ---------
+
+    .. autofunction:: app_or_default
+

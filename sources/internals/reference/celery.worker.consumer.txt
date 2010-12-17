@@ -1,5 +1,5 @@
 ==================================================
- Worker Message Consumer - celery.worker.consumer
+ celery.worker.consumer
 ==================================================
 
 .. contents::

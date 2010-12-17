@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Monitoring Guide &mdash; Celery v2.2.0a6 documentation</title>
+    <title>Monitoring Guide &mdash; Celery v2.2.0b1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.0a6',
+        VERSION:     '2.2.0b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0a6 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0b1 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Optimizing" href="optimizing.html" />
     <link rel="prev" title="Routing Tasks" href="routing.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="routing.html" title="Routing Tasks"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0a6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -398,7 +398,7 @@ the <cite>-p</cite> argument to the command, e.g:
 for delivery (sent but not received), <cite>messages_unacknowledged</cite>
 is the number of messages that has been received by a worker but
 not acknowledged yet (meaning it is in progress, or has been reserved).
-<cite>messages</cite> is the sum of ready and unacknowledged messages combined.</p>
+<cite>messages</cite> is the sum of ready and unacknowledged messages.</p>
 <p>Finding the number of workers currently consuming from a queue:</p>
 <div class="highlight-python"><pre>$ rabbitmqctl list_queues name consumers</pre>
 </div>
@@ -625,7 +625,7 @@ it is considered to be offline.</p>
         <li class="right" >
           <a href="routing.html" title="Routing Tasks"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0a6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>

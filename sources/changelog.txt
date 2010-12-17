@@ -10,7 +10,7 @@
 2.2.0
 =====
 :release-date: TBA
-:status: in-progress
+:status: FREEZE
 :branch: master
 
 .. _v220-important:
@@ -95,7 +95,7 @@ Important Notes
     broadcast exchange.
 
     This opens up a lot of possibilities, for example the workers could listen
-    for worker events, to know what workers are in the neighborhood, and even
+    for worker events to know what workers are in the neighborhood, and even
     restart workers when they go down (or use this information to optimize
     tasks/autoscaling).
 
@@ -130,7 +130,14 @@ Important Notes
   `celery.management.commands` has now been removed as per the deprecation
   timeline.
 
+* Removed `celery.task.RemoteExecuteTask` and accompanying functions:
+  `dmap`, `dmap_async`, and `execute_remote`.
 
+    Executing arbitrary code using pickle is a potential security issue if
+    someone gains unrestricted access to the message broker.
+
+    If you really need this functionality, then you can simply add this
+    manually.
 
 .. _v220-news:
 
@@ -147,8 +154,8 @@ News
     multiple results at once, unlike `join()` which fetches the results
     one by one.
 
-    So far only supported by the AMQP result backend. Support for memcached
-    and Redis will be added later.
+    So far only supported by the AMQP result backend.  Support for memcached
+    and Redis may be added later.
 
 * `celerybeat`: Now has built-in daemonization support using the `--detach``
    option.
@@ -167,15 +174,30 @@ News
 
         $ celeryd --config=celeryconfig.py --loader=myloader.Loader
 
+.. _version-2.1.4:
 
 2.1.4
 =====
-:release-data: TBA
+:release-date: 2010-12-03 12:00 PM CEST
 
 .. _v214-fixes:
 
 Fixes
 -----
+
+* Execution options to `apply_async` now takes precedence over options
+  returned by active routers.  This was a regression introduced recently
+  (Issue #244).
+
+* `celeryev` curses monitor: Long arguments are now truncated so curses
+  doesn't crash with out of bounds errors.  (Issue #235).
+
+* `celeryd`: Channel errors occurring while handling control commands no
+  longer crash the worker but are instead logged with severity error.
+
+* SQLAlchemy database backend: Fixed a race condition occurring when
+  the client wrote the pending state.  Just like the Django database backend,
+  it does no longer save the pending state (Issue #261 + Issue #262).
 
 * Error email body now uses `repr(exception)` instead of `str(exception)`,
   as the latter could result in Unicode decode errors (Issue #245).
@@ -203,8 +225,6 @@ Documentation
 * Added :ref:`guide-optimizing`.
 
 * Added :ref:`faq-security` section to the FAQ.
-
-* Periodic Task User Guide: Fixed typo in crontab example table (Issue #239).
 
 .. _version-2.1.3:
 

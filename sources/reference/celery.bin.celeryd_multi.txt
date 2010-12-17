@@ -1,5 +1,5 @@
 ===============================================
- Celeryd Multi Tool - celery.bin.celeryd_multi
+ celery.bin.celeryd_multi
 ===============================================
 
 .. contents::

@@ -22,7 +22,7 @@ like this:
 
 .. code-block:: python
 
-    from celery.decorators import task
+    from celery.task import task
 
     @task
     def add(x, y):

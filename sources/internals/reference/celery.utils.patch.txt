@@ -1,5 +1,5 @@
 ============================================
- Compatibility Patches - celery.utils.patch
+ celery.utils.patch
 ============================================
 
 .. contents::

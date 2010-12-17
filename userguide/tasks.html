@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tasks &mdash; Celery v2.2.0a6 documentation</title>
+    <title>Tasks &mdash; Celery v2.2.0b1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.0a6',
+        VERSION:     '2.2.0b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0a6 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0b1 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Executing Tasks" href="executing.html" />
     <link rel="prev" title="Overview" href="overview.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="overview.html" title="Overview"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0a6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -125,7 +125,7 @@
 </div>
 <p>This guide gives an overview of how tasks are defined. For a complete
 listing of task attributes and methods, please see the
-<tt class="xref py py-class docutils literal"><span class="pre">API</span> <span class="pre">reference</span></tt>.</p>
+<a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.BaseTask" title="celery.task.base.BaseTask"><tt class="xref py py-class docutils literal"><span class="pre">API</span> <span class="pre">reference</span></tt></a>.</p>
 <div class="section" id="basics">
 <span id="task-basics"></span><h2><a class="toc-backref" href="#id5">Basics</a><a class="headerlink" href="#basics" title="Permalink to this headline">¶</a></h2>
 <p>A task is a class that encapsulates a function and its execution options.
@@ -179,7 +179,7 @@ the client, and not by a worker.</p>
 <tr class="field"><th class="field-name">delivery_info:</th><td class="field-body"><dl class="first docutils">
 <dt>Additional message delivery information. This is a mapping</dt>
 <dd><p class="first last">containing the exchange and routing key used to deliver this
-task.  Used by e.g. <tt class="xref py py-meth docutils literal"><span class="pre">retry()</span></tt>
+task.  Used by e.g. <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.BaseTask.retry" title="celery.task.base.BaseTask.retry"><tt class="xref py py-meth docutils literal"><span class="pre">retry()</span></tt></a>
 to resend the task to the same destination queue.</p>
 </dd>
 </dl>
@@ -217,9 +217,9 @@ out/-err will be written to the log file as well.</p>
 </div>
 <div class="section" id="retrying-a-task-if-something-fails">
 <span id="task-retry"></span><h2><a class="toc-backref" href="#id9">Retrying a task if something fails</a><a class="headerlink" href="#retrying-a-task-if-something-fails" title="Permalink to this headline">¶</a></h2>
-<p>Simply use <tt class="xref py py-meth docutils literal"><span class="pre">retry()</span></tt> to re-send the task.
+<p>Simply use <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.BaseTask.retry" title="celery.task.base.BaseTask.retry"><tt class="xref py py-meth docutils literal"><span class="pre">retry()</span></tt></a> to re-send the task.
 It will do the right thing, and respect the
-<tt class="xref py py-attr docutils literal"><span class="pre">max_retries</span></tt> attribute:</p>
+<a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.BaseTask.max_retries" title="celery.task.base.BaseTask.max_retries"><tt class="xref py py-attr docutils literal"><span class="pre">max_retries</span></tt></a> attribute:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="nd">@celery.task</span><span class="p">()</span>
 <span class="k">def</span> <span class="nf">send_twitter_status</span><span class="p">(</span><span class="n">oauth</span><span class="p">,</span> <span class="n">tweet</span><span class="p">):</span>
     <span class="k">try</span><span class="p">:</span>
@@ -230,20 +230,20 @@ It will do the right thing, and respect the
 </pre></div>
 </div>
 <p>Here we used the <cite>exc</cite> argument to pass the current exception to
-<tt class="xref py py-meth docutils literal"><span class="pre">retry()</span></tt>. At each step of the retry this exception
+<a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.BaseTask.retry" title="celery.task.base.BaseTask.retry"><tt class="xref py py-meth docutils literal"><span class="pre">retry()</span></tt></a>. At each step of the retry this exception
 is available as the tombstone (result) of the task. When
-<tt class="xref py py-attr docutils literal"><span class="pre">max_retries</span></tt> has been exceeded this is the
+<a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.BaseTask.max_retries" title="celery.task.base.BaseTask.max_retries"><tt class="xref py py-attr docutils literal"><span class="pre">max_retries</span></tt></a> has been exceeded this is the
 exception raised.  However, if an <cite>exc</cite> argument is not provided the
 <a class="reference internal" href="../reference/celery.exceptions.html#celery.exceptions.RetryTaskError" title="celery.exceptions.RetryTaskError"><tt class="xref py py-exc docutils literal"><span class="pre">RetryTaskError</span></tt></a> exception is raised instead.</p>
 <div class="section" id="using-a-custom-retry-delay">
 <span id="task-retry-custom-delay"></span><h3><a class="toc-backref" href="#id10">Using a custom retry delay</a><a class="headerlink" href="#using-a-custom-retry-delay" title="Permalink to this headline">¶</a></h3>
 <p>When a task is to be retried, it will wait for a given amount of time
 before doing so. The default delay is in the
-<tt class="xref py py-attr docutils literal"><span class="pre">default_retry_delay</span></tt>
+<a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.BaseTask.default_retry_delay" title="celery.task.base.BaseTask.default_retry_delay"><tt class="xref py py-attr docutils literal"><span class="pre">default_retry_delay</span></tt></a>
 attribute on the task. By default this is set to 3 minutes. Note that the
 unit for setting the delay is in seconds (int or float).</p>
 <p>You can also provide the <cite>countdown</cite> argument to
-<tt class="xref py py-meth docutils literal"><span class="pre">retry()</span></tt> to override this default.</p>
+<a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.BaseTask.retry" title="celery.task.base.BaseTask.retry"><tt class="xref py py-meth docutils literal"><span class="pre">retry()</span></tt></a> to override this default.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="nd">@celery.task</span><span class="p">(</span><span class="n">default_retry_delay</span><span class="o">=</span><span class="mi">30</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>  <span class="c"># retry in 30 minutes.</span>
 <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
     <span class="k">try</span><span class="p">:</span>
@@ -385,7 +385,7 @@ will be available in the state metadata (e.g. <cite>result.info[&#8220;pid&#8221
 
 <div class="admonition-see-also admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last">The API reference for <tt class="xref py py-class docutils literal"><span class="pre">BaseTask</span></tt>.</p>
+<p class="last">The API reference for <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.BaseTask" title="celery.task.base.BaseTask"><tt class="xref py py-class docutils literal"><span class="pre">BaseTask</span></tt></a>.</p>
 </div>
 </div>
 <div class="section" id="message-and-routing-options">
@@ -514,56 +514,16 @@ add the project directory to the Python path:</p>
 </div>
 <div class="section" id="decorating-tasks">
 <h2><a class="toc-backref" href="#id16">Decorating tasks</a><a class="headerlink" href="#decorating-tasks" title="Permalink to this headline">¶</a></h2>
-<p>Using decorators with tasks requires extra steps because of the magic keyword
-arguments.</p>
-<p>If you have the following task and decorator:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.utils.functional</span> <span class="kn">import</span> <span class="n">wraps</span>
-
-<span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">task</span><span class="p">):</span>
-
-    <span class="nd">@wraps</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">_decorated</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">print</span><span class="p">(</span><span class="s">&quot;inside decorator&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">task</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-
-<span class="nd">@decorator</span>
-<span class="nd">@task</span>
+<p>When using other decorators you must make sure that the <cite>task</cite>
+decorator is applied last:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span>
+<span class="nd">@decorator2</span>
+<span class="nd">@decorator1</span>
 <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
 </pre></div>
 </div>
-<p>Then the worker will see that the task is accepting keyword arguments,
-while it really doesn&#8217;t, resulting in an error.</p>
-<p>The workaround is to either have your task accept arbitrary keyword
-arguments:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="nd">@decorator</span>
-<span class="nd">@task</span>
-<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
-</pre></div>
-</div>
-<p>or patch the decorator to preserve the original signature:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">getargspec</span>
-<span class="kn">from</span> <span class="nn">celery.utils.functional</span> <span class="kn">import</span> <span class="n">wraps</span>
-
-<span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">task</span><span class="p">):</span>
-
-    <span class="nd">@wraps</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">_decorated</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">print</span><span class="p">(</span><span class="s">&quot;in decorator&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">task</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="n">_decorated</span><span class="o">.</span><span class="n">argspec</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getargspec</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>Also note the use of <tt class="xref py py-func docutils literal"><span class="pre">wraps()</span></tt> here,
-this is necessary to keep the original function name and docstring.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">The magic keyword arguments will be deprecated in the future,
-replaced by the <cite>task.request</cite> attribute in 2.2, and the
-keyword arguments will be removed in 3.0.</p>
-</div>
+<p>Which means the <cite>&#64;task</cite> decorator must be the top statement.</p>
 </div>
 <div class="section" id="task-states">
 <span id="id4"></span><h2><a class="toc-backref" href="#id17">Task States</a><a class="headerlink" href="#task-states" title="Permalink to this headline">¶</a></h2>
@@ -668,7 +628,7 @@ when the exceptions was raised.</td>
 The name of the state is usually an uppercase string.  As an example
 you could have a look at <tt class="xref py py-mod docutils literal"><span class="pre">abortable</span> <span class="pre">tasks</span></tt>
 which defines its own custom <tt class="xref std std-state docutils literal"><span class="pre">ABORTED</span></tt> state.</p>
-<p>Use <tt class="xref py py-meth docutils literal"><span class="pre">Task.update_state</span></tt> to
+<p>Use <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.BaseTask.update_state" title="celery.task.base.BaseTask.update_state"><tt class="xref py py-meth docutils literal"><span class="pre">Task.update_state</span></tt></a> to
 update a tasks state:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="nd">@celery.task</span>
 <span class="k">def</span> <span class="nf">upload_files</span><span class="p">(</span><span class="n">filenames</span><span class="p">):</span>
@@ -712,9 +672,9 @@ only be registered when the module they are defined in is imported.</p>
 <a class="reference internal" href="../configuration.html#std:setting-CELERY_IMPORTS"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_IMPORTS</span></tt></a> setting.</p>
 <p>The entity responsible for registering your task in the registry is a
 meta class, <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.TaskType" title="celery.task.base.TaskType"><tt class="xref py py-class docutils literal"><span class="pre">TaskType</span></tt></a>.  This is the default
-meta class for <tt class="xref py py-class docutils literal"><span class="pre">BaseTask</span></tt>.</p>
+meta class for <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.BaseTask" title="celery.task.base.BaseTask"><tt class="xref py py-class docutils literal"><span class="pre">BaseTask</span></tt></a>.</p>
 <p>If you want to register your task manually you can set mark the
-task as <tt class="xref py py-attr docutils literal"><span class="pre">abstract</span></tt>:</p>
+task as <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.BaseTask.abstract" title="celery.task.base.BaseTask.abstract"><tt class="xref py py-attr docutils literal"><span class="pre">abstract</span></tt></a>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
     <span class="n">abstract</span> <span class="o">=</span> <span class="bp">True</span>
 </pre></div>
@@ -733,7 +693,7 @@ challenge that has yet to be solved.</p>
 <div class="section" id="ignore-results-you-don-t-want">
 <span id="task-ignore-results"></span><h3><a class="toc-backref" href="#id28">Ignore results you don&#8217;t want</a><a class="headerlink" href="#ignore-results-you-don-t-want" title="Permalink to this headline">¶</a></h3>
 <p>If you don&#8217;t care about the results of a task, be sure to set the
-<tt class="xref py py-attr docutils literal"><span class="pre">ignore_result</span></tt> option, as storing results
+<a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.BaseTask.ignore_result" title="celery.task.base.BaseTask.ignore_result"><tt class="xref py py-attr docutils literal"><span class="pre">ignore_result</span></tt></a> option, as storing results
 wastes time and resources.</p>
 <div class="highlight-python"><pre>@celery.task(ignore_result=True)
 def mytask(...)
@@ -1013,7 +973,7 @@ need to pay.  You have to sign up to their service to get an API key.</p>
 <div class="section" id="blog-tasks-py">
 <span id="task-example-blog-tasks"></span><h3><a class="toc-backref" href="#id39">blog/tasks.py</a><a class="headerlink" href="#blog-tasks-py" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">akismet</span> <span class="kn">import</span> <span class="n">Akismet</span>
-<span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
+<span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">task</span>
 
 <span class="kn">from</span> <span class="nn">django.core.exceptions</span> <span class="kn">import</span> <span class="n">ImproperlyConfigured</span>
 <span class="kn">from</span> <span class="nn">django.contrib.sites.models</span> <span class="kn">import</span> <span class="n">Site</span>
@@ -1099,7 +1059,7 @@ need to pay.  You have to sign up to their service to get an API key.</p>
         <li class="right" >
           <a href="overview.html" title="Overview"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0a6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>

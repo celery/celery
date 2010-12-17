@@ -1,5 +1,5 @@
 =================================
- Message Routers - celery.routes
+ celery.routes
 =================================
 
 .. contents::

@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Loader Base Classes - celery.loaders.base &mdash; Celery v2.2.0a6 documentation</title>
+    <title>celery.loaders.base &mdash; Celery v2.2.0b1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.0a6',
+        VERSION:     '2.2.0b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,10 +21,10 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0a6 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0b1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
-    <link rel="next" title="Task Registry - celery.registry" href="celery.registry.html" />
-    <link rel="prev" title="Default Loader - celery.loaders.default" href="celery.loaders.default.html" /> 
+    <link rel="next" title="celery.registry" href="celery.registry.html" />
+    <link rel="prev" title="celery.loaders.default" href="celery.loaders.default.html" /> 
   </head>
   <body>
     <div class="related">
@@ -37,12 +37,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.registry.html" title="Task Registry - celery.registry"
+          <a href="celery.registry.html" title="celery.registry"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="celery.loaders.default.html" title="Default Loader - celery.loaders.default"
+          <a href="celery.loaders.default.html" title="celery.loaders.default"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0a6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -64,8 +64,8 @@
         
 
 </div>
-    <div class="section" id="loader-base-classes-celery-loaders-base">
-<h1>Loader Base Classes - celery.loaders.base<a class="headerlink" href="#loader-base-classes-celery-loaders-base" title="Permalink to this headline">¶</a></h1>
+    <div class="section" id="celery-loaders-base">
+<h1>celery.loaders.base<a class="headerlink" href="#celery-loaders-base" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.loaders.base"></span><dl class="class">
 <dt id="celery.loaders.base.BaseLoader">
 <em class="property">class </em><tt class="descclassname">celery.loaders.base.</tt><tt class="descname">BaseLoader</tt><big>(</big><em>app=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.loaders.base.BaseLoader" title="Permalink to this definition">¶</a></dt>
@@ -93,7 +93,7 @@
 </blockquote>
 <dl class="method">
 <dt id="celery.loaders.base.BaseLoader.cmdline_config_parser">
-<tt class="descname">cmdline_config_parser</tt><big>(</big><em>args</em>, <em>namespace='celery'</em>, <em>re_type=&lt;_sre.SRE_Pattern object at 0x1033fca50&gt;</em>, <em>extra_types={'json': &lt;function &lt;lambda&gt; at 0x1045df230&gt;}</em>, <em>override_types={'dict': 'json'</em>, <em>'list': 'json'</em>, <em>'tuple': 'json'}</em><big>)</big><a class="headerlink" href="#celery.loaders.base.BaseLoader.cmdline_config_parser" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">cmdline_config_parser</tt><big>(</big><em>args</em>, <em>namespace='celery'</em>, <em>re_type=&lt;_sre.SRE_Pattern object at 0x1029eb930&gt;</em>, <em>extra_types={'json': &lt;function &lt;lambda&gt; at 0x104277d70&gt;}</em>, <em>override_types={'dict': 'json'</em>, <em>'list': 'json'</em>, <em>'tuple': 'json'}</em><big>)</big><a class="headerlink" href="#celery.loaders.base.BaseLoader.cmdline_config_parser" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -127,9 +127,14 @@
 <tt class="descname">init_worker</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.loaders.base.BaseLoader.init_worker" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="attribute">
+<dt id="celery.loaders.base.BaseLoader.mail">
+<tt class="descname">mail</tt><a class="headerlink" href="#celery.loaders.base.BaseLoader.mail" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="celery.loaders.base.BaseLoader.mail_admins">
-<tt class="descname">mail_admins</tt><big>(</big><em>subject</em>, <em>message</em>, <em>fail_silently=False</em>, <em>sender=None</em>, <em>to=None</em>, <em>host=None</em>, <em>port=None</em>, <em>user=None</em>, <em>password=None</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.loaders.base.BaseLoader.mail_admins" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">mail_admins</tt><big>(</big><em>subject</em>, <em>body</em>, <em>fail_silently=False</em>, <em>sender=None</em>, <em>to=None</em>, <em>host=None</em>, <em>port=None</em>, <em>user=None</em>, <em>password=None</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.loaders.base.BaseLoader.mail_admins" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -165,10 +170,10 @@ starts.</p>
 </a></p>
   <h4>Previous topic</h4>
   <p class="topless"><a href="celery.loaders.default.html"
-                        title="previous chapter">Default Loader - celery.loaders.default</a></p>
+                        title="previous chapter">celery.loaders.default</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="celery.registry.html"
-                        title="next chapter">Task Registry - celery.registry</a></p>
+                        title="next chapter">celery.registry</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../sources/reference/celery.loaders.base.txt"
@@ -201,12 +206,12 @@ starts.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.registry.html" title="Task Registry - celery.registry"
+          <a href="celery.registry.html" title="celery.registry"
              >next</a> |</li>
         <li class="right" >
-          <a href="celery.loaders.default.html" title="Default Loader - celery.loaders.default"
+          <a href="celery.loaders.default.html" title="celery.loaders.default"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0a6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

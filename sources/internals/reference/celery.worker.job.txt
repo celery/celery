@@ -1,5 +1,5 @@
 =====================================
- Executable Jobs - celery.worker.job
+ celery.worker.job
 =====================================
 
 .. contents::

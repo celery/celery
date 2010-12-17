@@ -43,7 +43,7 @@ Callbacks
 Let's improve our `add` task so it can accept a callback that
 takes the result as an argument::
 
-    from celery.decorators import task
+    from celery.task import task
     from celery.task.sets import subtask
 
     @task

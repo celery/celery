@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Task Information and Utilities - celery.task &mdash; Celery v2.2.0a6 documentation</title>
+    <title>celery.task &mdash; Celery v2.2.0b1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.0a6',
+        VERSION:     '2.2.0b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,10 +21,10 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0a6 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0b1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
-    <link rel="next" title="Configuration - celery.conf" href="celery.conf.html" />
-    <link rel="prev" title="Task Result - celery.result" href="celery.result.html" /> 
+    <link rel="next" title="celery.task.control" href="celery.task.control.html" />
+    <link rel="prev" title="celery.result" href="celery.result.html" /> 
   </head>
   <body>
     <div class="related">
@@ -37,12 +37,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.conf.html" title="Configuration - celery.conf"
+          <a href="celery.task.control.html" title="celery.task.control"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="celery.result.html" title="Task Result - celery.result"
+          <a href="celery.result.html" title="celery.result"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0a6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -64,265 +64,66 @@
         
 
 </div>
-    <div class="section" id="task-information-and-utilities-celery-task">
-<h1>Task Information and Utilities - celery.task<a class="headerlink" href="#task-information-and-utilities-celery-task" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.task"></span><p>Working with tasks and task sets.</p>
-<dl class="class">
-<dt id="celery.task.Task">
-<em class="property">class </em><tt class="descclassname">celery.task.</tt><tt class="descname">Task</tt><a class="headerlink" href="#celery.task.Task" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="celery.task.TaskSet">
-<em class="property">class </em><tt class="descclassname">celery.task.</tt><tt class="descname">TaskSet</tt><big>(</big><em>task=None</em>, <em>tasks=None</em>, <em>app=None</em>, <em>Publisher=None</em><big>)</big><a class="headerlink" href="#celery.task.TaskSet" title="Permalink to this definition">¶</a></dt>
-<dd><p>A task containing several subtasks, making it possible
-to track how many, or when all of the tasks has been completed.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>tasks</strong> &#8211; A list of <tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt> instances.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<dl class="attribute">
-<dt id="celery.task.TaskSet.total">
-<tt class="descname">total</tt><a class="headerlink" href="#celery.task.TaskSet.total" title="Permalink to this definition">¶</a></dt>
-<dd><p>Total number of subtasks in this task set.</p>
-</dd></dl>
-
-<p>Example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">djangofeeds.tasks</span> <span class="kn">import</span> <span class="n">RefreshFeedTask</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.sets</span> <span class="kn">import</span> <span class="n">TaskSet</span><span class="p">,</span> <span class="n">subtask</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">urls</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;http://cnn.com/rss&quot;</span><span class="p">,</span>
-<span class="gp">... </span>        <span class="s">&quot;http://bbc.co.uk/rss&quot;</span><span class="p">,</span>
-<span class="gp">... </span>        <span class="s">&quot;http://xkcd.com/rss&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">subtasks</span> <span class="o">=</span> <span class="p">[</span><span class="n">RefreshFeedTask</span><span class="o">.</span><span class="n">subtask</span><span class="p">(</span><span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s">&quot;feed_url&quot;</span><span class="p">:</span> <span class="n">url</span><span class="p">})</span>
-<span class="gp">... </span>                <span class="k">for</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">urls</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">taskset</span> <span class="o">=</span> <span class="n">TaskSet</span><span class="p">(</span><span class="n">tasks</span><span class="o">=</span><span class="n">subtasks</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">taskset_result</span> <span class="o">=</span> <span class="n">taskset</span><span class="o">.</span><span class="n">apply_async</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">list_of_return_values</span> <span class="o">=</span> <span class="n">taskset_result</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+    <div class="section" id="celery-task">
+<h1>celery.task<a class="headerlink" href="#celery-task" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-celery.task"></span><dl class="function">
+<dt id="celery.task.task">
+<tt class="descclassname">celery.task.</tt><tt class="descname">task</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator to create a task class out of any callable.</p>
+<div class="admonition-examples admonition ">
+<p class="first admonition-title">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">refresh_feed</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 </pre></div>
 </div>
-<dl class="method">
-<dt id="celery.task.TaskSet.apply">
-<tt class="descname">apply</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.TaskSet.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Applies the taskset locally.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.task.TaskSet.apply_async">
-<tt class="descname">apply_async</tt><big>(</big><em>connection=None</em>, <em>connect_timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.TaskSet.apply_async" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="celery.task.TaskSet.task">
-<tt class="descname">task</tt><a class="headerlink" href="#celery.task.TaskSet.task" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="celery.task.TaskSet.task_name">
-<tt class="descname">task_name</tt><a class="headerlink" href="#celery.task.TaskSet.task_name" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="celery.task.TaskSet.tasks">
-<tt class="descname">tasks</tt><a class="headerlink" href="#celery.task.TaskSet.tasks" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.task.PeriodicTask">
-<em class="property">class </em><tt class="descclassname">celery.task.</tt><tt class="descname">PeriodicTask</tt><a class="headerlink" href="#celery.task.PeriodicTask" title="Permalink to this definition">¶</a></dt>
-<dd><p>A periodic task is a task that behaves like a <em class="manpage">cron</em> job.</p>
-<p>Results of periodic tasks are not stored by default.</p>
-<dl class="attribute">
-<dt id="celery.task.PeriodicTask.run_every">
-<tt class="descname">run_every</tt><a class="headerlink" href="#celery.task.PeriodicTask.run_every" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>REQUIRED</em> Defines how often the task is run (its interval),
-it can be a <tt class="xref py py-class docutils literal"><span class="pre">timedelta</span></tt> object, a
-<tt class="xref py py-class docutils literal"><span class="pre">crontab</span></tt> object or an integer
-specifying the time in seconds.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.task.PeriodicTask.relative">
-<tt class="descname">relative</tt><a class="headerlink" href="#celery.task.PeriodicTask.relative" title="Permalink to this definition">¶</a></dt>
-<dd><p>If set to <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt>, run times are relative to the time when the
-server was started. This was the previous behaviour, periodic tasks
-are now scheduled by the clock.</p>
-</dd></dl>
-
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Raises NotImplementedError:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">if the <a class="reference internal" href="#celery.task.PeriodicTask.run_every" title="celery.task.PeriodicTask.run_every"><tt class="xref py py-attr docutils literal"><span class="pre">run_every</span></tt></a> attribute is
-not defined.</td>
-</tr>
-</tbody>
-</table>
-<p>Example</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">PeriodicTask</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">EveryThirtySecondsTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="n">run_every</span> <span class="o">=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
-<span class="gp">...</span>
-<span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Execute every 30 seconds&quot;</span><span class="p">)</span>
+<p>With setting extra options and using retry.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">(</span><span class="n">exchange</span><span class="o">=</span><span class="s">&quot;feeds&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">refresh_feed</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+    <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">refresh_feed</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">url</span><span class="p">],</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">exc</span><span class="o">=</span><span class="n">exc</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">PeriodicTask</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.schedules</span> <span class="kn">import</span> <span class="n">crontab</span>
+<p>Calling the resulting task:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">refresh_feed</span><span class="p">(</span><span class="s">&quot;http://example.com/rss&quot;</span><span class="p">)</span> <span class="c"># Regular</span>
+<span class="go">&lt;Feed: http://example.com/rss&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">refresh_feed</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="s">&quot;http://example.com/rss&quot;</span><span class="p">)</span> <span class="c"># Async</span>
+<span class="go">&lt;AsyncResult: 8998d0f4-da0b-4669-ba03-d5ab5ac6ad5d&gt;</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">EveryMondayMorningTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="n">run_every</span> <span class="o">=</span> <span class="n">crontab</span><span class="p">(</span><span class="n">hour</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">day_of_week</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="gp">...</span>
-<span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Execute every Monday at 7:30AM.&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">EveryMorningTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="n">run_every</span> <span class="o">=</span> <span class="n">crontab</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
-<span class="gp">...</span>
-<span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Execute every day at 7:30AM.&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">EveryQuarterPastTheHourTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="n">run_every</span> <span class="o">=</span> <span class="n">crontab</span><span class="p">(</span><span class="n">minute</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="gp">...</span>
-<span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Execute every 0:15 past the hour every day.&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<dl class="method">
-<dt id="celery.task.PeriodicTask.is_due">
-<tt class="descname">is_due</tt><big>(</big><em>last_run_at</em><big>)</big><a class="headerlink" href="#celery.task.PeriodicTask.is_due" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns tuple of two items <cite>(is_due, next_time_to_run)</cite>,
-where next time to run is in seconds.</p>
-<p>See <a class="reference internal" href="celery.schedules.html#celery.schedules.schedule.is_due" title="celery.schedules.schedule.is_due"><tt class="xref py py-meth docutils literal"><span class="pre">celery.schedules.schedule.is_due()</span></tt></a> for more information.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.task.PeriodicTask.remaining_estimate">
-<tt class="descname">remaining_estimate</tt><big>(</big><em>last_run_at</em><big>)</big><a class="headerlink" href="#celery.task.PeriodicTask.remaining_estimate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns when the periodic task should run next as a timedelta.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.task.PeriodicTask.timedelta_seconds">
-<tt class="descname">timedelta_seconds</tt><big>(</big><em>delta</em><big>)</big><a class="headerlink" href="#celery.task.PeriodicTask.timedelta_seconds" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert <tt class="xref py py-class docutils literal"><span class="pre">timedelta</span></tt> to seconds.</p>
-<p>Doesn&#8217;t account for negative timedeltas.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.task.dmap">
-<tt class="descclassname">celery.task.</tt><tt class="descname">dmap</tt><big>(</big><em>fun</em>, <em>args</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.dmap" title="Permalink to this definition">¶</a></dt>
-<dd><p>Distribute processing of the arguments and collect the results.</p>
-<p>Example</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">dmap</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">operator</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">dmap</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">add</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">]])</span>
-<span class="go">[4, 8, 16]</span>
-</pre></div>
 </div>
 </dd></dl>
 
 <dl class="function">
-<dt id="celery.task.dmap_async">
-<tt class="descclassname">celery.task.</tt><tt class="descname">dmap_async</tt><big>(</big><em>fun</em>, <em>args</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.dmap_async" title="Permalink to this definition">¶</a></dt>
-<dd><p>Distribute processing of the arguments and collect the results
-asynchronously.</p>
-<p>:returns <a class="reference internal" href="celery.result.html#celery.result.AsyncResult" title="celery.result.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a>:</p>
-<p>Example</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">dmap_async</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">operator</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">presult</span> <span class="o">=</span> <span class="n">dmap_async</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">add</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">]])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">presult</span>
-<span class="go">&lt;AsyncResult: 373550e8-b9a0-4666-bc61-ace01fa4f91d&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">presult</span><span class="o">.</span><span class="n">status</span>
-<span class="go">&#39;SUCCESS&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">presult</span><span class="o">.</span><span class="n">result</span>
-<span class="go">[4, 8, 16]</span>
+<dt id="celery.task.periodic_task">
+<tt class="descclassname">celery.task.</tt><tt class="descname">periodic_task</tt><big>(</big><em>*args</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.periodic_task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator to create a task class out of any callable.</p>
+<div class="admonition-examples admonition ">
+<p class="first admonition-title">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">refresh_feed</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 </pre></div>
 </div>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.task.execute_remote">
-<tt class="descclassname">celery.task.</tt><tt class="descname">execute_remote</tt><big>(</big><em>fun</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.execute_remote" title="Permalink to this definition">¶</a></dt>
-<dd><p>Execute arbitrary function/object remotely.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>fun</strong> &#8211; A callable function or object.</li>
-<li><strong>*args</strong> &#8211; Positional arguments to apply to the function.</li>
-<li><strong>**kwargs</strong> &#8211; Keyword arguments to apply to the function.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<p>The object must be picklable, so you can&#8217;t use lambdas or functions
-defined in the REPL (the objects must have an associated module).</p>
-<p>:returns class:<cite>celery.result.AsyncResult</cite>:</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.task.HttpDispatchTask">
-<em class="property">class </em><tt class="descclassname">celery.task.</tt><tt class="descname">HttpDispatchTask</tt><a class="headerlink" href="#celery.task.HttpDispatchTask" title="Permalink to this definition">¶</a></dt>
-<dd><p>Task dispatching to an URL.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>url</strong> &#8211; The URL location of the HTTP callback task.</li>
-<li><strong>method</strong> &#8211; Method to use when dispatching the callback. Usually
-<cite>GET</cite> or <cite>POST</cite>.</li>
-<li><strong>**kwargs</strong> &#8211; Keyword arguments to pass on to the HTTP callback.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<dl class="attribute">
-<dt id="celery.task.HttpDispatchTask.url">
-<tt class="descname">url</tt><a class="headerlink" href="#celery.task.HttpDispatchTask.url" title="Permalink to this definition">¶</a></dt>
-<dd><p>If this is set, this is used as the default URL for requests.
-Default is to require the user of the task to supply the url as an
-argument, as this attribute is intended for subclasses.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.task.HttpDispatchTask.method">
-<tt class="descname">method</tt><a class="headerlink" href="#celery.task.HttpDispatchTask.method" title="Permalink to this definition">¶</a></dt>
-<dd><p>If this is set, this is the default method used for requests.
-Default is to require the user of the task to supply the method as an
-argument, as this attribute is intended for subclasses.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.task.HttpDispatchTask.run">
-<tt class="descname">run</tt><big>(</big><em>url=None</em>, <em>method='GET'</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.HttpDispatchTask.run" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<p>With setting extra options and using retry.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">(</span><span class="n">exchange</span><span class="o">=</span><span class="s">&quot;feeds&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">refresh_feed</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+    <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">refresh_feed</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">url</span><span class="p">],</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">exc</span><span class="o">=</span><span class="n">exc</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Calling the resulting task:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">refresh_feed</span><span class="p">(</span><span class="s">&quot;http://example.com/rss&quot;</span><span class="p">)</span> <span class="c"># Regular</span>
+<span class="go">&lt;Feed: http://example.com/rss&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">refresh_feed</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="s">&quot;http://example.com/rss&quot;</span><span class="p">)</span> <span class="c"># Async</span>
+<span class="go">&lt;AsyncResult: 8998d0f4-da0b-4669-ba03-d5ab5ac6ad5d&gt;</span>
+</pre></div>
+</div>
+</div>
 </dd></dl>
 
 </div>
@@ -337,10 +138,10 @@ argument, as this attribute is intended for subclasses.</p>
 </a></p>
   <h4>Previous topic</h4>
   <p class="topless"><a href="celery.result.html"
-                        title="previous chapter">Task Result - celery.result</a></p>
+                        title="previous chapter">celery.result</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="celery.conf.html"
-                        title="next chapter">Configuration - celery.conf</a></p>
+  <p class="topless"><a href="celery.task.control.html"
+                        title="next chapter">celery.task.control</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../sources/reference/celery.task.txt"
@@ -373,12 +174,12 @@ argument, as this attribute is intended for subclasses.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.conf.html" title="Configuration - celery.conf"
+          <a href="celery.task.control.html" title="celery.task.control"
              >next</a> |</li>
         <li class="right" >
-          <a href="celery.result.html" title="Task Result - celery.result"
+          <a href="celery.result.html" title="celery.result"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0a6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

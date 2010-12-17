@@ -1,5 +1,5 @@
 ============================================
- Python Compatibility - celery.utils.compat
+ celery.utils.compat
 ============================================
 
 .. contents::
