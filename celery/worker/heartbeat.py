@@ -39,9 +39,9 @@ class Heart(threading.Thread):
         while 1:
             try:
                 now = time()
-            except TypeError:  # pragma: no cover
+            except TypeError:
                 # we lost the race at interpreter shutdown,
-                # so time has been collected by gc.
+                # so time() has been collected by gc.
                 return
 
             if not last_beat or now > last_beat + (60.0 / bpm):
