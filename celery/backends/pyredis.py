@@ -1,4 +1,3 @@
-import warnings
 from datetime import timedelta
 
 from celery.backends.base import KeyValueStoreBackend
@@ -28,22 +27,14 @@ class RedisBackend(KeyValueStoreBackend):
         the :setting:`REDIS_HOST` or :setting:`REDIS_PORT` settings is not set.
 
     """
+    redis = redis
     redis_host = "localhost"
     redis_port = 6379
     redis_db = 0
     redis_password = None
-    redis_timeout = None
-    redis_connect_retry = None
-    expires = None
-
-    deprecated_settings = frozenset(["REDIS_TIMEOUT",
-                                     "REDIS_CONNECT_RETRY"])
 
     def __init__(self, redis_host=None, redis_port=None, redis_db=None,
-            redis_timeout=None,
             redis_password=None,
-            redis_connect_retry=None,
-            redis_connect_timeout=None,
             expires=None, **kwargs):
         super(RedisBackend, self).__init__(**kwargs)
         if redis is None:
@@ -71,13 +62,6 @@ class RedisBackend(KeyValueStoreBackend):
         if self.expires is not None:
             self.expires = int(self.expires)
 
-        for setting_name in self.deprecated_settings:
-            if self.app.conf.get(setting_name) is not None:
-                warnings.warn(
-                    "The setting '%s' is no longer supported by the "
-                    "python Redis client!" % setting_name.upper(),
-                    DeprecationWarning)
-
         if self.redis_port:
             self.redis_port = int(self.redis_port)
         if not self.redis_host or not self.redis_port:
@@ -96,10 +80,10 @@ class RedisBackend(KeyValueStoreBackend):
         """
         # connection overrides bool()
         if self._connection is None:
-            self._connection = redis.Redis(host=self.redis_host,
-                                    port=self.redis_port,
-                                    db=self.redis_db,
-                                    password=self.redis_password)
+            self._connection = self.redis.Redis(host=self.redis_host,
+                                                port=self.redis_port,
+                                                db=self.redis_db,
+                                                password=self.redis_password)
         return self._connection
 
     def close(self):
