@@ -361,9 +361,10 @@ class cached_property(object):
             return value
 
         @connection.deleter
-        def connection(self):
+        def connection(self, value):
             # Additional action to do at del(self.attr)
-            print("Next access will give a new connection")
+            if value is not None:
+                print("Connection %r deleted" % (value, ))
 
     """
 
@@ -395,12 +396,12 @@ class cached_property(object):
         if obj is None:
             return self
         try:
-            del(obj.__dict__[self.__name__])
+            value = obj.__dict__.pop(self.__name__)
         except KeyError:
             pass
         else:
             if self.__del is not None:
-                self.__del(obj)
+                self.__del(obj, value)
 
     def setter(self, fset):
         return self.__class__(self.__get, fset, self.__del)
