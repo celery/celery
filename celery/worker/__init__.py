@@ -158,10 +158,12 @@ class WorkController(object):
         self.queues = queues
 
         self._finalize = Finalize(self, self.stop, exitpriority=1)
+        self._finalize_db = None
 
         if self.db:
             persistence = state.Persistent(self.db)
-            Finalize(persistence, persistence.save, exitpriority=5)
+            self._finalize_db = Finalize(persistence, persistence.save,
+                                         exitpriority=5)
 
         # Queues
         if self.disable_rate_limits:
