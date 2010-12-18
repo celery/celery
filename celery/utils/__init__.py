@@ -421,7 +421,7 @@ def cry():
     # get a map of threads by their ID so we can print their names
     # during the traceback dump
     for t in threading.enumerate():
-        if t.ident:
+        if getattr(t, "ident", None):
             tmap[t.ident] = t
         else:
             main_thread = t
