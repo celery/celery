@@ -140,45 +140,6 @@ class ConfigurationView(AttributeDictMixin):
         return tuple(self.iteritems())
 
 
-class PositionQueue(UserList):
-    """A positional queue of a specific length, with slots that are either
-    filled or unfilled. When all of the positions are filled, the queue
-    is considered :meth:`full`.
-
-    :param length: Number of items to fill.
-
-    """
-
-    #: The number of items required for the queue to be considered full.
-    length = None
-
-    class UnfilledPosition(object):
-        """Describes an unfilled slot."""
-
-        def __init__(self, position):
-            # This is not used, but is an argument from xrange
-            # so why not.
-            self.position = position
-
-    def __init__(self, length):
-        self.length = length
-        self.data = map(self.UnfilledPosition, xrange(length))
-
-    def full(self):
-        """Returns :const:`True` if all of the slots has been filled."""
-        return len(self) >= self.length
-
-    def __len__(self):
-        """`len(self)` -> number of slots filled with real values."""
-        return len(self.filled)
-
-    @property
-    def filled(self):
-        """All filled slots as a list."""
-        return [slot for slot in self.data
-                    if not isinstance(slot, self.UnfilledPosition)]
-
-
 class ExceptionInfo(object):
     """Exception wrapping an exception and its traceback.
 

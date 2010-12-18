@@ -2,7 +2,7 @@ import sys
 from celery.tests.utils import unittest
 from Queue import Queue
 
-from celery.datastructures import PositionQueue, ExceptionInfo, LocalCache
+from celery.datastructures import ExceptionInfo, LocalCache
 from celery.datastructures import LimitedSet, SharedCounter, consume_queue
 from celery.datastructures import AttributeDict, DictAttribute
 from celery.datastructures import ConfigurationView
@@ -69,36 +69,6 @@ class test_ConfigurationView(unittest.TestCase):
                     "default_key": 1,
                     "both": 2}
         self.assertDictEqual(dict(self.view.items()), expected)
-
-
-class test_PositionQueue(unittest.TestCase):
-
-    def test_position_queue_unfilled(self):
-        q = PositionQueue(length=10)
-        for position in q.data:
-            self.assertIsInstance(position, q.UnfilledPosition)
-
-        self.assertListEqual(q.filled, [])
-        self.assertEqual(len(q), 0)
-        self.assertFalse(q.full())
-
-    def test_position_queue_almost(self):
-        q = PositionQueue(length=10)
-        q[3] = 3
-        q[6] = 6
-        q[9] = 9
-
-        self.assertListEqual(q.filled, [3, 6, 9])
-        self.assertEqual(len(q), 3)
-        self.assertFalse(q.full())
-
-    def test_position_queue_full(self):
-        q = PositionQueue(length=10)
-        for i in xrange(10):
-            q[i] = i
-        self.assertListEqual(q.filled, list(xrange(10)))
-        self.assertEqual(len(q), 10)
-        self.assertTrue(q.full())
 
 
 class test_ExceptionInfo(unittest.TestCase):

@@ -7,7 +7,6 @@ from itertools import imap
 
 from celery import states
 from celery.app import app_or_default
-from celery.datastructures import PositionQueue
 from celery.exceptions import TimeoutError
 from celery.registry import _unpickle_task
 from celery.utils.compat import any, all
@@ -61,11 +60,21 @@ class BaseAsyncResult(object):
         self.app.control.revoke(self.task_id, connection=connection,
                                 connect_timeout=connect_timeout)
 
-    def wait(self, timeout=None):
+    def wait(self, timeout=None, propagate=True, interval=0.5):
         """Wait for task, and return the result.
+
+        .. warning::
+
+           Waiting for subtasks may lead to deadlocks.
+           Please read :ref:`task-synchronous-subtasks`.
 
         :keyword timeout: How long to wait, in seconds, before the
                           operation times out.
+        :keyword propagate: Re-raise exception if the task failed.
+        :keyword interval: Time to wait (in seconds) before retrying to
+           retrieve the result.  Note that this does not have any effect
+           when using the AMQP result store backend, as it does not
+           use polling.
 
         :raises celery.exceptions.TimeoutError: if `timeout` is not
             :const:`None` and the result does not arrive within `timeout`
@@ -75,7 +84,9 @@ class BaseAsyncResult(object):
         be re-raised.
 
         """
-        return self.backend.wait_for(self.task_id, timeout=timeout)
+        return self.backend.wait_for(self.task_id, timeout=timeout,
+                                                   propagate=propagate,
+                                                   interval=interval)
 
     def get(self, timeout=None):
         """Alias to :meth:`wait`."""
@@ -319,9 +330,22 @@ class TaskSetResult(object):
                 elif result.status in states.PROPAGATE_STATES:
                     raise result.result
 
-    def join(self, timeout=None, propagate=True):
+    def join(self, timeout=None, propagate=True, interval=0.5):
         """Gather the results of all tasks in the taskset,
         and returns a list ordered by the order of the set.
+
+        .. note::
+
+            This can be an very expensive operation on result store
+            backends that must resort to polling (e.g. database).
+
+            You should consider using :meth:`join_native` if your backends
+            supports it.
+
+        .. warning::
+
+            Waiting for subtasks may lead the deadlocks.
+            Please see :ref:`task-synchronous-subtasks`.
 
         :keyword timeout: The number of seconds to wait for results before
                           the operation times out.
@@ -329,14 +353,33 @@ class TaskSetResult(object):
         :keyword propagate: If any of the subtasks raises an exception, the
                             exception will be reraised.
 
+        :keyword interval: Time to wait (in seconds) before retrying to
+                           retrieve a result from the set.  Note that this
+                           does not have any effect when using the AMQP
+                           result store backend, as it does not use polling.
+
         :raises celery.exceptions.TimeoutError: if `timeout` is not
             :const:`None` and the operation takes longer than `timeout`
             seconds.
 
         """
-
         time_start = time.time()
-        results = PositionQueue(length=self.total)
+        remaining = None
+
+        results = []
+        for subtask in self.subtasks:
+            remaining = None
+            if timeout:
+                remaining = timeout - (time.time() - time_start)
+                if remaining <= 0.0:
+                    raise TimeoutError("join operation timed out")
+            results.append(subtask.wait(timeout=remaining,
+                                        propagate=propagate,
+                                        interval=interval))
+        return results
+
+
+
 
         while True:
             for position, pending_result in enumerate(self.subtasks):
@@ -371,7 +414,7 @@ class TaskSetResult(object):
 
         """
         backend = self.subtasks[0].backend
-        results = PositionQueue(length=self.total)
+        results = [None for _ in xrange(len(self.subtasks))]
 
         ids = [subtask.task_id for subtask in self.subtasks]
         states = dict(backend.get_many(ids, timeout=timeout))
@@ -426,12 +469,14 @@ class EagerResult(BaseAsyncResult):
         """Returns :const:`True` if the task has been executed."""
         return True
 
-    def wait(self, timeout=None):
+    def wait(self, timeout=None, propagate=True, **kwargs):
         """Wait until the task has been executed and return its result."""
         if self.state == states.SUCCESS:
             return self.result
         elif self.state in states.PROPAGATE_STATES:
-            raise self.result
+            if propagate:
+                raise self.result
+            return self.result
 
     def revoke(self):
         self._state = states.REVOKED

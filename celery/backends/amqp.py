@@ -131,7 +131,8 @@ class AMQPBackend(BaseDictBackend):
 
         return self.poll(task_id)
 
-    def wait_for(self, task_id, timeout=None, cache=True):
+    def wait_for(self, task_id, timeout=None, cache=True, propagate=True,
+            **kwargs):
         cached_meta = self._cache.get(task_id)
 
         if cache and cached_meta and \
@@ -143,10 +144,13 @@ class AMQPBackend(BaseDictBackend):
             except socket.timeout:
                 raise TimeoutError("The operation timed out.")
 
-        if meta["status"] == states.SUCCESS:
+        state = meta["status"]
+        if state == states.SUCCESS:
             return meta["result"]
-        elif meta["status"] in states.PROPAGATE_STATES:
-            raise self.exception_to_python(meta["result"])
+        elif state in states.PROPAGATE_STATES:
+            if propagate:
+                raise self.exception_to_python(meta["result"])
+            return meta["result"]
         else:
             return self.wait_for(task_id, timeout, cache)
 
