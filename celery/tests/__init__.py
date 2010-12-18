@@ -48,7 +48,10 @@ def find_distribution_modules(name=__name__, file=__file__):
 
 def import_all_modules(name=__name__, file=__file__):
     for module in find_distribution_modules(name, file):
-        import_module(module)
+        try:
+            import_module(module)
+        except ImportError:
+            pass
 
 
 if os.environ.get("COVER_ALL_MODULES") or "--with-coverage3" in sys.argv:
