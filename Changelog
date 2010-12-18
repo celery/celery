@@ -5,6 +5,18 @@
 .. contents::
     :local:
 
+.. _version-2.1.5:
+
+
+2.1.5
+=====
+
+* In 2.2 remote control commands are not persistent anymore.
+  There is now a new setting you can use to disable persistence in 2.1 as
+  well: the :setting:`CELERY_BROADCAST_PERSISTENT` setting.
+
+     This setting will not have any effect in 2.2.
+
 .. _version-2.1.4:
 
 2.1.4
