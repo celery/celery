@@ -203,3 +203,9 @@ def cancel_consumer(panel, queue=None, **_):
     cset = panel.consumer.task_consumer
     cset.cancel_by_queue(queue)
     return {"ok": "no longer consuming from %s" % (queue, )}
+    
+@Panel.register
+def worker_queues(panel):
+    """Returns the queues associated with each worker."""
+    return dict(panel.consumer.queues.iteritems())
+
