@@ -1,6 +1,8 @@
 import os
 import sys
 
+from nose import SkipTest
+
 from celery.tests.utils import unittest
 from celery.tests.utils import patch
 
