@@ -9,6 +9,13 @@ from celery.utils.functional import wraps
 from celery.tests.utils import unittest
 
 
+class MockCommand(object):
+    executed = []
+
+    def execute_from_commandline(self, **kwargs):
+        self.executed.append(True)
+
+
 def patch(module, name, mocked):
     module = import_module(module)
 
@@ -60,14 +67,8 @@ class test_EvCommand(unittest.TestCase):
         self.assertEqual(kw["logfile"], "logfile")
         self.assertIn("celeryev:cam", proctitle.last[0])
 
-    @patch("celery.events.cursesmon", "evtop", lambda **kw: "me top, you?")
-    @patch("celery.platforms", "set_process_title", proctitle)
+    @patch("celery.bin.celeryev", "EvCommand", MockCommand)
     def test_main(self):
-        prev_argv = list(sys.argv)
-        sys.argv = ["celeryev"]
-        try:
-            celeryev.main()
-            self.assertIn("celeryev:top", proctitle.last[0])
-        finally:
-            sys.argv = prev_argv
-
+        MockCommand.executed = []
+        celeryev.main()
+        self.assertTrue(MockCommand.executed)
