@@ -1,0 +1,246 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>celery.utils.serialization &mdash; Celery v2.2.0b1 documentation</title>
+    <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.2.0b1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
+    <script type="text/javascript" src="../../static/doctools.js"></script>
+    <link rel="top" title="Celery v2.2.0b1 documentation" href="../../index.html" />
+    <link rel="up" title="Internal Module Reference" href="index.html" />
+    <link rel="next" title="celery.utils.timer2" href="celery.utils.timer2.html" />
+    <link rel="prev" title="celery.utils.functional" href="celery.utils.functional.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.utils.timer2.html" title="celery.utils.timer2"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.utils.functional.html" title="celery.utils.functional"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Celery v2.2.0b1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://celeryproject.org/docs/internals/reference/celery.utils.serialization.html">2.1</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="celery-utils-serialization">
+<h1>celery.utils.serialization<a class="headerlink" href="#celery-utils-serialization" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-celery.utils.serialization"></span><dl class="exception">
+<dt id="celery.utils.serialization.UnpickleableExceptionWrapper">
+<em class="property">exception </em><tt class="descclassname">celery.utils.serialization.</tt><tt class="descname">UnpickleableExceptionWrapper</tt><big>(</big><em>exc_module</em>, <em>exc_cls_name</em>, <em>exc_args</em><big>)</big><a class="headerlink" href="#celery.utils.serialization.UnpickleableExceptionWrapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wraps unpickleable exceptions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>exc_module</strong> &#8211; see <a class="reference internal" href="#celery.utils.serialization.UnpickleableExceptionWrapper.exc_module" title="celery.utils.serialization.UnpickleableExceptionWrapper.exc_module"><tt class="xref py py-attr docutils literal"><span class="pre">exc_module</span></tt></a>.</li>
+<li><strong>exc_cls_name</strong> &#8211; see <a class="reference internal" href="#celery.utils.serialization.UnpickleableExceptionWrapper.exc_cls_name" title="celery.utils.serialization.UnpickleableExceptionWrapper.exc_cls_name"><tt class="xref py py-attr docutils literal"><span class="pre">exc_cls_name</span></tt></a>.</li>
+<li><strong>exc_args</strong> &#8211; see <a class="reference internal" href="#celery.utils.serialization.UnpickleableExceptionWrapper.exc_args" title="celery.utils.serialization.UnpickleableExceptionWrapper.exc_args"><tt class="xref py py-attr docutils literal"><span class="pre">exc_args</span></tt></a></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">something_raising_unpickleable_exc</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">exc</span> <span class="o">=</span> <span class="n">UnpickleableException</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__module__</span><span class="p">,</span>
+<span class="gp">... </span>                                <span class="n">e</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+<span class="gp">... </span>                                <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span> <span class="c"># Works fine.</span>
+</pre></div>
+</div>
+<dl class="attribute">
+<dt id="celery.utils.serialization.UnpickleableExceptionWrapper.exc_args">
+<tt class="descname">exc_args</tt><a class="headerlink" href="#celery.utils.serialization.UnpickleableExceptionWrapper.exc_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>The arguments for the original exception.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.utils.serialization.UnpickleableExceptionWrapper.exc_cls_name">
+<tt class="descname">exc_cls_name</tt><a class="headerlink" href="#celery.utils.serialization.UnpickleableExceptionWrapper.exc_cls_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the original exception class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.utils.serialization.UnpickleableExceptionWrapper.exc_module">
+<tt class="descname">exc_module</tt><a class="headerlink" href="#celery.utils.serialization.UnpickleableExceptionWrapper.exc_module" title="Permalink to this definition">¶</a></dt>
+<dd><p>The module of the original exception.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="celery.utils.serialization.UnpickleableExceptionWrapper.from_exception">
+<em class="property">classmethod </em><tt class="descname">from_exception</tt><big>(</big><em>exc</em><big>)</big><a class="headerlink" href="#celery.utils.serialization.UnpickleableExceptionWrapper.from_exception" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.utils.serialization.UnpickleableExceptionWrapper.restore">
+<tt class="descname">restore</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.serialization.UnpickleableExceptionWrapper.restore" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.serialization.create_exception_cls">
+<tt class="descclassname">celery.utils.serialization.</tt><tt class="descname">create_exception_cls</tt><big>(</big><em>name</em>, <em>module</em>, <em>parent=None</em><big>)</big><a class="headerlink" href="#celery.utils.serialization.create_exception_cls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dynamically create an exception class.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.serialization.find_nearest_pickleable_exception">
+<tt class="descclassname">celery.utils.serialization.</tt><tt class="descname">find_nearest_pickleable_exception</tt><big>(</big><em>exc</em><big>)</big><a class="headerlink" href="#celery.utils.serialization.find_nearest_pickleable_exception" title="Permalink to this definition">¶</a></dt>
+<dd><p>With an exception instance, iterate over its super classes (by mro)
+and find the first super exception that is pickleable.  It does
+not go below <tt class="xref py py-exc docutils literal"><span class="pre">Exception</span></tt> (i.e. it skips <tt class="xref py py-exc docutils literal"><span class="pre">Exception</span></tt>,
+<tt class="xref py py-class docutils literal"><span class="pre">BaseException</span></tt> and <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt>).  If that happens
+you should use <tt class="xref py py-exc docutils literal"><span class="pre">UnpickleableException</span></tt> instead.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>exc</strong> &#8211; An exception instance.</li>
+</ul>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the nearest exception if it&#8217;s not <tt class="xref py py-exc docutils literal"><span class="pre">Exception</span></tt> or below,
+if it is it returns <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>:rtype <tt class="xref py py-exc docutils literal"><span class="pre">Exception</span></tt>:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.serialization.get_pickleable_exception">
+<tt class="descclassname">celery.utils.serialization.</tt><tt class="descname">get_pickleable_exception</tt><big>(</big><em>exc</em><big>)</big><a class="headerlink" href="#celery.utils.serialization.get_pickleable_exception" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make sure exception is pickleable.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.serialization.get_pickled_exception">
+<tt class="descclassname">celery.utils.serialization.</tt><tt class="descname">get_pickled_exception</tt><big>(</big><em>exc</em><big>)</big><a class="headerlink" href="#celery.utils.serialization.get_pickled_exception" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get original exception from exception pickled using
+<a class="reference internal" href="#celery.utils.serialization.get_pickleable_exception" title="celery.utils.serialization.get_pickleable_exception"><tt class="xref py py-meth docutils literal"><span class="pre">get_pickleable_exception()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.serialization.subclass_exception">
+<tt class="descclassname">celery.utils.serialization.</tt><tt class="descname">subclass_exception</tt><big>(</big><em>name</em>, <em>parent</em>, <em>module</em><big>)</big><a class="headerlink" href="#celery.utils.serialization.subclass_exception" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="data">
+<dt id="celery.utils.serialization.unwanted_base_classes">
+<tt class="descclassname">celery.utils.serialization.</tt><tt class="descname">unwanted_base_classes</tt><a class="headerlink" href="#celery.utils.serialization.unwanted_base_classes" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of base classes we probably don&#8217;t want to reduce to.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="celery.utils.functional.html"
+                        title="previous chapter">celery.utils.functional</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="celery.utils.timer2.html"
+                        title="next chapter">celery.utils.timer2</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../sources/internals/reference/celery.utils.serialization.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.utils.timer2.html" title="celery.utils.timer2"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.utils.functional.html" title="celery.utils.functional"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Celery v2.2.0b1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+    </div>
+  </body>
+</html>
