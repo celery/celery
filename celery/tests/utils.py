@@ -6,6 +6,7 @@ try:
 except AttributeError:
     import unittest2 as unittest
 
+import importlib
 import os
 import sys
 import time
@@ -243,3 +244,22 @@ def override_stdouts():
 
     sys.stdout = sys.__stdout__ = prev_out
     sys.stderr = sys.__stderr__ = prev_err
+
+
+def patch(module, name, mocked):
+    module = importlib.import_module(module)
+
+    def _patch(fun):
+
+        @wraps(fun)
+        def __patched(*args, **kwargs):
+            prev = getattr(module, name)
+            setattr(module, name, mocked)
+            try:
+                return fun(*args, **kwargs)
+            finally:
+                setattr(module, name, prev)
+        return __patched
+    return _patch
+
+

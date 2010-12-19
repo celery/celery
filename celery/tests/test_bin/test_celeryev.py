@@ -1,12 +1,11 @@
 import sys
 
-from importlib import import_module
-
 from celery.app import app_or_default
 from celery.bin import celeryev
 from celery.utils.functional import wraps
 
 from celery.tests.utils import unittest
+from celery.tests.utils import patch
 
 
 class MockCommand(object):
@@ -14,23 +13,6 @@ class MockCommand(object):
 
     def execute_from_commandline(self, **kwargs):
         self.executed.append(True)
-
-
-def patch(module, name, mocked):
-    module = import_module(module)
-
-    def _patch(fun):
-
-        @wraps(fun)
-        def __patched(*args, **kwargs):
-            prev = getattr(module, name)
-            setattr(module, name, mocked)
-            try:
-                return fun(*args, **kwargs)
-            finally:
-                setattr(module, name, prev)
-        return __patched
-    return _patch
 
 
 def proctitle(prog, info=None):

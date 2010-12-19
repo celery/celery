@@ -6,6 +6,9 @@ SKIP_FILES="celery.bin.rst
             celery.bin.celeryd_detach.rst
             celery.contrib.rst
             celery.contrib.batches.rst
+            celery.control.rst
+            celery.control.builtins.rst
+            celery.control.registry.rst
             celery.task.schedules.rst
             celery.models.rst
             celery.app.base.rst
