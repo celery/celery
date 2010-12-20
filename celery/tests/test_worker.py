@@ -1,5 +1,5 @@
 import socket
-from celery.tests.utils import unittest
+import sys
 
 from datetime import datetime, timedelta
 from Queue import Empty
@@ -10,6 +10,7 @@ from celery.utils.timer2 import Timer
 
 from celery.app import app_or_default
 from celery.concurrency.base import BasePool
+from celery.exceptions import SystemTerminate
 from celery.task import task as task_dec
 from celery.task import periodic_task as periodic_task_dec
 from celery.utils import gen_unique_id
@@ -21,7 +22,8 @@ from celery.worker.consumer import QoS, RUN
 from celery.utils.serialization import pickle
 
 from celery.tests.compat import catch_warnings
-from celery.tests.utils import execute_context
+from celery.tests.utils import unittest
+from celery.tests.utils import execute_context, skip
 
 
 class MockConsumer(object):
@@ -125,12 +127,16 @@ class MockPool(BasePool):
     def __init__(self, *args, **kwargs):
         self.raise_regular = kwargs.get("raise_regular", False)
         self.raise_base = kwargs.get("raise_base", False)
+        self.raise_SystemTerminate = kwargs.get("raise_SystemTerminate",
+                                                False)
 
     def apply_async(self, *args, **kwargs):
         if self.raise_regular:
             raise KeyError("some exception")
         if self.raise_base:
             raise KeyboardInterrupt("Ctrl+c")
+        if self.raise_SystemTerminate:
+            raise SystemTerminate()
 
     def start(self):
         pass
@@ -173,7 +179,7 @@ class test_QoS(unittest.TestCase):
         def qos(self, prefetch_size=0, prefetch_count=0, apply_global=False):
             self.prefetch_count = prefetch_count
 
-    def test_decrement(self):
+    def test_increment_decrement(self):
         consumer = self.MockConsumer()
         qos = QoS(consumer, 10, app_or_default().log.get_default_logger())
         qos.update()
@@ -185,6 +191,13 @@ class test_QoS(unittest.TestCase):
         qos.decrement_eventually()
         self.assertEqual(int(qos.value), 8)
         self.assertEqual(consumer.prefetch_count, 9)
+
+        # Does not decrement 0 value
+        qos.value._value = 0
+        qos.decrement()
+        self.assertEqual(int(qos.value), 0)
+        qos.increment()
+        self.assertEqual(int(qos.value), 0)
 
 
 class test_Consumer(unittest.TestCase):
@@ -198,6 +211,18 @@ class test_Consumer(unittest.TestCase):
     def tearDown(self):
         self.eta_schedule.stop()
 
+    def test_info(self):
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+                           send_events=False)
+        l.qos = QoS(l.task_consumer, 10, l.logger)
+        info = l.info
+        self.assertEqual(info["prefetch_count"], 10)
+        self.assertFalse(info["broker"])
+
+        l.connection = app_or_default().broker_connection()
+        info = l.info
+        self.assertTrue(info["broker"])
+
     def test_connection(self):
         l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
                            send_events=False)
@@ -205,6 +230,12 @@ class test_Consumer(unittest.TestCase):
         l.reset_connection()
         self.assertIsInstance(l.connection, BrokerConnection)
 
+        l._state = RUN
+        l.event_dispatcher = None
+        l.stop_consumers(close=False)
+        self.assertTrue(l.connection)
+
+        l._state = RUN
         l.stop_consumers()
         self.assertIsNone(l.connection)
         self.assertIsNone(l.task_consumer)
@@ -322,6 +353,94 @@ class test_Consumer(unittest.TestCase):
         self.assertEqual(in_bucket.task_name, foo_task.name)
         self.assertEqual(in_bucket.execute(), 2 * 4 * 8)
         self.assertTrue(self.eta_schedule.empty())
+
+    def test_start_connection_error(self):
+
+        class MockConsumer(MainConsumer):
+            iterations = 0
+
+            def consume_messages(self):
+                if not self.iterations:
+                    self.iterations = 1
+                    raise KeyError("foo")
+                raise SyntaxError("bar")
+
+        l = MockConsumer(self.ready_queue, self.eta_schedule, self.logger,
+                             send_events=False)
+        l.connection_errors = (KeyError, )
+        self.assertRaises(SyntaxError, l.start)
+        l.heart.stop()
+
+    def test_consume_messages(self):
+        app = app_or_default()
+
+        class Connection(app.broker_connection().__class__):
+            obj = None
+
+            def drain_events(self, **kwargs):
+                self.obj.connection = None
+
+        class Consumer(object):
+            consuming = False
+            prefetch_count = 0
+
+            def consume(self):
+                self.consuming = True
+
+            def qos(self, prefetch_size=0, prefetch_count=0,
+                            apply_global=False):
+                self.prefetch_count = prefetch_count
+
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+                             send_events=False)
+        l.connection = Connection()
+        l.connection.obj = l
+        l.task_consumer = Consumer()
+        l.broadcast_consumer = Consumer()
+        l.qos = QoS(l.task_consumer, 10, l.logger)
+
+        l.consume_messages()
+        l.consume_messages()
+        self.assertTrue(l.task_consumer.consuming)
+        self.assertTrue(l.broadcast_consumer.consuming)
+        self.assertEqual(l.task_consumer.prefetch_count, 10)
+
+        l.qos.decrement()
+        l.consume_messages()
+        self.assertEqual(l.task_consumer.prefetch_count, 9)
+
+    def test_maybe_conn_error(self):
+
+        def raises(error):
+
+            def fun():
+                raise error
+
+            return fun
+
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+                             send_events=False)
+        l.connection_errors = (KeyError, )
+        l.channel_errors = (SyntaxError, )
+        l.maybe_conn_error(raises(AttributeError("foo")))
+        l.maybe_conn_error(raises(KeyError("foo")))
+        l.maybe_conn_error(raises(SyntaxError("foo")))
+        self.assertRaises(IndexError, l.maybe_conn_error,
+                raises(IndexError("foo")))
+
+
+    def test_apply_eta_task(self):
+        from celery.worker import state
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+                             send_events=False)
+        l.qos = QoS(None, 10, l.logger)
+
+        task = object()
+        qos = l.qos.next
+        l.apply_eta_task(task)
+        self.assertIn(task, state.reserved_requests)
+        self.assertEqual(l.qos.next, qos - 1)
+        self.assertIs(self.ready_queue.get_nowait(), task)
 
     def test_receieve_message_eta_isoformat(self):
 
@@ -471,9 +590,65 @@ class test_Consumer(unittest.TestCase):
 
 class test_WorkController(unittest.TestCase):
 
+    def create_worker(self, **kw):
+        worker = WorkController(concurrency=1, loglevel=0, **kw)
+        worker.logger = MockLogger()
+        return worker
+
     def setUp(self):
-        self.worker = WorkController(concurrency=1, loglevel=0)
-        self.worker.logger = MockLogger()
+        self.worker = self.create_worker()
+
+    def test_process_initializer(self):
+        from celery import Celery
+        from celery import platforms
+        from celery import signals
+        from celery.app import _tls
+        from celery.worker import process_initializer
+        from celery.worker import WORKER_SIGRESET, WORKER_SIGIGNORE
+
+        ignored_signals = []
+        reset_signals = []
+        worker_init = [False]
+        default_app = app_or_default()
+        app = Celery(loader="default")
+
+        class Loader(object):
+
+            def init_worker(self):
+                worker_init[0] = True
+        app.loader = Loader()
+
+        def on_worker_process_init(**kwargs):
+            on_worker_process_init.called = True
+        on_worker_process_init.called = False
+        signals.worker_process_init.connect(on_worker_process_init)
+
+        def set_mp_process_title(title, hostname=None):
+            set_mp_process_title.called = (title, hostname)
+        set_mp_process_title.called = ()
+
+        pignore_signal = platforms.ignore_signal
+        preset_signal = platforms.reset_signal
+        psetproctitle = platforms.set_mp_process_title
+        platforms.ignore_signal = lambda sig: ignored_signals.append(sig)
+        platforms.reset_signal = lambda sig: reset_signals.append(sig)
+        platforms.set_mp_process_title = set_mp_process_title
+        try:
+            process_initializer(app, "awesome.worker.com")
+            self.assertItemsEqual(ignored_signals, WORKER_SIGIGNORE)
+            self.assertItemsEqual(reset_signals, WORKER_SIGRESET)
+            self.assertTrue(worker_init[0])
+            self.assertTrue(on_worker_process_init.called)
+            self.assertIs(_tls.current_app, app)
+            self.assertTupleEqual(set_mp_process_title.called,
+                                  ("celeryd", "awesome.worker.com"))
+        finally:
+            platforms.ignore_signal = pignore_signal
+            platforms.reset_signal = preset_signal
+            platforms.set_mp_process_title = psetproctitle
+            default_app.set_current()
+
+
 
     def test_with_rate_limits_disabled(self):
         worker = WorkController(concurrency=1, loglevel=0,
@@ -494,6 +669,50 @@ class test_WorkController(unittest.TestCase):
                                 embed_clockservice=True)
         self.assertTrue(worker.beat)
         self.assertIn(worker.beat, worker.components)
+
+    def test_with_autoscaler(self):
+        worker = self.create_worker(autoscale=[10, 3], send_events=False,
+                                eta_scheduler_cls="celery.utils.timer2.Timer")
+        self.assertTrue(worker.autoscaler)
+
+    def test_dont_stop_or_terminate(self):
+        worker = WorkController(concurrency=1, loglevel=0)
+        worker.stop()
+        self.assertNotEqual(worker._state, worker.CLOSE)
+        worker.terminate()
+        self.assertNotEqual(worker._state, worker.CLOSE)
+
+        sigsafe, worker.pool.signal_safe = worker.pool.signal_safe, False
+        try:
+            worker._state = worker.RUN
+            worker.stop(in_sighandler=True)
+            self.assertNotEqual(worker._state, worker.CLOSE)
+            worker.terminate(in_sighandler=True)
+            self.assertNotEqual(worker._state, worker.CLOSE)
+        finally:
+            worker.pool.signal_safe = sigsafe
+
+    def test_on_timer_error(self):
+        worker = WorkController(concurrency=1, loglevel=0)
+        worker.logger = MockLogger()
+
+        try:
+            raise KeyError("foo")
+        except KeyError:
+            exc_info = sys.exc_info()
+
+        worker.on_timer_error(exc_info)
+        logged = worker.logger.logged[0]
+        self.assertIn("foo", logged)
+
+    def test_on_timer_tick(self):
+        worker = WorkController(concurrency=1, loglevel=10)
+        worker.logger = MockLogger()
+        worker.timer_debug = worker.logger.debug
+
+        worker.on_timer_tick(30.0)
+        logged = worker.logger.logged[0]
+        self.assertIn("30.0", logged)
 
     def test_process_task(self):
         worker = self.worker
@@ -517,6 +736,18 @@ class test_WorkController(unittest.TestCase):
         self.assertRaises(KeyboardInterrupt, worker.process_task, task)
         self.assertEqual(worker._state, worker.TERMINATE)
 
+    def test_process_task_raise_SystemTerminate(self):
+        worker = self.worker
+        worker.pool = MockPool(raise_SystemTerminate=True)
+        backend = MockBackend()
+        m = create_message(backend, task=foo_task.name, args=[4, 8, 10],
+                           kwargs={})
+        task = TaskRequest.from_message(m, m.decode())
+        worker.components = []
+        worker._state = worker.RUN
+        self.assertRaises(SystemExit, worker.process_task, task)
+        self.assertEqual(worker._state, worker.TERMINATE)
+
     def test_process_task_raise_regular(self):
         worker = self.worker
         worker.pool = MockPool(raise_regular=True)
@@ -526,6 +757,59 @@ class test_WorkController(unittest.TestCase):
         task = TaskRequest.from_message(m, m.decode())
         worker.process_task(task)
         worker.pool.stop()
+
+    def test_start_catches_base_exceptions(self):
+
+        class Component(object):
+            stopped = False
+            terminated = False
+
+            def __init__(self, exc):
+                self.exc = exc
+
+            def start(self):
+                raise self.exc
+
+            def terminate(self):
+                self.terminated = True
+
+            def stop(self):
+                self.stopped = True
+
+        worker1 = self.create_worker()
+        worker1.components = [Component(SystemTerminate())]
+        self.assertRaises(SystemExit, worker1.start)
+        self.assertTrue(worker1.components[0].terminated)
+
+        worker2 = self.create_worker()
+        worker2.components = [Component(SystemExit())]
+        self.assertRaises(SystemExit, worker2.start)
+        self.assertTrue(worker2.components[0].stopped)
+
+    def test_state_db(self):
+        from celery.worker import state
+        Persistent = state.Persistent
+
+        class MockPersistent(Persistent):
+
+            def _load(self):
+                return {}
+
+        state.Persistent = MockPersistent
+        try:
+            worker = self.create_worker(db="statefilename")
+            self.assertTrue(worker._finalize_db)
+            worker._finalize_db.cancel()
+        finally:
+            state.Persistent = Persistent
+
+    @skip("Issue #264")
+    def test_disable_rate_limits(self):
+        from celery.worker.buckets import FastQueue
+        worker = self.create_worker(disable_rate_limits=True)
+        self.assertIsInstance(worker.ready_queue, FastQueue)
+        self.assertIsNone(worker.mediator)
+        self.assertEqual(worker.ready_queue.put, worker.process_task)
 
     def test_start__stop(self):
         worker = self.worker

@@ -92,23 +92,24 @@ class Schedule(object):
         nowfun = time
         pop = heapq.heappop
         max_interval = self.max_interval
+        queue = self._queue
 
         while 1:
-            if self._queue:
-                eta, priority, entry = verify = self._queue[0]
+            if queue:
+                eta, priority, entry = verify = queue[0]
                 now = nowfun()
 
                 if now < eta:
                     yield min(eta - now, max_interval), None
                 else:
-                    event = pop(self._queue)
+                    event = pop(queue)
 
                     if event is verify:
                         if not entry.cancelled:
                             yield None, entry
                         continue
                     else:
-                        heapq.heappush(self._queue, event)
+                        heapq.heappush(queue, event)
             yield None, None
 
     def empty(self):
@@ -116,7 +117,8 @@ class Schedule(object):
         return not self._queue
 
     def clear(self):
-        self._queue = []
+        self._queue[:] = []  # used because we can't replace the object
+                             # and the operation is atomic.
 
     def info(self):
         return ({"eta": eta, "priority": priority, "item": item}

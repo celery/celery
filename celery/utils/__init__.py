@@ -5,12 +5,16 @@ import sys
 import operator
 import importlib
 import logging
+import threading
+import traceback
 
 from inspect import getargspec
 from itertools import islice
+from pprint import pprint
 
 from kombu.utils import gen_unique_id, rpartition
 
+from celery.utils.compat import StringIO
 from celery.utils.functional import partial
 
 
@@ -185,12 +189,6 @@ def is_iterable(obj):
     return True
 
 
-def mitemgetter(*items):
-    """Like :func:`operator.itemgetter` but returns :const:`None`
-    on missing items instead of raising :exc:`KeyError`."""
-    return lambda container: map(container.get, items)
-
-
 def mattrgetter(*attrs):
     """Like :func:`operator.itemgetter` but returns :const:`None` on missing
     attributes instead of raising :exc:`AttributeError`."""
@@ -363,9 +361,10 @@ class cached_property(object):
             return value
 
         @connection.deleter
-        def connection(self):
+        def connection(self, value):
             # Additional action to do at del(self.attr)
-            print("Next access will give a new connection")
+            if value is not None:
+                print("Connection %r deleted" % (value, ))
 
     """
 
@@ -378,7 +377,7 @@ class cached_property(object):
         self.__module__ = fget.__module__
 
     def __get__(self, obj, type=None):
-        if not obj:
+        if obj is None:
             return self
         try:
             return obj.__dict__[self.__name__]
@@ -387,25 +386,55 @@ class cached_property(object):
             return value
 
     def __set__(self, obj, value):
-        if not obj:
+        if obj is None:
             return self
         if self.__set is not None:
             value = self.__set(obj, value)
         obj.__dict__[self.__name__] = value
 
     def __delete__(self, obj):
-        if not obj:
+        if obj is None:
             return self
         try:
-            del(obj.__dict__[self.__name__])
+            value = obj.__dict__.pop(self.__name__)
         except KeyError:
             pass
         else:
             if self.__del is not None:
-                self.__del(obj)
+                self.__del(obj, value)
 
     def setter(self, fset):
         return self.__class__(self.__get, fset, self.__del)
 
     def deleter(self, fdel):
         return self.__class__(self.__get, self.__set, fdel)
+
+
+def cry():
+    """Return stacktrace of all active threads.
+
+    From https://gist.github.com/737056
+
+    """
+    tmap = {}
+    main_thread = None
+    # get a map of threads by their ID so we can print their names
+    # during the traceback dump
+    for t in threading.enumerate():
+        if getattr(t, "ident", None):
+            tmap[t.ident] = t
+        else:
+            main_thread = t
+
+    out = StringIO()
+    for tid, frame in sys._current_frames().iteritems():
+        thread = tmap.get(tid, main_thread)
+        out.write("%s\n" % (thread.getName(), ))
+        out.write("=================================================\n")
+        traceback.print_stack(frame, file=out)
+        out.write("=================================================\n")
+        out.write("LOCAL VARIABLES\n")
+        out.write("=================================================\n")
+        pprint(frame.f_locals, stream=out)
+        out.write("\n\n")
+    return out.getvalue()

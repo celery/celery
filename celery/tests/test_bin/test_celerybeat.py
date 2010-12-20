@@ -155,10 +155,28 @@ class test_Beat(unittest.TestCase):
             platforms.create_pidlock = prev
 
 
+class MockDaemonContext(object):
+    opened = False
+    closed = False
+
+    def open(self):
+        self.__class__.opened = True
+
+    def close(self):
+        self.__class__.closed = True
+
+
+def create_daemon_context(*args, **kwargs):
+    context = MockDaemonContext()
+    return context, context.close
+
+
 class test_div(unittest.TestCase):
 
     def setUp(self):
         self.prev, beatapp.Beat = beatapp.Beat, MockBeat
+        self.ctx, celerybeat_bin.create_daemon_context = \
+                celerybeat_bin.create_daemon_context, create_daemon_context
 
     def tearDown(self):
         beatapp.Beat = self.prev
@@ -170,6 +188,13 @@ class test_div(unittest.TestCase):
             self.assertTrue(MockBeat.running)
         finally:
             MockBeat.running = False
+
+    def test_detach(self):
+        cmd = celerybeat_bin.BeatCommand()
+        cmd.app = app_or_default()
+        cmd.run(detach=True)
+        self.assertTrue(MockDaemonContext.opened)
+        self.assertTrue(MockDaemonContext.closed)
 
     def test_parse_options(self):
         cmd = celerybeat_bin.BeatCommand()

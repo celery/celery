@@ -8,6 +8,7 @@ from celery.worker.state import revoked as revoked_tasks
 
 
 class MockTask(object):
+    hostname = "harness.com"
     task_id = 1234
     task_name = "mocktask"
     acked = False
@@ -51,6 +52,33 @@ class test_Mediator(unittest.TestCase):
         m.move()
 
         self.assertEqual(got["value"], "George Costanza")
+
+    def test_mediator_move_exception(self):
+        ready_queue = Queue()
+
+        def mycallback(value):
+            raise KeyError("foo")
+
+        m = Mediator(ready_queue, mycallback)
+        ready_queue.put(MockTask("Elaine M. Benes"))
+
+        m.move()
+
+    def test_run(self):
+        ready_queue = Queue()
+
+        condition = [None]
+
+        def mycallback(value):
+            condition[0].set()
+
+        m = Mediator(ready_queue, mycallback)
+        condition[0] = m._shutdown
+        ready_queue.put(MockTask("Elaine M. Benes"))
+
+        m.run()
+        self.assertTrue(m._shutdown.isSet())
+        self.assertTrue(m._stopped.isSet())
 
     def test_mediator_move_revoked(self):
         ready_queue = Queue()

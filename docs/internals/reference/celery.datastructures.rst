@@ -35,13 +35,6 @@
         :members:
         :undoc-members:
 
-    PositionQueue
-    -------------
-
-    .. autoclass:: PositionQueue
-        :members:
-        :undoc-members:
-
     ExceptionInfo
     -------------
 

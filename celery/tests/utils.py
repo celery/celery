@@ -6,16 +6,16 @@ try:
 except AttributeError:
     import unittest2 as unittest
 
+import importlib
 import os
 import sys
+import time
 try:
     import __builtin__ as builtins
 except ImportError:    # py3k
     import builtins
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+
+from celery.utils.compat import StringIO
 
 from nose import SkipTest
 
@@ -65,11 +65,13 @@ def execute_context(context, fun):
     exc_info = (None, None, None)
     retval = None
     try:
-        retval = fun(val)
-    except:
-        exc_info = sys.exc_info()
-    context.__exit__(*exc_info)
-    return retval
+        try:
+            return fun(val)
+        except:
+            exc_info = sys.exc_info()
+            raise
+    finally:
+        context.__exit__(*exc_info)
 
 
 try:
@@ -122,18 +124,20 @@ def with_environ(env_name, env_value):
         return _patch_environ
     return _envpatched
 
+def sleepdeprived(module=time):
 
-def sleepdeprived(fun):
+    def _sleepdeprived(fun):
 
-    @wraps(fun)
-    def _sleepdeprived(*args, **kwargs):
-        import time
-        old_sleep = time.sleep
-        time.sleep = noop
-        try:
-            return fun(*args, **kwargs)
-        finally:
-            time.sleep = old_sleep
+        @wraps(fun)
+        def __sleepdeprived(*args, **kwargs):
+            old_sleep = module.sleep
+            module.sleep = noop
+            try:
+                return fun(*args, **kwargs)
+            finally:
+                module.sleep = old_sleep
+
+        return __sleepdeprived
 
     return _sleepdeprived
 
@@ -240,3 +244,22 @@ def override_stdouts():
 
     sys.stdout = sys.__stdout__ = prev_out
     sys.stderr = sys.__stderr__ = prev_err
+
+
+def patch(module, name, mocked):
+    module = importlib.import_module(module)
+
+    def _patch(fun):
+
+        @wraps(fun)
+        def __patched(*args, **kwargs):
+            prev = getattr(module, name)
+            setattr(module, name, mocked)
+            try:
+                return fun(*args, **kwargs)
+            finally:
+                setattr(module, name, prev)
+        return __patched
+    return _patch
+
+

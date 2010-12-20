@@ -1,15 +1,19 @@
 import logging
 import os
 import sys
+import warnings
 
 from multiprocessing import get_logger, current_process
+
+from kombu.tests.utils import redirect_stdouts
 
 from celery import Celery
 from celery import platforms
 from celery import signals
 from celery.app import app_or_default
 from celery.apps import worker as cd
-from celery.bin.celeryd import WorkerCommand, main as celeryd_main
+from celery.bin.celeryd import WorkerCommand, windows_main, \
+                               main as celeryd_main
 from celery.exceptions import ImproperlyConfigured
 from celery.utils import patch
 from celery.utils.functional import wraps
@@ -105,18 +109,10 @@ class test_Worker(unittest.TestCase):
     def test_run(self):
         self.Worker().run()
         self.Worker(discard=True).run()
-
         worker = self.Worker()
         worker.init_loader()
-        worker.settings.DEBUG = True
+        worker.run()
 
-        def with_catch_warnings(log):
-            worker.run()
-            self.assertIn("memory leak", log[0].message.args[0])
-
-        context = catch_warnings(record=True)
-        execute_context(context, with_catch_warnings)
-        worker.settings.DEBUG = False
 
     @disable_stdouts
     def test_purge_messages(self):
@@ -159,7 +155,6 @@ class test_Worker(unittest.TestCase):
         worker2 = self.Worker(autoscale="10")
         self.assertListEqual(worker2.autoscale, [10, 0])
 
-    @disable_stdouts
     def test_include_argument(self):
         worker1 = self.Worker(include="some.module")
         self.assertListEqual(worker1.include, ["some.module"])
@@ -175,8 +170,8 @@ class test_Worker(unittest.TestCase):
         worker1 = self.Worker(loglevel=0xFFFF)
         self.assertEqual(worker1.loglevel, 0xFFFF)
 
-    @disable_stdouts
     def test_warns_if_running_as_privileged_user(self):
+        warnings.resetwarnings()
 
         def geteuid():
             return 0
@@ -187,7 +182,7 @@ class test_Worker(unittest.TestCase):
                 worker = self.Worker()
                 worker.run()
                 self.assertTrue(log)
-                self.assertIn("supervisor privileges is not encouraged",
+                self.assertIn("superuser privileges is not encouraged",
                               log[0].message.args[0])
             context = catch_warnings(record=True)
             execute_context(context, with_catch_warnings)
@@ -263,7 +258,7 @@ class test_Worker(unittest.TestCase):
             controller.hup_not_supported_installed = True
 
         class Controller(object):
-            pass
+            logger = logging.getLogger("celery.tests")
 
         prev = cd.install_HUP_not_supported_handler
         cd.install_HUP_not_supported_handler = install_HUP_nosupport
@@ -284,12 +279,15 @@ class test_Worker(unittest.TestCase):
         def install_worker_restart_handler(worker):
             restart_worker_handler_installed[0] = True
 
+        class Controller(object):
+            logger = logging.getLogger("celery.tests")
+
         prev = cd.install_worker_restart_handler
         cd.install_worker_restart_handler = install_worker_restart_handler
         try:
             worker = self.Worker()
             worker.app.IS_OSX = False
-            worker.install_platform_tweaks(object())
+            worker.install_platform_tweaks(Controller())
             self.assertTrue(restart_worker_handler_installed[0])
         finally:
             cd.install_worker_restart_handler = prev
@@ -308,6 +306,12 @@ class test_Worker(unittest.TestCase):
 
 
 class test_funs(unittest.TestCase):
+
+    @redirect_stdouts
+    def test_windows_main(self, stdout, stderr):
+        windows_main()
+        self.assertIn("celeryd command does not work on Windows",
+                      stderr.getvalue())
 
     @disable_stdouts
     def test_set_process_status(self):
@@ -436,6 +440,18 @@ class test_signal_handlers(unittest.TestCase):
         self.assertRaises(SystemExit, handlers["SIGTERM"],
                           "SIGTERM", object())
         self.assertTrue(worker.stopped)
+
+    def test_worker_cry_handler(self):
+
+        class Logger(object):
+            _errors = []
+
+            def error(self, msg, *args, **kwargs):
+                self._errors.append(msg)
+        logger = Logger()
+        handlers = self.psig(cd.install_cry_handler, logger)
+        self.assertIsNone(handlers["SIGUSR1"]("SIGUSR1", object()))
+        self.assertTrue(Logger._errors)
 
     @disable_stdouts
     def test_worker_term_handler_only_stop_MainProcess(self):

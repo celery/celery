@@ -6,7 +6,8 @@ from celery import states
 from celery.app import app_or_default
 from celery.utils import gen_unique_id
 from celery.utils.compat import all
-from celery.result import AsyncResult, TaskSetResult
+from celery.utils.serialization import pickle
+from celery.result import AsyncResult, EagerResult, TaskSetResult
 from celery.exceptions import TimeoutError
 from celery.task.base import Task
 
@@ -46,6 +47,15 @@ class TestAsyncResult(unittest.TestCase):
 
         for task in (self.task1, self.task2, self.task3, self.task4):
             save_result(task)
+
+    def test_reduce(self):
+        a1 = AsyncResult("uuid", task_name="celery.ping")
+        restored = pickle.loads(pickle.dumps(a1))
+        self.assertEqual(restored.task_id, "uuid")
+        self.assertEqual(restored.task_name, "celery.ping")
+
+        a2 = AsyncResult("uuid")
+        self.assertEqual(pickle.loads(pickle.dumps(a2)).task_id, "uuid")
 
     def test_successful(self):
         ok_res = AsyncResult(self.task1["id"])
@@ -108,6 +118,7 @@ class TestAsyncResult(unittest.TestCase):
         self.assertEqual(ok2_res.get(), "quick")
         self.assertRaises(KeyError, nok_res.get)
         self.assertIsInstance(nok2_res.result, KeyError)
+        self.assertEqual(ok_res.info, "the")
 
     def test_get_timeout(self):
         res = AsyncResult(self.task4["id"])             # has RETRY status
@@ -143,6 +154,10 @@ class MockAsyncResultFailure(AsyncResult):
 
 
 class MockAsyncResultSuccess(AsyncResult):
+    forgotten = False
+
+    def forget(self):
+        self.forgotten = True
 
     @property
     def result(self):
@@ -151,6 +166,16 @@ class MockAsyncResultSuccess(AsyncResult):
     @property
     def status(self):
         return states.SUCCESS
+
+
+class SimpleBackend(object):
+        ids = []
+
+        def __init__(self, ids=[]):
+            self.ids = ids
+
+        def get_many(self, *args, **kwargs):
+            return ((id, {"result": i}) for i, id in enumerate(self.ids))
 
 
 class TestTaskSetResult(unittest.TestCase):
@@ -167,6 +192,49 @@ class TestTaskSetResult(unittest.TestCase):
         ts = TaskSetResult(gen_unique_id(), [ar])
         it = iter(ts)
         self.assertRaises(KeyError, it.next)
+
+    def test_forget(self):
+        subs = [MockAsyncResultSuccess(gen_unique_id()),
+                MockAsyncResultSuccess(gen_unique_id())]
+        ts = TaskSetResult(gen_unique_id(), subs)
+        ts.forget()
+        for sub in subs:
+            self.assertTrue(sub.forgotten)
+
+    def test_getitem(self):
+        subs = [MockAsyncResultSuccess(gen_unique_id()),
+                MockAsyncResultSuccess(gen_unique_id())]
+        ts = TaskSetResult(gen_unique_id(), subs)
+        self.assertIs(ts[0], subs[0])
+
+    def test_save_restore(self):
+        subs = [MockAsyncResultSuccess(gen_unique_id()),
+                MockAsyncResultSuccess(gen_unique_id())]
+        ts = TaskSetResult(gen_unique_id(), subs)
+        ts.save()
+        self.assertRaises(AttributeError, ts.save, backend=object())
+        self.assertEqual(TaskSetResult.restore(ts.taskset_id).subtasks,
+                         ts.subtasks)
+        self.assertRaises(AttributeError,
+                          TaskSetResult.restore, ts.taskset_id,
+                          backend=object())
+
+    def test_join_native(self):
+        backend = SimpleBackend()
+        subtasks = [AsyncResult(gen_unique_id(), backend=backend)
+                        for i in range(10)]
+        ts = TaskSetResult(gen_unique_id(), subtasks)
+        backend.ids = [subtask.task_id for subtask in subtasks]
+        res = ts.join_native()
+        self.assertEqual(res, range(10))
+
+    def test_iter_native(self):
+        backend = SimpleBackend()
+        subtasks = [AsyncResult(gen_unique_id(), backend=backend)
+                        for i in range(10)]
+        ts = TaskSetResult(gen_unique_id(), subtasks)
+        backend.ids = [subtask.task_id for subtask in subtasks]
+        self.assertEqual(len(list(ts.iter_native())), 10)
 
     def test_iterate_yields(self):
         ar = MockAsyncResultSuccess(gen_unique_id())
@@ -302,6 +370,13 @@ class TestEagerResult(unittest.TestCase):
         res = RaisingTask.apply(args=[3, 3])
         self.assertRaises(KeyError, res.wait)
 
+    def test_wait(self):
+        res = EagerResult("x", "x", states.RETRY)
+        res.wait()
+        self.assertEqual(res.state, states.RETRY)
+        self.assertEqual(res.status, states.RETRY)
+
     def test_revoke(self):
         res = RaisingTask.apply(args=[3, 3])
         self.assertFalse(res.revoke())
+

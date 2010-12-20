@@ -98,6 +98,17 @@ class test_inspect(unittest.TestCase):
         self.i.ping()
         self.assertIn("ping", MockMailbox.sent)
 
+    @with_mock_broadcast
+    def test_add_consumer(self):
+        self.i.add_consumer("foo")
+        self.assertIn("add_consumer", MockMailbox.sent)
+
+    @with_mock_broadcast
+    def test_cancel_consumer(self):
+        self.i.cancel_consumer("foo")
+        self.assertIn("cancel_consumer", MockMailbox.sent)
+
+
 
 class test_Broadcast(unittest.TestCase):
 

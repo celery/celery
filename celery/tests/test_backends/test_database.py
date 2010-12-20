@@ -1,4 +1,4 @@
-from celery.tests.utils import unittest
+import sys
 
 from datetime import datetime
 
@@ -11,6 +11,9 @@ from celery.db.models import Task, TaskSet
 from celery.result import AsyncResult
 from celery.utils import gen_unique_id
 
+from celery.tests.utils import execute_context, mask_modules
+from celery.tests.utils import unittest
+
 
 class SomeClass(object):
 
@@ -19,6 +22,31 @@ class SomeClass(object):
 
 
 class test_DatabaseBackend(unittest.TestCase):
+
+    def test_missing_SQLAlchemy_raises_ImproperlyConfigured(self):
+
+        def with_SQLAlchemy_masked(_val):
+            from celery.backends.database import _sqlalchemy_installed
+            self.assertRaises(ImproperlyConfigured, _sqlalchemy_installed)
+
+        execute_context(mask_modules("sqlalchemy"), with_SQLAlchemy_masked)
+
+    def test_pickle_hack_for_sqla_05(self):
+        import sqlalchemy as sa
+        from celery.db import session
+        prev_base = session.ResultModelBase
+        prev_ver, sa.__version__ = sa.__version__, "0.5.0"
+        prev_models = sys.modules.pop("celery.db.models", None)
+        try:
+            from sqlalchemy.ext.declarative import declarative_base
+            session.ResultModelBase = declarative_base()
+            from celery.db.dfd042c7 import PickleType as Type1
+            from celery.db.models import PickleType as Type2
+            self.assertIs(Type1, Type2)
+        finally:
+            sys.modules["celery.db.models"] = prev_models
+            sa.__version__ = prev_ver
+            session.ResultModelBase = prev_base
 
     def test_missing_dburi_raises_ImproperlyConfigured(self):
         conf = app_or_default().conf

@@ -35,6 +35,10 @@ class AMQPBackend(BaseDictBackend):
     still cached locally by the backend instance).
 
     """
+    Exchange = Exchange
+    Queue = Queue
+    Consumer = Consumer
+    Producer = Producer
 
     _pool = None
 
@@ -51,11 +55,11 @@ class AMQPBackend(BaseDictBackend):
             persistent = conf.CELERY_RESULT_PERSISTENT
         self.persistent = persistent
         delivery_mode = persistent and "persistent" or "transient"
-        self.exchange = Exchange(name=exchange,
-                                 type=exchange_type,
-                                 delivery_mode=delivery_mode,
-                                 durable=self.persistent,
-                                 auto_delete=auto_delete)
+        self.exchange = self.Exchange(name=exchange,
+                                      type=exchange_type,
+                                      delivery_mode=delivery_mode,
+                                      durable=self.persistent,
+                                      auto_delete=auto_delete)
         self.serializer = serializer or conf.CELERY_RESULT_SERIALIZER
         self.auto_delete = auto_delete
         self.expires = expires
@@ -74,22 +78,22 @@ class AMQPBackend(BaseDictBackend):
 
     def _create_binding(self, task_id):
         name = task_id.replace("-", "")
-        return Queue(name=name,
-                     exchange=self.exchange,
-                     routing_key=name,
-                     durable=self.persistent,
-                     auto_delete=self.auto_delete)
+        return self.Queue(name=name,
+                          exchange=self.exchange,
+                          routing_key=name,
+                          durable=self.persistent,
+                          auto_delete=self.auto_delete)
 
     def _create_producer(self, task_id, channel):
         binding = self._create_binding(task_id)
         binding(channel).declare()
 
-        return Producer(channel, exchange=self.exchange,
-                        routing_key=task_id.replace("-", ""),
-                        serializer=self.serializer)
+        return self.Producer(channel, exchange=self.exchange,
+                             routing_key=task_id.replace("-", ""),
+                             serializer=self.serializer)
 
     def _create_consumer(self, bindings, channel):
-        return Consumer(channel, bindings, no_ack=True)
+        return self.Consumer(channel, bindings, no_ack=True)
 
     def store_result(self, task_id, result, status, traceback=None,
             max_retries=20, retry_delay=0.2):
@@ -101,7 +105,7 @@ class AMQPBackend(BaseDictBackend):
                 "status": status,
                 "traceback": traceback}
 
-        for i in range(max_retries + 1):
+        for i in xrange((max_retries or 0) + 1):
             conn = self.pool.acquire(block=True)
             channel = conn.channel()
             try:
@@ -127,10 +131,12 @@ class AMQPBackend(BaseDictBackend):
 
         return self.poll(task_id)
 
-    def wait_for(self, task_id, timeout=None, cache=True):
+    def wait_for(self, task_id, timeout=None, cache=True, propagate=True,
+            **kwargs):
         cached_meta = self._cache.get(task_id)
 
-        if cached_meta and cached_meta["status"] in states.READY_STATES:
+        if cache and cached_meta and \
+                cached_meta["status"] in states.READY_STATES:
             meta = cached_meta
         else:
             try:
@@ -138,10 +144,13 @@ class AMQPBackend(BaseDictBackend):
             except socket.timeout:
                 raise TimeoutError("The operation timed out.")
 
-        if meta["status"] == states.SUCCESS:
+        state = meta["status"]
+        if state == states.SUCCESS:
             return meta["result"]
-        elif meta["status"] in states.PROPAGATE_STATES:
-            raise self.exception_to_python(meta["result"])
+        elif state in states.PROPAGATE_STATES:
+            if propagate:
+                raise self.exception_to_python(meta["result"])
+            return meta["result"]
         else:
             return self.wait_for(task_id, timeout, cache)
 
@@ -167,8 +176,8 @@ class AMQPBackend(BaseDictBackend):
             channel.close()
             conn.release()
 
-    def drain_events(self, consumer, timeout=None):
-        wait = consumer.channel.connection.drain_events
+    def drain_events(self, connection, consumer, timeout=None):
+        wait = connection.drain_events
         results = {}
 
         def callback(meta, message):
@@ -199,7 +208,8 @@ class AMQPBackend(BaseDictBackend):
             consumer = self._create_consumer(binding, channel)
             consumer.consume()
             try:
-                return self.drain_events(consumer, timeout=timeout).values()[0]
+                return self.drain_events(conn, consumer,
+                                         timeout=timeout).values()[0]
             finally:
                 consumer.cancel()
         finally:
@@ -228,7 +238,7 @@ class AMQPBackend(BaseDictBackend):
             consumer.consume()
             try:
                 while ids:
-                    r = self.drain_events(consumer, timeout=timeout)
+                    r = self.drain_events(conn, consumer, timeout=timeout)
                     ids ^= set(r.keys())
                     for ready_id, ready_meta in r.items():
                         yield ready_id, ready_meta
@@ -243,11 +253,6 @@ class AMQPBackend(BaseDictBackend):
             raise
         channel.close()
         conn.release()
-
-    def close(self):
-        if self._pool is not None:
-            self._pool.close()
-            self._pool = None
 
     def reload_task_result(self, task_id):
         raise NotImplementedError(

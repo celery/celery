@@ -71,7 +71,7 @@ class BaseBackend(object):
         raise NotImplementedError("%s does not implement forget." % (
                     self.__class__))
 
-    def wait_for(self, task_id, timeout=None):
+    def wait_for(self, task_id, timeout=None, propagate=True, interval=0.5):
         """Wait for task and return its result.
 
         If the task raises an exception, this exception
@@ -83,7 +83,6 @@ class BaseBackend(object):
 
         """
 
-        sleep_inbetween = 0.5
         time_elapsed = 0.0
 
         while True:
@@ -91,10 +90,13 @@ class BaseBackend(object):
             if status == states.SUCCESS:
                 return self.get_result(task_id)
             elif status in states.PROPAGATE_STATES:
-                raise self.get_result(task_id)
+                result = self.get_result(task_id)
+                if propagate:
+                    raise result
+                return result
             # avoid hammering the CPU checking status.
-            time.sleep(sleep_inbetween)
-            time_elapsed += sleep_inbetween
+            time.sleep(interval)
+            time_elapsed += interval
             if timeout and time_elapsed >= timeout:
                 raise TimeoutError("The operation timed out.")
 

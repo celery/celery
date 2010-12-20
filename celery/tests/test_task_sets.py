@@ -1,11 +1,11 @@
-from celery.tests.utils import unittest
-
 import anyjson
+import warnings
 
 from celery.app import app_or_default
 from celery.task import Task
 from celery.task.sets import subtask, TaskSet
 
+from celery.tests.utils import unittest
 from celery.tests.utils import execute_context
 from celery.tests.compat import catch_warnings
 
@@ -91,6 +91,7 @@ class test_subtask(unittest.TestCase):
 class test_TaskSet(unittest.TestCase):
 
     def test_interface__compat(self):
+        warnings.resetwarnings()
 
         def with_catch_warnings(log):
             ts = TaskSet(MockTask, [[(2, 2)], [(4, 4)], [(8, 8)]])
@@ -108,7 +109,7 @@ class test_TaskSet(unittest.TestCase):
         # TaskSet.task (deprecated)
         def with_catch_warnings2(log):
             ts = TaskSet(MockTask, [[(2, 2)], [(4, 4)], [(8, 8)]])
-            self.assertEqual(ts.task, MockTask)
+            self.assertEqual(ts.task.name, MockTask.name)
             self.assertTrue(log)
             self.assertIn("TaskSet.task is deprecated",
                           log[0].message.args[0])

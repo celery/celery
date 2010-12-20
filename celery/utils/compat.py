@@ -11,6 +11,14 @@ try:
 except ImportError:
     from collections import UserDict
 
+try:
+    from cStringIO import StringIO
+except ImportError:
+    try:
+        from StringIO import StringIO
+    except ImportError:
+        from io import StringIO
+
 ############## urlparse.parse_qsl ###########################################
 
 try:

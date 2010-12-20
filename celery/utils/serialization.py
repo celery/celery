@@ -10,7 +10,7 @@ try:
 except ImportError:
     cpickle = None
 
-if sys.version_info < (2, 6):
+if sys.version_info < (2, 6):  # pragma: no cover
     # cPickle is broken in Python <= 2.5.
     # It unsafely and incorrectly uses relative instead of absolute imports,
     # so e.g.:
@@ -29,14 +29,14 @@ else:
 # BaseException was introduced in Python 2.5.
 try:
     _error_bases = (BaseException, )
-except NameError:
+except NameError:  # pragma: no cover
     _error_bases = (SystemExit, KeyboardInterrupt)
 
 #: List of base classes we probably don't want to reduce to.
 unwanted_base_classes = (StandardError, Exception) + _error_bases + (object, )
 
 
-if sys.version_info < (2, 5):
+if sys.version_info < (2, 5):  # pragma: no cover
 
     # Prior to Python 2.5, Exception was an old-style class
     def subclass_exception(name, parent, unused):
@@ -85,7 +85,6 @@ def find_nearest_pickleable_exception(exc):
             pass
         else:
             return superexc
-    return
 
 
 def create_exception_cls(name, module, parent=None):

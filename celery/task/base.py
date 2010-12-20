@@ -289,7 +289,7 @@ class BaseTask(object):
         return self.app.log.setup_task_logger(loglevel=loglevel,
                                               logfile=logfile,
                                               propagate=propagate,
-                                              task_kwargs=self.request.kwargs)
+                            task_kwargs=self.request.get("kwargs"))
 
     @classmethod
     def establish_connection(self, connect_timeout=None):
@@ -545,10 +545,7 @@ class BaseTask(object):
         # If task was executed eagerly using apply(),
         # then the retry must also be executed eagerly.
         if request.is_eager:
-            result = self.apply(args=args, kwargs=kwargs, **options)
-            if isinstance(result, EagerResult):
-                return result.get()             # propogates exceptions.
-            return result
+            return self.apply(args=args, kwargs=kwargs, **options).get()
 
         self.apply_async(args=args, kwargs=kwargs, **options)
 
@@ -714,18 +711,14 @@ class BaseTask(object):
 
     def __repr__(self):
         """`repr(task)`"""
-        try:
-            kind = self.__class__.mro()[1].__name__
-        except (AttributeError, IndexError):            # pragma: no cover
-            kind = "%s(Task)" % self.__class__.__name__
-        return "<%s: %s (%s)>" % (kind, self.name, self.type)
+        return "<@task: %s>" % (self.name, )
 
     @classmethod
     def subtask(cls, *args, **kwargs):
         """Returns :class:`~celery.task.sets.subtask` object for
         this task, wrapping arguments and execution options
         for a single task invocation."""
-        return subtask(cls, *args, **kwargs)
+        return sets.subtask(cls, *args, **kwargs)
 
     @property
     def __name__(self):

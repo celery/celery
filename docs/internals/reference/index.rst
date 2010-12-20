@@ -15,6 +15,7 @@
     celery.worker.buckets
     celery.worker.heartbeat
     celery.worker.state
+    celery.worker.autoscale
     celery.concurrency
     celery.concurrency.processes
     celery.concurrency.processes.pool

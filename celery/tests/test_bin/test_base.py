@@ -1,10 +1,18 @@
-from celery.tests.utils import unittest
+import os
 
 from celery.bin.base import Command
+
+from celery.tests.utils import unittest
 
 
 class Object(object):
     pass
+
+
+class MyApp(object):
+    pass
+
+APP = MyApp()  # <-- Used by test_with_custom_app
 
 
 class MockCommand(Command):
@@ -39,3 +47,32 @@ class test_Command(unittest.TestCase):
         self.assertTupleEqual(args2, (10, 20, 30))
         self.assertDictContainsSubset({"foo": "bar", "prog_name": "foo"},
                                       kwargs2)
+
+    def test_with_custom_config_module(self):
+        prev = os.environ.pop("CELERY_CONFIG_MODULE", None)
+        try:
+            cmd = MockCommand()
+            cmd.setup_app_from_commandline(["--config=foo.bar.baz"])
+            self.assertEqual(os.environ.get("CELERY_CONFIG_MODULE"),
+                             "foo.bar.baz")
+        finally:
+            if prev:
+                os.environ["CELERY_CONFIG_MODULE"] = prev
+
+    def test_with_custom_app(self):
+        cmd = MockCommand()
+        app = ".".join([__name__, "APP"])
+        cmd.setup_app_from_commandline(["--app=%s" % (app, ),
+                                        "--loglevel=INFO"])
+        self.assertIs(cmd.app, APP)
+
+    def test_with_cmdline_config(self):
+        cmd = MockCommand()
+        cmd.enable_config_from_cmdline = True
+        cmd.namespace = "celeryd"
+        rest = cmd.setup_app_from_commandline(argv=[
+            "--loglevel=INFO", "--", "broker.host=broker.example.com",
+            ".prefetch_multiplier=100"])
+        self.assertEqual(cmd.app.conf.BROKER_HOST, "broker.example.com")
+        self.assertEqual(cmd.app.conf.CELERYD_PREFETCH_MULTIPLIER, 100)
+        self.assertListEqual(rest, ["--loglevel=INFO"])

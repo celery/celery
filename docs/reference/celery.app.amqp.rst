@@ -20,11 +20,15 @@
             The task consumer class used.
             Default is :class:`kombu.compat.Consumer`.
 
+        .. attribute:: ConsumerSet
+
+            The class used to consume from multiple queues using the
+            same channel.
+
         .. attribute:: queues
 
             All currently defined task queues. (A :class:`Queues` instance).
 
-        .. automethod:: ConsumerSet
         .. automethod:: Queues
         .. automethod:: Router
         .. automethod:: TaskConsumer

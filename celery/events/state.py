@@ -109,7 +109,7 @@ class Task(Element):
     def merge(self, state, timestamp, fields):
         keep = self.merge_rules.get(state)
         if keep is not None:
-            fields = dict((key, fields[key]) for key in keep)
+            fields = dict((key, fields.get(key)) for key in keep)
             super(Task, self).update(fields)
 
     def on_sent(self, timestamp=None, **fields):

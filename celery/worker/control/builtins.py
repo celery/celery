@@ -43,17 +43,8 @@ def disable_events(panel):
 @Panel.register
 def heartbeat(panel):
     panel.logger.debug("Heartbeat requested by remote.")
-    dispatcher = panel.listener.event_dispatcher
+    dispatcher = panel.consumer.event_dispatcher
     dispatcher.send("worker-heartbeat")
-
-
-@Panel.register
-def set_loglevel(panel, loglevel=None):
-    if loglevel is not None:
-        if not isinstance(loglevel, int):
-            loglevel = LOG_LEVELS[loglevel.upper()]
-        panel.app.log.get_default_logger(loglevel=loglevel)
-    return {"ok": loglevel}
 
 
 @Panel.register
@@ -176,13 +167,13 @@ def ping(panel, **kwargs):
 
 @Panel.register
 def pool_grow(panel, n=1, **kwargs):
-    panel.listener.pool.grow(n)
+    panel.consumer.pool.grow(n)
     return {"ok": "spawned worker processes"}
 
 
 @Panel.register
 def pool_shrink(panel, n=1, **kwargs):
-    panel.listener.pool.shrink(n)
+    panel.consumer.pool.shrink(n)
     return {"ok": "terminated worker processes"}
 
 
@@ -212,3 +203,9 @@ def cancel_consumer(panel, queue=None, **_):
     cset = panel.consumer.task_consumer
     cset.cancel_by_queue(queue)
     return {"ok": "no longer consuming from %s" % (queue, )}
+    
+@Panel.register
+def worker_queues(panel):
+    """Returns the queues associated with each worker."""
+    return dict(panel.consumer.queues.iteritems())
+

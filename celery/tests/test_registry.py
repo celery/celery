@@ -39,6 +39,11 @@ class TestTaskRegistry(unittest.TestCase):
         self.assertRegisterUnregisterCls(r, TestTask)
         self.assertRegisterUnregisterCls(r, TestPeriodicTask)
 
+        r.register(TestPeriodicTask)
+        r.unregister(TestPeriodicTask.name)
+        self.assertNotIn(TestPeriodicTask, r)
+        r.register(TestPeriodicTask)
+
         tasks = dict(r)
         self.assertIsInstance(tasks.get(TestTask.name), TestTask)
         self.assertIsInstance(tasks.get(TestPeriodicTask.name),

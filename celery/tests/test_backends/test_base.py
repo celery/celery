@@ -2,6 +2,7 @@ import sys
 import types
 from celery.tests.utils import unittest
 
+from celery.utils import serialization
 from celery.utils.serialization import subclass_exception
 from celery.utils.serialization import \
         find_nearest_pickleable_exception as fnpe
@@ -25,6 +26,15 @@ Unpickleable = subclass_exception("Unpickleable", KeyError, "foo.module")
 Impossible = subclass_exception("Impossible", object, "foo.module")
 Lookalike = subclass_exception("Lookalike", wrapobject, "foo.module")
 b = BaseBackend()
+
+
+class test_serialization(unittest.TestCase):
+
+    def test_create_exception_cls(self):
+        self.assertTrue(serialization.create_exception_cls("FooError", "m"))
+        self.assertTrue(serialization.create_exception_cls("FooError",
+                                                            "m",
+                                                            KeyError))
 
 
 class test_BaseBackend_interface(unittest.TestCase):
@@ -60,6 +70,10 @@ class test_BaseBackend_interface(unittest.TestCase):
     def test_get_traceback(self):
         self.assertRaises(NotImplementedError,
                 b.get_traceback, "SOMExx-N0nex1stant-IDxx-")
+
+    def test_forget(self):
+        self.assertRaises(NotImplementedError,
+                b.forget, "SOMExx-N0nex1stant-IDxx-")
 
 
 class test_exception_pickle(unittest.TestCase):
@@ -116,6 +130,9 @@ class KVBackend(KeyValueStoreBackend):
     def set(self, key, value):
         self.db[key] = value
 
+    def delete(self, key):
+        self.db.pop(key, None)
+
 
 class DictBackend(BaseDictBackend):
 
@@ -155,7 +172,7 @@ class test_BaseDictBackend(unittest.TestCase):
 
     def test_reload_task_result(self):
         self.b._cache = {}
-        self.b.reload_taskset_result("task-exists")
+        self.b.reload_task_result("task-exists")
         self.b._cache["task-exists"] = {"result": "task"}
 
 
@@ -164,11 +181,13 @@ class test_KeyValueStoreBackend(unittest.TestCase):
     def setUp(self):
         self.b = KVBackend()
 
-    def test_get_store_result(self):
+    def test_get_store_delete_result(self):
         tid = gen_unique_id()
         self.b.mark_as_done(tid, "Hello world")
         self.assertEqual(self.b.get_result(tid), "Hello world")
         self.assertEqual(self.b.get_status(tid), states.SUCCESS)
+        self.b.forget(tid)
+        self.assertEqual(self.b.get_status(tid), states.PENDING)
 
     def test_get_missing_meta(self):
         self.assertIsNone(self.b.get_result("xxx-missing"))
@@ -195,3 +214,11 @@ class test_KeyValueStoreBackend_interface(unittest.TestCase):
 
     def test_cleanup(self):
         self.assertFalse(KeyValueStoreBackend().cleanup())
+
+    def test_delete(self):
+        self.assertRaises(NotImplementedError, KeyValueStoreBackend().delete,
+                "a")
+
+    def test_forget(self):
+        self.assertRaises(NotImplementedError, KeyValueStoreBackend().forget,
+                "a")

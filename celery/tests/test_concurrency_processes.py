@@ -58,6 +58,12 @@ class MockPool(object):
     def terminate(self):
         self.terminated = True
 
+    def grow(self, n=1):
+        self.processes += n
+
+    def shrink(self, n=1):
+        self.processes -= n
+
     def apply_async(self, *args, **kwargs):
         pass
 
@@ -162,6 +168,15 @@ class test_TaskPool(unittest.TestCase):
         pool = TaskPool(10)
         pool.start()
         pool.apply_async(lambda x: x, (2, ), {})
+
+    def test_grow_shrink(self):
+        pool = TaskPool(10)
+        pool.start()
+        self.assertEqual(pool._pool.processes, 10)
+        pool.grow()
+        self.assertEqual(pool._pool.processes, 11)
+        pool.shrink(2)
+        self.assertEqual(pool._pool.processes, 9)
 
     def test_info(self):
         pool = TaskPool(10)

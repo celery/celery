@@ -47,8 +47,8 @@ class Autoscaler(threading.Thread):
             try:
                 self.pool.shrink(n)
             except Exception, exc:
-                traceback.print_stack()
-                self.logger.error("Autoscaler: scale_down: %r" % (exc, ),
+                self.logger.error("Autoscaler: scale_down: %r\n%r" % (
+                                    exc, traceback.format_stack()),
                                   exc_info=sys.exc_info())
 
     def run(self):
@@ -59,7 +59,8 @@ class Autoscaler(threading.Thread):
     def stop(self):
         self._shutdown.set()
         self._stopped.wait()
-        self.join(1e100)
+        if self.isAlive():
+            self.join(1e100)
 
     @property
     def qty(self):

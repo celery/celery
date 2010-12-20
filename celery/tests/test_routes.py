@@ -96,6 +96,12 @@ class test_lookup_route(unittest.TestCase):
         self.assertNotIn("queue", route)
 
     @with_queues(foo=a_queue, bar=b_queue)
+    def test_expand_destaintion_string(self):
+        x = routes.Router({}, app_or_default().conf.CELERY_QUEUES)
+        dest = x.expand_destination("foo")
+        self.assertEqual(dest["exchange"], "fooexchange")
+
+    @with_queues(foo=a_queue, bar=b_queue)
     def test_lookup_paths_traversed(self):
         R = routes.prepare(({"celery.xaza": {"queue": "bar"}},
                             {"celery.ping": {"queue": "foo"}}))
