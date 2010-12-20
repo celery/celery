@@ -82,7 +82,8 @@ class AMQPBackend(BaseDictBackend):
                           exchange=self.exchange,
                           routing_key=name,
                           durable=self.persistent,
-                          auto_delete=self.auto_delete)
+                          auto_delete=self.auto_delete,
+                          queue_arguments=self.queue_arguments)
 
     def _create_producer(self, task_id, channel):
         binding = self._create_binding(task_id)
