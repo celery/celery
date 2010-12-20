@@ -193,10 +193,10 @@ def apply(task, args, kwargs, **options):
                             if key in supported_keys)
     kwargs.update(extend_with)
 
-    trace = TaskTrace(task.name, task_id, args, kwargs, task=task)
+    trace = TaskTrace(task.name, task_id, args, kwargs,
+                      task=task, propagate=throw)
     retval = trace.execute()
     if isinstance(retval, ExceptionInfo):
-        if throw:
-            raise retval.exception
         retval = retval.exception
-    return EagerResult(task_id, retval, trace.status, traceback=trace.strtb)
+    return EagerResult(task_id, retval, trace.status,
+                       traceback=trace.strtb)

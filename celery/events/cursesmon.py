@@ -239,8 +239,6 @@ class CursesMonitor(object):
                                 abbr(" " * 4 + subline, self.screen_width - 4),
                                 curses.A_NORMAL)
 
-
-
         return self.alert(alert_callback,
                 "Task details for %s" % self.selected_task)
 

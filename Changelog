@@ -5,11 +5,40 @@
 .. contents::
     :local:
 
+.. _version-2.1.5:
+
+
+2.1.5
+=====
+
+* In 2.2 remote control commands are not persistent anymore.
+  There is now a new setting you can use to disable persistence in 2.1 as
+  well: the :setting:`CELERY_BROADCAST_PERSISTENT` setting.
+
+     This setting will not have any effect in 2.2.
+
 .. _version-2.1.4:
 
 2.1.4
 =====
 :release-date: 2010-12-03 12:00 PM CEST
+
+.. _v214-important:
+
+* Celery programs now hijacks the root logger by default (Issue #250).
+
+    In 2.1 logging behavior was changed to not configure logging if it was
+    already configured.  The problem is that some libraries does not play
+    nice and hijack the root logger, or use `logging.basicConfig` -- resulting
+    in users not getting any output or logs.
+
+    So instead we now always hijack the root logger, but if you want the
+    previous behavior you can disable the :setting:`CELERYD_HIJACK_ROOT_LOGGER`
+    setting:
+
+    .. code-block:: python
+
+        CELERYD_HIJACK_ROOT_LOGGER = False
 
 .. _v214-fixes:
 
@@ -30,6 +59,9 @@ Fixes
   the client wrote the pending state.  Just like the Django database backend,
   it does no longer save the pending state (Issue #261 + Issue #262).
 
+* `task.apply`: `propagate=True` now raises exceptions from the original
+  frame, keeping the same stacktrace (Issue #256).
+
 * Error email body now uses `repr(exception)` instead of `str(exception)`,
   as the latter could result in Unicode decode errors (Issue #245).
 
@@ -45,6 +77,8 @@ Fixes
 
 * `celeryd`: Now properly handles errors occurring while trying to acknowledge
   the message.
+
+* Happy holidays :)
 
 .. _v214-documentation:
 

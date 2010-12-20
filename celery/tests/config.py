@@ -2,6 +2,8 @@ import os
 
 BROKER_BACKEND = "memory"
 
+#: Don't want log output when running suite.
+CELERYD_HIJACK_ROOT_LOGGER = False
 
 CELERY_RESULT_BACKEND = "database"
 CELERY_RESULT_DBURI = "sqlite:///test.db"

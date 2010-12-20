@@ -66,7 +66,7 @@ _DEFAULTS = {
     "CELERYD_LOG_COLOR": False,
     "CELERYD_LOG_LEVEL": "WARN",
     "CELERYD_LOG_FILE": None,                       # stderr
-    "CELERYD_FORCE_HIJACK_ROOT_LOGGER": False,
+    "CELERYD_HIJACK_ROOT_LOGGER": True,
     "CELERYBEAT_SCHEDULER": "celery.beat.PersistentScheduler",
     "CELERYBEAT_SCHEDULE": {},
     "CELERYD_STATE_DB": None,
@@ -87,6 +87,7 @@ _DEFAULTS = {
     "CELERY_EVENT_ROUTING_KEY": "celeryevent",
     "CELERY_EVENT_PERSISTENT": True,
     "CELERY_EVENT_SERIALIZER": "json",
+    "CELERY_BROADCAST_PERSISTENT": True,
     "CELERY_RESULT_EXCHANGE": "celeryresults",
     "CELERY_RESULT_EXCHANGE_TYPE": "direct",
     "CELERY_RESULT_SERIALIZER": "pickle",
@@ -186,7 +187,7 @@ def prepare(m, source=settings, defaults=_DEFAULTS):
                             compat=["CELERYD_DAEMON_LOG_LEVEL"])
     if not isinstance(m.CELERYD_LOG_LEVEL, int):
         m.CELERYD_LOG_LEVEL = LOG_LEVELS[m.CELERYD_LOG_LEVEL.upper()]
-    m.CELERYD_FORCE_HIJACK_ROOT_LOGGER = _get("CELERYD_FORCE_HIJACK_ROOT_LOGGER")
+    m.CELERYD_HIJACK_ROOT_LOGGER = _get("CELERYD_HIJACK_ROOT_LOGGER")
     m.CELERYD_STATE_DB = _get("CELERYD_STATE_DB")
     m.CELERYD_CONCURRENCY = _get("CELERYD_CONCURRENCY")
     m.CELERYD_PREFETCH_MULTIPLIER = _get("CELERYD_PREFETCH_MULTIPLIER")
@@ -244,6 +245,7 @@ def prepare(m, source=settings, defaults=_DEFAULTS):
     m.BROADCAST_QUEUE = _get("CELERY_BROADCAST_QUEUE")
     m.BROADCAST_EXCHANGE = _get("CELERY_BROADCAST_EXCHANGE")
     m.BROADCAST_EXCHANGE_TYPE = _get("CELERY_BROADCAST_EXCHANGE_TYPE")
+    m.BROADCAST_PERSISTENT = _get("CELERY_BROADCAST_PERSISTENT")
 
     # :--- Event queue settings                     <-   --   --- - ----- -- #
 
