@@ -130,6 +130,9 @@ class App(base.BaseApp):
             return inner_create_task_cls(**options)(*args)
         return inner_create_task_cls(**options)
 
+    def __repr__(self):
+        return "<Celery: 0x%x>" % (id(self), )
+
     def __reduce__(self):
         # Reduce only pickles the configuration changes,
         # so the default configuration doesn't have to be passed
