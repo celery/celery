@@ -89,7 +89,7 @@ Django Database
 For the Django database transport support you have to install the
 `django-kombu` library::
 
-    $ pip install -U django-kombu
+    $ pip install -U djkombu
 
 Configuration
 -------------
