@@ -135,7 +135,7 @@ Time limits can also be set using the :setting:`CELERYD_TASK_TIME_LIMIT` /
 
 .. note::
 
-    Time limits does not currently work on Windows.
+    Time limits do not currently work on Windows.
 
 .. _worker-maxtasksperchild:
 
