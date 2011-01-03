@@ -5,6 +5,7 @@ import warnings
 
 from multiprocessing import get_logger, current_process
 
+from nose import SkipTest
 from kombu.tests.utils import redirect_stdouts
 
 from celery import Celery
@@ -442,6 +443,8 @@ class test_signal_handlers(unittest.TestCase):
         self.assertTrue(worker.stopped)
 
     def test_worker_cry_handler(self):
+        if sys.version_info <= (2, 4):
+            raise SkipTest("Needs Python 2.5 or later")
 
         class Logger(object):
             _errors = []
