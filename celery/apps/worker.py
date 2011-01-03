@@ -305,15 +305,14 @@ def install_worker_restart_handler(worker):
 
 
 def install_cry_handler(logger):
-    if sys.version_info <= (2, 4):
-        # 2.4 does not have sys._current_frames
-        return
+    # 2.4 does not have sys._current_frames
+    if sys.version_info > (2, 5):
 
-    def cry_handler(signum, frame):
-        """Signal handler logging the stacktrace of all active threads."""
-        logger.error("\n" + cry())
+        def cry_handler(signum, frame):
+            """Signal handler logging the stacktrace of all active threads."""
+            logger.error("\n" + cry())
 
-    platforms.install_signal_handler("SIGUSR1", cry_handler)
+        platforms.install_signal_handler("SIGUSR1", cry_handler)
 
 
 def install_HUP_not_supported_handler(worker):
