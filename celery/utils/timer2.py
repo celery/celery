@@ -152,7 +152,11 @@ class Timer(Thread):
 
     if TRACE_THREAD:
         def start(self, *args, **kwargs):
-            self._started_by[self.ident] = traceback.format_stack()
+            try:
+                ident = self.ident
+            except AttributeError:  # Py<=2.4
+                ident = self.getName()
+            self._started_by[ident] = traceback.format_stack()
             return Thread.start(self, *args, **kwargs)
 
     def apply_entry(self, entry):
