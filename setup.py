@@ -142,7 +142,7 @@ install_requires.extend([
     "python-dateutil",
     "anyjson",
     "kombu>=0.9.1",
-    "pyparsing",
+    "pyparsing>=1.5.0",
 ])
 
 py_version = sys.version_info
