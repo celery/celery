@@ -90,9 +90,10 @@ class ConfigurationView(AttributeDictMixin):
     def __init__(self, changes, defaults):
         self.__dict__["changes"] = changes
         self.__dict__["defaults"] = defaults
+        self.__dict__["_order"] = [changes] + defaults
 
     def __getitem__(self, key):
-        for d in self.__dict__["changes"], self.__dict__["defaults"]:
+        for d in self.__dict__["_order"]:
             try:
                 return d[key]
             except KeyError:
@@ -119,7 +120,7 @@ class ConfigurationView(AttributeDictMixin):
         return self.__dict__["changes"].update(*args, **kwargs)
 
     def __contains__(self, key):
-        for d in self.__dict__["changes"], self.__dict__["defaults"]:
+        for d in self.__dict__["_order"]:
             if key in d:
                 return True
         return False
@@ -130,8 +131,8 @@ class ConfigurationView(AttributeDictMixin):
     def __iter__(self):
         # defaults must be first in the stream, so values in
         # in changes takes precedence.
-        return chain(*[d.iteritems() for d in (self.__dict__["defaults"],
-                                               self.__dict__["changes"])])
+        return chain(*[d.iteritems()
+                        for d in reversed(self.__dict__["_order"])])
 
     def iteritems(self):
         return iter(self)

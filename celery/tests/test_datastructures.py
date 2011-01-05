@@ -48,8 +48,8 @@ class test_ConfigurationView(unittest.TestCase):
     def setUp(self):
         self.view = ConfigurationView({"changed_key": 1,
                                        "both": 2},
-                                      {"default_key": 1,
-                                       "both": 1})
+                                      [{"default_key": 1,
+                                       "both": 1}])
 
     def test_setdefault(self):
         self.assertEqual(self.view.setdefault("both", 36), 2)
