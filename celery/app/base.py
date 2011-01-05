@@ -212,25 +212,25 @@ class BaseApp(object):
         defaults."""
         if not c.get("CELERY_QUEUES"):
             c["CELERY_QUEUES"] = {
-                c.CELERY_DEFAULT_QUEUE: {
-                    "exchange": c.CELERY_DEFAULT_EXCHANGE,
-                    "exchange_type": c.CELERY_DEFAULT_EXCHANGE_TYPE,
-                    "binding_key": c.CELERY_DEFAULT_ROUTING_KEY}}
+                c["CELERY_DEFAULT_QUEUE"]: {
+                    "exchange": c["CELERY_DEFAULT_EXCHANGE"],
+                    "exchange_type": c["CELERY_DEFAULT_EXCHANGE_TYPE"],
+                    "binding_key": c["CELERY_DEFAULT_ROUTING_KEY"]}}
         c["CELERY_ROUTES"] = routes.prepare(c.get("CELERY_ROUTES") or {})
         if c.get("CELERYD_LOG_COLOR") is None:
-            c["CELERYD_LOG_COLOR"] = not c.CELERYD_LOG_FILE and \
+            c["CELERYD_LOG_COLOR"] = not c["CELERYD_LOG_FILE"] and \
                                         isatty(sys.stderr)
         if self.IS_WINDOWS:  # windows console doesn't support ANSI colors
             c["CELERYD_LOG_COLOR"] = False
-        if isinstance(c.CELERY_TASK_RESULT_EXPIRES, int):
+        if isinstance(c["CELERY_TASK_RESULT_EXPIRES"], int):
             c["CELERY_TASK_RESULT_EXPIRES"] = timedelta(
-                    seconds=c.CELERY_TASK_RESULT_EXPIRES)
+                    seconds=c["CELERY_TASK_RESULT_EXPIRES"])
 
         # Install backend cleanup periodic task.
-        c.CELERYBEAT_SCHEDULE = maybe_promise(c.CELERYBEAT_SCHEDULE)
-        if c.CELERY_TASK_RESULT_EXPIRES:
+        c["CELERYBEAT_SCHEDULE"] = maybe_promise(c["CELERYBEAT_SCHEDULE"])
+        if c["CELERY_TASK_RESULT_EXPIRES"]:
             from celery.schedules import crontab
-            c.CELERYBEAT_SCHEDULE.setdefault("celery.backend_cleanup",
+            c["CELERYBEAT_SCHEDULE"].setdefault("celery.backend_cleanup",
                     dict(task="celery.backend_cleanup",
                          schedule=crontab(minute="00", hour="04",
                                           day_of_week="*"),
@@ -276,8 +276,10 @@ class BaseApp(object):
         return backend_cls(app=self)
 
     def _get_config(self):
-        return self.post_config_merge(ConfigurationView(
-                    self.pre_config_merge(self.loader.conf), DEFAULTS))
+        return self.post_config_merge(
+                        ConfigurationView({}, [
+                            self.pre_config_merge(self.loader.conf),
+                            DEFAULTS]))
 
     @cached_property
     def amqp(self):

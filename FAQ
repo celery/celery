@@ -635,7 +635,7 @@ use manual acknowledgement)
 In addition `Task.retry` has features not available in AMQP
 transactions: delay between retries, max retries, etc.
 
-So use retry for Python errors, and if your task is reentrant
+So use retry for Python errors, and if your task is idempotent
 combine that with `acks_late` if that level of reliability
 is required.
 
