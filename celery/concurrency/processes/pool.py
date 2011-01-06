@@ -863,7 +863,7 @@ class ApplyResult(object):
         self._time_accepted = time_accepted
         self._worker_pid = pid
         if self._accept_callback:
-            self._accept_callback()
+            self._accept_callback(pid, time_accepted)
         if self._ready:
             self._cache.pop(self._job, None)
 

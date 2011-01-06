@@ -398,15 +398,15 @@ class TaskRequest(object):
         if self.eventer:
             self.eventer.send(type, **fields)
 
-    def on_accepted(self):
+    def on_accepted(self, pid, time_accepted):
         """Handler called when task is accepted by worker pool."""
-        self.time_start = time.time()
+        self.time_start = time_accepted
         state.task_accepted(self)
         if not self.task.acks_late:
             self.acknowledge()
-        self.send_event("task-started", uuid=self.task_id)
-        self.logger.debug("Task accepted: %s[%s]" % (
-            self.task_name, self.task_id))
+        self.send_event("task-started", uuid=self.task_id, pid=pid)
+        self.logger.debug("Task accepted: %s[%s] pid:%r" % (
+            self.task_name, self.task_id, pid))
 
     def on_timeout(self, soft):
         """Handler called if the task times out."""
