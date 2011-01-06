@@ -476,7 +476,8 @@ class TaskRequest(object):
                    "id": self.task_id,
                    "name": self.task_name,
                    "exc": repr(exc_info.exception),
-                   "traceback": unicode(exc_info.traceback, 'utf-8'),
+                   "traceback": unicode(exc_info.traceback,
+                                        sys.getfilesystemencoding()),
                    "args": self.args,
                    "kwargs": self.kwargs}
 
