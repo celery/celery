@@ -132,20 +132,13 @@ class test_AMQPBackend(unittest.TestCase):
     def test_poll_result(self):
 
         class MockBinding(object):
-            delete_raises = [False]
             get_returns = [True]
-            tried_to_delete = []
 
             def __init__(self, *args, **kwargs):
                 pass
 
             def __call__(self, *args, **kwargs):
                 return self
-
-            def delete(self, **kwargs):
-                if self.delete_raises[0]:
-                    self.tried_to_delete.append(True)
-                    raise KeyError("foo")
 
             def declare(self):
                 pass
@@ -161,25 +154,13 @@ class test_AMQPBackend(unittest.TestCase):
             Queue = MockBinding
 
         backend = MockBackend()
-        conn = backend.pool.acquire(block=False)
-        channel_errors = conn.transport.__class__.channel_errors
-        conn.transport.__class__.channel_errors = (KeyError, )
-        conn.release()
-        try:
-            MockBinding.delete_raises[0] = True
-            backend.poll(gen_unique_id())
-            self.assertTrue(MockBinding.tried_to_delete)
-            MockBinding.delete_raises[0] = False
-            uuid = gen_unique_id()
-            backend.poll(uuid)
-            self.assertIn(uuid, backend._cache)
-            MockBinding.get_returns[0] = False
-            backend._cache[uuid] = "hello"
-            self.assertEqual(backend.poll(uuid), "hello")
-        finally:
-            conn = backend.pool.acquire(block=False)
-            conn.transport.__class__.channel_errors = channel_errors
-            conn.release()
+        backend.poll(gen_unique_id())
+        uuid = gen_unique_id()
+        backend.poll(uuid)
+        self.assertIn(uuid, backend._cache)
+        MockBinding.get_returns[0] = False
+        backend._cache[uuid] = "hello"
+        self.assertEqual(backend.poll(uuid), "hello")
 
     def test_wait_for(self):
         b = self.create_backend()
