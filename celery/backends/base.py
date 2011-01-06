@@ -161,6 +161,10 @@ class BaseDictBackend(BaseBackend):
         self._cache.pop(task_id, None)
         self._forget(task_id)
 
+    def _forget(self, task_id):
+        raise NotImplementedError("%s does not implement forget." % (
+                    self.__class__))
+
     def get_status(self, task_id):
         """Get the status of a task."""
         return self.get_task_meta(task_id)["status"]
