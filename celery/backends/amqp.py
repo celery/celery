@@ -163,10 +163,6 @@ class AMQPBackend(BaseDictBackend):
             binding.declare()
             result = binding.get()
             if result:
-                try:
-                    binding.delete(if_unused=True, if_empty=True, nowait=True)
-                except conn.channel_errors:
-                    pass
                 payload = self._cache[task_id] = result.payload
                 return payload
             elif task_id in self._cache:
