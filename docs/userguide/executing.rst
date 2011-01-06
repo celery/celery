@@ -36,7 +36,7 @@ available as attributes on the `Task` class (see :ref:`task-options`).
 In addition you can set countdown/eta, task expiry, provide a custom broker
 connection and more.
 
-Let's go over these in more detail.  All the examples uses a simple task,
+Let's go over these in more detail.  All the examples use a simple task,
 called `add`, taking two positional arguments and returning the sum:
 
 .. code-block:: python
@@ -97,7 +97,7 @@ Expiration
 
 The `expires` argument defines an optional expiry time,
 either as seconds after task publish, or a specific date and time using
-:class:~datetime.datetime`:
+:class:`~datetime.datetime`:
 
 .. code-block:: python
 
@@ -186,7 +186,7 @@ to use when sending a task:
     3. The default :setting:`CELERY_TASK_SERIALIZER` setting.
 
 
-*Using the `serializer` argument to `apply_async`*:
+* Using the `serializer` argument to `apply_async` *:
 
 .. code-block:: python
 
@@ -224,7 +224,7 @@ publisher:
 
 .. note::
 
-    This particularly example is better expressed as a task set.
+    This particular example is better expressed as a task set.
     See :ref:`sets-taskset`.  Tasksets already reuses connections.
 
 

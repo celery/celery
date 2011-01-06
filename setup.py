@@ -6,10 +6,10 @@ import codecs
 import platform
 
 extra = {}
-tests_require = ["nose", "nose-cover3"]
+tests_require = ["nose", "nose-cover3", "sqlalchemy"]
 if sys.version_info >= (3, 0):
     extra.update(use_2to3=True)
-elif sys.version_info <= (2, 6):
+elif sys.version_info < (2, 7):
     tests_require.append("unittest2")
 elif sys.version_info <= (2, 5):
     tests_require.append("simplejson")

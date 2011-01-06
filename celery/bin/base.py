@@ -69,7 +69,8 @@ class Command(object):
     def setup_app_from_commandline(self, argv):
         preload_options = self.parse_preload_options(argv)
         app = (preload_options.pop("app", None) or
-               os.environ.get("CELERY_APP"))
+               os.environ.get("CELERY_APP") or
+               self.app)
         loader = (preload_options.pop("loader", None) or
                   os.environ.get("CELERY_LOADER") or
                   "default")

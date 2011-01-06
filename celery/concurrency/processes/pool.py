@@ -331,7 +331,7 @@ class ResultHandler(PoolThread):
             if putlock is not None:
                 try:
                     putlock.release()
-                except ValueError:
+                except Exception:
                     pass
             try:
                 cache[job]._set(i, obj)
@@ -371,7 +371,7 @@ class ResultHandler(PoolThread):
         if putlock is not None:
             try:
                 putlock.release()
-            except ValueError:
+            except Exception:
                 pass
 
         while cache and self._state != TERMINATE:
@@ -863,7 +863,7 @@ class ApplyResult(object):
         self._time_accepted = time_accepted
         self._worker_pid = pid
         if self._accept_callback:
-            self._accept_callback()
+            self._accept_callback(pid, time_accepted)
         if self._ready:
             self._cache.pop(self._job, None)
 

@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
-import logging
 import anyjson
+import logging
+import os
 import sys
+import time
 
 from datetime import datetime, timedelta
 
@@ -272,14 +274,14 @@ class test_TaskRequest(unittest.TestCase):
 
     def test_on_accepted_acks_early(self):
         tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
-        tw.on_accepted()
+        tw.on_accepted(pid=os.getpid(), time_accepted=time.time())
         self.assertTrue(tw.acknowledged)
 
     def test_on_accepted_acks_late(self):
         tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
         mytask.acks_late = True
         try:
-            tw.on_accepted()
+            tw.on_accepted(pid=os.getpid(), time_accepted=time.time())
             self.assertFalse(tw.acknowledged)
         finally:
             mytask.acks_late = False

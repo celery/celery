@@ -14,6 +14,7 @@ from datetime import datetime
 
 from celery import platforms
 from celery import registry
+from celery import signals
 from celery.app import app_or_default
 from celery.log import SilenceRepeated
 from celery.schedules import maybe_schedule
@@ -323,7 +324,9 @@ class Service(object):
             "Ticking with max interval->%s" % (
                     humanize_seconds(self.scheduler.max_interval)))
 
+        signals.beat_init.send(sender=self)
         if embedded_process:
+            signals.beat_embedded_init.send(sender=self)
             platforms.set_process_title("celerybeat")
 
         try:

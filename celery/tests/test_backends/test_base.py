@@ -43,6 +43,10 @@ class test_BaseBackend_interface(unittest.TestCase):
         self.assertRaises(NotImplementedError,
                 b.get_status, "SOMExx-N0Nex1stant-IDxx-")
 
+    def test__forget(self):
+        self.assertRaises(NotImplementedError,
+                b.forget, "SOMExx-N0Nex1stant-IDxx-")
+
     def test_store_result(self):
         self.assertRaises(NotImplementedError,
                 b.store_result, "SOMExx-N0nex1stant-IDxx-", 42, states.SUCCESS)
