@@ -141,6 +141,21 @@ Worker Signals
 
     Dispatched when the worker is about to shut down.
 
+Celerybeat Signals
+~~~~~~~~~~~~~~~~~~
+
+.. data:: beat_init
+
+    Dispatched when celerybeat starts (either standalone or embedded).
+    Sender is the :class:`celery.beat.Service` instance.
+
+.. data:: beat_embedded_init
+
+    Dispatched in addition to the :data:`beat_init` signal when celerybeat is
+    started as an embedded process.  Sender is the
+    :class:`celery.beat.Service` instance.
+
+
 """
 from celery.utils.dispatch import Signal
 
@@ -161,3 +176,6 @@ worker_shutdown = Signal(providing_args=[])
 
 setup_logging = Signal(providing_args=["loglevel", "logfile",
                                        "format", "colorize"])
+
+beat_init = Signal(providing_args=[])
+beat_embedded_init = Signal(providing_args=[])
