@@ -208,6 +208,7 @@ class BaseApp(object):
         return c
 
     def post_config_merge(self, c):
+        # XXX This should be done by whoever requires these settings.
         """Prepare configuration after it has been merged with the
         defaults."""
         if not c.get("CELERY_QUEUES"):

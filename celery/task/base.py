@@ -729,6 +729,7 @@ def create_task_cls(app, **kwargs):
     apps = [app]
 
     class Task(BaseTask):
+        abstract = True
         app = apps[0]
         backend = app.backend
         exchange_type = app.conf.CELERY_DEFAULT_EXCHANGE_TYPE
