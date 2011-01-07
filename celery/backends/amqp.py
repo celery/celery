@@ -22,10 +22,6 @@ def repair_uuid(s):
     return "%s-%s-%s-%s-%s" % (s[:8], s[8:12], s[12:16], s[16:20], s[20:])
 
 
-class AMQResultWarning(UserWarning):
-    pass
-
-
 class AMQPBackend(BaseDictBackend):
     """AMQP backend. Publish results by sending messages to the broker
     using the task id as routing key.
@@ -125,18 +121,11 @@ class AMQPBackend(BaseDictBackend):
 
         conn = self.pool.acquire(block=True)
         try:
-            try:
-                conn.ensure(self, self._publish_result,
+            conn.ensure(self, self._publish_result,
                         max_retries=max_retries,
                         interval_start=interval_start,
                         interval_step=interval_step,
                         interval_max=interval_max)(conn, task_id, meta)
-            except Exception, exc:
-                raise
-                if not max_retries:
-                    raise
-                warnings.warn(AMQResultWarning(
-                    "Error sending result %s: %r" % (task_id, exc)))
         finally:
             conn.release()
 
