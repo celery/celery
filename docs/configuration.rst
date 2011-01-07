@@ -685,6 +685,65 @@ methods that have been registered with :mod:`kombu.serialization.registry`.
 
     :ref:`executing-serializers`.
 
+.. setting:: CELERY_TASK_PUBLISH_RETRY
+
+CELERY_TASK_PUBLISH_RETRY
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Decides if publishing task messages will be retried in the case
+of connection loss or other connection errors.
+See also :setting:`CELERY_TASK_PUBLISH_RETRY_POLICY`.
+
+Disabled by default.
+
+.. setting:: CELERY_TASK_PUBLISH_RETRY_POLICY
+
+Defines the default policy when retrying publishing a task message in
+the case of connection loss or other connection errors.
+
+This is a mapping that must contain the following keys:
+
+    * `max_retries`
+
+        Maximum number of retries before giving up, in this case the
+        exception that caused the retry to fail will be raised.
+
+        A value of 0 or :const:`None` means it will retry forever.
+
+        The default is to retry 3 times.
+
+    * `interval_start`
+
+        Defines the number of seconds (float or integer) to wait between
+        retries.  Default is 0, which means the first retry will be
+        instantaneous.
+
+    * `interval_step`
+
+        On each consecutive retry this number will be added to the retry
+        delay (float or integer).  Default is 0.2.
+
+    * `interval_max`
+
+        Maximum number of seconds (float or integer) to wait between
+        retries.  Default is 0.2.
+
+With the default policy of::
+
+    {"max_retries": 3,
+     "interval_start": 0,
+     "interval_step": 0.2,
+     "interval_max": 0.2}
+
+the maximum time spent retrying will be 0.4 seconds.  It is set relatively
+short by default because a connection failure could lead to a retry pile effect
+if the broker connection is down: e.g. many web server processes waiting
+to retry blocking other incoming requests.
+
+
+CELERY_TASK_PUBLISH_RETRY_POLICY
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. setting:: CELERY_DEFAULT_RATE_LIMIT
 
 CELERY_DEFAULT_RATE_LIMIT

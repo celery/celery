@@ -144,6 +144,16 @@ Important Notes
 News
 ----
 
+* Added the ability to retry publishing the task message in
+  the event of connection loss or failure.
+
+    This is disabled by default but can be enabled using the
+    :setting:`CELERY_TASK_PUBLISH_RETRY` setting, and tweaked by
+    the :setting:`CELERY_TASK_PUBLISH_RETRY_POLICY` setting.
+
+    In addition `retry`, and `retry_policy` keyword arguments have
+    been added to `Task.apply_async`.
+
 * Added support for message compression using the
   :setting:`CELERY_MESSAGE_COMPRESSION` setting, or the `compression` argument
   to `apply_async`.  This can also be set using routers.

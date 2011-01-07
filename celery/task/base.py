@@ -394,6 +394,14 @@ class BaseTask(object):
                                   on establishing a connection to the AMQP
                                   server.
 
+        :keyword retry: If enabled sending of the task message will be retried
+                        in the event of connection loss or failure.  Default
+                        is taken from the :setting:`CELERY_TASK_PUBLISH_RETRY`
+                        setting.
+
+        :keyword retry_policy:  Override the retry policy used.  See the
+                                :setting:`CELERY_TASK_PUBLISH_RETRY` setting.
+
         :keyword routing_key: The routing key used to route the task to a
                               worker server.  Defaults to the
                               :attr:`routing_key` attribute.

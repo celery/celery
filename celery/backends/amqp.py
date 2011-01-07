@@ -113,7 +113,7 @@ class AMQPBackend(BaseDictBackend):
         pass
 
     def _store_result(self, task_id, result, status, traceback=None,
-            max_retries=20, interval_start=0.2, interval_step=1,
+            max_retries=20, interval_start=0, interval_step=1,
             interval_max=1):
         """Send task return value and status."""
         result = self.encode_result(result, status)
