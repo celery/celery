@@ -1,0 +1,173 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>celery.worker.autoscale &mdash; Celery v2.2.0rc1 documentation</title>
+    <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.2.0rc1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
+    <script type="text/javascript" src="../../static/doctools.js"></script>
+    <link rel="top" title="Celery v2.2.0rc1 documentation" href="../../index.html" />
+    <link rel="up" title="Internal Module Reference" href="index.html" />
+    <link rel="next" title="celery.concurrency" href="celery.concurrency.html" />
+    <link rel="prev" title="celery.worker.state" href="celery.worker.state.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.concurrency.html" title="celery.concurrency"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.worker.state.html" title="celery.worker.state"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Celery v2.2.0rc1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://celeryproject.org/docs/internals/reference/celery.worker.autoscale.html">2.1</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="celery-worker-autoscale">
+<h1>celery.worker.autoscale<a class="headerlink" href="#celery-worker-autoscale" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-celery.worker.autoscale"></span><dl class="class">
+<dt id="celery.worker.autoscale.Autoscaler">
+<em class="property">class </em><tt class="descclassname">celery.worker.autoscale.</tt><tt class="descname">Autoscaler</tt><big>(</big><em>pool</em>, <em>max_concurrency</em>, <em>min_concurrency=0</em>, <em>keepalive=30</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#celery.worker.autoscale.Autoscaler" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="celery.worker.autoscale.Autoscaler.processes">
+<tt class="descname">processes</tt><a class="headerlink" href="#celery.worker.autoscale.Autoscaler.processes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.autoscale.Autoscaler.qty">
+<tt class="descname">qty</tt><a class="headerlink" href="#celery.worker.autoscale.Autoscaler.qty" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.autoscale.Autoscaler.run">
+<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.autoscale.Autoscaler.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.autoscale.Autoscaler.scale">
+<tt class="descname">scale</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.autoscale.Autoscaler.scale" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.autoscale.Autoscaler.scale_down">
+<tt class="descname">scale_down</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#celery.worker.autoscale.Autoscaler.scale_down" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.autoscale.Autoscaler.scale_up">
+<tt class="descname">scale_up</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#celery.worker.autoscale.Autoscaler.scale_up" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.autoscale.Autoscaler.stop">
+<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.autoscale.Autoscaler.stop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="celery.worker.state.html"
+                        title="previous chapter">celery.worker.state</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="celery.concurrency.html"
+                        title="next chapter">celery.concurrency</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../sources/internals/reference/celery.worker.autoscale.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.concurrency.html" title="celery.concurrency"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.worker.state.html" title="celery.worker.state"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Celery v2.2.0rc1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+    </div>
+  </body>
+</html>
