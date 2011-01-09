@@ -168,7 +168,7 @@ most systems), it usually contains a message describing the reason.
 Why won't celeryd run on FreeBSD?
 ---------------------------------
 
-**Answer:** multiprocessing.Pool requires a working POSIX semaphore
+**Answer:** The multiprocessing pool requires a working POSIX semaphore
 implementation which isn't enabled in FreeBSD by default. You have to enable
 POSIX semaphores in the kernel and manually recompile multiprocessing.
 
@@ -635,7 +635,7 @@ use manual acknowledgement)
 In addition `Task.retry` has features not available in AMQP
 transactions: delay between retries, max retries, etc.
 
-So use retry for Python errors, and if your task is reentrant
+So use retry for Python errors, and if your task is idempotent
 combine that with `acks_late` if that level of reliability
 is required.
 

@@ -108,10 +108,10 @@ are child processes.
 
 But this is not possible without enabling late acknowledgements
 acknowledgements; A task that has been started, will be
-retried if the worker crashes mid execution so the task must be `reentrant`_
+retried if the worker crashes mid execution so the task must be `idempotent`_
 (see also notes at :ref:`faq-acks_late-vs-retry`).
 
-.. _`reentrant`: http://en.wikipedia.org/wiki/Reentrant_(subroutine)
+.. _`idempotent`: http://en.wikipedia.org/wiki/Idempotent
 
 You can enable this behavior by using the following configuration options:
 

@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.task.base &mdash; Celery v2.2.0b1 documentation</title>
+    <title>celery.task.base &mdash; Celery v2.2.0rc1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.0b1',
+        VERSION:     '2.2.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0b1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0rc1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.task.sets" href="celery.task.sets.html" />
     <link rel="prev" title="celery.task" href="celery.task.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.task.html" title="celery.task"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -212,6 +212,12 @@ argument is not respected if this is set.</li>
 <li><strong>connect_timeout</strong> &#8211; The timeout in seconds, before we give up
 on establishing a connection to the AMQP
 server.</li>
+<li><strong>retry</strong> &#8211; If enabled sending of the task message will be retried
+in the event of connection loss or failure.  Default
+is taken from the <a class="reference internal" href="../configuration.html#std:setting-CELERY_TASK_PUBLISH_RETRY"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TASK_PUBLISH_RETRY</span></tt></a>
+setting.</li>
+<li><strong>retry_policy</strong> &#8211; Override the retry policy used.  See the
+<a class="reference internal" href="../configuration.html#std:setting-CELERY_TASK_PUBLISH_RETRY"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TASK_PUBLISH_RETRY</span></tt></a> setting.</li>
 <li><strong>routing_key</strong> &#8211; The routing key used to route the task to a
 worker server.  Defaults to the
 <a class="reference internal" href="#celery.task.base.BaseTask.routing_key" title="celery.task.base.BaseTask.routing_key"><tt class="xref py py-attr docutils literal"><span class="pre">routing_key</span></tt></a> attribute.</li>
@@ -839,7 +845,7 @@ set to the name of the module it was defined in, and the class name.</p>
         <li class="right" >
           <a href="celery.task.html" title="celery.task"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

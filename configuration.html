@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Configuration and defaults &mdash; Celery v2.2.0b1 documentation</title>
+    <title>Configuration and defaults &mdash; Celery v2.2.0rc1 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '2.2.0b1',
+        VERSION:     '2.2.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0b1 documentation" href="index.html" />
+    <link rel="top" title="Celery v2.2.0rc1 documentation" href="index.html" />
     <link rel="next" title="Cookbook" href="cookbook/index.html" />
     <link rel="prev" title="Optimizing" href="userguide/optimizing.html" /> 
   </head>
@@ -41,7 +41,7 @@
         <li class="right" >
           <a href="userguide/optimizing.html" title="Optimizing"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery v2.2.0b1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.2.0rc1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -596,6 +596,61 @@ methods that have been registered with <tt class="xref py py-mod docutils litera
 <p class="last"><a class="reference internal" href="userguide/executing.html#executing-serializers"><em>Serializers</em></a>.</p>
 </div>
 </div>
+<div class="section" id="celery-task-publish-retry">
+<span id="std:setting-CELERY_TASK_PUBLISH_RETRY"></span><h4>CELERY_TASK_PUBLISH_RETRY<a class="headerlink" href="#celery-task-publish-retry" title="Permalink to this headline">¶</a></h4>
+<p>Decides if publishing task messages will be retried in the case
+of connection loss or other connection errors.
+See also <a class="reference internal" href="#std:setting-CELERY_TASK_PUBLISH_RETRY_POLICY"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TASK_PUBLISH_RETRY_POLICY</span></tt></a>.</p>
+<p>Disabled by default.</p>
+<p id="std:setting-CELERY_TASK_PUBLISH_RETRY_POLICY">Defines the default policy when retrying publishing a task message in
+the case of connection loss or other connection errors.</p>
+<p>This is a mapping that must contain the following keys:</p>
+<blockquote>
+<ul>
+<li><p class="first"><cite>max_retries</cite></p>
+<blockquote>
+<p>Maximum number of retries before giving up, in this case the
+exception that caused the retry to fail will be raised.</p>
+<p>A value of 0 or <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> means it will retry forever.</p>
+<p>The default is to retry 3 times.</p>
+</blockquote>
+</li>
+<li><p class="first"><cite>interval_start</cite></p>
+<blockquote>
+<p>Defines the number of seconds (float or integer) to wait between
+retries.  Default is 0, which means the first retry will be
+instantaneous.</p>
+</blockquote>
+</li>
+<li><p class="first"><cite>interval_step</cite></p>
+<blockquote>
+<p>On each consecutive retry this number will be added to the retry
+delay (float or integer).  Default is 0.2.</p>
+</blockquote>
+</li>
+<li><p class="first"><cite>interval_max</cite></p>
+<blockquote>
+<p>Maximum number of seconds (float or integer) to wait between
+retries.  Default is 0.2.</p>
+</blockquote>
+</li>
+</ul>
+</blockquote>
+<p>With the default policy of:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;max_retries&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+ <span class="s">&quot;interval_start&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+ <span class="s">&quot;interval_step&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+ <span class="s">&quot;interval_max&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>the maximum time spent retrying will be 0.4 seconds.  It is set relatively
+short by default because a connection failure could lead to a retry pile effect
+if the broker connection is down: e.g. many web server processes waiting
+to retry blocking other incoming requests.</p>
+</div>
+<div class="section" id="celery-task-publish-retry-policy">
+<h4>CELERY_TASK_PUBLISH_RETRY_POLICY<a class="headerlink" href="#celery-task-publish-retry-policy" title="Permalink to this headline">¶</a></h4>
+</div>
 <div class="section" id="celery-default-rate-limit">
 <span id="std:setting-CELERY_DEFAULT_RATE_LIMIT"></span><h4>CELERY_DEFAULT_RATE_LIMIT<a class="headerlink" href="#celery-default-rate-limit" title="Permalink to this headline">¶</a></h4>
 <p>The global default rate limit for tasks.</p>
@@ -970,7 +1025,7 @@ the <em class="xref std std-option">--logfile</em> argument to <cite>celerymon</
         <li class="right" >
           <a href="userguide/optimizing.html" title="Optimizing"
              >previous</a> |</li>
-        <li><a href="index.html">Celery v2.2.0b1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.2.0rc1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

@@ -88,7 +88,7 @@ Commands
 
         $ celeryctl inspect registered_tasks
 
-* **inspect states**: Show worker statistics
+* **inspect stats**: Show worker statistics
     ::
 
         $ celeryctl inspect stats

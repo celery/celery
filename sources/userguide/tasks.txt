@@ -588,7 +588,7 @@ The entity responsible for registering your task in the registry is a
 meta class, :class:`~celery.task.base.TaskType`.  This is the default
 meta class for :class:`~celery.task.base.BaseTask`.
 
-If you want to register your task manually you can set mark the
+If you want to register your task manually you can mark the
 task as :attr:`~celery.task.base.BaseTask.abstract`:
 
 .. code-block:: python
