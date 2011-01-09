@@ -29,7 +29,6 @@ def teardown():
                 remaining_threads))
 
 
-
 def find_distribution_modules(name=__name__, file=__file__):
     current_dist_depth = len(name.split(".")) - 1
     current_dist = os.path.join(os.path.dirname(file),

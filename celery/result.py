@@ -378,25 +378,6 @@ class TaskSetResult(object):
                                         interval=interval))
         return results
 
-
-
-
-        while True:
-            for position, pending_result in enumerate(self.subtasks):
-                state = pending_result.state
-                if state in states.READY_STATES:
-                    if propagate and state in states.PROPAGATE_STATES:
-                        raise pending_result.result
-                    results[position] = pending_result.result
-            if results.full():
-                # Make list copy, so the returned type is not a position
-                # queue.
-                return list(results)
-            else:
-                if (timeout is not None and
-                        time.time() >= time_start + timeout):
-                    raise TimeoutError("join operation timed out.")
-
     def iter_native(self, timeout=None):
         backend = self.subtasks[0].backend
         ids = [subtask.task_id for subtask in self.subtasks]
@@ -462,7 +443,8 @@ class EagerResult(BaseAsyncResult):
         self._traceback = traceback
 
     def __reduce__(self):
-        return (self.__class__, (self.task_id, self._result, self._state,  self._traceback))
+        return (self.__class__, (self.task_id, self._result,
+                                 self._state, self._traceback))
 
     def successful(self):
         """Returns :const:`True` if the task executed without failure."""
@@ -506,4 +488,3 @@ class EagerResult(BaseAsyncResult):
     def status(self):
         """The tasks status (alias to :attr:`state`)."""
         return self._state
-

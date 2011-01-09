@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import socket
 import time
-import warnings
 
 from datetime import timedelta
 
@@ -98,7 +97,7 @@ class AMQPBackend(BaseDictBackend):
                 connection._result_producer_chan.connection is not None:
             channel = connection._result_producer_chan
         else:
-            channel = connection_result_producer_chan = connection.channel()
+            channel = connection._result_producer_chan = connection.channel()
 
         try:
             self._create_producer(task_id, channel).publish(meta)

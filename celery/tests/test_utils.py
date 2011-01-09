@@ -116,7 +116,7 @@ class test_utils(unittest.TestCase):
         def fun(obj):
             return fun.value
 
-        x =  utils.cached_property(fun)
+        x = utils.cached_property(fun)
         self.assertIs(x.__get__(None), x)
         self.assertIs(x.__set__(None, None), x)
         self.assertIs(x.__delete__(None), x)

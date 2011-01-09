@@ -28,4 +28,3 @@ class test_state_precedence(unittest.TestCase):
         self.assertTrue(state(states.REVOKED) < state("CRASHED"))
         self.assertTrue(state(states.REVOKED) <= state("CRASHED"))
         self.assertTrue(state("CRASHED") >= state(states.REVOKED))
-

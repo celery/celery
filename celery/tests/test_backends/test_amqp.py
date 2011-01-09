@@ -222,7 +222,6 @@ class test_AMQPBackend(unittest.TestCase):
         self.assertRaises(socket.timeout, list,
                           b.get_many(uuids, timeout=0.01))
 
-
     def test_test_get_many_raises_outer_block(self):
 
         class Backend(AMQPBackend):
@@ -242,7 +241,6 @@ class test_AMQPBackend(unittest.TestCase):
 
         b = Backend()
         self.assertRaises(KeyError, b.get_many(["id1"]).next)
-
 
     def test_no_expires(self):
         b = self.create_backend(expires=None)

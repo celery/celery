@@ -2,7 +2,7 @@ import sys
 from datetime import datetime
 
 from celery.registry import tasks
-from celery.utils import timeutils, LOG_LEVELS
+from celery.utils import timeutils
 from celery.worker import state
 from celery.worker.state import revoked
 from celery.worker.control.registry import Panel
@@ -203,9 +203,9 @@ def cancel_consumer(panel, queue=None, **_):
     cset = panel.consumer.task_consumer
     cset.cancel_by_queue(queue)
     return {"ok": "no longer consuming from %s" % (queue, )}
-    
+
+
 @Panel.register
 def worker_queues(panel):
     """Returns the queues associated with each worker."""
     return dict(panel.consumer.queues.iteritems())
-

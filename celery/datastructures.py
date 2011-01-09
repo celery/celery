@@ -16,7 +16,7 @@ import traceback
 from itertools import chain
 from Queue import Queue, Empty as QueueEmpty
 
-from celery.utils.compat import OrderedDict, UserList
+from celery.utils.compat import OrderedDict
 
 
 class AttributeDictMixin(object):

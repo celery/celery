@@ -1,6 +1,5 @@
 import warnings
 
-from celery.app import app_or_default
 from celery.task import ping, PingTask, backend_cleanup
 from celery.tests.compat import catch_warnings
 from celery.tests.utils import unittest, execute_context
@@ -34,8 +33,8 @@ class test_deprecated(unittest.TestCase):
 
         def block(log):
             from celery.task.base import TaskSet, subtask
-            x = TaskSet()
-            y = subtask(PingTask)
+            TaskSet()
+            subtask(PingTask)
             return log[0].message, log[1].message
 
         for w in execute_context(catch_warnings(record=True), block):

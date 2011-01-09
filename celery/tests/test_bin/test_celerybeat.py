@@ -12,6 +12,7 @@ from celery.utils.compat import defaultdict
 
 from celery.tests.utils import unittest
 
+
 class MockedShelveModule(object):
     shelves = defaultdict(lambda: {})
 
@@ -101,7 +102,6 @@ class test_Beat(unittest.TestCase):
         MockService.in_sync = False
 
     def test_setup_logging(self):
-        import sys
         b = beatapp.Beat()
         b.redirect_stdouts = False
         b.setup_logging()
@@ -127,7 +127,6 @@ class test_Beat(unittest.TestCase):
     @redirect_stdouts
     def test_use_pidfile(self, stdout, stderr):
         from celery import platforms
-
 
         class create_pidlock(object):
             instance = [None]

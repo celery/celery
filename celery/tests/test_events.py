@@ -77,7 +77,6 @@ class TestEventDispatcher(unittest.TestCase):
             self.assertEqual(dispatcher.publisher.serializer,
                             self.app.conf.CELERY_EVENT_SERIALIZER)
 
-
             created_channel = dispatcher.publisher.channel
             dispatcher.disable()
             dispatcher.disable()  # Disable with no active publisher
@@ -155,6 +154,7 @@ class TestEventReceiver(unittest.TestCase):
         channel = connection.channel()
         try:
             events_received = [0]
+
             def handler(event):
                 events_received[0] += 1
 
@@ -168,7 +168,7 @@ class TestEventReceiver(unittest.TestCase):
             for ev in evs:
                 producer.send(ev)
             it = r.itercapture(limit=4, wakeup=True)
-            consumer = it.next()
+            it.next()  # skip consumer (see itercapture)
             list(it)
             self.assertEqual(events_received[0], 4)
         finally:
@@ -176,12 +176,10 @@ class TestEventReceiver(unittest.TestCase):
             connection.close()
 
 
-
 class test_misc(unittest.TestCase):
 
     def setUp(self):
         self.app = app_or_default()
-
 
     def test_State(self):
         state = self.app.events.State()

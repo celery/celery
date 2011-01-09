@@ -243,7 +243,6 @@ class PublisherPool(Resource):
         return maybe_promise(publisher)
 
 
-
 class AMQP(object):
     BrokerConnection = BrokerConnection
     Publisher = messaging.Publisher

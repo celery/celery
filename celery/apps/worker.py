@@ -13,7 +13,7 @@ from celery import platforms
 from celery import signals
 from celery.app import app_or_default
 from celery.exceptions import ImproperlyConfigured, SystemTerminate
-from celery.utils import get_full_cls_name, LOG_LEVELS, isatty, cry
+from celery.utils import get_full_cls_name, LOG_LEVELS, cry
 from celery.utils import term
 from celery.worker import WorkController
 

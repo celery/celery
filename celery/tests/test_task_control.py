@@ -109,7 +109,6 @@ class test_inspect(unittest.TestCase):
         self.assertIn("cancel_consumer", MockMailbox.sent)
 
 
-
 class test_Broadcast(unittest.TestCase):
 
     def setUp(self):

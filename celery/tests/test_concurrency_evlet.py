@@ -4,7 +4,6 @@ import sys
 from nose import SkipTest
 
 from celery.tests.utils import unittest
-from celery.tests.utils import patch
 
 
 class EventletCase(unittest.TestCase):
@@ -15,7 +14,6 @@ class EventletCase(unittest.TestCase):
         except ImportError:
             raise SkipTest(
                 "eventlet not installed, skipping related tests.")
-
 
 
 class test_eventlet_patch(EventletCase):

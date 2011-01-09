@@ -197,7 +197,6 @@ class test_TaskRequest(unittest.TestCase):
         finally:
             mytask.ignore_result = False
 
-
     def test_send_email(self):
         app = app_or_default()
         old_mail_admins = app.mail_admins

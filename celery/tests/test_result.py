@@ -379,4 +379,3 @@ class TestEagerResult(unittest.TestCase):
     def test_revoke(self):
         res = RaisingTask.apply(args=[3, 3])
         self.assertFalse(res.revoke())
-

@@ -1,8 +1,5 @@
-import sys
-
 from celery.app import app_or_default
 from celery.bin import celeryev
-from celery.utils.functional import wraps
 
 from celery.tests.utils import unittest
 from celery.tests.utils import patch

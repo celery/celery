@@ -157,8 +157,6 @@ class TestLoaderBase(unittest.TestCase):
                          ["broker.port=foobar"])
 
 
-
-
 class TestDefaultLoader(unittest.TestCase):
 
     def test_wanted_module_item(self):
@@ -257,5 +255,3 @@ class test_AppLoader(unittest.TestCase):
         sys.modules.pop("subprocess", None)
         self.loader.on_worker_init()
         self.assertIn("subprocess", sys.modules)
-
-
