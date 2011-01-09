@@ -10,9 +10,8 @@ from celery.datastructures import ExceptionInfo
 from celery.exceptions import TimeoutError
 from celery.utils import gen_unique_id
 
-from celery.tests.compat import catch_warnings
 from celery.tests.utils import unittest
-from celery.tests.utils import execute_context, sleepdeprived
+from celery.tests.utils import sleepdeprived
 
 
 class SomeClass(object):
@@ -91,7 +90,6 @@ class test_AMQPBackend(unittest.TestCase):
 
     @sleepdeprived()
     def test_store_result_retries(self):
-        from celery.backends.amqp import AMQResultWarning
 
         class _Producer(object):
             iterations = 0
@@ -112,15 +110,9 @@ class test_AMQPBackend(unittest.TestCase):
         self.assertRaises(KeyError, backend.store_result,
                           "foo", "bar", "STARTED", max_retries=None)
 
-        def with_catch_warnings(log):
-            backend.store_result("foo", "bar", "STARTED", max_retries=10)
-            return log[0].message
-
-        message = execute_context(catch_warnings(record=True),
-                                  with_catch_warnings)
-
-        self.assertIsInstance(message, AMQResultWarning)
-        self.assertIn("Error sending result", message.args[0])
+        print(backend.store_result)
+        self.assertRaises(KeyError, backend.store_result,
+                          "foo", "bar", "STARTED", max_retries=10)
 
     def assertState(self, retval, state):
         self.assertEqual(retval["status"], state)
