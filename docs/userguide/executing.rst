@@ -186,7 +186,7 @@ to use when sending a task:
     3. The default :setting:`CELERY_TASK_SERIALIZER` setting.
 
 
-* Using the `serializer` argument to `apply_async` *:
+* Using the `serializer` argument to `apply_async`:
 
 .. code-block:: python
 
