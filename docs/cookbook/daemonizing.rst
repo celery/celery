@@ -11,13 +11,135 @@ daemonization tools.
     :local:
 
 
-.. _daemon-start-stop-daemon:
+.. _daemon-generic:
 
+Generic init scripts
+====================
+
+See the `contrib/generic-init.d/`_ directory Celery distribution.
+
+This directory contains generic bash init scripts for :program:`celeryd`,
+that should run on Linux, FreeBSD, OpenBSD, and other Unix platforms.
+
+.. _`contrib/generic-init.d/`:
+    http://github.com/ask/celery/tree/master/contrib/generic-init.d/
+
+.. _generic-initd-celeryd:
+
+Init script: celeryd
+--------------------
+
+:Usage: `/etc/init.d/celeryd {start|stop|restart|status}`
+:Configuration file: /etc/default/celeryd
+
+To configure celeryd you probably need to at least tell it where to change
+directory to when it starts (to find your `celeryconfig`).
+
+.. _generic-initd-celeryd-example:
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+This is an example configuration for a Python project.
+
+:file:`/etc/default/celeryd`:
+
+    # Name of nodes to start
+    # here we have a single node
+    CELERYD_NODES="w1"
+    # or we could have three nodes:
+    #CELERYD_NODES="w1 w2 w3"
+
+    # Where to chdir at start.
+    CELERYD_CHDIR="/opt/Myproject/"
+
+    # Extra arguments to celeryd
+    CELERYD_OPTS="--time-limit 300 --concurrency=8"
+
+    # Name of the celery config module.
+    CELERY_CONFIG_MODULE="celeryconfig"
+
+    # %n will be replaced with the nodename.
+    CELERYD_LOG_FILE="/var/log/celery/%n.log"
+    CELERYD_PID_FILE="/var/run/celery/%n.pid"
+
+    # Workers should run as an unprivileged user.
+    CELERYD_USER = "celery"
+    CELERYD_GROUP = "celery"
+
+.. _generic-initd-celeryd-django-example:
+
+Example Django configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is an example configuration for those using `django-celery`::
+
+    # Name of nodes to start, here we have a single node
+    CELERYD_NODES="w1"
+    # or we could have three nodes:
+    #CELERYD_NODES="w1 w2 w3"
+
+    # Where to chdir at start.
+    CELERYD_CHDIR="/opt/Myproject/"
+
+    # How to call "manage.py celeryd_multi"
+    CELERYD_MULTI="$CELERYD_CHDIR/manage.py celeryd_multi"
+
+    # Extra arguments to celeryd
+    CELERYD_OPTS="--time-limit 300 --concurrency=8"
+
+    # Name of the celery config module.
+    CELERY_CONFIG_MODULE="celeryconfig"
+
+    # %n will be replaced with the nodename.
+    CELERYD_LOG_FILE="/var/log/celery/%n.log"
+    CELERYD_PID_FILE="/var/run/celery/%n.pid"
+
+    # Workers should run as an unprivileged user.
+    CELERYD_USER = "celery"
+    CELERYD_GROUP = "celery"
+
+    # Name of the projects settings module.
+    export DJANGO_SETTINGS_MODULE="settings"
+
+.. _generic-initd-celeryd-options:
+
+Available options
+~~~~~~~~~~~~~~~~~~
+
+* CELERYD_NODES
+    Node names to start.
+
+* CELERYD_OPTS
+    Additional arguments to celeryd, see `celeryd --help` for a list.
+
+* CELERYD_CHDIR
+    Path to change directory to at start. Default is to stay in the current
+    directory.
+
+* CELERYD_PID_FILE
+    Full path to the PID file. Default is /var/run/celeryd%n.pid
+
+* CELERYD_LOG_FILE
+    Full path to the celeryd log file. Default is /var/log/celeryd@%n.log
+
+* CELERYD_LOG_LEVEL
+    Log level to use for celeryd. Default is INFO.
+
+* CELERYD_MULTI
+    Path to the celeryd-multi program. Default is `celeryd-multi`.
+    You can point this to an virtualenv, or even use manage.py for django.
+
+* CELERYD_USER
+    User to run celeryd as. Default is current user.
+
+* CELERYD_GROUP
+    Group to run celeryd as. Default is current user.
 
 start-stop-daemon (Debian/Ubuntu/++)
 ====================================
 
-See the `contrib/debian/init.d/`_ directory in the celery distribution, this
+See the `contrib/debian/init.d/`_ directory in the Celery distribution, this
 directory contains init scripts for celeryd and celerybeat.
 
 These scripts are configured in :file:`/etc/default/celeryd`.
