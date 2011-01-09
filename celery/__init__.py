@@ -1,7 +1,7 @@
 """Distributed Task Queue"""
 import os
 
-VERSION = (2, 2, 0, "b1")
+VERSION = (2, 2, 0, "rc1")
 
 __version__ = ".".join(map(str, VERSION[0:3])) + "".join(VERSION[3:])
 __author__ = "Ask Solem"
