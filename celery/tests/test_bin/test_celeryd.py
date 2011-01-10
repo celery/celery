@@ -171,6 +171,9 @@ class test_Worker(unittest.TestCase):
         self.assertEqual(worker1.loglevel, 0xFFFF)
 
     def test_warns_if_running_as_privileged_user(self):
+        app = app_or_default()
+        if app.IS_WINDOWS:
+            raise SkipTest("Not applicable on Windows")
         warnings.resetwarnings()
 
         def geteuid():
