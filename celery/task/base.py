@@ -397,7 +397,8 @@ class BaseTask(object):
         :keyword retry: If enabled sending of the task message will be retried
                         in the event of connection loss or failure.  Default
                         is taken from the :setting:`CELERY_TASK_PUBLISH_RETRY`
-                        setting.
+                        setting.  Note you need to handle the
+                        publisher/connection manually for this to work.
 
         :keyword retry_policy:  Override the retry policy used.  See the
                                 :setting:`CELERY_TASK_PUBLISH_RETRY` setting.
