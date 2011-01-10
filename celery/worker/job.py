@@ -230,7 +230,11 @@ class TaskRequest(object):
     #: Timestamp set when the task is started.
     time_start = None
 
+    #: Process id of the worker processing this task (if any).
+    worker_pid = None
+
     _already_revoked = False
+    _terminate_on_ack = None
 
     def __init__(self, task_name, task_id, args, kwargs,
             on_ack=noop, retries=0, delivery_info=None, hostname=None,
@@ -379,6 +383,14 @@ class TaskRequest(object):
             if self._store_errors:
                 self.task.backend.mark_as_revoked(self.task_id)
 
+    def terminate(self, pool, signal=None):
+        if self._terminate_on_ack is not None:
+            return
+        elif self.time_start:
+            return pool.terminate_job(self.worker_pid, signal)
+        else:
+            self._terminate_on_ack = (True, pool, signal)
+
     def revoked(self):
         """If revoked, skip task and mark state."""
         if self._already_revoked:
@@ -400,6 +412,7 @@ class TaskRequest(object):
 
     def on_accepted(self, pid, time_accepted):
         """Handler called when task is accepted by worker pool."""
+        self.worker_pid = pid
         self.time_start = time_accepted
         state.task_accepted(self)
         if not self.task.acks_late:
@@ -407,6 +420,9 @@ class TaskRequest(object):
         self.send_event("task-started", uuid=self.task_id, pid=pid)
         self.logger.debug("Task accepted: %s[%s] pid:%r" % (
             self.task_name, self.task_id, pid))
+        if self._terminate_on_ack is not None:
+            _, pool, signal = self._terminate_on_ack
+            self.terminate(pool, signal)
 
     def on_timeout(self, soft):
         """Handler called if the task times out."""

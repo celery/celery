@@ -105,13 +105,18 @@ class Control(object):
         return self.app.with_default_connection(_do_discard)(
                 connection=connection, connect_timeout=connect_timeout)
 
-    def revoke(self, task_id, destination=None, **kwargs):
+    def revoke(self, task_id, destination=None, terminate=False,
+            signal="SIGTERM", **kwargs):
         """Revoke a task by id.
 
         If a task is revoked, the workers will ignore the task and
         not execute it after all.
 
         :param task_id: Id of the task to revoke.
+        :keyword terminate: Also terminate the process currently working
+            on the task (if any).
+        :keyword signal: Name of signal to send to process if terminate.
+            Default is TERM.
         :keyword destination: If set, a list of the hosts to send the
             command to, when empty broadcast to all workers.
         :keyword connection: Custom broker connection to use, if not set,
@@ -124,7 +129,9 @@ class Control(object):
 
         """
         return self.broadcast("revoke", destination=destination,
-                              arguments={"task_id": task_id}, **kwargs)
+                              arguments={"task_id": task_id,
+                                         "terminate": terminate,
+                                         "signal": signal}, **kwargs)
 
     def ping(self, destination=None, timeout=1, **kwargs):
         """Ping workers.
