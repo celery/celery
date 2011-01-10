@@ -54,6 +54,9 @@ class Worker(object):
         self.hostname = hostname or socket.gethostname()
         self.discard = discard
         self.run_clockservice = run_clockservice
+        if self.app.IS_WINDOWS and self.run_clockservice:
+            self.die("-B option does not work on Windows.  "
+                     "Please run celerybeat as a separate service.")
         self.schedule = schedule or app.conf.CELERYBEAT_SCHEDULE_FILENAME
         self.scheduler_cls = scheduler_cls or app.conf.CELERYBEAT_SCHEDULER
         self.events = events
