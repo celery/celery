@@ -154,6 +154,11 @@ News
     In addition `retry`, and `retry_policy` keyword arguments have
     been added to `Task.apply_async`.
 
+    .. note::
+
+        Using the `retry` argument to `apply_async` requires you to
+        handle the publisher/connection manually.
+
 * Added support for message compression using the
   :setting:`CELERY_MESSAGE_COMPRESSION` setting, or the `compression` argument
   to `apply_async`.  This can also be set using routers.
@@ -167,8 +172,21 @@ News
     So far only supported by the AMQP result backend.  Support for memcached
     and Redis may be added later.
 
-* `celerybeat`: Now has built-in daemonization support using the `--detach``
+* Worker process PID is now sent with the task-accepted event.
+
+* The start time reported by the multiprocessing worker process is now used
+  when calculating task duration for better accuracy.
+
+    Previously the time reported by the accept callback was used.
+
+* `celerybeat`: Now has built-in daemonization support using the `--detach`
    option.
+
+* `celeryev`: Now has built-in daemonization support using the `--detach`
+   option.
+
+* `TaskSet.apply_async`: Now supports custom publishers by using the
+  `publisher` argument.
 
 * Added :setting:`CELERY_SEND_TASK_SENT_EVENT` setting.
 
@@ -183,6 +201,75 @@ News
     For example::
 
         $ celeryd --config=celeryconfig.py --loader=myloader.Loader
+
+* Added signals: `beat_init` and `beat_embedded_init`
+
+    * :data:`celery.signals.beat_init`
+
+        Dispatched when :program:`celerybeat` starts (either standalone or
+        embedded).  Sender is the :class:`celery.beat.Service` instance.
+
+    * :data:`celery.signals.beat_embedded_init`
+
+        Dispatched in addition to the :data:`beat_init` signal when
+        :program:`celerybeat` is started as an embedded process.  Sender
+        is the :class:`celery.beat.Service` instance.
+
+
+v220-fixes:
+
+Fixes
+-----
+
+* AMQP Backend: Exceptions occurring while sending task results are now
+  propagated instead of silenced.
+
+    `celeryd` will then show the full traceback of these errors in the log.
+
+* AMQP Backend: No longer deletes the result queue after successful
+  poll, as this should be handled by the
+  :setting:`CELERY_AMQP_TASK_RESULT_EXPIRES` setting instead.
+
+* Windows: celeryd: Show error if running with `-B` option.
+
+    Running celerybeat embedded is known not to work on Windows, so
+    users are encouraged to run celerybeat as a separate service instead.
+
+* Windows: Utilities no longer output ANSI color codes on Windows
+
+* camqadm: Now properly handles Ctrl+C by simply exiting instead of showing
+  confusing traceback.
+
+* Windows: All tests are now passing on Windows.
+
+* Remove bin/ directory, and `scripts` section from setup.py.
+
+    This means we now rely completely on setuptools entrypoints.
+
+.. v220-experimental:
+
+Experimental
+------------
+
+* :class:`PublisherPool`: Experimental pool of task publishers and
+  connections to be used with the `retry` argument to `apply_async`.
+
+  The example code below will re-use connections and channels, and
+  retry sending of the task message if the connection is lost.
+
+  .. code-block:: python
+
+    from celery import current_app
+
+    # Global pool
+    pool = current_app().amqp.PublisherPool(limit=10)
+
+    def my_view(request):
+        with pool.acquire() as publisher:
+            add.apply_async((2, 2), publisher=publisher, retry=True)
+
+
+
 
 .. _version-2.1.4:
 
