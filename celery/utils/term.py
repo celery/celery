@@ -1,4 +1,3 @@
-
 """
 
 term utils.
@@ -10,11 +9,16 @@ term utils.
               c.green("dog ")))
 
 """
+import platform
+
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 OP_SEQ = "\033[%dm"
 RESET_SEQ = "\033[0m"
 COLOR_SEQ = "\033[1;%dm"
 fg = lambda s: COLOR_SEQ % s
+
+SYSTEM = platform.system()
+IS_WINDOWS = SYSTEM == "Windows"
 
 
 class colored(object):
@@ -22,6 +26,8 @@ class colored(object):
     def __init__(self, *s, **kwargs):
         self.s = s
         self.enabled = kwargs.get("enabled", True)
+        if IS_WINDOWS:
+            self.enabled = False
         self.op = kwargs.get("op", "")
         self.names = {"black": self.black,
                       "red": self.red,
