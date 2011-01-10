@@ -13,6 +13,13 @@ os.environ["EVENTLET_NOPATCH"] = "yes"
 os.environ["GEVENT_NOPATCH"] = "yes"
 
 
+try:
+    WindowsError = WindowsError
+except NameError:
+    class WindowsError(Exception):
+        pass
+
+
 def teardown():
     # Don't want SUBDEBUG log messages at finalization.
     from multiprocessing.util import get_logger
@@ -20,7 +27,10 @@ def teardown():
     import threading
     import os
     if os.path.exists("test.db"):
-        os.remove("test.db")
+        try:
+            os.remove("test.db")
+        except WindowsError:
+            pass
     remaining_threads = [thread for thread in threading.enumerate()
                             if thread.name != "MainThread"]
     if remaining_threads:

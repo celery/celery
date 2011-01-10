@@ -1,3 +1,5 @@
+from nose import SkipTest
+
 from celery.app import app_or_default
 from celery.bin import celeryev
 
@@ -29,19 +31,24 @@ class test_EvCommand(unittest.TestCase):
         self.assertEqual(self.ev.run(dump=True), "me dumper, you?")
         self.assertIn("celeryev:dump", proctitle.last[0])
 
-    @patch("celery.events.cursesmon", "evtop", lambda **kw: "me top, you?")
-    @patch("celery.platforms", "set_process_title", proctitle)
     def test_run_top(self):
-        self.assertEqual(self.ev.run(), "me top, you?")
-        self.assertIn("celeryev:top", proctitle.last[0])
+        if self.app.IS_WINDOWS:
+            raise SkipTest("curses monitor does not run on Windows")
+
+        @patch("celery.events.cursesmon", "evtop", lambda **kw: "me top, you?")
+        @patch("celery.platforms", "set_process_title", proctitle)
+        def _inner():
+            self.assertEqual(self.ev.run(), "me top, you?")
+            self.assertIn("celeryev:top", proctitle.last[0])
+        return _inner()
 
     @patch("celery.events.snapshot", "evcam", lambda *a, **k: (a, k))
     @patch("celery.platforms", "set_process_title", proctitle)
     def test_run_cam(self):
         a, kw = self.ev.run(camera="foo.bar.baz", logfile="logfile")
         self.assertEqual(a[0], "foo.bar.baz")
-        self.assertEqual(a[1], 1.0)
-        self.assertIsNone(a[2])
+        self.assertEqual(kw["freq"], 1.0)
+        self.assertIsNone(kw["maxrate"])
         self.assertEqual(kw["loglevel"], "INFO")
         self.assertEqual(kw["logfile"], "logfile")
         self.assertIn("celeryev:cam", proctitle.last[0])

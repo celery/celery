@@ -1,6 +1,8 @@
-from celery.tests.utils import unittest
+from nose import SkipTest
 
-from celery.events import cursesmon
+from celery.app import current_app
+
+from celery.tests.utils import unittest
 
 
 class MockWindow(object):
@@ -12,6 +14,10 @@ class MockWindow(object):
 class TestCursesDisplay(unittest.TestCase):
 
     def setUp(self):
+        if current_app().IS_WINDOWS:
+            raise SkipTest("curses monitor does not run on Windows")
+
+        from celery.events import cursesmon
         self.monitor = cursesmon.CursesMonitor(object())
         self.win = MockWindow()
         self.monitor.win = self.win
