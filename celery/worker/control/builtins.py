@@ -217,6 +217,6 @@ def cancel_consumer(panel, queue=None, **_):
 
 
 @Panel.register
-def worker_queues(panel):
+def active_queues(panel):
     """Returns the queues associated with each worker."""
     return dict(panel.consumer.queues.iteritems())
