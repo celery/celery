@@ -8,12 +8,10 @@ Application Base Class.
 :license: BSD, see LICENSE for more details.
 
 """
-import sys
 import platform as _platform
 
 from datetime import timedelta
 
-from celery import routes
 from celery.app.defaults import DEFAULTS
 from celery.datastructures import ConfigurationView
 from celery.utils import instantiate, cached_property, maybe_promise
@@ -217,7 +215,6 @@ class BaseApp(object):
                     "exchange": c["CELERY_DEFAULT_EXCHANGE"],
                     "exchange_type": c["CELERY_DEFAULT_EXCHANGE_TYPE"],
                     "binding_key": c["CELERY_DEFAULT_ROUTING_KEY"]}}
-        c["CELERY_ROUTES"] = routes.prepare(c.get("CELERY_ROUTES") or {})
         if isinstance(c["CELERY_TASK_RESULT_EXPIRES"], int):
             c["CELERY_TASK_RESULT_EXPIRES"] = timedelta(
                     seconds=c["CELERY_TASK_RESULT_EXPIRES"])

@@ -252,8 +252,15 @@ class AMQP(object):
     #: Set to :const:`True` when the configured queues has been declared.
     _queues_declared = False
 
+    #: Cached and prepared routing table.
+    _routes = None
+
     def __init__(self, app):
         self.app = app
+
+    def flush_routes(self):
+        self._routes = routes.prepare(
+                        self.app.conf.get("CELERY_ROUTES") or {})
 
     def Queues(self, queues):
         """Create new :class:`Queues` instance, using queue defaults
@@ -264,8 +271,8 @@ class AMQP(object):
 
     def Router(self, queues=None, create_missing=None):
         """Returns the current task router."""
-        return routes.Router(self.app.conf.CELERY_ROUTES,
-                             queues or self.app.conf.CELERY_QUEUES,
+        return routes.Router(self.routes,
+                             queues or self.queues,
                              self.app.either("CELERY_CREATE_MISSING_QUEUES",
                                              create_missing),
                              app=self.app)
@@ -344,3 +351,9 @@ class AMQP(object):
     @queues.setter
     def queues(self, value):
         return self.Queues(value)
+
+    @property
+    def routes(self):
+        if self._routes is None:
+            self.flush_routes()
+        return self._routes
