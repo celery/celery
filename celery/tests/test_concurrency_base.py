@@ -19,10 +19,10 @@ class test_BasePool(unittest.TestCase):
 
             return callback
 
-        res = apply_target(gen_callback("target", 42),
-                           args=(8, 16),
-                           callback=gen_callback("callback"),
-                           accept_callback=gen_callback("accept_callback"))
+        apply_target(gen_callback("target", 42),
+                     args=(8, 16),
+                     callback=gen_callback("callback"),
+                     accept_callback=gen_callback("accept_callback"))
 
         self.assertDictEqual(scratch,
                              {"accept_callback": (0, ()),
@@ -31,10 +31,10 @@ class test_BasePool(unittest.TestCase):
 
         # No accept callback
         scratch.clear()
-        res2 = apply_target(gen_callback("target", 42),
-                            args=(8, 16),
-                            callback=gen_callback("callback"),
-                            accept_callback=None)
+        apply_target(gen_callback("target", 42),
+                     args=(8, 16),
+                     callback=gen_callback("callback"),
+                     accept_callback=None)
         self.assertDictEqual(scratch,
                               {"target": (3, (8, 16)),
                                "callback": (4, (42, ))})
@@ -56,4 +56,3 @@ class test_BasePool(unittest.TestCase):
         self.assertFalse(p.active)
         p._state = p.RUN
         self.assertTrue(p.active)
-

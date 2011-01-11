@@ -141,7 +141,7 @@ except ImportError:
 install_requires.extend([
     "python-dateutil",
     "anyjson",
-    "kombu>=0.9.1",
+    "kombu>=1.0.0b4",
     "pyparsing>=1.5.0",
 ])
 
@@ -182,9 +182,6 @@ setup(
     platforms=["any"],
     license="BSD",
     packages=find_packages(exclude=['ez_setup', 'tests', 'tests.*']),
-    scripts=["bin/celeryd", "bin/celerybeat",
-             "bin/camqadm", "bin/celeryd-multi",
-             "bin/celeryev"],
     zip_safe=False,
     install_requires=install_requires,
     tests_require=tests_require,

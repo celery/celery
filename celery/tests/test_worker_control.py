@@ -121,7 +121,6 @@ class test_ControlPanel(unittest.TestCase):
     def test_active(self):
         from celery.worker import state
         from celery.worker.job import TaskRequest
-        from celery.task import PingTask
 
         r = TaskRequest(PingTask.name, "do re mi", (), {})
         state.active_requests.add(r)
@@ -177,7 +176,6 @@ class test_ControlPanel(unittest.TestCase):
         self.assertTrue(consumer.task_consumer.consuming)
         panel.handle("cancel_consumer", {"queue": "MyQueue"})
         self.assertIn("MyQueue", consumer.task_consumer.cancelled)
-
 
     def test_revoked(self):
         from celery.worker import state

@@ -1,8 +1,10 @@
 import sys
+
 from datetime import datetime
 
+from celery.platforms import get_signal
 from celery.registry import tasks
-from celery.utils import timeutils, LOG_LEVELS
+from celery.utils import timeutils
 from celery.worker import state
 from celery.worker.state import revoked
 from celery.worker.control.registry import Panel
@@ -11,11 +13,20 @@ TASK_INFO_FIELDS = ("exchange", "routing_key", "rate_limit")
 
 
 @Panel.register
-def revoke(panel, task_id, **kwargs):
+def revoke(panel, task_id, terminate=False, signal=None, **kwargs):
     """Revoke task by task id."""
     revoked.add(task_id)
-    panel.logger.warn("Task %s revoked" % (task_id, ))
-    return {"ok": "task %s revoked" % (task_id, )}
+    action = "revoked"
+    if terminate:
+        signum = get_signal(signal)
+        for request in state.active_requests:
+            if request.task_id == task_id:
+                action = "terminated (%s)" % (signum, )
+                request.terminate(panel.consumer.pool, signal=signum)
+                break
+
+    panel.logger.warn("Task %s %s." % (task_id, action))
+    return {"ok": "task %s %s" % (task_id, action)}
 
 
 @Panel.register
@@ -203,9 +214,9 @@ def cancel_consumer(panel, queue=None, **_):
     cset = panel.consumer.task_consumer
     cset.cancel_by_queue(queue)
     return {"ok": "no longer consuming from %s" % (queue, )}
-    
+
+
 @Panel.register
-def worker_queues(panel):
+def active_queues(panel):
     """Returns the queues associated with each worker."""
     return dict(panel.consumer.queues.iteritems())
-

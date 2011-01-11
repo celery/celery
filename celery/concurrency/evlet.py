@@ -11,11 +11,17 @@ if not os.environ.get("EVENTLET_NOPATCH"):
     eventlet.debug.hub_prevent_multiple_readers(False)
 
 from eventlet import GreenPool
-from eventlet.greenthread import spawn, spawn_after_local
+from eventlet.greenthread import getcurrent, spawn, spawn_after_local
 from greenlet import GreenletExit
 
-from celery.concurrency.base import apply_target, BasePool
+from celery.concurrency import base
 from celery.utils import timer2
+
+
+def apply_target(target, args=(), kwargs={}, callback=None,
+                 accept_callback=None):
+    return base.apply_target(target, args, kwargs, callback, accept_callback,
+                             pid=getcurrent())
 
 
 class Schedule(timer2.Schedule):
@@ -82,7 +88,7 @@ class Timer(timer2.Timer):
         pass
 
 
-class TaskPool(BasePool):
+class TaskPool(base.BasePool):
     Pool = GreenPool
     Timer = Timer
 

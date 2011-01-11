@@ -296,7 +296,7 @@ class CursesMonitor(object):
     def display_task_row(self, lineno, task):
         state_color = self.state_colors.get(task.state)
         attr = curses.A_NORMAL
-        if task.uuid== self.selected_task:
+        if task.uuid == self.selected_task:
             attr = curses.A_STANDOUT
         timestamp = datetime.fromtimestamp(
                         task.timestamp or time.time())
@@ -307,11 +307,11 @@ class CursesMonitor(object):
         self.win.addstr(lineno, LEFT_BORDER_OFFSET, line, attr)
 
         if state_color:
-            self.win.addstr(lineno, len(line) - STATE_WIDTH + BORDER_SPACING - 1,
+            self.win.addstr(lineno,
+                            len(line) - STATE_WIDTH + BORDER_SPACING - 1,
                             task.state, state_color | attr)
         if task.ready:
             task.visited = time.time()
-
 
     def draw(self):
         win = self.win
@@ -391,7 +391,8 @@ class CursesMonitor(object):
 
         # Help
         self.safe_add_str(my - 2, x, self.help_title, curses.A_BOLD)
-        self.safe_add_str(my - 2, x + len(self.help_title), self.help, curses.A_DIM)
+        self.safe_add_str(my - 2, x + len(self.help_title), self.help,
+                          curses.A_DIM)
         win.refresh()
 
     def safe_add_str(self, y, x, string, *args, **kwargs):

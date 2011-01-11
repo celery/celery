@@ -1,4 +1,6 @@
+import os
 import sys
+import time
 import traceback
 
 from celery import log
@@ -8,9 +10,9 @@ from celery.utils import timer2
 
 
 def apply_target(target, args=(), kwargs={}, callback=None,
-        accept_callback=None):
+        accept_callback=None, pid=None):
     if accept_callback:
-        accept_callback()
+        accept_callback(pid or os.getpid(), time.time())
     callback(target(*args, **kwargs))
 
 
@@ -40,6 +42,10 @@ class BasePool(object):
 
     def on_apply(self, *args, **kwargs):
         pass
+
+    def terminate_job(self, pid):
+        raise NotImplementedError(
+                "%s does not implement kill_job" % (self.__class__, ))
 
     def stop(self):
         self._state = self.CLOSE

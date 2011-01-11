@@ -152,10 +152,10 @@ class BaseDictBackend(BaseBackend):
         self._cache = LocalCache(limit=kwargs.get("max_cached_results") or
                                  self.app.conf.CELERY_MAX_CACHED_RESULTS)
 
-    def store_result(self, task_id, result, status, traceback=None):
+    def store_result(self, task_id, result, status, traceback=None, **kwargs):
         """Store task result and status."""
         result = self.encode_result(result, status)
-        return self._store_result(task_id, result, status, traceback)
+        return self._store_result(task_id, result, status, traceback, **kwargs)
 
     def forget(self, task_id):
         self._cache.pop(task_id, None)

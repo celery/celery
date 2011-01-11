@@ -351,7 +351,11 @@ class AMQPAdmin(object):
         shell = AMQShell(connect=self.connect)
         if self.args:
             return shell.onecmd(" ".join(self.args))
-        return shell.cmdloop()
+        try:
+            return shell.cmdloop()
+        except KeyboardInterrupt:
+            self.say("(bibi)")
+            pass
 
     def say(self, m):
         if not self.silent:

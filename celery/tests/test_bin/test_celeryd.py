@@ -114,7 +114,6 @@ class test_Worker(unittest.TestCase):
         worker.init_loader()
         worker.run()
 
-
     @disable_stdouts
     def test_purge_messages(self):
         self.Worker().purge_messages()
@@ -172,6 +171,9 @@ class test_Worker(unittest.TestCase):
         self.assertEqual(worker1.loglevel, 0xFFFF)
 
     def test_warns_if_running_as_privileged_user(self):
+        app = app_or_default()
+        if app.IS_WINDOWS:
+            raise SkipTest("Not applicable on Windows")
         warnings.resetwarnings()
 
         def geteuid():
@@ -193,7 +195,6 @@ class test_Worker(unittest.TestCase):
     @disable_stdouts
     def test_use_pidfile(self):
         from celery import platforms
-
 
         class create_pidlock(object):
             instance = [None]
@@ -228,9 +229,8 @@ class test_Worker(unittest.TestCase):
         self.assertRaises(AttributeError, getattr, sys.stdout, "logger")
 
     def test_redirect_stdouts_already_handled(self):
-        from celery import signals
-
         logging_setup = [False]
+
         def on_logging_setup(**kwargs):
             logging_setup[0] = True
 

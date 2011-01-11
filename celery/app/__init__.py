@@ -164,6 +164,10 @@ default_loader = os.environ.get("CELERY_LOADER") or "default"
 default_app = App(loader=default_loader, set_as_current=False)
 
 
+def current_app():
+    return getattr(_tls, "current_app", None) or default_app
+
+
 def _app_or_default(app=None):
     """Returns the app provided or the default app if none.
 

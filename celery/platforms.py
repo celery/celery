@@ -274,6 +274,15 @@ def set_effective_user(uid=None, gid=None):
         gid and setegid(gid)
 
 
+def get_signal(signal_name):
+    """Get signal number from signal name."""
+    if not isinstance(signal_name, basestring) or not signal_name.isupper():
+        raise TypeError("signal name must be uppercase string.")
+    if not signal_name.startswith("SIG"):
+        signal_name = "SIG" + signal_name
+    return getattr(signal, signal_name)
+
+
 def reset_signal(signal_name):
     """Reset signal to the default signal handler.
 

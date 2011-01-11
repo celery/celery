@@ -335,7 +335,6 @@ class TestCeleryTasks(unittest.TestCase):
         T1 = self.createTaskCls("T1", "c.unittest.t.t1")
         conn = T1.app.broker_connection()
         chan = conn.channel()
-        prev = T1.app.conf.CELERY_SEND_TASK_SENT_EVENT
         T1.app.conf.CELERY_SEND_TASK_SENT_EVENT = True
         dispatcher = [None]
 
@@ -353,8 +352,6 @@ class TestCeleryTasks(unittest.TestCase):
             conn.close()
 
         self.assertTrue(dispatcher[0])
-
-
 
     def test_get_publisher(self):
         from celery.app import amqp
@@ -413,7 +410,6 @@ class TestCeleryTasks(unittest.TestCase):
         T1.request.loglevel = 3
         logger = t1.get_logger(logfile=logfh, loglevel=None)
         self.assertTrue(logger)
-
 
 
 class TestTaskSet(unittest.TestCase):

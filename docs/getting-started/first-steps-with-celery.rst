@@ -29,10 +29,10 @@ like this:
         return x + y
 
 
-All Celery tasks are classes that inherits from the
-:class:`~celery.task.base.Task` class.  In this example we're using a
-decorator that wraps the add function in an appropriate class for us
-automatically.
+Behind the scenes the `@task` decorator actually creates a class that
+inherits from :class:`~celery.task.base.Task`.  The best practice is to
+only create custom task classes when you want to change generic behavior,
+and use the decorator to define tasks.
 
 .. seealso::
 

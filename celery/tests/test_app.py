@@ -207,11 +207,10 @@ class test_App(unittest.TestCase):
         self.assertIn("bar_exchange", amqp._exchanges_declared)
 
 
-
 class test_BaseApp(unittest.TestCase):
 
     def test_on_init(self):
-        app = BaseApp()
+        BaseApp()
 
 
 class test_defaults(unittest.TestCase):

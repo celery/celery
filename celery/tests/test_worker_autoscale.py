@@ -94,8 +94,6 @@ class test_Autoscaler(unittest.TestCase):
         self.assertTrue(x._stopped.isSet())
         self.assertTrue(x.scale_called)
 
-
-
     def test_shrink_raises_exception(self):
         x = autoscale.Autoscaler(self.pool, 10, 3, logger=logger)
         x.scale_up(3)

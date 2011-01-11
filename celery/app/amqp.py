@@ -12,11 +12,13 @@ AMQ related functionality.
 from datetime import datetime, timedelta
 
 from kombu import BrokerConnection
+from kombu.connection import Resource
 from kombu import compat as messaging
 
 from celery import routes
 from celery import signals
 from celery.utils import gen_unique_id, textindent, cached_property
+from celery.utils import promise, maybe_promise
 from celery.utils.compat import UserDict
 
 #: List of known options to a Kombu producers send method.
@@ -130,6 +132,14 @@ class Queues(UserDict):
 
 class TaskPublisher(messaging.Publisher):
     auto_declare = False
+    retry = False
+    retry_policy = None
+
+    def __init__(self, *args, **kwargs):
+        self.retry = kwargs.pop("retry", self.retry)
+        self.retry_policy = kwargs.pop("retry_policy",
+                                        self.retry_policy or {})
+        super(TaskPublisher, self).__init__(*args, **kwargs)
 
     def declare(self):
         if self.exchange.name not in _exchanges_declared:
@@ -139,7 +149,7 @@ class TaskPublisher(messaging.Publisher):
     def delay_task(self, task_name, task_args=None, task_kwargs=None,
             countdown=None, eta=None, task_id=None, taskset_id=None,
             expires=None, exchange=None, exchange_type=None,
-            event_dispatcher=None, **kwargs):
+            event_dispatcher=None, retry=None, retry_policy=None, **kwargs):
         """Send task message."""
 
         task_id = task_id or gen_unique_id()
@@ -163,7 +173,7 @@ class TaskPublisher(messaging.Publisher):
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
 
-        message_data = {
+        body = {
             "task": task_name,
             "id": task_id,
             "args": task_args or [],
@@ -174,7 +184,7 @@ class TaskPublisher(messaging.Publisher):
         }
 
         if taskset_id:
-            message_data["taskset"] = taskset_id
+            body["taskset"] = taskset_id
 
         # custom exchange passed, need to declare it.
         if exchange and exchange not in _exchanges_declared:
@@ -184,10 +194,15 @@ class TaskPublisher(messaging.Publisher):
                                           durable=self.durable,
                                           auto_delete=self.auto_delete)
             _exchanges_declared.add(exchange)
-        self.send(message_data, exchange=exchange,
-                  **extract_msg_options(kwargs))
-        signals.task_sent.send(sender=task_name, **message_data)
 
+        send = self.send
+        if retry is None and self.retry or retry:
+            send = self.connection.ensure(self, self.send,
+                            **dict(self.retry_policy, **retry_policy or {}))
+
+        send(body, exchange=exchange, **extract_msg_options(kwargs))
+
+        signals.task_sent.send(sender=task_name, **body)
         if event_dispatcher:
             event_dispatcher.send("task-sent", uuid=task_id,
                                                name=task_name,
@@ -197,6 +212,35 @@ class TaskPublisher(messaging.Publisher):
                                                eta=eta,
                                                expires=expires)
         return task_id
+
+    def __exit__(self, *exc_info):
+        try:
+            self.release()
+        except AttributeError:
+            self.close()
+
+
+class PublisherPool(Resource):
+
+    def __init__(self, limit=None, app=None):
+        self.app = app
+        self.connections = self.app.broker_connection().Pool(limit=limit)
+        super(PublisherPool, self).__init__(limit=limit)
+
+    def create_publisher(self):
+        return self.app.amqp.TaskPublisher(self.connections.acquire(),
+                                           auto_declare=False)
+
+    def new(self):
+        return promise(self.create_publisher)
+
+    def setup(self):
+        if self.limit:
+            for _ in xrange(self.limit):
+                self._resource.put_nowait(self.new())
+
+    def prepare(self, publisher):
+        return maybe_promise(publisher)
 
 
 class AMQP(object):
@@ -240,11 +284,14 @@ class AMQP(object):
         You should use `app.send_task` instead.
 
         """
+        conf = self.app.conf
         _, default_queue = self.get_default_queue()
         defaults = {"exchange": default_queue["exchange"],
                     "exchange_type": default_queue["exchange_type"],
-                    "routing_key": self.app.conf.CELERY_DEFAULT_ROUTING_KEY,
-                    "serializer": self.app.conf.CELERY_TASK_SERIALIZER}
+                    "routing_key": conf.CELERY_DEFAULT_ROUTING_KEY,
+                    "serializer": conf.CELERY_TASK_SERIALIZER,
+                    "retry": conf.CELERY_TASK_PUBLISH_RETRY,
+                    "retry_policy": conf.CELERY_TASK_PUBLISH_RETRY_POLICY}
         publisher = TaskPublisher(*args,
                                   **self.app.merge(defaults, kwargs))
 
@@ -255,6 +302,9 @@ class AMQP(object):
         publisher.declare()
 
         return publisher
+
+    def PublisherPool(self, limit=None):
+        return PublisherPool(limit=limit, app=self.app)
 
     def get_task_consumer(self, connection, queues=None, **kwargs):
         """Return consumer configured to consume from all known task

@@ -95,7 +95,6 @@ class test_Polaroid(unittest.TestCase):
         self.assertEqual(shutter_signal_sent[0], 1)
 
 
-
 class test_evcam(unittest.TestCase):
 
     class MockReceiver(object):
@@ -109,7 +108,6 @@ class test_evcam(unittest.TestCase):
 
         def Receiver(self, *args, **kwargs):
             return test_evcam.MockReceiver()
-
 
     def setUp(self):
         self.app = app_or_default()

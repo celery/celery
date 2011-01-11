@@ -60,7 +60,8 @@ format:
 
 .. code-block:: javascript
 
-    {"task": "celery.task.PingTask",
+    {"id": "4cc7438e-afd4-4f8f-a2f3-f46567e7ca77",
+     "task": "celery.task.PingTask",
      "args": [],
      "kwargs": {},
      "retries": 0,

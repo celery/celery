@@ -63,7 +63,6 @@ def fallback_contextmanager(fun):
 def execute_context(context, fun):
     val = context.__enter__()
     exc_info = (None, None, None)
-    retval = None
     try:
         try:
             return fun(val)
@@ -123,6 +122,7 @@ def with_environ(env_name, env_value):
 
         return _patch_environ
     return _envpatched
+
 
 def sleepdeprived(module=time):
 
@@ -261,5 +261,3 @@ def patch(module, name, mocked):
                 setattr(module, name, prev)
         return __patched
     return _patch
-
-

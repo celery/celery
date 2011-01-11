@@ -1,8 +1,8 @@
 .. _guide-monitoring:
 
-==================
- Monitoring Guide
-==================
+=================================
+ Monitoring and Management Guide
+=================================
 
 .. contents::
     :local:
@@ -21,6 +21,7 @@ Workers
 =======
 
 .. _monitoring-celeryctl:
+
 
 celeryctl: Management Utility
 -----------------------------
@@ -53,6 +54,14 @@ Commands
 
     Note that you can omit the name of the task as long as the
     task doesn't use a custom result backend.
+
+* **purge**: Purge messages from all configured task queues.
+    ::
+        $ celeryctl purge
+
+    .. warning::
+        There is no undo for this operation, and messages will
+        be permanently deleted!
 
 * **inspect active**: List active tasks
     ::
@@ -486,7 +495,7 @@ Task Events
 
     Sent when the worker receives a task.
 
-* `task-started(uuid, hostname, timestamp)`
+* `task-started(uuid, hostname, timestamp, pid)`
 
     Sent just before the worker executes the task.
 

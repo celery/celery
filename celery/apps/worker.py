@@ -13,7 +13,7 @@ from celery import platforms
 from celery import signals
 from celery.app import app_or_default
 from celery.exceptions import ImproperlyConfigured, SystemTerminate
-from celery.utils import get_full_cls_name, LOG_LEVELS, isatty, cry
+from celery.utils import get_full_cls_name, LOG_LEVELS, cry
 from celery.utils import term
 from celery.worker import WorkController
 
@@ -54,6 +54,9 @@ class Worker(object):
         self.hostname = hostname or socket.gethostname()
         self.discard = discard
         self.run_clockservice = run_clockservice
+        if self.app.IS_WINDOWS and self.run_clockservice:
+            self.die("-B option does not work on Windows.  "
+                     "Please run celerybeat as a separate service.")
         self.schedule = schedule or app.conf.CELERYBEAT_SCHEDULE_FILENAME
         self.scheduler_cls = scheduler_cls or app.conf.CELERYBEAT_SCHEDULER
         self.events = events

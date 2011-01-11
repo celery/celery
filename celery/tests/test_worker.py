@@ -428,7 +428,6 @@ class test_Consumer(unittest.TestCase):
         self.assertRaises(IndexError, l.maybe_conn_error,
                 raises(IndexError("foo")))
 
-
     def test_apply_eta_task(self):
         from celery.worker import state
         l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
@@ -647,8 +646,6 @@ class test_WorkController(unittest.TestCase):
             platforms.reset_signal = preset_signal
             platforms.set_mp_process_title = psetproctitle
             default_app.set_current()
-
-
 
     def test_with_rate_limits_disabled(self):
         worker = WorkController(concurrency=1, loglevel=0,
