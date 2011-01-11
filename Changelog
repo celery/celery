@@ -40,12 +40,64 @@ Important Notes
 
 .. _`Kombu`: http://pypi.python.org/pypi/kombu
 
-* The magic keyword arguments are now available as `task.request`.
+* Magic keyword arguments deprecated.
 
-    Tasks can choose not to accept magic keyword arguments by setting
-    `task.accept_magic_kwargs=False`.
+    The magic keyword arguments were responsibile for many problems
+    and quirks, notably problems with tasks and decorators, and
+    of course making task keyword arguments unexpectedly special.
 
-    Available request keys:
+    It wasn't easy to find a way to deprecate the magic keyword arguments,
+    but we think we have found a solution that makes sense and will not
+    have any adverse effects on existing code.
+
+    The path to a magic keyword argument free world is:
+
+        * the `celery.decorators` module is deprecated and the decorators
+          can now be found in `celery.task`.
+        * The decorators in `celery.task` disables keyword arguments by
+          default
+        * All examples in the documentation have been changed to use
+          `celery.task`.
+
+        This means that the following will have magic keyword arguments
+        enabled (old style):
+
+            .. code-block:: python
+
+                from celery.decorators import task
+
+                @task
+                def add(x, y, **kwargs):
+                    print("In task %s" % kwargs["task_id"])
+                    return x + y
+
+        And this will not use magic keyword arguments (new style):
+
+            .. code-block:: python
+
+                from celery.task import task
+
+                @task
+                def add(x, y):
+                    print("In task %s" % add.request.id)
+                    return x + y
+
+    In addition, tasks can choose not to accept magic keyword arguments by
+    setting the `task.accept_magic_kwargs` attribute.
+
+    .. admonition:: Deprecation
+
+        Using the decorators in :mod:`celery.decorators` emits a
+        :class:`PendingDeprecationWarning` with a helpful message urging
+        you to change your code, in version 2.4 this will be replaced with
+        a :class:`DeprecationWarning`, and in version 3.0 the
+        :mod:`celery.decorators` module will be removed and no longer exist.
+
+* The magic keyword arguments are now available as `task.request`
+
+    This is called *the context*, and is stored in thread-local storage.
+
+    The following context attributes are always available:
 
     =====================================  ===================================
     **Magic Keyword Argument**             **Replace with**
@@ -60,12 +112,30 @@ Important Notes
     **NEW**                                `self.request.kwargs`
     =====================================  ===================================
 
-    The following methods now automatically uses the current context, so you
-    don't have to pass kwargs manually anymore:
+    In addition, the following methods now automatically uses the current
+    context, so you don't have to pass kwargs manually anymore:
 
-        * task.retry
-        * task.get_logger
-        * task.update_state
+        * `task.retry`
+        * `task.get_logger`
+        * `task.update_state`
+
+* `Eventlet`_ support.
+
+    This is great news for I/O-bound tasks!
+
+    The first alternative concurrency implementation is for `Eventlet`_,
+    but there is also an experimental `gevent`_ pool.
+
+    To change pool implementation you can use the :option:`-P|--pool` argument
+    to :program:`celeryd`, or change it globally using the
+    :setting:`CELERYD_POOL` setting.  This can be the full name of a class,
+    or one of the following aliases: `processes`, `eventlet`, `gevent`.
+
+    For more information please see the :ref:`concurrency-eventlet` section
+    in the User Guide.
+
+.. _`Eventlet`: http://eventlet.net
+.. _`gevent`: http://gevent.org
 
 * `celeryd`: Now supports Autoscaling of child worker processes.
 
@@ -144,6 +214,22 @@ Important Notes
 News
 ----
 
+* The internal module `celery.task.builtins` has been removed.
+
+* Importing `TaskSet` from `celery.task.base` is now deprecated.
+
+    You should use::
+
+        >>> from celery.task import TaskSet
+
+    instead.
+
+* New remote control commands:
+
+    * `active_queues`
+
+        Returns the queue declarations a worker is currently consuming from.
+
 * Added the ability to retry publishing the task message in
   the event of connection loss or failure.
 
@@ -159,9 +245,43 @@ News
         Using the `retry` argument to `apply_async` requires you to
         handle the publisher/connection manually.
 
+* Periodic Task classes (`@periodic_task`/`PeriodicTask`) will *not* be
+  deprecated as previously indicated in the source code.
+
+    But you are encouraged to use the more flexible
+    :setting:`CELERYBEAT_SCHEDULE` setting.
+
+* Built-in daemonization support of celeryd using `celeryd-multi`
+  is no longer experimental and is considered production quality.
+
+     See :ref:`daemon-generic` if you want to use the new generic init
+     scripts.
+
 * Added support for message compression using the
   :setting:`CELERY_MESSAGE_COMPRESSION` setting, or the `compression` argument
   to `apply_async`.  This can also be set using routers.
+
+* `celeryd`: Now logs stacktrace of all threads when receiving the
+   `SIGUSR1` signal.  (Does not work on Python 2.4, or Windows).
+
+    Inspired by https://gist.github.com/737056
+
+* Can now terminate the worker process processing task remotely.
+
+    The revoke remote control command now supports a `terminate` argument
+    Default signal is `TERM`, but can be specified using the `signal`
+    argument. Signal can be the uppercase name of any signal defined
+    in the :mod:`signal` module in the Python Standard Library.
+
+    Terminating a task also revokes it.
+
+    Example::
+
+        >>> from celery.task.control import revoke
+
+        >>> revoke(task_id, terminate=True)
+        >>> revoke(task_id, terminate=True, signal="KILL")
+        >>> revoke(task_id, terminate=True, signal="SIGKILL")
 
 * `TaskSetResult.join_native`: Backend-optimized version of `join()`.
 
@@ -171,6 +291,18 @@ News
 
     So far only supported by the AMQP result backend.  Support for memcached
     and Redis may be added later.
+
+* Improved implementations of `TaskSetResult.join` and `AsyncResult.wait`.
+
+   An `interval` keyword argument has been added to both so the
+   polling interval can be specified (default interval is 0.5 seconds).
+
+    A `propagate` keyword argument has been added to `result.wait()`,
+    errors will be returned instead of raised if this is set to False.
+
+    Pollingresults when using the database backend is probabably
+    not a good idea, at least you should increase the polling interval.
+
 
 * Worker process PID is now sent with the task-accepted event.
 
@@ -215,11 +347,25 @@ News
         :program:`celerybeat` is started as an embedded process.  Sender
         is the :class:`celery.beat.Service` instance.
 
+* Redis result backend: Removed deprecated settings `REDIS_TIMEOUT` and
+  `REDIS_CONNECT_RETRY`.
+
+* CentOS init script for :program:`celeryd` now available in `contrib/centos`.
+
 
 v220-fixes:
 
 Fixes
 -----
+
+* [Security] The `stats` command no longer transmits the broker password.
+
+    One would have needed an authenticated broker connection to receive
+    this password in the first place, but sniffing the password at the
+    wire level would have been possible if using unencrypted communication.
+
+* `celeryev` Curses Monitor: Improved resize handling and UI layout
+  (Issue #274 + Issue #276)
 
 * AMQP Backend: Exceptions occurring while sending task results are now
   propagated instead of silenced.
@@ -229,6 +375,8 @@ Fixes
 * AMQP Backend: No longer deletes the result queue after successful
   poll, as this should be handled by the
   :setting:`CELERY_AMQP_TASK_RESULT_EXPIRES` setting instead.
+
+* AMQP Backend: Now ensures queues are declared before polling results.
 
 * Windows: celeryd: Show error if running with `-B` option.
 
@@ -268,8 +416,12 @@ Experimental
         with pool.acquire() as publisher:
             add.apply_async((2, 2), publisher=publisher, retry=True)
 
+* Now depends on `pyparsing` version 1.5.0 or higher.
 
+    There have been reported issues using Celery with pyparsing 1.4.x,
+    so please upgrade to the latest version.
 
+* Lots of new unit tests written, now with a total coverage of 95%.
 
 .. _version-2.1.4:
 
@@ -311,6 +463,11 @@ Fixes
 
 * `celeryd`: Now properly handles errors occurring while trying to acknowledge
   the message.
+
+* `TaskRequest.on_failure` now encodes traceback using the current filesystem
+   encoding.  (Issue #286).
+
+* `EagerResult` can now be pickled (Issue #288).
 
 .. _v214-documentation:
 
@@ -2498,7 +2655,7 @@ Fixes
   settings has been deprecated:
 
         * `REDIS_TIMEOUT`
-        * REDIS_CONNECT_RETRY`
+        * `REDIS_CONNECT_RETRY`
 
     These will emit a `DeprecationWarning` if used.
 
