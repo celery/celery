@@ -5,7 +5,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Monitoring Guide &mdash; Celery v2.2.0rc1 documentation</title>
+    <title>Monitoring and Management Guide &mdash; Celery v2.2.0rc1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
@@ -64,8 +64,8 @@
         
 
 </div>
-    <div class="section" id="monitoring-guide">
-<span id="guide-monitoring"></span><h1>Monitoring Guide<a class="headerlink" href="#monitoring-guide" title="Permalink to this headline">¶</a></h1>
+    <div class="section" id="monitoring-and-management-guide">
+<span id="guide-monitoring"></span><h1>Monitoring and Management Guide<a class="headerlink" href="#monitoring-and-management-guide" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
 <li><a class="reference internal" href="#introduction" id="id2">Introduction</a></li>
@@ -140,6 +140,21 @@ and manage worker nodes (and to some degree tasks).</p>
 </div>
 <p class="last">Note that you can omit the name of the task as long as the
 task doesn&#8217;t use a custom result backend.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><strong>purge</strong>: Purge messages from all configured task queues.</dt>
+<dd><dl class="first docutils">
+<dt>::</dt>
+<dd><p class="first last">$ celeryctl purge</p>
+</dd>
+</dl>
+<div class="last admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">There is no undo for this operation, and messages will
+be permanently deleted!</p>
+</div>
 </dd>
 </dl>
 </li>
@@ -518,7 +533,7 @@ timestamp)</cite></p>
 <p>Sent when the worker receives a task.</p>
 </blockquote>
 </li>
-<li><p class="first"><cite>task-started(uuid, hostname, timestamp)</cite></p>
+<li><p class="first"><cite>task-started(uuid, hostname, timestamp, pid)</cite></p>
 <blockquote>
 <p>Sent just before the worker executes the task.</p>
 </blockquote>

@@ -163,10 +163,12 @@ retries.</li>
 <span id="faq-serializion-is-a-choice"></span><h3><a class="toc-backref" href="#id4">Is Celery dependent on pickle?</a><a class="headerlink" href="#is-celery-dependent-on-pickle" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> No.</p>
 <p>Celery can support any serialization scheme and has support for JSON/YAML and
-Pickle by default. You can even send one task using pickle, and another one
-with JSON seamlessly, this is because every task is associated with a
-content-type. The default serialization scheme is pickle because it&#8217;s the most
-used, and it has support for sending complex objects as task arguments.</p>
+Pickle by default. And as every task is associated with a content type, you
+can even send one task using pickle, and another using JSON.</p>
+<p>The default serialization format is pickle simply because it is
+convenient as it supports sending complex Python objects as task arguments.</p>
+<p>If you need to communicate with other languages you should change
+to a serialization format that is suitable for that.</p>
 <p>You can set a global default serializer, the default serializer for a
 particular Task, or even what serializer to use when sending a single task
 instance.</p>
@@ -180,8 +182,10 @@ to use the <a class="reference external" href="http://pypi.python.org/pypi/djang
 <div class="section" id="do-i-have-to-use-amqp-rabbitmq">
 <span id="faq-is-celery-for-rabbitmq-only"></span><h3><a class="toc-backref" href="#id6">Do I have to use AMQP/RabbitMQ?</a><a class="headerlink" href="#do-i-have-to-use-amqp-rabbitmq" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: No.</p>
-<p>You can also use Redis or an SQL database, see <a class="reference external" href="http://ask.github.com/celery/tutorials/otherqueues.html">Using other
-queues</a>.</p>
+<p>You can also use Redis, Beanstalk, CouchDB, MongoDB or an SQL database,
+see <a class="reference external" href="http://ask.github.com/celery/tutorials/otherqueues.html">Using other queues</a>.</p>
+<p>These &#8220;virtual transports&#8221; may have limited broadcast and event functionality.
+For example remote control commands only works with AMQP and Redis.</p>
 <p>Redis or a database won&#8217;t perform as well as
 an AMQP broker. If you have strict reliability requirements you are
 encouraged to use RabbitMQ or another AMQP broker. Redis/database also use
@@ -294,15 +298,22 @@ other error is happening.</p>
 </div>
 <div class="section" id="how-do-i-discard-all-waiting-tasks">
 <span id="faq-purge-the-queue"></span><h3><a class="toc-backref" href="#id17">How do I discard all waiting tasks?</a><a class="headerlink" href="#how-do-i-discard-all-waiting-tasks" title="Permalink to this headline">¶</a></h3>
-<p><strong>Answer:</strong> Use <tt class="xref py py-func docutils literal"><span class="pre">discard_all()</span></tt>, like this:</p>
+<p><strong>Answer:</strong> You can use celeryctl to purge all configured task queues:</p>
+<div class="highlight-python"><pre>$ celeryctl purge</pre>
+</div>
+<p>or programatically:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.control</span> <span class="kn">import</span> <span class="n">discard_all</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">discard_all</span><span class="p">()</span>
 <span class="go">1753</span>
 </pre></div>
 </div>
+<p>If you only want to purge messages from a specific queue
+you have to use the AMQP API or the <strong class="program">camqadm</strong> utility:</p>
+<div class="highlight-python"><pre>$ camqadm queue.purge &lt;queue name&gt;</pre>
+</div>
 <p>The number 1753 is the number of messages deleted.</p>
 <p>You can also start <a class="reference internal" href="reference/celery.bin.celeryd.html#module-celery.bin.celeryd" title="celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a> with the
-<em class="xref std std-option">--discard</em> argument which will accomplish the same thing.</p>
+<em class="xref std std-option">--purge</em> argument, to purge messages when the worker starts.</p>
 </div>
 <div class="section" id="i-ve-discarded-messages-but-there-are-still-messages-left-in-the-queue">
 <span id="faq-messages-left-after-purge"></span><h3><a class="toc-backref" href="#id18">I&#8217;ve discarded messages, but there are still messages left in the queue?</a><a class="headerlink" href="#i-ve-discarded-messages-but-there-are-still-messages-left-in-the-queue" title="Permalink to this headline">¶</a></h3>
@@ -424,10 +435,17 @@ but is not currently supported in Kombu.</p>
 <p>This is an incomplete list of features not available when
 using the virtual transports:</p>
 <blockquote>
-<ul class="simple">
-<li>The <cite>header</cite> exchange type.</li>
-<li>immediate</li>
-<li>mandatory</li>
+<ul>
+<li><p class="first">Remote control commands (supported only by Redis).</p>
+</li>
+<li><p class="first">Monitoring with events may not work in all virtual transports.</p>
+</li>
+<li><dl class="first docutils">
+<dt>The <cite>header</cite> and <cite>fanout</cite> exchange types</dt>
+<dd><p class="first last">(<cite>fanout</cite> is supported by Redis).</p>
+</dd>
+</dl>
+</li>
 </ul>
 </blockquote>
 </div>
@@ -457,7 +475,7 @@ that has an AMQP client.</p>
     <span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">mytask</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s">&quot;Running&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>For more information see <a class="reference internal" href="userguide/tasks.html#task-request-info"><em>Task Request Info</em></a>.</p>
+<p>For more information see <a class="reference internal" href="userguide/tasks.html#task-request-info"><em>Context</em></a>.</p>
 </div>
 <div class="section" id="can-i-specify-a-custom-task-id">
 <span id="faq-custom-task-ids"></span><h3><a class="toc-backref" href="#id33">Can I specify a custom task_id?</a><a class="headerlink" href="#can-i-specify-a-custom-task-id" title="Permalink to this headline">¶</a></h3>
@@ -536,8 +554,9 @@ and a worker can bind to as many queues as it wants.</p>
 </div>
 <div class="section" id="can-i-change-the-interval-of-a-periodic-task-at-runtime">
 <span id="faq-change-periodic-task-interval-at-runtime"></span><h3><a class="toc-backref" href="#id40">Can I change the interval of a periodic task at runtime?</a><a class="headerlink" href="#can-i-change-the-interval-of-a-periodic-task-at-runtime" title="Permalink to this headline">¶</a></h3>
-<p><strong>Answer</strong>: Yes. You can override <cite>PeriodicTask.is_due</cite> or turn
-<cite>PeriodicTask.run_every</cite> into a property:</p>
+<p><strong>Answer</strong>: Yes. You can use the Django database scheduler, or you can
+override <cite>PeriodicTask.is_due</cite> or turn <cite>PeriodicTask.run_every</cite> into a
+property:</p>
 <div class="highlight-python"><pre>class MyPeriodic(PeriodicTask):
 
     def run(self):

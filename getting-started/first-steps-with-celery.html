@@ -96,10 +96,10 @@ like this:</p>
     <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
 </pre></div>
 </div>
-<p>All Celery tasks are classes that inherits from the
-<tt class="xref py py-class docutils literal"><span class="pre">Task</span></tt> class.  In this example we&#8217;re using a
-decorator that wraps the add function in an appropriate class for us
-automatically.</p>
+<p>Behind the scenes the <cite>&#64;task</cite> decorator actually creates a class that
+inherits from <tt class="xref py py-class docutils literal"><span class="pre">Task</span></tt>.  The best practice is to
+only create custom task classes when you want to change generic behavior,
+and use the decorator to define tasks.</p>
 <div class="admonition-see-also admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last">The full documentation on how to create tasks and task classes is in the

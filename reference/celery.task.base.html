@@ -215,7 +215,8 @@ server.</li>
 <li><strong>retry</strong> &#8211; If enabled sending of the task message will be retried
 in the event of connection loss or failure.  Default
 is taken from the <a class="reference internal" href="../configuration.html#std:setting-CELERY_TASK_PUBLISH_RETRY"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TASK_PUBLISH_RETRY</span></tt></a>
-setting.</li>
+setting.  Note you need to handle the
+publisher/connection manually for this to work.</li>
 <li><strong>retry_policy</strong> &#8211; Override the retry policy used.  See the
 <a class="reference internal" href="../configuration.html#std:setting-CELERY_TASK_PUBLISH_RETRY"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TASK_PUBLISH_RETRY</span></tt></a> setting.</li>
 <li><strong>routing_key</strong> &#8211; The routing key used to route the task to a

@@ -88,14 +88,16 @@ python, webhooks, queue, distributed</td>
 distributed message passing.  It is focused on real-time operation,
 but supports scheduling as well.</p>
 <p>The execution units, called tasks, are executed concurrently on one or
-more worker nodes.  Tasks can execute asynchronously (in the background) or
-synchronously (wait until ready).</p>
-<p>Celery is already used in production to process millions of tasks a day.</p>
+more worker nodes using multiprocessing, <a class="reference external" href="http://eventlet.net/">Eventlet</a> or <a class="reference external" href="http://gevent.org/">gevent</a>.  Tasks can
+execute asynchronously (in the background) or synchronously
+(wait until ready).</p>
+<p>Celery is used in production systems to process millions of tasks a day.</p>
 <p>Celery is written in Python, but the protocol can be implemented in any
 language.  It can also <a class="reference external" href="http://ask.github.com/celery/userguide/remote-tasks.html">operate with other languages using webhooks</a>.</p>
-<p>The recommended message broker is <a class="reference external" href="http://www.rabbitmq.com/">RabbitMQ</a>, but support for <a class="reference external" href="http://code.google.com/p/redis/">Redis</a> and
-databases (<a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a>) is also available.</p>
-<p>Celery is easy to integrate with <a class="reference external" href="http://djangoproject.org/">Django</a>, <a class="reference external" href="http://pylonshq.com/">Pylons</a> and <a class="reference external" href="http://flask.pocoo.org/">Flask</a>, using
+<p>The recommended message broker is <a class="reference external" href="http://www.rabbitmq.com/">RabbitMQ</a>, but limited support for
+<a class="reference external" href="http://code.google.com/p/redis/">Redis</a>, <a class="reference external" href="http://kr.github.com/beanstalkd/">Beanstalk</a>, <a class="reference external" href="http://mongodb.org/">MongoDB</a>, <a class="reference external" href="http://couchdb.apache.org/">CouchDB</a> and
+databases (using <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a> or the <a class="reference external" href="http://djangoproject.com/">Django ORM</a>) is also available.</p>
+<p>Celery is easy to integrate with <a class="reference external" href="http://djangoproject.com/">Django</a>, <a class="reference external" href="http://pylonshq.com/">Pylons</a> and <a class="reference external" href="http://flask.pocoo.org/">Flask</a>, using
 the <a class="reference external" href="http://pypi.python.org/pypi/django-celery">django-celery</a>, <a class="reference external" href="http://pypi.python.org/pypi/celery-pylons">celery-pylons</a> and <a class="reference external" href="http://github.com/ask/flask-celery/">Flask-Celery</a> add-on packages.</p>
 <div class="contents local topic" id="contents">
 <ul class="simple">
@@ -114,8 +116,8 @@ the <a class="reference external" href="http://pypi.python.org/pypi/django-celer
 <span id="celery-overview"></span><h2><a class="toc-backref" href="#id1">Overview</a><a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
 <p>This is a high level overview of the architecture.</p>
 <img alt="http://cloud.github.com/downloads/ask/celery/Celery-Overview-v4.jpg" src="http://cloud.github.com/downloads/ask/celery/Celery-Overview-v4.jpg" />
-<p>The broker delivers tasks to the worker servers.
-A worker server is a networked machine running <cite>celeryd</cite>.  This can be one or
+<p>The broker delivers tasks to the worker nodes.
+A worker node is a networked machine running <cite>celeryd</cite>.  This can be one or
 more machines depending on the workload.</p>
 <p>The result of the task can be stored for later retrieval (called its
 &#8220;tombstone&#8221;).</p>
@@ -149,31 +151,35 @@ adding two numbers:</p>
 </colgroup>
 <tbody valign="top">
 <tr><td>Messaging</td>
-<td>Supported brokers include <a class="reference external" href="http://www.rabbitmq.com/">RabbitMQ</a>, <a class="reference external" href="http://stomp.codehaus.org/">Stomp</a>,
-<a class="reference external" href="http://code.google.com/p/redis/">Redis</a>, and most common SQL databases.</td>
+<td>Supported brokers include <a class="reference external" href="http://www.rabbitmq.com/">RabbitMQ</a>, <a class="reference external" href="http://code.google.com/p/redis/">Redis</a>,
+<a class="reference external" href="http://kr.github.com/beanstalkd/">Beanstalk</a>, <a class="reference external" href="http://mongodb.org/">MongoDB</a>, <a class="reference external" href="http://couchdb.apache.org/">CouchDB</a>, and popular
+SQL databases.</td>
 </tr>
-<tr><td>Robust</td>
-<td>Using <cite>RabbitMQ</cite>, celery survives most error
+<tr><td>Fault-tolerant</td>
+<td>Excellent configurable error recovery when using
+<cite>RabbitMQ</cite>, ensures your tasks are never lost.
 scenarios, and your tasks will never be lost.</td>
 </tr>
 <tr><td>Distributed</td>
 <td>Runs on one or more machines. Supports
-<a class="reference external" href="http://www.rabbitmq.com/clustering.html">clustering</a> when used in combination with
-<a class="reference external" href="http://www.rabbitmq.com/">RabbitMQ</a>. You can set up new workers without
-central configuration (e.g. use your dads laptop
-while the queue is temporarily overloaded).</td>
+broker <a class="reference external" href="http://www.rabbitmq.com/clustering.html">clustering</a> and <a class="reference external" href="http://www.rabbitmq.com/pacemaker.html">HA</a> when used in
+combination with <a class="reference external" href="http://www.rabbitmq.com/">RabbitMQ</a>.  You can set up new
+workers without central configuration (e.g. use
+your grandma&#8217;s laptop to help if the queue is
+temporarily congested).</td>
 </tr>
 <tr><td>Concurrency</td>
-<td>Tasks are executed in parallel using the
-<cite>multiprocessing</cite> module.</td>
+<td>Concurrency is achieved by using multiprocessing,
+<a class="reference external" href="http://eventlet.net/">Eventlet</a>, <cite>gevent</cite> or a mix of these.</td>
 </tr>
 <tr><td>Scheduling</td>
 <td>Supports recurring tasks like cron, or specifying
 an exact date or countdown for when after the task
 should be executed.</td>
 </tr>
-<tr><td>Performance</td>
-<td>Able to execute tasks while the user waits.</td>
+<tr><td>Latency</td>
+<td>Low latency means you are able to execute tasks
+<em>while the user is waiting</em>.</td>
 </tr>
 <tr><td>Return Values</td>
 <td>Task return values can be saved to the selected
@@ -181,8 +187,8 @@ result store backend. You can wait for the result,
 retrieve it later, or ignore it.</td>
 </tr>
 <tr><td>Result Stores</td>
-<td>Database, <a class="reference external" href="http://www.mongodb.org/">MongoDB</a>, <a class="reference external" href="http://code.google.com/p/redis/">Redis</a>, <cite>Tokyo Tyrant</cite>,
-<a class="reference external" href="http://www.amqp.org/">AMQP</a> (high performance).</td>
+<td>Database, <a class="reference external" href="http://mongodb.org/">MongoDB</a>, <a class="reference external" href="http://code.google.com/p/redis/">Redis</a>, <cite>Tokyo Tyrant</cite>,
+<cite>Cassandra</cite>, or <a class="reference external" href="http://www.amqp.org/">AMQP</a> (message notification).</td>
 </tr>
 <tr><td>Webhooks</td>
 <td>Your tasks can also be HTTP callbacks, enabling
@@ -195,12 +201,16 @@ Rate limits can be set for each task type, or
 globally for all.</td>
 </tr>
 <tr><td>Routing</td>
-<td>Using AMQP you can route tasks arbitrarily to
-different workers.</td>
+<td>Using AMQP&#8217;s flexible routing model you can route
+tasks to different workers, or select different
+message topologies, by configuration or even at
+runtime.</td>
 </tr>
 <tr><td>Remote-control</td>
-<td>You can rate limit and delete (revoke) tasks
-remotely.</td>
+<td>Worker nodes can be controlled from remote by
+using broadcast messaging.  A range of built-in
+commands exist in addition to the ability to
+easily define your own. (AMQP/Redis only)</td>
 </tr>
 <tr><td>Monitoring</td>
 <td>You can capture everything happening with the
@@ -238,13 +248,9 @@ anyone?</td>
 enabling the ability to poll task status using
 Ajax.</td>
 </tr>
-<tr><td>Error e-mails</td>
+<tr><td>Error E-mails</td>
 <td>Can be configured to send e-mails to the
 administrators when tasks fails.</td>
-</tr>
-<tr><td>Supervised</td>
-<td>Pool workers are supervised and automatically
-replaced if they crash.</td>
 </tr>
 </tbody>
 </table>

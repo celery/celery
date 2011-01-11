@@ -12,20 +12,19 @@ Contents:
 
     getting-started/index
     userguide/index
-    configuration
-    cookbook/index
-    community
-    contributing
-    tutorials/index
-    faq
 
 .. toctree::
     :maxdepth: 1
 
+    configuration
+    cookbook/index
+    contributing
+    community
+    tutorials/index
+    faq
     changelog
     reference/index
     internals/index
-    links
 
 
 Indices and tables

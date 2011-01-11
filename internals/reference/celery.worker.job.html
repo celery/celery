@@ -88,7 +88,7 @@ world-wide state.</p>
 
 <dl class="class">
 <dt id="celery.worker.job.TaskRequest">
-<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskRequest</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x104846140&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>hostname=None</em>, <em>email_subject=None</em>, <em>email_body=None</em>, <em>logger=None</em>, <em>eventer=None</em>, <em>eta=None</em>, <em>expires=None</em>, <em>app=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskRequest</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x104868ed8&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>hostname=None</em>, <em>email_subject=None</em>, <em>email_body=None</em>, <em>logger=None</em>, <em>eventer=None</em>, <em>eta=None</em>, <em>expires=None</em>, <em>app=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest" title="Permalink to this definition">¶</a></dt>
 <dd><p>A request for task execution.</p>
 <dl class="method">
 <dt id="celery.worker.job.TaskRequest.acknowledge">
@@ -199,7 +199,7 @@ Producer to consumer.</p>
 
 <dl class="classmethod">
 <dt id="celery.worker.job.TaskRequest.from_message">
-<em class="property">classmethod </em><tt class="descname">from_message</tt><big>(</big><em>message</em>, <em>message_data</em>, <em>on_ack=&lt;function noop at 0x104846140&gt;</em>, <em>**kw</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.from_message" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descname">from_message</tt><big>(</big><em>message</em>, <em>message_data</em>, <em>on_ack=&lt;function noop at 0x104868ed8&gt;</em>, <em>**kw</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.from_message" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create request from a task message.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -339,10 +339,21 @@ the message is also rejected.</td>
 <dd><p>UUID of the task.</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="celery.worker.job.TaskRequest.terminate">
+<tt class="descname">terminate</tt><big>(</big><em>pool</em>, <em>signal=None</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.terminate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="attribute">
 <dt id="celery.worker.job.TaskRequest.time_start">
 <tt class="descname">time_start</tt><a class="headerlink" href="#celery.worker.job.TaskRequest.time_start" title="Permalink to this definition">¶</a></dt>
 <dd><p>Timestamp set when the task is started.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.job.TaskRequest.worker_pid">
+<tt class="descname">worker_pid</tt><a class="headerlink" href="#celery.worker.job.TaskRequest.worker_pid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process id of the worker processing this task (if any).</p>
 </dd></dl>
 
 </dd></dl>

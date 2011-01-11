@@ -223,7 +223,7 @@ connection is not provided.</li>
 
 <dl class="method">
 <dt id="celery.task.control.Control.revoke">
-<tt class="descclassname">Control.</tt><tt class="descname">revoke</tt><big>(</big><em>task_id</em>, <em>destination=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.control.Control.revoke" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">Control.</tt><tt class="descname">revoke</tt><big>(</big><em>task_id</em>, <em>destination=None</em>, <em>terminate=False</em>, <em>signal='SIGTERM'</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.control.Control.revoke" title="Permalink to this definition">¶</a></dt>
 <dd><p>Revoke a task by id.</p>
 <p>If a task is revoked, the workers will ignore the task and
 not execute it after all.</p>
@@ -233,6 +233,10 @@ not execute it after all.</p>
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>task_id</strong> &#8211; Id of the task to revoke.</li>
+<li><strong>terminate</strong> &#8211; Also terminate the process currently working
+on the task (if any).</li>
+<li><strong>signal</strong> &#8211; Name of signal to send to process if terminate.
+Default is TERM.</li>
 <li><strong>destination</strong> &#8211; If set, a list of the hosts to send the
 command to, when empty broadcast to all workers.</li>
 <li><strong>connection</strong> &#8211; Custom broker connection to use, if not set,
@@ -257,6 +261,11 @@ connection is not provided.</li>
 <dd><dl class="method">
 <dt id="celery.task.control.Inspect.active">
 <tt class="descname">active</tt><big>(</big><em>safe=False</em><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.active" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.active_queues">
+<tt class="descname">active_queues</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.active_queues" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -307,11 +316,6 @@ connection is not provided.</li>
 <dl class="method">
 <dt id="celery.task.control.Inspect.stats">
 <tt class="descname">stats</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.stats" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.task.control.Inspect.worker_queues">
-<tt class="descname">worker_queues</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.worker_queues" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
