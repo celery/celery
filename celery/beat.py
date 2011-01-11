@@ -17,8 +17,8 @@ from celery import registry
 from celery import signals
 from celery.app import app_or_default
 from celery.log import SilenceRepeated
-from celery.schedules import maybe_schedule
-from celery.utils import cached_property, instantiate
+from celery.schedules import maybe_schedule, crontab
+from celery.utils import cached_property, instantiate, maybe_promise
 from celery.utils.compat import UserDict
 from celery.utils.timeutils import humanize_seconds
 
@@ -141,13 +141,23 @@ class Scheduler(UserDict):
             schedule = {}
         self.app = app_or_default(app)
         conf = self.app.conf
-        self.data = schedule
+        self.data = self.install_default_entries(schedule)
         self.logger = logger or self.app.log.get_default_logger(
                                                 name="celery.beat")
         self.max_interval = max_interval or conf.CELERYBEAT_MAX_LOOP_INTERVAL
         self.Publisher = Publisher or self.app.amqp.TaskPublisher
         if not lazy:
             self.setup_schedule()
+
+    def install_default_entries(self, schedule):
+        schedule = maybe_promise(schedule)
+        if self.app.conf.CELERY_TASK_RESULT_EXPIRES:
+            schedule.setdefault("celery.backend_cleanup",
+                    {"task": "celery.backend_cleanup",
+                     "schedule": crontab("0", "4", "*"),
+                     "options": {"expires": 12 * 3600}})
+        return schedule
+
 
     def maybe_due(self, entry, publisher=None):
         is_due, next_time_to_run = entry.is_due()
@@ -278,7 +288,8 @@ class PersistentScheduler(Scheduler):
     def setup_schedule(self):
         self._store = self.persistence.open(self.schedule_filename)
         self.data = self._store
-        self.merge_inplace(self.app.conf.CELERYBEAT_SCHEDULE)
+        self.merge_inplace(self.install_default_entries(
+                            self.app.conf.CELERYBEAT_SCHEDULE))
         self.sync()
         self.data = self._store
 

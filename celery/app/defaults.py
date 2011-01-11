@@ -101,6 +101,7 @@ NAMESPACES = {
         "TRACK_STARTED": Option(False, type="bool"),
         "REDIRECT_STDOUTS": Option(True, type="bool"),
         "REDIRECT_STDOUTS_LEVEL": Option("WARNING"),
+        "QUEUES": Option(None, type="dict"),
     },
     "CELERYD": {
         "AUTOSCALER": Option("celery.worker.autoscale.Autoscaler"),
@@ -124,7 +125,7 @@ NAMESPACES = {
         "TASK_TIME_LIMIT": Option(type="int"),
     },
     "CELERYBEAT": {
-        "SCHEDULE": Option(promise(lambda: {}), type="dict"),
+        "SCHEDULE": Option({}, type="dict"),
         "SCHEDULER": Option("celery.beat.PersistentScheduler"),
         "SCHEDULE_FILENAME": Option("celerybeat-schedule"),
         "MAX_LOOP_INTERVAL": Option(5 * 60, type="int"),

@@ -205,29 +205,6 @@ class BaseApp(object):
                 c["BROKER_BACKEND"] = cbackend
         return c
 
-    def post_config_merge(self, c):
-        # XXX This should be done by whoever requires these settings.
-        """Prepare configuration after it has been merged with the
-        defaults."""
-        if not c.get("CELERY_QUEUES"):
-            c["CELERY_QUEUES"] = {
-                c["CELERY_DEFAULT_QUEUE"]: {
-                    "exchange": c["CELERY_DEFAULT_EXCHANGE"],
-                    "exchange_type": c["CELERY_DEFAULT_EXCHANGE_TYPE"],
-                    "binding_key": c["CELERY_DEFAULT_ROUTING_KEY"]}}
-
-        # Install backend cleanup periodic task.
-        c["CELERYBEAT_SCHEDULE"] = maybe_promise(c["CELERYBEAT_SCHEDULE"])
-        if c["CELERY_TASK_RESULT_EXPIRES"]:
-            from celery.schedules import crontab
-            c["CELERYBEAT_SCHEDULE"].setdefault("celery.backend_cleanup",
-                    dict(task="celery.backend_cleanup",
-                         schedule=crontab(minute="00", hour="04",
-                                          day_of_week="*"),
-                         options={"expires": 12 * 3600}))
-
-        return c
-
     def mail_admins(self, subject, body, fail_silently=False):
         """Send an e-mail to the admins in conf.ADMINS."""
         if not self.conf.ADMINS:
@@ -266,10 +243,8 @@ class BaseApp(object):
         return backend_cls(app=self)
 
     def _get_config(self):
-        return self.post_config_merge(
-                        ConfigurationView({}, [
-                            self.pre_config_merge(self.loader.conf),
-                            DEFAULTS]))
+        return ConfigurationView({},
+                [self.pre_config_merge(self.loader.conf), DEFAULTS])
 
     @cached_property
     def amqp(self):

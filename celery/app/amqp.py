@@ -265,9 +265,15 @@ class AMQP(object):
     def Queues(self, queues):
         """Create new :class:`Queues` instance, using queue defaults
         from the current configuration."""
+        conf = self.app.conf
+        if not queues:
+            queues = {conf.CELERY_DEFAULT_QUEUE: {
+                        "exchange": conf.CELERY_DEFAULT_EXCHANGE,
+                        "exchange_type": conf.CELERY_DEFAULT_EXCHANGE_TYPE,
+                        "binding_key": conf.CELERY_DEFAULT_ROUTING_KEY}}
         return Queues.with_defaults(queues,
-                                    self.app.conf.CELERY_DEFAULT_EXCHANGE,
-                                    self.app.conf.CELERY_DEFAULT_EXCHANGE_TYPE)
+                                    conf.CELERY_DEFAULT_EXCHANGE,
+                                    conf.CELERY_DEFAULT_EXCHANGE_TYPE)
 
     def Router(self, queues=None, create_missing=None):
         """Returns the current task router."""
