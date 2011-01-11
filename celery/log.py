@@ -10,7 +10,7 @@ from multiprocessing import util as mputil
 
 from celery import signals
 from celery.app import app_or_default
-from celery.utils import LOG_LEVELS
+from celery.utils import LOG_LEVELS, isatty
 from celery.utils.compat import LoggerAdapter
 from celery.utils.patch import ensure_process_aware_logger
 from celery.utils.term import colored
@@ -63,6 +63,20 @@ class Logging(object):
         self.app = app
         self.loglevel = self.app.conf.CELERYD_LOG_LEVEL
         self.format = self.app.conf.CELERYD_LOG_FORMAT
+        self.colorize = self.app.conf.CELERYD_LOG_COLOR
+
+    def supports_color(self, logfile=None):
+        if self.app.IS_WINDOWS:
+            # Windows does not support ANSI color codes.
+            return False
+        if self.colorize is None:
+            # Only use color if there is no active log file
+            # and stderr is an actual terminal.
+            return logfile is None and isatty(sys.stderr)
+        return self.colorize
+
+    def colored(self, logfile=None):
+        return colored(enabled=self.supports_color(logfile))
 
     def get_task_logger(self, loglevel=None, name=None):
         logger = logging.getLogger(name or "celery.task.default")
@@ -74,7 +88,8 @@ class Logging(object):
             format=None, colorize=None, **kwargs):
         loglevel = loglevel or self.loglevel
         format = format or self.format
-        colorize = self.app.either("CELERYD_LOG_COLOR", colorize)
+        if colorize is None:
+            colorize = self.supports_color(logfile)
 
         if self.__class__._setup:
             return
@@ -136,7 +151,8 @@ class Logging(object):
         """
         loglevel = loglevel or self.loglevel
         format = format or self.format
-        colorize = self.app.either("CELERYD_LOG_COLOR", colorize)
+        if colorize is None:
+            colorize = self.supports_color(logfile)
 
         if not root or self.app.conf.CELERYD_HIJACK_ROOT_LOGGER:
             return self._setup_logger(self.get_default_logger(loglevel, name),
@@ -157,7 +173,8 @@ class Logging(object):
         """
         loglevel = loglevel or self.loglevel
         format = format or self.format
-        colorize = self.app.either("CELERYD_LOG_COLOR", colorize)
+        if colorize is None:
+            colorize = self.supports_color(logfile)
 
         if task_kwargs is None:
             task_kwargs = {}

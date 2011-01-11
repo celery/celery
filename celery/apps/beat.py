@@ -8,7 +8,6 @@ from celery import beat
 from celery import platforms
 from celery.app import app_or_default
 from celery.utils import get_full_cls_name, LOG_LEVELS
-from celery.utils import term
 from celery.utils.timeutils import humanize_seconds
 
 STARTUP_INFO_FMT = """
@@ -38,7 +37,7 @@ class Beat(object):
         self.scheduler_cls = scheduler_cls or app.conf.CELERYBEAT_SCHEDULER
         self.max_interval = max_interval
         self.socket_timeout = socket_timeout
-        self.colored = term.colored(enabled=app.conf.CELERYD_LOG_COLOR)
+        self.colored = app.log.colored(self.logfile)
         self.redirect_stdouts = (redirect_stdouts or
                                  app.conf.CELERY_REDIRECT_STDOUTS)
         self.redirect_stdouts_level = (redirect_stdouts_level or

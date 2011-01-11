@@ -16,7 +16,7 @@ from datetime import timedelta
 from celery import routes
 from celery.app.defaults import DEFAULTS
 from celery.datastructures import ConfigurationView
-from celery.utils import instantiate, isatty, cached_property, maybe_promise
+from celery.utils import instantiate, cached_property, maybe_promise
 from celery.utils.functional import wraps
 
 
@@ -218,11 +218,6 @@ class BaseApp(object):
                     "exchange_type": c["CELERY_DEFAULT_EXCHANGE_TYPE"],
                     "binding_key": c["CELERY_DEFAULT_ROUTING_KEY"]}}
         c["CELERY_ROUTES"] = routes.prepare(c.get("CELERY_ROUTES") or {})
-        if c.get("CELERYD_LOG_COLOR") is None:
-            c["CELERYD_LOG_COLOR"] = not c["CELERYD_LOG_FILE"] and \
-                                        isatty(sys.stderr)
-        if self.IS_WINDOWS:  # windows console doesn't support ANSI colors
-            c["CELERYD_LOG_COLOR"] = False
         if isinstance(c["CELERY_TASK_RESULT_EXPIRES"], int):
             c["CELERY_TASK_RESULT_EXPIRES"] = timedelta(
                     seconds=c["CELERY_TASK_RESULT_EXPIRES"])

@@ -122,8 +122,7 @@ class test_App(unittest.TestCase):
 
     def test_Windows_log_color_disabled(self):
         self.app.IS_WINDOWS = True
-        self.app.config_from_object(Object(CELERYD_LOG_COLOR=True))
-        self.assertFalse(self.app.conf.CELERYD_LOG_COLOR)
+        self.assertFalse(self.app.log.supports_color())
 
     def test_task_result_expires_converted_to_timedelta(self):
         self.app.config_from_object(Object(CELERY_TASK_RESULT_EXPIRES=100))

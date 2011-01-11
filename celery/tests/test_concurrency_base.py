@@ -1,3 +1,5 @@
+import os
+
 from itertools import count
 
 from celery.concurrency.base import apply_target, BasePool
@@ -24,10 +26,13 @@ class test_BasePool(unittest.TestCase):
                      callback=gen_callback("callback"),
                      accept_callback=gen_callback("accept_callback"))
 
-        self.assertDictEqual(scratch,
-                             {"accept_callback": (0, ()),
+        self.assertDictContainsSubset({
                               "target": (1, (8, 16)),
-                              "callback": (2, (42, ))})
+                              "callback": (2, (42, ))}, scratch)
+        pa1 = scratch["accept_callback"]
+        self.assertEqual(0, pa1[0])
+        self.assertEqual(pa1[1][0], os.getpid())
+        self.assertTrue(pa1[1][1])
 
         # No accept callback
         scratch.clear()

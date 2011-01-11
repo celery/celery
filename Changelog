@@ -100,7 +100,7 @@ Important Notes
 
 * The magic keyword arguments are now available as `task.request`
 
-    This is called *the context*.  Thread-local storage is used, and the
+    This is called *the context*.  Using thread-local storage the
     context contains state that is related to the current request.
 
     It is mutable and you can add custom attributes that will only be seen
