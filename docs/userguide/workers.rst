@@ -231,7 +231,7 @@ Rate limits
 -----------
 
 Example changing the rate limit for the `myapp.mytask` task to accept
-200 tasks a minute on all servers:
+200 tasks a minute on all servers::
 
     >>> from celery.task.control import rate_limit
     >>> rate_limit("myapp.mytask", "200/m")
@@ -247,6 +247,39 @@ destination hostname::
     This won't affect workers with the
     :setting:`CELERY_DISABLE_RATE_LIMITS` setting on. To re-enable rate limits
     then you have to restart the worker.
+
+.. control:: revoke
+
+Revoking tasks
+--------------
+
+All worker nodes keeps a memory of revoked task ids, either in-memory or
+persistent on disk (see :ref:`worker-persistent-revokes`).
+
+When a worker receives a revoke request it will skip executing
+the task, but it won't terminate an already executing task unless
+the `terminate` option is set.
+
+If `terminate` is set the worker child process processing the task
+will be terminated.  The default signal sent is `TERM`, but you can
+specify this using the `signal` argument.  Signal can be the uppercase name
+of any signal defined in the :mod:`signal` module in the Python Standard
+Library.
+
+Terminating a task also revokes it.
+
+**Example**
+
+::
+
+    >>> from celery.task.control import revoke
+    >>> revoke("d9078da5-9915-40a0-bfa1-392c7bde42ed")
+
+    >>> revoke("d9078da5-9915-40a0-bfa1-392c7bde42ed",
+    ...        terminate=True)
+
+    >>> revoke("d9078da5-9915-40a0-bfa1-392c7bde42ed",
+    ...        terminate=True, signal="SIGKILL")
 
 .. control:: shutdown
 
