@@ -16,6 +16,7 @@ from datetime import datetime
 from celery.backends.base import BaseDictBackend
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.serialization import pickle
+from celery.utils.timeutils import maybe_timedelta
 from celery import states
 
 
@@ -52,7 +53,8 @@ class CassandraBackend(BaseDictBackend):
                             name="celery.backends.cassandra")
 
         self.result_expires = kwargs.get("result_expires") or \
-                                self.app.conf.CELERY_TASK_RESULT_EXPIRES
+                                maybe_timedelta(
+                                    self.app.conf.CELERY_TASK_RESULT_EXPIRES)
 
         if not pycassa:
             raise ImproperlyConfigured(

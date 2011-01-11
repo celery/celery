@@ -10,6 +10,7 @@ from celery import states
 from celery.backends.base import BaseDictBackend
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.serialization import pickle
+from celery.utils.timeutils import maybe_timedelta
 
 
 class Bunch:
@@ -34,7 +35,8 @@ class MongoBackend(BaseDictBackend):
 
         """
         self.result_expires = kwargs.get("result_expires") or \
-                                self.app.conf.CELERY_TASK_RESULT_EXPIRES
+                                maybe_timedelta(
+                                    self.app.conf.CELERY_TASK_RESULT_EXPIRES)
 
         if not pymongo:
             raise ImproperlyConfigured(

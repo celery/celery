@@ -215,9 +215,6 @@ class BaseApp(object):
                     "exchange": c["CELERY_DEFAULT_EXCHANGE"],
                     "exchange_type": c["CELERY_DEFAULT_EXCHANGE_TYPE"],
                     "binding_key": c["CELERY_DEFAULT_ROUTING_KEY"]}}
-        if isinstance(c["CELERY_TASK_RESULT_EXPIRES"], int):
-            c["CELERY_TASK_RESULT_EXPIRES"] = timedelta(
-                    seconds=c["CELERY_TASK_RESULT_EXPIRES"])
 
         # Install backend cleanup periodic task.
         c["CELERYBEAT_SCHEDULE"] = maybe_promise(c["CELERYBEAT_SCHEDULE"])

@@ -124,19 +124,6 @@ class test_App(unittest.TestCase):
         self.app.IS_WINDOWS = True
         self.assertFalse(self.app.log.supports_color())
 
-    def test_task_result_expires_converted_to_timedelta(self):
-        self.app.config_from_object(Object(CELERY_TASK_RESULT_EXPIRES=100))
-        self.assertEqual(self.app.conf.CELERY_TASK_RESULT_EXPIRES,
-                         timedelta(seconds=100))
-
-        self.assertIn("celery.backend_cleanup",
-                      self.app.conf.CELERYBEAT_SCHEDULE)
-
-    def test_backend_cleanup_not_installed(self):
-        self.app.config_from_object(Object(CELERY_TASK_RESULT_EXPIRES=None))
-        self.assertNotIn("celery.backend_cleanup",
-                         self.app.conf.CELERYBEAT_SCHEDULE)
-
     def test_compat_setting_CARROT_BACKEND(self):
         self.app.config_from_object(Object(CARROT_BACKEND="set_by_us"))
         self.assertEqual(self.app.conf.BROKER_BACKEND, "set_by_us")
