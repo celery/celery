@@ -80,7 +80,8 @@ Available Fields
 
     Execution options (:class:`dict`).
 
-    This can be any argument supported by :meth:`~celery.execute.apply_async`,
+    This can be any argument supported by
+    :meth:`~celery.task.base.Task.apply_async`,
     e.g. `exchange`, `routing_key`, `expires`, and so on.
 
 * `relative`

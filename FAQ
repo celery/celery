@@ -56,10 +56,14 @@ Is Celery dependent on pickle?
 **Answer:** No.
 
 Celery can support any serialization scheme and has support for JSON/YAML and
-Pickle by default. You can even send one task using pickle, and another one
-with JSON seamlessly, this is because every task is associated with a
-content-type. The default serialization scheme is pickle because it's the most
-used, and it has support for sending complex objects as task arguments.
+Pickle by default. And as every task is associated with a content type, you
+can even send one task using pickle, and another using JSON.
+
+The default serialization format is pickle simply because it is
+convenient as it supports sending complex Python objects as task arguments.
+
+If you need to communicate with other languages you should change
+to a serialization format that is suitable for that.
 
 You can set a global default serializer, the default serializer for a
 particular Task, or even what serializer to use when sending a single task
@@ -84,8 +88,11 @@ Do I have to use AMQP/RabbitMQ?
 
 **Answer**: No.
 
-You can also use Redis or an SQL database, see `Using other
-queues`_.
+You can also use Redis, Beanstalk, CouchDB, MongoDB or an SQL database,
+see `Using other queues`_.
+
+These "virtual transports" may have limited broadcast and event functionality.
+For example remote control commands only works with AMQP and Redis.
 
 .. _`Using other queues`:
     http://ask.github.com/celery/tutorials/otherqueues.html
@@ -247,16 +254,25 @@ Why won't my Periodic Task run?
 How do I discard all waiting tasks?
 ------------------------------------
 
-**Answer:** Use :func:`~celery.task.control.discard_all`, like this:
+**Answer:** You can use celeryctl to purge all configured task queues::
 
-    >>> from celery.task.control import discard_all
-    >>> discard_all()
-    1753
+        $ celeryctl purge
+
+or programatically::
+
+        >>> from celery.task.control import discard_all
+        >>> discard_all()
+        1753
+
+If you only want to purge messages from a specific queue
+you have to use the AMQP API or the :program:`camqadm` utility::
+
+    $ camqadm queue.purge <queue name>
 
 The number 1753 is the number of messages deleted.
 
 You can also start :mod:`~celery.bin.celeryd` with the
-:option:`--discard` argument which will accomplish the same thing.
+:option:`--purge` argument, to purge messages when the worker starts.
 
 .. _faq-messages-left-after-purge:
 
@@ -420,11 +436,12 @@ What features are not supported when not using an AMQP broker?
 This is an incomplete list of features not available when
 using the virtual transports:
 
-    * The `header` exchange type.
+    * Remote control commands (supported only by Redis).
 
-    * immediate
+    * Monitoring with events may not work in all virtual transports.
 
-    * mandatory
+    * The `header` and `fanout` exchange types
+        (`fanout` is supported by Redis).
 
 .. _faq-tasks:
 
@@ -567,8 +584,9 @@ See :doc:`userguide/routing` for more information.
 Can I change the interval of a periodic task at runtime?
 --------------------------------------------------------
 
-**Answer**: Yes. You can override `PeriodicTask.is_due` or turn
-`PeriodicTask.run_every` into a property:
+**Answer**: Yes. You can use the Django database scheduler, or you can
+override `PeriodicTask.is_due` or turn `PeriodicTask.run_every` into a
+property:
 
 .. code-block:: python
 

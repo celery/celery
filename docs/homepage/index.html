@@ -67,19 +67,24 @@ pageTracker._trackPageview();
         It is focused on real-time operation, but supports scheduling as well.</p>
 
         <p>The execution units, called tasks, are executed concurrently on a single or
-        more worker servers. Tasks can execute asynchronously (in the background) or synchronously
+        more worker servers using multiprocessing, <a href="http://eventlet.net">Eventlet</a>,
+        or <a href="http://gevent.org">gevent</a>. Tasks can execute asynchronously (in the background) or synchronously
         (wait until ready).</p>
 
-        <p>Celery is already used in production to process millions of tasks a day.</p>
+        <p>Celery is used in production systems to process millions of tasks a day.</p>
 
         <p>Celery is written in Python, but the protocol can be implemented in any
         language.
         It can also <a href="http://celeryq.org/docs/userguide/remote-tasks.html"
         >operate with other languages</a> using webhooks.</p>
 
-        <p>The recommended message broker is <a href="http://rabbitmq.com/">RabbitMQ</a>,
-        but support for <a href="http://redisdb.com/">Redis</a> and databases
-        is also available.</p>
+    <p>The recommended message broker is <a href="http://rabbitmq.com/">RabbitMQ</a>,
+        but limited support for <a href="http://redisdb.com/">Redis</a>, <a
+            href="http://kr.github.com/beanstalkd/">Beanstalk</a>, <a
+            href="http://www.mongodb.org/">MongoDB</a>, <a
+            href="http://couchdb.apache.org/">CouchDB</a>, and databases
+        (using <a href="http://www.sqlalchemy.org/">SQLAlchemy</a> or the <a
+            href="http://djangoproject.com">Django ORM</a>) is also available.</p>
 
         Celery is easy to integrate with Django, Pylons and Flask, using
         the <a href="http://pypi.python.org/pypi/django-celery">django-celery</a>,

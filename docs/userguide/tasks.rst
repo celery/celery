@@ -40,11 +40,12 @@ Task options are added as arguments to `task`:
 
 .. _task-request-info:
 
-Task Request Info
-=================
+Context
+=======
 
-The `task.request` attribute contains information about
-the task being executed, and contains the following attributes:
+`task.request` contains information and state related
+the currently excuting task, and must always contain the following
+attributes:
 
 :id: The unique id of the executing task.
 

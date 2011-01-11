@@ -156,8 +156,6 @@ issue tracker.
 * Flask-Celery: http://github.com/ask/flask-celery/issues
 * Celery-Pylons: http://bitbucket.org/ianschenck/celery-pylons/issues
 * Kombu: http://github.com/ask/kombu/issues
-* Carrot: http://github.com/ask/carrot/issues
-* Ghettoq: http://github.com/ask/ghettoq/issues
 
 If you are unsure of the origin of the bug you can ask the
 :ref:`mailing-list`, or just use the Celery issue tracker.

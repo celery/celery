@@ -14,16 +14,18 @@ distributed message passing.  It is focused on real-time operation,
 but supports scheduling as well.
 
 The execution units, called tasks, are executed concurrently on one or
-more worker nodes.  Tasks can execute asynchronously (in the background) or
-synchronously (wait until ready).
+more worker nodes using multiprocessing, `Eventlet`_ or `gevent`_.  Tasks can
+execute asynchronously (in the background) or synchronously
+(wait until ready).
 
-Celery is already used in production to process millions of tasks a day.
+Celery is used in production systems to process millions of tasks a day.
 
 Celery is written in Python, but the protocol can be implemented in any
 language.  It can also `operate with other languages using webhooks`_.
 
-The recommended message broker is `RabbitMQ`_, but support for `Redis`_ and
-databases (`SQLAlchemy`_) is also available.
+The recommended message broker is `RabbitMQ`_, but limited support for
+`Redis`_, `Beanstalk`_, `MongoDB`_, `CouchDB`_ and
+databases (using `SQLAlchemy`_ or the `Django ORM`_) is also available.
 
 Celery is easy to integrate with `Django`_, `Pylons`_ and `Flask`_, using
 the `django-celery`_, `celery-pylons`_ and `Flask-Celery`_ add-on packages.
@@ -31,7 +33,13 @@ the `django-celery`_, `celery-pylons`_ and `Flask-Celery`_ add-on packages.
 .. _`RabbitMQ`: http://www.rabbitmq.com/
 .. _`Redis`: http://code.google.com/p/redis/
 .. _`SQLAlchemy`: http://www.sqlalchemy.org/
-.. _`Django`: http://djangoproject.org/
+.. _`Django`: http://djangoproject.com/
+.. _`Django ORM`: http://djangoproject.com/
+.. _`Eventlet`: http://eventlet.net/
+.. _`gevent`: http://gevent.org/
+.. _`Beanstalk`: http://kr.github.com/beanstalkd/
+.. _`MongoDB`: http://mongodb.org/
+.. _`CouchDB`: http://couchdb.apache.org/
 .. _`Pylons`: http://pylonshq.com/
 .. _`Flask`: http://flask.pocoo.org/
 .. _`django-celery`: http://pypi.python.org/pypi/django-celery
@@ -52,8 +60,8 @@ This is a high level overview of the architecture.
 
 .. image:: http://cloud.github.com/downloads/ask/celery/Celery-Overview-v4.jpg
 
-The broker delivers tasks to the worker servers.
-A worker server is a networked machine running `celeryd`.  This can be one or
+The broker delivers tasks to the worker nodes.
+A worker node is a networked machine running `celeryd`.  This can be one or
 more machines depending on the workload.
 
 The result of the task can be stored for later retrieval (called its
@@ -89,33 +97,37 @@ Features
 ========
 
     +-----------------+----------------------------------------------------+
-    | Messaging       | Supported brokers include `RabbitMQ`_, `Stomp`_,   |
-    |                 | `Redis`_, and most common SQL databases.           |
+    | Messaging       | Supported brokers include `RabbitMQ`_, `Redis`_,   |
+    |                 | `Beanstalk`_, `MongoDB`_, `CouchDB`_, and popular  |
+    |                 | SQL databases.                                     |
     +-----------------+----------------------------------------------------+
-    | Robust          | Using `RabbitMQ`, celery survives most error       |
+    | Fault-tolerant  | Excellent configurable error recovery when using   |
+    |                 | `RabbitMQ`, ensures your tasks are never lost.     |
     |                 | scenarios, and your tasks will never be lost.      |
     +-----------------+----------------------------------------------------+
     | Distributed     | Runs on one or more machines. Supports             |
-    |                 | `clustering`_ when used in combination with        |
-    |                 | `RabbitMQ`_. You can set up new workers without    |
-    |                 | central configuration (e.g. use your dads laptop   |
-    |                 | while the queue is temporarily overloaded).        |
+    |                 | broker `clustering`_ and `HA`_ when used in        |
+    |                 | combination with `RabbitMQ`_.  You can set up new  |
+    |                 | workers without central configuration (e.g. use    |
+    |                 | your grandma's laptop to help if the queue is      |
+    |                 | temporarily congested).                            |
     +-----------------+----------------------------------------------------+
-    | Concurrency     | Tasks are executed in parallel using the           |
-    |                 | `multiprocessing` module.                          |
+    | Concurrency     | Concurrency is achieved by using multiprocessing,  |
+    |                 | `Eventlet`_, `gevent` or a mix of these.           |
     +-----------------+----------------------------------------------------+
     | Scheduling      | Supports recurring tasks like cron, or specifying  |
     |                 | an exact date or countdown for when after the task |
     |                 | should be executed.                                |
     +-----------------+----------------------------------------------------+
-    | Performance     | Able to execute tasks while the user waits.        |
+    | Latency         | Low latency means you are able to execute tasks    |
+    |                 | *while the user is waiting*.                       |
     +-----------------+----------------------------------------------------+
     | Return Values   | Task return values can be saved to the selected    |
     |                 | result store backend. You can wait for the result, |
     |                 | retrieve it later, or ignore it.                   |
     +-----------------+----------------------------------------------------+
     | Result Stores   | Database, `MongoDB`_, `Redis`_, `Tokyo Tyrant`,    |
-    |                 | `AMQP`_ (high performance).                        |
+    |                 | `Cassandra`, or `AMQP`_ (message notification).    |
     +-----------------+----------------------------------------------------+
     | Webhooks        | Your tasks can also be HTTP callbacks, enabling    |
     |                 | cross-language communication.                      |
@@ -125,11 +137,15 @@ Features
     |                 | Rate limits can be set for each task type, or      |
     |                 | globally for all.                                  |
     +-----------------+----------------------------------------------------+
-    | Routing         | Using AMQP you can route tasks arbitrarily to      |
-    |                 | different workers.                                 |
+    | Routing         | Using AMQP's flexible routing model you can route  |
+    |                 | tasks to different workers, or select different    |
+    |                 | message topologies, by configuration or even at    |
+    |                 | runtime.                                           |
     +-----------------+----------------------------------------------------+
-    | Remote-control  | You can rate limit and delete (revoke) tasks       |
-    |                 | remotely.                                          |
+    | Remote-control  | Worker nodes can be controlled from remote by      |
+    |                 | using broadcast messaging.  A range of built-in    |
+    |                 | commands exist in addition to the ability to       |
+    |                 | easily define your own. (AMQP/Redis only)          |
     +-----------------+----------------------------------------------------+
     | Monitoring      | You can capture everything happening with the      |
     |                 | workers in real-time by subscribing to events.     |
@@ -160,18 +176,15 @@ Features
     |                 | enabling the ability to poll task status using     |
     |                 | Ajax.                                              |
     +-----------------+----------------------------------------------------+
-    | Error e-mails   | Can be configured to send e-mails to the           |
+    | Error E-mails   | Can be configured to send e-mails to the           |
     |                 | administrators when tasks fails.                   |
-    +-----------------+----------------------------------------------------+
-    | Supervised      | Pool workers are supervised and automatically      |
-    |                 | replaced if they crash.                            |
     +-----------------+----------------------------------------------------+
 
 
 .. _`clustering`: http://www.rabbitmq.com/clustering.html
+.. _`HA`: http://www.rabbitmq.com/pacemaker.html
 .. _`AMQP`: http://www.amqp.org/
 .. _`Stomp`: http://stomp.codehaus.org/
-.. _`MongoDB`: http://www.mongodb.org/
 .. _`Tokyo Tyrant`: http://tokyocabinet.sourceforge.net/
 
 .. _celery-documentation:

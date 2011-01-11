@@ -20,34 +20,36 @@ Important Notes
 
 * Carrot has been replaced with `Kombu`_
 
-    Kombu is the next generation messaging framework for Python.
+    Kombu is the next generation messaging framework for Python,
+    fixing several flaws present in Carrot that was hard to fix
+    without breaking backwards compatibility.
 
-    It fixes a lot of obvious flaws with Carrot that was impossible
-    to fix without breaking backward compatibility, and also it adds,
+    Also it adds:
 
     * First-class support for virtual transports; Redis, Django ORM,
-      SQLAlchemy, Beanstalk, MongoDB and CouchDB.
-    * consistent error handling with introspection,
-    * the ability to ensure that an operation is performed by gracefully
+      SQLAlchemy, Beanstalk, MongoDB, CouchDB and in-memory.
+    * Consistent error handling with introspection,
+    * The ability to ensure that an operation is performed by gracefully
       handling connection and channel errors,
-    * message compression (zlib, bzip2, or custom compression schemes).
+    * Message compression (zlib, bzip2, or custom compression schemes).
 
     This means that `ghettoq` is no longer needed as the
     functionality it provided is already available in Celery by default.
     The virtual transports are also more feature complete with support
     for exchanges (direct and topic).  The Redis transport even supports
-    fanout exchanges which means it handles remote control commands.
+    fanout exchanges so it is able to perform worker remote control
+    commands.
 
 .. _`Kombu`: http://pypi.python.org/pypi/kombu
 
-* Magic keyword arguments deprecated.
+* Magic keyword arguments pending deprecation.
 
     The magic keyword arguments were responsibile for many problems
-    and quirks, notably problems with tasks and decorators, and
-    of course making task keyword arguments unexpectedly special.
+    and quirks: notably issues with tasks and decorators, and name
+    collisions in keyword arguments for the unaware.
 
     It wasn't easy to find a way to deprecate the magic keyword arguments,
-    but we think we have found a solution that makes sense and will not
+    but we think this is a solution that makes sense and it will not
     have any adverse effects on existing code.
 
     The path to a magic keyword argument free world is:
@@ -93,9 +95,16 @@ Important Notes
         a :class:`DeprecationWarning`, and in version 3.0 the
         :mod:`celery.decorators` module will be removed and no longer exist.
 
+        Similarly, the `task.accept_magic_kwargs` attribute will no
+        longer have any effect starting from version 3.0.
+
 * The magic keyword arguments are now available as `task.request`
 
-    This is called *the context*, and is stored in thread-local storage.
+    This is called *the context*.  Thread-local storage is used, and the
+    context contains state that is related to the current request.
+
+    It is mutable and you can add custom attributes that will only be seen
+    by the current task request.
 
     The following context attributes are always available:
 
@@ -113,7 +122,7 @@ Important Notes
     =====================================  ===================================
 
     In addition, the following methods now automatically uses the current
-    context, so you don't have to pass kwargs manually anymore:
+    context, so you don't have to pass `kwargs` manually anymore:
 
         * `task.retry`
         * `task.get_logger`
@@ -123,16 +132,23 @@ Important Notes
 
     This is great news for I/O-bound tasks!
 
-    The first alternative concurrency implementation is for `Eventlet`_,
-    but there is also an experimental `gevent`_ pool.
-
-    To change pool implementation you can use the :option:`-P|--pool` argument
-    to :program:`celeryd`, or change it globally using the
+    To change pool implementations you use the :option:`-P|--pool` argument
+    to :program:`celeryd`, or globally using the
     :setting:`CELERYD_POOL` setting.  This can be the full name of a class,
     or one of the following aliases: `processes`, `eventlet`, `gevent`.
 
     For more information please see the :ref:`concurrency-eventlet` section
     in the User Guide.
+
+    .. admonition:: Why not gevent?
+
+        For our first alternative concurrency implementation we have focused
+        on `Eventlet`_, but there is also an experimental `gevent`_ pool
+        available. This is missing some features, notably the ability to
+        schedule ETA tasks.
+
+        Hopefully the `gevent`_ support will be feature complete by
+        version 2.3, but this depends on user demand (and contributions).
 
 .. _`Eventlet`: http://eventlet.net
 .. _`gevent`: http://gevent.org
@@ -169,8 +185,15 @@ Important Notes
     restart workers when they go down (or use this information to optimize
     tasks/autoscaling).
 
-    The event exchange has been renamed from "celeryevent" to "celeryev" so it
-    does not collide with older versions.
+    .. note::
+
+        The event exchange has been renamed from "celeryevent" to "celeryev"
+        so it does not collide with older versions.
+
+        If you would like to remove the old exchange you can do so
+        by executing the following command::
+
+            $ camqadm exchange.delete celeryevent
 
 * `celeryd` now starts without configuration, and configuration can be
   specified directly on the command line.
@@ -193,21 +216,28 @@ Important Notes
 * Remote control commands are now provided by `kombu.pidbox`, the generic
   process mailbox.
 
-* `celery.worker.listener` has been renamed to `celery.worker.consumer`,
-  and `.CarrotListener` is now `.Consumer`.
+* Internal module `celery.worker.listener` has been renamed to
+  `celery.worker.consumer`, and `.CarrotListener` is now `.Consumer`.
 
 * Previously deprecated modules `celery.models` and
-  `celery.management.commands` has now been removed as per the deprecation
+  `celery.management.commands` have now been removed as per the deprecation
   timeline.
 
-* Removed `celery.task.RemoteExecuteTask` and accompanying functions:
-  `dmap`, `dmap_async`, and `execute_remote`.
+* [Security: Low severity] Removed `celery.task.RemoteExecuteTask` and
+    accompanying functions: `dmap`, `dmap_async`, and `execute_remote`.
 
     Executing arbitrary code using pickle is a potential security issue if
     someone gains unrestricted access to the message broker.
 
-    If you really need this functionality, then you can simply add this
-    manually.
+    If you really need this functionality, then you would have to add
+    this to your own project.
+
+* [Security: Low severity] The `stats` command no longer transmits the
+  broker password.
+
+    One would have needed an authenticated broker connection to receive
+    this password in the first place, but sniffing the password at the
+    wire level would have been possible if using unencrypted communication.
 
 .. _v220-news:
 
@@ -266,9 +296,10 @@ News
 
     Inspired by https://gist.github.com/737056
 
-* Can now terminate the worker process processing task remotely.
+* Can now remotely terminate/kill the worker process currently processing
+  a task.
 
-    The revoke remote control command now supports a `terminate` argument
+    The `revoke` remote control command now supports a `terminate` argument
     Default signal is `TERM`, but can be specified using the `signal`
     argument. Signal can be the uppercase name of any signal defined
     in the :mod:`signal` module in the Python Standard Library.
@@ -294,27 +325,30 @@ News
 
 * Improved implementations of `TaskSetResult.join` and `AsyncResult.wait`.
 
-   An `interval` keyword argument has been added to both so the
+   An `interval` keyword argument have been added to both so the
    polling interval can be specified (default interval is 0.5 seconds).
 
-    A `propagate` keyword argument has been added to `result.wait()`,
+    A `propagate` keyword argument have been added to `result.wait()`,
     errors will be returned instead of raised if this is set to False.
 
-    Pollingresults when using the database backend is probabably
-    not a good idea, at least you should increase the polling interval.
+    .. warning::
 
+        You should increase the polling interval when using the
+        database result backend, as frequent polling can result in high
+        database load.
 
-* Worker process PID is now sent with the task-accepted event.
+* The PID of the child worker process accepting a task is now sent as a field
+  with the `task-started` event.
 
-* The start time reported by the multiprocessing worker process is now used
-  when calculating task duration for better accuracy.
+* For better accuracy the start time reported by the multiprocessing worker
+  process is used when calculating task duration.
 
     Previously the time reported by the accept callback was used.
 
-* `celerybeat`: Now has built-in daemonization support using the `--detach`
+* `celerybeat`: New built-in daemonization support using the `--detach`
    option.
 
-* `celeryev`: Now has built-in daemonization support using the `--detach`
+* `celeryev`: New built-in daemonization support using the `--detach`
    option.
 
 * `TaskSet.apply_async`: Now supports custom publishers by using the
@@ -322,10 +356,11 @@ News
 
 * Added :setting:`CELERY_SEND_TASK_SENT_EVENT` setting.
 
-    If enabled an event will be sent out with every task, so monitors can
+    If enabled an event will be sent with every task, so monitors can
     track tasks before the workers receive them.
 
-* `celerybeat`: Now reuses the connection.
+* `celerybeat`: Now reuses the broker connection when applying
+   scheduled tasks.
 
 * The configuration module and loader to use can now be specified on
   the command line.
@@ -352,17 +387,10 @@ News
 
 * CentOS init script for :program:`celeryd` now available in `contrib/centos`.
 
-
-v220-fixes:
+.. _v220-fixes:
 
 Fixes
 -----
-
-* [Security] The `stats` command no longer transmits the broker password.
-
-    One would have needed an authenticated broker connection to receive
-    this password in the first place, but sniffing the password at the
-    wire level would have been possible if using unencrypted communication.
 
 * `celeryev` Curses Monitor: Improved resize handling and UI layout
   (Issue #274 + Issue #276)
@@ -394,7 +422,7 @@ Fixes
 
     This means we now rely completely on setuptools entrypoints.
 
-.. v220-experimental:
+.. _v220-experimental:
 
 Experimental
 ------------
