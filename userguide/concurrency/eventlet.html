@@ -1,0 +1,173 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Concurrency with Eventlet &mdash; Celery v2.2.0rc1 documentation</title>
+    <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.2.0rc1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
+    <script type="text/javascript" src="../../static/doctools.js"></script>
+    <link rel="top" title="Celery v2.2.0rc1 documentation" href="../../index.html" />
+    <link rel="up" title="Concurrency" href="index.html" />
+    <link rel="next" title="Configuration and defaults" href="../../configuration.html" />
+    <link rel="prev" title="Concurrency" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../../configuration.html" title="Configuration and defaults"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Concurrency"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Celery v2.2.0rc1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >User Guide</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Concurrency</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://celeryproject.org/docs/userguide/concurrency/eventlet.html">2.1</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="concurrency-with-eventlet">
+<span id="concurrency-eventlet"></span><h1>Concurrency with Eventlet<a class="headerlink" href="#concurrency-with-eventlet" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="introduction">
+<span id="eventlet-introduction"></span><h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference external" href="http://eventlet.net">Eventlet</a> homepage describes eventlet as,
+a concurrent networking library for Python that allows you to
+change how you run your code, not how you write it.</p>
+<blockquote>
+<ul class="simple">
+<li>It uses epoll or libevent for <a class="reference external" href="http://en.wikipedia.org/wiki/Asynchronous_I/O#Select.28.2Fpoll.29_loops">highly scalable non-blocking I/O</a>.</li>
+<li><a class="reference external" href="http://en.wikipedia.org/wiki/Coroutine">Coroutines</a> ensure that the developer uses a blocking style of
+programming that is similar to threading, but provide the benefits of
+non-blocking I/O.</li>
+<li>The event dispatch is implicit, which means you can easily use Eventlet
+from the Python interpreter, or as a small part of a larger application.</li>
+</ul>
+</blockquote>
+<p>Celery supports Eventlet as an alternative execution pool implementation.
+It is in some cases superior to multiprocessing, but you need to ensure
+your tasks do not perform any blocking calls, as this will halt all
+other operations in the worker.</p>
+<p>The multiprocessing pool can take use of many processes, but it is often
+limited to a few processes per CPU.  With eventlet you can efficiently spawn
+hundreds of concurrent couroutines.  In an informal test with a feed hub
+system the Eventlet pool could fetch and process hundreds of feeds every
+second, while the multiprocessing pool spent 14 seconds processing 100 feeds.
+But this is exactly the kind of application evented I/O is good for.
+You may want a a mix of both eventlet and multiprocessing workers,
+depending on the needs of your tasks.</p>
+</div>
+<div class="section" id="enabling-eventlet">
+<h2>Enabling Eventlet<a class="headerlink" href="#enabling-eventlet" title="Permalink to this headline">¶</a></h2>
+<p>You can enable the Eventlet pool by using the <cite>-P</cite> option to
+<strong class="program">celeryd</strong>:</p>
+<div class="highlight-python"><pre>$ celeryd -P eventlet -c 1000</pre>
+</div>
+</div>
+<div class="section" id="examples">
+<span id="eventlet-examples"></span><h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>See the <a class="reference external" href="https://github.com/ask/celery/tree/master/examples/eventlet">Eventlet examples</a> directory in the Celery distribution for
+some examples taking use of Eventlet support.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Concurrency</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../../configuration.html"
+                        title="next chapter">Configuration and defaults</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../sources/userguide/concurrency/eventlet.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../../configuration.html" title="Configuration and defaults"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Concurrency"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Celery v2.2.0rc1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >User Guide</a> &raquo;</li>
+          <li><a href="index.html" >Concurrency</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+    </div>
+  </body>
+</html>
