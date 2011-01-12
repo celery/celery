@@ -19,6 +19,6 @@ def CompatCelery(*args, **kwargs):
     return Celery(loader=os.environ.get("CELERY_LOADER", "default"))
 
 
-def current_app():
-    from celery.app import current_app
-    return current_app()
+if not os.environ.get("CELERY_NO_EVAL", False):
+    from celery.utils import LocalProxy, instantiate
+    current_app = LocalProxy(lambda: instantiate("celery.app.current_app"))

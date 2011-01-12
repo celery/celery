@@ -28,7 +28,10 @@ except ImportError:
     from setuptools.command.test import test
     from setuptools.command.install import install
 
+os.environ["CELERY_NO_EVAL"] = "yes"
 import celery as distmeta
+os.environ.pop("CELERY_NO_EVAL", None)
+sys.modules.pop("celery", None)
 
 
 def with_dist_not_in_path(fun):
