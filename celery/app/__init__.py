@@ -15,7 +15,7 @@ from inspect import getargspec
 
 from celery import registry
 from celery.app import base
-from celery.utils import instantiate
+from celery.utils import cached_property, instantiate
 from celery.utils.functional import wraps
 
 # Apps with the :attr:`~celery.app.base.BaseApp.set_as_current` attribute
@@ -105,7 +105,7 @@ class App(base.BaseApp):
             def _create_task_cls(fun):
                 options["app"] = self
                 options.setdefault("accept_magic_kwargs", False)
-                base = options.pop("base", None) or self.create_task_cls()
+                base = options.pop("base", None) or self.Task
 
                 @wraps(fun, assigned=("__module__", "__name__"))
                 def run(self, *args, **kwargs):
@@ -127,6 +127,11 @@ class App(base.BaseApp):
         if len(args) == 1 and callable(args[0]):
             return inner_create_task_cls(**options)(*args)
         return inner_create_task_cls(**options)
+
+    @cached_property
+    def Task(self):
+        """Default Task base class for this application."""
+        return self.create_task_cls()
 
     def __repr__(self):
         return "<Celery: %s:0x%x>" % (self.main or "__main__", id(self), )
