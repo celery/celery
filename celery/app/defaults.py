@@ -1,7 +1,5 @@
 from datetime import timedelta
 
-from celery.utils import promise
-
 DEFAULT_PROCESS_LOG_FMT = """
     [%(asctime)s: %(levelname)s/%(processName)s] %(message)s
 """.strip()
@@ -12,29 +10,21 @@ DEFAULT_TASK_LOG_FMT = " ".join("""
 """.strip().split())
 
 
-def str_to_bool(s):
-    s = s.lower()
-    if s in ("false", "no", "0"):
-        return False
-    if s in ("true", "yes", "1"):
-        return True
-    raise TypeError("%r can not be converted to type bool" % (s, ))
+def str_to_bool(s, table={"false": False, "no": False, "0": False,
+                          "true":  True, "yes": True,  "1": True}):
+    try:
+        return table[s.lower()]
+    except KeyError:
+        raise TypeError("%r can not be converted to type bool" % (s, ))
 
 
 class Option(object):
-    typemap = {"string": str,
-               "int": int,
-               "float": float,
-               "bool": str_to_bool,
-               "dict": dict,
-               "tuple": tuple}
+    typemap = dict(string=str, int=int, float=float,
+                   bool=str_to_bool, dict=dict, tuple=tuple)
 
     def __init__(self, default=None, *args, **kwargs):
         self.default = default
-        kwargs.setdefault("type", "string")
-        self.type = kwargs["type"]
-        self.args = args
-        self.kwargs = kwargs
+        self.type = kwargs.get("type") or "string"
 
     def to_python(self, value):
         return self.typemap[self.type](value)
@@ -58,7 +48,7 @@ NAMESPACES = {
         "ACKS_LATE": Option(False, type="bool"),
         "ALWAYS_EAGER": Option(False, type="bool"),
         "AMQP_TASK_RESULT_EXPIRES": Option(type="int"),
-        "AMQP_TASK_RESULT_CONNECTION_MAX": Option(type="int", default=1),
+        "AMQP_TASK_RESULT_CONNECTION_MAX": Option(1, type="int"),
         "BROADCAST_QUEUE": Option("celeryctl"),
         "BROADCAST_EXCHANGE": Option("celeryctl"),
         "BROADCAST_EXCHANGE_TYPE": Option("fanout"),
