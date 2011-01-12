@@ -80,9 +80,7 @@ class BaseApp(object):
         The config
 
         """
-        config = self.loader.cmdline_config_parser(argv, namespace)
-        for key, value in config.items():
-            self.conf[key] = value
+        self.conf.update(self.loader.cmdline_config_parser(argv, namespace))
 
     def send_task(self, name, args=None, kwargs=None, countdown=None,
             eta=None, task_id=None, publisher=None, connection=None,
@@ -193,7 +191,7 @@ class BaseApp(object):
                     close_connection()
         return _inner
 
-    def pre_config_merge(self, c):
+    def prepare_config(self, c):
         """Prepare configuration before it is merged with the defaults."""
         if not c.get("CELERY_RESULT_BACKEND"):
             rbackend = c.get("CELERY_BACKEND")
@@ -206,12 +204,10 @@ class BaseApp(object):
         return c
 
     def mail_admins(self, subject, body, fail_silently=False):
-        """Send an e-mail to the admins in conf.ADMINS."""
-        if not self.conf.ADMINS:
-            return
-        to = [admin_email for _, admin_email in self.conf.ADMINS]
-        return self.loader.mail_admins(subject, body, fail_silently,
-                                       to=to,
+        """Send an e-mail to the admins in the :setting:`ADMINS` setting."""
+        if self.conf.ADMINS:
+            to = [admin_email for _, admin_email in self.conf.ADMINS]
+            return self.loader.mail_admins(subject, body, fail_silently, to=to,
                                        sender=self.conf.SERVER_EMAIL,
                                        host=self.conf.EMAIL_HOST,
                                        port=self.conf.EMAIL_PORT,
@@ -244,24 +240,17 @@ class BaseApp(object):
 
     def _get_config(self):
         return ConfigurationView({},
-                [self.pre_config_merge(self.loader.conf), DEFAULTS])
+                [self.prepare_config(self.loader.conf), DEFAULTS])
 
     @cached_property
     def amqp(self):
-        """Sending/receiving messages.
-
-        See :class:`~celery.app.amqp.AMQP`.
-
-        """
+        """Sending/receiving messages.  See :class:`~celery.app.amqp.AMQP`."""
         return instantiate(self.amqp_cls, app=self)
 
     @cached_property
     def backend(self):
-        """Storing/retreiving task state.
-
-        See :class:`~celery.backend.base.BaseBackend`.
-
-        """
+        """Storing/retreiving task state.  See
+        :class:`~celery.backend.base.BaseBackend`."""
         return self._get_backend()
 
     @cached_property
@@ -271,20 +260,13 @@ class BaseApp(object):
 
     @cached_property
     def control(self):
-        """Controlling worker nodes.
-
-        See :class:`~celery.task.control.Control`.
-
-        """
+        """Controlling worker nodes.  See
+        :class:`~celery.task.control.Control`."""
         return instantiate(self.control_cls, app=self)
 
     @cached_property
     def events(self):
-        """Sending/receiving events.
-
-        See :class:`~celery.events.Events`.
-
-        """
+        """Sending/receiving events.  See :class:`~celery.events.Events`. """
         return instantiate(self.events_cls, app=self)
 
     @cached_property
@@ -295,9 +277,5 @@ class BaseApp(object):
 
     @cached_property
     def log(self):
-        """Logging utilities.
-
-        See :class:`~celery.log.Logging`.
-
-        """
+        """Logging utilities.  See :class:`~celery.log.Logging`."""
         return instantiate(self.log_cls, app=self)

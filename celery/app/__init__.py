@@ -15,13 +15,13 @@ from inspect import getargspec
 
 from celery import registry
 from celery.app import base
+from celery.utils import instantiate
 from celery.utils.functional import wraps
-
-_tls = threading.local()
 
 # Apps with the :attr:`~celery.app.base.BaseApp.set_as_current` attribute
 # sets this, so it will always contain the last instantiated app,
 # and is the default app returned by :func:`app_or_default`.
+_tls = threading.local()
 _tls.current_app = None
 
 
@@ -51,19 +51,17 @@ class App(base.BaseApp):
 
     def Worker(self, **kwargs):
         """Create new :class:`~celery.apps.worker.Worker` instance."""
-        from celery.apps.worker import Worker
-        return Worker(app=self, **kwargs)
+        return instantiate("celery.apps.worker.Worker", app=self, **kwargs)
 
     def Beat(self, **kwargs):
         """Create new :class:`~celery.apps.beat.Beat` instance."""
-        from celery.apps.beat import Beat
-        return Beat(app=self, **kwargs)
+        return instantiate("celery.apps.beat.Beat", app=self, **kwargs)
 
     def TaskSet(self, *args, **kwargs):
         """Create new :class:`~celery.task.sets.TaskSet`."""
         from celery.task.sets import TaskSet
         kwargs["app"] = self
-        return TaskSet(*args, **kwargs)
+        return TaskSet(*args, app=self, **kwargs)
 
     def worker_main(self, argv=None):
         """Run :program:`celeryd` using `argv`.  Uses :data:`sys.argv`
@@ -131,7 +129,7 @@ class App(base.BaseApp):
         return inner_create_task_cls(**options)
 
     def __repr__(self):
-        return "<Celery: 0x%x>" % (id(self), )
+        return "<Celery: %s:0x%x>" % (self.main or "__main__", id(self), )
 
     def __reduce__(self):
         # Reduce only pickles the configuration changes,
@@ -149,7 +147,7 @@ class App(base.BaseApp):
 
 
 def _unpickle_app(cls, main, changes, loader, backend, amqp,
-                  events, log, control):
+        events, log, control):
     app = cls(main, loader=loader, backend=backend, amqp=amqp,
                     events=events, log=log, control=control,
                     set_as_current=False)
@@ -161,7 +159,7 @@ def _unpickle_app(cls, main, changes, loader, backend, amqp,
 default_loader = os.environ.get("CELERY_LOADER") or "default"
 
 #: Global fallback app instance.
-default_app = App(loader=default_loader, set_as_current=False)
+default_app = App("default", loader=default_loader, set_as_current=False)
 
 
 def current_app():
