@@ -1,13 +1,7 @@
 from celery.exceptions import QueueNotFound
-from celery.utils import instantiate, firstmethod, mpromise
+from celery.utils import firstmethod, instantiate, lpmerge, mpromise
 
 _first_route = firstmethod("route_for_task")
-
-
-def merge(a, b):
-    """Like `dict(a, **b)` except it will keep values from `a`, if the value
-    in `b` is :const:`None`."""
-    return dict(a, **dict((k, v) for k, v in b.iteritems() if v is not None))
 
 
 class MapRoute(object):
@@ -27,47 +21,43 @@ class Router(object):
     def __init__(self, routes=None, queues=None, create_missing=False,
             app=None):
         from celery.app import app_or_default
+        self.app = app_or_default(app)
         if queues is None:
             queues = {}
         if routes is None:
             routes = []
-        self.app = app_or_default(app)
         self.queues = queues
         self.routes = routes
         self.create_missing = create_missing
 
     def route(self, options, task, args=(), kwargs={}):
-        # Expand "queue" keys in options.
-        options = self.expand_destination(options)
+        options = self.expand_destination(options)  # expands 'queue'
         if self.routes:
             route = self.lookup_route(task, args, kwargs)
-            if route:
-                # Also expand "queue" keys in route.
-                return merge(self.expand_destination(route), options)
+            if route:  # expands 'queue' in route.
+                return lpmerge(self.expand_destination(route), options)
         return options
 
     def expand_destination(self, route):
-        # The route can simply be a queue name,
-        # this is convenient for direct exchanges.
+        # Route can be a queue name: convenient for direct exchanges.
         if isinstance(route, basestring):
             queue, route = route, {}
         else:
-            # For topic exchanges you can use the defaults from a queue
-            # definition, and override e.g. just the routing_key.
+            # can use defaults from configured queue, but override specific
+            # things (like the routing_key): great for topic exchanges.
             queue = route.pop("queue", None)
 
-        if queue:
+        if queue:  # expand config from configured queue.
             try:
                 dest = dict(self.queues[queue])
             except KeyError:
-                if self.create_missing:
-                    dest = self.app.amqp.queues.add(queue, queue, queue)
-                else:
+                if not self.create_missing:
                     raise QueueNotFound(
-                        "Queue '%s' is not defined in CELERY_QUEUES" % queue)
+                        "Queue %r is not defined in CELERY_QUEUES" % queue)
+                dest = self.app.amqp.queues.add(queue, queue, queue)
+            # routing_key and binding_key are synonyms.
             dest.setdefault("routing_key", dest.get("binding_key"))
-            return merge(dest, route)
-
+            return lpmerge(dest, route)
         return route
 
     def lookup_route(self, task, args=None, kwargs=None):
@@ -84,6 +74,8 @@ def prepare(routes):
             return mpromise(instantiate, route)
         return route
 
+    if routes is None:
+        return ()
     if not isinstance(routes, (list, tuple)):
         routes = (routes, )
     return map(expand_route, routes)

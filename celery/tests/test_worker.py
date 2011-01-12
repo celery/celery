@@ -59,8 +59,8 @@ class MyKombuConsumer(MainConsumer):
 class MockNode(object):
     commands = []
 
-    def handle_message(self, message_data, message):
-        self.commands.append(message.pop("command", None))
+    def handle_message(self, body, message):
+        self.commands.append(body.pop("command", None))
 
 
 class MockEventDispatcher(object):

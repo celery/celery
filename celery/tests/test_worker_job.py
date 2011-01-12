@@ -335,9 +335,9 @@ class test_TaskRequest(unittest.TestCase):
             mytask.acks_late = False
 
     def test_from_message_invalid_kwargs(self):
-        message_data = dict(task="foo", id=1, args=(), kwargs="foo")
-        self.assertRaises(InvalidTaskError, TaskRequest.from_message, None,
-                message_data)
+        body = dict(task="foo", id=1, args=(), kwargs="foo")
+        self.assertRaises(InvalidTaskError,
+                          TaskRequest.from_message, None, body)
 
     def test_on_timeout(self):
 

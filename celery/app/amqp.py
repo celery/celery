@@ -15,7 +15,7 @@ from kombu import BrokerConnection
 from kombu.connection import Resource
 from kombu import compat as messaging
 
-from celery import routes
+from celery import routes as _routes
 from celery import signals
 from celery.utils import gen_unique_id, textindent, cached_property
 from celery.utils import promise, maybe_promise
@@ -23,9 +23,8 @@ from celery.utils.compat import UserDict
 
 #: List of known options to a Kombu producers send method.
 #: Used to extract the message related options out of any `dict`.
-MSG_OPTIONS = ("mandatory", "priority", "immediate",
-               "routing_key", "serializer", "delivery_mode",
-               "compression")
+MSG_OPTIONS = ("mandatory", "priority", "immediate", "routing_key",
+                "serializer", "delivery_mode", "compression")
 
 #: Human readable queue declaration.
 QUEUE_FORMAT = """
@@ -33,12 +32,7 @@ QUEUE_FORMAT = """
 binding:%(binding_key)s
 """
 
-#: Broker connection info -> URI
-BROKER_FORMAT = """\
-%(transport)s://%(userid)s@%(hostname)s%(port)s%(virtual_host)s\
-"""
-
-#: Set of exchange names that has already been declared.
+#: Set of exchange names that have already been declared.
 _exchanges_declared = set()
 
 
@@ -253,14 +247,13 @@ class AMQP(object):
     _queues_declared = False
 
     #: Cached and prepared routing table.
-    _routes = None
+    _rtable = None
 
     def __init__(self, app):
         self.app = app
 
     def flush_routes(self):
-        self._routes = routes.prepare(
-                        self.app.conf.get("CELERY_ROUTES") or {})
+        self._rtable = _routes.prepare(self.app.conf.CELERY_ROUTES)
 
     def Queues(self, queues):
         """Create new :class:`Queues` instance, using queue defaults
@@ -271,17 +264,14 @@ class AMQP(object):
                         "exchange": conf.CELERY_DEFAULT_EXCHANGE,
                         "exchange_type": conf.CELERY_DEFAULT_EXCHANGE_TYPE,
                         "binding_key": conf.CELERY_DEFAULT_ROUTING_KEY}}
-        return Queues.with_defaults(queues,
-                                    conf.CELERY_DEFAULT_EXCHANGE,
-                                    conf.CELERY_DEFAULT_EXCHANGE_TYPE)
+        return Queues.with_defaults(queues, conf.CELERY_DEFAULT_EXCHANGE,
+                                            conf.CELERY_DEFAULT_EXCHANGE_TYPE)
 
     def Router(self, queues=None, create_missing=None):
         """Returns the current task router."""
-        return routes.Router(self.routes,
-                             queues or self.queues,
-                             self.app.either("CELERY_CREATE_MISSING_QUEUES",
-                                             create_missing),
-                             app=self.app)
+        return _routes.Router(self.routes, queues or self.queues,
+                              self.app.either("CELERY_CREATE_MISSING_QUEUES",
+                                              create_missing), app=self.app)
 
     def TaskConsumer(self, *args, **kwargs):
         """Returns consumer for a single task queue."""
@@ -331,24 +321,6 @@ class AMQP(object):
         q = self.app.conf.CELERY_DEFAULT_QUEUE
         return q, self.queues[q]
 
-    def get_broker_info(self, broker_connection=None):
-        """Returns information about the current broker connection
-        as a `dict`."""
-        if broker_connection is None:
-            broker_connection = self.app.broker_connection()
-        info = broker_connection.info()
-        port = info["port"]
-        if port:
-            info["port"] = ":%s" % (port, )
-        vhost = info["virtual_host"]
-        if not vhost.startswith("/"):
-            info["virtual_host"] = "/" + vhost
-        return info
-
-    def format_broker_info(self, info=None):
-        """Get message broker connection info string for log dumps."""
-        return BROKER_FORMAT % self.get_broker_info()
-
     @cached_property
     def queues(self):
         """Queue name⇒ declaration mapping."""
@@ -360,6 +332,6 @@ class AMQP(object):
 
     @property
     def routes(self):
-        if self._routes is None:
+        if self._rtable is None:
             self.flush_routes()
-        return self._routes
+        return self._rtable

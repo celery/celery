@@ -205,9 +205,9 @@ class EventReceiver(object):
             except socket.error:
                 pass
 
-    def _receive(self, message_data, message):
-        type = message_data.pop("type").lower()
-        self.process(type, create_event(type, message_data))
+    def _receive(self, body, message):
+        type = body.pop("type").lower()
+        self.process(type, create_event(type, body))
 
 
 class Events(object):

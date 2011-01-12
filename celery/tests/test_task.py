@@ -10,7 +10,7 @@ from celery.task import task as task_dec
 from celery.exceptions import RetryTaskError
 from celery.execute import send_task
 from celery.result import EagerResult
-from celery.task.schedules import crontab, crontab_parser
+from celery.schedules import crontab, crontab_parser
 from celery.utils import timeutils
 from celery.utils import gen_unique_id
 from celery.utils.functional import wraps

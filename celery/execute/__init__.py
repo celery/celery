@@ -1,25 +1,16 @@
-from celery.app import app_or_default
-from celery.registry import tasks
+from celery import current_app
+from celery.utils import deprecated
+
+send_task = current_app.send_task
 
 
+@deprecated(removal="2.3", alternative="Use task.apply_async() instead.")
 def apply_async(task, *args, **kwargs):
-    """Deprecated. See :meth:`celery.task.base.BaseTask.apply_async`."""
-    # FIXME Deprecate!
+    """*[Deprecated]* Use `task.apply_async()`"""
     return task.apply_async(*args, **kwargs)
 
 
+@deprecated(removal="2.3", alternative="Use task.apply() instead.")
 def apply(task, *args, **kwargs):
-    """Deprecated. See :meth:`celery.task.base.BaseTask.apply`."""
-    # FIXME Deprecate!
+    """*[Deprecated]* Use `task.apply()`"""
     return task.apply(*args, **kwargs)
-
-
-def send_task(*args, **kwargs):
-    """Deprecated. See :meth:`celery.app.App.send_task`."""
-    # FIXME Deprecate!
-    return app_or_default().send_task(*args, **kwargs)
-
-
-def delay_task(task_name, *args, **kwargs):
-    # FIXME Deprecate!
-    return tasks[task_name].apply_async(args, kwargs)

@@ -62,6 +62,3 @@ class TestInfo(unittest.TestCase):
         celery = Celery(set_as_current=False)
         celery.amqp.queues = QUEUES
         self.assertEqual(celery.amqp.queues.format(), QUEUE_FORMAT)
-
-    def test_broker_info(self):
-        app_or_default().amqp.format_broker_info()

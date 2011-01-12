@@ -17,7 +17,7 @@ import warnings
 from celery import task as _task
 
 
-DEPRECATION_TEXT = """\
+warnings.warn("""
 The `celery.decorators` module and the magic keyword arguments
 are pending deprecation and will be deprecated in 2.4, then removed
 in 3.0.
@@ -25,16 +25,16 @@ in 3.0.
 `task.request` should be used instead of magic keyword arguments,
 and `celery.task.task` used instead of `celery.decorators.task`.
 
-"""
+See the 2.2 Changelog for more information.
+
+""")
 
 
 def task(*args, **kwargs):  # ✞
-    warnings.warn(PendingDeprecationWarning(DEPRECATION_TEXT))
     kwargs.setdefault("accept_magic_kwargs", True)
     return _task.task(*args, **kwargs)
 
 
 def periodic_task(*args, **kwargs):  # ✞
-    warnings.warn(PendingDeprecationWarning(DEPRECATION_TEXT))
     kwargs.setdefault("accept_magic_kwargs", True)
     return _task.periodic_task(*args, **kwargs)

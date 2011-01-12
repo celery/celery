@@ -133,7 +133,7 @@ class test_SharedCounter(unittest.TestCase):
         self.assertEqual(int(c), -10)
 
     def test_repr(self):
-        self.assertIn("<SharedCounter:", repr(SharedCounter(10)))
+        self.assertIn("10", repr(SharedCounter(10)))
 
 
 class test_LimitedSet(unittest.TestCase):

@@ -15,7 +15,7 @@ from datetime import timedelta
 
 from celery.app.defaults import DEFAULTS
 from celery.datastructures import ConfigurationView
-from celery.utils import instantiate, cached_property, maybe_promise
+from celery.utils import cached_property, instantiate, lpmerge, maybe_promise
 from celery.utils.functional import wraps
 
 
@@ -224,14 +224,10 @@ class BaseApp(object):
                 return value
         return self.conf.get(default_key)
 
-    def merge(self, a, b):
+    def merge(self, l, r):
         """Like `dict(a, **b)` except it will keep values from `a`
         if the value in `b` is :const:`None`."""
-        b = dict(b)
-        for key, value in a.items():
-            if b.get(key) is None:
-                b[key] = value
-        return b
+        return lpmerge(l, r)
 
     def _get_backend(self):
         from celery.backends import get_backend_cls

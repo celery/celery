@@ -144,8 +144,8 @@ class ConfigurationView(AttributeDictMixin):
 class ExceptionInfo(object):
     """Exception wrapping an exception and its traceback.
 
-    :param exc_info: The exception tuple info as returned by
-        :func:`traceback.format_exception`.
+    :param exc_info: The exception info tuple as returned by
+        :func:`sys.exc_info`.
 
     """
 
@@ -156,7 +156,7 @@ class ExceptionInfo(object):
     traceback = None
 
     def __init__(self, exc_info):
-        type_, exception, tb = exc_info
+        _, exception, _ = exc_info
         self.exception = exception
         self.traceback = ''.join(traceback.format_exception(*exc_info))
 
@@ -164,10 +164,7 @@ class ExceptionInfo(object):
         return self.traceback
 
     def __repr__(self):
-        return "<%s.%s: %s>" % (
-                self.__class__.__module__,
-                self.__class__.__name__,
-                str(self.exception))
+        return "<ExceptionInfo: %r>" % (self.exception, )
 
 
 def consume_queue(queue):
@@ -176,7 +173,7 @@ def consume_queue(queue):
 
     The iterator stops as soon as the queue raises :exc:`Queue.Empty`.
 
-    Example
+    *Examples*
 
         >>> q = Queue()
         >>> map(q.put, range(4))
@@ -251,7 +248,7 @@ class SharedCounter(object):
         return self._update_value()
 
     def __repr__(self):
-        return "<SharedCounter: int(%s)>" % str(int(self))
+        return repr(int(self))
 
 
 class LimitedSet(object):
@@ -293,7 +290,7 @@ class LimitedSet(object):
                 if not self.expires or time.time() > when + self.expires:
                     try:
                         self.pop_value(value)
-                    except TypeError:                   # pragma: no cover
+                    except TypeError:  # pragma: no cover
                         continue
             break
 
@@ -354,10 +351,7 @@ class TokenBucket(object):
 
     .. admonition:: Thread safety
 
-        This implementation is not thread safe.
-
-    :param fill_rate: Refill rate in tokens/second.
-    :keyword capacity: Max number of tokens.  Default is 1.
+        This implementation may not be thread safe.
 
     """
 

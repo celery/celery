@@ -99,7 +99,7 @@ class Beat(object):
     def startup_info(self, beat):
         scheduler = beat.get_scheduler(lazy=True)
         return STARTUP_INFO_FMT % {
-            "conninfo": self.app.amqp.format_broker_info(),
+            "conninfo": self.app.broker_connection().as_uri(),
             "logfile": self.logfile or "[stderr]",
             "loglevel": LOG_LEVELS[self.loglevel],
             "loader": get_full_cls_name(self.app.loader.__class__),

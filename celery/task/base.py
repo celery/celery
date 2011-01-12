@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-"
 import sys
 import threading
 import warnings
@@ -10,32 +10,19 @@ from celery.execute.trace import TaskTrace
 from celery.registry import tasks, _unpickle_task
 from celery.result import EagerResult
 from celery.schedules import maybe_schedule
-from celery.utils import mattrgetter, gen_unique_id, fun_takes_kwargs
+from celery.utils import deprecated, mattrgetter, gen_unique_id, \
+                         fun_takes_kwargs
 from celery.utils.functional import wraps
 from celery.utils.timeutils import timedelta_seconds
 
 from celery.task import sets
 
-IMPORT_DEPRECATION_TEXT = """
-Importing %(symbol)s from `celery.task.base` is deprecated,
-and is scheduled for removal in 2.4.
-
-Please use `from celery.task import %(symbol)s` instead.
-
-"""
-
-
-def __deprecated_import(fun):
-
-    @wraps(fun)
-    def _inner(*args, **kwargs):
-        warnings.warn(DeprecationWarning(
-            IMPORT_DEPRECATION_TEXT % {"symbol": fun.__name__, }))
-        return fun(*args, **kwargs)
-
-    return _inner
-TaskSet = __deprecated_import(sets.TaskSet)  # ✟
-subtask = __deprecated_import(sets.subtask)  # ✟
+TaskSet = deprecated("Importing TaskSet from celery.task.base",
+                     alternative="Use celery.task.TaskSet instead.",
+                     removal="2.4")(sets.TaskSet)
+subtask = deprecated("Importing subtask from celery.task.base",
+                     alternative="Use celery.task.subtask instead.",
+                     removal="2.4")(sets.subtask)
 
 extract_exec_options = mattrgetter("queue", "routing_key",
                                    "exchange", "immediate",
@@ -249,39 +236,13 @@ class BaseTask(object):
         return (_unpickle_task, (self.name, ), None)
 
     def run(self, *args, **kwargs):
-        """The body of the task executed by the worker.
-
-        The following standard keyword arguments are reserved and is
-        automatically passed by the worker if the function/method
-        supports them:
-
-            * `task_id`
-            * `task_name`
-            * `task_retries`
-            * `task_is_eager`
-            * `logfile`
-            * `loglevel`
-            * `delivery_info`
-
-        To take these default arguments, the task can either list the ones
-        it wants explicitly or just take an arbitrary list of keyword
-        arguments (\*\*kwargs).
-
-        Magic keyword arguments can be disabled using the
-        :attr:`accept_magic_kwargs` flag.  The information can then
-        be found in the :attr:`request` attribute.
-
-        """
+        """The body of the task executed by workers."""
         raise NotImplementedError("Tasks must define the run method.")
 
     @classmethod
     def get_logger(self, loglevel=None, logfile=None, propagate=False,
             **kwargs):
-        """Get task-aware logger object.
-
-        See :func:`celery.log.setup_task_logger`.
-
-        """
+        """Get task-aware logger object."""
         if loglevel is None:
             loglevel = self.request.loglevel
         if logfile is None:
@@ -303,12 +264,16 @@ class BaseTask(object):
 
         :rtype :class:`~celery.app.amqp.TaskPublisher`:
 
-        Please be sure to close the AMQP connection after you're done
-        with this object.  Example::
+        Please be sure to close the connection after use::
 
             >>> publisher = self.get_publisher()
             >>> # ... do something with publisher
             >>> publisher.connection.close()
+
+        The connection can also be used as a context::
+
+            >>> with self.get_publisher() as publisher:
+            ...     # ... do something with publisher
 
         """
         if exchange is None:
@@ -329,8 +294,9 @@ class BaseTask(object):
 
         .. warning::
 
-            Please be sure to close the AMQP connection when you're done
-            with this object.  Example::
+            If you don't specify a connection, one will automatically
+            be established for you, in that case you need to close this
+            connection after use::
 
                 >>> consumer = self.get_consumer()
                 >>> # do something with consumer
@@ -345,8 +311,9 @@ class BaseTask(object):
 
     @classmethod
     def delay(self, *args, **kwargs):
-        """Shortcut to :meth:`apply_async` giving star arguments, but without
-        options.
+        """Star argument version of :meth:`apply_async`.
+
+        Does not support the extra options enabled by :meth:`apply_async`.
 
         :param \*args: positional arguments passed on to the task.
         :param \*\*kwargs: keyword arguments passed on to the task.
@@ -361,7 +328,7 @@ class BaseTask(object):
             eta=None, task_id=None, publisher=None, connection=None,
             connect_timeout=None, router=None, expires=None, queues=None,
             **options):
-        """Run a task asynchronously by the celery daemon(s).
+        """Apply tasks asynchronously by sending a message.
 
         :keyword args: The positional arguments to pass on to the
                        task (a :class:`list` or :class:`tuple`).
@@ -767,7 +734,7 @@ class PeriodicTask(Task):
 
         *REQUIRED* Defines how often the task is run (its interval),
         it can be a :class:`~datetime.timedelta` object, a
-        :class:`~celery.task.schedules.crontab` object or an integer
+        :class:`~celery.schedules.crontab` object or an integer
         specifying the time in seconds.
 
     .. attribute:: relative
@@ -791,7 +758,7 @@ class PeriodicTask(Task):
         ...         logger.info("Execute every 30 seconds")
 
         >>> from celery.task import PeriodicTask
-        >>> from celery.task.schedules import crontab
+        >>> from celery.schedules import crontab
 
         >>> class EveryMondayMorningTask(PeriodicTask):
         ...     run_every = crontab(hour=7, minute=30, day_of_week=1)

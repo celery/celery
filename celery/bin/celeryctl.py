@@ -225,10 +225,10 @@ class inspect(Command):
         if destination and isinstance(destination, basestring):
             destination = map(str.strip, destination.split(","))
 
-        def on_reply(message_data):
+        def on_reply(body):
             c = self.colored
-            node = message_data.keys()[0]
-            reply = message_data[node]
+            node = body.keys()[0]
+            reply = body[node]
             status, preply = self.prettify(reply)
             self.say("->", c.cyan(node, ": ") + status, indent(preply))
 

@@ -262,7 +262,7 @@ class TaskRequest(object):
             self._store_errors = self.task.store_errors_even_if_ignored
 
     @classmethod
-    def from_message(cls, message, message_data, on_ack=noop, **kw):
+    def from_message(cls, message, body, on_ack=noop, **kw):
         """Create request from a task message.
 
         :raises UnknownTaskError: if the message does not describe a task,
@@ -273,17 +273,17 @@ class TaskRequest(object):
         delivery_info = dict((key, _delivery_info.get(key))
                                 for key in WANTED_DELIVERY_INFO)
 
-        kwargs = message_data["kwargs"]
+        kwargs = body["kwargs"]
         if not hasattr(kwargs, "items"):
             raise InvalidTaskError("Task keyword arguments is not a mapping.")
 
-        return cls(task_name=message_data["task"],
-                   task_id=message_data["id"],
-                   args=message_data["args"],
+        return cls(task_name=body["task"],
+                   task_id=body["id"],
+                   args=body["args"],
                    kwargs=kwdict(kwargs),
-                   retries=message_data.get("retries", 0),
-                   eta=maybe_iso8601(message_data.get("eta")),
-                   expires=maybe_iso8601(message_data.get("expires")),
+                   retries=body.get("retries", 0),
+                   eta=maybe_iso8601(body.get("eta")),
+                   expires=maybe_iso8601(body.get("expires")),
                    on_ack=on_ack,
                    delivery_info=delivery_info,
                    **kw)

@@ -7,6 +7,7 @@ import importlib
 import logging
 import threading
 import traceback
+import warnings
 
 from inspect import getargspec
 from itertools import islice
@@ -15,12 +16,49 @@ from pprint import pprint
 from kombu.utils import gen_unique_id, rpartition
 
 from celery.utils.compat import StringIO
-from celery.utils.functional import partial
+from celery.utils.functional import partial, wraps
 
 
 LOG_LEVELS = dict(logging._levelNames)
 LOG_LEVELS["FATAL"] = logging.FATAL
 LOG_LEVELS[logging.FATAL] = "FATAL"
+
+PENDING_DEPRECATION_FMT = """
+    %(description)s is scheduled for deprecation in \
+    version %(deprecation)s and removal in version v%(removal)s. \
+    %(alternative)s
+"""
+
+DEPRECATION_FMT = """
+    %(description)s is deprecated and scheduled for removal in
+    version %(removal)s. %(alternative)s
+"""
+
+
+def deprecated(description=None, deprecation=None, removal=None,
+        alternative=None):
+
+    def _inner(fun):
+
+        @wraps(fun)
+        def __inner(*args, **kwargs):
+            ctx = {"description": description or get_full_cls_name(fun),
+                   "deprecation": deprecation, "removal": removal,
+                   "alternative": alternative}
+            if deprecation is not None:
+                w = PendingDeprecationWarning(PENDING_DEPRECATION_FMT % ctx)
+            else:
+                w = DeprecationWarning(DEPRECATION_FMT % ctx)
+            warnings.warn(w)
+            return fun(*args, **kwargs)
+        return __inner
+    return _inner
+
+
+def lpmerge(L, R):
+    """Left precedent dictionary merge.  Keeps values from `l`, if the value
+    in `r` is :const:`None`."""
+    return dict(L, **dict((k, v) for k, v in R.iteritems() if v is not None))
 
 
 class promise(object):

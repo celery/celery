@@ -55,12 +55,14 @@ def find_distribution_modules(name=__name__, file=__file__):
                     yield ".".join([package, filename])[:-3]
 
 
-def import_all_modules(name=__name__, file=__file__):
+def import_all_modules(name=__name__, file=__file__,
+        skip=["celery.decorators"]):
     for module in find_distribution_modules(name, file):
-        try:
-            import_module(module)
-        except ImportError:
-            pass
+        if module not in skip:
+            try:
+                import_module(module)
+            except ImportError:
+                pass
 
 
 if os.environ.get("COVER_ALL_MODULES") or "--with-coverage3" in sys.argv:

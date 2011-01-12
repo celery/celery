@@ -246,6 +246,35 @@ News
 
 * The internal module `celery.task.builtins` has been removed.
 
+* The module `celery.task.schedules` is deprecated, and
+  `celery.schedules` should be used instead.
+
+    For example if you have::
+
+        from celery.task.schedules import crontab
+
+    You should replace that with::
+
+        from celery.schedules import crontab
+
+    The module needs to be renamed because it must be possible
+    to import schedules without importing the `celery.task` module.
+
+* The following functions have been deprecated and is scheduled for
+  removed in version 2.3:
+
+    * `celery.execute.apply_async`
+
+        Use `task.apply_async()` instead.
+
+    * `celery.execute.apply`
+
+        Use `task.apply()` instead.
+
+    * `celery.execute.delay_task`
+
+        Use `registry.tasks[name].delay()` instead.
+
 * Importing `TaskSet` from `celery.task.base` is now deprecated.
 
     You should use::
@@ -2322,7 +2351,7 @@ News
 
     .. code-block:: python
 
-        from celery.task.schedules import crontab
+        from celery.schedules import crontab
         from celery.decorators import periodic_task
 
         @periodic_task(run_every=crontab(hour=7, minute=30))

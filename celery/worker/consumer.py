@@ -292,47 +292,47 @@ class Consumer(object):
             state.task_reserved(task)
             self.ready_queue.put(task)
 
-    def on_control(self, message, message_data):
+    def on_control(self, body, message):
         try:
-            self.pidbox_node.handle_message(message, message_data)
+            self.pidbox_node.handle_message(body, message)
         except KeyError, exc:
             self.logger.error("No such control command: %s" % exc)
         except Exception, exc:
             self.logger.error(
                 "Error occurred while handling control command: %r\n%r" % (
-                    exc, traceback.format_exc()))
+                    exc, traceback.format_exc()), exc_info=sys.exc_info())
 
     def apply_eta_task(self, task):
         state.task_reserved(task)
         self.ready_queue.put(task)
         self.qos.decrement_eventually()
 
-    def receive_message(self, message_data, message):
+    def receive_message(self, body, message):
         """The callback called when a new message is received. """
 
         # Handle task
-        if message_data.get("task"):
+        if body.get("task"):
             def ack():
                 try:
                     message.ack()
                 except self.connection_errors, exc:
                     self.logger.critical(
                             "Couldn't ack %r: message:%r reason:%r" % (
-                                message.delivery_tag, message_data, exc))
+                                message.delivery_tag, body, exc))
 
             try:
-                task = TaskRequest.from_message(message, message_data, ack,
+                task = TaskRequest.from_message(message, body, ack,
                                                 app=self.app,
                                                 logger=self.logger,
                                                 hostname=self.hostname,
                                                 eventer=self.event_dispatcher)
             except NotRegistered, exc:
-                self.logger.error("Unknown task ignored: %s: %s" % (
-                        str(exc), message_data), exc_info=sys.exc_info())
+                self.logger.error("Unknown task ignored: %r Body->%r" % (
+                        exc, body), exc_info=sys.exc_info())
                 message.ack()
             except InvalidTaskError, exc:
                 self.logger.error("Invalid task ignored: %s: %s" % (
-                        str(exc), message_data), exc_info=sys.exc_info())
+                        str(exc), body), exc_info=sys.exc_info())
                 message.ack()
             else:
                 self.on_task(task)
@@ -340,7 +340,7 @@ class Consumer(object):
 
         warnings.warn(RuntimeWarning(
             "Received and deleted unknown message. Wrong destination?!? \
-             the message was: %s" % message_data))
+             the message was: %s" % body))
         message.ack()
 
     def maybe_conn_error(self, fun):
@@ -477,7 +477,7 @@ class Consumer(object):
     def info(self):
         conninfo = {}
         if self.connection:
-            conninfo = self.app.amqp.get_broker_info(self.connection)
+            conninfo = self.connection.info()
             conninfo.pop("password", None)  # don't send password.
         return {"broker": conninfo,
                 "prefetch_count": self.qos.next}
