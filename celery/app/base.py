@@ -34,7 +34,7 @@ class BaseApp(object):
 
     def __init__(self, main=None, loader=None, backend=None,
             amqp=None, events=None, log=None, control=None,
-            set_as_current=True):
+            set_as_current=True, accept_magic_kwargs=False):
         self.main = main
         self.amqp_cls = amqp or self.amqp_cls
         self.backend_cls = backend or self.backend_cls
@@ -43,6 +43,7 @@ class BaseApp(object):
         self.log_cls = log or self.log_cls
         self.control_cls = control or self.control_cls
         self.set_as_current = set_as_current
+        self.accept_magic_kwargs = accept_magic_kwargs
         self.on_init()
 
     def on_init(self):

@@ -3,7 +3,7 @@ import sys
 import threading
 import warnings
 
-from celery.app import app_or_default
+from celery import current_app
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
 from celery.execute.trace import TaskTrace
@@ -91,6 +91,9 @@ class TaskType(type):
             tasks.register(task_cls)
         task = tasks[task_name].__class__
         return task
+
+    def __repr__(cls):
+        return "<class Task of %s>" % (cls.app, )
 
 
 class BaseTask(object):
@@ -723,7 +726,7 @@ def create_task_cls(app, **kwargs):
         accept_magic_kwargs = kwargs.get("accept_magic_kwargs", False)
 
     return Task
-Task = create_task_cls(app_or_default(), accept_magic_kwargs=True)
+Task = current_app.Task
 
 
 class PeriodicTask(Task):
@@ -790,7 +793,7 @@ class PeriodicTask(Task):
     options = None
 
     def __init__(self):
-        app = app_or_default()
+        app = current_app
         if not hasattr(self, "run_every"):
             raise NotImplementedError(
                     "Periodic tasks must have a run_every attribute")

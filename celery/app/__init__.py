@@ -47,7 +47,8 @@ class App(base.BaseApp):
         """Creates a base task class using default configuration
         taken from this app."""
         from celery.task.base import create_task_cls
-        return create_task_cls(app=self)
+        return create_task_cls(app=self,
+                               accept_magic_kwargs=self.accept_magic_kwargs)
 
     def Worker(self, **kwargs):
         """Create new :class:`~celery.apps.worker.Worker` instance."""
@@ -148,14 +149,16 @@ class App(base.BaseApp):
                                 self.amqp_cls,
                                 self.events_cls,
                                 self.log_cls,
-                                self.control_cls))
+                                self.control_cls,
+                                self.accept_magic_kwargs))
 
 
 def _unpickle_app(cls, main, changes, loader, backend, amqp,
-        events, log, control):
+        events, log, control, accept_magic_kwargs):
     app = cls(main, loader=loader, backend=backend, amqp=amqp,
                     events=events, log=log, control=control,
-                    set_as_current=False)
+                    set_as_current=False,
+                    accept_magic_kwargs=accept_magic_kwargs)
     app.conf.update(changes)
     return app
 
@@ -164,7 +167,8 @@ def _unpickle_app(cls, main, changes, loader, backend, amqp,
 default_loader = os.environ.get("CELERY_LOADER") or "default"
 
 #: Global fallback app instance.
-default_app = App("default", loader=default_loader, set_as_current=False)
+default_app = App("default", loader=default_loader,
+                  set_as_current=False, accept_magic_kwargs=True)
 
 
 def current_app():
