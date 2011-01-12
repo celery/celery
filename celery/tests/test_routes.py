@@ -93,7 +93,7 @@ class test_lookup_route(unittest.TestCase):
                                        "routing_key": "testq",
                                        "immediate": False},
                                        route)
-        self.assertNotIn("queue", route)
+        self.assertIn("queue", route)
 
     @with_queues(foo=a_queue, bar=b_queue)
     def test_expand_destaintion_string(self):

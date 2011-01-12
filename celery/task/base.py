@@ -259,7 +259,7 @@ class BaseTask(object):
 
     @classmethod
     def get_publisher(self, connection=None, exchange=None,
-            connect_timeout=None, exchange_type=None):
+            connect_timeout=None, exchange_type=None, **options):
         """Get a celery task message publisher.
 
         :rtype :class:`~celery.app.amqp.TaskPublisher`:
@@ -284,7 +284,8 @@ class BaseTask(object):
         return self.app.amqp.TaskPublisher(connection=connection,
                                            exchange=exchange,
                                            exchange_type=exchange_type,
-                                           routing_key=self.routing_key)
+                                           routing_key=self.routing_key,
+                                           **options)
 
     @classmethod
     def get_consumer(self, connection=None, connect_timeout=None):

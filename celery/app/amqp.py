@@ -35,6 +35,9 @@ binding:%(binding_key)s
 #: Set of exchange names that have already been declared.
 _exchanges_declared = set()
 
+#: Set of queue names that have already been declared.
+_queues_declared = set()
+
 
 def extract_msg_options(options, keep=MSG_OPTIONS):
     """Extracts known options to `basic_publish` from a dict,
@@ -125,26 +128,36 @@ class Queues(UserDict):
 
 
 class TaskPublisher(messaging.Publisher):
-    auto_declare = False
+    auto_declare = True
     retry = False
     retry_policy = None
 
     def __init__(self, *args, **kwargs):
+        self.app = kwargs.pop("app")
         self.retry = kwargs.pop("retry", self.retry)
         self.retry_policy = kwargs.pop("retry_policy",
                                         self.retry_policy or {})
         super(TaskPublisher, self).__init__(*args, **kwargs)
 
     def declare(self):
-        if self.exchange.name not in _exchanges_declared:
+        if self.exchange.name and \
+                self.exchange.name not in _exchanges_declared:
             super(TaskPublisher, self).declare()
             _exchanges_declared.add(self.exchange.name)
 
     def delay_task(self, task_name, task_args=None, task_kwargs=None,
             countdown=None, eta=None, task_id=None, taskset_id=None,
             expires=None, exchange=None, exchange_type=None,
-            event_dispatcher=None, retry=None, retry_policy=None, **kwargs):
+            event_dispatcher=None, retry=None, retry_policy=None,
+            queue=None, **kwargs):
         """Send task message."""
+
+        if queue and queue not in _queues_declared:
+            options = self.app.queues[queue]
+            entity = messaging.entry_to_queue(queue, **options)
+            entity(self.channel).declare()
+            _exchanges_declared.add(entity.exchange.name)
+            _queues_declared.add(entity.name)
 
         task_id = task_id or gen_unique_id()
         task_args = task_args or []
@@ -243,9 +256,6 @@ class AMQP(object):
     Consumer = messaging.Consumer
     ConsumerSet = messaging.ConsumerSet
 
-    #: Set to :const:`True` when the configured queues has been declared.
-    _queues_declared = False
-
     #: Cached and prepared routing table.
     _rtable = None
 
@@ -294,17 +304,9 @@ class AMQP(object):
                     "routing_key": conf.CELERY_DEFAULT_ROUTING_KEY,
                     "serializer": conf.CELERY_TASK_SERIALIZER,
                     "retry": conf.CELERY_TASK_PUBLISH_RETRY,
-                    "retry_policy": conf.CELERY_TASK_PUBLISH_RETRY_POLICY}
-        publisher = TaskPublisher(*args,
-                                  **self.app.merge(defaults, kwargs))
-
-        # Make sure all queues are declared.
-        if not self._queues_declared:
-            self.get_task_consumer(publisher.connection).close()
-            self._queues_declared = True
-        publisher.declare()
-
-        return publisher
+                    "retry_policy": conf.CELERY_TASK_PUBLISH_RETRY_POLICY,
+                    "app": self}
+        return TaskPublisher(*args, **self.app.merge(defaults, kwargs))
 
     def PublisherPool(self, limit=None):
         return PublisherPool(limit=limit, app=self.app)

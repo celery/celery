@@ -54,7 +54,9 @@ class Router(object):
                 if not self.create_missing:
                     raise QueueNotFound(
                         "Queue %r is not defined in CELERY_QUEUES" % queue)
-                dest = self.app.amqp.queues.add(queue, queue, queue)
+                dest = dict(self.app.amqp.queues.add(queue, queue, queue))
+            # needs to be declared by publisher
+            dest["queue"] = queue
             # routing_key and binding_key are synonyms.
             dest.setdefault("routing_key", dest.get("binding_key"))
             return lpmerge(dest, route)

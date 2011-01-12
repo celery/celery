@@ -198,17 +198,6 @@ class TestTaskRetries(unittest.TestCase):
         self.assertEqual(RetryTask.iterations, 2)
 
 
-class MockPublisher(object):
-    _declared = False
-
-    def __init__(self, *args, **kwargs):
-        self.kwargs = kwargs
-        self.connection = app_or_default().broker_connection()
-
-    def declare(self):
-        self._declared = True
-
-
 class TestCeleryTasks(unittest.TestCase):
 
     def test_unpickle_task(self):
@@ -354,19 +343,13 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertTrue(dispatcher[0])
 
     def test_get_publisher(self):
-        from celery.app import amqp
-        old_pub = amqp.TaskPublisher
-        amqp.TaskPublisher = MockPublisher
-        try:
-            p = IncrementCounterTask.get_publisher(exchange="foo",
-                                                   connection="bar")
-            self.assertEqual(p.kwargs["exchange"], "foo")
-            self.assertTrue(p._declared)
-            p = IncrementCounterTask.get_publisher(exchange_type="fanout",
-                                                   connection="bar")
-            self.assertEqual(p.kwargs["exchange_type"], "fanout")
-        finally:
-            amqp.TaskPublisher = old_pub
+        connection = app_or_default().broker_connection()
+        p = IncrementCounterTask.get_publisher(connection, auto_declare=False,
+                                               exchange="foo")
+        self.assertEqual(p.exchange.name, "foo")
+        p = IncrementCounterTask.get_publisher(connection, auto_declare=False,
+                                               exchange_type="fanout")
+        self.assertEqual(p.exchange.type, "fanout")
 
     def test_update_state(self):
 
