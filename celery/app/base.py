@@ -10,6 +10,7 @@ Application Base Class.
 """
 import platform as _platform
 
+from copy import deepcopy
 from datetime import timedelta
 
 from celery.app.defaults import DEFAULTS
@@ -240,7 +241,7 @@ class BaseApp(object):
 
     def _get_config(self):
         return ConfigurationView({},
-                [self.prepare_config(self.loader.conf), DEFAULTS])
+                [self.prepare_config(self.loader.conf), deepcopy(DEFAULTS)])
 
     @cached_property
     def amqp(self):
