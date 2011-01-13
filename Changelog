@@ -369,6 +369,12 @@ News
 * The PID of the child worker process accepting a task is now sent as a field
   with the `task-started` event.
 
+* The following fields have been added to all events in the worker class:
+
+    * `sw_ident`: Name of worker software (e.g. celeryd).
+    * `sw_ver`: Software version (e.g. 2.2.0).
+    * `sw_sys`: Operating System (e.g. Linux, Windows, Darwin).
+
 * For better accuracy the start time reported by the multiprocessing worker
   process is used when calculating task duration.
 

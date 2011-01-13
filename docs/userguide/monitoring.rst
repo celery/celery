@@ -525,9 +525,13 @@ Task Events
 Worker Events
 ~~~~~~~~~~~~~
 
-* `worker-online(hostname, timestamp)`
+* `worker-online(hostname, timestamp, sw_ident, sw_ver, sw_sys)`
 
     The worker has connected to the broker and is online.
+
+    * `sw_ident`: Name of worker software (e.g. celeryd).
+    * `sw_ver`: Software version (e.g. 2.2.0).
+    * `sw_sys`: Operating System (e.g. Linux, Windows, Darwin).
 
 * `worker-heartbeat(hostname, timestamp)`
 

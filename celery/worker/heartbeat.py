@@ -1,6 +1,9 @@
+import platform
 import threading
 
 from time import time, sleep
+
+from celery import __version__
 
 
 class Heart(threading.Thread):
@@ -11,6 +14,9 @@ class Heart(threading.Thread):
                        Default is 2 minutes.
 
     """
+    software_info = {"sw_ident": "celeryd",
+                     "sw_ver": __version__,
+                     "sw_sys": platform.system()}
 
     #: Beats per minute.
     bpm = 0.5
@@ -28,8 +34,11 @@ class Heart(threading.Thread):
         self._state = "RUN"
         bpm = self.bpm
         dispatch = self.eventer.send
+        software_info = self.software_info
 
-        dispatch("worker-online")
+        dispatch("worker-online", **software_info)
+
+        sw_ident, sw_ver, sw_sys = self.software_info
 
         # We can't sleep all of the interval, because then
         # it takes 60 seconds (or value of interval) to shutdown
@@ -46,12 +55,12 @@ class Heart(threading.Thread):
 
             if not last_beat or now > last_beat + (60.0 / bpm):
                 last_beat = now
-                dispatch("worker-heartbeat")
+                dispatch("worker-heartbeat", **software_info)
             if self._shutdown.isSet():
                 break
             sleep(1)
 
-        dispatch("worker-offline")
+        dispatch("worker-offline", **software_info)
 
     def stop(self):
         """Gracefully shutdown the thread."""
