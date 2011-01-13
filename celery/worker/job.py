@@ -48,13 +48,11 @@ WANTED_DELIVERY_INFO = ("exchange", "routing_key", "consumer_tag", )
 
 class InvalidTaskError(Exception):
     """The task has invalid data or is not properly constructed."""
-    pass
 
 
 class AlreadyExecutedError(Exception):
     """Tasks can only be executed once, as they might change
     world-wide state."""
-    pass
 
 
 class WorkerTaskTrace(TaskTrace):
@@ -76,6 +74,11 @@ class WorkerTaskTrace(TaskTrace):
     :param task_id: The unique id of the task.
     :param args: List of positional args to pass on to the function.
     :param kwargs: Keyword arguments mapping to pass on to the function.
+
+    :keyword loader: Custom loader to use, if not specified the current app
+      loader will be used.
+    :keyword hostname: Custom hostname to use, if not specified the system
+      hostname will be used.
 
     :returns: the evaluated functions return value on success, or
         the exception instance on failure.
@@ -155,12 +158,11 @@ def execute_and_trace(task_name, *args, **kwargs):
 
     """
     hostname = kwargs.get("hostname")
-    platforms.set_mp_process_title("celeryd", info=task_name,
-                                   hostname=hostname)
+    platforms.set_mp_process_title("celeryd", task_name, hostname=hostname)
     try:
         return WorkerTaskTrace(task_name, *args, **kwargs).execute_safe()
     finally:
-        platforms.set_mp_process_title("celeryd", hostname=hostname)
+        platforms.set_mp_process_title("celeryd", "-idle-", hostname)
 
 
 class TaskRequest(object):

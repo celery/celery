@@ -533,11 +533,11 @@ Worker Events
     * `sw_ver`: Software version (e.g. 2.2.0).
     * `sw_sys`: Operating System (e.g. Linux, Windows, Darwin).
 
-* `worker-heartbeat(hostname, timestamp)`
+* `worker-heartbeat(hostname, timestamp, sw_ident, sw_ver, sw_sys)`
 
     Sent every minute, if the worker has not sent a heartbeat in 2 minutes,
     it is considered to be offline.
 
-* `worker-offline(hostname, timestamp)`
+* `worker-offline(hostname, timestamp, sw_ident, sw_ver, sw_sys)`
 
     The worker has disconnected from the broker.
