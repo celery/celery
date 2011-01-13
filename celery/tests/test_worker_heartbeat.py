@@ -10,7 +10,7 @@ class MockDispatcher(object):
     def __init__(self):
         self.sent = []
 
-    def send(self, msg):
+    def send(self, msg, **_fields):
         self.sent.append(msg)
         if self.heart:
             if self.next_iter > 10:

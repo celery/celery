@@ -16,22 +16,25 @@ from celery.exceptions import ImproperlyConfigured, SystemTerminate
 from celery.utils import get_full_cls_name, LOG_LEVELS, cry
 from celery.worker import WorkController
 
+BANNER = """
+ -------------- celery@%(hostname)s v%(version)s
+---- **** -----
+--- * ***  * -- [Configuration]
+-- * - **** ---   . broker:      %(conninfo)s
+- ** ----------   . loader:      %(loader)s
+- ** ----------   . logfile:     %(logfile)s@%(loglevel)s
+- ** ----------   . concurrency: %(concurrency)s
+- ** ----------   . events:      %(events)s
+- *** --- * ---   . beat:        %(celerybeat)s
+-- ******* ----
+--- ***** ----- [Queues]
+ --------------   %(queues)s
+"""
 
-STARTUP_INFO_FMT = """
-Configuration ->
-    . broker -> %(conninfo)s
-    . queues ->
-%(queues)s
-    . concurrency -> %(concurrency)s
-    . loader -> %(loader)s
-    . logfile -> %(logfile)s@%(loglevel)s
-    . events -> %(events)s
-    . beat -> %(celerybeat)s
+EXTRA_INFO_FMT = """
+[Tasks]
 %(tasks)s
-""".strip()
-
-TASK_LIST_FMT = """    . tasks ->\n%s"""
-
+"""
 
 class Worker(object):
     WorkController = WorkController
@@ -102,8 +105,6 @@ class Worker(object):
         self.init_queues()
         self.worker_init()
         self.redirect_stdouts_to_logger()
-        print(str(self.colored.cyan(
-                "celery@%s v%s is starting." % (self.hostname, __version__))))
 
         if getattr(os, "geteuid", None) and os.geteuid() == 0:
             warnings.warn(
@@ -114,8 +115,9 @@ class Worker(object):
 
         # Dump configuration to screen so we have some basic information
         # for when users sends bug reports.
-        print(str(self.colored.reset(" \n", self.startup_info())))
-        self.set_process_status("Running...")
+        print(str(self.colored.cyan(" \n", self.startup_info())) +
+              str(self.colored.reset(self.extra_info())))
+        self.set_process_status("-active-")
 
         self.run_worker()
 
@@ -169,25 +171,31 @@ class Worker(object):
         if not include_builtins:
             tasklist = filter(lambda s: not s.startswith("celery."),
                               tasklist)
-        return TASK_LIST_FMT % "\n".join("\t. %s" % task
-                                            for task in sorted(tasklist))
+        return "\n".join("  . %s" % task for task in sorted(tasklist))
 
-    def startup_info(self):
-        tasklist = ""
+    def extra_info(self):
         if self.loglevel <= logging.INFO:
             include_builtins = self.loglevel <= logging.DEBUG
             tasklist = self.tasklist(include_builtins=include_builtins)
+            return EXTRA_INFO_FMT % {"tasks": tasklist}
+        return ""
 
-        return STARTUP_INFO_FMT % {
+    def startup_info(self):
+        concurrency = self.concurrency
+        if self.autoscale:
+            cmax, cmin = self.autoscale
+            concurrency = "{min=%s, max=%s}" % (cmin, cmax)
+        return BANNER % {
+            "hostname": self.hostname,
+            "version": __version__,
             "conninfo": self.app.broker_connection().as_uri(),
-            "queues": self.queues.format(indent=8),
-            "concurrency": self.concurrency,
+            "concurrency": concurrency,
             "loglevel": LOG_LEVELS[self.loglevel],
             "logfile": self.logfile or "[stderr]",
             "celerybeat": self.run_clockservice and "ON" or "OFF",
             "events": self.events and "ON" or "OFF",
-            "tasks": tasklist,
             "loader": get_full_cls_name(self.loader.__class__),
+            "queues": self.queues.format(indent=18, indent_first=False),
         }
 
     def run_worker(self):

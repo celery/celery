@@ -11,7 +11,7 @@ AMQ related functionality.
 """
 from datetime import datetime, timedelta
 
-from kombu import BrokerConnection
+from kombu import BrokerConnection, Exchange
 from kombu.connection import Resource
 from kombu import compat as messaging
 
@@ -28,7 +28,7 @@ MSG_OPTIONS = ("mandatory", "priority", "immediate", "routing_key",
 
 #: Human readable queue declaration.
 QUEUE_FORMAT = """
-. %(name)s -> exchange:%(exchange)s (%(exchange_type)s) \
+. %(name)s exchange:%(exchange)s (%(exchange_type)s) \
 binding:%(binding_key)s
 """
 
@@ -84,11 +84,14 @@ class Queues(UserDict):
                              exchange=exchange,
                              exchange_type=exchange_type)
 
-    def format(self, indent=0):
+    def format(self, indent=0, indent_first=True):
         """Format routing table into string for log dumps."""
-        info = "\n".join(QUEUE_FORMAT.strip() % dict(name=name, **config)
-                                for name, config in self.items())
-        return textindent(info, indent=indent)
+        info = [QUEUE_FORMAT.strip() % dict(
+                    name=(name + ":").ljust(12), **config)
+                            for name, config in self.items()]
+        if indent_first:
+            return textindent("\n".join(info), indent)
+        return info[0] + "\n" + textindent("\n".join(info[1:]), indent)
 
     def select_subset(self, wanted, create_missing=True):
         """Select subset of the currently defined queues.
