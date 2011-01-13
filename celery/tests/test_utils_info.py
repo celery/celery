@@ -30,8 +30,8 @@ QUEUES = {"queue1": {
 
 
 QUEUE_FORMAT = """
-. queue1 -> exchange:exchange1 (type1) binding:bind1
-. queue2 -> exchange:exchange2 (type2) binding:bind2
+. queue1:      exchange:exchange1 (type1) binding:bind1
+. queue2:      exchange:exchange2 (type2) binding:bind2
 """.strip()
 
 
