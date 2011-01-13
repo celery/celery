@@ -332,7 +332,7 @@ class ResultHandler(PoolThread):
             if putlock is not None:
                 try:
                     putlock.release()
-                except ValueError:
+                except Exception:
                     pass
             try:
                 cache[job]._set(i, obj)
@@ -372,7 +372,7 @@ class ResultHandler(PoolThread):
         if putlock is not None:
             try:
                 putlock.release()
-            except ValueError:
+            except Exception:
                 pass
 
         while cache and self._state != TERMINATE:
@@ -512,7 +512,7 @@ class Pool(object):
                 if self._putlock is not None:
                     try:
                         self._putlock.release()
-                    except ValueError:
+                    except Exception:
                         pass
                 worker.join()
                 cleaned.append(worker.pid)
