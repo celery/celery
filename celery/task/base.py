@@ -13,7 +13,7 @@ from celery.schedules import maybe_schedule
 from celery.utils import deprecated, mattrgetter, gen_unique_id, \
                          fun_takes_kwargs
 from celery.utils.functional import wraps
-from celery.utils.timeutils import timedelta_seconds
+from celery.utils import timeutils
 
 from celery.task import sets
 
@@ -64,30 +64,26 @@ class TaskType(type):
     """
 
     def __new__(cls, name, bases, attrs):
-        super_new = super(TaskType, cls).__new__
+        new = super(TaskType, cls).__new__
         task_module = attrs["__module__"]
 
-        # Abstract class, remove the abstract attribute so
-        # any class inheriting from this won't be abstract by default.
+        # Abstract class: abstract attribute should not be inherited.
         if attrs.pop("abstract", None) or not attrs.get("autoregister", True):
-            return super_new(cls, name, bases, attrs)
+            return new(cls, name, bases, attrs)
 
-        # Automatically generate missing name.
+        # Automatically generate missing/empty name.
         if not attrs.get("name"):
-            task_name = ".".join([sys.modules[task_module].__name__, name])
-            attrs["name"] = task_name
+            attrs["name"] = '.'.join([sys.modules[task_module].__name__, name])
 
         # Because of the way import happens (recursively)
         # we may or may not be the first time the task tries to register
-        # with the framework. There should only be one class for each task
+        # with the framework.  There should only be one class for each task
         # name, so we always return the registered version.
-
         task_name = attrs["name"]
         if task_name not in tasks:
-            task_cls = super_new(cls, name, bases, attrs)
+            task_cls = new(cls, name, bases, attrs)
             if task_module == "__main__" and task_cls.app.main:
-                task_name = task_cls.name = ".".join([task_cls.app.main,
-                                                      name])
+                task_name = task_cls.name = '.'.join([task_cls.app.main, name])
             tasks.register(task_cls)
         task = tasks[task_name].__class__
         return task
@@ -97,16 +93,11 @@ class TaskType(type):
 
 
 class BaseTask(object):
-    """A Celery task.
+    """Task base class.
 
-    All subclasses of :class:`Task` must define the :meth:`run` method,
-    which is the actual method the `celery` daemon executes.
-
-    The :meth:`run` method can take use of the default keyword arguments,
-    as listed in the :meth:`run` documentation.
-
-    The resulting class is callable, which if called will apply the
-    :meth:`run` method.
+    When called tasks apply the :meth:`run` method.  This method must
+    be defined by all tasks (that is unless the :meth:`__call__` method
+    is overridden).
 
     """
     __metaclass__ = TaskType
@@ -123,10 +114,10 @@ class BaseTask(object):
     abstract = True
 
     #: If disabled the worker will not forward magic keyword arguments.
-    #: Depracted and scheduled for removal in v3.0.
+    #: Deprecated and scheduled for removal in v3.0.
     accept_magic_kwargs = False
 
-    #: Current request context (when task is executed).
+    #: Request context (set when task is applied).
     request = Context()
 
     #: Destination queue.  The queue needs to exist
@@ -184,21 +175,19 @@ class BaseTask(object):
     #: If enabled an e-mail will be sent to :setting:`ADMINS` whenever a task
     #: of this type fails.
     send_error_emails = False
-
     disable_error_emails = False                            # FIXME
 
     #: List of exception types to send error e-mails for.
     error_whitelist = ()
 
-    #: The name of a serializer that has been registered with
+    #: The name of a serializer that are registered with
     #: :mod:`kombu.serialization.registry`.  Default is `"pickle"`.
     serializer = "pickle"
 
     #: The result store backend used for this task.
     backend = None
 
-    #: If disabled the task will not be automatically registered
-    #: in the task registry.
+    #: If disabled this task won't be registered automatically.
     autoregister = True
 
     #: If enabled the task will report its status as "started" when the task
@@ -214,7 +203,7 @@ class BaseTask(object):
     #: :setting:`CELERY_TRACK_STARTED` setting.
     track_started = False
 
-    #: When enabled  messages for this task will be acknowledged **after**
+    #: When enabled messages for this task will be acknowledged **after**
     #: the task has been executed, and not *just before* which is the
     #: default behavior.
     #:
@@ -267,16 +256,22 @@ class BaseTask(object):
 
         :rtype :class:`~celery.app.amqp.TaskPublisher`:
 
-        Please be sure to close the connection after use::
+        .. warning::
 
-            >>> publisher = self.get_publisher()
-            >>> # ... do something with publisher
-            >>> publisher.connection.close()
+            If you don't specify a connection, one will automatically
+            be established for you, in that case you need to close this
+            connection after use::
 
-        The connection can also be used as a context::
+            Please be sure to close the connection after use::
 
-            >>> with self.get_publisher() as publisher:
-            ...     # ... do something with publisher
+                >>> publisher = self.get_publisher()
+                >>> # ... do something with publisher
+                >>> publisher.connection.close()
+
+            or used as a context::
+
+                >>> with self.get_publisher() as publisher:
+                ...     # ... do something with publisher
 
         """
         if exchange is None:
@@ -500,27 +495,25 @@ class BaseTask(object):
         to convey that the rest of the block will not be executed.
 
         """
+        max_retries = self.max_retries
         request = self.request
         if args is None:
             args = request.args
         if kwargs is None:
             kwargs = request.kwargs
-
         delivery_info = request.delivery_info
+
         if delivery_info:
             options.setdefault("exchange", delivery_info.get("exchange"))
             options.setdefault("routing_key", delivery_info.get("routing_key"))
+        countdown = options.setdefault("countdown", self.default_retry_delay)
+        options.update({"retries": request.retries + 1,
+                        "task_id": request.id})
 
-        options["retries"] = request.retries + 1
-        options["task_id"] = request.id
-        options["countdown"] = options.get("countdown",
-                                           self.default_retry_delay)
-        max_exc = exc or self.MaxRetriesExceededError(
-                "Can't retry %s[%s] args:%s kwargs:%s" % (
-                    self.name, options["task_id"], args, kwargs))
-        max_retries = self.max_retries
         if max_retries is not None and options["retries"] > max_retries:
-            raise max_exc
+            raise exc or self.MaxRetriesExceededError(
+                            "Can't retry %s[%s] args:%s kwargs:%s" % (
+                                self.name, options["task_id"], args, kwargs))
 
         # If task was executed eagerly using apply(),
         # then the retry must also be executed eagerly.
@@ -528,10 +521,8 @@ class BaseTask(object):
             return self.apply(args=args, kwargs=kwargs, **options).get()
 
         self.apply_async(args=args, kwargs=kwargs, **options)
-
         if throw:
-            message = "Retry in %d seconds." % options["countdown"]
-            raise RetryTaskError(message, exc)
+            raise RetryTaskError("Retry in %d seconds" % (countdown, ), exc)
 
     @classmethod
     def apply(self, args=None, kwargs=None, **options):
@@ -818,7 +809,7 @@ class PeriodicTask(Task):
         Doesn't account for negative timedeltas.
 
         """
-        return timedelta_seconds(delta)
+        return timeutils.timedelta_seconds(delta)
 
     def is_due(self, last_run_at):
         """Returns tuple of two items `(is_due, next_time_to_run)`,
