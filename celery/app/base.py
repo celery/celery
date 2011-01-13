@@ -11,11 +11,10 @@ Application Base Class.
 import platform as _platform
 
 from copy import deepcopy
-from datetime import timedelta
 
 from celery.app.defaults import DEFAULTS
 from celery.datastructures import ConfigurationView
-from celery.utils import cached_property, instantiate, lpmerge, maybe_promise
+from celery.utils import cached_property, instantiate, lpmerge
 from celery.utils.functional import wraps
 
 

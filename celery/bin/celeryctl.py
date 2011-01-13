@@ -169,6 +169,7 @@ class purge(Command):
                 queues, pluralize(queues, "queue")))
 purge = command(purge)
 
+
 class result(Command):
     args = "<task_id>"
     option_list = Command.option_list + (

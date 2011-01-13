@@ -1,7 +1,5 @@
 import os
 
-from datetime import timedelta
-
 from celery import Celery
 from celery.app import defaults
 from celery.app.base import BaseApp

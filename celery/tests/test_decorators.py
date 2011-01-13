@@ -15,6 +15,7 @@ class test_decorators(unittest.TestCase):
 
     def setUp(self):
         warnings.resetwarnings()
+
         def with_catch_warnings(log):
             from celery import decorators
             return decorators

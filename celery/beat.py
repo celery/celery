@@ -158,7 +158,6 @@ class Scheduler(UserDict):
                      "options": {"expires": 12 * 3600}})
         return schedule
 
-
     def maybe_due(self, entry, publisher=None):
         is_due, next_time_to_run = entry.is_due()
 

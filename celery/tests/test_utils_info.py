@@ -1,7 +1,6 @@
 from celery.tests.utils import unittest
 
 from celery import Celery
-from celery.app import app_or_default
 from celery.utils import textindent
 from celery.utils.timeutils import humanize_seconds
 

@@ -47,4 +47,9 @@ celery/utils/compat.py:(.+?): redefinition of unused 'StringIO' from line 15
 celery/utils/compat.py:(.+?): redefinition of unused 'StringIO' from line 18
 celery/utils/compat.py:(.+?): 'StringIO' imported but unused
 celery/utils/compat.py:(.+?): redefinition of unused 'OrderedDict' from line 268
+celery/task/schedules.py:2: 'schedule' imported but unused
+celery/task/schedules.py:2: 'crontab_parser' imported but unused
+celery/task/schedules.py:2: 'crontab' imported but unused
+celery/tests/__init__.py:17: undefined name 'WindowsError'
+
 

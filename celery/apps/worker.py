@@ -36,6 +36,7 @@ EXTRA_INFO_FMT = """
 %(tasks)s
 """
 
+
 class Worker(object):
     WorkController = WorkController
 

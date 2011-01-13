@@ -3,14 +3,13 @@ import sys
 from celery import platforms
 from celery.bin.base import Command, Option, daemon_options
 from celery.platforms import create_daemon_context
-from celery.utils.functional import partial
 
 
 class EvCommand(Command):
 
     def run(self, dump=False, camera=None, frequency=1.0, maxrate=None,
             loglevel="INFO", logfile=None, prog_name="celeryev",
-            pidfile=None, uid=None, gid=None, umask=None, 
+            pidfile=None, uid=None, gid=None, umask=None,
             working_directory=None, detach=False, **kwargs):
         self.prog_name = prog_name
 
@@ -55,8 +54,6 @@ class EvCommand(Command):
             return evcam(camera, logfile=logfile, **kwargs)
         finally:
             on_stop()
-
-
 
     def set_process_status(self, prog, info=""):
         prog = "%s:%s" % (self.prog_name, prog)

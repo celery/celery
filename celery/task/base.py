@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-"
 import sys
 import threading
-import warnings
 
 from celery import current_app
 from celery.datastructures import ExceptionInfo
@@ -12,7 +11,6 @@ from celery.result import EagerResult
 from celery.schedules import maybe_schedule
 from celery.utils import deprecated, mattrgetter, gen_unique_id, \
                          fun_takes_kwargs
-from celery.utils.functional import wraps
 from celery.utils import timeutils
 
 from celery.task import sets

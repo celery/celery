@@ -3,7 +3,6 @@ from urllib import urlencode
 from urlparse import urlparse
 
 from anyjson import deserialize
-from kombu.utils import kwdict
 
 from celery import __version__ as celery_version
 from celery.task.base import Task as BaseTask

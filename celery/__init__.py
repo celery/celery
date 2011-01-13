@@ -10,7 +10,6 @@ __contact__ = "ask@celeryproject.org"
 __homepage__ = "http://celeryproject.org"
 __docformat__ = "restructuredtext"
 
-
 if sys.version_info < (2, 5):
     import warnings
     warnings.warn(DeprecationWarning("""
@@ -20,7 +19,6 @@ will be supported starting from Celery version 2.3.
 
 
 """))
-
 
 
 def Celery(*args, **kwargs):

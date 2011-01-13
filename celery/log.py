@@ -15,7 +15,6 @@ from celery.utils.patch import ensure_process_aware_logger
 from celery.utils.term import colored
 
 
-
 class ColorFormatter(logging.Formatter):
     #: Loglevel -> Color mapping.
     COLORS = colored().names
