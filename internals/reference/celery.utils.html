@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.utils &mdash; Celery v2.2.0rc1 documentation</title>
+    <title>celery.utils &mdash; Celery v2.2.0rc2 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.2.0rc1',
+        VERSION:     '2.2.0rc2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0rc1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.2.0rc2 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.utils.term" href="celery.utils.term.html" />
     <link rel="prev" title="celery.db.session" href="celery.db.session.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.db.session.html" title="celery.db.session"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0rc2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -67,7 +67,13 @@
 </div>
     <div class="section" id="celery-utils">
 <h1>celery.utils<a class="headerlink" href="#celery-utils" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.utils"></span><dl class="function">
+<span class="target" id="module-celery.utils"></span><dl class="class">
+<dt id="celery.utils.LocalProxy">
+<em class="property">class </em><tt class="descclassname">celery.utils.</tt><tt class="descname">LocalProxy</tt><big>(</big><em>local</em>, <em>name=None</em><big>)</big><a class="headerlink" href="#celery.utils.LocalProxy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Code stolen from werkzeug.local.LocalProxy.</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="celery.utils.abbr">
 <tt class="descclassname">celery.utils.</tt><tt class="descname">abbr</tt><big>(</big><em>S</em>, <em>max</em>, <em>ellipsis='...'</em><big>)</big><a class="headerlink" href="#celery.utils.abbr" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -125,6 +131,11 @@ of the get function.</p>
 <dd><p>Return stacktrace of all active threads.</p>
 <p>From <a class="reference external" href="https://gist.github.com/737056">https://gist.github.com/737056</a></p>
 </dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.deprecated">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">deprecated</tt><big>(</big><em>description=None</em>, <em>deprecation=None</em>, <em>removal=None</em>, <em>alternative=None</em><big>)</big><a class="headerlink" href="#celery.utils.deprecated" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="function">
 <dt id="celery.utils.first">
@@ -281,6 +292,13 @@ precedence over modules located in <cite>sys.path</cite>.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="celery.utils.lpmerge">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">lpmerge</tt><big>(</big><em>L</em>, <em>R</em><big>)</big><a class="headerlink" href="#celery.utils.lpmerge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Left precedent dictionary merge.  Keeps values from <cite>l</cite>, if the value
+in <cite>r</cite> is <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt>.</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="celery.utils.mattrgetter">
 <tt class="descclassname">celery.utils.</tt><tt class="descname">mattrgetter</tt><big>(</big><em>*attrs</em><big>)</big><a class="headerlink" href="#celery.utils.mattrgetter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Like <tt class="xref py py-func docutils literal"><span class="pre">operator.itemgetter()</span></tt> but returns <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> on missing
@@ -418,7 +436,7 @@ memoized (see <a class="reference internal" href="#celery.utils.mpromise" title=
         <li class="right" >
           <a href="celery.db.session.html" title="celery.db.session"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0rc2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

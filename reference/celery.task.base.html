@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.task.base &mdash; Celery v2.2.0rc1 documentation</title>
+    <title>celery.task.base &mdash; Celery v2.2.0rc2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.0rc1',
+        VERSION:     '2.2.0rc2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0rc1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0rc2 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.task.sets" href="celery.task.sets.html" />
     <link rel="prev" title="celery.task" href="celery.task.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.task.html" title="celery.task"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -69,13 +69,10 @@
 <span class="target" id="module-celery.task.base"></span><dl class="class">
 <dt id="celery.task.base.BaseTask">
 <em class="property">class </em><tt class="descclassname">celery.task.base.</tt><tt class="descname">BaseTask</tt><a class="headerlink" href="#celery.task.base.BaseTask" title="Permalink to this definition">¶</a></dt>
-<dd><p>A Celery task.</p>
-<p>All subclasses of <tt class="xref py py-class docutils literal"><span class="pre">Task</span></tt> must define the <a class="reference internal" href="#celery.task.base.BaseTask.run" title="celery.task.base.BaseTask.run"><tt class="xref py py-meth docutils literal"><span class="pre">run()</span></tt></a> method,
-which is the actual method the <cite>celery</cite> daemon executes.</p>
-<p>The <a class="reference internal" href="#celery.task.base.BaseTask.run" title="celery.task.base.BaseTask.run"><tt class="xref py py-meth docutils literal"><span class="pre">run()</span></tt></a> method can take use of the default keyword arguments,
-as listed in the <a class="reference internal" href="#celery.task.base.BaseTask.run" title="celery.task.base.BaseTask.run"><tt class="xref py py-meth docutils literal"><span class="pre">run()</span></tt></a> documentation.</p>
-<p>The resulting class is callable, which if called will apply the
-<a class="reference internal" href="#celery.task.base.BaseTask.run" title="celery.task.base.BaseTask.run"><tt class="xref py py-meth docutils literal"><span class="pre">run()</span></tt></a> method.</p>
+<dd><p>Task base class.</p>
+<p>When called tasks apply the <a class="reference internal" href="#celery.task.base.BaseTask.run" title="celery.task.base.BaseTask.run"><tt class="xref py py-meth docutils literal"><span class="pre">run()</span></tt></a> method.  This method must
+be defined by all tasks (that is unless the <tt class="xref py py-meth docutils literal"><span class="pre">__call__()</span></tt> method
+is overridden).</p>
 <dl class="classmethod">
 <dt id="celery.task.base.BaseTask.AsyncResult">
 <em class="property">classmethod </em><tt class="descname">AsyncResult</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.AsyncResult" title="Permalink to this definition">¶</a></dt>
@@ -109,13 +106,13 @@ as listed in the <a class="reference internal" href="#celery.task.base.BaseTask.
 <dt id="celery.task.base.BaseTask.accept_magic_kwargs">
 <tt class="descclassname">BaseTask.</tt><tt class="descname">accept_magic_kwargs</tt><a class="headerlink" href="#celery.task.base.BaseTask.accept_magic_kwargs" title="Permalink to this definition">¶</a></dt>
 <dd><p>If disabled the worker will not forward magic keyword arguments.
-Depracted and scheduled for removal in v3.0.</p>
+Deprecated and scheduled for removal in v3.0.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.task.base.BaseTask.acks_late">
 <tt class="descclassname">BaseTask.</tt><tt class="descname">acks_late</tt><a class="headerlink" href="#celery.task.base.BaseTask.acks_late" title="Permalink to this definition">¶</a></dt>
-<dd><p>When enabled  messages for this task will be acknowledged <strong>after</strong>
+<dd><p>When enabled messages for this task will be acknowledged <strong>after</strong>
 the task has been executed, and not <em>just before</em> which is the
 default behavior.</p>
 <p>Please note that this means the task may be executed twice if the
@@ -182,7 +179,7 @@ setting.</li>
 <dl class="classmethod">
 <dt id="celery.task.base.BaseTask.apply_async">
 <em class="property">classmethod </em><tt class="descclassname">BaseTask.</tt><tt class="descname">apply_async</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>countdown=None</em>, <em>eta=None</em>, <em>task_id=None</em>, <em>publisher=None</em>, <em>connection=None</em>, <em>connect_timeout=None</em>, <em>router=None</em>, <em>expires=None</em>, <em>queues=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.apply_async" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run a task asynchronously by the celery daemon(s).</p>
+<dd><p>Apply tasks asynchronously by sending a message.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -266,8 +263,7 @@ be replaced by a local <a class="reference internal" href="#celery.task.base.Bas
 <dl class="attribute">
 <dt id="celery.task.base.BaseTask.autoregister">
 <tt class="descclassname">BaseTask.</tt><tt class="descname">autoregister</tt><a class="headerlink" href="#celery.task.base.BaseTask.autoregister" title="Permalink to this definition">¶</a></dt>
-<dd><p>If disabled the task will not be automatically registered
-in the task registry.</p>
+<dd><p>If disabled this task won&#8217;t be registered automatically.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -286,8 +282,8 @@ executed.  3 minutes by default.</p>
 <dl class="classmethod">
 <dt id="celery.task.base.BaseTask.delay">
 <em class="property">classmethod </em><tt class="descclassname">BaseTask.</tt><tt class="descname">delay</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.delay" title="Permalink to this definition">¶</a></dt>
-<dd><p>Shortcut to <a class="reference internal" href="#celery.task.base.BaseTask.apply_async" title="celery.task.base.BaseTask.apply_async"><tt class="xref py py-meth docutils literal"><span class="pre">apply_async()</span></tt></a> giving star arguments, but without
-options.</p>
+<dd><p>Star argument version of <a class="reference internal" href="#celery.task.base.BaseTask.apply_async" title="celery.task.base.BaseTask.apply_async"><tt class="xref py py-meth docutils literal"><span class="pre">apply_async()</span></tt></a>.</p>
+<p>Does not support the extra options enabled by <a class="reference internal" href="#celery.task.base.BaseTask.apply_async" title="celery.task.base.BaseTask.apply_async"><tt class="xref py py-meth docutils literal"><span class="pre">apply_async()</span></tt></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -369,8 +365,9 @@ manual for any additional delivery modes.</p>
 <p>:rtype <tt class="xref py py-class docutils literal"><span class="pre">kombu.messaging.Consumer</span></tt>:</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
-<p>Please be sure to close the AMQP connection when you&#8217;re done
-with this object.  Example:</p>
+<p>If you don&#8217;t specify a connection, one will automatically
+be established for you, in that case you need to close this
+connection after use:</p>
 <div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">consumer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumer</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c"># do something with consumer</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">consumer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
@@ -384,20 +381,28 @@ with this object.  Example:</p>
 <dt id="celery.task.base.BaseTask.get_logger">
 <em class="property">classmethod </em><tt class="descclassname">BaseTask.</tt><tt class="descname">get_logger</tt><big>(</big><em>loglevel=None</em>, <em>logfile=None</em>, <em>propagate=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.get_logger" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get task-aware logger object.</p>
-<p>See <tt class="xref py py-func docutils literal"><span class="pre">celery.log.setup_task_logger()</span></tt>.</p>
 </dd></dl>
 
 <dl class="classmethod">
 <dt id="celery.task.base.BaseTask.get_publisher">
-<em class="property">classmethod </em><tt class="descclassname">BaseTask.</tt><tt class="descname">get_publisher</tt><big>(</big><em>connection=None</em>, <em>exchange=None</em>, <em>connect_timeout=None</em>, <em>exchange_type=None</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.get_publisher" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descclassname">BaseTask.</tt><tt class="descname">get_publisher</tt><big>(</big><em>connection=None</em>, <em>exchange=None</em>, <em>connect_timeout=None</em>, <em>exchange_type=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.get_publisher" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a celery task message publisher.</p>
 <p>:rtype <a class="reference internal" href="celery.app.amqp.html#celery.app.amqp.TaskPublisher" title="celery.app.amqp.TaskPublisher"><tt class="xref py py-class docutils literal"><span class="pre">TaskPublisher</span></tt></a>:</p>
-<p>Please be sure to close the AMQP connection after you&#8217;re done
-with this object.  Example:</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p>If you don&#8217;t specify a connection, one will automatically
+be established for you, in that case you need to close this
+connection after use:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">publisher</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_publisher</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c"># ... do something with publisher</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">publisher</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </pre></div>
+</div>
+<p>or used as a context:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_publisher</span><span class="p">()</span> <span class="k">as</span> <span class="n">publisher</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="c"># ... do something with publisher</span>
+</pre></div>
+</div>
 </div>
 </dd></dl>
 
@@ -531,7 +536,7 @@ a minute),`&#8221;100/h&#8221;` (hundred tasks an hour)</p>
 <dl class="attribute">
 <dt id="celery.task.base.BaseTask.request">
 <tt class="descclassname">BaseTask.</tt><tt class="descname">request</tt><a class="headerlink" href="#celery.task.base.BaseTask.request" title="Permalink to this definition">¶</a></dt>
-<dd><p>Current request context (when task is executed).</p>
+<dd><p>Request context (set when task is applied).</p>
 </dd></dl>
 
 <dl class="classmethod">
@@ -596,27 +601,7 @@ to convey that the rest of the block will not be executed.</p>
 <dl class="method">
 <dt id="celery.task.base.BaseTask.run">
 <tt class="descclassname">BaseTask.</tt><tt class="descname">run</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.run" title="Permalink to this definition">¶</a></dt>
-<dd><p>The body of the task executed by the worker.</p>
-<p>The following standard keyword arguments are reserved and is
-automatically passed by the worker if the function/method
-supports them:</p>
-<blockquote>
-<ul class="simple">
-<li><cite>task_id</cite></li>
-<li><cite>task_name</cite></li>
-<li><cite>task_retries</cite></li>
-<li><cite>task_is_eager</cite></li>
-<li><cite>logfile</cite></li>
-<li><cite>loglevel</cite></li>
-<li><cite>delivery_info</cite></li>
-</ul>
-</blockquote>
-<p>To take these default arguments, the task can either list the ones
-it wants explicitly or just take an arbitrary list of keyword
-arguments (**kwargs).</p>
-<p>Magic keyword arguments can be disabled using the
-<a class="reference internal" href="#celery.task.base.BaseTask.accept_magic_kwargs" title="celery.task.base.BaseTask.accept_magic_kwargs"><tt class="xref py py-attr docutils literal"><span class="pre">accept_magic_kwargs</span></tt></a> flag.  The information can then
-be found in the <a class="reference internal" href="#celery.task.base.BaseTask.request" title="celery.task.base.BaseTask.request"><tt class="xref py py-attr docutils literal"><span class="pre">request</span></tt></a> attribute.</p>
+<dd><p>The body of the task executed by workers.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -629,7 +614,7 @@ of this type fails.</p>
 <dl class="attribute">
 <dt id="celery.task.base.BaseTask.serializer">
 <tt class="descclassname">BaseTask.</tt><tt class="descname">serializer</tt><a class="headerlink" href="#celery.task.base.BaseTask.serializer" title="Permalink to this definition">¶</a></dt>
-<dd><p>The name of a serializer that has been registered with
+<dd><p>The name of a serializer that are registered with
 <tt class="xref py py-mod docutils literal"><span class="pre">kombu.serialization.registry</span></tt>.  Default is <cite>&#8220;pickle&#8221;</cite>.</p>
 </dd></dl>
 
@@ -699,7 +684,7 @@ running.</p>
 <tt class="descname">run_every</tt><a class="headerlink" href="#celery.task.base.PeriodicTask.run_every" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>REQUIRED</em> Defines how often the task is run (its interval),
 it can be a <tt class="xref py py-class docutils literal"><span class="pre">timedelta</span></tt> object, a
-<tt class="xref py py-class docutils literal"><span class="pre">crontab</span></tt> object or an integer
+<a class="reference internal" href="celery.schedules.html#celery.schedules.crontab" title="celery.schedules.crontab"><tt class="xref py py-class docutils literal"><span class="pre">crontab</span></tt></a> object or an integer
 specifying the time in seconds.</p>
 </dd></dl>
 
@@ -733,7 +718,7 @@ not defined.</td>
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">PeriodicTask</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.schedules</span> <span class="kn">import</span> <span class="n">crontab</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.schedules</span> <span class="kn">import</span> <span class="n">crontab</span>
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">EveryMondayMorningTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
@@ -846,7 +831,7 @@ set to the name of the module it was defined in, and the class name.</p>
         <li class="right" >
           <a href="celery.task.html" title="celery.task"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

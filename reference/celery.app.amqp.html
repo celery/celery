@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.app.amqp &mdash; Celery v2.2.0rc1 documentation</title>
+    <title>celery.app.amqp &mdash; Celery v2.2.0rc2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.0rc1',
+        VERSION:     '2.2.0rc2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0rc1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0rc2 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.app.defaults" href="celery.app.defaults.html" />
     <link rel="prev" title="celery.app" href="celery.app.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.app.html" title="celery.app"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -160,19 +160,6 @@ queues.</p>
 configured to be default (<a class="reference internal" href="../configuration.html#std:setting-CELERY_DEFAULT_QUEUE"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_DEFAULT_QUEUE</span></tt></a>).</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="celery.app.amqp.AMQP.get_broker_info">
-<tt class="descname">get_broker_info</tt><big>(</big><em>broker_connection=None</em><big>)</big><a class="headerlink" href="#celery.app.amqp.AMQP.get_broker_info" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns information about the current broker connection
-as a <cite>dict</cite>.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.app.amqp.AMQP.format_broker_info">
-<tt class="descname">format_broker_info</tt><big>(</big><em>info=None</em><big>)</big><a class="headerlink" href="#celery.app.amqp.AMQP.format_broker_info" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get message broker connection info string for log dumps.</p>
-</dd></dl>
-
 </dd></dl>
 
 </div>
@@ -225,7 +212,7 @@ keys present.</p>
 
 <dl class="method">
 <dt id="celery.app.amqp.Queues.format">
-<tt class="descname">format</tt><big>(</big><em>indent=0</em><big>)</big><a class="headerlink" href="#celery.app.amqp.Queues.format" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">format</tt><big>(</big><em>indent=0</em>, <em>indent_first=True</em><big>)</big><a class="headerlink" href="#celery.app.amqp.Queues.format" title="Permalink to this definition">¶</a></dt>
 <dd><p>Format routing table into string for log dumps.</p>
 </dd></dl>
 
@@ -274,7 +261,7 @@ exchange type information to queues that does not have any.</p>
 
 <dl class="method">
 <dt id="celery.app.amqp.TaskPublisher.delay_task">
-<tt class="descname">delay_task</tt><big>(</big><em>task_name</em>, <em>task_args=None</em>, <em>task_kwargs=None</em>, <em>countdown=None</em>, <em>eta=None</em>, <em>task_id=None</em>, <em>taskset_id=None</em>, <em>expires=None</em>, <em>exchange=None</em>, <em>exchange_type=None</em>, <em>event_dispatcher=None</em>, <em>retry=None</em>, <em>retry_policy=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.app.amqp.TaskPublisher.delay_task" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">delay_task</tt><big>(</big><em>task_name</em>, <em>task_args=None</em>, <em>task_kwargs=None</em>, <em>countdown=None</em>, <em>eta=None</em>, <em>task_id=None</em>, <em>taskset_id=None</em>, <em>expires=None</em>, <em>exchange=None</em>, <em>exchange_type=None</em>, <em>event_dispatcher=None</em>, <em>retry=None</em>, <em>retry_policy=None</em>, <em>queue=None</em>, <em>now=None</em>, <em>retries=0</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.app.amqp.TaskPublisher.delay_task" title="Permalink to this definition">¶</a></dt>
 <dd><p>Send task message.</p>
 </dd></dl>
 
@@ -334,7 +321,7 @@ exchange type information to queues that does not have any.</p>
         <li class="right" >
           <a href="celery.app.html" title="celery.app"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

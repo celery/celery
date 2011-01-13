@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.app &mdash; Celery v2.2.0rc1 documentation</title>
+    <title>celery.app &mdash; Celery v2.2.0rc2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.0rc1',
+        VERSION:     '2.2.0rc2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0rc1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0rc2 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.app.amqp" href="celery.app.amqp.html" />
     <link rel="prev" title="API Reference" href="index.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="index.html" title="API Reference"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -91,7 +91,7 @@
 <h2><a class="toc-backref" href="#id1">Application</a><a class="headerlink" href="#application" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="celery.app.App">
-<em class="property">class </em><tt class="descclassname">celery.app.</tt><tt class="descname">App</tt><big>(</big><em>main=None</em>, <em>loader=None</em>, <em>backend=None</em>, <em>amqp=None</em>, <em>events=None</em>, <em>log=None</em>, <em>control=None</em>, <em>set_as_current=True</em><big>)</big><a class="headerlink" href="#celery.app.App" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.app.</tt><tt class="descname">App</tt><big>(</big><em>main=None</em>, <em>loader=None</em>, <em>backend=None</em>, <em>amqp=None</em>, <em>events=None</em>, <em>log=None</em>, <em>control=None</em>, <em>set_as_current=True</em>, <em>accept_magic_kwargs=False</em><big>)</big><a class="headerlink" href="#celery.app.App" title="Permalink to this definition">¶</a></dt>
 <dd><p>Celery Application.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -119,15 +119,14 @@ generating task names.</p>
 <dl class="attribute">
 <dt id="celery.app.App.amqp">
 <tt class="descname">amqp</tt><a class="headerlink" href="#celery.app.App.amqp" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sending/receiving messages.</p>
-<p>See <a class="reference internal" href="celery.app.amqp.html#celery.app.amqp.AMQP" title="celery.app.amqp.AMQP"><tt class="xref py py-class docutils literal"><span class="pre">AMQP</span></tt></a>.</p>
+<dd><p>Sending/receiving messages.  See <a class="reference internal" href="celery.app.amqp.html#celery.app.amqp.AMQP" title="celery.app.amqp.AMQP"><tt class="xref py py-class docutils literal"><span class="pre">AMQP</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.app.App.backend">
 <tt class="descname">backend</tt><a class="headerlink" href="#celery.app.App.backend" title="Permalink to this definition">¶</a></dt>
-<dd><p>Storing/retreiving task state.</p>
-<p>See <tt class="xref py py-class docutils literal"><span class="pre">BaseBackend</span></tt>.</p>
+<dd><p>Storing/retreiving task state.  See
+<tt class="xref py py-class docutils literal"><span class="pre">BaseBackend</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -145,15 +144,14 @@ generating task names.</p>
 <dl class="attribute">
 <dt id="celery.app.App.control">
 <tt class="descname">control</tt><a class="headerlink" href="#celery.app.App.control" title="Permalink to this definition">¶</a></dt>
-<dd><p>Controlling worker nodes.</p>
-<p>See <a class="reference internal" href="celery.task.control.html#celery.task.control.Control" title="celery.task.control.Control"><tt class="xref py py-class docutils literal"><span class="pre">Control</span></tt></a>.</p>
+<dd><p>Controlling worker nodes.  See
+<a class="reference internal" href="celery.task.control.html#celery.task.control.Control" title="celery.task.control.Control"><tt class="xref py py-class docutils literal"><span class="pre">Control</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.app.App.log">
 <tt class="descname">log</tt><a class="headerlink" href="#celery.app.App.log" title="Permalink to this definition">¶</a></dt>
-<dd><p>Logging utilities.</p>
-<p>See <a class="reference internal" href="../internals/reference/celery.log.html#celery.log.Logging" title="celery.log.Logging"><tt class="xref py py-class docutils literal"><span class="pre">Logging</span></tt></a>.</p>
+<dd><p>Logging utilities.  See <a class="reference internal" href="../internals/reference/celery.log.html#celery.log.Logging" title="celery.log.Logging"><tt class="xref py py-class docutils literal"><span class="pre">Logging</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -325,20 +323,13 @@ the function returns.</p>
 <dl class="method">
 <dt id="celery.app.App.mail_admins">
 <tt class="descname">mail_admins</tt><big>(</big><em>subject</em>, <em>body</em>, <em>fail_silently=False</em><big>)</big><a class="headerlink" href="#celery.app.App.mail_admins" title="Permalink to this definition">¶</a></dt>
-<dd><p>Send an e-mail to the admins in conf.ADMINS.</p>
+<dd><p>Send an e-mail to the admins in the <a class="reference internal" href="../configuration.html#std:setting-ADMINS"><tt class="xref std std-setting docutils literal"><span class="pre">ADMINS</span></tt></a> setting.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.app.App.pre_config_merge">
-<tt class="descname">pre_config_merge</tt><big>(</big><em>c</em><big>)</big><a class="headerlink" href="#celery.app.App.pre_config_merge" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.app.App.prepare_config">
+<tt class="descname">prepare_config</tt><big>(</big><em>c</em><big>)</big><a class="headerlink" href="#celery.app.App.prepare_config" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prepare configuration before it is merged with the defaults.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.app.App.post_config_merge">
-<tt class="descname">post_config_merge</tt><big>(</big><em>c</em><big>)</big><a class="headerlink" href="#celery.app.App.post_config_merge" title="Permalink to this definition">¶</a></dt>
-<dd><p>Prepare configuration after it has been merged with the
-defaults.</p>
 </dd></dl>
 
 <dl class="method">
@@ -350,7 +341,7 @@ defaults.</p>
 
 <dl class="method">
 <dt id="celery.app.App.merge">
-<tt class="descname">merge</tt><big>(</big><em>a</em>, <em>b</em><big>)</big><a class="headerlink" href="#celery.app.App.merge" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">merge</tt><big>(</big><em>l</em>, <em>r</em><big>)</big><a class="headerlink" href="#celery.app.App.merge" title="Permalink to this definition">¶</a></dt>
 <dd><p>Like <cite>dict(a, **b)</cite> except it will keep values from <cite>a</cite>
 if the value in <cite>b</cite> is <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt>.</p>
 </dd></dl>
@@ -423,7 +414,7 @@ is no active app.</p>
         <li class="right" >
           <a href="index.html" title="API Reference"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

@@ -54,7 +54,7 @@ an SQLAlchemy database URI.
 
 #. Configure the database URI::
 
-    BROKER_HOST = "sqlite://celerydb.sqlite"
+    BROKER_HOST = "sqlite:///celerydb.sqlite"
 
 Please see `SQLAlchemy: Supported Databases`_ for a table of supported databases.
 Some other `SQLAlchemy Connection String`_, examples:

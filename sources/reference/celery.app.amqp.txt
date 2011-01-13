@@ -36,8 +36,6 @@
 
         .. automethod:: get_task_consumer
         .. automethod:: get_default_queue
-        .. automethod:: get_broker_info
-        .. automethod:: format_broker_info
 
     Queues
     ------

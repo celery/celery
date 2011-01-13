@@ -100,7 +100,7 @@ Important Notes
 
 * The magic keyword arguments are now available as `task.request`
 
-    This is called *the context*.  Thread-local storage is used, and the
+    This is called *the context*.  Using thread-local storage the
     context contains state that is related to the current request.
 
     It is mutable and you can add custom attributes that will only be seen
@@ -152,6 +152,24 @@ Important Notes
 
 .. _`Eventlet`: http://eventlet.net
 .. _`gevent`: http://gevent.org
+
+* Python 2.4 support deprecated!
+
+    We're happy^H^H^H^H^Hsad to announce that this is the last version
+    to support Python 2.4.
+
+    You are urged to make some noise if you're currently stuck with
+    Python 2.4.  Complain to your package maintainers, sysadmins and bosses:
+    tell them it's time to move on!
+
+    Apart from wanting to take advantage of with-statements, coroutines,
+    conditional expressions and enhanced try blocks, the code base
+    now contains so many 2.4 related hacks and workarounds it's no longer
+    just a compromise, but a sacrifice.
+
+    If it really isn't your choice, and you don't have the option to upgrade
+    to a newer version of Python, you can just continue to use Celery 2.2.
+    Important fixes can be backported for as long as there is interest.
 
 * `celeryd`: Now supports Autoscaling of child worker processes.
 
@@ -246,6 +264,35 @@ News
 
 * The internal module `celery.task.builtins` has been removed.
 
+* The module `celery.task.schedules` is deprecated, and
+  `celery.schedules` should be used instead.
+
+    For example if you have::
+
+        from celery.task.schedules import crontab
+
+    You should replace that with::
+
+        from celery.schedules import crontab
+
+    The module needs to be renamed because it must be possible
+    to import schedules without importing the `celery.task` module.
+
+* The following functions have been deprecated and is scheduled for
+  removed in version 2.3:
+
+    * `celery.execute.apply_async`
+
+        Use `task.apply_async()` instead.
+
+    * `celery.execute.apply`
+
+        Use `task.apply()` instead.
+
+    * `celery.execute.delay_task`
+
+        Use `registry.tasks[name].delay()` instead.
+
 * Importing `TaskSet` from `celery.task.base` is now deprecated.
 
     You should use::
@@ -339,6 +386,12 @@ News
 
 * The PID of the child worker process accepting a task is now sent as a field
   with the `task-started` event.
+
+* The following fields have been added to all events in the worker class:
+
+    * `sw_ident`: Name of worker software (e.g. celeryd).
+    * `sw_ver`: Software version (e.g. 2.2.0).
+    * `sw_sys`: Operating System (e.g. Linux, Windows, Darwin).
 
 * For better accuracy the start time reported by the multiprocessing worker
   process is used when calculating task duration.
@@ -2322,7 +2375,7 @@ News
 
     .. code-block:: python
 
-        from celery.task.schedules import crontab
+        from celery.schedules import crontab
         from celery.decorators import periodic_task
 
         @periodic_task(run_every=crontab(hour=7, minute=30))
