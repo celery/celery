@@ -336,7 +336,7 @@ class test_Consumer(unittest.TestCase):
         message = MockMessage()
         l.on_decode_error(message, KeyError("foo"))
         self.assertTrue(message.acked)
-        self.assertIn("Message decoding error", logger.logged[0])
+        self.assertIn("Can't decode message body", logger.logged[0])
 
     def test_receieve_message(self):
         l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,

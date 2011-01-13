@@ -401,8 +401,8 @@ class Consumer(object):
         :param exc: The original exception instance.
 
         """
-        self.logger.critical("Message decoding error: %s "
-                             "(type:%s encoding:%s raw:'%s')" % (
+        self.logger.critical("Can't decode message body: %r "
+                             "(type:%r encoding:%r raw:%r')" % (
                                 exc, message.content_type,
                                 message.content_encoding, message.body))
         message.ack()
