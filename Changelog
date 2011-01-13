@@ -153,6 +153,24 @@ Important Notes
 .. _`Eventlet`: http://eventlet.net
 .. _`gevent`: http://gevent.org
 
+* Python 2.4 support deprecated!
+
+    We're happy^H^H^H^H^Hsad to announce that this is the last version
+    to support Python 2.4.
+
+    You are urged to make some noise if you're currently stuck with
+    Python 2.4.  Complain to your package maintainers, sysadmins and bosses:
+    tell them it's time to move on!
+
+    Apart from wanting to take advantage of with-statements, coroutines,
+    conditional expressions and enhanced try blocks, the code base
+    now contains so many 2.4 related hacks and workarounds it's no longer
+    just a compromise, but a sacrifice.
+
+    If it really isn't your choice, and you don't have the option to upgrade
+    to a newer version of Python, you can just continue to use Celery 2.2.
+    Important fixes can be backported for as long as there is interest.
+
 * `celeryd`: Now supports Autoscaling of child worker processes.
 
     The :option:`--autoscale` option can be used to configure the minimum
