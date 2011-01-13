@@ -95,7 +95,6 @@ class Logging(object):
         except AttributeError:
             pass
         ensure_process_aware_logger()
-        logging.Logger.manager.loggerDict.clear()
         receivers = signals.setup_logging.send(sender=None,
                                                loglevel=loglevel,
                                                logfile=logfile,
