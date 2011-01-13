@@ -260,8 +260,6 @@ class BaseTask(object):
             be established for you, in that case you need to close this
             connection after use::
 
-            Please be sure to close the connection after use::
-
                 >>> publisher = self.get_publisher()
                 >>> # ... do something with publisher
                 >>> publisher.connection.close()
