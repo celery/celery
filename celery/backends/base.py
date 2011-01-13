@@ -9,8 +9,7 @@ from celery.datastructures import LocalCache
 
 
 class BaseBackend(object):
-    """The base backend class. All backends should inherit from this."""
-
+    """Base backend class."""
     READY_STATES = states.READY_STATES
     UNREADY_STATES = states.UNREADY_STATES
     EXCEPTION_STATES = states.EXCEPTION_STATES
