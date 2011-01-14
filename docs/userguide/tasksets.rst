@@ -74,8 +74,8 @@ Now let's execute our new `add` task with a callback::
 
     >>> add.delay(2, 2, callback=add.subtask((8, )))
 
-As expected this will first launch one task calculating `2 + 2`, then 
-another task calculating `4 + 8`.
+As expected this will first launch one task calculating :math:`2 + 2`, then
+another task calculating :math:`4 + 8`.
 
 .. _sets-taskset:
 

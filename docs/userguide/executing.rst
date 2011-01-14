@@ -13,7 +13,7 @@
 Basics
 ======
 
-Executing tasks is done with :meth:`~celery.task.Base.Task.apply_async`,
+Executing a task is done with :meth:`~celery.task.Base.Task.apply_async`,
 and the shortcut: :meth:`~celery.task.Base.Task.delay`.
 
 `delay` is simple and convenient, as it looks like calling a regular
@@ -36,8 +36,8 @@ available as attributes on the `Task` class (see :ref:`task-options`).
 In addition you can set countdown/eta, task expiry, provide a custom broker
 connection and more.
 
-Let's go over these in more detail.  All the examples use a simple task,
-called `add`, taking two positional arguments and returning the sum:
+Let's go over these in more detail.  All the examples uses a simple task
+called `add`, returning the sum of two positional arguments:
 
 .. code-block:: python
 

@@ -50,7 +50,7 @@ Important Notes
 
     It wasn't easy to find a way to deprecate the magic keyword arguments,
     but we think this is a solution that makes sense and it will not
-    have any adverse effects on existing code.
+    have any adverse effects for existing code.
 
     The path to a magic keyword argument free world is:
 

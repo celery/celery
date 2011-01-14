@@ -138,7 +138,7 @@ You can also override this using the `routing_key` argument to
 
 
 To make server `z` consume from the feed queue exclusively you can
-start it with the `-Q` option::
+start it with the ``-Q`` option::
 
     (z)$ celeryd -Q feed_tasks --hostname=z.example.com
 
@@ -302,12 +302,12 @@ Topic exchanges
 ~~~~~~~~~~~~~~~
 
 Topic exchanges matches routing keys using dot-separated words, and the
-wildcard characters: `*` (matches a single word), and `#` (matches
+wildcard characters: ``*`` (matches a single word), and ``#`` (matches
 zero or more words).
 
-With routing keys like `usa.news`, `usa.weather`, `norway.news` and
-`norway.weather`, bindings could be `*.news` (all news), `usa.#` (all
-items in the USA) or `usa.weather` (all USA weather items).
+With routing keys like ``usa.news``, ``usa.weather``, ``norway.news`` and
+``norway.weather``, bindings could be ``*.news`` (all news), ``usa.#`` (all
+items in the USA) or ``usa.weather`` (all USA weather items).
 
 .. _amqp-api:
 
@@ -367,16 +367,16 @@ It's used for command-line access to the AMQP API, enabling access to
 administration tasks like creating/deleting queues and exchanges, purging
 queues or sending messages.
 
-You can write commands directly in the arguments to `camqadm`, or just start
-with no arguments to start it in shell-mode::
+You can write commands directly in the arguments to :program:`camqadm`,
+or just start with no arguments to start it in shell-mode::
 
     $ camqadm
     -> connecting to amqp://guest@localhost:5672/.
     -> connected.
     1>
 
-Here `1>` is the prompt.  The number 1, is the number of commands you
-have executed so far.  Type `help` for a list of commands available.
+Here ``1>`` is the prompt.  The number 1, is the number of commands you
+have executed so far.  Type ``help`` for a list of commands available.
 It also supports auto-completion, so you can start typing a command and then
 hit the `tab` key to show a list of possible matches.
 
@@ -389,21 +389,19 @@ Let's create a queue we can send messages to::
     3> queue.bind testqueue testexchange testkey
     ok.
 
-This created the direct exchange `testexchange`, and a queue
-named `testqueue`.  The queue is bound to the exchange using
-the routing key `testkey`.
+This created the direct exchange ``testexchange``, and a queue
+named ``testqueue``.  The queue is bound to the exchange using
+the routing key ``testkey``.
 
-From now on all messages sent to the exchange `testexchange` with routing
-key `testkey` will be moved to this queue.  We can send a message by
-using the `basic.publish` command::
+From now on all messages sent to the exchange ``testexchange`` with routing
+key ``testkey`` will be moved to this queue.  We can send a message by
+using the ``basic.publish`` command::
 
     4> basic.publish "This is a message!" testexchange testkey
     ok.
 
 Now that the message is sent we can retrieve it again.  We use the
-`basic.get` command here, which pops a single message off the queue,
-this command is not recommended for production as it implies polling, any
-real application would declare consumers instead.
+``basic.get``` command here, which polls for new messages on the queue.
 
 Pop a message off the queue::
 
@@ -422,13 +420,13 @@ and processed successfully.  If the message has not been acknowledged
 and consumer channel is closed, the message will be delivered to
 another consumer.
 
-Note the delivery tag listed in the structure above; Within a connection channel,
-every received message has a unique delivery tag,
+Note the delivery tag listed in the structure above; Within a connection
+channel, every received message has a unique delivery tag,
 This tag is used to acknowledge the message.  Also note that
 delivery tags are not unique across connections, so in another client
 the delivery tag `1` might point to a different message than in this channel.
 
-You can acknowledge the message we received using `basic.ack`::
+You can acknowledge the message we received using ``basic.ack``::
 
     6> basic.ack 1
     ok.
@@ -510,7 +508,7 @@ Routers
 A router is a class that decides the routing options for a task.
 
 All you need to define a new router is to create a class with a
-`route_for_task` method:
+``route_for_task`` method:
 
 .. code-block:: python
 
@@ -523,7 +521,7 @@ All you need to define a new router is to create a class with a
                         "routing_key": "video.compress"}
             return None
 
-If you return the `queue` key, it will expand with the defined settings of
+If you return the ``queue`` key, it will expand with the defined settings of
 that queue in :setting:`CELERY_QUEUES`::
 
     {"queue": "video", "routing_key": "video.compress"}
@@ -536,7 +534,8 @@ that queue in :setting:`CELERY_QUEUES`::
          "routing_key": "video.compress"}
 
 
-You install router classes by adding them to the :setting:`CELERY_ROUTES` setting::
+You install router classes by adding them to the :setting:`CELERY_ROUTES`
+setting::
 
     CELERY_ROUTES = (MyRouter, )
 
@@ -545,8 +544,9 @@ Router classes can also be added by name::
     CELERY_ROUTES = ("myapp.routers.MyRouter", )
 
 
-For simple task name -> route mappings like the router example above, you can simply
-drop a dict into :setting:`CELERY_ROUTES` to get the same behavior:
+For simple task name -> route mappings like the router example above,
+you can simply drop a dict into :setting:`CELERY_ROUTES` to get the
+same behavior:
 
 .. code-block:: python
 

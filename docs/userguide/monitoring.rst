@@ -57,6 +57,7 @@ Commands
 
 * **purge**: Purge messages from all configured task queues.
     ::
+
         $ celeryctl purge
 
     .. warning::
@@ -115,9 +116,9 @@ Commands
 
 .. note::
 
-    All `inspect` commands supports a `--timeout` argument,
+    All ``inspect`` commands supports a ``--timeout`` argument,
     This is the number of seconds to wait for responses.
-    You may have to increase this timeout if you're getting empty responses
+    You may have to increase this timeout if you're not getting a response
     due to latency.
 
 .. _celeryctl-inspect-destination:
@@ -188,21 +189,21 @@ Shutter frequency
 
 By default the camera takes a snapshot every second, if this is too frequent
 or you want to have higher precision, then you can change this using the
-`--frequency` argument.  This is a float describing how often, in seconds,
+``--frequency`` argument.  This is a float describing how often, in seconds,
 it should wake up to check if there are any new events::
 
     $ python manage.py celerycam --frequency=3.0
 
-The camera also supports rate limiting using the `--maxrate` argument.
+The camera also supports rate limiting using the ``--maxrate`` argument.
 While the frequency controls how often the camera thread wakes up,
 the rate limit controls how often it will actually take a snapshot.
 
 The rate limits can be specified in seconds, minutes or hours
 by appending `/s`, `/m` or `/h` to the value.
-Example: `--maxrate=100/m`, means "hundred writes a minute".
+Example: ``--maxrate=100/m``, means "hundred writes a minute".
 
 The rate limit is off by default, which means it will take a snapshot
-for every `--frequency` seconds.
+for every ``--frequency`` seconds.
 
 The events also expire after some time, so the database doesn't fill up.
 Successful tasks are deleted after 1 day, failed tasks after 3 days,
@@ -269,7 +270,7 @@ Now that the service is started you can visit the monitor
 at http://127.0.0.1:8000, and log in using the user you created.
 
 For a list of the command line options supported by :program:`djcelerymon`,
-please see `djcelerymon --help`.
+please see ``djcelerymon --help``.
 
 .. _monitoring-celeryev:
 
@@ -295,7 +296,7 @@ and it includes a tool to dump events to :file:`stdout`::
 
     $ celeryev --dump
 
-For a complete list of options use `--help`::
+For a complete list of options use ``--help``::
 
     $ celeryev --help
 
@@ -331,10 +332,10 @@ as manage users, virtual hosts and their permissions.
 
 .. note::
 
-    The default virtual host (`"/"`) is used in these
+    The default virtual host (``"/"``) is used in these
     examples, if you use a custom virtual host you have to add
-    the `-p` argument to the command, e.g:
-    `rabbitmqctl list_queues -p my_vhost ....`
+    the ``-p`` argument to the command, e.g:
+    ``rabbitmqctl list_queues -p my_vhost ....``
 
 .. _`rabbitmqctl(1)`: http://www.rabbitmq.com/man/rabbitmqctl.1.man.html
 
@@ -365,7 +366,7 @@ Finding the amount of memory allocated to a queue::
 
     $ rabbitmqctl list_queues name memory
 
-:Tip: Adding the `-q` option to `rabbitmqctl(1)`_ makes the output
+:Tip: Adding the ``-q`` option to `rabbitmqctl(1)`_ makes the output
       easier to parse.
 
 
@@ -421,7 +422,7 @@ write it to a database, send it by e-mail or something else entirely.
 
 :program:`celeryev` is then used to take snapshots with the camera,
 for example if you want to capture state every 2 seconds using the
-camera `myapp.Camera` you run :program:`celeryev` with the following
+camera ``myapp.Camera`` you run :program:`celeryev` with the following
 arguments::
 
     $ celeryev -c myapp.Camera --frequency=2.0
@@ -455,7 +456,7 @@ Here is an example camera, dumping the snapshot to screen:
 See the API reference for :mod:`celery.events.state` to read more
 about state objects.
 
-Now you can use this cam with `celeryev` by specifying
+Now you can use this cam with :program:`celeryev` by specifying
 it with the `-c` option::
 
     $ celeryev -c myapp.DumpCam --frequency=2.0
@@ -490,16 +491,16 @@ This list contains the events sent by the worker, and their arguments.
 Task Events
 ~~~~~~~~~~~
 
-* `task-received(uuid, name, args, kwargs, retries, eta, hostname,
-  timestamp)`
+* ``task-received(uuid, name, args, kwargs, retries, eta, hostname,
+  timestamp)``
 
     Sent when the worker receives a task.
 
-* `task-started(uuid, hostname, timestamp, pid)`
+* ``task-started(uuid, hostname, timestamp, pid)``
 
     Sent just before the worker executes the task.
 
-* `task-succeeded(uuid, result, runtime, hostname, timestamp)`
+* ``task-succeeded(uuid, result, runtime, hostname, timestamp)``
 
     Sent if the task executed successfully.
 
@@ -507,16 +508,16 @@ Task Events
     (Starting from the task is sent to the worker pool, and ending when the
     pool result handler callback is called).
 
-* `task-failed(uuid, exception, traceback, hostname, timestamp)`
+* ``task-failed(uuid, exception, traceback, hostname, timestamp)``
 
     Sent if the execution of the task failed.
 
-* `task-revoked(uuid)`
+* ``task-revoked(uuid)``
 
     Sent if the task has been revoked (Note that this is likely
     to be sent by more than one worker).
 
-* `task-retried(uuid, exception, traceback, hostname, timestamp)`
+* ``task-retried(uuid, exception, traceback, hostname, timestamp)``
 
     Sent if the task failed, but will be retried in the future.
 
@@ -525,7 +526,7 @@ Task Events
 Worker Events
 ~~~~~~~~~~~~~
 
-* `worker-online(hostname, timestamp, sw_ident, sw_ver, sw_sys)`
+* ``worker-online(hostname, timestamp, sw_ident, sw_ver, sw_sys)``
 
     The worker has connected to the broker and is online.
 
@@ -533,11 +534,11 @@ Worker Events
     * `sw_ver`: Software version (e.g. 2.2.0).
     * `sw_sys`: Operating System (e.g. Linux, Windows, Darwin).
 
-* `worker-heartbeat(hostname, timestamp, sw_ident, sw_ver, sw_sys)`
+* ``worker-heartbeat(hostname, timestamp, sw_ident, sw_ver, sw_sys)``
 
     Sent every minute, if the worker has not sent a heartbeat in 2 minutes,
     it is considered to be offline.
 
-* `worker-offline(hostname, timestamp, sw_ident, sw_ver, sw_sys)`
+* ``worker-offline(hostname, timestamp, sw_ident, sw_ver, sw_sys)``
 
     The worker has disconnected from the broker.

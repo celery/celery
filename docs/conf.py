@@ -21,6 +21,7 @@ import celery
 
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.coverage',
+              'sphinx.ext.pngmath',
               'sphinxcontrib.issuetracker',
               'celerydocs']
 

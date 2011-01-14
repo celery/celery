@@ -60,9 +60,10 @@ Concurrency settings
 CELERYD_CONCURRENCY
 ~~~~~~~~~~~~~~~~~~~
 
-The number of concurrent worker processes, executing tasks simultaneously.
+The number of concurrent worker processes/threads/green threads, executing
+tasks.
 
-Defaults to the number of CPUs/cores available.
+Defaults to the number of available CPUs.
 
 .. setting:: CELERYD_PREFETCH_MULTIPLIER
 
@@ -514,7 +515,11 @@ Broker Settings
 BROKER_BACKEND
 ~~~~~~~~~~~~~~
 
-The messaging backend to use. Default is `"amqplib"`.
+The Kombu transport to use.  Default is ``amqplib``.
+
+You can use a custom transport class name, or select one of the
+built-in transports: ``amqplib``, ``pika``, ``redis``, ``beanstalk``, 
+``sqlalchemy``, ``django``, ``mongodb``, ``couchdb``.
 
 .. setting:: BROKER_HOST
 
@@ -620,7 +625,7 @@ CELERY_EAGER_PROPAGATES_EXCEPTIONS
 If this is :const:`True`, eagerly executed tasks (using `.apply`, or with
 :setting:`CELERY_ALWAYS_EAGER` on), will raise exceptions.
 
-It's the same as always running `apply` with `throw=True`.
+It's the same as always running `apply` with ``throw=True``.
 
 .. setting:: CELERY_IGNORE_RESULT
 
@@ -1125,8 +1130,12 @@ Custom Component Classes (advanced)
 CELERYD_POOL
 ~~~~~~~~~~~~
 
-Name of the task pool class used by the worker.
-Default is :class:`celery.concurrency.processes.TaskPool`.
+Name of the pool class used by the worker.
+
+You can use a custom pool class name, or select one of
+the built-in aliases: ``processes``, ``eventlet``, ``gevent``.
+
+Default is ``processes``.
 
 .. setting:: CELERYD_CONSUMER
 
@@ -1150,7 +1159,8 @@ CELERYD_ETA_SCHEDULER
 ~~~~~~~~~~~~~~~~~~~~~
 
 Name of the ETA scheduler class used by the worker.
-Default is :class:`celery.worker.controllers.ScheduleController`.
+Default is :class:`celery.utils.timer2.Timer`, or one overrided
+by the pool implementation.
 
 .. _conf-celerybeat:
 
