@@ -55,7 +55,7 @@ def disable_events(panel):
 def heartbeat(panel):
     panel.logger.debug("Heartbeat requested by remote.")
     dispatcher = panel.consumer.event_dispatcher
-    dispatcher.send("worker-heartbeat")
+    dispatcher.send("worker-heartbeat", **state.SOFTWARE_INFO)
 
 
 @Panel.register

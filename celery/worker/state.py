@@ -1,8 +1,15 @@
+import platform
 import shelve
 
+from celery import __version__
 from celery.utils import cached_property
 from celery.utils.compat import defaultdict
 from celery.datastructures import LimitedSet
+
+#: Worker software/platform information.
+SOFTWARE_INFO = {"sw_ident": "celeryd",
+                 "sw_ver": __version__,
+                 "sw_sys": platform.system()}
 
 #: maximum number of revokes to keep in memory.
 REVOKES_MAX = 10000
