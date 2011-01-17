@@ -38,7 +38,7 @@ class Dispatcher(object):
     def disable(self):
         self.enabled = False
 
-    def send(self, event):
+    def send(self, event, **fields):
         self.sent.append(event)
 
 
