@@ -57,7 +57,7 @@ with a `pdb` shell::
     (Pdb)
 
 Enter ``help`` to get a list of available commands,
-It may be a good idea to read the `The Python Debugger`_ manual if
+It may be a good idea to read the `Python Debugger Manual`_ if
 you have never used `pdb` before.
 
 To demonstrate, we will read the value of the ``result`` variable,
@@ -75,4 +75,4 @@ The result of our vandalism can be seen in the worker logs::
         tasks.add[d7261c71-4962-47e5-b342-2448bedd20e8] succeeded
         in 61.481s: 'hello from rdb'
 
-.. _`The Python Debugger`: http://docs.python.org/library/pdb.html
+.. _`Python Debugger Manual`: http://docs.python.org/library/pdb.html
