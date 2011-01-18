@@ -17,6 +17,18 @@ Inspired by http://snippets.dzone.com/posts/show/7248
         return result
 
 
+**Environment Variables**
+
+.. envvar:: CELERY_RDB_HOST
+
+    Hostname to bind to.  Default is '127.0.01', which means the socket
+    will only be accessible from the local host.
+
+.. envvar:: CELERY_RDB_PORt
+
+    Base port to bind to.  Default is 6899.
+    The debugger will try to find an available port starting from the
+    base port.  The selected port will be logged by celeryd.
 
 """
 import bdb
@@ -29,7 +41,7 @@ from pdb import Pdb
 
 default_port = 6899
 
-CELERY_RDB_HOST = os.environ.get("CELERY_RDB_HOST") or socket.gethostname()
+CELERY_RDB_HOST = os.environ.get("CELERY_RDB_HOST") or "127.0.0.1"
 CELERY_RDB_PORT = int(os.environ.get("CELERY_RDB_PORT") or default_port)
 
 #: Holds the currently active debugger.
