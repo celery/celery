@@ -129,8 +129,9 @@ It should contain all you need to run a basic Celery set-up.</p>
 <span id="conf-concurrency"></span><h3><a class="toc-backref" href="#id7">Concurrency settings</a><a class="headerlink" href="#concurrency-settings" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="celeryd-concurrency">
 <span id="std:setting-CELERYD_CONCURRENCY"></span><h4>CELERYD_CONCURRENCY<a class="headerlink" href="#celeryd-concurrency" title="Permalink to this headline">¶</a></h4>
-<p>The number of concurrent worker processes, executing tasks simultaneously.</p>
-<p>Defaults to the number of CPUs/cores available.</p>
+<p>The number of concurrent worker processes/threads/green threads, executing
+tasks.</p>
+<p>Defaults to the number of available CPUs.</p>
 </div>
 <div class="section" id="celeryd-prefetch-multiplier">
 <span id="std:setting-CELERYD_PREFETCH_MULTIPLIER"></span><h4>CELERYD_PREFETCH_MULTIPLIER<a class="headerlink" href="#celeryd-prefetch-multiplier" title="Permalink to this headline">¶</a></h4>
@@ -484,7 +485,10 @@ persistent messages.</p>
 <span id="conf-broker-connection"></span><h3><a class="toc-backref" href="#id16">Broker Settings</a><a class="headerlink" href="#broker-settings" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="broker-backend">
 <span id="std:setting-BROKER_BACKEND"></span><h4>BROKER_BACKEND<a class="headerlink" href="#broker-backend" title="Permalink to this headline">¶</a></h4>
-<p>The messaging backend to use. Default is <cite>&#8220;amqplib&#8221;</cite>.</p>
+<p>The Kombu transport to use.  Default is <tt class="docutils literal"><span class="pre">amqplib</span></tt>.</p>
+<p>You can use a custom transport class name, or select one of the
+built-in transports: <tt class="docutils literal"><span class="pre">amqplib</span></tt>, <tt class="docutils literal"><span class="pre">pika</span></tt>, <tt class="docutils literal"><span class="pre">redis</span></tt>, <tt class="docutils literal"><span class="pre">beanstalk</span></tt>,
+<tt class="docutils literal"><span class="pre">sqlalchemy</span></tt>, <tt class="docutils literal"><span class="pre">django</span></tt>, <tt class="docutils literal"><span class="pre">mongodb</span></tt>, <tt class="docutils literal"><span class="pre">couchdb</span></tt>.</p>
 </div>
 <div class="section" id="broker-host">
 <span id="std:setting-BROKER_HOST"></span><h4>BROKER_HOST<a class="headerlink" href="#broker-host" title="Permalink to this headline">¶</a></h4>
@@ -549,7 +553,7 @@ instead.</p>
 <span id="std:setting-CELERY_EAGER_PROPAGATES_EXCEPTIONS"></span><h4>CELERY_EAGER_PROPAGATES_EXCEPTIONS<a class="headerlink" href="#celery-eager-propagates-exceptions" title="Permalink to this headline">¶</a></h4>
 <p>If this is <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt>, eagerly executed tasks (using <cite>.apply</cite>, or with
 <a class="reference internal" href="#std:setting-CELERY_ALWAYS_EAGER"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ALWAYS_EAGER</span></tt></a> on), will raise exceptions.</p>
-<p>It&#8217;s the same as always running <cite>apply</cite> with <cite>throw=True</cite>.</p>
+<p>It&#8217;s the same as always running <cite>apply</cite> with <tt class="docutils literal"><span class="pre">throw=True</span></tt>.</p>
 </div>
 <div class="section" id="celery-ignore-result">
 <span id="std:setting-CELERY_IGNORE_RESULT"></span><h4>CELERY_IGNORE_RESULT<a class="headerlink" href="#celery-ignore-result" title="Permalink to this headline">¶</a></h4>
@@ -895,8 +899,10 @@ Can be one of <tt class="xref py py-const docutils literal"><span class="pre">DE
 <span id="conf-custom-components"></span><h3><a class="toc-backref" href="#id23">Custom Component Classes (advanced)</a><a class="headerlink" href="#custom-component-classes-advanced" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="celeryd-pool">
 <span id="std:setting-CELERYD_POOL"></span><h4>CELERYD_POOL<a class="headerlink" href="#celeryd-pool" title="Permalink to this headline">¶</a></h4>
-<p>Name of the task pool class used by the worker.
-Default is <a class="reference internal" href="internals/reference/celery.concurrency.processes.html#celery.concurrency.processes.TaskPool" title="celery.concurrency.processes.TaskPool"><tt class="xref py py-class docutils literal"><span class="pre">celery.concurrency.processes.TaskPool</span></tt></a>.</p>
+<p>Name of the pool class used by the worker.</p>
+<p>You can use a custom pool class name, or select one of
+the built-in aliases: <tt class="docutils literal"><span class="pre">processes</span></tt>, <tt class="docutils literal"><span class="pre">eventlet</span></tt>, <tt class="docutils literal"><span class="pre">gevent</span></tt>.</p>
+<p>Default is <tt class="docutils literal"><span class="pre">processes</span></tt>.</p>
 </div>
 <div class="section" id="celeryd-consumer">
 <span id="std:setting-CELERYD_CONSUMER"></span><h4>CELERYD_CONSUMER<a class="headerlink" href="#celeryd-consumer" title="Permalink to this headline">¶</a></h4>
@@ -911,7 +917,8 @@ Default is <a class="reference internal" href="internals/reference/celery.worker
 <div class="section" id="celeryd-eta-scheduler">
 <span id="std:setting-CELERYD_ETA_SCHEDULER"></span><h4>CELERYD_ETA_SCHEDULER<a class="headerlink" href="#celeryd-eta-scheduler" title="Permalink to this headline">¶</a></h4>
 <p>Name of the ETA scheduler class used by the worker.
-Default is <tt class="xref py py-class docutils literal"><span class="pre">celery.worker.controllers.ScheduleController</span></tt>.</p>
+Default is <a class="reference internal" href="internals/reference/celery.utils.timer2.html#celery.utils.timer2.Timer" title="celery.utils.timer2.Timer"><tt class="xref py py-class docutils literal"><span class="pre">celery.utils.timer2.Timer</span></tt></a>, or one overrided
+by the pool implementation.</p>
 </div>
 </div>
 <div class="section" id="periodic-task-server-celerybeat">

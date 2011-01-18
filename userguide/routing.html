@@ -198,7 +198,7 @@ will be taken from the <a class="reference internal" href="../configuration.html
 </pre></div>
 </div>
 <p>To make server <cite>z</cite> consume from the feed queue exclusively you can
-start it with the <cite>-Q</cite> option:</p>
+start it with the <tt class="docutils literal"><span class="pre">-Q</span></tt> option:</p>
 <div class="highlight-python"><pre>(z)$ celeryd -Q feed_tasks --hostname=z.example.com</pre>
 </div>
 <p>Servers <cite>x</cite> and <cite>y</cite> must be configured to consume from the default queue:</p>
@@ -325,11 +325,11 @@ the routing key <cite>video</cite> only receives messages with that routing key.
 <div class="section" id="topic-exchanges">
 <span id="amqp-exchange-type-topic"></span><h4><a class="toc-backref" href="#id16">Topic exchanges</a><a class="headerlink" href="#topic-exchanges" title="Permalink to this headline">¶</a></h4>
 <p>Topic exchanges matches routing keys using dot-separated words, and the
-wildcard characters: <cite>*</cite> (matches a single word), and <cite>#</cite> (matches
+wildcard characters: <tt class="docutils literal"><span class="pre">*</span></tt> (matches a single word), and <tt class="docutils literal"><span class="pre">#</span></tt> (matches
 zero or more words).</p>
-<p>With routing keys like <cite>usa.news</cite>, <cite>usa.weather</cite>, <cite>norway.news</cite> and
-<cite>norway.weather</cite>, bindings could be <cite>*.news</cite> (all news), <cite>usa.#</cite> (all
-items in the USA) or <cite>usa.weather</cite> (all USA weather items).</p>
+<p>With routing keys like <tt class="docutils literal"><span class="pre">usa.news</span></tt>, <tt class="docutils literal"><span class="pre">usa.weather</span></tt>, <tt class="docutils literal"><span class="pre">norway.news</span></tt> and
+<tt class="docutils literal"><span class="pre">norway.weather</span></tt>, bindings could be <tt class="docutils literal"><span class="pre">*.news</span></tt> (all news), <tt class="docutils literal"><span class="pre">usa.#</span></tt> (all
+items in the USA) or <tt class="docutils literal"><span class="pre">usa.weather</span></tt> (all USA weather items).</p>
 </div>
 </div>
 <div class="section" id="related-api-commands">
@@ -400,15 +400,15 @@ be the one to create it.</p>
 It&#8217;s used for command-line access to the AMQP API, enabling access to
 administration tasks like creating/deleting queues and exchanges, purging
 queues or sending messages.</p>
-<p>You can write commands directly in the arguments to <cite>camqadm</cite>, or just start
-with no arguments to start it in shell-mode:</p>
+<p>You can write commands directly in the arguments to <strong class="program">camqadm</strong>,
+or just start with no arguments to start it in shell-mode:</p>
 <div class="highlight-python"><pre>$ camqadm
 -&gt; connecting to amqp://guest@localhost:5672/.
 -&gt; connected.
 1&gt;</pre>
 </div>
-<p>Here <cite>1&gt;</cite> is the prompt.  The number 1, is the number of commands you
-have executed so far.  Type <cite>help</cite> for a list of commands available.
+<p>Here <tt class="docutils literal"><span class="pre">1&gt;</span></tt> is the prompt.  The number 1, is the number of commands you
+have executed so far.  Type <tt class="docutils literal"><span class="pre">help</span></tt> for a list of commands available.
 It also supports auto-completion, so you can start typing a command and then
 hit the <cite>tab</cite> key to show a list of possible matches.</p>
 <p>Let&#8217;s create a queue we can send messages to:</p>
@@ -419,19 +419,17 @@ ok. queue:testqueue messages:0 consumers:0.
 3&gt; queue.bind testqueue testexchange testkey
 ok.</pre>
 </div>
-<p>This created the direct exchange <cite>testexchange</cite>, and a queue
-named <cite>testqueue</cite>.  The queue is bound to the exchange using
-the routing key <cite>testkey</cite>.</p>
-<p>From now on all messages sent to the exchange <cite>testexchange</cite> with routing
-key <cite>testkey</cite> will be moved to this queue.  We can send a message by
-using the <cite>basic.publish</cite> command:</p>
+<p>This created the direct exchange <tt class="docutils literal"><span class="pre">testexchange</span></tt>, and a queue
+named <tt class="docutils literal"><span class="pre">testqueue</span></tt>.  The queue is bound to the exchange using
+the routing key <tt class="docutils literal"><span class="pre">testkey</span></tt>.</p>
+<p>From now on all messages sent to the exchange <tt class="docutils literal"><span class="pre">testexchange</span></tt> with routing
+key <tt class="docutils literal"><span class="pre">testkey</span></tt> will be moved to this queue.  We can send a message by
+using the <tt class="docutils literal"><span class="pre">basic.publish</span></tt> command:</p>
 <div class="highlight-python"><pre>4&gt; basic.publish "This is a message!" testexchange testkey
 ok.</pre>
 </div>
 <p>Now that the message is sent we can retrieve it again.  We use the
-<cite>basic.get</cite> command here, which pops a single message off the queue,
-this command is not recommended for production as it implies polling, any
-real application would declare consumers instead.</p>
+<tt class="docutils literal"><span class="pre">basic.get`</span></tt> command here, which polls for new messages on the queue.</p>
 <p>Pop a message off the queue:</p>
 <div class="highlight-python"><pre>5&gt; basic.get testqueue
 {'body': 'This is a message!',
@@ -446,12 +444,12 @@ real application would declare consumers instead.</p>
 and processed successfully.  If the message has not been acknowledged
 and consumer channel is closed, the message will be delivered to
 another consumer.</p>
-<p>Note the delivery tag listed in the structure above; Within a connection channel,
-every received message has a unique delivery tag,
+<p>Note the delivery tag listed in the structure above; Within a connection
+channel, every received message has a unique delivery tag,
 This tag is used to acknowledge the message.  Also note that
 delivery tags are not unique across connections, so in another client
 the delivery tag <cite>1</cite> might point to a different message than in this channel.</p>
-<p>You can acknowledge the message we received using <cite>basic.ack</cite>:</p>
+<p>You can acknowledge the message we received using <tt class="docutils literal"><span class="pre">basic.ack</span></tt>:</p>
 <div class="highlight-python"><pre>6&gt; basic.ack 1
 ok.</pre>
 </div>
@@ -515,7 +513,7 @@ as task attributes.</p>
 <span id="id4"></span><h3><a class="toc-backref" href="#id22">Routers</a><a class="headerlink" href="#routers" title="Permalink to this headline">¶</a></h3>
 <p>A router is a class that decides the routing options for a task.</p>
 <p>All you need to define a new router is to create a class with a
-<cite>route_for_task</cite> method:</p>
+<tt class="docutils literal"><span class="pre">route_for_task</span></tt> method:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyRouter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="nf">route_for_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
@@ -526,7 +524,7 @@ as task attributes.</p>
         <span class="k">return</span> <span class="bp">None</span>
 </pre></div>
 </div>
-<p>If you return the <cite>queue</cite> key, it will expand with the defined settings of
+<p>If you return the <tt class="docutils literal"><span class="pre">queue</span></tt> key, it will expand with the defined settings of
 that queue in <a class="reference internal" href="../configuration.html#std:setting-CELERY_QUEUES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_QUEUES</span></tt></a>:</p>
 <div class="highlight-python"><pre>{"queue": "video", "routing_key": "video.compress"}
 
@@ -537,7 +535,8 @@ becomes --&gt;
      "exchange_type": "topic",
      "routing_key": "video.compress"}</pre>
 </div>
-<p>You install router classes by adding them to the <a class="reference internal" href="../configuration.html#std:setting-CELERY_ROUTES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ROUTES</span></tt></a> setting:</p>
+<p>You install router classes by adding them to the <a class="reference internal" href="../configuration.html#std:setting-CELERY_ROUTES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ROUTES</span></tt></a>
+setting:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_ROUTES</span> <span class="o">=</span> <span class="p">(</span><span class="n">MyRouter</span><span class="p">,</span> <span class="p">)</span>
 </pre></div>
 </div>
@@ -545,8 +544,9 @@ becomes --&gt;
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_ROUTES</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;myapp.routers.MyRouter&quot;</span><span class="p">,</span> <span class="p">)</span>
 </pre></div>
 </div>
-<p>For simple task name -&gt; route mappings like the router example above, you can simply
-drop a dict into <a class="reference internal" href="../configuration.html#std:setting-CELERY_ROUTES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ROUTES</span></tt></a> to get the same behavior:</p>
+<p>For simple task name -&gt; route mappings like the router example above,
+you can simply drop a dict into <a class="reference internal" href="../configuration.html#std:setting-CELERY_ROUTES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ROUTES</span></tt></a> to get the
+same behavior:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_ROUTES</span> <span class="o">=</span> <span class="p">({</span><span class="s">&quot;myapp.tasks.compress_video&quot;</span><span class="p">:</span> <span class="p">{</span>
                         <span class="s">&quot;queue&quot;</span><span class="p">:</span> <span class="s">&quot;video&quot;</span><span class="p">,</span>
                         <span class="s">&quot;routing_key&quot;</span><span class="p">:</span> <span class="s">&quot;video.compress&quot;</span>

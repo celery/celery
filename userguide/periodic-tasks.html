@@ -179,68 +179,68 @@ the <cite>crontab</cite> schedule type:</p>
 <p>The syntax of these crontab expressions are very flexible.  Some examples:</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="46%" />
-<col width="54%" />
+<col width="48%" />
+<col width="52%" />
 </colgroup>
 <tbody valign="top">
 <tr><td><strong>Example</strong></td>
 <td><strong>Meaning</strong></td>
 </tr>
-<tr><td>crontab()</td>
+<tr><td><tt class="docutils literal"><span class="pre">crontab()</span></tt></td>
 <td>Execute every minute.</td>
 </tr>
-<tr><td>crontab(minute=0, hour=0)</td>
+<tr><td><tt class="docutils literal"><span class="pre">crontab(minute=0,</span> <span class="pre">hour=0)</span></tt></td>
 <td>Execute daily at midnight.</td>
 </tr>
-<tr><td>crontab(minute=0, hour=&#8221;*/3&#8221;)</td>
+<tr><td><tt class="docutils literal"><span class="pre">crontab(minute=0,</span> <span class="pre">hour=&quot;*/3&quot;)</span></tt></td>
 <td>Execute every three hours:
 3am, 6am, 9am, noon, 3pm, 6pm, 9pm.</td>
 </tr>
 <tr><td><dl class="first last docutils">
-<dt>crontab(minute=0,</dt>
-<dd>hour=[0,3,6,9,12,15,18,21])</dd>
+<dt><tt class="docutils literal"><span class="pre">crontab(minute=0,</span></tt></dt>
+<dd><tt class="docutils literal"><span class="pre">hour=[0,3,6,9,12,15,18,21])</span></tt></dd>
 </dl>
 </td>
 <td>Same as previous.</td>
 </tr>
-<tr><td>crontab(minute=&#8221;*/15&#8221;)</td>
+<tr><td><tt class="docutils literal"><span class="pre">crontab(minute=&quot;*/15&quot;)</span></tt></td>
 <td>Execute every 15 minutes.</td>
 </tr>
-<tr><td>crontab(day_of_week=&#8221;sunday&#8221;)</td>
+<tr><td><tt class="docutils literal"><span class="pre">crontab(day_of_week=&quot;sunday&quot;)</span></tt></td>
 <td>Execute every minute (!) at Sundays.</td>
 </tr>
 <tr><td><dl class="first last docutils">
-<dt>crontab(minute=&#8221;*&#8221;,</dt>
-<dd>hour=&#8221;*&#8221;,
-day_of_week=&#8221;sun&#8221;)</dd>
+<dt><tt class="docutils literal"><span class="pre">crontab(minute=&quot;*&quot;,</span></tt></dt>
+<dd><tt class="docutils literal"><span class="pre">hour=&quot;*&quot;,</span></tt>
+<tt class="docutils literal"><span class="pre">day_of_week=&quot;sun&quot;)</span></tt></dd>
 </dl>
 </td>
 <td>Same as previous.</td>
 </tr>
 <tr><td><dl class="first last docutils">
-<dt>crontab(minute=&#8221;*/10&#8221;,</dt>
-<dd>hour=&#8221;3,17,22&#8221;,
-day_of_week=&#8221;thu,fri&#8221;)</dd>
+<dt><tt class="docutils literal"><span class="pre">crontab(minute=&quot;*/10&quot;,</span></tt></dt>
+<dd><tt class="docutils literal"><span class="pre">hour=&quot;3,17,22&quot;,</span></tt>
+<tt class="docutils literal"><span class="pre">day_of_week=&quot;thu,fri&quot;)</span></tt></dd>
 </dl>
 </td>
 <td>Execute every ten minutes, but only
 between 3-4 am, 5-6 pm and 10-11 pm on
 Thursdays or Fridays.</td>
 </tr>
-<tr><td>crontab(minute=0, hour=&#8221;*/2,*/3&#8221;)</td>
+<tr><td><tt class="docutils literal"><span class="pre">crontab(minute=0,</span> <span class="pre">hour=&quot;*/2,*/3&quot;)</span></tt></td>
 <td>Execute every even hour, and every hour
 divisible by three. This means:
 at every hour <em>except</em>: 1am,
 5am, 7am, 11am, 1pm, 5pm, 7pm,
 11pm</td>
 </tr>
-<tr><td>crontab(minute=0, hour=&#8221;*/5&#8221;)</td>
+<tr><td><tt class="docutils literal"><span class="pre">crontab(minute=0,</span> <span class="pre">hour=&quot;*/5&quot;)</span></tt></td>
 <td>Execute hour divisible by 5. This means
 that it is triggered at 3pm, not 5pm
 (since 3pm equals the 24-hour clock
 value of &#8220;15&#8221;, which is divisible by 5).</td>
 </tr>
-<tr><td>crontab(minute=0, hour=&#8221;*/3,8-17&#8221;)</td>
+<tr><td><tt class="docutils literal"><span class="pre">crontab(minute=0,</span> <span class="pre">hour=&quot;*/3,8-17&quot;)</span></tt></td>
 <td>Execute every hour divisible by 3, and
 every hour during office hours (8am-5pm).</td>
 </tr>

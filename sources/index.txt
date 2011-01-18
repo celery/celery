@@ -1,6 +1,3 @@
-.. image:: images/celery_favicon_128.png
-   :class: celerylogo
-
 =================================
  Celery - Distributed Task Queue
 =================================

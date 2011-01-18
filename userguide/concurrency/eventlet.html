@@ -69,12 +69,13 @@
 <span id="concurrency-eventlet"></span><h1>Concurrency with Eventlet<a class="headerlink" href="#concurrency-with-eventlet" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="introduction">
 <span id="eventlet-introduction"></span><h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
-<p>The <a class="reference external" href="http://eventlet.net">Eventlet</a> homepage describes eventlet as,
-a concurrent networking library for Python that allows you to
+<p>The <a class="reference external" href="http://eventlet.net">Eventlet</a> homepage describes it as;
+A concurrent networking library for Python that allows you to
 change how you run your code, not how you write it.</p>
 <blockquote>
 <ul class="simple">
-<li>It uses epoll or libevent for <a class="reference external" href="http://en.wikipedia.org/wiki/Asynchronous_I/O#Select.28.2Fpoll.29_loops">highly scalable non-blocking I/O</a>.</li>
+<li>It uses <a class="reference external" href="http://linux.die.net/man/4/epoll">epoll(4)</a> or <a class="reference external" href="http://monkey.org/~provos/libevent/">libevent</a> for
+<a class="reference external" href="http://en.wikipedia.org/wiki/Asynchronous_I/O#Select.28.2Fpoll.29_loops">highly scalable non-blocking I/O</a>.</li>
 <li><a class="reference external" href="http://en.wikipedia.org/wiki/Coroutine">Coroutines</a> ensure that the developer uses a blocking style of
 programming that is similar to threading, but provide the benefits of
 non-blocking I/O.</li>
@@ -84,20 +85,21 @@ from the Python interpreter, or as a small part of a larger application.</li>
 </blockquote>
 <p>Celery supports Eventlet as an alternative execution pool implementation.
 It is in some cases superior to multiprocessing, but you need to ensure
-your tasks do not perform any blocking calls, as this will halt all
-other operations in the worker.</p>
-<p>The multiprocessing pool can take use of many processes, but it is often
-limited to a few processes per CPU.  With eventlet you can efficiently spawn
-hundreds of concurrent couroutines.  In an informal test with a feed hub
-system the Eventlet pool could fetch and process hundreds of feeds every
-second, while the multiprocessing pool spent 14 seconds processing 100 feeds.
-But this is exactly the kind of application evented I/O is good for.
-You may want a a mix of both eventlet and multiprocessing workers,
-depending on the needs of your tasks.</p>
+your tasks do not perform blocking calls, as this will halt all
+other operations in the worker until the blocking call returns.</p>
+<p>The multiprocessing pool can take use of multiple processes, but how many is
+often limited to a few processes per CPU.  With Eventlet you can efficiently
+spawn hundreds, or thousands of green threads.  In an informal test with a
+feed hub system the Eventlet pool could fetch and process hundreds of feeds
+every second, while the multiprocessing pool spent 14 seconds processing 100
+feeds.  Note that is one of the applications evented I/O is especially good
+at (asynchronous HTTP requests).  You may want a a mix of both Eventlet and
+multiprocessing workers, and route tasks according to compatibility or
+what works best.</p>
 </div>
 <div class="section" id="enabling-eventlet">
 <h2>Enabling Eventlet<a class="headerlink" href="#enabling-eventlet" title="Permalink to this headline">¶</a></h2>
-<p>You can enable the Eventlet pool by using the <cite>-P</cite> option to
+<p>You can enable the Eventlet pool by using the <tt class="docutils literal"><span class="pre">-P</span></tt> option to
 <strong class="program">celeryd</strong>:</p>
 <div class="highlight-python"><pre>$ celeryd -P eventlet -c 1000</pre>
 </div>

@@ -145,11 +145,8 @@ task doesn&#8217;t use a custom result backend.</p>
 </li>
 <li><dl class="first docutils">
 <dt><strong>purge</strong>: Purge messages from all configured task queues.</dt>
-<dd><dl class="first docutils">
-<dt>::</dt>
-<dd><p class="first last">$ celeryctl purge</p>
-</dd>
-</dl>
+<dd><div class="first highlight-python"><pre>$ celeryctl purge</pre>
+</div>
 <div class="last admonition warning">
 <p class="first admonition-title">Warning</p>
 <p class="last">There is no undo for this operation, and messages will
@@ -223,9 +220,9 @@ with an eta).</p>
 </ul>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">All <cite>inspect</cite> commands supports a <cite>&#8211;timeout</cite> argument,
+<p class="last">All <tt class="docutils literal"><span class="pre">inspect</span></tt> commands supports a <tt class="docutils literal"><span class="pre">--timeout</span></tt> argument,
 This is the number of seconds to wait for responses.
-You may have to increase this timeout if you&#8217;re getting empty responses
+You may have to increase this timeout if you&#8217;re not getting a response
 due to latency.</p>
 </div>
 </div>
@@ -281,18 +278,18 @@ or shutting down worker nodes.</p>
 <span id="monitoring-django-frequency"></span><h4><a class="toc-backref" href="#id9">Shutter frequency</a><a class="headerlink" href="#shutter-frequency" title="Permalink to this headline">¶</a></h4>
 <p>By default the camera takes a snapshot every second, if this is too frequent
 or you want to have higher precision, then you can change this using the
-<cite>&#8211;frequency</cite> argument.  This is a float describing how often, in seconds,
+<tt class="docutils literal"><span class="pre">--frequency</span></tt> argument.  This is a float describing how often, in seconds,
 it should wake up to check if there are any new events:</p>
 <div class="highlight-python"><pre>$ python manage.py celerycam --frequency=3.0</pre>
 </div>
-<p>The camera also supports rate limiting using the <cite>&#8211;maxrate</cite> argument.
+<p>The camera also supports rate limiting using the <tt class="docutils literal"><span class="pre">--maxrate</span></tt> argument.
 While the frequency controls how often the camera thread wakes up,
 the rate limit controls how often it will actually take a snapshot.</p>
 <p>The rate limits can be specified in seconds, minutes or hours
 by appending <cite>/s</cite>, <cite>/m</cite> or <cite>/h</cite> to the value.
-Example: <cite>&#8211;maxrate=100/m</cite>, means &#8220;hundred writes a minute&#8221;.</p>
+Example: <tt class="docutils literal"><span class="pre">--maxrate=100/m</span></tt>, means &#8220;hundred writes a minute&#8221;.</p>
 <p>The rate limit is off by default, which means it will take a snapshot
-for every <cite>&#8211;frequency</cite> seconds.</p>
+for every <tt class="docutils literal"><span class="pre">--frequency</span></tt> seconds.</p>
 <p>The events also expire after some time, so the database doesn&#8217;t fill up.
 Successful tasks are deleted after 1 day, failed tasks after 3 days,
 and tasks in other states after 5 days.</p>
@@ -345,7 +342,7 @@ Quit the server with CONTROL-C.</pre>
 <p>Now that the service is started you can visit the monitor
 at <a class="reference external" href="http://127.0.0.1:8000">http://127.0.0.1:8000</a>, and log in using the user you created.</p>
 <p>For a list of the command line options supported by <strong class="program">djcelerymon</strong>,
-please see <cite>djcelerymon &#8211;help</cite>.</p>
+please see <tt class="docutils literal"><span class="pre">djcelerymon</span> <span class="pre">--help</span></tt>.</p>
 </div>
 </div>
 <div class="section" id="celeryev-curses-monitor">
@@ -366,7 +363,7 @@ down workers.</p>
 <p>and it includes a tool to dump events to <tt class="file docutils literal"><span class="pre">stdout</span></tt>:</p>
 <div class="highlight-python"><pre>$ celeryev --dump</pre>
 </div>
-<p>For a complete list of options use <cite>&#8211;help</cite>:</p>
+<p>For a complete list of options use <tt class="docutils literal"><span class="pre">--help</span></tt>:</p>
 <div class="highlight-python"><pre>$ celeryev --help</pre>
 </div>
 </div>
@@ -398,10 +395,10 @@ queue lengths, the memory usage of each queue, as well
 as manage users, virtual hosts and their permissions.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">The default virtual host (<cite>&#8220;/&#8221;</cite>) is used in these
+<p class="last">The default virtual host (<tt class="docutils literal"><span class="pre">&quot;/&quot;</span></tt>) is used in these
 examples, if you use a custom virtual host you have to add
-the <cite>-p</cite> argument to the command, e.g:
-<cite>rabbitmqctl list_queues -p my_vhost ....</cite></p>
+the <tt class="docutils literal"><span class="pre">-p</span></tt> argument to the command, e.g:
+<tt class="docutils literal"><span class="pre">rabbitmqctl</span> <span class="pre">list_queues</span> <span class="pre">-p</span> <span class="pre">my_vhost</span> <span class="pre">....</span></tt></p>
 </div>
 <div class="section" id="inspecting-queues">
 <span id="monitoring-rmq-queues"></span><h3><a class="toc-backref" href="#id14">Inspecting queues</a><a class="headerlink" href="#inspecting-queues" title="Permalink to this headline">¶</a></h3>
@@ -424,7 +421,7 @@ not acknowledged yet (meaning it is in progress, or has been reserved).
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Tip:</th><td class="field-body">Adding the <cite>-q</cite> option to <a class="reference external" href="http://www.rabbitmq.com/man/rabbitmqctl.1.man.html">rabbitmqctl(1)</a> makes the output
+<tr class="field"><th class="field-name">Tip:</th><td class="field-body">Adding the <tt class="docutils literal"><span class="pre">-q</span></tt> option to <a class="reference external" href="http://www.rabbitmq.com/man/rabbitmqctl.1.man.html">rabbitmqctl(1)</a> makes the output
 easier to parse.</td>
 </tr>
 </tbody>
@@ -472,7 +469,7 @@ what should happen every time the state is captured;  You can
 write it to a database, send it by e-mail or something else entirely.</p>
 <p><strong class="program">celeryev</strong> is then used to take snapshots with the camera,
 for example if you want to capture state every 2 seconds using the
-camera <cite>myapp.Camera</cite> you run <strong class="program">celeryev</strong> with the following
+camera <tt class="docutils literal"><span class="pre">myapp.Camera</span></tt> you run <strong class="program">celeryev</strong> with the following
 arguments:</p>
 <div class="highlight-python"><pre>$ celeryev -c myapp.Camera --frequency=2.0</pre>
 </div>
@@ -498,7 +495,7 @@ arguments:</p>
 </div>
 <p>See the API reference for <a class="reference internal" href="../reference/celery.events.state.html#module-celery.events.state" title="celery.events.state"><tt class="xref py py-mod docutils literal"><span class="pre">celery.events.state</span></tt></a> to read more
 about state objects.</p>
-<p>Now you can use this cam with <cite>celeryev</cite> by specifying
+<p>Now you can use this cam with <strong class="program">celeryev</strong> by specifying
 it with the <cite>-c</cite> option:</p>
 <div class="highlight-python"><pre>$ celeryev -c myapp.DumpCam --frequency=2.0</pre>
 </div>
@@ -527,18 +524,18 @@ it with the <cite>-c</cite> option:</p>
 <div class="section" id="task-events">
 <span id="event-reference-task"></span><h4><a class="toc-backref" href="#id20">Task Events</a><a class="headerlink" href="#task-events" title="Permalink to this headline">¶</a></h4>
 <ul>
-<li><p class="first"><cite>task-received(uuid, name, args, kwargs, retries, eta, hostname,
-timestamp)</cite></p>
+<li><p class="first"><tt class="docutils literal"><span class="pre">task-received(uuid,</span> <span class="pre">name,</span> <span class="pre">args,</span> <span class="pre">kwargs,</span> <span class="pre">retries,</span> <span class="pre">eta,</span> <span class="pre">hostname,</span>
+<span class="pre">timestamp)</span></tt></p>
 <blockquote>
 <p>Sent when the worker receives a task.</p>
 </blockquote>
 </li>
-<li><p class="first"><cite>task-started(uuid, hostname, timestamp, pid)</cite></p>
+<li><p class="first"><tt class="docutils literal"><span class="pre">task-started(uuid,</span> <span class="pre">hostname,</span> <span class="pre">timestamp,</span> <span class="pre">pid)</span></tt></p>
 <blockquote>
 <p>Sent just before the worker executes the task.</p>
 </blockquote>
 </li>
-<li><p class="first"><cite>task-succeeded(uuid, result, runtime, hostname, timestamp)</cite></p>
+<li><p class="first"><tt class="docutils literal"><span class="pre">task-succeeded(uuid,</span> <span class="pre">result,</span> <span class="pre">runtime,</span> <span class="pre">hostname,</span> <span class="pre">timestamp)</span></tt></p>
 <blockquote>
 <p>Sent if the task executed successfully.</p>
 <p>Runtime is the time it took to execute the task using the pool.
@@ -546,18 +543,18 @@ timestamp)</cite></p>
 pool result handler callback is called).</p>
 </blockquote>
 </li>
-<li><p class="first"><cite>task-failed(uuid, exception, traceback, hostname, timestamp)</cite></p>
+<li><p class="first"><tt class="docutils literal"><span class="pre">task-failed(uuid,</span> <span class="pre">exception,</span> <span class="pre">traceback,</span> <span class="pre">hostname,</span> <span class="pre">timestamp)</span></tt></p>
 <blockquote>
 <p>Sent if the execution of the task failed.</p>
 </blockquote>
 </li>
-<li><p class="first"><cite>task-revoked(uuid)</cite></p>
+<li><p class="first"><tt class="docutils literal"><span class="pre">task-revoked(uuid)</span></tt></p>
 <blockquote>
 <p>Sent if the task has been revoked (Note that this is likely
 to be sent by more than one worker).</p>
 </blockquote>
 </li>
-<li><p class="first"><cite>task-retried(uuid, exception, traceback, hostname, timestamp)</cite></p>
+<li><p class="first"><tt class="docutils literal"><span class="pre">task-retried(uuid,</span> <span class="pre">exception,</span> <span class="pre">traceback,</span> <span class="pre">hostname,</span> <span class="pre">timestamp)</span></tt></p>
 <blockquote>
 <p>Sent if the task failed, but will be retried in the future.</p>
 </blockquote>
@@ -567,7 +564,7 @@ to be sent by more than one worker).</p>
 <div class="section" id="worker-events">
 <span id="event-reference-worker"></span><h4><a class="toc-backref" href="#id21">Worker Events</a><a class="headerlink" href="#worker-events" title="Permalink to this headline">¶</a></h4>
 <ul>
-<li><p class="first"><cite>worker-online(hostname, timestamp, sw_ident, sw_ver, sw_sys)</cite></p>
+<li><p class="first"><tt class="docutils literal"><span class="pre">worker-online(hostname,</span> <span class="pre">timestamp,</span> <span class="pre">sw_ident,</span> <span class="pre">sw_ver,</span> <span class="pre">sw_sys)</span></tt></p>
 <blockquote>
 <p>The worker has connected to the broker and is online.</p>
 <ul class="simple">
@@ -577,13 +574,13 @@ to be sent by more than one worker).</p>
 </ul>
 </blockquote>
 </li>
-<li><p class="first"><cite>worker-heartbeat(hostname, timestamp, sw_ident, sw_ver, sw_sys)</cite></p>
+<li><p class="first"><tt class="docutils literal"><span class="pre">worker-heartbeat(hostname,</span> <span class="pre">timestamp,</span> <span class="pre">sw_ident,</span> <span class="pre">sw_ver,</span> <span class="pre">sw_sys)</span></tt></p>
 <blockquote>
 <p>Sent every minute, if the worker has not sent a heartbeat in 2 minutes,
 it is considered to be offline.</p>
 </blockquote>
 </li>
-<li><p class="first"><cite>worker-offline(hostname, timestamp, sw_ident, sw_ver, sw_sys)</cite></p>
+<li><p class="first"><tt class="docutils literal"><span class="pre">worker-offline(hostname,</span> <span class="pre">timestamp,</span> <span class="pre">sw_ident,</span> <span class="pre">sw_ver,</span> <span class="pre">sw_sys)</span></tt></p>
 <blockquote>
 <p>The worker has disconnected from the broker.</p>
 </blockquote>

@@ -79,7 +79,7 @@
 </div>
 <div class="section" id="basics">
 <span id="executing-basics"></span><h2><a class="toc-backref" href="#id1">Basics</a><a class="headerlink" href="#basics" title="Permalink to this headline">¶</a></h2>
-<p>Executing tasks is done with <tt class="xref py py-meth docutils literal"><span class="pre">apply_async()</span></tt>,
+<p>Executing a task is done with <tt class="xref py py-meth docutils literal"><span class="pre">apply_async()</span></tt>,
 and the shortcut: <tt class="xref py py-meth docutils literal"><span class="pre">delay()</span></tt>.</p>
 <p><cite>delay</cite> is simple and convenient, as it looks like calling a regular
 function:</p>
@@ -95,8 +95,8 @@ function:</p>
 available as attributes on the <cite>Task</cite> class (see <a class="reference internal" href="tasks.html#task-options"><em>Task options</em></a>).
 In addition you can set countdown/eta, task expiry, provide a custom broker
 connection and more.</p>
-<p>Let&#8217;s go over these in more detail.  All the examples use a simple task,
-called <cite>add</cite>, taking two positional arguments and returning the sum:</p>
+<p>Let&#8217;s go over these in more detail.  All the examples uses a simple task
+called <cite>add</cite>, returning the sum of two positional arguments:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span>
 <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>

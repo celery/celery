@@ -27,6 +27,7 @@
     celery.loaders.base
     celery.registry
     celery.states
+    celery.contrib.rdb
     celery.contrib.abortable
     celery.events
     celery.events.state

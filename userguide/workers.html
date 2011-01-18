@@ -108,7 +108,7 @@ using <cite>celeryd</cite> with popular daemonization tools.</p>
 </div>
 <p>You can also start multiple workers on the same machine. If you do so
 be sure to give a unique name to each individual worker by specifying a
-host name with the <cite>&#8211;hostname|-n</cite> argument:</p>
+host name with the <em class="xref std std-option">--hostname|-n</em> argument:</p>
 <div class="highlight-python"><pre>$ celeryd --loglevel=INFO --concurrency=10 -n worker1.example.com
 $ celeryd --loglevel=INFO --concurrency=10 -n worker2.example.com
 $ celeryd --loglevel=INFO --concurrency=10 -n worker3.example.com</pre>
@@ -143,16 +143,20 @@ arguments as it was started with.</p>
 </div>
 <div class="section" id="concurrency">
 <span id="worker-concurrency"></span><h2><a class="toc-backref" href="#id4">Concurrency</a><a class="headerlink" href="#concurrency" title="Permalink to this headline">¶</a></h2>
-<p>Multiprocessing is used to perform concurrent execution of tasks.  The number
-of worker processes can be changed using the <cite>&#8211;concurrency</cite> argument and
-defaults to the number of CPUs available on the machine.</p>
-<p>More worker processes are usually better, but there&#8217;s a cut-off point where
+<p>By default multiprocessing is used to perform concurrent execution of tasks,
+but you can also use <a class="reference internal" href="concurrency/eventlet.html#concurrency-eventlet"><em>Eventlet</em></a>.  The number
+of worker processes/threads can be changed using the <em class="xref std std-option">--concurrency</em>
+argument and defaults to the number of CPUs available on the machine.</p>
+<div class="admonition-number-of-processes-multiprocessing admonition ">
+<p class="first admonition-title">Number of processes (multiprocessing)</p>
+<p class="last">More worker processes are usually better, but there&#8217;s a cut-off point where
 adding more processes affects performance in negative ways.
 There is even some evidence to support that having multiple celeryd&#8217;s running,
 may perform better than having a single worker.  For example 3 celeryd&#8217;s with
 10 worker processes each.  You need to experiment to find the numbers that
 works best for you, as this varies based on application, work load, task
 run times and other factors.</p>
+</div>
 </div>
 <div class="section" id="persistent-revokes">
 <span id="worker-persistent-revokes"></span><h2><a class="toc-backref" href="#id5">Persistent revokes</a><a class="headerlink" href="#persistent-revokes" title="Permalink to this headline">¶</a></h2>
