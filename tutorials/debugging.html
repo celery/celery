@@ -1,0 +1,190 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Debugging Tasks Remotely (using pdb) &mdash; Celery v2.2.0rc2 documentation</title>
+    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.2.0rc2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v2.2.0rc2 documentation" href="../index.html" />
+    <link rel="up" title="Tutorials" href="index.html" />
+    <link rel="next" title="Tutorial: Creating a click counter using Kombu and celery" href="clickcounter.html" />
+    <link rel="prev" title="Using Celery with Redis/Database as the messaging queue." href="otherqueues.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="clickcounter.html" title="Tutorial: Creating a click counter using Kombu and celery"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="otherqueues.html" title="Using Celery with Redis/Database as the messaging queue."
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v2.2.0rc2 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Tutorials</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://celeryproject.org/docs/tutorials/debugging.html">2.1</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="debugging-tasks-remotely-using-pdb">
+<span id="tut-remote-debug"></span><h1>Debugging Tasks Remotely (using pdb)<a class="headerlink" href="#debugging-tasks-remotely-using-pdb" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference internal" href="../reference/celery.contrib.rdb.html#module-celery.contrib.rdb" title="celery.contrib.rdb"><tt class="xref py py-mod docutils literal"><span class="pre">celery.contrib.rdb</span></tt></a> is an extended version of <tt class="xref py py-mod docutils literal"><span class="pre">pdb</span></tt> that
+enables remote debugging of processes that does not have terminal
+access.</p>
+<p>Example usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.contrib</span> <span class="kn">import</span> <span class="n">rdb</span>
+<span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">task</span>
+
+<span class="nd">@task</span>
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+    <span class="n">rdb</span><span class="o">.</span><span class="n">set_trace</span><span class="p">()</span>  <span class="c"># &lt;- set breakpoint</span>
+    <span class="k">return</span> <span class="n">result</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../reference/celery.contrib.rdb.html#celery.contrib.rdb.set_trace" title="celery.contrib.rdb.set_trace"><tt class="xref py py-func docutils literal"><span class="pre">set_trace()</span></tt></a> sets a breakpoint at the current
+location and creates a socket you can telnet into to remotely debug
+your task.</p>
+<p>The debugger may be started by multiple processes at the same time,
+so rather than using a fixed port the debugger will search for an
+available port, starting from the base port (6900 by default).
+The base port can be changed using the environment variable
+<span class="target" id="index-0"></span><a class="reference internal" href="../reference/celery.contrib.rdb.html#envvar-CELERY_RDB_PORT"><tt class="xref std std-envvar docutils literal"><span class="pre">CELERY_RDB_PORT</span></tt></a>.</p>
+<p>By default the debugger will only be available from the local host,
+to enable access from the outside you have to set the environment
+variable <span class="target" id="index-1"></span><a class="reference internal" href="../reference/celery.contrib.rdb.html#envvar-CELERY_RDB_HOST"><tt class="xref std std-envvar docutils literal"><span class="pre">CELERY_RDB_HOST</span></tt></a>.</p>
+<p>When <cite>celeryd</cite> encounters your breakpoint it will log the following
+information:</p>
+<div class="highlight-python"><pre>[INFO/MainProcess] Got task from broker:
+    tasks.add[d7261c71-4962-47e5-b342-2448bedd20e8]
+[WARNING/PoolWorker-1] Remote Debugger:6900:
+    Please telnet 127.0.0.1 6900.  Type `exit` in session to continue.
+[2011-01-18 14:25:44,119: WARNING/PoolWorker-1] Remote Debugger:6900:
+    Waiting for client...</pre>
+</div>
+<p>If you telnet the port specified you will be presented
+with a <cite>pdb</cite> shell:</p>
+<div class="highlight-python"><pre>$ telnet localhost 6900
+Connected to localhost.
+Escape character is '^]'.
+&gt; /opt/devel/demoapp/tasks.py(128)add()
+-&gt; return result
+(Pdb)</pre>
+</div>
+<p>Enter <tt class="docutils literal"><span class="pre">help</span></tt> to get a list of available commands,
+It may be a good idea to read the <a class="reference external" href="http://docs.python.org/library/pdb.html">The Python Debugger</a> manual if
+you have never used <cite>pdb</cite> before.</p>
+<p>To demonstrate, we will read the value of the <tt class="docutils literal"><span class="pre">result</span></tt> variable,
+change it and continue execution of the task:</p>
+<div class="highlight-python"><pre>(Pdb) result
+4
+(Pdb) result = "hello from rdb"
+(Pdb) continue
+Connection closed by foreign host.</pre>
+</div>
+<p>The result of our vandalism can be seen in the worker logs:</p>
+<div class="highlight-python"><pre>[2011-01-18 14:35:36,599: INFO/MainProcess] Task
+    tasks.add[d7261c71-4962-47e5-b342-2448bedd20e8] succeeded
+    in 61.481s: 'hello from rdb'</pre>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="otherqueues.html"
+                        title="previous chapter">Using Celery with Redis/Database as the messaging queue.</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="clickcounter.html"
+                        title="next chapter">Tutorial: Creating a click counter using Kombu and celery</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/tutorials/debugging.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="clickcounter.html" title="Tutorial: Creating a click counter using Kombu and celery"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="otherqueues.html" title="Using Celery with Redis/Database as the messaging queue."
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v2.2.0rc2 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Tutorials</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+    </div>
+  </body>
+</html>
