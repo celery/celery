@@ -1,6 +1,8 @@
 """
-Remote debugger for Celery tasks running in multiprocessing pool workers.
+celery.contrib.rdb
+==================
 
+Remote debugger for Celery tasks running in multiprocessing pool workers.
 Inspired by http://snippets.dzone.com/posts/show/7248
 
 **Usage**
@@ -24,13 +26,17 @@ Inspired by http://snippets.dzone.com/posts/show/7248
     Hostname to bind to.  Default is '127.0.01', which means the socket
     will only be accessible from the local host.
 
-.. envvar:: CELERY_RDB_PORt
+.. envvar:: CELERY_RDB_PORT
 
     Base port to bind to.  Default is 6899.
     The debugger will try to find an available port starting from the
     base port.  The selected port will be logged by celeryd.
 
+:copyright: (c) 2009 - 2010 by Ask Solem.
+:license: BSD, see LICENSE for more details.
+
 """
+
 import bdb
 import errno
 import os
@@ -136,6 +142,8 @@ class Rdb(Pdb):
 
 
 def debugger():
+    """Returns the current debugger instance (if any),
+    or creates a new one."""
     rdb = _current[0]
     if rdb is None or not rdb.active:
         rdb = _current[0] = Rdb()
@@ -143,4 +151,5 @@ def debugger():
 
 
 def set_trace():
+    """Set breakpoint at current location."""
     return debugger().set_trace(_frame().f_back)
