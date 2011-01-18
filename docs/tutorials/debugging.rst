@@ -4,6 +4,9 @@
  Debugging Tasks Remotely (using pdb)
 ======================================
 
+Basics
+======
+
 :mod:`celery.contrib.rdb` is an extended version of :mod:`pdb` that
 enables remote debugging of processes that does not have terminal
 access.
@@ -76,3 +79,23 @@ The result of our vandalism can be seen in the worker logs::
         in 61.481s: 'hello from rdb'
 
 .. _`Python Debugger Manual`: http://docs.python.org/library/pdb.html
+
+
+Tips
+====
+
+
+Enabling the breakpoint signal
+------------------------------
+
+If the environment variable :envvar:`CELERY_RDBSIG` is set, the worker
+will open up an rdb instance whenever the `SIGUSR2` signal is sent.
+This is the case for both main and worker processes.
+
+For example starting the worker with::
+
+    CELERY_RDBSIG=1 celeryd -l info
+
+You can start an rdb session for any of the worker processes by executing::
+
+    kill -USR2 <pid>

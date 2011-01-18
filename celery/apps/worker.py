@@ -242,6 +242,7 @@ class Worker(object):
         install_worker_term_handler(worker)
         install_worker_int_handler(worker)
         install_cry_handler(worker.logger)
+        install_rdb_handler()
         signals.worker_init.send(sender=worker)
 
     def osx_proxy_detection_workaround(self):
@@ -323,6 +324,17 @@ def install_cry_handler(logger):
             logger.error("\n" + cry())
 
         platforms.install_signal_handler("SIGUSR1", cry_handler)
+
+
+def install_rdb_handler():  # pragma: no cover
+
+    def rdb_handler(signum, frame):
+        """Signal handler setting a rdb breakpoint at the current frame."""
+        from celery.contrib import rdb
+        rdb.set_trace(frame)
+
+    if os.environ.get("CELERY_RDBSIG"):
+        platforms.install_signal_handler("SIGUSR2", rdb_handler)
 
 
 def install_HUP_not_supported_handler(worker):

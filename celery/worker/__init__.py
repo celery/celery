@@ -25,8 +25,7 @@ WORKER_SIGRESET = frozenset(["SIGTERM",
                              "SIGHUP",
                              "SIGTTIN",
                              "SIGTTOU",
-                             "SIGUSR1",
-                             "SIGUSR2"])
+                             "SIGUSR1"])
 
 #: List of signals to ignore when a child process starts.
 WORKER_SIGIGNORE = frozenset(["SIGINT"])

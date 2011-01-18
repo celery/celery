@@ -150,6 +150,8 @@ def debugger():
     return rdb
 
 
-def set_trace():
-    """Set breakpoint at current location."""
-    return debugger().set_trace(_frame().f_back)
+def set_trace(frame=None):
+    """Set breakpoint at current location, or a specified frame"""
+    if frame is None:
+        frame = _frame().f_back
+    return debugger().set_trace(frame)
