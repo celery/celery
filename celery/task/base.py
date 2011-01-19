@@ -665,16 +665,18 @@ class BaseTask(object):
         """
         pass
 
-    def execute(self, wrapper, pool, loglevel, logfile):
+    def execute(self, request, pool, loglevel, logfile, **kwargs):
         """The method the worker calls to execute the task.
 
-        :param wrapper: A :class:`~celery.worker.job.TaskRequest`.
+        :param request: A :class:`~celery.worker.job.TaskRequest`.
         :param pool: A task pool.
         :param loglevel: Current loglevel.
         :param logfile: Name of the currently used logfile.
 
+        :keyword consumer: The :class:`~celery.worker.consumer.Consumer`.
+
         """
-        wrapper.execute_using_pool(pool, loglevel, logfile)
+        request.execute_using_pool(pool, loglevel, logfile)
 
     def __repr__(self):
         """`repr(task)`"""

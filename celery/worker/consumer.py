@@ -106,24 +106,25 @@ class QoS(object):
         self.logger = logger
         self.value = SharedCounter(initial_value)
 
-    def increment(self):
+    def increment(self, n=1):
         """Increment the current prefetch count value by one."""
         if int(self.value):
-            return self.set(self.value.increment())
+            return self.set(self.value.increment(n))
 
-    def decrement(self):
+    def decrement(self, n=1):
         """Decrement the current prefetch count value by one."""
         if int(self.value):
-            return self.set(self.value.decrement())
+            return self.set(self.value.decrement(n))
 
-    def decrement_eventually(self):
+    def decrement_eventually(self, n=1):
         """Decrement the value, but do not update the qos.
 
         The MainThread will be responsible for calling :meth:`update`
         when necessary.
 
         """
-        self.value.decrement()
+        if int(self.value):
+            self.value.decrement(n)
 
     def set(self, pcount):
         """Set channel prefetch_count setting."""

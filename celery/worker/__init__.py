@@ -258,11 +258,12 @@ class WorkController(object):
             self.stop()
             raise exc
 
-    def process_task(self, wrapper):
+    def process_task(self, request):
         """Process task by sending it to the pool of workers."""
         try:
-            wrapper.task.execute(wrapper, self.pool,
-                                 self.loglevel, self.logfile)
+            request.task.execute(request, self.pool,
+                                 self.loglevel, self.logfile,
+                                 consumer=self.consumer)
         except SystemTerminate:
             self.terminate()
             raise SystemExit()
