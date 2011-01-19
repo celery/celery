@@ -1,0 +1,268 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>celery.contrib.batches &mdash; Celery v2.2.0rc2 documentation</title>
+    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.2.0rc2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v2.2.0rc2 documentation" href="../index.html" />
+    <link rel="up" title="API Reference" href="index.html" />
+    <link rel="next" title="celery.contrib.rdb" href="celery.contrib.rdb.html" />
+    <link rel="prev" title="celery.contrib.abortable" href="celery.contrib.abortable.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.contrib.rdb.html" title="celery.contrib.rdb"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.contrib.abortable.html" title="celery.contrib.abortable"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v2.2.0rc2 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://celeryproject.org/docs/reference/celery.contrib.batches.html">2.1</a>.
+        </p>
+        
+
+</div>
+    <span class="target" id="module-celery.contrib.batches"></span><div class="section" id="celery-contrib-batches">
+<h1>celery.contrib.batches<a class="headerlink" href="#celery-contrib-batches" title="Permalink to this headline">¶</a></h1>
+<p>Collect messages and processes them as a list.</p>
+<p><strong>Example</strong></p>
+<p>A click counter that flushes the buffer every 100 messages, and every
+10 seconds.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">task</span>
+<span class="kn">from</span> <span class="nn">celery.contrib.batches</span> <span class="kn">import</span> <span class="n">Batches</span>
+
+<span class="c"># Flush after 100 messages, or 10 seconds.</span>
+<span class="nd">@task</span><span class="p">(</span><span class="n">base</span><span class="o">=</span><span class="n">Batches</span><span class="p">,</span> <span class="n">flush_every</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">flush_interval</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">count_click</span><span class="p">(</span><span class="n">requests</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&quot;url&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">request</span> <span class="ow">in</span> <span class="n">requests</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">url</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">count</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;&gt;&gt;&gt; Clicks: </span><span class="si">%s</span><span class="s"> -&gt; </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">count</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Registering the click is done as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">count_click</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s">&quot;http://example.com&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p>For this to work you have to set
+<a class="reference internal" href="../configuration.html#std:setting-CELERYD_PREFETCH_MULTIPLIER"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYD_PREFETCH_MULTIPLIER</span></tt></a> to zero, or some value where
+the final multiplied value is higher than <tt class="docutils literal"><span class="pre">flush_every</span></tt>.</p>
+<p class="last">In the future we hope to add the ability to direct batching tasks
+to a channel with different QoS requirements than the task channel.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
+<li>2009 - 2011 by Ask Solem.</li>
+</ol>
+</td>
+</tr>
+<tr class="field"><th class="field-name">license:</th><td class="field-body"><p class="first last">BSD, see LICENSE for more details.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>API</strong></p>
+<dl class="class">
+<dt id="celery.contrib.batches.Batches">
+<em class="property">class </em><tt class="descclassname">celery.contrib.batches.</tt><tt class="descname">Batches</tt><a class="headerlink" href="#celery.contrib.batches.Batches" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.contrib.batches.Batches.apply_buffer">
+<tt class="descname">apply_buffer</tt><big>(</big><em>requests</em>, <em>args=()</em>, <em>kwargs={}</em><big>)</big><a class="headerlink" href="#celery.contrib.batches.Batches.apply_buffer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.contrib.batches.Batches.debug">
+<tt class="descname">debug</tt><big>(</big><em>msg</em><big>)</big><a class="headerlink" href="#celery.contrib.batches.Batches.debug" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.contrib.batches.Batches.execute">
+<tt class="descname">execute</tt><big>(</big><em>request</em>, <em>pool</em>, <em>loglevel</em>, <em>logfile</em>, <em>consumer</em><big>)</big><a class="headerlink" href="#celery.contrib.batches.Batches.execute" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.contrib.batches.Batches.flush">
+<tt class="descname">flush</tt><big>(</big><em>requests</em><big>)</big><a class="headerlink" href="#celery.contrib.batches.Batches.flush" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.contrib.batches.Batches.flush_every">
+<tt class="descname">flush_every</tt><a class="headerlink" href="#celery.contrib.batches.Batches.flush_every" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum number of message in buffer.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.contrib.batches.Batches.flush_interval">
+<tt class="descname">flush_interval</tt><a class="headerlink" href="#celery.contrib.batches.Batches.flush_interval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Timeout in seconds before buffer is flushed anyway.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.contrib.batches.Batches.logger">
+<tt class="descname">logger</tt><a class="headerlink" href="#celery.contrib.batches.Batches.logger" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.contrib.batches.Batches.run">
+<tt class="descname">run</tt><big>(</big><em>requests</em><big>)</big><a class="headerlink" href="#celery.contrib.batches.Batches.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.contrib.batches.SimpleRequest">
+<em class="property">class </em><tt class="descclassname">celery.contrib.batches.</tt><tt class="descname">SimpleRequest</tt><big>(</big><em>id</em>, <em>name</em>, <em>args</em>, <em>kwargs</em>, <em>delivery_info</em>, <em>hostname</em><big>)</big><a class="headerlink" href="#celery.contrib.batches.SimpleRequest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pickleable request.</p>
+<dl class="attribute">
+<dt id="celery.contrib.batches.SimpleRequest.args">
+<tt class="descname">args</tt><a class="headerlink" href="#celery.contrib.batches.SimpleRequest.args" title="Permalink to this definition">¶</a></dt>
+<dd><p>positional arguments</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.contrib.batches.SimpleRequest.delivery_info">
+<tt class="descname">delivery_info</tt><a class="headerlink" href="#celery.contrib.batches.SimpleRequest.delivery_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>message delivery information.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="celery.contrib.batches.SimpleRequest.from_request">
+<em class="property">classmethod </em><tt class="descname">from_request</tt><big>(</big><em>request</em><big>)</big><a class="headerlink" href="#celery.contrib.batches.SimpleRequest.from_request" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.contrib.batches.SimpleRequest.hostname">
+<tt class="descname">hostname</tt><a class="headerlink" href="#celery.contrib.batches.SimpleRequest.hostname" title="Permalink to this definition">¶</a></dt>
+<dd><p>worker node name</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.contrib.batches.SimpleRequest.id">
+<tt class="descname">id</tt><a class="headerlink" href="#celery.contrib.batches.SimpleRequest.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>task id</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.contrib.batches.SimpleRequest.kwargs">
+<tt class="descname">kwargs</tt><a class="headerlink" href="#celery.contrib.batches.SimpleRequest.kwargs" title="Permalink to this definition">¶</a></dt>
+<dd><p>keyword arguments</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.contrib.batches.SimpleRequest.name">
+<tt class="descname">name</tt><a class="headerlink" href="#celery.contrib.batches.SimpleRequest.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>task name</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="celery.contrib.abortable.html"
+                        title="previous chapter">celery.contrib.abortable</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="celery.contrib.rdb.html"
+                        title="next chapter">celery.contrib.rdb</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/reference/celery.contrib.batches.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.contrib.rdb.html" title="celery.contrib.rdb"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.contrib.abortable.html" title="celery.contrib.abortable"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v2.2.0rc2 documentation</a> &raquo;</li>
+          <li><a href="index.html" >API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2011, Ask Solem &amp; contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+    </div>
+  </body>
+</html>
