@@ -130,7 +130,7 @@ early, <em>then</em> close the connection.</p>
 </ul>
 <dl class="class">
 <dt id="celery.worker.consumer.Consumer">
-<em class="property">class </em><tt class="descclassname">celery.worker.consumer.</tt><tt class="descname">Consumer</tt><big>(</big><em>ready_queue</em>, <em>eta_schedule</em>, <em>logger</em>, <em>init_callback=&lt;function noop at 0x102645668&gt;</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>initial_prefetch_count=2</em>, <em>pool=None</em>, <em>queues=None</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.Consumer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.consumer.</tt><tt class="descname">Consumer</tt><big>(</big><em>ready_queue</em>, <em>eta_schedule</em>, <em>logger</em>, <em>init_callback=&lt;function noop at 0x10264a6e0&gt;</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>initial_prefetch_count=2</em>, <em>pool=None</em>, <em>queues=None</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.Consumer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Listen for messages received from the broker and
 move them the the ready queue for task processing.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -325,13 +325,13 @@ and restarts consuming messages.</p>
 </table>
 <dl class="method">
 <dt id="celery.worker.consumer.QoS.decrement">
-<tt class="descname">decrement</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.consumer.QoS.decrement" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">decrement</tt><big>(</big><em>n=1</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.QoS.decrement" title="Permalink to this definition">¶</a></dt>
 <dd><p>Decrement the current prefetch count value by one.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.consumer.QoS.decrement_eventually">
-<tt class="descname">decrement_eventually</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.consumer.QoS.decrement_eventually" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">decrement_eventually</tt><big>(</big><em>n=1</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.QoS.decrement_eventually" title="Permalink to this definition">¶</a></dt>
 <dd><p>Decrement the value, but do not update the qos.</p>
 <p>The MainThread will be responsible for calling <a class="reference internal" href="#celery.worker.consumer.QoS.update" title="celery.worker.consumer.QoS.update"><tt class="xref py py-meth docutils literal"><span class="pre">update()</span></tt></a>
 when necessary.</p>
@@ -339,7 +339,7 @@ when necessary.</p>
 
 <dl class="method">
 <dt id="celery.worker.consumer.QoS.increment">
-<tt class="descname">increment</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.consumer.QoS.increment" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">increment</tt><big>(</big><em>n=1</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.QoS.increment" title="Permalink to this definition">¶</a></dt>
 <dd><p>Increment the current prefetch count value by one.</p>
 </dd></dl>
 
@@ -421,7 +421,7 @@ when necessary.</p>
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
+        &copy; Copyright 2009-2011, Ask Solem &amp; contributors.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>

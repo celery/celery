@@ -66,6 +66,8 @@
 </div>
     <div class="section" id="debugging-tasks-remotely-using-pdb">
 <span id="tut-remote-debug"></span><h1>Debugging Tasks Remotely (using pdb)<a class="headerlink" href="#debugging-tasks-remotely-using-pdb" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="basics">
+<h2>Basics<a class="headerlink" href="#basics" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference internal" href="../reference/celery.contrib.rdb.html#module-celery.contrib.rdb" title="celery.contrib.rdb"><tt class="xref py py-mod docutils literal"><span class="pre">celery.contrib.rdb</span></tt></a> is an extended version of <tt class="xref py py-mod docutils literal"><span class="pre">pdb</span></tt> that
 enables remote debugging of processes that does not have terminal
 access.</p>
@@ -110,7 +112,7 @@ Escape character is '^]'.
 (Pdb)</pre>
 </div>
 <p>Enter <tt class="docutils literal"><span class="pre">help</span></tt> to get a list of available commands,
-It may be a good idea to read the <a class="reference external" href="http://docs.python.org/library/pdb.html">The Python Debugger</a> manual if
+It may be a good idea to read the <a class="reference external" href="http://docs.python.org/library/pdb.html">Python Debugger Manual</a> if
 you have never used <cite>pdb</cite> before.</p>
 <p>To demonstrate, we will read the value of the <tt class="docutils literal"><span class="pre">result</span></tt> variable,
 change it and continue execution of the task:</p>
@@ -124,6 +126,22 @@ Connection closed by foreign host.</pre>
 <div class="highlight-python"><pre>[2011-01-18 14:35:36,599: INFO/MainProcess] Task
     tasks.add[d7261c71-4962-47e5-b342-2448bedd20e8] succeeded
     in 61.481s: 'hello from rdb'</pre>
+</div>
+</div>
+<div class="section" id="tips">
+<h2>Tips<a class="headerlink" href="#tips" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="enabling-the-breakpoint-signal">
+<h3>Enabling the breakpoint signal<a class="headerlink" href="#enabling-the-breakpoint-signal" title="Permalink to this headline">¶</a></h3>
+<p>If the environment variable <span class="target" id="index-2"></span><tt class="xref std std-envvar docutils literal"><span class="pre">CELERY_RDBSIG</span></tt> is set, the worker
+will open up an rdb instance whenever the <cite>SIGUSR2</cite> signal is sent.
+This is the case for both main and worker processes.</p>
+<p>For example starting the worker with:</p>
+<div class="highlight-python"><pre>CELERY_RDBSIG=1 celeryd -l info</pre>
+</div>
+<p>You can start an rdb session for any of the worker processes by executing:</p>
+<div class="highlight-python"><pre>kill -USR2 &lt;pid&gt;</pre>
+</div>
+</div>
 </div>
 </div>
 
@@ -183,7 +201,7 @@ Connection closed by foreign host.</pre>
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
+        &copy; Copyright 2009-2011, Ask Solem &amp; contributors.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>

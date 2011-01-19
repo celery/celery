@@ -334,17 +334,18 @@ manual for any additional delivery modes.</p>
 
 <dl class="method">
 <dt id="celery.task.base.BaseTask.execute">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">execute</tt><big>(</big><em>wrapper</em>, <em>pool</em>, <em>loglevel</em>, <em>logfile</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.execute" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">execute</tt><big>(</big><em>request</em>, <em>pool</em>, <em>loglevel</em>, <em>logfile</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.execute" title="Permalink to this definition">¶</a></dt>
 <dd><p>The method the worker calls to execute the task.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>wrapper</strong> &#8211; A <a class="reference internal" href="../internals/reference/celery.worker.job.html#celery.worker.job.TaskRequest" title="celery.worker.job.TaskRequest"><tt class="xref py py-class docutils literal"><span class="pre">TaskRequest</span></tt></a>.</li>
+<li><strong>request</strong> &#8211; A <a class="reference internal" href="../internals/reference/celery.worker.job.html#celery.worker.job.TaskRequest" title="celery.worker.job.TaskRequest"><tt class="xref py py-class docutils literal"><span class="pre">TaskRequest</span></tt></a>.</li>
 <li><strong>pool</strong> &#8211; A task pool.</li>
 <li><strong>loglevel</strong> &#8211; Current loglevel.</li>
 <li><strong>logfile</strong> &#8211; Name of the currently used logfile.</li>
+<li><strong>consumer</strong> &#8211; The <a class="reference internal" href="../internals/reference/celery.worker.consumer.html#celery.worker.consumer.Consumer" title="celery.worker.consumer.Consumer"><tt class="xref py py-class docutils literal"><span class="pre">Consumer</span></tt></a>.</li>
 </ul>
 </td>
 </tr>
@@ -836,7 +837,7 @@ set to the name of the module it was defined in, and the class name.</p>
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
+        &copy; Copyright 2009-2011, Ask Solem &amp; contributors.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>

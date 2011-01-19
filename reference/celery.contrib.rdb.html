@@ -23,8 +23,8 @@
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Celery v2.2.0rc2 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
-    <link rel="next" title="celery.contrib.abortable" href="celery.contrib.abortable.html" />
-    <link rel="prev" title="celery.states" href="celery.states.html" /> 
+    <link rel="next" title="celery.events" href="celery.events.html" />
+    <link rel="prev" title="celery.contrib.batches" href="celery.contrib.batches.html" /> 
   </head>
   <body>
     <div class="related">
@@ -37,10 +37,10 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.contrib.abortable.html" title="celery.contrib.abortable"
+          <a href="celery.events.html" title="celery.events"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="celery.states.html" title="celery.states"
+          <a href="celery.contrib.batches.html" title="celery.contrib.batches"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">Celery v2.2.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
@@ -100,7 +100,7 @@ base port.  The selected port will be logged by celeryd.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
-<li>2009 - 2010 by Ask Solem.</li>
+<li>2009 - 2011 by Ask Solem.</li>
 </ol>
 </td>
 </tr>
@@ -111,8 +111,8 @@ base port.  The selected port will be logged by celeryd.</p>
 </table>
 <dl class="function">
 <dt id="celery.contrib.rdb.set_trace">
-<tt class="descclassname">celery.contrib.rdb.</tt><tt class="descname">set_trace</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.contrib.rdb.set_trace" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set breakpoint at current location.</p>
+<tt class="descclassname">celery.contrib.rdb.</tt><tt class="descname">set_trace</tt><big>(</big><em>frame=None</em><big>)</big><a class="headerlink" href="#celery.contrib.rdb.set_trace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set breakpoint at current location, or a specified frame</p>
 </dd></dl>
 
 <dl class="function">
@@ -138,11 +138,11 @@ or creates a new one.</p>
   <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
 </a></p>
   <h4>Previous topic</h4>
-  <p class="topless"><a href="celery.states.html"
-                        title="previous chapter">celery.states</a></p>
+  <p class="topless"><a href="celery.contrib.batches.html"
+                        title="previous chapter">celery.contrib.batches</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="celery.contrib.abortable.html"
-                        title="next chapter">celery.contrib.abortable</a></p>
+  <p class="topless"><a href="celery.events.html"
+                        title="next chapter">celery.events</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../sources/reference/celery.contrib.rdb.txt"
@@ -175,17 +175,17 @@ or creates a new one.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.contrib.abortable.html" title="celery.contrib.abortable"
+          <a href="celery.events.html" title="celery.events"
              >next</a> |</li>
         <li class="right" >
-          <a href="celery.states.html" title="celery.states"
+          <a href="celery.contrib.batches.html" title="celery.contrib.batches"
              >previous</a> |</li>
         <li><a href="../index.html">Celery v2.2.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
+        &copy; Copyright 2009-2011, Ask Solem &amp; contributors.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>

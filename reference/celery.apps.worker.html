@@ -71,7 +71,7 @@
 <em class="property">class </em><tt class="descclassname">celery.apps.worker.</tt><tt class="descname">Worker</tt><big>(</big><em>concurrency=None</em>, <em>loglevel=None</em>, <em>logfile=None</em>, <em>hostname=None</em>, <em>discard=False</em>, <em>run_clockservice=False</em>, <em>schedule=None</em>, <em>task_time_limit=None</em>, <em>task_soft_time_limit=None</em>, <em>max_tasks_per_child=None</em>, <em>queues=None</em>, <em>events=False</em>, <em>db=None</em>, <em>include=None</em>, <em>app=None</em>, <em>pidfile=None</em>, <em>redirect_stdouts=None</em>, <em>redirect_stdouts_level=None</em>, <em>autoscale=None</em>, <em>scheduler_cls=None</em>, <em>pool=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.apps.worker.Worker" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="class">
 <dt id="celery.apps.worker.Worker.WorkController">
-<em class="property">class </em><tt class="descname">WorkController</tt><big>(</big><em>concurrency=None</em>, <em>logfile=None</em>, <em>loglevel=None</em>, <em>send_events=None</em>, <em>hostname=None</em>, <em>ready_callback=&lt;function noop at 0x1024bb398&gt;</em>, <em>embed_clockservice=False</em>, <em>pool_cls=None</em>, <em>consumer_cls=None</em>, <em>mediator_cls=None</em>, <em>eta_scheduler_cls=None</em>, <em>schedule_filename=None</em>, <em>task_time_limit=None</em>, <em>task_soft_time_limit=None</em>, <em>max_tasks_per_child=None</em>, <em>pool_putlocks=None</em>, <em>db=None</em>, <em>prefetch_multiplier=None</em>, <em>eta_scheduler_precision=None</em>, <em>queues=None</em>, <em>disable_rate_limits=None</em>, <em>autoscale=None</em>, <em>autoscaler_cls=None</em>, <em>scheduler_cls=None</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.apps.worker.Worker.WorkController" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descname">WorkController</tt><big>(</big><em>concurrency=None</em>, <em>logfile=None</em>, <em>loglevel=None</em>, <em>send_events=None</em>, <em>hostname=None</em>, <em>ready_callback=&lt;function noop at 0x10264a6e0&gt;</em>, <em>embed_clockservice=False</em>, <em>pool_cls=None</em>, <em>consumer_cls=None</em>, <em>mediator_cls=None</em>, <em>eta_scheduler_cls=None</em>, <em>schedule_filename=None</em>, <em>task_time_limit=None</em>, <em>task_soft_time_limit=None</em>, <em>max_tasks_per_child=None</em>, <em>pool_putlocks=None</em>, <em>db=None</em>, <em>prefetch_multiplier=None</em>, <em>eta_scheduler_precision=None</em>, <em>queues=None</em>, <em>disable_rate_limits=None</em>, <em>autoscale=None</em>, <em>autoscaler_cls=None</em>, <em>scheduler_cls=None</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.apps.worker.Worker.WorkController" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unmanaged worker instance.</p>
 <dl class="method">
 <dt id="celery.apps.worker.Worker.WorkController.on_timer_error">
@@ -85,7 +85,7 @@
 
 <dl class="method">
 <dt id="celery.apps.worker.Worker.WorkController.process_task">
-<tt class="descname">process_task</tt><big>(</big><em>wrapper</em><big>)</big><a class="headerlink" href="#celery.apps.worker.Worker.WorkController.process_task" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">process_task</tt><big>(</big><em>request</em><big>)</big><a class="headerlink" href="#celery.apps.worker.Worker.WorkController.process_task" title="Permalink to this definition">¶</a></dt>
 <dd><p>Process task by sending it to the pool of workers.</p>
 </dd></dl>
 
@@ -199,6 +199,11 @@
 <dd></dd></dl>
 
 <dl class="function">
+<dt id="celery.apps.worker.install_rdb_handler">
+<tt class="descclassname">celery.apps.worker.</tt><tt class="descname">install_rdb_handler</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.apps.worker.install_rdb_handler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
 <dt id="celery.apps.worker.install_worker_int_again_handler">
 <tt class="descclassname">celery.apps.worker.</tt><tt class="descname">install_worker_int_again_handler</tt><big>(</big><em>worker</em><big>)</big><a class="headerlink" href="#celery.apps.worker.install_worker_int_again_handler" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -276,7 +281,7 @@
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
+        &copy; Copyright 2009-2011, Ask Solem &amp; contributors.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>

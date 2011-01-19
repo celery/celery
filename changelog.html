@@ -455,23 +455,8 @@ with a ``pdb`` shell::
     (Pdb)
 
 Enter ``help`` to get a list of available commands,
-It may be a good idea to read the `The Python Debugger`_ manual if
-you have never used `pdb` before.
-
-To demonstrate, we will read the value of the ``result`` variable,
-change it and continue execution of the task::
-
-    (Pdb) result
-    4
-    (Pdb) result = "hello from rdb"
-    (Pdb) continue
-    Connection closed by foreign host.
-
-The result of our vandalism can be seen in the worker logs::
-
-    [2011-01-18 14:35:36,599: INFO/MainProcess] Task
-        tasks.add[d7261c71-4962-47e5-b342-2448bedd20e8] succeeded
-        in 61.481s: 'hello from rdb'</pre>
+It may be a good idea to read the `Python Debugger Manual`_ if
+you have never used `pdb` before.</pre>
 </div>
 </blockquote>
 </li>
@@ -4946,7 +4931,7 @@ the name change request is in <cite>docs/name_change_request.txt</cite>.</p>
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
+        &copy; Copyright 2009-2011, Ask Solem &amp; contributors.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>
