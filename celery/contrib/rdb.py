@@ -37,7 +37,6 @@ Inspired by http://snippets.dzone.com/posts/show/7248
 
 """
 
-import bdb
 import errno
 import os
 import socket
@@ -90,7 +89,6 @@ class Rdb(Pdb):
                 "%s: Could not find available port. Please set using "
                 "environment variable CELERY_RDB_PORT" % (self.me, ))
 
-
         self._sock.listen(1)
         me = "%s:%s" % (self.me, this_port)
         context = self.context = {"me": me, "host": host, "port": this_port}
@@ -132,13 +130,12 @@ class Rdb(Pdb):
             Pdb.set_trace(self, frame)
         except socket.error, exc:
             # connection reset by peer.
-            if socket.errno != ECONNRESET:
+            if exc.errno != errno.ECONNRESET:
                 raise
 
     def set_quit(self):
         # this raises a BdbQuit exception that we are unable to catch.
         sys.settrace(None)
-
 
 
 def debugger():

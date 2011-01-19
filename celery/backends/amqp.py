@@ -12,7 +12,6 @@ from celery import states
 from celery.backends.base import BaseDictBackend
 from celery.exceptions import TimeoutError
 from celery.utils import timeutils
-from celery.utils import cached_property
 
 
 def repair_uuid(s):
