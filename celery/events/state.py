@@ -41,7 +41,7 @@ class Worker(Element):
         if timestamp:
             heapq.heappush(self.heartbeats, timestamp)
             if len(self.heartbeats) > self.heartbeat_max:
-                self.heartbeats = self.heartbeats[:self.heartbeat_max]
+                self.heartbeats = self.heartbeats[self.heartbeat_max:]
 
     def __repr__(self):
         return "<Worker: %s (%s)" % (self.hostname,
