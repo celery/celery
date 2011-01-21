@@ -147,7 +147,7 @@ Worker Signals
 
 .. data:: worker_init
 
-    Dispatched beforee the wxorker is started.
+    Dispatched before the worker is started.
 
 .. data:: worker_ready
 
