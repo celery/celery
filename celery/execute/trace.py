@@ -125,7 +125,7 @@ class TaskTrace(object):
         self.task.on_failure(exc, self.task_id,
                              self.args, self.kwargs, einfo=einfo)
         signals.task_failure.send(sender=self.task, task_id=self.task_id,
-                                  exception=exception, args=self.args,
+                                  exception=exc, args=self.args,
                                   kwargs=self.kwargs, traceback=tb,
                                   einfo=einfo)
         return einfo
