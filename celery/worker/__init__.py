@@ -262,8 +262,7 @@ class WorkController(object):
         """Process task by sending it to the pool of workers."""
         try:
             request.task.execute(request, self.pool,
-                                 self.loglevel, self.logfile,
-                                 consumer=self.consumer)
+                                 self.loglevel, self.logfile)
         except SystemTerminate:
             self.terminate()
             raise SystemExit()

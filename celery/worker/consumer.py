@@ -72,11 +72,12 @@ from __future__ import generators
 
 import socket
 import sys
+import threading
 import traceback
 import warnings
 
 from celery.app import app_or_default
-from celery.datastructures import AttributeDict, SharedCounter
+from celery.datastructures import AttributeDict
 from celery.exceptions import NotRegistered
 from celery.utils import noop
 from celery.utils.timer2 import to_timestamp
@@ -104,17 +105,34 @@ class QoS(object):
     def __init__(self, consumer, initial_value, logger):
         self.consumer = consumer
         self.logger = logger
-        self.value = SharedCounter(initial_value)
+        self._mutex = threading.RLock()
+        self.value = initial_value
 
     def increment(self, n=1):
         """Increment the current prefetch count value by one."""
-        if int(self.value):
-            return self.set(self.value.increment(n))
+        self._mutex.acquire()
+        try:
+            if self.value:
+                self.value += max(n, 0)
+                self.set(self.value)
+            return self.value
+        finally:
+            self._mutex.release()
+
+    def _sub(self, n=1):
+        assert self.value -n > 1
+        self.value -= n
 
     def decrement(self, n=1):
         """Decrement the current prefetch count value by one."""
-        if int(self.value):
-            return self.set(self.value.decrement(n))
+        self._mutex.acquire()
+        try:
+            if self.value:
+                self._sub(n)
+                self.set(self.value)
+            return self.value
+        finally:
+            self._mutex.release()
 
     def decrement_eventually(self, n=1):
         """Decrement the value, but do not update the qos.
@@ -123,23 +141,28 @@ class QoS(object):
         when necessary.
 
         """
-        if int(self.value):
-            self.value.decrement(n)
+        self._mutex.acquire()
+        try:
+            if self.value:
+                self._sub(n)
+        finally:
+            self._mutex.release()
 
     def set(self, pcount):
         """Set channel prefetch_count setting."""
-        self.logger.debug("basic.qos: prefetch_count->%s" % pcount)
-        self.consumer.qos(prefetch_count=pcount)
-        self.prev = pcount
+        if pcount != self.prev:
+            self.logger.debug("basic.qos: prefetch_count->%s" % pcount)
+            self.consumer.qos(prefetch_count=pcount)
+            self.prev = pcount
         return pcount
 
     def update(self):
         """Update prefetch count with current value."""
-        return self.set(self.next)
-
-    @property
-    def next(self):
-        return int(self.value)
+        self._mutex.acquire()
+        try:
+            return self.set(self.value)
+        finally:
+            self._mutex.release()
 
 
 class Consumer(object):
@@ -253,7 +276,7 @@ class Consumer(object):
         while 1:
             if not self.connection:
                 break
-            if self.qos.prev != self.qos.next:
+            if self.qos.prev != self.qos.value:
                 self.qos.update()
             self.connection.drain_events()
 
@@ -481,4 +504,4 @@ class Consumer(object):
             conninfo = self.connection.info()
             conninfo.pop("password", None)  # don't send password.
         return {"broker": conninfo,
-                "prefetch_count": self.qos.next}
+                "prefetch_count": self.qos.value}

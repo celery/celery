@@ -106,7 +106,7 @@ class Batches(Task):
         return self.apply_buffer(requests, ([SimpleRequest.from_request(r)
                                                 for r in requests], ))
 
-    def execute(self, request, pool, loglevel, logfile, consumer):
+    def execute(self, request, pool, loglevel, logfile):
         if not self._pool:         # just take pool from first task.
             self._pool = pool
 
@@ -126,7 +126,7 @@ class Batches(Task):
         if self._buffer.qsize():
             requests = list(consume_queue(self._buffer))
             if requests:
-                self.debug("Buffer complete: %s" % (len(requests, )))
+                self.debug("Buffer complete: %s" % (len(requests), ))
                 self.flush(requests)
         if not requests:
             self.debug("Cancelling timer: Nothing in buffer.")

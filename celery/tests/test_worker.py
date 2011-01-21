@@ -170,8 +170,62 @@ def create_message(backend, **data):
                    content_type="application/x-python-serialize",
                    content_encoding="binary")
 
-
 class test_QoS(unittest.TestCase):
+
+    class _QoS(QoS):
+        def __init__(self, value):
+            self.value = value
+            QoS.__init__(self, None, value, None)
+
+        def set(self, value):
+            return value
+
+    def test_qos_increment_decrement(self):
+        qos = self._QoS(10)
+        self.assertEqual(qos.increment(), 11)
+        self.assertEqual(qos.increment(3), 14)
+        self.assertEqual(qos.increment(-30), 14)
+        self.assertEqual(qos.decrement(7), 7)
+        self.assertEqual(qos.decrement(), 6)
+        self.assertRaises(AssertionError, qos.decrement, 10)
+
+    def test_qos_disabled_increment_decrement(self):
+        qos = self._QoS(0)
+        self.assertEqual(qos.increment(), 0)
+        self.assertEqual(qos.increment(3), 0)
+        self.assertEqual(qos.increment(-30), 0)
+        self.assertEqual(qos.decrement(7), 0)
+        self.assertEqual(qos.decrement(), 0)
+        self.assertEqual(qos.decrement(10), 0)
+
+    def test_qos_thread_safe(self):
+        qos = self._QoS(10)
+
+        def add():
+            for i in xrange(1000):
+                qos.increment()
+
+        def sub():
+            for i in xrange(1000):
+                qos.decrement_eventually()
+
+        def threaded(funs):
+            from threading import Thread
+            threads = [Thread(target=fun) for fun in funs]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+
+        threaded([add, add])
+        self.assertEqual(qos.value, 2010)
+
+        qos.value = 1000
+        threaded([add, sub]) # n = 2
+        self.assertEqual(qos.value, 1000)
+
+        threaded([sub, add, add, sub]) # n = 4
+        self.assertEqual(qos.value, 1000)
 
     class MockConsumer(object):
         prefetch_count = 0
@@ -179,25 +233,25 @@ class test_QoS(unittest.TestCase):
         def qos(self, prefetch_size=0, prefetch_count=0, apply_global=False):
             self.prefetch_count = prefetch_count
 
-    def test_increment_decrement(self):
+    def test_consumer_increment_decrement(self):
         consumer = self.MockConsumer()
         qos = QoS(consumer, 10, app_or_default().log.get_default_logger())
         qos.update()
-        self.assertEqual(int(qos.value), 10)
+        self.assertEqual(qos.value, 10)
         self.assertEqual(consumer.prefetch_count, 10)
         qos.decrement()
-        self.assertEqual(int(qos.value), 9)
+        self.assertEqual(qos.value, 9)
         self.assertEqual(consumer.prefetch_count, 9)
         qos.decrement_eventually()
-        self.assertEqual(int(qos.value), 8)
+        self.assertEqual(qos.value, 8)
         self.assertEqual(consumer.prefetch_count, 9)
 
         # Does not decrement 0 value
-        qos.value._value = 0
+        qos.value = 0
         qos.decrement()
-        self.assertEqual(int(qos.value), 0)
+        self.assertEqual(qos.value, 0)
         qos.increment()
-        self.assertEqual(int(qos.value), 0)
+        self.assertEqual(qos.value, 0)
 
 
 class test_Consumer(unittest.TestCase):
@@ -435,10 +489,10 @@ class test_Consumer(unittest.TestCase):
         l.qos = QoS(None, 10, l.logger)
 
         task = object()
-        qos = l.qos.next
+        qos = l.qos.value
         l.apply_eta_task(task)
         self.assertIn(task, state.reserved_requests)
-        self.assertEqual(l.qos.next, qos - 1)
+        self.assertEqual(l.qos.value, qos - 1)
         self.assertIs(self.ready_queue.get_nowait(), task)
 
     def test_receieve_message_eta_isoformat(self):
@@ -531,10 +585,10 @@ class test_Consumer(unittest.TestCase):
 
         class _QoS(object):
             prev = 3
-            next = 4
+            value = 4
 
             def update(self):
-                self.prev = self.next
+                self.prev = self.value
 
         class _Consumer(MyKombuConsumer):
             iterations = 0
@@ -559,7 +613,7 @@ class test_Consumer(unittest.TestCase):
 
         def raises_KeyError(limit=None):
             l.iterations += 1
-            if l.qos.prev != l.qos.next:
+            if l.qos.prev != l.qos.value:
                 l.qos.update()
             if l.iterations >= 2:
                 raise KeyError("foo")
@@ -568,7 +622,7 @@ class test_Consumer(unittest.TestCase):
         self.assertRaises(KeyError, l.start)
         self.assertTrue(called_back[0])
         self.assertEqual(l.iterations, 1)
-        self.assertEqual(l.qos.prev, l.qos.next)
+        self.assertEqual(l.qos.prev, l.qos.value)
 
         l = _Consumer(self.ready_queue, self.eta_schedule, self.logger,
                       send_events=False, init_callback=init_callback)

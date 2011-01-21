@@ -3,7 +3,7 @@ from celery.tests.utils import unittest
 from Queue import Queue
 
 from celery.datastructures import ExceptionInfo, LocalCache
-from celery.datastructures import LimitedSet, SharedCounter, consume_queue
+from celery.datastructures import LimitedSet, consume_queue
 from celery.datastructures import AttributeDict, DictAttribute
 from celery.datastructures import ConfigurationView
 
@@ -101,39 +101,6 @@ class test_utilities(unittest.TestCase):
         it = consume_queue(x)
         self.assertEqual(it.next(), "foo")
         self.assertRaises(StopIteration, it.next)
-
-
-class test_SharedCounter(unittest.TestCase):
-
-    def test_initial_value(self):
-        self.assertEqual(int(SharedCounter(10)), 10)
-
-    def test_increment(self):
-        c = SharedCounter(10)
-        c.increment()
-        self.assertEqual(int(c), 11)
-        c.increment(2)
-        self.assertEqual(int(c), 13)
-
-    def test_decrement(self):
-        c = SharedCounter(10)
-        c.decrement()
-        self.assertEqual(int(c), 9)
-        c.decrement(2)
-        self.assertEqual(int(c), 7)
-
-    def test_iadd(self):
-        c = SharedCounter(10)
-        c += 10
-        self.assertEqual(int(c), 20)
-
-    def test_isub(self):
-        c = SharedCounter(10)
-        c -= 20
-        self.assertEqual(int(c), -10)
-
-    def test_repr(self):
-        self.assertIn("10", repr(SharedCounter(10)))
 
 
 class test_LimitedSet(unittest.TestCase):

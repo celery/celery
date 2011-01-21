@@ -190,67 +190,6 @@ def consume_queue(queue):
             break
 
 
-class SharedCounter(object):
-    """Thread-safe counter.
-
-    Please note that the final value is not synchronized, this means
-    that you should not update the value by using a previous value, the only
-    reliable operations are increment and decrement.
-
-    Example::
-
-        >>> max_clients = SharedCounter(initial_value=10)
-
-        # Thread one
-        >>> max_clients += 1 # OK (safe)
-
-        # Thread two
-        >>> max_clients -= 3 # OK (safe)
-
-        # Main thread
-        >>> if client >= int(max_clients): # Max clients now at 8
-        ...    wait()
-
-        >>> max_client = max_clients + 10 # NOT OK (unsafe)
-
-    """
-
-    def __init__(self, initial_value):
-        self._value = initial_value
-        self._modify_queue = Queue()
-
-    def increment(self, n=1):
-        """Increment value."""
-        self += n
-        return int(self)
-
-    def decrement(self, n=1):
-        """Decrement value."""
-        self -= n
-        return int(self)
-
-    def _update_value(self):
-        self._value += sum(consume_queue(self._modify_queue))
-        return self._value
-
-    def __iadd__(self, y):
-        """`self += y`"""
-        self._modify_queue.put(y * +1)
-        return self
-
-    def __isub__(self, y):
-        """`self -= y`"""
-        self._modify_queue.put(y * -1)
-        return self
-
-    def __int__(self):
-        """`int(self) -> int`"""
-        return self._update_value()
-
-    def __repr__(self):
-        return repr(int(self))
-
-
 class LimitedSet(object):
     """Kind-of Set with limitations.
 
