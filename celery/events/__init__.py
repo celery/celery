@@ -109,6 +109,9 @@ class EventDispatcher(object):
             type, fields, _ = self._outbound_buffer.popleft()
             self.send(type, **fields)
 
+    def copy_buffer(self, other):
+        self._outbound_buffer = other._outbound_buffer
+
     def close(self):
         """Close the event dispatcher."""
         self._lock.locked() and self._lock.release()

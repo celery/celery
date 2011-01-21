@@ -67,6 +67,7 @@ class MockEventDispatcher(object):
     sent = []
     closed = False
     flushed = False
+    _outbound_buffer = []
 
     def send(self, event, *args, **kwargs):
         self.sent.append(event)
@@ -568,7 +569,6 @@ class test_Consumer(unittest.TestCase):
         finally:
             l.app.conf.BROKER_CONNECTION_RETRY = p
         l.stop_consumers()
-        self.assertTrue(dispatcher.flushed)
         l.event_dispatcher = MockEventDispatcher()
         l.receive_message(m.decode(), m)
         l.eta_schedule.stop()

@@ -259,8 +259,8 @@ class Consumer(object):
         self.init_callback(self)
 
         while 1:
-            self.reset_connection()
             try:
+                self.reset_connection()
                 self.consume_messages()
             except self.connection_errors:
                 self.logger.error("Consumer: Connection to broker lost."
@@ -325,6 +325,7 @@ class Consumer(object):
             self.logger.error(
                 "Error occurred while handling control command: %r\n%r" % (
                     exc, traceback.format_exc()), exc_info=sys.exc_info())
+            self.reset_pidbox_node()
 
     def apply_eta_task(self, task):
         state.task_reserved(task)
@@ -431,6 +432,17 @@ class Consumer(object):
                                 message.content_encoding, message.body))
         message.ack()
 
+    def reset_pidbox_node(self):
+        if self.pidbox_node.channel:
+            try:
+                self.pidbox_node.channel.close()
+            except self.connection_errors + self.channel_errors:
+                pass
+
+        self.pidbox_node.channel = self.connection.channel()
+        self.broadcast_consumer = self.pidbox_node.listen(
+                                        callback=self.on_control)
+
     def reset_connection(self):
         """Re-establish connection and set up consumers."""
         self.logger.debug(
@@ -453,16 +465,18 @@ class Consumer(object):
 
         self.task_consumer.register_callback(self.receive_message)
 
-        self.pidbox_node.channel = self.connection.channel()
-        self.broadcast_consumer = self.pidbox_node.listen(
-                                        callback=self.on_control)
+        # Pidbox
+        self.reset_pidbox_node()
 
         # Flush events sent while connection was down.
-        if self.event_dispatcher:
-            self.event_dispatcher.flush()
+        prev_event_dispatcher = self.event_dispatcher
         self.event_dispatcher = self.app.events.Dispatcher(self.connection,
                                                 hostname=self.hostname,
                                                 enabled=self.send_events)
+        if prev_event_dispatcher:
+            self.event_dispatcher.copy_buffer(prev_event_dispatcher)
+            self.event_dispatcher.flush()
+
         self.restart_heartbeat()
 
         self._state = RUN
