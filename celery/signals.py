@@ -119,15 +119,35 @@ Task Signals
         The tasks keyword arguments.
 
     * retval
-
         The return value of the task.
+
+.. data:: task_failure
+
+    Dispatched when a task fails.
+
+    Sender is the task class executed.
+
+    Provides arguments:
+
+    * task_id
+        Id of the task.
+    * exception
+        Exception instance raised.
+    * args
+        Positional arguments the task was called with.
+    * kwargs
+        Keyword arguments the task was called with.
+    * traceback
+        Stack trace object.
+    * einfo
+        The :class:`celery.datastructures.ExceptionInfo` instance.
 
 Worker Signals
 ~~~~~~~~~~~~~~
 
 .. data:: worker_init
 
-    Dispatched before the worker is started.
+    Dispatched beforee the wxorker is started.
 
 .. data:: worker_ready
 
@@ -168,6 +188,10 @@ task_prerun = Signal(providing_args=["task_id", "task",
 
 task_postrun = Signal(providing_args=["task_id", "task",
                                       "args", "kwargs", "retval"])
+
+task_failure = Signal(providing_args=["task_id", "exception",
+                                      "args", "kwargs", "traceback",
+                                      "einfo"])
 
 worker_init = Signal(providing_args=[])
 worker_process_init = Signal(providing_args=[])
