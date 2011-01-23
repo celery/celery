@@ -1,4 +1,10 @@
+import sys
+
 from datetime import timedelta
+
+is_jython = sys.platform.startswith("java")
+
+DEFAULT_POOL = is_jython and "threads" or "processes"
 
 DEFAULT_PROCESS_LOG_FMT = """
     [%(asctime)s: %(levelname)s/%(processName)s] %(message)s
@@ -105,7 +111,7 @@ NAMESPACES = {
         "LOG_FILE": Option(),
         "MEDIATOR": Option("celery.worker.controllers.Mediator"),
         "MAX_TASKS_PER_CHILD": Option(type="int"),
-        "POOL": Option("celery.concurrency.processes.TaskPool"),
+        "POOL": Option(DEFAULT_POOL),
         "POOL_PUTLOCKS": Option(True, type="bool"),
         "PREFETCH_MULTIPLIER": Option(4, type="int"),
         "STATE_DB": Option(),

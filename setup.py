@@ -54,10 +54,15 @@ install_requires.extend([
     "pyparsing>=1.5.0",
 ])
 py_version = sys.version_info
-if sys.version_info < (2, 6) and not sys.platform.startswith("java"):
+is_jython = sys.platform.startswith("java")
+if sys.version_info < (2, 6) and not is_jython:
     install_requires.append("multiprocessing")
 if sys.version_info < (2, 5):
     install_requires.append("uuid")
+
+if is_jython:
+    install_requires.append("threadpool")
+    install_requires.append("simplejson")
 
 if os.path.exists("README.rst"):
     long_description = codecs.open("README.rst", "r", "utf-8").read()
