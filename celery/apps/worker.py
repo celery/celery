@@ -1,6 +1,9 @@
 import atexit
 import logging
-import multiprocessing
+try:
+    import multiprocessing
+except ImportError:
+    multiprocessing = None
 import os
 import socket
 import sys
@@ -36,6 +39,11 @@ EXTRA_INFO_FMT = """
 %(tasks)s
 """
 
+def cpu_count():
+    if multiprocessing is not None:
+        return multiprocessing.cpu_count()
+    return 2
+
 
 class Worker(object):
     WorkController = WorkController
@@ -50,7 +58,7 @@ class Worker(object):
         self.app = app = app_or_default(app)
         self.concurrency = (concurrency or
                             app.conf.CELERYD_CONCURRENCY or
-                            multiprocessing.cpu_count())
+                            cpu_count())
         self.loglevel = loglevel or app.conf.CELERYD_LOG_LEVEL
         self.logfile = logfile or app.conf.CELERYD_LOG_FILE
 
@@ -263,8 +271,10 @@ class Worker(object):
 def install_worker_int_handler(worker):
 
     def _stop(signum, frame):
-        process_name = multiprocessing.current_process().name
-        if process_name == "MainProcess":
+        process_name = None
+        if multiprocessing:
+            process_name = multiprocessing.current_process().name
+        if not process_name or process_name == "MainProcess":
             worker.logger.warn(
                 "celeryd: Hitting Ctrl+C again will terminate "
                 "all running tasks!")
@@ -280,8 +290,10 @@ def install_worker_int_handler(worker):
 def install_worker_int_again_handler(worker):
 
     def _stop(signum, frame):
-        process_name = multiprocessing.current_process().name
-        if process_name == "MainProcess":
+        process_name = None
+        if multiprocessing:
+            process_name = multiprocessing.current_process().name
+        if not process_name or process_name == "MainProcess":
             worker.logger.warn("celeryd: Cold shutdown (%s)" % (
                 process_name))
             worker.terminate(in_sighandler=True)
@@ -293,8 +305,9 @@ def install_worker_int_again_handler(worker):
 def install_worker_term_handler(worker):
 
     def _stop(signum, frame):
-        process_name = multiprocessing.current_process().name
-        if process_name == "MainProcess":
+        if multiprocessing:
+            process_name = multiprocessing.current_process().name
+        if not process_name or process_name == "MainProcess":
             worker.logger.warn("celeryd: Warm shutdown (%s)" % (
                 process_name))
             worker.stop(in_sighandler=True)

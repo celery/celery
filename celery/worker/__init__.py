@@ -1,7 +1,8 @@
 import socket
 import logging
 import traceback
-from multiprocessing.util import Finalize
+
+from kombu.utils.finalize import Finalize
 
 from celery import beat
 from celery import concurrency as _concurrency

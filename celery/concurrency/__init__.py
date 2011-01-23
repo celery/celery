@@ -4,6 +4,7 @@ ALIASES = {
     "processes": "celery.concurrency.processes.TaskPool",
     "eventlet": "celery.concurrency.evlet.TaskPool",
     "gevent": "celery.concurrency.evg.TaskPool",
+    "threads": "celery.concurrency.threads.TaskPool",
 }
 
 

@@ -8,7 +8,10 @@ import shelve
 import sys
 import threading
 import traceback
-import multiprocessing
+try:
+    import multiprocessing
+except ImportError:
+    multiprocessing = None
 
 from datetime import datetime
 
@@ -393,21 +396,24 @@ class _Threaded(threading.Thread):
         self.service.stop(wait=True)
 
 
-class _Process(multiprocessing.Process):
-    """Embedded task scheduler using multiprocessing."""
+if multiprocessing is not None:
+    class _Process(multiprocessing.Process):
+        """Embedded task scheduler using multiprocessing."""
 
-    def __init__(self, *args, **kwargs):
-        super(_Process, self).__init__()
-        self.service = Service(*args, **kwargs)
-        self.name = "Beat"
+        def __init__(self, *args, **kwargs):
+            super(_Process, self).__init__()
+            self.service = Service(*args, **kwargs)
+            self.name = "Beat"
 
-    def run(self):
-        platforms.reset_signal("SIGTERM")
-        self.service.start(embedded_process=True)
+        def run(self):
+            platforms.reset_signal("SIGTERM")
+            self.service.start(embedded_process=True)
 
-    def stop(self):
-        self.service.stop()
-        self.terminate()
+        def stop(self):
+            self.service.stop()
+            self.terminate()
+else:
+    _Process = None
 
 
 def EmbeddedService(*args, **kwargs):
@@ -417,7 +423,7 @@ def EmbeddedService(*args, **kwargs):
         Default is :const:`False`.
 
     """
-    if kwargs.pop("thread", False):
+    if kwargs.pop("thread", False) or _Process is None:
         # Need short max interval to be able to stop thread
         # in reasonable time.
         kwargs.setdefault("max_interval", 1)

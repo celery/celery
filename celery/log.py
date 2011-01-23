@@ -4,8 +4,11 @@ import threading
 import sys
 import traceback
 
-from multiprocessing import current_process
-from multiprocessing import util as mputil
+try:
+    from multiprocessing import current_process
+    from multiprocessing import util as mputil
+except ImportError:
+    current_process = mputil = None
 
 from celery import signals
 from celery import current_app
@@ -42,7 +45,8 @@ class ColorFormatter(logging.Formatter):
         # by foreign logger instances.
         # (processName is always supported by Python 2.7)
         if "processName" not in record.__dict__:
-            record.__dict__["processName"] = current_process()._name
+            process_name = current_process and current_process()._name or ""
+            record.__dict__["processName"] = process_name
         t = logging.Formatter.format(self, record)
         if isinstance(t, unicode):
             return t.encode("utf-8", "replace")
@@ -89,10 +93,11 @@ class Logging(object):
         if colorize is None:
             colorize = self.supports_color(logfile)
 
-        try:
-            mputil._logger = None
-        except AttributeError:
-            pass
+        if mputil:
+            try:
+                mputil._logger = None
+            except AttributeError:
+                pass
         ensure_process_aware_logger()
         receivers = signals.setup_logging.send(sender=None,
                                                loglevel=loglevel,
@@ -105,10 +110,11 @@ class Logging(object):
             if self.app.conf.CELERYD_HIJACK_ROOT_LOGGER:
                 root.handlers = []
 
-            mp = mputil.get_logger()
+            mp = mputil and mputil.get_logger() or None
             for logger in (root, mp):
-                self._setup_logger(logger, logfile, format, colorize, **kwargs)
-                logger.setLevel(loglevel)
+                if logger:
+                    self._setup_logger(logger, logfile, format, colorize, **kwargs)
+                    logger.setLevel(loglevel)
         Logging._setup = True
         return receivers
 

@@ -62,4 +62,4 @@ class Heart(threading.Thread):
         self._state = "CLOSE"
         self._shutdown.set()
         if self.isAlive():
-            self.join(1e100)
+            self.join(1e10)

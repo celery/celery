@@ -351,7 +351,10 @@ def set_mp_process_title(progname, info=None, hostname=None):
     Only works if :mod:`setproctitle` is installed.
 
     """
-    from multiprocessing.process import current_process
+    try:
+        from multiprocessing.process import current_process
+    except ImportError:
+        return
     if hostname:
         progname = "%s@%s" % (progname, hostname.split(".")[0])
     return set_process_title("%s:%s" % (progname, current_process().name),
