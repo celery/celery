@@ -541,6 +541,18 @@ Fixes
 Experimental
 ------------
 
+* Jython: celeryd now runs on Jython using the threaded pool.
+
+    But tests do not pass, and there may be bugs lurking around the corners.
+
+* PyPy: celeryd now runs on PyPy.
+
+    It runs without any pool, so to get parallel execution you need to start
+    several instances (using e.g. ``celeryd-multi``).
+
+    Sadly an initial benchmark seems to show a 30% performance decrease on
+    pypy-1.4.1 + JIT.  We would like to find out why this is, so stay tuned.
+
 * :class:`PublisherPool`: Experimental pool of task publishers and
   connections to be used with the `retry` argument to `apply_async`.
 
