@@ -90,10 +90,7 @@ class AMQPBackend(BaseDictBackend):
         else:
             channel = connection._result_producer_chan = connection.channel()
 
-        try:
-            self._create_producer(task_id, channel).publish(meta)
-        finally:
-            channel.close()
+        self._create_producer(task_id, channel).publish(meta)
 
     def revive(self, channel):
         pass
