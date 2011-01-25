@@ -30,25 +30,15 @@ total_count = defaultdict(lambda: 0)
 #: the list of currently revoked tasks.  Persistent if statedb set.
 revoked = LimitedSet(maxlen=REVOKES_MAX, expires=REVOKE_EXPIRES)
 
-from time import time
-time_start = [None]
-
-
 def task_reserved(request):
     """Updates global state when a task has been reserved."""
     reserved_requests.add(request)
-    if not time_start[0]:
-        time_start[0] = time()
 
 
 def task_accepted(request):
     """Updates global state when a task has been accepted."""
     active_requests.add(request)
     total_count[request.task_name] += 1
-    if not total_count[request.task_name] % 10000:
-        tt = time()
-        print("TIME FOR 10000: %s" % (tt - time_start[0], ))
-        time_start[0] = tt
 
 
 def task_ready(request):
