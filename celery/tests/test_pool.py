@@ -2,10 +2,11 @@ import sys
 import time
 import logging
 import itertools
-from celery.tests.utils import unittest
 
-from celery.concurrency.processes import TaskPool
+from nose import SkipTest
+
 from celery.datastructures import ExceptionInfo
+from celery.tests.utils import unittest
 
 
 def do_something(i):
@@ -25,14 +26,22 @@ def raise_something(i):
 
 class TestTaskPool(unittest.TestCase):
 
+    def setUp(self):
+        try:
+            import multiprocessing
+        except ImportError:
+            raise SkipTest("multiprocessing not supported")
+        from celery.concurrency.processes import TaskPool
+        self.TaskPool = TaskPool
+
     def test_attrs(self):
-        p = TaskPool(2)
+        p = self.TaskPool(2)
         self.assertEqual(p.limit, 2)
         self.assertIsInstance(p.logger, logging.Logger)
         self.assertIsNone(p._pool)
 
     def x_apply(self):
-        p = TaskPool(2)
+        p = self.TaskPool(2)
         p.start()
         scratchpad = {}
         proc_counter = itertools.count().next

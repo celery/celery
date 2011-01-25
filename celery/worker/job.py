@@ -55,6 +55,14 @@ class AlreadyExecutedError(Exception):
     world-wide state."""
 
 
+def default_encode(obj):
+    if sys.platform.startswith("java"):
+        coding = "utf-8"
+    else:
+        coding = sys.getfilesystemencoding()
+    return unicode(obj, coding)
+
+
 class WorkerTaskTrace(TaskTrace):
     """Wraps the task in a jail, catches all exceptions, and
     saves the status and result of the task execution to the task
@@ -494,8 +502,7 @@ class TaskRequest(object):
                    "id": self.task_id,
                    "name": self.task_name,
                    "exc": repr(exc_info.exception),
-                   "traceback": unicode(exc_info.traceback,
-                                        sys.getfilesystemencoding()),
+                   "traceback": default_encode(exc_info.traceback),
                    "args": self.args,
                    "kwargs": self.kwargs}
 

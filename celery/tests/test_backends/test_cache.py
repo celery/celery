@@ -58,7 +58,7 @@ class test_CacheBackend(unittest.TestCase):
         tb = CacheBackend(backend="memory://")
         tid = gen_unique_id()
         tb.mark_as_done(tid, {"foo": "bar"})
-        x = AsyncResult(tid)
+        x = AsyncResult(tid, backend=tb)
         x.forget()
         self.assertIsNone(x.result)
 

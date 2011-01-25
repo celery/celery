@@ -22,20 +22,28 @@ except NameError:
 
 def teardown():
     # Don't want SUBDEBUG log messages at finalization.
-    from multiprocessing.util import get_logger
-    get_logger().setLevel(logging.WARNING)
-    import threading
+    try:
+        from multiprocessing.util import get_logger
+    except ImportError:
+        pass
+    else:
+        get_logger().setLevel(logging.WARNING)
+
+    # Make sure test database is removed.
     import os
     if os.path.exists("test.db"):
         try:
             os.remove("test.db")
         except WindowsError:
             pass
+
+    # Make sure there are no remaining threads at shutdown.
+    import threading
     remaining_threads = [thread for thread in threading.enumerate()
-                            if thread.name != "MainThread"]
+                            if thread.getName() != "MainThread"]
     if remaining_threads:
         sys.stderr.write(
-            "\n\n**WARNING**: Remaning threads at teardown: %r...\n" % (
+            "\n\n**WARNING**: Remaining threads at teardown: %r...\n" % (
                 remaining_threads))
 
 

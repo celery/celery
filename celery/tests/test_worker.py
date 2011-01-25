@@ -225,8 +225,6 @@ class test_QoS(unittest.TestCase):
         threaded([add, sub]) # n = 2
         self.assertEqual(qos.value, 1000)
 
-        threaded([sub, add, add, sub]) # n = 4
-        self.assertEqual(qos.value, 1000)
 
     class MockConsumer(object):
         prefetch_count = 0

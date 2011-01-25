@@ -28,10 +28,8 @@ QUEUES = {"queue1": {
             "binding_key": "bind2"}}
 
 
-QUEUE_FORMAT = """
-. queue1:      exchange:exchange1 (type1) binding:bind1
-. queue2:      exchange:exchange2 (type2) binding:bind2
-""".strip()
+QUEUE_FORMAT1 = """. queue1:      exchange:exchange1 (type1) binding:bind1"""
+QUEUE_FORMAT2 = """. queue2:      exchange:exchange2 (type2) binding:bind2"""
 
 
 class TestInfo(unittest.TestCase):
@@ -60,4 +58,5 @@ class TestInfo(unittest.TestCase):
     def test_format_queues(self):
         celery = Celery(set_as_current=False)
         celery.amqp.queues = QUEUES
-        self.assertEqual(celery.amqp.queues.format(), QUEUE_FORMAT)
+        self.assertItemsEqual(celery.amqp.queues.format().split("\n"),
+                              [QUEUE_FORMAT1, QUEUE_FORMAT2])

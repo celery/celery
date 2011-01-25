@@ -2,12 +2,13 @@ import sys
 
 from datetime import datetime
 
-from celery.exceptions import ImproperlyConfigured
+from nose import SkipTest
 
 from celery import states
 from celery.app import app_or_default
 from celery.backends.database import DatabaseBackend
 from celery.db.models import Task, TaskSet
+from celery.exceptions import ImproperlyConfigured
 from celery.result import AsyncResult
 from celery.utils import gen_unique_id
 
@@ -22,6 +23,10 @@ class SomeClass(object):
 
 
 class test_DatabaseBackend(unittest.TestCase):
+
+    def setUp(self):
+        if sys.platform.startswith("java"):
+            raise SkipTest("SQLite not available on Jython")
 
     def test_missing_SQLAlchemy_raises_ImproperlyConfigured(self):
 
@@ -169,9 +174,6 @@ class test_DatabaseBackend(unittest.TestCase):
         s.close()
 
         tb.cleanup()
-        s2 = tb.ResultSession()
-        self.assertEqual(s2.query(Task).count(), 0)
-        self.assertEqual(s2.query(TaskSet).count(), 0)
 
     def test_Task__repr__(self):
         self.assertIn("foo", repr(Task("foo")))

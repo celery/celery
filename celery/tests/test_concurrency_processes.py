@@ -1,11 +1,22 @@
 import sys
-from celery.tests.utils import unittest
 
 from itertools import cycle
 
-from celery.concurrency import processes as mp
+from nose import SkipTest
+
+try:
+    from celery.concurrency import processes as mp
+except ImportError:
+    class _mp(object):
+        RUN = 0x1
+
+        class TaskPool(object):
+            pass
+    mp = _mp()
+
 from celery.datastructures import ExceptionInfo
 from celery.utils import noop
+from celery.tests.utils import unittest
 
 
 class Object(object):   # for writeable attributes.
@@ -86,6 +97,12 @@ class ExeMockTaskPool(mp.TaskPool):
 
 
 class test_TaskPool(unittest.TestCase):
+
+    def setUp(self):
+        try:
+            import multiprocessing
+        except ImportError:
+            raise SkipTest("multiprocessing not supported")
 
     def test_start(self):
         pool = TaskPool(10)

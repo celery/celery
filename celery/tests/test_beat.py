@@ -3,6 +3,8 @@ from celery.tests.utils import unittest
 
 from datetime import datetime, timedelta
 
+from nose import SkipTest
+
 from celery import beat
 from celery import registry
 from celery.result import AsyncResult
@@ -322,8 +324,12 @@ class test_Service(unittest.TestCase):
 class test_EmbeddedService(unittest.TestCase):
 
     def test_start_stop_process(self):
+        try:
+            from multiprocessing import Process
+        except ImportError:
+            raise SkipTest("multiprocessing not available")
+
         s = beat.EmbeddedService()
-        from multiprocessing import Process
         self.assertIsInstance(s, Process)
         self.assertIsInstance(s.service, beat.Service)
         s.service = MockService()

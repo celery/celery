@@ -60,7 +60,7 @@ class Autoscaler(threading.Thread):
         self._shutdown.set()
         self._stopped.wait()
         if self.isAlive():
-            self.join(1e100)
+            self.join(1e10)
 
     @property
     def qty(self):
