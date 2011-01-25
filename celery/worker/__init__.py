@@ -2,6 +2,7 @@ import socket
 import logging
 import traceback
 
+from kombu.utils import blocking
 from kombu.utils.finalize import Finalize
 
 from celery import beat
@@ -251,7 +252,7 @@ class WorkController(object):
                 self.logger.debug("Starting thread %s..." % (
                                         component.__class__.__name__))
                 self._running = i + 1
-                self.pool.blocking(component.start)
+                blocking(component.start)
         except SystemTerminate:
             self.terminate()
             raise SystemExit()
@@ -278,13 +279,13 @@ class WorkController(object):
         """Graceful shutdown of the worker server."""
         if in_sighandler and not self.pool.signal_safe:
             return
-        self.pool.blocking(self._shutdown, warm=True)
+        blocking(self._shutdown, warm=True)
 
     def terminate(self, in_sighandler=False):
         """Not so graceful shutdown of the worker server."""
         if in_sighandler and not self.pool.signal_safe:
             return
-        self.pool.blocking(self._shutdown, warm=False)
+        blocking(self._shutdown, warm=False)
 
     def _shutdown(self, warm=True):
         what = (warm and "stopping" or "terminating").capitalize()

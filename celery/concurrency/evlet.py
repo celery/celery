@@ -11,7 +11,7 @@ if not os.environ.get("EVENTLET_NOPATCH"):
     eventlet.debug.hub_prevent_multiple_readers(False)
 
 from eventlet import GreenPool
-from eventlet.greenthread import getcurrent, spawn, spawn_after_local
+from eventlet.greenthread import getcurrent, spawn_after_local
 from greenlet import GreenletExit
 
 from celery.concurrency import base
@@ -105,6 +105,3 @@ class TaskPool(base.BasePool):
             accept_callback=None, **_):
         self._pool.spawn(apply_target, target, args, kwargs,
                          callback, accept_callback)
-
-    def blocking(self, fun, *args, **kwargs):
-        return spawn(fun, *args, **kwargs).wait()
