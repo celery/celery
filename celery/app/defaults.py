@@ -3,8 +3,13 @@ import sys
 from datetime import timedelta
 
 is_jython = sys.platform.startswith("java")
+is_pypy = hasattr(sys, "pypy_version_info")
 
-DEFAULT_POOL = is_jython and "threads" or "processes"
+DEFAULT_POOL = "processes"
+if is_jython:
+    DEFAULT_POOL = "threads"
+elif is_pypy:
+    DEFAULT_POOL = "solo"
 
 DEFAULT_PROCESS_LOG_FMT = """
     [%(asctime)s: %(levelname)s/%(processName)s] %(message)s
