@@ -17,6 +17,7 @@
     celery.worker.state
     celery.worker.autoscale
     celery.concurrency
+    celery.concurrency.solo
     celery.concurrency.processes
     celery.concurrency.processes.pool
     celery.concurrency.evlet

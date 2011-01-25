@@ -41,12 +41,6 @@
     .. autoclass:: ExceptionInfo
         :members:
 
-    SharedCounter
-    -------------
-
-    .. autoclass:: SharedCounter
-        :members:
-
     LimitedSet
     ----------
 
