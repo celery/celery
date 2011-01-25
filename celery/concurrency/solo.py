@@ -1,8 +1,3 @@
-"""
-
-Process Pools.
-
-"""
 import os
 
 from celery.concurrency.base import BasePool, apply_target
