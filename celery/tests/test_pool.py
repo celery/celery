@@ -28,7 +28,7 @@ class TestTaskPool(unittest.TestCase):
 
     def setUp(self):
         try:
-            import multiprocessing
+            __import__("multiprocessing")
         except ImportError:
             raise SkipTest("multiprocessing not supported")
         from celery.concurrency.processes import TaskPool

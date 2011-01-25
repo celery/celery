@@ -39,6 +39,7 @@ EXTRA_INFO_FMT = """
 %(tasks)s
 """
 
+
 def cpu_count():
     if multiprocessing is not None:
         return multiprocessing.cpu_count()

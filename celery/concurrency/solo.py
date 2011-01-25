@@ -4,7 +4,6 @@ Process Pools.
 
 """
 import os
-import signal as _signal
 
 from celery.concurrency.base import BasePool, apply_target
 

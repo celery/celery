@@ -14,7 +14,7 @@ import time
 import traceback
 
 from itertools import chain
-from Queue import Queue, Empty as QueueEmpty
+from Queue import Empty
 
 from celery.utils.compat import OrderedDict
 
@@ -186,7 +186,7 @@ def consume_queue(queue):
     while 1:
         try:
             yield queue.get_nowait()
-        except QueueEmpty:
+        except Empty:
             break
 
 

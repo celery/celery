@@ -120,7 +120,7 @@ class QoS(object):
             self._mutex.release()
 
     def _sub(self, n=1):
-        assert self.value -n > 1
+        assert self.value - n > 1
         self.value -= n
 
     def decrement(self, n=1):

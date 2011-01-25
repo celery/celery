@@ -1,7 +1,5 @@
 from nose import SkipTest
 
-from celery.app import current_app
-
 from celery.tests.utils import unittest
 
 

@@ -113,7 +113,8 @@ class Logging(object):
             mp = mputil and mputil.get_logger() or None
             for logger in (root, mp):
                 if logger:
-                    self._setup_logger(logger, logfile, format, colorize, **kwargs)
+                    self._setup_logger(logger, logfile, format,
+                                       colorize, **kwargs)
                     logger.setLevel(loglevel)
         Logging._setup = True
         return receivers

@@ -51,5 +51,17 @@ celery/task/schedules.py:2: 'schedule' imported but unused
 celery/task/schedules.py:2: 'crontab_parser' imported but unused
 celery/task/schedules.py:2: 'crontab' imported but unused
 celery/tests/__init__.py:17: undefined name 'WindowsError'
-
-
+celery/utils/patch.py:12: redefinition of unused 'current_process' from line 10
+celery/utils/compat.py:325: redefinition of unused 'multiprocessing' from line 323
+celery/tests/test_cursesmon.py:18: 'curses' imported but unused
+celery/log.py:11: redefinition of unused 'mputil' from line 9
+celery/log.py:11: redefinition of unused 'current_process' from line 8
+celery/tests/test_bin/test_celeryd.py:9: redefinition of unused 'current_process' from line 7
+celery/tests/test_bin/test_celeryd.py:324: 'setproctitle' imported but unused
+celery/tests/test_bin/test_celeryev.py:36: 'curses' imported but unused
+celery/tests/test_concurrency_processes.py:15: redefinition of unused 'mp' from line 8
+celery/tests/test_concurrency_processes.py:103: 'multiprocessing' imported but unused
+celery/apps/worker.py:6: redefinition of unused 'multiprocessing' from line 4
+celery/beat.py:14: redefinition of unused 'multiprocessing' from line 12
+celery/bin/celeryd.py:79: redefinition of unused 'freeze_support' from line 77
+celery/tests/test_cursesmon.py:16: 'curses' imported but unused

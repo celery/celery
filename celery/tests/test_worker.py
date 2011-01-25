@@ -171,6 +171,7 @@ def create_message(backend, **data):
                    content_type="application/x-python-serialize",
                    content_encoding="binary")
 
+
 class test_QoS(unittest.TestCase):
 
     class _QoS(QoS):
@@ -222,9 +223,8 @@ class test_QoS(unittest.TestCase):
         self.assertEqual(qos.value, 2010)
 
         qos.value = 1000
-        threaded([add, sub]) # n = 2
+        threaded([add, sub])  # n = 2
         self.assertEqual(qos.value, 1000)
-
 
     class MockConsumer(object):
         prefetch_count = 0
@@ -552,7 +552,7 @@ class test_Consumer(unittest.TestCase):
     def test_receieve_message_eta(self):
         l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
                           send_events=False)
-        dispatcher = l.event_dispatcher = MockEventDispatcher()
+        l.event_dispatcher = MockEventDispatcher()
         backend = MockBackend()
         m = create_message(backend, task=foo_task.name,
                            args=[2, 4, 8], kwargs={},
