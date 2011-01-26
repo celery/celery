@@ -23,7 +23,7 @@ from celery.utils.serialization import pickle
 
 from celery.tests.compat import catch_warnings
 from celery.tests.utils import unittest
-from celery.tests.utils import execute_context, skip
+from celery.tests.utils import AppCase, execute_context, skip
 
 
 class MockConsumer(object):
@@ -640,15 +640,15 @@ class test_Consumer(unittest.TestCase):
         self.assertEqual(l.iterations, 1)
 
 
-class test_WorkController(unittest.TestCase):
+class test_WorkController(AppCase):
+
+    def setup(self):
+        self.worker = self.create_worker()
 
     def create_worker(self, **kw):
         worker = WorkController(concurrency=1, loglevel=0, **kw)
         worker.logger = MockLogger()
         return worker
-
-    def setUp(self):
-        self.worker = self.create_worker()
 
     def test_process_initializer(self):
         from celery import Celery
@@ -662,7 +662,7 @@ class test_WorkController(unittest.TestCase):
         reset_signals = []
         worker_init = [False]
         default_app = app_or_default()
-        app = Celery(loader="default")
+        app = Celery(loader="default", set_as_current=False)
 
         class Loader(object):
 

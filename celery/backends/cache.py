@@ -8,19 +8,28 @@ from celery.utils import cached_property
 from celery.utils import timeutils
 from celery.datastructures import LocalCache
 
+_imp = [None]
+
+def import_best_memcache():
+    if _imp[0] is None:
+        is_pylibmc = False
+        try:
+            import pylibmc as memcache
+            is_pylibmc = True
+        except ImportError:
+            try:
+                import memcache
+            except ImportError:
+                raise ImproperlyConfigured(
+                        "Memcached backend requires either the 'pylibmc' "
+                        "or 'memcache' library")
+        _imp[0] = is_pylibmc, memcache
+    return _imp[0]
+
 
 def get_best_memcache(*args, **kwargs):
     behaviors = kwargs.pop("behaviors", None)
-    is_pylibmc = False
-    try:
-        import pylibmc as memcache
-        is_pylibmc = True
-    except ImportError:
-        try:
-            import memcache
-        except ImportError:
-            raise ImproperlyConfigured("Memcached backend requires either "
-                                       "the 'memcache' or 'pylibmc' library")
+    is_pylibmc, memcache = import_best_memcache()
     client = memcache.Client(*args, **kwargs)
     if is_pylibmc and behaviors is not None:
         client.behaviors = behaviors
@@ -42,10 +51,10 @@ class DummyClient(object):
         self.cache.pop(key, None)
 
 
-backends = {"memcache": get_best_memcache,
-            "memcached": get_best_memcache,
-            "pylibmc": get_best_memcache,
-            "memory": DummyClient}
+backends = {"memcache": lambda: get_best_memcache,
+            "memcached": lambda: get_best_memcache,
+            "pylibmc": lambda: get_best_memcache,
+            "memory": lambda: DummyClient}
 
 
 class CacheBackend(KeyValueStoreBackend):
@@ -64,7 +73,7 @@ class CacheBackend(KeyValueStoreBackend):
         self.backend, _, servers = partition(backend, "://")
         self.servers = servers.split(";")
         try:
-            self.Client = backends[self.backend]
+            self.Client = backends[self.backend]()
         except KeyError:
             raise ImproperlyConfigured(
                     "Unknown cache backend: %s. Please use one of the "

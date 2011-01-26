@@ -30,11 +30,11 @@ test_config = _get_test_config()
 class test_App(unittest.TestCase):
 
     def setUp(self):
-        self.app = Celery()
+        self.app = Celery(set_as_current=False)
         self.app.conf.update(test_config)
 
     def test_task(self):
-        app = Celery("foozibari")
+        app = Celery("foozibari", set_as_current=False)
 
         def fun():
             pass
@@ -73,7 +73,8 @@ class test_App(unittest.TestCase):
             celeryd.WorkerCommand = prev
 
     def test_config_from_envvar(self):
-        os.environ["CELERYTEST_CONFIG_OBJECT"] = "celery.tests.test_app"
+        os.environ["CELERYTEST_CONFIG_OBJECT"] = \
+                "celery.tests.test_app.test_app"
         self.app.config_from_envvar("CELERYTEST_CONFIG_OBJECT")
         self.assertEqual(self.app.conf.THIS_IS_A_KEY, "this is a value")
 

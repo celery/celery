@@ -12,7 +12,6 @@ os.environ["CELERY_LOADER"] = "default"
 os.environ["EVENTLET_NOPATCH"] = "yes"
 os.environ["GEVENT_NOPATCH"] = "yes"
 
-
 try:
     WindowsError = WindowsError
 except NameError:

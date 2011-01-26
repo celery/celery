@@ -23,6 +23,24 @@ from celery.app import app_or_default
 from celery.utils.functional import wraps
 
 
+class AppCase(unittest.TestCase):
+
+    def setUp(self):
+        from celery.app import current_app
+        self._current_app = current_app()
+        self.setup()
+
+    def tearDown(self):
+        self.teardown()
+        self._current_app.set_current()
+
+    def setup(self):
+        pass
+
+    def teardown(self):
+        pass
+
+
 class GeneratorContextManager(object):
     def __init__(self, gen):
         self.gen = gen

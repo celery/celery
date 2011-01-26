@@ -25,7 +25,7 @@ from celery.utils.functional import wraps
 
 from celery.tests.compat import catch_warnings
 from celery.tests.utils import execute_context
-from celery.tests.utils import unittest
+from celery.tests.utils import AppCase
 from celery.tests.utils import StringIO
 
 
@@ -59,7 +59,7 @@ class Worker(cd.Worker):
     WorkController = _WorkController
 
 
-class test_Worker(unittest.TestCase):
+class test_Worker(AppCase):
     Worker = Worker
 
     @disable_stdouts
@@ -310,7 +310,7 @@ class test_Worker(unittest.TestCase):
         self.assertTrue(worker_ready_sent[0])
 
 
-class test_funs(unittest.TestCase):
+class test_funs(AppCase):
 
     @redirect_stdouts
     def test_windows_main(self, stdout, stderr):
@@ -361,7 +361,7 @@ class test_funs(unittest.TestCase):
             sys.argv = s
 
 
-class test_signal_handlers(unittest.TestCase):
+class test_signal_handlers(AppCase):
 
     class _Worker(object):
         stopped = False
