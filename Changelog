@@ -400,7 +400,7 @@ News
   to `apply_async`.  This can also be set using routers.
 
 * `celeryd`: Now logs stacktrace of all threads when receiving the
-   `SIGUSR1` signal.  (Does not work on Python 2.4, or Windows).
+   `SIGUSR1` signal.  (Does not work on cPython 2.4, Windows or Jython).
 
     Inspired by https://gist.github.com/737056
 

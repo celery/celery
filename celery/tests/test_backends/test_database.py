@@ -6,14 +6,20 @@ from nose import SkipTest
 
 from celery import states
 from celery.app import app_or_default
-from celery.backends.database import DatabaseBackend
-from celery.db.models import Task, TaskSet
 from celery.exceptions import ImproperlyConfigured
 from celery.result import AsyncResult
 from celery.utils import gen_unique_id
 
 from celery.tests.utils import execute_context, mask_modules
 from celery.tests.utils import unittest
+
+try:
+    import sqlalchemy
+except ImportError:
+    DatabaseBackend = Task = TaskSet = None
+else:
+    from celery.backends.database import DatabaseBackend
+    from celery.db.models import Task, TaskSet
 
 
 class SomeClass(object):
@@ -27,6 +33,10 @@ class test_DatabaseBackend(unittest.TestCase):
     def setUp(self):
         if sys.platform.startswith("java"):
             raise SkipTest("SQLite not available on Jython")
+        if hasattr(sys, "pypy_version_info"):
+            raise SkipTest("Known to not pass on PyPy")
+        if DatabaseBackend is None:
+            raise SkipTest("sqlalchemy not installed")
 
     def test_missing_SQLAlchemy_raises_ImproperlyConfigured(self):
 

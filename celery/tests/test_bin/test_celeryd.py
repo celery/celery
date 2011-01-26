@@ -457,6 +457,8 @@ class test_signal_handlers(unittest.TestCase):
     def test_worker_cry_handler(self):
         if sys.platform.startswith("java"):
             raise SkipTest("Cry handler does not work on Jython")
+        if hasattr(sys, "pypy_version_info"):
+            raise SkipTest("Cry handler does not work on PyPy")
         if sys.version_info > (2, 5):
 
             class Logger(object):

@@ -156,9 +156,9 @@ class Scheduler(UserDict):
         schedule = maybe_promise(schedule)
         if self.app.conf.CELERY_TASK_RESULT_EXPIRES:
             schedule.setdefault("celery.backend_cleanup",
-                    {"task": "celery.backend_cleanup",
-                     "schedule": crontab("0", "4", "*"),
-                     "options": {"expires": 12 * 3600}})
+                                self.Entry(task="celery.backend_cleanup",
+                                           schedule=crontab("0", "4", "*"),
+                                           options={"expires": 12 * 3600}))
         return schedule
 
     def maybe_due(self, entry, publisher=None):
@@ -239,8 +239,13 @@ class Scheduler(UserDict):
         self.schedule[entry.name] = entry
         return entry
 
+    def _maybe_entry(self, name, entry):
+        if isinstance(entry, self.Entry):
+            return entry
+        return self.Entry(name, **entry)
+
     def update_from_dict(self, dict_):
-        self.update(dict((name, self.Entry(name, **entry))
+        self.update(dict((name, self._maybe_entry(name, entry))
                             for name, entry in dict_.items()))
 
     def merge_inplace(self, b):

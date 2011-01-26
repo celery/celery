@@ -335,7 +335,9 @@ def install_worker_restart_handler(worker):
 
 def install_cry_handler(logger):
     # 2.4 does not have sys._current_frames
-    if sys.version_info > (2, 5):
+    is_jython = sys.platform.startswith("java")
+    is_pypy = hasattr(sys, "pypy_version_info")
+    if not (is_jython or is_pypy) and sys.version_info > (2, 5):
 
         def cry_handler(signum, frame):
             """Signal handler logging the stacktrace of all active threads."""
