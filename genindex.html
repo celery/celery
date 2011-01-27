@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Index &mdash; Celery v2.2.0rc4 documentation</title>
+    <title>Index &mdash; Celery v2.2.0rc5 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '2.2.0rc4',
+        VERSION:     '2.2.0rc5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0rc4 documentation" href="index.html" /> 
+    <link rel="top" title="Celery v2.2.0rc5 documentation" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -34,7 +34,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Celery v2.2.0rc4 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.2.0rc5 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -1291,7 +1291,10 @@
     <dd><dl>
       <dt><a href="internals/reference/celery.backends.base.html#celery.backends.base.BaseDictBackend.get_result">(celery.backends.base.BaseDictBackend method)</a></dt>
   </dl></dd>
-    <dt><a href="internals/reference/celery.beat.html#celery.beat.Scheduler.get_schedule">get_schedule() (celery.beat.Scheduler method)</a></dt>
+    <dt><a href="internals/reference/celery.beat.html#celery.beat.PersistentScheduler.get_schedule">get_schedule() (celery.beat.PersistentScheduler method)</a></dt>
+    <dd><dl>
+      <dt><a href="internals/reference/celery.beat.html#celery.beat.Scheduler.get_schedule">(celery.beat.Scheduler method)</a></dt>
+  </dl></dd>
     <dt><a href="reference/celery.apps.beat.html#celery.apps.beat.Beat.Service.get_scheduler">get_scheduler() (celery.apps.beat.Beat.Service method)</a></dt>
     <dd><dl>
       <dt><a href="internals/reference/celery.beat.html#celery.beat.Service.get_scheduler">(celery.beat.Service method)</a></dt>
@@ -1403,6 +1406,7 @@
     <dd><dl>
       <dt><a href="userguide/tasks.html#Task.immediate">(Task attribute)</a></dt>
   </dl></dd>
+    <dt><a href="internals/reference/celery.backends.cache.html#celery.backends.cache.import_best_memcache">import_best_memcache() (in module celery.backends.cache)</a></dt>
     <dt><a href="reference/celery.loaders.base.html#celery.loaders.base.BaseLoader.import_default_modules">import_default_modules() (celery.loaders.base.BaseLoader method)</a></dt>
     <dt><a href="reference/celery.loaders.base.html#celery.loaders.base.BaseLoader.import_from_cwd">import_from_cwd() (celery.loaders.base.BaseLoader method)</a></dt>
     <dd><dl>
@@ -1442,9 +1446,9 @@
     <dt><a href="reference/celery.task.control.html#celery.task.control.Inspect">Inspect (class in celery.task.control)</a></dt>
     <dt><a href="reference/celery.task.control.html#celery.task.control.Control.inspect">inspect() (celery.task.control.Control method)</a></dt>
     <dt><a href="internals/reference/celery.events.snapshot.html#celery.events.snapshot.Polaroid.install">install() (celery.events.snapshot.Polaroid method)</a></dt>
-    <dt><a href="reference/celery.apps.worker.html#celery.apps.worker.install_cry_handler">install_cry_handler() (in module celery.apps.worker)</a></dt>
 </dl></td>
   <td width="33%" valign="top"><dl>
+    <dt><a href="reference/celery.apps.worker.html#celery.apps.worker.install_cry_handler">install_cry_handler() (in module celery.apps.worker)</a></dt>
     <dt><a href="internals/reference/celery.beat.html#celery.beat.Scheduler.install_default_entries">install_default_entries() (celery.beat.Scheduler method)</a></dt>
     <dt><a href="reference/celery.apps.worker.html#celery.apps.worker.install_HUP_not_supported_handler">install_HUP_not_supported_handler() (in module celery.apps.worker)</a></dt>
     <dt><a href="reference/celery.apps.worker.html#celery.apps.worker.Worker.install_platform_tweaks">install_platform_tweaks() (celery.apps.worker.Worker method)</a></dt>
@@ -1554,11 +1558,10 @@
   </dl></dd>
     <dt><a href="reference/celery.loaders.default.html#celery.loaders.default.Loader">Loader (class in celery.loaders.default)</a></dt>
     <dt><a href="internals/reference/celery.datastructures.html#celery.datastructures.LocalCache">LocalCache (class in celery.datastructures)</a></dt>
-    <dt><a href="internals/reference/celery.utils.html#celery.utils.LocalProxy">LocalProxy (class in celery.utils)</a></dt>
     <dt><a href="internals/reference/celery.platforms.html#celery.platforms.LockFailed">LockFailed</a></dt>
+    <dt><a href="reference/celery.app.html#celery.app.App.log">log (celery.app.App attribute)</a></dt>
 </dl></td>
   <td width="33%" valign="top"><dl>
-    <dt><a href="reference/celery.app.html#celery.app.App.log">log (celery.app.App attribute)</a></dt>
     <dt><a href="internals/reference/celery.utils.compat.html#celery.utils.compat.log_with_extra">log_with_extra() (in module celery.utils.compat)</a></dt>
     <dt><a href="internals/reference/celery.worker.html#celery.worker.WorkController.logfile">logfile (celery.worker.WorkController attribute)</a></dt>
     <dt><a href="internals/reference/celery.beat.html#celery.beat.Scheduler.logger">logger (celery.beat.Scheduler attribute)</a></dt>
@@ -2839,7 +2842,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Celery v2.2.0rc4 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.2.0rc5 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
