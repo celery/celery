@@ -7,7 +7,6 @@ except ImportError:
     pymongo = None
 
 from celery import states
-from celery.app import app_or_default
 from celery.backends.base import BaseDictBackend
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.serialization import pickle

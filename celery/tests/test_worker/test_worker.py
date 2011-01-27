@@ -518,7 +518,6 @@ class test_Consumer(unittest.TestCase):
         items = [entry[2] for entry in self.eta_schedule.queue]
         found = 0
         for item in items:
-            print("ITEM: %r" % (item, ) )
             if item.args[0].task_name == foo_task.name:
                 found = True
         self.assertTrue(found)

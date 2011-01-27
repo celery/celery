@@ -10,6 +10,7 @@ from celery.datastructures import LocalCache
 
 _imp = [None]
 
+
 def import_best_memcache():
     if _imp[0] is None:
         is_pylibmc = False

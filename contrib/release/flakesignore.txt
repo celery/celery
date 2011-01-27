@@ -16,8 +16,6 @@ celery/platforms.py:(.+?) redefinition of unused 'grp'
 celery/utils/serialization.py:(.+?) redefinition of unused 'cpickle'
 celery/utils/serialization.py:(.+?) redefinition of function 'subclass_exception'
 celery/tests/test_backends/test_redis.py:(.+?) redefinition of unused 'ConnectionError'
-celery/tests/test_log.py:(.+?) redefinition of unused 'contextmanager'
-celery/tests/test_task_http.py:(.+?) redefinition of unused 'contextmanager'
 celery/tests/utils.py:(.+?) redefinition of unused 'contextmanager'
 celery/utils/__init__.py:(.+?) redefinition of unused 'ctypes'
 celery/utils/compat.py:(.+?) redefinition of unused 'parse_qsl'
@@ -31,7 +29,6 @@ celery/utils/functional.py:(.+?) redefinition of unused 'wraps'
 celery/utils/mail.py:(.+?) redefinition of unused 'MIMEText'
 celery/utils/__init__.py:(.+?) 'gen_unique_id' imported but unused
 celery/events/cursesmon.py:(.+?): local variable 'consumer' is assigned to but never used
-celery/tests/test_task_http.py:(.+?): redefinition of unused 'addinfourl' from line 7
 celery/tests/utils.py:(.+?): 'unittest' imported but unused
 celery/tests/utils.py:(.+?): redefinition of unused 'builtins' from line 12
 celery/tests/utils.py:(.+?): redefinition of unused 'StringIO' from line 16
@@ -59,9 +56,15 @@ celery/log.py:11: redefinition of unused 'current_process' from line 8
 celery/tests/test_bin/test_celeryd.py:9: redefinition of unused 'current_process' from line 7
 celery/tests/test_bin/test_celeryd.py:324: 'setproctitle' imported but unused
 celery/tests/test_bin/test_celeryev.py:36: 'curses' imported but unused
-celery/tests/test_concurrency_processes.py:15: redefinition of unused 'mp' from line 8
-celery/tests/test_concurrency_processes.py:103: 'multiprocessing' imported but unused
 celery/apps/worker.py:6: redefinition of unused 'multiprocessing' from line 4
 celery/beat.py:14: redefinition of unused 'multiprocessing' from line 12
 celery/bin/celeryd.py:79: redefinition of unused 'freeze_support' from line 77
 celery/tests/test_cursesmon.py:16: 'curses' imported but unused
+celery/tests/__init__.py:16: undefined name 'WindowsError'
+celery/tests/test_backends/test_database.py:17: 'sqlalchemy' imported but unused
+celery/tests/test_compat/test_log.py:12: redefinition of unused 'contextmanager' from line 10
+celery/tests/test_concurrency/test_concurrency_processes.py:15: redefinition of unused 'mp' from line 8
+celery/tests/test_concurrency/test_concurrency_processes.py:103: 'multiprocessing' imported but unused
+celery/tests/test_events/test_events_cursesmon.py:16: 'curses' imported but unused
+celery/tests/test_task/test_task_http.py:9: redefinition of unused 'addinfourl' from line 7
+celery/tests/test_task/test_task_http.py:13: redefinition of unused 'contextmanager' from line 11
