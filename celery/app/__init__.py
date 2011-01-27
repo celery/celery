@@ -66,6 +66,7 @@ class App(base.BaseApp):
             store_errors_even_if_ignored = \
                 conf.CELERY_STORE_ERRORS_EVEN_IF_IGNORED
             accept_magic_kwargs = self.accept_magic_kwargs
+        Task.__doc__ = BaseTask.__doc__
 
         return Task
 
