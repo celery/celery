@@ -11,7 +11,8 @@
 =====
 :release-date: TBA (target end of january)
 :status: release candidate
-:branch: master
+:branch: master (http://github.com/ask/celery/tree/master)
+:latest tag: v2.2.0rc5
 
 .. _v220-important:
 

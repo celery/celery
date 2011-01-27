@@ -145,7 +145,6 @@ class Scheduler(UserDict):
         self.app = app_or_default(app)
         conf = self.app.conf
         self.data = maybe_promise(schedule)
-        self.install_default_entries(self.data)
         self.logger = logger or self.app.log.get_default_logger(
                                                 name="celery.beat")
         self.max_interval = max_interval or conf.CELERYBEAT_MAX_LOOP_INTERVAL
@@ -228,7 +227,7 @@ class Scheduler(UserDict):
         return self.app.send_task(*args, **kwargs)
 
     def setup_schedule(self):
-        pass
+        self.install_default_entries(self.data)
 
     def sync(self):
         pass
