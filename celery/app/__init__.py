@@ -46,9 +46,28 @@ class App(base.BaseApp):
     def create_task_cls(self):
         """Creates a base task class using default configuration
         taken from this app."""
-        from celery.task.base import create_task_cls
-        return create_task_cls(app=self,
-                               accept_magic_kwargs=self.accept_magic_kwargs)
+        conf = self.conf
+
+        from celery.task.base import BaseTask
+
+        class Task(BaseTask):
+            abstract = True
+            app = self
+            backend = self.backend
+            exchange_type = conf.CELERY_DEFAULT_EXCHANGE_TYPE
+            delivery_mode = conf.CELERY_DEFAULT_DELIVERY_MODE
+            send_error_emails = conf.CELERY_SEND_TASK_ERROR_EMAILS
+            error_whitelist = conf.CELERY_TASK_ERROR_WHITELIST
+            serializer = conf.CELERY_TASK_SERIALIZER
+            rate_limit = conf.CELERY_DEFAULT_RATE_LIMIT
+            track_started = conf.CELERY_TRACK_STARTED
+            acks_late = conf.CELERY_ACKS_LATE
+            ignore_result = conf.CELERY_IGNORE_RESULT
+            store_errors_even_if_ignored = \
+                conf.CELERY_STORE_ERRORS_EVEN_IF_IGNORED
+            accept_magic_kwargs = self.accept_magic_kwargs
+
+        return Task
 
     def Worker(self, **kwargs):
         """Create new :class:`~celery.apps.worker.Worker` instance."""

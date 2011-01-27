@@ -694,27 +694,6 @@ class BaseTask(object):
         return self.__class__.__name__
 
 
-def create_task_cls(app, **kwargs):
-    apps = [app]
-
-    class Task(BaseTask):
-        abstract = True
-        app = apps[0]
-        backend = app.backend
-        exchange_type = app.conf.CELERY_DEFAULT_EXCHANGE_TYPE
-        delivery_mode = app.conf.CELERY_DEFAULT_DELIVERY_MODE
-        send_error_emails = app.conf.CELERY_SEND_TASK_ERROR_EMAILS
-        error_whitelist = app.conf.CELERY_TASK_ERROR_WHITELIST
-        serializer = app.conf.CELERY_TASK_SERIALIZER
-        rate_limit = app.conf.CELERY_DEFAULT_RATE_LIMIT
-        track_started = app.conf.CELERY_TRACK_STARTED
-        acks_late = app.conf.CELERY_ACKS_LATE
-        ignore_result = app.conf.CELERY_IGNORE_RESULT
-        store_errors_even_if_ignored = \
-                app.conf.CELERY_STORE_ERRORS_EVEN_IF_IGNORED
-        accept_magic_kwargs = kwargs.get("accept_magic_kwargs", False)
-
-    return Task
 Task = current_app.Task
 
 
