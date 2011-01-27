@@ -514,9 +514,9 @@ class TestPeriodicTask(unittest.TestCase):
     def test_is_due_not_due(self):
         due, remaining = MyPeriodic().is_due(datetime.now())
         self.assertFalse(due)
-        # TODO This assertion may fail if executed in the
-        # first minute of an hour
-        self.assertGreater(remaining, 60)
+        # This assertion may fail if executed in the
+        # first minute of an hour, thus 59 instead of 60
+        self.assertGreater(remaining, 59)
 
     def test_is_due(self):
         p = MyPeriodic()
