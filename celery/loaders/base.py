@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import importlib
 import os
 import re
@@ -11,7 +13,7 @@ from celery.exceptions import ImproperlyConfigured
 from celery.utils import get_cls_by_name
 from celery.utils import import_from_cwd as _import_from_cwd
 
-BUILTIN_MODULES = ["celery.task"]
+BUILTIN_MODULES = frozenset(["celery.task"])
 
 ERROR_ENVVAR_NOT_SET = (
 """The environment variable %r is not set,
@@ -23,7 +25,7 @@ a configuration module.""")
 class BaseLoader(object):
     """The base class for loaders.
 
-    Loaders handles to following things:
+    Loaders handles,
 
         * Reading celery client/worker configurations.
 
@@ -65,14 +67,13 @@ class BaseLoader(object):
         return importlib.import_module(module)
 
     def import_from_cwd(self, module, imp=None):
-        if imp is None:
-            imp = self.import_module
-        return _import_from_cwd(module, imp)
+        return _import_from_cwd(module,
+                self.import_module if imp is None else imp)
 
     def import_default_modules(self):
-        imports = self.conf.get("CELERY_IMPORTS") or []
-        imports = set(list(imports) + BUILTIN_MODULES)
-        return map(self.import_task_module, imports)
+        imports = self.conf.get("CELERY_IMPORTS") or ()
+        imports = set(list(imports)) | BUILTIN_MODULES
+        return [self.import_task_module(module) for module in imports]
 
     def init_worker(self):
         if not self.worker_initialized:
@@ -172,5 +173,4 @@ class BaseLoader(object):
 
     @cached_property
     def mail(self):
-        from celery.utils import mail
-        return mail
+        return self.import_module("celery.utils.mail")

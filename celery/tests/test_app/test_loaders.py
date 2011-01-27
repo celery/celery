@@ -1,3 +1,5 @@
+from __future__ import with_statement
+
 import os
 import sys
 
@@ -11,7 +13,7 @@ from celery.loaders.app import AppLoader
 
 from celery.tests.compat import catch_warnings
 from celery.tests.utils import unittest
-from celery.tests.utils import with_environ, execute_context
+from celery.tests.utils import with_environ
 
 
 class ObjectConfig(object):
@@ -127,17 +129,15 @@ class TestLoaderBase(unittest.TestCase):
         MockMail.Mailer.raise_on_send = True
         opts = dict(self.message_options, **self.server_options)
 
-        def with_catch_warnings(log):
+        with catch_warnings(record=True) as log:
             self.loader.mail_admins(fail_silently=True, **opts)
-            return log[0].message
+            warning = log[0].message
 
-        warning = execute_context(catch_warnings(record=True),
-                                  with_catch_warnings)
-        self.assertIsInstance(warning, MockMail.SendmailWarning)
-        self.assertIn("KeyError", warning.args[0])
+            self.assertIsInstance(warning, MockMail.SendmailWarning)
+            self.assertIn("KeyError", warning.args[0])
 
-        self.assertRaises(KeyError, self.loader.mail_admins,
-                          fail_silently=False, **opts)
+            self.assertRaises(KeyError, self.loader.mail_admins,
+                              fail_silently=False, **opts)
 
     def test_mail_admins(self):
         MockMail.Mailer.raise_on_send = False
@@ -214,13 +214,10 @@ class TestDefaultLoader(unittest.TestCase):
             def import_from_cwd(self, name):
                 raise ImportError(name)
 
-        def with_catch_warnings(log):
+        with catch_warnings(record=True) as log:
             l = _Loader()
             self.assertDictEqual(l.conf, {})
             context_executed[0] = True
-
-        context = catch_warnings(record=True)
-        execute_context(context, with_catch_warnings)
         self.assertTrue(context_executed[0])
 
 

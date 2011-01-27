@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import with_statement
+
 import anyjson
 import logging
 import os
@@ -27,7 +29,7 @@ from celery.worker.state import revoked
 
 from celery.tests.compat import catch_warnings
 from celery.tests.utils import unittest
-from celery.tests.utils import execute_context, StringIO, wrap_logger
+from celery.tests.utils import StringIO, wrap_logger
 
 
 scratch = {"ACK": False}
@@ -89,19 +91,14 @@ class test_WorkerTaskTrace(unittest.TestCase):
         mytask.backend.process_cleanup = Mock(side_effect=KeyError())
         try:
 
-            def with_wrap_logger(sio):
+            logger = mytask.app.log.get_default_logger()
+            with wrap_logger(logger) as sio:
                 uuid = gen_unique_id()
                 ret = jail(uuid, mytask.name, [2], {})
                 self.assertEqual(ret, 4)
                 mytask.backend.mark_as_done.assert_called_with(uuid, 4)
                 logs = sio.getvalue().strip()
                 self.assertIn("Process cleanup failed", logs)
-                return 1234
-
-            logger = mytask.app.log.get_default_logger()
-            self.assertEqual(execute_context(
-                    wrap_logger(logger), with_wrap_logger), 1234)
-
         finally:
             mytask.backend = backend
 
@@ -418,17 +415,13 @@ class test_TaskRequest(unittest.TestCase):
 
         WorkerTaskTrace.execute = _error_exec
         try:
-
-            def with_catch_warnings(log):
+            with catch_warnings(record=True) as log:
                 res = execute_and_trace(mytask.name, gen_unique_id(),
                                         [4], {})
                 self.assertIsInstance(res, ExceptionInfo)
                 self.assertTrue(log)
                 self.assertIn("Exception outside", log[0].message.args[0])
                 self.assertIn("KeyError", log[0].message.args[0])
-
-            context = catch_warnings(record=True)
-            execute_context(context, with_catch_warnings)
         finally:
             WorkerTaskTrace.execute = old_exec
 

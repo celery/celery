@@ -2,10 +2,11 @@ import os
 import platform
 import shelve
 
+from collections import defaultdict
+
 from kombu.utils import cached_property
 
 from celery import __version__
-from celery.utils.compat import defaultdict
 from celery.datastructures import LimitedSet
 
 #: Worker software/platform information.

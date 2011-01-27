@@ -1,4 +1,4 @@
-from __future__ import generators
+from __future__ import with_statement
 
 import sys
 import logging
@@ -10,35 +10,10 @@ from celery import log
 from celery.log import (setup_logger, setup_task_logger,
                         get_default_logger, get_task_logger,
                         redirect_stdouts_to_logger, LoggingProxy)
-from celery.tests.utils import contextmanager
-from celery.tests.utils import override_stdouts, execute_context
 from celery.utils import gen_unique_id
-from celery.utils.compat import LoggerAdapter
 from celery.utils.compat import _CompatLoggerAdapter
-
-
-def get_handlers(logger):
-    if isinstance(logger, LoggerAdapter):
-        return logger.logger.handlers
-    return logger.handlers
-
-
-def set_handlers(logger, new_handlers):
-    if isinstance(logger, LoggerAdapter):
-        logger.logger.handlers = new_handlers
-    logger.handlers = new_handlers
-
-
-@contextmanager
-def wrap_logger(logger, loglevel=logging.ERROR):
-    old_handlers = get_handlers(logger)
-    sio = StringIO()
-    siohandler = logging.StreamHandler(sio)
-    set_handlers(logger, [siohandler])
-
-    yield sio
-
-    set_handlers(logger, old_handlers)
+from celery.tests.utils import (override_stdouts, wrap_logger,
+                                get_handlers, set_handlers)
 
 
 class test_default_logger(unittest.TestCase):
@@ -50,12 +25,9 @@ class test_default_logger(unittest.TestCase):
 
     def _assertLog(self, logger, logmsg, loglevel=logging.ERROR):
 
-        def with_wrap_logger(sio):
+        with wrap_logger(logger, loglevel=loglevel) as sio:
             logger.log(loglevel, logmsg)
             return sio.getvalue().strip()
-
-        context = wrap_logger(logger, loglevel=loglevel)
-        execute_context(context, with_wrap_logger)
 
     def assertDidLogTrue(self, logger, logmsg, reason, loglevel=None):
         val = self._assertLog(logger, logmsg, loglevel=loglevel)
@@ -81,15 +53,12 @@ class test_default_logger(unittest.TestCase):
         l = self.get_logger()
         set_handlers(l, [])
 
-        def with_override_stdouts(outs):
+        with override_stdouts() as outs:
             stdout, stderr = outs
             l = self.setup_logger(logfile=stderr, loglevel=logging.INFO,
                                   root=False)
             l.info("The quick brown fox...")
             self.assertIn("The quick brown fox...", stderr.getvalue())
-
-        context = override_stdouts()
-        execute_context(context, with_override_stdouts)
 
     def test_setup_logger_no_handlers_file(self):
         l = self.get_logger()
@@ -103,14 +72,10 @@ class test_default_logger(unittest.TestCase):
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
                                    root=False)
         try:
-
-            def with_wrap_logger(sio):
+            with wrap_logger(logger) as sio:
                 redirect_stdouts_to_logger(logger, loglevel=logging.ERROR)
                 logger.error("foo")
                 self.assertIn("foo", sio.getvalue())
-
-            context = wrap_logger(logger)
-            execute_context(context, with_wrap_logger)
         finally:
             sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
 
@@ -118,7 +83,7 @@ class test_default_logger(unittest.TestCase):
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
                                    root=False)
 
-        def with_wrap_logger(sio):
+        with wrap_logger(logger) as sio:
             p = LoggingProxy(logger, loglevel=logging.ERROR)
             p.close()
             p.write("foo")
@@ -134,9 +99,6 @@ class test_default_logger(unittest.TestCase):
             p.close()
             self.assertFalse(p.isatty())
             self.assertIsNone(p.fileno())
-
-        context = wrap_logger(logger)
-        execute_context(context, with_wrap_logger)
 
 
 class test_task_logger(test_default_logger):

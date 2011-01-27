@@ -1,3 +1,11 @@
+def try_import(module):
+    from importlib import import_module
+    try:
+        return import_module(module)
+    except ImportError:
+        pass
+
+
 class LocalProxy(object):
     """Code stolen from werkzeug.local.LocalProxy."""
     __slots__ = ('__local', '__dict__', '__name__')

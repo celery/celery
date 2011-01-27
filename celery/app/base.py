@@ -25,7 +25,6 @@ import kombu
 if kombu.VERSION < (1, 1, 0):
     raise ImportError("Celery requires Kombu version 1.1.0 or higher.")
 
-
 BUGREPORT_INFO = """
 platform -> system:%(system)s arch:%(arch)s imp:%(py_i)s
 software -> celery:%(celery_v)s kombu:%(kombu_v)s py:%(py_v)s

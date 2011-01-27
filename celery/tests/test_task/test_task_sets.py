@@ -1,3 +1,5 @@
+from __future__ import with_statement
+
 import anyjson
 import warnings
 
@@ -6,7 +8,6 @@ from celery.task import Task
 from celery.task.sets import subtask, TaskSet
 
 from celery.tests.utils import unittest
-from celery.tests.utils import execute_context
 from celery.tests.compat import catch_warnings
 
 
@@ -93,7 +94,7 @@ class test_TaskSet(unittest.TestCase):
     def test_interface__compat(self):
         warnings.resetwarnings()
 
-        def with_catch_warnings(log):
+        with catch_warnings(record=True) as log:
             ts = TaskSet(MockTask, [[(2, 2)], [(4, 4)], [(8, 8)]])
             self.assertTrue(log)
             self.assertIn("Using this invocation of TaskSet is deprecated",
@@ -103,28 +104,21 @@ class test_TaskSet(unittest.TestCase):
                                     for i in (2, 4, 8)])
             return ts
 
-        context = catch_warnings(record=True)
-        execute_context(context, with_catch_warnings)
-
         # TaskSet.task (deprecated)
-        def with_catch_warnings2(log):
+        with catch_warnings(record=True) as log:
             ts = TaskSet(MockTask, [[(2, 2)], [(4, 4)], [(8, 8)]])
             self.assertEqual(ts.task.name, MockTask.name)
             self.assertTrue(log)
             self.assertIn("TaskSet.task is deprecated",
                           log[0].message.args[0])
 
-        execute_context(catch_warnings(record=True), with_catch_warnings2)
-
         # TaskSet.task_name (deprecated)
-        def with_catch_warnings3(log):
+        with catch_warnings(record=True) as log:
             ts = TaskSet(MockTask, [[(2, 2)], [(4, 4)], [(8, 8)]])
             self.assertEqual(ts.task_name, MockTask.name)
             self.assertTrue(log)
             self.assertIn("TaskSet.task_name is deprecated",
                           log[0].message.args[0])
-
-        execute_context(catch_warnings(record=True), with_catch_warnings3)
 
     def test_task_arg_can_be_iterable__compat(self):
         ts = TaskSet([MockTask.subtask((i, i))

@@ -1,6 +1,8 @@
 import logging
 import sys
 
+from collections import defaultdict
+
 from kombu.tests.utils import redirect_stdouts
 
 from celery import beat
@@ -8,7 +10,6 @@ from celery import platforms
 from celery.app import app_or_default
 from celery.bin import celerybeat as celerybeat_bin
 from celery.apps import beat as beatapp
-from celery.utils.compat import defaultdict
 
 from celery.tests.utils import AppCase
 

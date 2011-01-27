@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from pyparsing import (Word, Literal, ZeroOrMore, Optional,
@@ -256,12 +258,11 @@ class crontab(schedule):
     def remaining_estimate(self, last_run_at):
         """Returns when the periodic task should run next as a timedelta."""
         weekday = last_run_at.isoweekday()
-        if weekday == 7:    # Sunday is day 0, not day 7.
-            weekday = 0
+        weekday = 0 if weekday == 7 else weekday  # Sunday is day 0, not day 7.
 
         execute_this_hour = (weekday in self.day_of_week and
                                 last_run_at.hour in self.hour and
-                                last_run_at.minute < max(self.minute))
+                                    last_run_at.minute < max(self.minute))
 
         if execute_this_hour:
             next_minute = min(minute for minute in self.minute
@@ -271,7 +272,6 @@ class crontab(schedule):
                                   microsecond=0)
         else:
             next_minute = min(self.minute)
-
             execute_today = (weekday in self.day_of_week and
                                  last_run_at.hour < max(self.hour))
 

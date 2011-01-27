@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import os
 
 from celery.utils import get_cls_by_name

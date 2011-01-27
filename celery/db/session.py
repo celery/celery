@@ -1,8 +1,8 @@
+from collections import defaultdict
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-
-from celery.utils.compat import defaultdict
 
 ResultModelBase = declarative_base()
 

@@ -1,5 +1,3 @@
-from __future__ import generators
-
 import os
 import sys
 import operator
@@ -18,7 +16,6 @@ from kombu.utils import cached_property, gen_unique_id  # noqa
 from kombu.utils import rpartition
 
 from celery.utils.compat import StringIO
-
 
 LOG_LEVELS = dict(logging._levelNames)
 LOG_LEVELS["FATAL"] = logging.FATAL

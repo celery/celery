@@ -3,7 +3,6 @@
 Worker Controller Threads
 
 """
-import logging
 import os
 import sys
 import threading
@@ -12,7 +11,6 @@ import traceback
 from Queue import Empty
 
 from celery.app import app_or_default
-from celery.utils.compat import log_with_extra
 
 
 class Mediator(threading.Thread):
@@ -51,13 +49,12 @@ class Mediator(threading.Thread):
         try:
             self.callback(task)
         except Exception, exc:
-            log_with_extra(self.logger, logging.ERROR,
-                           "Mediator callback raised exception %r\n%s" % (
-                               exc, traceback.format_exc()),
-                           exc_info=sys.exc_info(),
-                           extra={"data": {"hostname": task.hostname,
-                                           "id": task.task_id,
-                                           "name": task.task_name}})
+            self.logger.error("Mediator callback raised exception %r\n%s" % (
+                                exc, traceback.format_exc()),
+                              exc_info=sys.exc_info(),
+                              extra={"data": {"id": task.task_id,
+                                              "name": task.task_name,
+                                              "hostname": task.hostname}})
 
     def run(self):
         """Move tasks forver or until :meth:`stop` is called."""

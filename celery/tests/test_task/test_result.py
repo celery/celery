@@ -1,16 +1,12 @@
-from __future__ import generators
-
-from celery.tests.utils import unittest
-
 from celery import states
 from celery.app import app_or_default
 from celery.utils import gen_unique_id
-from celery.utils.compat import all
 from celery.utils.serialization import pickle
 from celery.result import AsyncResult, EagerResult, TaskSetResult
 from celery.exceptions import TimeoutError
 from celery.task.base import Task
 
+from celery.tests.utils import unittest
 from celery.tests.utils import skip_if_quick
 
 

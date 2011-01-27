@@ -1,4 +1,6 @@
 """celery.registry"""
+from __future__ import absolute_import
+
 import inspect
 
 from celery.exceptions import NotRegistered
@@ -27,8 +29,7 @@ class TaskRegistry(UserDict):
         instance.
 
         """
-        task = inspect.isclass(task) and task() or task
-        self.data[task.name] = task
+        self[task.name] = inspect.isclass(task) and task() or task
 
     def unregister(self, name):
         """Unregister task by name.

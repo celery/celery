@@ -1,3 +1,5 @@
+from __future__ import with_statement
+
 import sys
 
 from datetime import datetime
@@ -10,7 +12,7 @@ from celery.exceptions import ImproperlyConfigured
 from celery.result import AsyncResult
 from celery.utils import gen_unique_id
 
-from celery.tests.utils import execute_context, mask_modules
+from celery.tests.utils import mask_modules
 from celery.tests.utils import unittest
 
 try:
@@ -39,12 +41,9 @@ class test_DatabaseBackend(unittest.TestCase):
             raise SkipTest("sqlalchemy not installed")
 
     def test_missing_SQLAlchemy_raises_ImproperlyConfigured(self):
-
-        def with_SQLAlchemy_masked(_val):
+        with mask_modules("sqlalchemy"):
             from celery.backends.database import _sqlalchemy_installed
             self.assertRaises(ImproperlyConfigured, _sqlalchemy_installed)
-
-        execute_context(mask_modules("sqlalchemy"), with_SQLAlchemy_masked)
 
     def test_pickle_hack_for_sqla_05(self):
         import sqlalchemy as sa

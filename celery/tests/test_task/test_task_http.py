@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import generators
+from __future__ import with_statement
 
 import logging
 
+from contextlib import contextmanager
 from functools import wraps
 try:
     from urllib import addinfourl
@@ -12,8 +13,7 @@ except ImportError:  # py3k
 from anyjson import serialize
 
 from celery.task import http
-from celery.tests.utils import unittest
-from celery.tests.utils import execute_context, contextmanager, StringIO
+from celery.tests.utils import unittest, StringIO
 
 
 @contextmanager
@@ -98,68 +98,50 @@ class TestHttpDispatch(unittest.TestCase):
     def test_dispatch_success(self):
         logger = logging.getLogger("celery.unittest")
 
-        def with_mock_urlopen(_val):
+        with mock_urlopen(success_response(100)):
             d = http.HttpDispatch("http://example.com/mul", "GET", {
                                     "x": 10, "y": 10}, logger)
             self.assertEqual(d.dispatch(), 100)
-
-        context = mock_urlopen(success_response(100))
-        execute_context(context, with_mock_urlopen)
 
     def test_dispatch_failure(self):
         logger = logging.getLogger("celery.unittest")
 
-        def with_mock_urlopen(_val):
+        with mock_urlopen(fail_response("Invalid moon alignment")):
             d = http.HttpDispatch("http://example.com/mul", "GET", {
                                     "x": 10, "y": 10}, logger)
             self.assertRaises(http.RemoteExecuteError, d.dispatch)
 
-        context = mock_urlopen(fail_response("Invalid moon alignment"))
-        execute_context(context, with_mock_urlopen)
-
     def test_dispatch_empty_response(self):
         logger = logging.getLogger("celery.unittest")
 
-        def with_mock_urlopen(_val):
+        with mock_urlopen(_response("")):
             d = http.HttpDispatch("http://example.com/mul", "GET", {
                                     "x": 10, "y": 10}, logger)
             self.assertRaises(http.InvalidResponseError, d.dispatch)
-
-        context = mock_urlopen(_response(""))
-        execute_context(context, with_mock_urlopen)
 
     def test_dispatch_non_json(self):
         logger = logging.getLogger("celery.unittest")
 
-        def with_mock_urlopen(_val):
+        with mock_urlopen(_response("{'#{:'''")):
             d = http.HttpDispatch("http://example.com/mul", "GET", {
                                     "x": 10, "y": 10}, logger)
             self.assertRaises(http.InvalidResponseError, d.dispatch)
 
-        context = mock_urlopen(_response("{'#{:'''"))
-        execute_context(context, with_mock_urlopen)
-
     def test_dispatch_unknown_status(self):
         logger = logging.getLogger("celery.unittest")
 
-        def with_mock_urlopen(_val):
+        with mock_urlopen(unknown_response()):
             d = http.HttpDispatch("http://example.com/mul", "GET", {
                                     "x": 10, "y": 10}, logger)
             self.assertRaises(http.UnknownStatusError, d.dispatch)
 
-        context = mock_urlopen(unknown_response())
-        execute_context(context, with_mock_urlopen)
-
     def test_dispatch_POST(self):
         logger = logging.getLogger("celery.unittest")
 
-        def with_mock_urlopen(_val):
+        with mock_urlopen(success_response(100)):
             d = http.HttpDispatch("http://example.com/mul", "POST", {
                                     "x": 10, "y": 10}, logger)
             self.assertEqual(d.dispatch(), 100)
-
-        context = mock_urlopen(success_response(100))
-        execute_context(context, with_mock_urlopen)
 
 
 class TestURL(unittest.TestCase):
@@ -167,25 +149,17 @@ class TestURL(unittest.TestCase):
     def test_URL_get_async(self):
         http.HttpDispatchTask.app.conf.CELERY_ALWAYS_EAGER = True
         try:
-
-            def with_mock_urlopen(_val):
+            with mock_urlopen(success_response(100)):
                 d = http.URL("http://example.com/mul").get_async(x=10, y=10)
                 self.assertEqual(d.get(), 100)
-
-            context = mock_urlopen(success_response(100))
-            execute_context(context, with_mock_urlopen)
         finally:
             http.HttpDispatchTask.app.conf.CELERY_ALWAYS_EAGER = False
 
     def test_URL_post_async(self):
         http.HttpDispatchTask.app.conf.CELERY_ALWAYS_EAGER = True
         try:
-
-            def with_mock_urlopen(_val):
+            with mock_urlopen(success_response(100)):
                 d = http.URL("http://example.com/mul").post_async(x=10, y=10)
                 self.assertEqual(d.get(), 100)
-
-            context = mock_urlopen(success_response(100))
-            execute_context(context, with_mock_urlopen)
         finally:
             http.HttpDispatchTask.app.conf.CELERY_ALWAYS_EAGER = False

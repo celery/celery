@@ -1,4 +1,4 @@
-from __future__ import generators
+from __future__ import absolute_import
 
 import time
 
@@ -7,10 +7,10 @@ from itertools import imap
 
 from celery import current_app
 from celery import states
+from celery import current_app
 from celery.app import app_or_default
 from celery.exceptions import TimeoutError
 from celery.registry import _unpickle_task
-from celery.utils.compat import any, all
 
 
 def _unpickle_result(task_id, task_name):
@@ -35,10 +35,10 @@ class BaseAsyncResult(object):
     backend = None
 
     def __init__(self, task_id, backend, task_name=None, app=None):
+        self.app = app_or_default(app)
         self.task_id = task_id
         self.backend = backend
         self.task_name = task_name
-        self.app = app_or_default(app)
 
     def forget(self):
         """Forget about (and possibly remove the result of) this task."""
@@ -476,9 +476,7 @@ class TaskSetResult(ResultSet):
     @classmethod
     def restore(self, taskset_id, backend=None):
         """Restore previously saved taskset result."""
-        if backend is None:
-            backend = current_app.backend
-        return backend.restore_taskset(taskset_id)
+        return (backend or current_app.backend).restore_taskset(taskset_id)
 
     def itersubtasks(self):
         """Depreacted.   Use ``iter(self.results)`` instead."""

@@ -1,10 +1,13 @@
+from __future__ import absolute_import
+
 import os
 import warnings
+
 from importlib import import_module
 
 from celery.datastructures import AttributeDict
-from celery.loaders.base import BaseLoader
 from celery.exceptions import NotConfigured
+from celery.loaders.base import BaseLoader
 
 DEFAULT_CONFIG_MODULE = "celeryconfig"
 
@@ -19,7 +22,7 @@ class Loader(BaseLoader):
         """Read configuration from :file:`celeryconfig.py` and configure
         celery and Django so it can be used by regular Python."""
         configname = os.environ.get("CELERY_CONFIG_MODULE",
-                                    DEFAULT_CONFIG_MODULE)
+                                     DEFAULT_CONFIG_MODULE)
         try:
             celeryconfig = self.import_from_cwd(configname)
         except ImportError:

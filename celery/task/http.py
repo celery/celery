@@ -1,12 +1,16 @@
 import urllib2
+
 from urllib import urlencode
 from urlparse import urlparse
+try:
+    from urlparse import parse_qsl
+except ImportError:
+    from cgi import parse_qsl
 
 from anyjson import deserialize
 
 from celery import __version__ as celery_version
 from celery.task.base import Task as BaseTask
-from celery.utils.compat import parse_qsl
 
 GET_METHODS = frozenset(["GET", "HEAD"])
 

@@ -1,3 +1,5 @@
+from __future__ import with_statement
+
 import socket
 import sys
 
@@ -25,7 +27,7 @@ from celery.utils.timer2 import Timer
 
 from celery.tests.compat import catch_warnings
 from celery.tests.utils import unittest
-from celery.tests.utils import AppCase, execute_context, skip
+from celery.tests.utils import AppCase, skip
 
 
 class PlaceHolder(object):
@@ -253,13 +255,11 @@ class test_Consumer(unittest.TestCase):
         l.event_dispatcher = Mock()
         l.pidbox_node = MockNode()
 
-        def with_catch_warnings(log):
+        with catch_warnings(record=True) as log:
             l.receive_message(m.decode(), m)
             self.assertTrue(log)
             self.assertIn("unknown message", log[0].message.args[0])
 
-        context = catch_warnings(record=True)
-        execute_context(context, with_catch_warnings)
 
     @patch("celery.utils.timer2.to_timestamp")
     def test_receive_message_eta_OverflowError(self, to_timestamp):

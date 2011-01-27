@@ -1,5 +1,3 @@
-from __future__ import generators
-
 ############## py3k #########################################################
 try:
     from UserList import UserList       # noqa
@@ -18,39 +16,6 @@ except ImportError:
         from StringIO import StringIO   # noqa
     except ImportError:
         from io import StringIO         # noqa
-
-############## urlparse.parse_qsl ###########################################
-
-try:
-    from urlparse import parse_qsl
-except ImportError:
-    from cgi import parse_qsl  # noqa
-
-############## __builtin__.all ##############################################
-
-try:
-    all([True])
-    all = all
-except NameError:
-
-    def all(iterable):
-        for item in iterable:
-            if not item:
-                return False
-        return True
-
-############## __builtin__.any ##############################################
-
-try:
-    any([True])
-    any = any
-except NameError:
-
-    def any(iterable):
-        for item in iterable:
-            if item:
-                return True
-        return False
 
 ############## collections.OrderedDict ######################################
 
@@ -270,53 +235,6 @@ try:
 except ImportError:
     OrderedDict = CompatOrderedDict  # noqa
 
-############## collections.defaultdict ######################################
-
-try:
-    from collections import defaultdict
-except ImportError:
-    # Written by Jason Kirtland, taken from Python Cookbook:
-    # <http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/523034>
-    class defaultdict(dict):  # noqa
-
-        def __init__(self, default_factory=None, *args, **kwargs):
-            dict.__init__(self, *args, **kwargs)
-            self.default_factory = default_factory
-
-        def __getitem__(self, key):
-            try:
-                return dict.__getitem__(self, key)
-            except KeyError:
-                return self.__missing__(key)
-
-        def __missing__(self, key):
-            if self.default_factory is None:
-                raise KeyError(key)
-            self[key] = value = self.default_factory()
-            return value
-
-        def __reduce__(self):
-            f = self.default_factory
-            args = f is None and tuple() or f
-            return type(self), args, None, None, self.iteritems()
-
-        def copy(self):
-            return self.__copy__()
-
-        def __copy__(self):
-            return type(self)(self.default_factory, self)
-
-        def __deepcopy__(self):
-            import copy
-            return type(self)(self.default_factory,
-                        copy.deepcopy(self.items()))
-
-        def __repr__(self):
-            return "defaultdict(%s, %s)" % (self.default_factory,
-                                            dict.__repr__(self))
-    import collections
-    collections.defaultdict = defaultdict           # Pickle needs this.
-
 ############## logging.LoggerAdapter ########################################
 import inspect
 import logging
@@ -325,16 +243,6 @@ try:
 except ImportError:
     multiprocessing = None  # noqa
 import sys
-
-from logging import LogRecord
-
-log_takes_extra = "extra" in inspect.getargspec(logging.Logger._log)[0]
-
-# The func argument to LogRecord was added in 2.5
-if "func" not in inspect.getargspec(LogRecord.__init__)[0]:
-
-    def LogRecord(name, level, fn, lno, msg, args, exc_info, func):
-        return logging.LogRecord(name, level, fn, lno, msg, args, exc_info)
 
 
 def _checkLevel(level):
@@ -390,7 +298,7 @@ class _CompatLoggerAdapter(object):
 
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info,
             func=None, extra=None):
-        rv = LogRecord(name, level, fn, lno, msg, args, exc_info, func)
+        rv = logging.LogRecord(name, level, fn, lno, msg, args, exc_info, func)
         if extra is not None:
             for key, value in extra.items():
                 if key in ("message", "asctime") or key in rv.__dict__:
@@ -440,12 +348,6 @@ try:
     from logging import LoggerAdapter
 except ImportError:
     LoggerAdapter = _CompatLoggerAdapter  # noqa
-
-
-def log_with_extra(logger, level, msg, *args, **kwargs):
-    if not log_takes_extra:
-        kwargs.pop("extra", None)
-    return logger.log(level, msg, *args, **kwargs)
 
 ############## itertools.izip_longest #######################################
 

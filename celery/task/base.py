@@ -626,7 +626,7 @@ class BaseTask(object):
             task_id = self.request.id
         self.backend.store_result(task_id, meta, state)
 
-    def on_retry(self, exc, task_id, args, kwargs, einfo=None):
+    def on_retry(self, exc, task_id, args, kwargs, einfo):
         """Retry handler.
 
         This is run by the worker when the task is to be retried.
@@ -644,8 +644,7 @@ class BaseTask(object):
         """
         pass
 
-    def after_return(self, status, retval, task_id, args,
-            kwargs, einfo=None):
+    def after_return(self, status, retval, task_id, args, kwargs, einfo):
         """Handler called after the task returns.
 
         :param status: Current task state.
@@ -664,7 +663,7 @@ class BaseTask(object):
         if self.request.chord:
             self.backend.on_chord_part_return(self)
 
-    def on_failure(self, exc, task_id, args, kwargs, einfo=None):
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
         """Error handler.
 
         This is run by the worker when the task fails.

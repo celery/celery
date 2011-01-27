@@ -11,7 +11,7 @@ except ImportError:
     cpickle = None  # noqa
 
 if sys.version_info < (2, 6):  # pragma: no cover
-    # cPickle is broken in Python <= 2.5.
+    # cPickle is broken in Python <= 2.6.
     # It unsafely and incorrectly uses relative instead of absolute imports,
     # so e.g.:
     #       exceptions.KeyError
@@ -26,14 +26,8 @@ else:
     pickle = cpickle or pypickle
 
 
-# BaseException was introduced in Python 2.5.
-try:
-    _error_bases = (BaseException, )
-except NameError:  # pragma: no cover
-    _error_bases = (SystemExit, KeyboardInterrupt)
-
 #: List of base classes we probably don't want to reduce to.
-unwanted_base_classes = (StandardError, Exception) + _error_bases + (object, )
+unwanted_base_classes = (StandardError, Exception, BaseException, object)
 
 
 if sys.version_info < (2, 5):  # pragma: no cover

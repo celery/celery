@@ -1,4 +1,6 @@
 """celery.log"""
+from __future__ import absolute_import
+
 import logging
 import threading
 import sys
@@ -100,37 +102,29 @@ class Logging(object):
         if colorize is None:
             colorize = self.supports_color(logfile)
 
-        if mputil:
-            try:
-                mputil._logger = None
-            except AttributeError:
-                pass
+        if mputil and hasattr(mputil, "_logger"):
+            mputil._logger = None
         ensure_process_aware_logger()
         receivers = signals.setup_logging.send(sender=None,
-                                               loglevel=loglevel,
-                                               logfile=logfile,
-                                               format=format,
-                                               colorize=colorize)
+                        loglevel=loglevel, logfile=logfile,
+                        format=format, colorize=colorize)
         if not receivers:
             root = logging.getLogger()
 
             if self.app.conf.CELERYD_HIJACK_ROOT_LOGGER:
                 root.handlers = []
 
-            mp = mputil and mputil.get_logger() or None
-            for logger in (root, mp):
-                if logger:
-                    self._setup_logger(logger, logfile, format,
-                                       colorize, **kwargs)
-                    logger.setLevel(loglevel)
+            mp = mputil.get_logger() if mputil else None
+            for logger in filter(None, (root, mp)):
+                self._setup_logger(logger, logfile, format, colorize, **kwargs)
+                logger.setLevel(loglevel)
         Logging._setup = True
         return receivers
 
     def _detect_handler(self, logfile=None):
         """Create log handler with either a filename, an open stream
         or :const:`None` (stderr)."""
-        if logfile is None:
-            logfile = sys.__stderr__
+        logfile = sys.__stderr__ if logfile is None else logfile
         if hasattr(logfile, "write"):
             return logging.StreamHandler(logfile)
         return WatchedFileHandler(logfile)

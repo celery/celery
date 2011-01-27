@@ -1,7 +1,4 @@
 """timer2 - Scheduler for Python functions."""
-
-from __future__ import generators
-
 import atexit
 import heapq
 import logging

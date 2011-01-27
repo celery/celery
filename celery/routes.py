@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from celery.exceptions import QueueNotFound
 from celery.utils import firstmethod, instantiate, lpmerge, mpromise
 
@@ -22,12 +24,8 @@ class Router(object):
             app=None):
         from celery.app import app_or_default
         self.app = app_or_default(app)
-        if queues is None:
-            queues = {}
-        if routes is None:
-            routes = []
-        self.queues = queues
-        self.routes = routes
+        self.queues = {} if queues is None else queues
+        self.routes = [] if routes is None else routes
         self.create_missing = create_missing
 
     def route(self, options, task, args=(), kwargs={}):

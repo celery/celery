@@ -1,3 +1,5 @@
+from __future__ import with_statement
+
 import sys
 import socket
 from celery.tests.utils import unittest
@@ -11,7 +13,7 @@ from celery.utils import gen_unique_id
 from celery.backends import pyredis
 from celery.backends.pyredis import RedisBackend
 
-from celery.tests.utils import execute_context, mask_modules
+from celery.tests.utils import mask_modules
 
 _no_redis_msg = "* Redis %s. Will not execute related tests."
 _no_redis_msg_emitted = False
@@ -108,12 +110,9 @@ class TestRedisBackendNoRedis(unittest.TestCase):
     def test_redis_None_if_redis_not_installed(self):
         prev = sys.modules.pop("celery.backends.pyredis")
         try:
-
-            def with_redis_masked(_val):
+            with mask_modules("redis"):
                 from celery.backends.pyredis import redis
                 self.assertIsNone(redis)
-            context = mask_modules("redis")
-            execute_context(context, with_redis_masked)
         finally:
             sys.modules["celery.backends.pyredis"] = prev
 
