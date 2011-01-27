@@ -2,7 +2,7 @@ import socket
 import logging
 import traceback
 
-from kombu.utils import blocking
+from kombu.syn import blocking
 from kombu.utils.finalize import Finalize
 
 from celery import beat

@@ -50,7 +50,7 @@ except ImportError:
 install_requires.extend([
     "python-dateutil",
     "anyjson",
-    "kombu>=1.0.0b4",
+    "kombu>=1.0.0",
     "pyparsing>=1.5.0",
 ])
 py_version = sys.version_info
