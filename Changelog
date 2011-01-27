@@ -502,6 +502,13 @@ News
 
 * CentOS init script for :program:`celeryd` now available in `contrib/centos`.
 
+* Now depends on `pyparsing` version 1.5.0 or higher.
+
+    There have been reported issues using Celery with pyparsing 1.4.x,
+    so please upgrade to the latest version.
+
+* Lots of new unit tests written, now with a total coverage of 95%.
+
 .. _v220-fixes:
 
 Fixes
@@ -571,12 +578,6 @@ Experimental
         with pool.acquire() as publisher:
             add.apply_async((2, 2), publisher=publisher, retry=True)
 
-* Now depends on `pyparsing` version 1.5.0 or higher.
-
-    There have been reported issues using Celery with pyparsing 1.4.x,
-    so please upgrade to the latest version.
-
-* Lots of new unit tests written, now with a total coverage of 95%.
 
 .. _version-2.1.4:
 
