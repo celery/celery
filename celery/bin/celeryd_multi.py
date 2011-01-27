@@ -97,7 +97,7 @@ from time import sleep
 
 from celery import __version__
 from celery.utils import term
-from celery.utils.compat import defaultdict
+from celery.utils.compat import any, defaultdict
 
 SIGNAMES = set(sig for sig in dir(signal)
                         if sig.startswith("SIG") and "_" not in sig)
