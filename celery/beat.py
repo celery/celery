@@ -144,7 +144,8 @@ class Scheduler(UserDict):
             schedule = {}
         self.app = app_or_default(app)
         conf = self.app.conf
-        self.data = self.install_default_entries(schedule)
+        self.data = maybe_promise(schedule)
+        self.install_default_entries(self.data)
         self.logger = logger or self.app.log.get_default_logger(
                                                 name="celery.beat")
         self.max_interval = max_interval or conf.CELERYBEAT_MAX_LOOP_INTERVAL
@@ -152,14 +153,15 @@ class Scheduler(UserDict):
         if not lazy:
             self.setup_schedule()
 
-    def install_default_entries(self, schedule):
-        schedule = maybe_promise(schedule)
+    def install_default_entries(self, data):
+        entries = {}
         if self.app.conf.CELERY_TASK_RESULT_EXPIRES:
-            schedule.setdefault("celery.backend_cleanup",
-                                self.Entry(task="celery.backend_cleanup",
-                                           schedule=crontab("0", "4", "*"),
-                                           options={"expires": 12 * 3600}))
-        return schedule
+            if "celery.backend_cleanup" not in data:
+                entries["celery.backend_cleanup"] = {
+                        "task": "celery.backend_cleanup",
+                        "schedule": crontab("0", "4", "*"),
+                        "options": {"expires": 12 * 3600}}
+        self.update_from_dict(entries)
 
     def maybe_due(self, entry, publisher=None):
         is_due, next_time_to_run = entry.is_due()
@@ -293,12 +295,14 @@ class PersistentScheduler(Scheduler):
         Scheduler.__init__(self, *args, **kwargs)
 
     def setup_schedule(self):
-        self._store = self.persistence.open(self.schedule_filename)
-        self.data = self._store
-        self.merge_inplace(self.install_default_entries(
-                            self.app.conf.CELERYBEAT_SCHEDULE))
+        self._store = self.persistence.open(self.schedule_filename,
+                writeback=True)
+        self.merge_inplace(self.app.conf.CELERYBEAT_SCHEDULE)
+        self.install_default_entries(self._store)
         self.sync()
-        self.data = self._store
+
+    def get_schedule(self):
+        return self._store
 
     def sync(self):
         if self._store is not None:
