@@ -1,27 +1,16 @@
+from __future__ import absolute_import
+
 import os
 import sys
 import errno
 import signal
-try:
-    from setproctitle import setproctitle as _setproctitle
-except ImportError:
-    _setproctitle = None  # noqa
 
-CAN_DETACH = True
-try:
-    import resource
-except ImportError:
-    CAN_DETACH = False
+from celery.local import try_import
 
-try:
-    import pwd
-except ImportError:
-    pwd = None  # noqa
-
-try:
-    import grp
-except ImportError:
-    grp = None  # noqa
+_setproctitle = try_import("setproctitle")
+resource = try_import("resource")
+pwd = try_import("pwd")
+grp = try_import("grp")
 
 DAEMON_UMASK = 0
 DAEMON_WORKDIR = "/"
@@ -61,12 +50,14 @@ class PIDFile(object):
         except OSError, exc:
             raise LockFailed(str(exc))
         return self
+    __enter__ = acquire
 
     def is_locked(self):
         return os.path.exists(self.path)
 
-    def release(self):
+    def release(self, *args):
         self.remove()
+    __exit__ = release
 
     def read_pid(self):
         try:
@@ -134,76 +125,63 @@ def create_pidlock(pidfile):
 class DaemonContext(object):
     _is_open = False
 
-    def __init__(self, pidfile=None,
-            working_directory=DAEMON_WORKDIR, umask=DAEMON_UMASK, **kwargs):
-        self.working_directory = working_directory
+    def __init__(self, pidfile=None, workdir=DAEMON_WORKDIR,
+            umask=DAEMON_UMASK, **kwargs):
+        self.workdir = workdir
         self.umask = umask
 
-    def detach(self):
+    def open(self):
+        if not self._is_open:
+            self._detach()
+
+            os.chdir(self.workdir)
+            os.umask(self.umask)
+
+            for fd in reversed(range(get_fdmax(default=2048))):
+                try:
+                    os.close(fd)
+                except OSError, exc:
+                    if exc.errno != errno.EBADF:
+                        raise
+
+            os.open(DAEMON_REDIRECT_TO, os.O_RDWR)
+            os.dup2(0, 1)
+            os.dup2(0, 2)
+
+            self._is_open = True
+    __enter__ = open
+
+    def close(self, *args):
+        if self._is_open:
+            self._is_open = False
+    __exit__ = close
+
+    def _detach(self):
         if os.fork() == 0:      # first child
             os.setsid()         # create new session
             if os.fork() > 0:   # second child
                 os._exit(0)
         else:
             os._exit(0)
-
-    def open(self):
-        if self._is_open:
-            return
-
-        self.detach()
-
-        os.chdir(self.working_directory)
-        os.umask(self.umask)
-
-        for fd in reversed(range(get_fdmax(default=2048))):
-            try:
-                os.close(fd)
-            except OSError, exc:
-                if exc.errno != errno.EBADF:
-                    raise
-
-        os.open(DAEMON_REDIRECT_TO, os.O_RDWR)
-        os.dup2(0, 1)
-        os.dup2(0, 2)
-
-        self._is_open = True
-
-    def close(self):
-        if self._is_open:
-            self._is_open = False
+        return self
 
 
-def create_daemon_context(logfile=None, pidfile=None, uid=None, gid=None,
-        **options):
-    if not CAN_DETACH:
-        raise RuntimeError(
-                "This platform does not support detach.")
+def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
+             workdir=None, **opts):
+    if not resource:
+        raise RuntimeError("This platform does not support detach.")
+    workdir = os.getcwd() if workdir is None else workdir
 
-    # Make sure SIGCLD is using the default handler.
-    reset_signal("SIGCLD")
-
+    reset_signal("SIGCLD")  # Make sure SIGCLD is using the default handler.
     set_effective_user(uid=uid, gid=gid)
 
     # Since without stderr any errors will be silently suppressed,
     # we need to know that we have access to the logfile.
-    if logfile:
-        open(logfile, "a").close()
-    if pidfile:
-        # Doesn't actually create the pidfile, but makes sure it's
-        # not stale.
-        create_pidlock(pidfile)
+    logfile and open(logfile, "a").close()
+    # Doesn't actually create the pidfile, but makes sure it's not stale.
+    pidfile and create_pidlock(pidfile)
 
-    defaults = {"umask": lambda: 0,
-                "working_directory": lambda: os.getcwd()}
-
-    for opt_name, opt_default_gen in defaults.items():
-        if opt_name not in options or options[opt_name] is None:
-            options[opt_name] = opt_default_gen()
-
-    context = DaemonContext(**options)
-
-    return context, context.close
+    return DaemonContext(umask=umask, workdir=workdir)
 
 
 def parse_uid(uid):
@@ -337,7 +315,7 @@ def install_signal_handler(signal_name=None, handler=None, **sigmap):
 
 
 def strargv(argv):
-    arg_start = "manage" in argv[0] and 2 or 1
+    arg_start = 2 if "manage" in argv[0] else 1
     if len(argv) > arg_start:
         return " ".join(argv[arg_start:])
     return ""
@@ -350,9 +328,9 @@ def set_process_title(progname, info=None):
 
     """
     proctitle = "[%s]" % progname
-    proctitle = info and "%s %s" % (proctitle, info) or proctitle
+    proctitle = "%s %s" % (proctitle, info) if info else proctitle
     if _setproctitle:
-        _setproctitle(proctitle)
+        _setproctitle.setproctitle(proctitle)
     return proctitle
 
 
@@ -362,11 +340,12 @@ def set_mp_process_title(progname, info=None, hostname=None):
     Only works if :mod:`setproctitle` is installed.
 
     """
+    if hostname:
+        progname = "%s@%s" % (progname, hostname.split(".")[0])
     try:
         from multiprocessing.process import current_process
     except ImportError:
-        return
-    if hostname:
-        progname = "%s@%s" % (progname, hostname.split(".")[0])
-    return set_process_title("%s:%s" % (progname, current_process().name),
-                             info=info)
+        return set_process_title(progname, info=info)
+    else:
+        return set_process_title("%s:%s" % (progname,
+                                            current_process().name), info=info)

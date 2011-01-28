@@ -1,50 +1,30 @@
+from __future__ import absolute_import, with_statement
+
 import os
 import sys
 
 from optparse import OptionParser, BadOptionError
 
 from celery import __version__
+from celery.platforms import detached
 from celery.bin.base import daemon_options
-from celery.platforms import create_daemon_context
 
 OPTION_LIST = daemon_options(default_pidfile="celeryd.pid")
 
 
-class detached(object):
-
-    def __init__(self, path, argv, logfile=None, pidfile=None, uid=None,
-            gid=None, umask=0, working_directory=None):
-        self.path = path
-        self.argv = argv
-        self.logfile = logfile
-        self.pidfile = pidfile
-        self.uid = uid
-        self.gid = gid
-        self.umask = umask
-        self.working_directory = working_directory
-
-    def start(self):
-        context, on_stop = create_daemon_context(
-                                logfile=self.logfile,
-                                pidfile=self.pidfile,
-                                uid=self.uid,
-                                gid=self.gid,
-                                umask=self.umask,
-                                working_directory=self.working_directory)
-        context.open()
+def detach(path, argv, logfile=None, pidfile=None, uid=None,
+           gid=None, umask=0, working_directory=None):
+    with detached(logfile, pidfile, uid, gid, umask, working_directory):
         try:
-            try:
-                os.execv(self.path, [self.path] + self.argv)
-            except Exception:
-                import logging
-                from celery.log import setup_logger
-                logger = setup_logger(logfile=self.logfile,
-                                      loglevel=logging.ERROR)
-                logger.critical("Can't exec %r" % (
-                    " ".join([self.path] + self.argv), ),
+            os.execv(path, [path] + argv)
+        except Exception:
+            import logging
+            from celery.log import setup_logger
+            logger = setup_logger(logfile=self.logfile,
+                                  loglevel=logging.ERROR)
+            logger.critical("Can't exec %r" % (
+                    " ".join([path] + argv), ),
                     exc_info=sys.exc_info())
-        finally:
-            on_stop()
 
 
 class PartialOptionParser(OptionParser):
@@ -134,9 +114,9 @@ class detached_celeryd(object):
             argv = sys.argv
         prog_name = os.path.basename(argv[0])
         options, values, leftovers = self.parse_options(prog_name, argv[1:])
-        detached(path=self.execv_path,
-                 argv=self.execv_argv + leftovers,
-                 **vars(options)).start()
+        detach(path=self.execv_path,
+               argv=self.execv_argv + leftovers,
+               **vars(options))
 
 
 def main():

@@ -22,10 +22,12 @@
     `ERROR`, `CRITICAL`, or `FATAL`.
 
 """
+from __future__ import with_statement, absolute_import
+
 from functools import partial
 
+from celery.platforms import detached
 from celery.bin.base import Command, Option, daemon_options
-from celery.platforms import create_daemon_context
 
 
 class BeatCommand(Command):
@@ -34,25 +36,15 @@ class BeatCommand(Command):
     def run(self, detach=False, logfile=None, pidfile=None, uid=None,
             gid=None, umask=None, working_directory=None, **kwargs):
         kwargs.pop("app", None)
+        beat = partial(self.app.Beat,
+                       logfile=logfile, pidfile=pidfile, **kwargs)
+        workdir = working_directory
 
-        beat = partial(self.app.Beat, logfile=logfile, pidfile=pidfile,
-                       **kwargs)
-
-        if not detach:
+        if detach:
+            with detached(logfile, pidfile, uid, gid, umask, workdir):
+                return beat().run()
+        else:
             return beat().run()
-
-        context, on_stop = create_daemon_context(
-                                logfile=logfile,
-                                pidfile=pidfile,
-                                uid=uid,
-                                gid=gid,
-                                umask=umask,
-                                working_directory=working_directory)
-        context.open()
-        try:
-            beat().run()
-        finally:
-            on_stop()
 
     def get_options(self):
         conf = self.app.conf

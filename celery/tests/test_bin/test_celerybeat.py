@@ -161,24 +161,25 @@ class MockDaemonContext(object):
     opened = False
     closed = False
 
+    def __init__(self, *args, **kwargs):
+        pass
+
     def open(self):
         self.__class__.opened = True
+        return self
+    __enter__ = open
 
-    def close(self):
+    def close(self, *args):
         self.__class__.closed = True
-
-
-def create_daemon_context(*args, **kwargs):
-    context = MockDaemonContext()
-    return context, context.close
+    __exit__ = close
 
 
 class test_div(AppCase):
 
     def setup(self):
         self.prev, beatapp.Beat = beatapp.Beat, MockBeat
-        self.ctx, celerybeat_bin.create_daemon_context = \
-                celerybeat_bin.create_daemon_context, create_daemon_context
+        self.ctx, celerybeat_bin.detached = \
+                celerybeat_bin.detached, MockDaemonContext
 
     def teardown(self):
         beatapp.Beat = self.prev

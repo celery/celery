@@ -1,8 +1,12 @@
+from __future__ import absolute_import, with_statement
+
 import sys
 
+from functools import partial
+
 from celery import platforms
+from celery.platforms import detached
 from celery.bin.base import Command, Option, daemon_options
-from celery.platforms import create_daemon_context
 
 
 class EvCommand(Command):
@@ -39,22 +43,17 @@ class EvCommand(Command):
             gid=None, umask=None, working_directory=None,
             detach=False, **kwargs):
         from celery.events.snapshot import evcam
+        workdir = working_directory
         self.set_process_status("cam")
         kwargs["app"] = self.app
-        if not detach:
-            return evcam(camera, logfile=logfile, pidfile=pidfile, **kwargs)
-        context, on_stop = create_daemon_context(
-                                logfile=logfile,
-                                pidfile=pidfile,
-                                uid=uid,
-                                gid=gid,
-                                umask=umask,
-                                working_directory=working_directory)
-        context.open()
-        try:
-            return evcam(camera, logfile=logfile, pidfile=pidfile, **kwargs)
-        finally:
-            on_stop()
+        cam = partial(evcam, camera,
+                      logfile=logfile, pidfile=pidfile, **kwargs)
+
+        if detach:
+            with detached(logfile, pidfile, uid, gid, umask, workdir):
+                return cam()
+        else:
+            return cam()
 
     def set_process_status(self, prog, info=""):
         prog = "%s:%s" % (self.prog_name, prog)
