@@ -13,7 +13,6 @@ from itertools import islice
 from pprint import pprint
 
 from kombu.utils import cached_property, gen_unique_id  # noqa
-from kombu.utils import rpartition
 
 from celery.utils.compat import StringIO
 
@@ -304,7 +303,7 @@ def get_cls_by_name(name, aliases={}, imp=None):
         return name                                 # already a class
 
     name = aliases.get(name) or name
-    module_name, _, cls_name = rpartition(name, ".")
+    module_name, _, cls_name = name.rpartition(".")
     try:
         module = imp(module_name)
     except ValueError, exc:
@@ -342,7 +341,7 @@ def abbrtask(S, max):
     if S is None:
         return "???"
     if len(S) > max:
-        module, _, cls = rpartition(S, ".")
+        module, _, cls = S.rpartition(".")
         module = abbr(module, max - len(cls) - 3, False)
         return module + "[.]" + cls
     return S

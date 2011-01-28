@@ -22,9 +22,8 @@ from celery.log import setup_logger
 from celery.result import AsyncResult
 from celery.task.base import Task
 from celery.utils import gen_unique_id
-from celery.worker.job import WorkerTaskTrace, TaskRequest
-from celery.worker.job import execute_and_trace, AlreadyExecutedError
-from celery.worker.job import InvalidTaskError
+from celery.worker.job import (WorkerTaskTrace, TaskRequest,
+                               InvalidTaskError, execute_and_trace)
 from celery.worker.state import revoked
 
 from celery.tests.compat import catch_warnings
@@ -455,13 +454,6 @@ class test_TaskRequest(unittest.TestCase):
         w._store_errors = True
         w.handle_failure(value_, type_, tb_, "")
         self.assertEqual(mytask.backend.get_status(uuid), states.FAILURE)
-
-    def test_executed_bit(self):
-        tw = TaskRequest(mytask.name, gen_unique_id(), [], {})
-        self.assertFalse(tw.executed)
-        tw._set_executed_bit()
-        self.assertTrue(tw.executed)
-        self.assertRaises(AlreadyExecutedError, tw._set_executed_bit)
 
     def test_task_wrapper_mail_attrs(self):
         tw = TaskRequest(mytask.name, gen_unique_id(), [], {})

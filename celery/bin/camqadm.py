@@ -12,7 +12,6 @@ import pprint
 from itertools import count
 
 from amqplib import client_0_8 as amqp
-from kombu.utils import partition
 
 from celery.app import app_or_default
 from celery.bin.base import Command
@@ -257,7 +256,7 @@ class AMQShell(cmd.Cmd):
         if first:
             return first
         return [cmd for cmd in names
-                    if partition(cmd, ".")[2].startswith(text)]
+                    if cmd.partition(".")[2].startswith(text)]
 
     def dispatch(self, cmd, argline):
         """Dispatch and execute the command.

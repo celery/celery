@@ -104,9 +104,8 @@ class BasePool(object):
         else:
             self.safe_apply_callback(callback, ret_value)
 
-    def on_worker_error(self, errbacks, exc):
-        einfo = ExceptionInfo((exc.__class__, exc, None))
-        [errback(einfo) for errback in errbacks]
+    def on_worker_error(self, errback, exc):
+        errback(ExceptionInfo((exc.__class__, exc, None)))
 
     def safe_apply_callback(self, fun, *args):
         if fun:

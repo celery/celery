@@ -1,8 +1,11 @@
+from __future__ import absolute_import, with_statement
+
 import time
 import socket
 import threading
 
 from collections import deque
+from contextlib import contextmanager
 from itertools import count
 
 from kombu.entity import Exchange, Queue
@@ -87,22 +90,17 @@ class EventDispatcher(object):
         :keyword \*\*fields: Event arguments.
 
         """
-        if not self.enabled:
-            return
-
-        self._lock.acquire()
-        event = Event(type, hostname=self.hostname,
-                            clock=self.app.clock.forward(), **fields)
-        try:
-            try:
-                self.publisher.publish(event,
-                                       routing_key=type.replace("-", "."))
-            except Exception, exc:
-                if not self.buffer_while_offline:
-                    raise
-                self._outbound_buffer.append((type, fields, exc))
-        finally:
-            self._lock.release()
+        if self.enabled:
+            with self._lock:
+                event = Event(type, hostname=self.hostname,
+                                    clock=self.app.clock.forward(), **fields)
+                try:
+                    self.publisher.publish(event,
+                                           routing_key=type.replace("-", "."))
+                except Exception, exc:
+                    if not self.buffer_while_offline:
+                        raise
+                    self._outbound_buffer.append((type, fields, exc))
 
     def flush(self):
         while self._outbound_buffer:
@@ -154,6 +152,7 @@ class EventReceiver(object):
         handler = self.handlers.get(type) or self.handlers.get("*")
         handler and handler(event)
 
+    @contextmanager
     def consumer(self):
         """Create event consumer.
 
@@ -164,24 +163,20 @@ class EventReceiver(object):
 
         """
         consumer = Consumer(self.connection.channel(),
-                            queues=[self.queue],
-                            no_ack=True)
+                            queues=[self.queue], no_ack=True)
         consumer.register_callback(self._receive)
-        return consumer
+        with consumer:
+            yield consumer
+        consumer.channel.close()
 
     def itercapture(self, limit=None, timeout=None, wakeup=True):
-        consumer = self.consumer()
-        consumer.consume()
-        if wakeup:
-            self.wakeup_workers(channel=consumer.channel)
+        with self.consumer() as consumer:
+            if wakeup:
+                self.wakeup_workers(channel=consumer.channel)
 
-        yield consumer
+            yield consumer
 
-        try:
             self.drain_events(limit=limit, timeout=timeout)
-        finally:
-            consumer.cancel()
-            consumer.channel.close()
 
     def capture(self, limit=None, timeout=None, wakeup=True):
         """Open up a consumer capturing events.
@@ -190,9 +185,7 @@ class EventReceiver(object):
         stop unless forced via :exc:`KeyboardInterrupt` or :exc:`SystemExit`.
 
         """
-        list(self.itercapture(limit=limit,
-                              timeout=timeout,
-                              wakeup=wakeup))
+        list(self.itercapture(limit=limit, timeout=timeout, wakeup=wakeup))
 
     def wakeup_workers(self, channel=None):
         self.app.control.broadcast("heartbeat",

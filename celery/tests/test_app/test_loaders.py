@@ -12,8 +12,7 @@ from celery.loaders import default
 from celery.loaders.app import AppLoader
 
 from celery.tests.compat import catch_warnings
-from celery.tests.utils import unittest
-from celery.tests.utils import with_environ
+from celery.tests.utils import unittest, AppCase, with_environ
 
 
 class ObjectConfig(object):
@@ -59,7 +58,7 @@ class DummyLoader(base.BaseLoader):
         return MockMail()
 
 
-class TestLoaders(unittest.TestCase):
+class TestLoaders(AppCase):
 
     def test_get_loader_cls(self):
 
@@ -67,19 +66,10 @@ class TestLoaders(unittest.TestCase):
                           default.Loader)
 
     def test_current_loader(self):
-        loader1 = loaders.current_loader()
-        loader2 = loaders.current_loader()
-        self.assertIs(loader1, loader2)
-        self.assertIs(loader2, loaders._loader)
+        self.assertIs(loaders.current_loader(), self.app.loader)
 
     def test_load_settings(self):
-        loader = loaders.current_loader()
-        loaders._settings = None
-        settings = loaders.load_settings()
-        self.assertTrue(loaders._settings)
-        settings = loaders.load_settings()
-        self.assertIs(settings, loaders._settings)
-        self.assertIs(settings, loader.conf)
+        self.assertIs(loaders.load_settings(), self.app.conf)
 
     @with_environ("CELERY_LOADER", "default")
     def test_detect_loader_CELERY_LOADER(self):

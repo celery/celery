@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import os
 import sys
 import time
@@ -50,9 +52,12 @@ class InvalidTaskError(Exception):
     """The task has invalid data or is not properly constructed."""
 
 
-class AlreadyExecutedError(Exception):
-    """Tasks can only be executed once, as they might change
-    world-wide state."""
+def default_encode(obj):
+    if sys.platform.startswith("java"):
+        coding = "utf-8"
+    else:
+        coding = sys.getfilesystemencoding()
+    return unicode(obj, coding)
 
 
 class WorkerTaskTrace(TaskTrace):
@@ -211,9 +216,6 @@ class TaskRequest(object):
     #: The message object.  Used to acknowledge the message.
     message = None
 
-    #: Flag set when the task has been executed.
-    executed = False
-
     #: Additional delivery info, e.g. contains the path from
     #: Producer to consumer.
     delivery_info = None
@@ -287,8 +289,8 @@ class TaskRequest(object):
             the message is also rejected.
 
         """
-        _delivery_info = getattr(message, "delivery_info", {})
-        delivery_info = dict((key, _delivery_info.get(key))
+        delivery_info = getattr(message, "delivery_info", {})
+        delivery_info = dict((key, delivery_info.get(key))
                                 for key in WANTED_DELIVERY_INFO)
 
         kwargs = body["kwargs"]
@@ -357,9 +359,6 @@ class TaskRequest(object):
         if self.revoked():
             return
 
-        # Make sure task has not already been executed.
-        self._set_executed_bit()
-
         args = self._get_tracer_args(loglevel, logfile)
         instance_attrs = self.get_instance_attrs(loglevel, logfile)
         result = pool.apply_async(execute_and_trace,
@@ -384,9 +383,6 @@ class TaskRequest(object):
         """
         if self.revoked():
             return
-
-        # Make sure task has not already been executed.
-        self._set_executed_bit()
 
         # acknowledge task as being processed.
         if not self.task.acks_late:
@@ -585,11 +581,3 @@ class TaskRequest(object):
         """Get the :class:`WorkerTaskTrace` tracer for this task."""
         task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
         return self.task_name, self.task_id, self.args, task_func_kwargs
-
-    def _set_executed_bit(self):
-        """Set task as executed to make sure it's not executed again."""
-        if self.executed:
-            raise AlreadyExecutedError(
-                   "Task %s[%s] has already been executed" % (
-                       self.task_name, self.task_id))
-        self.executed = True

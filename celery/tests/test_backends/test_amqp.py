@@ -1,3 +1,5 @@
+from __future__ import with_statement
+
 import socket
 import sys
 
@@ -202,16 +204,11 @@ class test_AMQPBackend(unittest.TestCase):
                 pass
 
         b = self.create_backend()
-        conn = current_app.pool.acquire(block=False)
-        channel = conn.channel()
-        try:
+        with current_app.pool.acquire_channel(block=False) as (_, channel):
             binding = b._create_binding(gen_unique_id())
             consumer = b._create_consumer(binding, channel)
             self.assertRaises(socket.timeout, b.drain_events,
                               Connection(), consumer, timeout=0.1)
-        finally:
-            channel.close()
-            conn.release()
 
     def test_get_many(self):
         b = self.create_backend()

@@ -130,7 +130,7 @@ class test_TaskPool(unittest.TestCase):
 
         pool = TaskPool(10)
         exc = KeyError("foo")
-        pool.on_worker_error([errback], exc)
+        pool.on_worker_error(errback, exc)
 
         self.assertTrue(scratch[0])
         self.assertIs(scratch[0].exception, exc)
