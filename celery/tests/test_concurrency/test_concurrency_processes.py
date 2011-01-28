@@ -144,7 +144,7 @@ class test_TaskPool(unittest.TestCase):
 
         pool = TaskPool(10)
         exc = to_excinfo(KeyError("foo"))
-        pool.on_ready([], [errback], exc)
+        pool.on_ready(None, errback, exc)
         self.assertEqual(exc, scratch[0])
 
     def test_safe_apply_callback(self):
@@ -174,7 +174,7 @@ class test_TaskPool(unittest.TestCase):
 
         pool = TaskPool(10)
         retval = "the quick brown fox"
-        pool.on_ready([callback], [], retval)
+        pool.on_ready(callback, None, retval)
         self.assertEqual(retval, scratch[0])
 
     def test_on_ready_exit_exception(self):
