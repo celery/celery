@@ -8,9 +8,12 @@ Application Base Class.
 :license: BSD, see LICENSE for more details.
 
 """
+from __future__ import absolute_import, with_statement
+
 import platform as _platform
 import sys
 
+from contextlib import contextmanager
 from copy import deepcopy
 from functools import wraps
 from threading import Lock
@@ -84,21 +87,15 @@ class LamportClock(object):
 
     def __init__(self, initial_value=0):
         self.value = initial_value
-        self._mutex = Lock()
+        self.mutex = Lock()
 
     def adjust(self, other):
-        self._mutex.acquire()
-        try:
+        with self.mutex:
             self.value = max(self.value, other) + 1
-        finally:
-            self._mutex.release()
 
     def forward(self):
-        self._mutex.acquire()
-        try:
+        with self.mutex:
             self.value += 1
-        finally:
-            self._mutex.release()
         return self.value
 
 
@@ -193,8 +190,8 @@ class BaseApp(object):
         exchange = options.get("exchange")
         exchange_type = options.get("exchange_type")
 
-        def _do_publish(connection=None, **_):
-            publish = publisher or self.amqp.TaskPublisher(connection,
+        with self.default_connection(connection, connect_timeout) as conn:
+            publish = publisher or self.amqp.TaskPublisher(conn,
                                             exchange=exchange,
                                             exchange_type=exchange_type)
             try:
@@ -204,11 +201,7 @@ class BaseApp(object):
                                             expires=expires, **options)
             finally:
                 publisher or publish.close()
-
             return result_cls(new_id)
-
-        return self.with_default_connection(_do_publish)(
-                connection=connection, connect_timeout=connect_timeout)
 
     def AsyncResult(self, task_id, backend=None, task_name=None):
         """Create :class:`celery.result.BaseAsyncResult` instance."""
@@ -255,6 +248,16 @@ class BaseApp(object):
                                 "BROKER_CONNECTION_TIMEOUT", connect_timeout),
                     transport_options=self.conf.BROKER_TRANSPORT_OPTIONS)
 
+    @contextmanager
+    def default_connection(self, connection=None, connect_timeout=None):
+        """For use within a with-statement to get a connection from the pool
+        if one is not already provided."""
+        if connection:
+            yield connection
+        else:
+            with self.pool.acquire(block=True) as connection:
+                yield connection
+
     def with_default_connection(self, fun):
         """With any function accepting `connection` and `connect_timeout`
         keyword arguments, establishes a default connection if one is
@@ -263,20 +266,17 @@ class BaseApp(object):
         Any automatically established connection will be closed after
         the function returns.
 
-        """
+        **Deprecated**
 
+        Use ``with app.default_connection(connection)`` instead.
+
+        """
         @wraps(fun)
         def _inner(*args, **kwargs):
-            connection = kwargs.get("connection")
-            kwargs["connection"] = conn = connection or \
-                    self.pool.acquire(block=True)
-            close_connection = not connection and conn.release or None
-
-            try:
-                return fun(*args, **kwargs)
-            finally:
-                if close_connection:
-                    close_connection()
+            connection = kwargs.pop("connection", None)
+            connect_timeout = kwargs.get("connect_timeout")
+            with self.default_connection(connection, connect_timeout) as c:
+                return fun(*args, **dict(kwargs, connection=c))
         return _inner
 
     def prepare_config(self, c):

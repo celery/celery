@@ -1,3 +1,5 @@
+from __future__ import absolute_import, with_statement
+
 import threading
 
 from collections import deque
@@ -51,14 +53,11 @@ class TaskBucket(object):
     def put(self, request):
         """Put a :class:`~celery.worker.job.TaskRequest` into
         the appropiate bucket."""
-        self.mutex.acquire()
-        try:
+        with self.mutex:
             if request.task_name not in self.buckets:
                 self.add_bucket_for_type(request.task_name)
             self.buckets[request.task_name].put_nowait(request)
             self.not_empty.notify()
-        finally:
-            self.mutex.release()
     put_nowait = put
 
     def _get_immediate(self):
@@ -113,8 +112,7 @@ class TaskBucket(object):
         time_start = time()
         did_timeout = lambda: timeout and time() - time_start > timeout
 
-        self.not_empty.acquire()
-        try:
+        with self.not_empty:
             while True:
                 try:
                     remaining_time, item = self._get()
@@ -129,8 +127,6 @@ class TaskBucket(object):
                     sleep(min(remaining_time, timeout or 1))
                 else:
                     return item
-        finally:
-            self.not_empty.release()
 
     def get_nowait(self):
         return self.get(block=False)

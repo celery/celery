@@ -38,9 +38,12 @@ class BaseLoader(object):
         * What modules are imported to find tasks?
 
     """
-    worker_initialized = False
-    override_backends = {}
+    builtin_modules = BUILTIN_MODULES
     configured = False
+    error_envvar_not_set = ERROR_ENVVAR_NOT_SET
+    override_backends = {}
+    worker_initialized = False
+
     _conf = None
 
     def __init__(self, app=None, **kwargs):
@@ -71,9 +74,9 @@ class BaseLoader(object):
                 self.import_module if imp is None else imp)
 
     def import_default_modules(self):
-        imports = self.conf.get("CELERY_IMPORTS") or ()
-        imports = set(list(imports)) | BUILTIN_MODULES
-        return [self.import_task_module(module) for module in imports]
+        imports = set(list(self.conf.get("CELERY_IMPORTS") or ()))
+        return [self.import_task_module(module)
+                    for module in imports | self.builtin_modules]
 
     def init_worker(self):
         if not self.worker_initialized:
@@ -85,7 +88,7 @@ class BaseLoader(object):
         if not module_name:
             if silent:
                 return False
-            raise ImproperlyConfigured(ERROR_ENVVAR_NOT_SET % (module_name, ))
+            raise ImproperlyConfigured(self.error_envvar_not_set % module_name)
         return self.config_from_object(module_name, silent=silent)
 
     def config_from_object(self, obj, silent=False):

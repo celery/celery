@@ -1,3 +1,5 @@
+from __future__ import absolute_import, with_statement
+
 from kombu.pidbox import Mailbox
 
 from celery.app import app_or_default
@@ -94,16 +96,9 @@ class Control(object):
         :returns: the number of tasks discarded.
 
         """
-
-        def _do_discard(connection=None, connect_timeout=None):
-            consumer = self.app.amqp.get_task_consumer(connection=connection)
-            try:
+        with self.app.default_connection(connection, connect_timeout) as conn:
+            with self.app.amqp.get_task_consumer(connection=conn) as consumer:
                 return consumer.discard_all()
-            finally:
-                consumer.close()
-
-        return self.app.with_default_connection(_do_discard)(
-                connection=connection, connect_timeout=connect_timeout)
 
     def revoke(self, task_id, destination=None, terminate=False,
             signal="SIGTERM", **kwargs):
@@ -211,19 +206,11 @@ class Control(object):
             received.
 
         """
-        def _do_broadcast(connection=None, connect_timeout=None,
-                          channel=None):
-            return self.mailbox(connection)._broadcast(command, arguments,
-                                                       destination, reply,
-                                                       timeout, limit,
-                                                       callback,
-                                                       channel=channel)
-
-        if channel:
-            return _do_broadcast(connection, connect_timeout, channel)
-        else:
-            return self.app.with_default_connection(_do_broadcast)(
-                    connection=connection, connect_timeout=connect_timeout)
+        with self.app.default_connection(connection, connect_timeout) as conn:
+            return self.mailbox(conn)._broadcast(command, arguments,
+                                                 destination, reply, timeout,
+                                                 limit, callback,
+                                                 channel=channel)
 
 
 _default_control = Control(app_or_default())

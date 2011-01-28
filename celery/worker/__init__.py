@@ -251,7 +251,7 @@ class WorkController(object):
         except SystemTerminate:
             self.terminate()
             raise SystemExit()
-        except (SystemExit, KeyboardInterrupt), exc:
+        except BaseException, exc:
             self.stop()
             raise exc
 
@@ -260,27 +260,25 @@ class WorkController(object):
         try:
             request.task.execute(request, self.pool,
                                  self.loglevel, self.logfile)
-        except SystemTerminate:
-            self.terminate()
-            raise SystemExit()
-        except (SystemExit, KeyboardInterrupt), exc:
-            self.stop()
-            raise exc
         except Exception, exc:
             self.logger.critical("Internal error %s: %s\n%s" % (
                             exc.__class__, exc, traceback.format_exc()))
+        except SystemTerminate:
+            self.terminate()
+            raise SystemExit()
+        except BaseException, exc:
+            self.stop()
+            raise exc
 
     def stop(self, in_sighandler=False):
         """Graceful shutdown of the worker server."""
-        if in_sighandler and not self.pool.signal_safe:
-            return
-        blocking(self._shutdown, warm=True)
+        if not in_sighandler or self.pool.signal_safe:
+            blocking(self._shutdown, warm=True)
 
     def terminate(self, in_sighandler=False):
         """Not so graceful shutdown of the worker server."""
-        if in_sighandler and not self.pool.signal_safe:
-            return
-        blocking(self._shutdown, warm=False)
+        if not in_sighandler or self.pool.signal_safe:
+            blocking(self._shutdown, warm=False)
 
     def _shutdown(self, warm=True):
         what = (warm and "stopping" or "terminating").capitalize()

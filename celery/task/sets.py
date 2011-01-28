@@ -1,3 +1,5 @@
+from __future__ import absolute_import, with_statement
+
 import warnings
 
 from kombu.utils import cached_property
@@ -150,26 +152,21 @@ class TaskSet(UserList):
     def apply_async(self, connection=None, connect_timeout=None,
             publisher=None, taskset_id=None):
         """Apply taskset."""
-        return self.app.with_default_connection(self._apply_async)(
-                    connection=connection,
-                    connect_timeout=connect_timeout,
-                    publisher=publisher,
-                    taskset_id=taskset_id)
+        app = self.app
 
-    def _apply_async(self, connection=None, connect_timeout=None,
-            publisher=None, taskset_id=None):
-        if self.app.conf.CELERY_ALWAYS_EAGER:
+        if app.conf.CELERY_ALWAYS_EAGER:
             return self.apply(taskset_id=taskset_id)
 
-        setid = taskset_id or gen_unique_id()
-        pub = publisher or self.Publisher(connection=connection)
-        try:
-            results = self._async_results(setid, pub)
-        finally:
-            if not publisher:  # created by us.
-                pub.close()
+        with app.default_connection(connection, connect_timeout) as conn:
+            setid = taskset_id or gen_unique_id()
+            pub = publisher or self.Publisher(connection=conn)
+            try:
+                results = self._async_results(setid, pub)
+            finally:
+                if not publisher:  # created by us.
+                    pub.close()
 
-        return self.app.TaskSetResult(setid, results)
+            return app.TaskSetResult(setid, results)
 
     def _async_results(self, taskset_id, publisher):
         return [task.apply_async(taskset_id=taskset_id, publisher=publisher)

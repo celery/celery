@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, with_statement
 
 import time
 
@@ -308,13 +308,9 @@ class ResultSet(object):
 
     def revoke(self, connection=None, connect_timeout=None):
         """Revoke all tasks in the set."""
-
-        def _do_revoke(connection=None, connect_timeout=None):
+        with self.app.default_connection(connection, connect_timeout) as conn:
             for result in self.results:
                 result.revoke(connection=connection)
-
-        return self.app.with_default_connection(_do_revoke)(
-                connection=connection, connect_timeout=connect_timeout)
 
     def __iter__(self):
         return self.iterate()

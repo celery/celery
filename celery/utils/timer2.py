@@ -1,4 +1,6 @@
 """timer2 - Scheduler for Python functions."""
+from __future__ import absolute_import, with_statement
+
 import atexit
 import heapq
 import logging
@@ -164,15 +166,12 @@ class Timer(Thread):
                 traceback.print_exception(typ, val, tb)
 
     def next(self):
-        self.not_empty.acquire()
-        try:
+        with self.not_empty:
             delay, entry = self.scheduler.next()
             if entry is None:
                 if delay is None:
                     self.not_empty.wait(1.0)
                 return delay
-        finally:
-            self.not_empty.release()
         return self.apply_entry(entry)
 
     def run(self):
@@ -212,13 +211,10 @@ class Timer(Thread):
 
     def enter(self, entry, eta, priority=None):
         self.ensure_started()
-        self.mutex.acquire()
-        try:
+        with self.mutex:
             entry = self.schedule.enter(entry, eta, priority)
             self.not_empty.notify()
             return entry
-        finally:
-            self.mutex.release()
 
     def apply_at(self, eta, fun, args=(), kwargs={}, priority=0):
         return self.enter(self.Entry(fun, args, kwargs), eta, priority)
