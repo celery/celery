@@ -295,7 +295,6 @@ def install_worker_int_again_handler(worker):
         if multiprocessing:
             process_name = multiprocessing.current_process().name
         if not process_name or process_name == "MainProcess":
-            print("TERMINATING")
             worker.logger.warn("celeryd: Cold shutdown (%s)" % (
                 process_name))
             worker.terminate(in_sighandler=True)
@@ -310,9 +309,7 @@ def install_worker_term_handler(worker):
         process_name = None
         if multiprocessing:
             process_name = multiprocessing.current_process().name
-        print("SHOULD STOP? %r" % (process_name, ))
         if not process_name or process_name == "MainProcess":
-            print("STOPPING")
             worker.logger.warn("celeryd: Warm shutdown (%s)" % (
                 process_name))
             worker.stop(in_sighandler=True)
