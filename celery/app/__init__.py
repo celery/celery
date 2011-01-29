@@ -28,11 +28,17 @@ _tls.current_app = None
 class App(base.BaseApp):
     """Celery Application.
 
+    :param main: Name of the main module if running as `__main__`.
     :keyword loader: The loader class, or the name of the loader class to use.
                      Default is :class:`celery.loaders.app.AppLoader`.
     :keyword backend: The result store backend class, or the name of the
                       backend class to use. Default is the value of the
                       :setting:`CELERY_RESULT_BACKEND` setting.
+    :keyword amqp: AMQP object or class name.
+    :keyword events: Events object or class name.
+    :keyword log: Log object or class name.
+    :keyword control: Control object or class name.
+    :keyword set_as_current:  Make this the global current app.
 
     """
 
