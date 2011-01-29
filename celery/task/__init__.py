@@ -12,26 +12,26 @@ __all__ = ["Task", "TaskSet", "PeriodicTask", "subtask", "discard_all"]
 def task(*args, **kwargs):
     """Decorator to create a task class out of any callable.
 
-    .. admonition:: Examples
+    **Examples**
 
-        .. code-block:: python
+    .. code-block:: python
 
-            @task()
-            def refresh_feed(url):
+        @task()
+        def refresh_feed(url):
+            return Feed.objects.get(url=url).refresh()
+
+    With setting extra options and using retry.
+
+    .. code-block:: python
+
+        @task(max_retries=10)
+        def refresh_feed(url):
+            try:
                 return Feed.objects.get(url=url).refresh()
+            except socket.error, exc:
+                refresh_feed.retry(exc=exc)
 
-        With setting extra options and using retry.
-
-        .. code-block:: python
-
-            @task(exchange="feeds")
-            def refresh_feed(url, **kwargs):
-                try:
-                    return Feed.objects.get(url=url).refresh()
-                except socket.error, exc:
-                    refresh_feed.retry(args=[url], kwargs=kwargs, exc=exc)
-
-        Calling the resulting task:
+    Calling the resulting task:
 
             >>> refresh_feed("http://example.com/rss") # Regular
             <Feed: http://example.com/rss>
