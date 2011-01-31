@@ -72,7 +72,7 @@ class CacheBackend(KeyValueStoreBackend):
         backend = backend or self.app.conf.CELERY_CACHE_BACKEND
         self.expires = int(self.expires)
         self.backend, _, servers = partition(backend, "://")
-        self.servers = servers.split(";")
+        self.servers = servers.rstrip('/').split(";")
         try:
             self.Client = backends[self.backend]()
         except KeyError:
