@@ -9,10 +9,7 @@
 
 2.2.0
 =====
-:release-date: TBA (target end of january)
-:status: release candidate
-:branch: master (http://github.com/ask/celery/tree/master)
-:latest tag: v2.2.0rc5
+:release-date: 2011-02-01 10:00 AM CEST
 
 .. _v220-important:
 
