@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.backends.amqp &mdash; Celery v2.2.0rc5 documentation</title>
+    <title>celery.backends.amqp &mdash; Celery v2.2.0 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.2.0rc5',
+        VERSION:     '2.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0rc5 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.2.0 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.backends.mongodb" href="celery.backends.mongodb.html" />
     <link rel="prev" title="celery.backends.cache" href="celery.backends.cache.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.backends.cache.html" title="celery.backends.cache"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.0rc5 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -478,9 +478,10 @@ compression.</li>
 <li><strong>auto_declare</strong> &#8211; Automatically declare the exchange
 at instantiation. Default is <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt>.</li>
 <li><strong>on_return</strong> &#8211; Callback to call for undeliverable messages,
-when the <cite>mandatory</cite> or <cite>imediate</cite> arguments to
+when the <cite>mandatory</cite> or <cite>immediate</cite> arguments to
 <a class="reference internal" href="#celery.backends.amqp.AMQPBackend.Producer.publish" title="celery.backends.amqp.AMQPBackend.Producer.publish"><tt class="xref py py-meth docutils literal"><span class="pre">publish()</span></tt></a> is used. This callback needs the following
-signature: <cite>(exception, exchange, routing_key, message)</cite>.</li>
+signature: <cite>(exception, exchange, routing_key, message)</cite>.
+Note that the producer needs to drain events to use this feature.</li>
 </ul>
 </td>
 </tr>
@@ -914,7 +915,7 @@ without modifying the server state.</li>
         <li class="right" >
           <a href="celery.backends.cache.html" title="celery.backends.cache"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.0rc5 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

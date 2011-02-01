@@ -11,3 +11,8 @@
     .. autofunction:: task
 
     .. autofunction:: periodic_task
+
+    .. autoclass:: Task
+
+        .. seealso::
+            :class:`celery.task.base.BaseTask`.

@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.task &mdash; Celery v2.2.0rc5 documentation</title>
+    <title>celery.task &mdash; Celery v2.2.0 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.0rc5',
+        VERSION:     '2.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0rc5 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.task.control" href="celery.task.control.html" />
     <link rel="prev" title="celery.result" href="celery.result.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.result.html" title="celery.result"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0rc5 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -70,29 +70,27 @@
 <dt id="celery.task.task">
 <tt class="descclassname">celery.task.</tt><tt class="descname">task</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.task" title="Permalink to this definition">¶</a></dt>
 <dd><p>Decorator to create a task class out of any callable.</p>
-<div class="admonition-examples admonition ">
-<p class="first admonition-title">Examples</p>
+<p><strong>Examples</strong></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">()</span>
 <span class="k">def</span> <span class="nf">refresh_feed</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>With setting extra options and using retry.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">(</span><span class="n">exchange</span><span class="o">=</span><span class="s">&quot;feeds&quot;</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">refresh_feed</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">(</span><span class="n">max_retries</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">refresh_feed</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
     <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="n">exc</span><span class="p">:</span>
-        <span class="n">refresh_feed</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">url</span><span class="p">],</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">exc</span><span class="o">=</span><span class="n">exc</span><span class="p">)</span>
+        <span class="n">refresh_feed</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">exc</span><span class="o">=</span><span class="n">exc</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Calling the resulting task:</p>
-<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">refresh_feed</span><span class="p">(</span><span class="s">&quot;http://example.com/rss&quot;</span><span class="p">)</span> <span class="c"># Regular</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">refresh_feed</span><span class="p">(</span><span class="s">&quot;http://example.com/rss&quot;</span><span class="p">)</span> <span class="c"># Regular</span>
 <span class="go">&lt;Feed: http://example.com/rss&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">refresh_feed</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="s">&quot;http://example.com/rss&quot;</span><span class="p">)</span> <span class="c"># Async</span>
 <span class="go">&lt;AsyncResult: 8998d0f4-da0b-4669-ba03-d5ab5ac6ad5d&gt;</span>
 </pre></div>
-</div>
 </div>
 </dd></dl>
 
@@ -123,6 +121,19 @@
 <span class="go">&lt;AsyncResult: 8998d0f4-da0b-4669-ba03-d5ab5ac6ad5d&gt;</span>
 </pre></div>
 </div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.task.Task">
+<em class="property">class </em><tt class="descclassname">celery.task.</tt><tt class="descname">Task</tt><a class="headerlink" href="#celery.task.Task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Task base class.</p>
+<p>When called tasks apply the <tt class="xref py py-meth docutils literal"><span class="pre">run()</span></tt> method.  This method must
+be defined by all tasks (that is unless the <tt class="xref py py-meth docutils literal"><span class="pre">__call__()</span></tt> method
+is overridden).</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="celery.task.base.html#celery.task.base.BaseTask" title="celery.task.base.BaseTask"><tt class="xref py py-class docutils literal"><span class="pre">celery.task.base.BaseTask</span></tt></a>.</p>
 </div>
 </dd></dl>
 
@@ -179,7 +190,7 @@
         <li class="right" >
           <a href="celery.result.html" title="celery.result"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0rc5 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.app &mdash; Celery v2.2.0rc5 documentation</title>
+    <title>celery.app &mdash; Celery v2.2.0 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.0rc5',
+        VERSION:     '2.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.0rc5 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.0 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.app.amqp" href="celery.app.amqp.html" />
     <link rel="prev" title="API Reference" href="index.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="index.html" title="API Reference"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0rc5 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -98,11 +98,17 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>main</strong> &#8211; Name of the main module if running as <cite>__main__</cite>.</li>
 <li><strong>loader</strong> &#8211; The loader class, or the name of the loader class to use.
 Default is <a class="reference internal" href="celery.loaders.app.html#celery.loaders.app.AppLoader" title="celery.loaders.app.AppLoader"><tt class="xref py py-class docutils literal"><span class="pre">celery.loaders.app.AppLoader</span></tt></a>.</li>
 <li><strong>backend</strong> &#8211; The result store backend class, or the name of the
 backend class to use. Default is the value of the
 <a class="reference internal" href="../configuration.html#std:setting-CELERY_RESULT_BACKEND"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_RESULT_BACKEND</span></tt></a> setting.</li>
+<li><strong>amqp</strong> &#8211; AMQP object or class name.</li>
+<li><strong>events</strong> &#8211; Events object or class name.</li>
+<li><strong>log</strong> &#8211; Log object or class name.</li>
+<li><strong>control</strong> &#8211; Control object or class name.</li>
+<li><strong>set_as_current</strong> &#8211; Make this the global current app.</li>
 </ul>
 </td>
 </tr>
@@ -414,7 +420,7 @@ is no active app.</p>
         <li class="right" >
           <a href="index.html" title="API Reference"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.0rc5 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.0 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
