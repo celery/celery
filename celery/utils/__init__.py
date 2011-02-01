@@ -476,5 +476,3 @@ def cry():
         pprint(frame.f_locals, stream=out)
         out.write("\n\n")
     return out.getvalue()
-
-
