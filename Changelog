@@ -5,6 +5,24 @@
 .. contents::
     :local:
 
+.. _version-2.2.1:
+
+2.2.1
+=====
+:release-date: 2011-02-02 16:00 PM CEST
+
+.. _v221-fixes:
+
+Fixes
+-----
+
+* Eventlet pool was leaking memory (Issue #308).
+
+* Deprecated function ``celery.execute.delay_task`` was accidentally removed,
+  now available again.
+
+* ``BasePool.on_terminate`` stub did not exist
+
 .. _version-2.2.0:
 
 2.2.0
