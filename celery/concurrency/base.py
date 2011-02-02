@@ -43,6 +43,9 @@ class BasePool(object):
     def on_apply(self, *args, **kwargs):
         pass
 
+    def on_terminate(self):
+        pass
+
     def terminate_job(self, pid):
         raise NotImplementedError(
                 "%s does not implement kill_job" % (self.__class__, ))
