@@ -338,7 +338,7 @@ News
     to import schedules without importing the `celery.task` module.
 
 * The following functions have been deprecated and is scheduled for
-  removed in version 2.3:
+  removal in version 2.3:
 
     * `celery.execute.apply_async`
 
