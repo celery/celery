@@ -14,3 +14,10 @@ def apply_async(task, *args, **kwargs):
 def apply(task, *args, **kwargs):
     """*[Deprecated]* Use `task.apply()`"""
     return task.apply(*args, **kwargs)
+
+
+@deprecated(removal="2.3",
+            alternative="Use registry.tasks[name].delay instead.")
+def delay_task(task, *args, **kwargs):
+    from celery.registry import tasks
+    return tasks[task].apply_async(args, kwargs)
