@@ -103,5 +103,5 @@ class TaskPool(base.BasePool):
 
     def on_apply(self, target, args=None, kwargs=None, callback=None,
             accept_callback=None, **_):
-        self._pool.spawn(apply_target, target, args, kwargs,
-                         callback, accept_callback)
+        self._pool.spawn_n(apply_target, target, args, kwargs,
+                           callback, accept_callback)
