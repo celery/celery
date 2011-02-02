@@ -303,6 +303,24 @@ class PersistentScheduler(Scheduler):
     def get_schedule(self):
         return self._store
 
+    def merge_inplace(self, b):
+        A, B = set(self._store.keys()), set(b.keys())
+
+        # Remove items from disk not in the schedule anymore.
+        for key in A ^ B:
+            self._store.pop(key, None)
+
+        # Update and add new items in the schedule
+        for key in B:
+            entry = self.Entry(**dict(b[key]))
+            if self._store.get(key):
+                self._store[key].update(entry)
+            else:
+                self._store[key] = entry
+
+    def update_from_dict(self, dict_):
+        self._store.update(dict((name, self._maybe_entry(name, entry))
+                            for name, entry in dict_.items()))
     def sync(self):
         if self._store is not None:
             self.logger.debug("CeleryBeat: Syncing schedule to disk...")
