@@ -23,6 +23,11 @@ Fixes
 
 * ``BasePool.on_terminate`` stub did not exist
 
+* celeryd detach: Adds readable error messages if user/group name does not
+   exist.
+
+* Smarter handling of unicode decod errors when logging errors.
+
 .. _version-2.2.0:
 
 2.2.0
