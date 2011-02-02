@@ -217,7 +217,10 @@ def parse_uid(uid):
         return int(uid)
     except ValueError:
         if pwd:
-            return pwd.getpwnam(uid).pw_uid
+            try:
+                return pwd.getpwnam(uid).pw_uid
+            except KeyError:
+                raise KeyError("User does not exist: %r" % (uid, ))
         raise
 
 
@@ -232,7 +235,10 @@ def parse_gid(gid):
         return int(gid)
     except ValueError:
         if grp:
-            return grp.getgrnam(gid).gr_gid
+            try:
+                return grp.getgrnam(gid).gr_gid
+            except KeyError:
+                raise KeyError("Group does not exist: %r" % (gid, ))
         raise
 
 
