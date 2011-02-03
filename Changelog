@@ -5,11 +5,41 @@
 .. contents::
     :local:
 
+.. _version-2.2.2:
+
+2.2.2
+=====
+:release-date: 2011-02-03 16:00 PM CET
+
+.. _v222-fixes:
+
+Fixes
+-----
+
+* Celerybeat could not read the schedule properly, so entries in
+  :setting:`CELERYBEAT_SCHEDULE` would not be scheduled.
+
+* Task error log message now includes `exc_info` again.
+
+* The `eta` argument can now be used with `task.retry`.
+
+    Previously it was overwritten by the countdown argument.
+
+* celeryd-multi/celeryd_detach: Now logs errors occuring when executing
+  the `celeryd` command.
+
+* daemonizing cookbook: Fixed typo ``--time-limit 300`` ->
+  ``--time-limit=300``
+
+* Colors in logging broke non-string objects in log messages.
+
+* ``setup_task_logger`` no longer makes assumptions about magic task kwargs.
+
 .. _version-2.2.1:
 
 2.2.1
 =====
-:release-date: 2011-02-02 16:00 PM CEST
+:release-date: 2011-02-02 16:00 PM CET
 
 .. _v221-fixes:
 
@@ -32,7 +62,7 @@ Fixes
 
 2.2.0
 =====
-:release-date: 2011-02-01 10:00 AM CEST
+:release-date: 2011-02-01 10:00 AM CET
 
 .. _v220-important:
 
