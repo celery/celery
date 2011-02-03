@@ -63,9 +63,12 @@ def default_encoding():
 
 def safe_str(s, errors="replace"):
     encoding = default_encoding()
-    if isinstance(s, unicode):
-        return s.encode(encoding, errors)
-    return s
+    try:
+        if isinstance(s, unicode):
+            return s.encode(encoding, errors)
+        return unicode(s, encoding, errors)
+    except Exception:
+        return "<Unrepresentable %r>" % (type(s), )
 
 
 class WorkerTaskTrace(TaskTrace):
@@ -513,7 +516,7 @@ class TaskRequest(object):
 
         log_with_extra(self.logger, logging.ERROR,
                        self.error_msg.strip() % context,
-                       #exc_info=exc_info,
+                       exc_info=exc_info,
                        extra={"data": {"hostname": self.hostname,
                                        "id": self.task_id,
                                        "name": self.task_name}})
