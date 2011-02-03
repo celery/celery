@@ -449,7 +449,7 @@ class BaseTask(object):
 
     @classmethod
     def retry(self, args=None, kwargs=None, exc=None, throw=True,
-            **options):
+            eta=None, countdown=None, **options):
         """Retry the task.
 
         :param args: Positional arguments to retry with.
@@ -503,14 +503,14 @@ class BaseTask(object):
         if delivery_info:
             options.setdefault("exchange", delivery_info.get("exchange"))
             options.setdefault("routing_key", delivery_info.get("routing_key"))
-        
-        if options.has_key("eta"):
-            eta = options["eta"]
-        else:
-            countdown = options.setdefault("countdown", self.default_retry_delay)
+
+        if not eta and countdown is None:
+            countdown = self.default_retry_delay
 
         options.update({"retries": request.retries + 1,
-                        "task_id": request.id})
+                        "task_id": request.id,
+                        "countdown": countdown,
+                        "eta": eta})
 
         if max_retries is not None and options["retries"] > max_retries:
             raise exc or self.MaxRetriesExceededError(
@@ -524,10 +524,9 @@ class BaseTask(object):
 
         self.apply_async(args=args, kwargs=kwargs, **options)
         if throw:
-            if options.has_key("eta"):
-                raise RetryTaskError("Retry at %s" % str(eta), exc)
-            else:
-                raise RetryTaskError("Retry in %d seconds" % (countdown, ), exc)
+            raise RetryTaskError(
+                eta and "Retry at %s" % (eta, )
+                     or "Retry in %s secs." % (countdown, ), exc)
 
     @classmethod
     def apply(self, args=None, kwargs=None, **options):
