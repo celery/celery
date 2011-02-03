@@ -310,7 +310,6 @@ class PersistentScheduler(Scheduler):
                           "\n".join(repr(entry)
                                     for entry in entries.itervalues()))
 
-
     def get_schedule(self):
         return self._store["entries"]
 
