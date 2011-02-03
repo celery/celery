@@ -59,7 +59,7 @@ class colored(object):
         prefix, suffix = "", ""
         if self.enabled:
             prefix, suffix = self.op, RESET_SEQ
-        return prefix + reduce(self._add, self.s) + suffix
+        return prefix + str(reduce(self._add, self.s)) + suffix
 
     def node(self, s, op):
         return self.__class__(enabled=self.enabled, op=op, *s)
