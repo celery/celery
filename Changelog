@@ -462,9 +462,9 @@ News
 
     .. warning::
 
-        You should increase the polling interval when using the
-        database result backend, as frequent polling can result in high
-        database load.
+        You should decrease the polling interval when using the database
+        result backend, as frequent polling can result in high database load.
+
 
 * The PID of the child worker process accepting a task is now sent as a field
   with the `task-started` event.
