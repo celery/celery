@@ -54,7 +54,7 @@ This is an example configuration for a Python project.
     CELERYD_CHDIR="/opt/Myproject/"
 
     # Extra arguments to celeryd
-    CELERYD_OPTS="--time-limit 300 --concurrency=8"
+    CELERYD_OPTS="--time-limit=300 --concurrency=8"
 
     # Name of the celery config module.
     CELERY_CONFIG_MODULE="celeryconfig"
