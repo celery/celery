@@ -162,7 +162,7 @@ class Logging(object):
         return self.get_default_logger(name=name)
 
     def setup_task_logger(self, loglevel=None, logfile=None, format=None,
-            colorize=None, task_name='-?-', task_id='-?-', propagate=False,
+            colorize=None, task_name=None, task_id=None, propagate=False,
             app=None, **kwargs):
         """Setup the task logger.
 
@@ -180,13 +180,8 @@ class Logging(object):
                                     logfile, format, colorize, **kwargs)
         logger.propagate = int(propagate)    # this is an int for some reason.
                                              # better to not question why.
-
-        extra = {
-            "task_id": task_id,
-            "task_name": task_name,
-        }
-
-        return LoggerAdapter(logger, extra)
+        return LoggerAdapter(logger, {"task_id": task_id,
+                                      "task_name": task_name})
 
     def redirect_stdouts_to_logger(self, logger, loglevel=None):
         """Redirect :class:`sys.stdout` and :class:`sys.stderr` to a

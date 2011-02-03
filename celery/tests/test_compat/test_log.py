@@ -145,8 +145,18 @@ class test_default_logger(unittest.TestCase):
 class test_task_logger(test_default_logger):
 
     def setUp(self):
-        self.setup_logger = setup_task_logger
-        self.get_logger = get_task_logger
+        logger = get_task_logger()
+        logger.handlers = []
+        logging.root.manager.loggerDict.pop(logger.name, None)
+        self.id = gen_unique_id()
+
+    def setup_logger(self, *args, **kwargs):
+        return setup_task_logger(*args, **dict(kwargs, task_name=self.id,
+                                                       task_id=self.id))
+
+    def get_logger(self, *args, **kwargs):
+        id = gen_unique_id()
+        return get_task_logger(*args, **dict(kwargs, name=self.id))
 
 
 class MockLogger(logging.Logger):
