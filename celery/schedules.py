@@ -4,7 +4,8 @@ from pyparsing import (Word, Literal, ZeroOrMore, Optional,
                        Group, StringEnd, alphas)
 
 from celery.utils import is_iterable
-from celery.utils.timeutils import timedelta_seconds, weekday, remaining
+from celery.utils.timeutils import (timedelta_seconds, weekday,
+                                    remaining, humanize_seconds)
 
 
 class schedule(object):
@@ -45,6 +46,10 @@ class schedule(object):
         if rem == 0:
             return True, timedelta_seconds(self.run_every)
         return False, rem
+
+    def __repr__(self):
+        return "<freq: %s>" % humanize_seconds(
+                timedelta_seconds(self.run_every))
 
     def __eq__(self, other):
         if isinstance(other, schedule):
