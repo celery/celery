@@ -233,12 +233,6 @@ class test_Scheduler(unittest.TestCase):
         scheduler.setup_schedule()
         scheduler.close()
 
-    def test_set_schedule(self):
-        scheduler = mScheduler()
-        a, b = scheduler.schedule, {}
-        scheduler.schedule = b
-        self.assertIs(scheduler.schedule, b)
-
     def test_merge_inplace(self):
         a = mScheduler()
         b = mScheduler()
@@ -246,11 +240,11 @@ class test_Scheduler(unittest.TestCase):
                             "bar": {"schedule": mocked_schedule(True, 20)}})
         b.update_from_dict({"bar": {"schedule": mocked_schedule(True, 40)},
                             "baz": {"schedule": mocked_schedule(True, 10)}})
-        a.merge_inplace(b)
+        a.merge_inplace(b.schedule)
 
-        self.assertNotIn("foo", a)
-        self.assertIn("baz", a)
-        self.assertEqual(a["bar"].schedule._next_run_at, 40)
+        self.assertNotIn("foo", a.schedule)
+        self.assertIn("baz", a.schedule)
+        self.assertEqual(a.schedule["bar"].schedule._next_run_at, 40)
 
 
 class test_Service(unittest.TestCase):
@@ -275,10 +269,11 @@ class test_Service(unittest.TestCase):
 
     def test_start(self):
         s, sh = self.get_service()
-        self.assertIsInstance(s.schedule, dict)
+        schedule = s.scheduler.schedule
+        self.assertIsInstance(schedule, dict)
         self.assertIsInstance(s.scheduler, beat.Scheduler)
-        scheduled = s.schedule.keys()
-        for task_name in sh.keys():
+        scheduled = schedule.keys()
+        for task_name in sh["entries"].keys():
             self.assertIn(task_name, scheduled)
 
         s.sync()

@@ -525,6 +525,10 @@ class TestPeriodicTask(unittest.TestCase):
         self.assertEqual(remaining,
                          p.timedelta_seconds(p.run_every.run_every))
 
+    def test_schedule_repr(self):
+        p = MyPeriodic()
+        self.assertTrue(repr(p.run_every))
+
 
 class EveryMinutePeriodic(task.PeriodicTask):
     run_every = crontab()
