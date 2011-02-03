@@ -33,7 +33,16 @@ class detached(object):
                                 working_directory=self.working_directory)
         context.open()
         try:
-            os.execv(self.path, [self.path] + self.argv)
+            try:
+                os.execv(self.path, [self.path] + self.argv)
+            except Exception:
+                import logging
+                from celery.log import setup_logger
+                logger = setup_logger(logfile=self.logfile,
+                                      loglevel=logging.ERROR)
+                logger.critical("Can't exec %r" % (
+                    " ".join([self.path] + self.argv), ),
+                    exc_info=sys.exc_info())
         finally:
             on_stop()
 
