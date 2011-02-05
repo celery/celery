@@ -14,10 +14,11 @@ from datetime import datetime, timedelta
 from kombu import BrokerConnection, Exchange
 from kombu.connection import Resource
 from kombu import compat as messaging
+from kombu.utils import cached_property
 
 from celery import routes as _routes
 from celery import signals
-from celery.utils import gen_unique_id, textindent, cached_property
+from celery.utils import gen_unique_id, textindent
 from celery.utils import promise, maybe_promise
 from celery.utils.compat import UserDict
 

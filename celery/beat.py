@@ -15,6 +15,8 @@ except ImportError:
 
 from datetime import datetime
 
+from kombu.utils import cached_property
+
 from celery import __version__
 from celery import platforms
 from celery import registry
@@ -22,7 +24,7 @@ from celery import signals
 from celery.app import app_or_default
 from celery.log import SilenceRepeated
 from celery.schedules import maybe_schedule, crontab
-from celery.utils import cached_property, instantiate, maybe_promise
+from celery.utils import instantiate, maybe_promise
 from celery.utils.timeutils import humanize_seconds
 
 

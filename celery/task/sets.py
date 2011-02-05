@@ -1,9 +1,11 @@
 import warnings
 
+from kombu.utils import cached_property
+
 from celery import registry
 from celery.app import app_or_default
 from celery.datastructures import AttributeDict
-from celery.utils import cached_property, gen_unique_id
+from celery.utils import gen_unique_id
 from celery.utils.compat import UserList
 
 TASKSET_DEPRECATION_TEXT = """\

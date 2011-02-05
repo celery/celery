@@ -1,8 +1,9 @@
 import platform
 import shelve
 
+from kombu.utils import cached_property
+
 from celery import __version__
-from celery.utils import cached_property
 from celery.utils.compat import defaultdict
 from celery.datastructures import LimitedSet
 

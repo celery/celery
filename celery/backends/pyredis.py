@@ -1,9 +1,10 @@
 from datetime import timedelta
 
+from kombu.utils import cached_property
+
 from celery.backends.base import KeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured
 from celery.utils import timeutils
-from celery.utils import cached_property
 
 try:
     import redis

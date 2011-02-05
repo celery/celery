@@ -1,10 +1,9 @@
 from datetime import timedelta
 
-from kombu.utils import partition
+from kombu.utils import partition, cached_property
 
 from celery.backends.base import KeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured
-from celery.utils import cached_property
 from celery.utils import timeutils
 from celery.datastructures import LocalCache
 
