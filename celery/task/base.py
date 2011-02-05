@@ -449,7 +449,7 @@ class BaseTask(object):
 
     @classmethod
     def retry(self, args=None, kwargs=None, exc=None, throw=True,
-            eta=None, countdown=None, **options):
+            eta=None, countdown=None, max_retries=None, **options):
         """Retry the task.
 
         :param args: Positional arguments to retry with.
@@ -460,6 +460,7 @@ class BaseTask(object):
         :keyword countdown: Time in seconds to delay the retry for.
         :keyword eta: Explicit time and date to run the retry at
                       (must be a :class:`~datetime.datetime` instance).
+        :keyword max_retries: If set, overrides the default retry limit.
         :keyword \*\*options: Any extra options to pass on to
                               meth:`apply_async`.
         :keyword throw: If this is :const:`False`, do not raise the
@@ -492,8 +493,9 @@ class BaseTask(object):
         to convey that the rest of the block will not be executed.
 
         """
-        max_retries = self.max_retries
         request = self.request
+        if max_retries is None:
+            max_retries = self.max_retries
         if args is None:
             args = request.args
         if kwargs is None:
