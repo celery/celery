@@ -42,7 +42,10 @@ EXTRA_INFO_FMT = """
 
 def cpu_count():
     if multiprocessing is not None:
-        return multiprocessing.cpu_count()
+        try:
+            return multiprocessing.cpu_count()
+        except NotImplementedError:
+            pass
     return 2
 
 
