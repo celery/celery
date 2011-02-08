@@ -87,6 +87,10 @@ class Schedule(object):
             if not self.handle_error(sys.exc_info()):
                 raise
 
+        if eta is None:
+            # schedule now.
+            eta = time()
+
         heapq.heappush(self._queue, (eta, priority, entry))
         return entry
 

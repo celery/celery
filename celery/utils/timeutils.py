@@ -1,7 +1,16 @@
 import math
 
+from kombu.utils import cached_property
+
 from datetime import datetime, timedelta
+from dateutil import tz
 from dateutil.parser import parse as parse_iso8601
+
+try:
+    import pytz
+except ImportError:
+    pytz = None
+
 
 DAYNAMES = "sun", "mon", "tue", "wed", "thu", "fri", "sat"
 WEEKDAYS = dict((name, dow) for name, dow in zip(DAYNAMES, range(7)))
@@ -10,12 +19,55 @@ RATE_MODIFIER_MAP = {"s": lambda n: n,
                      "m": lambda n: n / 60.0,
                      "h": lambda n: n / 60.0 / 60.0}
 
-HAVE_TIMEDELTA_TOTAL_SECONDS = hasattr(timedelta, "total_seconds")
+
+HAS_TIMEDELTA_TOTAL_SECONDS = hasattr(timedelta, "total_seconds")
 
 TIME_UNITS = (("day", 60 * 60 * 24, lambda n: int(math.ceil(n))),
               ("hour", 60 * 60, lambda n: int(math.ceil(n))),
               ("minute", 60, lambda n: int(math.ceil(n))),
               ("second", 1, lambda n: "%.2f" % n))
+
+
+class UnknownTimezone(Exception):
+    """No specification exists for the timezone specified.  Consider
+    installing the pytz library to get access to more timezones."""
+
+
+def _is_naive(dt):
+    return bool(dt.tzinfo)
+
+
+class _Zone(object):
+
+    def tz_or_local(self, tzinfo=None):
+        if tzinfo is None:
+            return self.local
+        return self.get_timezone(tzinfo)
+
+    def to_local(self, dt, local=None, orig=None):
+        return dt.replace(tzinfo=orig or self.utc).astimezone(
+                    self.tz_or_local(local))
+
+    def get_timezone(self, zone):
+        if isinstance(zone, basestring):
+            if pytz:
+                return pytz.timezone(zone)
+            zone = tz.gettz(zone)
+            if zone is None:
+                raise UnknownTimezone(UnknownTimezone.__doc__)
+            return zone
+        return zone
+
+    @cached_property
+    def local(self):
+        return tz.tzlocal()
+
+    @cached_property
+    def utc(self):
+        return self.get_timezone("UTC")
+
+timezone = _Zone()
+
 
 
 def maybe_timedelta(delta):
@@ -31,7 +83,7 @@ def timedelta_seconds(delta):  # pragma: no cover
     Doesn't account for negative values.
 
     """
-    if HAVE_TIMEDELTA_TOTAL_SECONDS:
+    if HAS_TIMEDELTA_TOTAL_SECONDS:
         # Should return 0 for negative seconds
         return max(delta.total_seconds(), 0)
     if delta.days < 0:
@@ -72,10 +124,10 @@ def remaining(start, ends_in, now=None, relative=True):
         calculated using :func:`delta_resolution` (i.e. rounded to the
         resolution of `ends_in`).
     :keyword now: Function returning the current time and date,
-        defaults to :func:`datetime.now`.
+        defaults to :func:`datetime.utcnow`.
 
     """
-    now = now or datetime.now()
+    now = now or datetime.utcnow()
 
     end_date = start + ends_in
     if not relative:

@@ -236,16 +236,16 @@ class test_TaskRequest(unittest.TestCase):
         tw.terminate(pool, signal="KILL")
 
     def test_revoked_expires_expired(self):
-        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
-        tw.expires = datetime.now() - timedelta(days=1)
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"},
+                         expires=datetime.utcnow() - timedelta(days=1))
         tw.revoked()
         self.assertIn(tw.task_id, revoked)
         self.assertEqual(mytask.backend.get_status(tw.task_id),
                          states.REVOKED)
 
     def test_revoked_expires_not_expired(self):
-        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
-        tw.expires = datetime.now() + timedelta(days=1)
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"},
+                         expires=datetime.utcnow() + timedelta(days=1))
         tw.revoked()
         self.assertNotIn(tw.task_id, revoked)
         self.assertNotEqual(mytask.backend.get_status(tw.task_id),
@@ -253,9 +253,9 @@ class test_TaskRequest(unittest.TestCase):
 
     def test_revoked_expires_ignore_result(self):
         mytask.ignore_result = True
-        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"},
+                         expires=datetime.utcnow() - timedelta(days=1))
         try:
-            tw.expires = datetime.now() - timedelta(days=1)
             tw.revoked()
             self.assertIn(tw.task_id, revoked)
             self.assertNotEqual(mytask.backend.get_status(tw.task_id),

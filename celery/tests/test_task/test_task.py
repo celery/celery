@@ -301,8 +301,8 @@ class TestCeleryTasks(unittest.TestCase):
 
         # With eta.
         presult2 = t1.apply_async(kwargs=dict(name="George Costanza"),
-                                  eta=datetime.now() + timedelta(days=1),
-                                  expires=datetime.now() + timedelta(days=2))
+                                eta=datetime.utcnow() + timedelta(days=1),
+                                expires=datetime.utcnow() + timedelta(days=2))
         self.assertNextTaskDataEqual(consumer, presult2, t1.name,
                 name="George Costanza", test_eta=True, test_expires=True)
 
@@ -512,11 +512,11 @@ class TestPeriodicTask(unittest.TestCase):
 
     def test_remaining_estimate(self):
         self.assertIsInstance(
-            MyPeriodic().remaining_estimate(datetime.now()),
+            MyPeriodic().remaining_estimate(datetime.utcnow()),
             timedelta)
 
     def test_is_due_not_due(self):
-        due, remaining = MyPeriodic().is_due(datetime.now())
+        due, remaining = MyPeriodic().is_due(datetime.utcnow())
         self.assertFalse(due)
         # This assertion may fail if executed in the
         # first minute of an hour, thus 59 instead of 60
@@ -524,7 +524,7 @@ class TestPeriodicTask(unittest.TestCase):
 
     def test_is_due(self):
         p = MyPeriodic()
-        due, remaining = p.is_due(datetime.now() - p.run_every.run_every)
+        due, remaining = p.is_due(datetime.utcnow() - p.run_every.run_every)
         self.assertTrue(due)
         self.assertEqual(remaining,
                          p.timedelta_seconds(p.run_every.run_every))
@@ -695,7 +695,7 @@ class test_crontab_remaining_estimate(unittest.TestCase):
 class test_crontab_is_due(unittest.TestCase):
 
     def setUp(self):
-        self.now = datetime.now()
+        self.now = datetime.utcnow()
         self.next_minute = 60 - self.now.second - 1e-6 * self.now.microsecond
 
     def test_default_crontab_spec(self):

@@ -19,6 +19,9 @@ from .. import routes as _routes
 from .. import signals
 from ..utils import cached_property, textindent, uuid
 
+# UTC timezone mark.
+TZ_UTC = 0x1
+
 #: List of known options to a Kombu producers send method.
 #: Used to extract the message related options out of any `dict`.
 MSG_OPTIONS = ("mandatory", "priority", "immediate", "routing_key",
@@ -206,10 +209,10 @@ class TaskPublisher(messaging.Publisher):
         if not isinstance(task_kwargs, dict):
             raise ValueError("task kwargs must be a dictionary")
         if countdown:                           # Convert countdown to ETA.
-            now = now or datetime.now()
+            now = now or datetime.utcnow()
             eta = now + timedelta(seconds=countdown)
         if isinstance(expires, int):
-            now = now or datetime.now()
+            now = now or datetime.utcnow()
             expires = now + timedelta(seconds=expires)
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
@@ -220,8 +223,8 @@ class TaskPublisher(messaging.Publisher):
                 "kwargs": task_kwargs or {},
                 "retries": retries or 0,
                 "eta": eta,
-                "expires": expires}
-
+                "expires": expires,
+                "tz": TZ_UTC}
         if taskset_id:
             body["taskset"] = taskset_id
         if chord:

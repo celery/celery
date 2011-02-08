@@ -236,7 +236,7 @@ class crontab(schedule):
         return result
 
     def __init__(self, minute='*', hour='*', day_of_week='*',
-            nowfun=datetime.now):
+            nowfun=datetime.utcnow):
         self._orig_minute = minute
         self._orig_hour = hour
         self._orig_day_of_week = day_of_week

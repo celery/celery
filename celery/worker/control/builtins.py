@@ -126,7 +126,7 @@ def dump_schedule(panel, safe=False, **kwargs):
         return []
 
     formatitem = lambda (i, item): "%s. %s pri%s %r" % (i,
-            datetime.fromtimestamp(item["eta"]),
+            datetime.utcfromtimestamp(item["eta"]),
             item["priority"],
             item["item"])
     info = map(formatitem, enumerate(schedule.info()))

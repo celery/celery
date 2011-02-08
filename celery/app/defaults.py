@@ -116,6 +116,7 @@ NAMESPACES = {
                 "interval_step": 0.2}, type="dict"),
         "TASK_RESULT_EXPIRES": Option(timedelta(days=1), type="int"),
         "TASK_SERIALIZER": Option("pickle"),
+        "TIMEZONE": Option(None, type="string"),
         "TRACK_STARTED": Option(False, type="bool"),
         "REDIRECT_STDOUTS": Option(True, type="bool"),
         "REDIRECT_STDOUTS_LEVEL": Option("WARNING"),
@@ -124,7 +125,7 @@ NAMESPACES = {
     "CELERYD": {
         "AUTOSCALER": Option("celery.worker.autoscale.Autoscaler"),
         "CONCURRENCY": Option(0, type="int"),
-        "ETA_SCHEDULER": Option(None, type="str"),
+        "ETA_SCHEDULER": Option(None, type="string"),
         "ETA_SCHEDULER_PRECISION": Option(1.0, type="float"),
         "HIJACK_ROOT_LOGGER": Option(True, type="bool"),
         "CONSUMER": Option("celery.worker.consumer.Consumer"),

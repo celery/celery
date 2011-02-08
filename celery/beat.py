@@ -77,14 +77,14 @@ class ScheduleEntry(object):
         self.total_run_count = total_run_count or 0
 
     def _default_now(self):
-        return datetime.now()
+        return datetime.utcnow()
 
     def next(self, last_run_at=None):
         """Returns a new instance of the same class, but with
         its date and count fields updated."""
         return self.__class__(**dict(self,
-                                     last_run_at=last_run_at or datetime.now(),
-                                     total_run_count=self.total_run_count + 1))
+                                last_run_at=last_run_at or datetime.utcnow(),
+                                total_run_count=self.total_run_count + 1))
     __next__ = next  # for 2to3
 
     def update(self, other):
