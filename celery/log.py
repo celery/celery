@@ -39,7 +39,7 @@ class ColorFormatter(logging.Formatter):
         color = self.colors.get(levelname)
 
         if self.use_color and color:
-            record.msg = unicode(color(record.msg))
+            record.msg = unicode(color(safe_str(record.msg)))
 
         # Very ugly, but have to make sure processName is supported
         # by foreign logger instances.

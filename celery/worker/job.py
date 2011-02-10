@@ -17,6 +17,7 @@ from celery.registry import tasks
 from celery.utils import noop, kwdict, fun_takes_kwargs
 from celery.utils import truncate_text
 from celery.utils.compat import log_with_extra
+from celery.utils.encoding import safe_str
 from celery.utils.timeutils import maybe_iso8601
 from celery.worker import state
 
@@ -53,22 +54,6 @@ class InvalidTaskError(Exception):
 class AlreadyExecutedError(Exception):
     """Tasks can only be executed once, as they might change
     world-wide state."""
-
-
-def default_encoding():
-    if sys.platform.startswith("java"):
-        return "utf-8"
-    return sys.getfilesystemencoding()
-
-
-def safe_str(s, errors="replace"):
-    encoding = default_encoding()
-    try:
-        if isinstance(s, unicode):
-            return s.encode(encoding, errors)
-        return unicode(s, encoding, errors)
-    except Exception:
-        return "<Unrepresentable %r>" % (type(s), )
 
 
 class WorkerTaskTrace(TaskTrace):
