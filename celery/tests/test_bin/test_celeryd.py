@@ -126,16 +126,18 @@ class test_Worker(AppCase):
     def test_init_queues(self):
         app = current_app
         c = app.conf
-        p, app.amqp.queues = app.amqp.queues, {
+        p, app.amqp.queues = app.amqp.queues, app.amqp.Queues({
                 "celery": {"exchange": "celery",
                            "binding_key": "celery"},
                 "video": {"exchange": "video",
-                           "binding_key": "video"}}
+                           "binding_key": "video"}})
         try:
             worker = self.Worker(queues=["video"])
             worker.init_queues()
-            self.assertIn("video", worker.queues)
-            self.assertNotIn("celery", worker.queues)
+            self.assertIn("video", app.amqp.queues)
+            self.assertIn("video", app.amqp.queues.consume_from)
+            self.assertIn("celery", app.amqp.queues)
+            self.assertNotIn("celery", app.amqp.queues.consume_from)
 
             c.CELERY_CREATE_MISSING_QUEUES = False
             self.assertRaises(ImproperlyConfigured,
@@ -143,12 +145,12 @@ class test_Worker(AppCase):
             c.CELERY_CREATE_MISSING_QUEUES = True
             worker = self.Worker(queues=["image"])
             worker.init_queues()
-            self.assertIn("image", worker.queues)
+            self.assertIn("image", app.amqp.queues.consume_from)
             self.assertDictContainsSubset({"exchange": "image",
                                            "routing_key": "image",
                                            "binding_key": "image",
                                            "exchange_type": "direct"},
-                                            worker.queues["image"])
+                                            app.amqp.queues["image"])
         finally:
             app.amqp.queues = p
 

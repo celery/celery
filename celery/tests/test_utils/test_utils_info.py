@@ -57,6 +57,6 @@ class TestInfo(unittest.TestCase):
 
     def test_format_queues(self):
         celery = Celery(set_as_current=False)
-        celery.amqp.queues = QUEUES
+        celery.amqp.queues = celery.amqp.Queues(QUEUES)
         self.assertItemsEqual(celery.amqp.queues.format().split("\n"),
                               [QUEUE_FORMAT1, QUEUE_FORMAT2])
