@@ -104,9 +104,9 @@ class WorkController(object):
             schedule_filename=None, task_time_limit=None,
             task_soft_time_limit=None, max_tasks_per_child=None,
             pool_putlocks=None, db=None, prefetch_multiplier=None,
-            eta_scheduler_precision=None, queues=None,
-            disable_rate_limits=None, autoscale=None,
-            autoscaler_cls=None, scheduler_cls=None, app=None):
+            eta_scheduler_precision=None, disable_rate_limits=None,
+            autoscale=None, autoscaler_cls=None, scheduler_cls=None,
+            app=None):
 
         self.app = app_or_default(app)
         conf = self.app.conf
@@ -151,8 +151,6 @@ class WorkController(object):
         self.db = db or conf.CELERYD_STATE_DB
         self.disable_rate_limits = disable_rate_limits or \
                                 conf.CELERY_DISABLE_RATE_LIMITS
-        self.queues = queues
-
         self._finalize = Finalize(self, self.stop, exitpriority=1)
         self._finalize_db = None
 
@@ -225,7 +223,6 @@ class WorkController(object):
                                     init_callback=self.ready_callback,
                                     initial_prefetch_count=prefetch_count,
                                     pool=self.pool,
-                                    queues=self.queues,
                                     app=self.app)
 
         # The order is important here;

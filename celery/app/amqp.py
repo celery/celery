@@ -55,6 +55,9 @@ class Queues(UserDict):
     :param queues: Initial mapping.
 
     """
+    #: If set, this is a subset of queues to consume from.
+    #: The rest of the queues are then used for routing only.
+    _consume_from = None
 
     def __init__(self, queues):
         self.data = {}
@@ -87,9 +90,12 @@ class Queues(UserDict):
 
     def format(self, indent=0, indent_first=True):
         """Format routing table into string for log dumps."""
+        queues = self
+        if self._consume_from is not None:
+            queues = self._consume_from
         info = [QUEUE_FORMAT.strip() % dict(
                     name=(name + ":").ljust(12), **config)
-                            for name, config in self.items()]
+                        for name, config in sorted(queues.items())]
         if indent_first:
             return textindent("\n".join(info), indent)
         return info[0] + "\n" + textindent("\n".join(info[1:]), indent)
@@ -116,8 +122,8 @@ class Queues(UserDict):
                     raise
                 options = self.options(queue, queue)
             acc[queue] = options
-        self.data.clear()
-        self.data.update(acc)
+        self._consume_from = acc
+        self.update(acc)
 
     @classmethod
     def with_defaults(cls, queues, default_exchange, default_exchange_type):
@@ -129,6 +135,12 @@ class Queues(UserDict):
             opts.setdefault("binding_key", default_exchange)
             opts.setdefault("routing_key", opts.get("binding_key"))
         return cls(queues)
+
+    @property
+    def consume_from(self):
+        if self._consume_from is not None:
+            return self._consume_from
+        return self
 
 
 class TaskPublisher(messaging.Publisher):
@@ -321,7 +333,8 @@ class AMQP(object):
     def get_task_consumer(self, connection, queues=None, **kwargs):
         """Return consumer configured to consume from all known task
         queues."""
-        return self.ConsumerSet(connection, from_dict=queues or self.queues,
+        return self.ConsumerSet(connection,
+                                from_dict=queues or self.queues.consume_from,
                                 **kwargs)
 
     def get_default_queue(self):
@@ -334,10 +347,6 @@ class AMQP(object):
     def queues(self):
         """Queue name⇒ declaration mapping."""
         return self.Queues(self.app.conf.CELERY_QUEUES)
-
-    @queues.setter
-    def queues(self, value):
-        return self.Queues(value)
 
     @property
     def routes(self):

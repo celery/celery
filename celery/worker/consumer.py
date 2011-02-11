@@ -220,7 +220,7 @@ class Consumer(object):
 
     def __init__(self, ready_queue, eta_schedule, logger,
             init_callback=noop, send_events=False, hostname=None,
-            initial_prefetch_count=2, pool=None, queues=None, app=None):
+            initial_prefetch_count=2, pool=None, app=None):
         self.app = app_or_default(app)
         self.connection = None
         self.task_consumer = None
@@ -246,7 +246,6 @@ class Consumer(object):
         conninfo = self.app.broker_connection()
         self.connection_errors = conninfo.connection_errors
         self.channel_errors = conninfo.channel_errors
-        self.queues = queues
 
     def start(self):
         """Start the consumer.
@@ -456,7 +455,6 @@ class Consumer(object):
         self.connection = self._open_connection()
         self.logger.debug("Consumer: Connection Established.")
         self.task_consumer = self.app.amqp.get_task_consumer(self.connection,
-                                    queues=self.queues,
                                     on_decode_error=self.on_decode_error)
         # QoS: Reset prefetch window.
         self.qos = QoS(self.task_consumer,

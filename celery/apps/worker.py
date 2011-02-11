@@ -151,7 +151,6 @@ class Worker(object):
                     "automatically declare unknown queues you have to "
                     "enable CELERY_CREATE_MISSING_QUEUES" % (
                         self.use_queues, exc))
-        self.queues = self.app.amqp.queues
 
     def init_loader(self):
         self.loader = self.app.loader
@@ -194,6 +193,7 @@ class Worker(object):
         return ""
 
     def startup_info(self):
+        app = self.app
         concurrency = self.concurrency
         if self.autoscale:
             cmax, cmin = self.autoscale
@@ -208,7 +208,7 @@ class Worker(object):
             "celerybeat": self.run_clockservice and "ON" or "OFF",
             "events": self.events and "ON" or "OFF",
             "loader": get_full_cls_name(self.loader.__class__),
-            "queues": self.queues.format(indent=18, indent_first=False),
+            "queues": app.amqp.queues.format(indent=18, indent_first=False),
         }
 
     def run_worker(self):
@@ -226,7 +226,6 @@ class Worker(object):
                                 scheduler_cls=self.scheduler_cls,
                                 send_events=self.events,
                                 db=self.db,
-                                queues=self.queues,
                                 max_tasks_per_child=self.max_tasks_per_child,
                                 task_time_limit=self.task_time_limit,
                                 task_soft_time_limit=self.task_soft_time_limit,
