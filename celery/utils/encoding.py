@@ -17,3 +17,8 @@ def safe_str(s, errors="replace"):
         return "<Unrepresentable %r: %r>" % (type(s), exc)
 
 
+def safe_repr(o, errors="replace"):
+    try:
+        return repr(o)
+    except Exception, exc:
+        return safe_str(o, errors)

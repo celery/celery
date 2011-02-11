@@ -8,6 +8,7 @@ from celery.utils import timeutils
 from celery.worker import state
 from celery.worker.state import revoked
 from celery.worker.control.registry import Panel
+from celery.utils.encoding import safe_repr
 
 TASK_INFO_FIELDS = ("exchange", "routing_key", "rate_limit")
 
@@ -128,7 +129,7 @@ def dump_reserved(panel, safe=False, **kwargs):
         panel.logger.info("--Empty queue--")
         return []
     panel.logger.info("* Dump of currently reserved tasks:\n%s" % (
-                            "\n".join(map(repr, reserved), )))
+                            "\n".join(map(safe_repr, reserved), )))
     return [request.info(safe=safe)
             for request in reserved]
 
