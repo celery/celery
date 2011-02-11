@@ -537,7 +537,7 @@ that queue in :setting:`CELERY_QUEUES`::
 You install router classes by adding them to the :setting:`CELERY_ROUTES`
 setting::
 
-    CELERY_ROUTES = (MyRouter, )
+    CELERY_ROUTES = (MyRouter(), )
 
 Router classes can also be added by name::
 
