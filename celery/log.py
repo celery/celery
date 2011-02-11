@@ -67,6 +67,7 @@ class Logging(object):
         self.app = app
         self.loglevel = self.app.conf.CELERYD_LOG_LEVEL
         self.format = self.app.conf.CELERYD_LOG_FORMAT
+        self.task_format = self.app.conf.CELERYD_TASK_LOG_FORMAT
         self.colorize = self.app.conf.CELERYD_LOG_COLOR
 
     def supports_color(self, logfile=None):
@@ -176,7 +177,7 @@ class Logging(object):
 
         """
         loglevel = loglevel or self.loglevel
-        format = format or self.format
+        format = format or self.task_format
         if colorize is None:
             colorize = self.supports_color(logfile)
 

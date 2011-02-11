@@ -16,7 +16,7 @@ DEFAULT_PROCESS_LOG_FMT = """
 """.strip()
 DEFAULT_LOG_FMT = '[%(asctime)s: %(levelname)s] %(message)s'
 DEFAULT_TASK_LOG_FMT = """[%(asctime)s: %(levelname)s/%(processName)s] \
-[%(task_name)s(%(task_id)s)] %(message)s"""
+%(task_name)s[%(task_id)s]: %(message)s"""
 
 
 def str_to_bool(term, table={"false": False, "no": False, "0": False,
