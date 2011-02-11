@@ -13,7 +13,7 @@ def safe_str(s, errors="replace"):
         if isinstance(s, unicode):
             return s.encode(encoding, errors)
         return unicode(s, encoding, errors)
-    except Exception:
-        return "<Unrepresentable %r>" % (type(s), )
+    except Exception, exc:
+        return "<Unrepresentable %r: %r>" % (type(s), exc)
 
 

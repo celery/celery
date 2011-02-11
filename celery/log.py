@@ -39,7 +39,11 @@ class ColorFormatter(logging.Formatter):
         color = self.colors.get(levelname)
 
         if self.use_color and color:
-            record.msg = unicode(color(safe_str(record.msg)))
+            try:
+                record.msg = color(unicode(record.msg, "utf-8", "replace"))
+            except Exception, exc:
+                record.msg = "<Unrepresentable %r: %r>" % (type(record.msg),
+                                                           exc)
 
         # Very ugly, but have to make sure processName is supported
         # by foreign logger instances.
