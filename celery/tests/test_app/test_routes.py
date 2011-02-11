@@ -20,11 +20,14 @@ def with_queues(**queues):
         def __inner(*args, **kwargs):
             app = current_app
             prev_queues = app.conf.CELERY_QUEUES
+            prev_Queues = app.amqp.queues
             app.conf.CELERY_QUEUES = queues
+            app.amqp.queues = app.amqp.Queues(queues)
             try:
                 return fun(*args, **kwargs)
             finally:
                 app.conf.CELERY_QUEUES = prev_queues
+                app.amqp.queues = prev_Queues
         return __inner
     return patch_fun
 
@@ -109,7 +112,7 @@ class test_lookup_route(unittest.TestCase):
     def test_lookup_paths_traversed(self):
         R = routes.prepare(({"celery.xaza": {"queue": "bar"}},
                             {"celery.ping": {"queue": "foo"}}))
-        router = routes.Router(R, current_app.conf.CELERY_QUEUES)
+        router = routes.Router(R, current_app.amqp.queues)
         self.assertDictContainsSubset(a_queue,
                 router.route({}, "celery.ping",
                     args=[1, 2], kwargs={}))
