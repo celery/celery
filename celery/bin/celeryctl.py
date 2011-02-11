@@ -190,6 +190,7 @@ result = command(result)
 
 class inspect(Command):
     choices = {"active": 1.0,
+               "active_queues": 1.0,
                "scheduled": 1.0,
                "reserved": 1.0,
                "stats": 1.0,
