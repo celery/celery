@@ -64,8 +64,8 @@ This is an example configuration for a Python project.
     CELERYD_PID_FILE="/var/run/celery/%n.pid"
 
     # Workers should run as an unprivileged user.
-    CELERYD_USER = "celery"
-    CELERYD_GROUP = "celery"
+    CELERYD_USER="celery"
+    CELERYD_GROUP="celery"
 
 .. _generic-initd-celeryd-django-example:
 
@@ -96,8 +96,8 @@ This is an example configuration for those using `django-celery`::
     CELERYD_PID_FILE="/var/run/celery/%n.pid"
 
     # Workers should run as an unprivileged user.
-    CELERYD_USER = "celery"
-    CELERYD_GROUP = "celery"
+    CELERYD_USER="celery"
+    CELERYD_GROUP="celery"
 
     # Name of the projects settings module.
     export DJANGO_SETTINGS_MODULE="settings"
@@ -171,7 +171,7 @@ This is an example configuration for a Python project.
     CELERYD_CHDIR="/opt/Myproject/"
 
     # Extra arguments to celeryd
-    CELERYD_OPTS="--time-limit 300"
+    CELERYD_OPTS="--time-limit=300"
 
     # Name of the celery config module.#
     CELERY_CONFIG_MODULE="celeryconfig"
@@ -243,7 +243,7 @@ This is an example configuration for a Python project:
     CELERYD_CHDIR="/opt/Myproject/"
 
     # Extra arguments to celeryd
-    CELERYD_OPTS="--time-limit 300"
+    CELERYD_OPTS="--time-limit=300"
 
     # Extra arguments to celerybeat
     CELERYBEAT_OPTS="--schedule=/var/run/celerybeat-schedule"
@@ -262,7 +262,7 @@ This is an example configuration for those using `django-celery`::
     CELERYD_CHDIR="/opt/Project/"
 
     # Name of the projects settings module.
-    DJANGO_SETTINGS_MODULE="settings"
+    export DJANGO_SETTINGS_MODULE="settings"
 
     # Path to celeryd
     CELERYD="/opt/Project/manage.py celeryd"

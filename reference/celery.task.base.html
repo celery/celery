@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.task.base &mdash; Celery v2.2.1 documentation</title>
+    <title>celery.task.base &mdash; Celery v2.2.3 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.1',
+        VERSION:     '2.2.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.3 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.task.sets" href="celery.task.sets.html" />
     <link rel="prev" title="celery.task" href="celery.task.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.task.html" title="celery.task"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.3 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -244,7 +244,7 @@ Defaults to the <a class="reference internal" href="#celery.task.base.BaseTask.s
 to use.  Can be one of <tt class="docutils literal"><span class="pre">zlib</span></tt>, <tt class="docutils literal"><span class="pre">bzip2</span></tt>,
 or any custom compression methods registered with
 <tt class="xref py py-func docutils literal"><span class="pre">kombu.compression.register()</span></tt>. Defaults to
-the <tt class="xref std std-setting docutils literal"><span class="pre">CELERY_MESSAGE_COMPRESSION</span></tt>
+the <a class="reference internal" href="../configuration.html#std:setting-CELERY_MESSAGE_COMPRESSION"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_MESSAGE_COMPRESSION</span></tt></a>
 setting.</li>
 </ul>
 </td>
@@ -540,7 +540,7 @@ a minute),`&#8221;100/h&#8221;` (hundred tasks an hour)</p>
 
 <dl class="classmethod">
 <dt id="celery.task.base.BaseTask.retry">
-<em class="property">classmethod </em><tt class="descclassname">BaseTask.</tt><tt class="descname">retry</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>exc=None</em>, <em>throw=True</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.retry" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descclassname">BaseTask.</tt><tt class="descname">retry</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>exc=None</em>, <em>throw=True</em>, <em>eta=None</em>, <em>countdown=None</em>, <em>max_retries=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.retry" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retry the task.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -555,6 +555,7 @@ when the max restart limit has been exceeded.</li>
 <li><strong>countdown</strong> &#8211; Time in seconds to delay the retry for.</li>
 <li><strong>eta</strong> &#8211; Explicit time and date to run the retry at
 (must be a <tt class="xref py py-class docutils literal"><span class="pre">datetime</span></tt> instance).</li>
+<li><strong>max_retries</strong> &#8211; If set, overrides the default retry limit.</li>
 <li><strong>**options</strong> &#8211; Any extra options to pass on to
 meth:<cite>apply_async</cite>.</li>
 <li><strong>throw</strong> &#8211; If this is <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt>, do not raise the
@@ -830,7 +831,7 @@ set to the name of the module it was defined in, and the class name.</p>
         <li class="right" >
           <a href="celery.task.html" title="celery.task"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.3 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

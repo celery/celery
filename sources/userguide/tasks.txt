@@ -44,7 +44,7 @@ Context
 =======
 
 `task.request` contains information and state related
-the currently excuting task, and must always contain the following
+the currently executing task, and must always contain the following
 attributes:
 
 :id: The unique id of the executing task.

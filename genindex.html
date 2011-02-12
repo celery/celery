@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Index &mdash; Celery v2.2.1 documentation</title>
+    <title>Index &mdash; Celery v2.2.3 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '2.2.1',
+        VERSION:     '2.2.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.1 documentation" href="index.html" /> 
+    <link rel="top" title="Celery v2.2.3 documentation" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -34,7 +34,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Celery v2.2.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.2.3 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -345,7 +345,6 @@
 <table width="100%" class="indextable genindextable"><tr>
   <td width="33%" valign="top"><dl>
     <dt><a href="internals/reference/celery.backends.cache.html#celery.backends.cache.CacheBackend">CacheBackend (class in celery.backends.cache)</a></dt>
-    <dt><a href="internals/reference/celery.utils.html#celery.utils.cached_property">cached_property (in module celery.utils)</a></dt>
     <dt><a href="internals/reference/celery.utils.dispatch.saferef.html#celery.utils.dispatch.saferef.BoundMethodWeakref.calculate_key">calculate_key() (celery.utils.dispatch.saferef.BoundMethodWeakref class method)</a></dt>
     <dt><a href="reference/celery.task.control.html#celery.task.control.Control.Mailbox.call">call() (celery.task.control.Control.Mailbox method)</a></dt>
     <dt><a href="internals/reference/celery.worker.controllers.html#celery.worker.controllers.Mediator.callback">callback (celery.worker.controllers.Mediator attribute)</a></dt>
@@ -438,6 +437,7 @@
     <dt><a href="internals/reference/celery.utils.dispatch.html#module-celery.utils.dispatch">celery.utils.dispatch (module)</a></dt>
     <dt><a href="internals/reference/celery.utils.dispatch.saferef.html#module-celery.utils.dispatch.saferef">celery.utils.dispatch.saferef (module)</a></dt>
     <dt><a href="internals/reference/celery.utils.dispatch.signal.html#module-celery.utils.dispatch.signal">celery.utils.dispatch.signal (module)</a></dt>
+    <dt><a href="internals/reference/celery.utils.encoding.html#module-celery.utils.encoding">celery.utils.encoding (module)</a></dt>
     <dt><a href="internals/reference/celery.utils.functional.html#module-celery.utils.functional">celery.utils.functional (module)</a></dt>
     <dt><a href="internals/reference/celery.utils.mail.html#module-celery.utils.mail">celery.utils.mail (module)</a></dt>
     <dt><a href="internals/reference/celery.utils.patch.html#module-celery.utils.patch">celery.utils.patch (module)</a></dt>
@@ -460,6 +460,10 @@
     <dt>CELERY_ALWAYS_EAGER</dt>
     <dd><dl>
       <dt><a href="configuration.html#std:setting-CELERY_ALWAYS_EAGER">setting</a></dt>
+  </dl></dd>
+    <dt>CELERY_AMQP_TASK_RESULT_CONNECTION_MAX</dt>
+    <dd><dl>
+      <dt><a href="configuration.html#std:setting-CELERY_AMQP_TASK_RESULT_CONNECTION_MAX">setting</a></dt>
   </dl></dd>
     <dt>CELERY_AMQP_TASK_RESULT_EXPIRES</dt>
     <dd><dl>
@@ -538,8 +542,6 @@
     <dd><dl>
       <dt><a href="configuration.html#std:setting-CELERY_EVENT_EXCHANGE_TYPE">setting</a></dt>
   </dl></dd>
-</dl></td>
-  <td width="33%" valign="top"><dl>
     <dt>CELERY_EVENT_QUEUE</dt>
     <dd><dl>
       <dt><a href="configuration.html#std:setting-CELERY_EVENT_QUEUE">setting</a></dt>
@@ -548,6 +550,8 @@
     <dd><dl>
       <dt><a href="configuration.html#std:setting-CELERY_EVENT_ROUTING_KEY">setting</a></dt>
   </dl></dd>
+</dl></td>
+  <td width="33%" valign="top"><dl>
     <dt>CELERY_EVENT_SERIALIZER</dt>
     <dd><dl>
       <dt><a href="configuration.html#std:setting-CELERY_EVENT_SERIALIZER">setting</a></dt>
@@ -564,6 +568,10 @@
     <dt>CELERY_MAX_CACHED_RESULTS</dt>
     <dd><dl>
       <dt><a href="configuration.html#std:setting-CELERY_MAX_CACHED_RESULTS">setting</a></dt>
+  </dl></dd>
+    <dt>CELERY_MESSAGE_COMPRESSION</dt>
+    <dd><dl>
+      <dt><a href="configuration.html#std:setting-CELERY_MESSAGE_COMPRESSION">setting</a></dt>
   </dl></dd>
     <dt>CELERY_MONGODB_BACKEND_SETTINGS</dt>
     <dd><dl>
@@ -698,6 +706,10 @@
       <dt><a href="reference/celery.bin.celeryd.html#cmdoption-celeryd-n">-n, --hostname</a></dt>
       <dt><a href="reference/celery.bin.celeryd.html#cmdoption-celeryd-s">-s, --schedule</a></dt>
   </dl></dd>
+    <dt>CELERYD_AUTOSCALER</dt>
+    <dd><dl>
+      <dt><a href="configuration.html#std:setting-CELERYD_AUTOSCALER">setting</a></dt>
+  </dl></dd>
     <dt>CELERYD_CONCURRENCY</dt>
     <dd><dl>
       <dt><a href="configuration.html#std:setting-CELERYD_CONCURRENCY">setting</a></dt>
@@ -713,6 +725,14 @@
     <dt>CELERYD_ETA_SCHEDULER_PRECISION</dt>
     <dd><dl>
       <dt><a href="configuration.html#std:setting-CELERYD_ETA_SCHEDULER_PRECISION">setting</a></dt>
+  </dl></dd>
+    <dt>CELERYD_HIJACK_ROOT_LOGGER</dt>
+    <dd><dl>
+      <dt><a href="configuration.html#std:setting-CELERYD_HIJACK_ROOT_LOGGER">setting</a></dt>
+  </dl></dd>
+    <dt>CELERYD_LOG_COLOR</dt>
+    <dd><dl>
+      <dt><a href="configuration.html#std:setting-CELERYD_LOG_COLOR">setting</a></dt>
   </dl></dd>
     <dt>CELERYD_LOG_FILE</dt>
     <dd><dl>
@@ -933,7 +953,7 @@
     <dt><a href="internals/reference/celery.worker.consumer.html#celery.worker.consumer.QoS.decrement">decrement() (celery.worker.consumer.QoS method)</a></dt>
     <dt><a href="internals/reference/celery.worker.consumer.html#celery.worker.consumer.QoS.decrement_eventually">decrement_eventually() (celery.worker.consumer.QoS method)</a></dt>
     <dt><a href="reference/celery.bin.camqadm.html#celery.bin.camqadm.AMQShell.default">default() (celery.bin.camqadm.AMQShell method)</a></dt>
-    <dt><a href="internals/reference/celery.worker.job.html#celery.worker.job.default_encoding">default_encoding() (in module celery.worker.job)</a></dt>
+    <dt><a href="internals/reference/celery.utils.encoding.html#celery.utils.encoding.default_encoding">default_encoding() (in module celery.utils.encoding)</a></dt>
     <dt><a href="reference/celery.task.base.html#celery.task.base.BaseTask.default_retry_delay">default_retry_delay (celery.task.base.BaseTask attribute)</a></dt>
     <dd><dl>
       <dt><a href="userguide/tasks.html#Task.default_retry_delay">(Task attribute)</a></dt>
@@ -2185,7 +2205,8 @@
     <dt><a href="internals/reference/celery.events.cursesmon.html#celery.events.cursesmon.CursesMonitor.safe_add_str">safe_add_str() (celery.events.cursesmon.CursesMonitor method)</a></dt>
     <dt><a href="internals/reference/celery.concurrency.base.html#celery.concurrency.base.BasePool.safe_apply_callback">safe_apply_callback() (celery.concurrency.base.BasePool method)</a></dt>
     <dt><a href="internals/reference/celery.utils.dispatch.saferef.html#celery.utils.dispatch.saferef.safe_ref">safe_ref() (in module celery.utils.dispatch.saferef)</a></dt>
-    <dt><a href="internals/reference/celery.worker.job.html#celery.worker.job.safe_str">safe_str() (in module celery.worker.job)</a></dt>
+    <dt><a href="internals/reference/celery.utils.encoding.html#celery.utils.encoding.safe_repr">safe_repr() (in module celery.utils.encoding)</a></dt>
+    <dt><a href="internals/reference/celery.utils.encoding.html#celery.utils.encoding.safe_str">safe_str() (in module celery.utils.encoding)</a></dt>
     <dt><a href="reference/celery.result.html#celery.result.TaskSetResult.save">save() (celery.result.TaskSetResult method)</a></dt>
     <dd><dl>
       <dt><a href="internals/reference/celery.worker.state.html#celery.worker.state.Persistent.save">(celery.worker.state.Persistent method)</a></dt>
@@ -2284,6 +2305,7 @@
     <dd><dl>
       <dt><a href="internals/reference/celery.platforms.html#celery.platforms.set_process_title">(in module celery.platforms)</a></dt>
   </dl></dd>
+    <dt><a href="internals/reference/celery.beat.html#celery.beat.Scheduler.set_schedule">set_schedule() (celery.beat.Scheduler method)</a></dt>
     <dt><a href="reference/celery.contrib.rdb.html#celery.contrib.rdb.set_trace">set_trace() (in module celery.contrib.rdb)</a></dt>
     <dt><a href="internals/reference/celery.datastructures.html#celery.datastructures.ConfigurationView.setdefault">setdefault() (celery.datastructures.ConfigurationView method)</a></dt>
     <dd><dl>
@@ -2309,10 +2331,13 @@
       <dt><a href="configuration.html#std:setting-CELERYBEAT_SCHEDULE">CELERYBEAT_SCHEDULE</a></dt>
       <dt><a href="configuration.html#std:setting-CELERYBEAT_SCHEDULER">CELERYBEAT_SCHEDULER</a></dt>
       <dt><a href="configuration.html#std:setting-CELERYBEAT_SCHEDULE_FILENAME">CELERYBEAT_SCHEDULE_FILENAME</a></dt>
+      <dt><a href="configuration.html#std:setting-CELERYD_AUTOSCALER">CELERYD_AUTOSCALER</a></dt>
       <dt><a href="configuration.html#std:setting-CELERYD_CONCURRENCY">CELERYD_CONCURRENCY</a></dt>
       <dt><a href="configuration.html#std:setting-CELERYD_CONSUMER">CELERYD_CONSUMER</a></dt>
       <dt><a href="configuration.html#std:setting-CELERYD_ETA_SCHEDULER">CELERYD_ETA_SCHEDULER</a></dt>
       <dt><a href="configuration.html#std:setting-CELERYD_ETA_SCHEDULER_PRECISION">CELERYD_ETA_SCHEDULER_PRECISION</a></dt>
+      <dt><a href="configuration.html#std:setting-CELERYD_HIJACK_ROOT_LOGGER">CELERYD_HIJACK_ROOT_LOGGER</a></dt>
+      <dt><a href="configuration.html#std:setting-CELERYD_LOG_COLOR">CELERYD_LOG_COLOR</a></dt>
       <dt><a href="configuration.html#std:setting-CELERYD_LOG_FILE">CELERYD_LOG_FILE</a></dt>
       <dt><a href="configuration.html#std:setting-CELERYD_LOG_FORMAT">CELERYD_LOG_FORMAT</a></dt>
       <dt><a href="configuration.html#std:setting-CELERYD_LOG_LEVEL">CELERYD_LOG_LEVEL</a></dt>
@@ -2329,6 +2354,7 @@
       <dt><a href="configuration.html#std:setting-CELERYMON_LOG_LEVEL">CELERYMON_LOG_LEVEL</a></dt>
       <dt><a href="configuration.html#std:setting-CELERY_ACKS_LATE">CELERY_ACKS_LATE</a></dt>
       <dt><a href="configuration.html#std:setting-CELERY_ALWAYS_EAGER">CELERY_ALWAYS_EAGER</a></dt>
+      <dt><a href="configuration.html#std:setting-CELERY_AMQP_TASK_RESULT_CONNECTION_MAX">CELERY_AMQP_TASK_RESULT_CONNECTION_MAX</a></dt>
       <dt><a href="configuration.html#std:setting-CELERY_AMQP_TASK_RESULT_EXPIRES">CELERY_AMQP_TASK_RESULT_EXPIRES</a></dt>
       <dt><a href="configuration.html#std:setting-CELERY_BROADCASTS_EXCHANGE">CELERY_BROADCASTS_EXCHANGE</a></dt>
       <dt><a href="configuration.html#std:setting-CELERY_BROADCAST_EXCHANGE_TYPE">CELERY_BROADCAST_EXCHANGE_TYPE</a></dt>
@@ -2354,6 +2380,7 @@
       <dt><a href="configuration.html#std:setting-CELERY_IGNORE_RESULT">CELERY_IGNORE_RESULT</a></dt>
       <dt><a href="configuration.html#std:setting-CELERY_IMPORTS">CELERY_IMPORTS</a></dt>
       <dt><a href="configuration.html#std:setting-CELERY_MAX_CACHED_RESULTS">CELERY_MAX_CACHED_RESULTS</a></dt>
+      <dt><a href="configuration.html#std:setting-CELERY_MESSAGE_COMPRESSION">CELERY_MESSAGE_COMPRESSION</a></dt>
       <dt><a href="configuration.html#std:setting-CELERY_MONGODB_BACKEND_SETTINGS">CELERY_MONGODB_BACKEND_SETTINGS</a></dt>
       <dt><a href="configuration.html#std:setting-CELERY_QUEUES">CELERY_QUEUES</a></dt>
       <dt><a href="configuration.html#std:setting-CELERY_REDIRECT_STDOUTS">CELERY_REDIRECT_STDOUTS</a></dt>
@@ -2388,9 +2415,9 @@
   </dl></dd>
     <dt><a href="reference/celery.bin.base.html#celery.bin.base.Command.setup_app_from_commandline">setup_app_from_commandline() (celery.bin.base.Command method)</a></dt>
     <dt><a href="reference/celery.loaders.html#celery.loaders.setup_loader">setup_loader() (in module celery.loaders)</a></dt>
-    <dt><a href="internals/reference/celery.log.html#celery.log.Logging.setup_logger">setup_logger() (celery.log.Logging method)</a></dt>
 </dl></td>
   <td width="33%" valign="top"><dl>
+    <dt><a href="internals/reference/celery.log.html#celery.log.Logging.setup_logger">setup_logger() (celery.log.Logging method)</a></dt>
     <dt><a href="reference/celery.apps.beat.html#celery.apps.beat.Beat.setup_logging">setup_logging() (celery.apps.beat.Beat method)</a></dt>
     <dt><a href="internals/reference/celery.log.html#celery.log.Logging.setup_logging_subsystem">setup_logging_subsystem() (celery.log.Logging method)</a></dt>
     <dt><a href="internals/reference/celery.db.session.html#celery.db.session.setup_results">setup_results() (in module celery.db.session)</a></dt>
@@ -2847,7 +2874,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Celery v2.2.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.2.3 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

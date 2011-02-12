@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Routing Tasks &mdash; Celery v2.2.1 documentation</title>
+    <title>Routing Tasks &mdash; Celery v2.2.3 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.1',
+        VERSION:     '2.2.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.3 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Monitoring and Management Guide" href="monitoring.html" />
     <link rel="prev" title="HTTP Callback Tasks (Webhooks)" href="remote-tasks.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="remote-tasks.html" title="HTTP Callback Tasks (Webhooks)"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.3 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -120,7 +120,7 @@ configuration:</p>
 </div>
 <p>With this route enabled import feed tasks will be routed to the
 <cite>&#8220;feeds&#8221;</cite> queue, while all other tasks will be routed to the default queue
-(named <cite>&#8220;celery&#8221;</cite> for historic reasons).</p>
+(named <cite>&#8220;celery&#8221;</cite> for historical reasons).</p>
 <p>Now you can start server <cite>z</cite> to only process the feeds queue like this:</p>
 <div class="highlight-python"><pre>(z)$ celeryd -Q feeds</pre>
 </div>
@@ -535,7 +535,7 @@ becomes --&gt;
 </div>
 <p>You install router classes by adding them to the <a class="reference internal" href="../configuration.html#std:setting-CELERY_ROUTES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ROUTES</span></tt></a>
 setting:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_ROUTES</span> <span class="o">=</span> <span class="p">(</span><span class="n">MyRouter</span><span class="p">,</span> <span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_ROUTES</span> <span class="o">=</span> <span class="p">(</span><span class="n">MyRouter</span><span class="p">(),</span> <span class="p">)</span>
 </pre></div>
 </div>
 <p>Router classes can also be added by name:</p>
@@ -608,7 +608,7 @@ returning a true value, and use that as the final route for the task.</p>
         <li class="right" >
           <a href="remote-tasks.html" title="HTTP Callback Tasks (Webhooks)"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.3 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>

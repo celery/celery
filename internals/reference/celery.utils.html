@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.utils &mdash; Celery v2.2.1 documentation</title>
+    <title>celery.utils &mdash; Celery v2.2.3 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.2.1',
+        VERSION:     '2.2.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.2.3 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.utils.term" href="celery.utils.term.html" />
     <link rel="prev" title="celery.db.session" href="celery.db.session.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.db.session.html" title="celery.db.session"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.3 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -74,31 +74,6 @@
 <dt id="celery.utils.abbrtask">
 <tt class="descclassname">celery.utils.</tt><tt class="descname">abbrtask</tt><big>(</big><em>S</em>, <em>max</em><big>)</big><a class="headerlink" href="#celery.utils.abbrtask" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
-
-<dl class="attribute">
-<dt id="celery.utils.cached_property">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">cached_property</tt><a class="headerlink" href="#celery.utils.cached_property" title="Permalink to this definition">¶</a></dt>
-<dd><p>Property descriptor that caches the return value
-of the get function.</p>
-<p><em>Examples</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span class="nd">@cached_property</span>
-<span class="k">def</span> <span class="nf">connection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">Connection</span><span class="p">()</span>
-
-<span class="nd">@connection.setter</span>  <span class="c"># Prepares stored value</span>
-<span class="k">def</span> <span class="nf">connection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Connection must be a connection&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">value</span>
-
-<span class="nd">@connection.deleter</span>
-<span class="k">def</span> <span class="nf">connection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-    <span class="c"># Additional action to do at del(self.attr)</span>
-    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Connection </span><span class="si">%r</span><span class="s"> deleted&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">))</span>
-</pre></div>
-</div>
-</dd></dl>
 
 <dl class="function">
 <dt id="celery.utils.chunks">
@@ -428,7 +403,7 @@ memoized (see <a class="reference internal" href="#celery.utils.mpromise" title=
         <li class="right" >
           <a href="celery.db.session.html" title="celery.db.session"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.3 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
