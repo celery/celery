@@ -1,9 +1,10 @@
 """
+==============
 celery.signals
 ==============
 
-Signals allows decoupled applications receive notifications when actions
-occur elsewhere in the framework.
+Signals allows decoupled applications to receive notifications when certain actions
+occur.
 
 :copyright: (c) 2009 - 2011 by Ask Solem.
 :license: BSD, see LICENSE for more details.
@@ -14,12 +15,12 @@ occur elsewhere in the framework.
 .. _signal-basics:
 
 Basics
-------
+======
 
 Several kinds of events trigger signals, you can connect to these signals
 to perform actions as they trigger.
 
-Example connecting to the :data:`task_sent` signal:
+Example connecting to the :signal:`task_sent` signal:
 
 .. code-block:: python
 
@@ -33,7 +34,7 @@ Example connecting to the :data:`task_sent` signal:
 
 
 Some signals also have a sender which you can filter by. For example the
-:data:`task_sent` signal uses the task name as a sender, so you can
+:signal:`task_sent` signal uses the task name as a sender, so you can
 connect your handler to be called only when tasks with name `"tasks.add"`
 has been sent by providing the `sender` argument to
 :class:`~celery.utils.dispatch.signal.Signal.connect`:
@@ -45,135 +46,170 @@ has been sent by providing the `sender` argument to
 .. _signal-ref:
 
 Signals
--------
+=======
 
 Task Signals
+------------
+
+.. signal:: task_sent
+
+task_sent
+~~~~~~~~~
+
+Dispatched when a task has been sent to the broker.
+Note that this is executed in the client process, the one sending
+the task, not in the worker.
+
+Sender is the name of the task being sent.
+
+Provides arguments:
+
+* task_id
+    Id of the task to be executed.
+
+* task
+    The task being executed.
+
+* args
+    the tasks positional arguments.
+
+* kwargs
+    The tasks keyword arguments.
+
+* eta
+    The time to execute the task.
+
+* taskset
+    Id of the taskset this task is part of (if any).
+
+.. signal:: task_prerun
+
+task_prerun
+~~~~~~~~~~~
+
+Dispatched before a task is executed.
+
+Sender is the task class being executed.
+
+Provides arguments:
+
+* task_id
+    Id of the task to be executed.
+
+* task
+    The task being executed.
+
+* args
+    the tasks positional arguments.
+
+* kwargs
+    The tasks keyword arguments.
+
+.. signal:: task_postrun
+
+task_postrun
 ~~~~~~~~~~~~
 
-.. data:: task_sent
+Dispatched after a task has been executed.
 
-    Dispatched when a task has been sent to the broker.
-    Note that this is executed in the client process, the one sending
-    the task, not in the worker.
+Sender is the task class executed.
 
-    Sender is the name of the task being sent.
+Provides arguments:
 
-    Provides arguments:
+* task_id
+    Id of the task to be executed.
 
-    * task_id
-        Id of the task to be executed.
+* task
+    The task being executed.
 
-    * task
-        The task being executed.
+* args
+    The tasks positional arguments.
 
-    * args
-        the tasks positional arguments.
+* kwargs
+    The tasks keyword arguments.
 
-    * kwargs
-        The tasks keyword arguments.
+* retval
+    The return value of the task.
 
-    * eta
-        The time to execute the task.
+.. signal:: task_failure
 
-    * taskset
-        Id of the taskset this task is part of (if any).
+task_failure
+~~~~~~~~~~~~
 
-.. data:: task_prerun
+Dispatched when a task fails.
 
-    Dispatched before a task is executed.
+Sender is the task class executed.
 
-    Sender is the task class being executed.
+Provides arguments:
 
-    Provides arguments:
+* task_id
+    Id of the task.
 
-    * task_id
-        Id of the task to be executed.
+* exception
+    Exception instance raised.
 
-    * task
-        The task being executed.
+* args
+    Positional arguments the task was called with.
 
-    * args
-        the tasks positional arguments.
+* kwargs
+    Keyword arguments the task was called with.
 
-    * kwargs
-        The tasks keyword arguments.
+* traceback
+    Stack trace object.
 
-.. data:: task_postrun
-
-    Dispatched after a task has been executed.
-
-    Sender is the task class executed.
-
-    Provides arguments:
-
-    * task_id
-        Id of the task to be executed.
-
-    * task
-        The task being executed.
-
-    * args
-        The tasks positional arguments.
-
-    * kwargs
-        The tasks keyword arguments.
-
-    * retval
-        The return value of the task.
-
-.. data:: task_failure
-
-    Dispatched when a task fails.
-
-    Sender is the task class executed.
-
-    Provides arguments:
-
-    * task_id
-        Id of the task.
-    * exception
-        Exception instance raised.
-    * args
-        Positional arguments the task was called with.
-    * kwargs
-        Keyword arguments the task was called with.
-    * traceback
-        Stack trace object.
-    * einfo
-        The :class:`celery.datastructures.ExceptionInfo` instance.
+* einfo
+    The :class:`celery.datastructures.ExceptionInfo` instance.
 
 Worker Signals
-~~~~~~~~~~~~~~
+--------------
 
-.. data:: worker_init
+.. signal:: worker_init
 
-    Dispatched before the worker is started.
+worker_init
+~~~~~~~~~~~
 
-.. data:: worker_ready
+Dispatched before the worker is started.
 
-    Dispatched when the worker is ready to accept work.
+.. signal:: worker_ready
 
-.. data:: worker_process_init
+worker_ready
+~~~~~~~~~~~~
 
-    Dispatched by each new pool worker process when it starts.
+Dispatched when the worker is ready to accept work.
 
-.. data:: worker_shutdown
+.. signal:: worker_process_init
 
-    Dispatched when the worker is about to shut down.
+worker_process_init
+~~~~~~~~~~~~~~~~~~~
+
+Dispatched by each new pool worker process when it starts.
+
+.. signal:: worker_shutdown
+
+worker_shutdown
+~~~~~~~~~~~~~~~
+
+Dispatched when the worker is about to shut down.
 
 Celerybeat Signals
+------------------
+
+.. signal:: beat_init
+
+beat_init
+~~~~~~~~~
+
+Dispatched when celerybeat starts (either standalone or embedded).
+Sender is the :class:`celery.beat.Service` instance.
+
+.. signal:: beat_embedded_init
+
+beat_embedded_init
 ~~~~~~~~~~~~~~~~~~
 
-.. data:: beat_init
-
-    Dispatched when celerybeat starts (either standalone or embedded).
-    Sender is the :class:`celery.beat.Service` instance.
-
-.. data:: beat_embedded_init
-
-    Dispatched in addition to the :data:`beat_init` signal when celerybeat is
-    started as an embedded process.  Sender is the
-    :class:`celery.beat.Service` instance.
+Dispatched in addition to the :signal:`beat_init` signal when celerybeat is
+started as an embedded process.  Sender is the
+:class:`celery.beat.Service` instance.
 
 
 """

@@ -1099,7 +1099,7 @@ this behavior.
 .. note::
 
     Logging can also be customized by connecting to the
-    :data:`celery.signals.setup_logging` signal.
+    :signal:`celery.signals.setup_logging` signal.
 
 .. setting:: CELERYD_LOG_FILE
 

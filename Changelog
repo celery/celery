@@ -591,14 +591,14 @@ News
 
 * Added signals: `beat_init` and `beat_embedded_init`
 
-    * :data:`celery.signals.beat_init`
+    * :signal:`celery.signals.beat_init`
 
         Dispatched when :program:`celerybeat` starts (either standalone or
         embedded).  Sender is the :class:`celery.beat.Service` instance.
 
-    * :data:`celery.signals.beat_embedded_init`
+    * :signal:`celery.signals.beat_embedded_init`
 
-        Dispatched in addition to the :data:`beat_init` signal when
+        Dispatched in addition to the :signal:`beat_init` signal when
         :program:`celerybeat` is started as an embedded process.  Sender
         is the :class:`celery.beat.Service` instance.
 
@@ -1110,7 +1110,7 @@ News
     Unless you configure the loggers manually as shown below, that is.
 
     *Users can choose to configure logging by subscribing to the
-    :data:`~celery.signals.setup_logging` signal:*
+    :signal:`~celery.signals.setup_logging` signal:*
 
     .. code-block:: python
 
@@ -2267,7 +2267,7 @@ News
 * `apply(throw=True)` / :setting:`CELERY_EAGER_PROPAGATES_EXCEPTIONS`:
   Makes eager execution re-raise task errors.
 
-* New signal: :data:`~celery.signals.worker_process_init`: Sent inside the
+* New signal: :signal:`~celery.signals.worker_process_init`: Sent inside the
   pool worker process at init.
 
 * celeryd :option:`-Q` option: Ability to specify list of queues to use,
