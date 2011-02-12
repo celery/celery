@@ -150,9 +150,16 @@ class Timer(Thread):
         self.setDaemon(True)
         self.setName("Timer-%s" % (self._timer_count(), ))
 
+    def _get_thread_report_name(self):
+            try:
+                return self.ident
+            except AttributeError:  # Py<=2.4
+                return self.getName()
+
     if TRACE_THREAD:
         def start(self, *args, **kwargs):
-            self._started_by[self.ident] = traceback.format_stack()
+            ident = self._get_thread_report_name()
+            self._started_by[ident] = traceback.format_stack()
             return Thread.start(self, *args, **kwargs)
 
     def apply_entry(self, entry):
@@ -202,7 +209,7 @@ class Timer(Thread):
             self.join(1e100)
             self.running = False
             if TRACE_THREAD:
-                self._started_by.pop(self.ident, None)
+                self._started_by.pop(self._get_thread_report_name(), None)
 
     def ensure_started(self):
         if not self.running and not self.is_alive():
