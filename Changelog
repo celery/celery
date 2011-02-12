@@ -5,6 +5,58 @@
 .. contents::
     :local:
 
+2.2.3
+=====
+:release-date: 2011-02-12 16:00 PM CET
+
+.. _v223-fixes:
+
+Fixes
+-----
+
+* Now depends on Kombu 1.0.3
+
+* Task.retry now supports a ``max_retries`` argument, used to change the
+  default value.
+
+* `multiprocessing.cpu_count` may raise :exc:`NotImplementedError` on
+  platforms where this is not supported (Issue #320).
+
+* Coloring of log messages broke if the logged object was not a string.
+
+* Fixed several typos in the init script documentation.
+
+* A regression caused `Task.exchange` and `Task.routing_key` to no longer
+  have any effect.  This is now fixed.
+
+* Routing Userguide: Fixes typo, routers in :setting:`CELERY_ROUTES` must be
+  instances, not classes.
+
+* Task logger format was no longer used. (Issue #317).
+
+   The id and name of the task is now part of the log message again.
+
+* A safe version of ``repr()`` is now used in strategic places to ensure
+  objects with a broken ``__repr__`` does not crash the worker, or otherwise
+  make errors hard to understand (Issue #298).
+
+* Remote control command ``active_queues``: did not account for queues added
+  at runtime.
+
+    In addition the dictionary replied by this command now has a different
+    structure: the exchange key is now a dictionary containing the
+    exchange declaration in full.
+
+* The :option:`-Q` option to :program:`celeryd` removed unused queue
+  declarations, so routing of tasks could fail.
+
+    Queues are no longer removed, but rather `app.amqp.queues.consume_from()`
+    is used as the list of queues to consume from.
+
+    This ensures all queues are available for routing purposes.
+
+* celeryctl: Now supports the `inspect active_queues` command.
+
 .. _version-2.2.2:
 
 2.2.2
