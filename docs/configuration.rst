@@ -198,6 +198,15 @@ The time in seconds of which the task result queues should expire.
 
     AMQP result expiration requires RabbitMQ versions 2.1.0 and higher.
 
+.. setting:: CELERY_AMQP_TASK_RESULT_CONNECTION_MAX
+
+CELERY_AMQP_TASK_RESULT_CONNECTION_MAX
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Maximum number of connections used by the AMQP result backend simultaneously.
+
+Default is 1 (a single connection per process).
+
 .. setting:: CELERY_RESULT_EXCHANGE
 
 CELERY_RESULT_EXCHANGE
@@ -267,6 +276,11 @@ Using multiple memcached servers:
     CELERY_CACHE_BACKEND = 'memcached://172.19.26.240:11211;172.19.26.242:11211/'
 
 .. setting:: CELERY_CACHE_BACKEND_OPTIONS
+
+
+The "dummy" backend stores the cache in memory only:
+
+    CELERY_CACHE_BACKEND = "dummy"
 
 CELERY_CACHE_BACKEND_OPTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -608,24 +622,25 @@ Task execution settings
 CELERY_ALWAYS_EAGER
 ~~~~~~~~~~~~~~~~~~~
 
-If this is :const:`True`, all tasks will be executed locally by blocking
-until it is finished.  `apply_async` and `Task.delay` will return
-a :class:`~celery.result.EagerResult` which emulates the behavior of
-:class:`~celery.result.AsyncResult`, except the result has already
-been evaluated.
+If this is :const:`True`, all tasks will be executed locally by blocking until
+the task returns.  ``apply_async()`` and ``Task.delay()`` will return
+an :class:`~celery.result.EagerResult` instance, which emulates the API
+and behavior of :class:`~celery.result.AsyncResult`, except the result
+is already evaluated.
 
-Tasks will never be sent to the queue, but executed locally
-instead.
+That is, tasks will be executed locally instead of being sent to
+the queue.
 
 .. setting:: CELERY_EAGER_PROPAGATES_EXCEPTIONS
 
 CELERY_EAGER_PROPAGATES_EXCEPTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If this is :const:`True`, eagerly executed tasks (using `.apply`, or with
-:setting:`CELERY_ALWAYS_EAGER` on), will raise exceptions.
+If this is :const:`True`, eagerly executed tasks (applied by `task.apply()`,
+or when the :setting:`CELERY_ALWAYS_EAGER` setting is enabled), will
+propagate exceptions.
 
-It's the same as always running `apply` with ``throw=True``.
+It's the same as always running ``apply()`` with ``throw=True``.
 
 .. setting:: CELERY_IGNORE_RESULT
 
@@ -635,6 +650,17 @@ CELERY_IGNORE_RESULT
 Whether to store the task return values or not (tombstones).
 If you still want to store errors, just not successful return values,
 you can set :setting:`CELERY_STORE_ERRORS_EVEN_IF_IGNORED`.
+
+.. setting:: CELERY_MESSAGE_COMPRESSION
+
+CELERY_MESSAGE_COMPRESSION
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default compression used for task messages.
+Can be ``"gzip"``, ``"bzip2"`` (if available), or any custom
+compression schemes registered in the Kombu compression registry.
+
+The default is to send uncompressed messages.
 
 .. setting:: CELERY_TASK_RESULT_EXPIRES
 
@@ -662,8 +688,10 @@ A built-in periodic task will delete the results after this time
 CELERY_MAX_CACHED_RESULTS
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Total number of results to store before results are evicted from the
-result cache.  The default is 5000.
+Result backends caches ready results used by the client.
+
+This is the total number of results to cache before older results are evicted.
+The default is 5000.
 
 .. setting:: CELERY_TRACK_STARTED
 
@@ -972,6 +1000,16 @@ CELERY_SEND_EVENTS
 
 Send events so the worker can be monitored by tools like `celerymon`.
 
+.. settings:: CELERY_SEND_TASK_SENT_EVENT
+
+CELERY_SEND_TASK_SENT_EVENT
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If enabled, a `task-sent` event will be sent for every task so tasks can be
+tracked before they are consumed by a worker.
+
+Disabled by default.
+
 .. setting:: CELERY_EVENT_QUEUE
 
 CELERY_EVENT_QUEUE
@@ -1047,6 +1085,22 @@ Exchange type used for broadcast messages.  Default is `"fanout"`.
 Logging
 -------
 
+.. setting:: CELERYD_HIJACK_ROOT_LOGGER
+
+CELERYD_HIJACK_ROOT_LOGGER
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By default any previously configured logging options will be reset,
+because the Celery apps "hijacks" the root logger.
+
+If you want to customize your own logging then you can disable
+this behavior.
+
+.. note::
+
+    Logging can also be customized by connecting to the
+    :data:`celery.signals.setup_logging` signal.
+
 .. setting:: CELERYD_LOG_FILE
 
 CELERYD_LOG_FILE
@@ -1069,6 +1123,18 @@ Can also be set via the :option:`--loglevel` argument to
 :mod:`~celery.bin.celeryd`.
 
 See the :mod:`logging` module for more information.
+
+.. setting:: CELERYD_LOG_COLOR
+
+CELERYD_LOG_COLOR
+~~~~~~~~~~~~~~~~~
+
+Enables/disables colors in logging output by the Celery apps.
+
+By default colors are enabled if
+
+    1) the app is logging to a real terminal, and not a file.
+    2) the app is not running on Windows.
 
 .. setting:: CELERYD_LOG_FORMAT
 
@@ -1136,6 +1202,15 @@ You can use a custom pool class name, or select one of
 the built-in aliases: ``processes``, ``eventlet``, ``gevent``.
 
 Default is ``processes``.
+
+.. setting:: CELERYD_AUTOSCALER
+
+CELERYD_AUTOSCALER
+~~~~~~~~~~~~~~~~~~
+
+Name of the autoscaler class to use.
+
+Default is ``"celery.worker.autoscale.Autoscaler"``.
 
 .. setting:: CELERYD_CONSUMER
 
