@@ -32,6 +32,9 @@ Fixes
 * Routing Userguide: Fixes typo, routers in :setting:`CELERY_ROUTES` must be
   instances, not classes.
 
+* :program:`celeryev` did not create pidfile even though the
+  :option:`--pidfile` argument was set.
+
 * Task logger format was no longer used. (Issue #317).
 
    The id and name of the task is now part of the log message again.

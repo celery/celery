@@ -41,7 +41,7 @@ class EvCommand(Command):
         self.set_process_status("cam")
         kwargs["app"] = self.app
         if not detach:
-            return evcam(camera, logfile=logfile, **kwargs)
+            return evcam(camera, logfile=logfile, pidfile=pidfile, **kwargs)
         context, on_stop = create_daemon_context(
                                 logfile=logfile,
                                 pidfile=pidfile,
@@ -51,7 +51,7 @@ class EvCommand(Command):
                                 working_directory=working_directory)
         context.open()
         try:
-            return evcam(camera, logfile=logfile, **kwargs)
+            return evcam(camera, logfile=logfile, pidfile=pidfile, **kwargs)
         finally:
             on_stop()
 
