@@ -323,7 +323,7 @@ class test_funs(AppCase):
     @disable_stdouts
     def test_set_process_status(self):
         try:
-            import setproctitle
+            __import__("setproctitle")
         except ImportError:
             raise SkipTest("setproctitle not installed")
         worker = Worker(hostname="xyzza")

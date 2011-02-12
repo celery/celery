@@ -20,5 +20,5 @@ def safe_str(s, errors="replace"):
 def safe_repr(o, errors="replace"):
     try:
         return repr(o)
-    except Exception, exc:
+    except Exception:
         return safe_str(o, errors)
