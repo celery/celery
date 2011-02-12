@@ -46,6 +46,7 @@
     celery.utils
     celery.utils.term
     celery.utils.timeutils
+    celery.utils.encoding
     celery.utils.compat
     celery.utils.mail
     celery.utils.patch
