@@ -1000,7 +1000,7 @@ CELERY_SEND_EVENTS
 
 Send events so the worker can be monitored by tools like `celerymon`.
 
-.. settings:: CELERY_SEND_TASK_SENT_EVENT
+.. setting:: CELERY_SEND_TASK_SENT_EVENT
 
 CELERY_SEND_TASK_SENT_EVENT
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
