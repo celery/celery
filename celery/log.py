@@ -14,6 +14,7 @@ from celery import signals
 from celery import current_app
 from celery.utils import LOG_LEVELS, isatty
 from celery.utils.compat import LoggerAdapter
+from celery.utils.encoding import safe_str
 from celery.utils.patch import ensure_process_aware_logger
 from celery.utils.term import colored
 
@@ -40,10 +41,10 @@ class ColorFormatter(logging.Formatter):
 
         if self.use_color and color:
             try:
-                record.msg = color(unicode(record.msg, "utf-8", "replace"))
+                record.msg = color(safe_str(record.msg))
             except Exception, exc:
                 record.msg = "<Unrepresentable %r: %r>" % (type(record.msg),
-                                                           exc)
+                                                           traceback.format_stack())
 
         # Very ugly, but have to make sure processName is supported
         # by foreign logger instances.
