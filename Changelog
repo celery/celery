@@ -5,6 +5,18 @@
 .. contents::
     :local:
 
+.. _version-2.2.4:
+
+2.2.4
+=====
+:release-date: 2011-02-14 11:00 AM CET
+
+* celeryd: 2.2.3 broke error logging, so tracebacks would no longer be logged.
+
+.. _v224-fixes:
+
+.. _version-2.2.3:
+
 2.2.3
 =====
 :release-date: 2011-02-12 16:00 PM CET
