@@ -78,7 +78,7 @@ class Command(object):
         if config_module:
             os.environ["CELERY_CONFIG_MODULE"] = config_module
         if app:
-            self.app = self.get_cls_by_name(app)
+            self.app = self.get_cls_by_name(app)()
         else:
             self.app = self.get_app(loader=loader)
         if self.enable_config_from_cmdline:
