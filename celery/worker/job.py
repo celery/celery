@@ -178,6 +178,9 @@ class TaskRequest(object):
     #: UUID of the task.
     task_id = None
 
+    #: UUID of the taskset that this task belongs to.
+    taskset_id = None
+
     #: List of positional arguments to apply to the task.
     args = None
 
@@ -242,10 +245,12 @@ class TaskRequest(object):
     def __init__(self, task_name, task_id, args, kwargs,
             on_ack=noop, retries=0, delivery_info=None, hostname=None,
             email_subject=None, email_body=None, logger=None,
-            eventer=None, eta=None, expires=None, app=None, **opts):
+            eventer=None, eta=None, expires=None, app=None,
+            taskset_id=None, **opts):
         self.app = app_or_default(app)
         self.task_name = task_name
         self.task_id = task_id
+        self.taskset_id = taskset_id
         self.retries = retries
         self.args = args
         self.kwargs = kwargs
@@ -282,6 +287,7 @@ class TaskRequest(object):
 
         return cls(task_name=body["task"],
                    task_id=body["id"],
+                   taskset_id=body.get("taskset", None),
                    args=body["args"],
                    kwargs=kwdict(kwargs),
                    retries=body.get("retries", 0),
@@ -295,6 +301,7 @@ class TaskRequest(object):
         return {"logfile": logfile,
                 "loglevel": loglevel,
                 "id": self.task_id,
+                "taskset": self.taskset_id,
                 "retries": self.retries,
                 "is_eager": False,
                 "delivery_info": self.delivery_info}
