@@ -442,6 +442,13 @@ Which means the `@task` decorator must be the top statement.
 Task States
 ===========
 
+Celery can keep track of the tasks current state.  The state also contains the
+result of a successful task, or the exception and traceback information of a
+failed task.
+
+There are several *result backends* to choose from, and they all have
+different strenghts and weaknesses (see :ref:`task-result-backends`).
+
 During its lifetime a task will transition through several possible states,
 and each state may have arbitrary metadata attached to it.  When a task
 moves into a new state the previous state is
@@ -458,6 +465,80 @@ the exception should be re-raised (:state:`PROPAGATE_STATES`), or whether
 the result can be cached (it can if the task is ready).
 
 You can also define :ref:`custom-states`.
+
+.. _task-result-backends:
+
+Result Backends
+---------------
+
+Celery needs to store or send the states somewhere.  There are several
+built-in backends to choose from: SQLAlchemy/Django ORM, Memcached, Redis,
+AMQP, MongoDB, Tokyo Tyrant and Redis -- or you can define your own.
+
+There is no backend that works well for every single use case, but for
+historical reasons the default backend is the AMQP backend.  You should read
+about the strenghts and weaknesses of each backend, and choose the most
+appropriate for your own needs.
+
+
+.. seealso::
+
+    :ref:`conf-result-backend`
+
+AMQP Result Backend
+~~~~~~~~~~~~~~~~~~~
+
+The AMQP result backend is special as it does not actually *store* the states,
+but rather sends them as messages.  This is an important difference as it
+means that a result *can only be retrieved once*; If you have two processes
+waiting for the same result, one of the processes will never receive the
+result!
+
+Even with that limitation, it is an excellent choice if you need to receive
+state changes in real-time.  Using messaging means the client does not have to
+poll for new states.
+
+There are several other pitfalls you should be aware of when using the AMQP
+backend:
+
+* Every new task creates a new queue on the server, with thousands of tasks
+  the broker may be overloaded with queues and this will affect performance in
+  negative ways. If you're using RabbitMQ then each queue will be a separate
+  Erlang process, so if you're planning to keep many results simultaneously you
+  may have to increase the Erlang process limit, and the maximum number of file
+  descriptors your OS allows.
+
+* Old results will not be cleaned automatically, so you must make sure to
+  consume the results or else the number of queues will eventually go out of
+  control.  If you're running RabbitMQ 2.1.1 or higher you can take advantage
+  of the ``x-expires`` argument to queues, which will expire queues after a
+  certain time limit after they are unused.  The queue expiry can be set (in
+  seconds) by the :setting:`CELERY_AMQP_TASK_RESULT_EXPIRES` setting (not
+  enabled by default).
+
+For a list of options supported by the AMQP result backend, please see
+:ref:`conf-amqp-result-backend`.
+
+
+Database Result Backend
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Keeping state in the database can be convenient for many, especially for
+web applications with a database already in place, but it also comes with
+limitations.
+
+* Polling the database for new states is expensive, and so you should
+  increase the polling intervals of operations such as `result.wait()`, and
+  `tasksetresult.join()`
+
+* Some databases uses a default transaction isolation level that
+  is not suitable for polling tables for changes.
+
+  In MySQL the default transaction isolation level is `REPEATABLE-READ`, which
+  means the transaction will not see changes by other transactions until the
+  transaction is commited.  It is recommended that you change to the
+  `READ-COMMITTED` isolation level.
+
 
 .. _task-builtin-states:
 
@@ -526,6 +607,8 @@ REVOKED
 Task has been revoked.
 
 :propagates: Yes
+
+.. _custom-states:
 
 Custom states
 -------------
