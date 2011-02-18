@@ -34,7 +34,8 @@ _default_context = {"logfile": None,
                     "kwargs": None,
                     "retries": 0,
                     "is_eager": False,
-                    "delivery_info": None}
+                    "delivery_info": None,
+                    "taskset": None}
 
 
 class Context(threading.local):
