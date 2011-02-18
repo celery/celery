@@ -135,7 +135,7 @@ class test_AMQPBackend(unittest.TestCase):
             def declare(self):
                 pass
 
-            def get(self):
+            def get(self, no_ack=False):
                 if self.get_returns[0]:
                     class Object(object):
                         payload = {"status": "STARTED",
