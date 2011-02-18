@@ -446,6 +446,9 @@ class EagerResult(BaseAsyncResult):
         return (self.__class__, (self.task_id, self._result,
                                  self._state, self._traceback))
 
+    def __copy__(self):
+        return apply(*self.__reduce__())
+
     def successful(self):
         """Returns :const:`True` if the task executed without failure."""
         return self.state == states.SUCCESS
