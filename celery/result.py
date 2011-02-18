@@ -447,7 +447,8 @@ class EagerResult(BaseAsyncResult):
                                  self._state, self._traceback))
 
     def __copy__(self):
-        return apply(*self.__reduce__())
+        cls, args = self.__reduce__()
+        return cls(*args)
 
     def successful(self):
         """Returns :const:`True` if the task executed without failure."""

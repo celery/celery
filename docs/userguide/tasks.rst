@@ -49,9 +49,6 @@ attributes:
 
 :id: The unique id of the executing task.
 
-:taskset: The unique id of the taskset that owns the executing task.
-          This key exists only if the task is a member of a taskset.
-
 :args: Positional arguments.
 
 :kwargs: Keyword arguments.
