@@ -441,6 +441,7 @@ class TestTaskSet(unittest.TestCase):
         res = ts.apply(taskset_id=prefix + gen_unique_id())
         self.assertTrue(res.taskset_id.startswith(prefix))
 
+
 class TestTaskApply(unittest.TestCase):
 
     def test_apply_throw(self):
