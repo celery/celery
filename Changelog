@@ -9,9 +9,29 @@
 
 2.2.4
 =====
-:release-date: 2011-02-14 11:00 AM CET
+:release-date: 2011-02-19 12:00 AM CET
 
-* celeryd: 2.2.3 broke error logging, so tracebacks would no longer be logged.
+* celeryd: 2.2.3 broke error logging, resulting in tracebacks not being logged.
+
+* AMQP result backend: Polling task states did not work properly if there were
+  more than one result message in the queue.
+
+* ``TaskSet.apply_async()`` and ``TaskSet.apply()`` now supports an optional
+  ``taskset_id`` keyword argument (Issue #331).
+
+* The current taskset id (if any) is now available in the task context as
+  ``request.context`` (Issue #329).
+
+* SQLAlchemy result backend: `date_done` was no longer part of the results as it had
+  been accidentally removed.  It is now available again (Issue #325).
+
+* SQLAlchemy result backend: Added unique constraint on `Task.task_id` and
+  `TaskSet.taskset_id`.  Tables needs to be recreated for this to take effect.
+
+* Fixed exception raised when iterating on the result of ``TaskSet.apply()``.
+
+* Tasks Userguide: Added section on choosing a result backend.
+
 
 .. _v224-fixes:
 
