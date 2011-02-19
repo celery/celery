@@ -3,8 +3,8 @@
 celery.signals
 ==============
 
-Signals allows decoupled applications to receive notifications when certain actions
-occur.
+Signals allows decoupled applications to receive notifications when
+certain actions occur elsewhere in the application.
 
 :copyright: (c) 2009 - 2011 by Ask Solem.
 :license: BSD, see LICENSE for more details.
