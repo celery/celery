@@ -40,6 +40,9 @@ _default_context = {"logfile": None,
 
 class Context(threading.local):
 
+    def __init__(self):
+        self.update(_default_context)
+
     def update(self, d, **kwargs):
         self.__dict__.update(d, **kwargs)
 
