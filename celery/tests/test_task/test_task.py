@@ -438,7 +438,7 @@ class TestTaskSet(unittest.TestCase):
     def test_named_taskset(self):
         prefix = "test_named_taskset-"
         ts = task.TaskSet([return_True_task.subtask([1])])
-        res = ts.apply(taskset_id=prefix+gen_unique_id())
+        res = ts.apply(taskset_id=prefix + gen_unique_id())
         self.assertTrue(res.taskset_id.startswith(prefix))
 
 class TestTaskApply(unittest.TestCase):

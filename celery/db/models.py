@@ -33,7 +33,8 @@ class Task(ResultModelBase):
         return {"task_id": self.task_id,
                 "status": self.status,
                 "result": self.result,
-                "traceback": self.traceback}
+                "traceback": self.traceback,
+                "date_done": self.date_done}
 
     def __repr__(self):
         return "<Task %s state: %s>" % (self.task_id, self.status)
@@ -57,7 +58,8 @@ class TaskSet(ResultModelBase):
 
     def to_dict(self):
         return {"taskset_id": self.taskset_id,
-                "result": self.result}
+                "result": self.result,
+                "date_done": self.date_done}
 
     def __repr__(self):
         return u"<TaskSet: %s>" % (self.taskset_id, )
