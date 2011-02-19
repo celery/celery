@@ -20,7 +20,7 @@
   ``taskset_id`` keyword argument (Issue #331).
 
 * The current taskset id (if any) is now available in the task context as
-  ``request.context`` (Issue #329).
+  ``request.taskset`` (Issue #329).
 
 * SQLAlchemy result backend: `date_done` was no longer part of the results as it had
   been accidentally removed.  It is now available again (Issue #325).
