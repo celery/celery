@@ -21,7 +21,7 @@ So what can you do? In this tutorial we will send the individual clicks as
 messages using `kombu`, and then process them later with a Celery periodic
 task.
 
-Celery and Kombu is excellent in tandem, and while this might not be
+Celery and Kombu are excellent in tandem, and while this might not be
 the perfect example, you'll at least see one example how of they can be used
 to solve a task.
 
