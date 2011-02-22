@@ -6,7 +6,7 @@ from celery.tests.utils import unittest
 from celery.task.base import Context
 
 
-# Retreive the default values of all context attributes as a
+# Retreive the values of all context attributes as a
 # dictionary in an implementation-agnostic manner.
 def get_context_as_dict(ctx, getter=getattr):
     defaults = {}
