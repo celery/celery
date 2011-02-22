@@ -148,7 +148,6 @@ class TestTaskContext(unittest.TestCase):
         self.assertDictEqual(get_context_as_dict(ctx), default_context)
 
     def test_context_get(self):
-        # XXX Expected failure: Context.get is not getattr-like!
         expected = dict(default_context)
         changes = dict(id="unique id", args=["some", 1], wibble="wobble")
         ctx = Context()
