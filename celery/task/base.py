@@ -27,28 +27,25 @@ extract_exec_options = mattrgetter("queue", "routing_key",
                                    "mandatory", "priority",
                                    "serializer", "delivery_mode",
                                    "compression")
-_default_context = {"logfile": None,
-                    "loglevel": None,
-                    "id": None,
-                    "args": None,
-                    "kwargs": None,
-                    "retries": 0,
-                    "is_eager": False,
-                    "delivery_info": None,
-                    "taskset": None}
 
 
 class Context(threading.local):
-
-    def __init__(self):
-        self.update(_default_context)
+    # Default context
+    logfile = None
+    loglevel = None
+    id = None
+    args = None
+    kwargs = None
+    retries = 0
+    is_eager = False
+    delivery_info = None
+    taskset = None
 
     def update(self, d, **kwargs):
         self.__dict__.update(d, **kwargs)
 
     def clear(self):
         self.__dict__.clear()
-        self.update(_default_context)
 
     def get(self, key, default=None):
         if not hasattr(self, key):
