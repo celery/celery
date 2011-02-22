@@ -51,7 +51,9 @@ class Context(threading.local):
         self.update(_default_context)
 
     def get(self, key, default=None):
-        return self.__dict__.get(key, default)
+        if not hasattr(self, key):
+            return default
+        return getattr(self, key)
 
 
 class TaskType(type):
