@@ -5,6 +5,7 @@ import time
 from copy import copy
 from itertools import imap
 
+from celery import current_app
 from celery import states
 from celery.app import app_or_default
 from celery.exceptions import TimeoutError
@@ -423,7 +424,7 @@ class TaskSetResult(object):
     def restore(self, taskset_id, backend=None):
         """Restore previously saved taskset result."""
         if backend is None:
-            backend = app_or_default().backend
+            backend = current_app.backend
         return backend.restore_taskset(taskset_id)
 
     @property
