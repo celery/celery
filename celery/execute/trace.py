@@ -86,10 +86,11 @@ class TaskTrace(object):
                                 propagate=self.propagate)
         self.status = trace.status
         self.strtb = trace.strtb
+        handler = self._trace_handlers[trace.status]
+        r = handler(trace.retval, trace.exc_type, trace.tb, trace.strtb)
         self.handle_after_return(trace.status, trace.retval,
                                  trace.exc_type, trace.tb, trace.strtb)
-        handler = self._trace_handlers[trace.status]
-        return handler(trace.retval, trace.exc_type, trace.tb, trace.strtb)
+        return r
 
     def handle_after_return(self, status, retval, type_, tb, strtb):
         einfo = None
