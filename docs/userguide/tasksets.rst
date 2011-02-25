@@ -168,6 +168,7 @@ Simple, but may take a long time before your callback is called:
 
 
 .. code-block:: python
+
     from celery import current_app
     from celery.task import subtask
 
@@ -183,6 +184,7 @@ Using Redis and atomic counters:
 
 
 .. code-block:: python
+
     from celery import current_app
     from celery.task import Task, TaskSet
     from celery.result import TaskSetResult
