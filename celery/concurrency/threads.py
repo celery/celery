@@ -1,11 +1,8 @@
-
 import threading
-from threadpool import ThreadPool, WorkRequest
 
 from celery import log
 from celery.utils.functional import curry
 from celery.datastructures import ExceptionInfo
-
 
 accept_lock = threading.Lock()
 
@@ -23,12 +20,19 @@ def do_work(target, args=(), kwargs={}, callback=None,
 class TaskPool(object):
 
     def __init__(self, limit, logger=None, **kwargs):
+        try:
+            import threadpool
+        except ImportError:
+            raise ImportError(
+                    "The threaded pool requires the threadpool module.")
+        self.WorkRequest = threadpool.WorkRequest
+        self.ThreadPool = threadpool.ThreadPool
         self.limit = limit
         self.logger = logger or log.get_default_logger()
         self._pool = None
 
     def start(self):
-        self._pool = ThreadPool(self.limit)
+        self._pool = self.ThreadPool(self.limit)
 
     def stop(self):
         self._pool.dismissWorkers(self.limit, do_join=True)
@@ -45,7 +49,7 @@ class TaskPool(object):
         self.logger.debug("ThreadPool: Apply %s (args:%s kwargs:%s)" % (
             target, args, kwargs))
 
-        req = WorkRequest(do_work, (target, args, kwargs, on_ready,
+        req = self.WorkRequest(do_work, (target, args, kwargs, on_ready,
                                     accept_callback))
         self._pool.putRequest(req)
         # threadpool also has callback support,

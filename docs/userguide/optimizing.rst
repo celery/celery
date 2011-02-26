@@ -1,4 +1,4 @@
-.. _optimizing:
+.. _guide-optimizing:
 
 ============
  Optimizing
