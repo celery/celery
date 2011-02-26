@@ -3,6 +3,8 @@
 import sys
 import os
 
+os.environ["CELERY_LOADER"] = "default"
+
 this = os.path.dirname(os.path.abspath(__file__))
 
 # If your extensions are in another directory, add it here. If the directory
