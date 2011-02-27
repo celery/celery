@@ -340,7 +340,7 @@ class Consumer(object):
             def ack():
                 try:
                     message.ack()
-                except self.connection_errors, exc:
+                except self.connection_errors + (AttributeError, ), exc:
                     self.logger.critical(
                             "Couldn't ack %r: message:%r reason:%r" % (
                                 message.delivery_tag, body, exc))
