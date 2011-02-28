@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.backends.amqp &mdash; Celery v2.2.3 documentation</title>
+    <title>celery.backends.amqp &mdash; Celery v2.2.4 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.2.3',
+        VERSION:     '2.2.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.3 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.2.4 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.backends.mongodb" href="celery.backends.mongodb.html" />
     <link rel="prev" title="celery.backends.cache" href="celery.backends.cache.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.backends.cache.html" title="celery.backends.cache"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.4 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -69,9 +69,15 @@
 <dt id="celery.backends.amqp.AMQPBackend">
 <em class="property">class </em><tt class="descclassname">celery.backends.amqp.</tt><tt class="descname">AMQPBackend</tt><big>(</big><em>connection=None</em>, <em>exchange=None</em>, <em>exchange_type=None</em>, <em>persistent=None</em>, <em>serializer=None</em>, <em>auto_delete=True</em>, <em>expires=None</em>, <em>connection_max=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend" title="Permalink to this definition">¶</a></dt>
 <dd><p>Publishes results by sending messages.</p>
+<dl class="exception">
+<dt id="celery.backends.amqp.AMQPBackend.BacklogLimitExceeded">
+<em class="property">exception </em><tt class="descname">BacklogLimitExceeded</tt><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.BacklogLimitExceeded" title="Permalink to this definition">¶</a></dt>
+<dd><p>Too much state history to fast-forward.</p>
+</dd></dl>
+
 <dl class="class">
 <dt id="celery.backends.amqp.AMQPBackend.Consumer">
-<em class="property">class </em><tt class="descname">Consumer</tt><big>(</big><em>channel</em>, <em>queues</em>, <em>no_ack=None</em>, <em>auto_declare=None</em>, <em>callbacks=None</em>, <em>on_decode_error=None</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Consumer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">AMQPBackend.</tt><tt class="descname">Consumer</tt><big>(</big><em>channel</em>, <em>queues</em>, <em>no_ack=None</em>, <em>auto_declare=None</em>, <em>callbacks=None</em>, <em>on_decode_error=None</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Consumer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Message consumer.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -79,16 +85,16 @@
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>channel</strong> &#8211; see <tt class="xref py py-attr docutils literal"><span class="pre">channel</span></tt>.</li>
+<li><strong>queues</strong> &#8211; see <tt class="xref py py-attr docutils literal"><span class="pre">queues</span></tt>.</li>
+<li><strong>no_ack</strong> &#8211; see <tt class="xref py py-attr docutils literal"><span class="pre">no_ack</span></tt>.</li>
+<li><strong>auto_declare</strong> &#8211; see <tt class="xref py py-attr docutils literal"><span class="pre">auto_declare</span></tt></li>
+<li><strong>callbacks</strong> &#8211; see <tt class="xref py py-attr docutils literal"><span class="pre">callbacks</span></tt>.</li>
+<li><strong>on_decode_error</strong> &#8211; see <tt class="xref py py-attr docutils literal"><span class="pre">on_decode_error</span></tt>.</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
-<p>:param queues see <tt class="xref py py-attr docutils literal"><span class="pre">queues</span></tt>.
-:keyword no_ack: see <tt class="xref py py-attr docutils literal"><span class="pre">no_ack</span></tt>.
-:keyword auto_declare: see <tt class="xref py py-attr docutils literal"><span class="pre">auto_declare</span></tt>
-:keyword callbacks: see <tt class="xref py py-attr docutils literal"><span class="pre">callbacks</span></tt>.
-:keyword on_decode_error: see <tt class="xref py py-attr docutils literal"><span class="pre">on_decode_error</span></tt>.</p>
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Consumer.cancel">
 <tt class="descname">cancel</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Consumer.cancel" title="Permalink to this definition">¶</a></dt>
@@ -812,7 +818,7 @@ without modifying the server state.</li>
 
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.poll">
-<tt class="descclassname">AMQPBackend.</tt><tt class="descname">poll</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.poll" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">AMQPBackend.</tt><tt class="descname">poll</tt><big>(</big><em>task_id</em>, <em>backlog_limit=100</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.poll" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -853,6 +859,12 @@ without modifying the server state.</li>
 <tt class="descclassname">AMQPBackend.</tt><tt class="descname">wait_for</tt><big>(</big><em>task_id</em>, <em>timeout=None</em>, <em>cache=True</em>, <em>propagate=True</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.wait_for" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+</dd></dl>
+
+<dl class="exception">
+<dt id="celery.backends.amqp.BacklogLimitExceeded">
+<em class="property">exception </em><tt class="descclassname">celery.backends.amqp.</tt><tt class="descname">BacklogLimitExceeded</tt><a class="headerlink" href="#celery.backends.amqp.BacklogLimitExceeded" title="Permalink to this definition">¶</a></dt>
+<dd><p>Too much state history to fast-forward.</p>
 </dd></dl>
 
 <dl class="function">
@@ -913,13 +925,13 @@ without modifying the server state.</li>
         <li class="right" >
           <a href="celery.backends.cache.html" title="celery.backends.cache"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.4 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2009-2011, Ask Solem &amp; contributors.
+        &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
     </div>
   </body>

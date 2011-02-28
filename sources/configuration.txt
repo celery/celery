@@ -1000,7 +1000,7 @@ CELERY_SEND_EVENTS
 
 Send events so the worker can be monitored by tools like `celerymon`.
 
-.. settings:: CELERY_SEND_TASK_SENT_EVENT
+.. setting:: CELERY_SEND_TASK_SENT_EVENT
 
 CELERY_SEND_TASK_SENT_EVENT
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1099,7 +1099,7 @@ this behavior.
 .. note::
 
     Logging can also be customized by connecting to the
-    :data:`celery.signals.setup_logging` signal.
+    :signal:`celery.signals.setup_logging` signal.
 
 .. setting:: CELERYD_LOG_FILE
 

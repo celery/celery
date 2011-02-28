@@ -5,6 +5,38 @@
 .. contents::
     :local:
 
+.. _version-2.2.4:
+
+2.2.4
+=====
+:release-date: 2011-02-19 12:00 AM CET
+
+* celeryd: 2.2.3 broke error logging, resulting in tracebacks not being logged.
+
+* AMQP result backend: Polling task states did not work properly if there were
+  more than one result message in the queue.
+
+* ``TaskSet.apply_async()`` and ``TaskSet.apply()`` now supports an optional
+  ``taskset_id`` keyword argument (Issue #331).
+
+* The current taskset id (if any) is now available in the task context as
+  ``request.taskset`` (Issue #329).
+
+* SQLAlchemy result backend: `date_done` was no longer part of the results as it had
+  been accidentally removed.  It is now available again (Issue #325).
+
+* SQLAlchemy result backend: Added unique constraint on `Task.task_id` and
+  `TaskSet.taskset_id`.  Tables needs to be recreated for this to take effect.
+
+* Fixed exception raised when iterating on the result of ``TaskSet.apply()``.
+
+* Tasks Userguide: Added section on choosing a result backend.
+
+
+.. _v224-fixes:
+
+.. _version-2.2.3:
+
 2.2.3
 =====
 :release-date: 2011-02-12 16:00 PM CET
@@ -591,14 +623,14 @@ News
 
 * Added signals: `beat_init` and `beat_embedded_init`
 
-    * :data:`celery.signals.beat_init`
+    * :signal:`celery.signals.beat_init`
 
         Dispatched when :program:`celerybeat` starts (either standalone or
         embedded).  Sender is the :class:`celery.beat.Service` instance.
 
-    * :data:`celery.signals.beat_embedded_init`
+    * :signal:`celery.signals.beat_embedded_init`
 
-        Dispatched in addition to the :data:`beat_init` signal when
+        Dispatched in addition to the :signal:`beat_init` signal when
         :program:`celerybeat` is started as an embedded process.  Sender
         is the :class:`celery.beat.Service` instance.
 
@@ -1110,7 +1142,7 @@ News
     Unless you configure the loggers manually as shown below, that is.
 
     *Users can choose to configure logging by subscribing to the
-    :data:`~celery.signals.setup_logging` signal:*
+    :signal:`~celery.signals.setup_logging` signal:*
 
     .. code-block:: python
 
@@ -1721,7 +1753,7 @@ Documentation
 
 * New homepage design by Jan Henrik Helmers: http://celeryproject.org
 
-* New Sphinx theme by Armin Ronacher: http://celeryproject.org/docs
+* New Sphinx theme by Armin Ronacher: http://docs.celeryproject.org/
 
 * Fixed "pending_xref" errors shown in the HTML rendering of the
   documentation. Apparently this was caused by new changes in Sphinx 1.0b2.
@@ -2267,7 +2299,7 @@ News
 * `apply(throw=True)` / :setting:`CELERY_EAGER_PROPAGATES_EXCEPTIONS`:
   Makes eager execution re-raise task errors.
 
-* New signal: :data:`~celery.signals.worker_process_init`: Sent inside the
+* New signal: :signal:`~celery.signals.worker_process_init`: Sent inside the
   pool worker process at init.
 
 * celeryd :option:`-Q` option: Ability to specify list of queues to use,
