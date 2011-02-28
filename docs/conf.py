@@ -33,7 +33,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Celery'
-copyright = u'2009-2010, Ask Solem & contributors'
+copyright = u'2009-2011, Ask Solem & Contributors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -67,7 +67,7 @@ html_use_index = True
 
 latex_documents = [
   ('index', 'Celery.tex', ur'Celery Documentation',
-   ur'Ask Solem', 'manual'),
+   ur'Ask Solem & Contributors', 'manual'),
 ]
 
 html_theme = "celery"
