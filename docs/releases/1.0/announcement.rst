@@ -150,9 +150,9 @@ Resources
 
 * Download: http://pypi.python.org/pypi/celery
 
-* Documentation: http://celeryproject.org/docs/
+* Documentation: http://docs.celeryproject.org/
 
-* Changelog: http://celeryproject.org/docs/changelog.html
+* Changelog: http://docs.celeryproject.org/changelog.html
 
 * Code: http://github.com/ask/celery/
 
