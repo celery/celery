@@ -24,7 +24,7 @@ class UnknownStatusError(InvalidResponseError):
 
 
 def maybe_utf8(value):
-    """Encode utf-8 value, only if the value is actually utf-8."""
+    """Encode to utf-8, only if the value is Unicode."""
     if isinstance(value, unicode):
         return value.encode("utf-8")
     return value

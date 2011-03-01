@@ -27,6 +27,8 @@ from multiprocessing.util import Finalize, debug
 from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded
 from celery.exceptions import WorkerLostError
 
+_Semaphore = threading._Semaphore
+
 #
 # Constants representing the state of a pool
 #
@@ -54,6 +56,23 @@ job_counter = itertools.count()
 
 def mapstar(args):
     return map(*args)
+
+
+class LaxBoundedSemaphore(threading._Semaphore):
+    """Semaphore that checks that # release is <= # acquires,
+    but ignores if # releases >= value."""
+
+    def __init__(self, value=1, verbose=None):
+        _Semaphore.__init__(self, value, verbose)
+        self._initial_value = value
+
+    def release(self):
+        if self._Semaphore__value < self._initial_value:
+            return _Semaphore.release(self)
+        if __debug__:
+            self._note("%s.release: success, value=%s (unchanged)" % (
+                self, self._Semaphore__value))
+
 
 #
 # Code run by worker processes
@@ -222,16 +241,18 @@ class TaskHandler(PoolThread):
 
 class TimeoutHandler(PoolThread):
 
-    def __init__(self, processes, cache, t_soft, t_hard):
+    def __init__(self, processes, cache, t_soft, t_hard, putlock):
         self.processes = processes
         self.cache = cache
         self.t_soft = t_soft
         self.t_hard = t_hard
+        self.putlock = putlock
         super(TimeoutHandler, self).__init__()
 
     def run(self):
         processes = self.processes
         cache = self.cache
+        putlock = self.putlock
         t_hard, t_soft = self.t_hard, self.t_soft
         dirty = set()
 
@@ -268,11 +289,16 @@ class TimeoutHandler(PoolThread):
             dirty.add(i)
 
         def _on_hard_timeout(job, i):
+            if job.ready():
+                return
             debug('hard time limit exceeded for %i', i)
-            # Remove from _pool
-            process, _index = _process_by_pid(job._worker_pid)
             # Remove from cache and set return value to an exception
             job._set(i, (False, TimeLimitExceeded()))
+            # release sem
+            if putlock is not None:
+                putlock.release()
+            # Remove from _pool
+            process, _index = _process_by_pid(job._worker_pid)
             # Run timeout callback
             if job._timeout_callback is not None:
                 job._timeout_callback(soft=False)
@@ -328,13 +354,15 @@ class ResultHandler(PoolThread):
                 pass
 
         def on_ready(job, i, obj):
-            if putlock is not None:
-                try:
-                    putlock.release()
-                except Exception:
-                    pass
             try:
-                cache[job]._set(i, obj)
+                item = cache[job]
+            except KeyError:
+                return
+            if not item.ready():
+                if putlock is not None:
+                    putlock.release()
+            try:
+                item._set(i, obj)
             except KeyError:
                 pass
 
@@ -369,10 +397,7 @@ class ResultHandler(PoolThread):
 
         # Notify waiting threads
         if putlock is not None:
-            try:
-                putlock.release()
-            except Exception:
-                pass
+            putlock.release()
 
         while cache and self._state != TERMINATE:
             try:
@@ -450,8 +475,7 @@ class Pool(object):
         self._worker_handler = self.Supervisor(self)
         self._worker_handler.start()
 
-        self._putlock = threading.BoundedSemaphore(self._processes)
-
+        self._putlock = LaxBoundedSemaphore(self._processes)
         self._task_handler = self.TaskHandler(self._taskqueue,
                                               self._quick_put,
                                               self._outqueue,
@@ -462,7 +486,7 @@ class Pool(object):
         if self.timeout or self.soft_timeout:
             self._timeout_handler = self.TimeoutHandler(
                     self._pool, self._cache,
-                    self.soft_timeout, self.timeout)
+                    self.soft_timeout, self.timeout, self._putlock)
             self._timeout_handler.start()
         else:
             self._timeout_handler = None
@@ -508,18 +532,15 @@ class Pool(object):
             if worker.exitcode is not None:
                 # worker exited
                 debug('cleaning up worker %d' % i)
-                if self._putlock is not None:
-                    try:
-                        self._putlock.release()
-                    except ValueError:
-                        pass
                 worker.join()
                 cleaned.append(worker.pid)
                 del self._pool[i]
         if cleaned:
             for job in self._cache.values():
                 for worker_pid in job.worker_pids():
-                    if worker_pid in cleaned:
+                    if worker_pid in cleaned and not job.ready():
+                        if self._putlock is not None:
+                            self._putlock.release()
                         err = WorkerLostError("Worker exited prematurely.")
                         job._set(None, (False, err))
                         continue

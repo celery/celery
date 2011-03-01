@@ -32,8 +32,10 @@ class test_EvCommand(unittest.TestCase):
         self.assertIn("celeryev:dump", proctitle.last[0])
 
     def test_run_top(self):
-        if self.app.IS_WINDOWS:
-            raise SkipTest("curses monitor does not run on Windows")
+        try:
+            import curses
+        except ImportError:
+            raise SkipTest("curses monitor requires curses")
 
         @patch("celery.events.cursesmon", "evtop", lambda **kw: "me top, you?")
         @patch("celery.platforms", "set_process_title", proctitle)

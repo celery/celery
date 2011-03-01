@@ -2,6 +2,8 @@ import threading
 
 from time import time, sleep
 
+from celery.worker.state import SOFTWARE_INFO
+
 
 class Heart(threading.Thread):
     """Thread sending heartbeats at regular intervals.
@@ -29,7 +31,7 @@ class Heart(threading.Thread):
         bpm = self.bpm
         dispatch = self.eventer.send
 
-        dispatch("worker-online")
+        dispatch("worker-online", **SOFTWARE_INFO)
 
         # We can't sleep all of the interval, because then
         # it takes 60 seconds (or value of interval) to shutdown
@@ -46,12 +48,12 @@ class Heart(threading.Thread):
 
             if not last_beat or now > last_beat + (60.0 / bpm):
                 last_beat = now
-                dispatch("worker-heartbeat")
+                dispatch("worker-heartbeat", **SOFTWARE_INFO)
             if self._shutdown.isSet():
                 break
             sleep(1)
 
-        dispatch("worker-offline")
+        dispatch("worker-offline", **SOFTWARE_INFO)
 
     def stop(self):
         """Gracefully shutdown the thread."""
@@ -60,4 +62,4 @@ class Heart(threading.Thread):
         self._state = "CLOSE"
         self._shutdown.set()
         if self.isAlive():
-            self.join(1e100)
+            self.join(1e10)

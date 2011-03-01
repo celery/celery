@@ -667,7 +667,7 @@ Can I schedule tasks to execute at a specific time?
 **Answer**: Yes. You can use the `eta` argument of :meth:`Task.apply_async`.
 
 Or to schedule a periodic task at a specific time, use the
-:class:`celery.task.schedules.crontab` schedule behavior:
+:class:`celery.schedules.crontab` schedule behavior:
 
 
 .. code-block:: python

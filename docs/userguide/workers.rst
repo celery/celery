@@ -27,7 +27,7 @@ For a full list of available command line options see
 
 You can also start multiple workers on the same machine. If you do so
 be sure to give a unique name to each individual worker by specifying a
-host name with the `--hostname|-n` argument::
+host name with the :option:`--hostname|-n` argument::
 
     $ celeryd --loglevel=INFO --concurrency=10 -n worker1.example.com
     $ celeryd --loglevel=INFO --concurrency=10 -n worker2.example.com
@@ -75,17 +75,20 @@ arguments as it was started with.
 Concurrency
 ===========
 
-Multiprocessing is used to perform concurrent execution of tasks.  The number
-of worker processes can be changed using the `--concurrency` argument and
-defaults to the number of CPUs available on the machine.
+By default multiprocessing is used to perform concurrent execution of tasks,
+but you can also use :ref:`Eventlet <concurrency-eventlet>`.  The number
+of worker processes/threads can be changed using the :option:`--concurrency`
+argument and defaults to the number of CPUs available on the machine.
 
-More worker processes are usually better, but there's a cut-off point where
-adding more processes affects performance in negative ways.
-There is even some evidence to support that having multiple celeryd's running,
-may perform better than having a single worker.  For example 3 celeryd's with
-10 worker processes each.  You need to experiment to find the numbers that
-works best for you, as this varies based on application, work load, task
-run times and other factors.
+.. admonition:: Number of processes (multiprocessing)
+
+    More worker processes are usually better, but there's a cut-off point where
+    adding more processes affects performance in negative ways.
+    There is even some evidence to support that having multiple celeryd's running,
+    may perform better than having a single worker.  For example 3 celeryd's with
+    10 worker processes each.  You need to experiment to find the numbers that
+    works best for you, as this varies based on application, work load, task
+    run times and other factors.
 
 .. _worker-persistent-revokes:
 

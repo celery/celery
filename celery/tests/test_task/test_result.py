@@ -244,6 +244,14 @@ class TestTaskSetResult(unittest.TestCase):
         self.assertEqual(it.next(), 42)
         self.assertEqual(it.next(), 42)
 
+    def test_iterate_eager(self):
+        ar1 = EagerResult(gen_unique_id(), 42, states.SUCCESS)
+        ar2 = EagerResult(gen_unique_id(), 42, states.SUCCESS)
+        ts = TaskSetResult(gen_unique_id(), [ar1, ar2])
+        it = iter(ts)
+        self.assertEqual(it.next(), 42)
+        self.assertEqual(it.next(), 42)
+
     def test_join_timeout(self):
         ar = MockAsyncResultSuccess(gen_unique_id())
         ar2 = MockAsyncResultSuccess(gen_unique_id())

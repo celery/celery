@@ -9,4 +9,5 @@
     :maxdepth: 2
 
     otherqueues
+    debugging
     clickcounter

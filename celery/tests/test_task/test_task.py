@@ -10,7 +10,7 @@ from celery.task import task as task_dec
 from celery.exceptions import RetryTaskError
 from celery.execute import send_task
 from celery.result import EagerResult
-from celery.task.schedules import crontab, crontab_parser
+from celery.schedules import crontab, crontab_parser
 from celery.utils import timeutils
 from celery.utils import gen_unique_id
 from celery.utils.functional import wraps
@@ -198,17 +198,6 @@ class TestTaskRetries(unittest.TestCase):
         self.assertEqual(RetryTask.iterations, 2)
 
 
-class MockPublisher(object):
-    _declared = False
-
-    def __init__(self, *args, **kwargs):
-        self.kwargs = kwargs
-        self.connection = app_or_default().broker_connection()
-
-    def declare(self):
-        self._declared = True
-
-
 class TestCeleryTasks(unittest.TestCase):
 
     def test_unpickle_task(self):
@@ -354,19 +343,13 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertTrue(dispatcher[0])
 
     def test_get_publisher(self):
-        from celery.app import amqp
-        old_pub = amqp.TaskPublisher
-        amqp.TaskPublisher = MockPublisher
-        try:
-            p = IncrementCounterTask.get_publisher(exchange="foo",
-                                                   connection="bar")
-            self.assertEqual(p.kwargs["exchange"], "foo")
-            self.assertTrue(p._declared)
-            p = IncrementCounterTask.get_publisher(exchange_type="fanout",
-                                                   connection="bar")
-            self.assertEqual(p.kwargs["exchange_type"], "fanout")
-        finally:
-            amqp.TaskPublisher = old_pub
+        connection = app_or_default().broker_connection()
+        p = IncrementCounterTask.get_publisher(connection, auto_declare=False,
+                                               exchange="foo")
+        self.assertEqual(p.exchange.name, "foo")
+        p = IncrementCounterTask.get_publisher(connection, auto_declare=False,
+                                               exchange_type="fanout")
+        self.assertEqual(p.exchange.type, "fanout")
 
     def test_update_state(self):
 
@@ -452,6 +435,12 @@ class TestTaskSet(unittest.TestCase):
                     increment_by=m.get("kwargs", {}).get("increment_by"))
         self.assertEqual(IncrementCounterTask.count, sum(xrange(1, 10)))
 
+    def test_named_taskset(self):
+        prefix = "test_named_taskset-"
+        ts = task.TaskSet([return_True_task.subtask([1])])
+        res = ts.apply(taskset_id=prefix + gen_unique_id())
+        self.assertTrue(res.taskset_id.startswith(prefix))
+
 
 class TestTaskApply(unittest.TestCase):
 
@@ -531,9 +520,9 @@ class TestPeriodicTask(unittest.TestCase):
     def test_is_due_not_due(self):
         due, remaining = MyPeriodic().is_due(datetime.now())
         self.assertFalse(due)
-        # TODO This assertion may fail if executed in the
-        # first minute of an hour
-        self.assertGreater(remaining, 60)
+        # This assertion may fail if executed in the
+        # first minute of an hour, thus 59 instead of 60
+        self.assertGreater(remaining, 59)
 
     def test_is_due(self):
         p = MyPeriodic()
@@ -541,6 +530,10 @@ class TestPeriodicTask(unittest.TestCase):
         self.assertTrue(due)
         self.assertEqual(remaining,
                          p.timedelta_seconds(p.run_every.run_every))
+
+    def test_schedule_repr(self):
+        p = MyPeriodic()
+        self.assertTrue(repr(p.run_every))
 
 
 class EveryMinutePeriodic(task.PeriodicTask):

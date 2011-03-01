@@ -38,7 +38,7 @@ class Dispatcher(object):
     def disable(self):
         self.enabled = False
 
-    def send(self, event):
+    def send(self, event, **fields):
         self.sent.append(event)
 
 
@@ -184,8 +184,8 @@ class test_ControlPanel(unittest.TestCase):
         state.revoked.add("a2")
 
         try:
-            self.assertListEqual(self.panel.handle("dump_revoked"),
-                                 ["a1", "a2"])
+            self.assertItemsEqual(self.panel.handle("dump_revoked"),
+                                  ["a1", "a2"])
         finally:
             state.revoked.clear()
 

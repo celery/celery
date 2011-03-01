@@ -39,7 +39,7 @@ class test_deprecated(unittest.TestCase):
 
         for w in execute_context(catch_warnings(record=True), block):
             self.assertIsInstance(w, DeprecationWarning)
-            self.assertIn("Please use", w.args[0])
+            self.assertIn("is deprecated", w.args[0])
 
 
 class test_backend_cleanup(unittest.TestCase):

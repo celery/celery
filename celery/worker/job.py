@@ -17,6 +17,7 @@ from celery.registry import tasks
 from celery.utils import noop, kwdict, fun_takes_kwargs
 from celery.utils import truncate_text
 from celery.utils.compat import log_with_extra
+from celery.utils.encoding import safe_repr, safe_str
 from celery.utils.timeutils import maybe_iso8601
 from celery.worker import state
 
@@ -48,13 +49,11 @@ WANTED_DELIVERY_INFO = ("exchange", "routing_key", "consumer_tag", )
 
 class InvalidTaskError(Exception):
     """The task has invalid data or is not properly constructed."""
-    pass
 
 
 class AlreadyExecutedError(Exception):
     """Tasks can only be executed once, as they might change
     world-wide state."""
-    pass
 
 
 class WorkerTaskTrace(TaskTrace):
@@ -76,6 +75,11 @@ class WorkerTaskTrace(TaskTrace):
     :param task_id: The unique id of the task.
     :param args: List of positional args to pass on to the function.
     :param kwargs: Keyword arguments mapping to pass on to the function.
+
+    :keyword loader: Custom loader to use, if not specified the current app
+      loader will be used.
+    :keyword hostname: Custom hostname to use, if not specified the system
+      hostname will be used.
 
     :returns: the evaluated functions return value on success, or
         the exception instance on failure.
@@ -155,12 +159,11 @@ def execute_and_trace(task_name, *args, **kwargs):
 
     """
     hostname = kwargs.get("hostname")
-    platforms.set_mp_process_title("celeryd", info=task_name,
-                                   hostname=hostname)
+    platforms.set_mp_process_title("celeryd", task_name, hostname=hostname)
     try:
         return WorkerTaskTrace(task_name, *args, **kwargs).execute_safe()
     finally:
-        platforms.set_mp_process_title("celeryd", hostname=hostname)
+        platforms.set_mp_process_title("celeryd", "-idle-", hostname)
 
 
 class TaskRequest(object):
@@ -174,6 +177,9 @@ class TaskRequest(object):
 
     #: UUID of the task.
     task_id = None
+
+    #: UUID of the taskset that this task belongs to.
+    taskset_id = None
 
     #: List of positional arguments to apply to the task.
     args = None
@@ -239,10 +245,12 @@ class TaskRequest(object):
     def __init__(self, task_name, task_id, args, kwargs,
             on_ack=noop, retries=0, delivery_info=None, hostname=None,
             email_subject=None, email_body=None, logger=None,
-            eventer=None, eta=None, expires=None, app=None, **opts):
+            eventer=None, eta=None, expires=None, app=None,
+            taskset_id=None, **opts):
         self.app = app_or_default(app)
         self.task_name = task_name
         self.task_id = task_id
+        self.taskset_id = taskset_id
         self.retries = retries
         self.args = args
         self.kwargs = kwargs
@@ -262,7 +270,7 @@ class TaskRequest(object):
             self._store_errors = self.task.store_errors_even_if_ignored
 
     @classmethod
-    def from_message(cls, message, message_data, on_ack=noop, **kw):
+    def from_message(cls, message, body, on_ack=noop, **kw):
         """Create request from a task message.
 
         :raises UnknownTaskError: if the message does not describe a task,
@@ -273,17 +281,18 @@ class TaskRequest(object):
         delivery_info = dict((key, _delivery_info.get(key))
                                 for key in WANTED_DELIVERY_INFO)
 
-        kwargs = message_data["kwargs"]
+        kwargs = body["kwargs"]
         if not hasattr(kwargs, "items"):
             raise InvalidTaskError("Task keyword arguments is not a mapping.")
 
-        return cls(task_name=message_data["task"],
-                   task_id=message_data["id"],
-                   args=message_data["args"],
+        return cls(task_name=body["task"],
+                   task_id=body["id"],
+                   taskset_id=body.get("taskset", None),
+                   args=body["args"],
                    kwargs=kwdict(kwargs),
-                   retries=message_data.get("retries", 0),
-                   eta=maybe_iso8601(message_data.get("eta")),
-                   expires=maybe_iso8601(message_data.get("expires")),
+                   retries=body.get("retries", 0),
+                   eta=maybe_iso8601(body.get("eta")),
+                   expires=maybe_iso8601(body.get("expires")),
                    on_ack=on_ack,
                    delivery_info=delivery_info,
                    **kw)
@@ -292,6 +301,7 @@ class TaskRequest(object):
         return {"logfile": logfile,
                 "loglevel": loglevel,
                 "id": self.task_id,
+                "taskset": self.taskset_id,
                 "retries": self.retries,
                 "is_eager": False,
                 "delivery_info": self.delivery_info}
@@ -448,7 +458,7 @@ class TaskRequest(object):
 
         runtime = self.time_start and (time.time() - self.time_start) or 0
         self.send_event("task-succeeded", uuid=self.task_id,
-                        result=repr(ret_value), runtime=runtime)
+                        result=safe_repr(ret_value), runtime=runtime)
 
         self.logger.info(self.success_msg.strip() % {
                 "id": self.task_id,
@@ -459,13 +469,13 @@ class TaskRequest(object):
     def on_retry(self, exc_info):
         """Handler called if the task should be retried."""
         self.send_event("task-retried", uuid=self.task_id,
-                                        exception=repr(exc_info.exception.exc),
-                                        traceback=repr(exc_info.traceback))
+                         exception=safe_repr(exc_info.exception.exc),
+                         traceback=safe_repr(exc_info.traceback))
 
         self.logger.info(self.retry_msg.strip() % {
                 "id": self.task_id,
                 "name": self.task_name,
-                "exc": repr(exc_info.exception.exc)})
+                "exc": safe_repr(exc_info.exception.exc)})
 
     def on_failure(self, exc_info):
         """Handler called if the task raised an exception."""
@@ -485,15 +495,14 @@ class TaskRequest(object):
                                                   exc_info.exception)
 
         self.send_event("task-failed", uuid=self.task_id,
-                                       exception=repr(exc_info.exception),
-                                       traceback=exc_info.traceback)
+                         exception=safe_repr(exc_info.exception),
+                         traceback=safe_str(exc_info.traceback))
 
         context = {"hostname": self.hostname,
                    "id": self.task_id,
                    "name": self.task_name,
-                   "exc": repr(exc_info.exception),
-                   "traceback": unicode(exc_info.traceback,
-                                        sys.getfilesystemencoding()),
+                   "exc": safe_repr(exc_info.exception),
+                   "traceback": safe_str(exc_info.traceback),
                    "args": self.args,
                    "kwargs": self.kwargs}
 
@@ -528,14 +537,14 @@ class TaskRequest(object):
     def repr_result(self, result, maxlen=46):
         # 46 is the length needed to fit
         #     "the quick brown fox jumps over the lazy dog" :)
-        return truncate_text(repr(result), maxlen)
+        return truncate_text(safe_repr(result), maxlen)
 
     def info(self, safe=False):
         args = self.args
         kwargs = self.kwargs
         if not safe:
-            args = repr(args)
-            kwargs = repr(self.kwargs)
+            args = safe_repr(args)
+            kwargs = safe_repr(self.kwargs)
 
         return {"id": self.task_id,
                 "name": self.task_name,

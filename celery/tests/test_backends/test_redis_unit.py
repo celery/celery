@@ -1,8 +1,9 @@
 from datetime import timedelta
 
+from celery import current_app
 from celery import states
-from celery.app import app_or_default
 from celery.utils import gen_unique_id
+from celery.utils.timeutils import timedelta_seconds
 
 from celery.tests.utils import unittest
 
@@ -55,14 +56,14 @@ class test_RedisBackend(unittest.TestCase):
         self.Backend = self.get_backend()
 
     def test_expires_defaults_to_config(self):
-        app = app_or_default()
-        prev = app.conf.CELERY_AMQP_TASK_RESULT_EXPIRES
-        app.conf.CELERY_TASK_RESULT_EXPIRES = 10
+        conf = current_app.conf
+        prev = conf.CELERY_TASK_RESULT_EXPIRES
+        conf.CELERY_TASK_RESULT_EXPIRES = 10
         try:
             b = self.Backend(expires=None)
             self.assertEqual(b.expires, 10)
         finally:
-            app.conf.CELERY_TASK_RESULT_EXPIRES = prev
+            conf.CELERY_TASK_RESULT_EXPIRES = prev
 
     def test_expires_is_int(self):
         b = self.Backend(expires=48)
@@ -70,7 +71,8 @@ class test_RedisBackend(unittest.TestCase):
 
     def test_expires_is_None(self):
         b = self.Backend(expires=None)
-        self.assertIsNone(b.expires)
+        self.assertEqual(b.expires, timedelta_seconds(
+            current_app.conf.CELERY_TASK_RESULT_EXPIRES))
 
     def test_expires_is_timedelta(self):
         b = self.Backend(expires=timedelta(minutes=1))

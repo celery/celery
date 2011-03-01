@@ -19,7 +19,7 @@ class Task(ResultModelBase):
     id = sa.Column(sa.Integer, sa.Sequence("task_id_sequence"),
                    primary_key=True,
                    autoincrement=True)
-    task_id = sa.Column(sa.String(255))
+    task_id = sa.Column(sa.String(255), unique=True)
     status = sa.Column(sa.String(50), default=states.PENDING)
     result = sa.Column(PickleType, nullable=True)
     date_done = sa.Column(sa.DateTime, default=datetime.now,
@@ -33,7 +33,8 @@ class Task(ResultModelBase):
         return {"task_id": self.task_id,
                 "status": self.status,
                 "result": self.result,
-                "traceback": self.traceback}
+                "traceback": self.traceback,
+                "date_done": self.date_done}
 
     def __repr__(self):
         return "<Task %s state: %s>" % (self.task_id, self.status)
@@ -46,7 +47,7 @@ class TaskSet(ResultModelBase):
 
     id = sa.Column(sa.Integer, sa.Sequence("taskset_id_sequence"),
                 autoincrement=True, primary_key=True)
-    taskset_id = sa.Column(sa.String(255))
+    taskset_id = sa.Column(sa.String(255), unique=True)
     result = sa.Column(sa.PickleType, nullable=True)
     date_done = sa.Column(sa.DateTime, default=datetime.now,
                        nullable=True)
@@ -57,7 +58,8 @@ class TaskSet(ResultModelBase):
 
     def to_dict(self):
         return {"taskset_id": self.taskset_id,
-                "result": self.result}
+                "result": self.result,
+                "date_done": self.date_done}
 
     def __repr__(self):
         return u"<TaskSet: %s>" % (self.taskset_id, )

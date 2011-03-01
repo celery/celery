@@ -169,6 +169,7 @@ class purge(Command):
                 queues, pluralize(queues, "queue")))
 purge = command(purge)
 
+
 class result(Command):
     args = "<task_id>"
     option_list = Command.option_list + (
@@ -189,6 +190,7 @@ result = command(result)
 
 class inspect(Command):
     choices = {"active": 1.0,
+               "active_queues": 1.0,
                "scheduled": 1.0,
                "reserved": 1.0,
                "stats": 1.0,
@@ -225,10 +227,10 @@ class inspect(Command):
         if destination and isinstance(destination, basestring):
             destination = map(str.strip, destination.split(","))
 
-        def on_reply(message_data):
+        def on_reply(body):
             c = self.colored
-            node = message_data.keys()[0]
-            reply = message_data[node]
+            node = body.keys()[0]
+            reply = body[node]
             status, preply = self.prettify(reply)
             self.say("->", c.cyan(node, ": ") + status, indent(preply))
 

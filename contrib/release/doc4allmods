@@ -10,6 +10,7 @@ SKIP_FILES="celery.bin.rst
             celery.worker.control.builtins.rst
             celery.worker.control.registry.rst
             celery.task.schedules.rst
+            celery.local.rst
             celery.models.rst
             celery.app.base.rst
             celery.apps.rst

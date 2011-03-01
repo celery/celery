@@ -28,8 +28,7 @@ class TaskRegistry(UserDict):
 
         """
         task = inspect.isclass(task) and task() or task
-        name = task.name
-        self.data[name] = task
+        self.data[task.name] = task
 
     def unregister(self, name):
         """Unregister task by name.
@@ -46,34 +45,27 @@ class TaskRegistry(UserDict):
             name = name.name
         except AttributeError:
             pass
-
         self.pop(name)
 
     def filter_types(self, type):
         """Return all tasks of a specific type."""
-        return dict((task_name, task)
-                        for task_name, task in self.data.items()
-                            if task.type == type)
+        return dict((task_name, task) for task_name, task in self.data.items()
+                                        if task.type == type)
 
     def __getitem__(self, key):
         try:
             return UserDict.__getitem__(self, key)
-        except KeyError, exc:
-            raise self.NotRegistered(str(exc))
+        except KeyError:
+            raise self.NotRegistered(key)
 
     def pop(self, key, *args):
         try:
             return UserDict.pop(self, key, *args)
-        except KeyError, exc:
-            raise self.NotRegistered(str(exc))
+        except KeyError:
+            raise self.NotRegistered(key)
 
 
-"""
-.. data:: tasks
-
-    The global task registry.
-
-"""
+#: Global task registry.
 tasks = TaskRegistry()
 
 

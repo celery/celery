@@ -20,7 +20,7 @@
 #   CELERYD_CHDIR="/opt/Myproject/"
 #
 #   # Extra arguments to celeryd
-#   CELERYD_OPTS="--time-limit 300"
+#   CELERYD_OPTS="--time-limit=300"
 #
 #   # Name of the celery config module.#
 #   CELERY_CONFIG_MODULE="celeryconfig"
@@ -32,7 +32,7 @@
 #   CELERYD_CHDIR="/opt/Project/"
 #
 #   # Name of the projects settings module.
-#   DJANGO_SETTINGS_MODULE="settings"
+#   export DJANGO_SETTINGS_MODULE="settings"
 #
 #   # Path to celeryd
 #   CELERYD="/opt/Project/manage.py"

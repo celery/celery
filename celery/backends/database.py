@@ -5,6 +5,7 @@ from celery.backends.base import BaseDictBackend
 from celery.db.models import Task, TaskSet
 from celery.db.session import ResultSession
 from celery.exceptions import ImproperlyConfigured
+from celery.utils.timeutils import maybe_timedelta
 
 
 def _sqlalchemy_installed():
@@ -25,7 +26,8 @@ class DatabaseBackend(BaseDictBackend):
             engine_options=None, **kwargs):
         super(DatabaseBackend, self).__init__(**kwargs)
         self.result_expires = result_expires or \
-                                self.app.conf.CELERY_TASK_RESULT_EXPIRES
+                                maybe_timedelta(
+                                    self.app.conf.CELERY_TASK_RESULT_EXPIRES)
         self.dburi = dburi or self.app.conf.CELERY_RESULT_DBURI
         self.engine_options = dict(engine_options or {},
                         **self.app.conf.CELERY_RESULT_ENGINE_OPTIONS or {})

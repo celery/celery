@@ -43,6 +43,9 @@ class BasePool(object):
     def on_apply(self, *args, **kwargs):
         pass
 
+    def on_terminate(self):
+        pass
+
     def terminate_job(self, pid):
         raise NotImplementedError(
                 "%s does not implement kill_job" % (self.__class__, ))
@@ -112,9 +115,6 @@ class BasePool(object):
             self.logger.error("Pool callback raised exception: %s" % (
                 traceback.format_exc(), ),
                 exc_info=sys.exc_info())
-
-    def blocking(self, fun, *args, **kwargs):
-        return fun(*args, **kwargs)
 
     def _get_info(self):
         return {}

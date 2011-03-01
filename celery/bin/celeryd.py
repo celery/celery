@@ -72,7 +72,11 @@
 
 """
 import sys
-import multiprocessing
+
+try:
+    from multiprocessing import freeze_support
+except ImportError:
+    freeze_support = lambda: True
 
 from celery.bin.base import Command, Option
 
@@ -177,7 +181,7 @@ class WorkerCommand(Command):
 
 
 def main():
-    multiprocessing.freeze_support()
+    freeze_support()
     worker = WorkerCommand()
     worker.execute_from_commandline()
 

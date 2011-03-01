@@ -7,20 +7,58 @@ import importlib
 import logging
 import threading
 import traceback
+import warnings
 
 from inspect import getargspec
 from itertools import islice
 from pprint import pprint
 
-from kombu.utils import gen_unique_id, rpartition
+from kombu.utils import gen_unique_id, rpartition, cached_property
 
 from celery.utils.compat import StringIO
-from celery.utils.functional import partial
+from celery.utils.functional import partial, wraps
 
 
 LOG_LEVELS = dict(logging._levelNames)
 LOG_LEVELS["FATAL"] = logging.FATAL
 LOG_LEVELS[logging.FATAL] = "FATAL"
+
+PENDING_DEPRECATION_FMT = """
+    %(description)s is scheduled for deprecation in \
+    version %(deprecation)s and removal in version v%(removal)s. \
+    %(alternative)s
+"""
+
+DEPRECATION_FMT = """
+    %(description)s is deprecated and scheduled for removal in
+    version %(removal)s. %(alternative)s
+"""
+
+
+def deprecated(description=None, deprecation=None, removal=None,
+        alternative=None):
+
+    def _inner(fun):
+
+        @wraps(fun)
+        def __inner(*args, **kwargs):
+            ctx = {"description": description or get_full_cls_name(fun),
+                   "deprecation": deprecation, "removal": removal,
+                   "alternative": alternative}
+            if deprecation is not None:
+                w = PendingDeprecationWarning(PENDING_DEPRECATION_FMT % ctx)
+            else:
+                w = DeprecationWarning(DEPRECATION_FMT % ctx)
+            warnings.warn(w)
+            return fun(*args, **kwargs)
+        return __inner
+    return _inner
+
+
+def lpmerge(L, R):
+    """Left precedent dictionary merge.  Keeps values from `l`, if the value
+    in `r` is :const:`None`."""
+    return dict(L, **dict((k, v) for k, v in R.iteritems() if v is not None))
 
 
 class promise(object):
@@ -340,74 +378,6 @@ def import_from_cwd(module, imp=None):
             sys.path.remove(cwd)
         except ValueError:
             pass
-
-
-class cached_property(object):
-    """Property descriptor that caches the return value
-    of the get function.
-
-    *Examples*
-
-    .. code-block:: python
-
-        @cached_property
-        def connection(self):
-            return Connection()
-
-        @connection.setter  # Prepares stored value
-        def connection(self, value):
-            if value is None:
-                raise TypeError("Connection must be a connection")
-            return value
-
-        @connection.deleter
-        def connection(self, value):
-            # Additional action to do at del(self.attr)
-            if value is not None:
-                print("Connection %r deleted" % (value, ))
-
-    """
-
-    def __init__(self, fget=None, fset=None, fdel=None, doc=None):
-        self.__get = fget
-        self.__set = fset
-        self.__del = fdel
-        self.__doc__ = doc or fget.__doc__
-        self.__name__ = fget.__name__
-        self.__module__ = fget.__module__
-
-    def __get__(self, obj, type=None):
-        if obj is None:
-            return self
-        try:
-            return obj.__dict__[self.__name__]
-        except KeyError:
-            value = obj.__dict__[self.__name__] = self.__get(obj)
-            return value
-
-    def __set__(self, obj, value):
-        if obj is None:
-            return self
-        if self.__set is not None:
-            value = self.__set(obj, value)
-        obj.__dict__[self.__name__] = value
-
-    def __delete__(self, obj):
-        if obj is None:
-            return self
-        try:
-            value = obj.__dict__.pop(self.__name__)
-        except KeyError:
-            pass
-        else:
-            if self.__del is not None:
-                self.__del(obj, value)
-
-    def setter(self, fset):
-        return self.__class__(self.__get, fset, self.__del)
-
-    def deleter(self, fdel):
-        return self.__class__(self.__get, self.__set, fdel)
 
 
 def cry():

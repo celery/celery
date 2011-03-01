@@ -1,7 +1,5 @@
 import os
 
-from datetime import timedelta
-
 from celery import Celery
 from celery.app import defaults
 from celery.app.base import BaseApp
@@ -32,11 +30,11 @@ test_config = _get_test_config()
 class test_App(unittest.TestCase):
 
     def setUp(self):
-        self.app = Celery()
+        self.app = Celery(set_as_current=False)
         self.app.conf.update(test_config)
 
     def test_task(self):
-        app = Celery("foozibari")
+        app = Celery("foozibari", set_as_current=False)
 
         def fun():
             pass
@@ -75,7 +73,8 @@ class test_App(unittest.TestCase):
             celeryd.WorkerCommand = prev
 
     def test_config_from_envvar(self):
-        os.environ["CELERYTEST_CONFIG_OBJECT"] = "celery.tests.test_app"
+        os.environ["CELERYTEST_CONFIG_OBJECT"] = \
+                "celery.tests.test_app.test_app"
         self.app.config_from_envvar("CELERYTEST_CONFIG_OBJECT")
         self.assertEqual(self.app.conf.THIS_IS_A_KEY, "this is a value")
 
@@ -122,21 +121,7 @@ class test_App(unittest.TestCase):
 
     def test_Windows_log_color_disabled(self):
         self.app.IS_WINDOWS = True
-        self.app.config_from_object(Object(CELERYD_LOG_COLOR=True))
-        self.assertFalse(self.app.conf.CELERYD_LOG_COLOR)
-
-    def test_task_result_expires_converted_to_timedelta(self):
-        self.app.config_from_object(Object(CELERY_TASK_RESULT_EXPIRES=100))
-        self.assertEqual(self.app.conf.CELERY_TASK_RESULT_EXPIRES,
-                         timedelta(seconds=100))
-
-        self.assertIn("celery.backend_cleanup",
-                      self.app.conf.CELERYBEAT_SCHEDULE)
-
-    def test_backend_cleanup_not_installed(self):
-        self.app.config_from_object(Object(CELERY_TASK_RESULT_EXPIRES=None))
-        self.assertNotIn("celery.backend_cleanup",
-                         self.app.conf.CELERYBEAT_SCHEDULE)
+        self.assertFalse(self.app.log.supports_color())
 
     def test_compat_setting_CARROT_BACKEND(self):
         self.app.config_from_object(Object(CARROT_BACKEND="set_by_us"))
@@ -160,15 +145,15 @@ class test_App(unittest.TestCase):
                                        "userid": "guest",
                                        "password": "guest",
                                        "virtual_host": "/"},
-                                      self.app.amqp.get_broker_info())
+                                      self.app.broker_connection().info())
         self.app.conf.BROKER_PORT = 1978
         self.app.conf.BROKER_VHOST = "foo"
-        self.assertDictContainsSubset({"port": ":1978",
-                                       "virtual_host": "/foo"},
-                                      self.app.amqp.get_broker_info())
+        self.assertDictContainsSubset({"port": 1978,
+                                       "virtual_host": "foo"},
+                                      self.app.broker_connection().info())
         conn = self.app.broker_connection(virtual_host="/value")
         self.assertDictContainsSubset({"virtual_host": "/value"},
-                                      self.app.amqp.get_broker_info(conn))
+                                      conn.info())
 
     def test_send_task_sent_event(self):
         from celery.app import amqp

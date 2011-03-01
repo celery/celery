@@ -5,7 +5,8 @@ BROKER_BACKEND = "memory"
 #: Don't want log output when running suite.
 CELERYD_HIJACK_ROOT_LOGGER = False
 
-CELERY_RESULT_BACKEND = "database"
+CELERY_RESULT_BACKEND = "cache"
+CELERY_CACHE_BACKEND = "memory"
 CELERY_RESULT_DBURI = "sqlite:///test.db"
 CELERY_SEND_TASK_ERROR_EMAILS = False
 

@@ -4,19 +4,19 @@ celery.app.base
 
 Application Base Class.
 
-:copyright: (c) 2009 - 2010 by Ask Solem.
+:copyright: (c) 2009 - 2011 by Ask Solem.
 :license: BSD, see LICENSE for more details.
 
 """
-import sys
 import platform as _platform
 
-from datetime import timedelta
+from copy import deepcopy
 
-from celery import routes
+from kombu.utils import cached_property
+
 from celery.app.defaults import DEFAULTS
 from celery.datastructures import ConfigurationView
-from celery.utils import instantiate, isatty, cached_property, maybe_promise
+from celery.utils import instantiate, lpmerge
 from celery.utils.functional import wraps
 
 
@@ -35,7 +35,7 @@ class BaseApp(object):
 
     def __init__(self, main=None, loader=None, backend=None,
             amqp=None, events=None, log=None, control=None,
-            set_as_current=True):
+            set_as_current=True, accept_magic_kwargs=False):
         self.main = main
         self.amqp_cls = amqp or self.amqp_cls
         self.backend_cls = backend or self.backend_cls
@@ -44,6 +44,7 @@ class BaseApp(object):
         self.log_cls = log or self.log_cls
         self.control_cls = control or self.control_cls
         self.set_as_current = set_as_current
+        self.accept_magic_kwargs = accept_magic_kwargs
         self.on_init()
 
     def on_init(self):
@@ -82,9 +83,7 @@ class BaseApp(object):
         The config
 
         """
-        config = self.loader.cmdline_config_parser(argv, namespace)
-        for key, value in config.items():
-            self.conf[key] = value
+        self.conf.update(self.loader.cmdline_config_parser(argv, namespace))
 
     def send_task(self, name, args=None, kwargs=None, countdown=None,
             eta=None, task_id=None, publisher=None, connection=None,
@@ -195,7 +194,7 @@ class BaseApp(object):
                     close_connection()
         return _inner
 
-    def pre_config_merge(self, c):
+    def prepare_config(self, c):
         """Prepare configuration before it is merged with the defaults."""
         if not c.get("CELERY_RESULT_BACKEND"):
             rbackend = c.get("CELERY_BACKEND")
@@ -207,45 +206,11 @@ class BaseApp(object):
                 c["BROKER_BACKEND"] = cbackend
         return c
 
-    def post_config_merge(self, c):
-        # XXX This should be done by whoever requires these settings.
-        """Prepare configuration after it has been merged with the
-        defaults."""
-        if not c.get("CELERY_QUEUES"):
-            c["CELERY_QUEUES"] = {
-                c["CELERY_DEFAULT_QUEUE"]: {
-                    "exchange": c["CELERY_DEFAULT_EXCHANGE"],
-                    "exchange_type": c["CELERY_DEFAULT_EXCHANGE_TYPE"],
-                    "binding_key": c["CELERY_DEFAULT_ROUTING_KEY"]}}
-        c["CELERY_ROUTES"] = routes.prepare(c.get("CELERY_ROUTES") or {})
-        if c.get("CELERYD_LOG_COLOR") is None:
-            c["CELERYD_LOG_COLOR"] = not c["CELERYD_LOG_FILE"] and \
-                                        isatty(sys.stderr)
-        if self.IS_WINDOWS:  # windows console doesn't support ANSI colors
-            c["CELERYD_LOG_COLOR"] = False
-        if isinstance(c["CELERY_TASK_RESULT_EXPIRES"], int):
-            c["CELERY_TASK_RESULT_EXPIRES"] = timedelta(
-                    seconds=c["CELERY_TASK_RESULT_EXPIRES"])
-
-        # Install backend cleanup periodic task.
-        c["CELERYBEAT_SCHEDULE"] = maybe_promise(c["CELERYBEAT_SCHEDULE"])
-        if c["CELERY_TASK_RESULT_EXPIRES"]:
-            from celery.schedules import crontab
-            c["CELERYBEAT_SCHEDULE"].setdefault("celery.backend_cleanup",
-                    dict(task="celery.backend_cleanup",
-                         schedule=crontab(minute="00", hour="04",
-                                          day_of_week="*"),
-                         options={"expires": 12 * 3600}))
-
-        return c
-
     def mail_admins(self, subject, body, fail_silently=False):
-        """Send an e-mail to the admins in conf.ADMINS."""
-        if not self.conf.ADMINS:
-            return
-        to = [admin_email for _, admin_email in self.conf.ADMINS]
-        return self.loader.mail_admins(subject, body, fail_silently,
-                                       to=to,
+        """Send an e-mail to the admins in the :setting:`ADMINS` setting."""
+        if self.conf.ADMINS:
+            to = [admin_email for _, admin_email in self.conf.ADMINS]
+            return self.loader.mail_admins(subject, body, fail_silently, to=to,
                                        sender=self.conf.SERVER_EMAIL,
                                        host=self.conf.EMAIL_HOST,
                                        port=self.conf.EMAIL_PORT,
@@ -261,14 +226,10 @@ class BaseApp(object):
                 return value
         return self.conf.get(default_key)
 
-    def merge(self, a, b):
+    def merge(self, l, r):
         """Like `dict(a, **b)` except it will keep values from `a`
         if the value in `b` is :const:`None`."""
-        b = dict(b)
-        for key, value in a.items():
-            if b.get(key) is None:
-                b[key] = value
-        return b
+        return lpmerge(l, r)
 
     def _get_backend(self):
         from celery.backends import get_backend_cls
@@ -277,27 +238,18 @@ class BaseApp(object):
         return backend_cls(app=self)
 
     def _get_config(self):
-        return self.post_config_merge(
-                        ConfigurationView({}, [
-                            self.pre_config_merge(self.loader.conf),
-                            DEFAULTS]))
+        return ConfigurationView({},
+                [self.prepare_config(self.loader.conf), deepcopy(DEFAULTS)])
 
     @cached_property
     def amqp(self):
-        """Sending/receiving messages.
-
-        See :class:`~celery.app.amqp.AMQP`.
-
-        """
+        """Sending/receiving messages.  See :class:`~celery.app.amqp.AMQP`."""
         return instantiate(self.amqp_cls, app=self)
 
     @cached_property
     def backend(self):
-        """Storing/retreiving task state.
-
-        See :class:`~celery.backend.base.BaseBackend`.
-
-        """
+        """Storing/retreiving task state.  See
+        :class:`~celery.backend.base.BaseBackend`."""
         return self._get_backend()
 
     @cached_property
@@ -307,20 +259,13 @@ class BaseApp(object):
 
     @cached_property
     def control(self):
-        """Controlling worker nodes.
-
-        See :class:`~celery.task.control.Control`.
-
-        """
+        """Controlling worker nodes.  See
+        :class:`~celery.task.control.Control`."""
         return instantiate(self.control_cls, app=self)
 
     @cached_property
     def events(self):
-        """Sending/receiving events.
-
-        See :class:`~celery.events.Events`.
-
-        """
+        """Sending/receiving events.  See :class:`~celery.events.Events`. """
         return instantiate(self.events_cls, app=self)
 
     @cached_property
@@ -331,9 +276,5 @@ class BaseApp(object):
 
     @cached_property
     def log(self):
-        """Logging utilities.
-
-        See :class:`~celery.log.Logging`.
-
-        """
+        """Logging utilities.  See :class:`~celery.log.Logging`."""
         return instantiate(self.log_cls, app=self)

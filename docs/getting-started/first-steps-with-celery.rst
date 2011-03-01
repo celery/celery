@@ -110,7 +110,7 @@ see what's going on in the terminal::
 
 In production you will probably want to run the worker in the
 background as a daemon.  To do this you need to use the tools provided
-by your platform, or something like `supervisord`_ (see :ref:`daemonization`
+by your platform, or something like `supervisord`_ (see :ref:`daemonizing`
 for more information).
 
 For a complete listing of the command line options available, do::

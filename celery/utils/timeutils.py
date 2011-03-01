@@ -20,6 +20,13 @@ TIME_UNITS = (("day", 60 * 60 * 24, lambda n: int(math.ceil(n))),
               ("second", 1, lambda n: "%.2f" % n))
 
 
+def maybe_timedelta(delta):
+    """Coerces integer to timedelta if `delta` is an integer."""
+    if isinstance(delta, int):
+        return timedelta(seconds=int)
+    return delta
+
+
 def timedelta_seconds(delta):  # pragma: no cover
     """Convert :class:`datetime.timedelta` to seconds.
 

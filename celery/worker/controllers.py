@@ -68,4 +68,4 @@ class Mediator(threading.Thread):
         """Gracefully shutdown the thread."""
         self._shutdown.set()
         self._stopped.wait()
-        self.join(1e100)
+        self.join(1e10)

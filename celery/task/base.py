@@ -1,68 +1,56 @@
-# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-"
 import sys
 import threading
-import warnings
 
-from celery.app import app_or_default
+from celery import current_app
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
 from celery.execute.trace import TaskTrace
 from celery.registry import tasks, _unpickle_task
 from celery.result import EagerResult
 from celery.schedules import maybe_schedule
-from celery.utils import mattrgetter, gen_unique_id, fun_takes_kwargs
-from celery.utils.functional import wraps
-from celery.utils.timeutils import timedelta_seconds
+from celery.utils import deprecated, mattrgetter, gen_unique_id, \
+                         fun_takes_kwargs
+from celery.utils import timeutils
 
 from celery.task import sets
 
-IMPORT_DEPRECATION_TEXT = """
-Importing %(symbol)s from `celery.task.base` is deprecated,
-and is scheduled for removal in 2.4.
-
-Please use `from celery.task import %(symbol)s` instead.
-
-"""
-
-
-def __deprecated_import(fun):
-
-    @wraps(fun)
-    def _inner(*args, **kwargs):
-        warnings.warn(DeprecationWarning(
-            IMPORT_DEPRECATION_TEXT % {"symbol": fun.__name__, }))
-        return fun(*args, **kwargs)
-
-    return _inner
-TaskSet = __deprecated_import(sets.TaskSet)  # ✟
-subtask = __deprecated_import(sets.subtask)  # ✟
+TaskSet = deprecated("Importing TaskSet from celery.task.base",
+                     alternative="Use celery.task.TaskSet instead.",
+                     removal="2.4")(sets.TaskSet)
+subtask = deprecated("Importing subtask from celery.task.base",
+                     alternative="Use celery.task.subtask instead.",
+                     removal="2.4")(sets.subtask)
 
 extract_exec_options = mattrgetter("queue", "routing_key",
                                    "exchange", "immediate",
                                    "mandatory", "priority",
                                    "serializer", "delivery_mode",
                                    "compression")
-_default_context = {"logfile": None,
-                    "loglevel": None,
-                    "id": None,
-                    "args": None,
-                    "kwargs": None,
-                    "retries": 0,
-                    "is_eager": False,
-                    "delivery_info": None}
 
 
 class Context(threading.local):
+    # Default context
+    logfile = None
+    loglevel = None
+    id = None
+    args = None
+    kwargs = None
+    retries = 0
+    is_eager = False
+    delivery_info = None
+    taskset = None
 
     def update(self, d, **kwargs):
         self.__dict__.update(d, **kwargs)
 
     def clear(self):
         self.__dict__.clear()
-        self.update(_default_context)
 
     def get(self, key, default=None):
-        return self.__dict__.get(key, default)
+        if not hasattr(self, key):
+            return default
+        return getattr(self, key)
 
 
 class TaskType(type):
@@ -77,46 +65,40 @@ class TaskType(type):
     """
 
     def __new__(cls, name, bases, attrs):
-        super_new = super(TaskType, cls).__new__
+        new = super(TaskType, cls).__new__
         task_module = attrs["__module__"]
 
-        # Abstract class, remove the abstract attribute so
-        # any class inheriting from this won't be abstract by default.
+        # Abstract class: abstract attribute should not be inherited.
         if attrs.pop("abstract", None) or not attrs.get("autoregister", True):
-            return super_new(cls, name, bases, attrs)
+            return new(cls, name, bases, attrs)
 
-        # Automatically generate missing name.
+        # Automatically generate missing/empty name.
         if not attrs.get("name"):
-            task_name = ".".join([sys.modules[task_module].__name__, name])
-            attrs["name"] = task_name
+            attrs["name"] = '.'.join([sys.modules[task_module].__name__, name])
 
         # Because of the way import happens (recursively)
         # we may or may not be the first time the task tries to register
-        # with the framework. There should only be one class for each task
+        # with the framework.  There should only be one class for each task
         # name, so we always return the registered version.
-
         task_name = attrs["name"]
         if task_name not in tasks:
-            task_cls = super_new(cls, name, bases, attrs)
+            task_cls = new(cls, name, bases, attrs)
             if task_module == "__main__" and task_cls.app.main:
-                task_name = task_cls.name = ".".join([task_cls.app.main,
-                                                      name])
+                task_name = task_cls.name = '.'.join([task_cls.app.main, name])
             tasks.register(task_cls)
         task = tasks[task_name].__class__
         return task
 
+    def __repr__(cls):
+        return "<class Task of %s>" % (cls.app, )
+
 
 class BaseTask(object):
-    """A Celery task.
+    """Task base class.
 
-    All subclasses of :class:`Task` must define the :meth:`run` method,
-    which is the actual method the `celery` daemon executes.
-
-    The :meth:`run` method can take use of the default keyword arguments,
-    as listed in the :meth:`run` documentation.
-
-    The resulting class is callable, which if called will apply the
-    :meth:`run` method.
+    When called tasks apply the :meth:`run` method.  This method must
+    be defined by all tasks (that is unless the :meth:`__call__` method
+    is overridden).
 
     """
     __metaclass__ = TaskType
@@ -133,10 +115,10 @@ class BaseTask(object):
     abstract = True
 
     #: If disabled the worker will not forward magic keyword arguments.
-    #: Depracted and scheduled for removal in v3.0.
+    #: Deprecated and scheduled for removal in v3.0.
     accept_magic_kwargs = False
 
-    #: Current request context (when task is executed).
+    #: Request context (set when task is applied).
     request = Context()
 
     #: Destination queue.  The queue needs to exist
@@ -194,21 +176,19 @@ class BaseTask(object):
     #: If enabled an e-mail will be sent to :setting:`ADMINS` whenever a task
     #: of this type fails.
     send_error_emails = False
-
     disable_error_emails = False                            # FIXME
 
     #: List of exception types to send error e-mails for.
     error_whitelist = ()
 
-    #: The name of a serializer that has been registered with
+    #: The name of a serializer that are registered with
     #: :mod:`kombu.serialization.registry`.  Default is `"pickle"`.
     serializer = "pickle"
 
     #: The result store backend used for this task.
     backend = None
 
-    #: If disabled the task will not be automatically registered
-    #: in the task registry.
+    #: If disabled this task won't be registered automatically.
     autoregister = True
 
     #: If enabled the task will report its status as "started" when the task
@@ -224,7 +204,7 @@ class BaseTask(object):
     #: :setting:`CELERY_TRACK_STARTED` setting.
     track_started = False
 
-    #: When enabled  messages for this task will be acknowledged **after**
+    #: When enabled messages for this task will be acknowledged **after**
     #: the task has been executed, and not *just before* which is the
     #: default behavior.
     #:
@@ -249,39 +229,13 @@ class BaseTask(object):
         return (_unpickle_task, (self.name, ), None)
 
     def run(self, *args, **kwargs):
-        """The body of the task executed by the worker.
-
-        The following standard keyword arguments are reserved and is
-        automatically passed by the worker if the function/method
-        supports them:
-
-            * `task_id`
-            * `task_name`
-            * `task_retries`
-            * `task_is_eager`
-            * `logfile`
-            * `loglevel`
-            * `delivery_info`
-
-        To take these default arguments, the task can either list the ones
-        it wants explicitly or just take an arbitrary list of keyword
-        arguments (\*\*kwargs).
-
-        Magic keyword arguments can be disabled using the
-        :attr:`accept_magic_kwargs` flag.  The information can then
-        be found in the :attr:`request` attribute.
-
-        """
+        """The body of the task executed by workers."""
         raise NotImplementedError("Tasks must define the run method.")
 
     @classmethod
     def get_logger(self, loglevel=None, logfile=None, propagate=False,
             **kwargs):
-        """Get task-aware logger object.
-
-        See :func:`celery.log.setup_task_logger`.
-
-        """
+        """Get task-aware logger object."""
         if loglevel is None:
             loglevel = self.request.loglevel
         if logfile is None:
@@ -289,7 +243,8 @@ class BaseTask(object):
         return self.app.log.setup_task_logger(loglevel=loglevel,
                                               logfile=logfile,
                                               propagate=propagate,
-                            task_kwargs=self.request.get("kwargs"))
+                                              task_name=self.name,
+                                              task_id=self.request.id)
 
     @classmethod
     def establish_connection(self, connect_timeout=None):
@@ -298,17 +253,25 @@ class BaseTask(object):
 
     @classmethod
     def get_publisher(self, connection=None, exchange=None,
-            connect_timeout=None, exchange_type=None):
+            connect_timeout=None, exchange_type=None, **options):
         """Get a celery task message publisher.
 
         :rtype :class:`~celery.app.amqp.TaskPublisher`:
 
-        Please be sure to close the AMQP connection after you're done
-        with this object.  Example::
+        .. warning::
 
-            >>> publisher = self.get_publisher()
-            >>> # ... do something with publisher
-            >>> publisher.connection.close()
+            If you don't specify a connection, one will automatically
+            be established for you, in that case you need to close this
+            connection after use::
+
+                >>> publisher = self.get_publisher()
+                >>> # ... do something with publisher
+                >>> publisher.connection.close()
+
+            or used as a context::
+
+                >>> with self.get_publisher() as publisher:
+                ...     # ... do something with publisher
 
         """
         if exchange is None:
@@ -319,7 +282,8 @@ class BaseTask(object):
         return self.app.amqp.TaskPublisher(connection=connection,
                                            exchange=exchange,
                                            exchange_type=exchange_type,
-                                           routing_key=self.routing_key)
+                                           routing_key=self.routing_key,
+                                           **options)
 
     @classmethod
     def get_consumer(self, connection=None, connect_timeout=None):
@@ -329,8 +293,9 @@ class BaseTask(object):
 
         .. warning::
 
-            Please be sure to close the AMQP connection when you're done
-            with this object.  Example::
+            If you don't specify a connection, one will automatically
+            be established for you, in that case you need to close this
+            connection after use::
 
                 >>> consumer = self.get_consumer()
                 >>> # do something with consumer
@@ -345,8 +310,9 @@ class BaseTask(object):
 
     @classmethod
     def delay(self, *args, **kwargs):
-        """Shortcut to :meth:`apply_async` giving star arguments, but without
-        options.
+        """Star argument version of :meth:`apply_async`.
+
+        Does not support the extra options enabled by :meth:`apply_async`.
 
         :param \*args: positional arguments passed on to the task.
         :param \*\*kwargs: keyword arguments passed on to the task.
@@ -361,7 +327,7 @@ class BaseTask(object):
             eta=None, task_id=None, publisher=None, connection=None,
             connect_timeout=None, router=None, expires=None, queues=None,
             **options):
-        """Run a task asynchronously by the celery daemon(s).
+        """Apply tasks asynchronously by sending a message.
 
         :keyword args: The positional arguments to pass on to the
                        task (a :class:`list` or :class:`tuple`).
@@ -486,7 +452,7 @@ class BaseTask(object):
 
     @classmethod
     def retry(self, args=None, kwargs=None, exc=None, throw=True,
-            **options):
+            eta=None, countdown=None, max_retries=None, **options):
         """Retry the task.
 
         :param args: Positional arguments to retry with.
@@ -497,6 +463,7 @@ class BaseTask(object):
         :keyword countdown: Time in seconds to delay the retry for.
         :keyword eta: Explicit time and date to run the retry at
                       (must be a :class:`~datetime.datetime` instance).
+        :keyword max_retries: If set, overrides the default retry limit.
         :keyword \*\*options: Any extra options to pass on to
                               meth:`apply_async`.
         :keyword throw: If this is :const:`False`, do not raise the
@@ -530,26 +497,30 @@ class BaseTask(object):
 
         """
         request = self.request
+        if max_retries is None:
+            max_retries = self.max_retries
         if args is None:
             args = request.args
         if kwargs is None:
             kwargs = request.kwargs
-
         delivery_info = request.delivery_info
+
         if delivery_info:
             options.setdefault("exchange", delivery_info.get("exchange"))
             options.setdefault("routing_key", delivery_info.get("routing_key"))
 
-        options["retries"] = request.retries + 1
-        options["task_id"] = request.id
-        options["countdown"] = options.get("countdown",
-                                           self.default_retry_delay)
-        max_exc = exc or self.MaxRetriesExceededError(
-                "Can't retry %s[%s] args:%s kwargs:%s" % (
-                    self.name, options["task_id"], args, kwargs))
-        max_retries = self.max_retries
+        if not eta and countdown is None:
+            countdown = self.default_retry_delay
+
+        options.update({"retries": request.retries + 1,
+                        "task_id": request.id,
+                        "countdown": countdown,
+                        "eta": eta})
+
         if max_retries is not None and options["retries"] > max_retries:
-            raise max_exc
+            raise exc or self.MaxRetriesExceededError(
+                            "Can't retry %s[%s] args:%s kwargs:%s" % (
+                                self.name, options["task_id"], args, kwargs))
 
         # If task was executed eagerly using apply(),
         # then the retry must also be executed eagerly.
@@ -557,10 +528,10 @@ class BaseTask(object):
             return self.apply(args=args, kwargs=kwargs, **options).get()
 
         self.apply_async(args=args, kwargs=kwargs, **options)
-
         if throw:
-            message = "Retry in %d seconds." % options["countdown"]
-            raise RetryTaskError(message, exc)
+            raise RetryTaskError(
+                eta and "Retry at %s" % (eta, )
+                     or "Retry in %s secs." % (countdown, ), exc)
 
     @classmethod
     def apply(self, args=None, kwargs=None, **options):
@@ -707,16 +678,18 @@ class BaseTask(object):
         """
         pass
 
-    def execute(self, wrapper, pool, loglevel, logfile):
+    def execute(self, request, pool, loglevel, logfile, **kwargs):
         """The method the worker calls to execute the task.
 
-        :param wrapper: A :class:`~celery.worker.job.TaskRequest`.
+        :param request: A :class:`~celery.worker.job.TaskRequest`.
         :param pool: A task pool.
         :param loglevel: Current loglevel.
         :param logfile: Name of the currently used logfile.
 
+        :keyword consumer: The :class:`~celery.worker.consumer.Consumer`.
+
         """
-        wrapper.execute_using_pool(pool, loglevel, logfile)
+        request.execute_using_pool(pool, loglevel, logfile)
 
     def __repr__(self):
         """`repr(task)`"""
@@ -734,28 +707,7 @@ class BaseTask(object):
         return self.__class__.__name__
 
 
-def create_task_cls(app, **kwargs):
-    apps = [app]
-
-    class Task(BaseTask):
-        abstract = True
-        app = apps[0]
-        backend = app.backend
-        exchange_type = app.conf.CELERY_DEFAULT_EXCHANGE_TYPE
-        delivery_mode = app.conf.CELERY_DEFAULT_DELIVERY_MODE
-        send_error_emails = app.conf.CELERY_SEND_TASK_ERROR_EMAILS
-        error_whitelist = app.conf.CELERY_TASK_ERROR_WHITELIST
-        serializer = app.conf.CELERY_TASK_SERIALIZER
-        rate_limit = app.conf.CELERY_DEFAULT_RATE_LIMIT
-        track_started = app.conf.CELERY_TRACK_STARTED
-        acks_late = app.conf.CELERY_ACKS_LATE
-        ignore_result = app.conf.CELERY_IGNORE_RESULT
-        store_errors_even_if_ignored = \
-                app.conf.CELERY_STORE_ERRORS_EVEN_IF_IGNORED
-        accept_magic_kwargs = kwargs.get("accept_magic_kwargs", False)
-
-    return Task
-Task = create_task_cls(app_or_default(), accept_magic_kwargs=True)
+Task = current_app.Task
 
 
 class PeriodicTask(Task):
@@ -767,7 +719,7 @@ class PeriodicTask(Task):
 
         *REQUIRED* Defines how often the task is run (its interval),
         it can be a :class:`~datetime.timedelta` object, a
-        :class:`~celery.task.schedules.crontab` object or an integer
+        :class:`~celery.schedules.crontab` object or an integer
         specifying the time in seconds.
 
     .. attribute:: relative
@@ -791,7 +743,7 @@ class PeriodicTask(Task):
         ...         logger.info("Execute every 30 seconds")
 
         >>> from celery.task import PeriodicTask
-        >>> from celery.task.schedules import crontab
+        >>> from celery.schedules import crontab
 
         >>> class EveryMondayMorningTask(PeriodicTask):
         ...     run_every = crontab(hour=7, minute=30, day_of_week=1)
@@ -822,7 +774,7 @@ class PeriodicTask(Task):
     options = None
 
     def __init__(self):
-        app = app_or_default()
+        app = current_app
         if not hasattr(self, "run_every"):
             raise NotImplementedError(
                     "Periodic tasks must have a run_every attribute")
@@ -847,7 +799,7 @@ class PeriodicTask(Task):
         Doesn't account for negative timedeltas.
 
         """
-        return timedelta_seconds(delta)
+        return timeutils.timedelta_seconds(delta)
 
     def is_due(self, last_run_at):
         """Returns tuple of two items `(is_due, next_time_to_run)`,

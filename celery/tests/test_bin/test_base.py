@@ -2,7 +2,7 @@ import os
 
 from celery.bin.base import Command
 
-from celery.tests.utils import unittest
+from celery.tests.utils import AppCase
 
 
 class Object(object):
@@ -27,7 +27,7 @@ class MockCommand(Command):
         return args, kwargs
 
 
-class test_Command(unittest.TestCase):
+class test_Command(AppCase):
 
     def test_get_options(self):
         cmd = Command()

@@ -1,7 +1,7 @@
 import threading
-import time
 
 from collections import deque
+from time import time, sleep
 from Queue import Queue, Empty
 
 from celery.datastructures import TokenBucket
@@ -110,8 +110,8 @@ class TaskBucket(object):
         consume tokens from it.
 
         """
-        time_start = time.time()
-        did_timeout = lambda: timeout and time.time() - time_start > timeout
+        time_start = time()
+        did_timeout = lambda: timeout and time() - time_start > timeout
 
         self.not_empty.acquire()
         try:
@@ -126,7 +126,7 @@ class TaskBucket(object):
                 if remaining_time:
                     if not block or did_timeout():
                         raise Empty()
-                    time.sleep(min(remaining_time, timeout or 1))
+                    sleep(min(remaining_time, timeout or 1))
                 else:
                     return item
         finally:
@@ -302,7 +302,7 @@ class TokenBucketQueue(object):
             remaining = self.expected_time()
             if not remaining:
                 return self.get(block=block)
-            time.sleep(remaining)
+            sleep(remaining)
 
     def expected_time(self, tokens=1):
         """Returns the expected time in seconds of when a new token should be

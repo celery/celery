@@ -1,7 +1,9 @@
 import socket
 import logging
 import traceback
-from multiprocessing.util import Finalize
+
+from kombu.syn import blocking
+from kombu.utils.finalize import Finalize
 
 from celery import beat
 from celery import concurrency as _concurrency
@@ -25,8 +27,7 @@ WORKER_SIGRESET = frozenset(["SIGTERM",
                              "SIGHUP",
                              "SIGTTIN",
                              "SIGTTOU",
-                             "SIGUSR1",
-                             "SIGUSR2"])
+                             "SIGUSR1"])
 
 #: List of signals to ignore when a child process starts.
 WORKER_SIGIGNORE = frozenset(["SIGINT"])
@@ -103,9 +104,9 @@ class WorkController(object):
             schedule_filename=None, task_time_limit=None,
             task_soft_time_limit=None, max_tasks_per_child=None,
             pool_putlocks=None, db=None, prefetch_multiplier=None,
-            eta_scheduler_precision=None, queues=None,
-            disable_rate_limits=None, autoscale=None,
-            autoscaler_cls=None, scheduler_cls=None, app=None):
+            eta_scheduler_precision=None, disable_rate_limits=None,
+            autoscale=None, autoscaler_cls=None, scheduler_cls=None,
+            app=None):
 
         self.app = app_or_default(app)
         conf = self.app.conf
@@ -150,13 +151,6 @@ class WorkController(object):
         self.db = db or conf.CELERYD_STATE_DB
         self.disable_rate_limits = disable_rate_limits or \
                                 conf.CELERY_DISABLE_RATE_LIMITS
-
-        # FIXME
-        # For some reason disable rate limits does not work currently,
-        # needs to be fixed for v2.2.0.
-        self.disable_rate_limits = False
-        self.queues = queues
-
         self._finalize = Finalize(self, self.stop, exitpriority=1)
         self._finalize_db = None
 
@@ -229,7 +223,6 @@ class WorkController(object):
                                     init_callback=self.ready_callback,
                                     initial_prefetch_count=prefetch_count,
                                     pool=self.pool,
-                                    queues=self.queues,
                                     app=self.app)
 
         # The order is important here;
@@ -251,7 +244,7 @@ class WorkController(object):
                 self.logger.debug("Starting thread %s..." % (
                                         component.__class__.__name__))
                 self._running = i + 1
-                self.pool.blocking(component.start)
+                blocking(component.start)
         except SystemTerminate:
             self.terminate()
             raise SystemExit()
@@ -259,10 +252,10 @@ class WorkController(object):
             self.stop()
             raise exc
 
-    def process_task(self, wrapper):
+    def process_task(self, request):
         """Process task by sending it to the pool of workers."""
         try:
-            wrapper.task.execute(wrapper, self.pool,
+            request.task.execute(request, self.pool,
                                  self.loglevel, self.logfile)
         except SystemTerminate:
             self.terminate()
@@ -278,13 +271,13 @@ class WorkController(object):
         """Graceful shutdown of the worker server."""
         if in_sighandler and not self.pool.signal_safe:
             return
-        self.pool.blocking(self._shutdown, warm=True)
+        blocking(self._shutdown, warm=True)
 
     def terminate(self, in_sighandler=False):
         """Not so graceful shutdown of the worker server."""
         if in_sighandler and not self.pool.signal_safe:
             return
-        self.pool.blocking(self._shutdown, warm=False)
+        blocking(self._shutdown, warm=False)
 
     def _shutdown(self, warm=True):
         what = (warm and "stopping" or "terminating").capitalize()

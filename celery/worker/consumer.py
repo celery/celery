@@ -72,13 +72,15 @@ from __future__ import generators
 
 import socket
 import sys
+import threading
 import traceback
 import warnings
 
 from celery.app import app_or_default
-from celery.datastructures import AttributeDict, SharedCounter
+from celery.datastructures import AttributeDict
 from celery.exceptions import NotRegistered
 from celery.utils import noop
+from celery.utils.encoding import safe_repr
 from celery.utils.timer2 import to_timestamp
 from celery.worker import state
 from celery.worker.job import TaskRequest, InvalidTaskError
@@ -104,41 +106,64 @@ class QoS(object):
     def __init__(self, consumer, initial_value, logger):
         self.consumer = consumer
         self.logger = logger
-        self.value = SharedCounter(initial_value)
+        self._mutex = threading.RLock()
+        self.value = initial_value
 
-    def increment(self):
+    def increment(self, n=1):
         """Increment the current prefetch count value by one."""
-        if int(self.value):
-            return self.set(self.value.increment())
+        self._mutex.acquire()
+        try:
+            if self.value:
+                self.value += max(n, 0)
+                self.set(self.value)
+            return self.value
+        finally:
+            self._mutex.release()
 
-    def decrement(self):
+    def _sub(self, n=1):
+        assert self.value - n > 1
+        self.value -= n
+
+    def decrement(self, n=1):
         """Decrement the current prefetch count value by one."""
-        if int(self.value):
-            return self.set(self.value.decrement())
+        self._mutex.acquire()
+        try:
+            if self.value:
+                self._sub(n)
+                self.set(self.value)
+            return self.value
+        finally:
+            self._mutex.release()
 
-    def decrement_eventually(self):
+    def decrement_eventually(self, n=1):
         """Decrement the value, but do not update the qos.
 
         The MainThread will be responsible for calling :meth:`update`
         when necessary.
 
         """
-        self.value.decrement()
+        self._mutex.acquire()
+        try:
+            if self.value:
+                self._sub(n)
+        finally:
+            self._mutex.release()
 
     def set(self, pcount):
         """Set channel prefetch_count setting."""
-        self.logger.debug("basic.qos: prefetch_count->%s" % pcount)
-        self.consumer.qos(prefetch_count=pcount)
-        self.prev = pcount
+        if pcount != self.prev:
+            self.logger.debug("basic.qos: prefetch_count->%s" % pcount)
+            self.consumer.qos(prefetch_count=pcount)
+            self.prev = pcount
         return pcount
 
     def update(self):
         """Update prefetch count with current value."""
-        return self.set(self.next)
-
-    @property
-    def next(self):
-        return int(self.value)
+        self._mutex.acquire()
+        try:
+            return self.set(self.value)
+        finally:
+            self._mutex.release()
 
 
 class Consumer(object):
@@ -196,7 +221,7 @@ class Consumer(object):
 
     def __init__(self, ready_queue, eta_schedule, logger,
             init_callback=noop, send_events=False, hostname=None,
-            initial_prefetch_count=2, pool=None, queues=None, app=None):
+            initial_prefetch_count=2, pool=None, app=None):
         self.app = app_or_default(app)
         self.connection = None
         self.task_consumer = None
@@ -222,7 +247,6 @@ class Consumer(object):
         conninfo = self.app.broker_connection()
         self.connection_errors = conninfo.connection_errors
         self.channel_errors = conninfo.channel_errors
-        self.queues = queues
 
     def start(self):
         """Start the consumer.
@@ -235,8 +259,8 @@ class Consumer(object):
         self.init_callback(self)
 
         while 1:
-            self.reset_connection()
             try:
+                self.reset_connection()
                 self.consume_messages()
             except self.connection_errors:
                 self.logger.error("Consumer: Connection to broker lost."
@@ -252,7 +276,7 @@ class Consumer(object):
         while 1:
             if not self.connection:
                 break
-            if self.qos.prev != self.qos.next:
+            if self.qos.prev != self.qos.value:
                 self.qos.update()
             self.connection.drain_events()
 
@@ -270,8 +294,8 @@ class Consumer(object):
         self.logger.info("Got task from broker: %s" % (task.shortinfo(), ))
 
         self.event_dispatcher.send("task-received", uuid=task.task_id,
-                name=task.task_name, args=repr(task.args),
-                kwargs=repr(task.kwargs), retries=task.retries,
+                name=task.task_name, args=safe_repr(task.args),
+                kwargs=safe_repr(task.kwargs), retries=task.retries,
                 eta=task.eta and task.eta.isoformat(),
                 expires=task.expires and task.expires.isoformat())
 
@@ -292,47 +316,48 @@ class Consumer(object):
             state.task_reserved(task)
             self.ready_queue.put(task)
 
-    def on_control(self, message, message_data):
+    def on_control(self, body, message):
         try:
-            self.pidbox_node.handle_message(message, message_data)
+            self.pidbox_node.handle_message(body, message)
         except KeyError, exc:
             self.logger.error("No such control command: %s" % exc)
         except Exception, exc:
             self.logger.error(
                 "Error occurred while handling control command: %r\n%r" % (
-                    exc, traceback.format_exc()))
+                    exc, traceback.format_exc()), exc_info=sys.exc_info())
+            self.reset_pidbox_node()
 
     def apply_eta_task(self, task):
         state.task_reserved(task)
         self.ready_queue.put(task)
         self.qos.decrement_eventually()
 
-    def receive_message(self, message_data, message):
+    def receive_message(self, body, message):
         """The callback called when a new message is received. """
 
         # Handle task
-        if message_data.get("task"):
+        if body.get("task"):
             def ack():
                 try:
                     message.ack()
-                except self.connection_errors, exc:
+                except self.connection_errors + (AttributeError, ), exc:
                     self.logger.critical(
                             "Couldn't ack %r: message:%r reason:%r" % (
-                                message.delivery_tag, message_data, exc))
+                                message.delivery_tag, body, exc))
 
             try:
-                task = TaskRequest.from_message(message, message_data, ack,
+                task = TaskRequest.from_message(message, body, ack,
                                                 app=self.app,
                                                 logger=self.logger,
                                                 hostname=self.hostname,
                                                 eventer=self.event_dispatcher)
             except NotRegistered, exc:
-                self.logger.error("Unknown task ignored: %s: %s" % (
-                        str(exc), message_data), exc_info=sys.exc_info())
+                self.logger.error("Unknown task ignored: %r Body->%r" % (
+                        exc, body), exc_info=sys.exc_info())
                 message.ack()
             except InvalidTaskError, exc:
                 self.logger.error("Invalid task ignored: %s: %s" % (
-                        str(exc), message_data), exc_info=sys.exc_info())
+                        str(exc), body), exc_info=sys.exc_info())
                 message.ack()
             else:
                 self.on_task(task)
@@ -340,7 +365,7 @@ class Consumer(object):
 
         warnings.warn(RuntimeWarning(
             "Received and deleted unknown message. Wrong destination?!? \
-             the message was: %s" % message_data))
+             the message was: %s" % body))
         message.ack()
 
     def maybe_conn_error(self, fun):
@@ -401,11 +426,22 @@ class Consumer(object):
         :param exc: The original exception instance.
 
         """
-        self.logger.critical("Message decoding error: %s "
-                             "(type:%s encoding:%s raw:'%s')" % (
+        self.logger.critical("Can't decode message body: %r "
+                             "(type:%r encoding:%r raw:%r')" % (
                                 exc, message.content_type,
                                 message.content_encoding, message.body))
         message.ack()
+
+    def reset_pidbox_node(self):
+        if self.pidbox_node.channel:
+            try:
+                self.pidbox_node.channel.close()
+            except self.connection_errors + self.channel_errors:
+                pass
+
+        self.pidbox_node.channel = self.connection.channel()
+        self.broadcast_consumer = self.pidbox_node.listen(
+                                        callback=self.on_control)
 
     def reset_connection(self):
         """Re-establish connection and set up consumers."""
@@ -420,7 +456,6 @@ class Consumer(object):
         self.connection = self._open_connection()
         self.logger.debug("Consumer: Connection Established.")
         self.task_consumer = self.app.amqp.get_task_consumer(self.connection,
-                                    queues=self.queues,
                                     on_decode_error=self.on_decode_error)
         # QoS: Reset prefetch window.
         self.qos = QoS(self.task_consumer,
@@ -429,16 +464,18 @@ class Consumer(object):
 
         self.task_consumer.register_callback(self.receive_message)
 
-        self.pidbox_node.channel = self.connection.channel()
-        self.broadcast_consumer = self.pidbox_node.listen(
-                                        callback=self.on_control)
+        # Pidbox
+        self.reset_pidbox_node()
 
         # Flush events sent while connection was down.
-        if self.event_dispatcher:
-            self.event_dispatcher.flush()
+        prev_event_dispatcher = self.event_dispatcher
         self.event_dispatcher = self.app.events.Dispatcher(self.connection,
                                                 hostname=self.hostname,
                                                 enabled=self.send_events)
+        if prev_event_dispatcher:
+            self.event_dispatcher.copy_buffer(prev_event_dispatcher)
+            self.event_dispatcher.flush()
+
         self.restart_heartbeat()
 
         self._state = RUN
@@ -477,7 +514,7 @@ class Consumer(object):
     def info(self):
         conninfo = {}
         if self.connection:
-            conninfo = self.app.amqp.get_broker_info(self.connection)
+            conninfo = self.connection.info()
             conninfo.pop("password", None)  # don't send password.
         return {"broker": conninfo,
-                "prefetch_count": self.qos.next}
+                "prefetch_count": self.qos.value}

@@ -3,30 +3,27 @@ import logging
 import threading
 import sys
 import traceback
-import types
 
-from multiprocessing import current_process
-from multiprocessing import util as mputil
+try:
+    from multiprocessing import current_process
+    from multiprocessing import util as mputil
+except ImportError:
+    current_process = mputil = None
 
 from celery import signals
-from celery.app import app_or_default
-from celery.utils import LOG_LEVELS
+from celery import current_app
+from celery.utils import LOG_LEVELS, isatty
 from celery.utils.compat import LoggerAdapter
+from celery.utils.encoding import safe_str
 from celery.utils.patch import ensure_process_aware_logger
 from celery.utils.term import colored
 
-# The logging subsystem is only configured once per process.
-# setup_logging_subsystem sets this flag, and subsequent calls
-# will do nothing.
-_setup = False
-
-COLORS = {"DEBUG": "blue",
-          "WARNING": "yellow",
-          "ERROR": "red",
-          "CRITICAL": "magenta"}
-
 
 class ColorFormatter(logging.Formatter):
+    #: Loglevel -> Color mapping.
+    COLORS = colored().names
+    colors = {"DEBUG": COLORS["blue"], "WARNING": COLORS["yellow"],
+              "ERROR": COLORS["red"],  "CRITICAL": COLORS["magenta"]}
 
     def __init__(self, msg, use_color=True):
         logging.Formatter.__init__(self, msg)
@@ -34,35 +31,58 @@ class ColorFormatter(logging.Formatter):
 
     def formatException(self, ei):
         r = logging.Formatter.formatException(self, ei)
-        if type(r) in [types.StringType]:
-            r = r.decode("utf-8", "replace")    # Convert to unicode
+        if isinstance(r, str):
+            return r.decode("utf-8", "replace")    # Convert to unicode
         return r
 
     def format(self, record):
         levelname = record.levelname
+        color = self.colors.get(levelname)
 
-        if self.use_color and levelname in COLORS:
-            record.msg = unicode(colored().names[COLORS[levelname]](
-                            record.msg))
+        if self.use_color and color:
+            try:
+                record.msg = color(safe_str(record.msg))
+            except Exception:
+                record.msg = "<Unrepresentable %r: %r>" % (
+                        type(record.msg), traceback.format_stack())
 
         # Very ugly, but have to make sure processName is supported
         # by foreign logger instances.
         # (processName is always supported by Python 2.7)
         if "processName" not in record.__dict__:
-            record.__dict__["processName"] = current_process()._name
+            process_name = current_process and current_process()._name or ""
+            record.__dict__["processName"] = process_name
         t = logging.Formatter.format(self, record)
-        if type(t) in [types.UnicodeType]:
-            t = t.encode('utf-8', 'replace')
+        if isinstance(t, unicode):
+            return t.encode("utf-8", "replace")
         return t
 
 
 class Logging(object):
+    #: The logging subsystem is only configured once per process.
+    #: setup_logging_subsystem sets this flag, and subsequent calls
+    #: will do nothing.
     _setup = False
 
     def __init__(self, app):
         self.app = app
         self.loglevel = self.app.conf.CELERYD_LOG_LEVEL
         self.format = self.app.conf.CELERYD_LOG_FORMAT
+        self.task_format = self.app.conf.CELERYD_TASK_LOG_FORMAT
+        self.colorize = self.app.conf.CELERYD_LOG_COLOR
+
+    def supports_color(self, logfile=None):
+        if self.app.IS_WINDOWS:
+            # Windows does not support ANSI color codes.
+            return False
+        if self.colorize is None:
+            # Only use color if there is no active log file
+            # and stderr is an actual terminal.
+            return logfile is None and isatty(sys.stderr)
+        return self.colorize
+
+    def colored(self, logfile=None):
+        return colored(enabled=self.supports_color(logfile))
 
     def get_task_logger(self, loglevel=None, name=None):
         logger = logging.getLogger(name or "celery.task.default")
@@ -72,19 +92,19 @@ class Logging(object):
 
     def setup_logging_subsystem(self, loglevel=None, logfile=None,
             format=None, colorize=None, **kwargs):
+        if Logging._setup:
+            return
         loglevel = loglevel or self.loglevel
         format = format or self.format
-        colorize = self.app.either("CELERYD_LOG_COLOR", colorize)
+        if colorize is None:
+            colorize = self.supports_color(logfile)
 
-        if self.__class__._setup:
-            return
-
-        try:
-            mputil._logger = None
-        except AttributeError:
-            pass
+        if mputil:
+            try:
+                mputil._logger = None
+            except AttributeError:
+                pass
         ensure_process_aware_logger()
-        logging.Logger.manager.loggerDict.clear()
         receivers = signals.setup_logging.send(sender=None,
                                                loglevel=loglevel,
                                                logfile=logfile,
@@ -96,12 +116,13 @@ class Logging(object):
             if self.app.conf.CELERYD_HIJACK_ROOT_LOGGER:
                 root.handlers = []
 
-            mp = mputil.get_logger()
+            mp = mputil and mputil.get_logger() or None
             for logger in (root, mp):
-                self._setup_logger(logger, logfile,
-                                   format, colorize, **kwargs)
-                logger.setLevel(loglevel)
-        self.__class__._setup = True
+                if logger:
+                    self._setup_logger(logger, logfile, format,
+                                       colorize, **kwargs)
+                    logger.setLevel(loglevel)
+        Logging._setup = True
         return receivers
 
     def _detect_handler(self, logfile=None):
@@ -136,7 +157,8 @@ class Logging(object):
         """
         loglevel = loglevel or self.loglevel
         format = format or self.format
-        colorize = self.app.either("CELERYD_LOG_COLOR", colorize)
+        if colorize is None:
+            colorize = self.supports_color(logfile)
 
         if not root or self.app.conf.CELERYD_HIJACK_ROOT_LOGGER:
             return self._setup_logger(self.get_default_logger(loglevel, name),
@@ -146,8 +168,8 @@ class Logging(object):
         return self.get_default_logger(name=name)
 
     def setup_task_logger(self, loglevel=None, logfile=None, format=None,
-            colorize=None, task_kwargs=None, propagate=False, app=None,
-            **kwargs):
+            colorize=None, task_name=None, task_id=None, propagate=False,
+            app=None, **kwargs):
         """Setup the task logger.
 
         If `logfile` is not specified, then `sys.stderr` is used.
@@ -156,19 +178,16 @@ class Logging(object):
 
         """
         loglevel = loglevel or self.loglevel
-        format = format or self.format
-        colorize = self.app.either("CELERYD_LOG_COLOR", colorize)
+        format = format or self.task_format
+        if colorize is None:
+            colorize = self.supports_color(logfile)
 
-        if task_kwargs is None:
-            task_kwargs = {}
-        task_kwargs.setdefault("task_id", "-?-")
-        task_name = task_kwargs.get("task_name")
-        task_kwargs.setdefault("task_name", "-?-")
         logger = self._setup_logger(self.get_task_logger(loglevel, task_name),
                                     logfile, format, colorize, **kwargs)
         logger.propagate = int(propagate)    # this is an int for some reason.
                                              # better to not question why.
-        return LoggerAdapter(logger, task_kwargs)
+        return LoggerAdapter(logger, {"task_id": task_id,
+                                      "task_name": task_name})
 
     def redirect_stdouts_to_logger(self, logger, loglevel=None):
         """Redirect :class:`sys.stdout` and :class:`sys.stderr` to a
@@ -185,7 +204,7 @@ class Logging(object):
     def _setup_logger(self, logger, logfile, format, colorize,
             formatter=ColorFormatter, **kwargs):
 
-        if logger.handlers:                 # Logger already configured
+        if logger.handlers:  # Logger already configured
             return logger
 
         handler = self._detect_handler(logfile)
@@ -194,13 +213,12 @@ class Logging(object):
         return logger
 
 
-_default_logging = Logging(app_or_default())
-setup_logging_subsystem = _default_logging.setup_logging_subsystem
-get_default_logger = _default_logging.get_default_logger
-setup_logger = _default_logging.setup_logger
-setup_task_logger = _default_logging.setup_task_logger
-get_task_logger = _default_logging.get_task_logger
-redirect_stdouts_to_logger = _default_logging.redirect_stdouts_to_logger
+setup_logging_subsystem = current_app.log.setup_logging_subsystem
+get_default_logger = current_app.log.get_default_logger
+setup_logger = current_app.log.setup_logger
+setup_task_logger = current_app.log.setup_task_logger
+get_task_logger = current_app.log.get_task_logger
+redirect_stdouts_to_logger = current_app.log.redirect_stdouts_to_logger
 
 
 class LoggingProxy(object):

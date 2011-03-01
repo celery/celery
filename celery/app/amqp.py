@@ -5,41 +5,39 @@ celery.app.amqp
 
 AMQ related functionality.
 
-:copyright: (c) 2009 - 2010 by Ask Solem.
+:copyright: (c) 2009 - 2011 by Ask Solem.
 :license: BSD, see LICENSE for more details.
 
 """
 from datetime import datetime, timedelta
 
-from kombu import BrokerConnection
+from kombu import BrokerConnection, Exchange
 from kombu.connection import Resource
 from kombu import compat as messaging
+from kombu.utils import cached_property
 
-from celery import routes
+from celery import routes as _routes
 from celery import signals
-from celery.utils import gen_unique_id, textindent, cached_property
+from celery.utils import gen_unique_id, textindent
 from celery.utils import promise, maybe_promise
 from celery.utils.compat import UserDict
 
 #: List of known options to a Kombu producers send method.
 #: Used to extract the message related options out of any `dict`.
-MSG_OPTIONS = ("mandatory", "priority", "immediate",
-               "routing_key", "serializer", "delivery_mode",
-               "compression")
+MSG_OPTIONS = ("mandatory", "priority", "immediate", "routing_key",
+                "serializer", "delivery_mode", "compression")
 
 #: Human readable queue declaration.
 QUEUE_FORMAT = """
-. %(name)s -> exchange:%(exchange)s (%(exchange_type)s) \
+. %(name)s exchange:%(exchange)s (%(exchange_type)s) \
 binding:%(binding_key)s
 """
 
-#: Broker connection info -> URI
-BROKER_FORMAT = """\
-%(transport)s://%(userid)s@%(hostname)s%(port)s%(virtual_host)s\
-"""
-
-#: Set of exchange names that has already been declared.
+#: Set of exchange names that have already been declared.
 _exchanges_declared = set()
+
+#: Set of queue names that have already been declared.
+_queues_declared = set()
 
 
 def extract_msg_options(options, keep=MSG_OPTIONS):
@@ -57,6 +55,9 @@ class Queues(UserDict):
     :param queues: Initial mapping.
 
     """
+    #: If set, this is a subset of queues to consume from.
+    #: The rest of the queues are then used for routing only.
+    _consume_from = None
 
     def __init__(self, queues):
         self.data = {}
@@ -87,11 +88,17 @@ class Queues(UserDict):
                              exchange=exchange,
                              exchange_type=exchange_type)
 
-    def format(self, indent=0):
+    def format(self, indent=0, indent_first=True):
         """Format routing table into string for log dumps."""
-        info = "\n".join(QUEUE_FORMAT.strip() % dict(name=name, **config)
-                                for name, config in self.items())
-        return textindent(info, indent=indent)
+        queues = self
+        if self._consume_from is not None:
+            queues = self._consume_from
+        info = [QUEUE_FORMAT.strip() % dict(
+                    name=(name + ":").ljust(12), **config)
+                        for name, config in sorted(queues.items())]
+        if indent_first:
+            return textindent("\n".join(info), indent)
+        return info[0] + "\n" + textindent("\n".join(info[1:]), indent)
 
     def select_subset(self, wanted, create_missing=True):
         """Select subset of the currently defined queues.
@@ -115,8 +122,8 @@ class Queues(UserDict):
                     raise
                 options = self.options(queue, queue)
             acc[queue] = options
-        self.data.clear()
-        self.data.update(acc)
+        self._consume_from = acc
+        self.update(acc)
 
     @classmethod
     def with_defaults(cls, queues, default_exchange, default_exchange_type):
@@ -129,79 +136,98 @@ class Queues(UserDict):
             opts.setdefault("routing_key", opts.get("binding_key"))
         return cls(queues)
 
+    @property
+    def consume_from(self):
+        if self._consume_from is not None:
+            return self._consume_from
+        return self
+
 
 class TaskPublisher(messaging.Publisher):
-    auto_declare = False
+    auto_declare = True
     retry = False
     retry_policy = None
 
     def __init__(self, *args, **kwargs):
+        self.app = kwargs.pop("app")
         self.retry = kwargs.pop("retry", self.retry)
         self.retry_policy = kwargs.pop("retry_policy",
                                         self.retry_policy or {})
         super(TaskPublisher, self).__init__(*args, **kwargs)
 
     def declare(self):
-        if self.exchange.name not in _exchanges_declared:
+        if self.exchange.name and \
+                self.exchange.name not in _exchanges_declared:
             super(TaskPublisher, self).declare()
             _exchanges_declared.add(self.exchange.name)
+
+    def _declare_queue(self, name, retry=False, retry_policy={}):
+        options = self.app.queues[name]
+        queue = messaging.entry_to_queue(name, **options)(self.channel)
+        if retry:
+            self.connection.ensure(queue, queue.declare, **retry_policy)()
+        else:
+            queue.declare()
+        return queue
+
+    def _declare_exchange(self, name, type, retry=False, retry_policy={}):
+        ex = Exchange(name, type=type, durable=self.durable,
+                      auto_delete=self.auto_delete)(self.channel)
+        if retry:
+            return self.connection.ensure(ex, ex.declare, **retry_policy)
+        return ex.declare()
 
     def delay_task(self, task_name, task_args=None, task_kwargs=None,
             countdown=None, eta=None, task_id=None, taskset_id=None,
             expires=None, exchange=None, exchange_type=None,
-            event_dispatcher=None, retry=None, retry_policy=None, **kwargs):
+            event_dispatcher=None, retry=None, retry_policy=None,
+            queue=None, now=None, retries=0, **kwargs):
         """Send task message."""
+        connection = self.connection
+        _retry_policy = self.retry_policy
+        if retry_policy:  # merge default and custom policy
+            _retry_policy = dict(_retry_policy, **retry_policy)
+
+        # declare entities
+        if queue and queue not in _queues_declared:
+            entity = self._declare_queue(queue, retry, _retry_policy)
+            _exchanges_declared.add(entity.exchange.name)
+            _queues_declared.add(entity.name)
+        if exchange and exchange not in _exchanges_declared:
+            self._declare_exchange(exchange,
+                    exchange_type or self.exchange_type, retry, _retry_policy)
+            _exchanges_declared.add(exchange)
 
         task_id = task_id or gen_unique_id()
         task_args = task_args or []
         task_kwargs = task_kwargs or {}
-        now = None
-        if countdown:                           # Convert countdown to ETA.
-            now = datetime.now()
-            eta = now + timedelta(seconds=countdown)
-
         if not isinstance(task_args, (list, tuple)):
             raise ValueError("task args must be a list or tuple")
         if not isinstance(task_kwargs, dict):
             raise ValueError("task kwargs must be a dictionary")
-
+        if countdown:                           # Convert countdown to ETA.
+            now = now or datetime.now()
+            eta = now + timedelta(seconds=countdown)
         if isinstance(expires, int):
             now = now or datetime.now()
             expires = now + timedelta(seconds=expires)
-
-        retries = kwargs.get("retries", 0)
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
 
-        body = {
-            "task": task_name,
-            "id": task_id,
-            "args": task_args or [],
-            "kwargs": task_kwargs or {},
-            "retries": retries,
-            "eta": eta,
-            "expires": expires,
-        }
-
+        body = {"task": task_name,
+                "id": task_id,
+                "args": task_args or [],
+                "kwargs": task_kwargs or {},
+                "retries": retries or 0,
+                "eta": eta,
+                "expires": expires}
         if taskset_id:
             body["taskset"] = taskset_id
 
-        # custom exchange passed, need to declare it.
-        if exchange and exchange not in _exchanges_declared:
-            exchange_type = exchange_type or self.exchange_type
-            self.backend.exchange_declare(exchange=exchange,
-                                          type=exchange_type,
-                                          durable=self.durable,
-                                          auto_delete=self.auto_delete)
-            _exchanges_declared.add(exchange)
-
         send = self.send
         if retry is None and self.retry or retry:
-            send = self.connection.ensure(self, self.send,
-                            **dict(self.retry_policy, **retry_policy or {}))
-
+            send = connection.ensure(self, self.send, **_retry_policy)
         send(body, exchange=exchange, **extract_msg_options(kwargs))
-
         signals.task_sent.send(sender=task_name, **body)
         if event_dispatcher:
             event_dispatcher.send("task-sent", uuid=task_id,
@@ -249,26 +275,32 @@ class AMQP(object):
     Consumer = messaging.Consumer
     ConsumerSet = messaging.ConsumerSet
 
-    #: Set to :const:`True` when the configured queues has been declared.
-    _queues_declared = False
+    #: Cached and prepared routing table.
+    _rtable = None
 
     def __init__(self, app):
         self.app = app
 
+    def flush_routes(self):
+        self._rtable = _routes.prepare(self.app.conf.CELERY_ROUTES)
+
     def Queues(self, queues):
         """Create new :class:`Queues` instance, using queue defaults
         from the current configuration."""
-        return Queues.with_defaults(queues,
-                                    self.app.conf.CELERY_DEFAULT_EXCHANGE,
-                                    self.app.conf.CELERY_DEFAULT_EXCHANGE_TYPE)
+        conf = self.app.conf
+        if not queues:
+            queues = {conf.CELERY_DEFAULT_QUEUE: {
+                        "exchange": conf.CELERY_DEFAULT_EXCHANGE,
+                        "exchange_type": conf.CELERY_DEFAULT_EXCHANGE_TYPE,
+                        "binding_key": conf.CELERY_DEFAULT_ROUTING_KEY}}
+        return Queues.with_defaults(queues, conf.CELERY_DEFAULT_EXCHANGE,
+                                            conf.CELERY_DEFAULT_EXCHANGE_TYPE)
 
     def Router(self, queues=None, create_missing=None):
         """Returns the current task router."""
-        return routes.Router(self.app.conf.CELERY_ROUTES,
-                             queues or self.app.conf.CELERY_QUEUES,
-                             self.app.either("CELERY_CREATE_MISSING_QUEUES",
-                                             create_missing),
-                             app=self.app)
+        return _routes.Router(self.routes, queues or self.queues,
+                              self.app.either("CELERY_CREATE_MISSING_QUEUES",
+                                              create_missing), app=self.app)
 
     def TaskConsumer(self, *args, **kwargs):
         """Returns consumer for a single task queue."""
@@ -291,17 +323,9 @@ class AMQP(object):
                     "routing_key": conf.CELERY_DEFAULT_ROUTING_KEY,
                     "serializer": conf.CELERY_TASK_SERIALIZER,
                     "retry": conf.CELERY_TASK_PUBLISH_RETRY,
-                    "retry_policy": conf.CELERY_TASK_PUBLISH_RETRY_POLICY}
-        publisher = TaskPublisher(*args,
-                                  **self.app.merge(defaults, kwargs))
-
-        # Make sure all queues are declared.
-        if not self._queues_declared:
-            self.get_task_consumer(publisher.connection).close()
-            self._queues_declared = True
-        publisher.declare()
-
-        return publisher
+                    "retry_policy": conf.CELERY_TASK_PUBLISH_RETRY_POLICY,
+                    "app": self}
+        return TaskPublisher(*args, **self.app.merge(defaults, kwargs))
 
     def PublisherPool(self, limit=None):
         return PublisherPool(limit=limit, app=self.app)
@@ -309,7 +333,8 @@ class AMQP(object):
     def get_task_consumer(self, connection, queues=None, **kwargs):
         """Return consumer configured to consume from all known task
         queues."""
-        return self.ConsumerSet(connection, from_dict=queues or self.queues,
+        return self.ConsumerSet(connection,
+                                from_dict=queues or self.queues.consume_from,
                                 **kwargs)
 
     def get_default_queue(self):
@@ -318,29 +343,13 @@ class AMQP(object):
         q = self.app.conf.CELERY_DEFAULT_QUEUE
         return q, self.queues[q]
 
-    def get_broker_info(self, broker_connection=None):
-        """Returns information about the current broker connection
-        as a `dict`."""
-        if broker_connection is None:
-            broker_connection = self.app.broker_connection()
-        info = broker_connection.info()
-        port = info["port"]
-        if port:
-            info["port"] = ":%s" % (port, )
-        vhost = info["virtual_host"]
-        if not vhost.startswith("/"):
-            info["virtual_host"] = "/" + vhost
-        return info
-
-    def format_broker_info(self, info=None):
-        """Get message broker connection info string for log dumps."""
-        return BROKER_FORMAT % self.get_broker_info()
-
     @cached_property
     def queues(self):
         """Queue name⇒ declaration mapping."""
         return self.Queues(self.app.conf.CELERY_QUEUES)
 
-    @queues.setter
-    def queues(self, value):
-        return self.Queues(value)
+    @property
+    def routes(self):
+        if self._rtable is None:
+            self.flush_routes()
+        return self._rtable

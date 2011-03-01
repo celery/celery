@@ -3,14 +3,13 @@ import sys
 from celery import platforms
 from celery.bin.base import Command, Option, daemon_options
 from celery.platforms import create_daemon_context
-from celery.utils.functional import partial
 
 
 class EvCommand(Command):
 
     def run(self, dump=False, camera=None, frequency=1.0, maxrate=None,
             loglevel="INFO", logfile=None, prog_name="celeryev",
-            pidfile=None, uid=None, gid=None, umask=None, 
+            pidfile=None, uid=None, gid=None, umask=None,
             working_directory=None, detach=False, **kwargs):
         self.prog_name = prog_name
 
@@ -42,7 +41,7 @@ class EvCommand(Command):
         self.set_process_status("cam")
         kwargs["app"] = self.app
         if not detach:
-            return evcam(camera, logfile=logfile, **kwargs)
+            return evcam(camera, logfile=logfile, pidfile=pidfile, **kwargs)
         context, on_stop = create_daemon_context(
                                 logfile=logfile,
                                 pidfile=pidfile,
@@ -52,11 +51,9 @@ class EvCommand(Command):
                                 working_directory=working_directory)
         context.open()
         try:
-            return evcam(camera, logfile=logfile, **kwargs)
+            return evcam(camera, logfile=logfile, pidfile=pidfile, **kwargs)
         finally:
             on_stop()
-
-
 
     def set_process_status(self, prog, info=""):
         prog = "%s:%s" % (self.prog_name, prog)

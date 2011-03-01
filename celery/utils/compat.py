@@ -319,7 +319,10 @@ except ImportError:
 ############## logging.LoggerAdapter ########################################
 import inspect
 import logging
-import multiprocessing
+try:
+    import multiprocessing
+except ImportError:
+    multiprocessing = None
 import sys
 
 from logging import LogRecord
@@ -392,7 +395,10 @@ class _CompatLoggerAdapter(object):
                     raise KeyError(
                             "Attempt to override %r in LogRecord" % key)
                 rv.__dict__[key] = value
-        rv.processName = multiprocessing.current_process()._name
+        if multiprocessing is not None:
+            rv.processName = multiprocessing.current_process()._name
+        else:
+            rv.processName = ""
         return rv
 
     def _log(self, level, msg, args, exc_info=None, extra=None):

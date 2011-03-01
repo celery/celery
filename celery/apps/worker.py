@@ -1,6 +1,9 @@
 import atexit
 import logging
-import multiprocessing
+try:
+    import multiprocessing
+except ImportError:
+    multiprocessing = None
 import os
 import socket
 import sys
@@ -14,24 +17,36 @@ from celery import signals
 from celery.app import app_or_default
 from celery.exceptions import ImproperlyConfigured, SystemTerminate
 from celery.utils import get_full_cls_name, LOG_LEVELS, cry
-from celery.utils import term
 from celery.worker import WorkController
 
+BANNER = """
+ -------------- celery@%(hostname)s v%(version)s
+---- **** -----
+--- * ***  * -- [Configuration]
+-- * - **** ---   . broker:      %(conninfo)s
+- ** ----------   . loader:      %(loader)s
+- ** ----------   . logfile:     %(logfile)s@%(loglevel)s
+- ** ----------   . concurrency: %(concurrency)s
+- ** ----------   . events:      %(events)s
+- *** --- * ---   . beat:        %(celerybeat)s
+-- ******* ----
+--- ***** ----- [Queues]
+ --------------   %(queues)s
+"""
 
-STARTUP_INFO_FMT = """
-Configuration ->
-    . broker -> %(conninfo)s
-    . queues ->
-%(queues)s
-    . concurrency -> %(concurrency)s
-    . loader -> %(loader)s
-    . logfile -> %(logfile)s@%(loglevel)s
-    . events -> %(events)s
-    . beat -> %(celerybeat)s
+EXTRA_INFO_FMT = """
+[Tasks]
 %(tasks)s
-""".strip()
+"""
 
-TASK_LIST_FMT = """    . tasks ->\n%s"""
+
+def cpu_count():
+    if multiprocessing is not None:
+        try:
+            return multiprocessing.cpu_count()
+        except NotImplementedError:
+            pass
+    return 2
 
 
 class Worker(object):
@@ -47,7 +62,7 @@ class Worker(object):
         self.app = app = app_or_default(app)
         self.concurrency = (concurrency or
                             app.conf.CELERYD_CONCURRENCY or
-                            multiprocessing.cpu_count())
+                            cpu_count())
         self.loglevel = loglevel or app.conf.CELERYD_LOG_LEVEL
         self.logfile = logfile or app.conf.CELERYD_LOG_FILE
 
@@ -82,7 +97,7 @@ class Worker(object):
             self.autoscale = [int(max_c), min_c and int(min_c) or 0]
         self._isatty = sys.stdout.isatty()
 
-        self.colored = term.colored(enabled=app.conf.CELERYD_LOG_COLOR)
+        self.colored = app.log.colored(self.logfile)
 
         if isinstance(self.use_queues, basestring):
             self.use_queues = self.use_queues.split(",")
@@ -103,8 +118,6 @@ class Worker(object):
         self.init_queues()
         self.worker_init()
         self.redirect_stdouts_to_logger()
-        print(str(self.colored.cyan(
-                "celery@%s v%s is starting." % (self.hostname, __version__))))
 
         if getattr(os, "geteuid", None) and os.geteuid() == 0:
             warnings.warn(
@@ -115,8 +128,9 @@ class Worker(object):
 
         # Dump configuration to screen so we have some basic information
         # for when users sends bug reports.
-        print(str(self.colored.reset(" \n", self.startup_info())))
-        self.set_process_status("Running...")
+        print(str(self.colored.cyan(" \n", self.startup_info())) +
+              str(self.colored.reset(self.extra_info())))
+        self.set_process_status("-active-")
 
         self.run_worker()
 
@@ -137,7 +151,6 @@ class Worker(object):
                     "automatically declare unknown queues you have to "
                     "enable CELERY_CREATE_MISSING_QUEUES" % (
                         self.use_queues, exc))
-        self.queues = self.app.amqp.queues
 
     def init_loader(self):
         self.loader = self.app.loader
@@ -170,25 +183,32 @@ class Worker(object):
         if not include_builtins:
             tasklist = filter(lambda s: not s.startswith("celery."),
                               tasklist)
-        return TASK_LIST_FMT % "\n".join("\t. %s" % task
-                                            for task in sorted(tasklist))
+        return "\n".join("  . %s" % task for task in sorted(tasklist))
 
-    def startup_info(self):
-        tasklist = ""
+    def extra_info(self):
         if self.loglevel <= logging.INFO:
             include_builtins = self.loglevel <= logging.DEBUG
             tasklist = self.tasklist(include_builtins=include_builtins)
+            return EXTRA_INFO_FMT % {"tasks": tasklist}
+        return ""
 
-        return STARTUP_INFO_FMT % {
-            "conninfo": self.app.amqp.format_broker_info(),
-            "queues": self.queues.format(indent=8),
-            "concurrency": self.concurrency,
+    def startup_info(self):
+        app = self.app
+        concurrency = self.concurrency
+        if self.autoscale:
+            cmax, cmin = self.autoscale
+            concurrency = "{min=%s, max=%s}" % (cmin, cmax)
+        return BANNER % {
+            "hostname": self.hostname,
+            "version": __version__,
+            "conninfo": self.app.broker_connection().as_uri(),
+            "concurrency": concurrency,
             "loglevel": LOG_LEVELS[self.loglevel],
             "logfile": self.logfile or "[stderr]",
             "celerybeat": self.run_clockservice and "ON" or "OFF",
             "events": self.events and "ON" or "OFF",
-            "tasks": tasklist,
             "loader": get_full_cls_name(self.loader.__class__),
+            "queues": app.amqp.queues.format(indent=18, indent_first=False),
         }
 
     def run_worker(self):
@@ -206,7 +226,6 @@ class Worker(object):
                                 scheduler_cls=self.scheduler_cls,
                                 send_events=self.events,
                                 db=self.db,
-                                queues=self.queues,
                                 max_tasks_per_child=self.max_tasks_per_child,
                                 task_time_limit=self.task_time_limit,
                                 task_soft_time_limit=self.task_soft_time_limit,
@@ -234,6 +253,7 @@ class Worker(object):
         install_worker_term_handler(worker)
         install_worker_int_handler(worker)
         install_cry_handler(worker.logger)
+        install_rdb_handler()
         signals.worker_init.send(sender=worker)
 
     def osx_proxy_detection_workaround(self):
@@ -254,8 +274,10 @@ class Worker(object):
 def install_worker_int_handler(worker):
 
     def _stop(signum, frame):
-        process_name = multiprocessing.current_process().name
-        if process_name == "MainProcess":
+        process_name = None
+        if multiprocessing:
+            process_name = multiprocessing.current_process().name
+        if not process_name or process_name == "MainProcess":
             worker.logger.warn(
                 "celeryd: Hitting Ctrl+C again will terminate "
                 "all running tasks!")
@@ -271,8 +293,10 @@ def install_worker_int_handler(worker):
 def install_worker_int_again_handler(worker):
 
     def _stop(signum, frame):
-        process_name = multiprocessing.current_process().name
-        if process_name == "MainProcess":
+        process_name = None
+        if multiprocessing:
+            process_name = multiprocessing.current_process().name
+        if not process_name or process_name == "MainProcess":
             worker.logger.warn("celeryd: Cold shutdown (%s)" % (
                 process_name))
             worker.terminate(in_sighandler=True)
@@ -284,8 +308,10 @@ def install_worker_int_again_handler(worker):
 def install_worker_term_handler(worker):
 
     def _stop(signum, frame):
-        process_name = multiprocessing.current_process().name
-        if process_name == "MainProcess":
+        process_name = None
+        if multiprocessing:
+            process_name = multiprocessing.current_process().name
+        if not process_name or process_name == "MainProcess":
             worker.logger.warn("celeryd: Warm shutdown (%s)" % (
                 process_name))
             worker.stop(in_sighandler=True)
@@ -308,13 +334,26 @@ def install_worker_restart_handler(worker):
 
 def install_cry_handler(logger):
     # 2.4 does not have sys._current_frames
-    if sys.version_info > (2, 5):
+    is_jython = sys.platform.startswith("java")
+    is_pypy = hasattr(sys, "pypy_version_info")
+    if not (is_jython or is_pypy) and sys.version_info > (2, 5):
 
         def cry_handler(signum, frame):
             """Signal handler logging the stacktrace of all active threads."""
             logger.error("\n" + cry())
 
         platforms.install_signal_handler("SIGUSR1", cry_handler)
+
+
+def install_rdb_handler():  # pragma: no cover
+
+    def rdb_handler(signum, frame):
+        """Signal handler setting a rdb breakpoint at the current frame."""
+        from celery.contrib import rdb
+        rdb.set_trace(frame)
+
+    if os.environ.get("CELERY_RDBSIG"):
+        platforms.install_signal_handler("SIGUSR2", rdb_handler)
 
 
 def install_HUP_not_supported_handler(worker):

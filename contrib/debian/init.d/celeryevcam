@@ -35,7 +35,7 @@
 #   CELERYD_CHDIR="/opt/Project/"
 #
 #   # Name of the projects settings module.
-#   DJANGO_SETTINGS_MODULE="settings"
+#   export DJANGO_SETTINGS_MODULE="settings"
 #
 #   # Path to celeryd
 #   CELERYEV="/opt/Project/manage.py"

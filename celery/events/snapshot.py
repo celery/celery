@@ -1,7 +1,9 @@
-from celery.utils import timer2
+import atexit
 
+from celery import platforms
 from celery.app import app_or_default
 from celery.datastructures import TokenBucket
+from celery.utils import timer2
 from celery.utils import instantiate, LOG_LEVELS
 from celery.utils.dispatch import Signal
 from celery.utils.timeutils import rate
@@ -69,8 +71,13 @@ class Polaroid(object):
 
 
 def evcam(camera, freq=1.0, maxrate=None, loglevel=0,
-        logfile=None, timer=None, app=None):
+        logfile=None, pidfile=None, timer=None, app=None):
     app = app_or_default(app)
+
+    if pidfile:
+        pidlock = platforms.create_pidlock(pidfile).acquire()
+        atexit.register(pidlock.release)
+
     if not isinstance(loglevel, int):
         loglevel = LOG_LEVELS[loglevel.upper()]
     logger = app.log.setup_logger(loglevel=loglevel,

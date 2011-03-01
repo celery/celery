@@ -109,6 +109,9 @@ class EventDispatcher(object):
             type, fields, _ = self._outbound_buffer.popleft()
             self.send(type, **fields)
 
+    def copy_buffer(self, other):
+        self._outbound_buffer = other._outbound_buffer
+
     def close(self):
         """Close the event dispatcher."""
         self._lock.locked() and self._lock.release()
@@ -205,9 +208,9 @@ class EventReceiver(object):
             except socket.error:
                 pass
 
-    def _receive(self, message_data, message):
-        type = message_data.pop("type").lower()
-        self.process(type, create_event(type, message_data))
+    def _receive(self, body, message):
+        type = body.pop("type").lower()
+        self.process(type, create_event(type, body))
 
 
 class Events(object):

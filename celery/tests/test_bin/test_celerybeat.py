@@ -10,7 +10,7 @@ from celery.bin import celerybeat as celerybeat_bin
 from celery.apps import beat as beatapp
 from celery.utils.compat import defaultdict
 
-from celery.tests.utils import unittest
+from celery.tests.utils import AppCase
 
 
 class MockedShelveModule(object):
@@ -54,7 +54,7 @@ class MockBeat3(beatapp.Beat):
         raise TypeError("xxx")
 
 
-class test_Beat(unittest.TestCase):
+class test_Beat(AppCase):
 
     def test_loglevel_string(self):
         b = beatapp.Beat(loglevel="DEBUG")
@@ -170,14 +170,14 @@ def create_daemon_context(*args, **kwargs):
     return context, context.close
 
 
-class test_div(unittest.TestCase):
+class test_div(AppCase):
 
-    def setUp(self):
+    def setup(self):
         self.prev, beatapp.Beat = beatapp.Beat, MockBeat
         self.ctx, celerybeat_bin.create_daemon_context = \
                 celerybeat_bin.create_daemon_context, create_daemon_context
 
-    def tearDown(self):
+    def teardown(self):
         beatapp.Beat = self.prev
 
     def test_main(self):

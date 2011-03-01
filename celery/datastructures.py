@@ -4,7 +4,7 @@ celery.datastructures
 
 Custom data structures.
 
-:copyright: (c) 2009 - 2010 by Ask Solem.
+:copyright: (c) 2009 - 2011 by Ask Solem.
 :license: BSD, see LICENSE for more details.
 
 """
@@ -14,7 +14,7 @@ import time
 import traceback
 
 from itertools import chain
-from Queue import Queue, Empty as QueueEmpty
+from Queue import Empty
 
 from celery.utils.compat import OrderedDict
 
@@ -144,8 +144,8 @@ class ConfigurationView(AttributeDictMixin):
 class ExceptionInfo(object):
     """Exception wrapping an exception and its traceback.
 
-    :param exc_info: The exception tuple info as returned by
-        :func:`traceback.format_exception`.
+    :param exc_info: The exception info tuple as returned by
+        :func:`sys.exc_info`.
 
     """
 
@@ -156,7 +156,7 @@ class ExceptionInfo(object):
     traceback = None
 
     def __init__(self, exc_info):
-        type_, exception, tb = exc_info
+        _, exception, _ = exc_info
         self.exception = exception
         self.traceback = ''.join(traceback.format_exception(*exc_info))
 
@@ -164,10 +164,7 @@ class ExceptionInfo(object):
         return self.traceback
 
     def __repr__(self):
-        return "<%s.%s: %s>" % (
-                self.__class__.__module__,
-                self.__class__.__name__,
-                str(self.exception))
+        return "<ExceptionInfo: %r>" % (self.exception, )
 
 
 def consume_queue(queue):
@@ -176,7 +173,7 @@ def consume_queue(queue):
 
     The iterator stops as soon as the queue raises :exc:`Queue.Empty`.
 
-    Example
+    *Examples*
 
         >>> q = Queue()
         >>> map(q.put, range(4))
@@ -189,69 +186,8 @@ def consume_queue(queue):
     while 1:
         try:
             yield queue.get_nowait()
-        except QueueEmpty:
+        except Empty:
             break
-
-
-class SharedCounter(object):
-    """Thread-safe counter.
-
-    Please note that the final value is not synchronized, this means
-    that you should not update the value by using a previous value, the only
-    reliable operations are increment and decrement.
-
-    Example::
-
-        >>> max_clients = SharedCounter(initial_value=10)
-
-        # Thread one
-        >>> max_clients += 1 # OK (safe)
-
-        # Thread two
-        >>> max_clients -= 3 # OK (safe)
-
-        # Main thread
-        >>> if client >= int(max_clients): # Max clients now at 8
-        ...    wait()
-
-        >>> max_client = max_clients + 10 # NOT OK (unsafe)
-
-    """
-
-    def __init__(self, initial_value):
-        self._value = initial_value
-        self._modify_queue = Queue()
-
-    def increment(self, n=1):
-        """Increment value."""
-        self += n
-        return int(self)
-
-    def decrement(self, n=1):
-        """Decrement value."""
-        self -= n
-        return int(self)
-
-    def _update_value(self):
-        self._value += sum(consume_queue(self._modify_queue))
-        return self._value
-
-    def __iadd__(self, y):
-        """`self += y`"""
-        self._modify_queue.put(y * +1)
-        return self
-
-    def __isub__(self, y):
-        """`self -= y`"""
-        self._modify_queue.put(y * -1)
-        return self
-
-    def __int__(self):
-        """`int(self) -> int`"""
-        return self._update_value()
-
-    def __repr__(self):
-        return "<SharedCounter: int(%s)>" % str(int(self))
 
 
 class LimitedSet(object):
@@ -293,7 +229,7 @@ class LimitedSet(object):
                 if not self.expires or time.time() > when + self.expires:
                     try:
                         self.pop_value(value)
-                    except TypeError:                   # pragma: no cover
+                    except TypeError:  # pragma: no cover
                         continue
             break
 
@@ -354,10 +290,7 @@ class TokenBucket(object):
 
     .. admonition:: Thread safety
 
-        This implementation is not thread safe.
-
-    :param fill_rate: Refill rate in tokens/second.
-    :keyword capacity: Max number of tokens.  Default is 1.
+        This implementation may not be thread safe.
 
     """
 
