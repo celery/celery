@@ -46,6 +46,9 @@ class Autoscaler(threading.Thread):
             self._last_action = time()
             try:
                 self.pool.shrink(n)
+            except ValueError:
+                self.logger.warn(
+                    "Autoscaler did not scale down, all processes busy")
             except Exception, exc:
                 self.logger.error("Autoscaler: scale_down: %r\n%r" % (
                                     exc, traceback.format_stack()),
