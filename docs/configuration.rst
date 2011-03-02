@@ -1150,6 +1150,52 @@ formats.
 
 .. setting:: CELERYD_TASK_LOG_FORMAT
 
+CELERYD_LOG_ROTATE_COUNT
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+If count is non-zero, the system will save old log files by appending the 
+extensions “.1”, “.2” etc., to the filename. 
+For example, with a count of 5 and a base file name of celery.log, you would 
+get celery.log, celery.log.1, celery.log.2, up to celery.log.5.
+
+The default is `7`
+
+.. setting:: CELERYD_LOG_ROTATE_COUNT
+
+CELERYD_LOG_ROTATE_MAXBYTES
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can use the LOG_ROTATE_MAXBYTES to allow the file to rollover at a 
+predetermined size. When the size is about to be exceeded, the file is 
+closed and a new file is silently opened for output.
+
+The default is `0`
+
+means disabled and uses `TimedRotatingFileHandler`
+
+.. setting:: CELERYD_LOG_ROTATE_MAXBYTES
+
+CELERYD_LOG_ROTATE_INTERVAL
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can use the CELERYD_LOG_ROTATE_INTERVAL to allow the file to rollover at a 
+specified interval.
+
+The default is `1`
+
+.. setting:: CELERYD_LOG_ROTATE_INTERVAL
+
+
+CELERYD_LOG_ROTATE_WHEN
+~~~~~~~~~~~~~~~~~~~~~~~
+
+You can use the CELERYD_LOG_ROTATE_WHEN to allow the file to rollover given
+point in time.
+
+The default is `midnight`
+
+.. setting:: CELERYD_LOG_ROTATE_WHEN
+
 CELERYD_TASK_LOG_FORMAT
 ~~~~~~~~~~~~~~~~~~~~~~~
 

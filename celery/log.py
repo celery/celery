@@ -4,6 +4,8 @@ import threading
 import sys
 import traceback
 
+from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
+
 try:
     from multiprocessing import current_process
     from multiprocessing import util as mputil
@@ -23,7 +25,7 @@ class ColorFormatter(logging.Formatter):
     #: Loglevel -> Color mapping.
     COLORS = colored().names
     colors = {"DEBUG": COLORS["blue"], "WARNING": COLORS["yellow"],
-              "ERROR": COLORS["red"],  "CRITICAL": COLORS["magenta"]}
+              "ERROR": COLORS["red"], "CRITICAL": COLORS["magenta"]}
 
     def __init__(self, msg, use_color=True):
         logging.Formatter.__init__(self, msg)
@@ -70,6 +72,10 @@ class Logging(object):
         self.format = self.app.conf.CELERYD_LOG_FORMAT
         self.task_format = self.app.conf.CELERYD_TASK_LOG_FORMAT
         self.colorize = self.app.conf.CELERYD_LOG_COLOR
+        self.rotate_count = self.app.conf.CELERYD_LOG_ROTATE_COUNT
+        self.rotate_maxbytes = self.app.conf.CELERYD_LOG_ROTATE_MAXBYTES
+        self.rotate_when = self.app.conf.CELERYD_LOG_ROTATE_WHEN
+        self.rotate_interval = self.app.conf.CELERYD_LOG_ROTATE_INTERVAL
 
     def supports_color(self, logfile=None):
         if self.app.IS_WINDOWS:
@@ -132,7 +138,13 @@ class Logging(object):
             logfile = sys.__stderr__
         if hasattr(logfile, "write"):
             return logging.StreamHandler(logfile)
-        return logging.FileHandler(logfile)
+        if self.rotate_maxbytes > 0:
+            return RotatingFileHandler(filename=logfile,
+                                       maxBytes=self.rotate_maxbytes,
+                                       backupCount=self.rotate_count)
+        return TimedRotatingFileHandler(filename=logfile,
+                                        when=self.rotate_when,
+                                        interval=self.rotate_interval)
 
     def get_default_logger(self, loglevel=None, name="celery"):
         """Get default logger instance.

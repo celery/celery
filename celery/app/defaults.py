@@ -20,11 +20,11 @@ DEFAULT_TASK_LOG_FMT = """[%(asctime)s: %(levelname)s/%(processName)s] \
 
 
 def str_to_bool(term, table={"false": False, "no": False, "0": False,
-                             "true":  True, "yes": True,  "1": True}):
+                             "true":  True, "yes": True, "1": True}):
     try:
         return table[term.lower()]
     except KeyError:
-        raise TypeError("%r can not be converted to type bool" % (term, ))
+        raise TypeError("%r can not be converted to type bool" % (term,))
 
 
 class Option(object):
@@ -114,6 +114,10 @@ NAMESPACES = {
         "LOG_COLOR": Option(type="bool"),
         "LOG_LEVEL": Option("WARN"),
         "LOG_FILE": Option(),
+        "LOG_ROTATE_COUNT":Option(7, type="int"),
+        "LOG_ROTATE_MAXBYTES":Option(0, type="int"),
+        "LOG_ROTATE_WHEN":Option("midnight"),
+        "LOG_ROTATE_INTERVAL":Option(1, type="int"),
         "MEDIATOR": Option("celery.worker.controllers.Mediator"),
         "MAX_TASKS_PER_CHILD": Option(type="int"),
         "POOL": Option(DEFAULT_POOL),
