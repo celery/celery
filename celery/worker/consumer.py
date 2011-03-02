@@ -440,7 +440,6 @@ class Consumer(object):
                 pass
 
         if self.pool.is_green:
-            print("USING GREENLET NODE")
             return self.pool.spawn_n(self._green_pidbox_node)
         self.pidbox_node.channel = self.connection.channel()
         self.broadcast_consumer = self.pidbox_node.listen(
