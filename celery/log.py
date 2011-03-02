@@ -13,7 +13,7 @@ from multiprocessing import util as mputil
 from celery import conf
 from celery import signals
 from celery.utils import noop, LOG_LEVELS
-from celery.utils.compat import LoggerAdapter
+from celery.utils.compat import LoggerAdapter, WatchedFileHandler
 from celery.utils.patch import ensure_process_aware_logger
 from celery.utils.term import colored
 
@@ -102,7 +102,7 @@ def _detect_handler(logfile=None):
         logfile = sys.__stderr__
     if not logfile or hasattr(logfile, "write"):
         return logging.StreamHandler(logfile)
-    return logging.FileHandler(logfile)
+    return WatchedFileHandler(logfile)
 
 
 def get_default_logger(loglevel=None, name="celery"):
