@@ -1,19 +1,18 @@
 import os
 
-from gevent import monkey
-
 if not os.environ.get("GEVENT_NOPATCH"):
+    from gevent import monkey
     monkey.patch_all()
-
-from gevent.pool import Pool
 
 from celery.concurrency.base import apply_target, BasePool
 
 
 class TaskPool(BasePool):
-    Pool = Pool
-
     signal_safe = False
+
+    def __init__(self, *args, **kwargs):
+        from gevent.pool import Pool
+        self.Pool = Pool
 
     def on_start(self):
         self._pool = self.Pool(self.limit)
