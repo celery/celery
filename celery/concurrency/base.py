@@ -24,6 +24,7 @@ class BasePool(object):
     Timer = timer2.Timer
 
     signal_safe = True
+    is_green = False
 
     _state = None
     _pool = None

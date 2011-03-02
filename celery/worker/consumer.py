@@ -270,7 +270,6 @@ class Consumer(object):
         """Consume messages forever (or until an exception is raised)."""
         self.logger.debug("Consumer: Starting message consumer...")
         self.task_consumer.consume()
-        self.broadcast_consumer.consume()
         self.logger.debug("Consumer: Ready to accept tasks!")
 
         while 1:
@@ -440,9 +439,26 @@ class Consumer(object):
             except self.connection_errors + self.channel_errors:
                 pass
 
+        if self.pool.is_green:
+            print("USING GREENLET NODE")
+            return self.pool.spawn_n(self._green_pidbox_node)
         self.pidbox_node.channel = self.connection.channel()
         self.broadcast_consumer = self.pidbox_node.listen(
                                         callback=self.on_control)
+        self.broadcast_consumer.consume()
+
+    def _green_pidbox_node(self):
+        conn = self._open_connection()
+        self.pidbox_node.channel = conn.channel()
+        self.broadcast_consumer = self.pidbox_node.listen(
+                                        callback=self.on_control)
+        self.broadcast_consumer.consume()
+
+        try:
+            while self.connection:  # main connection still open?
+                conn.drain_events()
+        finally:
+            conn.close()
 
     def reset_connection(self):
         """Re-establish connection and set up consumers."""

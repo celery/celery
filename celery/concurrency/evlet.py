@@ -93,12 +93,14 @@ class TaskPool(base.BasePool):
     Timer = Timer
 
     signal_safe = False
+    is_green = True
 
     def __init__(self, *args, **kwargs):
         from eventlet import greenthread
         from eventlet.greenpool import GreenPool
         self.Pool = GreenPool
-        self.greenthread = greenthread
+        self.getcurrent = greenthread.getcurrent
+        self.spawn_n = greenthread.spawn_n
 
         super(TaskPool, self).__init__(*args, **kwargs)
 
@@ -113,4 +115,4 @@ class TaskPool(base.BasePool):
             accept_callback=None, **_):
         self._pool.spawn_n(apply_target, target, args, kwargs,
                            callback, accept_callback,
-                           self.greenthread.getcurrent)
+                           self.getcurrent)

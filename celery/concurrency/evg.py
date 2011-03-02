@@ -9,10 +9,13 @@ from celery.concurrency.base import apply_target, BasePool
 
 class TaskPool(BasePool):
     signal_safe = False
+    is_green = True
 
     def __init__(self, *args, **kwargs):
+        from gevent import spawn_raw
         from gevent.pool import Pool
         self.Pool = Pool
+        self.spawn_n = spawn_raw
 
     def on_start(self):
         self._pool = self.Pool(self.limit)
