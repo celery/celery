@@ -55,6 +55,11 @@ class Command(object):
 
     def parse_options(self, prog_name, arguments):
         """Parse the available options."""
+        # Don't want to load configuration to just print the version,
+        # so we handle --version manually here.
+        if "--version" in arguments:
+            print(self.version)
+            sys.exit(0)
         parser = self.create_parser(prog_name)
         options, args = parser.parse_args(arguments)
         return options, args
