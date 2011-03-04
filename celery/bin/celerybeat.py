@@ -27,6 +27,7 @@ from celery.platforms import create_daemon_context
 
 
 class BeatCommand(Command):
+    supports_args = False
 
     def run(self, detach=False, logfile=None, pidfile=None, uid=None,
             gid=None, umask=None, working_directory=None, **kwargs):

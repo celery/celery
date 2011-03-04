@@ -10,6 +10,7 @@ class Command(object):
     args = ''
     version = celery.__version__
     option_list = ()
+    supports_args = True
     preload_options = (
             Option("--app",
                     default=None, action="store", dest="app",
@@ -41,6 +42,12 @@ class Command(object):
 
     def handle_argv(self, prog_name, argv):
         options, args = self.parse_options(prog_name, argv)
+        if not self.supports_args and args:
+            sys.stderr.write(
+                "\nUnrecognized command line arguments: %r\n" % (
+                    ", ".join(args), ))
+            sys.stderr.write("\nTry --help?\n")
+            sys.exit(1)
         return self.run(*args, **vars(options))
 
     def run(self, *args, **options):

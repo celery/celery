@@ -84,6 +84,7 @@ from celery.bin.base import Command, Option
 class WorkerCommand(Command):
     namespace = "celeryd"
     enable_config_from_cmdline = True
+    supports_args = False
 
     def run(self, *args, **kwargs):
         kwargs.pop("app", None)

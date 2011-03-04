@@ -6,6 +6,7 @@ from celery.platforms import create_daemon_context
 
 
 class EvCommand(Command):
+    supports_args = False
 
     def run(self, dump=False, camera=None, frequency=1.0, maxrate=None,
             loglevel="INFO", logfile=None, prog_name="celeryev",
