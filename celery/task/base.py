@@ -13,14 +13,22 @@ from celery.utils import deprecated, mattrgetter, gen_unique_id, \
                          fun_takes_kwargs
 from celery.utils import timeutils
 
-from celery.task import sets
 
-TaskSet = deprecated("Importing TaskSet from celery.task.base",
-                     alternative="Use celery.task.TaskSet instead.",
-                     removal="2.4")(sets.TaskSet)
-subtask = deprecated("Importing subtask from celery.task.base",
-                     alternative="Use celery.task.subtask instead.",
-                     removal="2.4")(sets.subtask)
+@deprecated("Importing TaskSet from celery.task.base",
+            alternative="Use celery.task.TaskSet instead.",
+            removal="2.4")
+def TaskSet(*args, **kwargs):
+    from celery.task.sets import TaskSet
+    return TaskSet(*args, **kwargs)
+
+
+@deprecated("Importing subtask from celery.task.base",
+            alternative="Use celery.task.subtask instead.",
+            removal="2.4")
+def subtask(*args, **kwargs):
+    from celery.task.sets import subtask
+    return subtask(*args, **kwargs)
+
 
 extract_exec_options = mattrgetter("queue", "routing_key",
                                    "exchange", "immediate",
@@ -700,7 +708,8 @@ class BaseTask(object):
         """Returns :class:`~celery.task.sets.subtask` object for
         this task, wrapping arguments and execution options
         for a single task invocation."""
-        return sets.subtask(cls, *args, **kwargs)
+        from celery.task.sets import subtask
+        return subtask(cls, *args, **kwargs)
 
     @property
     def __name__(self):
