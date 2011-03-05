@@ -58,8 +58,8 @@ class CassandraBackend(BaseDictBackend):
 
         if not pycassa:
             raise ImproperlyConfigured(
-                    "You need to install the pycassa library to use the "
-                    "Cassandra backend. See https://github.com/pycassa/pycassa")
+                "You need to install the pycassa library to use the "
+                "Cassandra backend. See https://github.com/pycassa/pycassa")
 
         self.servers = servers or \
                         self.app.conf.get("CASSANDRA_SERVERS", self.servers)
@@ -77,7 +77,8 @@ class CassandraBackend(BaseDictBackend):
         write_cons = self.app.conf.get("CASSANDRA_WRITE_CONSISTENCY",
                                        "LOCAL_QUORUM")
         try:
-            self.read_consistency = getattr(pycassa.ConsistencyLevel, read_cons)
+            self.read_consistency = getattr(pycassa.ConsistencyLevel,
+                                            read_cons)
         except AttributeError:
             self.read_consistency = pycassa.ConsistencyLevel.LOCAL_QUORUM
         try:
