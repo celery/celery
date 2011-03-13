@@ -153,6 +153,9 @@ class BaseApp(object):
             :setting:`BROKER_CONNECTION_TIMEOUT` setting.
         :keyword backend_cls: defaults to the :setting:`BROKER_BACKEND`
             setting.
+        :keyword backend_extra_args: A dict of additional connection arguments to pass to
+        alternate kombu channel implementations (useful for things like SQLAlchemy
+        engine arguments)            
 
         :returns :class:`kombu.connection.BrokerConnection`:
 
