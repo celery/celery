@@ -267,6 +267,9 @@ class TokenBucketQueue(object):
         """
         get = block and self.queue.get or self.queue.get_nowait
 
+        if not block and not self.items:
+            raise Empty()
+
         if not self._bucket.can_consume(1):
             raise RateLimitExceeded()
 
@@ -307,6 +310,8 @@ class TokenBucketQueue(object):
     def expected_time(self, tokens=1):
         """Returns the expected time in seconds of when a new token should be
         available."""
+        if not self.items:
+            return 0
         return self._bucket.expected_time(tokens)
 
     @property
