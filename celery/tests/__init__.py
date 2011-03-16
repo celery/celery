@@ -7,7 +7,7 @@ from importlib import import_module
 config_module = os.environ.setdefault("CELERY_TEST_CONFIG_MODULE",
                                       "celery.tests.config")
 
-os.environ["CELERY_CONFIG_MODULE"] = config_module
+os.environ.setdefault("CELERY_CONFIG_MODULE", config_module)
 os.environ["CELERY_LOADER"] = "default"
 os.environ["EVENTLET_NOPATCH"] = "yes"
 os.environ["GEVENT_NOPATCH"] = "yes"
