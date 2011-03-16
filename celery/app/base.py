@@ -8,6 +8,7 @@ Application Base Class.
 :license: BSD, see LICENSE for more details.
 
 """
+import os
 import platform as _platform
 
 from copy import deepcopy
@@ -32,6 +33,8 @@ class BaseApp(object):
     loader_cls = "app"
     log_cls = "celery.log.Logging"
     control_cls = "celery.task.control.Control"
+
+    _pool = None
 
     def __init__(self, main=None, loader=None, backend=None,
             amqp=None, events=None, log=None, control=None,
@@ -184,8 +187,8 @@ class BaseApp(object):
             connection = kwargs.get("connection")
             timeout = kwargs.get("connect_timeout")
             kwargs["connection"] = conn = connection or \
-                    self.broker_connection(connect_timeout=timeout)
-            close_connection = not connection and conn.close or None
+                    self.pool.acquire(block=True)
+            close_connection = not connection and conn.release or None
 
             try:
                 return fun(*args, **kwargs)
@@ -240,6 +243,24 @@ class BaseApp(object):
     def _get_config(self):
         return ConfigurationView({},
                 [self.prepare_config(self.loader.conf), deepcopy(DEFAULTS)])
+
+    def _set_pool(self):
+        self._pool = self.broker_connection().Pool(2)
+        self._pool.owner_pid = os.getpid()
+
+    def _reset_after_fork(self):
+        if self._pool:
+            self._pool.force_close_all()
+
+    @property
+    def pool(self):
+        if self._pool is None:
+            self._set_pool()
+        elif os.getpid() != self._pool.owner_pid:
+            print("-- RESET POOL AFTER FORK -- ")
+            self._reset_after_fork()
+            self._set_pool()
+        return self._pool
 
     @cached_property
     def amqp(self):

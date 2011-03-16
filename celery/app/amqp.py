@@ -183,6 +183,7 @@ class TaskPublisher(messaging.Publisher):
             event_dispatcher=None, retry=None, retry_policy=None,
             queue=None, now=None, retries=0, **kwargs):
         """Send task message."""
+
         connection = self.connection
         _retry_policy = self.retry_policy
         if retry_policy:  # merge default and custom policy
@@ -248,14 +249,15 @@ class TaskPublisher(messaging.Publisher):
 
 class PublisherPool(Resource):
 
-    def __init__(self, limit=None, app=None):
+    def __init__(self, app=None):
         self.app = app
-        self.connections = self.app.broker_connection().Pool(limit=limit)
-        super(PublisherPool, self).__init__(limit=limit)
+        super(PublisherPool, self).__init__(limit=self.app.pool.limit)
 
     def create_publisher(self):
-        return self.app.amqp.TaskPublisher(self.connections.acquire(),
-                                           auto_declare=False)
+        conn = self.app.pool.acquire(block=True)
+        pub = self.app.amqp.TaskPublisher(conn, auto_declare=False)
+        conn._publisher_chan = pub.channel
+        return pub
 
     def new(self):
         return promise(self.create_publisher)
@@ -266,7 +268,18 @@ class PublisherPool(Resource):
                 self._resource.put_nowait(self.new())
 
     def prepare(self, publisher):
-        return maybe_promise(publisher)
+        pub = maybe_promise(publisher)
+        if not pub.connection:
+            pub.connection = self.app.pool.acquire(block=True)
+            if not getattr(pub.connection, "_publisher_chan", None):
+                pub.connection._publisher_chan = pub.connection.channel()
+            pub.revive(pub.connection._publisher_chan)
+        return pub
+
+    def release(self, resource):
+        resource.connection.release()
+        resource.connection = None
+        super(PublisherPool, self).release(resource)
 
 
 class AMQP(object):
@@ -327,9 +340,6 @@ class AMQP(object):
                     "app": self}
         return TaskPublisher(*args, **self.app.merge(defaults, kwargs))
 
-    def PublisherPool(self, limit=None):
-        return PublisherPool(limit=limit, app=self.app)
-
     def get_task_consumer(self, connection, queues=None, **kwargs):
         """Return consumer configured to consume from all known task
         queues."""
@@ -353,3 +363,7 @@ class AMQP(object):
         if self._rtable is None:
             self.flush_routes()
         return self._rtable
+
+    @cached_property
+    def publisher_pool(self):
+        return PublisherPool(app=self.app)

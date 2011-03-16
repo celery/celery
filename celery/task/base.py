@@ -436,9 +436,7 @@ class BaseTask(object):
         exchange_type = options.get("exchange_type")
         expires = expires or self.expires
 
-        publish = publisher or self.get_publisher(connection,
-                                                  exchange=exchange,
-                                                  exchange_type=exchange_type)
+        publish = publisher or self.app.amqp.publisher_pool.acquire(block=True)
         evd = None
         if conf.CELERY_SEND_TASK_SENT_EVENT:
             evd = self.app.events.Dispatcher(channel=publish.channel,
@@ -453,8 +451,7 @@ class BaseTask(object):
                                          **options)
         finally:
             if not publisher:
-                publish.close()
-                publish.connection.close()
+                publish.release()
 
         return self.AsyncResult(task_id)
 
