@@ -153,9 +153,6 @@ class BaseApp(object):
             :setting:`BROKER_CONNECTION_TIMEOUT` setting.
         :keyword backend_cls: defaults to the :setting:`BROKER_BACKEND`
             setting.
-        :keyword backend_extra_args: A dict of additional connection arguments to pass to
-        alternate kombu channel implementations (useful for things like SQLAlchemy
-        engine arguments)            
 
         :returns :class:`kombu.connection.BrokerConnection`:
 
@@ -171,7 +168,7 @@ class BaseApp(object):
                     ssl=self.either("BROKER_USE_SSL", ssl),
                     connect_timeout=self.either(
                                 "BROKER_CONNECTION_TIMEOUT", connect_timeout),
-                    backend_extra_args=self.conf.BROKER_BACKEND_EXTRA_ARGS)
+                    transport_options=self.conf.BROKER_TRANSPORT_OPTIONS)
 
     def with_default_connection(self, fun):
         """With any function accepting `connection` and `connect_timeout`
