@@ -301,29 +301,28 @@ class PersistentScheduler(Scheduler):
         Scheduler.__init__(self, *args, **kwargs)
 
     def _remove_db(self):
-        for suffix in "", ".db", ".dat":
+        for suffix in "", ".db", ".dat", ".bak", ".dir":
             try:
                 os.remove(self.schedule_filename + suffix)
             except OSError, exc:
                 if exc.errno != errno.ENOENT:
                     raise
-            else:
-                break
 
     def setup_schedule(self):
         try:
             self._store = self.persistence.open(self.schedule_filename,
                                                 writeback=True)
+            entries = self._store.setdefault("entries", {})
         except Exception, exc:
             self.logger.error("Removing corrupted schedule file %r: %r" % (
                 self.schedule_filename, exc))
             self._remove_db()
             self._store = self.persistence.open(self.schedule_filename,
                                                 writeback=True)
-
-        if "__version__" not in self._store:
-            self._store.clear()   # remove schedule at 2.2.2 upgrade.
-        entries = self._store.setdefault("entries", {})
+            entries = self._store.setdefault("entries", {})
+        else:
+            if "__version__" not in self._store:
+                self._store.clear()   # remove schedule at 2.2.2 upgrade.
         self.merge_inplace(self.app.conf.CELERYBEAT_SCHEDULE)
         self.install_default_entries(self.schedule)
         self._store["__version__"] = __version__
