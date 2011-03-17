@@ -52,7 +52,7 @@ NAMESPACES = {
         "CONNECTION_MAX_RETRIES": Option(100, type="int"),
         "INSIST": Option(False, type="bool"),
         "USE_SSL": Option(False, type="bool"),
-        "BACKEND_EXTRA_ARGS": Option({}, type="dict")
+        "TRANSPORT_OPTIONS": Option({}, type="dict")
     },
     "CELERY": {
         "ACKS_LATE": Option(False, type="bool"),
