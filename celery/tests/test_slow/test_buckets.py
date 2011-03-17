@@ -83,7 +83,7 @@ class test_TokenBucketQueue(unittest.TestCase):
         x = buckets.TokenBucketQueue(fill_rate=1)
         x.put_nowait("The quick brown fox")
         self.assertEqual(x.get_nowait(), "The quick brown fox")
-        self.assertTrue(x.expected_time())
+        self.assertFalse(x.expected_time())
 
     @skip_if_disabled
     def test_qsize(self):
