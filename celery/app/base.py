@@ -245,7 +245,7 @@ class BaseApp(object):
                 [self.prepare_config(self.loader.conf), deepcopy(DEFAULTS)])
 
     def _set_pool(self):
-        self._pool = self.broker_connection().Pool(2)
+        self._pool = self.broker_connection().Pool(self.conf.BROKER_POOL_LIMIT)
         self._pool.owner_pid = os.getpid()
 
     def _reset_after_fork(self):
