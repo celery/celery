@@ -23,7 +23,7 @@ TIME_UNITS = (("day", 60 * 60 * 24, lambda n: int(math.ceil(n))),
 def maybe_timedelta(delta):
     """Coerces integer to timedelta if `delta` is an integer."""
     if isinstance(delta, int):
-        return timedelta(seconds=int)
+        return timedelta(seconds=delta)
     return delta
 
 
