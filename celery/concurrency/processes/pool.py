@@ -13,6 +13,7 @@ __all__ = ['Pool']
 #
 
 import os
+import sys
 import errno
 import threading
 import Queue
@@ -22,6 +23,7 @@ import time
 import signal
 
 from multiprocessing import Process, cpu_count, TimeoutError
+from multiprocessing import util
 from multiprocessing.util import Finalize, debug
 
 from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded
@@ -56,6 +58,11 @@ job_counter = itertools.count()
 
 def mapstar(args):
     return map(*args)
+
+
+def error(msg, *args, **kwargs):
+    if util._logger:
+        util._logger.error(msg, *args, **kwargs)
 
 
 class LaxBoundedSemaphore(threading._Semaphore):
@@ -168,6 +175,14 @@ class PoolThread(threading.Thread):
         self._state = RUN
         self.daemon = True
 
+    def run(self):
+        try:
+            return self.body()
+        except Exception, exc:
+            error("Thread %r crashed: %r" % (self.__class__.__name__, exc, ),
+                  exc_info=sys.exc_info())
+            os._exit(1)
+
     def terminate(self):
         self._state = TERMINATE
 
@@ -181,7 +196,7 @@ class Supervisor(PoolThread):
         self.pool = pool
         super(Supervisor, self).__init__()
 
-    def run(self):
+    def body(self):
         debug('worker handler starting')
         while self._state == RUN and self.pool._state == RUN:
             self.pool._maintain_pool()
@@ -198,7 +213,7 @@ class TaskHandler(PoolThread):
         self.pool = pool
         super(TaskHandler, self).__init__()
 
-    def run(self):
+    def body(self):
         taskqueue = self.taskqueue
         outqueue = self.outqueue
         put = self.put
@@ -249,7 +264,7 @@ class TimeoutHandler(PoolThread):
         self.putlock = putlock
         super(TimeoutHandler, self).__init__()
 
-    def run(self):
+    def body(self):
         processes = self.processes
         cache = self.cache
         putlock = self.putlock
@@ -338,7 +353,7 @@ class ResultHandler(PoolThread):
         self.putlock = putlock
         super(ResultHandler, self).__init__()
 
-    def run(self):
+    def body(self):
         get = self.get
         outqueue = self.outqueue
         cache = self.cache

@@ -4,6 +4,7 @@ Worker Controller Threads
 
 """
 import logging
+import os
 import sys
 import threading
 import traceback
@@ -47,6 +48,7 @@ class Mediator(threading.Thread):
             "Mediator: Running callback for task: %s[%s]" % (
                 task.task_name, task.task_id))
 
+
         try:
             self.callback(task)
         except Exception, exc:
@@ -61,7 +63,13 @@ class Mediator(threading.Thread):
     def run(self):
         """Move tasks forver or until :meth:`stop` is called."""
         while not self._shutdown.isSet():
-            self.move()
+            try:
+                self.move()
+            except Exception, exc:
+                self.logger.error("Mediator crash: %r" % (exc, ),
+                    exc_info=sys.exc_info())
+                # exiting by normal means does not work here, so force exit.
+                os._exit(1)
         self._stopped.set()
 
     def stop(self):
