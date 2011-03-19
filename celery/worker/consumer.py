@@ -43,7 +43,7 @@ up and running.
 * If the task has an ETA/countdown, the task is moved to the `eta_schedule`
   so the :class:`timer2.Timer` can schedule it at its
   deadline. Tasks without an eta are moved immediately to the `ready_queue`,
-  so they can be picked up by the :class:`~celery.worker.controllers.Mediator`
+  so they can be picked up by the :class:`~celery.worker.mediator.Mediator`
   to be sent to the pool.
 
 * When a task with an ETA is received the QoS prefetch count is also

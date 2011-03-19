@@ -3,7 +3,7 @@ from celery.tests.utils import unittest
 from Queue import Queue
 
 from celery.utils import gen_unique_id
-from celery.worker.controllers import Mediator
+from celery.worker.mediator import Mediator
 from celery.worker.state import revoked as revoked_tasks
 
 
