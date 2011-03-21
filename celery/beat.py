@@ -319,10 +319,10 @@ class PersistentScheduler(Scheduler):
             self._remove_db()
             self._store = self.persistence.open(self.schedule_filename,
                                                 writeback=True)
-            entries = self._store.setdefault("entries", {})
         else:
             if "__version__" not in self._store:
                 self._store.clear()   # remove schedule at 2.2.2 upgrade.
+        entries = self._store.setdefault("entries", {})
         self.merge_inplace(self.app.conf.CELERYBEAT_SCHEDULE)
         self.install_default_entries(self.schedule)
         self._store["__version__"] = __version__
