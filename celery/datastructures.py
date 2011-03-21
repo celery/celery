@@ -84,6 +84,15 @@ class DictAttribute(object):
 
 
 class ConfigurationView(AttributeDictMixin):
+    """A view over an applications configuration dicts.
+
+    If the key does not exist in ``changes``, the ``defaults`` dict
+    is consulted.
+
+    :param changes:  Dict containing changes to the configuration.
+    :param defaults: Dict containing the default configuration.
+
+    """
     changes = None
     defaults = None
 
@@ -198,7 +207,7 @@ class LimitedSet(object):
     consume too much resources.
 
     :keyword maxlen: Maximum number of members before we start
-                     deleting expired members.
+                     evicting expired members.
     :keyword expires: Time in seconds, before a membership expires.
 
     """
