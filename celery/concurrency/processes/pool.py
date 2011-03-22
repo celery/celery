@@ -197,7 +197,7 @@ class Supervisor(PoolThread):
         debug('worker handler starting')
         while self._state == RUN and self.pool._state == RUN:
             self.pool._maintain_pool()
-            time.sleep(0.1)
+            time.sleep(0.8)
         debug('worker handler exiting')
 
 
@@ -561,7 +561,6 @@ class Pool(object):
         if shutdown and not len(self._pool):
             raise WorkersJoined()
 
-        cleaned = []
         for i in reversed(range(len(self._pool))):
             worker = self._pool[i]
             if worker.exitcode is not None:
@@ -577,8 +576,7 @@ class Pool(object):
                     if worker_pid in cleaned and not job.ready():
                         if self._putlock is not None:
                             self._putlock.release()
-                        err = WorkerLostError("Worker exited prematurely.")
-                        job._set(None, (False, err))
+                        job._worker_lost = time.time()
                         continue
             return True
         return False
@@ -821,9 +819,11 @@ DynamicPool = Pool
 
 
 class ApplyResult(object):
+    _worker_lost = None
 
     def __init__(self, cache, callback, accept_callback=None,
             timeout_callback=None, error_callback=None):
+        self._mutex = threading.Lock()
         self._cond = threading.Condition(threading.Lock())
         self._job = job_counter.next()
         self._cache = cache
@@ -869,28 +869,38 @@ class ApplyResult(object):
             raise self._value
 
     def _set(self, i, obj):
-        self._success, self._value = obj
-        if self._callback and self._success:
-            self._callback(self._value)
-        if self._errback and not self._success:
-            self._errback(self._value)
-        self._cond.acquire()
+        self._mutex.acquire()
         try:
-            self._ready = True
-            self._cond.notify()
+            self._success, self._value = obj
+            self._cond.acquire()
+            try:
+                self._ready = True
+                self._cond.notify()
+            finally:
+                self._cond.release()
+            if self._accepted:
+                self._cache.pop(self._job, None)
+
+            # apply callbacks last
+            if self._callback and self._success:
+                self._callback(self._value)
+            if self._errback and not self._success:
+                self._errback(self._value)
         finally:
-            self._cond.release()
-        if self._accepted:
-            self._cache.pop(self._job, None)
+            self._mutex.release()
 
     def _ack(self, i, time_accepted, pid):
-        self._accepted = True
-        self._time_accepted = time_accepted
-        self._worker_pid = pid
-        if self._accept_callback:
-            self._accept_callback()
-        if self._ready:
-            self._cache.pop(self._job, None)
+        self._mutex.acquire()
+        try:
+            self._accepted = True
+            self._time_accepted = time_accepted
+            self._worker_pid = pid
+            if self._ready:
+                self._cache.pop(self._job, None)
+            if self._accept_callback:
+                self._accept_callback(pid, time_accepted)
+        finally:
+            self._mutex.release()
 
 #
 # Class whose instances are returned by `Pool.map_async()`
