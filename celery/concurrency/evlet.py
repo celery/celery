@@ -3,13 +3,13 @@ import sys
 
 from time import time
 
-
 if not os.environ.get("EVENTLET_NOPATCH"):
     import eventlet
     import eventlet.debug
     eventlet.monkey_patch()
     eventlet.debug.hub_prevent_multiple_readers(False)
 
+from celery import signals
 from celery.concurrency import base
 from celery.utils import timer2
 
