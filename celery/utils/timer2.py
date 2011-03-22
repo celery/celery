@@ -4,6 +4,8 @@ from __future__ import generators
 
 import atexit
 import heapq
+import logging
+import os
 import sys
 import traceback
 import warnings
@@ -146,6 +148,7 @@ class Timer(Thread):
         self._shutdown = Event()
         self._stopped = Event()
         self.mutex = Lock()
+        self.logger = logging.getLogger("timer2.Timer")
         self.not_empty = Condition(self.mutex)
         self.setDaemon(True)
         self.setName("Timer-%s" % (self._timer_count(), ))
@@ -172,23 +175,28 @@ class Timer(Thread):
         return self.apply_entry(entry)
 
     def run(self):
-        self.running = True
-        self.scheduler = iter(self.schedule)
-
-        while not self._shutdown.isSet():
-            delay = self.next()
-            if delay:
-                if self.on_tick:
-                    self.on_tick(delay)
-                if sleep is None:
-                    break
-                sleep(delay)
         try:
-            self._stopped.set()
-        except TypeError:           # pragma: no cover
-            # we lost the race at interpreter shutdown,
-            # so gc collected built-in modules.
-            pass
+            self.running = True
+            self.scheduler = iter(self.schedule)
+
+            while not self._shutdown.isSet():
+                delay = self.next()
+                if delay:
+                    if self.on_tick:
+                        self.on_tick(delay)
+                    if sleep is None:
+                        break
+                    sleep(delay)
+            try:
+                self._stopped.set()
+            except TypeError:           # pragma: no cover
+                # we lost the race at interpreter shutdown,
+                # so gc collected built-in modules.
+                pass
+        except Exception, exc:
+            self.logger.error("Thread Timer crashed: %r" % (exc, ),
+                  exc_info=sys.exc_info())
+            os._exit(1)
 
     def stop(self):
         if self.running:

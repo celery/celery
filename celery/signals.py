@@ -211,6 +211,60 @@ Dispatched in addition to the :signal:`beat_init` signal when celerybeat is
 started as an embedded process.  Sender is the
 :class:`celery.beat.Service` instance.
 
+Eventlet Signals
+----------------
+
+.. signal:: eventlet_pool_started
+
+eventlet_pool_started
+~~~~~~~~~~~~~~~~~~~~~
+
+Sent when the eventlet pool has been started.
+
+Sender is the :class:`celery.concurrency.evlet.TaskPool` instance.
+
+.. signal:: eventlet_pool_preshutdown
+
+eventlet_pool_preshutdown
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Sent when the worker shutdown, just before the eventlet pool
+is requested to wait for remaining workers.
+
+Sender is the :class:`celery.concurrency.evlet.TaskPool` instance.
+
+.. signal:: eventlet_pool_postshutdown
+
+eventlet_pool_postshutdown
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Sent when the pool has been joined and the worker is ready to shutdown.
+
+Sender is the :class:`celery.concurrency.evlet.TaskPool` instance.
+
+.. signal:: eventlet_pool_apply
+
+eventlet_pool_apply
+~~~~~~~~~~~~~~~~~~~
+
+Sent whenever a task is applied to the pool.
+
+Sender is the :class:`celery.concurrency.evlet.TaskPool` instance.
+
+Provides arguments:
+
+* target
+
+    The target function.
+
+* args
+
+    Positional arguments.
+
+* kwargs
+
+    Keyword arguments.
+
 
 """
 from celery.utils.dispatch import Signal
@@ -239,3 +293,8 @@ setup_logging = Signal(providing_args=["loglevel", "logfile",
 
 beat_init = Signal(providing_args=[])
 beat_embedded_init = Signal(providing_args=[])
+
+eventlet_pool_started = Signal(providing_args=[])
+eventlet_pool_preshutdown = Signal(providing_args=[])
+eventlet_pool_postshutdown = Signal(providing_args=[])
+eventlet_pool_apply = Signal(providing_args=["target", "args", "kwargs"])

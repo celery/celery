@@ -26,7 +26,7 @@ def revoke(panel, task_id, terminate=False, signal=None, **kwargs):
                 request.terminate(panel.consumer.pool, signal=signum)
                 break
 
-    panel.logger.warn("Task %s %s." % (task_id, action))
+    panel.logger.info("Task %s %s." % (task_id, action))
     return {"ok": "task %s %s" % (task_id, action)}
 
 
@@ -36,7 +36,7 @@ def enable_events(panel):
     if not dispatcher.enabled:
         dispatcher.enable()
         dispatcher.send("worker-online")
-        panel.logger.warn("Events enabled by remote.")
+        panel.logger.info("Events enabled by remote.")
         return {"ok": "events enabled"}
     return {"ok": "events already enabled"}
 
@@ -47,7 +47,7 @@ def disable_events(panel):
     if dispatcher.enabled:
         dispatcher.send("worker-offline")
         dispatcher.disable()
-        panel.logger.warn("Events disabled by remote.")
+        panel.logger.info("Events disabled by remote.")
         return {"ok": "events disabled"}
     return {"ok": "events already disabled"}
 
@@ -89,11 +89,11 @@ def rate_limit(panel, task_name, rate_limit, **kwargs):
     panel.consumer.ready_queue.refresh()
 
     if not rate_limit:
-        panel.logger.warn("Disabled rate limits for tasks of type %s" % (
+        panel.logger.info("Disabled rate limits for tasks of type %s" % (
                             task_name, ))
         return {"ok": "rate limit disabled successfully"}
 
-    panel.logger.warn("New rate limit for tasks of type %s: %s." % (
+    panel.logger.info("New rate limit for tasks of type %s: %s." % (
                 task_name, rate_limit))
     return {"ok": "new rate limit set successfully"}
 
@@ -110,7 +110,7 @@ def dump_schedule(panel, safe=False, **kwargs):
             item["priority"],
             item["item"])
     info = map(formatitem, enumerate(schedule.info()))
-    panel.logger.info("* Dump of current schedule:\n%s" % (
+    panel.logger.debug("* Dump of current schedule:\n%s" % (
                             "\n".join(info, )))
     scheduled_tasks = []
     for item in schedule.info():
@@ -128,7 +128,7 @@ def dump_reserved(panel, safe=False, **kwargs):
     if not reserved:
         panel.logger.info("--Empty queue--")
         return []
-    panel.logger.info("* Dump of currently reserved tasks:\n%s" % (
+    panel.logger.debug("* Dump of currently reserved tasks:\n%s" % (
                             "\n".join(map(safe_repr, reserved), )))
     return [request.info(safe=safe)
             for request in reserved]
@@ -166,8 +166,8 @@ def dump_tasks(panel, **kwargs):
 
     info = map(_extract_info, (tasks[task]
                                         for task in sorted(tasks.keys())))
-    panel.logger.warn("* Dump of currently registered tasks:\n%s" % (
-                "\n".join(info)))
+    panel.logger.debug("* Dump of currently registered tasks:\n%s" % (
+                    "\n".join(info)))
 
     return info
 
@@ -191,7 +191,7 @@ def pool_shrink(panel, n=1, **kwargs):
 
 @Panel.register
 def shutdown(panel, **kwargs):
-    panel.logger.critical("Got shutdown from remote.")
+    panel.logger.warning("Got shutdown from remote.")
     raise SystemExit("Got shutdown from remote")
 
 

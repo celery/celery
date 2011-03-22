@@ -13,6 +13,7 @@ __all__ = ['Pool']
 #
 
 import os
+import sys
 import errno
 import threading
 import Queue
@@ -22,6 +23,7 @@ import time
 import signal
 
 from multiprocessing import Process, cpu_count, TimeoutError
+from multiprocessing import util
 from multiprocessing.util import Finalize, debug
 
 from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded
@@ -56,6 +58,11 @@ job_counter = itertools.count()
 
 def mapstar(args):
     return map(*args)
+
+
+def error(msg, *args, **kwargs):
+    if util._logger:
+        util._logger.error(msg, *args, **kwargs)
 
 
 class LaxBoundedSemaphore(threading._Semaphore):
@@ -168,6 +175,14 @@ class PoolThread(threading.Thread):
         self._state = RUN
         self.daemon = True
 
+    def run(self):
+        try:
+            return self.body()
+        except Exception, exc:
+            error("Thread %r crashed: %r" % (self.__class__.__name__, exc, ),
+                  exc_info=sys.exc_info())
+            os._exit(1)
+
     def terminate(self):
         self._state = TERMINATE
 
@@ -181,11 +196,11 @@ class Supervisor(PoolThread):
         self.pool = pool
         super(Supervisor, self).__init__()
 
-    def run(self):
+    def body(self):
         debug('worker handler starting')
         while self._state == RUN and self.pool._state == RUN:
             self.pool._maintain_pool()
-            time.sleep(0.1)
+            time.sleep(0.8)
         debug('worker handler exiting')
 
 
@@ -198,7 +213,7 @@ class TaskHandler(PoolThread):
         self.pool = pool
         super(TaskHandler, self).__init__()
 
-    def run(self):
+    def body(self):
         taskqueue = self.taskqueue
         outqueue = self.outqueue
         put = self.put
@@ -249,7 +264,7 @@ class TimeoutHandler(PoolThread):
         self.putlock = putlock
         super(TimeoutHandler, self).__init__()
 
-    def run(self):
+    def body(self):
         processes = self.processes
         cache = self.cache
         putlock = self.putlock
@@ -338,7 +353,7 @@ class ResultHandler(PoolThread):
         self.putlock = putlock
         super(ResultHandler, self).__init__()
 
-    def run(self):
+    def body(self):
         get = self.get
         outqueue = self.outqueue
         cache = self.cache
@@ -521,11 +536,22 @@ class Pool(object):
         w.start()
         return w
 
-    def _join_exited_workers(self):
+    def _join_exited_workers(self, lost_worker_timeout=10.0):
         """Cleanup after any worker processes which have exited due to
         reaching their specified lifetime. Returns True if any workers were
         cleaned up.
         """
+        now = None
+        # The worker may have published a result before being terminated,
+        # but we have no way to accurately tell if it did.  So we wait for
+        # 10 seconds before we mark the job with WorkerLostError.
+        for job in [job for job in self._cache.values()
+                if not job.ready() and job._worker_lost]:
+            now = now or time.time()
+            if now - job._worker_lost > lost_worker_timeout:
+                err = WorkerLostError("Worker exited prematurely.")
+                job._set(None, (False, err))
+
         cleaned = []
         for i in reversed(range(len(self._pool))):
             worker = self._pool[i]
@@ -541,8 +567,7 @@ class Pool(object):
                     if worker_pid in cleaned and not job.ready():
                         if self._putlock is not None:
                             self._putlock.release()
-                        err = WorkerLostError("Worker exited prematurely.")
-                        job._set(None, (False, err))
+                        job._worker_lost = time.time()
                         continue
             return True
         return False
@@ -817,9 +842,11 @@ DynamicPool = Pool
 
 
 class ApplyResult(object):
+    _worker_lost = None
 
     def __init__(self, cache, callback, accept_callback=None,
             timeout_callback=None, error_callback=None):
+        self._mutex = threading.Lock()
         self._cond = threading.Condition(threading.Lock())
         self._job = job_counter.next()
         self._cache = cache
@@ -865,28 +892,38 @@ class ApplyResult(object):
             raise self._value
 
     def _set(self, i, obj):
-        self._success, self._value = obj
-        if self._callback and self._success:
-            self._callback(self._value)
-        if self._errback and not self._success:
-            self._errback(self._value)
-        self._cond.acquire()
+        self._mutex.acquire()
         try:
-            self._ready = True
-            self._cond.notify()
+            self._success, self._value = obj
+            self._cond.acquire()
+            try:
+                self._ready = True
+                self._cond.notify()
+            finally:
+                self._cond.release()
+            if self._accepted:
+                self._cache.pop(self._job, None)
+
+            # apply callbacks last
+            if self._callback and self._success:
+                self._callback(self._value)
+            if self._errback and not self._success:
+                self._errback(self._value)
         finally:
-            self._cond.release()
-        if self._accepted:
-            self._cache.pop(self._job, None)
+            self._mutex.release()
 
     def _ack(self, i, time_accepted, pid):
-        self._accepted = True
-        self._time_accepted = time_accepted
-        self._worker_pid = pid
-        if self._accept_callback:
-            self._accept_callback(pid, time_accepted)
-        if self._ready:
-            self._cache.pop(self._job, None)
+        self._mutex.acquire()
+        try:
+            self._accepted = True
+            self._time_accepted = time_accepted
+            self._worker_pid = pid
+            if self._ready:
+                self._cache.pop(self._job, None)
+            if self._accept_callback:
+                self._accept_callback(pid, time_accepted)
+        finally:
+            self._mutex.release()
 
 #
 # Class whose instances are returned by `Pool.map_async()`

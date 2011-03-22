@@ -1,8 +1,3 @@
-"""
-
-Periodic Task Scheduler
-
-"""
 import errno
 import os
 import time
@@ -37,38 +32,37 @@ class SchedulingError(Exception):
 class ScheduleEntry(object):
     """An entry in the scheduler.
 
-    :param name: see :attr:`name`.
-    :param schedule: see :attr:`schedule`.
-    :param args: see :attr:`args`.
-    :param kwargs: see :attr:`kwargs`.
+    :keyword name: see :attr:`name`.
+    :keyword schedule: see :attr:`schedule`.
+    :keyword args: see :attr:`args`.
+    :keyword kwargs: see :attr:`kwargs`.
+    :keyword options: see :attr:`options`.
     :keyword last_run_at: see :attr:`last_run_at`.
     :keyword total_run_count: see :attr:`total_run_count`.
-
-    .. attribute:: name
-
-        The task name.
-
-    .. attribute:: schedule
-
-        The schedule (run_every/crontab)
-
-    .. attribute:: args
-
-        Args to apply.
-
-    .. attribute:: kwargs
-
-        Keyword arguments to apply.
-
-    .. attribute:: last_run_at
-
-        The time and date of when this task was last run.
-
-    .. attribute:: total_run_count
-
-        Total number of times this periodic task has been executed.
+    :keyword relative: Is the time relative to when the server starts?
 
     """
+
+    #: The task name
+    name = None
+
+    #: The schedule (run_every/crontab)
+    schedule = None
+
+    #: Positional arguments to apply.
+    args = None
+
+    #: Keyword arguments to apply.
+    kwargs = None
+
+    #: Task execution options.
+    options = None
+
+    #: The time and date of when this task was last scheduled.
+    last_run_at = None
+
+    #: Total number of times this task has been scheduled.
+    total_run_count = 0
 
     def __init__(self, name=None, task=None, last_run_at=None,
             total_run_count=None, schedule=None, args=(), kwargs={},
@@ -112,34 +106,29 @@ class ScheduleEntry(object):
         return vars(self).iteritems()
 
     def __repr__(self):
-        return "<Entry: %s %s(*%s, **%s) {%s}>" % (self.name,
-                                                   self.task,
-                                                   self.args,
-                                                   self.kwargs,
-                                                   self.schedule)
+        return "<Entry: %s %s(*%s, **%s) {%s}>" % (
+                self.name, self.task, self.args, self.kwargs, self.schedule)
 
 
 class Scheduler(object):
     """Scheduler for periodic tasks.
 
     :keyword schedule: see :attr:`schedule`.
-    :keyword logger:  see :attr:`logger`.
+    :keyword logger: see :attr:`logger`.
     :keyword max_interval: see :attr:`max_interval`.
 
-    .. attribute:: schedule
-
-        The schedule dict/shelve.
-
-    .. attribute:: logger
-
-        The logger to use.
-
-    .. attribute:: max_interval
-
-        Maximum time to sleep between re-checking the schedule.
-
     """
+
     Entry = ScheduleEntry
+
+    #: The schedule dict/shelve.
+    schedule = None
+
+    #: Current logger.
+    logger = None
+
+    #: Maximum time to sleep between re-checking the schedule.
+    max_interval = 1
 
     def __init__(self, schedule=None, logger=None, max_interval=None,
             app=None, Publisher=None, lazy=False, **kwargs):
@@ -301,28 +290,27 @@ class PersistentScheduler(Scheduler):
         Scheduler.__init__(self, *args, **kwargs)
 
     def _remove_db(self):
-        for suffix in "", ".db", ".dat":
+        for suffix in "", ".db", ".dat", ".bak", ".dir":
             try:
                 os.remove(self.schedule_filename + suffix)
             except OSError, exc:
                 if exc.errno != errno.ENOENT:
                     raise
-            else:
-                break
 
     def setup_schedule(self):
         try:
             self._store = self.persistence.open(self.schedule_filename,
                                                 writeback=True)
+            entries = self._store.setdefault("entries", {})
         except Exception, exc:
             self.logger.error("Removing corrupted schedule file %r: %r" % (
                 self.schedule_filename, exc))
             self._remove_db()
             self._store = self.persistence.open(self.schedule_filename,
                                                 writeback=True)
-
-        if "__version__" not in self._store:
-            self._store.clear()   # remove schedule at 2.2.2 upgrade.
+        else:
+            if "__version__" not in self._store:
+                self._store.clear()   # remove schedule at 2.2.2 upgrade.
         entries = self._store.setdefault("entries", {})
         self.merge_inplace(self.app.conf.CELERYBEAT_SCHEDULE)
         self.install_default_entries(self.schedule)
@@ -352,8 +340,7 @@ class PersistentScheduler(Scheduler):
 class Service(object):
     scheduler_cls = PersistentScheduler
 
-    def __init__(self, logger=None,
-            max_interval=None, schedule_filename=None,
+    def __init__(self, logger=None, max_interval=None, schedule_filename=None,
             scheduler_cls=None, app=None):
         self.app = app_or_default(app)
         self.max_interval = max_interval or \

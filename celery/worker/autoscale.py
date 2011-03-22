@@ -1,3 +1,4 @@
+import os
 import sys
 import threading
 import traceback
@@ -56,7 +57,12 @@ class Autoscaler(threading.Thread):
 
     def run(self):
         while not self._shutdown.isSet():
-            self.scale()
+            try:
+                self.scale()
+            except Exception, exc:
+                self.logger.error("Thread Autoscaler crashed: %r" % (exc, ),
+                                  exc_info=sys.exc_info())
+                os._exit(1)
         self._stopped.set()
 
     def stop(self):

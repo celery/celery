@@ -115,7 +115,7 @@ NAMESPACES = {
         "LOG_COLOR": Option(type="bool"),
         "LOG_LEVEL": Option("WARN"),
         "LOG_FILE": Option(),
-        "MEDIATOR": Option("celery.worker.controllers.Mediator"),
+        "MEDIATOR": Option("celery.worker.mediator.Mediator"),
         "MAX_TASKS_PER_CHILD": Option(type="int"),
         "POOL": Option(DEFAULT_POOL),
         "POOL_PUTLOCKS": Option(True, type="bool"),

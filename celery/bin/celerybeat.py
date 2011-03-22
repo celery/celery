@@ -24,6 +24,7 @@
 """
 from celery.bin.base import Command, Option, daemon_options
 from celery.platforms import create_daemon_context
+from celery.utils.functional import partial
 
 
 class BeatCommand(Command):
@@ -33,8 +34,11 @@ class BeatCommand(Command):
             gid=None, umask=None, working_directory=None, **kwargs):
         kwargs.pop("app", None)
 
+        beat = partial(self.app.Beat, logfile=logfile, pidfile=pidfile,
+                       **kwargs)
+
         if not detach:
-            return self.app.Beat(logfile=logfile, **kwargs).run()
+            return beat().run()
 
         context, on_stop = create_daemon_context(
                                 logfile=logfile,
@@ -45,7 +49,7 @@ class BeatCommand(Command):
                                 working_directory=working_directory)
         context.open()
         try:
-            self.app.Beat(pidfile=pidfile, logfile=logfile, **kwargs).run()
+            beat().run()
         finally:
             on_stop()
 

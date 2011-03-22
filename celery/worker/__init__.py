@@ -88,7 +88,7 @@ class WorkController(object):
     #: processing.
     ready_queue = None
 
-    #: Instance of :class:`celery.worker.controllers.Mediator`.
+    #: Instance of :class:`celery.worker.mediator.Mediator`.
     mediator = None
 
     #: Consumer instance.

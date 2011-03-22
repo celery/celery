@@ -3,13 +3,13 @@ import sys
 
 from time import time
 
-
 if not os.environ.get("EVENTLET_NOPATCH"):
     import eventlet
     import eventlet.debug
     eventlet.monkey_patch()
     eventlet.debug.hub_prevent_multiple_readers(False)
 
+from celery import signals
 from celery.concurrency import base
 from celery.utils import timer2
 
@@ -106,13 +106,18 @@ class TaskPool(base.BasePool):
 
     def on_start(self):
         self._pool = self.Pool(self.limit)
+        signals.eventlet_pool_started.send(sender=self)
 
     def on_stop(self):
+        signals.eventlet_pool_preshutdown.send(sender=self)
         if self._pool is not None:
             self._pool.waitall()
+        signals.eventlet_pool_postshutdown.send(sender=self)
 
     def on_apply(self, target, args=None, kwargs=None, callback=None,
             accept_callback=None, **_):
+        signals.eventlet_pool_apply.send(sender=self,
+                target=target, args=args, kwargs=kwargs)
         self._pool.spawn_n(apply_target, target, args, kwargs,
                            callback, accept_callback,
                            self.getcurrent)

@@ -244,22 +244,20 @@ class BaseApp(object):
         return ConfigurationView({},
                 [self.prepare_config(self.loader.conf), deepcopy(DEFAULTS)])
 
-    def _set_pool(self):
-        self._pool = self.broker_connection().Pool(self.conf.BROKER_POOL_LIMIT)
-        self._pool.owner_pid = os.getpid()
-
-    def _reset_after_fork(self):
+    def _after_fork(self, obj_):
         if self._pool:
             self._pool.force_close_all()
+            self._pool = None
 
     @property
     def pool(self):
         if self._pool is None:
-            self._set_pool()
-        elif os.getpid() != self._pool.owner_pid:
-            print("-- RESET POOL AFTER FORK -- ")
-            self._reset_after_fork()
-            self._set_pool()
+            try:
+                from multiprocessing.util import register_after_fork
+                register_after_fork(self, self._after_fork)
+            except ImportError:
+                pass
+            self._pool = self.broker_connection().Pool(self.conf.BROKER_POOL_LIMIT)
         return self._pool
 
     @cached_property
