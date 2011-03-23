@@ -310,8 +310,6 @@ class CursesMonitor(object):
             self.win.addstr(lineno,
                             len(line) - STATE_WIDTH + BORDER_SPACING - 1,
                             task.state, state_color | attr)
-        if task.ready:
-            task.visited = time.time()
 
     def draw(self):
         win = self.win

@@ -14,7 +14,6 @@ HEARTBEAT_EXPIRE = 150                      # 2 minutes, 30 seconds
 
 class Element(AttributeDict):
     """Base class for types."""
-    visited = False
 
     def __init__(self, **fields):
         dict.__init__(self, fields)
