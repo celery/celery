@@ -7,10 +7,26 @@ import celery
 
 
 class Command(object):
+    """Base class for command line applications.
+
+    :keyword app: The current app.
+    :keyword get_app: Callable returning the current app if no app provided.
+
+    """
+    #: Arg list used in help.
     args = ''
+
+    #: Application version.
     version = celery.__version__
-    option_list = ()
+
+    #: If false the parser will raise an exception if positional
+    #: args are provided.
     supports_args = True
+
+    #: List of options (without preload options).
+    option_list = ()
+
+    #: List of options to parse before parsing other options.
     preload_options = (
             Option("--app",
                     default=None, action="store", dest="app",
@@ -25,7 +41,11 @@ class Command(object):
                     dest="config_module",
                     help="Name of the module to read configuration from.")
     )
+
+    #: Enable if the application should support config from the cmdline.
     enable_config_from_cmdline = False
+
+    #: Default configuration namespace.
     namespace = "celery"
 
     Parser = OptionParser
@@ -34,13 +54,42 @@ class Command(object):
         self.app = app
         self.get_app = get_app or self._get_default_app
 
+    def run(self, *args, **options):
+        """This is the body of the command called by :meth:`handle_argv`."""
+        raise NotImplementedError("subclass responsibility")
+
+    def execute_from_commandline(self, argv=None):
+        """Execute application from command line.
+
+        :keyword argv: The list of command line arguments.
+                       Defaults to ``sys.argv``.
+
+        """
+        if argv is None:
+            argv = list(sys.argv)
+        argv = self.setup_app_from_commandline(argv)
+        prog_name = os.path.basename(argv[0])
+        return self.handle_argv(prog_name, argv[1:])
+
     def usage(self):
+        """Returns the command-line usage string for this app."""
         return "%%prog [options] %s" % (self.args, )
 
     def get_options(self):
+        """Get supported command line options."""
         return self.option_list
 
     def handle_argv(self, prog_name, argv):
+        """Parses command line arguments from ``argv`` and dispatches
+        to :meth:`run`.
+
+        :param prog_name: The program name (``argv[0]``).
+        :param argv: Command arguments.
+
+        Exits with an error message if :attr:`supports_args` is disabled
+        and ``argv`` contains positional arguments.
+
+        """
         options, args = self.parse_options(prog_name, argv)
         if not self.supports_args and args:
             sys.stderr.write(
@@ -49,16 +98,6 @@ class Command(object):
             sys.stderr.write("\nTry --help?\n")
             sys.exit(1)
         return self.run(*args, **vars(options))
-
-    def run(self, *args, **options):
-        raise NotImplementedError("subclass responsibility")
-
-    def execute_from_commandline(self, argv=None):
-        if argv is None:
-            argv = list(sys.argv)
-        argv = self.setup_app_from_commandline(argv)
-        prog_name = os.path.basename(argv[0])
-        return self.handle_argv(prog_name, argv[1:])
 
     def parse_options(self, prog_name, arguments):
         """Parse the available options."""
