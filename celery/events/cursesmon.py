@@ -284,8 +284,6 @@ class CursesMonitor(object):
                     if state_color:
                         win.addstr(lineno, len(line) - len(task.state) + 1,
                                 task.state, state_color | attr)
-                    if task.ready:
-                        task.visited = time.time()
 
         # -- Footer
         blank_line()
