@@ -135,19 +135,33 @@ class ConfigurationView(AttributeDictMixin):
         return False
 
     def __repr__(self):
-        return repr(dict(iter(self)))
+        return repr(dict(self.iteritems()))
 
     def __iter__(self):
+        return self.iterkeys()
+
+    def _iter(self, op):
         # defaults must be first in the stream, so values in
-        # in changes takes precedence.
-        return chain(*[d.iteritems()
-                        for d in reversed(self.__dict__["_order"])])
+        # changes takes precedence.
+        return chain(*[op(d) for d in reversed(self.__dict__["_order"])])
+
+    def iterkeys(self):
+        return self._iter(lambda d: d.iterkeys())
 
     def iteritems(self):
-        return iter(self)
+        return self._iter(lambda d: d.iteritems())
+
+    def itervalues(self):
+        return self._iter(lambda d: d.itervalues())
+
+    def keys(self):
+        return list(self.iterkeys())
 
     def items(self):
-        return tuple(self.iteritems())
+        return list(self.iteritems())
+
+    def values(self):
+        return list(self.itervalues())
 
 
 class ExceptionInfo(object):
