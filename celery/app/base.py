@@ -167,7 +167,8 @@ class BaseApp(object):
                     insist=self.either("BROKER_INSIST", insist),
                     ssl=self.either("BROKER_USE_SSL", ssl),
                     connect_timeout=self.either(
-                                "BROKER_CONNECTION_TIMEOUT", connect_timeout))
+                                "BROKER_CONNECTION_TIMEOUT", connect_timeout),
+                    transport_options=self.conf.BROKER_TRANSPORT_OPTIONS)
 
     def with_default_connection(self, fun):
         """With any function accepting `connection` and `connect_timeout`
