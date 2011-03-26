@@ -15,9 +15,8 @@ event_exchange = Exchange("celeryev", type="topic")
 
 
 def create_event(type, fields):
-    std = {"type": type,
-           "timestamp": fields.get("timestamp") or time.time()}
-    return dict(fields, **std)
+    return dict(fields, type=type,
+                        timestamp=fields.get("timestamp") or time.time())
 
 
 def Event(type, **fields):
@@ -93,7 +92,8 @@ class EventDispatcher(object):
             return
 
         self._lock.acquire()
-        event = Event(type, hostname=self.hostname, **fields)
+        event = Event(type, hostname=self.hostname,
+                            clock=self.app.clock.forward(), **fields)
         try:
             try:
                 self.publisher.publish(event,
@@ -214,6 +214,9 @@ class EventReceiver(object):
 
     def _receive(self, body, message):
         type = body.pop("type").lower()
+        clock = body.get("clock")
+        if clock:
+            self.app.clock.adjust(clock)
         self.process(type, create_event(type, body))
 
 

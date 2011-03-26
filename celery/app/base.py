@@ -11,6 +11,7 @@ Application Base Class.
 import platform as _platform
 
 from copy import deepcopy
+from threading import Lock
 
 from kombu.utils import cached_property
 
@@ -18,6 +19,62 @@ from celery.app.defaults import DEFAULTS
 from celery.datastructures import ConfigurationView
 from celery.utils import instantiate, lpmerge
 from celery.utils.functional import wraps
+
+
+class LamportClock(object):
+    """Lamports logical clock.
+
+    From Wikipedia:
+
+    "A Lamport logical clock is a monotonically incrementing software counter
+    maintained in each process.  It follows some simple rules:
+
+        * A process increments its counter before each event in that process;
+        * When a process sends a message, it includes its counter value with
+          the message;
+        * On receiving a message, the receiver process sets its counter to be
+          greater than the maximum of its own value and the received value
+          before it considers the message received.
+
+    Conceptually, this logical clock can be thought of as a clock that only
+    has meaning in relation to messages moving between processes.  When a
+    process receives a message, it resynchronizes its logical clock with
+    the sender.
+
+    .. seealso::
+
+        http://en.wikipedia.org/wiki/Lamport_timestamps
+        http://en.wikipedia.org/wiki/Lamport's_Distributed_
+            Mutual_Exclusion_Algorithm
+
+    *Usage*
+
+    When sending a message use :meth:`forward` to increment the clock,
+    when receiving a message use :meth:`adjust` to sync with
+    the timestamp of the incoming message.
+
+    """
+    #: The clocks current value.
+    value = 0
+
+    def __init__(self, initial_value=0):
+        self.value = initial_value
+        self._mutex = Lock()
+
+    def adjust(self, other):
+        self._mutex.acquire()
+        try:
+            self.value = max(self.value, other) + 1
+        finally:
+            self._mutex.release()
+
+    def forward(self):
+        self._mutex.acquire()
+        try:
+            self.value += 1
+        finally:
+            self._mutex.release()
+        return self.value
 
 
 class BaseApp(object):
@@ -46,6 +103,7 @@ class BaseApp(object):
         self.set_as_current = set_as_current
         self.accept_magic_kwargs = accept_magic_kwargs
         self.on_init()
+        self.clock = LamportClock()
 
     def on_init(self):
         """Called at the end of the constructor."""
