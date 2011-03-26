@@ -68,7 +68,6 @@ class EventDispatcher(object):
             self.enable()
 
     def enable(self):
-        conf = self.app.conf
         self.enabled = True
         channel = self.channel or self.connection.channel()
         self.publisher = Producer(channel, exchange=event_exchange,

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
 import socket
 import threading
 import time

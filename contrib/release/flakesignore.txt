@@ -72,4 +72,4 @@ celery/utils/__init__.py:16: 'cached_property' imported but unused
 celery/beat.py:16: redefinition of unused 'multiprocessing' from line 14
 celery/worker/state.py:62: redefinition of function 'task_reserved' from line 36
 celery/worker/state.py:68: redefinition of function 'task_ready' from line 47
-
+celery/beat.py:11: redefinition of unused 'multiprocessing' from line 9

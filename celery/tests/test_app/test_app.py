@@ -93,7 +93,7 @@ class test_App(unittest.TestCase):
         self.assertTrue(self.app.conf.MOMENT_TO_STOP)
         self.assertEqual(self.app.conf.CALL_ME_BACK, 123456789)
         self.assertFalse(self.app.conf.WANT_ME_TO)
-        self.assertTrue(self.app.conf.UNDERSTAND_ME)        
+        self.assertTrue(self.app.conf.UNDERSTAND_ME)
 
     def test_config_from_cmdline(self):
         cmdline = [".always_eager=no",
@@ -118,7 +118,7 @@ class test_App(unittest.TestCase):
 
         self.app.config_from_object(Object(CELERY_BACKEND="set_by_us"))
         self.assertEqual(self.app.conf.CELERY_RESULT_BACKEND, "set_by_us")
-        
+
     def test_setting_BROKER_TRANSPORT_OPTIONS(self):
 
         _args = {'foo': 'bar', 'spam': 'baz'}
@@ -127,7 +127,7 @@ class test_App(unittest.TestCase):
         self.assertEqual(self.app.conf.BROKER_TRANSPORT_OPTIONS, {})
 
         self.app.config_from_object(Object(BROKER_TRANSPORT_OPTIONS=_args))
-        self.assertEqual(self.app.conf.BROKER_TRANSPORT_OPTIONS, _args)        
+        self.assertEqual(self.app.conf.BROKER_TRANSPORT_OPTIONS, _args)
 
     def test_Windows_log_color_disabled(self):
         self.app.IS_WINDOWS = True

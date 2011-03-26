@@ -69,7 +69,6 @@ class Task(Element):
     merge_rules = {states.RECEIVED: ("name", "args", "kwargs",
                                      "retries", "eta", "expires")}
 
-
     #: meth:`info` displays these fields by default.
     _info_fields = ("args", "kwargs", "retries", "result",
                     "eta", "runtime", "expires", "exception")

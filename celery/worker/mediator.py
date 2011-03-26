@@ -48,7 +48,6 @@ class Mediator(threading.Thread):
             "Mediator: Running callback for task: %s[%s]" % (
                 task.task_name, task.task_id))
 
-
         try:
             self.callback(task)
         except Exception, exc:
