@@ -1,0 +1,167 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>celery.worker.mediator &mdash; Celery v2.2.5 documentation</title>
+    <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.2.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
+    <script type="text/javascript" src="../../static/doctools.js"></script>
+    <link rel="top" title="Celery v2.2.5 documentation" href="../../index.html" />
+    <link rel="up" title="Internal Module Reference" href="index.html" />
+    <link rel="next" title="celery.worker.buckets" href="celery.worker.buckets.html" />
+    <link rel="prev" title="celery.worker.job" href="celery.worker.job.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.worker.buckets.html" title="celery.worker.buckets"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.worker.job.html" title="celery.worker.job"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Celery v2.2.5 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p>
+        This document describes Celery 2.2. For development docs,
+        <a href="http://ask.github.com/celery/internals/reference/celery.worker.mediator.html">go here</a>.
+        </p>
+    
+
+</div>
+    <div class="section" id="celery-worker-mediator">
+<h1>celery.worker.mediator<a class="headerlink" href="#celery-worker-mediator" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-celery.worker.mediator"></span><p>Worker Controller Threads</p>
+<dl class="class">
+<dt id="celery.worker.mediator.Mediator">
+<em class="property">class </em><tt class="descclassname">celery.worker.mediator.</tt><tt class="descname">Mediator</tt><big>(</big><em>ready_queue</em>, <em>callback</em>, <em>logger=None</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.worker.mediator.Mediator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Thread continuously moving tasks from the ready queue into the pool.</p>
+<dl class="attribute">
+<dt id="celery.worker.mediator.Mediator.callback">
+<tt class="descname">callback</tt><a class="headerlink" href="#celery.worker.mediator.Mediator.callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback called when a task is obtained.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.mediator.Mediator.move">
+<tt class="descname">move</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.mediator.Mediator.move" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.mediator.Mediator.ready_queue">
+<tt class="descname">ready_queue</tt><a class="headerlink" href="#celery.worker.mediator.Mediator.ready_queue" title="Permalink to this definition">¶</a></dt>
+<dd><p>The task queue, a <tt class="xref py py-class docutils literal"><span class="pre">Queue</span></tt> instance.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.mediator.Mediator.run">
+<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.mediator.Mediator.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Move tasks forver or until <a class="reference internal" href="#celery.worker.mediator.Mediator.stop" title="celery.worker.mediator.Mediator.stop"><tt class="xref py py-meth docutils literal"><span class="pre">stop()</span></tt></a> is called.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.mediator.Mediator.stop">
+<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.mediator.Mediator.stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gracefully shutdown the thread.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="celery.worker.job.html"
+                        title="previous chapter">celery.worker.job</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="celery.worker.buckets.html"
+                        title="next chapter">celery.worker.buckets</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../sources/internals/reference/celery.worker.mediator.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.worker.buckets.html" title="celery.worker.buckets"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.worker.job.html" title="celery.worker.job"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Celery v2.2.5 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+    </div>
+  </body>
+</html>
