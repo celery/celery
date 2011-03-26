@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.bin.base &mdash; Celery v2.2.4 documentation</title>
+    <title>celery.bin.base &mdash; Celery v2.2.5 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.4',
+        VERSION:     '2.2.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.4 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.5 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.bin.celeryd" href="celery.bin.celeryd.html" />
     <link rel="prev" title="celery.apps.beat" href="celery.apps.beat.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.apps.beat.html" title="celery.apps.beat"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.4 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.5 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -67,10 +67,29 @@
 <span class="target" id="module-celery.bin.base"></span><dl class="class">
 <dt id="celery.bin.base.Command">
 <em class="property">class </em><tt class="descclassname">celery.bin.base.</tt><tt class="descname">Command</tt><big>(</big><em>app=None</em>, <em>get_app=None</em><big>)</big><a class="headerlink" href="#celery.bin.base.Command" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="attribute">
+<dd><p>Base class for command line applications.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>app</strong> &#8211; The current app.</li>
+<li><strong>get_app</strong> &#8211; Callable returning the current app if no app provided.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
 <dt id="celery.bin.base.Command.Parser">
 <tt class="descname">Parser</tt><a class="headerlink" href="#celery.bin.base.Command.Parser" title="Permalink to this definition">¶</a></dt>
 <dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">OptionParser</span></tt></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.bin.base.Command.args">
+<tt class="descname">args</tt><a class="headerlink" href="#celery.bin.base.Command.args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Arg list used in help.</p>
 </dd></dl>
 
 <dl class="method">
@@ -78,10 +97,29 @@
 <tt class="descname">create_parser</tt><big>(</big><em>prog_name</em><big>)</big><a class="headerlink" href="#celery.bin.base.Command.create_parser" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="attribute">
+<dt id="celery.bin.base.Command.enable_config_from_cmdline">
+<tt class="descname">enable_config_from_cmdline</tt><a class="headerlink" href="#celery.bin.base.Command.enable_config_from_cmdline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable if the application should support config from the cmdline.</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="celery.bin.base.Command.execute_from_commandline">
 <tt class="descname">execute_from_commandline</tt><big>(</big><em>argv=None</em><big>)</big><a class="headerlink" href="#celery.bin.base.Command.execute_from_commandline" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Execute application from command line.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>argv</strong> &#8211; The list of command line arguments.
+Defaults to <tt class="docutils literal"><span class="pre">sys.argv</span></tt>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.bin.base.Command.get_cls_by_name">
@@ -91,12 +129,41 @@
 <dl class="method">
 <dt id="celery.bin.base.Command.get_options">
 <tt class="descname">get_options</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.base.Command.get_options" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Get supported command line options.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.bin.base.Command.handle_argv">
 <tt class="descname">handle_argv</tt><big>(</big><em>prog_name</em>, <em>argv</em><big>)</big><a class="headerlink" href="#celery.bin.base.Command.handle_argv" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Parses command line arguments from <tt class="docutils literal"><span class="pre">argv</span></tt> and dispatches
+to <a class="reference internal" href="#celery.bin.base.Command.run" title="celery.bin.base.Command.run"><tt class="xref py py-meth docutils literal"><span class="pre">run()</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>prog_name</strong> &#8211; The program name (<tt class="docutils literal"><span class="pre">argv[0]</span></tt>).</li>
+<li><strong>argv</strong> &#8211; Command arguments.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Exits with an error message if <a class="reference internal" href="#celery.bin.base.Command.supports_args" title="celery.bin.base.Command.supports_args"><tt class="xref py py-attr docutils literal"><span class="pre">supports_args</span></tt></a> is disabled
+and <tt class="docutils literal"><span class="pre">argv</span></tt> contains positional arguments.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.bin.base.Command.namespace">
+<tt class="descname">namespace</tt><a class="headerlink" href="#celery.bin.base.Command.namespace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default configuration namespace.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.bin.base.Command.option_list">
+<tt class="descname">option_list</tt><a class="headerlink" href="#celery.bin.base.Command.option_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of options (without preload options).</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.bin.base.Command.parse_options">
@@ -109,6 +176,12 @@
 <tt class="descname">parse_preload_options</tt><big>(</big><em>args</em><big>)</big><a class="headerlink" href="#celery.bin.base.Command.parse_preload_options" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="attribute">
+<dt id="celery.bin.base.Command.preload_options">
+<tt class="descname">preload_options</tt><a class="headerlink" href="#celery.bin.base.Command.preload_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of options to parse before parsing other options.</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="celery.bin.base.Command.process_cmdline_config">
 <tt class="descname">process_cmdline_config</tt><big>(</big><em>argv</em><big>)</big><a class="headerlink" href="#celery.bin.base.Command.process_cmdline_config" title="Permalink to this definition">¶</a></dt>
@@ -117,17 +190,32 @@
 <dl class="method">
 <dt id="celery.bin.base.Command.run">
 <tt class="descname">run</tt><big>(</big><em>*args</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.bin.base.Command.run" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>This is the body of the command called by <a class="reference internal" href="#celery.bin.base.Command.handle_argv" title="celery.bin.base.Command.handle_argv"><tt class="xref py py-meth docutils literal"><span class="pre">handle_argv()</span></tt></a>.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.bin.base.Command.setup_app_from_commandline">
 <tt class="descname">setup_app_from_commandline</tt><big>(</big><em>argv</em><big>)</big><a class="headerlink" href="#celery.bin.base.Command.setup_app_from_commandline" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="attribute">
+<dt id="celery.bin.base.Command.supports_args">
+<tt class="descname">supports_args</tt><a class="headerlink" href="#celery.bin.base.Command.supports_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>If false the parser will raise an exception if positional
+args are provided.</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="celery.bin.base.Command.usage">
 <tt class="descname">usage</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.base.Command.usage" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Returns the command-line usage string for this app.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.bin.base.Command.version">
+<tt class="descname">version</tt><a class="headerlink" href="#celery.bin.base.Command.version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Application version.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -189,7 +277,7 @@
         <li class="right" >
           <a href="celery.apps.beat.html" title="celery.apps.beat"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.4 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.5 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

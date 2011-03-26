@@ -5,11 +5,143 @@
 .. contents::
     :local:
 
-.. _version-2.2.4:
+.. _version-2.2.5:
+
+2.2.5
+=====
+:release-date: TBA
+
+
+.. _v225-fixes:
+
+Fixes
+-----
+
+* ConfigurationView: ``iter(dict)`` should return keys, not items
+ (Issue #362).
+
+* multiprocessing.Pool:  Fixes race condition when marking job with
+  ``WorkerLostError`` (Issue #268).
+
+    The process may have published a result before it was terminated,
+    but we have no reliable way to detect that this is the case.
+
+    So we have to wait for 10 seconds before marking the result with
+    WorkerLostError.  This gives the result handler a chance to retrieve the
+    result.
+
+* celerybeat: Now creates pidfile even if the ``--detach`` option is not set.
+
+* eventlet/gevent: The broadcast command consumer is now running in a separate
+  greenthread.
+
+    This ensures broadcast commands will take priority even if there are many
+    active tasks.
+
+* Internal module ``celery.worker.controllers`` renamed to
+  ``celery.worker.mediator``.
+
+* celeryd: Threads now terminates the program by calling ``os._exit``, as it
+  is the only way to ensure exit in the case of syntax errors, or other
+  unrecoverable errors.
+
+* Fixed typo in ``maybe_timedelta`` (Issue #352).
+
+* celeryd: Broadcast commands now logs with loglevel debug instead of warning.
+
+* AMQP Result Backend: Now resets cached channel if the connection is lost.
+
+* Polling results with the AMQP result backend was not working properly.
+
+* Rate limits: No longer sleeps if there are no tasks, but rather waits for
+  the task received condition (Performance improvement).
+
+* celerybeat:  PersistentScheduler now automatically removes a corrupted
+  schedule file (Issue #346).
+
+* Programs that doesn't support positional command line arguments now provides
+  a user friendly error message.
+
+* Programs no longer tries to load the configuration file when showing
+  ``--version`` (Issue #347).
+
+* Autoscaler: The "all processes busy" log message is now severity debug
+  instead of error.
+
+* celeryd: If the message body can't be decoded, it is now passed through
+  ``safe_str`` when logging.
+
+    This to ensure we don't get additional decoding errors when trying to log
+    the failure.
+
+* eventlet/gevent is now imported on demand so autodoc can import the modules
+  without having eventlet/gevent installed.
+
+* celeryd: Ack callback now properly handles ``AttributeError``.
+
+* ``Task.after_return`` is now always called *after* the result has been
+  written.
+
+* Cassandra Result Backend: Should now works with the latest ``pycassa``
+  version.
+
+* multiprocessing.Pool: No longer cares if the putlock semaphore is released
+  too many times. (this can happen if one or more worker processes are
+  killed).
+
+* SQLAlchemy Result Backend: Now returns accidentally removed ``date_done`` again
+  (Issue #325).
+
+* Task.request contex is now always initialized to ensure calling the task
+  function directly works even if it actively uses the request context.
+
+* Exception occuring when iterating over the result from ``TaskSet.apply``
+  fixed.
+
+.. _v225-news:
+
+News
+----
+
+* Our documentation is now hosted by Read The Docs
+  (http://docs.celeryproject.org), and all links have been changed to point to
+  the new URL.
+
+* Eventlet: New signals:
+
+    * ``eventlet_pool_started``
+    * ``eventlet_pool_preshutdown``
+    * ``eventlet_pool_postshutdown``
+    * ``eventlet_pool_apply``
+
+    See :ref:`signals` for more information.
+
+* New :setting:`BROKER_TRANSPORT_OPTIONS` setting can be used to pass
+  additional arguments to a particular broker transport.
+
+* celeryd: ``worker_pid`` is now part of the request info as returned by
+  broadcast commands.
+
+* TaskSet.apply/Taskset.apply_async now accepts an optional ``taskset_id``
+  argument.
+
+* The taskset_id (if any) is now available in the Task request context.
+
+* SQLAlchemy result backend: taskset_id and taskset_id columns now have a
+  unique constraint.  (Tables need to recreated for this to take affect).
+
+* Task Userguide: Added section about choosing a result backend.
+
+.. _version-2.2.5:
 
 2.2.4
 =====
 :release-date: 2011-02-19 12:00 AM CET
+
+.. _v224-fixes:
+
+Fixes
+-----
 
 * celeryd: 2.2.3 broke error logging, resulting in tracebacks not being logged.
 
@@ -31,9 +163,6 @@
 * Fixed exception raised when iterating on the result of ``TaskSet.apply()``.
 
 * Tasks Userguide: Added section on choosing a result backend.
-
-
-.. _v224-fixes:
 
 .. _version-2.2.3:
 

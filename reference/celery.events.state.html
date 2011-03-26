@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.events.state &mdash; Celery v2.2.4 documentation</title>
+    <title>celery.events.state &mdash; Celery v2.2.5 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.4',
+        VERSION:     '2.2.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.4 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.5 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.apps.worker" href="celery.apps.worker.html" />
     <link rel="prev" title="celery.events" href="celery.events.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.events.html" title="celery.events"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.4 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.5 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -66,8 +66,16 @@
 <h1>celery.events.state<a class="headerlink" href="#celery-events-state" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.events.state"></span><dl class="class">
 <dt id="celery.events.state.Element">
-<em class="property">class </em><tt class="descclassname">celery.events.state.</tt><tt class="descname">Element</tt><big>(</big><em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Element" title="Permalink to this definition">¶</a></dt>
-<dd><p>Base class for types.</p>
+<em class="property">class </em><tt class="descclassname">celery.events.state.</tt><tt class="descname">Element</tt><a class="headerlink" href="#celery.events.state.Element" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for worker state elements.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.events.state.HEARTBEAT_EXPIRE">
+<tt class="descclassname">celery.events.state.</tt><tt class="descname">HEARTBEAT_EXPIRE</tt><a class="headerlink" href="#celery.events.state.HEARTBEAT_EXPIRE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hartbeat expiry time in seconds.  The worker will be considered offline
+if no heartbeat is received within this time.
+Default is 2:30 minutes.</p>
 </dd></dl>
 
 <dl class="class">
@@ -160,47 +168,68 @@
 <dl class="method">
 <dt id="celery.events.state.Task.info">
 <tt class="descname">info</tt><big>(</big><em>fields=None</em>, <em>extra=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#celery.events.state.Task.info" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Information about this task suitable for on-screen display.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.events.state.Task.merge">
 <tt class="descname">merge</tt><big>(</big><em>state</em>, <em>timestamp</em>, <em>fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Task.merge" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Merge with out of order event.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.events.state.Task.merge_rules">
+<tt class="descname">merge_rules</tt><a class="headerlink" href="#celery.events.state.Task.merge_rules" title="Permalink to this definition">¶</a></dt>
+<dd><p>How to merge out of order events.
+Disorder is detected by logical ordering (e.g. task-received must have
+happened before a task-failed event).</p>
+<p>A merge rule consists of a state and a list of fields to keep from
+that state. <tt class="docutils literal"><span class="pre">(RECEIVED,</span> <span class="pre">(&quot;name&quot;,</span> <span class="pre">&quot;args&quot;)</span></tt>, means the name and args
+fields are always taken from the RECEIVED state, and any values for
+these fields received before or after is simply ignored.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.events.state.Task.on_failed">
 <tt class="descname">on_failed</tt><big>(</big><em>timestamp=None</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Task.on_failed" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Callback for the <tt class="docutils literal"><span class="pre">task-failed</span></tt> event.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.events.state.Task.on_received">
 <tt class="descname">on_received</tt><big>(</big><em>timestamp=None</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Task.on_received" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Callback for the <tt class="docutils literal"><span class="pre">task-received</span></tt> event.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.events.state.Task.on_retried">
 <tt class="descname">on_retried</tt><big>(</big><em>timestamp=None</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Task.on_retried" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Callback for the <tt class="docutils literal"><span class="pre">task-retried</span></tt> event.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.events.state.Task.on_revoked">
 <tt class="descname">on_revoked</tt><big>(</big><em>timestamp=None</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Task.on_revoked" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Callback for the <tt class="docutils literal"><span class="pre">task-revoked</span></tt> event.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.events.state.Task.on_sent">
 <tt class="descname">on_sent</tt><big>(</big><em>timestamp=None</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Task.on_sent" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Callback for the <tt class="docutils literal"><span class="pre">task-sent</span></tt> event.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.events.state.Task.on_started">
 <tt class="descname">on_started</tt><big>(</big><em>timestamp=None</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Task.on_started" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Callback for the <tt class="docutils literal"><span class="pre">task-started</span></tt> event.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.events.state.Task.on_succeeded">
 <tt class="descname">on_succeeded</tt><big>(</big><em>timestamp=None</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Task.on_succeeded" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Callback for the <tt class="docutils literal"><span class="pre">task-succeeded</span></tt> event.</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.events.state.Task.ready">
@@ -210,7 +239,21 @@
 <dl class="method">
 <dt id="celery.events.state.Task.update">
 <tt class="descname">update</tt><big>(</big><em>state</em>, <em>timestamp</em>, <em>fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Task.update" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Update state from new event.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>state</strong> &#8211; State from event.</li>
+<li><strong>timestamp</strong> &#8211; Timestamp from event.</li>
+<li><strong>fields</strong> &#8211; Event data.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 </dd></dl>
 
@@ -226,17 +269,20 @@
 <dl class="method">
 <dt id="celery.events.state.Worker.on_heartbeat">
 <tt class="descname">on_heartbeat</tt><big>(</big><em>timestamp=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.Worker.on_heartbeat" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Callback for the <cite>worker-heartbeat</cite> event.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.events.state.Worker.on_offline">
 <tt class="descname">on_offline</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.Worker.on_offline" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Callback for the <cite>worker-offline</cite> event.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.events.state.Worker.on_online">
 <tt class="descname">on_online</tt><big>(</big><em>timestamp=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.Worker.on_online" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Callback for the <cite>worker-online</cite> event.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -293,7 +339,7 @@
         <li class="right" >
           <a href="celery.events.html" title="celery.events"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.4 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.5 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

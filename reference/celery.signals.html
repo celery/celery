@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.signals &mdash; Celery v2.2.4 documentation</title>
+    <title>celery.signals &mdash; Celery v2.2.5 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.4',
+        VERSION:     '2.2.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.4 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.2.5 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.exceptions" href="celery.exceptions.html" />
     <link rel="prev" title="celery.schedules" href="celery.schedules.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.schedules.html" title="celery.schedules"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.4 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.5 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -101,6 +101,13 @@ certain actions occur elsewhere in the application.</p>
 <li><a class="reference internal" href="#celerybeat-signals" id="id14">Celerybeat Signals</a><ul>
 <li><a class="reference internal" href="#beat-init" id="id15">beat_init</a></li>
 <li><a class="reference internal" href="#beat-embedded-init" id="id16">beat_embedded_init</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#eventlet-signals" id="id17">Eventlet Signals</a><ul>
+<li><a class="reference internal" href="#eventlet-pool-started" id="id18">eventlet_pool_started</a></li>
+<li><a class="reference internal" href="#eventlet-pool-preshutdown" id="id19">eventlet_pool_preshutdown</a></li>
+<li><a class="reference internal" href="#eventlet-pool-postshutdown" id="id20">eventlet_pool_postshutdown</a></li>
+<li><a class="reference internal" href="#eventlet-pool-apply" id="id21">eventlet_pool_apply</a></li>
 </ul>
 </li>
 </ul>
@@ -328,6 +335,48 @@ started as an embedded process.  Sender is the
 <a class="reference internal" href="../internals/reference/celery.beat.html#celery.beat.Service" title="celery.beat.Service"><tt class="xref py py-class docutils literal"><span class="pre">celery.beat.Service</span></tt></a> instance.</p>
 </div>
 </div>
+<div class="section" id="eventlet-signals">
+<h3><a class="toc-backref" href="#id17">Eventlet Signals</a><a class="headerlink" href="#eventlet-signals" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="eventlet-pool-started">
+<span id="std:signal-eventlet_pool_started"></span><h4><a class="toc-backref" href="#id18">eventlet_pool_started</a><a class="headerlink" href="#eventlet-pool-started" title="Permalink to this headline">¶</a></h4>
+<p>Sent when the eventlet pool has been started.</p>
+<p>Sender is the <a class="reference internal" href="../internals/reference/celery.concurrency.evlet.html#celery.concurrency.evlet.TaskPool" title="celery.concurrency.evlet.TaskPool"><tt class="xref py py-class docutils literal"><span class="pre">celery.concurrency.evlet.TaskPool</span></tt></a> instance.</p>
+</div>
+<div class="section" id="eventlet-pool-preshutdown">
+<span id="std:signal-eventlet_pool_preshutdown"></span><h4><a class="toc-backref" href="#id19">eventlet_pool_preshutdown</a><a class="headerlink" href="#eventlet-pool-preshutdown" title="Permalink to this headline">¶</a></h4>
+<p>Sent when the worker shutdown, just before the eventlet pool
+is requested to wait for remaining workers.</p>
+<p>Sender is the <a class="reference internal" href="../internals/reference/celery.concurrency.evlet.html#celery.concurrency.evlet.TaskPool" title="celery.concurrency.evlet.TaskPool"><tt class="xref py py-class docutils literal"><span class="pre">celery.concurrency.evlet.TaskPool</span></tt></a> instance.</p>
+</div>
+<div class="section" id="eventlet-pool-postshutdown">
+<span id="std:signal-eventlet_pool_postshutdown"></span><h4><a class="toc-backref" href="#id20">eventlet_pool_postshutdown</a><a class="headerlink" href="#eventlet-pool-postshutdown" title="Permalink to this headline">¶</a></h4>
+<p>Sent when the pool has been joined and the worker is ready to shutdown.</p>
+<p>Sender is the <a class="reference internal" href="../internals/reference/celery.concurrency.evlet.html#celery.concurrency.evlet.TaskPool" title="celery.concurrency.evlet.TaskPool"><tt class="xref py py-class docutils literal"><span class="pre">celery.concurrency.evlet.TaskPool</span></tt></a> instance.</p>
+</div>
+<div class="section" id="eventlet-pool-apply">
+<span id="std:signal-eventlet_pool_apply"></span><h4><a class="toc-backref" href="#id21">eventlet_pool_apply</a><a class="headerlink" href="#eventlet-pool-apply" title="Permalink to this headline">¶</a></h4>
+<p>Sent whenever a task is applied to the pool.</p>
+<p>Sender is the <a class="reference internal" href="../internals/reference/celery.concurrency.evlet.html#celery.concurrency.evlet.TaskPool" title="celery.concurrency.evlet.TaskPool"><tt class="xref py py-class docutils literal"><span class="pre">celery.concurrency.evlet.TaskPool</span></tt></a> instance.</p>
+<p>Provides arguments:</p>
+<ul>
+<li><p class="first">target</p>
+<blockquote>
+<p>The target function.</p>
+</blockquote>
+</li>
+<li><p class="first">args</p>
+<blockquote>
+<p>Positional arguments.</p>
+</blockquote>
+</li>
+<li><p class="first">kwargs</p>
+<blockquote>
+<p>Keyword arguments.</p>
+</blockquote>
+</li>
+</ul>
+</div>
+</div>
 </div>
 </div>
 
@@ -382,7 +431,7 @@ started as an embedded process.  Sender is the
         <li class="right" >
           <a href="celery.schedules.html" title="celery.schedules"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.4 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.5 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

@@ -11,7 +11,7 @@
     celery.worker
     celery.worker.consumer
     celery.worker.job
-    celery.worker.controllers
+    celery.worker.mediator
     celery.worker.buckets
     celery.worker.heartbeat
     celery.worker.state
