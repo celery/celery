@@ -1,11 +1,11 @@
 =======================================================
- celery.worker.controllers
+ celery.worker.mediator
 =======================================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.worker.controllers
+.. currentmodule:: celery.worker.mediator
 
-.. automodule:: celery.worker.controllers
+.. automodule:: celery.worker.mediator
     :members:
     :undoc-members:
