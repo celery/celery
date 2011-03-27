@@ -107,6 +107,15 @@ News
   (http://docs.celeryproject.org), and all links have been changed to point to
   the new URL.
 
+* Logging: Now supports log rotation using external tools like `logrotate.d`_
+  (Issue #321)
+
+    This is accomplished by using the ``WatchedFileHandler``, which re-opens
+    the file if it is renamed or deleted.
+
+.. _`logrotate.d`:
+    http://www.ducea.com/2006/06/06/rotating-linux-log-files-part-2-logrotate/
+
 * Eventlet: New signals:
 
     * ``eventlet_pool_started``
