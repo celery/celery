@@ -307,7 +307,10 @@ def get_cls_by_name(name, aliases={}, imp=None):
 
     name = aliases.get(name) or name
     module_name, _, cls_name = rpartition(name, ".")
-    module = imp(module_name)
+    try:
+        module = imp(module_name)
+    except ValueError, exc:
+        raise ValueError("Couldn't import %r: %s" % (name, exc))
     return getattr(module, cls_name)
 
 get_symbol_by_name = get_cls_by_name

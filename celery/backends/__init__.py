@@ -20,7 +20,12 @@ def get_backend_cls(backend, loader=None):
     loader = loader or current_app.loader
     if backend not in _backend_cache:
         aliases = dict(BACKEND_ALIASES, **loader.override_backends)
-        _backend_cache[backend] = get_cls_by_name(backend, aliases)
+        try:
+            _backend_cache[backend] = get_cls_by_name(backend, aliases)
+        except ValueError, exc:
+            raise ValueError("Unknown result backend: %r.  "
+                             "Did you spell it correctly?  (%s)" % (backend,
+                                                                    exc))
     return _backend_cache[backend]
 
 
