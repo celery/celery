@@ -11,6 +11,12 @@
 =====
 :release-date: TBA
 
+.. _v225-important:
+
+Important Notes
+---------------
+
+* Now depends on Kombu 1.0.7
 
 .. _v225-fixes:
 
