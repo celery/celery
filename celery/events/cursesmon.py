@@ -343,6 +343,7 @@ class CursesMonitor(object):
         if self.selected_task:
             win.addstr(my - 5, x, self.selected_str, curses.A_BOLD)
             info = "Missing extended info"
+            detail = ""
             try:
                 selection = self.state.tasks[self.selected_task]
             except KeyError:
