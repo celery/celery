@@ -17,9 +17,6 @@
 Fixes
 -----
 
-* ConfigurationView: ``iter(dict)`` should return keys, not items
- (Issue #362).
-
 * multiprocessing.Pool:  Fixes race condition when marking job with
   ``WorkerLostError`` (Issue #268).
 
@@ -65,6 +62,9 @@ Fixes
 * Rate limits: No longer sleeps if there are no tasks, but rather waits for
   the task received condition (Performance improvement).
 
+* ConfigurationView: ``iter(dict)`` should return keys, not items
+ (Issue #362).
+
 * celerybeat:  PersistentScheduler now automatically removes a corrupted
   schedule file (Issue #346).
 
@@ -101,6 +101,8 @@ Fixes
     disable the prefetch count, it is re-enabled as soon as the value is below
     the limit again.
 
+* cursesmon: Fixed unbound local error (Issue #303).
+
 * eventlet/gevent is now imported on demand so autodoc can import the modules
   without having eventlet/gevent installed.
 
@@ -125,6 +127,8 @@ Fixes
 * Exception occuring when iterating over the result from ``TaskSet.apply``
   fixed.
 
+* eventlet: Now properly schedules tasks with an ETA in the past.
+
 .. _v225-news:
 
 News
@@ -145,6 +149,10 @@ News
 
 * :ref:`tut-otherqueues` now documents how to configure Redis/Database result
    backends.
+
+* gevent: Now supports ETA tasks.
+
+    But gevent still needs ``CELERY_DISABLE_RATE_LIMITS=True` to work.
 
 * TaskSet User Guide: now contains TaskSet callback recipes.
 
@@ -173,7 +181,7 @@ News
 
 * Task Userguide: Added section about choosing a result backend.
 
-.. _version-2.2.5:
+.. _version-2.2.4:
 
 2.2.4
 =====
