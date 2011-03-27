@@ -45,6 +45,10 @@ class Entry(object):
     def cancel(self):
         self.tref.cancelled = True
 
+    def __repr__(self):
+        return "<TimerEntry: %s(*%r, **%r)" % (
+                self.fun.__name__, self.args, self.kwargs)
+
 
 def to_timestamp(d):
     if isinstance(d, datetime):
