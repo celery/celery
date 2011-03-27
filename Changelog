@@ -74,6 +74,24 @@ Fixes
     This to ensure we don't get additional decoding errors when trying to log
     the failure.
 
+* ``app.config_from_object``/``app.config_from_envvar`` now works for all
+  loaders.
+
+* Now emits a user-friendly error message if the result backend name is
+  unknown (Issue #349).
+
+* :mod:`celery.contrib.batches`: Now sets loglevel and logfile in task request so
+  ``task.get_logger`` works with batch tasks (Issue #357).
+
+* celeryd: An exception was raised if using the amqp transport and prefetch
+  the count value exceeded 65535 (Issue #359).
+
+    The prefetch count is incremented for every received task with an
+    ETA/countdown defined.  The prefetch count is a short, so can only support
+    a maximum value of 65535.  If the value exceeds the maximum value we now
+    disable the prefetch count, it is re-enabled as soon as the value is below
+    the limit again.
+
 * eventlet/gevent is now imported on demand so autodoc can import the modules
   without having eventlet/gevent installed.
 
@@ -115,6 +133,11 @@ News
 
 .. _`logrotate.d`:
     http://www.ducea.com/2006/06/06/rotating-linux-log-files-part-2-logrotate/
+
+* :ref:`tut-otherqueues` now documents how to configure Redis/Database result
+   backends.
+
+* TaskSet User Guide: now contains TaskSet callback recipes.
 
 * Eventlet: New signals:
 
