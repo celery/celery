@@ -14,6 +14,7 @@ from celery import signals
 from celery import current_app
 from celery.utils import LOG_LEVELS, isatty
 from celery.utils.compat import LoggerAdapter
+from celery.utils.compat import WatchedFileHandler
 from celery.utils.encoding import safe_str
 from celery.utils.patch import ensure_process_aware_logger
 from celery.utils.term import colored
@@ -23,7 +24,7 @@ class ColorFormatter(logging.Formatter):
     #: Loglevel -> Color mapping.
     COLORS = colored().names
     colors = {"DEBUG": COLORS["blue"], "WARNING": COLORS["yellow"],
-              "ERROR": COLORS["red"],  "CRITICAL": COLORS["magenta"]}
+              "ERROR": COLORS["red"], "CRITICAL": COLORS["magenta"]}
 
     def __init__(self, msg, use_color=True):
         logging.Formatter.__init__(self, msg)
@@ -132,7 +133,7 @@ class Logging(object):
             logfile = sys.__stderr__
         if hasattr(logfile, "write"):
             return logging.StreamHandler(logfile)
-        return logging.FileHandler(logfile)
+        return WatchedFileHandler(logfile)
 
     def get_default_logger(self, loglevel=None, name="celery"):
         """Get default logger instance.
