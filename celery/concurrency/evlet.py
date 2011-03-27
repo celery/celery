@@ -33,7 +33,7 @@ class Schedule(timer2.Schedule):
 
     def enter(self, entry, eta=None, priority=0):
         try:
-            timer2.to_timestamp(eta)
+            eta = timer2.to_timestamp(eta)
         except OverflowError:
             if not self.handle_error(sys.exc_info()):
                 raise
@@ -41,7 +41,7 @@ class Schedule(timer2.Schedule):
         now = time()
         if eta is None:
             eta = now
-        secs = eta - now
+        secs = max(eta - now, 0)
 
         g = self._spawn_after_local(secs, entry)
         self._queue.add(g)
