@@ -90,6 +90,9 @@ from celery.worker.heartbeat import Heart
 RUN = 0x1
 CLOSE = 0x2
 
+#: Prefetch count can't exceed short.
+PREFETCH_COUNT_MAX = 0xFFFF
+
 
 class QoS(object):
     """Quality of Service for Channel.
@@ -114,8 +117,8 @@ class QoS(object):
         self._mutex.acquire()
         try:
             if self.value:
-                self.value += max(n, 0)
-                self.set(self.value)
+                new_value = self.value + max(n, 0)
+                self.value = self.set(new_value)
             return self.value
         finally:
             self._mutex.release()
@@ -152,8 +155,13 @@ class QoS(object):
     def set(self, pcount):
         """Set channel prefetch_count setting."""
         if pcount != self.prev:
-            self.logger.debug("basic.qos: prefetch_count->%s" % pcount)
-            self.consumer.qos(prefetch_count=pcount)
+            new_value = pcount
+            if pcount > PREFETCH_COUNT_MAX:
+                self.logger.warning("QoS: Disabled: prefetch_count exceeds %r" % (
+                    PREFETCH_COUNT_MAX, ))
+                new_value = 0
+            self.logger.debug("basic.qos: prefetch_count->%s" % new_value)
+            self.consumer.qos(prefetch_count=new_value)
             self.prev = pcount
         return pcount
 

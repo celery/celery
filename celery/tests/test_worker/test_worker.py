@@ -18,7 +18,7 @@ from celery.worker import WorkController
 from celery.worker.buckets import FastQueue
 from celery.worker.job import TaskRequest
 from celery.worker.consumer import Consumer as MainConsumer
-from celery.worker.consumer import QoS, RUN
+from celery.worker.consumer import QoS, RUN, PREFETCH_COUNT_MAX
 from celery.utils.serialization import pickle
 
 from celery.tests.compat import catch_warnings
@@ -235,6 +235,21 @@ class test_QoS(unittest.TestCase):
 
         def qos(self, prefetch_size=0, prefetch_count=0, apply_global=False):
             self.prefetch_count = prefetch_count
+
+    def test_exceeds_short(self):
+        consumer = self.MockConsumer()
+        qos = QoS(consumer, PREFETCH_COUNT_MAX - 1,
+                current_app.log.get_default_logger())
+        qos.update()
+        self.assertEqual(qos.value, PREFETCH_COUNT_MAX - 1)
+        qos.increment()
+        self.assertEqual(qos.value, PREFETCH_COUNT_MAX)
+        qos.increment()
+        self.assertEqual(qos.value, PREFETCH_COUNT_MAX + 1)
+        qos.decrement()
+        self.assertEqual(qos.value, PREFETCH_COUNT_MAX)
+        qos.decrement()
+        self.assertEqual(qos.value, PREFETCH_COUNT_MAX - 1)
 
     def test_consumer_increment_decrement(self):
         consumer = self.MockConsumer()
