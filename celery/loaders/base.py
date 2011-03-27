@@ -1,13 +1,24 @@
 import importlib
+import os
 import re
 import warnings
 
 from anyjson import deserialize
 from kombu.utils import cached_property
 
+from celery.datastructures import DictAttribute
+from celery.exceptions import ImproperlyConfigured
+from celery.utils import get_cls_by_name
 from celery.utils import import_from_cwd as _import_from_cwd
 
 BUILTIN_MODULES = ["celery.task"]
+
+ERROR_ENVVAR_NOT_SET = (
+"""The environment variable %r is not set,
+and as such the configuration could not be loaded.
+Please set this variable and make it point to
+a configuration module.""")
+
 
 
 class BaseLoader(object):
@@ -29,6 +40,7 @@ class BaseLoader(object):
     worker_initialized = False
     override_backends = {}
     configured = False
+    _conf = None
 
     def __init__(self, app=None, **kwargs):
         from celery.app import app_or_default
@@ -67,6 +79,28 @@ class BaseLoader(object):
         if not self.worker_initialized:
             self.worker_initialized = True
             self.on_worker_init()
+
+    def config_from_envvar(self, variable_name, silent=False):
+        module_name = os.environ.get(variable_name)
+        if not module_name:
+            if silent:
+                return False
+            raise ImproperlyConfigured(ERROR_ENVVAR_NOT_SET % (module_name, ))
+        return self.config_from_object(module_name, silent=silent)
+
+    def config_from_object(self, obj, silent=False):
+        if isinstance(obj, basestring):
+            try:
+                obj = get_cls_by_name(obj, imp=self.import_from_cwd)
+            except (ImportError, AttributeError):
+                if silent:
+                    return False
+                raise
+        if not hasattr(obj, "__getitem__"):
+            obj = DictAttribute(obj)
+        self._conf = obj
+        return True
+
 
     def cmdline_config_parser(self, args, namespace="celery",
                 re_type=re.compile(r"\((\w+)\)"),
@@ -131,10 +165,12 @@ class BaseLoader(object):
                 "Mail could not be sent: %r %r" % (
                     exc, {"To": to, "Subject": subject})))
 
-    @cached_property
+    @property
     def conf(self):
         """Loader configuration."""
-        return self.read_configuration()
+        if self._conf is None:
+            self._conf = self.read_configuration()
+        return self._conf
 
     @cached_property
     def mail(self):
