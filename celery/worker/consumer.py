@@ -80,8 +80,8 @@ from celery.app import app_or_default
 from celery.datastructures import AttributeDict
 from celery.exceptions import NotRegistered
 from celery.utils import noop
+from celery.utils import timer2
 from celery.utils.encoding import safe_repr, safe_str
-from celery.utils.timer2 import to_timestamp
 from celery.worker import state
 from celery.worker.job import TaskRequest, InvalidTaskError
 from celery.worker.control.registry import Panel
@@ -229,7 +229,8 @@ class Consumer(object):
 
     def __init__(self, ready_queue, eta_schedule, logger,
             init_callback=noop, send_events=False, hostname=None,
-            initial_prefetch_count=2, pool=None, app=None):
+            initial_prefetch_count=2, pool=None, app=None,
+            priority_timer=None):
         self.app = app_or_default(app)
         self.connection = None
         self.task_consumer = None
@@ -244,6 +245,7 @@ class Consumer(object):
         self.event_dispatcher = None
         self.heart = None
         self.pool = pool
+        self.priority_timer = priority_timer or timer2.Timer()
         pidbox_state = AttributeDict(app=self.app,
                                      logger=logger,
                                      hostname=self.hostname,
@@ -308,7 +310,7 @@ class Consumer(object):
 
         if task.eta:
             try:
-                eta = to_timestamp(task.eta)
+                eta = timer2.to_timestamp(task.eta)
             except OverflowError, exc:
                 self.logger.error(
                     "Couldn't convert eta %s to timestamp: %r. Task: %r" % (
@@ -505,7 +507,7 @@ class Consumer(object):
         self._state = RUN
 
     def restart_heartbeat(self):
-        self.heart = Heart(self.event_dispatcher)
+        self.heart = Heart(self.priority_timer, self.event_dispatcher)
         self.heart.start()
 
     def _open_connection(self):

@@ -183,6 +183,8 @@ class WorkController(object):
                                 timeout=self.task_time_limit,
                                 soft_timeout=self.task_soft_time_limit,
                                 putlocks=self.pool_putlocks)
+        self.priority_timer = instantiate(self.pool.Timer)
+
         if not self.eta_scheduler_cls:
             # Default Timer is set by the pool, as e.g. eventlet
             # needs a custom implementation.
@@ -223,6 +225,7 @@ class WorkController(object):
                                     init_callback=self.ready_callback,
                                     initial_prefetch_count=prefetch_count,
                                     pool=self.pool,
+                                    priority_timer=self.priority_timer,
                                     app=self.app)
 
         # The order is important here;
