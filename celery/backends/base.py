@@ -261,3 +261,18 @@ class KeyValueStoreBackend(BaseDictBackend):
         if meta:
             meta = pickle.loads(str(meta))
             return meta
+
+
+class DisabledBackend(BaseBackend):
+
+    def store_result(self, *args, **kwargs):
+        pass
+
+    def _is_disabled(self, *args, **kwargs):
+        raise NotImplementedError("No result backend configured.  "
+                "Please see the documentation for more information.")
+
+    wait_for = _is_disabled
+    get_status = _is_disabled
+    get_result = _is_disabled
+    get_traceback = _is_disabled

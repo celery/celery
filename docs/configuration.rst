@@ -89,9 +89,10 @@ CELERY_RESULT_BACKEND
 ~~~~~~~~~~~~~~~~~~~~~
 
 The backend used to store task results (tombstones).
+Disabled by default.
 Can be one of the following:
 
-* database (default)
+* database
     Use a relational database supported by `SQLAlchemy`_.
     See :ref:`conf-database-result-backend`.
 

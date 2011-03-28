@@ -5,6 +5,39 @@
 .. contents::
     :local:
 
+.. _version-2.3.0:
+
+2.3.0
+=====
+:release-date: TBA
+:status: in development
+:branch: master
+
+.. _v230-important:
+
+Important Notes
+---------------
+
+* Results are now disabled by default.
+
+    The AMQP backend was not a good default because often the users were
+    not consuming the results, resulting in thousands of queues.
+
+    While the queues can be configured to expire if left unused, it was not
+    possible to enable this by default because this was only available in
+    recent RabbitMQ versions (2.1.1+)
+
+    With this change enabling a result backend will be a conscious choice,
+    which will hopefully lead the user to read the documentation and be aware
+    of any common pitfalls with the particular backend.
+
+    The default backend is now a dummy backend
+    (:class:`celery.backends.base.DisabledBackend`).  Saving state is simply an
+    noop operation, and AsyncResult.wait(), .result, .state, etc will raise
+    a :exc:`NotImplementedError` telling the user to configure the result backend.
+
+    For help choosing a backend please see :ref:`task-result-backends`.
+
 .. _version-2.2.5:
 
 2.2.5

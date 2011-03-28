@@ -10,13 +10,15 @@ BACKEND_ALIASES = {
     "tyrant": "celery.backends.tyrant.TyrantBackend",
     "database": "celery.backends.database.DatabaseBackend",
     "cassandra": "celery.backends.cassandra.CassandraBackend",
+    "disabled": "celery.backends.base.DisabledBackend",
 }
 
 _backend_cache = {}
 
 
-def get_backend_cls(backend, loader=None):
+def get_backend_cls(backend=None, loader=None):
     """Get backend class by name/alias"""
+    backend = backend or "disabled"
     loader = loader or current_app.loader
     if backend not in _backend_cache:
         aliases = dict(BACKEND_ALIASES, **loader.override_backends)

@@ -78,7 +78,7 @@ NAMESPACES = {
         "IGNORE_RESULT": Option(False, type="bool"),
         "MAX_CACHED_RESULTS": Option(5000, type="int"),
         "MESSAGE_COMPRESSION": Option(None, type="string"),
-        "RESULT_BACKEND": Option("amqp"),
+        "RESULT_BACKEND": Option(None, type="string"),
         "RESULT_DBURI": Option(),
         "RESULT_ENGINE_OPTIONS": Option(None, type="dict"),
         "RESULT_EXCHANGE": Option("celeryresults"),
