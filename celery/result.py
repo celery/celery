@@ -191,9 +191,6 @@ class AsyncResult(BaseAsyncResult):
 
     """
 
-    #: The tasks uuid.
-    uuid = None
-
     #: Task result store backend to use.
     backend = None
 
