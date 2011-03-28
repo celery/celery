@@ -20,7 +20,6 @@ Please set this variable and make it point to
 a configuration module.""")
 
 
-
 class BaseLoader(object):
     """The base class for loaders.
 
@@ -100,7 +99,6 @@ class BaseLoader(object):
             obj = DictAttribute(obj)
         self._conf = obj
         return True
-
 
     def cmdline_config_parser(self, args, namespace="celery",
                 re_type=re.compile(r"\((\w+)\)"),

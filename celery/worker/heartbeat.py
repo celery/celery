@@ -1,5 +1,4 @@
 from celery.worker.state import SOFTWARE_INFO
-from celery.utils import timer2
 
 
 class Heart(object):

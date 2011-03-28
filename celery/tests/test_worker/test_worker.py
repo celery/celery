@@ -13,6 +13,7 @@ from celery.concurrency.base import BasePool
 from celery.exceptions import SystemTerminate
 from celery.task import task as task_dec
 from celery.task import periodic_task as periodic_task_dec
+from celery.utils import timer2
 from celery.utils import gen_unique_id
 from celery.worker import WorkController
 from celery.worker.buckets import FastQueue
@@ -369,14 +370,13 @@ class test_Consumer(unittest.TestCase):
         l.event_dispatcher = MockEventDispatcher()
         l.pidbox_node = MockNode()
 
-        from celery.worker import consumer
-        prev, consumer.to_timestamp = consumer.to_timestamp, to_timestamp
+        prev, timer2.to_timestamp = timer2.to_timestamp, to_timestamp
         try:
             l.receive_message(m.decode(), m)
             self.assertTrue(m.acknowledged)
             self.assertTrue(called[0])
         finally:
-            consumer.to_timestamp = prev
+            timer2.to_timestamp = prev
 
     def test_receive_message_InvalidTaskError(self):
         logger = MockLogger()
