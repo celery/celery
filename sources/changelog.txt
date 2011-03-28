@@ -9,16 +9,73 @@
 
 2.2.5
 =====
-:release-date: TBA
+:release-date: 2011-03-28 06:00 P.M CEST
 
+.. _v225-important:
+
+Important Notes
+---------------
+
+* Now depends on Kombu 1.0.7
+
+.. _v225-news:
+
+News
+----
+
+* Our documentation is now hosted by Read The Docs
+  (http://docs.celeryproject.org), and all links have been changed to point to
+  the new URL.
+
+* Logging: Now supports log rotation using external tools like `logrotate.d`_
+  (Issue #321)
+
+    This is accomplished by using the ``WatchedFileHandler``, which re-opens
+    the file if it is renamed or deleted.
+
+.. _`logrotate.d`:
+    http://www.ducea.com/2006/06/06/rotating-linux-log-files-part-2-logrotate/
+
+* :ref:`tut-otherqueues` now documents how to configure Redis/Database result
+   backends.
+
+* gevent: Now supports ETA tasks.
+
+    But gevent still needs ``CELERY_DISABLE_RATE_LIMITS=True`` to work.
+
+* TaskSet User Guide: now contains TaskSet callback recipes.
+
+* Eventlet: New signals:
+
+    * ``eventlet_pool_started``
+    * ``eventlet_pool_preshutdown``
+    * ``eventlet_pool_postshutdown``
+    * ``eventlet_pool_apply``
+
+    See :ref:`signals` for more information.
+
+* New :setting:`BROKER_TRANSPORT_OPTIONS` setting can be used to pass
+  additional arguments to a particular broker transport.
+
+* celeryd: ``worker_pid`` is now part of the request info as returned by
+  broadcast commands.
+
+* TaskSet.apply/Taskset.apply_async now accepts an optional ``taskset_id``
+  argument.
+
+* The taskset_id (if any) is now available in the Task request context.
+
+* SQLAlchemy result backend: taskset_id and taskset_id columns now have a
+  unique constraint.  (Tables need to recreated for this to take affect).
+
+* Task Userguide: Added section about choosing a result backend.
+
+* Removed unused attribute ``AsyncResult.uuid``.
 
 .. _v225-fixes:
 
 Fixes
 -----
-
-* ConfigurationView: ``iter(dict)`` should return keys, not items
- (Issue #362).
 
 * multiprocessing.Pool:  Fixes race condition when marking job with
   ``WorkerLostError`` (Issue #268).
@@ -29,6 +86,15 @@ Fixes
     So we have to wait for 10 seconds before marking the result with
     WorkerLostError.  This gives the result handler a chance to retrieve the
     result.
+
+* multiprocessing.Pool: Shutdown could hang if rate limits disabled.
+
+    There was a race condition when the MainThread was waiting for the pool
+    semaphore to be released.  The ResultHandler now terminates after 5
+    seconds if there still results that have not been started, but no worker
+    processes left to start them  (it needs to timeout because there could
+    still be an ack+result that we haven't consumed from the result queue. It
+    is unlikely we will receive any after 5 seconds with no worker processes).
 
 * celerybeat: Now creates pidfile even if the ``--detach`` option is not set.
 
@@ -56,6 +122,8 @@ Fixes
 * Rate limits: No longer sleeps if there are no tasks, but rather waits for
   the task received condition (Performance improvement).
 
+* ConfigurationView: ``iter(dict)`` should return keys, not items (Issue #362).
+
 * celerybeat:  PersistentScheduler now automatically removes a corrupted
   schedule file (Issue #346).
 
@@ -73,6 +141,26 @@ Fixes
 
     This to ensure we don't get additional decoding errors when trying to log
     the failure.
+
+* ``app.config_from_object``/``app.config_from_envvar`` now works for all
+  loaders.
+
+* Now emits a user-friendly error message if the result backend name is
+  unknown (Issue #349).
+
+* :mod:`celery.contrib.batches`: Now sets loglevel and logfile in task request so
+  ``task.get_logger`` works with batch tasks (Issue #357).
+
+* celeryd: An exception was raised if using the amqp transport and prefetch
+  the count value exceeded 65535 (Issue #359).
+
+    The prefetch count is incremented for every received task with an
+    ETA/countdown defined.  The prefetch count is a short, so can only support
+    a maximum value of 65535.  If the value exceeds the maximum value we now
+    disable the prefetch count, it is re-enabled as soon as the value is below
+    the limit again.
+
+* cursesmon: Fixed unbound local error (Issue #303).
 
 * eventlet/gevent is now imported on demand so autodoc can import the modules
   without having eventlet/gevent installed.
@@ -98,41 +186,9 @@ Fixes
 * Exception occuring when iterating over the result from ``TaskSet.apply``
   fixed.
 
-.. _v225-news:
+* eventlet: Now properly schedules tasks with an ETA in the past.
 
-News
-----
-
-* Our documentation is now hosted by Read The Docs
-  (http://docs.celeryproject.org), and all links have been changed to point to
-  the new URL.
-
-* Eventlet: New signals:
-
-    * ``eventlet_pool_started``
-    * ``eventlet_pool_preshutdown``
-    * ``eventlet_pool_postshutdown``
-    * ``eventlet_pool_apply``
-
-    See :ref:`signals` for more information.
-
-* New :setting:`BROKER_TRANSPORT_OPTIONS` setting can be used to pass
-  additional arguments to a particular broker transport.
-
-* celeryd: ``worker_pid`` is now part of the request info as returned by
-  broadcast commands.
-
-* TaskSet.apply/Taskset.apply_async now accepts an optional ``taskset_id``
-  argument.
-
-* The taskset_id (if any) is now available in the Task request context.
-
-* SQLAlchemy result backend: taskset_id and taskset_id columns now have a
-  unique constraint.  (Tables need to recreated for this to take affect).
-
-* Task Userguide: Added section about choosing a result backend.
-
-.. _version-2.2.5:
+.. _version-2.2.4:
 
 2.2.4
 =====
@@ -168,7 +224,7 @@ Fixes
 
 2.2.3
 =====
-:release-date: 2011-02-12 16:00 PM CET
+:release-date: 2011-02-12 04:00 P.M CET
 
 .. _v223-fixes:
 
@@ -225,7 +281,7 @@ Fixes
 
 2.2.2
 =====
-:release-date: 2011-02-03 16:00 PM CET
+:release-date: 2011-02-03 04:00 P.M CET
 
 .. _v222-fixes:
 
@@ -255,7 +311,7 @@ Fixes
 
 2.2.1
 =====
-:release-date: 2011-02-02 16:00 PM CET
+:release-date: 2011-02-02 04:00 P.M CET
 
 .. _v221-fixes:
 
@@ -849,7 +905,7 @@ Experimental
 
 2.1.4
 =====
-:release-date: 2010-12-03 12:00 PM CEST
+:release-date: 2010-12-03 12:00 P.M CEST
 
 .. _v214-fixes:
 
@@ -906,7 +962,7 @@ Documentation
 
 2.1.3
 =====
-:release-date: 2010-11-09 17:00 PM CEST
+:release-date: 2010-11-09 05:00 P.M CEST
 
 .. _v213-fixes:
 
@@ -953,7 +1009,7 @@ Fixes
 
 2.1.1
 =====
-:release-date: 2010-10-14 14:00 PM CEST
+:release-date: 2010-10-14 02:00 P.M CEST
 
 .. _v211-fixes:
 
@@ -1090,7 +1146,7 @@ News
 
 2.1.0
 =====
-:release-date: 2010-10-08 12:00 PM CEST
+:release-date: 2010-10-08 12:00 P.M CEST
 
 .. _v210-important:
 
@@ -4279,7 +4335,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 0.1.7
 =====
-:release-date: 2009-04-30 1:50 P.M CET
+:release-date: 2009-04-30 01:50 P.M CET
 
 * Added some unit tests
 
@@ -4297,7 +4353,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 0.1.6
 =====
-:release-date: 2009-04-28 2:13 P.M CET
+:release-date: 2009-04-28 02:13 P.M CET
 
 * Introducing `TaskSet`. A set of subtasks is executed and you can
   find out how many, or if all them, are done (excellent for progress

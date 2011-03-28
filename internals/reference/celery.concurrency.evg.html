@@ -66,21 +66,121 @@
     <div class="section" id="celery-concurrency-evg-experimental">
 <h1>celery.concurrency.evg† (<em>experimental</em>)<a class="headerlink" href="#celery-concurrency-evg-experimental" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.concurrency.evg"></span><dl class="class">
+<dt id="celery.concurrency.evg.Schedule">
+<em class="property">class </em><tt class="descclassname">celery.concurrency.evg.</tt><tt class="descname">Schedule</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.evg.Schedule" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.concurrency.evg.Schedule.clear">
+<tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evg.Schedule.clear" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.evg.Schedule.enter">
+<tt class="descname">enter</tt><big>(</big><em>entry</em>, <em>eta=None</em>, <em>priority=0</em><big>)</big><a class="headerlink" href="#celery.concurrency.evg.Schedule.enter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.concurrency.evg.Schedule.queue">
+<tt class="descname">queue</tt><a class="headerlink" href="#celery.concurrency.evg.Schedule.queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="celery.concurrency.evg.TaskPool">
 <em class="property">class </em><tt class="descclassname">celery.concurrency.evg.</tt><tt class="descname">TaskPool</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.evg.TaskPool" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="class">
+<dt id="celery.concurrency.evg.TaskPool.Timer">
+<em class="property">class </em><tt class="descname">Timer</tt><big>(</big><em>schedule=None</em>, <em>on_error=None</em>, <em>on_tick=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.evg.TaskPool.Timer" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="class">
+<dt id="celery.concurrency.evg.TaskPool.Timer.Schedule">
+<em class="property">class </em><tt class="descname">Schedule</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.evg.TaskPool.Timer.Schedule" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
+<dt id="celery.concurrency.evg.TaskPool.Timer.Schedule.clear">
+<tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evg.TaskPool.Timer.Schedule.clear" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.evg.TaskPool.Timer.Schedule.enter">
+<tt class="descname">enter</tt><big>(</big><em>entry</em>, <em>eta=None</em>, <em>priority=0</em><big>)</big><a class="headerlink" href="#celery.concurrency.evg.TaskPool.Timer.Schedule.enter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.concurrency.evg.TaskPool.Timer.Schedule.queue">
+<tt class="descname">queue</tt><a class="headerlink" href="#celery.concurrency.evg.TaskPool.Timer.Schedule.queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.evg.TaskPool.Timer.ensure_started">
+<tt class="descclassname">TaskPool.Timer.</tt><tt class="descname">ensure_started</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evg.TaskPool.Timer.ensure_started" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.evg.TaskPool.Timer.start">
+<tt class="descclassname">TaskPool.Timer.</tt><tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evg.TaskPool.Timer.start" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.evg.TaskPool.Timer.stop">
+<tt class="descclassname">TaskPool.Timer.</tt><tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evg.TaskPool.Timer.stop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="method">
 <dt id="celery.concurrency.evg.TaskPool.on_apply">
-<tt class="descname">on_apply</tt><big>(</big><em>target</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>callback=None</em>, <em>accept_callback=None</em>, <em>**_</em><big>)</big><a class="headerlink" href="#celery.concurrency.evg.TaskPool.on_apply" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">TaskPool.</tt><tt class="descname">on_apply</tt><big>(</big><em>target</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>callback=None</em>, <em>accept_callback=None</em>, <em>**_</em><big>)</big><a class="headerlink" href="#celery.concurrency.evg.TaskPool.on_apply" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.concurrency.evg.TaskPool.on_start">
-<tt class="descname">on_start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evg.TaskPool.on_start" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">TaskPool.</tt><tt class="descname">on_start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evg.TaskPool.on_start" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.concurrency.evg.TaskPool.on_stop">
-<tt class="descname">on_stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evg.TaskPool.on_stop" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">TaskPool.</tt><tt class="descname">on_stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evg.TaskPool.on_stop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.concurrency.evg.Timer">
+<em class="property">class </em><tt class="descclassname">celery.concurrency.evg.</tt><tt class="descname">Timer</tt><big>(</big><em>schedule=None</em>, <em>on_error=None</em>, <em>on_tick=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.evg.Timer" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="class">
+<dt id="celery.concurrency.evg.Timer.Schedule">
+<em class="property">class </em><tt class="descname">Schedule</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.evg.Timer.Schedule" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.concurrency.evg.Timer.Schedule.clear">
+<tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evg.Timer.Schedule.clear" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.evg.Timer.Schedule.enter">
+<tt class="descname">enter</tt><big>(</big><em>entry</em>, <em>eta=None</em>, <em>priority=0</em><big>)</big><a class="headerlink" href="#celery.concurrency.evg.Timer.Schedule.enter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.concurrency.evg.Timer.Schedule.queue">
+<tt class="descname">queue</tt><a class="headerlink" href="#celery.concurrency.evg.Timer.Schedule.queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.evg.Timer.ensure_started">
+<tt class="descclassname">Timer.</tt><tt class="descname">ensure_started</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evg.Timer.ensure_started" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.evg.Timer.start">
+<tt class="descclassname">Timer.</tt><tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evg.Timer.start" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.evg.Timer.stop">
+<tt class="descclassname">Timer.</tt><tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.evg.Timer.stop" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>

@@ -128,7 +128,7 @@ early, <em>then</em> close the connection.</p>
 </ul>
 <dl class="class">
 <dt id="celery.worker.consumer.Consumer">
-<em class="property">class </em><tt class="descclassname">celery.worker.consumer.</tt><tt class="descname">Consumer</tt><big>(</big><em>ready_queue</em>, <em>eta_schedule</em>, <em>logger</em>, <em>init_callback=&lt;function noop at 0x1022e3de8&gt;</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>initial_prefetch_count=2</em>, <em>pool=None</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.Consumer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.consumer.</tt><tt class="descname">Consumer</tt><big>(</big><em>ready_queue</em>, <em>eta_schedule</em>, <em>logger</em>, <em>init_callback=&lt;function noop at 0x1025bc320&gt;</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>initial_prefetch_count=2</em>, <em>pool=None</em>, <em>app=None</em>, <em>priority_timer=None</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.Consumer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Listen for messages received from the broker and
 move them the the ready queue for task processing.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -306,6 +306,12 @@ and restarts consuming messages.</p>
 <dd><p>Stop consuming.</p>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.worker.consumer.PREFETCH_COUNT_MAX">
+<tt class="descclassname">celery.worker.consumer.</tt><tt class="descname">PREFETCH_COUNT_MAX</tt><a class="headerlink" href="#celery.worker.consumer.PREFETCH_COUNT_MAX" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prefetch count can&#8217;t exceed short.</p>
 </dd></dl>
 
 <dl class="class">

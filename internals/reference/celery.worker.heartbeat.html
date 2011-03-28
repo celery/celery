@@ -67,13 +67,14 @@
 <h1>celery.worker.heartbeat<a class="headerlink" href="#celery-worker-heartbeat" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.worker.heartbeat"></span><dl class="class">
 <dt id="celery.worker.heartbeat.Heart">
-<em class="property">class </em><tt class="descclassname">celery.worker.heartbeat.</tt><tt class="descname">Heart</tt><big>(</big><em>eventer</em>, <em>interval=None</em><big>)</big><a class="headerlink" href="#celery.worker.heartbeat.Heart" title="Permalink to this definition">¶</a></dt>
-<dd><p>Thread sending heartbeats at regular intervals.</p>
+<em class="property">class </em><tt class="descclassname">celery.worker.heartbeat.</tt><tt class="descname">Heart</tt><big>(</big><em>timer</em>, <em>eventer</em>, <em>interval=None</em><big>)</big><a class="headerlink" href="#celery.worker.heartbeat.Heart" title="Permalink to this definition">¶</a></dt>
+<dd><p>Timer sending heartbeats at regular intervals.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>timer</strong> &#8211; Timer instance.</li>
 <li><strong>eventer</strong> &#8211; Event dispatcher used to send the event.</li>
 <li><strong>interval</strong> &#8211; Time in seconds between heartbeats.
 Default is 2 minutes.</li>
@@ -89,15 +90,14 @@ Default is 2 minutes.</li>
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.worker.heartbeat.Heart.run">
-<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.heartbeat.Heart.run" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.worker.heartbeat.Heart.start">
+<tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.heartbeat.Heart.start" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.heartbeat.Heart.stop">
 <tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.heartbeat.Heart.stop" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gracefully shutdown the thread.</p>
-</dd></dl>
+<dd></dd></dl>
 
 </dd></dl>
 

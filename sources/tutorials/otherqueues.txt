@@ -30,6 +30,24 @@ your Redis database::
     BROKER_PORT = 6379         # Maps to redis port.
     BROKER_VHOST = "0"         # Maps to database number.
 
+
+Results
+~~~~~~~
+
+You probably also want to store results in Redis::
+
+    CELERY_RESULT_BACKEND = "redis"
+    REDIS_HOST = 6379
+    REDIS_PORT = 6379
+    REDIS_DB = 0
+
+For a complete list of options supported by the Redis result backend see
+:ref:`conf-redis-result-backend`
+
+If you don't intend to consume results you should disable them::
+
+    CELERY_IGNORE_RESULT = True
+
 .. _otherqueues-sqlalchemy:
 
 SQLAlchemy
@@ -78,6 +96,16 @@ Some other `SQLAlchemy Connection String`_, examples:
 
 .. _`SQLAlchemy Connection String`:
     http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments
+
+Results
+~~~~~~~
+
+To store results in the database as well, you should configure the result
+backend.  See :ref:`conf-database-result-backend`.
+
+If you don't intend to consume results you should disable them::
+
+    CELERY_IGNORE_RESULT = True
 
 .. _otherqueues-django:
 
