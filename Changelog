@@ -41,7 +41,7 @@ News
 
 * gevent: Now supports ETA tasks.
 
-    But gevent still needs ``CELERY_DISABLE_RATE_LIMITS=True` to work.
+    But gevent still needs ``CELERY_DISABLE_RATE_LIMITS=True`` to work.
 
 * TaskSet User Guide: now contains TaskSet callback recipes.
 
@@ -122,8 +122,7 @@ Fixes
 * Rate limits: No longer sleeps if there are no tasks, but rather waits for
   the task received condition (Performance improvement).
 
-* ConfigurationView: ``iter(dict)`` should return keys, not items
- (Issue #362).
+* ConfigurationView: ``iter(dict)`` should return keys, not items (Issue #362).
 
 * celerybeat:  PersistentScheduler now automatically removes a corrupted
   schedule file (Issue #346).
