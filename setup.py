@@ -48,10 +48,10 @@ try:
 except ImportError:
     install_requires.append("importlib")
 install_requires.extend([
-    "python-dateutil",
-    "anyjson",
-    "kombu>=1.0.7",
-    "pyparsing>=1.5.0",
+    "python-dateutil>=1.5.0,<2.0.0",
+    "anyjson>=0.3.1",
+    "kombu>=1.0.7,<2.0.0",
+    "pyparsing>=1.5.0,<2.0.0",
 ])
 py_version = sys.version_info
 is_jython = sys.platform.startswith("java")
