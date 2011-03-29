@@ -170,10 +170,10 @@ the :setting:`CELERY_RESULT_ENGINE_OPTIONS` setting::
     CELERY_RESULT_ENGINE_OPTIONS = {"echo": True}
 
 .. _`Supported Databases`:
-    http://www.sqlalchemy.org/docs/dbengine.html#supported-databases
+    http://www.sqlalchemy.org/docs/core/engines.html#supported-databases
 
 .. _`Connection String`:
-    http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments
+    http://www.sqlalchemy.org/docs/core/engines.html#database-urls
 
 Example configuration
 ~~~~~~~~~~~~~~~~~~~~~

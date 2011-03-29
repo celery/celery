@@ -92,10 +92,10 @@ Some other `SQLAlchemy Connection String`_, examples:
     BROKER_HOST = "oracle://scott:tiger@127.0.0.1:1521/sidname"
 
 .. _`SQLAlchemy: Supported Databases`:
-    http://www.sqlalchemy.org/docs/dbengine.html#supported-databases
+    http://www.sqlalchemy.org/docs/core/engines.html#supported-databases
 
 .. _`SQLAlchemy Connection String`:
-    http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments
+    http://www.sqlalchemy.org/docs/core/engines.html#database-urls
 
 Results
 ~~~~~~~
