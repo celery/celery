@@ -50,6 +50,7 @@ NAMESPACES = {
         "CONNECTION_TIMEOUT": Option(4, type="int"),
         "CONNECTION_RETRY": Option(True, type="bool"),
         "CONNECTION_MAX_RETRIES": Option(100, type="int"),
+        "POOL_LIMIT": Option(None, type="int"),
         "INSIST": Option(False, type="bool"),
         "USE_SSL": Option(False, type="bool"),
         "TRANSPORT_OPTIONS": Option({}, type="dict")
@@ -91,11 +92,11 @@ NAMESPACES = {
         "SEND_TASK_SENT_EVENT": Option(False, type="bool"),
         "STORE_ERRORS_EVEN_IF_IGNORED": Option(False, type="bool"),
         "TASK_ERROR_WHITELIST": Option((), type="tuple"),
-        "TASK_PUBLISH_RETRY": Option(False, type="bool"),
+        "TASK_PUBLISH_RETRY": Option(True, type="bool"),
         "TASK_PUBLISH_RETRY_POLICY": Option({
-                "max_retries": 3,
+                "max_retries": 100,
                 "interval_start": 0,
-                "interval_max": 0.2,
+                "interval_max": 1,
                 "interval_step": 0.2}, type="dict"),
         "TASK_RESULT_EXPIRES": Option(timedelta(days=1), type="int"),
         "TASK_SERIALIZER": Option("pickle"),

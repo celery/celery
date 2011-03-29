@@ -35,9 +35,6 @@ class AMQPBackend(BaseDictBackend):
 
     BacklogLimitExceeded = BacklogLimitExceeded
 
-    _pool = None
-    _pool_owner_pid = None
-
     def __init__(self, connection=None, exchange=None, exchange_type=None,
             persistent=None, serializer=None, auto_delete=True,
             expires=None, connection_max=None, **kwargs):
@@ -109,7 +106,7 @@ class AMQPBackend(BaseDictBackend):
         """Send task return value and status."""
         self.mutex.acquire()
         try:
-            conn = self.pool.acquire(block=True)
+            conn = self.app.pool.acquire(block=True)
             try:
 
                 def errback(error, delay):
@@ -159,7 +156,7 @@ class AMQPBackend(BaseDictBackend):
             return self.wait_for(task_id, timeout, cache)
 
     def poll(self, task_id, backlog_limit=100):
-        conn = self.pool.acquire(block=True)
+        conn = self.app.pool.acquire(block=True)
         channel = conn.channel()
         try:
             binding = self._create_binding(task_id)(channel)
@@ -203,7 +200,7 @@ class AMQPBackend(BaseDictBackend):
         return results
 
     def consume(self, task_id, timeout=None):
-        conn = self.pool.acquire(block=True)
+        conn = self.app.pool.acquire(block=True)
         channel = conn.channel()
         try:
             binding = self._create_binding(task_id)
@@ -218,7 +215,7 @@ class AMQPBackend(BaseDictBackend):
             conn.release()
 
     def get_many(self, task_ids, timeout=None):
-        conn = self.pool.acquire(block=True)
+        conn = self.app.pool.acquire(block=True)
         channel = conn.channel()
         try:
             ids = set(task_ids)
@@ -273,19 +270,3 @@ class AMQPBackend(BaseDictBackend):
         """Get the result of a taskset."""
         raise NotImplementedError(
                 "restore_taskset is not supported by this backend.")
-
-    def _reset_after_fork(self, *args):
-        if self._pool:
-            self._pool.force_close_all()
-            self._pool = None
-
-    @property
-    def pool(self):
-        if self._pool is None:
-            self._pool = self.app.broker_connection().Pool(self.connection_max)
-            try:
-                from multiprocessing.util import register_after_fork
-                register_after_fork(self, self._reset_after_fork)
-            except ImportError:
-                pass
-        return self._pool

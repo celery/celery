@@ -4,6 +4,7 @@ import sys
 from datetime import timedelta
 from Queue import Empty, Queue
 
+from celery import current_app
 from celery import states
 from celery.app import app_or_default
 from celery.backends.amqp import AMQPBackend
@@ -202,7 +203,7 @@ class test_AMQPBackend(unittest.TestCase):
                 pass
 
         b = self.create_backend()
-        conn = b.pool.acquire(block=False)
+        conn = current_app.pool.acquire(block=False)
         channel = conn.channel()
         try:
             binding = b._create_binding(gen_unique_id())
