@@ -288,7 +288,10 @@ class Consumer(object):
                 break
             if self.qos.prev != self.qos.value:
                 self.qos.update()
-            self.connection.drain_events()
+            try:
+                self.connection.drain_events(timeout=1)
+            except socket.timeout:
+                pass
 
     def on_task(self, task):
         """Handle received task.
