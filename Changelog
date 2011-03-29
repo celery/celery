@@ -38,6 +38,32 @@ Important Notes
 
     For help choosing a backend please see :ref:`task-result-backends`.
 
+.. _v230-news:
+
+News
+----
+
+* Automatic connection pool support.
+
+    The pool is used by everything that requires a broker connection.  For
+    example applying tasks, sending broadcast commands, retrieving results
+    with the AMQP result backend, and so on.
+
+    The pool is disabled by default, but you can enable it by configuring the
+    :setting:`BROKER_POOL_LIMIT` setting::
+
+        BROKER_POOL_LIMIT = 10
+
+    A limit of 10 means a maximum of 10 simultaneous connections can co-exist.
+    Only a single connection will ever be used in a single-thread
+    environment, but in a concurrent environment (threads, greenlets, etc., but
+    not processes) when the limit has been exceeded, any try to acquire a
+    connection will block the thread and wait for a connection to be released.
+    This is something to take into consideration when choosing a limit.
+
+    A limit of :const:`None` or 0 means no limit, and connections will be
+    established and closed every time.
+
 .. _version-2.2.5:
 
 2.2.5
