@@ -329,27 +329,27 @@ class TaskSetResult(object):
                     raise result.result
 
     def join(self, timeout=None, propagate=True, interval=0.5):
-        """Gather the results of all tasks in the taskset,
+        """Gathers the results of all tasks in the taskset,
         and returns a list ordered by the order of the set.
 
         .. note::
 
-            This can be an very expensive operation on result store
+            This can be an expensive operation for result store
             backends that must resort to polling (e.g. database).
 
-            You should consider using :meth:`join_native` if your backends
+            You should consider using :meth:`join_native` if your backend
             supports it.
 
         .. warning::
 
-            Waiting for subtasks may lead the deadlocks.
+            Waiting for subtasks may lead to deadlocks.
             Please see :ref:`task-synchronous-subtasks`.
 
         :keyword timeout: The number of seconds to wait for results before
                           the operation times out.
 
         :keyword propagate: If any of the subtasks raises an exception, the
-                            exception will be reraised.
+                            exception will be re-raised.
 
         :keyword interval: Time to wait (in seconds) before retrying to
                            retrieve a result from the set.  Note that this
