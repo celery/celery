@@ -14,6 +14,7 @@
     celery.task
     celery.task.base
     celery.task.sets
+    celery.task.chord
     celery.result
     celery.task
     celery.task.control

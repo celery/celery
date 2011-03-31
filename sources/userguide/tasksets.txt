@@ -159,81 +159,106 @@ It supports the following operations:
     and return a list with them ordered by the order of which they
     were called.
 
+.. _chords:
 
-Task set callbacks
-------------------
-
-
-Simple, but may take a long time before your callback is called:
+Chords
+======
 
 
-.. code-block:: python
-
-    from celery import current_app
-    from celery.task import subtask
-
-    def join_taskset(setid, subtasks, callback, interval=15, max_retries=None):
-        result = TaskSetResult(setid, subtasks)
-        if result.ready():
-            return subtask(callback).delay(result.join())
-        join_taskset.retry(countdown=interval, max_retries=max_retries)
+A chord is a task that only executes after all of the tasks in a taskset has
+finished executing.
 
 
+Let's calculate the sum of the expression
+:math:`1 + 1 + 2 + 2 + 3 + 3 ... n + n` up to a hundred digits.
 
-Using Redis and atomic counters:
-
+First we need two tasks, :func:`add` and :func:`tsum` (:func:`sum` is
+already a standard function):
 
 .. code-block:: python
 
-    from celery import current_app
-    from celery.task import Task, TaskSet
-    from celery.result import TaskSetResult
-    from celery.utils import gen_unique_id, cached_property
-    from redis import Redis
-    from time import sleep
+    from celery.task import task
 
-    class supports_taskset_callback(Task):
-        abstract = True
-        accept_magic_kwargs = False
-
-        def after_return(self, \*args, \*\*kwargs):
-            if self.request.taskset:
-                callback = self.request.kwargs.get("callback")
-                if callback:
-                    setid = self.request.taskset
-                    # task set must be saved in advance, so the task doesn't
-                    # try to restore it before that happens.  This is why we
-                    # use the `apply_presaved_taskset` below.
-                    result = TaskSetResult.restore(setid)
-                    current = self.redis.incr("taskset-" + setid)
-                    if current >= result.total:
-                        r = subtask(callback).delay(result.join())
-
-        @cached_property
-        def redis(self):
-            return Redis(host="localhost", port=6379)
-
-    @task(base=supports_taskset_callback)
-    def add(x, y, \*\*kwargs):
+    @task
+    def add(x, y):
         return x + y
 
     @task
-    def sum_of(numbers):
-        print("TASKSET READY: %r" % (sum(numbers), ))
-
-    def apply_presaved_taskset(tasks):
-        r = []
-        setid = gen_unique_id()
-        for task in tasks:
-            uuid = gen_unique_id()
-            task.options["task_id"] = uuid
-            r.append((task, current_app.AsyncResult(uuid)))
-        ts = current_app.TaskSetResult(setid, [task[1] for task in r])
-        ts.save()
-        return TaskSet(task[0] for task in r).apply_async(taskset_id=setid)
+    def tsum(numbers):
+        return sum(numbers)
 
 
-    # sum of 100 add tasks
-    result = apply_presaved_taskset(
-                add.subtask((i, i), {"callback": sum_of.subtask()})
-                    for i in xrange(100))
+Now we can use a chord to calculate each addition step in parallel, and then
+get the sum of the resulting numbers::
+
+    >>> from celery.task import chord
+    >>> from tasks import add, tsum
+
+    >>> chord(add.subtask((i, i))
+    ...     for i in xrange(100))(tsum.subtask()).get()
+    9900
+
+
+This is obviously a very contrived example, the overhead of messaging and
+synchronization makes this a lot slower than its Python counterpart::
+
+    sum(i + i for i in xrange(100))
+
+The synchronization step is costly, so you should avoid using chords as much
+as possible. Still, the chord is a powerful primitive to have in your toolbox
+as synchronization is a required step for many parallel algorithms.
+
+Let's break the chord expression down::
+
+    >>> callback = tsum.subtask()
+    >>> header = [add.subtask((i, i)) for i in xrange(100])
+    >>> result = chord(header)(callback)
+    >>> result.get()
+    9900
+
+Remember, the callback can only be executed after all of the tasks in the
+header has returned.  Each step in the header is executed as a task, in
+parallel, possibly on different nodes.  The callback is then applied with
+the return value of each task in the header.  The task id returned by
+:meth:`chord` is the id of the callback, so you can wait for it to complete
+and get the final return value (but remember to :ref:`never have a task wait
+for other tasks <task-synchronous-subtasks>`)
+
+.. _chord-important-notes:
+
+Important Notes
+---------------
+
+By default the synchronization step is implemented by having a recurring task
+poll the completion of the taskset every second, applying the subtask when
+ready.
+
+Example implementation:
+
+.. code-block:: python
+
+    def unlock_chord(taskset, callback, interval=1, max_retries=None):
+        if taskset.ready():
+            return subtask(callback).delay(taskset.join())
+        unlock_chord.retry(countdown=interval, max_retries=max_retries)
+
+
+This is used by all result backends except Redis, which increments a
+counter after each task in the header, then applying the callback when the
+counter exceeds the number of tasks in the set.
+
+The Redis approach is a much better solution, but not easily implemented
+in other backends (suggestions welcome!)
+
+
+.. note::
+
+    If you are using chords with the Redis result backend and also overriding
+    the :meth:`Task.after_return` method, you need to make sure to call the
+    super method or else the chord callback will not be applied.
+
+    .. code-block:: python
+
+        def after_return(self, *args, **kwargs):
+            do_something()
+            super(MyTask, self).after_return(*args, **kwargs)

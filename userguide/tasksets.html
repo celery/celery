@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Sets of tasks, Subtasks and Callbacks &mdash; Celery v2.2.5 documentation</title>
+    <title>Sets of tasks, Subtasks and Callbacks &mdash; Celery v2.3.0a1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.5',
+        VERSION:     '2.3.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.5 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.3.0a1 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="HTTP Callback Tasks (Webhooks)" href="remote-tasks.html" />
     <link rel="prev" title="Periodic Tasks" href="periodic-tasks.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="periodic-tasks.html" title="Periodic Tasks"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.5 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.3.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -56,7 +56,7 @@
 
     
         <p>
-        This document describes Celery 2.2. For development docs,
+        This document describes Celery 2.3. For development docs,
         <a href="http://ask.github.com/celery/userguide/tasksets.html">go here</a>.
         </p>
     
@@ -66,19 +66,22 @@
 <span id="guide-sets"></span><h1>Sets of tasks, Subtasks and Callbacks<a class="headerlink" href="#sets-of-tasks-subtasks-and-callbacks" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference internal" href="#subtasks" id="id1">Subtasks</a><ul>
-<li><a class="reference internal" href="#callbacks" id="id2">Callbacks</a></li>
+<li><a class="reference internal" href="#subtasks" id="id2">Subtasks</a><ul>
+<li><a class="reference internal" href="#callbacks" id="id3">Callbacks</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#task-sets" id="id3">Task Sets</a><ul>
-<li><a class="reference internal" href="#results" id="id4">Results</a></li>
-<li><a class="reference internal" href="#task-set-callbacks" id="id5">Task set callbacks</a></li>
+<li><a class="reference internal" href="#task-sets" id="id4">Task Sets</a><ul>
+<li><a class="reference internal" href="#results" id="id5">Results</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#chords" id="id6">Chords</a><ul>
+<li><a class="reference internal" href="#important-notes" id="id7">Important Notes</a></li>
 </ul>
 </li>
 </ul>
 </div>
 <div class="section" id="subtasks">
-<span id="sets-subtasks"></span><h2><a class="toc-backref" href="#id1">Subtasks</a><a class="headerlink" href="#subtasks" title="Permalink to this headline">¶</a></h2>
+<span id="sets-subtasks"></span><h2><a class="toc-backref" href="#id2">Subtasks</a><a class="headerlink" href="#subtasks" title="Permalink to this headline">¶</a></h2>
 <p class="versionadded">
 <span class="versionmodified">New in version 2.0.</span></p>
 <p>The <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.subtask" title="celery.task.sets.subtask"><tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt></a> type is used to wrap the arguments and
@@ -101,7 +104,7 @@ support complex Python objects.</p>
 </div>
 <p>This makes it excellent as a means to pass callbacks around to tasks.</p>
 <div class="section" id="callbacks">
-<span id="sets-callbacks"></span><h3><a class="toc-backref" href="#id2">Callbacks</a><a class="headerlink" href="#callbacks" title="Permalink to this headline">¶</a></h3>
+<span id="sets-callbacks"></span><h3><a class="toc-backref" href="#id3">Callbacks</a><a class="headerlink" href="#callbacks" title="Permalink to this headline">¶</a></h3>
 <p>Let&#8217;s improve our <cite>add</cite> task so it can accept a callback that
 takes the result as an argument:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">task</span>
@@ -138,7 +141,7 @@ another task calculating <img class="math" src="../images/math/c67562ae31bb2d101
 </div>
 </div>
 <div class="section" id="task-sets">
-<span id="sets-taskset"></span><h2><a class="toc-backref" href="#id3">Task Sets</a><a class="headerlink" href="#task-sets" title="Permalink to this headline">¶</a></h2>
+<span id="sets-taskset"></span><h2><a class="toc-backref" href="#id4">Task Sets</a><a class="headerlink" href="#task-sets" title="Permalink to this headline">¶</a></h2>
 <p>The <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.TaskSet" title="celery.task.sets.TaskSet"><tt class="xref py py-class docutils literal"><span class="pre">TaskSet</span></tt></a> enables easy invocation of several
 tasks at once, and is then able to join the results in the same order as the
 tasks were invoked.</p>
@@ -164,7 +167,7 @@ tasks were invoked.</p>
 </pre></div>
 </div>
 <div class="section" id="results">
-<span id="sets-results"></span><h3><a class="toc-backref" href="#id4">Results</a><a class="headerlink" href="#results" title="Permalink to this headline">¶</a></h3>
+<span id="sets-results"></span><h3><a class="toc-backref" href="#id5">Results</a><a class="headerlink" href="#results" title="Permalink to this headline">¶</a></h3>
 <p>When a  <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.TaskSet" title="celery.task.sets.TaskSet"><tt class="xref py py-class docutils literal"><span class="pre">TaskSet</span></tt></a> is applied it returns a
 <a class="reference internal" href="../reference/celery.result.html#celery.result.TaskSetResult" title="celery.result.TaskSetResult"><tt class="xref py py-class docutils literal"><span class="pre">TaskSetResult</span></tt></a> object.</p>
 <p><a class="reference internal" href="../reference/celery.result.html#celery.result.TaskSetResult" title="celery.result.TaskSetResult"><tt class="xref py py-class docutils literal"><span class="pre">TaskSetResult</span></tt></a> takes a list of
@@ -172,46 +175,46 @@ tasks were invoked.</p>
 single task.</p>
 <p>It supports the following operations:</p>
 <ul>
-<li><p class="first"><a class="reference internal" href="../reference/celery.result.html#celery.result.TaskSetResult.successful" title="celery.result.TaskSetResult.successful"><tt class="xref py py-meth docutils literal"><span class="pre">successful()</span></tt></a></p>
+<li><p class="first"><tt class="xref py py-meth docutils literal"><span class="pre">successful()</span></tt></p>
 <blockquote>
 <p>Returns <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if all of the subtasks finished
 successfully (e.g. did not raise an exception).</p>
 </blockquote>
 </li>
-<li><p class="first"><a class="reference internal" href="../reference/celery.result.html#celery.result.TaskSetResult.failed" title="celery.result.TaskSetResult.failed"><tt class="xref py py-meth docutils literal"><span class="pre">failed()</span></tt></a></p>
+<li><p class="first"><tt class="xref py py-meth docutils literal"><span class="pre">failed()</span></tt></p>
 <blockquote>
 <p>Returns <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if any of the subtasks failed.</p>
 </blockquote>
 </li>
-<li><p class="first"><a class="reference internal" href="../reference/celery.result.html#celery.result.TaskSetResult.waiting" title="celery.result.TaskSetResult.waiting"><tt class="xref py py-meth docutils literal"><span class="pre">waiting()</span></tt></a></p>
+<li><p class="first"><tt class="xref py py-meth docutils literal"><span class="pre">waiting()</span></tt></p>
 <blockquote>
 <p>Returns <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if any of the subtasks
 is not ready yet.</p>
 </blockquote>
 </li>
-<li><p class="first"><a class="reference internal" href="../reference/celery.result.html#celery.result.TaskSetResult.ready" title="celery.result.TaskSetResult.ready"><tt class="xref py py-meth docutils literal"><span class="pre">ready()</span></tt></a></p>
+<li><p class="first"><tt class="xref py py-meth docutils literal"><span class="pre">ready()</span></tt></p>
 <blockquote>
 <p>Return <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if all of the subtasks
 are ready.</p>
 </blockquote>
 </li>
-<li><p class="first"><a class="reference internal" href="../reference/celery.result.html#celery.result.TaskSetResult.completed_count" title="celery.result.TaskSetResult.completed_count"><tt class="xref py py-meth docutils literal"><span class="pre">completed_count()</span></tt></a></p>
+<li><p class="first"><tt class="xref py py-meth docutils literal"><span class="pre">completed_count()</span></tt></p>
 <blockquote>
 <p>Returns the number of completed subtasks.</p>
 </blockquote>
 </li>
-<li><p class="first"><a class="reference internal" href="../reference/celery.result.html#celery.result.TaskSetResult.revoke" title="celery.result.TaskSetResult.revoke"><tt class="xref py py-meth docutils literal"><span class="pre">revoke()</span></tt></a></p>
+<li><p class="first"><tt class="xref py py-meth docutils literal"><span class="pre">revoke()</span></tt></p>
 <blockquote>
 <p>Revokes all of the subtasks.</p>
 </blockquote>
 </li>
-<li><p class="first"><a class="reference internal" href="../reference/celery.result.html#celery.result.TaskSetResult.iterate" title="celery.result.TaskSetResult.iterate"><tt class="xref py py-meth docutils literal"><span class="pre">iterate()</span></tt></a></p>
+<li><p class="first"><tt class="xref py py-meth docutils literal"><span class="pre">iterate()</span></tt></p>
 <blockquote>
 <p>Iterates over the return values of the subtasks
 as they finish, one by one.</p>
 </blockquote>
 </li>
-<li><p class="first"><a class="reference internal" href="../reference/celery.result.html#celery.result.TaskSetResult.join" title="celery.result.TaskSetResult.join"><tt class="xref py py-meth docutils literal"><span class="pre">join()</span></tt></a></p>
+<li><p class="first"><tt class="xref py py-meth docutils literal"><span class="pre">join()</span></tt></p>
 <blockquote>
 <p>Gather the results for all of the subtasks
 and return a list with them ordered by the order of which they
@@ -220,72 +223,86 @@ were called.</p>
 </li>
 </ul>
 </div>
-<div class="section" id="task-set-callbacks">
-<h3><a class="toc-backref" href="#id5">Task set callbacks</a><a class="headerlink" href="#task-set-callbacks" title="Permalink to this headline">¶</a></h3>
-<p>Simple, but may take a long time before your callback is called:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery</span> <span class="kn">import</span> <span class="n">current_app</span>
-<span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">subtask</span>
+</div>
+<div class="section" id="chords">
+<span id="id1"></span><h2><a class="toc-backref" href="#id6">Chords</a><a class="headerlink" href="#chords" title="Permalink to this headline">¶</a></h2>
+<p>A chord is a task that only executes after all of the tasks in a taskset has
+finished executing.</p>
+<p>Let&#8217;s calculate the sum of the expression
+<img class="math" src="../images/math/c9bf2df3c397d6399241c37fc9887ca50bc8fa09.png" alt="1 + 1 + 2 + 2 + 3 + 3 ... n + n"/> up to a hundred digits.</p>
+<p>First we need two tasks, <tt class="xref py py-func docutils literal"><span class="pre">add()</span></tt> and <tt class="xref py py-func docutils literal"><span class="pre">tsum()</span></tt> (<tt class="xref py py-func docutils literal"><span class="pre">sum()</span></tt> is
+already a standard function):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">task</span>
 
-<span class="k">def</span> <span class="nf">join_taskset</span><span class="p">(</span><span class="n">setid</span><span class="p">,</span> <span class="n">subtasks</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">max_retries</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="n">TaskSetResult</span><span class="p">(</span><span class="n">setid</span><span class="p">,</span> <span class="n">subtasks</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">ready</span><span class="p">():</span>
-        <span class="k">return</span> <span class="n">subtask</span><span class="p">(</span><span class="n">callback</span><span class="p">)</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">join</span><span class="p">())</span>
-    <span class="n">join_taskset</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">countdown</span><span class="o">=</span><span class="n">interval</span><span class="p">,</span> <span class="n">max_retries</span><span class="o">=</span><span class="n">max_retries</span><span class="p">)</span>
+<span class="nd">@task</span>
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+
+<span class="nd">@task</span>
+<span class="k">def</span> <span class="nf">tsum</span><span class="p">(</span><span class="n">numbers</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">numbers</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Using Redis and atomic counters:</p>
-<div class="highlight-python"><pre>from celery import current_app
-from celery.task import Task, TaskSet
-from celery.result import TaskSetResult
-from celery.utils import gen_unique_id, cached_property
-from redis import Redis
-from time import sleep
+<p>Now we can use a chord to calculate each addition step in parallel, and then
+get the sum of the resulting numbers:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">chord</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">tasks</span> <span class="kn">import</span> <span class="n">add</span><span class="p">,</span> <span class="n">tsum</span>
 
-class supports_taskset_callback(Task):
-    abstract = True
-    accept_magic_kwargs = False
-
-    def after_return(self, \*args, \*\*kwargs):
-        if self.request.taskset:
-            callback = self.request.kwargs.get("callback")
-            if callback:
-                setid = self.request.taskset
-                # task set must be saved in advance, so the task doesn't
-                # try to restore it before that happens.  This is why we
-                # use the `apply_presaved_taskset` below.
-                result = TaskSetResult.restore(setid)
-                current = self.redis.incr("taskset-" + setid)
-                if current &gt;= result.total:
-                    r = subtask(callback).delay(result.join())
-
-    @cached_property
-    def redis(self):
-        return Redis(host="localhost", port=6379)
-
-@task(base=supports_taskset_callback)
-def add(x, y, \*\*kwargs):
-    return x + y
-
-@task
-def sum_of(numbers):
-    print("TASKSET READY: %r" % (sum(numbers), ))
-
-def apply_presaved_taskset(tasks):
-    r = []
-    setid = gen_unique_id()
-    for task in tasks:
-        uuid = gen_unique_id()
-        task.options["task_id"] = uuid
-        r.append((task, current_app.AsyncResult(uuid)))
-    ts = current_app.TaskSetResult(setid, [task[1] for task in r])
-    ts.save()
-    return TaskSet(task[0] for task in r).apply_async(taskset_id=setid)
-
-
-# sum of 100 add tasks
-result = apply_presaved_taskset(
-            add.subtask((i, i), {"callback": sum_of.subtask()})
-                for i in xrange(100))</pre>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">chord</span><span class="p">(</span><span class="n">add</span><span class="o">.</span><span class="n">subtask</span><span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span>
+<span class="gp">... </span>    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">100</span><span class="p">))(</span><span class="n">tsum</span><span class="o">.</span><span class="n">subtask</span><span class="p">())</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+<span class="go">9900</span>
+</pre></div>
+</div>
+<p>This is obviously a very contrived example, the overhead of messaging and
+synchronization makes this a lot slower than its Python counterpart:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nb">sum</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>The synchronization step is costly, so you should avoid using chords as much
+as possible. Still, the chord is a powerful primitive to have in your toolbox
+as synchronization is a required step for many parallel algorithms.</p>
+<p>Let&#8217;s break the chord expression down:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">callback</span> <span class="o">=</span> <span class="n">tsum</span><span class="o">.</span><span class="n">subtask</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">header</span> <span class="o">=</span> <span class="p">[</span><span class="n">add</span><span class="o">.</span><span class="n">subtask</span><span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">100</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">chord</span><span class="p">(</span><span class="n">header</span><span class="p">)(</span><span class="n">callback</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+<span class="go">9900</span>
+</pre></div>
+</div>
+<p>Remember, the callback can only be executed after all of the tasks in the
+header has returned.  Each step in the header is executed as a task, in
+parallel, possibly on different nodes.  The callback is then applied with
+the return value of each task in the header.  The task id returned by
+<tt class="xref py py-meth docutils literal"><span class="pre">chord()</span></tt> is the id of the callback, so you can wait for it to complete
+and get the final return value (but remember to <a class="reference internal" href="tasks.html#task-synchronous-subtasks"><em>never have a task wait
+for other tasks</em></a>)</p>
+<div class="section" id="important-notes">
+<span id="chord-important-notes"></span><h3><a class="toc-backref" href="#id7">Important Notes</a><a class="headerlink" href="#important-notes" title="Permalink to this headline">¶</a></h3>
+<p>By default the synchronization step is implemented by having a recurring task
+poll the completion of the taskset every second, applying the subtask when
+ready.</p>
+<p>Example implementation:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">unlock_chord</span><span class="p">(</span><span class="n">taskset</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_retries</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">taskset</span><span class="o">.</span><span class="n">ready</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">subtask</span><span class="p">(</span><span class="n">callback</span><span class="p">)</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">taskset</span><span class="o">.</span><span class="n">join</span><span class="p">())</span>
+    <span class="n">unlock_chord</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">countdown</span><span class="o">=</span><span class="n">interval</span><span class="p">,</span> <span class="n">max_retries</span><span class="o">=</span><span class="n">max_retries</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This is used by all result backends except Redis, which increments a
+counter after each task in the header, then applying the callback when the
+counter exceeds the number of tasks in the set.</p>
+<p>The Redis approach is a much better solution, but not easily implemented
+in other backends (suggestions welcome!)</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>If you are using chords with the Redis result backend and also overriding
+the <tt class="xref py py-meth docutils literal"><span class="pre">Task.after_return()</span></tt> method, you need to make sure to call the
+super method or else the chord callback will not be applied.</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">after_return</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">do_something</span><span class="p">()</span>
+    <span class="nb">super</span><span class="p">(</span><span class="n">MyTask</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">after_return</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div>
+</div>
 </div>
 </div>
 </div>
@@ -342,7 +359,7 @@ result = apply_presaved_taskset(
         <li class="right" >
           <a href="periodic-tasks.html" title="Periodic Tasks"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.5 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.3.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>

@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.backends.base &mdash; Celery v2.2.5 documentation</title>
+    <title>celery.backends.base &mdash; Celery v2.3.0a1 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.2.5',
+        VERSION:     '2.3.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.5 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.3.0a1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.backends.database" href="celery.backends.database.html" />
     <link rel="prev" title="celery.backends" href="celery.backends.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.backends.html" title="celery.backends"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.5 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.3.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -57,7 +57,7 @@
 
     
         <p>
-        This document describes Celery 2.2. For development docs,
+        This document describes Celery 2.3. For development docs,
         <a href="http://ask.github.com/celery/internals/reference/celery.backends.base.html">go here</a>.
         </p>
     
@@ -146,6 +146,16 @@ exception (if any).</p>
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">mark_as_started</tt><big>(</big><em>task_id</em>, <em>**meta</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.mark_as_started" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mark a task as started</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.base.BaseBackend.on_chord_apply">
+<tt class="descclassname">BaseBackend.</tt><tt class="descname">on_chord_apply</tt><big>(</big><em>setid</em>, <em>body</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.on_chord_apply" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.base.BaseBackend.on_chord_part_return">
+<tt class="descclassname">BaseBackend.</tt><tt class="descname">on_chord_part_return</tt><big>(</big><em>task</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.on_chord_part_return" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.prepare_exception">
@@ -275,6 +285,36 @@ takes longer than <cite>timeout</cite> seconds.</p>
 </dd></dl>
 
 <dl class="class">
+<dt id="celery.backends.base.DisabledBackend">
+<em class="property">class </em><tt class="descclassname">celery.backends.base.</tt><tt class="descname">DisabledBackend</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.base.DisabledBackend" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.backends.base.DisabledBackend.get_result">
+<tt class="descname">get_result</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.base.DisabledBackend.get_result" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.base.DisabledBackend.get_status">
+<tt class="descname">get_status</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.base.DisabledBackend.get_status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.base.DisabledBackend.get_traceback">
+<tt class="descname">get_traceback</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.base.DisabledBackend.get_traceback" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.base.DisabledBackend.store_result">
+<tt class="descname">store_result</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.base.DisabledBackend.store_result" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.base.DisabledBackend.wait_for">
+<tt class="descname">wait_for</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.base.DisabledBackend.wait_for" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="celery.backends.base.KeyValueStoreBackend">
 <em class="property">class </em><tt class="descclassname">celery.backends.base.</tt><tt class="descname">KeyValueStoreBackend</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.base.KeyValueStoreBackend" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
@@ -359,7 +399,7 @@ takes longer than <cite>timeout</cite> seconds.</p>
         <li class="right" >
           <a href="celery.backends.html" title="celery.backends"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.5 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.3.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

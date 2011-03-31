@@ -475,10 +475,9 @@ Celery needs to store or send the states somewhere.  There are several
 built-in backends to choose from: SQLAlchemy/Django ORM, Memcached, Redis,
 AMQP, MongoDB, Tokyo Tyrant and Redis -- or you can define your own.
 
-There is no backend that works well for every single use case, but for
-historical reasons the default backend is the AMQP backend.  You should read
-about the strenghts and weaknesses of each backend, and choose the most
-appropriate for your own needs.
+No backend works well for every use case.
+You should read about the strenghts and weaknesses of each backend, and choose
+the most appropriate for your needs.
 
 
 .. seealso::

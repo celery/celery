@@ -5,6 +5,84 @@
 .. contents::
     :local:
 
+.. _version-2.3.0:
+
+2.3.0
+=====
+:release-date: TBA
+:status: in development
+:branch: master
+
+.. _v230-important:
+
+Important Notes
+---------------
+
+* Results are now disabled by default.
+
+    The AMQP backend was not a good default because often the users were
+    not consuming the results, resulting in thousands of queues.
+
+    While the queues can be configured to expire if left unused, it was not
+    possible to enable this by default because this was only available in
+    recent RabbitMQ versions (2.1.1+)
+
+    With this change enabling a result backend will be a conscious choice,
+    which will hopefully lead the user to read the documentation and be aware
+    of any common pitfalls with the particular backend.
+
+    The default backend is now a dummy backend
+    (:class:`celery.backends.base.DisabledBackend`).  Saving state is simply an
+    noop operation, and AsyncResult.wait(), .result, .state, etc will raise
+    a :exc:`NotImplementedError` telling the user to configure the result backend.
+
+    For help choosing a backend please see :ref:`task-result-backends`.
+
+.. _v230-news:
+
+News
+----
+
+* Automatic connection pool support.
+
+    The pool is used by everything that requires a broker connection.  For
+    example applying tasks, sending broadcast commands, retrieving results
+    with the AMQP result backend, and so on.
+
+    The pool is disabled by default, but you can enable it by configuring the
+    :setting:`BROKER_POOL_LIMIT` setting::
+
+        BROKER_POOL_LIMIT = 10
+
+    A limit of 10 means a maximum of 10 simultaneous connections can co-exist.
+    Only a single connection will ever be used in a single-thread
+    environment, but in a concurrent environment (threads, greenlets, etc., but
+    not processes) when the limit has been exceeded, any try to acquire a
+    connection will block the thread and wait for a connection to be released.
+    This is something to take into consideration when choosing a limit.
+
+    A limit of :const:`None` or 0 means no limit, and connections will be
+    established and closed every time.
+
+* Introducing Chords (taskset callbacks).
+
+    A chord is a task that only executes after all of the tasks in a taskset
+    has finished executing.  It's a fancy term for "taskset callbacks"
+    adopted from
+    `Cω  <http://research.microsoft.com/en-us/um/cambridge/projects/comega/>`_).
+
+    It works with all result backends, but the best implementation is
+    currently provided by the Redis result backend.
+
+    Here's an example chord::
+
+        >>> chord(add.subtask((i, i))
+        ...         for i in xrange(100))(tsum.subtask()).get()
+        9900
+
+    Please read the :ref:`Chord section in the user guide <chord>`, if you
+    want to know more.
+
 .. _version-2.2.5:
 
 2.2.5
@@ -91,9 +169,9 @@ Fixes
 
     There was a race condition when the MainThread was waiting for the pool
     semaphore to be released.  The ResultHandler now terminates after 5
-    seconds if there still results that have not been started, but no worker
-    processes left to start them  (it needs to timeout because there could
-    still be an ack+result that we haven't consumed from the result queue. It
+    seconds if there are unacked jobs, but no worker processes left to start
+    them  (it needs to timeout because there could still be an ack+result
+    that we haven't consumed from the result queue. It
     is unlikely we will receive any after 5 seconds with no worker processes).
 
 * celerybeat: Now creates pidfile even if the ``--detach`` option is not set.
@@ -148,11 +226,11 @@ Fixes
 * Now emits a user-friendly error message if the result backend name is
   unknown (Issue #349).
 
-* :mod:`celery.contrib.batches`: Now sets loglevel and logfile in task request so
-  ``task.get_logger`` works with batch tasks (Issue #357).
+* :mod:`celery.contrib.batches`: Now sets loglevel and logfile in the task
+  request so ``task.get_logger`` works with batch tasks (Issue #357).
 
-* celeryd: An exception was raised if using the amqp transport and prefetch
-  the count value exceeded 65535 (Issue #359).
+* celeryd: An exception was raised if using the amqp transport and the prefetch
+  count value exceeded 65535 (Issue #359).
 
     The prefetch count is incremented for every received task with an
     ETA/countdown defined.  The prefetch count is a short, so can only support
@@ -170,7 +248,7 @@ Fixes
 * ``Task.after_return`` is now always called *after* the result has been
   written.
 
-* Cassandra Result Backend: Should now works with the latest ``pycassa``
+* Cassandra Result Backend: Should now work with the latest ``pycassa``
   version.
 
 * multiprocessing.Pool: No longer cares if the putlock semaphore is released
@@ -2119,11 +2197,11 @@ the :setting:`CELERY_RESULT_ENGINE_OPTIONS` setting::
 .. _`SQLAlchemy`:
     http://www.sqlalchemy.org
 .. _`Supported Databases`:
-    http://www.sqlalchemy.org/docs/dbengine.html#supported-databases
+    http://www.sqlalchemy.org/docs/core/engines.html#supported-databases
 .. _`SQLAlchemy Connection String`:
-    http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments
+    http://www.sqlalchemy.org/docs/core/engines.html#database-urls
 .. _`SQLAlchemy Connection Strings`:
-    http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments
+    http://www.sqlalchemy.org/docs/core/engines.html#database-urls
 
 .. _v200-upgrade-cache:
 

@@ -140,17 +140,40 @@ broker will hold on to the task until a worker server has consumed and
 executed it.
 
 Right now we have to check the worker log files to know what happened
-with the task.  This is because we didn't keep the
-:class:`~celery.result.AsyncResult` object returned.
+with the task.  Applying a task returns an
+:class:`~celery.result.AsyncResult`, if you have configured a result store
+the :class:`~celery.result.AsyncResult` enables you to check the state of
+the task, wait for the task to finish, get its return value
+or exception/traceback if the task failed, and more.
 
-The :class:`~celery.result.AsyncResult` lets us check the state of the task,
-wait for the task to finish, get its return value or exception/traceback
-if the task failed, and more.
+Keeping Results
+---------------
 
-Let's execute the task again -- but this time we'll keep track of the task
-by holding on to the :class:`~celery.result.AsyncResult`::
+If you want to keep track of the tasks state, Celery needs to store or send
+the states somewhere.  There are several
+built-in backends to choose from: SQLAlchemy/Django ORM, Memcached, Redis,
+AMQP, MongoDB, Tokyo Tyrant and Redis -- or you can define your own.
+
+For this example we will use the `amqp` result backend, which sends states
+as messages.  The backend is configured via the ``CELERY_RESULT_BACKEND``
+option, in addition individual result backends may have additional settings
+you can configure::
+
+    CELERY_RESULT_BACKEND = "amqp"
+
+    #: We want the results to expire in 5 minutes, note that this requires
+    #: RabbitMQ version 2.1.1 or higher, so please comment out if you have
+    #: an earlier version.
+    CELERY_AMQP_TASK_RESULT_EXPIRES = 300
+
+To read more about result backends please see :ref:`task-result-backends`.
+
+Now with the result backend configured, let's execute the task again.
+This time we'll hold on to the :class:`~celery.result.AsyncResult`::
 
     >>> result = add.delay(4, 4)
+
+Here's some examples of what you can do when you have results::
 
     >>> result.ready() # returns True if the task has finished processing.
     False
