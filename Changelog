@@ -64,6 +64,25 @@ News
     A limit of :const:`None` or 0 means no limit, and connections will be
     established and closed every time.
 
+* Introducing Chords (taskset callbacks).
+
+    A chord is a task that only executes after all of the tasks in a taskset
+    has finished executing.  It's a fancy term for "taskset callbacks"
+    adopted from
+    `Cω  <http://research.microsoft.com/en-us/um/cambridge/projects/comega/>`_).
+
+    It works with all result backends, but the best implementation is
+    currently provided by the Redis result backend.
+
+    Here's an example chord::
+
+        >>> chord(add.subtask((i, i))
+        ...         for i in xrange(100))(tsum.subtask()).get()
+        9900
+
+    Please read the :ref:`Chord section in the user guide <chord>`, if you
+    want to know more.
+
 .. _version-2.2.5:
 
 2.2.5

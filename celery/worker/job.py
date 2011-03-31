@@ -196,6 +196,9 @@ class TaskRequest(object):
     #: When the task expires.
     expires = None
 
+    #: Body of a chord depending on this task.
+    chord = None
+
     #: Callback called when the task should be acknowledged.
     on_ack = None
 
@@ -246,7 +249,7 @@ class TaskRequest(object):
             on_ack=noop, retries=0, delivery_info=None, hostname=None,
             email_subject=None, email_body=None, logger=None,
             eventer=None, eta=None, expires=None, app=None,
-            taskset_id=None, **opts):
+            taskset_id=None, chord=None, **opts):
         self.app = app_or_default(app)
         self.task_name = task_name
         self.task_id = task_id
@@ -256,6 +259,7 @@ class TaskRequest(object):
         self.kwargs = kwargs
         self.eta = eta
         self.expires = expires
+        self.chord = chord
         self.on_ack = on_ack
         self.delivery_info = delivery_info or {}
         self.hostname = hostname or socket.gethostname()
@@ -290,6 +294,7 @@ class TaskRequest(object):
                    taskset_id=body.get("taskset", None),
                    args=body["args"],
                    kwargs=kwdict(kwargs),
+                   chord=body.get("chord"),
                    retries=body.get("retries", 0),
                    eta=maybe_iso8601(body.get("eta")),
                    expires=maybe_iso8601(body.get("expires")),
@@ -304,7 +309,8 @@ class TaskRequest(object):
                 "taskset": self.taskset_id,
                 "retries": self.retries,
                 "is_eager": False,
-                "delivery_info": self.delivery_info}
+                "delivery_info": self.delivery_info,
+                "chord": self.chord}
 
     def extend_with_default_kwargs(self, loglevel, logfile):
         """Extend the tasks keyword arguments with standard task arguments.

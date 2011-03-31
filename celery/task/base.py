@@ -48,6 +48,7 @@ class Context(threading.local):
     is_eager = False
     delivery_info = None
     taskset = None
+    chord = None
 
     def update(self, d, **kwargs):
         self.__dict__.update(d, **kwargs)
@@ -647,7 +648,8 @@ class BaseTask(object):
         The return value of this handler is ignored.
 
         """
-        pass
+        if self.request.chord:
+            self.backend.on_chord_part_return(self)
 
     def on_failure(self, exc, task_id, args, kwargs, einfo=None):
         """Error handler.

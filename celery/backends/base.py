@@ -143,6 +143,16 @@ class BaseBackend(object):
         raise NotImplementedError(
                 "reload_taskset_result is not supported by this backend.")
 
+    def on_chord_part_return(self, task):
+        pass
+
+    def on_chord_apply(self, setid, body):
+        from celery.registry import tasks
+        tasks["celery.chord_unlock"].apply_async((setid, body, ), countdown=1)
+
+    def __reduce__(self):
+        return (self.__class__, ())
+
 
 class BaseDictBackend(BaseBackend):
 
@@ -244,8 +254,8 @@ class KeyValueStoreBackend(BaseDictBackend):
         return result
 
     def _save_taskset(self, taskset_id, result):
-        meta = {"result": result}
-        self.set(self.get_key_for_taskset(taskset_id), pickle.dumps(meta))
+        self.set(self.get_key_for_taskset(taskset_id),
+                 pickle.dumps({"result": result}))
         return result
 
     def _get_task_meta_for(self, task_id):

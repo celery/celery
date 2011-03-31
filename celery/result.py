@@ -468,6 +468,7 @@ class TaskSetResult(ResultSet):
         if backend is None:
             backend = self.app.backend
         backend.save_taskset(self.taskset_id, self)
+        return self
 
     @classmethod
     def restore(self, taskset_id, backend=None):
@@ -479,6 +480,9 @@ class TaskSetResult(ResultSet):
     def itersubtasks(self):
         """Depreacted.   Use ``iter(self.results)`` instead."""
         return iter(self.results)
+
+    def __reduce__(self):
+        return (self.__class__, (self.taskset_id, self.results))
 
 
 class EagerResult(BaseAsyncResult):
