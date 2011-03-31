@@ -21,6 +21,10 @@ from celery.datastructures import ConfigurationView
 from celery.utils import instantiate, lpmerge
 from celery.utils.functional import wraps
 
+import kombu
+if kombu.VERSION < (1, 0, 8):
+    raise ImportError("Celery requires Kombu version 1.0.8 or higher.")
+
 
 class LamportClock(object):
     """Lamports logical clock.
