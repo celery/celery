@@ -435,7 +435,8 @@ class TaskSetResult(ResultSet):
     """An instance of this class is returned by
     `TaskSet`'s :meth:`~celery.task.TaskSet.apply_async` method.
 
-    It enables inspection of the tasks state and return values as a single entity.
+    It enables inspection of the tasks state and return values as
+    a single entity.
 
     :param taskset_id: The id of the taskset.
     :param results: List of result instances.

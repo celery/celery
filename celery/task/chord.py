@@ -4,6 +4,7 @@ from celery import current_app
 from celery.result import TaskSetResult
 from celery.task.sets import TaskSet, subtask
 
+
 @current_app.task(name="celery.chord_unlock", max_retries=None)
 def _unlock_chord(setid, callback, interval=1, max_retries=None):
     result = TaskSetResult.restore(setid)
@@ -24,7 +25,7 @@ class Chord(current_app.Task):
             uuid = gen_unique_id()
             task.options.update(task_id=uuid, chord=body)
             r.append(current_app.AsyncResult(uuid))
-        ts = current_app.TaskSetResult(setid, r).save()
+        current_app.TaskSetResult(setid, r).save()
         self.backend.on_chord_apply(setid, body)
         return set.apply_async(taskset_id=setid)
 

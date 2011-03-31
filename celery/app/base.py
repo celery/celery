@@ -8,7 +8,6 @@ Application Base Class.
 :license: BSD, see LICENSE for more details.
 
 """
-import os
 import platform as _platform
 
 from copy import deepcopy
@@ -248,7 +247,6 @@ class BaseApp(object):
         @wraps(fun)
         def _inner(*args, **kwargs):
             connection = kwargs.get("connection")
-            timeout = kwargs.get("connect_timeout")
             kwargs["connection"] = conn = connection or \
                     self.pool.acquire(block=True)
             close_connection = not connection and conn.release or None
@@ -320,7 +318,8 @@ class BaseApp(object):
                 register_after_fork(self, self._after_fork)
             except ImportError:
                 pass
-            self._pool = self.broker_connection().Pool(self.conf.BROKER_POOL_LIMIT)
+            self._pool = self.broker_connection().Pool(
+                            self.conf.BROKER_POOL_LIMIT)
         return self._pool
 
     @cached_property

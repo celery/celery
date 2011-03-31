@@ -433,8 +433,6 @@ class BaseTask(object):
                            conf.CELERY_MESSAGE_COMPRESSION)
         options = dict(extract_exec_options(self), **options)
         options = router.route(options, self.name, args, kwargs)
-        exchange = options.get("exchange")
-        exchange_type = options.get("exchange_type")
         expires = expires or self.expires
 
         publish = publisher or self.app.amqp.publisher_pool.acquire(block=True)
