@@ -516,8 +516,15 @@ else:
             Schroeder.
             """
             def __init__(self, filename, mode='a', encoding=None, delay=0):
-                logging.FileHandler.__init__(self, filename, mode,
+                try:
+                    logging.FileHandler.__init__(self, filename, mode,
                                              encoding, delay)
+                except TypeError: #wrong number of arguments
+                    # python <= 2.5 does not have delay
+                    # see http://docs.python.org/library/logging.html#filehandler
+                    logging.FileHandler.__init__(self, filename, mode,
+                                             encoding)
+                    
                 if not os.path.exists(self.baseFilename):
                     self.dev, self.ino = -1, -1
                 else:
