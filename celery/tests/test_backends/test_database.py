@@ -158,7 +158,7 @@ class test_DatabaseBackend(unittest.TestCase):
         tb = DatabaseBackend()
         tb.process_cleanup()
 
-    def test_save___restore_taskset(self):
+    def test_save__restore__delete_taskset(self):
         tb = DatabaseBackend()
 
         tid = gen_unique_id()
@@ -167,6 +167,9 @@ class test_DatabaseBackend(unittest.TestCase):
 
         res2 = tb.restore_taskset(tid)
         self.assertEqual(res2, res)
+
+        tb.delete_taskset(tid)
+        self.assertIsNone(tb.restore_taskset(tid))
 
         self.assertIsNone(tb.restore_taskset("xxx-nonexisting-id"))
 

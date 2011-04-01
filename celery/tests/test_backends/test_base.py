@@ -1,6 +1,7 @@
 import sys
 import types
-from celery.tests.utils import unittest
+
+from mock import Mock
 
 from celery.utils import serialization
 from celery.utils.serialization import subclass_exception
@@ -14,6 +15,7 @@ from celery.backends.base import BaseBackend, KeyValueStoreBackend
 from celery.backends.base import BaseDictBackend
 from celery.utils import gen_unique_id
 
+from celery.tests.utils import unittest
 
 class wrapobject(object):
 
@@ -66,6 +68,10 @@ class test_BaseBackend_interface(unittest.TestCase):
     def test_restore_taskset(self):
         self.assertRaises(NotImplementedError,
                 b.restore_taskset, "SOMExx-N0nex1stant-IDxx-")
+
+    def test_delete_taskset(self):
+        self.assertRaises(NotImplementedError,
+                b.delete_taskset, "SOMExx-N0nex1stant-IDxx-")
 
     def test_save_taskset(self):
         self.assertRaises(NotImplementedError,
@@ -140,8 +146,9 @@ class KVBackend(KeyValueStoreBackend):
 
 class DictBackend(BaseDictBackend):
 
-    def _save_taskset(self, taskset_id, result):
-        return "taskset-saved"
+    def __init__(self, *args, **kwargs):
+        BaseDictBackend.__init__(self, *args, **kwargs)
+        self._data = {"can-delete": {"result": "foo"}}
 
     def _restore_taskset(self, taskset_id):
         if taskset_id == "exists":
@@ -151,15 +158,24 @@ class DictBackend(BaseDictBackend):
         if task_id == "task-exists":
             return {"result": "task"}
 
+    def _delete_taskset(self, taskset_id):
+        self._data.pop(taskset_id, None)
+
 
 class test_BaseDictBackend(unittest.TestCase):
 
     def setUp(self):
         self.b = DictBackend()
 
+    def test_delete_taskset(self):
+        self.b.delete_taskset("can-delete")
+        self.assertNotIn("can-delete", self.b._data)
+
     def test_save_taskset(self):
-        self.assertEqual(self.b.save_taskset("foofoo", "xxx"),
-                         "taskset-saved")
+        b = BaseDictBackend()
+        b._save_taskset = Mock()
+        b.save_taskset("foofoo", "xxx")
+        b._save_taskset.assert_called_with("foofoo", "xxx")
 
     def test_restore_taskset(self):
         self.assertIsNone(self.b.restore_taskset("missing"))
@@ -197,10 +213,12 @@ class test_KeyValueStoreBackend(unittest.TestCase):
         self.assertIsNone(self.b.get_result("xxx-missing"))
         self.assertEqual(self.b.get_status("xxx-missing"), states.PENDING)
 
-    def test_save_restore_taskset(self):
+    def test_save_restore_delete_taskset(self):
         tid = gen_unique_id()
         self.b.save_taskset(tid, "Hello world")
         self.assertEqual(self.b.restore_taskset(tid), "Hello world")
+        self.b.delete_taskset(tid)
+        self.assertIsNone(self.b.restore_taskset(tid))
 
     def test_restore_missing_taskset(self):
         self.assertIsNone(self.b.restore_taskset("xxx-nonexistant"))

@@ -466,10 +466,12 @@ class TaskSetResult(ResultSet):
             >>> result = TaskSetResult.restore(taskset_id)
 
         """
-        if backend is None:
-            backend = self.app.backend
-        backend.save_taskset(self.taskset_id, self)
-        return self
+        return (backend or self.app.backend).save_taskset(self.taskset_id,
+                                                          self)
+
+    def delete(self, backend=None):
+        """Remove this result if it was previously saved."""
+        (backend or self.app.backend).delete_taskset(self.taskset_id)
 
     @classmethod
     def restore(self, taskset_id, backend=None):

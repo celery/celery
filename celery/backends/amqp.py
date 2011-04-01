@@ -262,11 +262,14 @@ class AMQPBackend(BaseDictBackend):
                 "reload_taskset_result is not supported by this backend.")
 
     def save_taskset(self, taskset_id, result):
-        """Store the result and status of a task."""
         raise NotImplementedError(
                 "save_taskset is not supported by this backend.")
 
     def restore_taskset(self, taskset_id, cache=True):
-        """Get the result of a taskset."""
         raise NotImplementedError(
                 "restore_taskset is not supported by this backend.")
+
+    def delete_taskset(self, taskset_id):
+        raise NotImplementedError(
+                "delete_taskset is not supported by this backend.")
+

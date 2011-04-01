@@ -215,6 +215,8 @@ class TestTaskSetResult(unittest.TestCase):
         self.assertRaises(AttributeError, ts.save, backend=object())
         self.assertEqual(TaskSetResult.restore(ts.taskset_id).subtasks,
                          ts.subtasks)
+        ts.delete()
+        self.assertIsNone(TaskSetResult.restore(ts.taskset_id))
         self.assertRaises(AttributeError,
                           TaskSetResult.restore, ts.taskset_id,
                           backend=object())

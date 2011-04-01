@@ -133,6 +133,10 @@ class BaseBackend(object):
         raise NotImplementedError(
                 "restore_taskset is not supported by this backend.")
 
+    def delete_taskset(self, taskset_id):
+        raise NotImplementedError(
+                "delete_taskset is not supported by this backend.")
+
     def reload_task_result(self, task_id):
         """Reload task result, even if it has been previously fetched."""
         raise NotImplementedError(
@@ -226,6 +230,10 @@ class BaseDictBackend(BaseBackend):
         """Store the result of an executed taskset."""
         return self._save_taskset(taskset_id, result)
 
+    def delete_taskset(self, taskset_id):
+        self._cache.pop(taskset_id, None)
+        return self._delete_taskset(taskset_id)
+
 
 class KeyValueStoreBackend(BaseDictBackend):
 
@@ -258,6 +266,9 @@ class KeyValueStoreBackend(BaseDictBackend):
         self.set(self.get_key_for_taskset(taskset_id),
                  pickle.dumps({"result": result}))
         return result
+
+    def _delete_taskset(self, taskset_id):
+        self.delete(self.get_key_for_taskset(taskset_id))
 
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""

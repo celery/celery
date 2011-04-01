@@ -287,3 +287,7 @@ class test_AMQPBackend(unittest.TestCase):
     def test_restore_taskset(self):
         self.assertRaises(NotImplementedError,
                           self.create_backend().restore_taskset, "x")
+    
+    def test_delete_taskset(self):
+        self.assertRaises(NotImplementedError,
+                          self.create_backend().delete_taskset, "x")

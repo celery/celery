@@ -82,13 +82,24 @@ class DatabaseBackend(BaseDictBackend):
             session.close()
 
     def _restore_taskset(self, taskset_id):
-        """Get taskset metadata for a taskset by id."""
+        """Get metadata for taskset by id."""
         session = self.ResultSession()
         try:
             taskset = session.query(TaskSet).filter(
                     TaskSet.taskset_id == taskset_id).first()
             if taskset:
                 return taskset.to_dict()
+        finally:
+            session.close()
+
+    def _delete_taskset(self, taskset_id):
+        """Delete metadata for taskset by id."""
+        session = self.ResultSession()
+        try:
+            session.query(TaskSet).filter(
+                    TaskSet.taskset_id == taskset_id).delete()
+            session.flush()
+            session.commit()
         finally:
             session.close()
 
