@@ -75,7 +75,7 @@ class TaskType(type):
 
     def __new__(cls, name, bases, attrs):
         new = super(TaskType, cls).__new__
-        task_module = attrs["__module__"]
+        task_module = attrs.get("__module__") or "__main__"
 
         # Abstract class: abstract attribute should not be inherited.
         if attrs.pop("abstract", None) or not attrs.get("autoregister", True):
@@ -83,7 +83,12 @@ class TaskType(type):
 
         # Automatically generate missing/empty name.
         if not attrs.get("name"):
-            attrs["name"] = '.'.join([sys.modules[task_module].__name__, name])
+            try:
+                module_name = sys.modules[task_module].__name__
+            except KeyError:
+                # Fix for manage.py shell_plus (Issue #366).
+                module_name = task_module
+            attrs["name"] = '.'.join([task_module, name])
 
         # Because of the way import happens (recursively)
         # we may or may not be the first time the task tries to register
