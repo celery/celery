@@ -109,8 +109,13 @@ class WorkerTaskTrace(TaskTrace):
         try:
             return super(WorkerTaskTrace, self).execute()
         finally:
-            self.task.backend.process_cleanup()
-            self.loader.on_process_cleanup()
+            try:
+                self.task.backend.process_cleanup()
+                self.loader.on_process_cleanup()
+            except Exception, exc:
+                logger = log.get_default_logger()
+                logger.error("Process cleanup failed: %r" % (exc, ),
+                        exc_info=sys.exc_info())
 
     def handle_success(self, retval, *args):
         """Handle successful execution."""
