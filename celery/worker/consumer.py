@@ -473,8 +473,6 @@ class Consumer(object):
 
     def reset_connection(self):
         """Re-establish connection and set up consumers."""
-        import traceback
-        traceback.print_stack()
         self.logger.debug(
                 "Consumer: Re-establishing connection to the broker...")
         self.stop_consumers()
