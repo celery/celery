@@ -7,8 +7,9 @@ import warnings
 
 from datetime import datetime
 
+from celery import current_app
 from celery import platforms
-from celery.app import app_or_default, current_app
+from celery.app import app_or_default
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded
 from celery.exceptions import WorkerLostError, RetryTaskError
@@ -93,7 +94,7 @@ class WorkerTaskTrace(TaskTrace):
     hostname = None
 
     def __init__(self, *args, **kwargs):
-        self.loader = kwargs.get("loader") or current_app().loader
+        self.loader = kwargs.get("loader") or current_app.loader
         self.hostname = kwargs.get("hostname") or socket.gethostname()
         super(WorkerTaskTrace, self).__init__(*args, **kwargs)
 
@@ -125,8 +126,16 @@ class WorkerTaskTrace(TaskTrace):
         try:
             return super(WorkerTaskTrace, self).execute()
         finally:
-            self.task.backend.process_cleanup()
-            self.loader.on_process_cleanup()
+            try:
+                self.task.backend.process_cleanup()
+                self.loader.on_process_cleanup()
+            except (KeyboardInterrupt, SystemExit, MemoryError):
+                raise
+            except Exception, exc:
+                logger = current_app.log.get_default_logger()
+                logger.error("Process cleanup failed: %r" % (exc, ),
+                             exc_info=sys.exc_info())
+
 
     def handle_success(self, retval, *args):
         """Handle successful execution."""
