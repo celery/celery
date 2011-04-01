@@ -221,11 +221,12 @@ class TaskPublisher(messaging.Publisher):
                 "kwargs": task_kwargs or {},
                 "retries": retries or 0,
                 "eta": eta,
-                "expires": expires,
-                "chord": chord}
+                "expires": expires}
 
         if taskset_id:
             body["taskset"] = taskset_id
+        if chord:
+        	body["chord"] = chord
 
         send = self.send
         if retry is None and self.retry or retry:
