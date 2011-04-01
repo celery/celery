@@ -272,4 +272,3 @@ class AMQPBackend(BaseDictBackend):
     def delete_taskset(self, taskset_id):
         raise NotImplementedError(
                 "delete_taskset is not supported by this backend.")
-

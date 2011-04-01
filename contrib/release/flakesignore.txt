@@ -30,7 +30,7 @@ celery/utils/mail.py:(.+?) redefinition of unused 'MIMEText'
 celery/utils/__init__.py:(.+?) 'gen_unique_id' imported but unused
 celery/events/cursesmon.py:(.+?): local variable 'consumer' is assigned to but never used
 celery/tests/utils.py:(.+?): 'unittest' imported but unused
-celery/tests/utils.py:(.+?): redefinition of unused 'builtins' from line 12
+celery/tests/utils.py:(.+?): redefinition of unused 'builtins' from line \d+
 celery/tests/utils.py:(.+?): redefinition of unused 'StringIO' from line 16
 celery/utils/compat.py:(.+?): redefinition of unused 'UserList' from line 5
 celery/utils/compat.py:(.+?): 'UserList' imported but unused
@@ -73,6 +73,6 @@ celery/worker/state.py:62: redefinition of function 'task_reserved' from line 36
 celery/worker/state.py:68: redefinition of function 'task_ready' from line 47
 celery/beat.py:11: redefinition of unused 'multiprocessing' from line 9
 celery/utils/compat.py:498: redefinition of unused 'WatchedFileHandler' from line 496
-celery/backends/pyredis.py:103: redefinition of function 'client' from line 96
+celery/backends/pyredis.py:(.+?): redefinition of function 'client' from line .+?$
 celery/task/__init__.py:7: 'chord' imported but unused
 

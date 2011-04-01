@@ -17,6 +17,7 @@ from celery.utils import gen_unique_id
 
 from celery.tests.utils import unittest
 
+
 class wrapobject(object):
 
     def __init__(self, *args, **kwargs):

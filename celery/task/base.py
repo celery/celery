@@ -88,7 +88,7 @@ class TaskType(type):
             except KeyError:
                 # Fix for manage.py shell_plus (Issue #366).
                 module_name = task_module
-            attrs["name"] = '.'.join([task_module, name])
+            attrs["name"] = '.'.join([module_name, name])
 
         # Because of the way import happens (recursively)
         # we may or may not be the first time the task tries to register

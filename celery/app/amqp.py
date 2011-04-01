@@ -226,7 +226,7 @@ class TaskPublisher(messaging.Publisher):
         if taskset_id:
             body["taskset"] = taskset_id
         if chord:
-        	body["chord"] = chord
+            body["chord"] = chord
 
         send = self.send
         if retry is None and self.retry or retry:
