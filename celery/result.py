@@ -61,8 +61,8 @@ class BaseAsyncResult(object):
         self.app.control.revoke(self.task_id, connection=connection,
                                 connect_timeout=connect_timeout)
 
-    def wait(self, timeout=None, propagate=True, interval=0.5):
-        """Wait for task, and return the result.
+    def get(self, timeout=None, propagate=True, interval=0.5):
+        """Wait until task is ready, and return its result.
 
         .. warning::
 
@@ -89,9 +89,9 @@ class BaseAsyncResult(object):
                                                    propagate=propagate,
                                                    interval=interval)
 
-    def get(self, timeout=None):
-        """Alias to :meth:`wait`."""
-        return self.wait(timeout=timeout)
+    def wait(self, **kwargs):
+        """Deprecated alias to :meth:`get`."""
+        return self.get(**kwargs)
 
     def ready(self):
         """Returns :const:`True` if the task has been executed.
