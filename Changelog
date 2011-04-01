@@ -1007,7 +1007,7 @@ Fixes
 * Error email body now uses `repr(exception)` instead of `str(exception)`,
   as the latter could result in Unicode decode errors (Issue #245).
 
-* Error e-mail timeout value is now configurable by using the
+* Error email timeout value is now configurable by using the
   :setting:`EMAIL_TIMEOUT` setting.
 
 * `celeryev`: Now works on Windows (but the curses monitor won't work without
@@ -1773,7 +1773,7 @@ Fixes
 * Can now store result/metadata for custom states.
 
 * celeryd: A warning is now emitted if the sending of task error
-  e-mails fails.
+  emails fails.
 
 * celeryev: Curses monitor no longer crashes if the terminal window
   is resized.
@@ -1896,7 +1896,7 @@ Documentation
 
 * Task logger: `warn` method added (synonym for `warning`)
 
-* Can now define a white list of errors to send error e-mails for.
+* Can now define a white list of errors to send error emails for.
 
     Example::
 
@@ -3620,7 +3620,7 @@ Documentation
 * Make sure logger class is process aware, even if running Python >= 2.6.
 
 
-* Error e-mails are not sent anymore when the task is retried.
+* Error emails are not sent anymore when the task is retried.
 
 .. _version-0.8.3:
 
@@ -4114,7 +4114,7 @@ News
 
 * Fixed typo `AMQP_SERVER` in documentation to `AMQP_HOST`.
 
-* Worker exception e-mails sent to administrators now works properly.
+* Worker exception emails sent to administrators now works properly.
 
 * No longer depends on `django`, so installing `celery` won't affect
   the preferred Django version installed.
@@ -4189,7 +4189,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 * **IMPORTANT** Celery now depends on carrot >= 0.4.1.
 
-* The celery daemon now sends task errors to the registered admin e-mails.
+* The celery daemon now sends task errors to the registered admin emails.
   To turn off this feature, set `SEND_CELERY_TASK_ERROR_EMAILS` to
   `False` in your `settings.py`. Thanks to Grégoire Cachet.
 

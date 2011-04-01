@@ -26,7 +26,7 @@ from celery.worker import state
 # says "trailing whitespace" ;)
 EMAIL_SIGNATURE_SEP = "-- "
 
-#: format string for the body of an error e-mail.
+#: format string for the body of an error email.
 TASK_ERROR_EMAIL_BODY = """
 Task %%(name)s with id %%(id)s raised exception:\n%%(exc)r
 
@@ -236,12 +236,12 @@ class TaskRequest(object):
     #: Format string used to log task retry.
     retry_msg = """Task %(name)s[%(id)s] retry: %(exc)s"""
 
-    #: Format string used to generate error e-mail subjects.
+    #: Format string used to generate error email subjects.
     email_subject = """\
         [celery@%(hostname)s] Error: Task %(name)s (%(id)s): %(exc)s
     """
 
-    #: Format string used to generate error e-mail content.
+    #: Format string used to generate error email content.
     email_body = TASK_ERROR_EMAIL_BODY
 
     #: Timestamp set when the task is started.

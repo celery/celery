@@ -187,12 +187,12 @@ class BaseTask(object):
     #: configured to ignore results.
     store_errors_even_if_ignored = False
 
-    #: If enabled an e-mail will be sent to :setting:`ADMINS` whenever a task
+    #: If enabled an email will be sent to :setting:`ADMINS` whenever a task
     #: of this type fails.
     send_error_emails = False
     disable_error_emails = False                            # FIXME
 
-    #: List of exception types to send error e-mails for.
+    #: List of exception types to send error emails for.
     error_whitelist = ()
 
     #: The name of a serializer that are registered with

@@ -181,7 +181,7 @@ Features
     |                 | enabling the ability to poll task status using     |
     |                 | Ajax.                                              |
     +-----------------+----------------------------------------------------+
-    | Error E-mails   | Can be configured to send e-mails to the           |
+    | Error Emails   | Can be configured to send emails to the           |
     |                 | administrators when tasks fails.                   |
     +-----------------+----------------------------------------------------+
 

@@ -226,14 +226,14 @@ General
 
 .. attribute:: Task.send_error_emails
 
-    Send an e-mail whenever a task of this type fails.
+    Send an email whenever a task of this type fails.
     Defaults to the :setting:`CELERY_SEND_TASK_ERROR_EMAILS` setting.
     See :ref:`conf-error-mails` for more information.
 
 .. attribute:: Task.error_whitelist
 
-    If the sending of error e-mails is enabled for this task, then
-    this is a white list of exceptions to actually send e-mails about.
+    If the sending of error emails is enabled for this task, then
+    this is a white list of exceptions to actually send emails about.
 
 .. attribute:: Task.serializer
 
@@ -986,7 +986,7 @@ The comment model looks like this:
 
     class Comment(models.Model):
         name = models.CharField(_("name"), max_length=64)
-        email_address = models.EmailField(_("e-mail address"))
+        email_address = models.EmailField(_("email address"))
         homepage = models.URLField(_("home page"),
                                    blank=True, verify_exists=False)
         comment = models.TextField(_("comment"))

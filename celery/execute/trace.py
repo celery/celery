@@ -109,7 +109,7 @@ class TaskTrace(object):
 
         # Create a simpler version of the RetryTaskError that stringifies
         # the original exception instead of including the exception instance.
-        # This is for reporting the retry in logs, e-mail etc, while
+        # This is for reporting the retry in logs, email etc, while
         # guaranteeing pickleability.
         message, orig_exc = exc.args
         expanded_msg = "%s: %s" % (message, str(orig_exc))

@@ -271,7 +271,7 @@ class BaseApp(object):
         return c
 
     def mail_admins(self, subject, body, fail_silently=False):
-        """Send an e-mail to the admins in the :setting:`ADMINS` setting."""
+        """Send an email to the admins in the :setting:`ADMINS` setting."""
         if self.conf.ADMINS:
             to = [admin_email for _, admin_email in self.conf.ADMINS]
             return self.loader.mail_admins(subject, body, fail_silently, to=to,

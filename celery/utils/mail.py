@@ -10,7 +10,7 @@ supports_timeout = sys.version_info > (2, 5)
 
 
 class SendmailWarning(UserWarning):
-    """Problem happened while sending the e-mail message."""
+    """Problem happened while sending the email message."""
 
 
 class Message(object):
@@ -27,7 +27,7 @@ class Message(object):
             self.to = [self.to]
 
     def __repr__(self):
-        return "<E-mail: To:%r Subject:%r>" % (self.to, self.subject)
+        return "<Email: To:%r Subject:%r>" % (self.to, self.subject)
 
     def __str__(self):
         msg = MIMEText(self.body, "plain", self.charset)

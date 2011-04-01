@@ -908,14 +908,14 @@ CELERY_SEND_TASK_ERROR_EMAILS
 
 The default value for the `Task.send_error_emails` attribute, which if
 set to :const:`True` means errors occurring during task execution will be
-sent to :setting:`ADMINS` by e-mail.
+sent to :setting:`ADMINS` by email.
 
 .. setting:: CELERY_TASK_ERROR_WHITELIST
 
 CELERY_TASK_ERROR_WHITELIST
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A white list of exceptions to send error e-mails for.
+A white list of exceptions to send error emails for.
 
 .. setting:: ADMINS
 
@@ -923,14 +923,14 @@ ADMINS
 ~~~~~~
 
 List of `(name, email_address)` tuples for the administrators that should
-receive error e-mails.
+receive error emails.
 
 .. setting:: SERVER_EMAIL
 
 SERVER_EMAIL
 ~~~~~~~~~~~~
 
-The e-mail address this worker sends e-mails from.
+The email address this worker sends emails from.
 Default is celery@localhost.
 
 .. setting:: MAIL_HOST
@@ -966,21 +966,21 @@ The port the mail server is listening on.  Default is `25`.
 Example E-Mail configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This configuration enables the sending of error e-mails to
+This configuration enables the sending of error emails to
 george@vandelay.com and kramer@vandelay.com:
 
 .. code-block:: python
 
-    # Enables error e-mails.
+    # Enables error emails.
     CELERY_SEND_TASK_ERROR_EMAILS = True
 
-    # Name and e-mail addresses of recipients
+    # Name and email addresses of recipients
     ADMINS = (
         ("George Costanza", "george@vandelay.com"),
         ("Cosmo Kramer", "kosmo@vandelay.com"),
     )
 
-    # E-mail address used as sender (From field).
+    # Email address used as sender (From field).
     SERVER_EMAIL = "no-reply@vandelay.com"
 
     # Mailserver configuration
