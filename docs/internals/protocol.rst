@@ -52,6 +52,26 @@ Message format
     will be expired when the message is received and the expiration date
     has been exceeded.
 
+
+Extensions
+==========
+
+Extensions are additional keys in the message body that the worker may or
+may not support.  If the worker finds an extension key it doesn't support
+it should optimally reject the message so another worker gets a chance
+to process it.
+
+
+* taskset_id
+
+  The taskset this task is part of.
+
+* chord
+
+  Siginifies that this task is one of the header parts of a chord.  The value
+  of this key is the body of the cord that should be executed when all of
+  the tasks in the header has returned.
+
 Example message
 ===============
 
