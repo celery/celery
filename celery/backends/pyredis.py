@@ -81,7 +81,7 @@ class RedisBackend(KeyValueStoreBackend):
     def process_cleanup(self):
         self.close()
 
-    def on_chord_apply(self, setid, body):
+    def on_chord_apply(self, *args, **kwargs):
         pass
 
     def on_chord_part_return(self, task, keyprefix="chord-unlock-%s"):

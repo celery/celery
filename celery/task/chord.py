@@ -14,9 +14,10 @@ def _unlock_chord(setid, callback, interval=1, max_retries=None):
 
 
 class Chord(current_app.Task):
+    accept_magic_kwargs = False
     name = "celery.chord"
 
-    def run(self, set, body):
+    def run(self, set, body, max_retries=None, interval=1, **kwargs):
         if not isinstance(set, TaskSet):
             set = TaskSet(set)
         r = []
@@ -26,17 +27,19 @@ class Chord(current_app.Task):
             task.options.update(task_id=uuid, chord=body)
             r.append(current_app.AsyncResult(uuid))
         current_app.TaskSetResult(setid, r).save()
-        self.backend.on_chord_apply(setid, body)
+        self.backend.on_chord_apply(setid, body, max_retries, interval)
         return set.apply_async(taskset_id=setid)
 
 
 class chord(object):
     Chord = Chord
 
-    def __init__(self, tasks):
+    def __init__(self, tasks, **options):
         self.tasks = tasks
+        self.options = options
 
-    def __call__(self, body):
+    def __call__(self, body, **options):
         uuid = body.options.setdefault("task_id", gen_unique_id())
-        self.Chord.apply_async((list(self.tasks), body))
+        self.Chord.apply_async((list(self.tasks), body), self.options,
+                                **options)
         return body.type.app.AsyncResult(uuid)
