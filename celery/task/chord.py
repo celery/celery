@@ -17,7 +17,7 @@ class Chord(current_app.Task):
     accept_magic_kwargs = False
     name = "celery.chord"
 
-    def run(self, set, body, max_retries=None, interval=1, **kwargs):
+    def run(self, set, body, interval=1, max_retries=None, **kwargs):
         if not isinstance(set, TaskSet):
             set = TaskSet(set)
         r = []
@@ -27,7 +27,7 @@ class Chord(current_app.Task):
             task.options.update(task_id=uuid, chord=body)
             r.append(current_app.AsyncResult(uuid))
         current_app.TaskSetResult(setid, r).save()
-        self.backend.on_chord_apply(setid, body, max_retries, interval)
+        self.backend.on_chord_apply(setid, body, interval, max_retries)
         return set.apply_async(taskset_id=setid)
 
 
