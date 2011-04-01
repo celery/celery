@@ -8,6 +8,7 @@ import time
 from datetime import datetime, timedelta
 
 from kombu.transport.base import Message
+from mock import Mock
 
 from celery import states
 from celery.app import app_or_default
@@ -26,7 +27,7 @@ from celery.worker.state import revoked
 
 from celery.tests.compat import catch_warnings
 from celery.tests.utils import unittest
-from celery.tests.utils import execute_context, StringIO
+from celery.tests.utils import execute_context, StringIO, wrap_logger
 
 
 scratch = {"ACK": False}
@@ -81,6 +82,38 @@ class test_RetryTaskError(unittest.TestCase):
 
 
 class test_WorkerTaskTrace(unittest.TestCase):
+
+    def test_process_cleanup_fails(self):
+        backend = mytask.backend
+        mytask.backend = Mock()
+        mytask.backend.process_cleanup = Mock(side_effect=KeyError())
+        try:
+
+            def with_wrap_logger(sio):
+                uuid = gen_unique_id()
+                ret = jail(uuid, mytask.name, [2], {})
+                self.assertEqual(ret, 4)
+                mytask.backend.mark_as_done.assert_called_with(uuid, 4)
+                logs = sio.getvalue().strip()
+                self.assertIn("Process cleanup failed", logs)
+                return 1234
+
+            logger = mytask.app.log.get_default_logger()
+            self.assertEqual(execute_context(
+                    wrap_logger(logger), with_wrap_logger), 1234)
+
+        finally:
+            mytask.backend = backend
+
+    def test_process_cleanup_BaseException(self):
+        backend = mytask.backend
+        mytask.backend = Mock()
+        mytask.backend.process_cleanup = Mock(side_effect=SystemExit())
+        try:
+            self.assertRaises(SystemExit,
+                    jail, gen_unique_id(), mytask.name, [2], {})
+        finally:
+            mytask.backend = backend
 
     def test_execute_jail_success(self):
         ret = jail(gen_unique_id(), mytask.name, [2], {})

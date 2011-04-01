@@ -7,6 +7,7 @@ except AttributeError:
     import unittest2 as unittest
 
 import importlib
+import logging
 import os
 import sys
 import time
@@ -15,7 +16,12 @@ try:
 except ImportError:    # py3k
     import builtins
 
-from celery.utils.compat import StringIO
+from celery.utils.compat import StringIO, LoggerAdapter
+try:
+    from contextlib import contextmanager
+except ImportError:
+    from celery.tests.utils import fallback_contextmanager as contextmanager
+
 
 from nose import SkipTest
 
@@ -70,6 +76,30 @@ class GeneratorContextManager(object):
             except:
                 if sys.exc_info()[1] is not value:
                     raise
+
+
+def get_handlers(logger):
+    if isinstance(logger, LoggerAdapter):
+        return logger.logger.handlers
+    return logger.handlers
+
+
+def set_handlers(logger, new_handlers):
+    if isinstance(logger, LoggerAdapter):
+        logger.logger.handlers = new_handlers
+    logger.handlers = new_handlers
+
+
+@contextmanager
+def wrap_logger(logger, loglevel=logging.ERROR):
+    old_handlers = get_handlers(logger)
+    sio = StringIO()
+    siohandler = logging.StreamHandler(sio)
+    set_handlers(logger, [siohandler])
+
+    yield sio
+
+    set_handlers(logger, old_handlers)
 
 
 def fallback_contextmanager(fun):
