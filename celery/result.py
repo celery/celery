@@ -82,9 +82,9 @@ class BaseAsyncResult(object):
                                                    propagate=propagate,
                                                    interval=interval)
 
-    def wait(self, **kwargs):
+    def wait(self, *args, **kwargs):
         """Deprecated alias to :meth:`get`."""
-        return self.get(**kwargs)
+        return self.get(*args, **kwargs)
 
     def ready(self):
         """Returns :const:`True` if the task has been executed.
@@ -512,7 +512,7 @@ class EagerResult(BaseAsyncResult):
         """Returns :const:`True` if the task has been executed."""
         return True
 
-    def wait(self, timeout=None, propagate=True, **kwargs):
+    def get(self, timeout=None, propagate=True, **kwargs):
         """Wait until the task has been executed and return its result."""
         if self.state == states.SUCCESS:
             return self.result
