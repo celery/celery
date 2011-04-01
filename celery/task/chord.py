@@ -9,7 +9,8 @@ from celery.task.sets import TaskSet, subtask
 def _unlock_chord(setid, callback, interval=1, max_retries=None):
     result = TaskSetResult.restore(setid)
     if result.ready():
-        return subtask(callback).delay(result.join())
+        subtask(callback).delay(result.join())
+        result.delete()
     _unlock_chord.retry(countdown=interval, max_retries=max_retries)
 
 

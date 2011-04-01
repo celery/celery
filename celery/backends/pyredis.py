@@ -90,6 +90,7 @@ class RedisBackend(KeyValueStoreBackend):
         deps = TaskSetResult.restore(setid, backend=task.backend)
         if self.client.incr(key) >= deps.total:
             subtask(task.request.chord).delay(deps.join())
+            deps.delete()
         self.client.expire(key, 86400)
 
     @cached_property

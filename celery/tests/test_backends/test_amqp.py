@@ -112,7 +112,6 @@ class test_AMQPBackend(unittest.TestCase):
         self.assertRaises(KeyError, backend.store_result,
                           "foo", "bar", "STARTED", max_retries=None)
 
-        print(backend.store_result)
         self.assertRaises(KeyError, backend.store_result,
                           "foo", "bar", "STARTED", max_retries=10)
 
