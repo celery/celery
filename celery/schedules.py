@@ -4,7 +4,8 @@ from pyparsing import (Word, Literal, ZeroOrMore, Optional,
                        Group, StringEnd, alphas)
 
 from celery.utils import is_iterable
-from celery.utils.timeutils import timedelta_seconds, weekday, remaining
+from celery.utils.timeutils import (timedelta_seconds, weekday,
+                                    remaining, humanize_seconds)
 
 
 class schedule(object):
@@ -19,15 +20,15 @@ class schedule(object):
         return remaining(last_run_at, self.run_every, relative=self.relative)
 
     def is_due(self, last_run_at):
-        """Returns tuple of two items ``(is_due, next_time_to_run)``,
+        """Returns tuple of two items `(is_due, next_time_to_run)`,
         where next time to run is in seconds.
 
         e.g.
 
-        * ``(True, 20)``, means the task should be run now, and the next
+        * `(True, 20)`, means the task should be run now, and the next
             time to run is in 20 seconds.
 
-        * ``(False, 12)``, means the task should be run in 12 seconds.
+        * `(False, 12)`, means the task should be run in 12 seconds.
 
         You can override this to decide the interval at runtime,
         but keep in mind the value of :setting:`CELERYBEAT_MAX_LOOP_INTERVAL`,
@@ -45,6 +46,10 @@ class schedule(object):
         if rem == 0:
             return True, timedelta_seconds(self.run_every)
         return False, rem
+
+    def __repr__(self):
+        return "<freq: %s>" % humanize_seconds(
+                timedelta_seconds(self.run_every))
 
     def __eq__(self, other):
         if isinstance(other, schedule):
@@ -134,7 +139,7 @@ class crontab_parser(object):
 
     @staticmethod
     def _ignore_comma(toks):
-        return filter(lambda x: x != ',', toks)
+        return [x for x in toks if x != ',']
 
     @staticmethod
     def _join_to_set(toks):
@@ -145,7 +150,7 @@ class crontab_parser(object):
 
 
 class crontab(schedule):
-    """A crontab can be used as the ``run_every`` value of a
+    """A crontab can be used as the `run_every` value of a
     :class:`PeriodicTask` to add cron-like scheduling.
 
     Like a :manpage:`cron` job, you can specify units of time of when
@@ -251,6 +256,9 @@ class crontab(schedule):
     def remaining_estimate(self, last_run_at):
         """Returns when the periodic task should run next as a timedelta."""
         weekday = last_run_at.isoweekday()
+        if weekday == 7:    # Sunday is day 0, not day 7.
+            weekday = 0
+
         execute_this_hour = (weekday in self.day_of_week and
                                 last_run_at.hour in self.hour and
                                 last_run_at.minute < max(self.minute))
@@ -265,8 +273,7 @@ class crontab(schedule):
             next_minute = min(self.minute)
 
             execute_today = (weekday in self.day_of_week and
-                                (last_run_at.hour < max(self.hour) or
-                                    execute_this_hour))
+                                 last_run_at.hour < max(self.hour))
 
             if execute_today:
                 next_hour = min(hour for hour in self.hour
@@ -277,13 +284,13 @@ class crontab(schedule):
                                       microsecond=0)
             else:
                 next_hour = min(self.hour)
-                iso_next_day = min([day for day in self.day_of_week
-                                        if day > weekday] or
-                                   self.day_of_week)
-                add_week = iso_next_day == weekday
+                next_day = min([day for day in self.day_of_week
+                                    if day > weekday] or
+                               self.day_of_week)
+                add_week = next_day == weekday
 
                 delta = relativedelta(weeks=add_week and 1 or 0,
-                                      weekday=(iso_next_day - 1) % 7,
+                                      weekday=(next_day - 1) % 7,
                                       hour=next_hour,
                                       minute=next_minute,
                                       second=0,
@@ -292,7 +299,7 @@ class crontab(schedule):
         return remaining(last_run_at, delta, now=self.nowfun())
 
     def is_due(self, last_run_at):
-        """Returns tuple of two items ``(is_due, next_time_to_run)``,
+        """Returns tuple of two items `(is_due, next_time_to_run)`,
         where next time to run is in seconds.
 
         See :meth:`celery.schedules.schedule.is_due` for more information.

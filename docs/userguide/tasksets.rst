@@ -40,10 +40,10 @@ This makes it excellent as a means to pass callbacks around to tasks.
 Callbacks
 ---------
 
-Let's improve our ``add`` task so it can accept a callback that
+Let's improve our `add` task so it can accept a callback that
 takes the result as an argument::
 
-    from celery.decorators import task
+    from celery.task import task
     from celery.task.sets import subtask
 
     @task
@@ -57,25 +57,25 @@ takes the result as an argument::
 asynchronously by :meth:`~celery.task.sets.subtask.delay`, and
 eagerly by :meth:`~celery.task.sets.subtask.apply`.
 
-The best thing is that any arguments you add to ``subtask.delay``,
+The best thing is that any arguments you add to `subtask.delay`,
 will be prepended to the arguments specified by the subtask itself!
 
 If you have the subtask::
 
     >>> add.subtask(args=(10, ))
 
-``subtask.delay(result)`` becomes::
+`subtask.delay(result)` becomes::
 
     >>> add.apply_async(args=(result, 10))
 
 ...
 
-Now let's execute our new ``add`` task with a callback::
+Now let's execute our new `add` task with a callback::
 
     >>> add.delay(2, 2, callback=add.subtask((8, )))
 
-As expected this will first launch one task calculating ``2 + 2``, then 
-another task calculating ``4 + 8``.
+As expected this will first launch one task calculating :math:`2 + 2`, then
+another task calculating :math:`4 + 8`.
 
 .. _sets-taskset:
 
@@ -100,10 +100,10 @@ A task set takes a list of :class:`~celery.task.sets.subtask`'s::
 
     >>> result = job.apply_async()
 
-    >>> result.ready()  # has all subtasks completed?
+    >>> result.ready()  # have all subtasks completed?
     True
-    >>> result.successful() # was all subtasks successful?
-
+    >>> result.successful() # were all subtasks successful?
+    True
     >>> result.join()
     [4, 8, 16, 32, 64]
 
@@ -158,3 +158,107 @@ It supports the following operations:
     Gather the results for all of the subtasks
     and return a list with them ordered by the order of which they
     were called.
+
+.. _chords:
+
+Chords
+======
+
+
+A chord is a task that only executes after all of the tasks in a taskset has
+finished executing.
+
+
+Let's calculate the sum of the expression
+:math:`1 + 1 + 2 + 2 + 3 + 3 ... n + n` up to a hundred digits.
+
+First we need two tasks, :func:`add` and :func:`tsum` (:func:`sum` is
+already a standard function):
+
+.. code-block:: python
+
+    from celery.task import task
+
+    @task
+    def add(x, y):
+        return x + y
+
+    @task
+    def tsum(numbers):
+        return sum(numbers)
+
+
+Now we can use a chord to calculate each addition step in parallel, and then
+get the sum of the resulting numbers::
+
+    >>> from celery.task import chord
+    >>> from tasks import add, tsum
+
+    >>> chord(add.subtask((i, i))
+    ...     for i in xrange(100))(tsum.subtask()).get()
+    9900
+
+
+This is obviously a very contrived example, the overhead of messaging and
+synchronization makes this a lot slower than its Python counterpart::
+
+    sum(i + i for i in xrange(100))
+
+The synchronization step is costly, so you should avoid using chords as much
+as possible. Still, the chord is a powerful primitive to have in your toolbox
+as synchronization is a required step for many parallel algorithms.
+
+Let's break the chord expression down::
+
+    >>> callback = tsum.subtask()
+    >>> header = [add.subtask((i, i)) for i in xrange(100])
+    >>> result = chord(header)(callback)
+    >>> result.get()
+    9900
+
+Remember, the callback can only be executed after all of the tasks in the
+header has returned.  Each step in the header is executed as a task, in
+parallel, possibly on different nodes.  The callback is then applied with
+the return value of each task in the header.  The task id returned by
+:meth:`chord` is the id of the callback, so you can wait for it to complete
+and get the final return value (but remember to :ref:`never have a task wait
+for other tasks <task-synchronous-subtasks>`)
+
+.. _chord-important-notes:
+
+Important Notes
+---------------
+
+By default the synchronization step is implemented by having a recurring task
+poll the completion of the taskset every second, applying the subtask when
+ready.
+
+Example implementation:
+
+.. code-block:: python
+
+    def unlock_chord(taskset, callback, interval=1, max_retries=None):
+        if taskset.ready():
+            return subtask(callback).delay(taskset.join())
+        unlock_chord.retry(countdown=interval, max_retries=max_retries)
+
+
+This is used by all result backends except Redis, which increments a
+counter after each task in the header, then applying the callback when the
+counter exceeds the number of tasks in the set.
+
+The Redis approach is a much better solution, but not easily implemented
+in other backends (suggestions welcome!)
+
+
+.. note::
+
+    If you are using chords with the Redis result backend and also overriding
+    the :meth:`Task.after_return` method, you need to make sure to call the
+    super method or else the chord callback will not be applied.
+
+    .. code-block:: python
+
+        def after_return(self, *args, **kwargs):
+            do_something()
+            super(MyTask, self).after_return(*args, **kwargs)

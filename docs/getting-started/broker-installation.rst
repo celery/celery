@@ -19,7 +19,7 @@ see `Installing RabbitMQ on OS X`_.
 
 .. note::
 
-    If you're getting ``nodedown`` errors after installing and using
+    If you're getting `nodedown` errors after installing and using
     :program:`rabbitmqctl` then this blog post can help you identify
     the source of the problem:
 
@@ -53,23 +53,23 @@ Installing RabbitMQ on OS X
 The easiest way to install RabbitMQ on Snow Leopard is using `Homebrew`_; the new
 and shiny package management system for OS X.
 
-In this example we'll install homebrew into ``/lol``, but you can
+In this example we'll install Homebrew into :file:`/lol`, but you can
 choose whichever destination, even in your home directory if you want, as one of
-the strengths of homebrew is that it's relocateable.
+the strengths of Homebrew is that it's relocatable.
 
-Homebrew is actually a `git`_ repository, so to install homebrew, you first need to
+Homebrew is actually a `git`_ repository, so to install Homebrew, you first need to
 install git. Download and install from the disk image at
 http://code.google.com/p/git-osx-installer/downloads/list?can=3
 
-When git is installed you can finally clone the repo, storing it at the
-``/lol`` location::
+When git is installed you can finally clone the repository, storing it at the
+:file:`/lol` location::
 
     $ git clone git://github.com/mxcl/homebrew /lol
 
 
 Brew comes with a simple utility called :program:`brew`, used to install, remove and
 query packages. To use it you first have to add it to :envvar:`PATH`, by
-adding the following line to the end of your ``~/.profile``::
+adding the following line to the end of your :file:`~/.profile`::
 
     export PATH="/lol/bin:/lol/sbin:$PATH"
 
@@ -88,23 +88,23 @@ Finally, we can install rabbitmq using :program:`brew`::
 
 .. _rabbitmq-osx-system-hostname:
 
-Configuring the system hostname
--------------------------------
+Configuring the system host name
+--------------------------------
 
-If you're using a DHCP server that is giving you a random hostname, you need
-to permanently configure the hostname. This is because RabbitMQ uses the hostname
+If you're using a DHCP server that is giving you a random host name, you need
+to permanently configure the host name. This is because RabbitMQ uses the host name
 to communicate with nodes.
 
-Use the :program:`scutil` command to permanently set your hostname::
+Use the :program:`scutil` command to permanently set your host name::
 
     sudo scutil --set HostName myhost.local
 
-Then add that hostname to ``/etc/hosts`` so it's possible to resolve it
+Then add that host name to :file:`/etc/hosts` so it's possible to resolve it
 back into an IP address::
 
     127.0.0.1       localhost myhost myhost.local
 
-If you start the rabbitmq server, your rabbit node should now be ``rabbit@myhost``,
+If you start the rabbitmq server, your rabbit node should now be `rabbit@myhost`,
 as verified by :program:`rabbitmqctl`::
 
     $ sudo rabbitmqctl status
@@ -119,9 +119,9 @@ as verified by :program:`rabbitmqctl`::
     {running_nodes,[rabbit@myhost]}]
     ...done.
 
-This is especially important if your DHCP server gives you a hostname
-starting with an IP address, (e.g. ``23.10.112.31.comcast.net``), because
-then RabbitMQ will try to use ``rabbit@23``, which is an illegal hostname.
+This is especially important if your DHCP server gives you a host name
+starting with an IP address, (e.g. `23.10.112.31.comcast.net`), because
+then RabbitMQ will try to use `rabbit@23`, which is an illegal host name.
 
 .. _rabbitmq-osx-start-stop:
 

@@ -1,5 +1,5 @@
 ====================================
- Worker State - celery.worker.state
+ celery.worker.state
 ====================================
 
 .. contents::

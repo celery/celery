@@ -1,5 +1,5 @@
 =================================================================
- In-memory Representation of Cluster State - celery.events.state
+ celery.events.state
 =================================================================
 
 .. contents::

@@ -1,5 +1,5 @@
 ======================================
- Platform Specific - celery.platforms
+ celery.platforms
 ======================================
 
 .. contents::

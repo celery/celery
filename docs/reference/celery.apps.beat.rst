@@ -1,5 +1,5 @@
 =================================================
- App: Periodic Task Scheduler - celery.apps.beat
+ celery.apps.beat
 =================================================
 
 .. contents::

@@ -70,7 +70,16 @@ def verifyindex(options):
 
 @task
 def flakes(options):
-    sh("find celery -name '*.py' | xargs pyflakes")
+    noerror = getattr(options, "noerror", False)
+    sh("""find celery -name '*.py' | xargs pyflakes | perl -mstrict -nle'
+           my $flake = $_;open(my $f, "contrib/release/flakesignore.txt");
+           my $ignored = 0;
+           PATTERN: foreach my $p (<$f>) { chomp($p);
+               if ($p && $flake =~ /$p/m) {
+                   $ignored = 1; last PATTERN; } } close($f);
+           if (! $ignored) { print $flake; our $FOUND_FLAKE = 1; }
+       }{exit $FOUND_FLAKE;
+            '""", ignore_error=noerror)
 
 
 @task
@@ -137,7 +146,7 @@ def gitcleanforce(options):
 
 
 @task
-@needs("pep8", "autodoc", "verifyindex", "test", "gitclean")
+@needs("pep8", "flakes", "autodoc", "verifyindex", "test", "gitclean")
 def releaseok(options):
     pass
 
@@ -146,3 +155,18 @@ def releaseok(options):
 @needs("releaseok", "removepyc", "upload_docs")
 def release(options):
     pass
+
+
+@task
+def coreloc(options):
+    sh("xargs sloccount < contrib/release/core-modules.txt")
+
+
+@task
+def testloc(options):
+    sh("sloccount celery/tests")
+
+
+@task
+def loc(options):
+    sh("sloccount celery")

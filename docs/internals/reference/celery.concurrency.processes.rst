@@ -1,5 +1,5 @@
 =============================================================
- Multiprocessing Pool Support - celery.concurrency.processes
+ celery.concurrency.processes
 =============================================================
 
 .. contents::

@@ -1,5 +1,5 @@
 ==========================================
- Event Snapshots - celery.events.snapshot
+ celery.events.snapshot
 ==========================================
 
 .. contents::

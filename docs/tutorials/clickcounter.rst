@@ -1,7 +1,7 @@
 .. _tut-clickcounter:
 
 ============================================================
- Tutorial: Creating a click counter using carrot and celery
+ Tutorial: Creating a click counter using Kombu and celery
 ============================================================
 
 .. contents::
@@ -18,19 +18,19 @@ you are likely to bump into problems. One database write for every click is
 not good if you have millions of clicks a day.
 
 So what can you do? In this tutorial we will send the individual clicks as
-messages using ``carrot``, and then process them later with a ``celery``
-periodic task.
+messages using `kombu`, and then process them later with a Celery periodic
+task.
 
-Celery and carrot is excellent in tandem, and while this might not be
+Celery and Kombu are excellent in tandem, and while this might not be
 the perfect example, you'll at least see one example how of they can be used
 to solve a task.
 
 The model
 =========
 
-The model is simple, ``Click`` has the URL as primary key and a number of
-clicks for that URL. Its manager, ``ClickManager`` implements the
-``increment_clicks`` method, which takes a URL and by how much to increment
+The model is simple, `Click` has the URL as primary key and a number of
+clicks for that URL. Its manager, `ClickManager` implements the
+`increment_clicks` method, which takes a URL and by how much to increment
 its count by.
 
 
@@ -70,27 +70,27 @@ its count by.
             verbose_name = _(u"URL clicks")
             verbose_name_plural = _(u"URL clicks")
 
-Using carrot to send clicks as messages
+Using Kombu to send clicks as messages
 ========================================
 
 The model is normal django stuff, nothing new there. But now we get on to
 the messaging. It has been a tradition for me to put the projects messaging
-related code in its own ``messaging.py`` module, and I will continue to do so
+related code in its own `messaging.py` module, and I will continue to do so
 here so maybe you can adopt this practice. In this module we have two
 functions:
 
-* ``send_increment_clicks``
+* `send_increment_clicks`
 
   This function sends a simple message to the broker. The message body only
   contains the URL we want to increment as plain-text, so the exchange and
-  routing key play a role here. We use an exchange called ``clicks``, with a
-  routing key of ``increment_click``, so any consumer binding a queue to
+  routing key play a role here. We use an exchange called `clicks`, with a
+  routing key of `increment_click`, so any consumer binding a queue to
   this exchange using this routing key will receive these messages.
 
-* ``process_clicks``
+* `process_clicks`
 
   This function processes all currently gathered clicks sent using
-  ``send_increment_clicks``. Instead of issuing one database query for every
+  `send_increment_clicks`. Instead of issuing one database query for every
   click it processes all of the messages first, calculates the new click count
   and issues one update per URL. A message that has been received will not be
   deleted from the broker until it has been acknowledged by the receiver, so
@@ -98,11 +98,13 @@ functions:
   re-sent at a later point in time. This guarantees delivery and we respect
   this feature here by not acknowledging the message until the clicks has
   actually been written to disk.
-  
-  **Note**: This could probably be optimized further with
-  some hand-written SQL, but it will do for now. Let's say it's an exercise
-  left for the picky reader, albeit a discouraged one if you can survive
-  without doing it.
+
+  .. note::
+
+    This could probably be optimized further with
+    some hand-written SQL, but it will do for now. Let's say it's an exercise
+    left for the picky reader, albeit a discouraged one if you can survive
+    without doing it.
 
 On to the code...
 
@@ -111,7 +113,7 @@ On to the code...
 .. code-block:: python
 
     from celery.messaging import establish_connection
-    from carrot.messaging import Publisher, Consumer
+    from kombu.compat import Publisher, Consumer
     from clickmuncher.models import Click
 
 
@@ -174,7 +176,7 @@ would want to count the clicks for, you replace the URL with:
 
     http://mysite/clickmuncher/count/?u=http://google.com
 
-and the ``count`` view will send off an increment message and forward you to
+and the `count` view will send off an increment message and forward you to
 that site.
 
 *clickmuncher/views.py*:
@@ -223,8 +225,8 @@ Processing the clicks every 30 minutes is easy using celery periodic tasks.
         def run(self, **kwargs):
             process_clicks()
 
-We subclass from :class:`celery.task.base.PeriodicTask`, set the ``run_every``
-attribute and in the body of the task just call the ``process_clicks``
+We subclass from :class:`celery.task.base.PeriodicTask`, set the `run_every`
+attribute and in the body of the task just call the `process_clicks`
 function we wrote earlier. 
 
 

@@ -1,6 +1,9 @@
-from datetime import datetime, timedelta
+import math
 
-from carrot.utils import partition
+from datetime import datetime, timedelta
+from dateutil.parser import parse as parse_iso8601
+
+from kombu.utils import partition
 
 DAYNAMES = "sun", "mon", "tue", "wed", "thu", "fri", "sat"
 WEEKDAYS = dict((name, dow) for name, dow in zip(DAYNAMES, range(7)))
@@ -11,8 +14,20 @@ RATE_MODIFIER_MAP = {"s": lambda n: n,
 
 HAVE_TIMEDELTA_TOTAL_SECONDS = hasattr(timedelta, "total_seconds")
 
+TIME_UNITS = (("day", 60 * 60 * 24, lambda n: int(math.ceil(n))),
+              ("hour", 60 * 60, lambda n: int(math.ceil(n))),
+              ("minute", 60, lambda n: int(math.ceil(n))),
+              ("second", 1, lambda n: "%.2f" % n))
 
-def timedelta_seconds(delta):
+
+def maybe_timedelta(delta):
+    """Coerces integer to timedelta if `delta` is an integer."""
+    if isinstance(delta, int):
+        return timedelta(seconds=delta)
+    return delta
+
+
+def timedelta_seconds(delta):  # pragma: no cover
     """Convert :class:`datetime.timedelta` to seconds.
 
     Doesn't account for negative values.
@@ -57,7 +72,7 @@ def remaining(start, ends_in, now=None, relative=True):
     :param ends_in: The end delta as a :class:`~datetime.timedelta`.
     :keyword relative: If set to :const:`False`, the end time will be
         calculated using :func:`delta_resolution` (i.e. rounded to the
-        resolution of ``ends_in``).
+        resolution of `ends_in`).
     :keyword now: Function returning the current time and date,
         defaults to :func:`datetime.now`.
 
@@ -71,7 +86,7 @@ def remaining(start, ends_in, now=None, relative=True):
 
 
 def rate(rate):
-    """Parses rate strings, such as ``"100/m"`` or ``"2/h"``
+    """Parses rate strings, such as `"100/m"` or `"2/h"`
     and converts them to seconds."""
     if rate:
         if isinstance(rate, basestring):
@@ -96,3 +111,23 @@ def weekday(name):
     except KeyError:
         # Show original day name in exception, instead of abbr.
         raise KeyError(name)
+
+
+def humanize_seconds(secs, prefix=""):
+    """Show seconds in human form, e.g. 60 is "1 minute", 7200 is "2
+    hours"."""
+    for unit, divider, formatter in TIME_UNITS:
+        if secs >= divider:
+            w = secs / divider
+            punit = w > 1 and (unit + "s") or unit
+            return "%s%s %s" % (prefix, formatter(w), punit)
+    return "now"
+
+
+def maybe_iso8601(dt):
+    """`Either datetime | str -> datetime or None -> None`"""
+    if not dt:
+        return
+    if isinstance(dt, datetime):
+        return dt
+    return parse_iso8601(dt)

@@ -5,7 +5,7 @@
 
 .. cmdoption:: -s, --schedule
 
-    Path to the schedule database. Defaults to ``celerybeat-schedule``.
+    Path to the schedule database. Defaults to `celerybeat-schedule`.
     The extension ".db" will be appended to the filename.
 
 .. cmdoption:: -S, --scheduler
@@ -14,28 +14,52 @@
 
 .. cmdoption:: -f, --logfile
 
-    Path to log file. If no logfile is specified, ``stderr`` is used.
+    Path to log file. If no logfile is specified, `stderr` is used.
 
 .. cmdoption:: -l, --loglevel
 
-    Logging level, choose between ``DEBUG``, ``INFO``, ``WARNING``,
-    ``ERROR``, ``CRITICAL``, or ``FATAL``.
+    Logging level, choose between `DEBUG`, `INFO`, `WARNING`,
+    `ERROR`, `CRITICAL`, or `FATAL`.
 
 """
-from celery.bin.base import Command, Option
+from celery.bin.base import Command, Option, daemon_options
+from celery.platforms import create_daemon_context
+from celery.utils.functional import partial
 
 
 class BeatCommand(Command):
+    supports_args = False
 
-    def run(self, *args, **kwargs):
-        from celery.apps.beat import Beat
-        kwargs["defaults"] = self.defaults
-        return Beat(**kwargs).run()
+    def run(self, detach=False, logfile=None, pidfile=None, uid=None,
+            gid=None, umask=None, working_directory=None, **kwargs):
+        kwargs.pop("app", None)
+
+        beat = partial(self.app.Beat, logfile=logfile, pidfile=pidfile,
+                       **kwargs)
+
+        if not detach:
+            return beat().run()
+
+        context, on_stop = create_daemon_context(
+                                logfile=logfile,
+                                pidfile=pidfile,
+                                uid=uid,
+                                gid=gid,
+                                umask=umask,
+                                working_directory=working_directory)
+        context.open()
+        try:
+            beat().run()
+        finally:
+            on_stop()
 
     def get_options(self):
-        conf = self.defaults
+        conf = self.app.conf
 
         return (
+            Option('--detach',
+                default=False, action="store_true", dest="detach",
+                help="Detach and run in the background."),
             Option('-s', '--schedule',
                 default=conf.CELERYBEAT_SCHEDULE_FILENAME,
                 action="store", dest="schedule",
@@ -50,14 +74,12 @@ class BeatCommand(Command):
                 action="store", dest="scheduler_cls",
                 help="Scheduler class. Default is "
                      "celery.beat.PersistentScheduler"),
-            Option('-f', '--logfile', default=conf.CELERYBEAT_LOG_FILE,
-                action="store", dest="logfile",
-                help="Path to log file."),
             Option('-l', '--loglevel',
                 default=conf.CELERYBEAT_LOG_LEVEL,
                 action="store", dest="loglevel",
                 help="Loglevel. One of DEBUG/INFO/WARNING/ERROR/CRITICAL."),
-        )
+        ) + daemon_options(default_pidfile="celerybeat.pid",
+                           default_logfile=conf.CELERYBEAT_LOG_FILE)
 
 
 def main():

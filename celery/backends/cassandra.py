@@ -2,7 +2,7 @@
 try:
     import pycassa
     from thrift import Thrift
-    C = __import__('cassandra').ttypes          # FIXME Namespace kludge
+    C = pycassa.cassandra.ttypes
 except ImportError:
     pycassa = None
 
@@ -14,11 +14,9 @@ import time
 from datetime import datetime
 
 from celery.backends.base import BaseDictBackend
-from celery import conf
 from celery.exceptions import ImproperlyConfigured
-from celery.loaders import load_settings
-from celery.log import setup_logger
-from celery.serialization import pickle
+from celery.utils.serialization import pickle
+from celery.utils.timeutils import maybe_timedelta
 from celery import states
 
 
@@ -50,34 +48,49 @@ class CassandraBackend(BaseDictBackend):
         the :setting:`CASSANDRA_SERVERS` setting is not set.
 
         """
-        self.logger = setup_logger("celery.backends.cassandra")
+        super(CassandraBackend, self).__init__(**kwargs)
+        self.logger = self.app.log.setup_logger(
+                            name="celery.backends.cassandra")
 
         self.result_expires = kwargs.get("result_expires") or \
-                                conf.TASK_RESULT_EXPIRES
+                                maybe_timedelta(
+                                    self.app.conf.CELERY_TASK_RESULT_EXPIRES)
 
         if not pycassa:
             raise ImproperlyConfigured(
-                    "You need to install the pycassa library to use the "
-                    "Cassandra backend. See http://github.com/vomjom/pycassa")
-
-        settings = load_settings()
+                "You need to install the pycassa library to use the "
+                "Cassandra backend. See https://github.com/pycassa/pycassa")
 
         self.servers = servers or \
-                         getattr(settings, "CASSANDRA_SERVERS", self.servers)
+                        self.app.conf.get("CASSANDRA_SERVERS", self.servers)
         self.keyspace = keyspace or \
-                          getattr(settings, "CASSANDRA_KEYSPACE",
-                                  self.keyspace)
+                            self.app.conf.get("CASSANDRA_KEYSPACE",
+                                              self.keyspace)
         self.column_family = column_family or \
-                               getattr(settings, "CASSANDRA_COLUMN_FAMILY",
-                                       self.column_family)
+                                self.app.conf.get("CASSANDRA_COLUMN_FAMILY",
+                                                  self.column_family)
         self.cassandra_options = dict(cassandra_options or {},
-                                   **getattr(settings,
-                                             "CASSANDRA_OPTIONS", {}))
+                                   **self.app.conf.get("CASSANDRA_OPTIONS",
+                                                       {}))
+        read_cons = self.app.conf.get("CASSANDRA_READ_CONSISTENCY",
+                                      "LOCAL_QUORUM")
+        write_cons = self.app.conf.get("CASSANDRA_WRITE_CONSISTENCY",
+                                       "LOCAL_QUORUM")
+        try:
+            self.read_consistency = getattr(pycassa.ConsistencyLevel,
+                                            read_cons)
+        except AttributeError:
+            self.read_consistency = pycassa.ConsistencyLevel.LOCAL_QUORUM
+        try:
+            self.write_consistency = getattr(pycassa.ConsistencyLevel,
+                                             write_cons)
+        except AttributeError:
+            self.write_consistency = pycassa.ConsistencyLevel.LOCAL_QUORUM
+
         if not self.servers or not self.keyspace or not self.column_family:
             raise ImproperlyConfigured(
                     "Cassandra backend not configured.")
 
-        super(CassandraBackend, self).__init__()
         self._column_family = None
 
     def _retry_on_error(func):
@@ -88,7 +101,6 @@ class CassandraBackend(BaseDictBackend):
                 try:
                     return func(*args, **kwargs)
                 except (pycassa.InvalidRequestException,
-                        pycassa.NoServerAvailable,
                         pycassa.TimedOutException,
                         pycassa.UnavailableException,
                         socket.error,
@@ -102,13 +114,12 @@ class CassandraBackend(BaseDictBackend):
 
     def _get_column_family(self):
         if self._column_family is None:
-            conn = pycassa.connect(self.servers,
+            conn = pycassa.connect(self.keyspace, servers=self.servers,
                                    **self.cassandra_options)
             self._column_family = \
-              pycassa.ColumnFamily(conn, self.keyspace,
-                    self.column_family,
-                    read_consistency_level=pycassa.ConsistencyLevel.DCQUORUM,
-                    write_consistency_level=pycassa.ConsistencyLevel.DCQUORUM)
+              pycassa.ColumnFamily(conn, self.column_family,
+                    read_consistency_level=self.read_consistency,
+                    write_consistency_level=self.write_consistency)
         return self._column_family
 
     def process_cleanup(self):
@@ -157,11 +168,11 @@ class CassandraBackend(BaseDictBackend):
         cf = self._get_column_family()
         column_parent = C.ColumnParent(cf.column_family)
         slice_pred = C.SlicePredicate(
-                        slice_range=C.SliceRange('', end_column,
-                                                 count=2 ** 30))
+                            slice_range=C.SliceRange('', end_column,
+                                                     count=2 ** 30))
         columns = cf.client.multiget_slice(cf.keyspace, self._index_keys,
                                            column_parent, slice_pred,
-                                           pycassa.ConsistencyLevel.DCQUORUM)
+                                           self.read_consistency)
 
         index_cols = [c.column.name
                         for c in itertools.chain(*columns.values())]

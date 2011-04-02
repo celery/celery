@@ -6,11 +6,19 @@ SKIP_FILES="celery.bin.rst
             celery.bin.celeryd_detach.rst
             celery.contrib.rst
             celery.contrib.batches.rst
+            celery.worker.control.rst
+            celery.worker.control.builtins.rst
+            celery.worker.control.registry.rst
             celery.task.schedules.rst
+            celery.local.rst
             celery.models.rst
-            celery.concurrency.rst
+            celery.app.base.rst
             celery.apps.rst
             celery.db.rst
+            celery.messaging.rst
+            celery.execute.rst
+            celery.conf.rst
+            celery.decorators.rst
             celery.db.a805d4bd.rst
             celery.db.dfd042c7.rst"
 

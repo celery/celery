@@ -14,7 +14,7 @@ Modules
 
         Tasks are defined in this module. This module is automatically
         imported by the worker because it's listed in
-        celeryconfig's ``CELERY_IMPORTS`` directive.
+        celeryconfig's `CELERY_IMPORTS` directive.
 
     * test.py
 

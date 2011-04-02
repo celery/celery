@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 # ============================================
 #  celeryd - Starts the Celery worker daemon.
 # ============================================
@@ -35,10 +35,13 @@
 #   CELERYD_CHDIR="/opt/Project/"
 #
 #   # Name of the projects settings module.
-#   DJANGO_SETTINGS_MODULE="settings"
+#   export DJANGO_SETTINGS_MODULE="settings"
 #
 #   # Path to celeryd
-#   CELERYEV="/opt/Project/manage.py celeryev"
+#   CELERYEV="/opt/Project/manage.py"
+#
+#   # Extra arguments to manage.py
+#   CELERYEV_OPTS="celeryev"
 #
 #   # Camera class to use (required)
 #   CELERYEV_CAM = "djcelery.snapshot.Camera"
@@ -47,7 +50,7 @@
 # =================
 #
 #   * CELERYEV_OPTS
-#       Additional arguments to celeryd, see ``celeryd --help`` for a list.
+#       Additional arguments to celeryd, see `celeryd --help` for a list.
 #
 #   * CELERYD_CHDIR
 #       Path to chdir at start. Default is to stay in the current directory.
@@ -62,7 +65,7 @@
 #       Log level to use for celeryd. Default is INFO.
 #
 #   * CELERYEV
-#       Path to the celeryev program. Default is ``celeryev``.
+#       Path to the celeryev program. Default is `celeryev`.
 #       You can point this to an virtualenv, or even use manage.py for django.
 #
 #   * CELERYEV_USER
@@ -70,7 +73,9 @@
 #
 #   * CELERYEV_GROUP
 #       Group to run celeryev as. Default is current user.
-
+#
+#   * VIRTUALENV
+#       Full path to the virtualenv environment to activate. Default is none.
 
 ### BEGIN INIT INFO
 # Provides:          celeryev
@@ -176,6 +181,9 @@ start_evcam () {
                            $* \
                            --pidfile $CELERYEV_PID_FILE
                            --exec $CELERYEV -- $CELERYEV_OPTS"
+    if [ -n "$VIRTUALENV" ]; then
+        source $VIRTUALENV/bin/activate
+    fi
     if $cmd; then
         log_end_msg 0
     else

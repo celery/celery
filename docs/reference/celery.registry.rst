@@ -1,5 +1,5 @@
 ================================
-Task Registry - celery.registry
+ celery.registry
 ================================
 
 .. contents::

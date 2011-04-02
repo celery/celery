@@ -1,5 +1,5 @@
 ============================================
- functools compat - celery.utils.functional
+ celery.utils.functional
 ============================================
 
 .. contents::

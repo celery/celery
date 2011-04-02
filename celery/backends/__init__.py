@@ -1,7 +1,6 @@
-from celery import conf
+from celery import current_app
+from celery.local import LocalProxy
 from celery.utils import get_cls_by_name
-from celery.utils.functional import curry
-from celery.loaders import current_loader
 
 BACKEND_ALIASES = {
     "amqp": "celery.backends.amqp.AMQPBackend",
@@ -11,41 +10,26 @@ BACKEND_ALIASES = {
     "tyrant": "celery.backends.tyrant.TyrantBackend",
     "database": "celery.backends.database.DatabaseBackend",
     "cassandra": "celery.backends.cassandra.CassandraBackend",
+    "disabled": "celery.backends.base.DisabledBackend",
 }
 
 _backend_cache = {}
 
 
-def get_backend_cls(backend):
+def get_backend_cls(backend=None, loader=None):
     """Get backend class by name/alias"""
+    backend = backend or "disabled"
+    loader = loader or current_app.loader
     if backend not in _backend_cache:
-        aliases = dict(BACKEND_ALIASES, **current_loader().override_backends)
-        _backend_cache[backend] = get_cls_by_name(backend, aliases)
+        aliases = dict(BACKEND_ALIASES, **loader.override_backends)
+        try:
+            _backend_cache[backend] = get_cls_by_name(backend, aliases)
+        except ValueError, exc:
+            raise ValueError("Unknown result backend: %r.  "
+                             "Did you spell it correctly?  (%s)" % (backend,
+                                                                    exc))
     return _backend_cache[backend]
 
 
-"""
-.. function:: get_default_backend_cls()
-
-    Get the backend class specified in the ``CELERY_RESULT_BACKEND`` setting.
-
-"""
-get_default_backend_cls = curry(get_backend_cls, conf.RESULT_BACKEND)
-
-
-"""
-.. class:: DefaultBackend
-
-    The default backend class used for storing task results and status,
-    specified in the ``CELERY_RESULT_BACKEND`` setting.
-
-"""
-DefaultBackend = get_default_backend_cls()
-
-"""
-.. data:: default_backend
-
-    An instance of :class:`DefaultBackend`.
-
-"""
-default_backend = DefaultBackend()
+# deprecate this.
+default_backend = LocalProxy(lambda: current_app.backend)

@@ -2,7 +2,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-from celery import conf
 from celery.utils.compat import defaultdict
 
 ResultModelBase = declarative_base()
@@ -28,7 +27,7 @@ def setup_results(engine):
         _SETUP["results"] = True
 
 
-def ResultSession(dburi=conf.RESULT_DBURI, **kwargs):
+def ResultSession(dburi, **kwargs):
     engine, session = create_session(dburi, **kwargs)
     setup_results(engine)
     return session()

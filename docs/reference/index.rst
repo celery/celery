@@ -6,28 +6,31 @@
 :Date: |today|
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
-    celery.decorators
+    celery.app
+    celery.app.amqp
+    celery.app.defaults
+    celery.task
     celery.task.base
     celery.task.sets
-    celery.execute
+    celery.task.chord
     celery.result
     celery.task
-    celery.conf
     celery.task.control
     celery.task.http
     celery.schedules
     celery.signals
     celery.exceptions
-    celery.task.builtins
     celery.loaders
-    celery.loaders.base
+    celery.loaders.app
     celery.loaders.default
+    celery.loaders.base
     celery.registry
     celery.states
-    celery.messaging
     celery.contrib.abortable
+    celery.contrib.batches
+    celery.contrib.rdb
     celery.events
     celery.events.state
     celery.apps.worker

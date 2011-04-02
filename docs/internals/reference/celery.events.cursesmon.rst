@@ -1,5 +1,5 @@
 ==========================================
- Curses Monitor - celery.events.cursesmon
+ celery.events.cursesmon
 ==========================================
 
 .. contents::

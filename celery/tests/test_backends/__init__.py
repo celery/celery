@@ -1,15 +1,15 @@
-import unittest2 as unittest
+from celery.tests.utils import unittest
 
 from celery import backends
 from celery.backends.amqp import AMQPBackend
-from celery.backends.database import DatabaseBackend
+from celery.backends.cache import CacheBackend
 
 
 class TestBackends(unittest.TestCase):
 
     def test_get_backend_aliases(self):
         expects = [("amqp", AMQPBackend),
-                   ("database", DatabaseBackend)]
+                   ("cache", CacheBackend)]
         for expect_name, expect_cls in expects:
             self.assertIsInstance(backends.get_backend_cls(expect_name)(),
                                   expect_cls)

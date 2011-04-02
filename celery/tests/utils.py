@@ -1,13 +1,50 @@
 from __future__ import generators
 
+try:
+    import unittest
+    unittest.skip
+except AttributeError:
+    import unittest2 as unittest
+
+import importlib
+import logging
 import os
 import sys
-import __builtin__
-from StringIO import StringIO
+import time
+try:
+    import __builtin__ as builtins
+except ImportError:    # py3k
+    import builtins
+
+from celery.utils.compat import StringIO, LoggerAdapter
+try:
+    from contextlib import contextmanager
+except ImportError:
+    from celery.tests.utils import fallback_contextmanager as contextmanager
+
 
 from nose import SkipTest
 
+from celery.app import app_or_default
 from celery.utils.functional import wraps
+
+
+class AppCase(unittest.TestCase):
+
+    def setUp(self):
+        from celery.app import current_app
+        self._current_app = current_app()
+        self.setup()
+
+    def tearDown(self):
+        self.teardown()
+        self._current_app.set_current()
+
+    def setup(self):
+        pass
+
+    def teardown(self):
+        pass
 
 
 class GeneratorContextManager(object):
@@ -41,6 +78,30 @@ class GeneratorContextManager(object):
                     raise
 
 
+def get_handlers(logger):
+    if isinstance(logger, LoggerAdapter):
+        return logger.logger.handlers
+    return logger.handlers
+
+
+def set_handlers(logger, new_handlers):
+    if isinstance(logger, LoggerAdapter):
+        logger.logger.handlers = new_handlers
+    logger.handlers = new_handlers
+
+
+@contextmanager
+def wrap_logger(logger, loglevel=logging.ERROR):
+    old_handlers = get_handlers(logger)
+    sio = StringIO()
+    siohandler = logging.StreamHandler(sio)
+    set_handlers(logger, [siohandler])
+
+    yield sio
+
+    set_handlers(logger, old_handlers)
+
+
 def fallback_contextmanager(fun):
     def helper(*args, **kwds):
         return GeneratorContextManager(fun(*args, **kwds))
@@ -50,13 +111,14 @@ def fallback_contextmanager(fun):
 def execute_context(context, fun):
     val = context.__enter__()
     exc_info = (None, None, None)
-    retval = None
     try:
-        retval = fun(val)
-    except:
-        exc_info = sys.exc_info()
-    context.__exit__(*exc_info)
-    return retval
+        try:
+            return fun(val)
+        except:
+            exc_info = sys.exc_info()
+            raise
+    finally:
+        context.__exit__(*exc_info)
 
 
 try:
@@ -69,27 +131,27 @@ from celery.utils import noop
 
 @contextmanager
 def eager_tasks():
+    app = app_or_default()
 
-    from celery import conf
-    prev = conf.ALWAYS_EAGER
-    conf.ALWAYS_EAGER = True
+    prev = app.conf.CELERY_ALWAYS_EAGER
+    app.conf.CELERY_ALWAYS_EAGER = True
 
     yield True
 
-    conf.ALWAYS_EAGER = prev
+    app.conf.CELERY_ALWAYS_EAGER = prev
 
 
 def with_eager_tasks(fun):
 
     @wraps(fun)
     def _inner(*args, **kwargs):
-        from celery import conf
-        prev = conf.ALWAYS_EAGER
-        conf.ALWAYS_EAGER = True
+        app = app_or_default()
+        prev = app.conf.CELERY_ALWAYS_EAGER
+        app.conf.CELERY_ALWAYS_EAGER = True
         try:
             return fun(*args, **kwargs)
         finally:
-            conf.ALWAYS_EAGER = prev
+            app.conf.CELERY_ALWAYS_EAGER = prev
 
 
 def with_environ(env_name, env_value):
@@ -110,17 +172,20 @@ def with_environ(env_name, env_value):
     return _envpatched
 
 
-def sleepdeprived(fun):
+def sleepdeprived(module=time):
 
-    @wraps(fun)
-    def _sleepdeprived(*args, **kwargs):
-        import time
-        old_sleep = time.sleep
-        time.sleep = noop
-        try:
-            return fun(*args, **kwargs)
-        finally:
-            time.sleep = old_sleep
+    def _sleepdeprived(fun):
+
+        @wraps(fun)
+        def __sleepdeprived(*args, **kwargs):
+            old_sleep = module.sleep
+            module.sleep = noop
+            try:
+                return fun(*args, **kwargs)
+            finally:
+                module.sleep = old_sleep
+
+        return __sleepdeprived
 
     return _sleepdeprived
 
@@ -168,7 +233,7 @@ def skip(reason):
 
 
 def skip_if(predicate, reason):
-    """Skip test if predicate is ``True``."""
+    """Skip test if predicate is :const:`True`."""
 
     def _inner(fun):
         return predicate and skip(reason)(fun) or fun
@@ -177,7 +242,7 @@ def skip_if(predicate, reason):
 
 
 def skip_unless(predicate, reason):
-    """Skip test if predicate is ``False``."""
+    """Skip test if predicate is :const:`False`."""
     return skip_if(not predicate, reason)
 
 
@@ -202,7 +267,7 @@ def mask_modules(*modnames):
 
     """
 
-    realimport = __builtin__.__import__
+    realimport = builtins.__import__
 
     def myimp(name, *args, **kwargs):
         if name in modnames:
@@ -210,14 +275,14 @@ def mask_modules(*modnames):
         else:
             return realimport(name, *args, **kwargs)
 
-    __builtin__.__import__ = myimp
+    builtins.__import__ = myimp
     yield True
-    __builtin__.__import__ = realimport
+    builtins.__import__ = realimport
 
 
 @contextmanager
 def override_stdouts():
-    """Override ``sys.stdout`` and ``sys.stderr`` with ``StringIO``."""
+    """Override `sys.stdout` and `sys.stderr` with `StringIO`."""
     prev_out, prev_err = sys.stdout, sys.stderr
     mystdout, mystderr = StringIO(), StringIO()
     sys.stdout = sys.__stdout__ = mystdout
@@ -227,3 +292,20 @@ def override_stdouts():
 
     sys.stdout = sys.__stdout__ = prev_out
     sys.stderr = sys.__stderr__ = prev_err
+
+
+def patch(module, name, mocked):
+    module = importlib.import_module(module)
+
+    def _patch(fun):
+
+        @wraps(fun)
+        def __patched(*args, **kwargs):
+            prev = getattr(module, name)
+            setattr(module, name, mocked)
+            try:
+                return fun(*args, **kwargs)
+            finally:
+                setattr(module, name, prev)
+        return __patched
+    return _patch

@@ -102,14 +102,14 @@ functionality.
     >>> res.get()
     100
 
-The output of :program:`celeryd` (or the logfile if enabled) should show the
+The output of :program:`celeryd` (or the log file if enabled) should show the
 task being executed::
 
     [INFO/MainProcess] Task celery.task.http.HttpDispatchTask
             [f2cc8efc-2a14-40cd-85ad-f1c77c94beeb] processed: 100
 
 Since applying tasks can be done via HTTP using the
-``djcelery.views.apply`` view, executing tasks from other languages is easy.
+`djcelery.views.apply` view, executing tasks from other languages is easy.
 For an example service exposing tasks via HTTP you should have a look at
-``examples/celery_http_gateway`` in the Celery distribution:
+`examples/celery_http_gateway` in the Celery distribution:
 http://github.com/ask/celery/tree/master/examples/celery_http_gateway/

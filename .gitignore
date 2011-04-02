@@ -1,5 +1,6 @@
 .DS_Store
 *.pyc
+*$py.class
 *~
 .*.sw[po]
 dist/
@@ -15,3 +16,4 @@ erl_crash.dump
 *.db
 Documentation/
 .tox/
+.ropeproject/

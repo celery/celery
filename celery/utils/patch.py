@@ -6,7 +6,11 @@ _process_aware = False
 def _patch_logger_class():
     """Make sure process name is recorded when loggers are used."""
 
-    from multiprocessing.process import current_process
+    try:
+        from multiprocessing.process import current_process
+    except ImportError:
+        current_process = None
+
     logging._acquireLock()
     try:
         OldLoggerClass = logging.getLoggerClass()
@@ -17,7 +21,10 @@ def _patch_logger_class():
 
                 def makeRecord(self, *args, **kwds):
                     record = OldLoggerClass.makeRecord(self, *args, **kwds)
-                    record.processName = current_process()._name
+                    if current_process:
+                        record.processName = current_process()._name
+                    else:
+                        record.processName = ""
                     return record
             logging.setLoggerClass(ProcessAwareLogger)
     finally:

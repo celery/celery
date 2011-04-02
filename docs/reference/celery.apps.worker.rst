@@ -1,5 +1,5 @@
 =======================================
- App: Worker Node - celery.apps.worker
+ celery.apps.worker
 =======================================
 
 .. contents::

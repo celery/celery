@@ -3,6 +3,11 @@
 import sys
 import os
 
+# eventlet/gevent should not monkey patch anything.
+os.environ["GEVENT_NOPATCH"] = "yes"
+os.environ["EVENTLET_NOPATCH"] = "yes"
+os.environ["CELERY_LOADER"] = "default"
+
 this = os.path.dirname(os.path.abspath(__file__))
 
 # If your extensions are in another directory, add it here. If the directory
@@ -12,11 +17,22 @@ sys.path.append(os.path.join(os.pardir, "tests"))
 sys.path.append(os.path.join(this, "_ext"))
 import celery
 
+
+# use app loader
+from celery import Celery
+app = Celery(set_as_current=True)
+app.conf.update(BROKER_BACKEND="memory",
+                   CELERY_RESULT_BACKEND="cache",
+                   CELERY_CACHE_BACKEND="memory",
+                   CELERYD_HIJACK_ROOT_LOGGER=False,
+                   CELERYD_LOG_COLOR=False)
+
 # General configuration
 # ---------------------
 
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.coverage',
+              'sphinx.ext.pngmath',
               'sphinxcontrib.issuetracker',
               'celerydocs']
 
@@ -31,7 +47,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Celery'
-copyright = u'2009-2010, Ask Solem & contributors'
+copyright = u'2009-2011, Ask Solem & Contributors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -65,7 +81,7 @@ html_use_index = True
 
 latex_documents = [
   ('index', 'Celery.tex', ur'Celery Documentation',
-   ur'Ask Solem', 'manual'),
+   ur'Ask Solem & Contributors', 'manual'),
 ]
 
 html_theme = "celery"

@@ -1,5 +1,5 @@
 ====================================================
- Remote Management of Workers - celery.task.control
+ celery.task.control
 ====================================================
 
 .. contents::

@@ -1,5 +1,5 @@
 ================================
- Base Command - celery.bin.base
+ celery.bin.base
 ================================
 
 .. contents::

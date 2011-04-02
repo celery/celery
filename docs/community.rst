@@ -56,6 +56,70 @@ http://botland.oebfare.com/logger/celery/
 News
 ====
 
+Celery: Mini Tutorial (Catalan)
+-------------------------------
+http://trespams.com/2010/11/28/celery-mini-tutorial/
+
+Building a Django App Server with Chef
+--------------------------------------
+http://ericholscher.com/blog/2010/nov/11/building-django-app-server-chef-part-4/
+
+Introducció a Celery (Catalan)
+------------------------------
+http://trespams.com/2010/11/13/introduccio-celery/
+
+Django and Celery - Death to Cron
+---------------------------------
+http://tensixtyone.com/django-and-celery-death-to-cron
+
+Celery Tips
+-----------
+http://ericholscher.com/blog/2010/nov/2/celery-tips/
+
+What's your favorite Django app?
+--------------------------------
+http://jacobian.org/writing/favorite-apps/
+
+Virtualenv Tips
+---------------
+http://ericholscher.com/blog/2010/nov/1/virtualenv-tips/
+
+10 Tools That Make Django Better
+--------------------------------
+http://iamseb.com/seb/2010/10/10-django-tools/
+
+Distributed Task Locking in Celery
+----------------------------------
+http://www.loose-bits.com/2010_10_10_archive.html
+
+Celery — распределенные очереди задач на Python (Russian)
+---------------------------------------------------------
+http://www.bitbybit.ru/article/216
+
+Подробнее о Celery (Russian)
+----------------------------
+http://vorushin.ru/blog/34-celery-described/
+
+Celery, RabbitMQ and sending messages directly.
+-----------------------------------------------
+http://blog.timc3.com/2010/10/17/celery-rabbitmq-and-sending-messages-directly/
+
+Cron dentro do Django com Celery (Portugese)
+--------------------------------------------
+http://blog.avelino.us/2010/10/cron-dentro-do-django-com-celery.html
+
+RabbitMQとCeleryを使ってDjangoでジョブキューしてみる (Japanese)
+---------------------------------------------------------------
+http://d.hatena.ne.jp/yuku_t/
+
+Kaninchen & Schlangen: RabbitMQ & Python (German)
+-------------------------------------------------
+http://www.scribd.com/doc/37562923/Kaninchen-Schlangen-RabbitMQ-Python
+
+Celery - Eine asynchrone Task Queue (nicht nur) für Django (German)
+-------------------------------------------------------------------
+http://www.scribd.com/doc/39203296/Celery-Eine-asynchrone-Task-Queue-nicht-nur-fur-Django
+
 Asynchronous Processing Using Celery (historio.us)
 --------------------------------------------------
 http://blog.historio.us/asynchronous-processing-using-celery
@@ -68,6 +132,9 @@ http://www.slideshare.net/shawnrider/massaging-the-pony-message-queues-and-you
 ------------------------------------------------
 http://www.slideshare.net/ericholscher/large-problems
 
+A Simple Celery with Django How-To
+----------------------------------
+http://shawnmilo.blogspot.com/2010/07/simple-celery-with-django-how-to.html
 
 Django and asynchronous jobs
 ----------------------------

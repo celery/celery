@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 # =========================================================
 #  celerybeat - Starts the Celery periodic task scheduler.
 # =========================================================
@@ -18,7 +18,7 @@
 #   CELERYD_CHDIR="/opt/Myproject/"
 #
 #   # Extra arguments to celeryd
-#   CELERYD_OPTS="--time-limit 300"
+#   CELERYD_OPTS="--time-limit=300"
 #
 #   # Extra arguments to celerybeat
 #   CELERYBEAT_OPTS="--schedule=/var/run/celerybeat-schedule"
@@ -33,22 +33,22 @@
 #   CELERYD_CHDIR="/opt/Project/"
 #
 #   # Name of the projects settings module.
-#   DJANGO_SETTINGS_MODULE="settings"
+#   export DJANGO_SETTINGS_MODULE="settings"
 #
 #   # Path to celeryd
 #   CELERYD="/opt/Project/manage.py celeryd"
 #
 #   # Path to celerybeat
-#   CELERYBEAT="/opt/Project/manage.py celerybeat"
+#   CELERYBEAT="/opt/Project/manage.py"
 #
 #   # Extra arguments to celerybeat
-#   CELERYBEAT_OPTS="--schedule=/var/run/celerybeat-schedule"
+#   CELERYBEAT_OPTS="celerybeat --schedule=/var/run/celerybeat-schedule"
 #
 # AVAILABLE OPTIONS
 # =================
 #
 #   * CELERYBEAT_OPTS
-#       Additional arguments to celerybeat, see ``celerybeat --help`` for a
+#       Additional arguments to celerybeat, see `celerybeat --help` for a
 #       list.
 #
 #   * CELERYBEAT_PID_FILE
@@ -61,7 +61,7 @@
 #       Log level to use for celeryd. Default is INFO.
 #
 #   * CELERYBEAT
-#       Path to the celeryd program. Default is ``celeryd``.
+#       Path to the celeryd program. Default is `celeryd`.
 #       You can point this to an virtualenv, or even use manage.py for django.
 #
 #   * CELERYBEAT_USER
@@ -69,7 +69,9 @@
 #
 #   * CELERYBEAT_GROUP
 #       Group to run celeryd as. Default is current user.
-
+#
+#   * VIRTUALENV
+#       Full path to the virtualenv environment to activate. Default is none.
 
 ### BEGIN INIT INFO
 # Provides:          celerybeat
@@ -165,6 +167,9 @@ start_worker () {
                            $* \
                            --pidfile $CELERYBEAT_PID_FILE
                            --exec $CELERYBEAT -- $CELERYBEAT_OPTS"
+    if [ -n "$VIRTUALENV" ]; then
+        source $VIRTUALENV/bin/activate
+    fi
     if $cmd; then
         log_end_msg 0
     else

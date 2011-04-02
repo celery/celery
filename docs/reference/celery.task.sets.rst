@@ -1,5 +1,5 @@
 ======================================================
- Task Sets, Subtasks and Callbacks - celery.task.sets
+ celery.task.sets
 ======================================================
 
 .. contents::

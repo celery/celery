@@ -1,5 +1,5 @@
 =========================================
- Signal Dispatch - celery.utils.dispatch
+ celery.utils.dispatch
 =========================================
 
 .. contents::

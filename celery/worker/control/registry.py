@@ -1,13 +1,8 @@
-from UserDict import UserDict
+from celery.utils.compat import UserDict
 
 
 class Panel(UserDict):
-    data = dict()                       # global registry.
-
-    def __init__(self, logger, listener, hostname=None):
-        self.logger = logger
-        self.hostname = hostname
-        self.listener = listener
+    data = dict()                               # Global registry.
 
     @classmethod
     def register(cls, method, name=None):

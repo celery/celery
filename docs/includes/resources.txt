@@ -39,23 +39,28 @@ Wiki
 
 http://wiki.github.com/ask/celery/
 
-.. _contributing:
+.. _contributing-short:
 
 Contributing
 ============
 
-Development of ``celery`` happens at Github: http://github.com/ask/celery
+Development of `celery` happens at Github: http://github.com/ask/celery
 
 You are highly encouraged to participate in the development
-of ``celery``. If you don't like Github (for some reason) you're welcome
+of `celery`. If you don't like Github (for some reason) you're welcome
 to send regular patches.
+
+Be sure to also read the `Contributing to Celery`_ section in the
+documentation.
+
+.. _`Contributing to Celery`: http://ask.github.com/celery/contributing.html
 
 .. _license:
 
 License
 =======
 
-This software is licensed under the ``New BSD License``. See the :file:`LICENSE`
+This software is licensed under the `New BSD License`. See the :file:`LICENSE`
 file in the top distribution directory for the full license text.
 
 .. # vim: syntax=rst expandtab tabstop=4 shiftwidth=4 shiftround

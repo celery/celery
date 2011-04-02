@@ -8,15 +8,15 @@ import cmd
 import sys
 import shlex
 import pprint
-import optparse
+
 from itertools import count
 
 from amqplib import client_0_8 as amqp
-from carrot.utils import partition
+from kombu.utils import partition
 
-from celery.utils import info
+from celery.app import app_or_default
+from celery.bin.base import Command
 from celery.utils import padlist
-from celery.messaging import establish_connection
 
 # Valid string -> bool coercions.
 BOOLS = {"1": True, "0": False,
@@ -26,8 +26,6 @@ BOOLS = {"1": True, "0": False,
 
 # Map to coerce strings to other types.
 COERCE = {bool: lambda value: BOOLS[value.lower()]}
-
-OPTION_LIST = ()
 
 HELP_HEADER = """
 Commands
@@ -56,12 +54,12 @@ class Spec(object):
     .. attribute args::
 
         List of arguments this command takes. Should
-        contain ``(argument_name, argument_type)`` tuples.
+        contain `(argument_name, argument_type)` tuples.
 
     .. attribute returns:
 
         Helpful human string representation of what this command returns.
-        May be ``None``, to signify the return type is unknown.
+        May be :const:`None`, to signify the return type is unknown.
 
     """
     def __init__(self, *args, **kwargs):
@@ -71,13 +69,14 @@ class Spec(object):
     def coerce(self, index, value):
         """Coerce value for argument at index.
 
-        E.g. if :attr:`args` is ``[("is_active", bool)]``:
+        E.g. if :attr:`args` is `[("is_active", bool)]`:
 
             >>> coerce(0, "False")
             False
 
         """
-        arg_name, arg_type = self.args[index]
+        arg_info = self.args[index]
+        arg_type = arg_info[1]
         # Might be a custom way to coerce the string value,
         # so look in the coercion map.
         return COERCE.get(arg_type, arg_type)(value)
@@ -133,8 +132,8 @@ class AMQShell(cmd.Cmd):
     :keyword connect: Function used to connect to the server, must return
         connection object.
 
-    :keyword silent: If ``True``, the commands won't have annoying output not
-        relevant when running in non-shell mode.
+    :keyword silent: If :const:`True`, the commands won't have annoying
+                     output not relevant when running in non-shell mode.
 
 
     .. attribute: builtins
@@ -200,7 +199,7 @@ class AMQShell(cmd.Cmd):
         self._reconnect()
 
     def say(self, m):
-        """Say something to the user. Disabled if :attr:`silent``."""
+        """Say something to the user. Disabled if :attr:`silent`."""
         if not self.silent:
             say(m)
 
@@ -209,7 +208,7 @@ class AMQShell(cmd.Cmd):
         to Python values and find the corresponding method on the AMQP channel
         object.
 
-        :returns: tuple of ``(method, processed_args)``.
+        :returns: tuple of `(method, processed_args)`.
 
         Example:
 
@@ -227,7 +226,7 @@ class AMQShell(cmd.Cmd):
         return getattr(self.chan, attr_name), args, spec.format_response
 
     def do_exit(self, *args):
-        """The ``"exit"`` command."""
+        """The `"exit"` command."""
         self.say("\n-> please, don't leave!")
         sys.exit(0)
 
@@ -251,7 +250,7 @@ class AMQShell(cmd.Cmd):
         return set(self.builtins.keys() + self.amqp.keys())
 
     def completenames(self, text, *ignored):
-        """Return all commands starting with ``text``, for tab-completion."""
+        """Return all commands starting with `text`, for tab-completion."""
         names = self.get_names()
         first = [cmd for cmd in names
                         if cmd.startswith(text.replace("_", "."))]
@@ -276,7 +275,7 @@ class AMQShell(cmd.Cmd):
         """Parse input line.
 
         :returns: tuple of three items:
-            ``(command_name, arglist, original_line)``
+            `(command_name, arglist, original_line)`
 
         E.g::
 
@@ -320,7 +319,7 @@ class AMQShell(cmd.Cmd):
     def _reconnect(self):
         """Re-establish connection to the AMQP server."""
         self.conn = self.connect(self.conn)
-        self.chan = self.conn.create_backend().channel
+        self.chan = self.conn.channel()
         self.needs_reconnect = False
 
     @property
@@ -329,9 +328,10 @@ class AMQShell(cmd.Cmd):
 
 
 class AMQPAdmin(object):
-    """The celery ``camqadm`` utility."""
+    """The celery :program:`camqadm` utility."""
 
     def __init__(self, *args, **kwargs):
+        self.app = app_or_default(kwargs.get("app"))
         self.silent = bool(args)
         if "silent" in kwargs:
             self.silent = kwargs["silent"]
@@ -340,8 +340,8 @@ class AMQPAdmin(object):
     def connect(self, conn=None):
         if conn:
             conn.close()
-        self.say("-> connecting to %s." % info.format_broker_info())
-        conn = establish_connection()
+        conn = self.app.broker_connection()
+        self.say("-> connecting to %s." % conn.as_uri())
         conn.connect()
         self.say("-> connected.")
         return conn
@@ -350,27 +350,30 @@ class AMQPAdmin(object):
         shell = AMQShell(connect=self.connect)
         if self.args:
             return shell.onecmd(" ".join(self.args))
-        return shell.cmdloop()
+        try:
+            return shell.cmdloop()
+        except KeyboardInterrupt:
+            self.say("(bibi)")
+            pass
 
     def say(self, m):
         if not self.silent:
             say(m)
 
 
-def parse_options(arguments):
-    """Parse the available options to ``celeryd``."""
-    parser = optparse.OptionParser(option_list=OPTION_LIST)
-    options, values = parser.parse_args(arguments)
-    return options, values
+class AMQPAdminCommand(Command):
+
+    def run(self, *args, **options):
+        options["app"] = self.app
+        return AMQPAdmin(*args, **options).run()
 
 
 def camqadm(*args, **options):
-    return AMQPAdmin(*args, **options).run()
+    AMQPAdmin(*args, **options).run()
 
 
 def main():
-    options, values = parse_options(sys.argv[1:])
-    return camqadm(*values, **vars(options))
+    AMQPAdminCommand().execute_from_commandline()
 
 if __name__ == "__main__":              # pragma: no cover
     main()

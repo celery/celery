@@ -1,5 +1,5 @@
 ===================================================================
- extended multiprocessing.pool - celery.concurrency.processes.pool
+ celery.concurrency.processes.pool
 ===================================================================
 
 .. contents::

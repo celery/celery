@@ -1,11 +1,31 @@
 from __future__ import generators
 
+############## py3k #########################################################
+try:
+    from UserList import UserList
+except ImportError:
+    from collections import UserList
+
+try:
+    from UserDict import UserDict
+except ImportError:
+    from collections import UserDict
+
+try:
+    from cStringIO import StringIO
+except ImportError:
+    try:
+        from StringIO import StringIO
+    except ImportError:
+        from io import StringIO
+
 ############## urlparse.parse_qsl ###########################################
 
 try:
     from urlparse import parse_qsl
 except ImportError:
     from cgi import parse_qsl
+parse_sql = parse_qsl
 
 ############## __builtin__.all ##############################################
 
@@ -44,10 +64,12 @@ from operator import eq as _eq
 
 class _Link(object):
     """Doubly linked list."""
-    __slots__ = 'prev', 'next', 'key', '__weakref__'
+    # next can't be lowercase because 2to3 thinks it's a generator
+    # and renames it to __next__.
+    __slots__ = 'PREV', 'NEXT', 'key', '__weakref__'
 
 
-class OrderedDict(dict, MutableMapping):
+class CompatOrderedDict(dict, MutableMapping):
     """Dictionary that remembers insertion order"""
     # An inherited dict maps keys to values.
     # The inherited dict provides __getitem__, __len__, __contains__, and get.
@@ -79,18 +101,18 @@ class OrderedDict(dict, MutableMapping):
             raise TypeError("expected at most 1 arguments, got %d" % (
                                 len(args)))
         try:
-            self.__root
+            self._root
         except AttributeError:
             # sentinel node for the doubly linked list
-            self.__root = root = _Link()
-            root.prev = root.next = root
+            self._root = root = _Link()
+            root.PREV = root.NEXT = root
             self.__map = {}
         self.update(*args, **kwds)
 
     def clear(self):
         "od.clear() -> None.  Remove all items from od."
-        root = self.__root
-        root.prev = root.next = root
+        root = self._root
+        root.PREV = root.NEXT = root
         self.__map.clear()
         dict.clear(self)
 
@@ -101,10 +123,10 @@ class OrderedDict(dict, MutableMapping):
         # key/value pair.
         if key not in self:
             self.__map[key] = link = _Link()
-            root = self.__root
-            last = root.prev
-            link.prev, link.next, link.key = last, root, key
-            last.next = root.prev = weakref.proxy(link)
+            root = self._root
+            last = root.PREV
+            link.PREV, link.NEXT, link.key = last, root, key
+            last.NEXT = root.PREV = weakref.proxy(link)
         dict.__setitem__(self, key, value)
 
     def __delitem__(self, key):
@@ -114,34 +136,34 @@ class OrderedDict(dict, MutableMapping):
         # predecessor and successor nodes.
         dict.__delitem__(self, key)
         link = self.__map.pop(key)
-        link.prev.next = link.next
-        link.next.prev = link.prev
+        link.PREV.NEXT = link.NEXT
+        link.NEXT.PREV = link.PREV
 
     def __iter__(self):
         """od.__iter__() <==> iter(od)"""
         # Traverse the linked list in order.
-        root = self.__root
-        curr = root.next
+        root = self._root
+        curr = root.NEXT
         while curr is not root:
             yield curr.key
-            curr = curr.next
+            curr = curr.NEXT
 
     def __reversed__(self):
         """od.__reversed__() <==> reversed(od)"""
         # Traverse the linked list in reverse order.
-        root = self.__root
-        curr = root.prev
+        root = self._root
+        curr = root.PREV
         while curr is not root:
             yield curr.key
-            curr = curr.prev
+            curr = curr.PREV
 
     def __reduce__(self):
         """Return state information for pickling"""
         items = [[k, self[k]] for k in self]
-        tmp = self.__map, self.__root
-        del(self.__map, self.__root)
+        tmp = self.__map, self._root
+        del(self.__map, self._root)
         inst_dict = vars(self).copy()
-        self.__map, self.__root = tmp
+        self.__map, self._root = tmp
         if inst_dict:
             return (self.__class__, (items,), inst_dict)
         return self.__class__, (items,)
@@ -242,6 +264,11 @@ class OrderedDict(dict, MutableMapping):
     def __ne__(self, other):
         return not (self == other)
 
+try:
+    from collections import OrderedDict
+except ImportError:
+    OrderedDict = CompatOrderedDict
+
 ############## collections.defaultdict ######################################
 
 try:
@@ -287,15 +314,20 @@ except ImportError:
             return "defaultdict(%s, %s)" % (self.default_factory,
                                             dict.__repr__(self))
     import collections
-    collections.defaultdict = defaultdict               # Pickle needs this.
+    collections.defaultdict = defaultdict           # Pickle needs this.
 
 ############## logging.LoggerAdapter ########################################
 import inspect
 import logging
-import multiprocessing
+try:
+    import multiprocessing
+except ImportError:
+    multiprocessing = None
 import sys
 
 from logging import LogRecord
+
+log_takes_extra = "extra" in inspect.getargspec(logging.Logger._log)[0]
 
 # The func argument to LogRecord was added in 2.5
 if "func" not in inspect.getargspec(LogRecord.__init__)[0]:
@@ -363,7 +395,10 @@ class _CompatLoggerAdapter(object):
                     raise KeyError(
                             "Attempt to override %r in LogRecord" % key)
                 rv.__dict__[key] = value
-        rv.processName = multiprocessing.current_process()._name
+        if multiprocessing is not None:
+            rv.processName = multiprocessing.current_process()._name
+        else:
+            rv.processName = ""
         return rv
 
     def _log(self, level, msg, args, exc_info=None, extra=None):
@@ -404,6 +439,12 @@ try:
 except ImportError:
     LoggerAdapter = _CompatLoggerAdapter
 
+
+def log_with_extra(logger, level, msg, *args, **kwargs):
+    if not log_takes_extra:
+        kwargs.pop("extra", None)
+    return logger.log(level, msg, *args, **kwargs)
+
 ############## itertools.izip_longest #######################################
 
 try:
@@ -426,6 +467,7 @@ except ImportError:
         except IndexError:
             pass
 
+
 ############## itertools.chain.from_iterable ################################
 from itertools import chain
 
@@ -439,3 +481,69 @@ try:
     chain_from_iterable = getattr(chain, "from_iterable")
 except AttributeError:
     chain_from_iterable = _compat_chain_from_iterable
+
+
+############## logging.handlers.WatchedFileHandler ##########################
+import os
+from stat import ST_DEV, ST_INO
+import platform as _platform
+
+if _platform.system() == "Windows":
+    #since windows doesn't go with WatchedFileHandler use FileHandler instead
+    WatchedFileHandler = logging.FileHandler
+else:
+    try:
+        from logging.handlers import WatchedFileHandler
+    except ImportError:
+        class WatchedFileHandler(logging.FileHandler):
+            """
+            A handler for logging to a file, which watches the file
+            to see if it has changed while in use. This can happen because of
+            usage of programs such as newsyslog and logrotate which perform
+            log file rotation. This handler, intended for use under Unix,
+            watches the file to see if it has changed since the last emit.
+            (A file has changed if its device or inode have changed.)
+            If it has changed, the old file stream is closed, and the file
+            opened to get a new stream.
+
+            This handler is not appropriate for use under Windows, because
+            under Windows open files cannot be moved or renamed - logging
+            opens the files with exclusive locks - and so there is no need
+            for such a handler. Furthermore, ST_INO is not supported under
+            Windows; stat always returns zero for this value.
+
+            This handler is based on a suggestion and patch by Chad J.
+            Schroeder.
+            """
+            def __init__(self, *args, **kwargs):
+                logging.FileHandler.__init__(self, *args, **kwargs)
+
+                if not os.path.exists(self.baseFilename):
+                    self.dev, self.ino = -1, -1
+                else:
+                    stat = os.stat(self.baseFilename)
+                    self.dev, self.ino = stat[ST_DEV], stat[ST_INO]
+
+            def emit(self, record):
+                """
+                Emit a record.
+
+                First check if the underlying file has changed, and if it
+                has, close the old stream and reopen the file to get the
+                current stream.
+                """
+                if not os.path.exists(self.baseFilename):
+                    stat = None
+                    changed = 1
+                else:
+                    stat = os.stat(self.baseFilename)
+                    changed = ((stat[ST_DEV] != self.dev) or
+                               (stat[ST_INO] != self.ino))
+                if changed and self.stream is not None:
+                    self.stream.flush()
+                    self.stream.close()
+                    self.stream = self._open()
+                    if stat is None:
+                        stat = os.stat(self.baseFilename)
+                    self.dev, self.ino = stat[ST_DEV], stat[ST_INO]
+                logging.FileHandler.emit(self, record)

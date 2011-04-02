@@ -1,18 +1,33 @@
+"""
+celery.datastructures
+=====================
+
+Custom data structures.
+
+:copyright: (c) 2009 - 2011 by Ask Solem.
+:license: BSD, see LICENSE for more details.
+
+"""
 from __future__ import generators
 
 import time
 import traceback
 
-from UserList import UserList
-from Queue import Queue, Empty as QueueEmpty
+from itertools import chain
+from Queue import Empty
 
 from celery.utils.compat import OrderedDict
 
 
-class AttributeDict(dict):
-    """Dict subclass with attribute access."""
+class AttributeDictMixin(object):
+    """Adds attribute access to mappings.
+
+    `d.key -> d[key]`
+
+    """
 
     def __getattr__(self, key):
+        """`d.key -> d[key]`"""
         try:
             return self[key]
         except KeyError:
@@ -20,68 +35,151 @@ class AttributeDict(dict):
                     self.__class__.__name__, key))
 
     def __setattr__(self, key, value):
+        """`d[key] = value -> d.key = value`"""
         self[key] = value
 
 
-class PositionQueue(UserList):
-    """A positional queue of a specific length, with slots that are either
-    filled or unfilled. When all of the positions are filled, the queue
-    is considered :meth:`full`.
-
-    :param length: see :attr:`length`.
+class AttributeDict(dict, AttributeDictMixin):
+    """Dict subclass with attribute access."""
+    pass
 
 
-    .. attribute:: length
+class DictAttribute(object):
+    """Dict interface to attributes.
 
-        The number of items required for the queue to be considered full.
+    `obj[k] -> obj.k`
 
     """
 
-    class UnfilledPosition(object):
-        """Describes an unfilled slot."""
+    def __init__(self, obj):
+        self.obj = obj
 
-        def __init__(self, position):
-            # This is not used, but is an argument from xrange
-            # so why not.
-            self.position = position
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
 
-    def __init__(self, length):
-        self.length = length
-        self.data = map(self.UnfilledPosition, xrange(length))
+    def setdefault(self, key, default):
+        try:
+            return self[key]
+        except KeyError:
+            self[key] = default
+            return default
 
-    def full(self):
-        """Returns ``True`` if all of the slots has been filled."""
-        return len(self) >= self.length
+    def __getitem__(self, key):
+        try:
+            return getattr(self.obj, key)
+        except AttributeError:
+            raise KeyError(key)
 
-    def __len__(self):
-        """``len(self)`` -> number of slots filled with real values."""
-        return len(self.filled)
+    def __setitem__(self, key, value):
+        setattr(self.obj, key, value)
 
-    @property
-    def filled(self):
-        """Returns the filled slots as a list."""
-        return filter(lambda v: not isinstance(v, self.UnfilledPosition),
-                      self.data)
+    def __contains__(self, key):
+        return hasattr(self.obj, key)
+
+    def iteritems(self):
+        return vars(self.obj).iteritems()
+
+
+class ConfigurationView(AttributeDictMixin):
+    """A view over an applications configuration dicts.
+
+    If the key does not exist in ``changes``, the ``defaults`` dict
+    is consulted.
+
+    :param changes:  Dict containing changes to the configuration.
+    :param defaults: Dict containing the default configuration.
+
+    """
+    changes = None
+    defaults = None
+
+    def __init__(self, changes, defaults):
+        self.__dict__["changes"] = changes
+        self.__dict__["defaults"] = defaults
+        self.__dict__["_order"] = [changes] + defaults
+
+    def __getitem__(self, key):
+        for d in self.__dict__["_order"]:
+            try:
+                return d[key]
+            except KeyError:
+                pass
+        raise KeyError(key)
+
+    def __setitem__(self, key, value):
+        self.__dict__["changes"][key] = value
+
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def setdefault(self, key, default):
+        try:
+            return self[key]
+        except KeyError:
+            self[key] = default
+            return default
+
+    def update(self, *args, **kwargs):
+        return self.__dict__["changes"].update(*args, **kwargs)
+
+    def __contains__(self, key):
+        for d in self.__dict__["_order"]:
+            if key in d:
+                return True
+        return False
+
+    def __repr__(self):
+        return repr(dict(self.iteritems()))
+
+    def __iter__(self):
+        return self.iterkeys()
+
+    def _iter(self, op):
+        # defaults must be first in the stream, so values in
+        # changes takes precedence.
+        return chain(*[op(d) for d in reversed(self.__dict__["_order"])])
+
+    def iterkeys(self):
+        return self._iter(lambda d: d.iterkeys())
+
+    def iteritems(self):
+        return self._iter(lambda d: d.iteritems())
+
+    def itervalues(self):
+        return self._iter(lambda d: d.itervalues())
+
+    def keys(self):
+        return list(self.iterkeys())
+
+    def items(self):
+        return list(self.iteritems())
+
+    def values(self):
+        return list(self.itervalues())
 
 
 class ExceptionInfo(object):
     """Exception wrapping an exception and its traceback.
 
-    :param exc_info: The exception tuple info as returned by
-        :func:`traceback.format_exception`.
-
-    .. attribute:: exception
-
-        The original exception.
-
-    .. attribute:: traceback
-
-        A traceback from the point when :attr:`exception` was raised.
+    :param exc_info: The exception info tuple as returned by
+        :func:`sys.exc_info`.
 
     """
 
+    #: The original exception.
+    exception = None
+
+    #: A traceback form the point when :attr:`exception` was raised.
+    traceback = None
+
     def __init__(self, exc_info):
-        type_, exception, tb = exc_info
+        _, exception, _ = exc_info
         self.exception = exception
         self.traceback = ''.join(traceback.format_exception(*exc_info))
 
@@ -89,10 +187,7 @@ class ExceptionInfo(object):
         return self.traceback
 
     def __repr__(self):
-        return "<%s.%s: %s>" % (
-                self.__class__.__module__,
-                self.__class__.__name__,
-                str(self.exception))
+        return "<ExceptionInfo: %r>" % (self.exception, )
 
 
 def consume_queue(queue):
@@ -101,7 +196,7 @@ def consume_queue(queue):
 
     The iterator stops as soon as the queue raises :exc:`Queue.Empty`.
 
-    Example
+    *Examples*
 
         >>> q = Queue()
         >>> map(q.put, range(4))
@@ -114,81 +209,19 @@ def consume_queue(queue):
     while 1:
         try:
             yield queue.get_nowait()
-        except QueueEmpty:
+        except Empty:
             break
-
-
-class SharedCounter(object):
-    """Thread-safe counter.
-
-    Please note that the final value is not synchronized, this means
-    that you should not update the value by using a previous value, the only
-    reliable operations are increment and decrement.
-
-    Example
-
-        >>> max_clients = SharedCounter(initial_value=10)
-
-        # Thread one
-        >>> max_clients += 1 # OK (safe)
-
-        # Thread two
-        >>> max_clients -= 3 # OK (safe)
-
-        # Main thread
-        >>> if client >= int(max_clients): # Max clients now at 8
-        ...    wait()
-
-
-        >>> max_client = max_clients + 10 # NOT OK (unsafe)
-
-    """
-
-    def __init__(self, initial_value):
-        self._value = initial_value
-        self._modify_queue = Queue()
-
-    def increment(self, n=1):
-        """Increment value."""
-        self += n
-        return int(self)
-
-    def decrement(self, n=1):
-        """Decrement value."""
-        self -= n
-        return int(self)
-
-    def _update_value(self):
-        self._value += sum(consume_queue(self._modify_queue))
-        return self._value
-
-    def __iadd__(self, y):
-        """``self += y``"""
-        self._modify_queue.put(y * +1)
-        return self
-
-    def __isub__(self, y):
-        """``self -= y``"""
-        self._modify_queue.put(y * -1)
-        return self
-
-    def __int__(self):
-        """``int(self) -> int``"""
-        return self._update_value()
-
-    def __repr__(self):
-        return "<SharedCounter: int(%s)>" % str(int(self))
 
 
 class LimitedSet(object):
     """Kind-of Set with limitations.
 
-    Good for when you need to test for membership (``a in set``),
+    Good for when you need to test for membership (`a in set`),
     but the list might become to big, so you want to limit it so it doesn't
     consume too much resources.
 
     :keyword maxlen: Maximum number of members before we start
-        deleting expired members.
+                     evicting expired members.
     :keyword expires: Time in seconds, before a membership expires.
 
     """
@@ -219,7 +252,7 @@ class LimitedSet(object):
                 if not self.expires or time.time() > when + self.expires:
                     try:
                         self.pop_value(value)
-                    except TypeError:                   # pragma: no cover
+                    except TypeError:  # pragma: no cover
                         continue
             break
 
@@ -278,22 +311,20 @@ class TokenBucket(object):
     Most of this code was stolen from an entry in the ASPN Python Cookbook:
     http://code.activestate.com/recipes/511490/
 
-    :param fill_rate: see :attr:`fill_rate`.
-    :keyword capacity: see :attr:`capacity`.
+    .. admonition:: Thread safety
 
-    .. attribute:: fill_rate
-
-        The rate in tokens/second that the bucket will be refilled.
-
-    .. attribute:: capacity
-
-        Maximum number of tokens in the bucket. Default is ``1``.
-
-    .. attribute:: timestamp
-
-        Timestamp of the last time a token was taken out of the bucket.
+        This implementation may not be thread safe.
 
     """
+
+    #: The rate in tokens/second that the bucket will be refilled
+    fill_rate = None
+
+    #: Maximum number of tokensin the bucket.
+    capacity = 1
+
+    #: Timestamp of the last time a token was taken out of the bucket.
+    timestamp = None
 
     def __init__(self, fill_rate, capacity=1):
         self.capacity = float(capacity)
@@ -302,6 +333,8 @@ class TokenBucket(object):
         self.timestamp = time.time()
 
     def can_consume(self, tokens=1):
+        """Returns :const:`True` if `tokens` number of tokens can be consumed
+        from the bucket."""
         if tokens <= self._get_tokens():
             self._tokens -= tokens
             return True
@@ -309,7 +342,13 @@ class TokenBucket(object):
 
     def expected_time(self, tokens=1):
         """Returns the expected time in seconds when a new token should be
-        available. *Note: consumes a token from the bucket*"""
+        available.
+
+        .. admonition:: Warning
+
+            This consumes a token from the bucket.
+
+        """
         _tokens = self._get_tokens()
         tokens = max(tokens, _tokens)
         return (tokens - _tokens) / self.fill_rate

@@ -65,9 +65,9 @@ In the producer:
 
        ...
 
-After the ``async_result.abort()`` call, the task execution is not
+After the `async_result.abort()` call, the task execution is not
 aborted immediately. In fact, it is not guaranteed to abort at all. Keep
-checking the ``async_result`` status, or call ``async_result.wait()`` to
+checking the `async_result` status, or call `async_result.wait()` to
 have it block until the task is finished.
 
 .. note::
@@ -101,8 +101,8 @@ ABORTED = "ABORTED"
 class AbortableAsyncResult(AsyncResult):
     """Represents a abortable result.
 
-    Specifically, this gives the ``AsyncResult`` a :meth:`abort()` method,
-    which sets the state of the underlying Task to ``"ABORTED"``.
+    Specifically, this gives the `AsyncResult` a :meth:`abort()` method,
+    which sets the state of the underlying Task to `"ABORTED"`.
 
     """
 

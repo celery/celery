@@ -17,11 +17,11 @@ You can accomplish this by using a lock.
 In this example we'll be using the cache framework to set a lock that is
 accessible for all workers.
 
-It's part of an imaginary RSS feed importer called ``djangofeeds``.
+It's part of an imaginary RSS feed importer called `djangofeeds`.
 The task takes a feed URL as a single argument, and imports that feed into
-a Django model called ``Feed``. We ensure that it's not possible for two or
+a Django model called `Feed`. We ensure that it's not possible for two or
 more workers to import the same feed at the same time by setting a cache key
-consisting of the md5sum of the feed URL.
+consisting of the MD5 checksum of the feed URL.
 
 The cache key expires after some time in case something unexpected happens
 (you never know, right?)
@@ -53,7 +53,7 @@ The cache key expires after some time in case something unexpected happens
             release_lock = lambda: cache.delete(lock_id)
 
             logger.debug("Importing feed: %s" % feed_url)
-            if aquire_lock():
+            if acquire_lock():
                 try:
                     feed = Feed.objects.import_feed(feed_url)
                 finally:

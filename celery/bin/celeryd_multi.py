@@ -5,17 +5,24 @@ Examples
 
 ::
 
-    # Advanced example starting 10 workers in the background:
-    #   * Three of the workers processes the images and video queue
-    #   * Two of the workers processes the data queue with loglevel DEBUG
-    #   * the rest processes the default' queue.
-    $ celeryd-multi start 10 -l INFO -Q:1-3 images,video -Q:4,5:data
-        -Q default -L:4,5 DEBUG
+    # Single worker with explicit name and events enabled.
+    $ celeryd-multi start Leslie -E
 
-    # You can show the commands necessary to start the workers with
-    # the "show" command:
-    $ celeryd-multi show 10 -l INFO -Q:1-3 images,video -Q:4,5:data
-        -Q default -L:4,5 DEBUG
+    # Pidfiles and logfiles are stored in the current directory
+    # by default.  Use --pidfile and --logfile argument to change
+    # this.  The abbreviation %n will be expanded to the current
+    # node name.
+    $ celeryd-multi start Leslie -E --pidfile=/var/run/celery/%n.pid
+                                    --logfile=/var/log/celery/%n.log
+
+
+    # You need to add the same arguments when you restart,
+    # as these are not persisted anywhere.
+    $ celeryd-multi restart Leslie -E --pidfile=/var/run/celery/%n.pid
+                                      --logfile=/var/run/celery/%n.log
+
+    # To stop the node, you need to specify the same pidfile.
+    $ celeryd-multi stop Leslie --pidfile=/var/run/celery/%n.pid
 
     # 3 workers, with 3 processes each
     $ celeryd-multi start 3 -c 3
@@ -34,8 +41,20 @@ Examples
     celeryd -n celeryd1.worker.example.com -c 3
     celeryd -n celeryd2.worker.example.com -c 3
 
-    # Additionl options are added to each celeryd',
-    # but you can also modify the options for ranges of or single workers
+    # Advanced example starting 10 workers in the background:
+    #   * Three of the workers processes the images and video queue
+    #   * Two of the workers processes the data queue with loglevel DEBUG
+    #   * the rest processes the default' queue.
+    $ celeryd-multi start 10 -l INFO -Q:1-3 images,video -Q:4,5:data
+        -Q default -L:4,5 DEBUG
+
+    # You can show the commands necessary to start the workers with
+    # the "show" command:
+    $ celeryd-multi show 10 -l INFO -Q:1-3 images,video -Q:4,5:data
+        -Q default -L:4,5 DEBUG
+
+    # Additional options are added to each celeryd',
+    # but you can also modify the options for ranges of, or specific workers
 
     # 3 workers: Two with 3 processes, and one with 10 processes.
     $ celeryd-multi start 3 -c 3 -c:1 10
@@ -78,7 +97,7 @@ from time import sleep
 
 from celery import __version__
 from celery.utils import term
-from celery.utils.compat import defaultdict
+from celery.utils.compat import any, defaultdict
 
 SIGNAMES = set(sig for sig in dir(signal)
                         if sig.startswith("SIG") and "_" not in sig)
@@ -164,7 +183,6 @@ class MultiTool(object):
         wanted = argv[0]
         p = NamespacedOptionParser(argv[1:])
         for name, worker, _ in multi_args(p, cmd):
-            print("NAME: %s WANTED: %s" % (name, wanted))
             if name == wanted:
                 print(" ".join(worker))
                 return

@@ -27,7 +27,7 @@ These are some common use cases:
 
 * Running something in the background. For example, to finish the web request
   as soon as possible, then update the users page incrementally.
-  This gives the user the impression of good performane and "snappiness", even
+  This gives the user the impression of good performance and "snappiness", even
   though the real work might actually take some time.
 
 * Running something after the web request has finished.
@@ -56,10 +56,14 @@ Is Celery dependent on pickle?
 **Answer:** No.
 
 Celery can support any serialization scheme and has support for JSON/YAML and
-Pickle by default. You can even send one task using pickle, and another one
-with JSON seamlessly, this is because every task is associated with a
-content-type. The default serialization scheme is pickle because it's the most
-used, and it has support for sending complex objects as task arguments.
+Pickle by default. And as every task is associated with a content type, you
+can even send one task using pickle, and another using JSON.
+
+The default serialization format is pickle simply because it is
+convenient as it supports sending complex Python objects as task arguments.
+
+If you need to communicate with other languages you should change
+to a serialization format that is suitable for that.
 
 You can set a global default serializer, the default serializer for a
 particular Task, or even what serializer to use when sending a single task
@@ -84,8 +88,11 @@ Do I have to use AMQP/RabbitMQ?
 
 **Answer**: No.
 
-You can also use Redis or an SQL database, see `Using other
-queues`_.
+You can also use Redis, Beanstalk, CouchDB, MongoDB or an SQL database,
+see `Using other queues`_.
+
+These "virtual transports" may have limited broadcast and event functionality.
+For example remote control commands only works with AMQP and Redis.
 
 .. _`Using other queues`:
     http://ask.github.com/celery/tutorials/otherqueues.html
@@ -112,7 +119,7 @@ language has an AMQP client, there shouldn't be much work to create a worker
 in your language.  A Celery worker is just a program connecting to the broker
 to process messages.
 
-Also, there's another way to be language indepedent, and that is to use REST
+Also, there's another way to be language independent, and that is to use REST
 tasks, instead of your tasks being functions, they're URLs. With this
 information you can even create simple web servers that enable preloading of
 code. See: `User Guide: Remote Tasks`_.
@@ -130,14 +137,14 @@ Troubleshooting
 MySQL is throwing deadlock errors, what can I do?
 -------------------------------------------------
 
-**Answer:** MySQL has default isolation level set to ``REPEATABLE-READ``,
-if you don't really need that, set it to ``READ-COMMITTED``.
+**Answer:** MySQL has default isolation level set to `REPEATABLE-READ`,
+if you don't really need that, set it to `READ-COMMITTED`.
 You can do that by adding the following to your :file:`my.cnf`::
 
     [mysqld]
     transaction-isolation = READ-COMMITTED
 
-For more information about InnoDBs transaction model see `MySQL - The InnoDB
+For more information about InnoDB`s transaction model see `MySQL - The InnoDB
 Transaction Model and Locking`_ in the MySQL user manual.
 
 (Thanks to Honza Kral and Anton Tsigularov for this solution)
@@ -168,7 +175,7 @@ most systems), it usually contains a message describing the reason.
 Why won't celeryd run on FreeBSD?
 ---------------------------------
 
-**Answer:** multiprocessing.Pool requires a working POSIX semaphore
+**Answer:** The multiprocessing pool requires a working POSIX semaphore
 implementation which isn't enabled in FreeBSD by default. You have to enable
 POSIX semaphores in the kernel and manually recompile multiprocessing.
 
@@ -178,7 +185,7 @@ http://www.playingwithwire.com/2009/10/how-to-get-celeryd-to-work-on-freebsd/
 
 .. _faq-duplicate-key-errors:
 
-I'm having ``IntegrityError: Duplicate Key`` errors. Why?
+I'm having `IntegrityError: Duplicate Key` errors. Why?
 ---------------------------------------------------------
 
 **Answer:** See `MySQL is throwing deadlock errors, what can I do?`_.
@@ -203,7 +210,7 @@ One reason that the queue is never emptied could be that you have a stale
 worker process taking the messages hostage. This could happen if celeryd
 wasn't properly shut down.
 
-When a message is recieved by a worker the broker waits for it to be
+When a message is received by a worker the broker waits for it to be
 acknowledged before marking the message as processed. The broker will not
 re-send that message to another consumer until the consumer is shut down
 properly.
@@ -232,7 +239,7 @@ task manually:
     >>> from myapp.tasks import MyPeriodicTask
     >>> MyPeriodicTask.delay()
 
-Watch celeryds logfile to see if it's able to find the task, or if some
+Watch celeryd`s log file to see if it's able to find the task, or if some
 other error is happening.
 
 .. _faq-periodic-task-does-not-run:
@@ -247,16 +254,25 @@ Why won't my Periodic Task run?
 How do I discard all waiting tasks?
 ------------------------------------
 
-**Answer:** Use :func:`~celery.task.control.discard_all`, like this:
+**Answer:** You can use celeryctl to purge all configured task queues::
 
-    >>> from celery.task.control import discard_all
-    >>> discard_all()
-    1753
+        $ celeryctl purge
+
+or programatically::
+
+        >>> from celery.task.control import discard_all
+        >>> discard_all()
+        1753
+
+If you only want to purge messages from a specific queue
+you have to use the AMQP API or the :program:`camqadm` utility::
+
+    $ camqadm queue.purge <queue name>
 
 The number 1753 is the number of messages deleted.
 
 You can also start :mod:`~celery.bin.celeryd` with the
-:option:`--discard` argument which will accomplish the same thing.
+:option:`--purge` argument, to purge messages when the worker starts.
 
 .. _faq-messages-left-after-purge:
 
@@ -268,7 +284,7 @@ as they are actually executed. After the worker has received a task, it will
 take some time until it is actually executed, especially if there are a lot
 of tasks already waiting for execution. Messages that are not acknowledged are
 held on to by the worker until it closes the connection to the broker (AMQP
-server). When that connection is closed (e.g because the worker was stopped)
+server). When that connection is closed (e.g. because the worker was stopped)
 the tasks will be re-sent by the broker to the next available worker (or the
 same worker when it has been restarted), so to properly purge the queue of
 waiting tasks you have to stop all the workers, and then discard the tasks
@@ -284,7 +300,7 @@ Results
 How do I get the result of a task if I have the ID that points there?
 ----------------------------------------------------------------------
 
-**Answer**: Use ``Task.AsyncResult``::
+**Answer**: Use `Task.AsyncResult`::
 
     >>> result = MyTask.AsyncResult(task_id)
     >>> result.get()
@@ -299,6 +315,48 @@ If you need to specify a custom result backend you should use
     >>> result = BaseAsyncResult(task_id, backend=...)
     >>> result.get()
 
+.. _faq-security:
+
+Security
+========
+
+Isn't using `pickle` a security concern?
+----------------------------------------
+
+**Answer**: Yes, indeed it is.
+
+You are right to have a security concern, as this can indeed be a real issue.
+It is essential that you protect against unauthorized
+access to your broker, databases and other services transmitting pickled
+data.
+
+For the task messages you can set the :setting:`CELERY_TASK_SERIALIZER`
+setting to "json" or "yaml" instead of pickle. There is
+currently no alternative solution for task results (but writing a
+custom result backend using JSON is a simple task)
+
+Note that this is not just something you should be aware of with Celery, for
+example also Django uses pickle for its cache client.
+
+Can messages be encrypted?
+--------------------------
+
+**Answer**: Some AMQP brokers supports using SSL (including RabbitMQ).
+You can enable this using the :setting:`BROKER_USE_SSL` setting.
+
+It is also possible to add additional encryption and security to messages,
+if you have a need for this then you should contact the :ref:`mailing-list`.
+
+Is it safe to run :program:`celeryd` as root?
+---------------------------------------------
+
+**Answer**: No!
+
+We're not currently aware of any security issues, but it would
+be incredibly naive to assume that they don't exist, so running
+the Celery services (:program:`celeryd`, :program:`celerybeat`,
+:program:`celeryev`, etc) as an unprivileged user is recommended.
+
 .. _faq-brokers:
 
 Brokers
@@ -307,7 +365,7 @@ Brokers
 Why is RabbitMQ crashing?
 -------------------------
 
-RabbitMQ will crash if it runs out of memory. This will be fixed in a
+**Answer:** RabbitMQ will crash if it runs out of memory. This will be fixed in a
 future release of RabbitMQ. please refer to the RabbitMQ FAQ:
 http://www.rabbitmq.com/faq.html#node-runs-out-of-memory
 
@@ -320,10 +378,10 @@ http://www.rabbitmq.com/faq.html#node-runs-out-of-memory
     If you're still running an older version of RabbitMQ and experience
     crashes, then please upgrade!
 
-Some common Celery misconfigurations can eventually lead to a crash
-on older version of RabbitMQ. Even if it doesn't crash, these
-misconfigurations can still consume a lot of resources, so it is very
-important that you are aware of them.
+Misconfiguration of Celery can eventually lead to a crash
+on older version of RabbitMQ. Even if it doesn't crash, this
+can still consume a lot of resources, so it is very
+important that you are aware of the common pitfalls.
 
 * Events.
 
@@ -340,7 +398,7 @@ as a message. If you don't collect these results, they will build up and
 RabbitMQ will eventually run out of memory.
 
 If you don't use the results for a task, make sure you set the
-``ignore_result`` option:
+`ignore_result` option:
 
 .. code-block python
 
@@ -367,69 +425,23 @@ Results can also be disabled globally using the
 Can I use Celery with ActiveMQ/STOMP?
 -------------------------------------
 
-**Answer**: Yes, but this is somewhat experimental for now.
-It is working ok in a test configuration, but it has not
-been tested in production. If you have any problems
-using STOMP with Celery, please report an issue here::
+**Answer**: No.  It used to be supported by Carrot,
+but is not currently supported in Kombu.
 
-    http://github.com/ask/celery/issues/
+.. _faq-non-amqp-missing-features:
 
-The STOMP carrot backend requires the `stompy`_ library::
+What features are not supported when not using an AMQP broker?
+--------------------------------------------------------------
 
-    $ pip install stompy
-    $ cd python-stomp
-    $ sudo python setup.py install
-    $ cd ..
+This is an incomplete list of features not available when
+using the virtual transports:
 
-.. _`stompy`: http://pypi.python.org/pypi/stompy
+    * Remote control commands (supported only by Redis).
 
-In this example we will use a queue called ``celery`` which we created in
-the ActiveMQ web admin interface.
+    * Monitoring with events may not work in all virtual transports.
 
-**Note**: When using ActiveMQ the queue name needs to have ``"/queue/"``
-prepended to it. i.e. the queue ``celery`` becomes ``/queue/celery``.
-
-Since STOMP doesn't have exchanges and the routing capabilities of AMQP,
-you need to set ``exchange`` name to the same as the queue name. This is
-a minor inconvenience since carrot needs to maintain the same interface
-for both AMQP and STOMP.
-
-Use the following settings in your :file:`celeryconfig.py`/
-django :file:`settings.py`:
-
-.. code-block:: python
-
-    # Use the stomp carrot backend.
-    CARROT_BACKEND = "stomp"
-
-    # STOMP hostname and port settings.
-    BROKER_HOST = "localhost"
-    BROKER_PORT = 61613
-
-    # The queue name to use (the exchange *must* be set to the
-    # same as the queue name when using STOMP)
-    CELERY_DEFAULT_QUEUE = "/queue/celery"
-    CELERY_DEFAULT_EXCHANGE = "/queue/celery" 
-
-    CELERY_QUEUES = {
-        "/queue/celery": {"exchange": "/queue/celery"}
-    }
-
-.. _faq-stomp-missing-features:
-
-What features are not supported when using ghettoq/STOMP?
----------------------------------------------------------
-
-This is a (possible incomplete) list of features not available when
-using the STOMP backend:
-
-    * routing keys
-
-    * exchange types (direct, topic, headers, etc)
-
-    * immediate
-
-    * mandatory
+    * The `header` and `fanout` exchange types
+        (`fanout` is supported by Redis).
 
 .. _faq-tasks:
 
@@ -461,26 +473,29 @@ that has an AMQP client.
 How can I get the task id of the current task?
 ----------------------------------------------
 
-**Answer**: Celery does set some default keyword arguments if the task
-accepts them (you can accept them by either using ``**kwargs``, or list them
-specifically)::
+**Answer**: The current id and more is available in the task request::
 
     @task
-    def mytask(task_id=None):
-        cache.set(task_id, "Running")
+    def mytask():
+        cache.set(mytask.request.id, "Running")
 
-The default keyword arguments are documented here:
-http://celeryq.org/docs/userguide/tasks.html#default-keyword-arguments
+For more information see :ref:`task-request-info`.
 
 .. _faq-custom-task-ids:
 
 Can I specify a custom task_id?
 -------------------------------
 
-**Answer**: Yes. Use the ``task_id`` argument to
+**Answer**: Yes.  Use the `task_id` argument to
 :meth:`~celery.execute.apply_async`::
 
     >>> task.apply_async(args, kwargs, task_id="...")
+
+
+Can I use decorators with tasks?
+--------------------------------
+
+**Answer**: Yes.  But please see note at :ref:`tasks-decorating`.
 
 .. _faq-natural-task-ids:
 
@@ -526,7 +541,7 @@ See :doc:`userguide/tasksets` for more information.
 
 Can I cancel the execution of a task?
 -------------------------------------
-**Answer**: Yes. Use ``result.revoke``::
+**Answer**: Yes. Use `result.revoke`::
 
     >>> result = add.apply_async(args=[2, 2], countdown=120)
     >>> result.revoke()
@@ -542,17 +557,17 @@ Why aren't my remote control commands received by all workers?
 --------------------------------------------------------------
 
 **Answer**: To receive broadcast remote control commands, every worker node
-uses its hostname to create a unique queue name to listen to,
-so if you have more than one worker with the same hostname, the
-control commands will be recieved in round-robin between them.
+uses its host name to create a unique queue name to listen to,
+so if you have more than one worker with the same host name, the
+control commands will be received in round-robin between them.
 
-To work around this you can explicitly set the hostname for every worker
+To work around this you can explicitly set the host name for every worker
 using the :option:`--hostname` argument to :mod:`~celery.bin.celeryd`::
 
     $ celeryd --hostname=$(hostname).1
     $ celeryd --hostname=$(hostname).2
 
-etc, etc.
+etc., etc...
 
 .. _faq-task-routing:
 
@@ -569,8 +584,9 @@ See :doc:`userguide/routing` for more information.
 Can I change the interval of a periodic task at runtime?
 --------------------------------------------------------
 
-**Answer**: Yes. You can override ``PeriodicTask.is_due`` or turn
-``PeriodicTask.run_every`` into a property:
+**Answer**: Yes. You can use the Django database scheduler, or you can
+override `PeriodicTask.is_due` or turn `PeriodicTask.run_every` into a
+property:
 
 .. code-block:: python
 
@@ -594,7 +610,7 @@ RabbitMQ doesn't implement them yet.
 The usual way to prioritize work in Celery, is to route high priority tasks
 to different servers. In the real world this may actually work better than per message
 priorities. You can use this in combination with rate limiting to achieve a
-highly performant system.
+highly responsive system.
 
 .. _faq-acks_late-vs-retry:
 
@@ -604,11 +620,11 @@ Should I use retry or acks_late?
 **Answer**: Depends. It's not necessarily one or the other, you may want
 to use both.
 
-``Task.retry`` is used to retry tasks, notably for expected errors that
-is catchable with the ``try:`` block. The AMQP transaction is not used
-for these errors: **if the task raises an exception it is still acked!**.
+`Task.retry` is used to retry tasks, notably for expected errors that
+is catchable with the `try:` block. The AMQP transaction is not used
+for these errors: **if the task raises an exception it is still acknowledged!**.
 
-The ``acks_late`` setting would be used when you need the task to be
+The `acks_late` setting would be used when you need the task to be
 executed again if the worker (for some reason) crashes mid-execution.
 It's important to note that the worker is not known to crash, and if
 it does it is usually an unrecoverable error that requires human
@@ -634,11 +650,11 @@ It's a good default, users who require it and know what they
 are doing can still enable acks_late (and in the future hopefully
 use manual acknowledgement)
 
-In addition ``Task.retry`` has features not available in AMQP
+In addition `Task.retry` has features not available in AMQP
 transactions: delay between retries, max retries, etc.
 
-So use retry for Python errors, and if your task is reentrant
-combine that with ``acks_late`` if that level of reliability
+So use retry for Python errors, and if your task is idempotent
+combine that with `acks_late` if that level of reliability
 is required.
 
 .. _faq-schedule-at-specific-time:
@@ -648,24 +664,24 @@ Can I schedule tasks to execute at a specific time?
 
 .. module:: celery.task.base
 
-**Answer**: Yes. You can use the ``eta`` argument of :meth:`Task.apply_async`.
+**Answer**: Yes. You can use the `eta` argument of :meth:`Task.apply_async`.
 
 Or to schedule a periodic task at a specific time, use the
-:class:`celery.task.schedules.crontab` schedule behavior:
+:class:`celery.schedules.crontab` schedule behavior:
 
 
 .. code-block:: python
 
     from celery.task.schedules import crontab
-    from celery.decorators import periodic_task
+    from celery.task import periodic_task
 
     @periodic_task(run_every=crontab(hours=7, minute=30, day_of_week="mon"))
     def every_monday_morning():
-        print("This is run every monday morning at 7:30")
+        print("This is run every Monday morning at 7:30")
 
 .. _faq-safe-worker-shutdown:
 
-How do I shut down ``celeryd`` safely?
+How do I shut down `celeryd` safely?
 --------------------------------------
 
 **Answer**: Use the :sig:`TERM` signal, and the worker will finish all currently
@@ -675,7 +691,7 @@ You should never stop :mod:`~celery.bin.celeryd` with the :sig:`KILL` signal
 (:option:`-9`), unless you've tried :sig:`TERM` a few times and waited a few
 minutes to let it get a chance to shut down.  As if you do tasks may be
 terminated mid-execution, and they will not be re-run unless you have the
-``acks_late`` option set (``Task.acks_late`` / :setting:`CELERY_ACKS_LATE`).
+`acks_late` option set (`Task.acks_late` / :setting:`CELERY_ACKS_LATE`).
 
 .. seealso::
 
@@ -708,14 +724,14 @@ See http://bit.ly/bo9RSw
 
 .. _faq-windows-worker-embedded-beat:
 
-The ``-B`` / ``--beat`` option to celeryd doesn't work?
+The `-B` / `--beat` option to celeryd doesn't work?
 ----------------------------------------------------------------
-**Answer**: That's right. Run ``celerybeat`` and ``celeryd`` as separate
+**Answer**: That's right. Run `celerybeat` and `celeryd` as separate
 services instead.
 
 .. _faq-windows-django-settings:
 
-``django-celery`` can’t find settings?
+`django-celery` can't find settings?
 --------------------------------------
 
 **Answer**: You need to specify the :option:`--settings` argument to

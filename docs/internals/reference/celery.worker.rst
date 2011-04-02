@@ -1,5 +1,5 @@
 ========================================
-Multiprocessing Worker - celery.worker
+ celery.worker
 ========================================
 
 .. contents::

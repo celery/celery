@@ -2,6 +2,7 @@ import os
 import warnings
 from importlib import import_module
 
+from celery.datastructures import AttributeDict
 from celery.loaders.base import BaseLoader
 from celery.datastructures import AttributeDict
 from celery.exceptions import NotConfigured
@@ -21,7 +22,7 @@ DEFAULT_UNCONFIGURED_SETTINGS = {
 
 
 def wanted_module_item(item):
-    return not item.startswith("_")
+    return item[0].isupper() and not item.startswith("_")
 
 
 class Loader(BaseLoader):
@@ -41,16 +42,16 @@ class Loader(BaseLoader):
         return settings
 
     def read_configuration(self):
-        """Read configuration from ``celeryconfig.py`` and configure
+        """Read configuration from :file:`celeryconfig.py` and configure
         celery and Django so it can be used by regular Python."""
         configname = os.environ.get("CELERY_CONFIG_MODULE",
                                     DEFAULT_CONFIG_MODULE)
         try:
             celeryconfig = self.import_from_cwd(configname)
         except ImportError:
-            warnings.warn("No celeryconfig.py module found! Please make "
-                          "sure it exists and is available to Python.",
-                          NotConfigured)
+            warnings.warn(NotConfigured(
+                "No %r module found! Please make sure it exists and "
+                "is available to Python." % (configname, )))
             return self.setup_settings(DEFAULT_UNCONFIGURED_SETTINGS)
         else:
             usercfg = dict((key, getattr(celeryconfig, key))

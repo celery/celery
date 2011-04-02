@@ -1,5 +1,5 @@
 ========================================
- SQLAlchemy Session - celery.db.session
+ celery.db.session
 ========================================
 
 .. contents::

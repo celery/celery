@@ -19,3 +19,8 @@ def setup(app):
         rolename="control",
         indextemplate="pair: %s; control",
     )
+    app.add_crossref_type(
+        directivename="signal",
+        rolename="signal",
+        indextemplate="pair: %s; signal",
+    )

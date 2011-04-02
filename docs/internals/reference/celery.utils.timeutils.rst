@@ -1,5 +1,5 @@
 ==================================================
- Time and Date Utilities - celery.utils.timeutils
+ celery.utils.timeutils
 ==================================================
 
 .. contents::

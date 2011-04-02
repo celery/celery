@@ -1,5 +1,5 @@
 ==========================
-Logging - celery.log
+ celery.log
 ==========================
 
 .. contents::

@@ -3,25 +3,17 @@
 Process Pools.
 
 """
-import traceback
+import os
+import signal as _signal
 
-from time import sleep, time
-
-from celery import log
-from celery.datastructures import ExceptionInfo
-from celery.utils.functional import curry
-
+from celery.concurrency.base import BasePool
 from celery.concurrency.processes.pool import Pool, RUN
 
 
-def pingback(i):
-    return i
-
-
-class TaskPool(object):
+class TaskPool(BasePool):
     """Process Pool for processing tasks in parallel.
 
-    :param limit: see :attr:`limit`.
+    :param processes: see :attr:`processes`.
     :param logger: see :attr:`logger`.
 
 
@@ -36,70 +28,27 @@ class TaskPool(object):
     """
     Pool = Pool
 
-    def __init__(self, limit, logger=None, initializer=None,
-            maxtasksperchild=None, timeout=None, soft_timeout=None,
-            putlocks=True, initargs=()):
-        self.limit = limit
-        self.logger = logger or log.get_default_logger()
-        self.initializer = initializer
-        self.maxtasksperchild = maxtasksperchild
-        self.timeout = timeout
-        self.soft_timeout = soft_timeout
-        self.putlocks = putlocks
-        self.initargs = initargs
-        self._pool = None
-
-    def start(self):
+    def on_start(self):
         """Run the task pool.
 
         Will pre-fork all workers so they're ready to accept tasks.
 
         """
-        self._pool = self.Pool(processes=self.limit,
-                               initializer=self.initializer,
-                               initargs=self.initargs,
-                               timeout=self.timeout,
-                               soft_timeout=self.soft_timeout,
-                               maxtasksperchild=self.maxtasksperchild)
+        self._pool = self.Pool(processes=self.limit, **self.options)
+        self.on_apply = self._pool.apply_async
 
-    def stop(self):
+    def on_stop(self):
         """Gracefully stop the pool."""
         if self._pool is not None and self._pool._state == RUN:
             self._pool.close()
             self._pool.join()
             self._pool = None
 
-    def terminate(self):
+    def on_terminate(self):
         """Force terminate the pool."""
         if self._pool is not None:
             self._pool.terminate()
             self._pool = None
-
-    def diagnose(self, timeout=None):
-        pids = set(worker.pid for worker in self._pool._pool)
-        seen = set()
-        results = {}
-        time_start = time()
-
-        def callback(i):
-            for pid in results[i].worker_pids():
-                seen.add(pid)
-
-        i = 0
-        while pids ^ seen:
-            print("%r > %r" % (time() - time_start, timeout))
-            if timeout and time() - time_start > timeout:
-                print("TIMED OUT i==%r" % (i, ))
-                break
-            results[i] = self._pool.apply_async(pingback,
-                                                args=(i, ),
-                                                callback=callback)
-            sleep(0.1)
-            i += 1
-
-        return {"active": list(seen),
-                "waiting": list(pids ^ seen),
-                "iterations": i}
 
     def apply_async(self, target, args=None, kwargs=None, callbacks=None,
             errbacks=None, accept_callback=None, timeout_callback=None,
@@ -155,10 +104,18 @@ class TaskPool(object):
             self.logger.error("Pool callback raised exception: %s" % (
                 traceback.format_exc(), ))
 
-    @property
-    def info(self):
+    def terminate_job(self, pid, signal=None):
+        os.kill(pid, signal or _signal.SIGTERM)
+
+    def grow(self, n=1):
+        return self._pool.grow(n)
+
+    def shrink(self, n=1):
+        return self._pool.shrink(n)
+
+    def _get_info(self):
         return {"max-concurrency": self.limit,
                 "processes": [p.pid for p in self._pool._pool],
-                "max-tasks-per-child": self.maxtasksperchild,
+                "max-tasks-per-child": self._pool._maxtasksperchild,
                 "put-guarded-by-semaphore": self.putlocks,
-                "timeouts": (self.soft_timeout, self.timeout)}
+                "timeouts": (self._pool.soft_timeout, self._pool.timeout)}

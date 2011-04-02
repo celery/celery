@@ -1,5 +1,5 @@
 ======================================
- SQLAlchemy Models - celery.db.models
+ celery.db.models
 ======================================
 
 .. contents::

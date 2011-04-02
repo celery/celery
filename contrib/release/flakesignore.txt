@@ -1,0 +1,78 @@
+celery/app/__init__.py:(.+?) redefinition of function 'app_or_default'
+celery/backends/cache.py:(.+?) redefinition of unused 'memcache'
+celery/backends/cassandra.py:(.+?) redefinition of unused 'pycassa'
+celery/backends/mongodb.py:(.+?) redefinition of unused 'pymongo'
+celery/backends/pyredis.py:(.+?) redefinition of unused 'redis'
+celery/backends/pyredis.py:(.+?) redefinition of unused 'ConnectionError'
+celery/backends/tyrant.py:(.+?) redefinition of unused 'pytyrant'
+celery/concurrency/processes/pool.py:(.+?) redefinition of function 'poll'
+celery/db/a805d4bd.py:(.+?) redefinition of function 'process'
+celery/db/a805d4bd.py:(.+?) redefinition of function 'process'
+celery/db/models.py:(.+?) redefinition of unused 'PickleType'
+celery/loaders/default.py:(.+?) redefinition of unused 'AttributeDict'
+celery/platforms.py:(.+?) redefinition of unused '_setproctitle'
+celery/platforms.py:(.+?) redefinition of unused 'pwd'
+celery/platforms.py:(.+?) redefinition of unused 'grp'
+celery/utils/serialization.py:(.+?) redefinition of unused 'cpickle'
+celery/utils/serialization.py:(.+?) redefinition of function 'subclass_exception'
+celery/tests/test_backends/test_redis.py:(.+?) redefinition of unused 'ConnectionError'
+celery/tests/utils.py:(.+?) redefinition of unused 'contextmanager'
+celery/utils/__init__.py:(.+?) redefinition of unused 'ctypes'
+celery/utils/compat.py:(.+?) redefinition of unused 'parse_qsl'
+celery/utils/compat.py:(.+?) redefinition of unused 'MutableMapping'
+celery/utils/compat.py:(.+?) redefinition of unused 'defaultdict'
+celery/utils/compat.py:(.+?) redefinition of unused 'LoggerAdapter'
+celery/utils/compat.py:(.+?) redefinition of unused 'izip_longest'
+celery/utils/functional.py:(.+?) redefinition of unused 'partial'
+celery/utils/functional.py:(.+?) redefinition of unused 'update_wrapper'
+celery/utils/functional.py:(.+?) redefinition of unused 'wraps'
+celery/utils/mail.py:(.+?) redefinition of unused 'MIMEText'
+celery/utils/__init__.py:(.+?) 'gen_unique_id' imported but unused
+celery/events/cursesmon.py:(.+?): local variable 'consumer' is assigned to but never used
+celery/tests/utils.py:(.+?): 'unittest' imported but unused
+celery/tests/utils.py:(.+?): redefinition of unused 'builtins' from line \d+
+celery/tests/utils.py:(.+?): redefinition of unused 'StringIO' from line 16
+celery/utils/compat.py:(.+?): redefinition of unused 'UserList' from line 5
+celery/utils/compat.py:(.+?): 'UserList' imported but unused
+celery/utils/compat.py:(.+?): redefinition of unused 'UserDict' from line 10
+celery/utils/compat.py:(.+?): 'UserDict' imported but unused
+celery/utils/compat.py:(.+?): redefinition of unused 'OrderedDict' from line 260
+celery/app/amqp.py:(.+?): redefinition of function 'queues' from line
+celery/tests/utils.py:(.+?): redefinition of unused 'builtins' from line 14
+celery/utils/compat.py:(.+?): redefinition of unused 'StringIO' from line 15
+celery/utils/compat.py:(.+?): redefinition of unused 'StringIO' from line 18
+celery/utils/compat.py:(.+?): 'StringIO' imported but unused
+celery/utils/compat.py:(.+?): redefinition of unused 'OrderedDict' from line 268
+celery/task/schedules.py:2: 'schedule' imported but unused
+celery/task/schedules.py:2: 'crontab_parser' imported but unused
+celery/task/schedules.py:2: 'crontab' imported but unused
+celery/tests/__init__.py:17: undefined name 'WindowsError'
+celery/utils/patch.py:12: redefinition of unused 'current_process' from line 10
+celery/utils/compat.py:325: redefinition of unused 'multiprocessing' from line 323
+celery/tests/test_cursesmon.py:18: 'curses' imported but unused
+celery/log.py:11: redefinition of unused 'mputil' from line 9
+celery/log.py:11: redefinition of unused 'current_process' from line 8
+celery/tests/test_bin/test_celeryd.py:9: redefinition of unused 'current_process' from line 7
+celery/tests/test_bin/test_celeryd.py:324: 'setproctitle' imported but unused
+celery/tests/test_bin/test_celeryev.py:36: 'curses' imported but unused
+celery/apps/worker.py:6: redefinition of unused 'multiprocessing' from line 4
+celery/beat.py:14: redefinition of unused 'multiprocessing' from line 12
+celery/bin/celeryd.py:79: redefinition of unused 'freeze_support' from line 77
+celery/tests/test_cursesmon.py:16: 'curses' imported but unused
+celery/tests/__init__.py:16: undefined name 'WindowsError'
+celery/tests/test_backends/test_database.py:17: 'sqlalchemy' imported but unused
+celery/tests/test_compat/test_log.py:12: redefinition of unused 'contextmanager' from line 10
+celery/tests/test_concurrency/test_concurrency_processes.py:15: redefinition of unused 'mp' from line 8
+celery/tests/test_concurrency/test_concurrency_processes.py:103: 'multiprocessing' imported but unused
+celery/tests/test_events/test_events_cursesmon.py:16: 'curses' imported but unused
+celery/tests/test_task/test_task_http.py:9: redefinition of unused 'addinfourl' from line 7
+celery/tests/test_task/test_task_http.py:13: redefinition of unused 'contextmanager' from line 11
+celery/utils/__init__.py:16: 'cached_property' imported but unused
+celery/beat.py:16: redefinition of unused 'multiprocessing' from line 14
+celery/worker/state.py:62: redefinition of function 'task_reserved' from line 36
+celery/worker/state.py:68: redefinition of function 'task_ready' from line 47
+celery/beat.py:11: redefinition of unused 'multiprocessing' from line 9
+celery/utils/compat.py:498: redefinition of unused 'WatchedFileHandler' from line 496
+celery/backends/pyredis.py:(.+?): redefinition of function 'client' from line .+?$
+celery/task/__init__.py:7: 'chord' imported but unused
+

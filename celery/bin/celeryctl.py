@@ -1,4 +1,3 @@
-import os
 import sys
 
 from optparse import OptionParser, make_option as Option
@@ -8,6 +7,8 @@ from textwrap import wrap
 from anyjson import deserialize
 
 from celery import __version__
+from celery.app import app_or_default, current_app
+from celery.bin.base import Command as CeleryCommand
 from celery.utils import term
 
 
@@ -28,18 +29,15 @@ class Command(object):
     args = ""
     version = __version__
 
-    option_list = (
+    option_list = CeleryCommand.preload_options + (
         Option("--quiet", "-q", action="store_true", dest="quiet",
                 default=False),
-        Option("--conf", dest="conf",
-            help="Celery config module name (default: celeryconfig)"),
-        Option("--loader", dest="loader",
-            help="Celery loaders module name (default: default)"),
         Option("--no-color", "-C", dest="no_color", action="store_true",
             help="Don't colorize output."),
     )
 
-    def __init__(self, no_color=False):
+    def __init__(self, app=None, no_color=False):
+        self.app = app_or_default(app)
         self.colored = term.colored(enabled=not no_color)
 
     def __call__(self, *args, **kwargs):
@@ -63,16 +61,12 @@ class Command(object):
                             version=self.version,
                             option_list=self.option_list)
 
-    def run_from_argv(self, argv):
-        self.prog_name = os.path.basename(argv[0])
-        self.command = argv[1]
-        self.arglist = argv[2:]
+    def run_from_argv(self, prog_name, argv):
+        self.prog_name = prog_name
+        self.command = argv[0]
+        self.arglist = argv[1:]
         self.parser = self.create_parser(self.prog_name, self.command)
         options, args = self.parser.parse_args(self.arglist)
-        if options.loader:
-            os.environ["CELERY_LOADER"] = options.loader
-        if options.conf:
-            os.environ["CELERY_CONFIG_MODULE"] = options.conf
         self.colored = term.colored(enabled=not options.no_color)
         self(*args, **options.__dict__)
 
@@ -125,8 +119,6 @@ class apply(Command):
     )
 
     def run(self, name, *_, **kw):
-        from celery.execute import send_task
-
         # Positional args.
         args = kw.get("args") or ()
         if isinstance(args, basestring):
@@ -144,17 +136,38 @@ class apply(Command):
         except (TypeError, ValueError):
             pass
 
-        res = send_task(name, args=args, kwargs=kwargs,
-                        countdown=kw.get("countdown"),
-                        serializer=kw.get("serializer"),
-                        queue=kw.get("queue"),
-                        exchange=kw.get("exchange"),
-                        routing_key=kw.get("routing_key"),
-                        eta=kw.get("eta"),
-                        expires=expires)
-
+        res = self.app.send_task(name, args=args, kwargs=kwargs,
+                                 countdown=kw.get("countdown"),
+                                 serializer=kw.get("serializer"),
+                                 queue=kw.get("queue"),
+                                 exchange=kw.get("exchange"),
+                                 routing_key=kw.get("routing_key"),
+                                 eta=kw.get("eta"),
+                                 expires=expires)
         self.out(res.task_id)
 apply = command(apply)
+
+
+def pluralize(n, text, suffix='s'):
+    if n > 1:
+        return text + suffix
+    return text
+
+
+class purge(Command):
+
+    def run(self, *args, **kwargs):
+        app = current_app()
+        queues = len(app.amqp.queues.keys())
+        messages_removed = app.control.discard_all()
+        if messages_removed:
+            self.out("Purged %s %s from %s known task %s." % (
+                messages_removed, pluralize(messages_removed, "message"),
+                queues, pluralize(queues, "queue")))
+        else:
+            self.out("No messages purged from %s known %s" % (
+                queues, pluralize(queues, "queue")))
+purge = command(purge)
 
 
 class result(Command):
@@ -165,8 +178,7 @@ class result(Command):
 
     def run(self, task_id, *args, **kwargs):
         from celery import registry
-        from celery.result import AsyncResult
-        result_cls = AsyncResult
+        result_cls = self.app.AsyncResult
         task = kwargs.get("task")
 
         if task:
@@ -178,6 +190,7 @@ result = command(result)
 
 class inspect(Command):
     choices = {"active": 1.0,
+               "active_queues": 1.0,
                "scheduled": 1.0,
                "reserved": 1.0,
                "stats": 1.0,
@@ -208,24 +221,23 @@ class inspect(Command):
             raise Error("Did you mean 'inspect --help'?")
         if command not in self.choices:
             raise Error("Unknown inspect command: %s" % command)
-        from celery.task.control import inspect
 
         destination = kwargs.get("destination")
         timeout = kwargs.get("timeout") or self.choices[command]
         if destination and isinstance(destination, basestring):
             destination = map(str.strip, destination.split(","))
 
-        def on_reply(message_data):
+        def on_reply(body):
             c = self.colored
-            node = message_data.keys()[0]
-            reply = message_data[node]
+            node = body.keys()[0]
+            reply = body[node]
             status, preply = self.prettify(reply)
             self.say("->", c.cyan(node, ": ") + status, indent(preply))
 
         self.say("<-", command)
-        i = inspect(destination=destination,
-                    timeout=timeout,
-                    callback=on_reply)
+        i = self.app.control.inspect(destination=destination,
+                                     timeout=timeout,
+                                     callback=on_reply)
         replies = getattr(i, command)(*args[1:])
         if not replies:
             raise Error("No nodes replied within time constraint.")
@@ -251,8 +263,9 @@ class status(Command):
     option_list = inspect.option_list
 
     def run(self, *args, **kwargs):
-        replies = inspect(no_color=kwargs.get("no_color", False)) \
-                            .run("ping", **dict(kwargs, quiet=True))
+        replies = inspect(app=self.app,
+                          no_color=kwargs.get("no_color", False)) \
+                    .run("ping", **dict(kwargs, quiet=True))
         if not replies:
             raise Error("No nodes replied within time constraint")
         nodecount = len(replies)
@@ -280,32 +293,26 @@ class help(Command):
 help = command(help)
 
 
-class celeryctl(object):
+class celeryctl(CeleryCommand):
     commands = commands
 
     def execute(self, command, argv=None):
-        if argv is None:
-            argv = sys.arg
-        argv = list(argv)
         try:
             cls = self.commands[command]
         except KeyError:
-            cls = self.commands["help"]
-            argv.insert(1, "help")
+            cls, argv = self.commands["help"], ["help"]
         cls = self.commands.get(command) or self.commands["help"]
         try:
-            cls().run_from_argv(argv)
+            cls(app=self.app).run_from_argv(self.prog_name, argv)
         except Error:
             return self.execute("help", argv)
 
-    def execute_from_commandline(self, argv=None):
-        if argv is None:
-            argv = sys.argv
+    def handle_argv(self, prog_name, argv):
+        self.prog_name = prog_name
         try:
-            command = argv[1]
+            command = argv[0]
         except IndexError:
-            command = "help"
-            argv.insert(1, "help")
+            command, argv = "help", ["help"]
         return self.execute(command, argv)
 
 

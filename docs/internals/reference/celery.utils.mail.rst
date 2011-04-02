@@ -1,5 +1,5 @@
 ====================================
- Sending E-mail - celery.utils.mail
+ celery.utils.mail
 ====================================
 
 .. contents::

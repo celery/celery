@@ -1,26 +1,35 @@
 from datetime import timedelta
 
-from carrot.utils import partition
+from kombu.utils import partition, cached_property
 
-from celery import conf
 from celery.backends.base import KeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured
 from celery.utils import timeutils
 from celery.datastructures import LocalCache
 
+_imp = [None]
+
+
+def import_best_memcache():
+    if _imp[0] is None:
+        is_pylibmc = False
+        try:
+            import pylibmc as memcache
+            is_pylibmc = True
+        except ImportError:
+            try:
+                import memcache
+            except ImportError:
+                raise ImproperlyConfigured(
+                        "Memcached backend requires either the 'pylibmc' "
+                        "or 'memcache' library")
+        _imp[0] = is_pylibmc, memcache
+    return _imp[0]
+
 
 def get_best_memcache(*args, **kwargs):
     behaviors = kwargs.pop("behaviors", None)
-    is_pylibmc = False
-    try:
-        import pylibmc as memcache
-        is_pylibmc = True
-    except ImportError:
-        try:
-            import memcache
-        except ImportError:
-            raise ImproperlyConfigured("Memcached backend requires either "
-                                       "the 'memcache' or 'pylibmc' library")
+    is_pylibmc, memcache = import_best_memcache()
     client = memcache.Client(*args, **kwargs)
     if is_pylibmc and behaviors is not None:
         client.behaviors = behaviors
@@ -42,26 +51,29 @@ class DummyClient(object):
         self.cache.pop(key, None)
 
 
-backends = {"memcache": get_best_memcache,
-            "memcached": get_best_memcache,
-            "pylibmc": get_best_memcache,
-            "memory": DummyClient}
+backends = {"memcache": lambda: get_best_memcache,
+            "memcached": lambda: get_best_memcache,
+            "pylibmc": lambda: get_best_memcache,
+            "memory": lambda: DummyClient}
 
 
 class CacheBackend(KeyValueStoreBackend):
-    _client = None
 
-    def __init__(self, expires=conf.TASK_RESULT_EXPIRES,
-            backend=conf.CACHE_BACKEND, options={}, **kwargs):
+    def __init__(self, expires=None, backend=None, options={}, **kwargs):
         super(CacheBackend, self).__init__(self, **kwargs)
-        if isinstance(expires, timedelta):
-            expires = timeutils.timedelta_seconds(expires)
-        self.expires = int(expires)
-        self.options = dict(conf.CACHE_BACKEND_OPTIONS, **options)
+
+        self.expires = expires or self.app.conf.CELERY_TASK_RESULT_EXPIRES
+        if isinstance(self.expires, timedelta):
+            self.expires = timeutils.timedelta_seconds(self.expires)
+        self.options = dict(self.app.conf.CELERY_CACHE_BACKEND_OPTIONS,
+                            **options)
+
+        backend = backend or self.app.conf.CELERY_CACHE_BACKEND
+        self.expires = int(self.expires)
         self.backend, _, servers = partition(backend, "://")
-        self.servers = servers.split(";")
+        self.servers = servers.rstrip('/').split(";")
         try:
-            self.Client = backends[self.backend]
+            self.Client = backends[self.backend]()
         except KeyError:
             raise ImproperlyConfigured(
                     "Unknown cache backend: %s. Please use one of the "
@@ -77,8 +89,6 @@ class CacheBackend(KeyValueStoreBackend):
     def delete(self, key):
         return self.client.delete(key)
 
-    @property
+    @cached_property
     def client(self):
-        if self._client is None:
-            self._client = self.Client(self.servers, **self.options)
-        return self._client
+        return self.Client(self.servers, **self.options)

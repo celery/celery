@@ -1,5 +1,5 @@
 ========================================
- HTTP Callback Tasks - celery.task.http
+ celery.task.http
 ========================================
 
 .. contents::

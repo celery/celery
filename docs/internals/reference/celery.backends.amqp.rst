@@ -1,5 +1,5 @@
 =======================================
-Backend: AMQP - celery.backends.amqp
+ celery.backends.amqp
 =======================================
 
 .. contents::

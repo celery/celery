@@ -217,7 +217,10 @@ def parse_uid(uid):
         return int(uid)
     except ValueError:
         if pwd:
-            return pwd.getpwnam(uid).pw_uid
+            try:
+                return pwd.getpwnam(uid).pw_uid
+            except KeyError:
+                raise KeyError("User does not exist: %r" % (uid, ))
         raise
 
 
@@ -232,7 +235,10 @@ def parse_gid(gid):
         return int(gid)
     except ValueError:
         if grp:
-            return grp.getgrnam(gid).gr_gid
+            try:
+                return grp.getgrnam(gid).gr_gid
+            except KeyError:
+                raise KeyError("Group does not exist: %r" % (gid, ))
         raise
 
 
@@ -272,6 +278,15 @@ def set_effective_user(uid=None, gid=None):
         seteuid(uid)
     else:
         gid and setegid(gid)
+
+
+def get_signal(signal_name):
+    """Get signal number from signal name."""
+    if not isinstance(signal_name, basestring) or not signal_name.isupper():
+        raise TypeError("signal name must be uppercase string.")
+    if not signal_name.startswith("SIG"):
+        signal_name = "SIG" + signal_name
+    return getattr(signal, signal_name)
 
 
 def reset_signal(signal_name):
@@ -342,7 +357,10 @@ def set_mp_process_title(progname, info=None, hostname=None):
     Only works if :mod:`setproctitle` is installed.
 
     """
-    from multiprocessing.process import current_process
+    try:
+        from multiprocessing.process import current_process
+    except ImportError:
+        return
     if hostname:
         progname = "%s@%s" % (progname, hostname.split(".")[0])
     return set_process_title("%s:%s" % (progname, current_process().name),

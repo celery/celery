@@ -1,0 +1,152 @@
+#! /bin/sh
+#
+# chkconfig: - 55 45
+# description:  Celery worker daemon
+# processname: celeryd
+# config: /etc/sysconfig/celeryd
+# pidfile: /var/run/celeryd.pid
+#
+# To configure celeryd you probably need to tell it where to chdir.
+#
+# EXAMPLE CONFIGURATION
+# =====================
+#
+# this is an example configuration for a Python project:
+#
+# /etc/sysconfig/celeryd:
+#
+#   # Where to chdir at start.
+#   CELERYD_CHDIR="/opt/Myproject/"
+#
+#   # Extra arguments to celeryd
+#   CELERYD_OPTS="--time-limit=300"
+#
+#   # Name of the celery config module.#
+#   CELERY_CONFIG_MODULE="celeryconfig"
+#
+# EXAMPLE DJANGO CONFIGURATION
+# ============================
+#
+#   # Where the Django project is.
+#   CELERYD_CHDIR="/opt/Project/"
+#
+#   # Name of the projects settings module.
+#   export DJANGO_SETTINGS_MODULE="settings"
+#
+#   # Path to celeryd
+#   CELERYD="/opt/Project/manage.py"
+#
+#   # Extra arguments to manage.py
+#   CELERYD_OPTS="celeryd"
+#
+# AVAILABLE OPTIONS
+# =================
+#
+#   * CELERYD_OPTS
+#       Additional arguments to celeryd, see `celeryd --help` for a list.
+#
+#   * CELERYD_CHDIR
+#       Path to chdir at start. Default is to stay in the current directory.
+#
+#   * CELERYD_PID_FILE
+#       Full path to the pidfile. Default is /var/run/celeryd.pid.
+#
+#   * CELERYD_LOG_FILE
+#       Full path to the celeryd logfile. Default is /var/log/celeryd.log
+#
+#   * CELERYD_LOG_LEVEL
+#       Log level to use for celeryd. Default is INFO.
+#
+#   * CELERYD
+#       Path to the celeryd program. Default is `celeryd`.
+#       You can point this to an virtualenv, or even use manage.py for django.
+#
+#   * CELERYD_USER
+#       User to run celeryd as. Default is current user.
+#
+#   * CELERYD_GROUP
+#       Group to run celeryd as. Default is current user.
+#
+#   * VIRTUALENV
+#       Full path to the virtualenv environment to activate. Default is none.
+#
+#   * PYTHONPATH
+#       A directory to add to the Python path.
+
+# Source function library.
+. /etc/init.d/functions
+
+if test -f /etc/sysconfig/celeryd; then
+    . /etc/sysconfig/celeryd
+fi
+
+RETVAL=0
+
+DEFAULT_CELERYD="/usr/bin/celeryd"
+CELERYD_LOG_FILE=${CELERYD_LOG_FILE:-${CELERYD_LOGFILE:-"/var/log/celeryd.log"}}
+CELERYD_PID_FILE=${CELERYD_PID_FILE:-${CELERYD_PIDFILE:-"/var/run/celeryd.pid"}}
+CELERYD_LOG_LEVEL=${CELERYD_LOG_LEVEL:-${CELERYD_LOGLEVEL:-"INFO"}}
+CELERYD_USER=${CELERYD_USER:-${CELERYD_USER:-"celeryd"}}
+
+CELERYD=${CELERYD:-$DEFAULT_CELERYD}
+
+export CELERY_LOADER
+
+CELERYD_OPTS="$CELERYD_OPTS -f $CELERYD_LOG_FILE -l $CELERYD_LOG_LEVEL --pidfile=$CELERYD_PID_FILE"
+
+if [ -n "$2" ]; then
+    CELERYD_OPTS="$CELERYD_OPTS $2"
+fi
+
+# Append the Django settings module to use, if specified
+if [ -n "$DJANGO_SETTINGS_MODULE" ]; then
+    CELERYD_OPTS="$CELERYD_OPTS --settings=$DJANGO_SETTINGS_MODULE"
+fi
+
+start_worker () {
+    echo -n $"Starting deleryd: "
+    daemon --pidfile=$CELERYD_PID_FILE --user=$CELERYD_USER \
+      PYTHONPATH=$PYTHONPATH:$CELERY_PYTHONPATH $CELERYD $CELERYD_OPTS 2>/dev/null &
+    RETVAL=$?
+    sleep 3; echo
+    if [ -n "$VIRTUALENV" ]; then
+        source $VIRTUALENV/bin/activate
+    fi
+    [ $RETVAL -eq 0 ] && touch /var/lock/subsys/celeryd
+}
+
+stop_worker () {
+    echo -n $"Stopping celeryd: "
+    killproc -p $CELERYD_PID_FILE $CELERYD 2>/dev/null
+    RETVAL=$?
+    sleep 3; echo
+    if [ $RETVAL -eq 0 ]; then
+        rm -f /var/lock/subsys/celeryd
+        rm -f $CELERYD_PID_FILE
+    fi
+}
+
+case "$1" in
+  start)
+    start_worker
+    ;;
+
+  stop)
+    stop_worker
+    ;;
+
+  restart)
+    stop_worker
+    start_worker
+    ;;
+
+  status)
+    status celeryd
+    ;;
+
+  *)
+    echoi $"Usage: $0 {start|stop|restart|status}"
+    exit 1
+esac
+
+exit $?

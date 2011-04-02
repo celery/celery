@@ -1,16 +1,30 @@
 import logging
 import sys
-import unittest2 as unittest
+
+from kombu.tests.utils import redirect_stdouts
 
 from celery import beat
 from celery import platforms
+from celery.app import app_or_default
+from celery.bin import celerybeat as celerybeat_bin
 from celery.apps import beat as beatapp
-from celery.bin import celerybeat as celerybeat
+from celery.utils.compat import defaultdict
+
+from celery.tests.utils import AppCase
+
+
+class MockedShelveModule(object):
+    shelves = defaultdict(lambda: {})
+
+    def open(self, filename, *args, **kwargs):
+        return self.shelves[filename]
+mocked_shelve = MockedShelveModule()
 
 
 class MockService(beat.Service):
     started = False
     in_sync = False
+    persistence = mocked_shelve
 
     def start(self):
         self.__class__.started = True
@@ -33,7 +47,14 @@ class MockBeat2(beatapp.Beat):
         pass
 
 
-class test_Beat(unittest.TestCase):
+class MockBeat3(beatapp.Beat):
+    Service = MockService
+
+    def install_sync_handler(self, b):
+        raise TypeError("xxx")
+
+
+class test_Beat(AppCase):
 
     def test_loglevel_string(self):
         b = beatapp.Beat(loglevel="DEBUG")
@@ -80,31 +101,102 @@ class test_Beat(unittest.TestCase):
         self.assertTrue(MockService.in_sync)
         MockService.in_sync = False
 
+    def test_setup_logging(self):
+        b = beatapp.Beat()
+        b.redirect_stdouts = False
+        b.setup_logging()
+        self.assertRaises(AttributeError, getattr, sys.stdout, "logger")
 
-class test_div(unittest.TestCase):
+    @redirect_stdouts
+    def test_logs_errors(self, stdout, stderr):
+        class MockLogger(object):
+            _critical = []
 
-    def setUp(self):
+            def debug(self, *args, **kwargs):
+                pass
+
+            def critical(self, msg, *args, **kwargs):
+                self._critical.append(msg)
+
+        logger = MockLogger()
+        b = MockBeat3(socket_timeout=None)
+        b.start_scheduler(logger)
+
+        self.assertTrue(logger._critical)
+
+    @redirect_stdouts
+    def test_use_pidfile(self, stdout, stderr):
+        from celery import platforms
+
+        class create_pidlock(object):
+            instance = [None]
+
+            def __init__(self, file):
+                self.file = file
+                self.instance[0] = self
+
+            def acquire(self):
+                self.acquired = True
+
+                class Object(object):
+                    def release(self):
+                        pass
+
+                return Object()
+
+        prev, platforms.create_pidlock = platforms.create_pidlock, \
+                                         create_pidlock
+        try:
+            b = MockBeat2(pidfile="pidfilelockfilepid", socket_timeout=None)
+            b.start_scheduler()
+            self.assertTrue(create_pidlock.instance[0].acquired)
+        finally:
+            platforms.create_pidlock = prev
+
+
+class MockDaemonContext(object):
+    opened = False
+    closed = False
+
+    def open(self):
+        self.__class__.opened = True
+
+    def close(self):
+        self.__class__.closed = True
+
+
+def create_daemon_context(*args, **kwargs):
+    context = MockDaemonContext()
+    return context, context.close
+
+
+class test_div(AppCase):
+
+    def setup(self):
         self.prev, beatapp.Beat = beatapp.Beat, MockBeat
+        self.ctx, celerybeat_bin.create_daemon_context = \
+                celerybeat_bin.create_daemon_context, create_daemon_context
 
-    def tearDown(self):
+    def teardown(self):
         beatapp.Beat = self.prev
 
     def test_main(self):
         sys.argv = [sys.argv[0], "-s", "foo"]
         try:
-            celerybeat.main()
+            celerybeat_bin.main()
             self.assertTrue(MockBeat.running)
         finally:
             MockBeat.running = False
 
-    def test_run_celerybeat(self):
-        try:
-            beatapp.run_celerybeat()
-            self.assertTrue(MockBeat.running)
-        finally:
-            MockBeat.running = False
+    def test_detach(self):
+        cmd = celerybeat_bin.BeatCommand()
+        cmd.app = app_or_default()
+        cmd.run(detach=True)
+        self.assertTrue(MockDaemonContext.opened)
+        self.assertTrue(MockDaemonContext.closed)
 
     def test_parse_options(self):
-        options, args = celerybeat.BeatCommand().parse_options(
-                            "celerybeat", ["-s", "foo"])
+        cmd = celerybeat_bin.BeatCommand()
+        cmd.app = app_or_default()
+        options, args = cmd.parse_options("celerybeat", ["-s", "foo"])
         self.assertEqual(options.schedule, "foo")

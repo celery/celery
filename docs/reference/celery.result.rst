@@ -1,5 +1,5 @@
 =============================
-Task Result - celery.result
+ celery.result
 =============================
 
 .. contents::
