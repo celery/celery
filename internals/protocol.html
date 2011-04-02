@@ -67,8 +67,9 @@
 <div class="contents local topic" id="contents">
 <ul class="simple">
 <li><a class="reference internal" href="#message-format" id="id1">Message format</a></li>
-<li><a class="reference internal" href="#example-message" id="id2">Example message</a></li>
-<li><a class="reference internal" href="#serialization" id="id3">Serialization</a></li>
+<li><a class="reference internal" href="#extensions" id="id2">Extensions</a></li>
+<li><a class="reference internal" href="#example-message" id="id3">Example message</a></li>
+<li><a class="reference internal" href="#serialization" id="id4">Serialization</a></li>
 </ul>
 </div>
 <div class="section" id="message-format">
@@ -132,8 +133,25 @@ has been exceeded.</p>
 </li>
 </ul>
 </div>
+<div class="section" id="extensions">
+<h2><a class="toc-backref" href="#id2">Extensions</a><a class="headerlink" href="#extensions" title="Permalink to this headline">¶</a></h2>
+<p>Extensions are additional keys in the message body that the worker may or
+may not support.  If the worker finds an extension key it doesn&#8217;t support
+it should optimally reject the message so another worker gets a chance
+to process it.</p>
+<ul>
+<li><p class="first">taskset_id</p>
+<p>The taskset this task is part of.</p>
+</li>
+<li><p class="first">chord</p>
+<p>Siginifies that this task is one of the header parts of a chord.  The value
+of this key is the body of the cord that should be executed when all of
+the tasks in the header has returned.</p>
+</li>
+</ul>
+</div>
 <div class="section" id="example-message">
-<h2><a class="toc-backref" href="#id2">Example message</a><a class="headerlink" href="#example-message" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id3">Example message</a><a class="headerlink" href="#example-message" title="Permalink to this headline">¶</a></h2>
 <p>This is an example invocation of the <cite>celery.task.PingTask</cite> task in JSON
 format:</p>
 <div class="highlight-javascript"><div class="highlight"><pre><span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;4cc7438e-afd4-4f8f-a2f3-f46567e7ca77&quot;</span><span class="p">,</span>
@@ -146,7 +164,7 @@ format:</p>
 </div>
 </div>
 <div class="section" id="serialization">
-<h2><a class="toc-backref" href="#id3">Serialization</a><a class="headerlink" href="#serialization" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id4">Serialization</a><a class="headerlink" href="#serialization" title="Permalink to this headline">¶</a></h2>
 <p>The protocol supports several serialization formats using the
 <cite>content_type</cite> message header.</p>
 <p>The MIME-types supported by default are shown in the following table.</p>

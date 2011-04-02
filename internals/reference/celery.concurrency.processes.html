@@ -208,7 +208,7 @@ to give the task a chance to clean up.</p>
 
 <dl class="class">
 <dt id="celery.concurrency.processes.TaskPool.Pool.TimeoutHandler">
-<em class="property">class </em><tt class="descclassname">TaskPool.Pool.</tt><tt class="descname">TimeoutHandler</tt><big>(</big><em>processes</em>, <em>cache</em>, <em>t_soft</em>, <em>t_hard</em>, <em>putlock</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.TaskPool.Pool.TimeoutHandler" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">TaskPool.Pool.</tt><tt class="descname">TimeoutHandler</tt><big>(</big><em>processes</em>, <em>cache</em>, <em>t_soft</em>, <em>t_hard</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.TaskPool.Pool.TimeoutHandler" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="celery.concurrency.processes.TaskPool.Pool.TimeoutHandler.body">
 <tt class="descname">body</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.TaskPool.Pool.TimeoutHandler.body" title="Permalink to this definition">¶</a></dt>
@@ -224,7 +224,7 @@ to give the task a chance to clean up.</p>
 
 <dl class="method">
 <dt id="celery.concurrency.processes.TaskPool.Pool.apply_async">
-<tt class="descclassname">TaskPool.Pool.</tt><tt class="descname">apply_async</tt><big>(</big><em>func</em>, <em>args=()</em>, <em>kwds={}</em>, <em>callback=None</em>, <em>accept_callback=None</em>, <em>timeout_callback=None</em>, <em>waitforslot=False</em>, <em>error_callback=None</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.TaskPool.Pool.apply_async" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">TaskPool.Pool.</tt><tt class="descname">apply_async</tt><big>(</big><em>func</em>, <em>args=()</em>, <em>kwds={}</em>, <em>callback=None</em>, <em>accept_callback=None</em>, <em>timeout_callback=None</em>, <em>waitforslot=False</em>, <em>error_callback=None</em>, <em>soft_timeout=None</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.TaskPool.Pool.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Asynchronous equivalent of <cite>apply()</cite> builtin.</p>
 <p>Callback is called when the functions return value is ready.
 The accept callback is called when the job is accepted to be executed.</p>

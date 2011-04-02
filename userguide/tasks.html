@@ -314,6 +314,20 @@ rate limiting for tasks is disabled by default.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="Task.time_limit">
+<tt class="descclassname">Task.</tt><tt class="descname">time_limit</tt><a class="headerlink" href="#Task.time_limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>The hard time limit for this task.  If not set then the workers default
+will be used.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Task.soft_time_limit">
+<tt class="descclassname">Task.</tt><tt class="descname">soft_time_limit</tt><a class="headerlink" href="#Task.soft_time_limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>The soft time limit for this task.  If not set then the workers default
+will be used.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="Task.ignore_result">
 <tt class="descclassname">Task.</tt><tt class="descname">ignore_result</tt><a class="headerlink" href="#Task.ignore_result" title="Permalink to this definition">¶</a></dt>
 <dd><p>Don&#8217;t store task state.    Note that this means you can&#8217;t use
@@ -331,7 +345,7 @@ to ignore results.</p>
 <dl class="attribute">
 <dt id="Task.send_error_emails">
 <tt class="descclassname">Task.</tt><tt class="descname">send_error_emails</tt><a class="headerlink" href="#Task.send_error_emails" title="Permalink to this definition">¶</a></dt>
-<dd><p>Send an e-mail whenever a task of this type fails.
+<dd><p>Send an email whenever a task of this type fails.
 Defaults to the <tt class="xref std std-setting docutils literal"><span class="pre">CELERY_SEND_TASK_ERROR_EMAILS</span></tt> setting.
 See <a class="reference internal" href="../configuration.html#conf-error-mails"><em>Error E-Mails</em></a> for more information.</p>
 </dd></dl>
@@ -339,8 +353,8 @@ See <a class="reference internal" href="../configuration.html#conf-error-mails">
 <dl class="attribute">
 <dt id="Task.error_whitelist">
 <tt class="descclassname">Task.</tt><tt class="descname">error_whitelist</tt><a class="headerlink" href="#Task.error_whitelist" title="Permalink to this definition">¶</a></dt>
-<dd><p>If the sending of error e-mails is enabled for this task, then
-this is a white list of exceptions to actually send e-mails about.</p>
+<dd><p>If the sending of error emails is enabled for this task, then
+this is a white list of exceptions to actually send emails about.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -984,7 +998,7 @@ application.</p>
 
 <span class="k">class</span> <span class="nc">Comment</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
     <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">),</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span>
-    <span class="n">email_address</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">EmailField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;e-mail address&quot;</span><span class="p">))</span>
+    <span class="n">email_address</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">EmailField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;email address&quot;</span><span class="p">))</span>
     <span class="n">homepage</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">URLField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;home page&quot;</span><span class="p">),</span>
                                <span class="n">blank</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">verify_exists</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
     <span class="n">comment</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;comment&quot;</span><span class="p">))</span>

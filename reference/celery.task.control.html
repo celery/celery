@@ -198,7 +198,7 @@ connection is not provided.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>task_name</strong> &#8211; Type of task to change rate limit for.</li>
+<li><strong>task_name</strong> &#8211; Name of task to change rate limit for.</li>
 <li><strong>rate_limit</strong> &#8211; The rate limit as tasks per second, or a rate limit
 string (<cite>&#8220;100/m&#8221;</cite>, etc.
 see <tt class="xref py py-attr docutils literal"><span class="pre">celery.task.base.Task.rate_limit</span></tt> for
@@ -249,6 +249,26 @@ connection is not provided.</li>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Control.time_limit">
+<tt class="descclassname">Control.</tt><tt class="descname">time_limit</tt><big>(</big><em>task_name</em>, <em>soft=None</em>, <em>hard=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.control.Control.time_limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set time limits for task by type.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>task_name</strong> &#8211; Name of task to change time limits for.</li>
+<li><strong>soft</strong> &#8211; New soft time limit (in seconds).</li>
+<li><strong>hard</strong> &#8211; New hard time limit (in seconds).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Any additional keyword arguments are passed on to <a class="reference internal" href="#celery.task.control.Control.broadcast" title="celery.task.control.Control.broadcast"><tt class="xref py py-meth docutils literal"><span class="pre">broadcast()</span></tt></a>.</p>
 </dd></dl>
 
 </dd></dl>

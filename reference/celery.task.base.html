@@ -309,7 +309,7 @@ manual for any additional delivery modes.</p>
 <dl class="attribute">
 <dt id="celery.task.base.BaseTask.error_whitelist">
 <tt class="descclassname">BaseTask.</tt><tt class="descname">error_whitelist</tt><a class="headerlink" href="#celery.task.base.BaseTask.error_whitelist" title="Permalink to this definition">¶</a></dt>
-<dd><p>List of exception types to send error e-mails for.</p>
+<dd><p>List of exception types to send error emails for.</p>
 </dd></dl>
 
 <dl class="classmethod">
@@ -607,7 +607,7 @@ to convey that the rest of the block will not be executed.</p>
 <dl class="attribute">
 <dt id="celery.task.base.BaseTask.send_error_emails">
 <tt class="descclassname">BaseTask.</tt><tt class="descname">send_error_emails</tt><a class="headerlink" href="#celery.task.base.BaseTask.send_error_emails" title="Permalink to this definition">¶</a></dt>
-<dd><p>If enabled an e-mail will be sent to <a class="reference internal" href="../configuration.html#std:setting-ADMINS"><tt class="xref std std-setting docutils literal"><span class="pre">ADMINS</span></tt></a> whenever a task
+<dd><p>If enabled an email will be sent to <a class="reference internal" href="../configuration.html#std:setting-ADMINS"><tt class="xref std std-setting docutils literal"><span class="pre">ADMINS</span></tt></a> whenever a task
 of this type fails.</p>
 </dd></dl>
 
@@ -616,6 +616,13 @@ of this type fails.</p>
 <tt class="descclassname">BaseTask.</tt><tt class="descname">serializer</tt><a class="headerlink" href="#celery.task.base.BaseTask.serializer" title="Permalink to this definition">¶</a></dt>
 <dd><p>The name of a serializer that are registered with
 <tt class="xref py py-mod docutils literal"><span class="pre">kombu.serialization.registry</span></tt>.  Default is <cite>&#8220;pickle&#8221;</cite>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.task.base.BaseTask.soft_time_limit">
+<tt class="descclassname">BaseTask.</tt><tt class="descname">soft_time_limit</tt><a class="headerlink" href="#celery.task.base.BaseTask.soft_time_limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Soft time limit.
+Defaults to the <tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TASK_SOFT_TIME_LIMIT</span></tt> setting.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -631,6 +638,13 @@ configured to ignore results.</p>
 <dd><p>Returns <a class="reference internal" href="celery.task.sets.html#celery.task.sets.subtask" title="celery.task.sets.subtask"><tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt></a> object for
 this task, wrapping arguments and execution options
 for a single task invocation.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.task.base.BaseTask.time_limit">
+<tt class="descclassname">BaseTask.</tt><tt class="descname">time_limit</tt><a class="headerlink" href="#celery.task.base.BaseTask.time_limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hard time limit.
+Defaults to the <tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TASK_TIME_LIMIT</span></tt> setting.</p>
 </dd></dl>
 
 <dl class="attribute">

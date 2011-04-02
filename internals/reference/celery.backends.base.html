@@ -84,6 +84,11 @@
 </dd></dl>
 
 <dl class="method">
+<dt id="celery.backends.base.BaseBackend.delete_taskset">
+<tt class="descclassname">BaseBackend.</tt><tt class="descname">delete_taskset</tt><big>(</big><em>taskset_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.delete_taskset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.backends.base.BaseBackend.encode_result">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">encode_result</tt><big>(</big><em>result</em>, <em>status</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.encode_result" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -149,7 +154,7 @@ exception (if any).</p>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.on_chord_apply">
-<tt class="descclassname">BaseBackend.</tt><tt class="descname">on_chord_apply</tt><big>(</big><em>setid</em>, <em>body</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.on_chord_apply" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseBackend.</tt><tt class="descname">on_chord_apply</tt><big>(</big><em>setid</em>, <em>body</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.on_chord_apply" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -222,6 +227,11 @@ takes longer than <cite>timeout</cite> seconds.</p>
 <dt id="celery.backends.base.BaseDictBackend">
 <em class="property">class </em><tt class="descclassname">celery.backends.base.</tt><tt class="descname">BaseDictBackend</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseDictBackend" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
+<dt id="celery.backends.base.BaseDictBackend.delete_taskset">
+<tt class="descname">delete_taskset</tt><big>(</big><em>taskset_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseDictBackend.delete_taskset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.backends.base.BaseDictBackend.forget">
 <tt class="descname">forget</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseDictBackend.forget" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>

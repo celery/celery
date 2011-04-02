@@ -216,7 +216,7 @@
 
 <dl class="method">
 <dt id="celery.concurrency.base.BasePool.apply_async">
-<tt class="descclassname">BasePool.</tt><tt class="descname">apply_async</tt><big>(</big><em>target</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>callbacks=None</em>, <em>errbacks=None</em>, <em>accept_callback=None</em>, <em>timeout_callback=None</em>, <em>**compat</em><big>)</big><a class="headerlink" href="#celery.concurrency.base.BasePool.apply_async" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BasePool.</tt><tt class="descname">apply_async</tt><big>(</big><em>target</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>callbacks=None</em>, <em>errbacks=None</em>, <em>accept_callback=None</em>, <em>timeout_callback=None</em>, <em>soft_timeout=None</em>, <em>timeout=None</em>, <em>**compat</em><big>)</big><a class="headerlink" href="#celery.concurrency.base.BasePool.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Equivalent of the <tt class="xref py py-func docutils literal"><span class="pre">apply()</span></tt> built-in function.</p>
 <p>All <cite>callbacks</cite> and <cite>errbacks</cite> should complete immediately since
 otherwise the thread which handles the result will get blocked.</p>

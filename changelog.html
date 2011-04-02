@@ -282,8 +282,37 @@ currently provided by the Redis result backend.</p>
 <span class="go">9900</span>
 </pre></div>
 </div>
-<p>Please read the <em class="xref std std-ref">Chord section in the user guide</em>, if you
+<p>Please read the <a class="reference internal" href="userguide/tasksets.html#chords"><em>Chords section in the user guide</em></a>, if you
 want to know more.</p>
+</blockquote>
+</li>
+<li><p class="first">Time limits can now be set for individual tasks.</p>
+<blockquote>
+<p>To set the soft and hard time limits for a task use the <tt class="docutils literal"><span class="pre">time_limit</span></tt>
+and <tt class="docutils literal"><span class="pre">soft_time_limit</span></tt> attributes:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">time</span>
+
+<span class="nd">@task</span><span class="p">(</span><span class="n">time_limit</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">soft_time_limit</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">sleeptask</span><span class="p">(</span><span class="n">seconds</span><span class="p">):</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">seconds</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>If the attributes are not set, then the workers default time limits
+will be used.</p>
+<p>New in this version you can also change the time limits for a task
+at runtime using the <tt class="xref py py-func docutils literal"><span class="pre">time_limit()</span></tt> remote control command:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">control</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">control</span><span class="o">.</span><span class="n">time_limit</span><span class="p">(</span><span class="s">&quot;tasks.sleeptask&quot;</span><span class="p">,</span>
+<span class="gp">... </span>                                       <span class="n">soft</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">hard</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span> <span class="n">reply</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">[{&#39;worker1.example.com&#39;: {&#39;ok&#39;: &#39;time limits set successfully&#39;}}]</span>
+</pre></div>
+</div>
+<p>Only tasks that starts executing after the time limit change will be affected.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Soft time limits will still not work on Windows or other platforms
+that do not have the <tt class="docutils literal"><span class="pre">SIGUSR1</span></tt> signal.</p>
+</div>
 </blockquote>
 </li>
 </ul>
@@ -1330,7 +1359,7 @@ it does no longer save the pending state (<a class="issue-closed reference-issue
 <li><p class="first">Error email body now uses <cite>repr(exception)</cite> instead of <cite>str(exception)</cite>,
 as the latter could result in Unicode decode errors (<a class="issue-closed reference-issue reference external" href="http://github.com/ask/celery/issues/245">Issue #245</a>).</p>
 </li>
-<li><p class="first">Error e-mail timeout value is now configurable by using the
+<li><p class="first">Error email timeout value is now configurable by using the
 <tt class="xref std std-setting docutils literal"><span class="pre">EMAIL_TIMEOUT</span></tt> setting.</p>
 </li>
 <li><p class="first"><cite>celeryev</cite>: Now works on Windows (but the curses monitor won&#8217;t work without
@@ -2177,7 +2206,7 @@ if no destination was specified.</p>
 <li><p class="first">Can now store result/metadata for custom states.</p>
 </li>
 <li><p class="first">celeryd: A warning is now emitted if the sending of task error
-e-mails fails.</p>
+emails fails.</p>
 </li>
 <li><p class="first">celeryev: Curses monitor no longer crashes if the terminal window
 is resized.</p>
@@ -2323,7 +2352,7 @@ instead.</p>
 </li>
 <li><p class="first">Task logger: <cite>warn</cite> method added (synonym for <cite>warning</cite>)</p>
 </li>
-<li><p class="first">Can now define a white list of errors to send error e-mails for.</p>
+<li><p class="first">Can now define a white list of errors to send error emails for.</p>
 <blockquote>
 <p>Example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_TASK_ERROR_WHITELIST</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;myapp.MalformedInputError&#39;</span><span class="p">)</span>
@@ -4253,7 +4282,7 @@ reference.</li>
 bugs related to it. Instead, use something like start-stop-daemon,
 Supervisord or launchd (os x).</li>
 <li>Make sure logger class is process aware, even if running Python &gt;= 2.6.</li>
-<li>Error e-mails are not sent anymore when the task is retried.</li>
+<li>Error emails are not sent anymore when the task is retried.</li>
 </ul>
 </div>
 <div class="section" id="version-0-8-3">
@@ -4887,7 +4916,7 @@ more than one task.</p>
 </li>
 <li><p class="first">Fixed typo <cite>AMQP_SERVER</cite> in documentation to <cite>AMQP_HOST</cite>.</p>
 </li>
-<li><p class="first">Worker exception e-mails sent to administrators now works properly.</p>
+<li><p class="first">Worker exception emails sent to administrators now works properly.</p>
 </li>
 <li><p class="first">No longer depends on <cite>django</cite>, so installing <cite>celery</cite> won&#8217;t affect
 the preferred Django version installed.</p>
@@ -4984,7 +5013,7 @@ taskset as it was a single entity.</p>
 </li>
 <li><p class="first"><strong>IMPORTANT</strong> Celery now depends on carrot &gt;= 0.4.1.</p>
 </li>
-<li><p class="first">The celery daemon now sends task errors to the registered admin e-mails.
+<li><p class="first">The celery daemon now sends task errors to the registered admin emails.
 To turn off this feature, set <cite>SEND_CELERY_TASK_ERROR_EMAILS</cite> to
 <cite>False</cite> in your <cite>settings.py</cite>. Thanks to Grégoire Cachet.</p>
 </li>

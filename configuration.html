@@ -756,20 +756,20 @@ be 1 second. If you need near millisecond precision you can set this to 0.1.</p>
 <span id="std:setting-CELERYD_SEND_TASK_ERROR_EMAILS"></span><h4>CELERY_SEND_TASK_ERROR_EMAILS<a class="headerlink" href="#celery-send-task-error-emails" title="Permalink to this headline">¶</a></h4>
 <p>The default value for the <cite>Task.send_error_emails</cite> attribute, which if
 set to <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> means errors occurring during task execution will be
-sent to <a class="reference internal" href="#std:setting-ADMINS"><tt class="xref std std-setting docutils literal"><span class="pre">ADMINS</span></tt></a> by e-mail.</p>
+sent to <a class="reference internal" href="#std:setting-ADMINS"><tt class="xref std std-setting docutils literal"><span class="pre">ADMINS</span></tt></a> by email.</p>
 </div>
 <div class="section" id="celery-task-error-whitelist">
 <span id="std:setting-CELERY_TASK_ERROR_WHITELIST"></span><h4>CELERY_TASK_ERROR_WHITELIST<a class="headerlink" href="#celery-task-error-whitelist" title="Permalink to this headline">¶</a></h4>
-<p>A white list of exceptions to send error e-mails for.</p>
+<p>A white list of exceptions to send error emails for.</p>
 </div>
 <div class="section" id="admins">
 <span id="std:setting-ADMINS"></span><h4>ADMINS<a class="headerlink" href="#admins" title="Permalink to this headline">¶</a></h4>
 <p>List of <cite>(name, email_address)</cite> tuples for the administrators that should
-receive error e-mails.</p>
+receive error emails.</p>
 </div>
 <div class="section" id="server-email">
 <span id="std:setting-SERVER_EMAIL"></span><h4>SERVER_EMAIL<a class="headerlink" href="#server-email" title="Permalink to this headline">¶</a></h4>
-<p>The e-mail address this worker sends e-mails from.
+<p>The email address this worker sends emails from.
 Default is <a class="reference external" href="mailto:celery&#37;&#52;&#48;localhost">celery<span>&#64;</span>localhost</a>.</p>
 </div>
 <div class="section" id="mail-host">
@@ -790,18 +790,18 @@ Default is <a class="reference external" href="mailto:celery&#37;&#52;&#48;local
 </div>
 <div class="section" id="example-e-mail-configuration">
 <span id="conf-example-error-mail-config"></span><h4>Example E-Mail configuration<a class="headerlink" href="#example-e-mail-configuration" title="Permalink to this headline">¶</a></h4>
-<p>This configuration enables the sending of error e-mails to
+<p>This configuration enables the sending of error emails to
 <a class="reference external" href="mailto:george&#37;&#52;&#48;vandelay&#46;com">george<span>&#64;</span>vandelay<span>&#46;</span>com</a> and <a class="reference external" href="mailto:kramer&#37;&#52;&#48;vandelay&#46;com">kramer<span>&#64;</span>vandelay<span>&#46;</span>com</a>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># Enables error e-mails.</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Enables error emails.</span>
 <span class="n">CELERY_SEND_TASK_ERROR_EMAILS</span> <span class="o">=</span> <span class="bp">True</span>
 
-<span class="c"># Name and e-mail addresses of recipients</span>
+<span class="c"># Name and email addresses of recipients</span>
 <span class="n">ADMINS</span> <span class="o">=</span> <span class="p">(</span>
     <span class="p">(</span><span class="s">&quot;George Costanza&quot;</span><span class="p">,</span> <span class="s">&quot;george@vandelay.com&quot;</span><span class="p">),</span>
     <span class="p">(</span><span class="s">&quot;Cosmo Kramer&quot;</span><span class="p">,</span> <span class="s">&quot;kosmo@vandelay.com&quot;</span><span class="p">),</span>
 <span class="p">)</span>
 
-<span class="c"># E-mail address used as sender (From field).</span>
+<span class="c"># Email address used as sender (From field).</span>
 <span class="n">SERVER_EMAIL</span> <span class="o">=</span> <span class="s">&quot;no-reply@vandelay.com&quot;</span>
 
 <span class="c"># Mailserver configuration</span>

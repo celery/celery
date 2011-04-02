@@ -256,7 +256,7 @@ to be able to log into the admin later)::
     have any superusers defined.  Would you like to create
     one now? (yes/no): yes
     Username (Leave blank to use 'username'): username
-    E-mail address: me@example.com
+    Email address: me@example.com
     Password: ******
     Password (again): ******
     Superuser created successfully.
@@ -418,7 +418,7 @@ still only periodically write it to disk.
 
 To take snapshots you need a Camera class, with this you can define
 what should happen every time the state is captured;  You can
-write it to a database, send it by e-mail or something else entirely.
+write it to a database, send it by email or something else entirely.
 
 :program:`celeryev` is then used to take snapshots with the camera,
 for example if you want to capture state every 2 seconds using the
