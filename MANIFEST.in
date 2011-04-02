@@ -10,15 +10,16 @@ include TODO
 include THANKS
 include pavement.py
 include setup.cfg
-recursive-include bin *
 recursive-include celery *.py
-recursive-include funtests *
+recursive-include funtests *.py
 recursive-include docs *
 recursive-include contrib *
 recursive-include examples *
+recursive-include requirements *.txt
 prune tests/*.pyc
 prune docs/*.pyc
 prune contrib/*.pyc
 prune celery/*.pyc
+prune examples/*.pyc
 prune bin/*.pyc
 prune docs/.build
