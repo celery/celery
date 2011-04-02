@@ -8,7 +8,6 @@ include MANIFEST.in
 include LICENSE
 include TODO
 include THANKS
-include pavement.py
 include setup.cfg
 recursive-include celery *.py
 recursive-include funtests *.py
