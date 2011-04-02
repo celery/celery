@@ -80,8 +80,39 @@ News
         ...         for i in xrange(100))(tsum.subtask()).get()
         9900
 
-    Please read the :ref:`Chord section in the user guide <chord>`, if you
+    Please read the :ref:`Chords section in the user guide <chords>`, if you
     want to know more.
+
+* Time limits can now be set for individual tasks.
+
+	To set the soft and hard time limits for a task use the ``time_limit``
+	and ``soft_time_limit`` attributes:
+
+	.. code-block:: python
+
+		import time
+
+		@task(time_limit=60, soft_time_limit=30)
+		def sleeptask(seconds):
+			time.sleep(seconds)
+
+	If the attributes are not set, then the workers default time limits
+	will be used.
+
+	New in this version you can also change the time limits for a task
+	at runtime using the :func:`time_limit` remote control command::
+
+		>>> from celery.task import control
+		>>> control.time_limit("tasks.sleeptask",
+		...					   soft=60, hard=120, reply=True)
+		[{'worker1.example.com': {'ok': 'time limits set successfully'}}]
+
+	Only tasks that starts executing after the time limit change will be affected.
+
+	.. note::
+
+		Soft time limits will still not work on Windows or other platforms
+		that do not have the ``SIGUSR1`` signal.
 
 .. _version-2.2.5:
 

@@ -213,6 +213,16 @@ General
     :setting:`CELERY_DEFAULT_RATE_LIMIT` setting, which if not specified means
     rate limiting for tasks is disabled by default.
 
+.. attribute:: Task.time_limit
+
+    The hard time limit for this task.  If not set then the workers default
+    will be used.
+
+.. attribute:: Task.soft_time_limit
+
+    The soft time limit for this task.  If not set then the workers default
+    will be used.
+
 .. attribute:: Task.ignore_result
 
     Don't store task state.    Note that this means you can't use
