@@ -273,7 +273,6 @@ class TimeoutHandler(PoolThread):
         self.cache = cache
         self.t_soft = t_soft
         self.t_hard = t_hard
-        self.putlock = putlock
         super(TimeoutHandler, self).__init__()
 
     def body(self):

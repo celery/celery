@@ -99,6 +99,24 @@ def rate_limit(panel, task_name, rate_limit, **kwargs):
 
 
 @Panel.register
+def time_limit(panel, task_name=None, hard=None, soft=None, **kwargs):
+    try:
+        task = tasks[task_name]
+    except KeyError:
+        panel.logger.error(
+            "Change time limit attempt for unknown task %s" % (task_name, ))
+        return {"error": "unknown task"}
+
+    task.soft_time_limit = soft
+    task.time_limit = hard
+
+    panel.logger.info(
+        "New time limits for tasks of type %s: soft=%s hard=%s" % (
+            task_name, soft, hard))
+    return {"ok": "time limits set successfully"}
+
+
+@Panel.register
 def dump_schedule(panel, safe=False, **kwargs):
     schedule = panel.consumer.eta_schedule.schedule
     if not schedule.queue:

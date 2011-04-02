@@ -138,7 +138,27 @@ Time limits can also be set using the :setting:`CELERYD_TASK_TIME_LIMIT` /
 
 .. note::
 
-    Time limits do not currently work on Windows.
+    Time limits do not currently work on Windows and other
+    platforms that do not support the ``SIGUSR1`` signal.
+
+
+Changing time limits at runtime
+-------------------------------
+.. versionadded:: 2.3
+
+You can change the soft and hard time limits for a task by using the
+``time_limit`` remote control command.
+
+Example changing the time limit for the ``tasks.crawl_the_web`` task
+to have a soft time limit of one minute, and a hard time limit of
+two minutes::
+
+    >>> from celery.task import control
+    >>> control.time_limit("tasks.crawl_the_web",
+                           soft=60, hard=120, reply=True)
+    [{'worker1.example.com': {'ok': 'time limits set successfully'}}]
+
+Only tasks that starts executing after the time limit change will be affected.
 
 .. _worker-maxtasksperchild:
 

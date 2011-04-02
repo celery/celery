@@ -155,7 +155,7 @@ class Control(object):
     def rate_limit(self, task_name, rate_limit, destination=None, **kwargs):
         """Set rate limit for task by type.
 
-        :param task_name: Type of task to change rate limit for.
+        :param task_name: Name of task to change rate limit for.
         :param rate_limit: The rate limit as tasks per second, or a rate limit
             string (`"100/m"`, etc.
             see :attr:`celery.task.base.Task.rate_limit` for
@@ -174,6 +174,21 @@ class Control(object):
         return self.broadcast("rate_limit", destination=destination,
                               arguments={"task_name": task_name,
                                          "rate_limit": rate_limit},
+                              **kwargs)
+
+    def time_limit(self, task_name, soft=None, hard=None, **kwargs):
+        """Set time limits for task by type.
+
+        :param task_name: Name of task to change time limits for.
+        :keyword soft: New soft time limit (in seconds).
+        :keyword hard: New hard time limit (in seconds).
+
+        Any additional keyword arguments are passed on to :meth:`broadcast`.
+
+        """
+        return self.broadcast("time_limit",
+                              arguments={"task_name": task_name,
+                                         "hard": hard, "soft": soft},
                               **kwargs)
 
     def broadcast(self, command, arguments=None, destination=None,
@@ -214,6 +229,7 @@ class Control(object):
 _default_control = Control(app_or_default())
 broadcast = _default_control.broadcast
 rate_limit = _default_control.rate_limit
+time_limit = _default_control.time_limit
 ping = _default_control.ping
 revoke = _default_control.revoke
 discard_all = _default_control.discard_all
