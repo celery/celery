@@ -1,3 +1,4 @@
+import sys
 from paver.easy import *
 from paver import doctools
 from paver.setuputils import setup
@@ -49,7 +50,8 @@ def ghdocs(options):
 @needs("clean_docs", "paver.doctools.html")
 def upload_pypi_docs(options):
     builtdocs = path("docs") / options.builddir / "html"
-    sh("python setup.py upload_sphinx --upload-dir='%s'" % (builtdocs))
+    sh("%s setup.py upload_sphinx --upload-dir='%s'" % (
+        sys.executable, builtdocs))
 
 
 @task
@@ -66,6 +68,12 @@ def autodoc(options):
 @task
 def verifyindex(options):
     sh("contrib/release/verify-reference-index.sh")
+
+
+@task
+def verifyconfigref(options):
+    sh("PYTHONPATH=. %s contrib/release/verify_config_reference.py \
+            docs/configuration.rst" % (sys.executable, ))
 
 
 @task
@@ -91,8 +99,8 @@ def clean_readme(options):
 @task
 @needs("clean_readme")
 def readme(options):
-    sh("python contrib/release/sphinx-to-rst.py docs/templates/readme.txt \
-            > README.rst")
+    sh("%s contrib/release/sphinx-to-rst.py docs/templates/readme.txt \
+            > README.rst" % (sys.executable, ))
     sh("ln -sf README.rst README")
 
 
@@ -146,7 +154,8 @@ def gitcleanforce(options):
 
 
 @task
-@needs("pep8", "flakes", "autodoc", "verifyindex", "test", "gitclean")
+@needs("pep8", "flakes", "autodoc", "verifyindex",
+       "verifyconfigref", "test", "gitclean")
 def releaseok(options):
     pass
 
