@@ -50,60 +50,6 @@ class TaskPool(BasePool):
             self._pool.terminate()
             self._pool = None
 
-    def apply_async(self, target, args=None, kwargs=None, callbacks=None,
-            errbacks=None, accept_callback=None, timeout_callback=None,
-            soft_timeout=None, timeout=None, **compat):
-        """Equivalent of the :func:``apply`` built-in function.
-
-        All ``callbacks`` and ``errbacks`` should complete immediately since
-        otherwise the thread which handles the result will get blocked.
-
-        """
-        args = args or []
-        kwargs = kwargs or {}
-        callbacks = callbacks or []
-        errbacks = errbacks or []
-
-        on_ready = curry(self.on_ready, callbacks, errbacks)
-        on_worker_error = curry(self.on_worker_error, errbacks)
-
-        self.logger.debug("TaskPool: Apply %s (args:%s kwargs:%s)" % (
-            target, args, kwargs))
-
-        return self._pool.apply_async(target, args, kwargs,
-                                      callback=on_ready,
-                                      accept_callback=accept_callback,
-                                      timeout_callback=timeout_callback,
-                                      error_callback=on_worker_error,
-                                      waitforslot=self.putlocks,
-                                      soft_timeout=soft_timeout,
-                                      timeout=timeout)
-
-    def on_worker_error(self, errbacks, exc):
-        einfo = ExceptionInfo((exc.__class__, exc, None))
-        [errback(einfo) for errback in errbacks]
-
-    def on_ready(self, callbacks, errbacks, ret_value):
-        """What to do when a worker task is ready and its return value has
-        been collected."""
-
-        if isinstance(ret_value, ExceptionInfo):
-            if isinstance(ret_value.exception, (
-                    SystemExit, KeyboardInterrupt)):
-                raise ret_value.exception
-            [self.safe_apply_callback(errback, ret_value)
-                    for errback in errbacks]
-        else:
-            [self.safe_apply_callback(callback, ret_value)
-                    for callback in callbacks]
-
-    def safe_apply_callback(self, fun, *args):
-        try:
-            fun(*args)
-        except:
-            self.logger.error("Pool callback raised exception: %s" % (
-                traceback.format_exc(), ))
-
     def terminate_job(self, pid, signal=None):
         os.kill(pid, signal or _signal.SIGTERM)
 

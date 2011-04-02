@@ -300,6 +300,7 @@ class WorkController(object):
                 stop = getattr(component, "terminate", stop)
             stop()
 
+        self.priority_timer.stop()
         self.consumer.close_connection()
         self._state = self.TERMINATE
 

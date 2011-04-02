@@ -388,10 +388,11 @@ class test_TaskRequest(unittest.TestCase):
 
         tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
         tw.logger = MockLogger()
-        tw.on_timeout(soft=True)
-        self.assertIn("Soft time limit exceeded", tw.logger.warnings[0])
-        tw.on_timeout(soft=False)
-        self.assertIn("Hard time limit exceeded", tw.logger.errors[0])
+        tw.on_timeout(soft=True, timeout=1337)
+        self.assertIn("Soft time limit (1337s) exceeded",
+                      tw.logger.warnings[0])
+        tw.on_timeout(soft=False, timeout=1337)
+        self.assertIn("Hard time limit (1337s) exceeded", tw.logger.errors[0])
         self.assertEqual(mytask.backend.get_status(tw.task_id),
                          states.FAILURE)
 
@@ -401,7 +402,7 @@ class test_TaskRequest(unittest.TestCase):
             tw.logger = MockLogger()
         finally:
             mytask.ignore_result = False
-            tw.on_timeout(soft=True)
+            tw.on_timeout(soft=True, timeout=1336)
             self.assertEqual(mytask.backend.get_status(tw.task_id),
                              states.PENDING)
 

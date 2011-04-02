@@ -21,6 +21,7 @@ import itertools
 import collections
 import time
 import signal
+import warnings
 
 from multiprocessing import Process, cpu_count, TimeoutError
 from multiprocessing import util
@@ -267,7 +268,7 @@ class TaskHandler(PoolThread):
 
 class TimeoutHandler(PoolThread):
 
-    def __init__(self, processes, cache, t_soft, t_hard, putlock):
+    def __init__(self, processes, cache, t_soft, t_hard):
         self.processes = processes
         self.cache = cache
         self.t_soft = t_soft
@@ -278,7 +279,6 @@ class TimeoutHandler(PoolThread):
     def body(self):
         processes = self.processes
         cache = self.cache
-        putlock = self.putlock
         t_hard, t_soft = self.t_hard, self.t_soft
         dirty = set()
 
@@ -492,9 +492,10 @@ class Pool(object):
         self._initializer = initializer
         self._initargs = initargs
 
-        if self.soft_timeout and SIG_SOFT_TIMEOUT is None:
-            raise NotImplementedError("Soft timeouts not supported: "
-                    "Your platform does not have the SIGUSR1 signal.")
+        if soft_timeout and SIG_SOFT_TIMEOUT is None:
+            warnings.warn(UserWarning("Soft timeouts are not supported: "
+                    "on this platform: It does not have the SIGUSR1 signal."))
+            soft_timeout = None
 
         if processes is None:
             try:
@@ -521,13 +522,10 @@ class Pool(object):
         self._task_handler.start()
 
         # Thread killing timedout jobs.
+        self._timeout_handler = None
+        self._timeout_handler_mutex = threading.Lock()
         if self.timeout is not None or self.soft_timeout is not None:
-            self._timeout_handler = self.TimeoutHandler(
-                    self._pool, self._cache,
-                    self.soft_timeout, self.timeout, self._putlock)
-            self._timeout_handler.start()
-        else:
-            self._timeout_handler = None
+            self._start_timeout_handler()
 
         # Thread processing results in the outqueue.
         self._result_handler = self.ResultHandler(self._outqueue,
@@ -665,6 +663,19 @@ class Pool(object):
             return False, None
         self._poll_result = _poll_result
 
+    def _start_timeout_handler(self):
+        # ensure more than one thread does not start the timeout handler
+        # thread at once.
+        self._timeout_handler_mutex.acquire()
+        try:
+            if self._timeout_handler is None:
+                self._timeout_handler = self.TimeoutHandler(
+                        self._pool, self._cache,
+                        self.soft_timeout, self.timeout)
+                self._timeout_handler.start()
+        finally:
+            self._timeout_handler_mutex.release()
+
     def apply(self, func, args=(), kwds={}):
         '''
         Equivalent of `apply()` builtin
@@ -736,6 +747,10 @@ class Pool(object):
 
         '''
         assert self._state == RUN
+        if soft_timeout and SIG_SOFT_TIMEOUT is None:
+            warnings.warn(UserWarning("Soft timeouts are not supported: "
+                    "on this platform: It does not have the SIGUSR1 signal."))
+            soft_timeout = None
         result = ApplyResult(self._cache, callback,
                              accept_callback, timeout_callback,
                              error_callback, soft_timeout, timeout)
@@ -744,6 +759,9 @@ class Pool(object):
             self._putlock.acquire()
             if self._state != RUN:
                 return
+        if timeout or soft_timeout:
+            # start the timeout handler thread when required.
+            self._start_timeout_handler()
         self._taskqueue.put(([(result._job, None, func, args, kwds)], None))
         return result
 

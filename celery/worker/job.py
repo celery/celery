@@ -455,11 +455,11 @@ class TaskRequest(object):
         """Handler called if the task times out."""
         state.task_ready(self)
         if soft:
-            self.logger.warning("Soft time limit (%s) exceeded for %s[%s]" % (
+            self.logger.warning("Soft time limit (%ss) exceeded for %s[%s]" % (
                 timeout, self.task_name, self.task_id))
             exc = SoftTimeLimitExceeded(timeout)
         else:
-            self.logger.error("Hard time limit (%s) exceeded for %s[%s]" % (
+            self.logger.error("Hard time limit (%ss) exceeded for %s[%s]" % (
                 timeout, self.task_name, self.task_id))
             exc = TimeLimitExceeded(timeout)
 

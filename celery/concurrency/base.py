@@ -66,7 +66,7 @@ class BasePool(object):
 
     def apply_async(self, target, args=None, kwargs=None, callbacks=None,
             errbacks=None, accept_callback=None, timeout_callback=None,
-            **compat):
+            soft_timeout=None, timeout=None, **compat):
         """Equivalent of the :func:`apply` built-in function.
 
         All `callbacks` and `errbacks` should complete immediately since
@@ -89,7 +89,9 @@ class BasePool(object):
                              accept_callback=accept_callback,
                              timeout_callback=timeout_callback,
                              error_callback=on_worker_error,
-                             waitforslot=self.putlocks)
+                             waitforslot=self.putlocks,
+                             soft_timeout=soft_timeout,
+                             timeout=timeout)
 
     def on_ready(self, callbacks, errbacks, ret_value):
         """What to do when a worker task is ready and its return value has
