@@ -86,7 +86,7 @@ This is an example configuration for those using `django-celery`::
     CELERYD_MULTI="$CELERYD_CHDIR/manage.py celeryd_multi"
 
     # Extra arguments to celeryd
-    CELERYD_OPTS="--time-limit 300 --concurrency=8"
+    CELERYD_OPTS="--time-limit=300 --concurrency=8"
 
     # Name of the celery config module.
     CELERY_CONFIG_MODULE="celeryconfig"
