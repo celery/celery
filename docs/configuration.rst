@@ -340,7 +340,7 @@ Redis backend settings
 .. note::
 
     The Redis backend requires the :mod:`redis` library:
-    http://pypi.python.org/pypi/redis/0.5.5
+    http://pypi.python.org/pypi/redis/
 
     To install the redis package use `pip` or `easy_install`::
 
@@ -580,6 +580,21 @@ BROKER_USE_SSL
 Use SSL to connect to the broker.  Off by default.  This may not be supported
 by all transports.
 
+.. setting:: BROKER_POOL_LIMIT
+
+BROKER_POOL_LIMIT
+~~~~~~~~~~~~~~~~~
+
+The maximum number of connections that can be open in the connection pool.
+
+A good default value could be 10, or more if you're using eventlet/gevent
+or lots of threads.
+
+If set to :const:`None` or 0 the connection pool will be disabled and
+connections will be established and closed for every use.
+
+**Disabled by default.**
+
 .. setting:: BROKER_CONNECTION_TIMEOUT
 
 BROKER_CONNECTION_TIMEOUT
@@ -588,7 +603,7 @@ BROKER_CONNECTION_TIMEOUT
 The default timeout in seconds before we give up establishing a connection
 to the AMQP server.  Default is 4 seconds.
 
-.. setting:: CELERY_BROKER_CONNECTION_RETRY
+.. setting:: BROKER_CONNECTION_RETRY
 
 BROKER_CONNECTION_RETRY
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -596,15 +611,15 @@ BROKER_CONNECTION_RETRY
 Automatically try to re-establish the connection to the AMQP broker if lost.
 
 The time between retries is increased for each retry, and is
-not exhausted before :setting:`CELERY_BROKER_CONNECTION_MAX_RETRIES` is
+not exhausted before :setting:`BROKER_CONNECTION_MAX_RETRIES` is
 exceeded.
 
 This behavior is on by default.
 
-.. setting:: CELERY_BROKER_CONNECTION_MAX_RETRIES
+.. setting:: BROKER_CONNECTION_MAX_RETRIES
 
-CELERY_BROKER_CONNECTION_MAX_RETRIES
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+BROKER_CONNECTION_MAX_RETRIES
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Maximum number of retries before we give up re-establishing a connection
 to the AMQP broker.
@@ -612,6 +627,15 @@ to the AMQP broker.
 If this is set to :const:`0` or :const:`None`, we will retry forever.
 
 Default is 100 retries.
+
+.. setting:: BROKER_TRANSPORT_OPTIONS
+
+BROKER_TRANSPORT_OPTIONS
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+A dict of additional options passed to the underlying transport.
+
+See your transport user manual for supported options (if any).
 
 .. _conf-task-execution:
 
@@ -901,7 +925,7 @@ be 1 second. If you need near millisecond precision you can set this to 0.1.
 Error E-Mails
 -------------
 
-.. setting:: CELERYD_SEND_TASK_ERROR_EMAILS
+.. setting:: CELERY_SEND_TASK_ERROR_EMAILS
 
 CELERY_SEND_TASK_ERROR_EMAILS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -933,33 +957,43 @@ SERVER_EMAIL
 The email address this worker sends emails from.
 Default is celery@localhost.
 
-.. setting:: MAIL_HOST
+.. setting:: EMAIL_HOST
 
-MAIL_HOST
-~~~~~~~~~
+EMAIL_HOST
+~~~~~~~~~~
 
 The mail server to use.  Default is `"localhost"`.
 
-.. setting:: MAIL_HOST_USER
+.. setting:: EMAIL_HOST_USER
 
-MAIL_HOST_USER
-~~~~~~~~~~~~~~
+EMAIL_HOST_USER
+~~~~~~~~~~~~~~~
 
 User name (if required) to log on to the mail server with.
 
-.. setting:: MAIL_HOST_PASSWORD
+.. setting:: EMAIL_HOST_PASSWORD
 
-MAIL_HOST_PASSWORD
-~~~~~~~~~~~~~~~~~~
+EMAIL_HOST_PASSWORD
+~~~~~~~~~~~~~~~~~~~
 
 Password (if required) to log on to the mail server with.
 
-.. setting:: MAIL_PORT
+.. setting:: EMAIL_PORT
 
-MAIL_PORT
-~~~~~~~~~
+EMAIL_PORT
+~~~~~~~~~~
 
 The port the mail server is listening on.  Default is `25`.
+
+.. setting:: EMAIL_TIMEOUT
+
+EMAIL_TIMEOUT
+~~~~~~~~~~~~~
+
+Timeout in seconds for when we give up trying to connect
+to the SMTP server when sending emails.
+
+The default is 2 seconds.
 
 .. _conf-example-error-mail-config:
 
@@ -1011,36 +1045,6 @@ tracked before they are consumed by a worker.
 
 Disabled by default.
 
-.. setting:: CELERY_EVENT_QUEUE
-
-CELERY_EVENT_QUEUE
-~~~~~~~~~~~~~~~~~~
-
-Name of the queue to consume event messages from. Default is
-`"celeryevent"`.
-
-.. setting:: CELERY_EVENT_EXCHANGE
-
-CELERY_EVENT_EXCHANGE
-~~~~~~~~~~~~~~~~~~~~~
-
-Name of the exchange to send event messages to.  Default is `"celeryevent"`.
-
-.. setting:: CELERY_EVENT_EXCHANGE_TYPE
-
-CELERY_EVENT_EXCHANGE_TYPE
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The exchange type of the event exchange.  Default is to use a `"direct"`
-exchange.
-
-.. setting:: CELERY_EVENT_ROUTING_KEY
-
-CELERY_EVENT_ROUTING_KEY
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-Routing key used when sending event messages.  Default is `"celeryevent"`.
-
 .. setting:: CELERY_EVENT_SERIALIZER
 
 CELERY_EVENT_SERIALIZER
@@ -1065,7 +1069,7 @@ queue name.
 
 Default is `"celeryctl"`.
 
-.. setting:: CELERY_BROADCASTS_EXCHANGE
+.. setting:: CELERY_BROADCAST_EXCHANGE
 
 CELERY_BROADCAST_EXCHANGE
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1329,3 +1333,15 @@ Logging level. Can be any of :const:`DEBUG`, :const:`INFO`, :const:`WARNING`,
 :const:`ERROR`, or :const:`CRITICAL`.
 
 See the :mod:`logging` module for more information.
+
+.. setting:: CELERYMON_LOG_FORMAT
+
+CELERYMON_LOG_FORMAT
+~~~~~~~~~~~~~~~~~~~~
+
+The format to use for log messages.
+
+Default is `[%(asctime)s: %(levelname)s/%(processName)s] %(message)s`
+
+See the Python :mod:`logging` module for more information about log
+formats.

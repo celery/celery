@@ -79,6 +79,7 @@ NAMESPACES = {
         "IGNORE_RESULT": Option(False, type="bool"),
         "MAX_CACHED_RESULTS": Option(5000, type="int"),
         "MESSAGE_COMPRESSION": Option(None, type="string"),
+        "MONGODB_BACKEND_SETTINGS": Option(None, type="dict"),
         "RESULT_BACKEND": Option(None, type="string"),
         "RESULT_DBURI": Option(),
         "RESULT_ENGINE_OPTIONS": Option(None, type="dict"),
@@ -148,6 +149,16 @@ NAMESPACES = {
     },
     "SERVER_EMAIL": Option("celery@localhost"),
     "ADMINS": Option((), type="tuple"),
+    "REDIS": {
+        "HOST": Option(None, type="string"),
+        "PORT": Option(None, type="int"),
+        "DB": Option(None, type="int"),
+        "PASSWORD": Option(None, type="string"),
+    },
+    "TT": {
+        "HOST": Option(None, type="string"),
+        "PORT": Option(None, type="int"),
+    },
 }
 
 
