@@ -156,7 +156,7 @@ class Worker(object):
         self.loader = self.app.loader
         self.settings = self.app.conf
         for module in self.include:
-            self.loader.import_module(module)
+            self.loader.import_from_cwd(module)
 
     def redirect_stdouts_to_logger(self):
         handled = self.app.log.setup_logging_subsystem(loglevel=self.loglevel,
