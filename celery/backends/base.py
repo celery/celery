@@ -26,7 +26,7 @@ class BaseBackend(object):
         else:
             return self.prepare_value(result)
 
-    def store_result(self, task_id, result, status):
+    def store_result(self, task_id, result, status, traceback=None):
         """Store the result and status of a task."""
         raise NotImplementedError(
                 "store_result is not supported by this backend.")
