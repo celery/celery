@@ -93,7 +93,7 @@ class CassandraBackend(BaseDictBackend):
 
         self._column_family = None
 
-    def _retry_on_error(func):
+    def _retry_on_error(self, func):
         def wrapper(*args, **kwargs):
             self = args[0]
             ts = time.time() + self._retry_timeout
