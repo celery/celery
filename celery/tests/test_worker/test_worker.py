@@ -1,6 +1,7 @@
 import socket
 import sys
 
+from collections import deque
 from datetime import datetime, timedelta
 from Queue import Empty
 
@@ -212,7 +213,7 @@ class test_Consumer(unittest.TestCase):
 
         l._state = RUN
         l.event_dispatcher = None
-        l.stop_consumers(close=False)
+        l.stop_consumers(close_connection=False)
         self.assertTrue(l.connection)
 
         l._state = RUN
@@ -237,11 +238,12 @@ class test_Consumer(unittest.TestCase):
 
         l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
                            send_events=False)
-        eventer = l.event_dispatcher = MockEventDispatcher()
+        eventer = l.event_dispatcher = Mock()
+        eventer.enabled = True
         heart = l.heart = MockHeart()
         l._state = RUN
         l.stop_consumers()
-        self.assertTrue(eventer.closed)
+        self.assertTrue(eventer.close.call_count)
         self.assertTrue(heart.closed)
 
     def test_receive_message_unknown(self):
@@ -249,7 +251,7 @@ class test_Consumer(unittest.TestCase):
                            send_events=False)
         backend = Mock()
         m = create_message(backend, unknown={"baz": "!!!"})
-        l.event_dispatcher = MockEventDispatcher()
+        l.event_dispatcher = Mock()
         l.pidbox_node = MockNode()
 
         def with_catch_warnings(log):
@@ -274,7 +276,7 @@ class test_Consumer(unittest.TestCase):
                                     args=("2, 2"),
                                     kwargs={},
                                     eta=datetime.now().isoformat())
-        l.event_dispatcher = MockEventDispatcher()
+        l.event_dispatcher = Mock()
         l.pidbox_node = MockNode()
 
         prev, timer2.to_timestamp = timer2.to_timestamp, to_timestamp
@@ -292,11 +294,12 @@ class test_Consumer(unittest.TestCase):
         backend = Mock()
         m = create_message(backend, task=foo_task.name,
             args=(1, 2), kwargs="foobarbaz", id=1)
-        l.event_dispatcher = MockEventDispatcher()
+        l.event_dispatcher = Mock()
         l.pidbox_node = MockNode()
 
         l.receive_message(m.decode(), m)
-        self.assertIn("Invalid task ignored", logger.error.call_args[0][0])
+        self.assertIn("Received invalid task message",
+                      logger.error.call_args[0][0])
 
     def test_on_decode_error(self):
         logger = Mock()
@@ -325,7 +328,7 @@ class test_Consumer(unittest.TestCase):
         m = create_message(backend, task=foo_task.name,
                            args=[2, 4, 8], kwargs={})
 
-        l.event_dispatcher = MockEventDispatcher()
+        l.event_dispatcher = Mock()
         l.receive_message(m.decode(), m)
 
         in_bucket = self.ready_queue.get_nowait()
@@ -436,7 +439,7 @@ class test_Consumer(unittest.TestCase):
 
         l.task_consumer = MockConsumer()
         l.qos = QoS(l.task_consumer, l.initial_prefetch_count, l.logger)
-        l.event_dispatcher = MockEventDispatcher()
+        l.event_dispatcher = Mock()
         l.receive_message(m.decode(), m)
         l.eta_schedule.stop()
 
@@ -469,7 +472,7 @@ class test_Consumer(unittest.TestCase):
         backend = Mock()
         m = create_message(backend, task="x.X.31x", args=[2, 4, 8], kwargs={})
 
-        l.event_dispatcher = MockEventDispatcher()
+        l.event_dispatcher = Mock()
         self.assertFalse(l.receive_message(m.decode(), m))
         self.assertRaises(Empty, self.ready_queue.get_nowait)
         self.assertTrue(self.eta_schedule.empty())
@@ -477,7 +480,8 @@ class test_Consumer(unittest.TestCase):
     def test_receieve_message_eta(self):
         l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
                           send_events=False)
-        l.event_dispatcher = MockEventDispatcher()
+        l.event_dispatcher = Mock()
+        l.event_dispatcher._outbound_buffer = deque()
         backend = Mock()
         m = create_message(backend, task=foo_task.name,
                            args=[2, 4, 8], kwargs={},
@@ -492,7 +496,7 @@ class test_Consumer(unittest.TestCase):
         finally:
             l.app.conf.BROKER_CONNECTION_RETRY = p
         l.stop_consumers()
-        l.event_dispatcher = MockEventDispatcher()
+        l.event_dispatcher = Mock()
         l.receive_message(m.decode(), m)
         l.eta_schedule.stop()
         in_hold = self.eta_schedule.queue[0]
