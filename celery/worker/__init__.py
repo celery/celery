@@ -297,7 +297,7 @@ class WorkController(object):
                     what, component.__class__.__name__))
             stop = component.stop
             if not warm:
-                stop = getattr(component, "terminate", stop)
+                stop = getattr(component, "terminate", None) or stop
             stop()
 
         self.priority_timer.stop()

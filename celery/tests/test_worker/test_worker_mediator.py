@@ -2,6 +2,8 @@ from celery.tests.utils import unittest
 
 from Queue import Queue
 
+from mock import Mock
+
 from celery.utils import gen_unique_id
 from celery.worker.mediator import Mediator
 from celery.worker.state import revoked as revoked_tasks
@@ -11,13 +13,11 @@ class MockTask(object):
     hostname = "harness.com"
     task_id = 1234
     task_name = "mocktask"
-    acked = False
 
     def __init__(self, value, **kwargs):
         self.value = value
 
-    def on_ack(self):
-        self.acked = True
+    on_ack = Mock()
 
     def revoked(self):
         if self.task_id in revoked_tasks:
@@ -96,4 +96,4 @@ class test_Mediator(unittest.TestCase):
         m.move()
 
         self.assertNotIn("value", got)
-        self.assertTrue(t.acked)
+        self.assertTrue(t.on_ack.call_count)

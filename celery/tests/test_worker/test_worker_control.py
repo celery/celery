@@ -4,6 +4,7 @@ from celery.tests.utils import unittest
 from datetime import datetime, timedelta
 
 from kombu import pidbox
+from mock import Mock
 
 from celery.utils.timer2 import Timer
 
@@ -26,22 +27,6 @@ def mytask():
     pass
 
 
-class Dispatcher(object):
-    enabled = None
-
-    def __init__(self, *args, **kwargs):
-        self.sent = []
-
-    def enable(self):
-        self.enabled = True
-
-    def disable(self):
-        self.enabled = False
-
-    def send(self, event, **fields):
-        self.sent.append(event)
-
-
 class Consumer(object):
 
     def __init__(self):
@@ -52,7 +37,7 @@ class Consumer(object):
                                          kwargs={}))
         self.eta_schedule = Timer()
         self.app = app_or_default()
-        self.event_dispatcher = Dispatcher()
+        self.event_dispatcher = Mock()
 
         from celery.concurrency.base import BasePool
         self.pool = BasePool(10)
@@ -83,8 +68,9 @@ class test_ControlPanel(unittest.TestCase):
         panel = self.create_panel(consumer=consumer)
         consumer.event_dispatcher.enabled = False
         panel.handle("enable_events")
-        self.assertEqual(consumer.event_dispatcher.enabled, True)
-        self.assertIn("worker-online", consumer.event_dispatcher.sent)
+        self.assertTrue(consumer.event_dispatcher.enable.call_count)
+        self.assertIn(("worker-online", ),
+                consumer.event_dispatcher.send.call_args)
         self.assertTrue(panel.handle("enable_events")["ok"])
 
     def test_disable_events(self):
@@ -92,8 +78,9 @@ class test_ControlPanel(unittest.TestCase):
         panel = self.create_panel(consumer=consumer)
         consumer.event_dispatcher.enabled = True
         panel.handle("disable_events")
-        self.assertEqual(consumer.event_dispatcher.enabled, False)
-        self.assertIn("worker-offline", consumer.event_dispatcher.sent)
+        self.assertTrue(consumer.event_dispatcher.disable.call_count)
+        self.assertIn(("worker-offline", ),
+                      consumer.event_dispatcher.send.call_args)
         self.assertTrue(panel.handle("disable_events")["ok"])
 
     def test_heartbeat(self):
@@ -101,7 +88,8 @@ class test_ControlPanel(unittest.TestCase):
         panel = self.create_panel(consumer=consumer)
         consumer.event_dispatcher.enabled = True
         panel.handle("heartbeat")
-        self.assertIn("worker-heartbeat", consumer.event_dispatcher.sent)
+        self.assertIn(("worker-heartbeat", ),
+                      consumer.event_dispatcher.send.call_args)
 
     def test_dump_tasks(self):
         info = "\n".join(self.panel.handle("dump_tasks"))
