@@ -262,7 +262,7 @@ class Timer(Thread):
     def queue(self):
         return self.schedule.queue
 
-_default_timer = Timer()
+default_timer = _default_timer = Timer()
 apply_after = _default_timer.apply_after
 apply_at = _default_timer.apply_at
 apply_interval = _default_timer.apply_interval

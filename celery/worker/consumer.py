@@ -246,7 +246,7 @@ class Consumer(object):
         self.event_dispatcher = None
         self.heart = None
         self.pool = pool
-        self.priority_timer = priority_timer or timer2.Timer()
+        self.priority_timer = priority_timer or timer2.default_timer
         pidbox_state = AttributeDict(app=self.app,
                                      logger=logger,
                                      hostname=self.hostname,

@@ -350,6 +350,7 @@ class test_Consumer(unittest.TestCase):
         l.connection_errors = (KeyError, )
         self.assertRaises(SyntaxError, l.start)
         l.heart.stop()
+        l.priority_timer.stop()
 
     def test_consume_messages(self):
 
