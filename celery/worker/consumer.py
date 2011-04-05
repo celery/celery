@@ -255,7 +255,7 @@ class Consumer(object):
     #: The current worker pool instance.
     pool = None
 
-    #: A timer used for high-priority internal tasks, such 
+    #: A timer used for high-priority internal tasks, such
     #: as sending heartbeats.
     priority_timer = None
 
@@ -393,42 +393,40 @@ class Consumer(object):
         :param message: The kombu message object.
 
         """
-
-        # Handle task
-        if body.get("task"):
-            # need to guard against errors occuring while acking the message.
-            def ack():
-                try:
-                    message.ack()
-                except self.connection_errors + (AttributeError, ), exc:
-                    self.logger.critical(
-                        "Couldn't ack %r: body:%r reason:%r" % (
-                            message.delivery_tag, safe_str(body), exc))
-
+        # need to guard against errors occuring while acking the message.
+        def ack():
             try:
-                task = TaskRequest.from_message(message, body, ack,
-                                                app=self.app,
-                                                logger=self.logger,
-                                                hostname=self.hostname,
-                                                eventer=self.event_dispatcher)
+                message.ack()
+            except self.connection_errors + (AttributeError, ), exc:
+                self.logger.critical(
+                    "Couldn't ack %r: body:%r reason:%r" % (
+                        message.delivery_tag, safe_str(body), exc))
 
-            except NotRegistered, exc:
-                self.logger.error(UNKNOWN_TASK_ERROR % (
-                        exc, safe_str(body)), exc_info=sys.exc_info())
-                message.ack()
-            except InvalidTaskError, exc:
-                self.logger.error(INVALID_TASK_ERROR % (
-                        str(exc), safe_str(body)), exc_info=sys.exc_info())
-                message.ack()
-            else:
-                self.on_task(task)
+        if not body.get("task"):
+            warnings.warn(RuntimeWarning(
+                "Received and deleted unknown message. Wrong destination?!? \
+                the full contents of the message body was: %s" % (
+                 safe_str(body), )))
+            ack()
             return
 
-        warnings.warn(RuntimeWarning(
-            "Received and deleted unknown message. Wrong destination?!? \
-             the full contents of the message body was: %s" % (
-                 safe_str(body), )))
-        message.ack()
+        try:
+            task = TaskRequest.from_message(message, body, ack,
+                                            app=self.app,
+                                            logger=self.logger,
+                                            hostname=self.hostname,
+                                            eventer=self.event_dispatcher)
+
+        except NotRegistered, exc:
+            self.logger.error(UNKNOWN_TASK_ERROR % (
+                    exc, safe_str(body)), exc_info=sys.exc_info())
+            ack()
+        except InvalidTaskError, exc:
+            self.logger.error(INVALID_TASK_ERROR % (
+                    str(exc), safe_str(body)), exc_info=sys.exc_info())
+            ack()
+        else:
+            self.on_task(task)
 
     def maybe_conn_error(self, fun):
         """Applies function but ignores any connection or channel
@@ -644,4 +642,3 @@ class Consumer(object):
 
     def _debug(self, msg, **kwargs):
         self.logger.debug("Consumer: %s" % (msg, ), **kwargs)
-

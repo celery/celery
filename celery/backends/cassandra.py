@@ -14,7 +14,7 @@ from datetime import datetime
 from celery.backends.base import BaseDictBackend
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.serialization import pickle
-from celery.utils.timeutils import maybe_timedelta
+from celery.utils.timeutils import maybe_timedelta, timedelta_seconds
 from celery import states
 
 
@@ -126,12 +126,11 @@ class CassandraBackend(BaseDictBackend):
         """Store return value and status of an executed task."""
         cf = self._get_column_family()
         date_done = datetime.utcnow()
-        lifetime = self.result_expires.days * 86400 + self.result_expires.seconds
         meta = {"status": status,
                 "result": pickle.dumps(result),
                 "date_done": date_done.strftime('%Y-%m-%dT%H:%M:%SZ'),
                 "traceback": pickle.dumps(traceback)}
-        cf.insert(task_id, meta, ttl=lifetime)
+        cf.insert(task_id, meta, ttl=timedelta_seconds(self.result_expires))
 
     @_retry_on_error
     def _get_task_meta_for(self, task_id):
