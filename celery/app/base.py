@@ -21,8 +21,8 @@ from celery.utils import instantiate, lpmerge
 from celery.utils.functional import wraps
 
 import kombu
-if kombu.VERSION < (1, 0, 8):
-    raise ImportError("Celery requires Kombu version 1.0.8 or higher.")
+if kombu.VERSION < (1, 1, 0):
+    raise ImportError("Celery requires Kombu version 1.1.0 or higher.")
 
 
 class LamportClock(object):
