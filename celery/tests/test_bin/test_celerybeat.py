@@ -80,8 +80,10 @@ class test_Beat(AppCase):
     def psig(self, fun, *args, **kwargs):
         handlers = {}
 
-        def i(sig, handler):
-            handlers[sig] = handler
+        def i(sig=None, handler=None, **sigmap):
+            if sig:
+                sigmap[sig] = handler
+            handlers.update(sigmap)
 
         p, platforms.install_signal_handler = \
                 platforms.install_signal_handler, i

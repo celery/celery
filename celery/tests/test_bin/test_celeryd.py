@@ -78,8 +78,10 @@ class test_Worker(AppCase):
     def test_run_worker(self):
         handlers = {}
 
-        def i(sig, handler):
-            handlers[sig] = handler
+        def i(sig=None, handler=None, **sigmap):
+            if sig:
+                sigmap[sig] = handler
+            handlers.update(sigmap)
 
         p = platforms.install_signal_handler
         platforms.install_signal_handler = i
@@ -379,8 +381,10 @@ class test_signal_handlers(AppCase):
     def psig(self, fun, *args, **kwargs):
         handlers = {}
 
-        def i(sig, handler):
-            handlers[sig] = handler
+        def i(sig=None, handler=None, **sigmap):
+            if sig:
+                sigmap[sig] = handler
+            handlers.update(sigmap)
 
         p, platforms.install_signal_handler = \
                 platforms.install_signal_handler, i
@@ -396,8 +400,10 @@ class test_signal_handlers(AppCase):
         handlers = self.psig(cd.install_worker_int_handler, worker)
         next_handlers = {}
 
-        def i(sig, handler):
-            next_handlers[sig] = handler
+        def i(sig=None, handler=None, **sigmap):
+            if sig:
+                sigmap[sig] = handler
+            next_handlers.update(sigmap)
 
         p = platforms.install_signal_handler
         platforms.install_signal_handler = i

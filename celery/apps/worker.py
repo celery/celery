@@ -287,7 +287,7 @@ def install_worker_int_handler(worker):
             worker.stop(in_sighandler=True)
         raise SystemExit()
 
-    platforms.install_signal_handler("SIGINT", _stop)
+    platforms.install_signal_handler(SIGINT=_stop)
 
 
 def install_worker_int_again_handler(worker):
@@ -302,7 +302,7 @@ def install_worker_int_again_handler(worker):
             worker.terminate(in_sighandler=True)
         raise SystemTerminate()
 
-    platforms.install_signal_handler("SIGINT", _stop)
+    platforms.install_signal_handler(SIGINT=_stop)
 
 
 def install_worker_term_handler(worker):
@@ -317,7 +317,7 @@ def install_worker_term_handler(worker):
             worker.stop(in_sighandler=True)
         raise SystemExit()
 
-    platforms.install_signal_handler("SIGTERM", _stop)
+    platforms.install_signal_handler(SIGTERM=_stop)
 
 
 def install_worker_restart_handler(worker):
@@ -329,7 +329,7 @@ def install_worker_restart_handler(worker):
         worker.stop(in_sighandler=True)
         os.execv(sys.executable, [sys.executable] + sys.argv)
 
-    platforms.install_signal_handler("SIGHUP", restart_worker_sig_handler)
+    platforms.install_signal_handler(SIGHUP=restart_worker_sig_handler)
 
 
 def install_cry_handler(logger):
@@ -342,7 +342,7 @@ def install_cry_handler(logger):
             """Signal handler logging the stacktrace of all active threads."""
             logger.error("\n" + cry())
 
-        platforms.install_signal_handler("SIGUSR1", cry_handler)
+        platforms.install_signal_handler(SIGUSR1=cry_handler)
 
 
 def install_rdb_handler():  # pragma: no cover
@@ -353,7 +353,7 @@ def install_rdb_handler():  # pragma: no cover
         rdb.set_trace(frame)
 
     if os.environ.get("CELERY_RDBSIG"):
-        platforms.install_signal_handler("SIGUSR2", rdb_handler)
+        platforms.install_signal_handler(SIGUSR2=rdb_handler)
 
 
 def install_HUP_not_supported_handler(worker):
@@ -362,4 +362,4 @@ def install_HUP_not_supported_handler(worker):
         worker.logger.error("SIGHUP not supported: "
             "Restarting with HUP is unstable on this platform!")
 
-    platforms.install_signal_handler("SIGHUP", warn_on_HUP_handler)
+    platforms.install_signal_handler(SIGHUP=warn_on_HUP_handler)

@@ -544,12 +544,10 @@ class test_WorkController(AppCase):
 
         app = Celery(loader=Mock(), set_as_current=False)
         process_initializer(app, "awesome.worker.com")
-        for ignoresig in WORKER_SIGIGNORE:
-            self.assertIn(((ignoresig, ), {}),
-                            ignore_signal.call_args_list)
-        for resetsig in WORKER_SIGRESET:
-            self.assertIn(((resetsig, ), {}),
-                            reset_signal.call_args_list)
+        self.assertIn((tuple(WORKER_SIGIGNORE), {}),
+                      ignore_signal.call_args_list)
+        self.assertIn((tuple(WORKER_SIGRESET), {}),
+                      reset_signal.call_args_list)
         self.assertTrue(app.loader.init_worker.call_count)
         self.assertTrue(on_worker_process_init.called)
         self.assertIs(_tls.current_app, app)

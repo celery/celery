@@ -289,46 +289,51 @@ def get_signal(signal_name):
     return getattr(signal, signal_name)
 
 
-def reset_signal(signal_name):
+def reset_signal(*signal_names):
     """Reset signal to the default signal handler.
 
     Does nothing if the platform doesn't support signals,
     or the specified signal in particular.
 
     """
-    try:
-        signum = getattr(signal, signal_name)
-        signal.signal(signum, signal.SIG_DFL)
-    except (AttributeError, ValueError):
-        pass
+    for signal_name in signal_names:
+        try:
+            signum = getattr(signal, signal_name)
+            signal.signal(signum, signal.SIG_DFL)
+        except (AttributeError, ValueError):
+            pass
 
 
-def ignore_signal(signal_name):
+def ignore_signal(*signal_names):
     """Ignore signal using :const:`SIG_IGN`.
 
     Does nothing if the platform doesn't support signals,
     or the specified signal in particular.
 
     """
-    try:
-        signum = getattr(signal, signal_name)
-        signal.signal(signum, signal.SIG_IGN)
-    except (AttributeError, ValueError):
-        pass
+    for signal_name in signal_names:
+        try:
+            signum = getattr(signal, signal_name)
+            signal.signal(signum, signal.SIG_IGN)
+        except (AttributeError, ValueError):
+            pass
 
 
-def install_signal_handler(signal_name, handler):
-    """Install a handler.
+def install_signal_handler(signal_name=None, handler=None, **sigmap):
+    """Install signal handlers.
 
     Does nothing if the current platform doesn't support signals,
     or the specified signal in particular.
 
     """
-    try:
-        signum = getattr(signal, signal_name)
-        signal.signal(signum, handler)
-    except (AttributeError, ValueError):
-        pass
+    if signal_name:
+        sigmap[signal_name] = handler
+    for signal_name, handler in sigmap.iteritems():
+        try:
+            signum = getattr(signal, signal_name)
+            signal.signal(signum, handler)
+        except (AttributeError, ValueError):
+            pass
 
 
 def strargv(argv):

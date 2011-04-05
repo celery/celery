@@ -122,5 +122,4 @@ class Beat(object):
             beat.sync()
             raise SystemExit()
 
-        platforms.install_signal_handler("SIGTERM", _sync)
-        platforms.install_signal_handler("SIGINT", _sync)
+        platforms.install_signal_handler(SIGTERM=_sync, SIGINT=_sync)
