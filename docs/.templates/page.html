@@ -2,17 +2,17 @@
 {% block body %}
 <div class="deck">
 
-    {% if version == "3.0" %}
+    {% if version == "2.3" or version == "3.0" %}
         <p class="developmentversion">
         This document is for Celery's development version, which can be
         significantly different from previous releases. Get old docs here:
 
-        <a href="http://docs.celeryproject.org/{{ pagename }}{{ file_suffix }}">2.1</a>.
+        <a href="http://docs.celeryproject.org/en/latest/{{ pagename }}{{ file_suffix }}">2.1</a>.
         </p>
         {% else %}
         <p>
         This document describes Celery {{ version }}. For development docs,
-        <a href="http://ask.github.com/celery/{{ pagename }}{{ file_suffix }}">go here</a>.
+        <a href="http://ask.github.com/celery/en/master/{{ pagename }}{{ file_suffix }}">go here</a>.
         </p>
     {% endif %}
 
