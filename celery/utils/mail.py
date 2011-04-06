@@ -6,7 +6,7 @@ try:
 except ImportError:
     from email.MIMEText import MIMEText
 
-supports_timeout = sys.version_info > (2, 5)
+supports_timeout = sys.version_info >= (2, 6)
 
 
 class SendmailWarning(UserWarning):
