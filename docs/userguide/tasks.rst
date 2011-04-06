@@ -280,8 +280,6 @@ General
     The global default can be overridden by the :setting:`CELERY_ACKS_LATE`
     setting.
 
-.. _task-track-started:
-
 .. attribute:: Task.track_started
 
     If :const:`True` the task will report its status as "started"
@@ -437,7 +435,7 @@ add the project directory to the Python path::
 
 This makes more sense from the reusable app perspective anyway.
 
-.. tasks-decorating:
+.. _tasks-decorating:
 
 Decorating tasks
 ================
@@ -542,7 +540,7 @@ STARTED
 ~~~~~~~
 
 Task has been started.
-Not reported by default, to enable please see :ref:`task-track-started`.
+Not reported by default, to enable please see :attr`Task.track_started`.
 
 :metadata: ``pid`` and ``hostname`` of the worker process executing
            the task.
