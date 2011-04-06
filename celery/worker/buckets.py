@@ -2,7 +2,7 @@ import threading
 import time
 
 from collections import deque
-from Queue import Queue, Empty as QueueEmpty
+from Queue import Queue, Empty
 
 from celery.datastructures import TokenBucket
 from celery.utils import all
@@ -66,8 +66,8 @@ class TaskBucket(object):
     def _get_immediate(self):
         try:
             return self.immediate.popleft()
-        except IndexError:                                      # Empty
-            raise QueueEmpty()
+        except IndexError:
+            raise Empty()
 
     def _get(self):
         # If the first bucket is always returning items, we would never
@@ -76,8 +76,8 @@ class TaskBucket(object):
         # "immediate". This queue is always checked for cached items first.
         try:
             return 0, self._get_immediate()
-        except QueueEmpty:
-                pass
+        except Empty:
+            pass
 
         remaining_times = []
         for bucket in self.buckets.values():
@@ -86,7 +86,7 @@ class TaskBucket(object):
                 try:
                     # Just put any ready items into the immediate queue.
                     self.immediate.append(bucket.get_nowait())
-                except QueueEmpty:
+                except Empty:
                     pass
                 except RateLimitExceeded:
                     remaining_times.append(bucket.expected_time())
@@ -96,7 +96,7 @@ class TaskBucket(object):
         # Try the immediate queue again.
         try:
             return 0, self._get_immediate()
-        except QueueEmpty:
+        except Empty:
             if not remaining_times:
                 # No items in any of the buckets.
                 raise
@@ -120,14 +120,14 @@ class TaskBucket(object):
             while True:
                 try:
                     remaining_time, item = self._get()
-                except QueueEmpty:
+                except Empty:
                     if not block or did_timeout():
                         raise
                     self.not_empty.wait(timeout)
                     continue
                 if remaining_time:
                     if not block or did_timeout():
-                        raise QueueEmpty
+                        raise Empty
                     time.sleep(min(remaining_time, timeout or 1))
                 else:
                     return item

@@ -5,7 +5,7 @@ import unittest2 as unittest
 from celery import states
 from celery.utils import gen_unique_id
 from celery.utils.compat import all
-from celery.result import AsyncResult, TaskSetResult
+from celery.result import AsyncResult, TaskSetResult, EagerResult
 from celery.backends import default_backend
 from celery.exceptions import TimeoutError
 from celery.task.base import Task

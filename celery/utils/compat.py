@@ -481,8 +481,8 @@ else:
             This handler is based on a suggestion and patch by Chad J.
             Schroeder.
             """
-            def __init__(self, filename, mode='a', encoding=None, delay=0):
-                logging.FileHandler.__init__(self, filename, mode, encoding, delay)
+            def __init__(self, *args, **kwargs):
+                logging.FileHandler.__init__(self, *args, **kwargs)
                 if not os.path.exists(self.baseFilename):
                     self.dev, self.ino = -1, -1
                 else:
@@ -502,7 +502,8 @@ else:
                     changed = 1
                 else:
                     stat = os.stat(self.baseFilename)
-                    changed = (stat[ST_DEV] != self.dev) or (stat[ST_INO] != self.ino)
+                    changed = ((stat[ST_DEV] != self.dev) or
+                               (stat[ST_INO] != self.ino))
                 if changed and self.stream is not None:
                     self.stream.flush()
                     self.stream.close()

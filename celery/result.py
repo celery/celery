@@ -397,7 +397,7 @@ class EagerResult(BaseAsyncResult):
 
     def __reduce__(self):
         return (self.__class__, (self.task_id, self._result,
-                                 self._state, self._traceback))
+                                 self._status, self._traceback))
 
     def __copy__(self):
         return apply(*self.__reduce__())
@@ -433,7 +433,7 @@ class EagerResult(BaseAsyncResult):
     @property
     def state(self):
         """The tasks state."""
-        return self._state
+        return self._status
 
     @property
     def traceback(self):

@@ -88,6 +88,7 @@ class LaxBoundedSemaphore(threading._Semaphore):
 # Exceptions
 #
 
+
 class MaybeEncodingError(Exception):
     """Wraps unpickleable object."""
 
@@ -114,7 +115,6 @@ def soft_timeout_sighandler(signum, frame):
 #
 # Code run by worker processes
 #
-
 
 
 def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None):
@@ -576,6 +576,7 @@ class Pool(object):
         if shutdown and not len(self._pool):
             raise WorkersJoined()
 
+        cleaned = []
         for i in reversed(range(len(self._pool))):
             worker = self._pool[i]
             if worker.exitcode is not None:
