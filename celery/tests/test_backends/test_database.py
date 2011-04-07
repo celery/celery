@@ -14,7 +14,7 @@ from celery.tests.utils import execute_context, mask_modules
 from celery.tests.utils import unittest
 
 try:
-    import sqlalchemy
+    import sqlalchemy  # noqa
 except ImportError:
     DatabaseBackend = Task = TaskSet = None
 else:

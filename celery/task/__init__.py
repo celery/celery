@@ -7,7 +7,8 @@ from celery.task.sets import TaskSet, subtask
 from celery.task.chord import chord
 from celery.task.control import discard_all
 
-__all__ = ["Task", "TaskSet", "PeriodicTask", "subtask", "discard_all"]
+__all__ = ["Task", "TaskSet", "PeriodicTask", "subtask",
+           "discard_all", "chord"]
 
 
 def task(*args, **kwargs):

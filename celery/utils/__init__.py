@@ -13,7 +13,8 @@ from inspect import getargspec
 from itertools import islice
 from pprint import pprint
 
-from kombu.utils import gen_unique_id, rpartition, cached_property
+from kombu.utils import cached_property, gen_unique_id  # noqa
+from kombu.utils import rpartition
 
 from celery.utils.compat import StringIO
 from celery.utils.functional import partial, wraps

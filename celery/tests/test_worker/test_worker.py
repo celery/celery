@@ -14,7 +14,6 @@ from celery.concurrency.base import BasePool
 from celery.exceptions import SystemTerminate
 from celery.task import task as task_dec
 from celery.task import periodic_task as periodic_task_dec
-from celery.utils import timer2
 from celery.utils import gen_unique_id
 from celery.worker import WorkController
 from celery.worker.buckets import FastQueue

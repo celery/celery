@@ -12,8 +12,8 @@ try:
     import redis
     from redis.exceptions import ConnectionError
 except ImportError:
-    redis = None
-    ConnectionError = None
+    redis = None            # noqa
+    ConnectionError = None  # noqa
 
 
 class RedisBackend(KeyValueStoreBackend):
@@ -100,6 +100,6 @@ class RedisBackend(KeyValueStoreBackend):
                                 db=self.redis_db,
                                 password=self.redis_password)
 
-    @client.deleter
+    @client.deleter  # noqa
     def client(self, client):
         client.connection.disconnect()

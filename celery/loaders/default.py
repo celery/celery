@@ -4,7 +4,6 @@ from importlib import import_module
 
 from celery.datastructures import AttributeDict
 from celery.loaders.base import BaseLoader
-from celery.datastructures import AttributeDict
 from celery.exceptions import NotConfigured
 
 DEFAULT_CONFIG_MODULE = "celeryconfig"

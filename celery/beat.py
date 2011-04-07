@@ -8,7 +8,7 @@ import traceback
 try:
     import multiprocessing
 except ImportError:
-    multiprocessing = None
+    multiprocessing = None  # noqa
 
 from datetime import datetime
 
@@ -424,6 +424,7 @@ class _Threaded(threading.Thread):
 
 
 if multiprocessing is not None:
+
     class _Process(multiprocessing.Process):
         """Embedded task scheduler using multiprocessing."""
 

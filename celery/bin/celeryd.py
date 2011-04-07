@@ -76,7 +76,7 @@ import sys
 try:
     from multiprocessing import freeze_support
 except ImportError:
-    freeze_support = lambda: True
+    freeze_support = lambda: True  # noqa
 
 from celery.bin.base import Command, Option
 

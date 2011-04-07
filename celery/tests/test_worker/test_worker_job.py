@@ -418,6 +418,7 @@ class test_TaskRequest(unittest.TestCase):
 
         WorkerTaskTrace.execute = _error_exec
         try:
+
             def with_catch_warnings(log):
                 res = execute_and_trace(mytask.name, gen_unique_id(),
                                         [4], {})

@@ -13,19 +13,21 @@ import sys
 import time
 try:
     import __builtin__ as builtins
-except ImportError:    # py3k
-    import builtins
+except ImportError:  # py3k
+    import builtins  # noqa
 
 from celery.utils.compat import StringIO, LoggerAdapter
 try:
     from contextlib import contextmanager
 except ImportError:
-    from celery.tests.utils import fallback_contextmanager as contextmanager
+    from celery.tests.utils import fallback_contextmanager
+    contextmanager = fallback_contextmanager  # noqa
 
 
 from nose import SkipTest
 
 from celery.app import app_or_default
+from celery.utils import noop
 from celery.utils.functional import wraps
 
 
@@ -119,14 +121,6 @@ def execute_context(context, fun):
             raise
     finally:
         context.__exit__(*exc_info)
-
-
-try:
-    from contextlib import contextmanager
-except ImportError:
-    contextmanager = fallback_contextmanager
-
-from celery.utils import noop
 
 
 @contextmanager

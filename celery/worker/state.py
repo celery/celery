@@ -59,13 +59,13 @@ if os.environ.get("CELERY_BENCH"):
     __reserved = task_reserved
     __ready = task_ready
 
-    def task_reserved(request):
+    def task_reserved(request):  # noqa
         global bench_start
         if bench_start is None:
             bench_start = time()
         return __reserved(request)
 
-    def task_ready(request):
+    def task_ready(request):  # noqa
         global all_count, bench_start
         all_count += 1
         if not all_count % bench_every:

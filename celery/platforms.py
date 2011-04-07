@@ -5,7 +5,7 @@ import signal
 try:
     from setproctitle import setproctitle as _setproctitle
 except ImportError:
-    _setproctitle = None
+    _setproctitle = None  # noqa
 
 CAN_DETACH = True
 try:
@@ -16,12 +16,12 @@ except ImportError:
 try:
     import pwd
 except ImportError:
-    pwd = None
+    pwd = None  # noqa
 
 try:
     import grp
 except ImportError:
-    grp = None
+    grp = None  # noqa
 
 DAEMON_UMASK = 0
 DAEMON_WORKDIR = "/"

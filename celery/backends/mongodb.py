@@ -4,7 +4,7 @@ from datetime import datetime
 try:
     import pymongo
 except ImportError:
-    pymongo = None
+    pymongo = None  # noqa
 
 from celery import states
 from celery.backends.base import BaseDictBackend

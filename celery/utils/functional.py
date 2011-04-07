@@ -78,7 +78,7 @@ def _compat_partial(fun, *args, **kwargs):
 try:
     from functools import partial
 except ImportError:
-    partial = _compat_partial
+    partial = _compat_partial  # noqa
 
 WRAPPER_ASSIGNMENTS = ('__module__', '__name__', '__doc__')
 WRAPPER_UPDATES = ('__dict__',)
@@ -111,7 +111,7 @@ def _compat_update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS,
 try:
     from functools import update_wrapper
 except ImportError:
-    update_wrapper = _compat_update_wrapper
+    update_wrapper = _compat_update_wrapper  # noqa
 
 
 def _compat_wraps(wrapped, assigned=WRAPPER_ASSIGNMENTS,
@@ -131,6 +131,6 @@ def _compat_wraps(wrapped, assigned=WRAPPER_ASSIGNMENTS,
 try:
     from functools import wraps
 except ImportError:
-    wraps = _compat_wraps
+    wraps = _compat_wraps  # noqa
 
 ### End from Python 2.5 functools.py ##########################################

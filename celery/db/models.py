@@ -8,7 +8,7 @@ from celery.db.session import ResultModelBase
 if sa.__version__.startswith('0.5'):
     from celery.db.dfd042c7 import PickleType
 else:
-    from celery.db.a805d4bd import PickleType
+    from celery.db.a805d4bd import PickleType  # noqa
 
 
 class Task(ResultModelBase):

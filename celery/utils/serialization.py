@@ -8,7 +8,7 @@ import pickle as pypickle
 try:
     import cPickle as cpickle
 except ImportError:
-    cpickle = None
+    cpickle = None  # noqa
 
 if sys.version_info < (2, 6):  # pragma: no cover
     # cPickle is broken in Python <= 2.5.
@@ -42,7 +42,8 @@ if sys.version_info < (2, 5):  # pragma: no cover
     def subclass_exception(name, parent, unused):
         return types.ClassType(name, (parent,), {})
 else:
-    def subclass_exception(name, parent, module):
+
+    def subclass_exception(name, parent, module):  # noqa
         return type(name, (parent,), {'__module__': module})
 
 

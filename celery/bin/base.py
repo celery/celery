@@ -39,7 +39,7 @@ class Command(object):
             Option("--config",
                     default="celeryconfig", action="store",
                     dest="config_module",
-                    help="Name of the module to read configuration from.")
+                    help="Name of the module to read configuration from."),
     )
 
     #: Enable if the application should support config from the cmdline.

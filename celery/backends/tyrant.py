@@ -2,7 +2,7 @@
 try:
     import pytyrant
 except ImportError:
-    pytyrant = None
+    pytyrant = None  # noqa
 
 from celery.backends.base import KeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured

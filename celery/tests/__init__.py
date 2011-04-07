@@ -13,8 +13,9 @@ os.environ["EVENTLET_NOPATCH"] = "yes"
 os.environ["GEVENT_NOPATCH"] = "yes"
 
 try:
-    WindowsError = WindowsError
+    WindowsError = WindowsError  # noqa
 except NameError:
+
     class WindowsError(Exception):
         pass
 

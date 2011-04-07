@@ -19,7 +19,7 @@ _no_redis_msg_emitted = False
 try:
     from redis.exceptions import ConnectionError
 except ImportError:
-    class ConnectionError(socket.error):
+    class ConnectionError(socket.error):  # noqa
         pass
 
 
@@ -108,6 +108,7 @@ class TestRedisBackendNoRedis(unittest.TestCase):
     def test_redis_None_if_redis_not_installed(self):
         prev = sys.modules.pop("celery.backends.pyredis")
         try:
+
             def with_redis_masked(_val):
                 from celery.backends.pyredis import redis
                 self.assertIsNone(redis)

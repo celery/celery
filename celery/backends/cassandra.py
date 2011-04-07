@@ -88,8 +88,7 @@ class CassandraBackend(BaseDictBackend):
 
         self._column_family = None
 
-    def _retry_on_error(self, fun):
-        self = args[0]
+    def _retry_on_error(self, fun, *args, **kwargs):
         ts = time.time() + self._retry_timeout
         while 1:
             try:

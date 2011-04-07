@@ -8,7 +8,7 @@ try:
     from multiprocessing import current_process
     from multiprocessing import util as mputil
 except ImportError:
-    current_process = mputil = None
+    current_process = mputil = None  # noqa
 
 from celery import signals
 from celery import current_app

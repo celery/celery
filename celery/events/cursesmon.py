@@ -464,7 +464,7 @@ def evtop(app=None):
     conn = app.broker_connection()
     recv = app.events.Receiver(conn, handlers={"*": state.event})
     capture = recv.itercapture()
-    consumer = capture.next()
+    capture.next()
     display = CursesMonitor(state, app=app)
     display.init_screen()
     refresher = DisplayThread(display)

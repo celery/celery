@@ -53,7 +53,7 @@ NAMESPACES = {
         "POOL_LIMIT": Option(None, type="int"),
         "INSIST": Option(False, type="bool"),
         "USE_SSL": Option(False, type="bool"),
-        "TRANSPORT_OPTIONS": Option({}, type="dict")
+        "TRANSPORT_OPTIONS": Option({}, type="dict"),
     },
     "CELERY": {
         "ACKS_LATE": Option(False, type="bool"),

@@ -4,7 +4,7 @@ import smtplib
 try:
     from email.mime.text import MIMEText
 except ImportError:
-    from email.MIMEText import MIMEText
+    from email.MIMEText import MIMEText  # noqa
 
 supports_timeout = sys.version_info >= (2, 6)
 

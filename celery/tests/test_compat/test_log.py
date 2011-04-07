@@ -6,15 +6,11 @@ from celery.tests.utils import unittest
 from tempfile import mktemp
 from celery.tests.utils import StringIO
 
-try:
-    from contextlib import contextmanager
-except ImportError:
-    from celery.tests.utils import fallback_contextmanager as contextmanager
-
 from celery import log
 from celery.log import (setup_logger, setup_task_logger,
                         get_default_logger, get_task_logger,
                         redirect_stdouts_to_logger, LoggingProxy)
+from celery.tests.utils import contextmanager
 from celery.tests.utils import override_stdouts, execute_context
 from celery.utils import gen_unique_id
 from celery.utils.compat import LoggerAdapter
@@ -107,6 +103,7 @@ class test_default_logger(unittest.TestCase):
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
                                    root=False)
         try:
+
             def with_wrap_logger(sio):
                 redirect_stdouts_to_logger(logger, loglevel=logging.ERROR)
                 logger.error("foo")

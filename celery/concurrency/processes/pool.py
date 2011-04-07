@@ -125,12 +125,14 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None):
     get = inqueue.get
 
     if hasattr(inqueue, '_reader'):
+
         def poll(timeout):
             if inqueue._reader.poll(timeout):
                 return True, get()
             return False, None
     else:
-        def poll(timeout):
+
+        def poll(timeout):  # noqa
             try:
                 return True, get(timeout=timeout)
             except Queue.Empty:

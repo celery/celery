@@ -18,7 +18,7 @@ def import_best_memcache():
             is_pylibmc = True
         except ImportError:
             try:
-                import memcache
+                import memcache  # noqa
             except ImportError:
                 raise ImproperlyConfigured(
                         "Memcached backend requires either the 'pylibmc' "

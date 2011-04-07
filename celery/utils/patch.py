@@ -9,7 +9,7 @@ def _patch_logger_class():
     try:
         from multiprocessing.process import current_process
     except ImportError:
-        current_process = None
+        current_process = None  # noqa
 
     logging._acquireLock()
     try:

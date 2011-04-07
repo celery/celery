@@ -13,7 +13,7 @@ class TestCursesDisplay(unittest.TestCase):
 
     def setUp(self):
         try:
-            import curses
+            import curses  # noqa
         except ImportError:
             raise SkipTest("curses monitor requires curses")
 

@@ -9,6 +9,7 @@ class TestAAPickle(unittest.TestCase):
     def test_no_cpickle(self):
         prev = sys.modules.pop("celery.utils.serialization", None)
         try:
+
             def with_cPickle_masked(_val):
                 from celery.utils.serialization import pickle
                 import pickle as orig_pickle

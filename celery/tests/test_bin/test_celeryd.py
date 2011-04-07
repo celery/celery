@@ -6,7 +6,7 @@ import warnings
 try:
     from multiprocessing import current_process
 except ImportError:
-    current_process = None
+    current_process = None  # noqa
 
 
 from nose import SkipTest
@@ -189,6 +189,7 @@ class test_Worker(AppCase):
 
         prev, os.geteuid = os.geteuid, geteuid
         try:
+
             def with_catch_warnings(log):
                 worker = self.Worker()
                 worker.run()

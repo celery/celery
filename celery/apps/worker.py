@@ -3,7 +3,7 @@ import logging
 try:
     import multiprocessing
 except ImportError:
-    multiprocessing = None
+    multiprocessing = None  # noqa
 import os
 import socket
 import sys

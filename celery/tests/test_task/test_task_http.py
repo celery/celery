@@ -6,19 +6,14 @@ from celery.tests.utils import unittest
 try:
     from urllib import addinfourl
 except ImportError:  # py3k
-    from urllib.request import addinfourl
-try:
-    from contextlib import contextmanager
-except ImportError:
-    from celery.tests.utils import fallback_contextmanager as contextmanager
-from celery.tests.utils import StringIO
+    from urllib.request import addinfourl  # noqa
 
 from anyjson import serialize
 
 from celery.task import http
 from celery.utils.functional import wraps
 
-from celery.tests.utils import execute_context
+from celery.tests.utils import execute_context, contextmanager, StringIO
 
 
 @contextmanager

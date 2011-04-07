@@ -2,30 +2,29 @@ from __future__ import generators
 
 ############## py3k #########################################################
 try:
-    from UserList import UserList
+    from UserList import UserList       # noqa
 except ImportError:
-    from collections import UserList
+    from collections import UserList    # noqa
 
 try:
-    from UserDict import UserDict
+    from UserDict import UserDict       # noqa
 except ImportError:
-    from collections import UserDict
+    from collections import UserDict    # noqa
 
 try:
-    from cStringIO import StringIO
+    from cStringIO import StringIO      # noqa
 except ImportError:
     try:
-        from StringIO import StringIO
+        from StringIO import StringIO   # noqa
     except ImportError:
-        from io import StringIO
+        from io import StringIO         # noqa
 
 ############## urlparse.parse_qsl ###########################################
 
 try:
     from urlparse import parse_qsl
 except ImportError:
-    from cgi import parse_qsl
-parse_sql = parse_qsl
+    from cgi import parse_qsl  # noqa
 
 ############## __builtin__.all ##############################################
 
@@ -33,6 +32,7 @@ try:
     all([True])
     all = all
 except NameError:
+
     def all(iterable):
         for item in iterable:
             if not item:
@@ -45,6 +45,7 @@ try:
     any([True])
     any = any
 except NameError:
+
     def any(iterable):
         for item in iterable:
             if item:
@@ -57,7 +58,7 @@ import weakref
 try:
     from collections import MutableMapping
 except ImportError:
-    from UserDict import DictMixin as MutableMapping
+    from UserDict import DictMixin as MutableMapping  # noqa
 from itertools import imap as _imap
 from operator import eq as _eq
 
@@ -267,7 +268,7 @@ class CompatOrderedDict(dict, MutableMapping):
 try:
     from collections import OrderedDict
 except ImportError:
-    OrderedDict = CompatOrderedDict
+    OrderedDict = CompatOrderedDict  # noqa
 
 ############## collections.defaultdict ######################################
 
@@ -276,7 +277,7 @@ try:
 except ImportError:
     # Written by Jason Kirtland, taken from Python Cookbook:
     # <http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/523034>
-    class defaultdict(dict):
+    class defaultdict(dict):  # noqa
 
         def __init__(self, default_factory=None, *args, **kwargs):
             dict.__init__(self, *args, **kwargs)
@@ -322,7 +323,7 @@ import logging
 try:
     import multiprocessing
 except ImportError:
-    multiprocessing = None
+    multiprocessing = None  # noqa
 import sys
 
 from logging import LogRecord
@@ -331,6 +332,7 @@ log_takes_extra = "extra" in inspect.getargspec(logging.Logger._log)[0]
 
 # The func argument to LogRecord was added in 2.5
 if "func" not in inspect.getargspec(LogRecord.__init__)[0]:
+
     def LogRecord(name, level, fn, lno, msg, args, exc_info, func):
         return logging.LogRecord(name, level, fn, lno, msg, args, exc_info)
 
@@ -437,7 +439,7 @@ class _CompatLoggerAdapter(object):
 try:
     from logging import LoggerAdapter
 except ImportError:
-    LoggerAdapter = _CompatLoggerAdapter
+    LoggerAdapter = _CompatLoggerAdapter  # noqa
 
 
 def log_with_extra(logger, level, msg, *args, **kwargs):
@@ -452,7 +454,7 @@ try:
 except ImportError:
     import itertools
 
-    def izip_longest(*args, **kwds):
+    def izip_longest(*args, **kwds):  # noqa
         fillvalue = kwds.get("fillvalue")
 
         def sentinel(counter=([fillvalue] * (len(args) - 1)).pop):
@@ -495,7 +497,7 @@ else:
     try:
         from logging.handlers import WatchedFileHandler
     except ImportError:
-        class WatchedFileHandler(logging.FileHandler):
+        class WatchedFileHandler(logging.FileHandler):  # noqa
             """
             A handler for logging to a file, which watches the file
             to see if it has changed while in use. This can happen because of

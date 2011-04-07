@@ -7,12 +7,13 @@ from nose import SkipTest
 try:
     from celery.concurrency import processes as mp
 except ImportError:
+
     class _mp(object):
         RUN = 0x1
 
         class TaskPool(object):
             pass
-    mp = _mp()
+    mp = _mp()  # noqa
 
 from celery.datastructures import ExceptionInfo
 from celery.utils import noop
@@ -100,7 +101,7 @@ class test_TaskPool(unittest.TestCase):
 
     def setUp(self):
         try:
-            import multiprocessing
+            import multiprocessing  # noqa
         except ImportError:
             raise SkipTest("multiprocessing not supported")
 
