@@ -392,7 +392,7 @@ class TaskRequest(object):
                                   errbacks=[self.on_failure])
         return result
 
-    def on_accepted(self):
+    def on_accepted(self, **kw):
         """Handler called when task is accepted by worker pool."""
         self.time_start = time.time()
         state.task_accepted(self)
