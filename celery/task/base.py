@@ -82,6 +82,7 @@ class TaskType(type):
             return new(cls, name, bases, attrs)
 
         # Automatically generate missing/empty name.
+        autoname = False
         if not attrs.get("name"):
             try:
                 module_name = sys.modules[task_module].__name__
@@ -89,6 +90,7 @@ class TaskType(type):
                 # Fix for manage.py shell_plus (Issue #366).
                 module_name = task_module
             attrs["name"] = '.'.join([module_name, name])
+            autoname = True
 
         # Because of the way import happens (recursively)
         # we may or may not be the first time the task tries to register
@@ -97,7 +99,7 @@ class TaskType(type):
         task_name = attrs["name"]
         if task_name not in tasks:
             task_cls = new(cls, name, bases, attrs)
-            if task_module == "__main__" and task_cls.app.main:
+            if autoname and task_module == "__main__" and task_cls.app.main:
                 task_name = task_cls.name = '.'.join([task_cls.app.main, name])
             tasks.register(task_cls)
         task = tasks[task_name].__class__
