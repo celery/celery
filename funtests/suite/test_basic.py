@@ -1,10 +1,20 @@
 import operator
+import os
+import sys
 import time
 
+# funtest config
+sys.path.insert(0, os.getcwd())
+sys.path.insert(0, os.path.join(os.getcwd(), os.pardir))
+import suite
+
+from celery.tests.utils import unittest
 from celery.tests.functional import tasks
 from celery.tests.functional.case import WorkerCase
 
+
 from celery.task.control import broadcast
+
 
 
 class test_basic(WorkerCase):
@@ -55,5 +65,4 @@ class test_basic(WorkerCase):
 
 
 if __name__ == "__main__":
-    from unittest2 import main
-    main()
+    unittest.main()

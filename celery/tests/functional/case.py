@@ -52,6 +52,7 @@ class Worker(object):
             from celery import current_app
             current_app.worker_main(["celeryd", "--loglevel=DEBUG",
                                                 "-n", self.hostname])
+            os._exit(0)
         self.pid = pid
 
     def is_alive(self, timeout=1):
