@@ -16,7 +16,6 @@
     celery.task.sets
     celery.task.chord
     celery.result
-    celery.task
     celery.task.control
     celery.task.http
     celery.schedules
