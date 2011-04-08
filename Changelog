@@ -5,6 +5,53 @@
 .. contents::
     :local:
 
+.. _version-2.2.6:
+
+2.2.6
+=====
+:release-date: TBA
+
+.. _v226-important:
+
+Important Notes
+---------------
+
+* Now depends on Kombu 1.1.2.
+
+.. _v226-fixes:
+
+Fixes
+-----
+
+* The new ``WatchedFileHandler`` broke Python 2.5 support (Issue #367).
+
+* Task: Don't use ``app.main`` if the task name is set explicitly.
+
+* Sending emails did not work on Python 2.5, due to a bug in
+  the version detection code (Issue #378).
+
+* Beat: Adds method ``ScheduleEntry._default_now``
+
+    This method can be overridden to change the default value
+    of ``last_run_at``.
+
+* An error occurring in process cleanup could mask task errors,
+  so we no longer propagate errors in process cleanup anymore
+  bur rather log them (Issue #365).
+
+* Defining tasks did not work properly when using the Django
+  ``shell_plus`` utility (Issue #366).
+
+* ``AsyncResult.get`` did not accept the ``interval`` and ``propagate``
+   arguments.
+
+* celeryd: Fixed a bug where celeryd would not shutdown if a
+   :exc:`socket.error` was raised.
+
+* Dependency lists now explicitly specifies that we don't want python-dateutil
+  2.x.
+
+
 .. _version-2.2.5:
 
 2.2.5
