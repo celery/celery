@@ -11,7 +11,8 @@ def _unlock_chord(setid, callback, interval=1, max_retries=None):
     if result.ready():
         subtask(callback).delay(result.join())
         result.delete()
-    _unlock_chord.retry(countdown=interval, max_retries=max_retries)
+    else:
+        _unlock_chord.retry(countdown=interval, max_retries=max_retries)
 
 
 class Chord(current_app.Task):
