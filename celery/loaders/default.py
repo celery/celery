@@ -15,11 +15,6 @@ DEFAULT_SETTINGS = {
     "CELERY_TASK_ERROR_WHITELIST": (),
 }
 
-DEFAULT_UNCONFIGURED_SETTINGS = {
-    "CELERY_RESULT_BACKEND": "amqp",
-}
-
-
 def wanted_module_item(item):
     return item[0].isupper() and not item.startswith("_")
 
@@ -51,7 +46,7 @@ class Loader(BaseLoader):
             warnings.warn(NotConfigured(
                 "No %r module found! Please make sure it exists and "
                 "is available to Python." % (configname, )))
-            return self.setup_settings(DEFAULT_UNCONFIGURED_SETTINGS)
+            return self.setup_settings({})
         else:
             usercfg = dict((key, getattr(celeryconfig, key))
                             for key in dir(celeryconfig)
