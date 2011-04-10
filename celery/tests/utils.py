@@ -23,12 +23,22 @@ except ImportError:
     from celery.tests.utils import fallback_contextmanager
     contextmanager = fallback_contextmanager  # noqa
 
+import mock
 
 from nose import SkipTest
 
 from celery.app import app_or_default
 from celery.utils import noop
 from celery.utils.functional import wraps
+
+
+class Mock(mock.Mock):
+
+    def __init__(self, *args, **kwargs):
+        attrs = kwargs.pop("attrs", None) or {}
+        super(Mock, self).__init__(*args, **kwargs)
+        for attr_name, attr_value in attrs.items():
+            setattr(self, attr_name, attr_value)
 
 
 class AppCase(unittest.TestCase):
