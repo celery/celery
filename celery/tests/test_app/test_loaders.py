@@ -215,7 +215,7 @@ class TestDefaultLoader(unittest.TestCase):
 
         def with_catch_warnings(log):
             l = _Loader()
-            self.assertEqual(l.conf.CELERY_RESULT_BACKEND, "amqp")
+            self.assertDictEqual(l.conf, {})
             context_executed[0] = True
 
         context = catch_warnings(record=True)
