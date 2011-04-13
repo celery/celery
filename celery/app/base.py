@@ -9,6 +9,7 @@ Application Base Class.
 
 """
 import platform as _platform
+import sys
 
 from copy import deepcopy
 from threading import Lock
@@ -23,6 +24,27 @@ from celery.utils.functional import wraps
 import kombu
 if kombu.VERSION < (1, 1, 0):
     raise ImportError("Celery requires Kombu version 1.1.0 or higher.")
+
+
+BUGREPORT_INFO = """
+platform -> system:%(system)s arch:%(arch)s imp:%(py_i)s
+software -> celery:%(celery_v)s kombu:%(kombu_v)s py:%(py_v)s
+settings -> transport:%(transport)s results:%(results)s
+"""
+
+
+def pyimplementation():
+    if hasattr(_platform, "python_implementation"):
+        return _platform.python_implementation()
+    elif sys.platform.startswith("java"):
+        return "Jython %s" % (sys.platform, )
+    elif hasattr(sys, "pypy_version_info"):
+        v = ".".join(map(str, sys.pypy_version_info[:3]))
+        if sys.pypy_version_info[3:]:
+            v += "-" + "".join(map(str, sys.pypy_version_info[3:]))
+        return "PyPy %s" % (v, )
+    else:
+        return "CPython"
 
 
 class LamportClock(object):
@@ -309,6 +331,18 @@ class BaseApp(object):
         if self._pool:
             self._pool.force_close_all()
             self._pool = None
+
+    def bugreport(self):
+        import celery
+        import kombu
+        return BUGREPORT_INFO % {"system": _platform.system(),
+                                 "arch": _platform.architecture(),
+                                 "py_i": pyimplementation(),
+                                 "celery_v": celery.__version__,
+                                 "kombu_v": kombu.__version__,
+                                 "py_v": _platform.python_version(),
+                                 "transport": self.conf.BROKER_BACKEND,
+                                 "results": self.conf.CELERY_RESULT_BACKEND}
 
     @property
     def pool(self):
