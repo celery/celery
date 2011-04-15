@@ -16,7 +16,7 @@ from celery.exceptions import WorkerLostError, RetryTaskError
 from celery.execute.trace import TaskTrace
 from celery.registry import tasks
 from celery.utils import noop, kwdict, fun_takes_kwargs
-from celery.utils import truncate_text
+from celery.utils import get_symbol_by_name, truncate_text
 from celery.utils.compat import log_with_extra
 from celery.utils.encoding import safe_repr, safe_str
 from celery.utils.timeutils import maybe_iso8601
@@ -544,12 +544,11 @@ class TaskRequest(object):
     def send_error_email(self, task, context, exc,
             whitelist=None, enabled=False, fail_silently=True):
         if enabled and not task.disable_error_emails:
-            if whitelist:
-                if not isinstance(exc, tuple(whitelist)):
-                    return
-            subject = self.email_subject.strip() % context
-            body = self.email_body.strip() % context
-            self.app.mail_admins(subject, body, fail_silently=fail_silently)
+            if not whitelist or isinstance(exc,
+                    tuple(map(get_symbol_by_name, whitelist))):
+                subject = self.email_subject.strip() % context
+                body = self.email_body.strip() % context
+                self.app.mail_admins(subject, body, fail_silently=fail_silently)
 
     def repr_result(self, result, maxlen=46):
         # 46 is the length needed to fit

@@ -8,32 +8,12 @@ from celery.exceptions import NotConfigured
 
 DEFAULT_CONFIG_MODULE = "celeryconfig"
 
-DEFAULT_SETTINGS = {
-    "DEBUG": False,
-    "ADMINS": (),
-    "CELERY_IMPORTS": (),
-    "CELERY_TASK_ERROR_WHITELIST": (),
-}
-
-def wanted_module_item(item):
-    return item[0].isupper() and not item.startswith("_")
-
 
 class Loader(BaseLoader):
-    """The default loader.
-
-    See the FAQ for example usage.
-
-    """
+    """The loader used by the default app."""
 
     def setup_settings(self, settingsdict):
-        settings = AttributeDict(DEFAULT_SETTINGS, **settingsdict)
-        settings.CELERY_TASK_ERROR_WHITELIST = tuple(
-                getattr(import_module(mod), cls)
-                    for fqn in settings.CELERY_TASK_ERROR_WHITELIST
-                        for mod, cls in (fqn.rsplit('.', 1), ))
-
-        return settings
+        return AttributeDict(settingsdict)
 
     def read_configuration(self):
         """Read configuration from :file:`celeryconfig.py` and configure
@@ -50,9 +30,12 @@ class Loader(BaseLoader):
         else:
             usercfg = dict((key, getattr(celeryconfig, key))
                             for key in dir(celeryconfig)
-                                if wanted_module_item(key))
+                                if self.wanted_module_item(key))
             self.configured = True
             return self.setup_settings(usercfg)
+
+    def wanted_module_item(self, item):
+        return item[0].isupper() and not item.startswith("_")
 
     def on_worker_init(self):
         """Imports modules at worker init so tasks can be registered
