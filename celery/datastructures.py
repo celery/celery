@@ -95,14 +95,14 @@ class ConfigurationView(AttributeDictMixin):
     """
     changes = None
     defaults = None
+    _order = None
 
     def __init__(self, changes, defaults):
-        self.__dict__["changes"] = changes
-        self.__dict__["defaults"] = defaults
-        self.__dict__["_order"] = [changes] + defaults
+        self.__dict__.update(changes=changes, defaults=defaults,
+                             _order=[changes] + defaults)
 
     def __getitem__(self, key):
-        for d in self.__dict__["_order"]:
+        for d in self._order:
             try:
                 return d[key]
             except KeyError:
@@ -110,7 +110,7 @@ class ConfigurationView(AttributeDictMixin):
         raise KeyError(key)
 
     def __setitem__(self, key, value):
-        self.__dict__["changes"][key] = value
+        self.changes[key] = value
 
     def get(self, key, default=None):
         try:
@@ -126,10 +126,10 @@ class ConfigurationView(AttributeDictMixin):
             return default
 
     def update(self, *args, **kwargs):
-        return self.__dict__["changes"].update(*args, **kwargs)
+        return self.changes.update(*args, **kwargs)
 
     def __contains__(self, key):
-        for d in self.__dict__["_order"]:
+        for d in self._order:
             if key in d:
                 return True
         return False
@@ -143,7 +143,7 @@ class ConfigurationView(AttributeDictMixin):
     def _iter(self, op):
         # defaults must be first in the stream, so values in
         # changes takes precedence.
-        return chain(*[op(d) for d in reversed(self.__dict__["_order"])])
+        return chain(*[op(d) for d in reversed(self._order)])
 
     def iterkeys(self):
         return self._iter(lambda d: d.iterkeys())
