@@ -136,7 +136,6 @@ class WorkerTaskTrace(TaskTrace):
                 logger.error("Process cleanup failed: %r" % (exc, ),
                              exc_info=sys.exc_info())
 
-
     def handle_success(self, retval, *args):
         """Handle successful execution."""
         if not self.task.ignore_result:
