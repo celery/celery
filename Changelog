@@ -85,34 +85,91 @@ News
 
 * Time limits can now be set for individual tasks.
 
-	To set the soft and hard time limits for a task use the ``time_limit``
-	and ``soft_time_limit`` attributes:
+    To set the soft and hard time limits for a task use the ``time_limit``
+    and ``soft_time_limit`` attributes:
 
-	.. code-block:: python
+    .. code-block:: python
 
-		import time
+        import time
 
-		@task(time_limit=60, soft_time_limit=30)
-		def sleeptask(seconds):
-			time.sleep(seconds)
+        @task(time_limit=60, soft_time_limit=30)
+        def sleeptask(seconds):
+            time.sleep(seconds)
 
-	If the attributes are not set, then the workers default time limits
-	will be used.
+    If the attributes are not set, then the workers default time limits
+    will be used.
 
-	New in this version you can also change the time limits for a task
-	at runtime using the :func:`time_limit` remote control command::
+    New in this version you can also change the time limits for a task
+    at runtime using the :func:`time_limit` remote control command::
 
-		>>> from celery.task import control
-		>>> control.time_limit("tasks.sleeptask",
-		...					   soft=60, hard=120, reply=True)
-		[{'worker1.example.com': {'ok': 'time limits set successfully'}}]
+    >>> from celery.task import control
+    >>> control.time_limit("tasks.sleeptask",
+    ...                        soft=60, hard=120, reply=True)
+    [{'worker1.example.com': {'ok': 'time limits set successfully'}}]
 
-	Only tasks that starts executing after the time limit change will be affected.
+    Only tasks that starts executing after the time limit change will be affected.
 
-	.. note::
+    .. note::
 
-		Soft time limits will still not work on Windows or other platforms
-		that do not have the ``SIGUSR1`` signal.
+        Soft time limits will still not work on Windows or other platforms
+        that do not have the ``SIGUSR1`` signal.
+
+.. _version-2.2.6:
+
+2.2.6
+=====
+:release-date: 2011-04-15 16:00 P.M CEST
+
+.. _v226-important:
+
+Important Notes
+---------------
+
+* Now depends on Kombu 1.1.2.
+
+* Dependency lists now explicitly specifies that we don't want python-dateutil
+  2.x, as this version only supports py3k.
+
+    If you have installed dateutil 2.0 by accident you should downgrade
+    to the 1.5.0 version::
+
+        pip install -U python-dateutil==1.5.0
+
+    or by easy_install::
+
+        easy_install -U python-dateutil==1.5.0
+
+.. _v226-fixes:
+
+Fixes
+-----
+
+* The new ``WatchedFileHandler`` broke Python 2.5 support (Issue #367).
+
+* Task: Don't use ``app.main`` if the task name is set explicitly.
+
+* Sending emails did not work on Python 2.5, due to a bug in
+  the version detection code (Issue #378).
+
+* Beat: Adds method ``ScheduleEntry._default_now``
+
+    This method can be overridden to change the default value
+    of ``last_run_at``.
+
+* An error occurring in process cleanup could mask task errors.
+
+  We no longer propagate errors happening at process cleanup,
+  but log them instead.  This way they will not interfere with publishing
+  the task result (Issue #365).
+
+* Defining tasks did not work properly when using the Django
+  ``shell_plus`` utility (Issue #366).
+
+* ``AsyncResult.get`` did not accept the ``interval`` and ``propagate``
+   arguments.
+
+* celeryd: Fixed a bug where celeryd would not shutdown if a
+   :exc:`socket.error` was raised.
 
 .. _version-2.2.5:
 
