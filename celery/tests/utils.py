@@ -16,6 +16,8 @@ try:
 except ImportError:  # py3k
     import builtins  # noqa
 
+from functools import wraps
+
 from celery.utils.compat import StringIO, LoggerAdapter
 try:
     from contextlib import contextmanager
@@ -29,7 +31,6 @@ from nose import SkipTest
 
 from celery.app import app_or_default
 from celery.utils import noop
-from celery.utils.functional import wraps
 
 
 class Mock(mock.Mock):

@@ -2,18 +2,17 @@ from __future__ import generators
 
 import sys
 import time
-from celery.tests.utils import unittest
 
+from functools import partial
 from itertools import chain, izip
 
 from celery.registry import TaskRegistry
 from celery.task.base import Task
 from celery.utils import timeutils
 from celery.utils import gen_unique_id
-from celery.utils.functional import partial
 from celery.worker import buckets
 
-from celery.tests.utils import skip_if_environ
+from celery.tests.utils import skip_if_environ, unittest
 
 skip_if_disabled = partial(skip_if_environ("SKIP_RLIMITS"))
 

@@ -41,7 +41,8 @@ class TraceInfo(object):
                 raise
             return cls(states.FAILURE, retval=exc, exc_info=sys.exc_info())
         except:  # pragma: no cover
-            # For Python2.4 where raising strings are still allowed.
+            # For Python2.5 where raising strings are still allowed
+            # (but deprecated)
             if propagate:
                 raise
             return cls(states.FAILURE, retval=None, exc_info=sys.exc_info())

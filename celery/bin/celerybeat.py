@@ -22,9 +22,10 @@
     `ERROR`, `CRITICAL`, or `FATAL`.
 
 """
+from functools import partial
+
 from celery.bin.base import Command, Option, daemon_options
 from celery.platforms import create_daemon_context
-from celery.utils.functional import partial
 
 
 class BeatCommand(Command):

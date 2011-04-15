@@ -3,6 +3,7 @@ import os
 import sys
 import warnings
 
+from functools import wraps
 try:
     from multiprocessing import current_process
 except ImportError:
@@ -21,12 +22,9 @@ from celery.bin.celeryd import WorkerCommand, windows_main, \
                                main as celeryd_main
 from celery.exceptions import ImproperlyConfigured
 from celery.utils import patch
-from celery.utils.functional import wraps
 
 from celery.tests.compat import catch_warnings
-from celery.tests.utils import execute_context
-from celery.tests.utils import AppCase
-from celery.tests.utils import StringIO
+from celery.tests.utils import AppCase, execute_context, StringIO
 
 
 patch.ensure_process_aware_logger()

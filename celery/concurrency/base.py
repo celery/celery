@@ -3,9 +3,10 @@ import sys
 import time
 import traceback
 
+from functools import partial
+
 from celery import log
 from celery.datastructures import ExceptionInfo
-from celery.utils.functional import partial
 from celery.utils import timer2
 
 

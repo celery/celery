@@ -1,6 +1,5 @@
-from celery.tests.utils import unittest
-from celery.tests.utils import StringIO
 from datetime import datetime, timedelta
+from functools import wraps
 
 from pyparsing import ParseException
 
@@ -13,10 +12,9 @@ from celery.result import EagerResult
 from celery.schedules import crontab, crontab_parser
 from celery.utils import timeutils
 from celery.utils import gen_unique_id
-from celery.utils.functional import wraps
 from celery.utils.timeutils import parse_iso8601
 
-from celery.tests.utils import with_eager_tasks
+from celery.tests.utils import with_eager_tasks, unittest, StringIO
 
 
 def return_True(*args, **kwargs):

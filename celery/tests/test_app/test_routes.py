@@ -1,10 +1,10 @@
-from celery.tests.utils import unittest
+from functools import wraps
 
 from celery import routes
 from celery import current_app
-from celery.utils import maybe_promise
-from celery.utils.functional import wraps
 from celery.exceptions import QueueNotFound
+from celery.utils import maybe_promise
+from celery.tests.utils import unittest
 
 
 def E(queues):
@@ -16,6 +16,7 @@ def E(queues):
 def with_queues(**queues):
 
     def patch_fun(fun):
+
         @wraps(fun)
         def __inner(*args, **kwargs):
             app = current_app

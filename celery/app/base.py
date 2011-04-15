@@ -12,6 +12,7 @@ import platform as _platform
 import sys
 
 from copy import deepcopy
+from functools import wraps
 from threading import Lock
 
 from kombu.utils import cached_property
@@ -19,7 +20,6 @@ from kombu.utils import cached_property
 from celery.app.defaults import DEFAULTS
 from celery.datastructures import ConfigurationView
 from celery.utils import instantiate, lpmerge
-from celery.utils.functional import wraps
 
 import kombu
 if kombu.VERSION < (1, 1, 0):

@@ -2,7 +2,8 @@
 from __future__ import generators
 
 import logging
-from celery.tests.utils import unittest
+
+from functools import wraps
 try:
     from urllib import addinfourl
 except ImportError:  # py3k
@@ -11,8 +12,7 @@ except ImportError:  # py3k
 from anyjson import serialize
 
 from celery.task import http
-from celery.utils.functional import wraps
-
+from celery.tests.utils import unittest
 from celery.tests.utils import execute_context, contextmanager, StringIO
 
 
