@@ -14,14 +14,9 @@ __homepage__ = "http://celeryproject.org"
 __docformat__ = "restructuredtext"
 
 if sys.version_info < (2, 5):
-    import warnings
-    warnings.warn(DeprecationWarning("""
-
-Python 2.4 support is deprecated and only versions 2.5, 2.6, 2.7+
-will be supported starting from Celery version 2.3.
-
-
-"""))
+    raise Exception(
+        "Python 2.4 is not supported by this version. "
+        "Please use Celery versions 2.1.x or earlier.")
 
 
 def Celery(*args, **kwargs):
