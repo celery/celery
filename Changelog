@@ -18,6 +18,18 @@ Important Notes
 
 * Now depends on Kombu 1.1.2.
 
+* Dependency lists now explicitly specifies that we don't want python-dateutil
+  2.x, as this version only supports py3k.
+
+    If you have installed dateutil 2.0 by accident you should downgrade
+    to the 1.5.0 version::
+
+        pip install -U python-dateutil==1.5.0
+
+    or by easy_install::
+
+        easy_install -U python-dateutil==1.5.0
+
 .. _v226-fixes:
 
 Fixes
@@ -35,9 +47,11 @@ Fixes
     This method can be overridden to change the default value
     of ``last_run_at``.
 
-* An error occurring in process cleanup could mask task errors,
-  so we no longer propagate errors in process cleanup anymore
-  bur rather log them (Issue #365).
+* An error occurring in process cleanup could mask task errors.
+
+  We no longer propagate errors happening at process cleanup,
+  but log them instead.  This way they will not interfere with publishing
+  the task result (Issue #365).
 
 * Defining tasks did not work properly when using the Django
   ``shell_plus`` utility (Issue #366).
@@ -47,10 +61,6 @@ Fixes
 
 * celeryd: Fixed a bug where celeryd would not shutdown if a
    :exc:`socket.error` was raised.
-
-* Dependency lists now explicitly specifies that we don't want python-dateutil
-  2.x.
-
 
 .. _version-2.2.5:
 
