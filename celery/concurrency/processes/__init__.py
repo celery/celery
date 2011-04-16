@@ -3,11 +3,19 @@
 Process Pools.
 
 """
-import os
+import platform
 import signal as _signal
+
+from os import kill as _kill
 
 from celery.concurrency.base import BasePool
 from celery.concurrency.processes.pool import Pool, RUN
+
+if platform.system() == "Windows":
+    # On Windows os.kill calls TerminateProcess which cannot be
+    # handled by # any process, so this is needed to terminate the task
+    # *and its children* (if any).
+    from celery.concurrency.processes._win import kill_processtree as _kill
 
 
 class TaskPool(BasePool):
@@ -51,7 +59,7 @@ class TaskPool(BasePool):
             self._pool = None
 
     def terminate_job(self, pid, signal=None):
-        os.kill(pid, signal or _signal.SIGTERM)
+        kill(pid, signal or _signal.SIGTERM)
 
     def grow(self, n=1):
         return self._pool.grow(n)
