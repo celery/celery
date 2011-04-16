@@ -4,8 +4,6 @@ from kombu.utils import cached_property
 
 from celery.backends.base import KeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured
-from celery.result import TaskSetResult
-from celery.task.sets import subtask
 from celery.utils import timeutils
 
 try:
@@ -85,6 +83,8 @@ class RedisBackend(KeyValueStoreBackend):
         pass
 
     def on_chord_part_return(self, task, keyprefix="chord-unlock-%s"):
+        from celery.task.sets import subtask
+        from celery.result import TaskSetResult
         setid = task.request.taskset
         key = keyprefix % setid
         deps = TaskSetResult.restore(setid, backend=task.backend)
