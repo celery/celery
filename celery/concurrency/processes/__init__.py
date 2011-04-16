@@ -9,6 +9,13 @@ import signal as _signal
 from celery.concurrency.base import BasePool
 from celery.concurrency.processes.pool import Pool, RUN
 
+if os.name == 'nt':
+    # In windows os.kill calls TerminateProcess which cannot be handled,
+    # so we need to clean up the process tree
+    from celery.concurrency.processes.processlist import kill_processtree as kill
+else:
+    kill = os.kill
+
 
 class TaskPool(BasePool):
     """Process Pool for processing tasks in parallel.
@@ -51,7 +58,7 @@ class TaskPool(BasePool):
             self._pool = None
 
     def terminate_job(self, pid, signal=None):
-        os.kill(pid, signal or _signal.SIGTERM)
+        kill(pid, signal or _signal.SIGTERM)
 
     def grow(self, n=1):
         return self._pool.grow(n)
