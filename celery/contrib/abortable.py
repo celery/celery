@@ -155,7 +155,8 @@ class AbortableTask(Task):
         often (for performance).
 
         """
-        result = self.AsyncResult(kwargs["task_id"])
+        task_id = kwargs.get('task_id', self.request.id)
+        result = self.AsyncResult(task_id)
         if not isinstance(result, AbortableAsyncResult):
             return False
         return result.is_aborted()
