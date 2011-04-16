@@ -148,6 +148,11 @@ class MockAsyncResultFailure(AsyncResult):
     def status(self):
         return states.FAILURE
 
+    def get(self, propagate=True, **kwargs):
+        if propagate:
+            raise self.result
+        return self.result
+
 
 class MockAsyncResultSuccess(AsyncResult):
     forgotten = False
@@ -162,6 +167,9 @@ class MockAsyncResultSuccess(AsyncResult):
     @property
     def status(self):
         return states.SUCCESS
+
+    def get(self, **kwargs):
+        return self.result
 
 
 class SimpleBackend(object):

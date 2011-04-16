@@ -323,27 +323,29 @@ class ResultSet(object):
         """`res[i] -> res.results[i]`"""
         return self.results[index]
 
-    def iterate(self):
+    def iterate(self, timeout=None, propagate=True, interval=0.5):
         """Iterate over the return values of the tasks as they finish
         one by one.
 
         :raises: The exception if any of the tasks raised an exception.
 
         """
-        pending = list(self.results)
+        elapsed = 0.0
         results = dict((result.task_id, copy(result))
                             for result in self.results)
-        while pending:
-            for task_id in pending:
-                result = results[task_id]
-                if result.status == states.SUCCESS:
-                    try:
-                        pending.remove(task_id)
-                    except ValueError:
-                        pass
-                    yield result.result
-                elif result.status in states.PROPAGATE_STATES:
-                    raise result.result
+
+        while results:
+            removed = set()
+            for task_id, result in results.iteritems():
+                yield result.get(timeout=timeout and timeout - elapsed,
+                                 propagate=propagate, interval=0.0)
+                removed.add(task_id)
+            for task_id in removed:
+                results.pop(task_id, None)
+            time.sleep(interval)
+            elapsed += interval
+            if timeout and elapsed >= timeout:
+                raise TimeoutError("The operation timed out")
 
     def join(self, timeout=None, propagate=True, interval=0.5):
         """Gathers the results of all tasks as a list in order.
