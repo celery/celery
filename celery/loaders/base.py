@@ -94,7 +94,7 @@ class BaseLoader(object):
     def config_from_object(self, obj, silent=False):
         if isinstance(obj, basestring):
             try:
-                obj = get_cls_by_name(obj, imp=self.import_from_cwd)
+                obj = self.import_from_cwd(obj)
             except (ImportError, AttributeError):
                 if silent:
                     return False
