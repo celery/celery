@@ -9,6 +9,8 @@ def default_encoding():
 
 
 def safe_str(s, errors="replace"):
+    if not isinstance(s, basestring):
+        return safe_repr(s, errors)
     encoding = default_encoding()
     try:
         if isinstance(s, unicode):

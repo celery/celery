@@ -78,7 +78,7 @@ from celery.datastructures import AttributeDict
 from celery.exceptions import NotRegistered
 from celery.utils import noop
 from celery.utils import timer2
-from celery.utils.encoding import safe_repr, safe_str
+from celery.utils.encoding import safe_repr
 from celery.worker import state
 from celery.worker.job import TaskRequest, InvalidTaskError
 from celery.worker.control.registry import Panel
@@ -385,13 +385,13 @@ class Consumer(object):
             except self.connection_errors + (AttributeError, ), exc:
                 self.logger.critical(
                     "Couldn't ack %r: body:%r reason:%r" % (
-                        message.delivery_tag, safe_str(body), exc))
+                        message.delivery_tag, safe_repr(body), exc))
 
         if not body.get("task"):
             warnings.warn(RuntimeWarning(
                 "Received and deleted unknown message. Wrong destination?!? \
                 the full contents of the message body was: %s" % (
-                 safe_str(body), )))
+                 safe_repr(body), )))
             ack()
             return
 
@@ -404,11 +404,11 @@ class Consumer(object):
 
         except NotRegistered, exc:
             self.logger.error(UNKNOWN_TASK_ERROR % (
-                    exc, safe_str(body)), exc_info=sys.exc_info())
+                    exc, safe_repr(body)), exc_info=sys.exc_info())
             ack()
         except InvalidTaskError, exc:
             self.logger.error(INVALID_TASK_ERROR % (
-                    str(exc), safe_str(body)), exc_info=sys.exc_info())
+                    str(exc), safe_repr(body)), exc_info=sys.exc_info())
             ack()
         else:
             self.on_task(task)
@@ -485,7 +485,7 @@ class Consumer(object):
         self.logger.critical(
             "Can't decode message body: %r (type:%r encoding:%r raw:%r')" % (
                     exc, message.content_type, message.content_encoding,
-                    safe_str(message.body)))
+                    safe_repr(message.body)))
         message.ack()
 
     def reset_pidbox_node(self):
