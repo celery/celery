@@ -81,7 +81,7 @@ from celery.datastructures import AttributeDict
 from celery.exceptions import NotRegistered
 from celery.utils import noop
 from celery.utils import timer2
-from celery.utils.encoding import safe_repr, safe_str
+from celery.utils.encoding import safe_repr
 from celery.worker import state
 from celery.worker.job import TaskRequest, InvalidTaskError
 from celery.worker.control.registry import Panel
@@ -358,7 +358,7 @@ class Consumer(object):
                 except self.connection_errors + (AttributeError, ), exc:
                     self.logger.critical(
                             "Couldn't ack %r: message:%r reason:%r" % (
-                                message.delivery_tag, body, exc))
+                                message.delivery_tag, safe_repr(body), exc))
 
             try:
                 task = TaskRequest.from_message(message, body, ack,
@@ -368,11 +368,11 @@ class Consumer(object):
                                                 eventer=self.event_dispatcher)
             except NotRegistered, exc:
                 self.logger.error("Unknown task ignored: %r Body->%r" % (
-                        exc, body), exc_info=sys.exc_info())
+                        exc, safe_repr(body)), exc_info=sys.exc_info())
                 message.ack()
             except InvalidTaskError, exc:
                 self.logger.error("Invalid task ignored: %s: %s" % (
-                        str(exc), body), exc_info=sys.exc_info())
+                        str(exc), safe_repr(body)), exc_info=sys.exc_info())
                 message.ack()
             else:
                 self.on_task(task)
@@ -437,11 +437,10 @@ class Consumer(object):
         :param exc: The original exception instance.
 
         """
-        self.logger.critical("Can't decode message body: %r "
-                             "(type:%r encoding:%r raw:%r')" % (
-                                exc, message.content_type,
-                                message.content_encoding,
-                                safe_str(message.body)))
+        self.logger.critical(
+            "Can't decode message body: %r (type:%r encoding:%r raw:%r')" % (
+                    exc, message.content_type, message.content_encoding,
+                    safe_repr(message.body)))
         message.ack()
 
     def reset_pidbox_node(self):
