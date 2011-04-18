@@ -206,9 +206,10 @@ def consume_queue(queue):
         []
 
     """
+    get = queue.get_nowait
     while 1:
         try:
-            yield queue.get_nowait()
+            yield get()
         except Empty:
             break
 
@@ -225,6 +226,7 @@ class LimitedSet(object):
     :keyword expires: Time in seconds, before a membership expires.
 
     """
+    __slots__ = ("maxlen", "expires", "_data")
 
     def __init__(self, maxlen=None, expires=None):
         self.maxlen = maxlen

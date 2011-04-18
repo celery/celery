@@ -297,10 +297,12 @@ class TokenBucketQueue(object):
     def wait(self, block=False):
         """Wait until a token can be retrieved from the bucket and return
         the next item."""
-        while True:
-            remaining = self.expected_time()
+        get = self.get
+        expected_time = self.expected_time
+        while 1:
+            remaining = expected_time()
             if not remaining:
-                return self.get(block=block)
+                return get(block=block)
             sleep(remaining)
 
     def expected_time(self, tokens=1):

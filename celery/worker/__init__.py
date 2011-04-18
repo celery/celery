@@ -285,6 +285,7 @@ class WorkController(object):
 
         if self._state != self.RUN or self._running != len(self.components):
             # Not fully started, can safely exit.
+            self._state = self.TERMINATE
             return
 
         self._state = self.CLOSE

@@ -314,7 +314,7 @@ class SilenceRepeated(object):
         self._iterations = 0
 
     def __call__(self, *msgs):
-        if self._iterations >= self.max_iterations:
+        if not self._iterations or self._iterations >= self.max_iterations:
             for msg in msgs:
                 self.action(msg)
             self._iterations = 0

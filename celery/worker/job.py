@@ -9,15 +9,14 @@ import warnings
 from datetime import datetime
 
 from celery import current_app
+from celery import exceptions
 from celery import platforms
+from celery import registry
 from celery.app import app_or_default
 from celery.datastructures import ExceptionInfo
-from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded
-from celery.exceptions import WorkerLostError, RetryTaskError
 from celery.execute.trace import TaskTrace
-from celery.registry import tasks
-from celery.utils import noop, kwdict, fun_takes_kwargs
-from celery.utils import get_symbol_by_name, truncate_text
+from celery.utils import (noop, kwdict, fun_takes_kwargs,
+                          get_symbol_by_name, truncate_text)
 from celery.utils.encoding import safe_repr, safe_str
 from celery.utils.timeutils import maybe_iso8601
 from celery.worker import state
@@ -68,7 +67,7 @@ class WorkerTaskTrace(TaskTrace):
     If the call was successful, it saves the result to the task result
     backend, and sets the task status to `"SUCCESS"`.
 
-    If the call raises :exc:`celery.exceptions.RetryTaskError`, it extracts
+    If the call raises :exc:`~celery.exceptions.RetryTaskError`, it extracts
     the original exception, uses that as the result and sets the task status
     to `"RETRY"`.
 
@@ -269,14 +268,14 @@ class TaskRequest(object):
         self.expires = expires
         self.chord = chord
         self.on_ack = on_ack
-        self.delivery_info = delivery_info or {}
+        self.delivery_info = {} if delivery_info is None else delivery_info
         self.hostname = hostname or socket.gethostname()
         self.logger = logger or self.app.log.get_default_logger()
         self.eventer = eventer
         self.email_subject = email_subject or self.email_subject
         self.email_body = email_body or self.email_body
 
-        self.task = tasks[self.task_name]
+        self.task = registry.tasks[self.task_name]
         self._store_errors = True
         if self.task.ignore_result:
             self._store_errors = self.task.store_errors_even_if_ignored
@@ -306,19 +305,13 @@ class TaskRequest(object):
                    retries=body.get("retries", 0),
                    eta=maybe_iso8601(body.get("eta")),
                    expires=maybe_iso8601(body.get("expires")),
-                   on_ack=on_ack,
-                   delivery_info=delivery_info,
-                   **kw)
+                   on_ack=on_ack, delivery_info=delivery_info, **kw)
 
     def get_instance_attrs(self, loglevel, logfile):
-        return {"logfile": logfile,
-                "loglevel": loglevel,
-                "id": self.task_id,
-                "taskset": self.taskset_id,
-                "retries": self.retries,
-                "is_eager": False,
-                "delivery_info": self.delivery_info,
-                "chord": self.chord}
+        return {"logfile": logfile, "loglevel": loglevel,
+                "id": self.task_id, "taskset": self.taskset_id,
+                "retries": self.retries, "is_eager": False,
+                "delivery_info": self.delivery_info, "chord": self.chord}
 
     def extend_with_default_kwargs(self, loglevel, logfile):
         """Extend the tasks keyword arguments with standard task arguments.
@@ -327,6 +320,9 @@ class TaskRequest(object):
         `task_name`, `task_retries`, and `delivery_info`.
 
         See :meth:`celery.task.base.Task.run` for more information.
+
+        Magic keyword arguments are deprecated and will be removed
+        in version 3.0.
 
         """
         if not self.task.accept_magic_kwargs:
@@ -451,11 +447,11 @@ class TaskRequest(object):
         if soft:
             self.logger.warning("Soft time limit (%ss) exceeded for %s[%s]" % (
                 timeout, self.task_name, self.task_id))
-            exc = SoftTimeLimitExceeded(timeout)
+            exc = exceptions.SoftTimeLimitExceeded(timeout)
         else:
             self.logger.error("Hard time limit (%ss) exceeded for %s[%s]" % (
                 timeout, self.task_name, self.task_id))
-            exc = TimeLimitExceeded(timeout)
+            exc = exceptions.TimeLimitExceeded(timeout)
 
         if self._store_errors:
             self.task.backend.mark_as_failure(self.task_id, exc)
@@ -472,10 +468,10 @@ class TaskRequest(object):
                         result=safe_repr(ret_value), runtime=runtime)
 
         self.logger.info(self.success_msg.strip() % {
-                "id": self.task_id,
-                "name": self.task_name,
-                "return_value": self.repr_result(ret_value),
-                "runtime": runtime})
+                            "id": self.task_id,
+                            "name": self.task_name,
+                            "return_value": self.repr_result(ret_value),
+                            "runtime": runtime})
 
     def on_retry(self, exc_info):
         """Handler called if the task should be retried."""
@@ -484,9 +480,9 @@ class TaskRequest(object):
                          traceback=safe_repr(exc_info.traceback))
 
         self.logger.info(self.retry_msg.strip() % {
-                "id": self.task_id,
-                "name": self.task_name,
-                "exc": safe_repr(exc_info.exception.exc)})
+                            "id": self.task_id,
+                            "name": self.task_name,
+                            "exc": safe_repr(exc_info.exception.exc)})
 
     def on_failure(self, exc_info):
         """Handler called if the task raised an exception."""
@@ -495,15 +491,14 @@ class TaskRequest(object):
         if self.task.acks_late:
             self.acknowledge()
 
-        if isinstance(exc_info.exception, RetryTaskError):
+        if isinstance(exc_info.exception, exceptions.RetryTaskError):
             return self.on_retry(exc_info)
 
         # This is a special case as the process would not have had
         # time to write the result.
-        if isinstance(exc_info.exception, WorkerLostError):
-            if self._store_errors:
-                self.task.backend.mark_as_failure(self.task_id,
-                                                  exc_info.exception)
+        if isinstance(exc_info.exception, exceptions.WorkerLostError) and \
+                self._store_errors:
+            self.task.backend.mark_as_failure(self.task_id, exc_info.exception)
 
         self.send_event("task-failed", uuid=self.task_id,
                          exception=safe_repr(exc_info.exception),
@@ -523,7 +518,7 @@ class TaskRequest(object):
                                           "name": self.task_name,
                                           "hostname": self.hostname}})
 
-        task_obj = tasks.get(self.task_name, object)
+        task_obj = registry.tasks.get(self.task_name, object)
         self.send_error_email(task_obj, context, exc_info.exception,
                               enabled=task_obj.send_error_emails,
                               whitelist=task_obj.error_whitelist)
@@ -549,16 +544,10 @@ class TaskRequest(object):
         return truncate_text(safe_repr(result), maxlen)
 
     def info(self, safe=False):
-        args = self.args
-        kwargs = self.kwargs
-        if not safe:
-            args = safe_repr(args)
-            kwargs = safe_repr(self.kwargs)
-
         return {"id": self.task_id,
                 "name": self.task_name,
-                "args": args,
-                "kwargs": kwargs,
+                "args": self.args if safe else safe_repr(self.args),
+                "kwargs": self.kwargs if safe else safe_repr(self.kwargs),
                 "hostname": self.hostname,
                 "time_start": self.time_start,
                 "acknowledged": self.acknowledged,
@@ -569,8 +558,9 @@ class TaskRequest(object):
         return "%s[%s]%s%s" % (
                     self.task_name,
                     self.task_id,
-                    self.eta and " eta:[%s]" % (self.eta, ) or "",
-                    self.expires and " expires:[%s]" % (self.expires, ) or "")
+                    " eta:[%s]" % (self.eta, ) if self.eta else "",
+                    " expires:[%s]" % (self.expires, ) if self.expires else "")
+    __str__ = shortinfo
 
     def __repr__(self):
         return '<%s: {name:"%s", id:"%s", args:"%s", kwargs:"%s"}>' % (

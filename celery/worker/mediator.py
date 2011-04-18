@@ -1,8 +1,3 @@
-"""
-
-Worker Controller Threads
-
-"""
 import os
 import sys
 import threading
@@ -14,7 +9,7 @@ from celery.app import app_or_default
 
 
 class Mediator(threading.Thread):
-    """Thread continuously moving tasks from the ready queue into the pool."""
+    """Thread continuously moving tasks from the ready queue onto the pool."""
 
     #: The task queue, a :class:`~Queue.Queue` instance.
     ready_queue = None
@@ -57,7 +52,7 @@ class Mediator(threading.Thread):
                                               "hostname": task.hostname}})
 
     def run(self):
-        """Move tasks forver or until :meth:`stop` is called."""
+        """Move tasks until :meth:`stop` is called."""
         while not self._shutdown.isSet():
             try:
                 self.move()
