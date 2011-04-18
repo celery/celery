@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import os
 import sys
 import errno
-import signal
+import signal as _signal
 
 from celery.local import try_import
 
@@ -172,7 +172,7 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
         raise RuntimeError("This platform does not support detach.")
     workdir = os.getcwd() if workdir is None else workdir
 
-    reset_signal("SIGCLD")  # Make sure SIGCLD is using the default handler.
+    signals.reset("SIGCLD")  # Make sure SIGCLD is using the default handler.
     set_effective_user(uid=uid, gid=gid)
 
     # Since without stderr any errors will be silently suppressed,
@@ -258,60 +258,71 @@ def set_effective_user(uid=None, gid=None):
         gid and setegid(gid)
 
 
-def get_signal(signal_name):
-    """Get signal number from signal name."""
-    if not isinstance(signal_name, basestring) or not signal_name.isupper():
-        raise TypeError("signal name must be uppercase string.")
-    if not signal_name.startswith("SIG"):
-        signal_name = "SIG" + signal_name
-    return getattr(signal, signal_name)
+class Signals(object):
+    ignored = _signal.SIG_IGN
+    default = _signal.SIG_DFL
 
-
-def reset_signal(*signal_names):
-    """Reset signal to the default signal handler.
-
-    Does nothing if the platform doesn't support signals,
-    or the specified signal in particular.
-
-    """
-    for signal_name in signal_names:
+    def supported(self, signal_name):
+        """Returns true value if ``signal_name`` exists on this platform."""
         try:
-            signum = getattr(signal, signal_name)
-            signal.signal(signum, signal.SIG_DFL)
+            return self.signum(signal_name)
+        except AttributeError:
+            pass
+
+    def signum(self, signal_name):
+        """Get signal number from signal name."""
+        if isinstance(signal_name, int):
+            return signal_name
+        if not isinstance(signal_name, basestring) or not signal_name.isupper():
+            raise TypeError("signal name must be uppercase string.")
+        if not signal_name.startswith("SIG"):
+            signal_name = "SIG" + signal_name
+        return getattr(_signal, signal_name)
+
+    def reset(self, *signal_names):
+        """Reset signals to the default signal handler.
+
+        Does nothing if the platform doesn't support signals,
+        or the specified signal in particular.
+
+        """
+        self.update((sig, self.default) for sig in signal_names)
+
+    def ignore(self, *signal_names):
+        """Ignore signal using :const:`SIG_IGN`.
+
+        Does nothing if the platform doesn't support signals,
+        or the specified signal in particular.
+
+        """
+        self.update((sig, self.ignored) for sig in signal_names)
+
+    def __getitem__(self, signal_name):
+        return _signal.getsignal(self.signum(signal_name))
+
+    def __setitem__(self, signal_name, handler):
+        """Install signal handler.
+
+        Does nothing if the current platform doesn't support signals,
+        or the specified signal in particular.
+
+        """
+        try:
+            _signal.signal(self.signum(signal_name), handler)
         except (AttributeError, ValueError):
             pass
 
-
-def ignore_signal(*signal_names):
-    """Ignore signal using :const:`SIG_IGN`.
-
-    Does nothing if the platform doesn't support signals,
-    or the specified signal in particular.
-
-    """
-    for signal_name in signal_names:
-        try:
-            signum = getattr(signal, signal_name)
-            signal.signal(signum, signal.SIG_IGN)
-        except (AttributeError, ValueError):
-            pass
+    def update(self, _d_=None, **sigmap):
+        """Set signal handlers from a mapping."""
+        for signal_name, handler in dict(_d_ or {}, **sigmap).iteritems():
+            self[signal_name] = handler
 
 
-def install_signal_handler(signal_name=None, handler=None, **sigmap):
-    """Install signal handlers.
-
-    Does nothing if the current platform doesn't support signals,
-    or the specified signal in particular.
-
-    """
-    if signal_name:
-        sigmap[signal_name] = handler
-    for signal_name, handler in sigmap.iteritems():
-        try:
-            signum = getattr(signal, signal_name)
-            signal.signal(signum, handler)
-        except (AttributeError, ValueError):
-            pass
+signals = Signals()
+get_signal = signals.signum                   # compat
+install_signal_handler = signals.__setitem__  # compat
+reset_signal = signals.reset                  # compat
+ignore_signal = signals.ignore                # compat
 
 
 def strargv(argv):

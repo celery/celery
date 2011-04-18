@@ -19,8 +19,6 @@ class BaseBackend(object):
 
     TimeoutError = TimeoutError
 
-    can_get_many = False
-
     def __init__(self, *args, **kwargs):
         from celery.app import app_or_default
         self.app = app_or_default(kwargs.get("app"))

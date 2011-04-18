@@ -2,7 +2,7 @@ import sys
 
 from datetime import datetime
 
-from celery.platforms import get_signal
+from celery.platforms import signals as _signals
 from celery.registry import tasks
 from celery.utils import timeutils
 from celery.worker import state
@@ -19,7 +19,7 @@ def revoke(panel, task_id, terminate=False, signal=None, **kwargs):
     revoked.add(task_id)
     action = "revoked"
     if terminate:
-        signum = get_signal(signal)
+        signum = _signals.signum(signal)
         for request in state.active_requests:
             if request.task_id == task_id:
                 action = "terminated (%s)" % (signum, )

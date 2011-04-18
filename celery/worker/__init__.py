@@ -41,8 +41,8 @@ def process_initializer(app, hostname):
     """
     app = app_or_default(app)
     app.set_current()
-    platforms.reset_signal(*WORKER_SIGRESET)
-    platforms.ignore_signal(*WORKER_SIGIGNORE)
+    platforms.signals.reset(*WORKER_SIGRESET)
+    platforms.signals.ignore(*WORKER_SIGIGNORE)
     platforms.set_mp_process_title("celeryd", hostname=hostname)
 
     # This is for Windows and other platforms not supporting

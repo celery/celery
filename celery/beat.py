@@ -420,7 +420,7 @@ if multiprocessing is not None:
             self.name = "Beat"
 
         def run(self):
-            platforms.reset_signal("SIGTERM")
+            platforms.signals.reset("SIGTERM")
             self.service.start(embedded_process=True)
 
         def stop(self):

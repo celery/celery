@@ -79,13 +79,13 @@ class test_Worker(AppCase):
     def test_run_worker(self):
         handlers = {}
 
-        def i(sig=None, handler=None, **sigmap):
-            if sig:
-                sigmap[sig] = handler
-            handlers.update(sigmap)
+        class Signals(platforms.Signals):
 
-        p = platforms.install_signal_handler
-        platforms.install_signal_handler = i
+            def __setitem__(self, sig, handler):
+                handlers[sig] = handler
+
+        p = platforms.signals
+        platforms.signals = Signals()
         try:
             w = self.Worker()
             w._isatty = False
@@ -101,7 +101,7 @@ class test_Worker(AppCase):
                 self.assertIn(sig, handlers)
             self.assertNotIn("SIGHUP", handlers)
         finally:
-            platforms.install_signal_handler = p
+            platforms.signals = p
 
     @disable_stdouts
     def test_startup_info(self):
@@ -380,18 +380,16 @@ class test_signal_handlers(AppCase):
     def psig(self, fun, *args, **kwargs):
         handlers = {}
 
-        def i(sig=None, handler=None, **sigmap):
-            if sig:
-                sigmap[sig] = handler
-            handlers.update(sigmap)
+        class Signals(platforms.Signals):
+            def __setitem__(self, sig, handler):
+                handlers[sig] = handler
 
-        p, platforms.install_signal_handler = \
-                platforms.install_signal_handler, i
+        p, platforms.signals = platforms.signals, Signals()
         try:
             fun(*args, **kwargs)
             return handlers
         finally:
-            platforms.install_signal_handler = p
+            platforms.signals = p
 
     @disable_stdouts
     def test_worker_int_handler(self):
@@ -399,19 +397,18 @@ class test_signal_handlers(AppCase):
         handlers = self.psig(cd.install_worker_int_handler, worker)
         next_handlers = {}
 
-        def i(sig=None, handler=None, **sigmap):
-            if sig:
-                sigmap[sig] = handler
-            next_handlers.update(sigmap)
+        class Signals(platforms.Signals):
 
-        p = platforms.install_signal_handler
-        platforms.install_signal_handler = i
+            def __setitem__(self, sig, handler):
+                next_handlers[sig] = handler
+
+        p, platforms.signals = platforms.signals, Signals()
         try:
             self.assertRaises(SystemExit, handlers["SIGINT"],
                               "SIGINT", object())
             self.assertTrue(worker.stopped)
         finally:
-            platforms.install_signal_handler = p
+            platforms.signals = p
 
         self.assertRaises(SystemExit, next_handlers["SIGINT"],
                           "SIGINT", object())

@@ -81,18 +81,17 @@ class test_Beat(AppCase):
     def psig(self, fun, *args, **kwargs):
         handlers = {}
 
-        def i(sig=None, handler=None, **sigmap):
-            if sig:
-                sigmap[sig] = handler
-            handlers.update(sigmap)
+        class Signals(platforms.Signals):
 
-        p, platforms.install_signal_handler = \
-                platforms.install_signal_handler, i
+            def __setitem__(self, sig, handler):
+                handlers[sig] = handler
+
+        p, platforms.signals = platforms.signals, Signals()
         try:
             fun(*args, **kwargs)
             return handlers
         finally:
-            platforms.install_signal_handler = p
+            platforms.signals = p
 
     def test_install_sync_handler(self):
         b = beatapp.Beat()

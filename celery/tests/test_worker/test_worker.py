@@ -525,11 +525,9 @@ class test_WorkController(AppCase):
         worker.logger = Mock()
         return worker
 
-    @patch("celery.platforms.reset_signal")
-    @patch("celery.platforms.ignore_signal")
+    @patch("celery.platforms.signals")
     @patch("celery.platforms.set_mp_process_title")
-    def test_process_initializer(self, set_mp_process_title, ignore_signal,
-            reset_signal):
+    def test_process_initializer(self, set_mp_process_title, _signals):
         from celery import Celery
         from celery import signals
         from celery.app import _tls
@@ -544,9 +542,9 @@ class test_WorkController(AppCase):
         app = Celery(loader=Mock(), set_as_current=False)
         process_initializer(app, "awesome.worker.com")
         self.assertIn((tuple(WORKER_SIGIGNORE), {}),
-                      ignore_signal.call_args_list)
+                      _signals.ignore.call_args_list)
         self.assertIn((tuple(WORKER_SIGRESET), {}),
-                      reset_signal.call_args_list)
+                      _signals.reset.call_args_list)
         self.assertTrue(app.loader.init_worker.call_count)
         self.assertTrue(on_worker_process_init.called)
         self.assertIs(_tls.current_app, app)
