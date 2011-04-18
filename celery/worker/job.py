@@ -477,7 +477,7 @@ class TaskRequest(object):
         """Handler called if the task should be retried."""
         self.send_event("task-retried", uuid=self.task_id,
                          exception=safe_repr(exc_info.exception.exc),
-                         traceback=safe_repr(exc_info.traceback))
+                         traceback=safe_str(exc_info.traceback))
 
         self.logger.info(self.retry_msg.strip() % {
                             "id": self.task_id,
