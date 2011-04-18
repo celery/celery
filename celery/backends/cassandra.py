@@ -47,8 +47,7 @@ class CassandraBackend(BaseDictBackend):
         self.logger = self.app.log.setup_logger(
                             name="celery.backends.cassandra")
 
-        self.result_expires = kwargs.get("result_expires") or \
-                                maybe_timedelta(
+        self.expires = kwargs.get("expires") or maybe_timedelta(
                                     self.app.conf.CELERY_TASK_RESULT_EXPIRES)
 
         if not pycassa:
@@ -129,7 +128,7 @@ class CassandraBackend(BaseDictBackend):
                     "date_done": date_done.strftime('%Y-%m-%dT%H:%M:%SZ'),
                     "traceback": pickle.dumps(traceback)}
             cf.insert(task_id, meta,
-                      ttl=timedelta_seconds(self.result_expires))
+                      ttl=timedelta_seconds(self.expires))
 
         return self._retry_on_error(_do_store)
 

@@ -35,8 +35,7 @@ class MongoBackend(BaseDictBackend):
 
         """
         super(MongoBackend, self).__init__(*args, **kwargs)
-        self.result_expires = kwargs.get("result_expires") or \
-                                maybe_timedelta(
+        self.expires = kwargs.get("expires") or maybe_timedelta(
                                     self.app.conf.CELERY_TASK_RESULT_EXPIRES)
 
         if not pymongo:
@@ -134,6 +133,6 @@ class MongoBackend(BaseDictBackend):
         taskmeta_collection = db[self.mongodb_taskmeta_collection]
         taskmeta_collection.remove({
                 "date_done": {
-                    "$lt": datetime.now() - self.result_expires,
+                    "$lt": datetime.now() - self.expires,
                  }
         })

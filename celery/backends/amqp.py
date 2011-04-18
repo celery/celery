@@ -5,7 +5,6 @@ import socket
 import threading
 import time
 
-from datetime import timedelta
 from itertools import count
 
 from kombu.entity import Exchange, Queue
@@ -14,7 +13,6 @@ from kombu.messaging import Consumer, Producer
 from celery import states
 from celery.backends.base import BaseDictBackend
 from celery.exceptions import TimeoutError
-from celery.utils import timeutils
 
 
 class BacklogLimitExceeded(Exception):
@@ -58,10 +56,8 @@ class AMQPBackend(BaseDictBackend):
         self.auto_delete = auto_delete
         self.expires = (conf.CELERY_AMQP_TASK_RESULT_EXPIRES if expires is None
                                                              else expires)
-        if isinstance(self.expires, timedelta):
-            self.expires = timeutils.timedelta_seconds(self.expires)
         if self.expires is not None:
-            self.expires = int(self.expires)
+            self.expires = self.prepare_expires(self.expires)
             # x-expires requires RabbitMQ 2.1.0 or higher.
             self.queue_arguments["x-expires"] = self.expires * 1000.0
         self.connection_max = (connection_max or

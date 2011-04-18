@@ -1,10 +1,7 @@
-from datetime import timedelta
-
 from kombu.utils import cached_property
 
 from celery.backends.base import KeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured
-from celery.utils import timeutils
 from celery.datastructures import LocalCache
 
 _imp = [None]
@@ -62,15 +59,12 @@ class CacheBackend(KeyValueStoreBackend):
     def __init__(self, expires=None, backend=None, options={}, **kwargs):
         super(CacheBackend, self).__init__(self, **kwargs)
 
-        self.expires = expires or self.app.conf.CELERY_TASK_RESULT_EXPIRES
-        if isinstance(self.expires, timedelta):
-            self.expires = timeutils.timedelta_seconds(self.expires)
         self.options = dict(self.app.conf.CELERY_CACHE_BACKEND_OPTIONS,
                             **options)
 
         backend = backend or self.app.conf.CELERY_CACHE_BACKEND
-        self.expires = int(self.expires)
         self.backend, _, servers = backend.partition("://")
+        self.expires = self.prepare_expires(expires, type=int)
         self.servers = servers.rstrip('/').split(";")
         try:
             self.Client = backends[self.backend]()

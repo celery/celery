@@ -22,12 +22,10 @@ _sqlalchemy_installed()
 class DatabaseBackend(BaseDictBackend):
     """The database result backend."""
 
-    def __init__(self, dburi=None, result_expires=None,
+    def __init__(self, dburi=None, expires=None,
             engine_options=None, **kwargs):
         super(DatabaseBackend, self).__init__(**kwargs)
-        self.result_expires = result_expires or \
-                                maybe_timedelta(
-                                    self.app.conf.CELERY_TASK_RESULT_EXPIRES)
+        self.expires = maybe_timedelta(self.prepare_expires(expires))
         self.dburi = dburi or self.app.conf.CELERY_RESULT_DBURI
         self.engine_options = dict(engine_options or {},
                         **self.app.conf.CELERY_RESULT_ENGINE_OPTIONS or {})
@@ -115,7 +113,7 @@ class DatabaseBackend(BaseDictBackend):
     def cleanup(self):
         """Delete expired metadata."""
         session = self.ResultSession()
-        expires = self.result_expires
+        expires = self.expires
         try:
             session.query(Task).filter(
                     Task.date_done < (datetime.now() - expires)).delete()
