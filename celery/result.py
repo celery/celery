@@ -390,12 +390,23 @@ class ResultSet(object):
                                        interval=interval))
         return results
 
-    def iter_native(self, timeout=None):
+    def iter_native(self, timeout=None, interval=None):
+        """Backend optimized version of :meth:`iterate`.
+
+        .. versionadded:: 2.2
+
+        Note that this does not support collecting the results
+        for different task types using different backends.
+
+        This is currently only supported by the AMQP, Redis and cache
+        result backends.
+
+        """
         backend = self.results[0].backend
         ids = [result.task_id for result in self.results]
-        return backend.get_many(ids, timeout=timeout)
+        return backend.get_many(ids, timeout=timeout, interval=interval)
 
-    def join_native(self, timeout=None, propagate=True):
+    def join_native(self, timeout=None, propagate=True, interval=0.5):
         """Backend optimized version of :meth:`join`.
 
         .. versionadded:: 2.2
@@ -403,20 +414,16 @@ class ResultSet(object):
         Note that this does not support collecting the results
         for different task types using different backends.
 
-        This is currently only supported by the AMQP result backend.
+        This is currently only supported by the AMQP, Redis and cache
+        result backends.
 
         """
-        backend = self.results[0].backend
-        results = [None for _ in xrange(len(self.results))]
-
-        ids = [result.task_id for result in self.results]
-        states = dict(backend.get_many(ids, timeout=timeout))
-
-        for task_id, meta in states.items():
-            index = self.results.index(task_id)
-            results[index] = meta["result"]
-
-        return list(results)
+        results = self.results
+        acc = [None for _ in xrange(self.total)]
+        for task_id, meta in self.iter_native(timeout=timeout,
+                                              interval=interval):
+            acc[results.index(task_id)] = meta["result"]
+        return acc
 
     @property
     def total(self):

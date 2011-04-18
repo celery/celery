@@ -57,6 +57,9 @@ class RedisBackend(KeyValueStoreBackend):
     def get(self, key):
         return self.client.get(key)
 
+    def mget(self, keys):
+        return self.client.mget(keys)
+
     def set(self, key, value):
         client = self.client
         client.set(key, value)

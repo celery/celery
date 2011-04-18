@@ -190,7 +190,7 @@ class AMQPBackend(BaseDictBackend):
             with self._create_consumer(binding, channel) as consumer:
                 return self.drain_events(conn, consumer, timeout).values()[0]
 
-    def get_many(self, task_ids, timeout=None):
+    def get_many(self, task_ids, timeout=None, **kwargs):
         with self.app.pool.acquire_channel(block=True) as (conn, channel):
             ids = set(task_ids)
             cached_ids = set()
@@ -210,7 +210,7 @@ class AMQPBackend(BaseDictBackend):
                 while ids:
                     r = self.drain_events(conn, consumer, timeout)
                     ids ^= set(r.keys())
-                    for ready_id, ready_meta in r.items():
+                    for ready_id, ready_meta in r.iteritems():
                         yield ready_id, ready_meta
 
     def reload_task_result(self, task_id):

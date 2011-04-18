@@ -41,6 +41,10 @@ class DummyClient(object):
     def get(self, key, *args, **kwargs):
         return self.cache.get(key)
 
+    def get_multi(self, keys):
+        cache = self.cache
+        return dict((k, cache[k]) for k in keys if k in cache)
+
     def set(self, key, value, *args, **kwargs):
         self.cache[key] = value
 
@@ -76,6 +80,9 @@ class CacheBackend(KeyValueStoreBackend):
 
     def get(self, key):
         return self.client.get(key)
+
+    def mget(self, keys):
+        return self.client.get_multi(keys)
 
     def set(self, key, value):
         return self.client.set(key, value, self.expires)
