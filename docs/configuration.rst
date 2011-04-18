@@ -87,6 +87,7 @@ Task result backend settings
 
 CELERY_RESULT_BACKEND
 ~~~~~~~~~~~~~~~~~~~~~
+:Deprecated aliases: ``CELERY_BACKEND``
 
 The backend used to store task results (tombstones).
 Disabled by default.
@@ -525,10 +526,12 @@ persistent messages.
 Broker Settings
 ---------------
 
-.. setting:: BROKER_BACKEND
+.. setting:: BROKER_TRANSPORT
 
-BROKER_BACKEND
-~~~~~~~~~~~~~~
+BROKER_TRANSPORT
+~~~~~~~~~~~~~~~~
+:Aliases: ``BROKER_BACKEND``
+:Deprecated aliases: ``CARROT_BACKEND``
 
 The Kombu transport to use.  Default is ``amqplib``.
 

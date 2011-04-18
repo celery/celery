@@ -135,7 +135,7 @@ class test_App(unittest.TestCase):
 
     def test_compat_setting_CARROT_BACKEND(self):
         self.app.config_from_object(Object(CARROT_BACKEND="set_by_us"))
-        self.assertEqual(self.app.conf.BROKER_BACKEND, "set_by_us")
+        self.assertEqual(self.app.conf.BROKER_TRANSPORT, "set_by_us")
 
     def test_mail_admins(self):
 

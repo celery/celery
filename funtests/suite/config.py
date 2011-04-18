@@ -1,7 +1,8 @@
 import atexit
 import os
 
-BROKER_BACKEND = os.environ.get("BROKER_BACKEND") or "amqplib"
+BROKER_TRANSPORT = (os.environ.get("BROKER_TRANSPORT") or
+                    os.environ.get("BROKER_BACKEND") or "amqplib")
 
 BROKER_HOST = os.environ.get("BROKER_HOST") or "localhost"
 BROKER_USER = os.environ.get("BROKER_USER") or "guest"

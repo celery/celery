@@ -20,8 +20,8 @@ from threading import Lock
 
 from kombu.utils import cached_property
 
+from celery import datastructures
 from celery.app.defaults import DEFAULTS
-from celery.datastructures import ConfigurationView
 from celery.utils import instantiate, lpmerge
 
 import kombu
@@ -97,6 +97,26 @@ class LamportClock(object):
         with self.mutex:
             self.value += 1
         return self.value
+
+
+class Settings(datastructures.ConfigurationView):
+
+    @property
+    def CELERY_RESULT_BACKEND(self):
+        """Resolves deprecated alias ``CELERY_BACKEND``."""
+        return self.get("CELERY_RESULT_BACKEND") or self.get("CELERY_BACKEND")
+
+    @property
+    def BROKER_TRANSPORT(self):
+        """Resolves compat aliases ``BROKER_BACKEND`` and ``CARROT_BACKEND``."""
+        return (self.get("BROKER_TRANSPORT") or
+                self.get("BROKER_BACKEND") or
+                self.get("CARROT_BACKEND"))
+
+    @property
+    def BROKER_BACKEND(self):
+        """Deprecated compat alias to :attr:`BROKER_TRANSPORT`."""
+        return self.BROKER_TRANSPORT
 
 
 class BaseApp(object):
@@ -229,7 +249,7 @@ class BaseApp(object):
         :keyword insist: defaults to the :setting:`BROKER_INSIST` setting.
         :keyword connect_timeout: defaults to the
             :setting:`BROKER_CONNECTION_TIMEOUT` setting.
-        :keyword backend_cls: defaults to the :setting:`BROKER_BACKEND`
+        :keyword backend_cls: defaults to the :setting:`BROKER_TRANSPORT`
             setting.
 
         :returns :class:`kombu.connection.BrokerConnection`:
@@ -241,7 +261,7 @@ class BaseApp(object):
                     password or self.conf.BROKER_PASSWORD,
                     virtual_host or self.conf.BROKER_VHOST,
                     port or self.conf.BROKER_PORT,
-                    transport=transport or self.conf.BROKER_BACKEND,
+                    transport=transport or self.conf.BROKER_TRANSPORT,
                     insist=self.either("BROKER_INSIST", insist),
                     ssl=self.either("BROKER_USE_SSL", ssl),
                     connect_timeout=self.either(
@@ -281,14 +301,6 @@ class BaseApp(object):
 
     def prepare_config(self, c):
         """Prepare configuration before it is merged with the defaults."""
-        if not c.get("CELERY_RESULT_BACKEND"):
-            rbackend = c.get("CELERY_BACKEND")
-            if rbackend:
-                c["CELERY_RESULT_BACKEND"] = rbackend
-        if not c.get("BROKER_BACKEND"):
-            cbackend = c.get("BROKER_TRANSPORT") or c.get("CARROT_BACKEND")
-            if cbackend:
-                c["BROKER_BACKEND"] = cbackend
         return c
 
     def mail_admins(self, subject, body, fail_silently=False):
@@ -323,8 +335,8 @@ class BaseApp(object):
         return backend_cls(app=self)
 
     def _get_config(self):
-        return ConfigurationView({},
-                [self.prepare_config(self.loader.conf), deepcopy(DEFAULTS)])
+        return Settings({}, [self.prepare_config(self.loader.conf),
+                             deepcopy(DEFAULTS)])
 
     def _after_fork(self, obj_):
         if self._pool:
@@ -340,7 +352,7 @@ class BaseApp(object):
                                  "celery_v": celery.__version__,
                                  "kombu_v": kombu.__version__,
                                  "py_v": _platform.python_version(),
-                                 "transport": self.conf.BROKER_BACKEND,
+                                 "transport": self.conf.BROKER_TRANSPORT,
                                  "results": self.conf.CELERY_RESULT_BACKEND}
 
     @property

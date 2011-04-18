@@ -21,11 +21,11 @@ import celery
 # use app loader
 from celery import Celery
 app = Celery(set_as_current=True)
-app.conf.update(BROKER_BACKEND="memory",
-                   CELERY_RESULT_BACKEND="cache",
-                   CELERY_CACHE_BACKEND="memory",
-                   CELERYD_HIJACK_ROOT_LOGGER=False,
-                   CELERYD_LOG_COLOR=False)
+app.conf.update(BROKER_TRANSPORT="memory",
+                CELERY_RESULT_BACKEND="cache",
+                CELERY_CACHE_BACKEND="memory",
+                CELERYD_HIJACK_ROOT_LOGGER=False,
+                CELERYD_LOG_COLOR=False)
 
 # General configuration
 # ---------------------

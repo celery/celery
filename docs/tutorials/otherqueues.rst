@@ -24,7 +24,7 @@ Configuration
 Configuration is easy, set the transport, and configure the location of
 your Redis database::
 
-    BROKER_BACKEND = "redis"
+    BROKER_TRANSPORT = "redis"
 
     BROKER_HOST = "localhost"  # Maps to redis host.
     BROKER_PORT = 6379         # Maps to redis port.
@@ -68,7 +68,7 @@ an SQLAlchemy database URI.
 
 #. Set your broker transport::
 
-    BROKER_BACKEND = "sqlakombu.transport.Transport"
+    BROKER_TRANSPORT = "sqlakombu.transport.Transport"
 
 #. Configure the database URI::
 
@@ -127,7 +127,7 @@ configuration values.
 
 #. Set your broker transport::
 
-    BROKER_BACKEND = "djkombu.transport.DatabaseTransport"
+    BROKER_TRANSPORT = "djkombu.transport.DatabaseTransport"
 
 #. Add :mod:`djkombu` to `INSTALLED_APPS`::
 

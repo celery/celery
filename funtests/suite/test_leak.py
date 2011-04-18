@@ -89,7 +89,7 @@ class test_leaks(LeakFunCase):
 
     def test_task_apply_leak(self):
         its = QUICKTEST and 10 or 1000
-        self.assertNotEqual(self.app.conf.BROKER_BACKEND, "memory")
+        self.assertNotEqual(self.app.conf.BROKER_TRANSPORT, "memory")
 
         @self.app.task
         def task1():
@@ -109,7 +109,7 @@ class test_leaks(LeakFunCase):
 
     def test_task_apply_leak_with_pool(self):
         its = QUICKTEST and 10 or 1000
-        self.assertNotEqual(self.app.conf.BROKER_BACKEND, "memory")
+        self.assertNotEqual(self.app.conf.BROKER_TRANSPORT, "memory")
 
         @self.app.task
         def task2():

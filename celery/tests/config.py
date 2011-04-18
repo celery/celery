@@ -1,6 +1,6 @@
 import os
 
-BROKER_BACKEND = "memory"
+BROKER_TRANSPORT = "memory"
 
 #: Don't want log output when running suite.
 CELERYD_HIJACK_ROOT_LOGGER = False
