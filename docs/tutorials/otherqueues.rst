@@ -37,7 +37,7 @@ Results
 You probably also want to store results in Redis::
 
     CELERY_RESULT_BACKEND = "redis"
-    REDIS_HOST = 6379
+    REDIS_HOST = "localhost"
     REDIS_PORT = 6379
     REDIS_DB = 0
 
