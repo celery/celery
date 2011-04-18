@@ -1,4 +1,4 @@
-from __future__ import with_statement
+from __future__ import absolute_import, with_statement
 
 import sys
 import socket
@@ -10,8 +10,8 @@ from celery.exceptions import ImproperlyConfigured
 
 from celery import states
 from celery.utils import gen_unique_id
-from celery.backends import pyredis
-from celery.backends.pyredis import RedisBackend
+from celery.backends import redis
+from celery.backends.redis import RedisBackend
 
 from celery.tests.utils import mask_modules
 
@@ -39,7 +39,7 @@ def get_redis_or_SkipTest():
             sys.stderr.write("\n" + _no_redis_msg % reason + "\n")
             _no_redis_msg_emitted = True
 
-    if pyredis.redis is None:
+    if redis.redis is None:
         emit_no_redis_msg("not installed")
         raise SkipTest("redis library not installed")
     try:
@@ -108,19 +108,19 @@ class TestRedisBackend(unittest.TestCase):
 class TestRedisBackendNoRedis(unittest.TestCase):
 
     def test_redis_None_if_redis_not_installed(self):
-        prev = sys.modules.pop("celery.backends.pyredis")
+        prev = sys.modules.pop("celery.backends.redis")
         try:
             with mask_modules("redis"):
-                from celery.backends.pyredis import redis
+                from celery.backends.redis import redis
                 self.assertIsNone(redis)
         finally:
-            sys.modules["celery.backends.pyredis"] = prev
+            sys.modules["celery.backends.redis"] = prev
 
     def test_constructor_raises_if_redis_not_installed(self):
-        from celery.backends import pyredis
-        prev = pyredis.RedisBackend.redis
-        pyredis.RedisBackend.redis = None
+        from celery.backends import redis
+        prev = redis.RedisBackend.redis
+        redis.RedisBackend.redis = None
         try:
-            self.assertRaises(ImproperlyConfigured, pyredis.RedisBackend)
+            self.assertRaises(ImproperlyConfigured, redis.RedisBackend)
         finally:
-            pyredis.RedisBackend.redis = prev
+            redis.RedisBackend.redis = prev

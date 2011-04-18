@@ -80,6 +80,10 @@ NAMESPACES = {
         "MAX_CACHED_RESULTS": Option(5000, type="int"),
         "MESSAGE_COMPRESSION": Option(None, type="string"),
         "MONGODB_BACKEND_SETTINGS": Option(None, type="dict"),
+        "REDIS_HOST": Option(None, type="string"),
+        "REDIS_PORT": Option(None, type="int"),
+        "REDIS_DB": Option(None, type="int"),
+        "REDIS_PASSWORD": Option(None, type="string"),
         "RESULT_BACKEND": Option(None, type="string"),
         "RESULT_DBURI": Option(),
         "RESULT_ENGINE_OPTIONS": Option(None, type="dict"),
@@ -149,12 +153,6 @@ NAMESPACES = {
     },
     "SERVER_EMAIL": Option("celery@localhost"),
     "ADMINS": Option((), type="tuple"),
-    "REDIS": {
-        "HOST": Option(None, type="string"),
-        "PORT": Option(None, type="int"),
-        "DB": Option(None, type="int"),
-        "PASSWORD": Option(None, type="string"),
-    },
     "TT": {
         "HOST": Option(None, type="string"),
         "PORT": Option(None, type="int"),

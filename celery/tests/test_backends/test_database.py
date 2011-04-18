@@ -179,9 +179,9 @@ class test_DatabaseBackend(unittest.TestCase):
             tb.save_taskset(gen_unique_id(), {"foo": "bar"})
         s = tb.ResultSession()
         for t in s.query(Task).all():
-            t.date_done = datetime.now() - tb.result_expires * 2
+            t.date_done = datetime.now() - tb.expires * 2
         for t in s.query(TaskSet).all():
-            t.date_done = datetime.now() - tb.result_expires * 2
+            t.date_done = datetime.now() - tb.expires * 2
         s.commit()
         s.close()
 

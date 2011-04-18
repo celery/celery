@@ -1,8 +1,11 @@
 """celery.backends.base"""
 import time
 
+from datetime import timedelta
+
 from celery import states
 from celery.exceptions import TimeoutError, TaskRevokedError
+from celery.utils import timeutils
 from celery.utils.serialization import pickle, get_pickled_exception
 from celery.utils.serialization import get_pickleable_exception
 from celery.datastructures import LocalCache
@@ -19,6 +22,15 @@ class BaseBackend(object):
     def __init__(self, *args, **kwargs):
         from celery.app import app_or_default
         self.app = app_or_default(kwargs.get("app"))
+
+    def prepare_expires(self, value, type=None):
+        if value is None:
+            value = self.app.conf.CELERY_TASK_RESULT_EXPIRES
+        if isinstance(value, timedelta):
+            value = timeutils.timedelta_seconds(value)
+        if value is not None and type:
+            return type(value)
+        return value
 
     def encode_result(self, result, status):
         if status in self.EXCEPTION_STATES:
