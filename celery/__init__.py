@@ -24,10 +24,10 @@ def Celery(*args, **kwargs):
     return App(*args, **kwargs)
 
 if not os.environ.get("CELERY_NO_EVAL", False):
-    from celery.local import LocalProxy
+    from celery.local import Proxy
 
     def _get_current_app():
         from celery.app import current_app
         return current_app()
 
-    current_app = LocalProxy(_get_current_app)
+    current_app = Proxy(_get_current_app)

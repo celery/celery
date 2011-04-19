@@ -3,10 +3,10 @@ import sys
 from datetime import datetime
 
 from celery.app import app_or_default
-from celery.datastructures import LocalCache
+from celery.datastructures import LRUCache
 
 
-TASK_NAMES = LocalCache(0xFFF)
+TASK_NAMES = LRUCache(limit=0xFFF)
 
 HUMAN_TYPES = {"worker-offline": "shutdown",
                "worker-online": "started",

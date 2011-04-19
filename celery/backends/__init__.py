@@ -1,5 +1,5 @@
 from celery import current_app
-from celery.local import LocalProxy
+from celery.local import Proxy
 from celery.utils import get_cls_by_name
 
 BACKEND_ALIASES = {
@@ -32,4 +32,4 @@ def get_backend_cls(backend=None, loader=None):
 
 
 # deprecate this.
-default_backend = LocalProxy(lambda: current_app.backend)
+default_backend = Proxy(lambda: current_app.backend)

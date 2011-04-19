@@ -6,12 +6,12 @@ def try_import(module):
         pass
 
 
-class LocalProxy(object):
-    """Code stolen from werkzeug.local.LocalProxy."""
+class Proxy(object):
+    """Code stolen from werkzeug.local.Proxy."""
     __slots__ = ('__local', '__dict__', '__name__')
 
     def __init__(self, local, name=None):
-        object.__setattr__(self, '_LocalProxy__local', local)
+        object.__setattr__(self, '_Proxy__local', local)
         object.__setattr__(self, '__name__', name)
 
     def _get_current_object(self):

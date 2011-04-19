@@ -12,11 +12,12 @@ from __future__ import absolute_import
 
 import time
 import traceback
+import weakref
 
 from itertools import chain
 from Queue import Empty
 
-from celery.utils.compat import OrderedDict
+from celery.utils.compat import MutableMapping
 
 
 class AttributeDictMixin(object):
@@ -289,21 +290,112 @@ class LimitedSet(object):
         return self.chronologically[0]
 
 
-class LocalCache(OrderedDict):
+class DLL(object):
+    """Doubly Linked List."""
+    __slots__ = ("PREV", "NEXT", "value", "__weakref__")
+
+    def __init__(self, value=None):
+        self.PREV, self.NEXT, self.value = None, None, value
+
+    def __repr__(self):
+        return "<DLL: %r>" % (self.value, )
+
+    def iterate(self, sentinel=None):
+        node = self
+        while node is not sentinel:
+            yield node.value
+            node = node.NEXT
+
+
+class LRUCache(dict, MutableMapping):
     """Dictionary with a finite number of keys.
 
     Older items expires first.
 
     """
 
-    def __init__(self, limit=None):
-        super(LocalCache, self).__init__()
+    def __init__(self, items=None, limit=None):
+        dict.__init__(self)
         self.limit = limit
+        self._root = DLL()
+        self._map = {}
+        self.clear()
+        if items:
+            self.update(items)
+
+    def clear(self):
+        root = self._root
+        root.PREV = root.NEXT = root
+        self._map.clear()
+        dict.clear(self)
+
+    def _move_to_head(self, node):
+        root = self._root
+        prev = root.NEXT
+        if node is not prev:
+            nref = weakref.proxy(node)
+            node.NEXT, root.NEXT.PREV = root.NEXT, nref
+            root.NEXT, node.PREV = nref, root
+
+    def __getitem__(self, key):
+        value = self._get(key)
+        self._move_to_head(self._map[key])
+        return value
 
     def __setitem__(self, key, value):
-        while len(self) >= self.limit:
-            self.popitem(last=False)
-        super(LocalCache, self).__setitem__(key, value)
+        # remove least recently used key.
+        if self.limit and len(self) >= self.limit:
+            del(self[self._root.PREV.value])
+
+        if key in self._map:
+            node = self._map[key]
+            node.PREV.NEXT = node.NEXT
+            node.NEXT.PREV = node.PREV
+        else:
+            node = self._map[key] = DLL()
+            node.value = key
+        self._move_to_head(node)
+
+        dict.__setitem__(self, key, value)
+
+    def __delitem__(self, key):
+        dict.__delitem__(self, key)
+        node = self._map.pop(key)
+        node.PREV.NEXT = node.NEXT
+        node.NEXT.PREV = node.PREV
+
+    def _get(self, key):
+        return dict.__getitem__(self, key)
+
+    def __iter__(self):
+        return self._root.NEXT.iterate(self._root)
+
+    def keys(self):
+        return list(iter(self))
+
+    def iterkeys(self):
+        return iter(self)
+
+    def items(self):
+        return [(key, self._get(key)) for key in self]
+
+    def iteritems(self):
+        for key in self:
+            yield (key, self._get(key))
+
+    def __reduce__(self):
+        return (self.__class__, (self.items(), self.limit))
+
+    def __copy__(self):
+        fun, args = self.__reduce__()
+        return fun(*args)
+
+    get = MutableMapping.get
+    pop = MutableMapping.pop
+    update = MutableMapping.update
+    popitem = MutableMapping.popitem
+    setdefault = MutableMapping.setdefault
+
 
 
 class TokenBucket(object):

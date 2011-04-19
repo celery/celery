@@ -4,11 +4,11 @@ import time
 from datetime import timedelta
 
 from celery import states
+from celery.datastructures import LRUCache
 from celery.exceptions import TimeoutError, TaskRevokedError
 from celery.utils import timeutils
 from celery.utils.serialization import pickle, get_pickled_exception
 from celery.utils.serialization import get_pickleable_exception
-from celery.datastructures import LocalCache
 
 
 class BaseBackend(object):
@@ -175,7 +175,7 @@ class BaseDictBackend(BaseBackend):
 
     def __init__(self, *args, **kwargs):
         super(BaseDictBackend, self).__init__(*args, **kwargs)
-        self._cache = LocalCache(limit=kwargs.get("max_cached_results") or
+        self._cache = LRUCache(limit=kwargs.get("max_cached_results") or
                                  self.app.conf.CELERY_MAX_CACHED_RESULTS)
 
     def store_result(self, task_id, result, status, traceback=None, **kwargs):
@@ -208,8 +208,11 @@ class BaseDictBackend(BaseBackend):
             return meta["result"]
 
     def get_task_meta(self, task_id, cache=True):
-        if cache and task_id in self._cache:
-            return self._cache[task_id]
+        if cache:
+            try:
+                return self._cache[task_id]
+            except KeyError:
+                pass
 
         meta = self._get_task_meta_for(task_id)
         if cache and meta.get("status") == states.SUCCESS:
@@ -224,8 +227,11 @@ class BaseDictBackend(BaseBackend):
                                                         cache=False)
 
     def get_taskset_meta(self, taskset_id, cache=True):
-        if cache and taskset_id in self._cache:
-            return self._cache[taskset_id]
+        if cache:
+            try:
+                return self._cache[taskset_id]
+            except KeyError:
+                pass
 
         meta = self._restore_taskset(taskset_id)
         if cache and meta is not None:

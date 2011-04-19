@@ -2,7 +2,7 @@ import sys
 from celery.tests.utils import unittest
 from Queue import Queue
 
-from celery.datastructures import ExceptionInfo, LocalCache
+from celery.datastructures import ExceptionInfo, LRUCache
 from celery.datastructures import LimitedSet, consume_queue
 from celery.datastructures import AttributeDict, DictAttribute
 from celery.datastructures import ConfigurationView
@@ -133,15 +133,15 @@ class test_LimitedSet(unittest.TestCase):
         self.assertIn("LimitedSet(", repr(s))
 
 
-class test_LocalCache(unittest.TestCase):
+class test_LRUCache(unittest.TestCase):
 
     def test_expires(self):
         limit = 100
-        x = LocalCache(limit=limit)
+        x = LRUCache(limit=limit)
         slots = list(range(limit * 2))
         for i in slots:
             x[i] = i
-        self.assertListEqual(x.keys(), slots[limit:])
+        self.assertListEqual(x.keys(), list(reversed(slots[limit:])))
 
 
 class test_AttributeDict(unittest.TestCase):

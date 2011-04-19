@@ -2,7 +2,7 @@ from kombu.utils import cached_property
 
 from celery.backends.base import KeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured
-from celery.datastructures import LocalCache
+from celery.datastructures import LRUCache
 
 _imp = [None]
 
@@ -36,7 +36,7 @@ def get_best_memcache(*args, **kwargs):
 class DummyClient(object):
 
     def __init__(self, *args, **kwargs):
-        self.cache = LocalCache(5000)
+        self.cache = LRUCache(limit=5000)
 
     def get(self, key, *args, **kwargs):
         return self.cache.get(key)
@@ -59,6 +59,7 @@ backends = {"memcache": lambda: get_best_memcache,
 
 
 class CacheBackend(KeyValueStoreBackend):
+    servers = None
 
     def __init__(self, expires=None, backend=None, options={}, **kwargs):
         super(CacheBackend, self).__init__(self, **kwargs)
@@ -66,10 +67,11 @@ class CacheBackend(KeyValueStoreBackend):
         self.options = dict(self.app.conf.CELERY_CACHE_BACKEND_OPTIONS,
                             **options)
 
-        backend = backend or self.app.conf.CELERY_CACHE_BACKEND
-        self.backend, _, servers = backend.partition("://")
+        self.backend = backend or self.app.conf.CELERY_CACHE_BACKEND
+        if self.backend:
+            self.backend, _, servers = self.backend.partition("://")
+            self.servers = servers.rstrip('/').split(";")
         self.expires = self.prepare_expires(expires, type=int)
-        self.servers = servers.rstrip('/').split(";")
         try:
             self.Client = backends[self.backend]()
         except KeyError:

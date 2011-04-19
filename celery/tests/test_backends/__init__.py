@@ -8,6 +8,8 @@ from celery.backends.cache import CacheBackend
 class TestBackends(unittest.TestCase):
 
     def test_get_backend_aliases(self):
+        from celery import current_app
+        print("CACHE BACKEND: %r" % (current_app.conf.CELERY_CACHE_BACKEND, ))
         expects = [("amqp", AMQPBackend),
                    ("cache", CacheBackend)]
         for expect_name, expect_cls in expects:

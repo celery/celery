@@ -124,14 +124,14 @@ class test_lookup_route(unittest.TestCase):
 class test_prepare(unittest.TestCase):
 
     def test_prepare(self):
-        from celery.datastructures import LocalCache
+        from celery.datastructures import LRUCache
         o = object()
         R = [{"foo": "bar"},
-                  "celery.datastructures.LocalCache",
+                  "celery.datastructures.LRUCache",
                   o]
         p = routes.prepare(R)
         self.assertIsInstance(p[0], routes.MapRoute)
-        self.assertIsInstance(maybe_promise(p[1]), LocalCache)
+        self.assertIsInstance(maybe_promise(p[1]), LRUCache)
         self.assertIs(p[2], o)
 
         self.assertEqual(routes.prepare(o), [o])

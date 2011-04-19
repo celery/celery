@@ -41,7 +41,9 @@ class AppCase(unittest.TestCase):
 
     def setUp(self):
         from celery.app import current_app
-        self.app = self._current_app = current_app()
+        app = self.app = self._current_app = current_app()
+        app.backend.client.cache.clear()
+        app.backend._cache.clear()
         self.setup()
 
     def tearDown(self):
