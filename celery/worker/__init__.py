@@ -250,10 +250,10 @@ class WorkController(object):
                 blocking(component.start)
         except SystemTerminate:
             self.terminate()
-            raise SystemExit()
+            raise
         except BaseException, exc:
             self.stop()
-            raise exc
+            raise
 
     def process_task(self, request):
         """Process task by sending it to the pool of workers."""
