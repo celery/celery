@@ -4,15 +4,11 @@ from __future__ import absolute_import
 import inspect
 
 from celery.exceptions import NotRegistered
-from celery.utils.compat import UserDict
 
 
-class TaskRegistry(UserDict):
+class TaskRegistry(dict):
 
     NotRegistered = NotRegistered
-
-    def __init__(self):
-        self.data = {}
 
     def regular(self):
         """Get all regular task types."""
@@ -50,18 +46,18 @@ class TaskRegistry(UserDict):
 
     def filter_types(self, type):
         """Return all tasks of a specific type."""
-        return dict((task_name, task) for task_name, task in self.data.items()
-                                        if task.type == type)
+        return dict((name, task) for name, task in self.data.iteritems()
+                                    if task.type == type)
 
     def __getitem__(self, key):
         try:
-            return UserDict.__getitem__(self, key)
+            return dict.__getitem__(self, key)
         except KeyError:
             raise self.NotRegistered(key)
 
     def pop(self, key, *args):
         try:
-            return UserDict.pop(self, key, *args)
+            return dict.pop(self, key, *args)
         except KeyError:
             raise self.NotRegistered(key)
 

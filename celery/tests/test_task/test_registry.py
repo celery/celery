@@ -33,8 +33,8 @@ class TestTaskRegistry(unittest.TestCase):
 
     def test_task_registry(self):
         r = registry.TaskRegistry()
-        self.assertIsInstance(r.data, dict,
-                "TaskRegistry has composited dict")
+        self.assertIsInstance(r dict,
+                "TaskRegistry is mapping")
 
         self.assertRegisterUnregisterCls(r, TestTask)
         self.assertRegisterUnregisterCls(r, TestPeriodicTask)
