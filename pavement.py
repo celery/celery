@@ -79,6 +79,9 @@ def verifyconfigref(options):
 
 
 @task
+@cmdopts([
+    ("noerror", "E", "Ignore errors"),
+])
 def flake8(options):
     noerror = getattr(options, "noerror", False)
     complexity = getattr(options, "complexity", 22)
