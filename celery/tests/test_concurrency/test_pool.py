@@ -53,9 +53,9 @@ class TestTaskPool(unittest.TestCase):
 
         myerrback = mycallback
 
-        res = p.apply_async(do_something, args=[10], callbacks=[mycallback])
-        res2 = p.apply_async(raise_something, args=[10], errbacks=[myerrback])
-        res3 = p.apply_async(do_something, args=[20], callbacks=[mycallback])
+        res = p.apply_async(do_something, args=[10], callback=mycallback)
+        res2 = p.apply_async(raise_something, args=[10], errback=myerrback)
+        res3 = p.apply_async(do_something, args=[20], callback=mycallback)
 
         self.assertEqual(res.get(), 100)
         time.sleep(0.5)
@@ -75,7 +75,7 @@ class TestTaskPool(unittest.TestCase):
         self.assertDictContainsSubset({"ret_value": 400},
                                        scratchpad.get(2))
 
-        res3 = p.apply_async(do_something, args=[30], callbacks=[mycallback])
+        res3 = p.apply_async(do_something, args=[30], callback=mycallback)
 
         self.assertEqual(res3.get(), 900)
         time.sleep(0.5)

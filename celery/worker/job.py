@@ -363,8 +363,8 @@ class TaskRequest(object):
                                           "request": instance_attrs},
                                   accept_callback=self.on_accepted,
                                   timeout_callback=self.on_timeout,
-                                  callbacks=[self.on_success],
-                                  errbacks=[self.on_failure],
+                                  callback=self.on_success,
+                                  errback=self.on_failure,
                                   soft_timeout=self.task.soft_time_limit,
                                   timeout=self.task.time_limit)
         return result

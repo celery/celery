@@ -160,7 +160,7 @@ class Batches(Task):
         return self._pool.apply_async(apply_batches_task,
                     (self, args, loglevel, logfile),
                     accept_callback=on_accepted,
-                    callbacks=acks_late[True] and [on_return] or [])
+                    callback=acks_late[True] and on_return or None)
 
     def debug(self, msg):
         self.logger.debug("%s: %s" % (self.name, msg))
