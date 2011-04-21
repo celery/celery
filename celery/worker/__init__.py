@@ -251,7 +251,7 @@ class WorkController(object):
         except SystemTerminate:
             self.terminate()
             raise
-        except BaseException, exc:
+        except:
             self.stop()
             raise
 
