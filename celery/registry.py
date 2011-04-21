@@ -46,7 +46,7 @@ class TaskRegistry(dict):
 
     def filter_types(self, type):
         """Return all tasks of a specific type."""
-        return dict((name, task) for name, task in self.data.iteritems()
+        return dict((name, task) for name, task in self.iteritems()
                                     if task.type == type)
 
     def __getitem__(self, key):

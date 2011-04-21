@@ -59,7 +59,7 @@ class TaskPool(BasePool):
             self._pool = None
 
     def terminate_job(self, pid, signal=None):
-        kill(pid, signal or _signal.SIGTERM)
+        _kill(pid, signal or _signal.SIGTERM)
 
     def grow(self, n=1):
         return self._pool.grow(n)
