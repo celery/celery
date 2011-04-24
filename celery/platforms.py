@@ -14,7 +14,7 @@ grp = try_import("grp")
 
 DAEMON_UMASK = 0
 DAEMON_WORKDIR = "/"
-DAEMON_REDIRECT_TO = getattr(os, "devnull", "/dev/nulll")
+DAEMON_REDIRECT_TO = getattr(os, "devnull", "/dev/null")
 
 
 class LockFailed(Exception):
