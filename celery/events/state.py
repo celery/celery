@@ -146,6 +146,9 @@ class Task(Element):
         self.revoked = timestamp
         self.update(states.REVOKED, timestamp, fields)
 
+    def on_unknown_event(self, type, timestamp=None, **fields):
+        self.update(type.upper(), timestamp, fields)
+
     def info(self, fields=None, extra=[]):
         """Information about this task suitable for on-screen display."""
         if fields is None:
@@ -245,6 +248,8 @@ class State(object):
             self.task_count += 1
         if handler:
             handler(**fields)
+        else:
+            task.on_unknown_event(type, **fields)
         task.worker = worker
 
     def event(self, event):
