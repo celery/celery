@@ -153,8 +153,8 @@ You can also provide the `countdown` argument to
         try:
             ...
         except Exception, exc:
-            self.retry(exc=exc, countdown=60)  # override the default and
-                                               # retry in 1 minute
+            add.retry(exc=exc, countdown=60)  # override the default and
+                                              # retry in 1 minute
 
 .. _task-options:
 
