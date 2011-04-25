@@ -8,6 +8,7 @@ from importlib import import_module
 from celery.datastructures import AttributeDict
 from celery.exceptions import NotConfigured
 from celery.loaders.base import BaseLoader
+from celery.utils import find_module
 
 DEFAULT_CONFIG_MODULE = "celeryconfig"
 
@@ -24,13 +25,14 @@ class Loader(BaseLoader):
         configname = os.environ.get("CELERY_CONFIG_MODULE",
                                      DEFAULT_CONFIG_MODULE)
         try:
-            celeryconfig = self.import_from_cwd(configname)
+            find_module(configname)
         except ImportError:
             warnings.warn(NotConfigured(
                 "No %r module found! Please make sure it exists and "
                 "is available to Python." % (configname, )))
             return self.setup_settings({})
         else:
+            celeryconfig = self.import_from_cwd(configname)
             usercfg = dict((key, getattr(celeryconfig, key))
                             for key in dir(celeryconfig)
                                 if self.wanted_module_item(key))

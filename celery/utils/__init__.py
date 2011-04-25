@@ -1,12 +1,16 @@
+from __future__ import absolute_import, with_statement
+
 import os
 import sys
 import operator
+import imp as _imp
 import importlib
 import logging
 import threading
 import traceback
 import warnings
 
+from contextlib import contextmanager
 from functools import partial, wraps
 from inspect import getargspec
 from itertools import islice
@@ -358,6 +362,37 @@ def textindent(t, indent=0):
         return "\n".join(" " * indent + p for p in t.split("\n"))
 
 
+@contextmanager
+def cwd_in_path():
+    cwd = os.getcwd()
+    if cwd in sys.path:
+        yield
+    else:
+        sys.path.insert(0, cwd)
+        try:
+            yield cwd
+        finally:
+            try:
+                sys.path.remove(cwd)
+            except ValueError:
+                pass
+
+
+def find_module(module, path=None, imp=None):
+    if imp is None:
+        imp = importlib.import_module
+    with cwd_in_path():
+        if "." in module:
+            last = None
+            parts = module.split(".")
+            for i, part in enumerate(parts[:-1]):
+                path = imp(part).__path__
+                last = _imp.find_module(parts[i+1], path)
+            return last
+        return _imp.find_module(module)
+
+
+
 def import_from_cwd(module, imp=None):
     """Import module, but make sure it finds modules
     located in the current directory.
@@ -367,17 +402,8 @@ def import_from_cwd(module, imp=None):
     """
     if imp is None:
         imp = importlib.import_module
-    cwd = os.getcwd()
-    if cwd in sys.path:
+    with cwd_in_path():
         return imp(module)
-    sys.path.insert(0, cwd)
-    try:
-        return imp(module)
-    finally:
-        try:
-            sys.path.remove(cwd)
-        except ValueError:
-            pass
 
 
 def cry():
