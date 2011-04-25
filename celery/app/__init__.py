@@ -56,7 +56,7 @@ class App(base.BaseApp):
         taken from this app."""
         conf = self.conf
 
-        from celery.task.base import BaseTask
+        from celery.app.task import BaseTask
 
         class Task(BaseTask):
             abstract = True

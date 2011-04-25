@@ -198,7 +198,7 @@ class BaseApp(object):
             using :meth:`AsyncResult`.
 
         Supports the same arguments as
-        :meth:`~celery.task.base.BaseTask.apply_async`.
+        :meth:`~celery.app.task.BaseTask.apply_async`.
 
         """
         router = self.amqp.Router(queues)
