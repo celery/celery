@@ -55,15 +55,16 @@ class Worker(object):
     def __init__(self, concurrency=None, loglevel=None, logfile=None,
             hostname=None, discard=False, run_clockservice=False,
             schedule=None, task_time_limit=None, task_soft_time_limit=None,
-            max_tasks_per_child=None, queues=None, events=False, db=None,
+            max_tasks_per_child=None, queues=None, events=None, db=None,
             include=None, app=None, pidfile=None,
             redirect_stdouts=None, redirect_stdouts_level=None,
             autoscale=None, scheduler_cls=None, pool=None, **kwargs):
         self.app = app = app_or_default(app)
+        conf = app.conf
         self.concurrency = (concurrency or
-                            app.conf.CELERYD_CONCURRENCY or cpu_count())
-        self.loglevel = loglevel or app.conf.CELERYD_LOG_LEVEL
-        self.logfile = logfile or app.conf.CELERYD_LOG_FILE
+                            conf.CELERYD_CONCURRENCY or cpu_count())
+        self.loglevel = loglevel or conf.CELERYD_LOG_LEVEL
+        self.logfile = logfile or conf.CELERYD_LOG_FILE
 
         self.hostname = hostname or socket.gethostname()
         self.discard = discard
@@ -71,20 +72,20 @@ class Worker(object):
         if self.app.IS_WINDOWS and self.run_clockservice:
             self.die("-B option does not work on Windows.  "
                      "Please run celerybeat as a separate service.")
-        self.schedule = schedule or app.conf.CELERYBEAT_SCHEDULE_FILENAME
-        self.scheduler_cls = scheduler_cls or app.conf.CELERYBEAT_SCHEDULER
-        self.events = events
+        self.schedule = schedule or conf.CELERYBEAT_SCHEDULE_FILENAME
+        self.scheduler_cls = scheduler_cls or conf.CELERYBEAT_SCHEDULER
+        self.events = events if events is not None else conf.CELERY_SEND_EVENTS
         self.task_time_limit = (task_time_limit or
-                                app.conf.CELERYD_TASK_TIME_LIMIT)
+                                conf.CELERYD_TASK_TIME_LIMIT)
         self.task_soft_time_limit = (task_soft_time_limit or
-                                     app.conf.CELERYD_TASK_SOFT_TIME_LIMIT)
+                                     conf.CELERYD_TASK_SOFT_TIME_LIMIT)
         self.max_tasks_per_child = (max_tasks_per_child or
-                                    app.conf.CELERYD_MAX_TASKS_PER_CHILD)
+                                    conf.CELERYD_MAX_TASKS_PER_CHILD)
         self.redirect_stdouts = (redirect_stdouts or
-                                 app.conf.CELERY_REDIRECT_STDOUTS)
+                                 conf.CELERY_REDIRECT_STDOUTS)
         self.redirect_stdouts_level = (redirect_stdouts_level or
-                                       app.conf.CELERY_REDIRECT_STDOUTS_LEVEL)
-        self.pool = (pool or app.conf.CELERYD_POOL)
+                                       conf.CELERY_REDIRECT_STDOUTS_LEVEL)
+        self.pool = pool or conf.CELERYD_POOL
         self.db = db
         self.use_queues = [] if queues is None else queues
         self.queues = None
