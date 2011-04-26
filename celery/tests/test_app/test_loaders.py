@@ -201,7 +201,7 @@ class TestDefaultLoader(unittest.TestCase):
 
         class _Loader(default.Loader):
 
-            def import_from_cwd(self, name):
+            def find_module(self, name):
                 raise ImportError(name)
 
         with catch_warnings(record=True) as log:

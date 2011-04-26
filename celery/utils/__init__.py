@@ -379,6 +379,7 @@ def cwd_in_path():
 
 
 def find_module(module, path=None, imp=None):
+    """Version of :func:`imp.find_module` supporting dots."""
     if imp is None:
         imp = importlib.import_module
     with cwd_in_path():
@@ -386,7 +387,7 @@ def find_module(module, path=None, imp=None):
             last = None
             parts = module.split(".")
             for i, part in enumerate(parts[:-1]):
-                path = imp(part).__path__
+                path = imp(".".join(parts[:i+1])).__path__
                 last = _imp.find_module(parts[i+1], path)
             return last
         return _imp.find_module(module)
