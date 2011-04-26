@@ -224,7 +224,7 @@ def setegid(gid):
     """Set effective group id."""
     gid = parse_gid(gid)
     if gid != os.getgid():
-        os.setegid
+        os.setegid(gid)
 
 
 def seteuid(uid):
