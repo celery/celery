@@ -98,6 +98,7 @@ class ScheduleEntry(object):
         self.__dict__.update({"task": other.task, "schedule": other.schedule,
                               "args": other.args, "kwargs": other.kwargs,
                               "options": other.options})
+
     def is_due(self):
         """See :meth:`celery.task.base.PeriodicTask.is_due`."""
         return self.schedule.is_due(self.last_run_at)
@@ -232,7 +233,6 @@ class Scheduler(object):
             self.sync()
         finally:
             self._last_sync = time.time()
-
 
     def sync(self):
         pass

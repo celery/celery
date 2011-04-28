@@ -273,7 +273,8 @@ class Signals(object):
         """Get signal number from signal name."""
         if isinstance(signal_name, int):
             return signal_name
-        if not isinstance(signal_name, basestring) or not signal_name.isupper():
+        if not isinstance(signal_name, basestring) \
+                or not signal_name.isupper():
             raise TypeError("signal name must be uppercase string.")
         if not signal_name.startswith("SIG"):
             signal_name = "SIG" + signal_name

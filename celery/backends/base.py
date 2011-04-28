@@ -300,7 +300,7 @@ class KeyValueStoreBackend(BaseDictBackend):
             else:
                 if cached["status"] in states.READY_STATES:
                     yield task_id, cached
-                    cached_ids.add(taskid)
+                    cached_ids.add(task_id)
 
         ids ^= cached_ids
         while ids:

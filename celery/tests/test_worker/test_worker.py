@@ -260,16 +260,15 @@ class test_Consumer(unittest.TestCase):
             self.assertTrue(log)
             self.assertIn("unknown message", log[0].message.args[0])
 
-
     @patch("celery.utils.timer2.to_timestamp")
     def test_receive_message_eta_OverflowError(self, to_timestamp):
         to_timestamp.side_effect = OverflowError()
         l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
                              send_events=False)
         m = create_message(Mock(), task=foo_task.name,
-                                    args=("2, 2"),
-                                    kwargs={},
-                                    eta=datetime.now().isoformat())
+                                   args=("2, 2"),
+                                   kwargs={},
+                                   eta=datetime.now().isoformat())
         l.event_dispatcher = Mock()
         l.pidbox_node = MockNode()
 

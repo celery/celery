@@ -236,7 +236,6 @@ except ImportError:
     OrderedDict = CompatOrderedDict  # noqa
 
 ############## logging.LoggerAdapter ########################################
-import inspect
 import logging
 try:
     import multiprocessing

@@ -140,7 +140,6 @@ class Queues(dict):
         return cls(queues)
 
 
-
 class TaskPublisher(messaging.Publisher):
     auto_declare = True
     retry = False

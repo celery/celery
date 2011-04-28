@@ -108,7 +108,8 @@ class Settings(datastructures.ConfigurationView):
 
     @property
     def BROKER_TRANSPORT(self):
-        """Resolves compat aliases ``BROKER_BACKEND`` and ``CARROT_BACKEND``."""
+        """Resolves compat aliases :setting:`BROKER_BACKEND`
+        and :setting:`CARROT_BACKEND`."""
         return (self.get("BROKER_TRANSPORT") or
                 self.get("BROKER_BACKEND") or
                 self.get("CARROT_BACKEND"))

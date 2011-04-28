@@ -4,7 +4,6 @@ import sys
 import logging
 from celery.tests.utils import unittest
 from tempfile import mktemp
-from celery.tests.utils import StringIO
 
 from celery import log
 from celery.log import (setup_logger, setup_task_logger,

@@ -387,11 +387,10 @@ def find_module(module, path=None, imp=None):
             last = None
             parts = module.split(".")
             for i, part in enumerate(parts[:-1]):
-                path = imp(".".join(parts[:i+1])).__path__
-                last = _imp.find_module(parts[i+1], path)
+                path = imp(".".join(parts[:i + 1])).__path__
+                last = _imp.find_module(parts[i + 1], path)
             return last
         return _imp.find_module(module)
-
 
 
 def import_from_cwd(module, imp=None):

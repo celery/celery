@@ -95,7 +95,8 @@ class TaskTrace(object):
                                  trace.exc_type, trace.tb, trace.strtb)
         return r
 
-    def handle_after_return(self, status, retval, type_, tb, strtb, einfo=None):
+    def handle_after_return(self, status, retval, type_, tb, strtb,
+            einfo=None):
         if status in states.EXCEPTION_STATES:
             einfo = ExceptionInfo((retval, type_, tb))
         self.task.after_return(status, retval, self.task_id,

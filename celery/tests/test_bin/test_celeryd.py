@@ -11,8 +11,6 @@ try:
 except ImportError:
     current_process = None  # noqa
 
-from functools import wraps
-
 from nose import SkipTest
 from kombu.tests.utils import redirect_stdouts
 

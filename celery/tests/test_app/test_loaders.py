@@ -204,7 +204,7 @@ class TestDefaultLoader(unittest.TestCase):
             def find_module(self, name):
                 raise ImportError(name)
 
-        with catch_warnings(record=True) as log:
+        with catch_warnings(record=True):
             l = _Loader()
             self.assertDictEqual(l.conf, {})
             context_executed[0] = True

@@ -7,7 +7,6 @@ from itertools import imap
 
 from celery import current_app
 from celery import states
-from celery import current_app
 from celery.app import app_or_default
 from celery.exceptions import TimeoutError
 from celery.registry import _unpickle_task
@@ -310,7 +309,7 @@ class ResultSet(object):
         """Revoke all tasks in the set."""
         with self.app.default_connection(connection, connect_timeout) as conn:
             for result in self.results:
-                result.revoke(connection=connection)
+                result.revoke(connection=conn)
 
     def __iter__(self):
         return self.iterate()

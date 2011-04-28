@@ -15,7 +15,8 @@ if platform.system() == "Windows":
     # On Windows os.kill calls TerminateProcess which cannot be
     # handled by # any process, so this is needed to terminate the task
     # *and its children* (if any).
-    from celery.concurrency.processes._win import kill_processtree as _kill
+    from celery.concurrency.processes import _win
+    _kill = _win.kill_processtree  # noqa
 
 
 class TaskPool(BasePool):

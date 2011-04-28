@@ -302,7 +302,7 @@ def install_worker_int_again_handler(worker):
             worker.terminate(in_sighandler=True)
         raise SystemTerminate()
 
-    platforms.signals["SIGINT"] =_stop
+    platforms.signals["SIGINT"] = _stop
 
 
 def install_worker_term_handler(worker):

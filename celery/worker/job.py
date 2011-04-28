@@ -536,7 +536,8 @@ class TaskRequest(object):
                     tuple(map(get_symbol_by_name, whitelist))):
                 subject = self.email_subject.strip() % context
                 body = self.email_body.strip() % context
-                self.app.mail_admins(subject, body, fail_silently=fail_silently)
+                self.app.mail_admins(subject, body,
+                                     fail_silently=fail_silently)
 
     def repr_result(self, result, maxlen=46):
         # 46 is the length needed to fit

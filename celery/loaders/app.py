@@ -1,9 +1,5 @@
 from __future__ import absolute_import
 
-import os
-
-from celery.datastructures import DictAttribute
-from celery.exceptions import ImproperlyConfigured
 from celery.loaders.base import BaseLoader
 
 

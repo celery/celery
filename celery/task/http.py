@@ -5,7 +5,7 @@ from urlparse import urlparse
 try:
     from urlparse import parse_qsl
 except ImportError:
-    from cgi import parse_qsl
+    from cgi import parse_qsl  # noqa
 
 from anyjson import deserialize
 

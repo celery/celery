@@ -1,5 +1,5 @@
 from celery import current_app
-from celery.app.task import Context, TaskType, BaseTask
+from celery.app.task import Context, TaskType, BaseTask  # noqa
 from celery.schedules import maybe_schedule
 from celery.utils import deprecated
 from celery.utils import timeutils

@@ -3,8 +3,6 @@ from __future__ import absolute_import
 import os
 import warnings
 
-from importlib import import_module
-
 from celery.datastructures import AttributeDict
 from celery.exceptions import NotConfigured
 from celery.loaders.base import BaseLoader

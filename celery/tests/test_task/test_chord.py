@@ -43,7 +43,6 @@ class test_unlock_chord_task(AppCase):
         self.assertIn("celery.chord_unlock", tasks)
 
 
-
 class test_chord(AppCase):
 
     def test_apply(self):

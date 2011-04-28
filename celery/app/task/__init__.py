@@ -7,7 +7,6 @@ from celery.exceptions import MaxRetriesExceededError, RetryTaskError
 from celery.execute.trace import TaskTrace
 from celery.registry import tasks, _unpickle_task
 from celery.result import EagerResult
-from celery.schedules import maybe_schedule
 from celery.utils import mattrgetter, gen_unique_id, fun_takes_kwargs
 
 extract_exec_options = mattrgetter("queue", "routing_key",
@@ -705,5 +704,3 @@ class BaseTask(object):
     @property
     def __name__(self):
         return self.__class__.__name__
-
-
