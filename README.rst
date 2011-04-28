@@ -4,7 +4,7 @@
 
 .. image:: http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png
 
-:Version: 2.3.0a1
+:Version: 2.3.0a2
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/ask/celery/
@@ -181,7 +181,7 @@ Features
     |                 | enabling the ability to poll task status using     |
     |                 | Ajax.                                              |
     +-----------------+----------------------------------------------------+
-    | Error Emails   | Can be configured to send emails to the           |
+    | Error Emails    | Can be configured to send emails to the            |
     |                 | administrators when tasks fails.                   |
     +-----------------+----------------------------------------------------+
 
