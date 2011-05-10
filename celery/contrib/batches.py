@@ -53,9 +53,13 @@ from celery.worker import state
 def apply_batches_task(task, args, loglevel, logfile):
     task.request.update({"loglevel": loglevel, "logfile": logfile})
     try:
-        return task(*args)
+        result = task(*args)
+    except Exception, exp:
+        result = None
+        task.logger.error("There was an Exception: %s" % exp)
     finally:
         task.request.clear()
+    return result
 
 
 class SimpleRequest(object):
