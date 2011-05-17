@@ -6,7 +6,7 @@ import codecs
 import platform
 
 extra = {}
-tests_require = ["nose", "nose-cover3", "sqlalchemy"]
+tests_require = ["nose", "nose-cover3", "sqlalchemy", "mock"]
 if sys.version_info >= (3, 0):
     extra.update(use_2to3=True)
 elif sys.version_info < (2, 7):
@@ -18,15 +18,14 @@ if sys.version_info < (2, 5):
     raise Exception("Celery requires Python 2.5 or higher.")
 
 try:
-    from setuptools import setup, find_packages, Command
+    from setuptools import setup, find_packages
     from setuptools.command.test import test
-    from setuptools.command.install import install
 except ImportError:
+    raise
     from ez_setup import use_setuptools
     use_setuptools()
-    from setuptools import setup, find_packages, Command
-    from setuptools.command.test import test
-    from setuptools.command.install import install
+    from setuptools import setup, find_packages           # noqa
+    from setuptools.command.test import test              # noqa
 
 os.environ["CELERY_NO_EVAL"] = "yes"
 import celery as distmeta
@@ -44,7 +43,7 @@ class quicktest(test):
 
 install_requires = []
 try:
-    import importlib
+    import importlib  # noqa
 except ImportError:
     install_requires.append("importlib")
 install_requires.extend([
@@ -120,5 +119,4 @@ setup(
         'console_scripts': console_scripts,
     },
     long_description=long_description,
-    **extra
-)
+    **extra)
