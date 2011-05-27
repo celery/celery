@@ -40,12 +40,13 @@ class Message(object):
 class Mailer(object):
 
     def __init__(self, host="localhost", port=0, user=None, password=None,
-            timeout=2):
+            timeout=2, use_ssl=False):
         self.host = host
         self.port = port
         self.user = user
         self.password = password
         self.timeout = timeout
+        self.use_ssl = use_ssl
 
     def send(self, message):
         if supports_timeout:
@@ -60,7 +61,10 @@ class Mailer(object):
                 socket.setdefaulttimeout(old_timeout)
 
     def _send(self, message, **kwargs):
-        client = smtplib.SMTP(self.host, self.port, **kwargs)
+        if (self.use_ssl):
+            client = smtplib.SMTP_SSL(self.host, self.port, **kwargs)
+        else:
+            client = smtplib.SMTP(self.host, self.port, **kwargs)
 
         if self.user and self.password:
             client.login(self.user, self.password)
