@@ -118,7 +118,11 @@ class Logging(object):
             for logger in filter(None, (root, mp)):
                 self._setup_logger(logger, logfile, format, colorize, **kwargs)
                 logger.setLevel(loglevel)
+                signals.after_setup_logger.send(sender=None, logger=logger,
+                                        loglevel=loglevel, logfile=logfile,
+                                        format=format, colorize=colorize)
         Logging._setup = True
+        
         return receivers
 
     def _detect_handler(self, logfile=None):
@@ -181,6 +185,9 @@ class Logging(object):
                                     logfile, format, colorize, **kwargs)
         logger.propagate = int(propagate)    # this is an int for some reason.
                                              # better to not question why.
+        signals.after_setup_task_logger.send(sender=None, logger=logger,
+                                     loglevel=loglevel, logfile=logfile,
+                                     format=format, colorize=colorize)
         return LoggerAdapter(logger, {"task_id": task_id,
                                       "task_name": task_name})
 

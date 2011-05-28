@@ -290,6 +290,10 @@ worker_shutdown = Signal(providing_args=[])
 
 setup_logging = Signal(providing_args=["loglevel", "logfile",
                                        "format", "colorize"])
+after_setup_logger = Signal(providing_args=["logger","loglevel", "logfile",
+                                       "format", "colorize"])
+after_setup_task_logger = Signal(providing_args=["logger","loglevel", "logfile",
+                                       "format", "colorize"])
 
 beat_init = Signal(providing_args=[])
 beat_embedded_init = Signal(providing_args=[])
