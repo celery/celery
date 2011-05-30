@@ -97,7 +97,8 @@ from subprocess import Popen
 from time import sleep
 
 from celery import __version__
-from celery.utils import term
+from celery.utils import term, import_from_cwd
+from celery.loaders.default import DEFAULT_CONFIG_MODULE
 
 SIGNAMES = set(sig for sig in dir(signal)
                         if sig.startswith("SIG") and "_" not in sig)
@@ -166,6 +167,14 @@ class MultiTool(object):
         self.prog_name = os.path.basename(argv.pop(0))
         if len(argv) == 0 or argv[0][0] == "-":
             return self.error()
+
+        if len(argv) == 1:
+            try:
+                conf = import_from_cwd(os.environ.get("CELERY_CONFIG_MODULE",
+                                                      DEFAULT_CONFIG_MODULE))
+                argv.extend(conf.CELERYD_MULTI_ARGS.split())
+            except (ImportError, AttributeError):
+                pass
 
         try:
             self.commands[argv[0]](argv[1:], cmd)
