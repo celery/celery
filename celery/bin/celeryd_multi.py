@@ -45,7 +45,7 @@ Examples
     #   * Three of the workers processes the images and video queue
     #   * Two of the workers processes the data queue with loglevel DEBUG
     #   * the rest processes the default' queue.
-    $ celeryd-multi start 10 -l INFO -Q:1-3 images,video -Q:4,5:data
+    $ celeryd-multi start 10 -l INFO -Q:1-3 images,video -Q:4,5 data
         -Q default -L:4,5 DEBUG
 
     # You can show the commands necessary to start the workers with
