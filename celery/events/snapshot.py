@@ -83,9 +83,6 @@ def evcam(camera, freq=1.0, maxrate=None, loglevel=0,
     logger = app.log.setup_logger(loglevel=loglevel,
                                   logfile=logfile,
                                   name="celery.evcam")
-    if pidfile:
-        pidlock = platforms.create_pidlock(pidfile).acquire()
-        atexit.register(pidlock.release)
 
     logger.info(
         "-> evcam: Taking snapshots with %s (every %s secs.)\n" % (
