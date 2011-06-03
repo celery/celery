@@ -40,12 +40,13 @@ class Message(object):
 class Mailer(object):
 
     def __init__(self, host="localhost", port=0, user=None, password=None,
-            timeout=2):
+            timeout=2, use_tls=False):
         self.host = host
         self.port = port
         self.user = user
         self.password = password
         self.timeout = timeout
+        self.use_tls = use_tls
 
     def send(self, message):
         if supports_timeout:
@@ -61,6 +62,11 @@ class Mailer(object):
 
     def _send(self, message, **kwargs):
         client = smtplib.SMTP(self.host, self.port, **kwargs)
+
+        if self.use_tls:
+            client.ehlo()
+            client.starttls()
+            client.ehlo()
 
         if self.user and self.password:
             client.login(self.user, self.password)
