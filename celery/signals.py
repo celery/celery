@@ -264,7 +264,57 @@ Provides arguments:
 * kwargs
 
     Keyword arguments.
+    
+Logging Signals
+---------------
 
+.. signal:: after_setup_task_logger
+
+after_setup_task_logger
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Sent after the setup of every single task logger.
+
+Provides arguments:
+
+* logger
+    The logger object.
+
+* loglevel
+    The level of the logging object.
+
+* logfile
+    The name of the logfile.
+
+* format
+    The log format string.
+
+* colorize
+    Specify if log messages are colored or not.
+    
+.. signal:: after_setup_logger
+
+after_setup_logger
+~~~~~~~~~~~~~~~~~~
+
+Sent after the setup of every global logger.
+
+Provides arguments:
+
+* logger
+    The logger object.
+
+* loglevel
+    The level of the logging object.
+
+* logfile
+    The name of the logfile.
+
+* format
+    The log format string.
+
+* colorize
+    Specify if log messages are colored or not.    
 
 """
 from celery.utils.dispatch import Signal
