@@ -3,7 +3,8 @@ from __future__ import with_statement
 from eventlet import spawn_n, monkey_patch, Timeout
 from eventlet.queue import LightQueue
 from eventlet.event import Event
-from celery.messaging import establish_connection, TaskPublisher
+
+from celery import current_app
 
 monkey_patch()
 
@@ -13,7 +14,7 @@ class Receipt(object):
 
     def __init__(self, callback=None):
         self.callback = None
-        self.event = Event()
+        self.ready = Event()
 
     def finished(self, result):
         self.result = result
@@ -27,6 +28,7 @@ class Receipt(object):
 
 
 class ProducerPool(object):
+    Receipt = Receipt
 
     def __init__(self, size=20):
         self.size = size
@@ -46,8 +48,8 @@ class ProducerPool(object):
                                 for _ in xrange(self.size)]
 
     def _producer(self):
-        connection = establish_connection()
-        publisher = TaskPublisher(connection)
+        connection = current_app.broker_connection()
+        publisher = current_app.amqp.TaskPublisher(connection)
         inqueue = self.inqueue
 
         while 1:
