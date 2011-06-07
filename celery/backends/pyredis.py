@@ -72,12 +72,8 @@ class RedisBackend(KeyValueStoreBackend):
     def delete(self, key):
         self.client.delete(key)
 
-    def close(self):
-        """Closes the Redis connection."""
-        del(self.client)
-
     def process_cleanup(self):
-        self.close()
+        pass
 
     @cached_property
     def client(self):
@@ -85,7 +81,3 @@ class RedisBackend(KeyValueStoreBackend):
                                 port=self.redis_port,
                                 db=self.redis_db,
                                 password=self.redis_password)
-
-    @client.deleter
-    def client(self, client):
-        client.connection.disconnect()
