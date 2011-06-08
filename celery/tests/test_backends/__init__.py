@@ -14,7 +14,7 @@ class TestBackends(unittest.TestCase):
             self.assertIsInstance(backends.get_backend_cls(expect_name)(),
                                   expect_cls)
 
-    def test_get_backend_cahe(self):
+    def test_get_backend_cache(self):
         backends._backend_cache = {}
         backends.get_backend_cls("amqp")
         self.assertIn("amqp", backends._backend_cache)
