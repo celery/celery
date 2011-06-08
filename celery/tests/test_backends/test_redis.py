@@ -46,7 +46,7 @@ def get_redis_or_SkipTest():
         tb = RedisBackend(redis_db="celery_unittest")
         try:
             # Evaluate lazy connection
-            tb.client.connection.connect(tb.client)
+            tb.client.info()
         except ConnectionError, exc:
             emit_no_redis_msg("not running")
             raise SkipTest("can't connect to redis: %s" % (exc, ))
@@ -93,16 +93,6 @@ class TestRedisBackend(unittest.TestCase):
         tb.mark_as_failure(tid3, exception)
         self.assertEqual(tb.get_status(tid3), states.FAILURE)
         self.assertIsInstance(tb.get_result(tid3), KeyError)
-
-    def test_connection_close_if_connected(self):
-        tb = get_redis_or_SkipTest()
-
-        client = tb.client
-        self.assertIsNotNone(client)
-        tb.process_cleanup()
-        self.assertRaises(KeyError, tb.__dict__.__getitem__, "client")
-        tb.process_cleanup()
-        self.assertRaises(KeyError, tb.__dict__.__getitem__, "client")
 
 
 class TestRedisBackendNoRedis(unittest.TestCase):
