@@ -93,12 +93,3 @@ class test_RedisBackend(unittest.TestCase):
         key = b.get_key_for_task(uuid)
         b.store_result(uuid, 42, states.SUCCESS)
         self.assertEqual(b.client.expiry[key], 512)
-
-    def test_closes_connection_at_process_cleanup(self):
-        b = self.Backend(expires=512)
-        client = b.client
-        self.assertTrue(client.connection.connected)
-        b.process_cleanup()
-        self.assertFalse(client.connection.connected)
-        b.process_cleanup()
-        self.assertFalse(client.connection.connected)
