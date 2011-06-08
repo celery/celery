@@ -13,13 +13,8 @@ from celery.tests.compat import catch_warnings
 from celery.tests.utils import unittest
 from celery.tests.utils import with_environ, execute_context
 
-
-class ObjectConfig(object):
-    FOO = 1
-    BAR = 2
-
-object_config = ObjectConfig()
-dict_config = dict(FOO=10, BAR=20)
+FOO = 1
+BAR = 2
 
 
 class Object(object):
@@ -235,7 +230,8 @@ class test_AppLoader(unittest.TestCase):
         self.assertRaises(ImproperlyConfigured,
                           self.loader.config_from_envvar, "HDSAJIHWIQHEWQU",
                           silent=False)
-        os.environ[key] = __name__ + ".object_config"
+        os.environ[key] = __name__
+        print(os.environ[key])
         self.assertTrue(self.loader.config_from_envvar(key))
         self.assertEqual(self.loader.conf["FOO"], 1)
         self.assertEqual(self.loader.conf["BAR"], 2)
@@ -244,11 +240,6 @@ class test_AppLoader(unittest.TestCase):
         self.assertRaises(ImportError,
                           self.loader.config_from_envvar, key, silent=False)
         self.assertFalse(self.loader.config_from_envvar(key, silent=True))
-
-        os.environ[key] = __name__ + ".dict_config"
-        self.assertTrue(self.loader.config_from_envvar(key))
-        self.assertEqual(self.loader.conf["FOO"], 10)
-        self.assertEqual(self.loader.conf["BAR"], 20)
 
     def test_on_worker_init(self):
         self.loader.conf["CELERY_IMPORTS"] = ("subprocess", )
