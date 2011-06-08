@@ -513,6 +513,12 @@ class test_Consumer(unittest.TestCase):
         self.assertTrue(init_callback.call_count)
         self.assertTrue(l.consume_messages.call_count)
 
+    def test_reset_connection_with_no_node(self):
+
+        l = MainConsumer(self.ready_queue, self.eta_schedule, self.logger)
+        self.assertEqual(None, l.pool)
+        l.reset_connection()
+
 
 class test_WorkController(AppCase):
 

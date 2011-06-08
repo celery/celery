@@ -497,7 +497,7 @@ class Consumer(object):
             except self.connection_errors + self.channel_errors:
                 pass
 
-        if self.pool.is_green:
+        if self.pool is not None and self.pool.is_green:
             return self.pool.spawn_n(self._green_pidbox_node)
         self.pidbox_node.channel = self.connection.channel()
         self.broadcast_consumer = self.pidbox_node.listen(
