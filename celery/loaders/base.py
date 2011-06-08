@@ -155,13 +155,13 @@ class BaseLoader(object):
 
     def mail_admins(self, subject, body, fail_silently=False,
             sender=None, to=None, host=None, port=None,
-            user=None, password=None, timeout=None):
+            user=None, password=None, timeout=None, use_ssl=False):
         try:
             message = self.mail.Message(sender=sender, to=to,
                                         subject=subject, body=body)
             mailer = self.mail.Mailer(host=host, port=port,
                                       user=user, password=password,
-                                      timeout=timeout)
+                                      timeout=timeout, use_ssl=use_ssl)
             mailer.send(message)
         except Exception, exc:
             if not fail_silently:
