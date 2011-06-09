@@ -41,12 +41,12 @@ class Option(object):
 
 NAMESPACES = {
     "BROKER": {
-        "HOST": Option("localhost"),
+        "HOST": Option(None, type="string"),
         "PORT": Option(type="int"),
-        "USER": Option("guest"),
-        "PASSWORD": Option("guest"),
-        "VHOST": Option("/"),
-        "BACKEND": Option(),
+        "USER": Option(None, type="string"),
+        "PASSWORD": Option(None, type="string"),
+        "VHOST": Option(None, type="string"),
+        "BACKEND": Option(None, type="string"),
         "CONNECTION_TIMEOUT": Option(4, type="int"),
         "CONNECTION_RETRY": Option(True, type="bool"),
         "CONNECTION_MAX_RETRIES": Option(100, type="int"),
