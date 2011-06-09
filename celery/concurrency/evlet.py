@@ -23,12 +23,12 @@ def apply_target(target, args=(), kwargs={}, callback=None,
 class Schedule(timer2.Schedule):
 
     def __init__(self, *args, **kwargs):
-        from eventlet.greenthread import spawn_after_local
+        from eventlet.greenthread import spawn_after
         from greenlet import GreenletExit
         super(Schedule, self).__init__(*args, **kwargs)
 
         self.GreenletExit = GreenletExit
-        self._spawn_after_local = spawn_after_local
+        self._spawn_after = spawn_after
         self._queue = set()
 
     def enter(self, entry, eta=None, priority=0):
@@ -43,7 +43,7 @@ class Schedule(timer2.Schedule):
             eta = now
         secs = max(eta - now, 0)
 
-        g = self._spawn_after_local(secs, entry)
+        g = self._spawn_after(secs, entry)
         self._queue.add(g)
         g.link(self._entry_exit, entry)
         g.entry = entry
@@ -68,7 +68,7 @@ class Schedule(timer2.Schedule):
         while queue:
             try:
                 queue.pop().cancel()
-            except KeyError:
+            except (KeyError, self.GreenletExit):
                 pass
 
     @property
@@ -84,6 +84,12 @@ class Timer(timer2.Timer):
 
     def stop(self):
         self.schedule.clear()
+
+    def cancel(self, tref):
+        try:
+            tref.cancel()
+        except self.schedule.GreenletExit:
+            pass
 
     def start(self):
         pass

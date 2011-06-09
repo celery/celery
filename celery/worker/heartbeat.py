@@ -11,9 +11,6 @@ class Heart(object):
 
     """
 
-    #: Beats per minute.
-    bpm = 0.5
-
     def __init__(self, timer, eventer, interval=None):
         self.timer = timer
         self.eventer = eventer
@@ -30,6 +27,6 @@ class Heart(object):
 
     def stop(self):
         if self.tref is not None:
-            self.tref.cancel()
+            self.timer.cancel(self.tref)
             self.tref = None
         self._send("worker-offline")
