@@ -114,6 +114,29 @@ News
         Soft time limits will still not work on Windows or other platforms
         that do not have the ``SIGUSR1`` signal.
 
+.. _version-2.2.7:
+
+2.2.7
+=====
+:release-date: 2011-06-13 16:00 P.M BST
+
+* New signals: :signal:`after_setup_logger` and
+  :signal:`after_setup_task_logger`
+
+    These signals can be used to augment logging configuration
+    after Celery has set up logging.
+
+* Redis result backend now works with Redis 2.4.4.
+
+* celeryd_multi: The :option:`--gid` option now works correctly.
+
+* celeryd: Retry wrongfully used the repr of the traceback instead
+  of the string representation.
+
+* App.config_from_object: Now loads module, not attribute of module.
+
+* Fixed issue where logging of objects would give "<Unrepresentable: ...>"
+
 .. _version-2.2.6:
 
 2.2.6
