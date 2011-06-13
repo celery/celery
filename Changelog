@@ -9,7 +9,7 @@
 
 2.2.7
 =====
-:release-date: TBA
+:release-date: 2011-06-13 16:00 P.M BST
 
 * New signals: :signal:`after_setup_logger` and
   :signal:`after_setup_task_logger`
