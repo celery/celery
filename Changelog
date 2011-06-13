@@ -19,12 +19,12 @@
 
 * Redis result backend now works with Redis 2.4.4.
 
-* celeryd_multi: The ``--gid`` option now works correctly.
+* celeryd_multi: The :option:`--gid` option now works correctly.
 
 * celeryd: Retry wrongfully used the repr of the traceback instead
   of the string representation.
 
-* App.config_from_object:  Now loads module, not attribute of module.
+* App.config_from_object: Now loads module, not attribute of module.
 
 * Fixed issue where logging of objects would give "<Unrepresentable: ...>"
 

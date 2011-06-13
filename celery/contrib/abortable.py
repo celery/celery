@@ -29,7 +29,7 @@ In the consumer:
 
    from celery.contrib.abortable import AbortableTask
 
-   def MyLongRunningTask(AbortableTask):
+   class MyLongRunningTask(AbortableTask):
 
        def run(self, **kwargs):
            logger = self.get_logger(**kwargs)
