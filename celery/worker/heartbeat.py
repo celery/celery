@@ -7,7 +7,7 @@ class Heart(object):
     :param timer: Timer instance.
     :param eventer: Event dispatcher used to send the event.
     :keyword interval: Time in seconds between heartbeats.
-                       Default is 2 minutes.
+                       Default is 30 seconds.
 
     """
 
