@@ -264,7 +264,7 @@ Provides arguments:
 * kwargs
 
     Keyword arguments.
-    
+
 Logging Signals
 ---------------
 
@@ -291,7 +291,7 @@ Provides arguments:
 
 * colorize
     Specify if log messages are colored or not.
-    
+
 .. signal:: after_setup_logger
 
 after_setup_logger
@@ -314,7 +314,7 @@ Provides arguments:
     The log format string.
 
 * colorize
-    Specify if log messages are colored or not.    
+    Specify if log messages are colored or not.
 
 """
 from celery.utils.dispatch import Signal
@@ -340,10 +340,11 @@ worker_shutdown = Signal(providing_args=[])
 
 setup_logging = Signal(providing_args=["loglevel", "logfile",
                                        "format", "colorize"])
-after_setup_logger = Signal(providing_args=["logger","loglevel", "logfile",
-                                       "format", "colorize"])
-after_setup_task_logger = Signal(providing_args=["logger","loglevel", "logfile",
-                                       "format", "colorize"])
+after_setup_logger = Signal(providing_args=["logger", "loglevel", "logfile",
+                                            "format", "colorize"])
+after_setup_task_logger = Signal(providing_args=["logger", "loglevel",
+                                                 "logfile", "format",
+                                                 "colorize"])
 
 beat_init = Signal(providing_args=[])
 beat_embedded_init = Signal(providing_args=[])
