@@ -122,7 +122,7 @@ class Logging(object):
                                         loglevel=loglevel, logfile=logfile,
                                         format=format, colorize=colorize)
         Logging._setup = True
-        
+
         return receivers
 
     def _detect_handler(self, logfile=None):

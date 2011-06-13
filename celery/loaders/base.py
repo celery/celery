@@ -10,6 +10,7 @@ from kombu.utils import cached_property
 
 from celery.datastructures import DictAttribute
 from celery.exceptions import ImproperlyConfigured
+from celery.utils import get_cls_by_name
 from celery.utils import import_from_cwd as _import_from_cwd
 
 BUILTIN_MODULES = frozenset(["celery.task"])
