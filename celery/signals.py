@@ -265,6 +265,56 @@ Provides arguments:
 
     Keyword arguments.
 
+Logging Signals
+---------------
+
+.. signal:: after_setup_task_logger
+
+after_setup_task_logger
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Sent after the setup of every single task logger.
+
+Provides arguments:
+
+* logger
+    The logger object.
+
+* loglevel
+    The level of the logging object.
+
+* logfile
+    The name of the logfile.
+
+* format
+    The log format string.
+
+* colorize
+    Specify if log messages are colored or not.
+
+.. signal:: after_setup_logger
+
+after_setup_logger
+~~~~~~~~~~~~~~~~~~
+
+Sent after the setup of every global logger.
+
+Provides arguments:
+
+* logger
+    The logger object.
+
+* loglevel
+    The level of the logging object.
+
+* logfile
+    The name of the logfile.
+
+* format
+    The log format string.
+
+* colorize
+    Specify if log messages are colored or not.
 
 """
 from celery.utils.dispatch import Signal
@@ -290,10 +340,11 @@ worker_shutdown = Signal(providing_args=[])
 
 setup_logging = Signal(providing_args=["loglevel", "logfile",
                                        "format", "colorize"])
-after_setup_logger = Signal(providing_args=["logger","loglevel", "logfile",
-                                       "format", "colorize"])
-after_setup_task_logger = Signal(providing_args=["logger","loglevel", "logfile",
-                                       "format", "colorize"])
+after_setup_logger = Signal(providing_args=["logger", "loglevel", "logfile",
+                                            "format", "colorize"])
+after_setup_task_logger = Signal(providing_args=["logger", "loglevel",
+                                                 "logfile", "format",
+                                                 "colorize"])
 
 beat_init = Signal(providing_args=[])
 beat_embedded_init = Signal(providing_args=[])

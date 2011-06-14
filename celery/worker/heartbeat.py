@@ -7,12 +7,9 @@ class Heart(object):
     :param timer: Timer instance.
     :param eventer: Event dispatcher used to send the event.
     :keyword interval: Time in seconds between heartbeats.
-                       Default is 2 minutes.
+                       Default is 30 seconds.
 
     """
-
-    #: Beats per minute.
-    bpm = 0.5
 
     def __init__(self, timer, eventer, interval=None):
         self.timer = timer
@@ -30,6 +27,6 @@ class Heart(object):
 
     def stop(self):
         if self.tref is not None:
-            self.tref.cancel()
+            self.timer.cancel(self.tref)
             self.tref = None
         self._send("worker-offline")

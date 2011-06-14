@@ -69,12 +69,8 @@ class RedisBackend(KeyValueStoreBackend):
     def delete(self, key):
         self.client.delete(key)
 
-    def close(self):
-        """Closes the Redis connection."""
-        del(self.client)
-
     def process_cleanup(self):
-        self.close()
+        pass
 
     def on_chord_apply(self, *args, **kwargs):
         pass
@@ -94,7 +90,3 @@ class RedisBackend(KeyValueStoreBackend):
     def client(self):
         return self.redis.Redis(host=self.host, port=self.port,
                                 db=self.db, password=self.password)
-
-    @client.deleter  # noqa
-    def client(self, client):
-        client.connection.disconnect()

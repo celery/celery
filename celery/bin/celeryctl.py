@@ -1,3 +1,5 @@
+from __future__ import with_statement
+
 import sys
 
 from optparse import OptionParser, make_option as Option
@@ -19,8 +21,8 @@ class Error(Exception):
     pass
 
 
-def command(fun):
-    commands[fun.__name__] = fun
+def command(fun, name=None):
+    commands[name or fun.__name__] = fun
     return fun
 
 
@@ -102,6 +104,29 @@ class Command(object):
         if isinstance(n, basestring):
             return OK, unicode(n)
         return OK, pformat(n)
+
+
+class list_(Command):
+    args = "<bindings>"
+
+    def list_bindings(self, channel):
+        fmt = lambda q, e, r: self.out("%s %s %s" % (q.ljust(28),
+                                                     e.ljust(28), r))
+        fmt("Queue", "Exchange", "Routing Key")
+        fmt("-" * 16, "-" * 16, "-" * 16)
+        for binding in channel.list_bindings():
+            fmt(*binding)
+
+    def run(self, what, *_, **kw):
+        topics = {"bindings": self.list_bindings}
+        if what not in topics:
+            raise ValueError("%r not in %r" % (what, topics.keys()))
+        with self.app.broker_connection() as conn:
+            consumer = self.app.amqp.get_task_consumer(conn)
+            consumer.declare()
+            with conn.channel() as channel:
+                return topics[what](channel)
+list_ = command(list_, "list")
 
 
 class apply(Command):

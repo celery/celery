@@ -315,8 +315,8 @@ class BaseApp(object):
                                        user=self.conf.EMAIL_HOST_USER,
                                        password=self.conf.EMAIL_HOST_PASSWORD,
                                        timeout=self.conf.EMAIL_TIMEOUT,
-                                       use_tls=self.conf.get('EMAIL_TLS',
-                                           False))
+                                       use_tls=self.conf.EMAIL_USE_TLS,
+                                       use_ssl=self.conf.EMAIL_USE_SSL)
 
     def either(self, default_key, *values):
         """Fallback to the value of a configuration key if none of the
