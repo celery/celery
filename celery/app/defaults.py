@@ -157,6 +157,7 @@ NAMESPACES = {
         "HOST_PASSWORD": Option(None),
         "TIMEOUT": Option(2, type="int"),
         "USE_SSL": Option(False, type="bool"),
+        "USE_TLS": Option(False, type="bool"),
     },
     "SERVER_EMAIL": Option("celery@localhost"),
     "ADMINS": Option((), type="tuple"),

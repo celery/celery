@@ -1026,6 +1026,13 @@ EMAIL_USE_SSL
 
 Use SSL when connecting to the SMTP server.  Disabled by default.
 
+.. setting:: EMAIL_USE_TLS
+
+EMAIL_USE_TLS
+~~~~~~~~~~~~~
+
+Use TLS when connecting to the SMTP server.  Disabled by default.
+
 .. setting:: EMAIL_TIMEOUT
 
 EMAIL_TIMEOUT
