@@ -582,7 +582,7 @@ class Consumer(object):
 
         # Callback called for each retry while the connection
         # can't be established.
-        def __error_handler(exc, interval):
+        def _error_handler(exc, interval):
             self.logger.error("Consumer: Connection Error: %s. " % exc
                             + "Trying again in %d seconds..." % interval)
 
