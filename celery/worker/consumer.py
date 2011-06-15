@@ -580,9 +580,9 @@ class Consumer(object):
 
         """
 
-        def _connection_error_handler(exc, interval):
-            # Callback called for each retry when the connection
-            # can't be established.
+        # Callback called for each retry while the connection
+        # can't be established.
+        def __error_handler(exc, interval):
             self.logger.error("Consumer: Connection Error: %s. " % exc
                             + "Trying again in %d seconds..." % interval)
 
@@ -594,7 +594,7 @@ class Consumer(object):
             conn.connect()
             return conn
 
-        return conn.ensure_connection(_connection_error_handler,
+        return conn.ensure_connection(_error_handler,
                     self.app.conf.BROKER_CONNECTION_MAX_RETRIES)
 
     def stop(self):
