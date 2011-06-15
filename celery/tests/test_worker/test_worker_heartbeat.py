@@ -37,6 +37,9 @@ class MockTimer(object):
 
         return entry((msecs, fun, args, kwargs))
 
+    def cancel(self, entry):
+        entry.cancel()
+
 
 class TestHeart(unittest.TestCase):
 
