@@ -122,8 +122,7 @@ class list_(Command):
         if what not in topics:
             raise ValueError("%r not in %r" % (what, topics.keys()))
         with self.app.broker_connection() as conn:
-            consumer = self.app.amqp.get_task_consumer(conn)
-            consumer.declare()
+            self.app.amqp.get_task_consumer(conn).declare()
             with conn.channel() as channel:
                 return topics[what](channel)
 list_ = command(list_, "list")
