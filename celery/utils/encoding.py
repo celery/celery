@@ -11,6 +11,10 @@ def default_encoding():
 def safe_str(s, errors="replace"):
     if not isinstance(s, basestring):
         return safe_repr(s, errors)
+    return _safe_str(s, errors)
+
+
+def _safe_str(s, errors="replace"):
     encoding = default_encoding()
     try:
         if isinstance(s, unicode):
@@ -24,4 +28,4 @@ def safe_repr(o, errors="replace"):
     try:
         return repr(o)
     except Exception:
-        return safe_str(o, errors)
+        return _safe_str(o, errors)

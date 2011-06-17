@@ -23,7 +23,8 @@ from celery.result import AsyncResult
 from celery.task.base import Task
 from celery.utils import gen_unique_id
 from celery.worker.job import (WorkerTaskTrace, TaskRequest,
-                               InvalidTaskError, execute_and_trace)
+                               InvalidTaskError, execute_and_trace,
+                               default_encode)
 from celery.worker.state import revoked
 
 from celery.tests.compat import catch_warnings
@@ -69,6 +70,26 @@ def mytask_some_kwargs(i, logfile):
 @task_dec(accept_magic_kwargs=True)
 def mytask_raising(i, **kwargs):
     raise KeyError(i)
+
+
+class test_default_encode(unittest.TestCase):
+
+    def test_jython(self):
+        prev, sys.platform = sys.platform, "java 1.6.1"
+        try:
+            self.assertEqual(default_encode("foo"), "foo")
+        finally:
+            sys.platform = prev
+
+    def test_cython(self):
+        prev, sys.platform = sys.platform, "darwin"
+        gfe, sys.getfilesystemencoding = sys.getfilesystemencoding, \
+                                         lambda: "utf-8"
+        try:
+            self.assertEqual(default_encode("foo"), "foo")
+        finally:
+            sys.platform = prev
+            sys.getfilesystemencoding = gfe
 
 
 class test_RetryTaskError(unittest.TestCase):
@@ -197,6 +218,23 @@ class test_TaskRequest(unittest.TestCase):
         tw.on_failure(einfo)
         self.assertIn("task-retried", tw.eventer.sent)
 
+    def test_terminate__task_started(self):
+        pool = Mock()
+        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw.time_start = time.time()
+        tw.worker_pid = 313
+        tw.terminate(pool, signal="KILL")
+        pool.terminate_job.assert_called_with(tw.worker_pid, "KILL")
+
+    def test_terminate__task_reserved(self):
+        pool = Mock()
+        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw.time_start = None
+        tw.terminate(pool, signal="KILL")
+        self.assertFalse(pool.terminate_job.call_count)
+        self.assertTupleEqual(tw._terminate_on_ack, (True, pool, "KILL"))
+        tw.terminate(pool, signal="KILL")
+
     def test_revoked_expires_expired(self):
         tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
         tw.expires = datetime.now() - timedelta(days=1)
@@ -313,6 +351,14 @@ class test_TaskRequest(unittest.TestCase):
             self.assertFalse(tw.acknowledged)
         finally:
             mytask.acks_late = False
+
+    def test_on_accepted_terminates(self):
+        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        pool = Mock()
+        tw.terminate(pool, signal="KILL")
+        self.assertFalse(pool.terminate_job.call_count)
+        tw.on_accepted(pid=314, time_accepted=time.time())
+        pool.terminate_job.assert_called_with(314, "KILL")
 
     def test_on_success_acks_early(self):
         tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})

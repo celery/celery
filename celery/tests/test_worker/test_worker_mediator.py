@@ -2,7 +2,7 @@ from celery.tests.utils import unittest
 
 from Queue import Queue
 
-from mock import Mock
+from mock import Mock, patch
 
 from celery.utils import gen_unique_id
 from celery.worker.mediator import Mediator
@@ -52,6 +52,25 @@ class test_Mediator(unittest.TestCase):
         m.move()
 
         self.assertEqual(got["value"], "George Costanza")
+
+    @patch("os._exit")
+    def test_mediator_crash(self, _exit):
+        ms = [None]
+
+        class _Mediator(Mediator):
+
+            def move(self):
+                try:
+                    raise KeyError("foo")
+                finally:
+                    ms[0]._shutdown.set()
+
+        ready_queue = Queue()
+        ms[0] = m = _Mediator(ready_queue, None)
+        ready_queue.put(MockTask("George Constanza"))
+        m.run()
+
+        self.assertTrue(_exit.call_count)
 
     def test_mediator_move_exception(self):
         ready_queue = Queue()

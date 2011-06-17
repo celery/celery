@@ -17,7 +17,7 @@ from celery.datastructures import ExceptionInfo
 from celery.execute.trace import TaskTrace
 from celery.utils import (noop, kwdict, fun_takes_kwargs,
                           get_symbol_by_name, truncate_text)
-from celery.utils.encoding import safe_repr, safe_str
+from celery.utils.encoding import safe_repr, safe_str, default_encoding
 from celery.utils.timeutils import maybe_iso8601
 from celery.worker import state
 
@@ -52,11 +52,7 @@ class InvalidTaskError(Exception):
 
 
 def default_encode(obj):
-    if sys.platform.startswith("java"):
-        coding = "utf-8"
-    else:
-        coding = sys.getfilesystemencoding()
-    return unicode(obj, coding)
+    return unicode(obj, default_encoding())
 
 
 class WorkerTaskTrace(TaskTrace):
@@ -401,9 +397,7 @@ class TaskRequest(object):
                 self.task.backend.mark_as_revoked(self.task_id)
 
     def terminate(self, pool, signal=None):
-        if self._terminate_on_ack is not None:
-            return
-        elif self.time_start:
+        if self.time_start:
             return pool.terminate_job(self.worker_pid, signal)
         else:
             self._terminate_on_ack = (True, pool, signal)

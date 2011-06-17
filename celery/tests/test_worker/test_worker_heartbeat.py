@@ -51,6 +51,7 @@ class TestHeart(unittest.TestCase):
         self.assertTrue(h.tref)
         h.stop()
         self.assertIsNone(h.tref)
+        h.stop()
 
     @sleepdeprived
     def test_run_manages_cycle(self):

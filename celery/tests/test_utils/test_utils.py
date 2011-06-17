@@ -31,12 +31,6 @@ class test_chunks(unittest.TestCase):
 
 class test_utils(unittest.TestCase):
 
-    def test_maybe_iso8601_datetime(self):
-        from celery.utils.timeutils import maybe_iso8601
-        from datetime import datetime
-        now = datetime.now()
-        self.assertIs(maybe_iso8601(now), now)
-
     def test_get_full_cls_name(self):
         Class = type("Fox", (object, ), {"__module__": "quick.brown"})
         self.assertEqual(utils.get_full_cls_name(Class), "quick.brown.Fox")

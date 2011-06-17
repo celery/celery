@@ -51,7 +51,7 @@ def task_ready(request):
     reserved_requests.discard(request)
 
 
-if os.environ.get("CELERY_BENCH"):
+if os.environ.get("CELERY_BENCH"):  # pragma: no cover
     from time import time
 
     all_count = 0

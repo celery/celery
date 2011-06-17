@@ -1,6 +1,9 @@
 import logging
+import os
 
 from time import time
+
+from mock import Mock, patch
 
 from celery.concurrency.base import BasePool
 from celery.worker import state
@@ -17,6 +20,7 @@ class Object(object):
 
 class MockPool(BasePool):
     shrink_raises_exception = False
+    shrink_raises_ValueError = False
 
     def __init__(self, *args, **kwargs):
         super(MockPool, self).__init__(*args, **kwargs)
@@ -29,6 +33,8 @@ class MockPool(BasePool):
     def shrink(self, n=1):
         if self.shrink_raises_exception:
             raise KeyError("foo")
+        if self.shrink_raises_ValueError:
+            raise ValueError("foo")
         self._pool._processes -= n
 
     @property
@@ -100,3 +106,30 @@ class test_Autoscaler(unittest.TestCase):
         x._last_action = time() - 10000
         x.pool.shrink_raises_exception = True
         x.scale_down(1)
+
+    def test_shrink_raises_ValueError(self):
+        x = autoscale.Autoscaler(self.pool, 10, 3, logger=logger)
+        x.logger = Mock()
+        x.scale_up(3)
+        x._last_action = time() - 10000
+        x.pool.shrink_raises_ValueError = True
+        x.scale_down(1)
+        self.assertTrue(x.logger.debug.call_count)
+
+    @patch("os._exit")
+    def test_thread_crash(self, _exit):
+
+        class _Autoscaler(autoscale.Autoscaler):
+
+            def scale(self):
+                self._shutdown.set()
+                raise OSError("foo")
+
+        x = _Autoscaler(self.pool, 10, 3, logger=logger)
+        x.logger = Mock()
+        x.run()
+        _exit.assert_called_with(1)
+        self.assertTrue(x.logger.error.call_count)
+
+
+

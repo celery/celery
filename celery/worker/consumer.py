@@ -135,24 +135,24 @@ class QoS(object):
         self.value = initial_value
 
     def increment(self, n=1):
-        """Increment the current prefetch count value by one."""
+        """Increment the current prefetch count value by n."""
         with self._mutex:
             if self.value:
                 new_value = self.value + max(n, 0)
                 self.value = self.set(new_value)
-            return self.value
+        return self.value
 
     def _sub(self, n=1):
         assert self.value - n > 1
         self.value -= n
 
     def decrement(self, n=1):
-        """Decrement the current prefetch count value by one."""
+        """Decrement the current prefetch count value by n."""
         with self._mutex:
             if self.value:
                 self._sub(n)
                 self.set(self.value)
-            return self.value
+        return self.value
 
     def decrement_eventually(self, n=1):
         """Decrement the value, but do not update the qos.
