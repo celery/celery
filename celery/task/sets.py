@@ -92,9 +92,6 @@ class subtask(AttributeDict):
         options = dict(self.options, **options)
         return self.type.apply_async(args, kwargs, **options)
 
-    def get_type(self):
-        return self.type
-
     def __reduce__(self):
         # for serialization, the task type is lazily loaded,
         # and not stored in the dict itself.
