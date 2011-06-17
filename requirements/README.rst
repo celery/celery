@@ -16,7 +16,7 @@ Index
 
 * `requirements/py26.txt`
 
-    Extra requirements needed to run on Python 2.4.
+    Extra requirements needed to run on Python 2.6.
 
 * `requirements/test.txt`
 

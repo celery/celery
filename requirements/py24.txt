@@ -1,4 +1,0 @@
-uuid
-importlib
-multiprocessing==2.6.2.1
-pysqlite
