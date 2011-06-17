@@ -29,7 +29,8 @@ class Chord(current_app.Task):
             task.options.update(task_id=uuid, chord=body)
             r.append(current_app.AsyncResult(uuid))
         current_app.TaskSetResult(setid, r).save()
-        self.backend.on_chord_apply(setid, body, interval, max_retries)
+        self.backend.on_chord_apply(setid, body, interval,
+                                    max_retries=max_retries)
         return set.apply_async(taskset_id=setid)
 
 

@@ -162,7 +162,7 @@ class BaseBackend(object):
     def on_chord_part_return(self, task):
         pass
 
-    def on_chord_apply(self, setid, body, **kwargs):
+    def on_chord_apply(self, setid, body, *args, **kwargs):
         from celery.registry import tasks
         tasks["celery.chord_unlock"].apply_async((setid, body, ), kwargs,
                                                  countdown=1)
