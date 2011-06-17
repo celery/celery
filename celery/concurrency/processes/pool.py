@@ -23,7 +23,7 @@ import time
 import signal
 import warnings
 
-from multiprocessing import Process, cpu_count, TimeoutError
+from multiprocessing import Process, cpu_count, TimeoutError, Event
 from multiprocessing import util
 from multiprocessing.util import Finalize, debug
 
@@ -118,7 +118,8 @@ def soft_timeout_sighandler(signum, frame):
 #
 
 
-def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None):
+def worker(inqueue, outqueue, initializer=None, initargs=(), 
+           maxtasks=None, sentinel=None):
     pid = os.getpid()
     assert maxtasks is None or (type(maxtasks) == int and maxtasks > 0)
     put = outqueue.put
@@ -150,6 +151,10 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None):
 
     completed = 0
     while maxtasks is None or (maxtasks and completed < maxtasks):
+        if sentinel is not None and sentinel.is_set():
+            debug('worker got sentinel -- exiting')
+            break
+
         try:
             ready, task = poll(1.0)
             if not ready:
@@ -509,6 +514,7 @@ class Pool(object):
             raise TypeError('initializer must be a callable')
 
         self._pool = []
+        self._poolctrl = {}
         for i in range(processes):
             self._create_worker_process()
 
@@ -546,16 +552,19 @@ class Pool(object):
             )
 
     def _create_worker_process(self):
+        sentinel = Event()
         w = self.Process(
             target=worker,
             args=(self._inqueue, self._outqueue,
                     self._initializer, self._initargs,
-                    self._maxtasksperchild),
+                    self._maxtasksperchild,
+                    sentinel),
             )
         self._pool.append(w)
         w.name = w.name.replace('Process', 'PoolWorker')
         w.daemon = True
         w.start()
+        self._poolctrl[w.pid] = sentinel
         return w
 
     def _join_exited_workers(self, shutdown=False, lost_worker_timeout=10.0):
@@ -587,6 +596,7 @@ class Pool(object):
                 debug('Supervisor: worked %d joined' % i)
                 cleaned.append(worker.pid)
                 del self._pool[i]
+                del self._poolctrl[worker.pid]
         if cleaned:
             for job in self._cache.values():
                 for worker_pid in job.worker_pids():
@@ -829,6 +839,10 @@ class Pool(object):
         for i, p in enumerate(self._pool):
             debug('joining worker %s/%s (%r)' % (i, len(self._pool), p, ))
             p.join()
+
+    def restart(self):
+        for e in self._poolctrl.itervalues():
+            e.set()
 
     @staticmethod
     def _help_stuff_finish(inqueue, task_handler, size):
