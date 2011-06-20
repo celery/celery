@@ -4,7 +4,7 @@ from urllib import urlencode
 from urlparse import urlparse
 try:
     from urlparse import parse_qsl
-except ImportError:
+except ImportError:  # pragma: no cover
     from cgi import parse_qsl  # noqa
 
 from anyjson import deserialize

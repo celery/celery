@@ -3,6 +3,7 @@ from __future__ import with_statement
 import anyjson
 import warnings
 
+from celery import registry
 from celery.app import app_or_default
 from celery.task import Task
 from celery.task.sets import subtask, TaskSet
@@ -88,33 +89,34 @@ class test_subtask(unittest.TestCase):
                          subtask(anyjson.deserialize(
                              anyjson.serialize(s))))
 
+    def test_repr(self):
+        s = MockTask.subtask((2, ), {"cache": True})
+        self.assertIn("2", repr(s))
+        self.assertIn("cache=True", repr(s))
+
+    def test_reduce(self):
+        s = MockTask.subtask((2, ), {"cache": True})
+        cls, args, _ = s.__reduce__()
+        self.assertDictEqual(dict(cls(*args)), dict(s))
+
 
 class test_TaskSet(unittest.TestCase):
 
     def test_interface__compat(self):
-        warnings.resetwarnings()
-
         with catch_warnings(record=True) as log:
             ts = TaskSet(MockTask, [[(2, 2)], [(4, 4)], [(8, 8)]])
-            self.assertTrue(log)
-            self.assertIn("Using this invocation of TaskSet is deprecated",
-                          log[0].message.args[0])
             self.assertListEqual(ts.tasks,
                                  [MockTask.subtask((i, i))
                                     for i in (2, 4, 8)])
-            return ts
-
-        # TaskSet.task (deprecated)
-        with catch_warnings(record=True) as log:
-            ts = TaskSet(MockTask, [[(2, 2)], [(4, 4)], [(8, 8)]])
-            self.assertEqual(ts.task.name, MockTask.name)
+            self.assertIn("Using this invocation of TaskSet is deprecated",
+                          log[0].message.args[0])
+            log[:] = []
+            self.assertEqual(ts.task, registry.tasks[MockTask.name])
             self.assertTrue(log)
             self.assertIn("TaskSet.task is deprecated",
                           log[0].message.args[0])
 
-        # TaskSet.task_name (deprecated)
-        with catch_warnings(record=True) as log:
-            ts = TaskSet(MockTask, [[(2, 2)], [(4, 4)], [(8, 8)]])
+            log[:] = []
             self.assertEqual(ts.task_name, MockTask.name)
             self.assertTrue(log)
             self.assertIn("TaskSet.task_name is deprecated",
@@ -156,6 +158,14 @@ class test_TaskSet(unittest.TestCase):
                         for i in (2, 4, 8)])
         ts.apply_async()
         self.assertEqual(applied[0], 3)
+
+
+        class Publisher(object):
+
+            def send(self, *args, **kwargs):
+                pass
+
+        ts.apply_async(publisher=Publisher())
 
     def test_apply(self):
 
