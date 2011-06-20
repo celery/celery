@@ -423,14 +423,22 @@ def cry():
             main_thread = t
 
     out = StringIO()
+    sep = "=" * 49 + "\n"
     for tid, frame in sys._current_frames().iteritems():
         thread = tmap.get(tid, main_thread)
         out.write("%s\n" % (thread.getName(), ))
-        out.write("=================================================\n")
+        out.write(sep)
         traceback.print_stack(frame, file=out)
-        out.write("=================================================\n")
+        out.write(sep)
         out.write("LOCAL VARIABLES\n")
-        out.write("=================================================\n")
+        out.write(sep)
         pprint(frame.f_locals, stream=out)
         out.write("\n\n")
     return out.getvalue()
+
+
+def reprcall(name, args=(), kwargs=(), sep=', ',
+        kwformat=lambda i: "%s=%r" % i):
+    return "%s(%s%s%s)" % (name, sep.join(map(repr, args)),
+                           kwargs and sep or "",
+                           sep.join(map(kwformat, kwargs.iteritems())))

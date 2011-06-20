@@ -7,7 +7,7 @@ from kombu.utils import cached_property
 from celery import registry
 from celery.app import app_or_default
 from celery.datastructures import AttributeDict
-from celery.utils import gen_unique_id
+from celery.utils import gen_unique_id, reprcall
 from celery.utils.compat import UserList
 
 TASKSET_DEPRECATION_TEXT = """\
@@ -97,10 +97,8 @@ class subtask(AttributeDict):
         # and not stored in the dict itself.
         return (self.__class__, (dict(self), ), None)
 
-    def __repr__(self, kwformat=lambda i: "%s=%r" % i, sep=', '):
-        kw = self["kwargs"]
-        return "%s(%s%s%s)" % (self["task"], sep.join(map(repr, self["args"])),
-                kw and sep or "", sep.join(map(kwformat, kw.iteritems())))
+    def __repr__(self):
+        return reprcall(self["task"], self["args"], self["kwargs"])
 
     @cached_property
     def type(self):
