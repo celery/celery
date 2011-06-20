@@ -378,6 +378,7 @@ class MultiTool(object):
 def multi_args(p, cmd="celeryd", append="", prefix="", suffix=""):
     names = p.values
     options = dict(p.options)
+    passthrough = p.passthrough
     ranges = len(names) == 1
     if ranges:
         try:
@@ -406,7 +407,8 @@ def multi_args(p, cmd="celeryd", append="", prefix="", suffix=""):
                                 "%n": name})
         argv = ([expand(cmd)] +
                 [format_opt(opt, expand(value))
-                        for opt, value in p.optmerge(name, options).items()])
+                        for opt, value in p.optmerge(name, options).items()] +
+                [passthrough])
         if append:
             argv.append(expand(append))
         yield this_name, argv, expand
@@ -418,6 +420,7 @@ class NamespacedOptionParser(object):
         self.args = args
         self.options = {}
         self.values = []
+        self.passthrough = ""
         self.namespaces = defaultdict(lambda: {})
 
         self.parse()
@@ -427,7 +430,10 @@ class NamespacedOptionParser(object):
         pos = 0
         while pos < len(rargs):
             arg = rargs[pos]
-            if arg[0] == "-":
+            if arg == "--":
+                self.passthrough = " ".join(rargs[pos:])
+                break
+            elif arg[0] == "-":
                 if arg[1] == "-":
                     self.process_long_opt(arg[2:])
                 else:
