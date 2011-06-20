@@ -268,17 +268,20 @@ Provides arguments:
 Logging Signals
 ---------------
 
-.. signal:: after_setup_task_logger
+.. signal:: setup_logging
 
-after_setup_task_logger
-~~~~~~~~~~~~~~~~~~~~~~~
+setup_logging
+~~~~~~~~~~~~~
 
-Sent after the setup of every single task logger.
+Celery won't configure the loggers if this signal is connected,
+so you can use this to completely override the logging configuration
+with your own.
+
+If you would like to augment the logging configuration setup by
+Celery then you can use the :signal:`after_setup_logger` and
+:signal:`after_setup_task_logger` signals.
 
 Provides arguments:
-
-* logger
-    The logger object.
 
 * loglevel
     The level of the logging object.
@@ -297,7 +300,8 @@ Provides arguments:
 after_setup_logger
 ~~~~~~~~~~~~~~~~~~
 
-Sent after the setup of every global logger.
+Sent after the setup of every global logger (not task loggers).
+Used to augment logging configuration.
 
 Provides arguments:
 
@@ -315,6 +319,32 @@ Provides arguments:
 
 * colorize
     Specify if log messages are colored or not.
+
+.. signal:: after_setup_task_logger
+
+after_setup_task_logger
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Sent after the setup of every single task logger.
+Used to augment logging configuration.
+
+Provides arguments:
+
+* logger
+    The logger object.
+
+* loglevel
+    The level of the logging object.
+
+* logfile
+    The name of the logfile.
+
+* format
+    The log format string.
+
+* colorize
+    Specify if log messages are colored or not.
+
 
 """
 from celery.utils.dispatch import Signal
