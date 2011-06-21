@@ -15,7 +15,8 @@ from celery.loaders.base import BaseLoader
 from celery.utils.serialization import pickle
 
 from celery.tests import config
-from celery.tests.utils import unittest, mask_modules
+from celery.tests.utils import (unittest, mask_modules, platform_pyimp,
+                                sys_platform, pypy_version)
 
 THIS_IS_A_KEY = "this is a value"
 
@@ -291,60 +292,25 @@ class test_compilation(unittest.TestCase):
 
 class test_pyimplementation(unittest.TestCase):
 
-    @contextmanager
-    def platform_pyimp(self, replace=None):
-        import platform
-        prev = getattr(platform, "python_implementation", None)
-        if replace:
-            platform.python_implementation = replace
-        else:
-            try:
-                delattr(platform, "python_implementation")
-            except AttributeError:
-                pass
-        yield
-        if prev is not None:
-            platform.python_implementation = prev
-
-    @contextmanager
-    def sys_platform(self, value):
-        prev, sys.platform = sys.platform, value
-        yield
-        sys.platform = prev
-
-    @contextmanager
-    def pypy_version(self, value=None):
-        prev = getattr(sys, "pypy_version_info", None)
-        if value:
-            sys.pypy_version_info = value
-        else:
-            try:
-                delattr(sys, "pypy_version_info")
-            except AttributeError:
-                pass
-        yield
-        if prev is not None:
-            sys.pypy_version_info = prev
-
     def test_platform_python_implementation(self):
-        with self.platform_pyimp(lambda: "Xython"):
+        with platform_pyimp(lambda: "Xython"):
             self.assertEqual(pyimplementation(), "Xython")
 
     def test_platform_jython(self):
-        with self.platform_pyimp():
-            with self.sys_platform("java 1.6.51"):
+        with platform_pyimp():
+            with sys_platform("java 1.6.51"):
                 self.assertIn("Jython", pyimplementation())
 
     def test_platform_pypy(self):
-        with self.platform_pyimp():
-            with self.sys_platform("darwin"):
-                with self.pypy_version((1, 4, 3)):
+        with platform_pyimp():
+            with sys_platform("darwin"):
+                with pypy_version((1, 4, 3)):
                     self.assertIn("PyPy", pyimplementation())
-                with self.pypy_version((1, 4, 3, "a4")):
+                with pypy_version((1, 4, 3, "a4")):
                     self.assertIn("PyPy", pyimplementation())
 
     def test_platform_fallback(self):
-        with self.platform_pyimp():
-            with self.sys_platform("darwin"):
-                with self.pypy_version():
+        with platform_pyimp():
+            with sys_platform("darwin"):
+                with pypy_version():
                     self.assertEqual("CPython", pyimplementation())

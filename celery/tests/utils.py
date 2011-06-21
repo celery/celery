@@ -259,3 +259,40 @@ def patch(module, name, mocked):
                 setattr(module, name, prev)
         return __patched
     return _patch
+
+
+@contextmanager
+def platform_pyimp(replace=None):
+    import platform
+    prev = getattr(platform, "python_implementation", None)
+    if replace:
+        platform.python_implementation = replace
+    else:
+        try:
+            delattr(platform, "python_implementation")
+        except AttributeError:
+            pass
+    yield
+    if prev is not None:
+        platform.python_implementation = prev
+
+@contextmanager
+def sys_platform(value):
+    prev, sys.platform = sys.platform, value
+    yield
+    sys.platform = prev
+
+
+@contextmanager
+def pypy_version(value=None):
+    prev = getattr(sys, "pypy_version_info", None)
+    if value:
+        sys.pypy_version_info = value
+    else:
+        try:
+            delattr(sys, "pypy_version_info")
+        except AttributeError:
+            pass
+    yield
+    if prev is not None:
+        sys.pypy_version_info = prev
