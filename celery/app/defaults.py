@@ -9,7 +9,11 @@ DEFAULT_POOL = "processes"
 if is_jython:
     DEFAULT_POOL = "threads"
 elif is_pypy:
-    DEFAULT_POOL = "solo"
+    if sys.pypy_version_info[0:3] < (1, 5, 0):
+        DEFAULT_POOL = "solo"
+    else:
+        DEFAULT_POOL = "processes"
+
 
 DEFAULT_PROCESS_LOG_FMT = """
     [%(asctime)s: %(levelname)s/%(processName)s] %(message)s
