@@ -36,9 +36,10 @@ class Context(threading.local):
         self.__dict__.clear()
 
     def get(self, key, default=None):
-        if not hasattr(self, key):
+        try:
+            return getattr(self, key)
+        except AttributeError:
             return default
-        return getattr(self, key)
 
 
 class TaskType(type):
@@ -65,7 +66,7 @@ class TaskType(type):
         if not attrs.get("name"):
             try:
                 module_name = sys.modules[task_module].__name__
-            except KeyError:
+            except KeyError:  # pragma: no cover
                 # Fix for manage.py shell_plus (Issue #366).
                 module_name = task_module
             attrs["name"] = '.'.join([module_name, name])
