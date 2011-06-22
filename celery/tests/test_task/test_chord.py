@@ -2,9 +2,14 @@ from mock import patch
 
 from celery import current_app
 from celery.task import chords
+from celery.task import TaskSet
 from celery.tests.utils import AppCase, Mock
 
 passthru = lambda x: x
+
+@current_app.task
+def add(x, y):
+    return x + y
 
 
 class test_unlock_chord_task(AppCase):
@@ -47,10 +52,6 @@ class test_chord(AppCase):
 
     def test_apply(self):
 
-        @current_app.task
-        def add(x, y):
-            return x + y
-
         class chord(chords.chord):
             Chord = Mock()
 
@@ -59,3 +60,18 @@ class test_chord(AppCase):
         result = x(body)
         self.assertEqual(result.task_id, body.options["task_id"])
         self.assertTrue(chord.Chord.apply_async.call_count)
+
+
+
+class test_Chord_task(AppCase):
+
+    def test_run(self):
+
+        class Chord(chords.Chord):
+            backend = Mock()
+
+        body = dict()
+        r = Chord()(TaskSet(add.subtask((i, i)) for i in xrange(5)), body)
+        r = Chord()([add.subtask((i, i)) for i in xrange(5)], body)
+        self.assertEqual(Chord.backend.on_chord_apply.call_count, 2)
+
