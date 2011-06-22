@@ -8,7 +8,8 @@ from tempfile import mktemp
 from celery import log
 from celery.log import (setup_logger, setup_task_logger,
                         get_default_logger, get_task_logger,
-                        redirect_stdouts_to_logger, LoggingProxy)
+                        redirect_stdouts_to_logger, LoggingProxy,
+                        setup_logging_subsystem)
 from celery.utils import gen_unique_id
 from celery.utils.compat import _CompatLoggerAdapter
 from celery.tests.utils import (override_stdouts, wrap_logger,
@@ -21,6 +22,18 @@ class test_default_logger(unittest.TestCase):
         self.setup_logger = setup_logger
         self.get_logger = get_default_logger
         log._setup = False
+
+    def test_setup_logging_subsystem_colorize(self):
+        setup_logging_subsystem(colorize=None)
+        setup_logging_subsystem(colorize=True)
+
+    def test_setup_logging_subsystem_no_mputil(self):
+        mputil, log.mputil = log.mputil, None
+        log.mputil
+        try:
+            log.setup_logging_subsystem()
+        finally:
+            log.mputil = mputil
 
     def _assertLog(self, logger, logmsg, loglevel=logging.ERROR):
 
@@ -38,10 +51,10 @@ class test_default_logger(unittest.TestCase):
 
     def test_setup_logger(self):
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
-                                   root=False)
+                                   root=False, colorize=True)
         set_handlers(logger, [])
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
-                                   root=False)
+                                   root=False, colorize=None)
         self.assertIs(get_handlers(logger)[0].stream, sys.__stderr__,
                 "setup_logger logs to stderr without logfile argument.")
         self.assertDidLogFalse(logger, "Logging something",

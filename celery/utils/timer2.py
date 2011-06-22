@@ -77,15 +77,14 @@ class Schedule(object):
         :keyword priority: Unused.
 
         """
+        if eta is None:  # schedule now
+            eta = datetime.now()
+
         try:
             eta = to_timestamp(eta)
         except OverflowError:
             if not self.handle_error(sys.exc_info()):
                 raise
-
-        if eta is None:
-            # schedule now.
-            eta = time()
 
         heapq.heappush(self._queue, (eta, priority, entry))
         return entry
@@ -184,12 +183,12 @@ class Timer(Thread):
                 if delay:
                     if self.on_tick:
                         self.on_tick(delay)
-                    if sleep is None:
+                    if sleep is None:  # pragma: no cover
                         break
                     sleep(delay)
             try:
                 self._stopped.set()
-            except TypeError:           # pragma: no cover
+            except TypeError:  # pragma: no cover
                 # we lost the race at interpreter shutdown,
                 # so gc collected built-in modules.
                 pass

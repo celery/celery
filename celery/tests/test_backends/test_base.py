@@ -1,3 +1,5 @@
+from __future__ import with_statement
+
 import sys
 import types
 
@@ -12,7 +14,7 @@ from celery.utils.serialization import get_pickleable_exception as gpe
 
 from celery import states
 from celery.backends.base import BaseBackend, KeyValueStoreBackend
-from celery.backends.base import BaseDictBackend
+from celery.backends.base import BaseDictBackend, DisabledBackend
 from celery.utils import gen_unique_id
 
 from celery.tests.utils import unittest
@@ -54,6 +56,10 @@ class test_BaseBackend_interface(unittest.TestCase):
         self.assertRaises(NotImplementedError,
                 b.store_result, "SOMExx-N0nex1stant-IDxx-", 42, states.SUCCESS)
 
+    def test_mark_as_started(self):
+        self.assertRaises(NotImplementedError,
+                b.mark_as_started, "SOMExx-N0nex1stant-IDxx-")
+
     def test_reload_task_result(self):
         self.assertRaises(NotImplementedError,
                 b.reload_task_result, "SOMExx-N0nex1stant-IDxx-")
@@ -85,6 +91,15 @@ class test_BaseBackend_interface(unittest.TestCase):
     def test_forget(self):
         self.assertRaises(NotImplementedError,
                 b.forget, "SOMExx-N0nex1stant-IDxx-")
+
+    def test_on_chord_apply(self, unlock="celery.chord_unlock"):
+        from celery.registry import tasks
+        p, tasks[unlock] = tasks.get(unlock), Mock()
+        try:
+            b.on_chord_apply("dakj221", "sdokqweok")
+            self.assertTrue(tasks[unlock].apply_async.call_count)
+        finally:
+            tasks[unlock] = p
 
 
 class test_exception_pickle(unittest.TestCase):
@@ -130,6 +145,7 @@ class test_prepare_exception(unittest.TestCase):
 
 
 class KVBackend(KeyValueStoreBackend):
+    mget_returns_dict = False
 
     def __init__(self, *args, **kwargs):
         self.db = {}
@@ -140,6 +156,12 @@ class KVBackend(KeyValueStoreBackend):
 
     def set(self, key, value):
         self.db[key] = value
+
+    def mget(self, keys):
+        if self.mget_returns_dict:
+            return dict((key, self.get(key)) for key in keys)
+        else:
+            return [self.get(key) for key in keys]
 
     def delete(self, key):
         self.db.pop(key, None)
@@ -178,6 +200,11 @@ class test_BaseDictBackend(unittest.TestCase):
         b.save_taskset("foofoo", "xxx")
         b._save_taskset.assert_called_with("foofoo", "xxx")
 
+    def test_forget_interface(self):
+        b = BaseDictBackend()
+        with self.assertRaises(NotImplementedError):
+            b.forget("foo")
+
     def test_restore_taskset(self):
         self.assertIsNone(self.b.restore_taskset("missing"))
         self.assertIsNone(self.b.restore_taskset("missing"))
@@ -209,6 +236,23 @@ class test_KeyValueStoreBackend(unittest.TestCase):
         self.assertEqual(self.b.get_status(tid), states.SUCCESS)
         self.b.forget(tid)
         self.assertEqual(self.b.get_status(tid), states.PENDING)
+
+    def test_strip_prefix(self):
+        x = self.b.get_key_for_task("x1b34")
+        self.assertEqual(self.b._strip_prefix(x), "x1b34")
+        self.assertEqual(self.b._strip_prefix("x1b34"), "x1b34")
+
+    def test_get_many(self):
+        for is_dict in True, False:
+            self.b.mget_returns_dict = is_dict
+            ids = dict((gen_unique_id(), i) for i in xrange(10))
+            for id, i in ids.items():
+                self.b.mark_as_done(id, i)
+            it = self.b.get_many(ids.keys())
+            for i, (got_id, got_state) in enumerate(it):
+                self.assertEqual(got_state["result"], ids[got_id])
+            self.assertEqual(i, 9)
+            self.assertTrue(list(self.b.get_many(ids.keys())))
 
     def test_get_missing_meta(self):
         self.assertIsNone(self.b.get_result("xxx-missing"))
@@ -242,6 +286,20 @@ class test_KeyValueStoreBackend_interface(unittest.TestCase):
         self.assertRaises(NotImplementedError, KeyValueStoreBackend().delete,
                 "a")
 
+    def test_mget(self):
+        self.assertRaises(NotImplementedError, KeyValueStoreBackend().mget,
+                ["a"])
+
     def test_forget(self):
         self.assertRaises(NotImplementedError, KeyValueStoreBackend().forget,
                 "a")
+
+
+class test_DisabledBackend(unittest.TestCase):
+
+    def test_store_result(self):
+        DisabledBackend().store_result()
+
+    def test_is_disabled(self):
+        with self.assertRaises(NotImplementedError):
+            DisabledBackend().get_status("foo")

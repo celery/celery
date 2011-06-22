@@ -2,7 +2,7 @@ from celery import states
 from celery.app import app_or_default
 from celery.utils import gen_unique_id
 from celery.utils.serialization import pickle
-from celery.result import AsyncResult, EagerResult, TaskSetResult
+from celery.result import AsyncResult, EagerResult, TaskSetResult, ResultSet
 from celery.exceptions import TimeoutError
 from celery.task.base import Task
 
@@ -93,6 +93,12 @@ class TestAsyncResult(unittest.TestCase):
         self.assertEqual(repr(pending_res), "<AsyncResult: %s>" % (
                 pending_id))
 
+    def test_hash(self):
+        self.assertEqual(hash(AsyncResult("x0w991")),
+                         hash(AsyncResult("x0w991")))
+        self.assertNotEqual(hash(AsyncResult("x0w991")),
+                            hash(AsyncResult("x1w991")))
+
     def test_get_traceback(self):
         ok_res = AsyncResult(self.task1["id"])
         nok_res = AsyncResult(self.task3["id"])
@@ -136,6 +142,26 @@ class TestAsyncResult(unittest.TestCase):
         self.assertFalse(AsyncResult(self.task4["id"]).ready())
 
         self.assertFalse(AsyncResult(gen_unique_id()).ready())
+
+
+class test_ResultSet(unittest.TestCase):
+
+    def test_add_discard(self):
+        x = ResultSet([])
+        x.add(AsyncResult("1"))
+        self.assertIn(AsyncResult("1"), x.results)
+        x.discard(AsyncResult("1"))
+        x.discard(AsyncResult("1"))
+        x.discard("1")
+        self.assertNotIn(AsyncResult("1"), x.results)
+
+        x.update([AsyncResult("2")])
+
+    def test_clear(self):
+        x = ResultSet([])
+        r = x.results
+        x.clear()
+        self.assertIs(x.results, r)
 
 
 class MockAsyncResultFailure(AsyncResult):

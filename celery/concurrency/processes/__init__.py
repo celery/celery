@@ -11,7 +11,7 @@ from os import kill as _kill
 from celery.concurrency.base import BasePool
 from celery.concurrency.processes.pool import Pool, RUN
 
-if platform.system() == "Windows":
+if platform.system() == "Windows":  # pragma: no cover
     # On Windows os.kill calls TerminateProcess which cannot be
     # handled by # any process, so this is needed to terminate the task
     # *and its children* (if any).

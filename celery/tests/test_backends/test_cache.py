@@ -1,6 +1,9 @@
+from __future__ import with_statement
+
 import sys
 import types
-from celery.tests.utils import unittest
+
+from contextlib import contextmanager
 
 from celery import states
 from celery.backends.cache import CacheBackend, DummyClient
@@ -8,7 +11,7 @@ from celery.exceptions import ImproperlyConfigured
 from celery.result import AsyncResult
 from celery.utils import gen_unique_id
 
-from celery.tests.utils import mask_modules
+from celery.tests.utils import unittest, mask_modules, reset_modules
 
 
 class SomeClass(object):
@@ -54,6 +57,14 @@ class test_CacheBackend(unittest.TestCase):
         self.assertEqual(tb.get_status(tid3), states.FAILURE)
         self.assertIsInstance(tb.get_result(tid3), KeyError)
 
+    def test_mget(self):
+        tb = CacheBackend(backend="memory://")
+        tb.set("foo", 1)
+        tb.set("bar", 2)
+
+        self.assertDictEqual(tb.mget(["foo", "bar"]),
+                             {"foo": 1, "bar": 2})
+
     def test_forget(self):
         tb = CacheBackend(backend="memory://")
         tid = gen_unique_id()
@@ -81,6 +92,7 @@ class MyClient(DummyClient):
 
 class test_get_best_memcache(unittest.TestCase):
 
+    @contextmanager
     def mock_memcache(self):
         memcache = types.ModuleType("memcache")
         memcache.Client = MyClient
@@ -89,8 +101,8 @@ class test_get_best_memcache(unittest.TestCase):
         yield True
         if prev is not None:
             sys.modules["memcache"] = prev
-        yield True
 
+    @contextmanager
     def mock_pylibmc(self):
         pylibmc = types.ModuleType("pylibmc")
         pylibmc.Client = MyClient
@@ -100,43 +112,41 @@ class test_get_best_memcache(unittest.TestCase):
         yield True
         if prev is not None:
             sys.modules["pylibmc"] = prev
-        yield True
 
     def test_pylibmc(self):
-        pylibmc = self.mock_pylibmc()
-        pylibmc.next()
-        from celery.backends import cache
-        cache._imp = [None]
-        self.assertEqual(cache.get_best_memcache().__module__, "pylibmc")
-        pylibmc.next()
+        with reset_modules("celery.backends.cache"):
+            with self.mock_pylibmc():
+                from celery.backends import cache
+                cache._imp = [None]
+                self.assertEqual(cache.get_best_memcache().__module__,
+                                 "pylibmc")
 
-    def xxx_memcache(self):
+    def test_memcache(self):
+        with self.mock_memcache():
+            with reset_modules("celery.backends.cache"):
+                with mask_modules("pylibmc"):
+                    from celery.backends import cache
+                    cache._imp = [None]
+                    self.assertEqual(cache.get_best_memcache().__module__,
+                                     "memcache")
 
-        def with_no_pylibmc():
-            from celery.backends import cache
-            cache._imp = [None]
-            self.assertEqual(cache.get_best_memcache().__module__, "memcache")
+    def test_no_implementations(self):
+        with mask_modules("pylibmc", "memcache"):
+            with reset_modules("celery.backends.cache"):
+                from celery.backends import cache
+                cache._imp = [None]
+                with self.assertRaises(ImproperlyConfigured):
+                    cache.get_best_memcache()
 
-        context = mask_modules("pylibmc")
-        context.__enter__()
-        try:
-            memcache = self.mock_memcache()
-            memcache.next()
-            with_no_pylibmc()
-            memcache.next()
-        finally:
-            context.__exit__(None, None, None)
+    def test_cached(self):
+        with self.mock_pylibmc():
+            with reset_modules("celery.backends.cache"):
+                from celery.backends import cache
+                cache.get_best_memcache(behaviors={"foo": "bar"})
+                self.assertTrue(cache._imp[0])
+                cache.get_best_memcache()
 
-    def xxx_no_implementations(self):
-
-        def with_no_memcache_libs():
-            from celery.backends import cache
-            cache._imp = [None]
-            self.assertRaises(ImproperlyConfigured, cache.get_best_memcache)
-
-        context = mask_modules("pylibmc", "memcache")
-        context.__enter__()
-        try:
-            with_no_memcache_libs()
-        finally:
-            context.__exit__(None, None, None)
+    def test_backends(self):
+        from celery.backends.cache import backends
+        for name, fun in backends.items():
+            self.assertTrue(fun())

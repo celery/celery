@@ -406,7 +406,7 @@ def import_from_cwd(module, imp=None):
         return imp(module)
 
 
-def cry():
+def cry():  # pragma: no cover
     """Return stacktrace of all active threads.
 
     From https://gist.github.com/737056
