@@ -9,12 +9,13 @@
     :maxdepth: 1
 
     celery.app
+    celery.app.task
     celery.app.amqp
     celery.app.defaults
     celery.task
     celery.task.base
     celery.task.sets
-    celery.task.chord
+    celery.task.chords
     celery.result
     celery.task.control
     celery.task.http

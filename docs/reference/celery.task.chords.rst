@@ -1,11 +1,11 @@
 ======================================================
- celery.task.chord
+ celery.task.chords
 ======================================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.task.chord
+.. currentmodule:: celery.task.chords
 
-.. automodule:: celery.task.chord
+.. automodule:: celery.task.chords
     :members:
     :undoc-members:

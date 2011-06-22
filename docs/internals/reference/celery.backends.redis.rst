@@ -1,11 +1,11 @@
 ==========================================
- celery.backends.pyredis
+ celery.backends.redis
 ==========================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.backends.pyredis
+.. currentmodule:: celery.backends.redis
 
-.. automodule:: celery.backends.pyredis
+.. automodule:: celery.backends.redis
     :members:
     :undoc-members:

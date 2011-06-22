@@ -31,7 +31,7 @@
     celery.backends.cache
     celery.backends.amqp
     celery.backends.mongodb
-    celery.backends.pyredis
+    celery.backends.redis
     celery.backends.cassandra
     celery.backends.tyrant
     celery.execute.trace
