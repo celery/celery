@@ -5,7 +5,7 @@
 import os
 import sys
 
-VERSION = (2, 3, 0, "rc1")
+VERSION = (2, 3, 0, "rc2")
 
 __version__ = ".".join(map(str, VERSION[0:3])) + "".join(VERSION[3:])
 __author__ = "Ask Solem"
