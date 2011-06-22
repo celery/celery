@@ -37,9 +37,9 @@ Results
 You probably also want to store results in Redis::
 
     CELERY_RESULT_BACKEND = "redis"
-    REDIS_HOST = "localhost"
-    REDIS_PORT = 6379
-    REDIS_DB = 0
+    CELERY_REDIS_HOST = "localhost"
+    CELERY_REDIS_PORT = 6379
+    CELERY_REDIS_DB = 0
 
 For a complete list of options supported by the Redis result backend see
 :ref:`conf-redis-result-backend`

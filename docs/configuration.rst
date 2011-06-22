@@ -349,31 +349,31 @@ Redis backend settings
 
 This backend requires the following configuration directives to be set.
 
-.. setting:: REDIS_HOST
+.. setting:: CELERY_REDIS_HOST
 
-REDIS_HOST
-~~~~~~~~~~
+CELERY_REDIS_HOST
+~~~~~~~~~~~~~~~~~
 
 Host name of the Redis database server. e.g. `"localhost"`.
 
-.. setting:: REDIS_PORT
+.. setting:: CELERY_REDIS_PORT
 
-REDIS_PORT
-~~~~~~~~~~
+CELERY_REDIS_PORT
+~~~~~~~~~~~~~~~~~
 
 Port to the Redis database server. e.g. `6379`.
 
-.. setting:: REDIS_DB
+.. setting:: CELERY_REDIS_DB
 
-REDIS_DB
-~~~~~~~~
+CELERY_REDIS_DB
+~~~~~~~~~~~~~~~
 
 Database number to use. Default is 0
 
-.. setting:: REDIS_PASSWORD
+.. setting:: CELERY_REDIS_PASSWORD
 
-REDIS_PASSWORD
-~~~~~~~~~~~~~~
+CELERY_REDIS_PASSWORD
+~~~~~~~~~~~~~~~~~~~~~
 
 Password used to connect to the database.
 
@@ -383,9 +383,9 @@ Example configuration
 .. code-block:: python
 
     CELERY_RESULT_BACKEND = "redis"
-    REDIS_HOST = "localhost"
-    REDIS_PORT = 6379
-    REDIS_DB = 0
+    CELERY_REDIS_HOST = "localhost"
+    CELERY_REDIS_PORT = 6379
+    CELERY_REDIS_DB = 0
 
 .. _conf-mongodb-result-backend:
 

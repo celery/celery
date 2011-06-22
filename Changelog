@@ -114,6 +114,21 @@ News
         Soft time limits will still not work on Windows or other platforms
         that do not have the ``SIGUSR1`` signal.
 
+* Redis backend configuration directive names changed to include the
+   ``CELERY_`` prefix.
+
+
+    =====================================  ===================================
+    **Old setting name**                   **Replace with**
+    =====================================  ===================================
+    `REDIS_HOST`                           `CELERY_REDIS_HOST`
+    `REDIS_PORT`                           `CELERY_REDIS_PORT`
+    `REDIS_DB`                             `CELERY_REDIS_DB`
+    `REDIS_PASSWORD`                       `CELERY_REDIS_PASSWORD`
+    =====================================  ===================================
+
+    The old names are still supported, but pending deprecation.
+
 .. _version-2.2.7:
 
 2.2.7
@@ -3267,7 +3282,7 @@ Fixes
 
 * Caches are now also limited in size, so their memory usage doesn't grow
   out of control.
-  
+
     You can set the maximum number of results the cache
     can hold using the :setting:`CELERY_MAX_CACHED_RESULTS` setting (the
     default is five thousand results). In addition, you can refetch already
