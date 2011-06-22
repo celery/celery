@@ -50,7 +50,6 @@
     celery.utils.compat
     celery.utils.mail
     celery.utils.patch
-    celery.utils.functional
     celery.utils.serialization
     celery.utils.timer2
     celery.utils.dispatch
