@@ -987,6 +987,14 @@ EMAIL_PORT
 
 The port the mail server is listening on.  Default is `25`.
 
+
+.. setting:: EMAIL_USE_SSL
+
+EMAIL_USE_SSL
+~~~~~~~~~~~~~
+
+Use SSL when connecting to the SMTP server.  Disabled by default.
+
 .. setting:: EMAIL_TIMEOUT
 
 EMAIL_TIMEOUT
