@@ -8,7 +8,7 @@ from mock import Mock
 
 from celery.utils.timer2 import Timer
 
-from celery.app import app_or_default
+from celery import current_app
 from celery.datastructures import AttributeDict
 from celery.task import task
 from celery.registry import tasks
@@ -16,7 +16,9 @@ from celery.task import PingTask
 from celery.utils import gen_unique_id
 from celery.worker.buckets import FastQueue
 from celery.worker.job import TaskRequest
+from celery.worker import state
 from celery.worker.state import revoked
+from celery.worker.control import builtins
 from celery.worker.control.registry import Panel
 
 hostname = socket.gethostname()
@@ -36,7 +38,7 @@ class Consumer(object):
                                          args=(2, 2),
                                          kwargs={}))
         self.eta_schedule = Timer()
-        self.app = app_or_default()
+        self.app = current_app
         self.event_dispatcher = Mock()
 
         from celery.concurrency.base import BasePool
@@ -50,7 +52,7 @@ class Consumer(object):
 class test_ControlPanel(unittest.TestCase):
 
     def setUp(self):
-        self.app = app_or_default()
+        self.app = current_app
         self.panel = self.create_panel(consumer=Consumer())
 
     def create_state(self, **kwargs):
@@ -71,7 +73,8 @@ class test_ControlPanel(unittest.TestCase):
         self.assertTrue(consumer.event_dispatcher.enable.call_count)
         self.assertIn(("worker-online", ),
                 consumer.event_dispatcher.send.call_args)
-        self.assertTrue(panel.handle("enable_events")["ok"])
+        consumer.event_dispatcher.enabled = True
+        self.assertIn("already enabled", panel.handle("enable_events")["ok"])
 
     def test_disable_events(self):
         consumer = Consumer()
@@ -81,7 +84,8 @@ class test_ControlPanel(unittest.TestCase):
         self.assertTrue(consumer.event_dispatcher.disable.call_count)
         self.assertIn(("worker-offline", ),
                       consumer.event_dispatcher.send.call_args)
-        self.assertTrue(panel.handle("disable_events")["ok"])
+        consumer.event_dispatcher.enabled = False
+        self.assertIn("already disabled", panel.handle("disable_events")["ok"])
 
     def test_heartbeat(self):
         consumer = Consumer()
@@ -90,6 +94,41 @@ class test_ControlPanel(unittest.TestCase):
         panel.handle("heartbeat")
         self.assertIn(("worker-heartbeat", ),
                       consumer.event_dispatcher.send.call_args)
+
+    def test_time_limit(self):
+        panel = self.create_panel(consumer=Mock())
+        th, ts = mytask.time_limit, mytask.soft_time_limit
+        try:
+            r = panel.handle("time_limit", arguments=dict(
+                task_name=mytask.name, hard=30, soft=10))
+            self.assertEqual((mytask.time_limit, mytask.soft_time_limit),
+                             (30, 10))
+            self.assertIn("ok", r)
+            r = panel.handle("time_limit", arguments=dict(
+                task_name=mytask.name, hard=None, soft=None))
+            self.assertEqual((mytask.time_limit, mytask.soft_time_limit),
+                             (None, None))
+            self.assertIn("ok", r)
+
+            r = panel.handle("time_limit", arguments=dict(
+                task_name="248e8afya9s8dh921eh928", hard=30))
+            self.assertIn("error", r)
+        finally:
+            mytask.time_limit, mytask.soft_time_limit = th, ts
+
+    def test_active_queues(self):
+        import kombu
+
+        x = kombu.Consumer(current_app.broker_connection(),
+                           [kombu.Queue("foo", kombu.Exchange("foo"), "foo"),
+                            kombu.Queue("bar", kombu.Exchange("bar"), "bar")],
+                           auto_declare=False)
+        consumer = Mock()
+        consumer.task_consumer = x
+        panel = self.create_panel(consumer=consumer)
+        r = panel.handle("active_queues")
+        self.assertListEqual(list(sorted(q["name"] for q in r)),
+                             ["bar", "foo"])
 
     def test_dump_tasks(self):
         info = "\n".join(self.panel.handle("dump_tasks"))
@@ -200,7 +239,7 @@ class test_ControlPanel(unittest.TestCase):
         self.assertFalse(panel.handle("dump_reserved"))
 
     def test_rate_limit_when_disabled(self):
-        app = app_or_default()
+        app = current_app
         app.conf.CELERY_DISABLE_RATE_LIMITS = True
         try:
             e = self.panel.handle("rate_limit", arguments=dict(
@@ -284,6 +323,21 @@ class test_ControlPanel(unittest.TestCase):
              "arguments": {"task_id": uuid + "xxx"}}
         self.panel.dispatch_from_message(m)
         self.assertNotIn(uuid + "xxx", revoked)
+
+    def test_revoke_terminate(self):
+        request = Mock()
+        request.task_id = uuid = gen_unique_id()
+        state.active_requests.add(request)
+        try:
+            r = builtins.revoke(Mock(), uuid, terminate=True)
+            self.assertIn(uuid, revoked)
+            self.assertTrue(request.terminate.call_count)
+            self.assertIn("terminated", r["ok"])
+            # unknown task id only revokes
+            r = builtins.revoke(Mock(), gen_unique_id(), terminate=True)
+            self.assertIn("revoked", r["ok"])
+        finally:
+            state.active_requests.discard(request)
 
     def test_ping(self):
         m = {"method": "ping",

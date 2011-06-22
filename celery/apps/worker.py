@@ -49,6 +49,11 @@ def cpu_count():
     return 2
 
 
+def get_process_name():
+    if multiprocessing is not None:
+        return multiprocessing.current_process().name
+
+
 class Worker(object):
     WorkController = WorkController
 
@@ -274,9 +279,7 @@ class Worker(object):
 def install_worker_int_handler(worker):
 
     def _stop(signum, frame):
-        process_name = None
-        if multiprocessing:
-            process_name = multiprocessing.current_process().name
+        process_name = get_process_name()
         if not process_name or process_name == "MainProcess":
             worker.logger.warn(
                 "celeryd: Hitting Ctrl+C again will terminate "
@@ -293,9 +296,7 @@ def install_worker_int_handler(worker):
 def install_worker_int_again_handler(worker):
 
     def _stop(signum, frame):
-        process_name = None
-        if multiprocessing:
-            process_name = multiprocessing.current_process().name
+        process_name = get_process_name()
         if not process_name or process_name == "MainProcess":
             worker.logger.warn("celeryd: Cold shutdown (%s)" % (
                 process_name))
@@ -308,9 +309,7 @@ def install_worker_int_again_handler(worker):
 def install_worker_term_handler(worker):
 
     def _stop(signum, frame):
-        process_name = None
-        if multiprocessing:
-            process_name = multiprocessing.current_process().name
+        process_name = get_process_name()
         if not process_name or process_name == "MainProcess":
             worker.logger.warn("celeryd: Warm shutdown (%s)" % (
                 process_name))

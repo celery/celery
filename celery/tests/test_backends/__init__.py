@@ -1,3 +1,5 @@
+from __future__ import with_statement
+
 from celery.tests.utils import unittest
 
 from celery import backends
@@ -20,3 +22,7 @@ class TestBackends(unittest.TestCase):
         self.assertIn("amqp", backends._backend_cache)
         amqp_backend = backends.get_backend_cls("amqp")
         self.assertIs(amqp_backend, backends._backend_cache["amqp"])
+
+    def test_unknown_backend(self):
+        with self.assertRaises(ValueError):
+            backends.get_backend_cls("fasodaopjeqijwqe")

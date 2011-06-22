@@ -296,3 +296,27 @@ def pypy_version(value=None):
     yield
     if prev is not None:
         sys.pypy_version_info = prev
+
+
+@contextmanager
+def reset_modules(*modules):
+    prev = dict((k, sys.modules.pop(k)) for k in modules if k in sys.modules)
+    yield
+    sys.modules.update(prev)
+
+
+@contextmanager
+def patch_modules(*modules):
+    from types import ModuleType
+
+    prev = {}
+    for mod in modules:
+        prev[mod], sys.modules[mod] = sys.modules[mod], ModuleType(mod)
+    yield
+    for name, mod in prev.iteritems():
+        if mod is None:
+            sys.modules.pop(name, None)
+        else:
+            sys.modules[name] = mod
+
+

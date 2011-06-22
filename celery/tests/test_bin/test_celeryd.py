@@ -11,6 +11,7 @@ try:
 except ImportError:
     current_process = None  # noqa
 
+from mock import patch
 from nose import SkipTest
 from kombu.tests.utils import redirect_stdouts
 
@@ -22,13 +23,14 @@ from celery.apps import worker as cd
 from celery.bin.celeryd import WorkerCommand, windows_main, \
                                main as celeryd_main
 from celery.exceptions import ImproperlyConfigured
-from celery.utils import patch
 
 from celery.tests.compat import catch_warnings
-from celery.tests.utils import AppCase, StringIO
+from celery.tests.utils import (AppCase, StringIO, mask_modules,
+                                reset_modules, patch_modules)
 
 
-patch.ensure_process_aware_logger()
+from celery.utils.patch import ensure_process_aware_logger
+ensure_process_aware_logger()
 
 
 def disable_stdouts(fun):
@@ -58,6 +60,39 @@ class Worker(cd.Worker):
     WorkController = _WorkController
 
 
+class test_compilation(AppCase):
+
+    def test_no_multiprocessing(self):
+        with mask_modules("multiprocessing"):
+            with reset_modules("celery.apps.worker"):
+                from celery.apps.worker import multiprocessing
+                self.assertIsNone(multiprocessing)
+
+    def test_cpu_count_no_mp(self):
+        with mask_modules("multiprocessing"):
+            with reset_modules("celery.apps.worker"):
+                from celery.apps.worker import cpu_count
+                self.assertEqual(cpu_count(), 2)
+
+    @patch("multiprocessing.cpu_count")
+    def test_no_cpu_count(self, pcount):
+        pcount.side_effect = NotImplementedError("cpu_count")
+        from celery.apps.worker import cpu_count
+        self.assertEqual(cpu_count(), 2)
+        pcount.assert_called_with()
+
+    def test_process_name(self):
+        with mask_modules("multiprocessing"):
+            with reset_modules("celery.apps.worker"):
+                from celery.apps.worker import get_process_name
+                self.assertIsNone(get_process_name())
+
+    @patch("multiprocessing.current_process")
+    def test_process_name(self, current_process):
+            from celery.apps.worker import get_process_name
+            self.assertTrue(get_process_name())
+
+
 class test_Worker(AppCase):
     Worker = Worker
 
@@ -68,6 +103,27 @@ class test_Worker(AppCase):
         worker.init_queues()
         self.assertEqual(worker.use_queues, ["foo", "bar", "baz"])
         self.assertTrue("foo" in celery.amqp.queues)
+
+    @disable_stdouts
+    def test_windows_B_option(self):
+        celery = Celery(set_as_current=False)
+        celery.IS_WINDOWS = True
+        with self.assertRaises(SystemExit):
+            celery.Worker(run_clockservice=True)
+
+    def test_tasklist(self):
+        celery = Celery(set_as_current=False)
+        worker = celery.Worker()
+        self.assertTrue(worker.tasklist(include_builtins=True))
+        worker.tasklist(include_builtins=False)
+
+    def test_extra_info(self):
+        celery = Celery(set_as_current=False)
+        worker = celery.Worker()
+        worker.loglevel = logging.WARNING
+        self.assertFalse(worker.extra_info())
+        worker.loglevel = logging.INFO
+        self.assertTrue(worker.extra_info())
 
     @disable_stdouts
     def test_loglevel_string(self):
@@ -109,6 +165,8 @@ class test_Worker(AppCase):
         worker.loglevel = logging.DEBUG
         self.assertTrue(worker.startup_info())
         worker.loglevel = logging.INFO
+        self.assertTrue(worker.startup_info())
+        worker.autoscale = 13, 10
         self.assertTrue(worker.startup_info())
 
     @disable_stdouts
