@@ -25,7 +25,8 @@ from celery.bin.celeryd import WorkerCommand, windows_main, \
 from celery.exceptions import ImproperlyConfigured
 
 from celery.tests.compat import catch_warnings
-from celery.tests.utils import AppCase, StringIO, mask_modules, reset_modules
+from celery.tests.utils import (AppCase, StringIO, mask_modules,
+                                reset_modules, skip_unless_module)
 
 
 from celery.utils.patch import ensure_process_aware_logger
@@ -73,12 +74,17 @@ class test_compilation(AppCase):
                 from celery.apps.worker import cpu_count
                 self.assertEqual(cpu_count(), 2)
 
-    @patch("multiprocessing.cpu_count")
+    @skip_unless_module("multiprocessing")
     def test_no_cpu_count(self, pcount):
-        pcount.side_effect = NotImplementedError("cpu_count")
-        from celery.apps.worker import cpu_count
-        self.assertEqual(cpu_count(), 2)
-        pcount.assert_called_with()
+
+        @patch("multiprocessing.cpu_count")
+        def _do_test():
+            pcount.side_effect = NotImplementedError("cpu_count")
+            from celery.apps.worker import cpu_count
+            self.assertEqual(cpu_count(), 2)
+            pcount.assert_called_with()
+
+        _do_test()
 
     def test_process_name_wo_mp(self):
         with mask_modules("multiprocessing"):
@@ -86,10 +92,15 @@ class test_compilation(AppCase):
                 from celery.apps.worker import get_process_name
                 self.assertIsNone(get_process_name())
 
-    @patch("multiprocessing.current_process")
+    @skip_unless_module("multiprocessing")
     def test_process_name_w_mp(self, current_process):
+
+        @patch("multiprocessing.current_process")
+        def _do_test():
             from celery.apps.worker import get_process_name
             self.assertTrue(get_process_name())
+
+        _do_test()
 
 
 class test_Worker(AppCase):

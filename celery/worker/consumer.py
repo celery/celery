@@ -1,3 +1,5 @@
+from __future__ import absolute_import, with_statement
+
 """
 
 This module contains the component responsible for consuming messages

@@ -189,11 +189,15 @@ class test_TaskPool(unittest.TestCase):
         pool.start()
         pool.apply_async(lambda x: x, (2, ), {})
 
-    @patch("celery.concurrency.processes._kill")
     def test_terminate_job(self, _kill):
-        pool = TaskPool(10)
-        pool.terminate_job(1341)
-        _kill.assert_called_with(1341, signal.SIGTERM)
+
+        @patch("celery.concurrency.processes._kill")
+        def _do_test():
+            pool = TaskPool(10)
+            pool.terminate_job(1341)
+            _kill.assert_called_with(1341, signal.SIGTERM)
+
+        _do_test()
 
     def test_grow_shrink(self):
         pool = TaskPool(10)

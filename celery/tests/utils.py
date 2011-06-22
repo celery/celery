@@ -37,6 +37,24 @@ class Mock(mock.Mock):
             setattr(self, attr_name, attr_value)
 
 
+def skip_unless_module(module):
+
+    def _inner(fun):
+
+        @wraps(fun)
+        def __inner(*args, **kwargs):
+            try:
+                importlib.import_module(module)
+            except ImportError:
+                raise SkipTest("Does not have %s" % (module, ))
+
+            return fun(*args, **kwargs)
+
+        return __inner
+    return _inner
+
+
+
 class AppCase(unittest.TestCase):
 
     def setUp(self):
