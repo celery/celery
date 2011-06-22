@@ -1,7 +1,6 @@
 from __future__ import with_statement
 
 import anyjson
-import warnings
 
 from celery import registry
 from celery.app import app_or_default
@@ -158,7 +157,6 @@ class test_TaskSet(unittest.TestCase):
                         for i in (2, 4, 8)])
         ts.apply_async()
         self.assertEqual(applied[0], 3)
-
 
         class Publisher(object):
 

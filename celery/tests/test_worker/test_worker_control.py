@@ -136,7 +136,6 @@ class test_ControlPanel(unittest.TestCase):
         self.assertIn("rate_limit=200", info)
 
     def test_stats(self):
-        from celery.worker import state
         prev_count, state.total_count = state.total_count, 100
         try:
             self.assertDictContainsSubset({"total": 100,
@@ -146,7 +145,6 @@ class test_ControlPanel(unittest.TestCase):
             state.total_count = prev_count
 
     def test_active(self):
-        from celery.worker import state
         from celery.worker.job import TaskRequest
 
         r = TaskRequest(PingTask.name, "do re mi", (), {})
@@ -205,7 +203,6 @@ class test_ControlPanel(unittest.TestCase):
         self.assertIn("MyQueue", consumer.task_consumer.cancelled)
 
     def test_revoked(self):
-        from celery.worker import state
         state.revoked.clear()
         state.revoked.add("a1")
         state.revoked.add("a2")

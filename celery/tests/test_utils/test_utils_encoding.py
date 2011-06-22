@@ -25,4 +25,3 @@ class test_encoding(unittest.TestCase):
                 raise ValueError("foo")
 
         self.assertTrue(encoding.safe_repr(foo()))
-

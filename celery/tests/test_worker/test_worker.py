@@ -197,6 +197,7 @@ class test_QoS(unittest.TestCase):
         self.assertEqual(qos.prev, 12)
         qos.set(qos.prev)
 
+
 class test_Consumer(unittest.TestCase):
 
     def setUp(self):

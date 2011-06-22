@@ -4,7 +4,7 @@ from mock import Mock
 
 from celery.tests.utils import AppCase
 
-from celery.app.amqp import MSG_OPTIONS, extract_msg_options, TaskPublisher
+from celery.app.amqp import MSG_OPTIONS, extract_msg_options
 
 
 class TestMsgOptions(AppCase):

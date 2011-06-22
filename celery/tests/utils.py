@@ -276,6 +276,7 @@ def platform_pyimp(replace=None):
     if prev is not None:
         platform.python_implementation = prev
 
+
 @contextmanager
 def sys_platform(value):
     prev, sys.platform = sys.platform, value
@@ -318,5 +319,3 @@ def patch_modules(*modules):
             sys.modules.pop(name, None)
         else:
             sys.modules[name] = mod
-
-

@@ -1,5 +1,4 @@
 import logging
-import os
 
 from time import time
 
@@ -130,6 +129,3 @@ class test_Autoscaler(unittest.TestCase):
         x.run()
         _exit.assert_called_with(1)
         self.assertTrue(x.logger.error.call_count)
-
-
-

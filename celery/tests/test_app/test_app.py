@@ -3,8 +3,6 @@ from __future__ import with_statement
 import os
 import sys
 
-from contextlib import contextmanager
-
 from mock import Mock
 
 from celery import Celery
@@ -259,7 +257,6 @@ class test_defaults(unittest.TestCase):
         for s in ("true", "yes", "1"):
             self.assertTrue(defaults.str_to_bool(s))
         self.assertRaises(TypeError, defaults.str_to_bool, "unsure")
-
 
 
 class test_debugging_utils(unittest.TestCase):

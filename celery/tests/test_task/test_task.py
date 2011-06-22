@@ -11,7 +11,6 @@ from celery.exceptions import RetryTaskError
 from celery.execute import send_task
 from celery.result import EagerResult
 from celery.schedules import crontab, crontab_parser
-from celery.utils import timeutils
 from celery.utils import gen_unique_id
 from celery.utils.timeutils import parse_iso8601
 
@@ -331,7 +330,7 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertEqual(request.get("foo"), 32)
         self.assertEqual(request.get("bar", 36), 36)
 
-    def test_repr(self):
+    def test_task_class_repr(self):
         task = self.createTaskCls("T1", "c.unittest.t.repr")
         self.assertIn("class Task of", repr(task.app.Task))
 

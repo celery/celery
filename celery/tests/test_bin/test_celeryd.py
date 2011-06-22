@@ -25,8 +25,7 @@ from celery.bin.celeryd import WorkerCommand, windows_main, \
 from celery.exceptions import ImproperlyConfigured
 
 from celery.tests.compat import catch_warnings
-from celery.tests.utils import (AppCase, StringIO, mask_modules,
-                                reset_modules, patch_modules)
+from celery.tests.utils import AppCase, StringIO, mask_modules, reset_modules
 
 
 from celery.utils.patch import ensure_process_aware_logger
@@ -81,14 +80,14 @@ class test_compilation(AppCase):
         self.assertEqual(cpu_count(), 2)
         pcount.assert_called_with()
 
-    def test_process_name(self):
+    def test_process_name_wo_mp(self):
         with mask_modules("multiprocessing"):
             with reset_modules("celery.apps.worker"):
                 from celery.apps.worker import get_process_name
                 self.assertIsNone(get_process_name())
 
     @patch("multiprocessing.current_process")
-    def test_process_name(self, current_process):
+    def test_process_name_w_mp(self, current_process):
             from celery.apps.worker import get_process_name
             self.assertTrue(get_process_name())
 
