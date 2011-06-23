@@ -15,18 +15,13 @@ def get_loader_cls(loader):
     return get_cls_by_name(loader, LOADER_ALIASES)
 
 
-def setup_loader():
-    # XXX Deprecate
+def setup_loader():     # XXX Deprecate
     return get_loader_cls(os.environ.setdefault("CELERY_LOADER", "default"))()
 
 
-def current_loader():
-    """Detect and return the current loader."""
-    # XXX Deprecate
+def current_loader():   # XXX Deprecate
     return current_app.loader
 
 
-def load_settings():
-    """Load the global settings object."""
-    # XXX Deprecate
+def load_settings():    # XXX Deprecate
     return current_app.conf

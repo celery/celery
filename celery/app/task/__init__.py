@@ -48,7 +48,7 @@ class TaskType(type):
     Automatically registers the task in the task registry, except
     if the `abstract` attribute is set.
 
-    If no `name` attribute is provided, the name is automatically
+    If no `name` attribute is provided, then no name is automatically
     set to the name of the module it was defined in, and the class name.
 
     """
@@ -240,15 +240,10 @@ class BaseTask(object):
     def get_logger(self, loglevel=None, logfile=None, propagate=False,
             **kwargs):
         """Get task-aware logger object."""
-        if loglevel is None:
-            loglevel = self.request.loglevel
-        if logfile is None:
-            logfile = self.request.logfile
-        return self.app.log.setup_task_logger(loglevel=loglevel,
-                                              logfile=logfile,
-                                              propagate=propagate,
-                                              task_name=self.name,
-                                              task_id=self.request.id)
+        return self.app.log.setup_task_logger(
+            loglevel=self.request.loglevel if loglevel is None else loglevel,
+            logfile=self.request.logfile if logfile is None else logfile,
+            propagate=propagate, task_name=self.name, task_id=self.request.id)
 
     @classmethod
     def establish_connection(self, connect_timeout=None):
@@ -278,8 +273,7 @@ class BaseTask(object):
                 ...     # ... do something with publisher
 
         """
-        if exchange is None:
-            exchange = self.exchange
+        exchange = self.exchange if exchange is None else exchange
         if exchange_type is None:
             exchange_type = self.exchange_type
         connection = connection or self.establish_connection(connect_timeout)
@@ -341,7 +335,7 @@ class BaseTask(object):
 
         :keyword countdown: Number of seconds into the future that the
                             task should execute. Defaults to immediate
-                            delivery (do not confuse with the
+                            execution (do not confuse with the
                             `immediate` flag, as they are unrelated).
 
         :keyword eta: A :class:`~datetime.datetime` object describing
@@ -496,12 +490,9 @@ class BaseTask(object):
 
         """
         request = self.request
-        if max_retries is None:
-            max_retries = self.max_retries
-        if args is None:
-            args = request.args
-        if kwargs is None:
-            kwargs = request.kwargs
+        max_retries = self.max_retries if max_retries is None else max_retries
+        args = request.args if args is None else args
+        kwargs = request.kwargs if kwargs is None else kwargs
         delivery_info = request.delivery_info
 
         if delivery_info:
@@ -534,8 +525,7 @@ class BaseTask(object):
 
     @classmethod
     def apply(self, args=None, kwargs=None, **options):
-        """Execute this task locally, by blocking until the task
-        returns.
+        """Execute this task locally, by blocking until the task returns.
 
         :param args: positional arguments passed on to the task.
         :param kwargs: keyword arguments passed on to the task.

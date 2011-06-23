@@ -45,6 +45,7 @@ class App(base.BaseApp):
     """
 
     def set_current(self):
+        """Make this the current app for this thread."""
         _tls.current_app = self
 
     def on_init(self):
@@ -89,8 +90,7 @@ class App(base.BaseApp):
     def TaskSet(self, *args, **kwargs):
         """Create new :class:`~celery.task.sets.TaskSet`."""
         from celery.task.sets import TaskSet
-        kwargs["app"] = self
-        return TaskSet(*args, **kwargs)
+        return TaskSet(*args, app=self, **kwargs)
 
     def worker_main(self, argv=None):
         """Run :program:`celeryd` using `argv`.  Uses :data:`sys.argv`

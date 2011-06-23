@@ -129,7 +129,7 @@ class BaseApp(object):
     amqp_cls = "celery.app.amqp.AMQP"
     backend_cls = None
     events_cls = "celery.events.Events"
-    loader_cls = "app"
+    loader_cls = "celery.loaders.app.AppLoader"
     log_cls = "celery.log.Logging"
     control_cls = "celery.task.control.Control"
 
@@ -147,8 +147,9 @@ class BaseApp(object):
         self.control_cls = control or self.control_cls
         self.set_as_current = set_as_current
         self.accept_magic_kwargs = accept_magic_kwargs
-        self.on_init()
         self.clock = LamportClock()
+
+        self.on_init()
 
     def on_init(self):
         """Called at the end of the constructor."""
@@ -156,7 +157,7 @@ class BaseApp(object):
 
     def config_from_object(self, obj, silent=False):
         """Read configuration from object, where object is either
-        a real object, or the name of an object to import.
+        a object, or the name of a module to import.
 
             >>> celery.config_from_object("myapp.celeryconfig")
 
@@ -171,7 +172,7 @@ class BaseApp(object):
         """Read configuration from environment variable.
 
         The value of the environment variable must be the name
-        of an object to import.
+        of a module to import.
 
             >>> os.environ["CELERY_CONFIG_MODULE"] = "myapp.celeryconfig"
             >>> celery.config_from_envvar("CELERY_CONFIG_MODULE")
@@ -227,8 +228,7 @@ class BaseApp(object):
     def AsyncResult(self, task_id, backend=None, task_name=None):
         """Create :class:`celery.result.BaseAsyncResult` instance."""
         from celery.result import BaseAsyncResult
-        return BaseAsyncResult(task_id, app=self,
-                               task_name=task_name,
+        return BaseAsyncResult(task_id, app=self, task_name=task_name,
                                backend=backend or self.backend)
 
     def TaskSetResult(self, taskset_id, results, **kwargs):
@@ -272,7 +272,13 @@ class BaseApp(object):
     @contextmanager
     def default_connection(self, connection=None, connect_timeout=None):
         """For use within a with-statement to get a connection from the pool
-        if one is not already provided."""
+        if one is not already provided.
+
+        :keyword connection: If not provided, then a connection will be
+                             acquired from the connection pool.
+        :keyword connect_timeout: *No longer used.*
+
+        """
         if connection:
             yield connection
         else:
@@ -295,8 +301,7 @@ class BaseApp(object):
         @wraps(fun)
         def _inner(*args, **kwargs):
             connection = kwargs.pop("connection", None)
-            connect_timeout = kwargs.get("connect_timeout")
-            with self.default_connection(connection, connect_timeout) as c:
+            with self.default_connection(connection) as c:
                 return fun(*args, **dict(kwargs, connection=c))
         return _inner
 
@@ -365,8 +370,8 @@ class BaseApp(object):
                 register_after_fork(self, self._after_fork)
             except ImportError:
                 pass
-            self._pool = self.broker_connection().Pool(
-                            self.conf.BROKER_POOL_LIMIT)
+            limit = self.conf.BROKER_POOL_LIMIT
+            self._pool = self.broker_connection().Pool(limit)
         return self._pool
 
     @cached_property
