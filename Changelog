@@ -13,6 +13,8 @@
 :status: frozen
 :branch: master
 
+:tested: cPython: 2.5, 2.6, 2.7; PyPy: 1.5; Jython: 2.5.2
+
 .. _v230-important:
 
 Important Notes
@@ -102,10 +104,10 @@ News
     New in this version you can also change the time limits for a task
     at runtime using the :func:`time_limit` remote control command::
 
-    >>> from celery.task import control
-    >>> control.time_limit("tasks.sleeptask",
-    ...                        soft=60, hard=120, reply=True)
-    [{'worker1.example.com': {'ok': 'time limits set successfully'}}]
+        >>> from celery.task import control
+        >>> control.time_limit("tasks.sleeptask",
+        ...                    soft=60, hard=120, reply=True)
+        [{'worker1.example.com': {'ok': 'time limits set successfully'}}]
 
     Only tasks that starts executing after the time limit change will be affected.
 
@@ -127,7 +129,93 @@ News
     `REDIS_PASSWORD`                       `CELERY_REDIS_PASSWORD`
     =====================================  ===================================
 
-    The old names are still supported, but pending deprecation.
+    The old names are still supported but pending deprecation.
+
+* PyPy: The default pool implementation used is now multiprocessing
+  if running on pypy 1.5.
+
+* celeryd-multi: now supports "pass through" options.
+
+    Pass through options makes it easier to use celery without a
+    configuration file, or just add last-minute options on the command
+    line.
+
+    Example use:
+
+        $ celeryd-multi start 4  -c 2  -- broker.host=amqp.example.com \
+                                          broker.vhost=/               \
+                                          celery.disable_rate_limits=yes
+
+* celerybeat: Now retries establishing the connection (Issue #419).
+
+* celeryctl: New ``list bindings`` command.
+
+    Lists the current or all available bindings, depending on the
+    broker transport used.
+
+* Heartbeat is now sent every 30 seconds (previously every 2 minutes).
+
+* ``ResultSet.join_native()`` and ``iter_native()`` is now supported by
+  the Redis and Cache result backends.
+
+    This is an optimized version of ``join()`` using the underlying
+    backends ability to fetch multiple results at once.
+
+* Can now use SSL when sending error e-mails by enabling the
+  :setting:`EMAIL_USE_SSL` setting.
+
+* ``events.default_dispatcher()``: Context manager to easily obtain
+  an event dispatcher instance using the connection pool.
+
+* Import errors in the configuration module will not be silenced anymore.
+
+* ResultSet.iterate:  Now supports the ``timeout``, ``propagate`` and
+  ``interval`` arguments.
+
+* ``with_default_connection`` ->  ``with default_connection``
+
+* TaskPool.apply_async:  Keyword arguments ``callbacks`` and ``errbacks``
+  has been renamed to ``callback`` and ``errback`` and take a single scalar
+  value instead of a list.
+
+* No longer propagates errors occuring during process cleanup (Issue #365)
+
+* Added ``TaskSetResult.delete()``, which will delete a previously
+  saved taskset result.
+
+* Celerybeat now syncs every 3 minutes instead of only at
+  shutdown (Issue #382).
+
+* Monitors now properly handles unknown events, so user-defined events
+  are displayed.
+
+* Terminating a task on Windows now also terminates all of the tasks child
+  processes (Issue #384).
+
+* celeryd: ``-I|--include`` option now always searches the current directory
+  to import the specified modules.
+
+* Cassandra backend: Now expires results by using TTLs.
+
+* Functional test suite in ``funtests`` is now actually working properly, and
+  passing tests.
+
+.. _v230-fixes:
+
+Fixes
+-----
+
+* celeryev was trying to create the pidfile twice.
+
+* celery.contrib.batches: Fixed problem where tasks failed
+  silently (Issue #393).
+
+* Fixed an issue where logging objects would give "<Unrepresentable",
+  even though the objects were.
+
+* ``CELERY_TASK_ERROR_WHITE_LIST`` is now properly initialized
+  in all loaders.
+
 
 .. _version-2.2.7:
 
