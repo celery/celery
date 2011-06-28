@@ -6,10 +6,11 @@ from celery.task.sets import TaskSet, subtask
 
 
 @current_app.task(name="celery.chord_unlock", max_retries=None)
-def _unlock_chord(setid, callback, interval=1, max_retries=None):
+def _unlock_chord(setid, callback, interval=1, propagate=False,
+        max_retries=None):
     result = TaskSetResult.restore(setid)
     if result.ready():
-        subtask(callback).delay(result.join())
+        subtask(callback).delay(result.join(propagate=propagate))
         result.delete()
     else:
         _unlock_chord.retry(countdown=interval, max_retries=max_retries)
@@ -19,7 +20,8 @@ class Chord(current_app.Task):
     accept_magic_kwargs = False
     name = "celery.chord"
 
-    def run(self, set, body, interval=1, max_retries=None, **kwargs):
+    def run(self, set, body, interval=1, max_retries=None,
+            propagate=False, **kwargs):
         if not isinstance(set, TaskSet):
             set = TaskSet(set)
         r = []
@@ -30,7 +32,8 @@ class Chord(current_app.Task):
             r.append(current_app.AsyncResult(uuid))
         current_app.TaskSetResult(setid, r).save()
         self.backend.on_chord_apply(setid, body, interval,
-                                    max_retries=max_retries)
+                                    max_retries=max_retries,
+                                    propagate=propagate)
         return set.apply_async(taskset_id=setid)
 
 

@@ -75,14 +75,15 @@ class RedisBackend(KeyValueStoreBackend):
     def on_chord_apply(self, *args, **kwargs):
         pass
 
-    def on_chord_part_return(self, task, keyprefix="chord-unlock-%s"):
+    def on_chord_part_return(self, task, propagate=False,
+            keyprefix="chord-unlock-%s"):
         from celery.task.sets import subtask
         from celery.result import TaskSetResult
         setid = task.request.taskset
         key = keyprefix % setid
         deps = TaskSetResult.restore(setid, backend=task.backend)
         if self.client.incr(key) >= deps.total:
-            subtask(task.request.chord).delay(deps.join())
+            subtask(task.request.chord).delay(deps.join(propagate=propagate))
             deps.delete()
         self.client.expire(key, 86400)
 
