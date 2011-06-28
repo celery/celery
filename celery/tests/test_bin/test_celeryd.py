@@ -75,10 +75,10 @@ class test_compilation(AppCase):
                 self.assertEqual(cpu_count(), 2)
 
     @skip_unless_module("multiprocessing")
-    def test_no_cpu_count(self, pcount):
+    def test_no_cpu_count(self):
 
         @patch("multiprocessing.cpu_count")
-        def _do_test():
+        def _do_test(pcount):
             pcount.side_effect = NotImplementedError("cpu_count")
             from celery.apps.worker import cpu_count
             self.assertEqual(cpu_count(), 2)
@@ -93,10 +93,10 @@ class test_compilation(AppCase):
                 self.assertIsNone(get_process_name())
 
     @skip_unless_module("multiprocessing")
-    def test_process_name_w_mp(self, current_process):
+    def test_process_name_w_mp(self):
 
         @patch("multiprocessing.current_process")
-        def _do_test():
+        def _do_test(current_process):
             from celery.apps.worker import get_process_name
             self.assertTrue(get_process_name())
 

@@ -20,7 +20,7 @@ class test_unlock_chord_task(AppCase):
     def test_unlock_ready(self, retry, TaskSetResult):
         callback = Mock()
         result = Mock(attrs=dict(ready=lambda: True,
-                                 join=lambda: [2, 4, 8, 6]))
+                                 join=lambda **kw: [2, 4, 8, 6]))
         TaskSetResult.restore = lambda setid: result
         subtask, chords.subtask = chords.subtask, passthru
         try:
