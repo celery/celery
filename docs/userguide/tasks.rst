@@ -642,6 +642,163 @@ aware of this state that the task is currently in progress, and also where
 it is in the process by having `current` and `total` counts as part of the
 state metadata.  This can then be used to create e.g. progress bars.
 
+.. _task-custom-classes:
+
+Creating custom task classes
+============================
+
+All tasks inherit from the :class:`celery.task.Task` class.
+The tasks body is its :meth:`run` method.
+
+The following code,
+
+.. code-block:: python
+
+    @task
+    def add(x, y):
+        return x + y
+
+
+will do roughly this behind the scenes:
+
+    @task
+    def AddTask(Task):
+
+        def run(self, x, y):
+            return x + y
+    add = registry.tasks[AddTask.name]
+
+
+Instantiation
+-------------
+
+A task is **not** instantiated for every request, but is registered
+in the task registry as a global instance.
+
+This means that the ``__init__`` constructor will only be called
+once per process, and that the task class is semantically closer to an
+Actor.
+
+If you have a task,
+
+.. code-block:: python
+
+    class NaiveAuthenticateServer(Task):
+
+        def __init__(self):
+            self.users = {"george": "password"}
+
+        def run(self, username, password):
+            try:
+                return self.users[username] == password
+            except KeyError:
+                return False
+
+And you route every request to the same process, then it
+will keep state between requests.
+
+This can also be useful to keep cached resources::
+
+    class DatabaseTask(Task):
+        _db = None
+
+        @property
+        def db(self):
+            if self._db = None:
+                self._db = Database.connect()
+            return self._db
+
+Abstract classes
+----------------
+
+Abstract classes are not registered, but are used as the
+base class for new task types.
+
+.. code-block:: python
+
+    class DebugTask(object):
+        abstract = True
+
+        def after_return(self, \*args, \*\*kwargs):
+            print("Task returned: %r" % (self.request, ))
+
+
+    @task(base=DebugTask)
+    def add(x, y):
+        return x + y
+
+
+Handlers
+--------
+
+.. method:: execute(self, request, pool, loglevel, logfile, \*\*kw):
+
+    :param request: A :class:`~celery.worker.job.TaskRequest`.
+    :param pool: The task pool.
+    :param loglevel: Current loglevel.
+    :param logfile: Name of the currently used logfile.
+
+    :keyword consumer: The :class:`~celery.worker.consumer.Consumer`.
+
+.. method:: after_return(self, status, retval, task_id, args, kwargs, einfo)
+
+    Handler called after the task returns.
+
+    :param status: Current task state.
+    :param retval: Task return value/exception.
+    :param task_id: Unique id of the task.
+    :param args: Original arguments for the task that failed.
+    :param kwargs: Original keyword arguments for the task
+                   that failed.
+
+    :keyword einfo: :class:`~celery.datastructures.ExceptionInfo`
+                    instance, containing the traceback (if any).
+
+    The return value of this handler is ignored.
+
+.. method:: on_failure(self, exc, task_id, args, kwargs, einfo)
+
+    This is run by the worker when the task fails.
+
+    :param exc: The exception raised by the task.
+    :param task_id: Unique id of the failed task.
+    :param args: Original arguments for the task that failed.
+    :param kwargs: Original keyword arguments for the task
+                       that failed.
+
+    :keyword einfo: :class:`~celery.datastructures.ExceptionInfo`
+                           instance, containing the traceback.
+
+    The return value of this handler is ignored.
+
+.. method:: on_retry(self, exc, task_id, args, kwargs, einfo)
+
+    This is run by the worker when the task is to be retried.
+
+    :param exc: The exception sent to :meth:`retry`.
+    :param task_id: Unique id of the retried task.
+    :param args: Original arguments for the retried task.
+    :param kwargs: Original keyword arguments for the retried task.
+
+    :keyword einfo: :class:`~celery.datastructures.ExceptionInfo`
+                    instance, containing the traceback.
+
+    The return value of this handler is ignored.
+
+.. method:: on_success(self, retval, task_id, args, kwargs)
+
+    Run by the worker if the task executes successfully.
+
+    :param retval: The return value of the task.
+    :param task_id: Unique id of the executed task.
+    :param args: Original arguments for the executed task.
+    :param kwargs: Original keyword arguments for the executed task.
+
+    The return value of this handler is ignored.
+
+on_retry
+~~~~~~~~
+
 .. _task-how-they-work:
 
 How it works
