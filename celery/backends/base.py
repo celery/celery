@@ -1,5 +1,6 @@
 """celery.backends.base"""
 import time
+import sys
 
 from datetime import timedelta
 
@@ -8,8 +9,9 @@ from celery.exceptions import TimeoutError, TaskRevokedError
 from celery.utils import timeutils
 from celery.utils.serialization import pickle, get_pickled_exception
 from celery.utils.serialization import get_pickleable_exception
+from celery.utils.serialization import create_exception_cls
 from celery.datastructures import LocalCache
-
+from celery.app import app_or_default
 
 class BaseBackend(object):
     """Base backend class."""
@@ -33,7 +35,7 @@ class BaseBackend(object):
         return value
 
     def encode_result(self, result, status):
-        if status in self.EXCEPTION_STATES:
+        if status in self.EXCEPTION_STATES and isinstance(result, Exception):
             return self.prepare_exception(result)
         else:
             return self.prepare_value(result)
@@ -68,11 +70,18 @@ class BaseBackend(object):
 
     def prepare_exception(self, exc):
         """Prepare exception for serialization."""
-        return get_pickleable_exception(exc)
+        if (app_or_default().conf["CELERY_RESULT_SERIALIZER"] in ("pickle", "yaml")):
+            return get_pickleable_exception(exc)
+        return {
+            "exc_type": type(exc).__name__,
+            "exc_message": str(exc),
+        }
 
     def exception_to_python(self, exc):
         """Convert serialized exception to Python exception."""
-        return get_pickled_exception(exc)
+        if (app_or_default().conf["CELERY_RESULT_SERIALIZER"] in ("pickle", "yaml")):
+            return get_pickled_exception(exc)
+        return create_exception_cls(exc["exc_type"].encode("utf-8"), sys.modules[__name__])
 
     def prepare_value(self, result):
         """Prepare value for storage."""
