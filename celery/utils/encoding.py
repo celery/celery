@@ -20,8 +20,9 @@ def _safe_str(s, errors="replace"):
         if isinstance(s, unicode):
             return s.encode(encoding, errors)
         return unicode(s, encoding, errors)
-    except Exception:
-        return "<Unrepresentable %r: %r>" % (type(s), traceback.format_stack())
+    except Exception, exc:
+        return "<Unrepresentable %r: %r %r>" % (
+                type(s), exc, "\n".join(traceback.format_stack()))
 
 
 def safe_repr(o, errors="replace"):

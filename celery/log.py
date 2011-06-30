@@ -44,10 +44,11 @@ class ColorFormatter(logging.Formatter):
 
         if self.use_color and color:
             try:
-                record.msg = color(safe_str(record.msg))
-            except Exception:
+                record.msg = str(color(safe_str(record.msg)))
+            except Exception, exc:
                 record.msg = "<Unrepresentable %r: %r>" % (
-                        type(record.msg), traceback.format_stack())
+                        type(record.msg), exc)
+                record.exc_info = sys.exc_info()
 
         # Very ugly, but have to make sure processName is supported
         # by foreign logger instances.
