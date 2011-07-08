@@ -3717,7 +3717,7 @@ in practice, so consider this experimental.</p>
 <li><p class="first"><cite>TaskPool.apply_async</cite>: Now supports the <cite>accept_callback</cite> argument.</p>
 </li>
 <li><p class="first"><cite>apply_async</cite>: Now raises <tt class="xref py py-exc docutils literal"><span class="pre">ValueError</span></tt> if task args is not a list,
-or kwargs is not a tuple (Issue #95).</p>
+or kwargs is not a tuple (<a class="issue-closed reference-issue reference external" href="https://github.com/ask/celery/issues/95">Issue #95</a>).</p>
 </li>
 <li><p class="first"><cite>Task.max_retries</cite> can now be <cite>None</cite>, which means it will retry forever.</p>
 </li>
@@ -3878,7 +3878,7 @@ the mediator thread could block shutdown (and potentially block other
 jobs from coming in).</p>
 </div></blockquote>
 </li>
-<li><p class="first">Remote rate limits was not properly applied (Issue #98).</p>
+<li><p class="first">Remote rate limits was not properly applied (<a class="issue-closed reference-issue reference external" href="https://github.com/ask/celery/issues/98">Issue #98</a>).</p>
 </li>
 <li><p class="first">Now handles exceptions with Unicode messages correctly in
 <cite>TaskRequest.on_failure</cite>.</p>
@@ -3928,7 +3928,7 @@ can easily be traced.</p>
 </li>
 <li><p class="first">Unit tests: Don&#8217;t disable the django test database tear down,
 instead fixed the underlying issue which was caused by modifications
-to the <cite>DATABASE_NAME</cite> setting (Issue #82).</p>
+to the <cite>DATABASE_NAME</cite> setting (<a class="issue-closed reference-issue reference external" href="https://github.com/ask/celery/issues/82">Issue #82</a>).</p>
 </li>
 <li><p class="first">Django Loader: New config <tt class="xref std std-setting docutils literal"><span class="pre">CELERY_DB_REUSE_MAX</span></tt> (max number of
 tasks to reuse the same database connection)</p>
@@ -3957,7 +3957,7 @@ twisted/eventlet pool?</p>
 <p>Consider the competition for the first pool plug-in started!</p>
 </div></blockquote>
 </li>
-<li><p class="first">Debian init scripts: Use <cite>-a</cite> not <cite>&amp;&amp;</cite> (Issue #82).</p>
+<li><p class="first">Debian init scripts: Use <cite>-a</cite> not <cite>&amp;&amp;</cite> (<a class="issue-closed reference-issue reference external" href="https://github.com/ask/celery/issues/82">Issue #82</a>).</p>
 </li>
 <li><p class="first">Debian init scripts: Now always preserves <cite>$CELERYD_OPTS</cite> from the
 <cite>/etc/default/celeryd</cite> and <cite>/etc/default/celerybeat</cite>.</p>
@@ -3974,7 +3974,7 @@ and <tt class="xref std std-sig docutils literal"><span class="pre">SIGINT</span
 when trying to log that a task had been revoked.</p>
 </li>
 <li><p class="first">management.commands.camqadm: Fixed typo <cite>camqpadm</cite> -&gt; <cite>camqadm</cite>
-(Issue #83).</p>
+(<a class="issue-closed reference-issue reference external" href="https://github.com/ask/celery/issues/83">Issue #83</a>).</p>
 </li>
 <li><p class="first">PeriodicTask.delta_resolution: Was not working for days and hours, now fixed
 by rounding to the nearest day/hour.</p>
@@ -4697,7 +4697,7 @@ be sure to initialize tables (django: <cite>syncdb</cite>, python: <cite>celeryi
 <blockquote>
 <div><p>It uses messages to publish task return value and status. And it&#8217;s
 incredibly fast!</p>
-<p>See issue #6 for more info!</p>
+<p>See <a class="issue-closed reference-issue reference external" href="https://github.com/ask/celery/issues/6">issue #6</a> for more info!</p>
 </div></blockquote>
 </li>
 <li><p class="first">AMQP QoS (prefetch count) implemented:</p>
