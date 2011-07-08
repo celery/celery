@@ -1,0 +1,11 @@
+.issue-closed {
+    text-decoration: line-through;
+}
+
+.issue-closed:hover {
+    text-decoration: line-through underline;
+}
+
+.issue-closed:visited {
+    text-decoration: line-through;
+}
