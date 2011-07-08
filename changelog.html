@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Change history &mdash; Celery v2.2.6 documentation</title>
+    <title>Change history &mdash; Celery v2.3.0rc2 documentation</title>
     <link rel="stylesheet" href="_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '2.2.6',
+        VERSION:     '2.3.0rc2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.6 documentation" href="index.html" />
+    <link rel="top" title="Celery v2.3.0rc2 documentation" href="index.html" />
     <link rel="next" title="API Reference" href="reference/index.html" />
     <link rel="prev" title="Frequently Asked Questions" href="faq.html" /> 
   </head>
@@ -41,7 +41,7 @@
         <li class="right" >
           <a href="faq.html" title="Frequently Asked Questions"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery v2.2.6 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -53,11 +53,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.2. For development docs,
-        <a href="http://ask.github.com/celery/en/master/changelog.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/changelog.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="change-history">
@@ -246,7 +248,7 @@ recent RabbitMQ versions (2.1.1+)</p>
 which will hopefully lead the user to read the documentation and be aware
 of any common pitfalls with the particular backend.</p>
 <p>The default backend is now a dummy backend
-(<tt class="xref py py-class docutils literal"><span class="pre">celery.backends.base.DisabledBackend</span></tt>).  Saving state is simply an
+(<a class="reference internal" href="internals/reference/celery.backends.base.html#celery.backends.base.DisabledBackend" title="celery.backends.base.DisabledBackend"><tt class="xref py py-class docutils literal"><span class="pre">celery.backends.base.DisabledBackend</span></tt></a>).  Saving state is simply an
 noop operation, and AsyncResult.wait(), .result, .state, etc will raise
 a <tt class="xref py py-exc docutils literal"><span class="pre">NotImplementedError</span></tt> telling the user to configure the result backend.</p>
 <p>For help choosing a backend please see <a class="reference internal" href="userguide/tasks.html#task-result-backends"><em>Result Backends</em></a>.</p>
@@ -468,8 +470,8 @@ in all loaders.</li>
 </tbody>
 </table>
 <ul>
-<li><p class="first">New signals: <tt class="xref std std-signal docutils literal"><span class="pre">after_setup_logger</span></tt> and
-<tt class="xref std std-signal docutils literal"><span class="pre">after_setup_task_logger</span></tt></p>
+<li><p class="first">New signals: <a class="reference internal" href="reference/celery.signals.html#std:signal-after_setup_logger"><tt class="xref std std-signal docutils literal"><span class="pre">after_setup_logger</span></tt></a> and
+<a class="reference internal" href="reference/celery.signals.html#std:signal-after_setup_task_logger"><tt class="xref std std-signal docutils literal"><span class="pre">after_setup_task_logger</span></tt></a></p>
 <blockquote>
 <div><p>These signals can be used to augment logging configuration
 after Celery has set up logging.</p>
@@ -2172,7 +2174,7 @@ to &#8220;celery.backend_cleanup&#8221;</p>
 <div><p>See <a class="issue-closed reference-issue reference external" href="https://github.com/ask/celery/issues/184">issue #184</a>.</p>
 </div></blockquote>
 </li>
-<li><p class="first"><a class="reference internal" href="reference/celery.result.html#celery.result.TaskSetResult.join" title="celery.result.TaskSetResult.join"><tt class="xref py py-meth docutils literal"><span class="pre">TaskSetResult.join</span></tt></a>:
+<li><p class="first"><tt class="xref py py-meth docutils literal"><span class="pre">TaskSetResult.join</span></tt>:
 Added &#8216;propagate=True&#8217; argument.</p>
 <p>When set to <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt> exceptions occurring in subtasks will
 not be re-raised.</p>
@@ -3717,7 +3719,7 @@ in practice, so consider this experimental.</p>
 <li><p class="first"><cite>TaskPool.apply_async</cite>: Now supports the <cite>accept_callback</cite> argument.</p>
 </li>
 <li><p class="first"><cite>apply_async</cite>: Now raises <tt class="xref py py-exc docutils literal"><span class="pre">ValueError</span></tt> if task args is not a list,
-or kwargs is not a tuple (<a class="issue-closed reference-issue reference external" href="https://github.com/ask/celery/issues/95">Issue #95</a>).</p>
+or kwargs is not a tuple (Issue #95).</p>
 </li>
 <li><p class="first"><cite>Task.max_retries</cite> can now be <cite>None</cite>, which means it will retry forever.</p>
 </li>
@@ -3878,7 +3880,7 @@ the mediator thread could block shutdown (and potentially block other
 jobs from coming in).</p>
 </div></blockquote>
 </li>
-<li><p class="first">Remote rate limits was not properly applied (<a class="issue-closed reference-issue reference external" href="https://github.com/ask/celery/issues/98">Issue #98</a>).</p>
+<li><p class="first">Remote rate limits was not properly applied (Issue #98).</p>
 </li>
 <li><p class="first">Now handles exceptions with Unicode messages correctly in
 <cite>TaskRequest.on_failure</cite>.</p>
@@ -3928,7 +3930,7 @@ can easily be traced.</p>
 </li>
 <li><p class="first">Unit tests: Don&#8217;t disable the django test database tear down,
 instead fixed the underlying issue which was caused by modifications
-to the <cite>DATABASE_NAME</cite> setting (<a class="issue-closed reference-issue reference external" href="https://github.com/ask/celery/issues/82">Issue #82</a>).</p>
+to the <cite>DATABASE_NAME</cite> setting (Issue #82).</p>
 </li>
 <li><p class="first">Django Loader: New config <tt class="xref std std-setting docutils literal"><span class="pre">CELERY_DB_REUSE_MAX</span></tt> (max number of
 tasks to reuse the same database connection)</p>
@@ -3957,7 +3959,7 @@ twisted/eventlet pool?</p>
 <p>Consider the competition for the first pool plug-in started!</p>
 </div></blockquote>
 </li>
-<li><p class="first">Debian init scripts: Use <cite>-a</cite> not <cite>&amp;&amp;</cite> (<a class="issue-closed reference-issue reference external" href="https://github.com/ask/celery/issues/82">Issue #82</a>).</p>
+<li><p class="first">Debian init scripts: Use <cite>-a</cite> not <cite>&amp;&amp;</cite> (Issue #82).</p>
 </li>
 <li><p class="first">Debian init scripts: Now always preserves <cite>$CELERYD_OPTS</cite> from the
 <cite>/etc/default/celeryd</cite> and <cite>/etc/default/celerybeat</cite>.</p>
@@ -3974,7 +3976,7 @@ and <tt class="xref std std-sig docutils literal"><span class="pre">SIGINT</span
 when trying to log that a task had been revoked.</p>
 </li>
 <li><p class="first">management.commands.camqadm: Fixed typo <cite>camqpadm</cite> -&gt; <cite>camqadm</cite>
-(<a class="issue-closed reference-issue reference external" href="https://github.com/ask/celery/issues/83">Issue #83</a>).</p>
+(Issue #83).</p>
 </li>
 <li><p class="first">PeriodicTask.delta_resolution: Was not working for days and hours, now fixed
 by rounding to the nearest day/hour.</p>
@@ -4697,7 +4699,7 @@ be sure to initialize tables (django: <cite>syncdb</cite>, python: <cite>celeryi
 <blockquote>
 <div><p>It uses messages to publish task return value and status. And it&#8217;s
 incredibly fast!</p>
-<p>See <a class="issue-closed reference-issue reference external" href="https://github.com/ask/celery/issues/6">issue #6</a> for more info!</p>
+<p>See issue #6 for more info!</p>
 </div></blockquote>
 </li>
 <li><p class="first">AMQP QoS (prefetch count) implemented:</p>
@@ -5664,7 +5666,7 @@ the name change request is in <cite>docs/name_change_request.txt</cite>.</p>
         <li class="right" >
           <a href="faq.html" title="Frequently Asked Questions"
              >previous</a> |</li>
-        <li><a href="index.html">Celery v2.2.6 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

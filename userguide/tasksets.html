@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Sets of tasks, Subtasks and Callbacks &mdash; Celery v2.2.6 documentation</title>
+    <title>Sets of tasks, Subtasks and Callbacks &mdash; Celery v2.3.0rc2 documentation</title>
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.6',
+        VERSION:     '2.3.0rc2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.6 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.3.0rc2 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="HTTP Callback Tasks (Webhooks)" href="remote-tasks.html" />
     <link rel="prev" title="Periodic Tasks" href="periodic-tasks.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="periodic-tasks.html" title="Periodic Tasks"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,11 +55,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.2. For development docs,
-        <a href="http://ask.github.com/celery/en/master/userguide/tasksets.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/userguide/tasksets.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="sets-of-tasks-subtasks-and-callbacks">
@@ -175,46 +177,46 @@ tasks were invoked.</p>
 single task.</p>
 <p>It supports the following operations:</p>
 <ul>
-<li><p class="first"><a class="reference internal" href="../reference/celery.result.html#celery.result.TaskSetResult.successful" title="celery.result.TaskSetResult.successful"><tt class="xref py py-meth docutils literal"><span class="pre">successful()</span></tt></a></p>
+<li><p class="first"><tt class="xref py py-meth docutils literal"><span class="pre">successful()</span></tt></p>
 <blockquote>
 <div><p>Returns <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if all of the subtasks finished
 successfully (e.g. did not raise an exception).</p>
 </div></blockquote>
 </li>
-<li><p class="first"><a class="reference internal" href="../reference/celery.result.html#celery.result.TaskSetResult.failed" title="celery.result.TaskSetResult.failed"><tt class="xref py py-meth docutils literal"><span class="pre">failed()</span></tt></a></p>
+<li><p class="first"><tt class="xref py py-meth docutils literal"><span class="pre">failed()</span></tt></p>
 <blockquote>
 <div><p>Returns <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if any of the subtasks failed.</p>
 </div></blockquote>
 </li>
-<li><p class="first"><a class="reference internal" href="../reference/celery.result.html#celery.result.TaskSetResult.waiting" title="celery.result.TaskSetResult.waiting"><tt class="xref py py-meth docutils literal"><span class="pre">waiting()</span></tt></a></p>
+<li><p class="first"><tt class="xref py py-meth docutils literal"><span class="pre">waiting()</span></tt></p>
 <blockquote>
 <div><p>Returns <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if any of the subtasks
 is not ready yet.</p>
 </div></blockquote>
 </li>
-<li><p class="first"><a class="reference internal" href="../reference/celery.result.html#celery.result.TaskSetResult.ready" title="celery.result.TaskSetResult.ready"><tt class="xref py py-meth docutils literal"><span class="pre">ready()</span></tt></a></p>
+<li><p class="first"><tt class="xref py py-meth docutils literal"><span class="pre">ready()</span></tt></p>
 <blockquote>
 <div><p>Return <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if all of the subtasks
 are ready.</p>
 </div></blockquote>
 </li>
-<li><p class="first"><a class="reference internal" href="../reference/celery.result.html#celery.result.TaskSetResult.completed_count" title="celery.result.TaskSetResult.completed_count"><tt class="xref py py-meth docutils literal"><span class="pre">completed_count()</span></tt></a></p>
+<li><p class="first"><tt class="xref py py-meth docutils literal"><span class="pre">completed_count()</span></tt></p>
 <blockquote>
 <div><p>Returns the number of completed subtasks.</p>
 </div></blockquote>
 </li>
-<li><p class="first"><a class="reference internal" href="../reference/celery.result.html#celery.result.TaskSetResult.revoke" title="celery.result.TaskSetResult.revoke"><tt class="xref py py-meth docutils literal"><span class="pre">revoke()</span></tt></a></p>
+<li><p class="first"><tt class="xref py py-meth docutils literal"><span class="pre">revoke()</span></tt></p>
 <blockquote>
 <div><p>Revokes all of the subtasks.</p>
 </div></blockquote>
 </li>
-<li><p class="first"><a class="reference internal" href="../reference/celery.result.html#celery.result.TaskSetResult.iterate" title="celery.result.TaskSetResult.iterate"><tt class="xref py py-meth docutils literal"><span class="pre">iterate()</span></tt></a></p>
+<li><p class="first"><tt class="xref py py-meth docutils literal"><span class="pre">iterate()</span></tt></p>
 <blockquote>
 <div><p>Iterates over the return values of the subtasks
 as they finish, one by one.</p>
 </div></blockquote>
 </li>
-<li><p class="first"><a class="reference internal" href="../reference/celery.result.html#celery.result.TaskSetResult.join" title="celery.result.TaskSetResult.join"><tt class="xref py py-meth docutils literal"><span class="pre">join()</span></tt></a></p>
+<li><p class="first"><tt class="xref py py-meth docutils literal"><span class="pre">join()</span></tt></p>
 <blockquote>
 <div><p>Gather the results for all of the subtasks
 and return a list with them ordered by the order of which they
@@ -359,7 +361,7 @@ super method or else the chord callback will not be applied.</p>
         <li class="right" >
           <a href="periodic-tasks.html" title="Periodic Tasks"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>

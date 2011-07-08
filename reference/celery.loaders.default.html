@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.loaders.default &mdash; Celery v2.2.6 documentation</title>
+    <title>celery.loaders.default &mdash; Celery v2.3.0rc2 documentation</title>
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.6',
+        VERSION:     '2.3.0rc2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.6 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.3.0rc2 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.loaders.base" href="celery.loaders.base.html" />
     <link rel="prev" title="celery.loaders.app" href="celery.loaders.app.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.loaders.app.html" title="celery.loaders.app"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,11 +55,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.2. For development docs,
-        <a href="http://ask.github.com/celery/en/master/reference/celery.loaders.default.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/reference/celery.loaders.default.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-loaders-default">
@@ -67,8 +69,12 @@
 <span class="target" id="module-celery.loaders.default"></span><dl class="class">
 <dt id="celery.loaders.default.Loader">
 <em class="property">class </em><tt class="descclassname">celery.loaders.default.</tt><tt class="descname">Loader</tt><big>(</big><em>app=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.loaders.default.Loader" title="Permalink to this definition">¶</a></dt>
-<dd><p>The default loader.</p>
-<p>See the FAQ for example usage.</p>
+<dd><p>The loader used by the default app.</p>
+<dl class="method">
+<dt id="celery.loaders.default.Loader.find_module">
+<tt class="descname">find_module</tt><big>(</big><em>module</em><big>)</big><a class="headerlink" href="#celery.loaders.default.Loader.find_module" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="celery.loaders.default.Loader.on_worker_init">
 <tt class="descname">on_worker_init</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.loaders.default.Loader.on_worker_init" title="Permalink to this definition">¶</a></dt>
@@ -90,12 +96,12 @@ celery and Django so it can be used by regular Python.</p>
 <tt class="descname">setup_settings</tt><big>(</big><em>settingsdict</em><big>)</big><a class="headerlink" href="#celery.loaders.default.Loader.setup_settings" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.loaders.default.wanted_module_item">
-<tt class="descclassname">celery.loaders.default.</tt><tt class="descname">wanted_module_item</tt><big>(</big><em>item</em><big>)</big><a class="headerlink" href="#celery.loaders.default.wanted_module_item" title="Permalink to this definition">¶</a></dt>
+<dl class="method">
+<dt id="celery.loaders.default.Loader.wanted_module_item">
+<tt class="descname">wanted_module_item</tt><big>(</big><em>item</em><big>)</big><a class="headerlink" href="#celery.loaders.default.Loader.wanted_module_item" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+</dd></dl>
 
 </div>
 
@@ -150,7 +156,7 @@ celery and Django so it can be used by regular Python.</p>
         <li class="right" >
           <a href="celery.loaders.app.html" title="celery.loaders.app"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

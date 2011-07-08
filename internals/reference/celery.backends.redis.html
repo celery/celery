@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.backends.redis &mdash; Celery v2.2.6 documentation</title>
+    <title>celery.backends.redis &mdash; Celery v2.3.0rc2 documentation</title>
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.2.6',
+        VERSION:     '2.3.0rc2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.6 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.3.0rc2 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.backends.cassandra" href="celery.backends.cassandra.html" />
     <link rel="prev" title="celery.backends.mongodb" href="celery.backends.mongodb.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.backends.mongodb.html" title="celery.backends.mongodb"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,15 +56,93 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.2. For development docs,
-        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.backends.redis.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.backends.redis.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-backends-redis">
 <h1>celery.backends.redis<a class="headerlink" href="#celery-backends-redis" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-celery.backends.redis"></span><dl class="class">
+<dt id="celery.backends.redis.RedisBackend">
+<em class="property">class </em><tt class="descclassname">celery.backends.redis.</tt><tt class="descname">RedisBackend</tt><big>(</big><em>host=None</em>, <em>port=None</em>, <em>db=None</em>, <em>password=None</em>, <em>expires=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.redis.RedisBackend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Redis task result store.</p>
+<dl class="attribute">
+<dt id="celery.backends.redis.RedisBackend.client">
+<tt class="descname">client</tt><a class="headerlink" href="#celery.backends.redis.RedisBackend.client" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.backends.redis.RedisBackend.db">
+<tt class="descname">db</tt><a class="headerlink" href="#celery.backends.redis.RedisBackend.db" title="Permalink to this definition">¶</a></dt>
+<dd><p>default Redis db number (0)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.redis.RedisBackend.delete">
+<tt class="descname">delete</tt><big>(</big><em>key</em><big>)</big><a class="headerlink" href="#celery.backends.redis.RedisBackend.delete" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.redis.RedisBackend.get">
+<tt class="descname">get</tt><big>(</big><em>key</em><big>)</big><a class="headerlink" href="#celery.backends.redis.RedisBackend.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.backends.redis.RedisBackend.host">
+<tt class="descname">host</tt><a class="headerlink" href="#celery.backends.redis.RedisBackend.host" title="Permalink to this definition">¶</a></dt>
+<dd><p>default Redis server hostname (<cite>localhost</cite>).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.redis.RedisBackend.mget">
+<tt class="descname">mget</tt><big>(</big><em>keys</em><big>)</big><a class="headerlink" href="#celery.backends.redis.RedisBackend.mget" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.redis.RedisBackend.on_chord_apply">
+<tt class="descname">on_chord_apply</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.redis.RedisBackend.on_chord_apply" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.redis.RedisBackend.on_chord_part_return">
+<tt class="descname">on_chord_part_return</tt><big>(</big><em>task</em>, <em>propagate=False</em>, <em>keyprefix='chord-unlock-%s'</em><big>)</big><a class="headerlink" href="#celery.backends.redis.RedisBackend.on_chord_part_return" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.backends.redis.RedisBackend.password">
+<tt class="descname">password</tt><a class="headerlink" href="#celery.backends.redis.RedisBackend.password" title="Permalink to this definition">¶</a></dt>
+<dd><p>default Redis password (<tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt>)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.backends.redis.RedisBackend.port">
+<tt class="descname">port</tt><a class="headerlink" href="#celery.backends.redis.RedisBackend.port" title="Permalink to this definition">¶</a></dt>
+<dd><p>default Redis server port (6379)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.redis.RedisBackend.process_cleanup">
+<tt class="descname">process_cleanup</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.redis.RedisBackend.process_cleanup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.backends.redis.RedisBackend.redis">
+<tt class="descname">redis</tt><a class="headerlink" href="#celery.backends.redis.RedisBackend.redis" title="Permalink to this definition">¶</a></dt>
+<dd><p>redis-py client module.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.redis.RedisBackend.set">
+<tt class="descname">set</tt><big>(</big><em>key</em>, <em>value</em><big>)</big><a class="headerlink" href="#celery.backends.redis.RedisBackend.set" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </div>
 
 
@@ -118,7 +196,7 @@
         <li class="right" >
           <a href="celery.backends.mongodb.html" title="celery.backends.mongodb"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

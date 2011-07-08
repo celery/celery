@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.worker.job &mdash; Celery v2.2.6 documentation</title>
+    <title>celery.worker.job &mdash; Celery v2.3.0rc2 documentation</title>
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.2.6',
+        VERSION:     '2.3.0rc2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.6 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.3.0rc2 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.worker.mediator" href="celery.worker.mediator.html" />
     <link rel="prev" title="celery.worker.consumer" href="celery.worker.consumer.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.worker.consumer.html" title="celery.worker.consumer"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,23 +56,18 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.2. For development docs,
-        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.worker.job.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.worker.job.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-worker-job">
 <h1>celery.worker.job<a class="headerlink" href="#celery-worker-job" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.worker.job"></span><dl class="exception">
-<dt id="celery.worker.job.AlreadyExecutedError">
-<em class="property">exception </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">AlreadyExecutedError</tt><a class="headerlink" href="#celery.worker.job.AlreadyExecutedError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Tasks can only be executed once, as they might change
-world-wide state.</p>
-</dd></dl>
-
-<dl class="exception">
 <dt id="celery.worker.job.InvalidTaskError">
 <em class="property">exception </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">InvalidTaskError</tt><a class="headerlink" href="#celery.worker.job.InvalidTaskError" title="Permalink to this definition">¶</a></dt>
 <dd><p>The task has invalid data or is not properly constructed.</p>
@@ -81,12 +76,12 @@ world-wide state.</p>
 <dl class="data">
 <dt id="celery.worker.job.TASK_ERROR_EMAIL_BODY">
 <tt class="descclassname">celery.worker.job.</tt><tt class="descname">TASK_ERROR_EMAIL_BODY</tt><a class="headerlink" href="#celery.worker.job.TASK_ERROR_EMAIL_BODY" title="Permalink to this definition">¶</a></dt>
-<dd><p>format string for the body of an error e-mail.</p>
+<dd><p>format string for the body of an error email.</p>
 </dd></dl>
 
 <dl class="class">
 <dt id="celery.worker.job.TaskRequest">
-<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskRequest</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x101789c08&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>hostname=None</em>, <em>email_subject=None</em>, <em>email_body=None</em>, <em>logger=None</em>, <em>eventer=None</em>, <em>eta=None</em>, <em>expires=None</em>, <em>app=None</em>, <em>taskset_id=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskRequest</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x1017c8410&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>hostname=None</em>, <em>email_subject=None</em>, <em>email_body=None</em>, <em>logger=None</em>, <em>eventer=None</em>, <em>eta=None</em>, <em>expires=None</em>, <em>app=None</em>, <em>taskset_id=None</em>, <em>chord=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest" title="Permalink to this definition">¶</a></dt>
 <dd><p>A request for task execution.</p>
 <dl class="method">
 <dt id="celery.worker.job.TaskRequest.acknowledge">
@@ -107,6 +102,12 @@ world-wide state.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="celery.worker.job.TaskRequest.chord">
+<tt class="descname">chord</tt><a class="headerlink" href="#celery.worker.job.TaskRequest.chord" title="Permalink to this definition">¶</a></dt>
+<dd><p>Body of a chord depending on this task.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="celery.worker.job.TaskRequest.delivery_info">
 <tt class="descname">delivery_info</tt><a class="headerlink" href="#celery.worker.job.TaskRequest.delivery_info" title="Permalink to this definition">¶</a></dt>
 <dd><p>Additional delivery info, e.g. contains the path from
@@ -116,13 +117,13 @@ Producer to consumer.</p>
 <dl class="attribute">
 <dt id="celery.worker.job.TaskRequest.email_body">
 <tt class="descname">email_body</tt><a class="headerlink" href="#celery.worker.job.TaskRequest.email_body" title="Permalink to this definition">¶</a></dt>
-<dd><p>Format string used to generate error e-mail content.</p>
+<dd><p>Format string used to generate error email content.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.worker.job.TaskRequest.email_subject">
 <tt class="descname">email_subject</tt><a class="headerlink" href="#celery.worker.job.TaskRequest.email_subject" title="Permalink to this definition">¶</a></dt>
-<dd><p>Format string used to generate error e-mail subjects.</p>
+<dd><p>Format string used to generate error email subjects.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -175,12 +176,6 @@ Producer to consumer.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="celery.worker.job.TaskRequest.executed">
-<tt class="descname">executed</tt><a class="headerlink" href="#celery.worker.job.TaskRequest.executed" title="Permalink to this definition">¶</a></dt>
-<dd><p>Flag set when the task has been executed.</p>
-</dd></dl>
-
-<dl class="attribute">
 <dt id="celery.worker.job.TaskRequest.expires">
 <tt class="descname">expires</tt><a class="headerlink" href="#celery.worker.job.TaskRequest.expires" title="Permalink to this definition">¶</a></dt>
 <dd><p>When the task expires.</p>
@@ -193,11 +188,13 @@ Producer to consumer.</p>
 <p>Currently these are <cite>logfile</cite>, <cite>loglevel</cite>, <cite>task_id</cite>,
 <cite>task_name</cite>, <cite>task_retries</cite>, and <cite>delivery_info</cite>.</p>
 <p>See <tt class="xref py py-meth docutils literal"><span class="pre">celery.task.base.Task.run()</span></tt> for more information.</p>
+<p>Magic keyword arguments are deprecated and will be removed
+in version 3.0.</p>
 </dd></dl>
 
 <dl class="classmethod">
 <dt id="celery.worker.job.TaskRequest.from_message">
-<em class="property">classmethod </em><tt class="descname">from_message</tt><big>(</big><em>message</em>, <em>body</em>, <em>on_ack=&lt;function noop at 0x101789c08&gt;</em>, <em>**kw</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.from_message" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descname">from_message</tt><big>(</big><em>message</em>, <em>body</em>, <em>on_ack=&lt;function noop at 0x1017c8410&gt;</em>, <em>**kw</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.from_message" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create request from a task message.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -277,7 +274,7 @@ the message is also rejected.</td>
 
 <dl class="method">
 <dt id="celery.worker.job.TaskRequest.on_timeout">
-<tt class="descname">on_timeout</tt><big>(</big><em>soft</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.on_timeout" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">on_timeout</tt><big>(</big><em>soft</em>, <em>timeout</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.on_timeout" title="Permalink to this definition">¶</a></dt>
 <dd><p>Handler called if the task times out.</p>
 </dd></dl>
 
@@ -377,7 +374,7 @@ saves the status and result of the task execution to the task
 meta backend.</p>
 <p>If the call was successful, it saves the result to the task result
 backend, and sets the task status to <cite>&#8220;SUCCESS&#8221;</cite>.</p>
-<p>If the call raises <a class="reference internal" href="../../reference/celery.exceptions.html#celery.exceptions.RetryTaskError" title="celery.exceptions.RetryTaskError"><tt class="xref py py-exc docutils literal"><span class="pre">celery.exceptions.RetryTaskError</span></tt></a>, it extracts
+<p>If the call raises <a class="reference internal" href="../../reference/celery.exceptions.html#celery.exceptions.RetryTaskError" title="celery.exceptions.RetryTaskError"><tt class="xref py py-exc docutils literal"><span class="pre">RetryTaskError</span></tt></a>, it extracts
 the original exception, uses that as the result and sets the task status
 to <cite>&#8220;RETRY&#8221;</cite>.</p>
 <p>If the call results in an exception, it saves the exception as the task
@@ -449,6 +446,11 @@ the exception instance on failure.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="celery.worker.job.default_encode">
+<tt class="descclassname">celery.worker.job.</tt><tt class="descname">default_encode</tt><big>(</big><em>obj</em><big>)</big><a class="headerlink" href="#celery.worker.job.default_encode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
 <dt id="celery.worker.job.execute_and_trace">
 <tt class="descclassname">celery.worker.job.</tt><tt class="descname">execute_and_trace</tt><big>(</big><em>task_name</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.worker.job.execute_and_trace" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is a pickleable method used as a target when applying to pools.</p>
@@ -511,7 +513,7 @@ the exception instance on failure.</p>
         <li class="right" >
           <a href="celery.worker.consumer.html" title="celery.worker.consumer"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

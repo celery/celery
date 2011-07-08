@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.platforms &mdash; Celery v2.2.6 documentation</title>
+    <title>celery.platforms &mdash; Celery v2.3.0rc2 documentation</title>
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.2.6',
+        VERSION:     '2.3.0rc2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.6 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.3.0rc2 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="prev" title="celery.utils.dispatch.saferef" href="celery.utils.dispatch.saferef.html" /> 
   </head>
@@ -38,7 +38,7 @@
         <li class="right" >
           <a href="celery.utils.dispatch.saferef.html" title="celery.utils.dispatch.saferef"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -52,26 +52,23 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.2. For development docs,
-        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.platforms.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.platforms.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-platforms">
 <h1>celery.platforms<a class="headerlink" href="#celery-platforms" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.platforms"></span><dl class="class">
 <dt id="celery.platforms.DaemonContext">
-<em class="property">class </em><tt class="descclassname">celery.platforms.</tt><tt class="descname">DaemonContext</tt><big>(</big><em>pidfile=None</em>, <em>working_directory='/'</em>, <em>umask=0</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.platforms.DaemonContext" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.platforms.</tt><tt class="descname">DaemonContext</tt><big>(</big><em>pidfile=None</em>, <em>workdir='/'</em>, <em>umask=0</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.platforms.DaemonContext" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="celery.platforms.DaemonContext.close">
-<tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.platforms.DaemonContext.close" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.platforms.DaemonContext.detach">
-<tt class="descname">detach</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.platforms.DaemonContext.detach" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">close</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#celery.platforms.DaemonContext.close" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -106,7 +103,7 @@
 
 <dl class="method">
 <dt id="celery.platforms.PIDFile.release">
-<tt class="descname">release</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.platforms.PIDFile.release" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">release</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#celery.platforms.PIDFile.release" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -126,10 +123,44 @@
 
 </dd></dl>
 
-<dl class="function">
-<dt id="celery.platforms.create_daemon_context">
-<tt class="descclassname">celery.platforms.</tt><tt class="descname">create_daemon_context</tt><big>(</big><em>logfile=None</em>, <em>pidfile=None</em>, <em>uid=None</em>, <em>gid=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.platforms.create_daemon_context" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dl class="class">
+<dt id="celery.platforms.Signals">
+<em class="property">class </em><tt class="descclassname">celery.platforms.</tt><tt class="descname">Signals</tt><a class="headerlink" href="#celery.platforms.Signals" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.platforms.Signals.ignore">
+<tt class="descname">ignore</tt><big>(</big><em>*signal_names</em><big>)</big><a class="headerlink" href="#celery.platforms.Signals.ignore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ignore signal using <tt class="xref py py-const docutils literal"><span class="pre">SIG_IGN</span></tt>.</p>
+<p>Does nothing if the platform doesn&#8217;t support signals,
+or the specified signal in particular.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.Signals.reset">
+<tt class="descname">reset</tt><big>(</big><em>*signal_names</em><big>)</big><a class="headerlink" href="#celery.platforms.Signals.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset signals to the default signal handler.</p>
+<p>Does nothing if the platform doesn&#8217;t support signals,
+or the specified signal in particular.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.Signals.signum">
+<tt class="descname">signum</tt><big>(</big><em>signal_name</em><big>)</big><a class="headerlink" href="#celery.platforms.Signals.signum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get signal number from signal name.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.Signals.supported">
+<tt class="descname">supported</tt><big>(</big><em>signal_name</em><big>)</big><a class="headerlink" href="#celery.platforms.Signals.supported" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns true value if <tt class="docutils literal"><span class="pre">signal_name</span></tt> exists on this platform.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.Signals.update">
+<tt class="descname">update</tt><big>(</big><em>_d_=None</em>, <em>**sigmap</em><big>)</big><a class="headerlink" href="#celery.platforms.Signals.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set signal handlers from a mapping.</p>
+</dd></dl>
+
+</dd></dl>
 
 <dl class="function">
 <dt id="celery.platforms.create_pidlock">
@@ -141,31 +172,14 @@ is just deleted.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="celery.platforms.get_fdmax">
-<tt class="descclassname">celery.platforms.</tt><tt class="descname">get_fdmax</tt><big>(</big><em>default=None</em><big>)</big><a class="headerlink" href="#celery.platforms.get_fdmax" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.platforms.detached">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">detached</tt><big>(</big><em>logfile=None</em>, <em>pidfile=None</em>, <em>uid=None</em>, <em>gid=None</em>, <em>umask=0</em>, <em>workdir=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.platforms.detached" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
-<dt id="celery.platforms.get_signal">
-<tt class="descclassname">celery.platforms.</tt><tt class="descname">get_signal</tt><big>(</big><em>signal_name</em><big>)</big><a class="headerlink" href="#celery.platforms.get_signal" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get signal number from signal name.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.platforms.ignore_signal">
-<tt class="descclassname">celery.platforms.</tt><tt class="descname">ignore_signal</tt><big>(</big><em>signal_name</em><big>)</big><a class="headerlink" href="#celery.platforms.ignore_signal" title="Permalink to this definition">¶</a></dt>
-<dd><p>Ignore signal using <tt class="xref py py-const docutils literal"><span class="pre">SIG_IGN</span></tt>.</p>
-<p>Does nothing if the platform doesn&#8217;t support signals,
-or the specified signal in particular.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.platforms.install_signal_handler">
-<tt class="descclassname">celery.platforms.</tt><tt class="descname">install_signal_handler</tt><big>(</big><em>signal_name</em>, <em>handler</em><big>)</big><a class="headerlink" href="#celery.platforms.install_signal_handler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Install a handler.</p>
-<p>Does nothing if the current platform doesn&#8217;t support signals,
-or the specified signal in particular.</p>
-</dd></dl>
+<dt id="celery.platforms.get_fdmax">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">get_fdmax</tt><big>(</big><em>default=None</em><big>)</big><a class="headerlink" href="#celery.platforms.get_fdmax" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="function">
 <dt id="celery.platforms.parse_gid">
@@ -181,14 +195,6 @@ the gid is taken from the password file.</p>
 <dd><p>Parse user id.</p>
 <p>uid can be an interger (uid) or a string (username), if a username
 the uid is taken from the password file.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.platforms.reset_signal">
-<tt class="descclassname">celery.platforms.</tt><tt class="descname">reset_signal</tt><big>(</big><em>signal_name</em><big>)</big><a class="headerlink" href="#celery.platforms.reset_signal" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reset signal to the default signal handler.</p>
-<p>Does nothing if the platform doesn&#8217;t support signals,
-or the specified signal in particular.</p>
 </dd></dl>
 
 <dl class="function">
@@ -279,7 +285,7 @@ set to the users primary group.</p>
         <li class="right" >
           <a href="celery.utils.dispatch.saferef.html" title="celery.utils.dispatch.saferef"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.datastructures &mdash; Celery v2.2.6 documentation</title>
+    <title>celery.datastructures &mdash; Celery v2.3.0rc2 documentation</title>
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.2.6',
+        VERSION:     '2.3.0rc2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.6 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.3.0rc2 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.routes" href="celery.routes.html" />
     <link rel="prev" title="celery.execute.trace" href="celery.execute.trace.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.execute.trace.html" title="celery.execute.trace"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,11 +56,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.2. For development docs,
-        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.datastructures.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.datastructures.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <span class="target" id="module-celery.datastructures"></span><div class="section" id="celery-datastructures">
@@ -328,10 +330,20 @@ evicting expired members.</li>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="celery.datastructures.LimitedSet.expires">
+<tt class="descname">expires</tt><a class="headerlink" href="#celery.datastructures.LimitedSet.expires" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
 <dt id="celery.datastructures.LimitedSet.first">
 <tt class="descname">first</tt><a class="headerlink" href="#celery.datastructures.LimitedSet.first" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the oldest member.</p>
 </dd></dl>
+
+<dl class="attribute">
+<dt id="celery.datastructures.LimitedSet.maxlen">
+<tt class="descname">maxlen</tt><a class="headerlink" href="#celery.datastructures.LimitedSet.maxlen" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.datastructures.LimitedSet.pop_value">
@@ -430,7 +442,7 @@ evicting expired members.</li>
         <li class="right" >
           <a href="celery.execute.trace.html" title="celery.execute.trace"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

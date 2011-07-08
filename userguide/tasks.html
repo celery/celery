@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tasks &mdash; Celery v2.2.6 documentation</title>
+    <title>Tasks &mdash; Celery v2.3.0rc2 documentation</title>
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.6',
+        VERSION:     '2.3.0rc2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.6 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.3.0rc2 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Executing Tasks" href="executing.html" />
     <link rel="prev" title="Overview" href="overview.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="overview.html" title="Overview"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,11 +55,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.2. For development docs,
-        <a href="http://ask.github.com/celery/en/master/userguide/tasks.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/userguide/tasks.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="tasks">
@@ -235,7 +237,7 @@ out/-err will be written to the log file as well.</p>
 <span id="task-retry"></span><h2><a class="toc-backref" href="#id9">Retrying a task if something fails</a><a class="headerlink" href="#retrying-a-task-if-something-fails" title="Permalink to this headline">¶</a></h2>
 <p>Simply use <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.BaseTask.retry" title="celery.task.base.BaseTask.retry"><tt class="xref py py-meth docutils literal"><span class="pre">retry()</span></tt></a> to re-send the task.
 It will do the right thing, and respect the
-<a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.BaseTask.max_retries" title="celery.task.base.BaseTask.max_retries"><tt class="xref py py-attr docutils literal"><span class="pre">max_retries</span></tt></a> attribute:</p>
+<tt class="xref py py-attr docutils literal"><span class="pre">max_retries</span></tt> attribute:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span>
 <span class="k">def</span> <span class="nf">send_twitter_status</span><span class="p">(</span><span class="n">oauth</span><span class="p">,</span> <span class="n">tweet</span><span class="p">):</span>
     <span class="k">try</span><span class="p">:</span>
@@ -248,14 +250,14 @@ It will do the right thing, and respect the
 <p>Here we used the <cite>exc</cite> argument to pass the current exception to
 <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.BaseTask.retry" title="celery.task.base.BaseTask.retry"><tt class="xref py py-meth docutils literal"><span class="pre">retry()</span></tt></a>. At each step of the retry this exception
 is available as the tombstone (result) of the task. When
-<a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.BaseTask.max_retries" title="celery.task.base.BaseTask.max_retries"><tt class="xref py py-attr docutils literal"><span class="pre">max_retries</span></tt></a> has been exceeded this is the
+<tt class="xref py py-attr docutils literal"><span class="pre">max_retries</span></tt> has been exceeded this is the
 exception raised.  However, if an <cite>exc</cite> argument is not provided the
 <a class="reference internal" href="../reference/celery.exceptions.html#celery.exceptions.RetryTaskError" title="celery.exceptions.RetryTaskError"><tt class="xref py py-exc docutils literal"><span class="pre">RetryTaskError</span></tt></a> exception is raised instead.</p>
 <div class="section" id="using-a-custom-retry-delay">
 <span id="task-retry-custom-delay"></span><h3><a class="toc-backref" href="#id10">Using a custom retry delay</a><a class="headerlink" href="#using-a-custom-retry-delay" title="Permalink to this headline">¶</a></h3>
 <p>When a task is to be retried, it will wait for a given amount of time
 before doing so. The default delay is in the
-<a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.BaseTask.default_retry_delay" title="celery.task.base.BaseTask.default_retry_delay"><tt class="xref py py-attr docutils literal"><span class="pre">default_retry_delay</span></tt></a>
+<tt class="xref py py-attr docutils literal"><span class="pre">default_retry_delay</span></tt>
 attribute on the task. By default this is set to 3 minutes. Note that the
 unit for setting the delay is in seconds (int or float).</p>
 <p>You can also provide the <cite>countdown</cite> argument to
@@ -959,7 +961,7 @@ only be registered when the module they are defined in is imported.</p>
 meta class, <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.TaskType" title="celery.task.base.TaskType"><tt class="xref py py-class docutils literal"><span class="pre">TaskType</span></tt></a>.  This is the default
 meta class for <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.BaseTask" title="celery.task.base.BaseTask"><tt class="xref py py-class docutils literal"><span class="pre">BaseTask</span></tt></a>.</p>
 <p>If you want to register your task manually you can mark the
-task as <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.BaseTask.abstract" title="celery.task.base.BaseTask.abstract"><tt class="xref py py-attr docutils literal"><span class="pre">abstract</span></tt></a>:</p>
+task as <tt class="xref py py-attr docutils literal"><span class="pre">abstract</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
     <span class="n">abstract</span> <span class="o">=</span> <span class="bp">True</span>
 </pre></div>
@@ -978,7 +980,7 @@ challenge that has yet to be solved.</p>
 <div class="section" id="ignore-results-you-don-t-want">
 <span id="task-ignore-results"></span><h3><a class="toc-backref" href="#id36">Ignore results you don&#8217;t want</a><a class="headerlink" href="#ignore-results-you-don-t-want" title="Permalink to this headline">¶</a></h3>
 <p>If you don&#8217;t care about the results of a task, be sure to set the
-<a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.BaseTask.ignore_result" title="celery.task.base.BaseTask.ignore_result"><tt class="xref py py-attr docutils literal"><span class="pre">ignore_result</span></tt></a> option, as storing results
+<tt class="xref py py-attr docutils literal"><span class="pre">ignore_result</span></tt> option, as storing results
 wastes time and resources.</p>
 <div class="highlight-python"><pre>@task(ignore_result=True)
 def mytask(...)
@@ -1344,7 +1346,7 @@ need to pay.  You have to sign up to their service to get an API key.</p>
         <li class="right" >
           <a href="overview.html" title="Overview"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>

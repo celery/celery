@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.concurrency.processes &mdash; Celery v2.2.6 documentation</title>
+    <title>celery.concurrency.processes &mdash; Celery v2.3.0rc2 documentation</title>
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.2.6',
+        VERSION:     '2.3.0rc2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.6 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.3.0rc2 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.concurrency.processes.pool" href="celery.concurrency.processes.pool.html" />
     <link rel="prev" title="celery.concurrency.solo" href="celery.concurrency.solo.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.concurrency.solo.html" title="celery.concurrency.solo"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,11 +56,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.2. For development docs,
-        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.concurrency.processes.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.concurrency.processes.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-concurrency-processes">
@@ -208,7 +210,7 @@ to give the task a chance to clean up.</p>
 
 <dl class="class">
 <dt id="celery.concurrency.processes.TaskPool.Pool.TimeoutHandler">
-<em class="property">class </em><tt class="descclassname">TaskPool.Pool.</tt><tt class="descname">TimeoutHandler</tt><big>(</big><em>processes</em>, <em>cache</em>, <em>t_soft</em>, <em>t_hard</em>, <em>putlock</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.TaskPool.Pool.TimeoutHandler" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">TaskPool.Pool.</tt><tt class="descname">TimeoutHandler</tt><big>(</big><em>processes</em>, <em>cache</em>, <em>t_soft</em>, <em>t_hard</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.TaskPool.Pool.TimeoutHandler" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="celery.concurrency.processes.TaskPool.Pool.TimeoutHandler.body">
 <tt class="descname">body</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.TaskPool.Pool.TimeoutHandler.body" title="Permalink to this definition">¶</a></dt>
@@ -224,7 +226,7 @@ to give the task a chance to clean up.</p>
 
 <dl class="method">
 <dt id="celery.concurrency.processes.TaskPool.Pool.apply_async">
-<tt class="descclassname">TaskPool.Pool.</tt><tt class="descname">apply_async</tt><big>(</big><em>func</em>, <em>args=()</em>, <em>kwds={}</em>, <em>callback=None</em>, <em>accept_callback=None</em>, <em>timeout_callback=None</em>, <em>waitforslot=False</em>, <em>error_callback=None</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.TaskPool.Pool.apply_async" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">TaskPool.Pool.</tt><tt class="descname">apply_async</tt><big>(</big><em>func</em>, <em>args=()</em>, <em>kwds={}</em>, <em>callback=None</em>, <em>accept_callback=None</em>, <em>timeout_callback=None</em>, <em>waitforslot=False</em>, <em>error_callback=None</em>, <em>soft_timeout=None</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.TaskPool.Pool.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Asynchronous equivalent of <cite>apply()</cite> builtin.</p>
 <p>Callback is called when the functions return value is ready.
 The accept callback is called when the job is accepted to be executed.</p>
@@ -379,7 +381,7 @@ than <cite>Pool.map()</cite></p>
         <li class="right" >
           <a href="celery.concurrency.solo.html" title="celery.concurrency.solo"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

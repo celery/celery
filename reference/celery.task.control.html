@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.task.control &mdash; Celery v2.2.6 documentation</title>
+    <title>celery.task.control &mdash; Celery v2.3.0rc2 documentation</title>
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.6',
+        VERSION:     '2.3.0rc2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.6 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.3.0rc2 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.task.http" href="celery.task.http.html" />
     <link rel="prev" title="celery.result" href="celery.result.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.result.html" title="celery.result"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,11 +55,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.2. For development docs,
-        <a href="http://ask.github.com/celery/en/master/reference/celery.task.control.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/reference/celery.task.control.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-task-control">
@@ -198,7 +200,7 @@ connection is not provided.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>task_name</strong> &#8211; Type of task to change rate limit for.</li>
+<li><strong>task_name</strong> &#8211; Name of task to change rate limit for.</li>
 <li><strong>rate_limit</strong> &#8211; The rate limit as tasks per second, or a rate limit
 string (<cite>&#8220;100/m&#8221;</cite>, etc.
 see <tt class="xref py py-attr docutils literal"><span class="pre">celery.task.base.Task.rate_limit</span></tt> for
@@ -249,6 +251,26 @@ connection is not provided.</li>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Control.time_limit">
+<tt class="descclassname">Control.</tt><tt class="descname">time_limit</tt><big>(</big><em>task_name</em>, <em>soft=None</em>, <em>hard=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.control.Control.time_limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set time limits for task by type.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>task_name</strong> &#8211; Name of task to change time limits for.</li>
+<li><strong>soft</strong> &#8211; New soft time limit (in seconds).</li>
+<li><strong>hard</strong> &#8211; New hard time limit (in seconds).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Any additional keyword arguments are passed on to <a class="reference internal" href="#celery.task.control.Control.broadcast" title="celery.task.control.Control.broadcast"><tt class="xref py py-meth docutils literal"><span class="pre">broadcast()</span></tt></a>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -376,7 +398,7 @@ connection is not provided.</li>
         <li class="right" >
           <a href="celery.result.html" title="celery.result"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

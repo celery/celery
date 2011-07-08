@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.events.state &mdash; Celery v2.2.6 documentation</title>
+    <title>celery.events.state &mdash; Celery v2.3.0rc2 documentation</title>
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.2.6',
+        VERSION:     '2.3.0rc2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.2.6 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.3.0rc2 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.apps.worker" href="celery.apps.worker.html" />
     <link rel="prev" title="celery.events" href="celery.events.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.events.html" title="celery.events"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,11 +55,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.2. For development docs,
-        <a href="http://ask.github.com/celery/en/master/reference/celery.events.state.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/reference/celery.events.state.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-events-state">
@@ -231,6 +233,11 @@ these fields received before or after is simply ignored.</p>
 <dd><p>Callback for the <tt class="docutils literal"><span class="pre">task-succeeded</span></tt> event.</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="celery.events.state.Task.on_unknown_event">
+<tt class="descname">on_unknown_event</tt><big>(</big><em>type</em>, <em>timestamp=None</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Task.on_unknown_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="attribute">
 <dt id="celery.events.state.Task.ready">
 <tt class="descname">ready</tt><a class="headerlink" href="#celery.events.state.Task.ready" title="Permalink to this definition">¶</a></dt>
@@ -339,7 +346,7 @@ these fields received before or after is simply ignored.</p>
         <li class="right" >
           <a href="celery.events.html" title="celery.events"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
