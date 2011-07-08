@@ -5,25 +5,25 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.app &mdash; Celery v2.3.0a1 documentation</title>
-    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
-    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
+    <title>celery.app &mdash; Celery v2.2.6 documentation</title>
+    <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.3.0a1',
+        VERSION:     '2.2.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
-    <script type="text/javascript" src="../static/jquery.js"></script>
-    <script type="text/javascript" src="../static/underscore.js"></script>
-    <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.0a1 documentation" href="../index.html" />
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Celery v2.2.6 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
-    <link rel="next" title="celery.app.amqp" href="celery.app.amqp.html" />
+    <link rel="next" title="celery.app.task" href="celery.app.task.html" />
     <link rel="prev" title="API Reference" href="index.html" /> 
   </head>
   <body>
@@ -37,12 +37,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.app.amqp.html" title="celery.app.amqp"
+          <a href="celery.app.task.html" title="celery.app.task"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="index.html" title="API Reference"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.0a1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -56,8 +56,8 @@
 
     
         <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/reference/celery.app.html">go here</a>.
+        This document describes Celery 2.2. For development docs,
+        <a href="http://ask.github.com/celery/en/master/reference/celery.app.html">go here</a>.
         </p>
     
 
@@ -304,7 +304,7 @@ if <cite>argv</cite> is not specified.</p>
 <li><strong>insist</strong> &#8211; defaults to the <tt class="xref std std-setting docutils literal"><span class="pre">BROKER_INSIST</span></tt> setting.</li>
 <li><strong>connect_timeout</strong> &#8211; defaults to the
 <a class="reference internal" href="../configuration.html#std:setting-BROKER_CONNECTION_TIMEOUT"><tt class="xref std std-setting docutils literal"><span class="pre">BROKER_CONNECTION_TIMEOUT</span></tt></a> setting.</li>
-<li><strong>backend_cls</strong> &#8211; defaults to the <a class="reference internal" href="../configuration.html#std:setting-BROKER_BACKEND"><tt class="xref std std-setting docutils literal"><span class="pre">BROKER_BACKEND</span></tt></a>
+<li><strong>backend_cls</strong> &#8211; defaults to the <tt class="xref std std-setting docutils literal"><span class="pre">BROKER_BACKEND</span></tt>
 setting.</li>
 </ul>
 </td>
@@ -327,7 +327,7 @@ the function returns.</p>
 <dl class="method">
 <dt id="celery.app.App.mail_admins">
 <tt class="descname">mail_admins</tt><big>(</big><em>subject</em>, <em>body</em>, <em>fail_silently=False</em><big>)</big><a class="headerlink" href="#celery.app.App.mail_admins" title="Permalink to this definition">¶</a></dt>
-<dd><p>Send an email to the admins in the <a class="reference internal" href="../configuration.html#std:setting-ADMINS"><tt class="xref std std-setting docutils literal"><span class="pre">ADMINS</span></tt></a> setting.</p>
+<dd><p>Send an e-mail to the admins in the <a class="reference internal" href="../configuration.html#std:setting-ADMINS"><tt class="xref std std-setting docutils literal"><span class="pre">ADMINS</span></tt></a> setting.</p>
 </dd></dl>
 
 <dl class="method">
@@ -379,11 +379,11 @@ is no active app.</p>
   <p class="topless"><a href="index.html"
                         title="previous chapter">API Reference</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="celery.app.amqp.html"
-                        title="next chapter">celery.app.amqp</a></p>
+  <p class="topless"><a href="celery.app.task.html"
+                        title="next chapter">celery.app.task</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../sources/reference/celery.app.txt"
+    <li><a href="../_sources/reference/celery.app.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -413,18 +413,18 @@ is no active app.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.app.amqp.html" title="celery.app.amqp"
+          <a href="celery.app.task.html" title="celery.app.task"
              >next</a> |</li>
         <li class="right" >
           <a href="index.html" title="API Reference"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.0a1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
   </body>
 </html>

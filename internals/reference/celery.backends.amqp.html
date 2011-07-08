@@ -5,23 +5,23 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.backends.amqp &mdash; Celery v2.3.0a1 documentation</title>
-    <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
-    <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
+    <title>celery.backends.amqp &mdash; Celery v2.2.6 documentation</title>
+    <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.3.0a1',
+        VERSION:     '2.2.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
-    <script type="text/javascript" src="../../static/jquery.js"></script>
-    <script type="text/javascript" src="../../static/underscore.js"></script>
-    <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.0a1 documentation" href="../../index.html" />
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Celery v2.2.6 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.backends.mongodb" href="celery.backends.mongodb.html" />
     <link rel="prev" title="celery.backends.cache" href="celery.backends.cache.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.backends.cache.html" title="celery.backends.cache"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.0a1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -57,8 +57,8 @@
 
     
         <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/internals/reference/celery.backends.amqp.html">go here</a>.
+        This document describes Celery 2.2. For development docs,
+        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.backends.amqp.html">go here</a>.
         </p>
     
 
@@ -212,13 +212,10 @@ on the specified channel.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>requeue</strong> &#8211; By default the messages will be redelivered
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>requeue</strong> &#8211; By default the messages will be redelivered
 to the original recipient. With <cite>requeue</cite> set to true, the
 server will attempt to requeue the message, potentially then
-delivering it to an alternative subscriber.</li>
-</ul>
-</td>
+delivering it to an alternative subscriber.</td>
 </tr>
 </tbody>
 </table>
@@ -278,44 +275,44 @@ covers most of the common messaging use cases. An AMQP broker can
 also define additional exchange types, so see your broker
 manual for more information about available exchange types.</p>
 <blockquote>
-<ul>
+<div><ul>
 <li><p class="first"><cite>direct</cite> (<em>default</em>)</p>
 <blockquote>
-<p>Direct match between the routing key in the message, and the
+<div><p>Direct match between the routing key in the message, and the
 routing criteria used when a queue is bound to this exchange.</p>
-</blockquote>
+</div></blockquote>
 </li>
 <li><p class="first"><cite>topic</cite></p>
 <blockquote>
-<p>Wildcard match between the routing key and the routing pattern
+<div><p>Wildcard match between the routing key and the routing pattern
 specified in the exchange/queue binding. The routing key is
 treated as zero or more words delimited by <cite>&#8221;.&#8221;</cite> and
 supports special wildcard characters. <cite>&#8220;*&#8221;</cite> matches a
 single word and <cite>&#8220;#&#8221;</cite> matches zero or more words.</p>
-</blockquote>
+</div></blockquote>
 </li>
 <li><p class="first"><cite>fanout</cite></p>
 <blockquote>
-<p>Queues are bound to this exchange with no arguments. Hence any
+<div><p>Queues are bound to this exchange with no arguments. Hence any
 message sent to this exchange will be forwarded to all queues
 bound to this exchange.</p>
-</blockquote>
+</div></blockquote>
 </li>
 <li><p class="first"><cite>headers</cite></p>
 <blockquote>
-<p>Queues are bound to this exchange with a table of arguments
+<div><p>Queues are bound to this exchange with a table of arguments
 containing headers and values (optional). A special argument
 named &#8220;x-match&#8221; determines the matching algorithm, where
 <cite>&#8220;all&#8221;</cite> implies an <cite>AND</cite> (all pairs must match) and
 <cite>&#8220;any&#8221;</cite> implies <cite>OR</cite> (at least one pair must match).</p>
 <p><a class="reference internal" href="#celery.backends.amqp.AMQPBackend.Exchange.arguments" title="celery.backends.amqp.AMQPBackend.Exchange.arguments"><tt class="xref py py-attr docutils literal"><span class="pre">arguments</span></tt></a> is used to specify the arguments.</p>
-</blockquote>
+</div></blockquote>
 </li>
 </ul>
 <p>This description of AMQP exchange types was shamelessly stolen
 from the blog post <a class="reference external" href="http://bit.ly/amqp-exchange-types">AMQP in 10 minutes: Part 4</a> by
 Rajith Attapattu. This article is recommended reading.</p>
-</blockquote>
+</div></blockquote>
 </dd></dl>
 
 <dl class="attribute">
@@ -345,12 +342,12 @@ using it. Default is <tt class="xref py py-const xref docutils literal"><span cl
 <dd><p>The default delivery mode used for messages. The value is an integer,
 or alias string.</p>
 <blockquote>
-<ul>
+<div><ul>
 <li><p class="first">1 or <cite>&#8220;transient&#8221;</cite></p>
 <blockquote>
-<p>The message is transient. Which means it is stored in
+<div><p>The message is transient. Which means it is stored in
 memory only, and is lost if the server dies or restarts.</p>
-</blockquote>
+</div></blockquote>
 </li>
 <li><dl class="first docutils">
 <dt>2 or &#8220;persistent&#8221; (<em>default</em>)</dt>
@@ -361,7 +358,7 @@ preserved if the server dies or restarts.</p>
 </dl>
 </li>
 </ul>
-</blockquote>
+</div></blockquote>
 <p>The default value is 2 (persistent).</p>
 </dd></dl>
 
@@ -412,11 +409,8 @@ properly sets content_encoding.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>nowait</strong> &#8211; If set the server will not respond, and a
-response will not be waited for. Default is <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt>.</li>
-</ul>
-</td>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>nowait</strong> &#8211; If set the server will not respond, and a
+response will not be waited for. Default is <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt>.</td>
 </tr>
 </tbody>
 </table>
@@ -578,21 +572,21 @@ must have been declared.</li>
 <p>The interpretation of the routing key depends on
 the <tt class="xref py py-attr docutils literal"><span class="pre">Exchange.type</span></tt>.</p>
 <blockquote>
-<ul>
+<div><ul>
 <li><p class="first">direct exchange</p>
 <blockquote>
-<p>Matches if the routing key property of the message and
+<div><p>Matches if the routing key property of the message and
 the <a class="reference internal" href="#celery.backends.amqp.AMQPBackend.Queue.routing_key" title="celery.backends.amqp.AMQPBackend.Queue.routing_key"><tt class="xref py py-attr docutils literal"><span class="pre">routing_key</span></tt></a> attribute are identical.</p>
-</blockquote>
+</div></blockquote>
 </li>
 <li><p class="first">fanout exchange</p>
 <blockquote>
-<p>Always matches, even if the binding does not have a key.</p>
-</blockquote>
+<div><p>Always matches, even if the binding does not have a key.</p>
+</div></blockquote>
 </li>
 <li><p class="first">topic exchange</p>
 <blockquote>
-<p>Matches the routing key property of the message by a primitive
+<div><p>Matches the routing key property of the message by a primitive
 pattern matching scheme. The message routing key then consists
 of words separated by dots (<cite>&#8221;.&#8221;</cite>, like domain names), and
 two special characters are available; star (<cite>&#8220;*&#8221;</cite>) and hash
@@ -600,10 +594,10 @@ two special characters are available; star (<cite>&#8220;*&#8221;</cite>) and ha
 zero or more words. For example <cite>&#8220;*.stock.#&#8221;</cite> matches the
 routing keys <cite>&#8220;usd.stock&#8221;</cite> and <cite>&#8220;eur.stock.db&#8221;</cite> but not
 <cite>&#8220;stock.nasdaq&#8221;</cite>.</p>
-</blockquote>
+</div></blockquote>
 </li>
 </ul>
-</blockquote>
+</div></blockquote>
 </dd></dl>
 
 <dl class="attribute">
@@ -726,11 +720,8 @@ or <tt class="xref py py-const xref docutils literal"><span class="pre">None</sp
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>no_ack</strong> &#8211; If set messages received does not have to
-be acknowledged.</li>
-</ul>
-</td>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>no_ack</strong> &#8211; If set messages received does not have to
+be acknowledged.</td>
 </tr>
 </tbody>
 </table>
@@ -754,10 +745,7 @@ is more important than performance.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>nowait</strong> &#8211; Do not wait for a reply.</li>
-</ul>
-</td>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>nowait</strong> &#8211; Do not wait for a reply.</td>
 </tr>
 </tbody>
 </table>
@@ -802,11 +790,6 @@ without modifying the server state.</li>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="celery.backends.amqp.AMQPBackend.delete_taskset">
-<tt class="descclassname">AMQPBackend.</tt><tt class="descname">delete_taskset</tt><big>(</big><em>taskset_id</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.delete_taskset" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.drain_events">
 <tt class="descclassname">AMQPBackend.</tt><tt class="descname">drain_events</tt><big>(</big><em>connection</em>, <em>consumer</em>, <em>timeout=None</em>, <em>now=&lt;built-in function time&gt;</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.drain_events" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -826,6 +809,11 @@ without modifying the server state.</li>
 <tt class="descclassname">AMQPBackend.</tt><tt class="descname">poll</tt><big>(</big><em>task_id</em>, <em>backlog_limit=100</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.poll" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.pool">
+<tt class="descclassname">AMQPBackend.</tt><tt class="descname">pool</tt><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.pool" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.reload_task_result">
 <tt class="descclassname">AMQPBackend.</tt><tt class="descname">reload_task_result</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.reload_task_result" title="Permalink to this definition">¶</a></dt>
@@ -840,7 +828,8 @@ without modifying the server state.</li>
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.restore_taskset">
 <tt class="descclassname">AMQPBackend.</tt><tt class="descname">restore_taskset</tt><big>(</big><em>taskset_id</em>, <em>cache=True</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.restore_taskset" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Get the result of a taskset.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.revive">
@@ -850,7 +839,8 @@ without modifying the server state.</li>
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.save_taskset">
 <tt class="descclassname">AMQPBackend.</tt><tt class="descname">save_taskset</tt><big>(</big><em>taskset_id</em>, <em>result</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.save_taskset" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Store the result and status of a task.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.wait_for">
@@ -888,7 +878,7 @@ without modifying the server state.</li>
                         title="next chapter">celery.backends.mongodb</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../../sources/internals/reference/celery.backends.amqp.txt"
+    <li><a href="../../_sources/internals/reference/celery.backends.amqp.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -923,14 +913,14 @@ without modifying the server state.</li>
         <li class="right" >
           <a href="celery.backends.cache.html" title="celery.backends.cache"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.0a1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
   </body>
 </html>

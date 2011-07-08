@@ -5,23 +5,23 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Concurrency with Eventlet &mdash; Celery v2.3.0a1 documentation</title>
-    <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
-    <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
+    <title>Concurrency with Eventlet &mdash; Celery v2.2.6 documentation</title>
+    <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.3.0a1',
+        VERSION:     '2.2.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
-    <script type="text/javascript" src="../../static/jquery.js"></script>
-    <script type="text/javascript" src="../../static/underscore.js"></script>
-    <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.0a1 documentation" href="../../index.html" />
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Celery v2.2.6 documentation" href="../../index.html" />
     <link rel="up" title="Concurrency" href="index.html" />
     <link rel="next" title="Configuration and defaults" href="../../configuration.html" />
     <link rel="prev" title="Concurrency" href="index.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="index.html" title="Concurrency"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.0a1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
           <li><a href="../index.html" >User Guide</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Concurrency</a> &raquo;</li> 
       </ul>
@@ -57,8 +57,8 @@
 
     
         <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/userguide/concurrency/eventlet.html">go here</a>.
+        This document describes Celery 2.2. For development docs,
+        <a href="http://ask.github.com/celery/en/master/userguide/concurrency/eventlet.html">go here</a>.
         </p>
     
 
@@ -71,7 +71,7 @@
 A concurrent networking library for Python that allows you to
 change how you run your code, not how you write it.</p>
 <blockquote>
-<ul class="simple">
+<div><ul class="simple">
 <li>It uses <a class="reference external" href="http://linux.die.net/man/4/epoll">epoll(4)</a> or <a class="reference external" href="http://monkey.org/~provos/libevent/">libevent</a> for
 <a class="reference external" href="http://en.wikipedia.org/wiki/Asynchronous_I/O#Select.28.2Fpoll.29_loops">highly scalable non-blocking I/O</a>.</li>
 <li><a class="reference external" href="http://en.wikipedia.org/wiki/Coroutine">Coroutines</a> ensure that the developer uses a blocking style of
@@ -80,7 +80,7 @@ non-blocking I/O.</li>
 <li>The event dispatch is implicit, which means you can easily use Eventlet
 from the Python interpreter, or as a small part of a larger application.</li>
 </ul>
-</blockquote>
+</div></blockquote>
 <p>Celery supports Eventlet as an alternative execution pool implementation.
 It is in some cases superior to multiprocessing, but you need to ensure
 your tasks do not perform blocking calls, as this will halt all
@@ -125,7 +125,7 @@ some examples taking use of Eventlet support.</p>
                         title="next chapter">Configuration and defaults</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../../sources/userguide/concurrency/eventlet.txt"
+    <li><a href="../../_sources/userguide/concurrency/eventlet.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -160,14 +160,14 @@ some examples taking use of Eventlet support.</p>
         <li class="right" >
           <a href="index.html" title="Concurrency"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.0a1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
           <li><a href="../index.html" >User Guide</a> &raquo;</li>
           <li><a href="index.html" >Concurrency</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
   </body>
 </html>

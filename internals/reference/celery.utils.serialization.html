@@ -5,26 +5,26 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.utils.serialization &mdash; Celery v2.3.0a1 documentation</title>
-    <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
-    <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
+    <title>celery.utils.serialization &mdash; Celery v2.2.6 documentation</title>
+    <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.3.0a1',
+        VERSION:     '2.2.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
-    <script type="text/javascript" src="../../static/jquery.js"></script>
-    <script type="text/javascript" src="../../static/underscore.js"></script>
-    <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.0a1 documentation" href="../../index.html" />
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Celery v2.2.6 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.utils.timer2" href="celery.utils.timer2.html" />
-    <link rel="prev" title="celery.utils.functional" href="celery.utils.functional.html" /> 
+    <link rel="prev" title="celery.utils.patch" href="celery.utils.patch.html" /> 
   </head>
   <body>
     <div class="related">
@@ -40,9 +40,9 @@
           <a href="celery.utils.timer2.html" title="celery.utils.timer2"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="celery.utils.functional.html" title="celery.utils.functional"
+          <a href="celery.utils.patch.html" title="celery.utils.patch"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.0a1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -57,8 +57,8 @@
 
     
         <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/internals/reference/celery.utils.serialization.html">go here</a>.
+        This document describes Celery 2.2. For development docs,
+        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.utils.serialization.html">go here</a>.
         </p>
     
 
@@ -140,14 +140,10 @@ you should use <tt class="xref py py-exc docutils literal"><span class="pre">Unp
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>exc</strong> &#8211; An exception instance.</li>
-</ul>
-</td>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>exc</strong> &#8211; An exception instance.</td>
 </tr>
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the nearest exception if it&#8217;s not <tt class="xref py py-exc docutils literal"><span class="pre">Exception</span></tt> or below,
-if it is it returns <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt>.</p>
-</td>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body">the nearest exception if it&#8217;s not <tt class="xref py py-exc docutils literal"><span class="pre">Exception</span></tt> or below,
+if it is it returns <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt>.</td>
 </tr>
 </tbody>
 </table>
@@ -189,14 +185,14 @@ if it is it returns <tt class="xref py py-const xref docutils literal"><span cla
   <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
 </a></p>
   <h4>Previous topic</h4>
-  <p class="topless"><a href="celery.utils.functional.html"
-                        title="previous chapter">celery.utils.functional</a></p>
+  <p class="topless"><a href="celery.utils.patch.html"
+                        title="previous chapter">celery.utils.patch</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="celery.utils.timer2.html"
                         title="next chapter">celery.utils.timer2</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../../sources/internals/reference/celery.utils.serialization.txt"
+    <li><a href="../../_sources/internals/reference/celery.utils.serialization.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -229,16 +225,16 @@ if it is it returns <tt class="xref py py-const xref docutils literal"><span cla
           <a href="celery.utils.timer2.html" title="celery.utils.timer2"
              >next</a> |</li>
         <li class="right" >
-          <a href="celery.utils.functional.html" title="celery.utils.functional"
+          <a href="celery.utils.patch.html" title="celery.utils.patch"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.0a1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
   </body>
 </html>

@@ -5,23 +5,23 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Using Celery with Redis/Database as the messaging queue. &mdash; Celery v2.3.0a1 documentation</title>
-    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
-    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
+    <title>Using Celery with Redis/Database as the messaging queue. &mdash; Celery v2.2.6 documentation</title>
+    <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.3.0a1',
+        VERSION:     '2.2.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
-    <script type="text/javascript" src="../static/jquery.js"></script>
-    <script type="text/javascript" src="../static/underscore.js"></script>
-    <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.0a1 documentation" href="../index.html" />
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Celery v2.2.6 documentation" href="../index.html" />
     <link rel="up" title="Tutorials" href="index.html" />
     <link rel="next" title="Debugging Tasks Remotely (using pdb)" href="debugging.html" />
     <link rel="prev" title="Tutorials" href="index.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="index.html" title="Tutorials"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.0a1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials</a> &raquo;</li> 
       </ul>
     </div>  
@@ -56,8 +56,8 @@
 
     
         <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/tutorials/otherqueues.html">go here</a>.
+        This document describes Celery 2.2. For development docs,
+        <a href="http://ask.github.com/celery/en/master/tutorials/otherqueues.html">go here</a>.
         </p>
     
 
@@ -95,7 +95,7 @@
 <span id="otherqueues-redis-conf"></span><h3><a class="toc-backref" href="#id5">Configuration</a><a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h3>
 <p>Configuration is easy, set the transport, and configure the location of
 your Redis database:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">BROKER_BACKEND</span> <span class="o">=</span> <span class="s">&quot;redis&quot;</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">BROKER_TRANSPORT</span> <span class="o">=</span> <span class="s">&quot;redis&quot;</span>
 
 <span class="n">BROKER_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>  <span class="c"># Maps to redis host.</span>
 <span class="n">BROKER_PORT</span> <span class="o">=</span> <span class="mi">6379</span>         <span class="c"># Maps to redis port.</span>
@@ -106,9 +106,9 @@ your Redis database:</p>
 <h4><a class="toc-backref" href="#id6">Results</a><a class="headerlink" href="#results" title="Permalink to this headline">¶</a></h4>
 <p>You probably also want to store results in Redis:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_RESULT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;redis&quot;</span>
-<span class="n">REDIS_HOST</span> <span class="o">=</span> <span class="mi">6379</span>
-<span class="n">REDIS_PORT</span> <span class="o">=</span> <span class="mi">6379</span>
-<span class="n">REDIS_DB</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">CELERY_REDIS_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
+<span class="n">CELERY_REDIS_PORT</span> <span class="o">=</span> <span class="mi">6379</span>
+<span class="n">CELERY_REDIS_DB</span> <span class="o">=</span> <span class="mi">0</span>
 </pre></div>
 </div>
 <p>For a complete list of options supported by the Redis result backend see
@@ -132,7 +132,7 @@ your Redis database:</p>
 an SQLAlchemy database URI.</p>
 <ol class="arabic">
 <li><p class="first">Set your broker transport:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">BROKER_BACKEND</span> <span class="o">=</span> <span class="s">&quot;sqlakombu.transport.Transport&quot;</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">BROKER_TRANSPORT</span> <span class="o">=</span> <span class="s">&quot;sqlakombu.transport.Transport&quot;</span>
 </pre></div>
 </div>
 </li>
@@ -180,7 +180,7 @@ backend.  See <a class="reference internal" href="../configuration.html#conf-dat
 configuration values.</p>
 <ol class="arabic">
 <li><p class="first">Set your broker transport:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">BROKER_BACKEND</span> <span class="o">=</span> <span class="s">&quot;djkombu.transport.DatabaseTransport&quot;</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">BROKER_TRANSPORT</span> <span class="o">=</span> <span class="s">&quot;djkombu.transport.DatabaseTransport&quot;</span>
 </pre></div>
 </div>
 </li>
@@ -199,14 +199,14 @@ configuration values.</p>
 </li>
 </ol>
 <blockquote>
-The above is just an example, if you haven&#8217;t configured your database before
+<div>The above is just an example, if you haven&#8217;t configured your database before
 you should read the Django database settings reference:
-<a class="reference external" href="http://docs.djangoproject.com/en/1.1/ref/settings/#database-engine">http://docs.djangoproject.com/en/1.1/ref/settings/#database-engine</a></blockquote>
+<a class="reference external" href="http://docs.djangoproject.com/en/1.1/ref/settings/#database-engine">http://docs.djangoproject.com/en/1.1/ref/settings/#database-engine</a></div></blockquote>
 <ol class="arabic">
 <li><p class="first">Sync your database schema.</p>
 <blockquote>
-<p>$ python manage.py syncdb</p>
-</blockquote>
+<div><p>$ python manage.py syncdb</p>
+</div></blockquote>
 </li>
 </ol>
 </div>
@@ -229,7 +229,7 @@ you should read the Django database settings reference:
                         title="next chapter">Debugging Tasks Remotely (using pdb)</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../sources/tutorials/otherqueues.txt"
+    <li><a href="../_sources/tutorials/otherqueues.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -264,13 +264,13 @@ you should read the Django database settings reference:
         <li class="right" >
           <a href="index.html" title="Tutorials"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.0a1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
           <li><a href="index.html" >Tutorials</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
   </body>
 </html>

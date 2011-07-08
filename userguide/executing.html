@@ -5,23 +5,23 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Executing Tasks &mdash; Celery v2.3.0a1 documentation</title>
-    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
-    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
+    <title>Executing Tasks &mdash; Celery v2.2.6 documentation</title>
+    <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.3.0a1',
+        VERSION:     '2.2.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
-    <script type="text/javascript" src="../static/jquery.js"></script>
-    <script type="text/javascript" src="../static/underscore.js"></script>
-    <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.0a1 documentation" href="../index.html" />
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Celery v2.2.6 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Workers Guide" href="workers.html" />
     <link rel="prev" title="Tasks" href="tasks.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="tasks.html" title="Tasks"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.0a1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -56,8 +56,8 @@
 
     
         <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/userguide/executing.html">go here</a>.
+        This document describes Celery 2.2. For development docs,
+        <a href="http://ask.github.com/celery/en/master/userguide/executing.html">go here</a>.
         </p>
     
 
@@ -209,12 +209,12 @@ be available for the worker.</p>
 <p>The client uses the following order to decide which serializer
 to use when sending a task:</p>
 <blockquote>
-<ol class="arabic simple">
+<div><ol class="arabic simple">
 <li>The <cite>serializer</cite> argument to <cite>apply_async</cite></li>
 <li>The tasks <cite>serializer</cite> attribute</li>
 <li>The default <a class="reference internal" href="../configuration.html#std:setting-CELERY_TASK_SERIALIZER"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TASK_SERIALIZER</span></tt></a> setting.</li>
 </ol>
-</blockquote>
+</div></blockquote>
 <ul class="simple">
 <li>Using the <cite>serializer</cite> argument to <cite>apply_async</cite>:</li>
 </ul>
@@ -277,17 +277,17 @@ key in different ways, implementing different messaging scenarios.</p>
 <ul>
 <li><p class="first">direct</p>
 <blockquote>
-<p>Matches the routing key exactly.</p>
-</blockquote>
+<div><p>Matches the routing key exactly.</p>
+</div></blockquote>
 </li>
 <li><p class="first">topic</p>
 <blockquote>
-<p>In the topic exchange the routing key is made up of words separated by
+<div><p>In the topic exchange the routing key is made up of words separated by
 dots (<cite>.</cite>).  Words can be matched by the wild cards <cite>*</cite> and <cite>#</cite>,
 where <cite>*</cite> matches one exact word, and <cite>#</cite> matches one or many words.</p>
 <p>For example, <cite>*.stock.#</cite> matches the routing keys <cite>usd.stock</cite> and
 <cite>euro.stock.db</cite> but not <cite>stock.nasdaq</cite>.</p>
-</blockquote>
+</div></blockquote>
 </li>
 </ul>
 <p>We create three queues, <cite>video</cite>, <cite>image</cite> and <cite>lowpri</cite> that binds to
@@ -358,7 +358,7 @@ if the task cannot be routed to a worker immediately.</p>
                         title="next chapter">Workers Guide</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../sources/userguide/executing.txt"
+    <li><a href="../_sources/userguide/executing.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -393,13 +393,13 @@ if the task cannot be routed to a worker immediately.</p>
         <li class="right" >
           <a href="tasks.html" title="Tasks"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.0a1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.2.6 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
   </body>
 </html>

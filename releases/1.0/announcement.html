@@ -5,23 +5,23 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Celery 1.0 has been released! &mdash; Celery v2.3.0a1 documentation</title>
-    <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
-    <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
+    <title>Celery 1.0 has been released! &mdash; Celery v2.2.6 documentation</title>
+    <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.3.0a1',
+        VERSION:     '2.2.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
-    <script type="text/javascript" src="../../static/jquery.js"></script>
-    <script type="text/javascript" src="../../static/underscore.js"></script>
-    <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.0a1 documentation" href="../../index.html" /> 
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Celery v2.2.6 documentation" href="../../index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -33,7 +33,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.0a1 documentation</a> &raquo;</li> 
+        <li><a href="../../index.html">Celery v2.2.6 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -46,8 +46,8 @@
 
     
         <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/releases/1.0/announcement.html">go here</a>.
+        This document describes Celery 2.2. For development docs,
+        <a href="http://ask.github.com/celery/en/master/releases/1.0/announcement.html">go here</a>.
         </p>
     
 
@@ -96,68 +96,68 @@ is loud by default, and will likely be quite annoying.</li>
 <ul>
 <li><p class="first">Task decorators</p>
 <blockquote>
-<p>Write tasks as regular functions and decorate them.
+<div><p>Write tasks as regular functions and decorate them.
 There are both <tt class="xref py py-func docutils literal"><span class="pre">task()</span></tt>, and <tt class="xref py py-func docutils literal"><span class="pre">periodic_task()</span></tt> decorators.</p>
-</blockquote>
+</div></blockquote>
 </li>
 <li><p class="first">Tasks are automatically registered</p>
 <blockquote>
-<p>Registering the tasks manually was getting tedious, so now you don&#8217;t have
+<div><p>Registering the tasks manually was getting tedious, so now you don&#8217;t have
 to anymore. You can still do it manually if you need to, just
 disable <tt class="xref py py-attr docutils literal"><span class="pre">Task.autoregister</span></tt>. The concept of abstract task classes
 has also been introduced, this is like django models, where only the
 subclasses of an abstract task is registered.</p>
-</blockquote>
+</div></blockquote>
 </li>
 <li><p class="first">Events</p>
 <blockquote>
-<p>If enabled, the worker will send events, telling you what tasks it
+<div><p>If enabled, the worker will send events, telling you what tasks it
 executes, their results, and how long it took to execute them. It also
 sends out heartbeats, so listeners are able to detect nonfunctional
 workers. This is the basis for the new real-time web monitor we&#8217;re working on
 (<a class="reference external" href="http://github.com/ask/celerymon/">celerymon</a>).</p>
-</blockquote>
+</div></blockquote>
 </li>
 </ul>
 <ul>
 <li><p class="first">Rate limiting</p>
 <blockquote>
-<p>Global and per task rate limits. 10 tasks a second? or one an hour? You
+<div><p>Global and per task rate limits. 10 tasks a second? or one an hour? You
 decide. It&#8217;s using the awesome <a class="reference external" href="http://en.wikipedia.org/wiki/Token_bucket">token bucket algorithm</a>, which is
 commonly used for network traffic shaping. It accounts for bursts of
 activity, so your workers won&#8217;t be bored by having nothing to do.</p>
-</blockquote>
+</div></blockquote>
 </li>
 </ul>
 <ul>
 <li><p class="first">New periodic task service.</p>
 <blockquote>
-<p>Periodic tasks are no longer dispatched by <cite>celeryd</cite>, but instead by a
+<div><p>Periodic tasks are no longer dispatched by <cite>celeryd</cite>, but instead by a
 separate service called <cite>celerybeat</cite>. This is an optimized, centralized
 service dedicated to your periodic tasks, which means you don&#8217;t have to
 worry about deadlocks or race conditions any more. But that does mean you
 have to make sure only one instance of this service is running at any one
 time.</p>
-</blockquote>
+</div></blockquote>
 <p><strong>TIP:</strong> If you&#8217;re only running a single <cite>celeryd</cite> server, you can embed
 <cite>celerybeat</cite> inside it. Just add the <cite>&#8211;beat</cite> argument.</p>
 </li>
 <li><p class="first">Broadcast commands</p>
 <blockquote>
-<p>If you change your mind and don&#8217;t want to run a task after all, you
+<div><p>If you change your mind and don&#8217;t want to run a task after all, you
 now have the option to revoke it.</p>
 <p>Also, you can rate limit tasks or even shut down the worker remotely.</p>
 <p>It doesn&#8217;t have many commands yet, but we&#8217;re waiting for broadcast
 commands to reach its full potential, so please share your ideas
 if you have any.</p>
-</blockquote>
+</div></blockquote>
 </li>
 <li><p class="first">Multiple queues</p>
 <blockquote>
-<p>The worker is able to receive tasks on multiple queues at once.
+<div><p>The worker is able to receive tasks on multiple queues at once.
 This opens up a lot of new possibilities when combined with the impressive
 routing support in AMQP.</p>
-</blockquote>
+</div></blockquote>
 </li>
 <li><p class="first">Platform agnostic message format.</p>
 <p>The message format has been standardized and is now using the ISO-8601 format
@@ -206,7 +206,7 @@ Just install it using pip: <cite>pip install setproctitle</cite>.</p>
 </a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../../sources/releases/1.0/announcement.txt"
+    <li><a href="../../_sources/releases/1.0/announcement.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -235,12 +235,12 @@ Just install it using pip: <cite>pip install setproctitle</cite>.</p>
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.0a1 documentation</a> &raquo;</li> 
+        <li><a href="../../index.html">Celery v2.2.6 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
   </body>
 </html>

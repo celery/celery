@@ -5,23 +5,23 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Configuration and defaults &mdash; Celery v2.3.0a1 documentation</title>
-    <link rel="stylesheet" href="static/celery.css" type="text/css" />
-    <link rel="stylesheet" href="static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="static/issuetracker.css" type="text/css" />
+    <title>Configuration and defaults &mdash; Celery v2.2.6 documentation</title>
+    <link rel="stylesheet" href="_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '2.3.0a1',
+        VERSION:     '2.2.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
-    <script type="text/javascript" src="static/jquery.js"></script>
-    <script type="text/javascript" src="static/underscore.js"></script>
-    <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.0a1 documentation" href="index.html" />
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Celery v2.2.6 documentation" href="index.html" />
     <link rel="next" title="Cookbook" href="cookbook/index.html" />
     <link rel="prev" title="Concurrency with Eventlet" href="userguide/concurrency/eventlet.html" /> 
   </head>
@@ -41,7 +41,7 @@
         <li class="right" >
           <a href="userguide/concurrency/eventlet.html" title="Concurrency with Eventlet"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery v2.3.0a1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.2.6 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -54,8 +54,8 @@
 
     
         <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/configuration.html">go here</a>.
+        This document describes Celery 2.2. For development docs,
+        <a href="http://ask.github.com/celery/en/master/configuration.html">go here</a>.
         </p>
     
 
@@ -146,6 +146,15 @@ to the workers.</p>
 <span id="conf-result-backend"></span><h3><a class="toc-backref" href="#id8">Task result backend settings</a><a class="headerlink" href="#task-result-backend-settings" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="celery-result-backend">
 <span id="std:setting-CELERY_RESULT_BACKEND"></span><h4>CELERY_RESULT_BACKEND<a class="headerlink" href="#celery-result-backend" title="Permalink to this headline">¶</a></h4>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Deprecated aliases:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><tt class="docutils literal"><span class="pre">CELERY_BACKEND</span></tt></td>
+</tr>
+</tbody>
+</table>
 <p>The backend used to store task results (tombstones).
 Disabled by default.
 Can be one of the following:</p>
@@ -298,7 +307,7 @@ libraries.  The latter is used only if <a class="reference external" href="http:
 </div>
 <p id="std:setting-CELERY_CACHE_BACKEND_OPTIONS">The &#8220;dummy&#8221; backend stores the cache in memory only:</p>
 <blockquote>
-CELERY_CACHE_BACKEND = &#8220;dummy&#8221;</blockquote>
+<div>CELERY_CACHE_BACKEND = &#8220;dummy&#8221;</div></blockquote>
 </div>
 <div class="section" id="celery-cache-backend-options">
 <h4>CELERY_CACHE_BACKEND_OPTIONS<a class="headerlink" href="#celery-cache-backend-options" title="Permalink to this headline">¶</a></h4>
@@ -340,35 +349,34 @@ setting:</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p>The Redis backend requires the <tt class="xref py py-mod docutils literal"><span class="pre">redis</span></tt> library:
-<a class="reference external" href="http://pypi.python.org/pypi/redis/0.5.5">http://pypi.python.org/pypi/redis/0.5.5</a></p>
+<a class="reference external" href="http://pypi.python.org/pypi/redis/">http://pypi.python.org/pypi/redis/</a></p>
 <p>To install the redis package use <cite>pip</cite> or <cite>easy_install</cite>:</p>
 <div class="last highlight-python"><pre>$ pip install redis</pre>
 </div>
 </div>
 <p>This backend requires the following configuration directives to be set.</p>
-<div class="section" id="redis-host">
-<span id="std:setting-REDIS_HOST"></span><h4>REDIS_HOST<a class="headerlink" href="#redis-host" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="celery-redis-host">
+<span id="std:setting-CELERY_REDIS_HOST"></span><h4>CELERY_REDIS_HOST<a class="headerlink" href="#celery-redis-host" title="Permalink to this headline">¶</a></h4>
 <p>Host name of the Redis database server. e.g. <cite>&#8220;localhost&#8221;</cite>.</p>
 </div>
-<div class="section" id="redis-port">
-<span id="std:setting-REDIS_PORT"></span><h4>REDIS_PORT<a class="headerlink" href="#redis-port" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="celery-redis-port">
+<span id="std:setting-CELERY_REDIS_PORT"></span><h4>CELERY_REDIS_PORT<a class="headerlink" href="#celery-redis-port" title="Permalink to this headline">¶</a></h4>
 <p>Port to the Redis database server. e.g. <cite>6379</cite>.</p>
 </div>
-<div class="section" id="redis-db">
-<span id="std:setting-REDIS_DB"></span><h4>REDIS_DB<a class="headerlink" href="#redis-db" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="celery-redis-db">
+<span id="std:setting-CELERY_REDIS_DB"></span><h4>CELERY_REDIS_DB<a class="headerlink" href="#celery-redis-db" title="Permalink to this headline">¶</a></h4>
 <p>Database number to use. Default is 0</p>
 </div>
-<div class="section" id="redis-password">
-<span id="std:setting-REDIS_PASSWORD"></span><h4>REDIS_PASSWORD<a class="headerlink" href="#redis-password" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="celery-redis-password">
+<span id="std:setting-CELERY_REDIS_PASSWORD"></span><h4>CELERY_REDIS_PASSWORD<a class="headerlink" href="#celery-redis-password" title="Permalink to this headline">¶</a></h4>
 <p>Password used to connect to the database.</p>
 </div>
 <div class="section" id="id3">
 <h4>Example configuration<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_RESULT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;redis&quot;</span>
-<span class="n">REDIS_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
-<span class="n">REDIS_PORT</span> <span class="o">=</span> <span class="mi">6379</span>
-<span class="n">REDIS_DB</span> <span class="o">=</span> <span class="mi">0</span>
-<span class="n">REDIS_CONNECT_RETRY</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="n">CELERY_REDIS_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
+<span class="n">CELERY_REDIS_PORT</span> <span class="o">=</span> <span class="mi">6379</span>
+<span class="n">CELERY_REDIS_DB</span> <span class="o">=</span> <span class="mi">0</span>
 </pre></div>
 </div>
 </div>
@@ -490,8 +498,19 @@ persistent messages.</p>
 </div>
 <div class="section" id="broker-settings">
 <span id="conf-broker-connection"></span><h3><a class="toc-backref" href="#id16">Broker Settings</a><a class="headerlink" href="#broker-settings" title="Permalink to this headline">¶</a></h3>
-<div class="section" id="broker-backend">
-<span id="std:setting-BROKER_BACKEND"></span><h4>BROKER_BACKEND<a class="headerlink" href="#broker-backend" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="broker-transport">
+<span id="std:setting-BROKER_TRANSPORT"></span><h4>BROKER_TRANSPORT<a class="headerlink" href="#broker-transport" title="Permalink to this headline">¶</a></h4>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Aliases:</th><td class="field-body"><tt class="docutils literal"><span class="pre">BROKER_BACKEND</span></tt></td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Deprecated aliases:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><tt class="docutils literal"><span class="pre">CARROT_BACKEND</span></tt></td>
+</tr>
+</tbody>
+</table>
 <p>The Kombu transport to use.  Default is <tt class="docutils literal"><span class="pre">amqplib</span></tt>.</p>
 <p>You can use a custom transport class name, or select one of the
 built-in transports: <tt class="docutils literal"><span class="pre">amqplib</span></tt>, <tt class="docutils literal"><span class="pre">pika</span></tt>, <tt class="docutils literal"><span class="pre">redis</span></tt>, <tt class="docutils literal"><span class="pre">beanstalk</span></tt>,
@@ -523,25 +542,39 @@ selected backend.</p>
 <p>Use SSL to connect to the broker.  Off by default.  This may not be supported
 by all transports.</p>
 </div>
+<div class="section" id="broker-pool-limit">
+<span id="std:setting-BROKER_POOL_LIMIT"></span><h4>BROKER_POOL_LIMIT<a class="headerlink" href="#broker-pool-limit" title="Permalink to this headline">¶</a></h4>
+<p>The maximum number of connections that can be open in the connection pool.</p>
+<p>A good default value could be 10, or more if you&#8217;re using eventlet/gevent
+or lots of threads.</p>
+<p>If set to <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> or 0 the connection pool will be disabled and
+connections will be established and closed for every use.</p>
+<p><strong>Disabled by default.</strong></p>
+</div>
 <div class="section" id="broker-connection-timeout">
 <span id="std:setting-BROKER_CONNECTION_TIMEOUT"></span><h4>BROKER_CONNECTION_TIMEOUT<a class="headerlink" href="#broker-connection-timeout" title="Permalink to this headline">¶</a></h4>
 <p>The default timeout in seconds before we give up establishing a connection
 to the AMQP server.  Default is 4 seconds.</p>
 </div>
 <div class="section" id="broker-connection-retry">
-<span id="std:setting-CELERY_BROKER_CONNECTION_RETRY"></span><h4>BROKER_CONNECTION_RETRY<a class="headerlink" href="#broker-connection-retry" title="Permalink to this headline">¶</a></h4>
+<span id="std:setting-BROKER_CONNECTION_RETRY"></span><h4>BROKER_CONNECTION_RETRY<a class="headerlink" href="#broker-connection-retry" title="Permalink to this headline">¶</a></h4>
 <p>Automatically try to re-establish the connection to the AMQP broker if lost.</p>
 <p>The time between retries is increased for each retry, and is
-not exhausted before <a class="reference internal" href="#std:setting-CELERY_BROKER_CONNECTION_MAX_RETRIES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_BROKER_CONNECTION_MAX_RETRIES</span></tt></a> is
+not exhausted before <a class="reference internal" href="#std:setting-BROKER_CONNECTION_MAX_RETRIES"><tt class="xref std std-setting docutils literal"><span class="pre">BROKER_CONNECTION_MAX_RETRIES</span></tt></a> is
 exceeded.</p>
 <p>This behavior is on by default.</p>
 </div>
-<div class="section" id="celery-broker-connection-max-retries">
-<span id="std:setting-CELERY_BROKER_CONNECTION_MAX_RETRIES"></span><h4>CELERY_BROKER_CONNECTION_MAX_RETRIES<a class="headerlink" href="#celery-broker-connection-max-retries" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="broker-connection-max-retries">
+<span id="std:setting-BROKER_CONNECTION_MAX_RETRIES"></span><h4>BROKER_CONNECTION_MAX_RETRIES<a class="headerlink" href="#broker-connection-max-retries" title="Permalink to this headline">¶</a></h4>
 <p>Maximum number of retries before we give up re-establishing a connection
 to the AMQP broker.</p>
 <p>If this is set to <tt class="xref py py-const docutils literal"><span class="pre">0</span></tt> or <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt>, we will retry forever.</p>
 <p>Default is 100 retries.</p>
+</div>
+<div class="section" id="broker-transport-options">
+<span id="std:setting-BROKER_TRANSPORT_OPTIONS"></span><h4>BROKER_TRANSPORT_OPTIONS<a class="headerlink" href="#broker-transport-options" title="Permalink to this headline">¶</a></h4>
+<p>A dict of additional options passed to the underlying transport.</p>
+<p>See your transport user manual for supported options (if any).</p>
 </div>
 </div>
 <div class="section" id="task-execution-settings">
@@ -622,40 +655,43 @@ methods that have been registered with <tt class="xref py py-mod docutils litera
 of connection loss or other connection errors.
 See also <a class="reference internal" href="#std:setting-CELERY_TASK_PUBLISH_RETRY_POLICY"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TASK_PUBLISH_RETRY_POLICY</span></tt></a>.</p>
 <p>Disabled by default.</p>
-<p id="std:setting-CELERY_TASK_PUBLISH_RETRY_POLICY">Defines the default policy when retrying publishing a task message in
+</div>
+<div class="section" id="celery-task-publish-retry-policy">
+<span id="std:setting-CELERY_TASK_PUBLISH_RETRY_POLICY"></span><h4>CELERY_TASK_PUBLISH_RETRY_POLICY<a class="headerlink" href="#celery-task-publish-retry-policy" title="Permalink to this headline">¶</a></h4>
+<p>Defines the default policy when retrying publishing a task message in
 the case of connection loss or other connection errors.</p>
 <p>This is a mapping that must contain the following keys:</p>
 <blockquote>
-<ul>
+<div><ul>
 <li><p class="first"><cite>max_retries</cite></p>
 <blockquote>
-<p>Maximum number of retries before giving up, in this case the
+<div><p>Maximum number of retries before giving up, in this case the
 exception that caused the retry to fail will be raised.</p>
 <p>A value of 0 or <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> means it will retry forever.</p>
 <p>The default is to retry 3 times.</p>
-</blockquote>
+</div></blockquote>
 </li>
 <li><p class="first"><cite>interval_start</cite></p>
 <blockquote>
-<p>Defines the number of seconds (float or integer) to wait between
+<div><p>Defines the number of seconds (float or integer) to wait between
 retries.  Default is 0, which means the first retry will be
 instantaneous.</p>
-</blockquote>
+</div></blockquote>
 </li>
 <li><p class="first"><cite>interval_step</cite></p>
 <blockquote>
-<p>On each consecutive retry this number will be added to the retry
+<div><p>On each consecutive retry this number will be added to the retry
 delay (float or integer).  Default is 0.2.</p>
-</blockquote>
+</div></blockquote>
 </li>
 <li><p class="first"><cite>interval_max</cite></p>
 <blockquote>
-<p>Maximum number of seconds (float or integer) to wait between
+<div><p>Maximum number of seconds (float or integer) to wait between
 retries.  Default is 0.2.</p>
-</blockquote>
+</div></blockquote>
 </li>
 </ul>
-</blockquote>
+</div></blockquote>
 <p>With the default policy of:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;max_retries&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
  <span class="s">&quot;interval_start&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
@@ -667,9 +703,6 @@ retries.  Default is 0.2.</p>
 short by default because a connection failure could lead to a retry pile effect
 if the broker connection is down: e.g. many web server processes waiting
 to retry blocking other incoming requests.</p>
-</div>
-<div class="section" id="celery-task-publish-retry-policy">
-<h4>CELERY_TASK_PUBLISH_RETRY_POLICY<a class="headerlink" href="#celery-task-publish-retry-policy" title="Permalink to this headline">¶</a></h4>
 </div>
 <div class="section" id="celery-default-rate-limit">
 <span id="std:setting-CELERY_DEFAULT_RATE_LIMIT"></span><h4>CELERY_DEFAULT_RATE_LIMIT<a class="headerlink" href="#celery-default-rate-limit" title="Permalink to this headline">¶</a></h4>
@@ -753,7 +786,7 @@ be 1 second. If you need near millisecond precision you can set this to 0.1.</p>
 <div class="section" id="error-e-mails">
 <span id="conf-error-mails"></span><h3><a class="toc-backref" href="#id19">Error E-Mails</a><a class="headerlink" href="#error-e-mails" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="celery-send-task-error-emails">
-<span id="std:setting-CELERYD_SEND_TASK_ERROR_EMAILS"></span><h4>CELERY_SEND_TASK_ERROR_EMAILS<a class="headerlink" href="#celery-send-task-error-emails" title="Permalink to this headline">¶</a></h4>
+<span id="std:setting-CELERY_SEND_TASK_ERROR_EMAILS"></span><h4>CELERY_SEND_TASK_ERROR_EMAILS<a class="headerlink" href="#celery-send-task-error-emails" title="Permalink to this headline">¶</a></h4>
 <p>The default value for the <cite>Task.send_error_emails</cite> attribute, which if
 set to <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> means errors occurring during task execution will be
 sent to <a class="reference internal" href="#std:setting-ADMINS"><tt class="xref std std-setting docutils literal"><span class="pre">ADMINS</span></tt></a> by email.</p>
@@ -772,21 +805,31 @@ receive error emails.</p>
 <p>The email address this worker sends emails from.
 Default is <a class="reference external" href="mailto:celery&#37;&#52;&#48;localhost">celery<span>&#64;</span>localhost</a>.</p>
 </div>
-<div class="section" id="mail-host">
-<span id="std:setting-MAIL_HOST"></span><h4>MAIL_HOST<a class="headerlink" href="#mail-host" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="email-host">
+<span id="std:setting-EMAIL_HOST"></span><h4>EMAIL_HOST<a class="headerlink" href="#email-host" title="Permalink to this headline">¶</a></h4>
 <p>The mail server to use.  Default is <cite>&#8220;localhost&#8221;</cite>.</p>
 </div>
-<div class="section" id="mail-host-user">
-<span id="std:setting-MAIL_HOST_USER"></span><h4>MAIL_HOST_USER<a class="headerlink" href="#mail-host-user" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="email-host-user">
+<span id="std:setting-EMAIL_HOST_USER"></span><h4>EMAIL_HOST_USER<a class="headerlink" href="#email-host-user" title="Permalink to this headline">¶</a></h4>
 <p>User name (if required) to log on to the mail server with.</p>
 </div>
-<div class="section" id="mail-host-password">
-<span id="std:setting-MAIL_HOST_PASSWORD"></span><h4>MAIL_HOST_PASSWORD<a class="headerlink" href="#mail-host-password" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="email-host-password">
+<span id="std:setting-EMAIL_HOST_PASSWORD"></span><h4>EMAIL_HOST_PASSWORD<a class="headerlink" href="#email-host-password" title="Permalink to this headline">¶</a></h4>
 <p>Password (if required) to log on to the mail server with.</p>
 </div>
-<div class="section" id="mail-port">
-<span id="std:setting-MAIL_PORT"></span><h4>MAIL_PORT<a class="headerlink" href="#mail-port" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="email-port">
+<span id="std:setting-EMAIL_PORT"></span><h4>EMAIL_PORT<a class="headerlink" href="#email-port" title="Permalink to this headline">¶</a></h4>
 <p>The port the mail server is listening on.  Default is <cite>25</cite>.</p>
+</div>
+<div class="section" id="email-use-ssl">
+<span id="std:setting-EMAIL_USE_SSL"></span><h4>EMAIL_USE_SSL<a class="headerlink" href="#email-use-ssl" title="Permalink to this headline">¶</a></h4>
+<p>Use SSL when connecting to the SMTP server.  Disabled by default.</p>
+</div>
+<div class="section" id="email-timeout">
+<span id="std:setting-EMAIL_TIMEOUT"></span><h4>EMAIL_TIMEOUT<a class="headerlink" href="#email-timeout" title="Permalink to this headline">¶</a></h4>
+<p>Timeout in seconds for when we give up trying to connect
+to the SMTP server when sending emails.</p>
+<p>The default is 2 seconds.</p>
 </div>
 <div class="section" id="example-e-mail-configuration">
 <span id="conf-example-error-mail-config"></span><h4>Example E-Mail configuration<a class="headerlink" href="#example-e-mail-configuration" title="Permalink to this headline">¶</a></h4>
@@ -825,24 +868,6 @@ Default is <a class="reference external" href="mailto:celery&#37;&#52;&#48;local
 tracked before they are consumed by a worker.</p>
 <p>Disabled by default.</p>
 </div>
-<div class="section" id="celery-event-queue">
-<span id="std:setting-CELERY_EVENT_QUEUE"></span><h4>CELERY_EVENT_QUEUE<a class="headerlink" href="#celery-event-queue" title="Permalink to this headline">¶</a></h4>
-<p>Name of the queue to consume event messages from. Default is
-<cite>&#8220;celeryevent&#8221;</cite>.</p>
-</div>
-<div class="section" id="celery-event-exchange">
-<span id="std:setting-CELERY_EVENT_EXCHANGE"></span><h4>CELERY_EVENT_EXCHANGE<a class="headerlink" href="#celery-event-exchange" title="Permalink to this headline">¶</a></h4>
-<p>Name of the exchange to send event messages to.  Default is <cite>&#8220;celeryevent&#8221;</cite>.</p>
-</div>
-<div class="section" id="celery-event-exchange-type">
-<span id="std:setting-CELERY_EVENT_EXCHANGE_TYPE"></span><h4>CELERY_EVENT_EXCHANGE_TYPE<a class="headerlink" href="#celery-event-exchange-type" title="Permalink to this headline">¶</a></h4>
-<p>The exchange type of the event exchange.  Default is to use a <cite>&#8220;direct&#8221;</cite>
-exchange.</p>
-</div>
-<div class="section" id="celery-event-routing-key">
-<span id="std:setting-CELERY_EVENT_ROUTING_KEY"></span><h4>CELERY_EVENT_ROUTING_KEY<a class="headerlink" href="#celery-event-routing-key" title="Permalink to this headline">¶</a></h4>
-<p>Routing key used when sending event messages.  Default is <cite>&#8220;celeryevent&#8221;</cite>.</p>
-</div>
 <div class="section" id="celery-event-serializer">
 <span id="std:setting-CELERY_EVENT_SERIALIZER"></span><h4>CELERY_EVENT_SERIALIZER<a class="headerlink" href="#celery-event-serializer" title="Permalink to this headline">¶</a></h4>
 <p>Message serialization format used when sending event messages.
@@ -859,7 +884,7 @@ queue name.</p>
 <p>Default is <cite>&#8220;celeryctl&#8221;</cite>.</p>
 </div>
 <div class="section" id="celery-broadcast-exchange">
-<span id="std:setting-CELERY_BROADCASTS_EXCHANGE"></span><h4>CELERY_BROADCAST_EXCHANGE<a class="headerlink" href="#celery-broadcast-exchange" title="Permalink to this headline">¶</a></h4>
+<span id="std:setting-CELERY_BROADCAST_EXCHANGE"></span><h4>CELERY_BROADCAST_EXCHANGE<a class="headerlink" href="#celery-broadcast-exchange" title="Permalink to this headline">¶</a></h4>
 <p>Name of the exchange used for broadcast messages.</p>
 <p>Default is <cite>&#8220;celeryctl&#8221;</cite>.</p>
 </div>
@@ -901,11 +926,11 @@ using the <em class="xref std std-option">--logfile</em> option to <a class="ref
 <p>Enables/disables colors in logging output by the Celery apps.</p>
 <p>By default colors are enabled if</p>
 <blockquote>
-<ol class="arabic simple">
+<div><ol class="arabic simple">
 <li>the app is logging to a real terminal, and not a file.</li>
 <li>the app is not running on Windows.</li>
 </ol>
-</blockquote>
+</div></blockquote>
 </div>
 <div class="section" id="celeryd-log-format">
 <span id="std:setting-CELERYD_LOG_FORMAT"></span><h4>CELERYD_LOG_FORMAT<a class="headerlink" href="#celeryd-log-format" title="Permalink to this headline">¶</a></h4>
@@ -1027,6 +1052,13 @@ the <em class="xref std std-option">--logfile</em> argument to <cite>celerymon</
 <tt class="xref py py-const docutils literal"><span class="pre">ERROR</span></tt>, or <tt class="xref py py-const docutils literal"><span class="pre">CRITICAL</span></tt>.</p>
 <p>See the <tt class="xref py py-mod docutils literal"><span class="pre">logging</span></tt> module for more information.</p>
 </div>
+<div class="section" id="celerymon-log-format">
+<span id="std:setting-CELERYMON_LOG_FORMAT"></span><h4>CELERYMON_LOG_FORMAT<a class="headerlink" href="#celerymon-log-format" title="Permalink to this headline">¶</a></h4>
+<p>The format to use for log messages.</p>
+<p>Default is <cite>[%(asctime)s: %(levelname)s/%(processName)s] %(message)s</cite></p>
+<p>See the Python <tt class="xref py py-mod docutils literal"><span class="pre">logging</span></tt> module for more information about log
+formats.</p>
+</div>
 </div>
 </div>
 </div>
@@ -1047,7 +1079,7 @@ the <em class="xref std std-option">--logfile</em> argument to <cite>celerymon</
                         title="next chapter">Cookbook</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="sources/configuration.txt"
+    <li><a href="_sources/configuration.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -1082,12 +1114,12 @@ the <em class="xref std std-option">--logfile</em> argument to <cite>celerymon</
         <li class="right" >
           <a href="userguide/concurrency/eventlet.html" title="Concurrency with Eventlet"
              >previous</a> |</li>
-        <li><a href="index.html">Celery v2.3.0a1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.2.6 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
   </body>
 </html>
