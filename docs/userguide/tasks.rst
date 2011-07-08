@@ -661,6 +661,8 @@ The following code,
 
 will do roughly this behind the scenes:
 
+.. code-block:: python
+
     @task
     def AddTask(Task):
 

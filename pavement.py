@@ -40,7 +40,7 @@ def qhtml(options):
 @needs("clean_docs", "paver.doctools.html")
 def ghdocs(options):
     builtdocs = sphinx_builddir(options)
-    sh("sphinx-to-github", cwd=builtdocs)
+    sh("sphinxtogithub", cwd=builtdocs)
     sh("git checkout gh-pages && \
             cp -r %s/* .    && \
             git commit . -m 'Rendered documentation for Github Pages.' && \
