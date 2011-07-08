@@ -758,6 +758,9 @@ Disabled by default.
 
 .. setting:: CELERY_TASK_PUBLISH_RETRY_POLICY
 
+CELERY_TASK_PUBLISH_RETRY_POLICY
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Defines the default policy when retrying publishing a task message in
 the case of connection loss or other connection errors.
 
@@ -800,9 +803,6 @@ short by default because a connection failure could lead to a retry pile effect
 if the broker connection is down: e.g. many web server processes waiting
 to retry blocking other incoming requests.
 
-
-CELERY_TASK_PUBLISH_RETRY_POLICY
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. setting:: CELERY_DEFAULT_RATE_LIMIT
 
