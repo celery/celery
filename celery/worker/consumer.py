@@ -252,10 +252,11 @@ class Consumer(object):
     def __init__(self, ready_queue, eta_schedule, logger,
             init_callback=noop, send_events=False, hostname=None,
             initial_prefetch_count=2, pool=None, app=None,
-            priority_timer=None):
+            priority_timer=None, controller=None):
         self.app = app_or_default(app)
         self.connection = None
         self.task_consumer = None
+        self.controller = controller
         self.broadcast_consumer = None
         self.ready_queue = ready_queue
         self.eta_schedule = eta_schedule

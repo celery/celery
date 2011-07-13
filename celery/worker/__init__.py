@@ -190,6 +190,7 @@ class WorkController(object):
             # needs a custom implementation.
             self.eta_scheduler_cls = self.pool.Timer
 
+        self.autoscaler = None
         if autoscale:
             self.autoscaler = instantiate(self.autoscaler_cls, self.pool,
                                           max_concurrency=max_concurrency,
@@ -226,7 +227,8 @@ class WorkController(object):
                                     initial_prefetch_count=prefetch_count,
                                     pool=self.pool,
                                     priority_timer=self.priority_timer,
-                                    app=self.app)
+                                    app=self.app,
+                                    controller=self)
 
         # The order is important here;
         #   the first in the list is the first to start,
