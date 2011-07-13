@@ -29,6 +29,10 @@ def mytask():
     pass
 
 
+class WorkController(object):
+    autoscaler = None
+
+
 class Consumer(object):
 
     def __init__(self):
@@ -40,6 +44,7 @@ class Consumer(object):
         self.eta_schedule = Timer()
         self.app = current_app
         self.event_dispatcher = Mock()
+        self.controller = WorkController()
 
         from celery.concurrency.base import BasePool
         self.pool = BasePool(10)

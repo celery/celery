@@ -86,11 +86,13 @@ def foo_periodic_task():
     return "foo"
 
 
-def create_message(backend, **data):
+def create_message(channel, **data):
     data.setdefault("id", gen_unique_id())
-    return Message(backend, body=pickle.dumps(dict(**data)),
+    channel.no_ack_consumers = set()
+    return Message(channel, body=pickle.dumps(dict(**data)),
                    content_type="application/x-python-serialize",
-                   content_encoding="binary")
+                   content_encoding="binary",
+                   delivery_info={"consumer_tag": "mock"})
 
 
 class test_QoS(unittest.TestCase):

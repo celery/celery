@@ -90,7 +90,8 @@ class App(base.BaseApp):
     def TaskSet(self, *args, **kwargs):
         """Create new :class:`~celery.task.sets.TaskSet`."""
         from celery.task.sets import TaskSet
-        return TaskSet(*args, app=self, **kwargs)
+        kwargs["app"] = self
+        return TaskSet(*args, **kwargs)
 
     def worker_main(self, argv=None):
         """Run :program:`celeryd` using `argv`.  Uses :data:`sys.argv`

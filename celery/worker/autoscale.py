@@ -1,3 +1,5 @@
+from __future__ import absolute_import, with_statement
+
 import os
 import sys
 import threading
