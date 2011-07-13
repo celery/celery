@@ -22,7 +22,8 @@
     `ERROR`, `CRITICAL`, or `FATAL`.
 
 """
-from __future__ import with_statement, absolute_import
+from __future__ import with_statement
+from __future__ import absolute_import
 
 from functools import partial
 
