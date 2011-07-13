@@ -90,6 +90,8 @@ class Queues(dict):
     def format(self, indent=0, indent_first=True):
         """Format routing table into string for log dumps."""
         active = self.consume_from
+        if not active:
+            return ""
         info = [QUEUE_FORMAT.strip() % dict(
                     name=(name + ":").ljust(12), **config)
                         for name, config in sorted(active.iteritems())]
@@ -132,6 +134,8 @@ class Queues(dict):
     def with_defaults(cls, queues, default_exchange, default_exchange_type):
         """Alternate constructor that adds default exchange and
         exchange type information to queues that does not have any."""
+        if queues is None:
+            queues = {}
         for opts in queues.values():
             opts.setdefault("exchange", default_exchange),
             opts.setdefault("exchange_type", default_exchange_type)
@@ -302,7 +306,7 @@ class AMQP(object):
         """Create new :class:`Queues` instance, using queue defaults
         from the current configuration."""
         conf = self.app.conf
-        if not queues:
+        if not queues and conf.CELERY_DEFAULT_QUEUE:
             queues = {conf.CELERY_DEFAULT_QUEUE: {
                         "exchange": conf.CELERY_DEFAULT_EXCHANGE,
                         "exchange_type": conf.CELERY_DEFAULT_EXCHANGE_TYPE,
