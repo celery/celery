@@ -131,7 +131,8 @@ def main():
 class MultiTool(object):
     retcode = 0  # Final exit code.
 
-    def __init__(self):
+    def __init__(self, env=None):
+        self.env = env
         self.commands = {"start": self.start,
                          "show": self.show,
                          "stop": self.stop,
@@ -350,7 +351,7 @@ class MultiTool(object):
     def waitexec(self, argv, path=sys.executable):
         args = " ".join([path] + list(argv))
         argstr = shlex.split(args.encode("utf-8"))
-        pipe = Popen(argstr)
+        pipe = Popen(argstr, env=self.env)
         self.info("  %s" % " ".join(argstr))
         retcode = pipe.wait()
         if retcode < 0:
