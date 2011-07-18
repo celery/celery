@@ -208,6 +208,10 @@ class Control(object):
 
         """
         with self.app.default_connection(connection, connect_timeout) as conn:
+            if channel is None:
+                if not getattr(conn, "_publisher_chan", None):
+                    conn._publisher_chan = conn.channel()
+                channel = conn._publisher_chan
             return self.mailbox(conn)._broadcast(command, arguments,
                                                  destination, reply, timeout,
                                                  limit, callback,
