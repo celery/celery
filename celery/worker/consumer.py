@@ -299,7 +299,7 @@ class Consumer(object):
                 self.consume_messages()
             except self.connection_errors:
                 self.logger.error("Consumer: Connection to broker lost."
-                                + " Trying to re-establish connection...",
+                                + " Trying to re-establish the connection...",
                                 exc_info=sys.exc_info())
 
     def consume_messages(self):
