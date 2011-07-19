@@ -197,6 +197,9 @@ class test_ControlPanel(unittest.TestCase):
             def cancel_by_queue(self, queue):
                 self.cancelled.append(queue)
 
+            def consuming_from(self, queue):
+                return queue in self.queues
+
         consumer = Consumer()
         consumer.task_consumer = MockConsumer()
         panel = self.create_panel(consumer=consumer)
