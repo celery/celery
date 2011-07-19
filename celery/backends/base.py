@@ -4,6 +4,8 @@ import sys
 
 from datetime import timedelta
 
+from kombu.serialization import encode, decode
+
 from celery import states
 from celery.exceptions import TimeoutError, TaskRevokedError
 from celery.utils import timeutils
@@ -24,6 +26,7 @@ class BaseBackend(object):
     def __init__(self, *args, **kwargs):
         from celery.app import app_or_default
         self.app = app_or_default(kwargs.get("app"))
+        self.serializer = kwargs.get("serializer", self.app.conf.CELERY_RESULT_SERIALIZER)
 
     def prepare_expires(self, value, type=None):
         if value is None:
@@ -70,7 +73,7 @@ class BaseBackend(object):
 
     def prepare_exception(self, exc):
         """Prepare exception for serialization."""
-        if (app_or_default().conf["CELERY_RESULT_SERIALIZER"] in ("pickle", "yaml")):
+        if (self.app.conf.CELERY_RESULT_SERIALIZER in ("pickle", "yaml")):
             return get_pickleable_exception(exc)
         return {
             "exc_type": type(exc).__name__,
@@ -79,7 +82,7 @@ class BaseBackend(object):
 
     def exception_to_python(self, exc):
         """Convert serialized exception to Python exception."""
-        if (app_or_default().conf["CELERY_RESULT_SERIALIZER"] in ("pickle", "yaml")):
+        if (self.app.conf.CELERY_RESULT_SERIALIZER in ("pickle", "yaml")):
             return get_pickled_exception(exc)
         return create_exception_cls(exc["exc_type"].encode("utf-8"), sys.modules[__name__])
 
@@ -327,12 +330,12 @@ class KeyValueStoreBackend(BaseDictBackend):
 
     def _store_result(self, task_id, result, status, traceback=None):
         meta = {"status": status, "result": result, "traceback": traceback}
-        self.set(self.get_key_for_task(task_id), pickle.dumps(meta))
+        self.set(self.get_key_for_task(task_id), encode(meta, serializer=self.serializer)[2])
         return result
 
     def _save_taskset(self, taskset_id, result):
         self.set(self.get_key_for_taskset(taskset_id),
-                 pickle.dumps({"result": result}))
+                 encode({"result": result }, serializer=self.serializer)[2])
         return result
 
     def _delete_taskset(self, taskset_id):
@@ -343,13 +346,13 @@ class KeyValueStoreBackend(BaseDictBackend):
         meta = self.get(self.get_key_for_task(task_id))
         if not meta:
             return {"status": states.PENDING, "result": None}
-        return pickle.loads(str(meta))
+        return decode(str(meta), serializer=self.serializer)
 
     def _restore_taskset(self, taskset_id):
         """Get task metadata for a task by id."""
         meta = self.get(self.get_key_for_taskset(taskset_id))
         if meta:
-            meta = pickle.loads(str(meta))
+            meta = decode(str(meta), serializer=self.serializer)
             return meta
 
 
