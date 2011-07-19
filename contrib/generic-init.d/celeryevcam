@@ -1,0 +1,217 @@
+#!/bin/bash -e
+# ============================================
+#  celeryd - Starts the Celery worker daemon.
+# ============================================
+#
+# :Usage: /etc/init.d/celeryd {start|stop|force-reload|restart|try-restart|status}
+#
+# :Configuration file: /etc/default/celeryev | /etc/default/celeryd
+#
+# To configure celeryd you probably need to tell it where to chdir.
+#
+# EXAMPLE CONFIGURATION
+# =====================
+#
+# this is an example configuration for a Python project:
+#
+# /etc/default/celeryd:
+#
+#   # Where to chdir at start.
+#   CELERYD_CHDIR="/opt/Myproject/"
+#
+#   # Extra arguments to celeryev
+#   CELERYEV_OPTS="-x"
+#
+#   # Name of the celery config module.#
+#   CELERY_CONFIG_MODULE="celeryconfig"
+#
+#   # Camera class to use (required)
+#   CELERYEV_CAM = "myapp.Camera"
+#
+# EXAMPLE DJANGO CONFIGURATION
+# ============================
+#
+#   # Where the Django project is.
+#   CELERYD_CHDIR="/opt/Project/"
+#
+#   # Name of the projects settings module.
+#   export DJANGO_SETTINGS_MODULE="settings"
+#
+#   # Path to celeryd
+#   CELERYEV="/opt/Project/manage.py"
+#
+#   # Extra arguments to manage.py
+#   CELERYEV_OPTS="celeryev"
+#
+#   # Camera class to use (required)
+#   CELERYEV_CAM = "djcelery.snapshot.Camera"
+#
+# AVAILABLE OPTIONS
+# =================
+#
+#   * CELERYEV_OPTS
+#       Additional arguments to celeryd, see `celeryd --help` for a list.
+#
+#   * CELERYD_CHDIR
+#       Path to chdir at start. Default is to stay in the current directory.
+#
+#   * CELERYEV_PID_FILE
+#       Full path to the pidfile. Default is /var/run/celeryd.pid.
+#
+#   * CELERYEV_LOG_FILE
+#       Full path to the celeryd logfile. Default is /var/log/celeryd.log
+#
+#   * CELERYEV_LOG_LEVEL
+#       Log level to use for celeryd. Default is INFO.
+#
+#   * CELERYEV
+#       Path to the celeryev program. Default is `celeryev`.
+#       You can point this to an virtualenv, or even use manage.py for django.
+#
+#   * CELERYEV_USER
+#       User to run celeryev as. Default is current user.
+#
+#   * CELERYEV_GROUP
+#       Group to run celeryev as. Default is current user.
+#
+#   * VIRTUALENV
+#       Full path to the virtualenv environment to activate. Default is none.
+
+### BEGIN INIT INFO
+# Provides:          celeryev
+# Required-Start:    $network $local_fs $remote_fs
+# Required-Stop:     $network $local_fs $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: celery event snapshots
+### END INIT INFO
+
+set -e
+
+DEFAULT_PID_FILE="/var/run/celeryev.pid"
+DEFAULT_LOG_FILE="/var/log/celeryev.log"
+DEFAULT_LOG_LEVEL="INFO"
+DEFAULT_CELERYEV="/usr/bin/celeryev"
+
+if test -f /etc/default/celeryd; then
+    . /etc/default/celeryd
+fi
+
+if test -f /etc/default/celeryev; then
+    . /etc/default/celeryev
+fi
+
+CELERYEV=${CELERYEV:-$DEFAULT_CELERYEV}
+CELERYEV_PID_FILE=${CELERYEV_PID_FILE:-${CELERYEV_PIDFILE:-$DEFAULT_PID_FILE}}
+CELERYEV_LOG_FILE=${CELERYEV_LOG_FILE:-${CELERYEV_LOGFILE:-$DEFAULT_LOG_FILE}}
+CELERYEV_LOG_LEVEL=${CELERYEV_LOG_LEVEL:-${CELERYEV_LOG_LEVEL:-$DEFAULT_LOG_LEVEL}}
+
+export CELERY_LOADER
+
+CELERYEV_OPTS="$CELERYEV_OPTS -f $CELERYEV_LOG_FILE -l $CELERYEV_LOG_LEVEL"
+
+if [ -z "$CELERYEV_CAM" ]; then
+    echo "Missing CELERYEV_CAM variable" 1>&2
+    exit
+fi
+
+CELERYEV_OPTS="$CELERYEV_OPTS -c $CELERYEV_CAM"
+
+if [ -n "$2" ]; then
+    CELERYEV_OPTS="$CELERYEV_OPTS $2"
+fi
+
+# Extra start-stop-daemon options, like user/group.
+if [ -n "$CELERYEV_USER" ]; then
+    DAEMON_OPTS="$DAEMON_OPTS --uid $CELERYEV_USER"
+fi
+if [ -n "$CELERYEV_GROUP" ]; then
+    DAEMON_OPTS="$DAEMON_OPTS --gid $CELERYEV_GROUP"
+fi
+
+if [ -n "$CELERYEV_CHDIR" ]; then
+    DAEMON_OPTS="$DAEMON_OPTS --workdir $CELERYEV_CHDIR"
+elif [ -n "$CELERYD_CHDIR" ]; then
+    DAEMON_OPTS="$DAEMON_OPTS --workdir $CELERYD_CHDIR"
+fi
+
+
+export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
+
+check_dev_null() {
+    if [ ! -c /dev/null ]; then
+        echo "/dev/null is not a character device!"
+        exit 1
+    fi
+}
+
+wait_pid () {
+    pid=$1
+    forever=1
+    i=0
+    while [ $forever -gt 0 ]; do
+        kill -0 $pid 1>/dev/null 2>&1
+        if [ ! $? ]; then
+            echo "OK"
+            forever=0
+        else
+            kill -TERM "$pid"
+            i=$((i + 1))
+            if [ $i -gt 60 ]; then
+                echo "ERROR"
+                echo "Timed out while stopping (30s)"
+                forever=0
+            else
+                sleep 0.5
+            fi
+        fi
+    done
+}
+
+
+
+stop_evcam () {
+    echo -n "Stopping celeryev..."
+    if [ -f "$CELERYEV_PID_FILE" ]; then
+        wait_pid $(cat "$CELERYEV_PID_FILE")
+    else
+        echo "NOT RUNNING"
+    fi
+}
+
+start_evcam () {
+    echo "Starting celeryev..."
+    if [ -n "$VIRTUALENV" ]; then
+        source $VIRTUALENV/bin/activate
+    fi
+    $CELERYEV $CELERYEV_OPTS $DAEMON_OPTS --detach \
+              --pidfile="$CELERYEV_PID_FILE"
+}
+
+
+
+case "$1" in
+  start)
+    check_dev_null
+    start_evcam
+    ;;
+  stop)
+    stop_evcam
+    ;;
+
+  reload|force-reload)
+    echo "Use start+stop"
+    ;;
+  restart)
+    log_daemon_msg "Restarting celery event snapshots" "celeryev"
+    stop_evcam
+    check_dev_null
+    start_evcam
+    ;;
+
+  *)
+    echo "Usage: /etc/init.d/celeryev {start|stop|restart}"
+    exit 1
+esac
+
+exit 0
