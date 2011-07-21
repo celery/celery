@@ -147,6 +147,8 @@ Given a function create_user`, that takes two arguments: <cite>username</cite> a
 <cite>password</cite>, you can create a task like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.contrib.auth</span> <span class="kn">import</span> <span class="n">User</span>
 
+<span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">task</span>
+
 <span class="nd">@task</span>
 <span class="k">def</span> <span class="nf">create_user</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
     <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="p">)</span>
@@ -209,7 +211,9 @@ capabilities, you can&#8217;t trust the availability of keys in this mapping.</p
 </table>
 <div class="section" id="example-usage">
 <h3><a class="toc-backref" href="#id7">Example Usage</a><a class="headerlink" href="#example-usage" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">task</span>
+
+<span class="nd">@task</span>
 <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
     <span class="k">print</span><span class="p">(</span><span class="s">&quot;Executing task id </span><span class="si">%r</span><span class="s">, args: </span><span class="si">%r</span><span class="s"> kwargs: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span>
         <span class="n">add</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">add</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="n">add</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">kwargs</span><span class="p">))</span>

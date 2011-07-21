@@ -603,12 +603,12 @@
     <dd><dl>
       <dt><a href="configuration.html#std:setting-CELERY_MESSAGE_COMPRESSION">setting</a></dt>
   </dl></dd>
-</dl></td>
-  <td style="width: 33%" valign="top"><dl>
     <dt>CELERY_MONGODB_BACKEND_SETTINGS</dt>
     <dd><dl>
       <dt><a href="configuration.html#std:setting-CELERY_MONGODB_BACKEND_SETTINGS">setting</a></dt>
   </dl></dd>
+</dl></td>
+  <td style="width: 33%" valign="top"><dl>
     <dt>CELERY_QUEUES</dt>
     <dd><dl>
       <dt><a href="configuration.html#std:setting-CELERY_QUEUES">setting</a></dt>
@@ -953,6 +953,7 @@
     <dt><a href="internals/reference/celery.worker.consumer.html#celery.worker.consumer.Consumer">Consumer (class in celery.worker.consumer)</a></dt>
     <dt><a href="reference/celery.events.html#celery.events.EventReceiver.consumer">consumer() (celery.events.EventReceiver method)</a></dt>
     <dt><a href="reference/celery.app.amqp.html#celery.app.amqp.AMQP.ConsumerSet">ConsumerSet (celery.app.amqp.AMQP attribute)</a></dt>
+    <dt><a href="internals/reference/celery.backends.amqp.html#celery.backends.amqp.AMQPBackend.Consumer.consuming_from">consuming_from() (celery.backends.amqp.AMQPBackend.Consumer method)</a></dt>
     <dt>control</dt>
     <dd><dl>
       <dt><a href="userguide/workers.html#std:control-disable_events">disable_events</a></dt>
@@ -1340,9 +1341,11 @@
       <dt><a href="internals/reference/celery.log.html#celery.log.LoggingProxy.flush">(celery.log.LoggingProxy method)</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.contrib.batches.html#celery.contrib.batches.Batches.flush_every">flush_every (celery.contrib.batches.Batches attribute)</a></dt>
+    <dt><a href="reference/celery.contrib.batches.html#celery.contrib.batches.Batches.flush_interval">flush_interval (celery.contrib.batches.Batches attribute)</a></dt>
 </dl></td>
   <td style="width: 33%" valign="top"><dl>
-    <dt><a href="reference/celery.contrib.batches.html#celery.contrib.batches.Batches.flush_interval">flush_interval (celery.contrib.batches.Batches attribute)</a></dt>
+    <dt><a href="internals/reference/celery.worker.autoscale.html#celery.worker.autoscale.Autoscaler.force_scale_down">force_scale_down() (celery.worker.autoscale.Autoscaler method)</a></dt>
+    <dt><a href="internals/reference/celery.worker.autoscale.html#celery.worker.autoscale.Autoscaler.force_scale_up">force_scale_up() (celery.worker.autoscale.Autoscaler method)</a></dt>
     <dt><a href="internals/reference/celery.backends.base.html#celery.backends.base.BaseBackend.forget">forget() (celery.backends.base.BaseBackend method)</a></dt>
     <dd><dl>
       <dt><a href="internals/reference/celery.backends.base.html#celery.backends.base.BaseDictBackend.forget">(celery.backends.base.BaseDictBackend method)</a></dt>
@@ -1595,6 +1598,7 @@
       <dt><a href="reference/celery.events.state.html#celery.events.state.Task.info">(celery.events.state.Task method)</a></dt>
       <dt><a href="internals/reference/celery.utils.timer2.html#celery.utils.timer2.Schedule.info">(celery.utils.timer2.Schedule method)</a></dt>
       <dt><a href="internals/reference/celery.utils.timer2.html#celery.utils.timer2.Timer.Schedule.info">(celery.utils.timer2.Timer.Schedule method)</a></dt>
+      <dt><a href="internals/reference/celery.worker.autoscale.html#celery.worker.autoscale.Autoscaler.info">(celery.worker.autoscale.Autoscaler method)</a></dt>
       <dt><a href="internals/reference/celery.worker.job.html#celery.worker.job.TaskRequest.info">(celery.worker.job.TaskRequest method)</a></dt>
   </dl></dd>
     <dt><a href="internals/reference/celery.worker.consumer.html#celery.worker.consumer.Consumer.init_callback">init_callback (celery.worker.consumer.Consumer attribute)</a></dt>
@@ -2990,6 +2994,7 @@
       <dt><a href="internals/reference/celery.platforms.html#celery.platforms.Signals.update">(celery.platforms.Signals method)</a></dt>
       <dt><a href="reference/celery.result.html#celery.result.ResultSet.update">(celery.result.ResultSet method)</a></dt>
       <dt><a href="internals/reference/celery.utils.compat.html#celery.utils.compat.CompatOrderedDict.update">(celery.utils.compat.CompatOrderedDict method)</a></dt>
+      <dt><a href="internals/reference/celery.worker.autoscale.html#celery.worker.autoscale.Autoscaler.update">(celery.worker.autoscale.Autoscaler method)</a></dt>
       <dt><a href="internals/reference/celery.worker.consumer.html#celery.worker.consumer.QoS.update">(celery.worker.consumer.QoS method)</a></dt>
   </dl></dd>
     <dt><a href="internals/reference/celery.worker.buckets.html#celery.worker.buckets.TaskBucket.update_bucket_for_type">update_bucket_for_type() (celery.worker.buckets.TaskBucket method)</a></dt>

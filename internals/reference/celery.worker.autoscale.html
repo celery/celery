@@ -70,7 +70,22 @@
 <span class="target" id="module-celery.worker.autoscale"></span><dl class="class">
 <dt id="celery.worker.autoscale.Autoscaler">
 <em class="property">class </em><tt class="descclassname">celery.worker.autoscale.</tt><tt class="descname">Autoscaler</tt><big>(</big><em>pool</em>, <em>max_concurrency</em>, <em>min_concurrency=0</em>, <em>keepalive=30</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#celery.worker.autoscale.Autoscaler" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="attribute">
+<dd><dl class="method">
+<dt id="celery.worker.autoscale.Autoscaler.force_scale_down">
+<tt class="descname">force_scale_down</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#celery.worker.autoscale.Autoscaler.force_scale_down" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.autoscale.Autoscaler.force_scale_up">
+<tt class="descname">force_scale_up</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#celery.worker.autoscale.Autoscaler.force_scale_up" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.autoscale.Autoscaler.info">
+<tt class="descname">info</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.autoscale.Autoscaler.info" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
 <dt id="celery.worker.autoscale.Autoscaler.processes">
 <tt class="descname">processes</tt><a class="headerlink" href="#celery.worker.autoscale.Autoscaler.processes" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -103,6 +118,11 @@
 <dl class="method">
 <dt id="celery.worker.autoscale.Autoscaler.stop">
 <tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.autoscale.Autoscaler.stop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.autoscale.Autoscaler.update">
+<tt class="descname">update</tt><big>(</big><em>max=None</em>, <em>min=None</em><big>)</big><a class="headerlink" href="#celery.worker.autoscale.Autoscaler.update" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>

@@ -118,6 +118,11 @@ mean the server will not send any more messages for this consumer.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="celery.backends.amqp.AMQPBackend.Consumer.consuming_from">
+<tt class="descname">consuming_from</tt><big>(</big><em>queue</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Consumer.consuming_from" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Consumer.declare">
 <tt class="descname">declare</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Consumer.declare" title="Permalink to this definition">¶</a></dt>
 <dd><p>Declare queues, exchanges and bindings.</p>
@@ -497,7 +502,7 @@ is set to <tt class="xref py py-const xref docutils literal"><span class="pre">T
 
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Producer.publish">
-<tt class="descname">publish</tt><big>(</big><em>body</em>, <em>routing_key=None</em>, <em>delivery_mode=None</em>, <em>mandatory=False</em>, <em>immediate=False</em>, <em>priority=0</em>, <em>content_type=None</em>, <em>content_encoding=None</em>, <em>serializer=None</em>, <em>headers=None</em>, <em>compression=None</em>, <em>exchange=None</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.publish" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">publish</tt><big>(</big><em>body</em>, <em>routing_key=None</em>, <em>delivery_mode=None</em>, <em>mandatory=False</em>, <em>immediate=False</em>, <em>priority=0</em>, <em>content_type=None</em>, <em>content_encoding=None</em>, <em>serializer=None</em>, <em>headers=None</em>, <em>compression=None</em>, <em>exchange=None</em>, <em>**properties</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.publish" title="Permalink to this definition">¶</a></dt>
 <dd><p>Publish message to the specified exchange.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -517,6 +522,7 @@ is set to <tt class="xref py py-const xref docutils literal"><span class="pre">T
 with the message body.</li>
 <li><strong>exchange</strong> &#8211; Override the exchange.  Note that this exchange
 must have been declared.</li>
+<li><strong>properties</strong> &#8211; Additional properties, see the AMQP spec.</li>
 </ul>
 </td>
 </tr>

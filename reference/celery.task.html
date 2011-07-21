@@ -71,7 +71,7 @@
 <tt class="descclassname">celery.task.</tt><tt class="descname">task</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.task" title="Permalink to this definition">¶</a></dt>
 <dd><p>Decorator to create a task class out of any callable.</p>
 <p><strong>Examples</strong></p>
-<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">()</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span>
 <span class="k">def</span> <span class="nf">refresh_feed</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 </pre></div>
@@ -100,7 +100,7 @@
 <dd><p>Decorator to create a task class out of any callable.</p>
 <div class="admonition-examples admonition ">
 <p class="first admonition-title">Examples</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">()</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span>
 <span class="k">def</span> <span class="nf">refresh_feed</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
 </pre></div>

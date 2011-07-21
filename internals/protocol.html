@@ -5,7 +5,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Task Message Protocol &mdash; Celery v2.3.0rc2 documentation</title>
+    <title>Task Messages &mdash; Celery v2.3.0rc2 documentation</title>
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
@@ -64,8 +64,8 @@
         
 
 </div>
-    <div class="section" id="task-message-protocol">
-<span id="internals-task-message-protocol"></span><h1>Task Message Protocol<a class="headerlink" href="#task-message-protocol" title="Permalink to this headline">¶</a></h1>
+    <div class="section" id="task-messages">
+<span id="internals-task-message-protocol"></span><h1>Task Messages<a class="headerlink" href="#task-messages" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
 <li><a class="reference internal" href="#message-format" id="id1">Message format</a></li>
@@ -167,7 +167,7 @@ format:</p>
 </div>
 <div class="section" id="serialization">
 <h2><a class="toc-backref" href="#id4">Serialization</a><a class="headerlink" href="#serialization" title="Permalink to this headline">¶</a></h2>
-<p>The protocol supports several serialization formats using the
+<p>Several types of serialization formats are supported using the
 <cite>content_type</cite> message header.</p>
 <p>The MIME-types supported by default are shown in the following table.</p>
 <blockquote>
