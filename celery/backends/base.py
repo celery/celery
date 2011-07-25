@@ -293,12 +293,16 @@ class KeyValueStoreBackend(BaseDictBackend):
     def _mget_to_results(self, values, keys):
         if hasattr(values, "items"):
             # client returns dict so mapping preserved.
-            return dict((self._strip_prefix(k), pickle.loads(str(v)))
+            return dict((self._strip_prefix(k), decode(str(v),
+                                         content_type=self.content_type,
+                                         content_encoding=self.content_encoding))
                             for k, v in values.iteritems()
                                 if v is not None)
         else:
             # client returns list so need to recreate mapping.
-            return dict((keys[i], pickle.loads(str(value)))
+            return dict((keys[i], decode(str(value),
+                                         content_type=self.content_type,
+                                         content_encoding=self.content_encoding))
                             for i, value in enumerate(values)
                                 if value is not None)
 
