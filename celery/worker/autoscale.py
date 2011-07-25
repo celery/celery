@@ -36,7 +36,8 @@ class Autoscaler(threading.Thread):
             if current > self.processes:
                 self.scale_up(current - self.processes)
             elif current < self.processes:
-                self.scale_down((self.processes - current) - self.min_concurrency)
+                self.scale_down(
+                    (self.processes - current) - self.min_concurrency)
 
     def update(self, max=None, min=None):
         with self.mutex:

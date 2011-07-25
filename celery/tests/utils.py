@@ -54,7 +54,6 @@ def skip_unless_module(module):
     return _inner
 
 
-
 class AppCase(unittest.TestCase):
 
     def setUp(self):

@@ -12,7 +12,6 @@ AMQ related functionality.
 from datetime import datetime, timedelta
 
 from kombu import BrokerConnection, Exchange
-from kombu.connection import Resource
 from kombu import compat as messaging
 from kombu.pools import ProducerPool
 from kombu.utils import cached_property

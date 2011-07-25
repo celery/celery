@@ -11,7 +11,7 @@ from celery.utils.serialization import pickle, get_pickled_exception
 from celery.utils.serialization import get_pickleable_exception
 from celery.utils.serialization import create_exception_cls
 from celery.datastructures import LocalCache
-from celery.app import app_or_default
+
 
 class BaseBackend(object):
     """Base backend class."""
@@ -70,7 +70,7 @@ class BaseBackend(object):
 
     def prepare_exception(self, exc):
         """Prepare exception for serialization."""
-        if (app_or_default().conf["CELERY_RESULT_SERIALIZER"] in ("pickle", "yaml")):
+        if (self.app.conf["CELERY_RESULT_SERIALIZER"] in ("pickle", "yaml")):
             return get_pickleable_exception(exc)
         return {
             "exc_type": type(exc).__name__,
@@ -79,9 +79,10 @@ class BaseBackend(object):
 
     def exception_to_python(self, exc):
         """Convert serialized exception to Python exception."""
-        if (app_or_default().conf["CELERY_RESULT_SERIALIZER"] in ("pickle", "yaml")):
+        if (self.app.conf["CELERY_RESULT_SERIALIZER"] in ("pickle", "yaml")):
             return get_pickled_exception(exc)
-        return create_exception_cls(exc["exc_type"].encode("utf-8"), sys.modules[__name__])
+        return create_exception_cls(exc["exc_type"].encode("utf-8"),
+                                    sys.modules[__name__])
 
     def prepare_value(self, result):
         """Prepare value for storage."""
