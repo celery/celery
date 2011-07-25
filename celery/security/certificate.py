@@ -1,16 +1,19 @@
 import os
 import glob
 
-from OpenSSL import crypto
-from OpenSSL.crypto import FILETYPE_PEM
+try:
+    from OpenSSL import crypto
+except ImportError:
+    crypto = None
 
 from celery.security.exceptions import SecurityError
 
 class Certificate(object):
     """X.509 certificate"""
     def __init__(self, cert):
+        assert crypto is not None
         try:
-            self._cert = crypto.load_certificate(FILETYPE_PEM, cert)
+            self._cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert)
         except crypto.Error, e:
             raise SecurityError("Invalid certificate", e)
 

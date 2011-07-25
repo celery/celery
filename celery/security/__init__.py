@@ -17,6 +17,13 @@ def setup_security():
     if conf.CELERY_TASK_SERIALIZER != 'auth':
         return
 
+    try:
+        from OpenSSL import crypto
+    except ImportError:
+        raise ImproperlyConfigured(
+            "You need to install pyOpenSSL library to use "
+            "the auth serializer.")
+
     key = getattr(conf, 'CELERY_SECURITY_KEY', None)
     cert = getattr(conf, 'CELERY_SECURITY_CERTIFICATE', None)
     store = getattr(conf, 'CELERY_SECURITY_CERT_STORE', None)

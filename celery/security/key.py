@@ -1,12 +1,15 @@
-from OpenSSL import crypto
-from OpenSSL.crypto import FILETYPE_PEM
+try:
+    from OpenSSL import crypto
+except ImportError:
+    crypto = None
 
 from celery.security.exceptions import SecurityError
 
 class PrivateKey(object):
     def __init__(self, key):
+        assert crypto is not None
         try:
-            self._key = crypto.load_privatekey(FILETYPE_PEM, key)
+            self._key = crypto.load_privatekey(crypto.FILETYPE_PEM, key)
         except crypto.Error, e:
             raise SecurityError("Invalid private key", e)
 
