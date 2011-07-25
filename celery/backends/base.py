@@ -4,7 +4,7 @@ import sys
 
 from datetime import timedelta
 
-from kombu.serialization import encode, decode
+from kombu.serialization import registry, encode, decode
 
 from celery import states
 from celery.exceptions import TimeoutError, TaskRevokedError
@@ -27,6 +27,7 @@ class BaseBackend(object):
         from celery.app import app_or_default
         self.app = app_or_default(kwargs.get("app"))
         self.serializer = kwargs.get("serializer", self.app.conf.CELERY_RESULT_SERIALIZER)
+        self.content_type, self.content_encoding, self.encoder = registry._encoders[self.serializer]
 
     def prepare_expires(self, value, type=None):
         if value is None:
@@ -346,13 +347,14 @@ class KeyValueStoreBackend(BaseDictBackend):
         meta = self.get(self.get_key_for_task(task_id))
         if not meta:
             return {"status": states.PENDING, "result": None}
-        return decode(str(meta), serializer=self.serializer)
+        return decode(str(meta), content_type=self.content_type, content_encoding=self.content_encoding)
 
     def _restore_taskset(self, taskset_id):
         """Get task metadata for a task by id."""
         meta = self.get(self.get_key_for_taskset(taskset_id))
         if meta:
-            meta = decode(str(meta), serializer=self.serializer)
+            meta = decode(str(meta), content_type=self.content_type, content_encoding=self.content_encoding)
+            print repr(meta)
             return meta
 
 
