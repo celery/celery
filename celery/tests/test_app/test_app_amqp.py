@@ -90,7 +90,7 @@ class test_PublisherPool(AppCase):
 
             p1 = r1 = pool.acquire()
             p2 = r2 = pool.acquire()
-            delattr(r1.connection, "_publisher_chan")
+            delattr(r1.connection, "_producer_chan")
             r1.release()
             r2.release()
             r1 = pool.acquire()
