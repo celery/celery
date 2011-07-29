@@ -2,7 +2,7 @@
  celery - Distributed Task Queue
 =================================
 
-.. image:: http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png
+.. image:: http://cloud.github.com/downloads/ask/celery/celery_128.png
 
 :Version: 2.3.0rc2
 :Web: http://celeryproject.org/
