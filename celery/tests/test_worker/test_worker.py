@@ -854,7 +854,6 @@ class test_WorkController(AppCase):
         finally:
             state.Persistent = Persistent
 
-    @skip("Issue #264")
     def test_disable_rate_limits(self):
         from celery.worker.buckets import FastQueue
         worker = self.create_worker(disable_rate_limits=True)
