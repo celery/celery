@@ -1,4 +1,5 @@
-from __future__ import absolute_import, with_statement
+from __future__ import absolute_import
+from __future__ import with_statement
 
 """
 
@@ -252,10 +253,11 @@ class Consumer(object):
     def __init__(self, ready_queue, eta_schedule, logger,
             init_callback=noop, send_events=False, hostname=None,
             initial_prefetch_count=2, pool=None, app=None,
-            priority_timer=None):
+            priority_timer=None, controller=None):
         self.app = app_or_default(app)
         self.connection = None
         self.task_consumer = None
+        self.controller = controller
         self.broadcast_consumer = None
         self.ready_queue = ready_queue
         self.eta_schedule = eta_schedule
@@ -297,7 +299,7 @@ class Consumer(object):
                 self.consume_messages()
             except self.connection_errors:
                 self.logger.error("Consumer: Connection to broker lost."
-                                + " Trying to re-establish connection...",
+                                + " Trying to re-establish the connection...",
                                 exc_info=sys.exc_info())
 
     def consume_messages(self):

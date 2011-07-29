@@ -131,7 +131,8 @@ def main():
 class MultiTool(object):
     retcode = 0  # Final exit code.
 
-    def __init__(self):
+    def __init__(self, env=None):
+        self.env = env
         self.commands = {"start": self.start,
                          "show": self.show,
                          "stop": self.stop,
@@ -348,8 +349,9 @@ class MultiTool(object):
         self.note(c.cyan("celeryd-multi v%s" % __version__))
 
     def waitexec(self, argv, path=sys.executable):
-        argstr = shlex.split(" ".join([path] + list(argv)))
-        pipe = Popen(argstr)
+        args = " ".join([path] + list(argv))
+        argstr = shlex.split(args.encode("utf-8"))
+        pipe = Popen(argstr, env=self.env)
         self.info("  %s" % " ".join(argstr))
         retcode = pipe.wait()
         if retcode < 0:
@@ -394,6 +396,8 @@ def multi_args(p, cmd="celeryd", append="", prefix="", suffix=""):
                    options.pop("-n", socket.gethostname()))
     prefix = options.pop("--prefix", prefix) or ""
     suffix = options.pop("--suffix", suffix) or "." + hostname
+    if suffix in ('""', "''"):
+        suffix = ""
 
     for ns_name, ns_opts in p.namespaces.items():
         if "," in ns_name or (ranges and "-" in ns_name):

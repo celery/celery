@@ -160,9 +160,13 @@ def dump_active(panel, safe=False, **kwargs):
 
 @Panel.register
 def stats(panel, **kwargs):
+    asinfo = {}
+    if panel.consumer.controller.autoscaler:
+        asinfo = panel.consumer.controller.autoscaler.info()
     return {"total": state.total_count,
             "consumer": panel.consumer.info,
-            "pool": panel.consumer.pool.info}
+            "pool": panel.consumer.pool.info,
+            "autoscaler": asinfo}
 
 
 @Panel.register
@@ -197,14 +201,29 @@ def ping(panel, **kwargs):
 
 @Panel.register
 def pool_grow(panel, n=1, **kwargs):
-    panel.consumer.pool.grow(n)
+    if panel.consumer.controller.autoscaler:
+        panel.consumer.controller.autoscaler.force_scale_up(n)
+    else:
+        panel.consumer.pool.grow(n)
     return {"ok": "spawned worker processes"}
 
 
 @Panel.register
 def pool_shrink(panel, n=1, **kwargs):
-    panel.consumer.pool.shrink(n)
+    if panel.consumer.controller.autoscaler:
+        panel.consumer.controller.autoscaler.force_scale_down(n)
+    else:
+        panel.consumer.pool.shrink(n)
     return {"ok": "terminated worker processes"}
+
+
+@Panel.register
+def autoscale(panel, max=None, min=None):
+    autoscaler = panel.consumer.controller.autoscaler
+    if autoscaler:
+        max_, min_ = autoscaler.update(max, min)
+        return {"ok": "autoscale now min=%r max=%r" % (max_, min_)}
+    raise ValueError("Autoscale not enabled")
 
 
 @Panel.register
@@ -217,15 +236,18 @@ def shutdown(panel, **kwargs):
 def add_consumer(panel, queue=None, exchange=None, exchange_type="direct",
         routing_key=None, **options):
     cset = panel.consumer.task_consumer
-    declaration = dict(queue=queue,
-                       exchange=exchange,
-                       exchange_type=exchange_type,
-                       routing_key=routing_key,
-                       **options)
-    cset.add_consumer_from_dict(**declaration)
-    cset.consume()
-    panel.logger.info("Started consuming from %r" % (declaration, ))
-    return {"ok": "started consuming from %s" % (queue, )}
+    if not cset.consuming_from(queue):
+        declaration = dict(queue=queue,
+                           exchange=exchange,
+                           exchange_type=exchange_type,
+                           routing_key=routing_key,
+                           **options)
+        cset.add_consumer_from_dict(**declaration)
+        cset.consume()
+        panel.logger.info("Started consuming from %r" % (declaration, ))
+        return {"ok": "started consuming from %s" % (queue, )}
+    else:
+        return {"ok": "already consuming from %s" % (queue, )}
 
 
 @Panel.register

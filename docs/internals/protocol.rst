@@ -1,7 +1,7 @@
 .. _internals-task-message-protocol:
 
 =======================
- Task Message Protocol
+ Task Messages
 =======================
 
 .. contents::
@@ -90,7 +90,7 @@ format:
 Serialization
 =============
 
-The protocol supports several serialization formats using the
+Several types of serialization formats are supported using the
 `content_type` message header.
 
 The MIME-types supported by default are shown in the following table.

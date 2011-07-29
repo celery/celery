@@ -20,7 +20,7 @@ def get_engine(dburi, **kwargs):
 def create_session(dburi, **kwargs):
     engine = get_engine(dburi, **kwargs)
     if dburi not in _MAKERS:
-      _MAKERS[dburi] = sessionmaker(bind=engine)
+        _MAKERS[dburi] = sessionmaker(bind=engine)
     return engine, _MAKERS[dburi]
 
 

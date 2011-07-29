@@ -18,7 +18,7 @@ def task(*args, **kwargs):
 
     .. code-block:: python
 
-        @task()
+        @task
         def refresh_feed(url):
             return Feed.objects.get(url=url).refresh()
 
@@ -51,7 +51,7 @@ def periodic_task(*args, **options):
 
             .. code-block:: python
 
-                @task()
+                @task
                 def refresh_feed(url):
                     return Feed.objects.get(url=url).refresh()
 
