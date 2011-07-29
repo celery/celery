@@ -10,8 +10,6 @@
 2.3.0
 =====
 :release-date: TBA
-:status: frozen
-:branch: master
 
 :tested: cPython: 2.5, 2.6, 2.7; PyPy: 1.5; Jython: 2.5.2
 
@@ -19,6 +17,8 @@
 
 Important Notes
 ---------------
+
+* Now requires Kombu 1.2.1
 
 * Results are now disabled by default.
 
@@ -39,6 +39,12 @@ Important Notes
     a :exc:`NotImplementedError` telling the user to configure the result backend.
 
     For help choosing a backend please see :ref:`task-result-backends`.
+
+* The debian init scripts have been deprecated in favor of the generic-init.d
+  init scripts.
+
+    In addition generic init scripts for celerybeat and celeryev has been
+    added.
 
 .. _v230-news:
 
@@ -215,6 +221,11 @@ Fixes
 
 * ``CELERY_TASK_ERROR_WHITE_LIST`` is now properly initialized
   in all loaders.
+
+* celeryd_detach now passes thorugh commandline configuration.
+
+* Remote control command ``add_consumer`` now does nothing if the
+  queue is already being consumed from.
 
 
 .. _version-2.2.7:

@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Index &mdash; Celery v2.3.0rc2 documentation</title>
+    <title>Index &mdash; Celery v2.3.0 documentation</title>
     <link rel="stylesheet" href="_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '2.3.0rc2',
+        VERSION:     '2.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.0rc2 documentation" href="index.html" /> 
+    <link rel="top" title="Celery v2.3.0 documentation" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -34,7 +34,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.3.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -162,6 +162,7 @@
     <dt><a href="internals/reference/celery.worker.buckets.html#celery.worker.buckets.TaskBucket.add_bucket_for_type">add_bucket_for_type() (celery.worker.buckets.TaskBucket method)</a></dt>
     <dt><a href="reference/celery.task.control.html#celery.task.control.Inspect.add_consumer">add_consumer() (celery.task.control.Inspect method)</a></dt>
     <dt><a href="reference/celery.bin.celeryd_multi.html#celery.bin.celeryd_multi.NamespacedOptionParser.add_option">add_option() (celery.bin.celeryd_multi.NamespacedOptionParser method)</a></dt>
+    <dt><a href="internals/reference/celery.backends.amqp.html#celery.backends.amqp.AMQPBackend.Consumer.add_queue">add_queue() (celery.backends.amqp.AMQPBackend.Consumer method)</a></dt>
     <dt>ADMINS</dt>
     <dd><dl>
       <dt><a href="configuration.html#std:setting-ADMINS">setting</a></dt>
@@ -193,9 +194,9 @@
       <dt><a href="reference/celery.bin.camqadm.html#celery.bin.camqadm.AMQShell.amqp">(celery.bin.camqadm.AMQShell attribute)</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.app.amqp.html#celery.app.amqp.AMQP">AMQP (class in celery.app.amqp)</a></dt>
-    <dt><a href="reference/celery.bin.camqadm.html#celery.bin.camqadm.AMQPAdmin">AMQPAdmin (class in celery.bin.camqadm)</a></dt>
 </dl></td>
   <td style="width: 33%" valign="top"><dl>
+    <dt><a href="reference/celery.bin.camqadm.html#celery.bin.camqadm.AMQPAdmin">AMQPAdmin (class in celery.bin.camqadm)</a></dt>
     <dt><a href="reference/celery.bin.camqadm.html#celery.bin.camqadm.AMQPAdminCommand">AMQPAdminCommand (class in celery.bin.camqadm)</a></dt>
     <dt><a href="internals/reference/celery.backends.amqp.html#celery.backends.amqp.AMQPBackend">AMQPBackend (class in celery.backends.amqp)</a></dt>
     <dt><a href="internals/reference/celery.backends.amqp.html#celery.backends.amqp.AMQPBackend.BacklogLimitExceeded">AMQPBackend.BacklogLimitExceeded</a></dt>
@@ -891,8 +892,9 @@
     <dd><dl>
       <dt><a href="internals/reference/celery.backends.redis.html#celery.backends.redis.RedisBackend.client">(celery.backends.redis.RedisBackend attribute)</a></dt>
   </dl></dd>
-    <dt><a href="internals/reference/celery.backends.tyrant.html#celery.backends.tyrant.TyrantBackend.close">close() (celery.backends.tyrant.TyrantBackend method)</a></dt>
+    <dt><a href="internals/reference/celery.backends.amqp.html#celery.backends.amqp.AMQPBackend.Producer.close">close() (celery.backends.amqp.AMQPBackend.Producer method)</a></dt>
     <dd><dl>
+      <dt><a href="internals/reference/celery.backends.tyrant.html#celery.backends.tyrant.TyrantBackend.close">(celery.backends.tyrant.TyrantBackend method)</a></dt>
       <dt><a href="internals/reference/celery.beat.html#celery.beat.PersistentScheduler.close">(celery.beat.PersistentScheduler method)</a></dt>
       <dt><a href="internals/reference/celery.beat.html#celery.beat.Scheduler.close">(celery.beat.Scheduler method)</a></dt>
       <dt><a href="internals/reference/celery.concurrency.processes.html#celery.concurrency.processes.TaskPool.Pool.close">(celery.concurrency.processes.TaskPool.Pool method)</a></dt>
@@ -3111,7 +3113,7 @@
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper"><p class="logo"><a href="index.html">
-  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
 </a></p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
@@ -3139,7 +3141,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.3.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.backends.amqp &mdash; Celery v2.3.0rc2 documentation</title>
+    <title>celery.backends.amqp &mdash; Celery v2.3.0 documentation</title>
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.3.0rc2',
+        VERSION:     '2.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.0rc2 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.3.0 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.backends.mongodb" href="celery.backends.mongodb.html" />
     <link rel="prev" title="celery.backends.cache" href="celery.backends.cache.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.backends.cache.html" title="celery.backends.cache"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.3.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,13 +56,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.backends.amqp.html">2.1</a>.
+        <p>
+        This document describes Celery 2.3. For development docs,
+        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.backends.amqp.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="celery-backends-amqp">
@@ -97,6 +95,11 @@
 </tr>
 </tbody>
 </table>
+<dl class="method">
+<dt id="celery.backends.amqp.AMQPBackend.Consumer.add_queue">
+<tt class="descname">add_queue</tt><big>(</big><em>queue</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Consumer.add_queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Consumer.cancel">
 <tt class="descname">cancel</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Consumer.cancel" title="Permalink to this definition">¶</a></dt>
@@ -493,6 +496,11 @@ Note that the producer needs to drain events to use this feature.</li>
 </tbody>
 </table>
 <dl class="method">
+<dt id="celery.backends.amqp.AMQPBackend.Producer.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Producer.declare">
 <tt class="descname">declare</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.declare" title="Permalink to this definition">¶</a></dt>
 <dd><p>Declare the exchange.</p>
@@ -874,7 +882,7 @@ without modifying the server state.</li>
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper"><p class="logo"><a href="../../index.html">
-  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
 </a></p>
   <h4>Previous topic</h4>
   <p class="topless"><a href="celery.backends.cache.html"
@@ -919,7 +927,7 @@ without modifying the server state.</li>
         <li class="right" >
           <a href="celery.backends.cache.html" title="celery.backends.cache"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.3.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
