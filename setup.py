@@ -55,6 +55,8 @@ install_requires.extend([
 py_version = sys.version_info
 is_jython = sys.platform.startswith("java")
 is_pypy = hasattr(sys, "pypy_version_info")
+if sys.version_info < (2, 7):
+    install_requires.append("ordereddict") # Replacement for the ordered dict
 if sys.version_info < (2, 6) and not (is_jython or is_pypy):
     install_requires.append("multiprocessing")
 if sys.version_info < (2, 5):
