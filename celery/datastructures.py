@@ -15,6 +15,7 @@ import traceback
 
 from itertools import chain
 from Queue import Empty
+from threading import Lock
 
 from celery.utils.compat import OrderedDict
 
@@ -299,11 +300,16 @@ class LocalCache(OrderedDict):
     def __init__(self, limit=None):
         super(LocalCache, self).__init__()
         self.limit = limit
+        self.lock = Lock()
 
     def __setitem__(self, key, value):
-        while len(self) >= self.limit:
-            self.popitem(last=False)
-        super(LocalCache, self).__setitem__(key, value)
+        self.lock.acquire()   
+        try:
+            while len(self) >= self.limit:
+                self.popitem(last=False)
+            super(LocalCache, self).__setitem__(key, value)
+        finally:
+          self.lock.release()
 
 
 class TokenBucket(object):
