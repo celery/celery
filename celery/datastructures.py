@@ -311,6 +311,14 @@ class LocalCache(OrderedDict):
         finally:
           self.lock.release()
 
+    def pop(self, key, *args):
+        self.lock.acquire()   
+        try:
+            self.pop(key, *args)
+        finally:
+          self.lock.release()
+
+
 
 class TokenBucket(object):
     """Token Bucket Algorithm.
