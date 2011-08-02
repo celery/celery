@@ -177,8 +177,13 @@ class BaseBackend(object):
         tasks["celery.chord_unlock"].apply_async((setid, body, ), kwargs,
                                                  countdown=1)
 
-    def __reduce__(self):
-        return (self.__class__, ())
+    @classmethod
+    def _unpickle(cls, args, kwargs):
+      """Returns an unpickled backend."""
+      return cls(*args, **kwargs)
+
+    def __reduce__(self, args=(), kwargs={}):
+        return (self._unpickle, (args, kwargs))
 
 
 class BaseDictBackend(BaseBackend):
