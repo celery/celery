@@ -9,6 +9,7 @@ Custom data structures.
 
 """
 from __future__ import absolute_import
+from __future__ import with_statement
 
 import time
 import traceback
@@ -303,21 +304,14 @@ class LocalCache(OrderedDict):
         self.lock = Lock()
 
     def __setitem__(self, key, value):
-        self.lock.acquire()   
-        try:
+        with self.lock:
             while len(self) >= self.limit:
                 self.popitem(last=False)
             super(LocalCache, self).__setitem__(key, value)
-        finally:
-          self.lock.release()
 
     def pop(self, key, *args):
-        self.lock.acquire()   
-        try:
+        with self.lock:
             self.pop(key, *args)
-        finally:
-          self.lock.release()
-
 
 
 class TokenBucket(object):
