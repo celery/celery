@@ -101,4 +101,4 @@ class CacheBackend(KeyValueStoreBackend):
             dict(backend=backend, 
                  expires=self.expires,
                  options=self.options))
-        return super(DatabaseBackend, self).__reduce__(args, kwargs)
+        return super(CacheBackend, self).__reduce__(args, kwargs)

@@ -140,4 +140,4 @@ class MongoBackend(BaseDictBackend):
     def __reduce__(self, args=(), kwargs={}):
         kwargs.update(
             dict(expires=self.expires))
-        return super(DatabaseBackend, self).__reduce__(args, kwargs)
+        return super(MongoBackend, self).__reduce__(args, kwargs)

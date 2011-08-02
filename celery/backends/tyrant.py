@@ -87,4 +87,4 @@ class TyrantBackend(KeyValueStoreBackend):
         kwargs.update(
             dict(tyrant_host=self.tyrant_host, 
                  tyrant_port=self.tyrant_port))
-        return super(DatabaseBackend, self).__reduce__(args, kwargs)
+        return super(TyrantBackend, self).__reduce__(args, kwargs)

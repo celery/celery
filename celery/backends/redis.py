@@ -99,4 +99,4 @@ class RedisBackend(KeyValueStoreBackend):
                  db=self.db,
                  password=self.password,
                  expires=self.expires))
-        return super(DatabaseBackend, self).__reduce__(args, kwargs)
+        return super(RedisBackend, self).__reduce__(args, kwargs)
