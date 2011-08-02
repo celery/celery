@@ -82,3 +82,9 @@ class TyrantBackend(KeyValueStoreBackend):
 
     def delete(self, key):
         self.open().pop(key, None)
+
+    def __reduce__(self, args=(), kwargs={}):
+        kwargs.update(
+            dict(tyrant_host=self.tyrant_host, 
+                 tyrant_port=self.tyrant_port))
+        return super(TyrantBackend, self).__reduce__(args, kwargs)

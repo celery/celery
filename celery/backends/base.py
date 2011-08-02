@@ -12,6 +12,10 @@ from celery.utils.serialization import get_pickleable_exception
 from celery.utils.serialization import create_exception_cls
 from celery.datastructures import LocalCache
 
+def unpickle_backend(cls, args, kwargs):
+  """Returns an unpickled backend."""
+  return cls(*args, **kwargs)
+
 
 class BaseBackend(object):
     """Base backend class."""
@@ -181,8 +185,8 @@ class BaseBackend(object):
         tasks["celery.chord_unlock"].apply_async((setid, body, ), kwargs,
                                                  countdown=1)
 
-    def __reduce__(self):
-        return (self.__class__, ())
+    def __reduce__(self, args=(), kwargs={}):
+        return (unpickle_backend, (self.__class__, args, kwargs))
 
 
 class BaseDictBackend(BaseBackend):

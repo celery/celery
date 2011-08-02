@@ -234,3 +234,15 @@ class AMQPBackend(BaseDictBackend):
     def delete_taskset(self, taskset_id):
         raise NotImplementedError(
                 "delete_taskset is not supported by this backend.")
+
+    def __reduce__(self, args=(), kwargs={}):
+        kwargs.update(
+            dict(connection=self._connection, 
+                 exchange=self.exchange.name,
+                 exchange_type=self.exchange.type,
+                 persistent=self.persistent,
+                 serializer=self.serializer,
+                 auto_delete=self.auto_delete,
+                 expires=self.expires,
+                 connection_max=self.connection_max))
+        return super(AMQPBackend, self).__reduce__(args, kwargs)

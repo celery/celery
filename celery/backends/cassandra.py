@@ -151,3 +151,11 @@ class CassandraBackend(BaseDictBackend):
             return meta
 
         return self._retry_on_error(_do_get)
+
+    def __reduce__(self, args=(), kwargs={}):
+        kwargs.update(
+            dict(servers=self.servers, 
+                 keyspace=self.keyspace,
+                 column_family=self.column_family,
+                 cassandra_options=self.cassandra_options))
+        return super(CassandraBackend, self).__reduce__(args, kwargs)
