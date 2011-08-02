@@ -16,7 +16,7 @@ import traceback
 
 from itertools import chain
 from Queue import Empty
-from threading import Lock
+from threading import RLock
 
 from celery.utils.compat import OrderedDict
 
@@ -301,7 +301,7 @@ class LocalCache(OrderedDict):
     def __init__(self, limit=None):
         super(LocalCache, self).__init__()
         self.limit = limit
-        self.lock = Lock()
+        self.lock = RLock()
 
     def __setitem__(self, key, value):
         with self.lock:
