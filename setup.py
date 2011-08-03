@@ -59,8 +59,6 @@ if sys.version_info < (2, 7):
     install_requires.append("ordereddict") # Replacement for the ordered dict
 if sys.version_info < (2, 6) and not (is_jython or is_pypy):
     install_requires.append("multiprocessing")
-if sys.version_info < (2, 5):
-    install_requires.append("uuid")
 
 if is_jython:
     install_requires.append("threadpool")
