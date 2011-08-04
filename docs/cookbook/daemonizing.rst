@@ -262,3 +262,13 @@ launchd (OS X)
 
 .. _`contrib/mac/`:
     http://github.com/ask/celery/tree/master/contrib/mac/
+
+
+.. _daemon-windows:
+
+Windows
+=======
+
+See this excellent external tutorial:
+
+http://www.calazan.com/windows-tip-run-applications-in-the-background-using-task-scheduler/

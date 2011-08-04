@@ -105,14 +105,14 @@ class test_Task(unittest.TestCase):
                     received=time() - 10,
                     started=time() - 8,
                     succeeded=time())
-        self.assertItemsEqual(list(task._info_fields),
-                              task.info().keys())
+        self.assertEqual(sorted(list(task._info_fields)),
+                              sorted(task.info().keys()))
 
-        self.assertItemsEqual(list(task._info_fields + ("received", )),
-                              task.info(extra=("received", )))
+        self.assertEqual(sorted(list(task._info_fields + ("received", ))),
+                              sorted(task.info(extra=("received", ))))
 
-        self.assertItemsEqual(["args", "kwargs"],
-                              task.info(["args", "kwargs"]).keys())
+        self.assertEqual(sorted(["args", "kwargs"]),
+                         sorted(task.info(["args", "kwargs"]).keys()))
 
     def test_ready(self):
         task = Task(uuid="abcdefg",
@@ -278,7 +278,7 @@ class test_State(unittest.TestCase):
     def test_task_types(self):
         r = ev_snapshot(State())
         r.play()
-        self.assertItemsEqual(r.state.task_types(), ["task1", "task2"])
+        self.assertEqual(sorted(r.state.task_types()), ["task1", "task2"])
 
     def test_tasks_by_timestamp(self):
         r = ev_snapshot(State())

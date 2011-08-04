@@ -7,7 +7,8 @@ import platform
 
 extra = {}
 tests_require = ["nose", "nose-cover3", "sqlalchemy", "mock"]
-if sys.version_info >= (3, 0):
+is_py3k  = sys.version_info >= (3, 0)
+if is_py3k:
     extra.update(use_2to3=True)
 elif sys.version_info < (2, 7):
     tests_require.append("unittest2")
@@ -52,13 +53,18 @@ install_requires.extend([
     "kombu>=1.2.1,<2.0.0",
     "pyparsing>=1.5.0,<2.0.0",
 ])
+if is_py3k:
+    install_requires.append("python-dateutil>2.0.0")
+else:
+    install_requires.append("python-dateutil>1.5.0,<2.0.0")
+
 py_version = sys.version_info
 is_jython = sys.platform.startswith("java")
 is_pypy = hasattr(sys, "pypy_version_info")
+if sys.version_info < (2, 7):
+    install_requires.append("ordereddict") # Replacement for the ordered dict
 if sys.version_info < (2, 6) and not (is_jython or is_pypy):
     install_requires.append("multiprocessing")
-if sys.version_info < (2, 5):
-    install_requires.append("uuid")
 
 if is_jython:
     install_requires.append("threadpool")

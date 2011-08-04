@@ -9,12 +9,14 @@ Custom data structures.
 
 """
 from __future__ import absolute_import
+from __future__ import with_statement
 
 import time
 import traceback
 
 from itertools import chain
 from Queue import Empty
+from threading import RLock
 
 from celery.utils.compat import OrderedDict
 
@@ -299,11 +301,17 @@ class LocalCache(OrderedDict):
     def __init__(self, limit=None):
         super(LocalCache, self).__init__()
         self.limit = limit
+        self.lock = RLock()
 
     def __setitem__(self, key, value):
-        while len(self) >= self.limit:
-            self.popitem(last=False)
-        super(LocalCache, self).__setitem__(key, value)
+        with self.lock:
+            while len(self) >= self.limit:
+                self.popitem(last=False)
+            super(LocalCache, self).__setitem__(key, value)
+
+    def pop(self, key, *args):
+        with self.lock:
+            super(LocalCache, self).pop(key, *args)
 
 
 class TokenBucket(object):
