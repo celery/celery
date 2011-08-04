@@ -220,10 +220,9 @@ class BaseDictBackend(BaseBackend):
     def get_task_meta(self, task_id, cache=True):
         if cache and task_id in self._cache:
             try:
-              return self._cache[task_id]
+                return self._cache[task_id]
             except KeyError:
-              #The Backend has been emptied in the meantime
-              pass
+                pass   # backend emptied in the meantime
 
         meta = self._get_task_meta_for(task_id)
         if cache and meta.get("status") == states.SUCCESS:
@@ -240,10 +239,9 @@ class BaseDictBackend(BaseBackend):
     def get_taskset_meta(self, taskset_id, cache=True):
         if cache and taskset_id in self._cache:
             try:
-              return self._cache[taskset_id]
+                return self._cache[taskset_id]
             except KeyError:
-              #The Backend has been emptied in the meantime
-              pass
+                pass  # backend emptied in the meantime
 
         meta = self._restore_taskset(taskset_id)
         if cache and meta is not None:

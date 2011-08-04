@@ -9,8 +9,7 @@
 
 2.3.0
 =====
-:release-date: TBA
-
+:release-date: 2011-08-05 12:00 P.M BST
 :tested: cPython: 2.5, 2.6, 2.7; PyPy: 1.5; Jython: 2.5.2
 
 .. _v230-important:
@@ -355,7 +354,7 @@ News
     * ``eventlet_pool_postshutdown``
     * ``eventlet_pool_apply``
 
-    See :ref:`signals` for more information.
+    See :mod:`celery.signals` for more information.
 
 * New :setting:`BROKER_TRANSPORT_OPTIONS` setting can be used to pass
   additional arguments to a particular broker transport.

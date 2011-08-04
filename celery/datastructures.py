@@ -311,7 +311,7 @@ class LocalCache(OrderedDict):
 
     def pop(self, key, *args):
         with self.lock:
-            self.pop(key, *args)
+            super(LocalCache, self).pop(key, *args)
 
 
 class TokenBucket(object):

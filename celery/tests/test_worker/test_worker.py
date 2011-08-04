@@ -27,7 +27,7 @@ from celery.utils.timer2 import Timer
 
 from celery.tests.compat import catch_warnings
 from celery.tests.utils import unittest
-from celery.tests.utils import AppCase, skip
+from celery.tests.utils import AppCase
 
 
 class PlaceHolder(object):
