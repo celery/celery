@@ -766,8 +766,8 @@ class test_WorkController(AppCase):
             exc_info = sys.exc_info()
 
         worker.on_timer_error(exc_info)
-        logged = worker.logger.error.call_args[0][0]
-        self.assertIn("KeyError", logged)
+        msg, args = worker.logger.error.call_args[0]
+        self.assertIn("KeyError", msg % args)
 
     def test_on_timer_tick(self):
         worker = WorkController(concurrency=1, loglevel=10)
