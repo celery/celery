@@ -56,7 +56,7 @@ def apply_batches_task(task, args, loglevel, logfile):
         result = task(*args)
     except Exception, exp:
         result = None
-        task.logger.error("There was an Exception: %s" % exp)
+        task.logger.error("There was an Exception: %s", exp, exc_info=True)
     finally:
         task.request.clear()
     return result
@@ -167,7 +167,7 @@ class Batches(Task):
                     callback=acks_late[True] and on_return or None)
 
     def debug(self, msg):
-        self.logger.debug("%s: %s" % (self.name, msg))
+        self.logger.debug("%s: %s", self.name, msg)
 
     @cached_property
     def logger(self):

@@ -162,15 +162,15 @@ class Scheduler(object):
         is_due, next_time_to_run = entry.is_due()
 
         if is_due:
-            self.logger.debug("Scheduler: Sending due task %s" % entry.task)
+            self.logger.debug("Scheduler: Sending due task %s", entry.task)
             try:
                 result = self.apply_async(entry, publisher=publisher)
             except Exception, exc:
-                self.logger.error("Message Error: %s\n%s" % (exc,
-                    traceback.format_stack()), exc_info=sys.exc_info())
+                self.logger.error("Message Error: %s\n%s", exc,
+                                  traceback.format_stack(),
+                                  exc_info=sys.exc_info())
             else:
-                self.logger.debug("%s sent. id->%s" % (entry.task,
-                                                       result.task_id))
+                self.logger.debug("%s sent. id->%s", entry.task, result.task_id)
         return next_time_to_run
 
     def tick(self):
@@ -281,8 +281,8 @@ class Scheduler(object):
         # callback called for each retry while the connection
         # can't be established.
         def _error_handler(exc, interval):
-            self.logger.error("Celerybeat: Connection error: %s. " % exc
-                            + "Trying again in %s seconds..." % interval)
+            self.logger.error("Celerybeat: Connection error: %s. "
+                              "Trying again in %s seconds...", exc, interval)
 
         return self.connection.ensure_connection(_error_handler,
                     self.app.conf.BROKER_CONNECTION_MAX_RETRIES)
@@ -327,8 +327,8 @@ class PersistentScheduler(Scheduler):
                                                 writeback=True)
             entries = self._store.setdefault("entries", {})
         except Exception, exc:
-            self.logger.error("Removing corrupted schedule file %r: %r" % (
-                self.schedule_filename, exc))
+            self.logger.error("Removing corrupted schedule file %r: %r",
+                              self.schedule_filename, exc, exc_info=True)
             self._remove_db()
             self._store = self.persistence.open(self.schedule_filename,
                                                 writeback=True)
@@ -380,8 +380,8 @@ class Service(object):
 
     def start(self, embedded_process=False):
         self.logger.info("Celerybeat: Starting...")
-        self.logger.debug("Celerybeat: Ticking with max interval->%s" % (
-                    humanize_seconds(self.scheduler.max_interval)))
+        self.logger.debug("Celerybeat: Ticking with max interval->%s",
+                          humanize_seconds(self.scheduler.max_interval))
 
         signals.beat_init.send(sender=self)
         if embedded_process:

@@ -195,8 +195,8 @@ class Timer(Thread):
                 # so gc collected built-in modules.
                 pass
         except Exception, exc:
-            self.logger.error("Thread Timer crashed: %r" % (exc, ),
-                  exc_info=sys.exc_info())
+            self.logger.error("Thread Timer crashed: %r", exc,
+                              exc_info=sys.exc_info())
             os._exit(1)
 
     def stop(self):
