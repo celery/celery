@@ -462,10 +462,11 @@ class TaskRequest(object):
         self.send_event("task-succeeded", uuid=self.task_id,
                         result=safe_repr(ret_value), runtime=runtime)
 
-        self.logger.info(self.success_msg.strip(), id=self.task_id,
-                         name=self.task_name,
-                         return_value=self.repr_result(ret_value),
-                         runtime=runtime)
+        self.logger.info(self.success_msg.strip(),
+                         {"id": self.task_id,
+                          "name": self.task_name,
+                          "return_value": self.repr_result(ret_value),
+                          "runtime": runtime})
 
     def on_retry(self, exc_info):
         """Handler called if the task should be retried."""
@@ -474,9 +475,10 @@ class TaskRequest(object):
                          traceback=safe_str(exc_info.traceback))
 
         self.logger.info(self.retry_msg.strip(),
-                         id=self.task_id,
-                         name=self.task_name,
-                         exc=safe_repr(exc_info.exception.exc))
+                         {"id": self.task_id,
+                         "name": self.task_name,
+                         "exc": safe_repr(exc_info.exception.exc)},
+                         exc_info=exc_info)
 
     def on_failure(self, exc_info):
         """Handler called if the task raised an exception."""
@@ -506,12 +508,11 @@ class TaskRequest(object):
                    "args": self.args,
                    "kwargs": self.kwargs}
 
-        self.logger.error(self.error_msg.strip(),
+        self.logger.error(self.error_msg.strip(), context,
                           exc_info=exc_info,
                           extra={"data": {"id": self.task_id,
                                           "name": self.task_name,
-                                          "hostname": self.hostname}},
-                          **context)
+                                          "hostname": self.hostname}})
 
         task_obj = registry.tasks.get(self.task_name, object)
         self.send_error_email(task_obj, context, exc_info.exception,
