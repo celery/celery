@@ -39,6 +39,16 @@ Important Notes
 
     For help choosing a backend please see :ref:`task-result-backends`.
 
+    If you depend on the previous default which was the AMQP backend, then
+    you have to set this explicitly before upgrading::
+
+        CELERY_RESULT_BACKEND = "amqp"
+
+    .. note::
+
+        For django-celery users the default backend is still ``database``,
+        and results are not disabled by default.
+
 * The debian init scripts have been deprecated in favor of the generic-init.d
   init scripts.
 
