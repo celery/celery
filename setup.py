@@ -56,7 +56,7 @@ install_requires.extend([
 if is_py3k:
     install_requires.append("python-dateutil>2.0.0")
 else:
-    install_requires.append("python-dateutil>1.5.0,<2.0.0")
+    install_requires.append("python-dateutil>=1.5.0,<2.0.0")
 
 py_version = sys.version_info
 is_jython = sys.platform.startswith("java")
