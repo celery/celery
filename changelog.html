@@ -222,7 +222,7 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">release-date:</th><td class="field-body">TBA</td>
+<tr class="field"><th class="field-name">release-date:</th><td class="field-body">2011-08-05 12:00 P.M BST</td>
 </tr>
 <tr class="field"><th class="field-name">tested:</th><td class="field-body">cPython: 2.5, 2.6, 2.7; PyPy: 1.5; Jython: 2.5.2</td>
 </tr>
@@ -248,6 +248,16 @@ of any common pitfalls with the particular backend.</p>
 noop operation, and AsyncResult.wait(), .result, .state, etc will raise
 a <tt class="xref py py-exc docutils literal"><span class="pre">NotImplementedError</span></tt> telling the user to configure the result backend.</p>
 <p>For help choosing a backend please see <a class="reference internal" href="userguide/tasks.html#task-result-backends"><em>Result Backends</em></a>.</p>
+<p>If you depend on the previous default which was the AMQP backend, then
+you have to set this explicitly before upgrading:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_RESULT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;amqp&quot;</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">For django-celery users the default backend is still <tt class="docutils literal"><span class="pre">database</span></tt>,
+and results are not disabled by default.</p>
+</div>
 </div></blockquote>
 </li>
 <li><p class="first">The debian init scripts have been deprecated in favor of the generic-init.d
@@ -617,7 +627,7 @@ the file if it is renamed or deleted.</p>
 <li><tt class="docutils literal"><span class="pre">eventlet_pool_postshutdown</span></tt></li>
 <li><tt class="docutils literal"><span class="pre">eventlet_pool_apply</span></tt></li>
 </ul>
-<p>See <em class="xref std std-ref">signals</em> for more information.</p>
+<p>See <a class="reference internal" href="reference/celery.signals.html#module-celery.signals" title="celery.signals"><tt class="xref py py-mod docutils literal"><span class="pre">celery.signals</span></tt></a> for more information.</p>
 </div></blockquote>
 </li>
 <li><p class="first">New <a class="reference internal" href="configuration.html#std:setting-BROKER_TRANSPORT_OPTIONS"><tt class="xref std std-setting docutils literal"><span class="pre">BROKER_TRANSPORT_OPTIONS</span></tt></a> setting can be used to pass
@@ -3725,7 +3735,7 @@ in practice, so consider this experimental.</p>
 <li><p class="first"><cite>TaskPool.apply_async</cite>: Now supports the <cite>accept_callback</cite> argument.</p>
 </li>
 <li><p class="first"><cite>apply_async</cite>: Now raises <tt class="xref py py-exc docutils literal"><span class="pre">ValueError</span></tt> if task args is not a list,
-or kwargs is not a tuple (<a class="issue-closed reference-issue reference external" href="https://github.com/ask/celery/issues/95">Issue #95</a>).</p>
+or kwargs is not a tuple (Issue #95).</p>
 </li>
 <li><p class="first"><cite>Task.max_retries</cite> can now be <cite>None</cite>, which means it will retry forever.</p>
 </li>
@@ -3886,7 +3896,7 @@ the mediator thread could block shutdown (and potentially block other
 jobs from coming in).</p>
 </div></blockquote>
 </li>
-<li><p class="first">Remote rate limits was not properly applied (<a class="issue-closed reference-issue reference external" href="https://github.com/ask/celery/issues/98">Issue #98</a>).</p>
+<li><p class="first">Remote rate limits was not properly applied (Issue #98).</p>
 </li>
 <li><p class="first">Now handles exceptions with Unicode messages correctly in
 <cite>TaskRequest.on_failure</cite>.</p>
@@ -3936,7 +3946,7 @@ can easily be traced.</p>
 </li>
 <li><p class="first">Unit tests: Don&#8217;t disable the django test database tear down,
 instead fixed the underlying issue which was caused by modifications
-to the <cite>DATABASE_NAME</cite> setting (<a class="issue-closed reference-issue reference external" href="https://github.com/ask/celery/issues/82">Issue #82</a>).</p>
+to the <cite>DATABASE_NAME</cite> setting (Issue #82).</p>
 </li>
 <li><p class="first">Django Loader: New config <tt class="xref std std-setting docutils literal"><span class="pre">CELERY_DB_REUSE_MAX</span></tt> (max number of
 tasks to reuse the same database connection)</p>
@@ -3965,7 +3975,7 @@ twisted/eventlet pool?</p>
 <p>Consider the competition for the first pool plug-in started!</p>
 </div></blockquote>
 </li>
-<li><p class="first">Debian init scripts: Use <cite>-a</cite> not <cite>&amp;&amp;</cite> (<a class="issue-closed reference-issue reference external" href="https://github.com/ask/celery/issues/82">Issue #82</a>).</p>
+<li><p class="first">Debian init scripts: Use <cite>-a</cite> not <cite>&amp;&amp;</cite> (Issue #82).</p>
 </li>
 <li><p class="first">Debian init scripts: Now always preserves <cite>$CELERYD_OPTS</cite> from the
 <cite>/etc/default/celeryd</cite> and <cite>/etc/default/celerybeat</cite>.</p>
@@ -3982,7 +3992,7 @@ and <tt class="xref std std-sig docutils literal"><span class="pre">SIGINT</span
 when trying to log that a task had been revoked.</p>
 </li>
 <li><p class="first">management.commands.camqadm: Fixed typo <cite>camqpadm</cite> -&gt; <cite>camqadm</cite>
-(<a class="issue-closed reference-issue reference external" href="https://github.com/ask/celery/issues/83">Issue #83</a>).</p>
+(Issue #83).</p>
 </li>
 <li><p class="first">PeriodicTask.delta_resolution: Was not working for days and hours, now fixed
 by rounding to the nearest day/hour.</p>
@@ -4705,7 +4715,7 @@ be sure to initialize tables (django: <cite>syncdb</cite>, python: <cite>celeryi
 <blockquote>
 <div><p>It uses messages to publish task return value and status. And it&#8217;s
 incredibly fast!</p>
-<p>See <a class="issue-closed reference-issue reference external" href="https://github.com/ask/celery/issues/6">issue #6</a> for more info!</p>
+<p>See issue #6 for more info!</p>
 </div></blockquote>
 </li>
 <li><p class="first">AMQP QoS (prefetch count) implemented:</p>
