@@ -17,3 +17,6 @@ erl_crash.dump
 Documentation/
 .tox/
 .ropeproject/
+.project
+.pydevproject
+

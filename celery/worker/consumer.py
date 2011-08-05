@@ -391,7 +391,7 @@ class Consumer(object):
                     "Couldn't ack %r: body:%r reason:%r" % (
                         message.delivery_tag, safe_repr(body), exc))
 
-        if not body.get("task"):
+        if not isinstance(body,dict) or not body.get("task"):
             warnings.warn(RuntimeWarning(
                 "Received and deleted unknown message. Wrong destination?!? \
                 the full contents of the message body was: %s" % (
