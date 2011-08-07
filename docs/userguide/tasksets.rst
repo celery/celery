@@ -164,6 +164,7 @@ It supports the following operations:
 Chords
 ======
 
+.. versionadded:: 2.3
 
 A chord is a task that only executes after all of the tasks in a taskset has
 finished executing.

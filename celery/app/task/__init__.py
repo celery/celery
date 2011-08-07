@@ -43,7 +43,7 @@ class Context(threading.local):
 
 
 class TaskType(type):
-    """Metaclass for tasks.
+    """Meta class for tasks.
 
     Automatically registers the task in the task registry, except
     if the `abstract` attribute is set.
@@ -216,7 +216,7 @@ class BaseTask(object):
     #: worker crashes mid execution (which may be acceptable for some
     #: applications).
     #:
-    #: The application default can be overriden with the
+    #: The application default can be overridden with the
     #: :setting:`CELERY_ACKS_LATE` setting.
     acks_late = False
 
@@ -374,7 +374,7 @@ class BaseTask(object):
         :keyword exchange: The named exchange to send the task to.
                            Defaults to the :attr:`exchange` attribute.
 
-        :keyword exchange_type: The exchange type to initalize the exchange
+        :keyword exchange_type: The exchange type to initialize the exchange
                                 if not already declared.  Defaults to the
                                 :attr:`exchange_type` attribute.
 

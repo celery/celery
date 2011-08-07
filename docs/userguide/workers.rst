@@ -260,7 +260,7 @@ Example changing the rate limit for the `myapp.mytask` task to accept
     >>> rate_limit("myapp.mytask", "200/m")
 
 Example changing the rate limit on a single host by specifying the
-destination hostname::
+destination host name::
 
     >>> rate_limit("myapp.mytask", "200/m",
     ...            destination=["worker1.example.com"])

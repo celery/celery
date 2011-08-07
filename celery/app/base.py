@@ -51,7 +51,7 @@ def pyimplementation():
 
 
 class LamportClock(object):
-    """Lamports logical clock.
+    """Lamport's logical clock.
 
     From Wikipedia:
 
@@ -80,7 +80,7 @@ class LamportClock(object):
 
     When sending a message use :meth:`forward` to increment the clock,
     when receiving a message use :meth:`adjust` to sync with
-    the timestamp of the incoming message.
+    the time stamp of the incoming message.
 
     """
     #: The clocks current value.
@@ -382,7 +382,7 @@ class BaseApp(object):
 
     @cached_property
     def backend(self):
-        """Storing/retreiving task state.  See
+        """Storing/retrieving task state.  See
         :class:`~celery.backend.base.BaseBackend`."""
         return self._get_backend()
 

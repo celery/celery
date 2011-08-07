@@ -392,7 +392,7 @@ Example configuration
 MongoDB backend settings
 ------------------------
 
-.. note:: 
+.. note::
 
     The MongoDB backend requires the :mod:`pymongo` library:
     http://github.com/mongodb/mongo-python-driver/tree/master
@@ -535,7 +535,7 @@ BROKER_TRANSPORT
 The Kombu transport to use.  Default is ``amqplib``.
 
 You can use a custom transport class name, or select one of the
-built-in transports: ``amqplib``, ``pika``, ``redis``, ``beanstalk``, 
+built-in transports: ``amqplib``, ``pika``, ``redis``, ``beanstalk``,
 ``sqlalchemy``, ``django``, ``mongodb``, ``couchdb``.
 
 .. setting:: BROKER_HOST
@@ -587,6 +587,8 @@ by all transports.
 BROKER_POOL_LIMIT
 ~~~~~~~~~~~~~~~~~
 
+.. versionadded:: 2.3
+
 The maximum number of connections that can be open in the connection pool.
 
 A good default value could be 10, or more if you're using eventlet/gevent
@@ -634,6 +636,8 @@ Default is 100 retries.
 
 BROKER_TRANSPORT_OPTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.2
 
 A dict of additional options passed to the underlying transport.
 
@@ -750,6 +754,8 @@ methods that have been registered with :mod:`kombu.serialization.registry`.
 CELERY_TASK_PUBLISH_RETRY
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. versionadded:: 2.2
+
 Decides if publishing task messages will be retried in the case
 of connection loss or other connection errors.
 See also :setting:`CELERY_TASK_PUBLISH_RETRY_POLICY`.
@@ -760,6 +766,8 @@ Disabled by default.
 
 CELERY_TASK_PUBLISH_RETRY_POLICY
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.2
 
 Defines the default policy when retrying publishing a task message in
 the case of connection loss or other connection errors.
@@ -1050,6 +1058,8 @@ Send events so the worker can be monitored by tools like `celerymon`.
 CELERY_SEND_TASK_SENT_EVENT
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. versionadded:: 2.2
+
 If enabled, a `task-sent` event will be sent for every task so tasks can be
 tracked before they are consumed by a worker.
 
@@ -1105,8 +1115,10 @@ Logging
 CELERYD_HIJACK_ROOT_LOGGER
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. versionadded:: 2.2
+
 By default any previously configured logging options will be reset,
-because the Celery apps "hijacks" the root logger.
+because the Celery programs "hijacks" the root logger.
 
 If you want to customize your own logging then you can disable
 this behavior.
@@ -1222,6 +1234,8 @@ Default is ``processes``.
 
 CELERYD_AUTOSCALER
 ~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.2
 
 Name of the autoscaler class to use.
 
