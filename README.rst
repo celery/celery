@@ -29,9 +29,10 @@ Celery is used in production systems to process millions of tasks a day.
 Celery is written in Python, but the protocol can be implemented in any
 language.  It can also `operate with other languages using webhooks`_.
 
-The recommended message broker is `RabbitMQ`_, but limited support for
+The recommended message broker is `RabbitMQ`_, but `limited support`_ for
 `Redis`_, `Beanstalk`_, `MongoDB`_, `CouchDB`_ and
 databases (using `SQLAlchemy`_ or the `Django ORM`_) is also available.
+
 
 Celery is easy to integrate with `Django`_, `Pylons`_ and `Flask`_, using
 the `django-celery`_, `celery-pylons`_ and `Flask-Celery`_ add-on packages.
@@ -53,6 +54,8 @@ the `django-celery`_, `celery-pylons`_ and `Flask-Celery`_ add-on packages.
 .. _`Flask-Celery`: http://github.com/ask/flask-celery/
 .. _`operate with other languages using webhooks`:
     http://ask.github.com/celery/userguide/remote-tasks.html
+.. _`limited support`:
+    http://kombu.readthedocs.org/en/latest/introduction.html#transport-comparison
 
 .. contents::
     :local:

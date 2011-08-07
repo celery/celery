@@ -5,6 +5,19 @@
 .. contents::
     :local:
 
+.. _version-2.3.1:
+
+2.3.1
+=====
+:release-date: 2011-08-07 08:00 P.M BST
+
+Fixes
+-----
+
+* The :setting:`CELERY_AMQP_TASK_RESULT_EXPIRES` setting did not work,
+  resulting in an AMQP related error about not being able to serialize
+  floats while trying to publish task states (Issue #446).
+
 .. _version-2.3.0:
 
 2.3.0
