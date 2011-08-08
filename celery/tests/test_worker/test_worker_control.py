@@ -216,8 +216,8 @@ class test_ControlPanel(unittest.TestCase):
         state.revoked.add("a2")
 
         try:
-            self.assertItemsEqual(self.panel.handle("dump_revoked"),
-                                  ["a1", "a2"])
+            self.assertEqual(sorted(self.panel.handle("dump_revoked")),
+                             ["a1", "a2"])
         finally:
             state.revoked.clear()
 

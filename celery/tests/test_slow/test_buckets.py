@@ -278,7 +278,7 @@ class test_TaskBucket(unittest.TestCase):
         x.buckets[TaskA.name].put(1)
         x.buckets[TaskB.name].put(2)
         x.buckets[TaskC.name].put(3)
-        self.assertItemsEqual(x.items, [1, 2, 3])
+        self.assertEqual(sorted(x.items), [1, 2, 3])
 
 
 class test_FastQueue(unittest.TestCase):
