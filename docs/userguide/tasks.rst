@@ -143,7 +143,7 @@ Using a custom retry delay
 
 When a task is to be retried, it will wait for a given amount of time
 before doing so. The default delay is in the
-:attr:`~celery.task.base.BaseTask.default_retry_delay` 
+:attr:`~celery.task.base.BaseTask.default_retry_delay`
 attribute on the task. By default this is set to 3 minutes. Note that the
 unit for setting the delay is in seconds (int or float).
 
@@ -209,7 +209,7 @@ General
     a given period of time is the task allowed to run.
 
     If this is :const:`None` no rate limit is in effect.
-    If it is an integer, it is interpreted as "tasks per second". 
+    If it is an integer, it is interpreted as "tasks per second".
 
     The rate limits can be specified in seconds, minutes or hours
     by appending `"/s"`, `"/m"` or `"/h"` to the value.
@@ -411,7 +411,7 @@ This is also the case if using Django and using `project.myapp`::
 
     INSTALLED_APPS = ("project.myapp", )
 
-The worker will have the tasks registered as "project.myapp.tasks.*", 
+The worker will have the tasks registered as "project.myapp.tasks.*",
 while this is what happens in the client if the module is imported as
 "myapp.tasks":
 
@@ -461,7 +461,7 @@ result of a successful task, or the exception and traceback information of a
 failed task.
 
 There are several *result backends* to choose from, and they all have
-different strenghts and weaknesses (see :ref:`task-result-backends`).
+different strengths and weaknesses (see :ref:`task-result-backends`).
 
 During its lifetime a task will transition through several possible states,
 and each state may have arbitrary metadata attached to it.  When a task
@@ -490,7 +490,7 @@ built-in backends to choose from: SQLAlchemy/Django ORM, Memcached, Redis,
 AMQP, MongoDB, Tokyo Tyrant and Redis -- or you can define your own.
 
 No backend works well for every use case.
-You should read about the strenghts and weaknesses of each backend, and choose
+You should read about the strengths and weaknesses of each backend, and choose
 the most appropriate for your needs.
 
 
@@ -549,7 +549,7 @@ limitations.
 
   In MySQL the default transaction isolation level is `REPEATABLE-READ`, which
   means the transaction will not see changes by other transactions until the
-  transaction is commited.  It is recommended that you change to the
+  transaction is committed.  It is recommended that you change to the
   `READ-COMMITTED` isolation level.
 
 

@@ -112,10 +112,19 @@ class detached_celeryd(object):
     def execute_from_commandline(self, argv=None):
         if argv is None:
             argv = sys.argv
+        config = []
+        seen_cargs = 0
+        for arg in argv:
+            if seen_cargs:
+                config.append(arg)
+            else:
+                if arg == "--":
+                    seen_cargs = 1
+                    config.append(arg)
         prog_name = os.path.basename(argv[0])
         options, values, leftovers = self.parse_options(prog_name, argv[1:])
         detach(path=self.execv_path,
-               argv=self.execv_argv + leftovers,
+               argv=self.execv_argv + leftovers + config,
                **vars(options))
 
 

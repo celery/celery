@@ -13,7 +13,7 @@ from celery.utils.serialization import pickle, get_pickled_exception
 from celery.utils.serialization import get_pickleable_exception
 from celery.utils.serialization import create_exception_cls
 from celery.datastructures import LocalCache
-from celery.app import app_or_default
+
 
 class BaseBackend(object):
     """Base backend class."""
@@ -85,7 +85,8 @@ class BaseBackend(object):
         """Convert serialized exception to Python exception."""
         if (self.app.conf.CELERY_RESULT_SERIALIZER in ("pickle", "yaml")):
             return get_pickled_exception(exc)
-        return create_exception_cls(exc["exc_type"].encode("utf-8"), sys.modules[__name__])
+        return create_exception_cls(exc["exc_type"].encode("utf-8"),
+                                    sys.modules[__name__])
 
     def prepare_value(self, result):
         """Prepare value for storage."""
@@ -222,7 +223,10 @@ class BaseDictBackend(BaseBackend):
 
     def get_task_meta(self, task_id, cache=True):
         if cache and task_id in self._cache:
-            return self._cache[task_id]
+            try:
+                return self._cache[task_id]
+            except KeyError:
+                pass   # backend emptied in the meantime
 
         meta = self._get_task_meta_for(task_id)
         if cache and meta.get("status") == states.SUCCESS:
@@ -238,7 +242,10 @@ class BaseDictBackend(BaseBackend):
 
     def get_taskset_meta(self, taskset_id, cache=True):
         if cache and taskset_id in self._cache:
-            return self._cache[taskset_id]
+            try:
+                return self._cache[taskset_id]
+            except KeyError:
+                pass  # backend emptied in the meantime
 
         meta = self._restore_taskset(taskset_id)
         if cache and meta is not None:

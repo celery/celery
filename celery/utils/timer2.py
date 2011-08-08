@@ -173,6 +173,7 @@ class Timer(Thread):
                     self.not_empty.wait(1.0)
                 return delay
         return self.apply_entry(entry)
+    __next__ = next  # for 2to3
 
     def run(self):
         try:
