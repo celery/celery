@@ -60,7 +60,7 @@ class AMQPBackend(BaseDictBackend):
         if self.expires is not None:
             self.expires = self.prepare_expires(self.expires)
             # x-expires requires RabbitMQ 2.1.0 or higher.
-            self.queue_arguments["x-expires"] = self.expires * 1000.0
+            self.queue_arguments["x-expires"] = int(self.expires * 1000)
         self.connection_max = (connection_max or
                                conf.CELERY_AMQP_TASK_RESULT_CONNECTION_MAX)
         self.mutex = threading.Lock()

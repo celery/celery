@@ -27,7 +27,7 @@ from celery.utils.timer2 import Timer
 
 from celery.tests.compat import catch_warnings
 from celery.tests.utils import unittest
-from celery.tests.utils import AppCase, skip
+from celery.tests.utils import AppCase
 
 
 class PlaceHolder(object):
@@ -854,7 +854,6 @@ class test_WorkController(AppCase):
         finally:
             state.Persistent = Persistent
 
-    @skip("Issue #264")
     def test_disable_rate_limits(self):
         from celery.worker.buckets import FastQueue
         worker = self.create_worker(disable_rate_limits=True)

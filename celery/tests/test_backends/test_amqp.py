@@ -225,10 +225,10 @@ class test_AMQPBackend(unittest.TestCase):
                                     "traceback": None,
                                     "task_id": uuid})
                                 for i, uuid in enumerate(uuids)]
-        self.assertItemsEqual(res, expected_results)
+        self.assertEqual(sorted(res), sorted(expected_results))
         self.assertDictEqual(b._cache[res[0][0]], res[0][1])
         cached_res = list(b.get_many(uuids, timeout=1))
-        self.assertItemsEqual(cached_res, expected_results)
+        self.assertEqual(sorted(cached_res), sorted(expected_results))
         b._cache[res[0][0]]["status"] = states.RETRY
         self.assertRaises(socket.timeout, list,
                           b.get_many(uuids, timeout=0.01))

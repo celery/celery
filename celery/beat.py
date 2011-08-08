@@ -87,6 +87,7 @@ class ScheduleEntry(object):
         return self.__class__(**dict(self,
                                      last_run_at=last_run_at or datetime.now(),
                                      total_run_count=self.total_run_count + 1))
+    __next__ = next  # for 2to3
 
     def update(self, other):
         """Update values from another entry.
