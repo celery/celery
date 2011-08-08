@@ -32,7 +32,7 @@ class RedisBackend(KeyValueStoreBackend):
     password = None
 
     def __init__(self, host=None, port=None, db=None, password=None,
-            expires=None, **kwargs):
+            expires=None, max_connections=None, **kwargs):
         super(RedisBackend, self).__init__(**kwargs)
         conf = self.app.conf
         if self.redis is None:
@@ -53,6 +53,8 @@ class RedisBackend(KeyValueStoreBackend):
         self.db = db or _get("DB") or self.db
         self.password = password or _get("PASSWORD") or self.password
         self.expires = self.prepare_expires(expires, type=int)
+        self.max_connections = max_connections or _get("MAX_CONNECTIONS") \
+                               or self.max_connections
 
     def get(self, key):
         return self.client.get(key)
@@ -91,5 +93,7 @@ class RedisBackend(KeyValueStoreBackend):
 
     @cached_property
     def client(self):
-        return self.redis.Redis(host=self.host, port=self.port,
-                                db=self.db, password=self.password)
+        pool = self.redis.ConnectionPool(host=self.host, port=self.port,
+                                db=self.db, password=self.password,
+                                max_connections=self.max_connections)
+        return self.redis.Redis(connection_pool=pool)
