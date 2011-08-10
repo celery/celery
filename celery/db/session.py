@@ -8,7 +8,7 @@ ResultModelBase = declarative_base()
 
 _SETUP = defaultdict(lambda: False)
 _ENGINES = {}
-_MAKERS = {}
+_SESSIONS = {}
 
 
 def get_engine(dburi, **kwargs):
@@ -17,11 +17,11 @@ def get_engine(dburi, **kwargs):
     return _ENGINES[dburi]
 
 
-def create_session(dburi, **kwargs):
+def create_session(dburi, short_lived_sessions=False, **kwargs):
     engine = get_engine(dburi, **kwargs)
-    if dburi not in _MAKERS:
-        _MAKERS[dburi] = sessionmaker(bind=engine)
-    return engine, _MAKERS[dburi]
+    if short_lived_sessions or dburi not in _SESSIONS:
+        _SESSIONS[dburi] = sessionmaker(bind=engine)
+    return engine, _SESSIONS[dburi]
 
 
 def setup_results(engine):

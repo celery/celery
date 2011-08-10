@@ -89,6 +89,7 @@ NAMESPACES = {
         "REDIS_DB": Option(None, type="int"),
         "REDIS_PASSWORD": Option(None, type="string"),
         "RESULT_BACKEND": Option(None, type="string"),
+        "RESULT_DB_SHORT_LIVED_SESSIONS": Option(False, type="bool"),
         "RESULT_DBURI": Option(),
         "RESULT_ENGINE_OPTIONS": Option(None, type="dict"),
         "RESULT_EXCHANGE": Option("celeryresults"),
