@@ -31,6 +31,9 @@ class RedisBackend(KeyValueStoreBackend):
     #: default Redis password (:const:`None`)
     password = None
 
+    #: default max number of concurrent connections to Redis
+    max_connections = 10
+
     def __init__(self, host=None, port=None, db=None, password=None,
             expires=None, max_connections=None, **kwargs):
         super(RedisBackend, self).__init__(**kwargs)
