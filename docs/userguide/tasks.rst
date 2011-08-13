@@ -667,7 +667,6 @@ will do roughly this behind the scenes:
 
 .. code-block:: python
 
-    @task
     def AddTask(Task):
 
         def run(self, x, y):
