@@ -20,6 +20,7 @@ from pprint import pprint
 from kombu.utils import cached_property, gen_unique_id  # noqa
 
 from celery.utils.compat import StringIO
+from celery.utils.encoding import safe_repr as _safe_repr
 
 LOG_LEVELS = dict(logging._levelNames)
 LOG_LEVELS["FATAL"] = logging.FATAL
@@ -438,8 +439,11 @@ def cry():  # pragma: no cover
     return out.getvalue()
 
 
-def reprcall(name, args=(), kwargs=(), sep=', ',
-        kwformat=lambda i: "%s=%r" % i):
-    return "%s(%s%s%s)" % (name, sep.join(map(repr, args)),
-                           kwargs and sep or "",
-                           sep.join(map(kwformat, kwargs.iteritems())))
+def reprkwargs(kwargs, sep=', ', fmt="%s=%s"):
+    return sep.join(fmt % (k, _safe_repr(v)) for k, v in kwargs.iteritems())
+
+
+def reprcall(name, args=(), kwargs=(), sep=', '):
+    return "%s(%s%s%s)" % (name, sep.join(map(_safe_repr, args)),
+                           (args and kwargs) and sep or "",
+                           reprkwargs(kwargs, sep))
