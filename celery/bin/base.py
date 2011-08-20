@@ -13,6 +13,7 @@ class Command(object):
     :keyword get_app: Callable returning the current app if no app provided.
 
     """
+    _default_broker_url = r'amqp://guest:guest@localhost:5672//'
     #: Arg list used in help.
     args = ''
 
@@ -31,6 +32,10 @@ class Command(object):
             Option("--app",
                     default=None, action="store", dest="app",
                     help="Name of the app instance to use. "),
+            Option("-b", "--broker",
+                    default=None, action="store", dest="broker",
+                    help="Broker URL.  Default is %s" % (
+                            _default_broker_url, )),
             Option("--loader",
                    default=None, action="store", dest="loader",
                    help="Name of the loader class to use. "
@@ -125,6 +130,9 @@ class Command(object):
         loader = (preload_options.pop("loader", None) or
                   os.environ.get("CELERY_LOADER") or
                   "default")
+        broker = preload_options.pop("broker", None)
+        if broker:
+            os.environ["CELERY_BROKER_URL"] = broker
         config_module = preload_options.pop("config_module", None)
         if config_module:
             os.environ["CELERY_CONFIG_MODULE"] = config_module
@@ -151,14 +159,25 @@ class Command(object):
 
     def parse_preload_options(self, args):
         acc = {}
-        preload_options = dict((opt._long_opts[0], opt.dest)
-                                for opt in self.preload_options)
-        for arg in args:
+        opts = {}
+        for opt in self.preload_options:
+            for t in (opt._long_opts, opt._short_opts):
+                opts.update(dict(zip(t, [opt.dest] * len(t))))
+        index = 0
+        length = len(args)
+        while index < length:
+            arg = args[index]
             if arg.startswith('--') and '=' in arg:
                 key, value = arg.split('=', 1)
-                dest = preload_options.get(key)
+                dest = opts.get(key)
                 if dest:
                     acc[dest] = value
+            elif arg.startswith('-'):
+                dest = opts.get(arg)
+                if dest:
+                    acc[dest] = args[index + 1]
+                    index += 1
+            index += 1
         return acc
 
     def _get_default_app(self, *args, **kwargs):

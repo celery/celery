@@ -120,6 +120,10 @@ class Settings(datastructures.ConfigurationView):
         """Deprecated compat alias to :attr:`BROKER_TRANSPORT`."""
         return self.BROKER_TRANSPORT
 
+    @property
+    def BROKER_HOST(self):
+        return self.get("BROKER_URL") or self.get("BROKER_HOST")
+
 
 class BaseApp(object):
     """Base class for apps."""
