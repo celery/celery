@@ -31,11 +31,7 @@ It should contain all you need to run a basic Celery set-up.
     CELERY_RESULT_DBURI = "sqlite:///mydatabase.db"
 
     ## Broker settings.
-    BROKER_HOST = "localhost"
-    BROKER_PORT = 5672
-    BROKER_VHOST = "/"
-    BROKER_USER = "guest"
-    BROKER_PASSWORD = "guest"
+    BROKER_URL = "amqp://guest:guest@localhost:5672//"
 
     ## Worker settings
     ## If you're doing mostly I/O you can have more processes,
@@ -537,6 +533,22 @@ The Kombu transport to use.  Default is ``amqplib``.
 You can use a custom transport class name, or select one of the
 built-in transports: ``amqplib``, ``pika``, ``redis``, ``beanstalk``,
 ``sqlalchemy``, ``django``, ``mongodb``, ``couchdb``.
+
+.. setting:: BROKER_URL
+
+Default broker URL.  This must be an URL in the format of::
+
+    transport://userid:password@hostname:port/virtual_host
+
+If this setting is defined it will override a subset of the
+other ``BROKER`` options, these options are :setting:`BROKER_HOST`,
+:setting:`BROKER_USER`, :setting:`BROKER_PASSWORD`, :setting:`BROKER_PORT`,
+and :setting:`BROKER_VHOST`.  The query part of the URL can also be used
+to set options, e.g.::
+
+    amqp://localhost/myvhost?ssl=1
+
+See the Kombu documentation for more information about broker URLs.
 
 .. setting:: BROKER_HOST
 

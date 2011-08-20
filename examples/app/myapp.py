@@ -19,7 +19,7 @@ from celery import Celery
 
 
 celery = Celery("myapp")
-celery.conf.update(BROKER_HOST="localhost")
+celery.conf.update(BROKER_URL="amqp://guest:guest@localhost:5672//")
 
 
 @celery.task

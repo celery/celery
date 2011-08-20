@@ -57,11 +57,7 @@ Let's create our :file:`celeryconfig.py`.
 
 1. Configure how we communicate with the broker (RabbitMQ in this example)::
 
-        BROKER_HOST = "localhost"
-        BROKER_PORT = 5672
-        BROKER_USER = "myuser"
-        BROKER_PASSWORD = "mypassword"
-        BROKER_VHOST = "myvhost"
+        BROKER_URL = "amqp://guest:guest@localhost:5672//"
 
 2. Define the backend used to store task metadata and return values::
 
