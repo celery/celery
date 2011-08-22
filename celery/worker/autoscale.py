@@ -122,4 +122,4 @@ class Autoscaler(threading.Thread):
 
     @property
     def processes(self):
-        return self.pool._pool._processes
+        return self.pool.num_processes

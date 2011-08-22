@@ -255,7 +255,11 @@ class WorkController(object):
             raise
         except:
             self.stop()
-            raise
+            try:
+                raise
+            except TypeError:
+                # eventlet borks here saying that the exception is None(?)
+                pass
 
     def process_task(self, request):
         """Process task by sending it to the pool of workers."""

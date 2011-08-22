@@ -125,3 +125,7 @@ class BasePool(object):
     @property
     def active(self):
         return self._state == self.RUN
+
+    @property
+    def num_processes(self):
+        return self.limit

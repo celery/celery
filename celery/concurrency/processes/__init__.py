@@ -74,3 +74,7 @@ class TaskPool(BasePool):
                 "max-tasks-per-child": self._pool._maxtasksperchild,
                 "put-guarded-by-semaphore": self.putlocks,
                 "timeouts": (self._pool.soft_timeout, self._pool.timeout)}
+
+    @property
+    def num_processes(self):
+        return self._pool._processes
