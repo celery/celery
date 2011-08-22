@@ -331,8 +331,21 @@ class celeryctl(CeleryCommand):
         except Error:
             return self.execute("help", argv)
 
+    def remove_options_at_beginning(self, argv, index=0):
+        while index <= len(argv):
+            value = argv[index]
+            if value.startswith("--"):
+                pass
+            elif value.startswith("-"):
+                index += 1
+            else:
+                return argv[index:]
+            index += 1
+        return []
+
     def handle_argv(self, prog_name, argv):
         self.prog_name = prog_name
+        argv = self.remove_options_at_beginning(argv)
         try:
             command = argv[0]
         except IndexError:

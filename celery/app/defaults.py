@@ -46,7 +46,7 @@ class Option(object):
 
 NAMESPACES = {
     "BROKER": {
-        "URL": Option(os.environ.get("CELERY_BROKER_URL"), type="string"),
+        "URL": Option(None, type="string"),
         "HOST": Option(None, type="string"),
         "PORT": Option(type="int"),
         "USER": Option(None, type="string"),

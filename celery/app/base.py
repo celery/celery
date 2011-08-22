@@ -11,6 +11,7 @@ Application Base Class.
 from __future__ import absolute_import
 from __future__ import with_statement
 
+import os
 import platform as _platform
 import sys
 
@@ -122,7 +123,10 @@ class Settings(datastructures.ConfigurationView):
 
     @property
     def BROKER_HOST(self):
-        return self.get("BROKER_URL") or self.get("BROKER_HOST")
+
+        return (os.environ.get("CELERY_BROKER_URL") or
+                self.get("BROKER_URL") or
+                self.get("BROKER_HOST"))
 
 
 class BaseApp(object):
