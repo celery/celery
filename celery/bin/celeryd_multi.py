@@ -118,6 +118,7 @@ usage: %(prog_name)s start <node1 node2 nodeN|range> [celeryd options]
 
 additional options (must appear after command name):
 
+    * --nosplash:   Don't display program info.
     * --quiet:      Don't show as much output.
     * --verbose:    Show more output.
     * --no-color:   Don't display colors.
@@ -131,11 +132,13 @@ def main():
 class MultiTool(object):
     retcode = 0  # Final exit code.
 
-    def __init__(self, env=None):
+    def __init__(self, env=None, fh=None):
+        self.fh = fh or sys.stderr
         self.env = env
         self.commands = {"start": self.start,
                          "show": self.show,
                          "stop": self.stop,
+                         "stop_verify": self.stop_verify,
                          "restart": self.restart,
                          "kill": self.kill,
                          "names": self.names,
@@ -146,10 +149,13 @@ class MultiTool(object):
     def execute_from_commandline(self, argv, cmd="celeryd"):
         argv = list(argv)   # don't modify callers argv.
 
-        # Reserve the --quiet|-q/--verbose options.
+        # Reserve the --nosplash|--quiet|-q/--verbose options.
+        self.nosplash = False
         self.quiet = False
         self.verbose = False
         self.no_color = False
+        if "--nosplash" in argv:
+            self.nosplash = argv.pop(argv.index("--nosplash"))
         if "--quiet" in argv:
             self.quiet = argv.pop(argv.index("--quiet"))
         if "-q" in argv:
@@ -175,9 +181,12 @@ class MultiTool(object):
 
         return self.retcode
 
+    def say(self, msg):
+        self.fh.write("%s\n" % (msg, ))
+
     def names(self, argv, cmd):
         p = NamespacedOptionParser(argv)
-        print("\n".join(hostname
+        self.say("\n".join(hostname
                         for hostname, _, _ in multi_args(p, cmd)))
 
     def get(self, argv, cmd):
@@ -185,13 +194,13 @@ class MultiTool(object):
         p = NamespacedOptionParser(argv[1:])
         for name, worker, _ in multi_args(p, cmd):
             if name == wanted:
-                print(" ".join(worker))
+                self.say(" ".join(worker))
                 return
 
     def show(self, argv, cmd):
         p = NamespacedOptionParser(argv)
         self.note("> Starting nodes...")
-        print("\n".join(" ".join(worker)
+        self.say("\n".join(" ".join(worker)
                         for _, worker, _ in multi_args(p, cmd)))
 
     def start(self, argv, cmd):
@@ -331,11 +340,17 @@ class MultiTool(object):
         self._stop_nodes(p, cmd, retry=2, callback=on_node_shutdown)
         self.retval = int(any(retvals))
 
+    def stop_verify(self, argv, cmd):
+        self.splash()
+        p = NamespacedOptionParser(argv)
+        self.with_detacher_default_options(p)
+        return self._stop_nodes(p, cmd, retry=2)
+
     def expand(self, argv, cmd=None):
         template = argv[0]
         p = NamespacedOptionParser(argv[1:])
         for _, _, expander in multi_args(p, cmd):
-            print(expander(template))
+            self.say(expander(template))
 
     def help(self, argv, cmd=None):
         say(__doc__)
@@ -345,8 +360,9 @@ class MultiTool(object):
         say(USAGE % {"prog_name": self.prog_name})
 
     def splash(self):
-        c = self.colored
-        self.note(c.cyan("celeryd-multi v%s" % __version__))
+        if not self.nosplash:
+            c = self.colored
+            self.note(c.cyan("celeryd-multi v%s" % __version__))
 
     def waitexec(self, argv, path=sys.executable):
         args = " ".join([path] + list(argv))
