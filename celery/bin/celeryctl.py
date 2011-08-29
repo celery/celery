@@ -332,15 +332,16 @@ class celeryctl(CeleryCommand):
             return self.execute("help", argv)
 
     def remove_options_at_beginning(self, argv, index=0):
-        while index <= len(argv):
-            value = argv[index]
-            if value.startswith("--"):
-                pass
-            elif value.startswith("-"):
+        if argv:
+            while index <= len(argv):
+                value = argv[index]
+                if value.startswith("--"):
+                    pass
+                elif value.startswith("-"):
+                    index += 1
+                else:
+                    return argv[index:]
                 index += 1
-            else:
-                return argv[index:]
-            index += 1
         return []
 
     def handle_argv(self, prog_name, argv):
