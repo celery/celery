@@ -272,7 +272,7 @@ def fun_takes_kwargs(fun, kwlist=[]):
     return filter(partial(operator.contains, args), kwlist)
 
 
-def get_cls_by_name(name, aliases={}, imp=None):
+def get_cls_by_name(name, aliases={}, imp=None, package=None, **kwargs):
     """Get class by name.
 
     The name should be the full dot-separated path to the class::
@@ -310,8 +310,10 @@ def get_cls_by_name(name, aliases={}, imp=None):
 
     name = aliases.get(name) or name
     module_name, _, cls_name = name.rpartition(".")
+    if not module_name and package:
+        module_name = package
     try:
-        module = imp(module_name)
+        module = imp(module_name, package=package, **kwargs)
     except ValueError, exc:
         raise ValueError("Couldn't import %r: %s" % (name, exc))
     return getattr(module, cls_name)
@@ -395,7 +397,7 @@ def find_module(module, path=None, imp=None):
         return _imp.find_module(module)
 
 
-def import_from_cwd(module, imp=None):
+def import_from_cwd(module, imp=None, package=None):
     """Import module, but make sure it finds modules
     located in the current directory.
 
@@ -405,7 +407,7 @@ def import_from_cwd(module, imp=None):
     if imp is None:
         imp = importlib.import_module
     with cwd_in_path():
-        return imp(module)
+        return imp(module, package=package)
 
 
 def cry():  # pragma: no cover

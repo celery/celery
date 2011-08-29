@@ -66,12 +66,13 @@ class BaseLoader(object):
     def import_task_module(self, module):
         return self.import_from_cwd(module)
 
-    def import_module(self, module):
-        return importlib.import_module(module)
+    def import_module(self, module, package=None):
+        return importlib.import_module(module, package=package)
 
-    def import_from_cwd(self, module, imp=None):
+    def import_from_cwd(self, module, imp=None, package=None):
         return _import_from_cwd(module,
-                self.import_module if imp is None else imp)
+                self.import_module if imp is None else imp,
+                package=package)
 
     def import_default_modules(self):
         imports = set(list(self.conf.get("CELERY_IMPORTS") or ()))

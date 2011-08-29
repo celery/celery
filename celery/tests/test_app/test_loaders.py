@@ -108,7 +108,7 @@ class TestLoaderBase(unittest.TestCase):
 
     def test_import_from_cwd_custom_imp(self):
 
-        def imp(module):
+        def imp(module, package=None):
             imp.called = True
         imp.called = False
 
