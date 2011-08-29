@@ -339,14 +339,14 @@ def install_cry_handler(logger):
         platforms.signals["SIGUSR1"] = cry_handler
 
 
-def install_rdb_handler():  # pragma: no cover
+def install_rdb_handler(envvar="CELERY_RDBSIG"):  # pragma: no cover
 
     def rdb_handler(signum, frame):
         """Signal handler setting a rdb breakpoint at the current frame."""
         from celery.contrib import rdb
         rdb.set_trace(frame)
 
-    if os.environ.get("CELERY_RDBSIG"):
+    if os.environ.get(envvar):
         platforms.signals["SIGUSR2"] = rdb_handler
 
 
