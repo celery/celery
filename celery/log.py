@@ -192,7 +192,8 @@ class Logging(object):
         return LoggerAdapter(logger, {"task_id": task_id,
                                       "task_name": task_name})
 
-    def redirect_stdouts_to_logger(self, logger, loglevel=None):
+    def redirect_stdouts_to_logger(self, logger, loglevel=None,
+            stdout=True, stderr=True):
         """Redirect :class:`sys.stdout` and :class:`sys.stderr` to a
         logging instance.
 
@@ -201,7 +202,10 @@ class Logging(object):
 
         """
         proxy = LoggingProxy(logger, loglevel)
-        sys.stdout = sys.stderr = proxy
+        if stdout:
+            sys.stdout = proxy
+        if stderr:
+            sys.stderr = proxy
         return proxy
 
     def _setup_logger(self, logger, logfile, format, colorize,
