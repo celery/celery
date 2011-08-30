@@ -212,7 +212,7 @@ as synchronization is a required step for many parallel algorithms.
 Let's break the chord expression down::
 
     >>> callback = tsum.subtask()
-    >>> header = [add.subtask((i, i)) for i in xrange(100])
+    >>> header = [add.subtask((i, i)) for i in xrange(100)]
     >>> result = chord(header)(callback)
     >>> result.get()
     9900
