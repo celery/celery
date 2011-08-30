@@ -98,8 +98,8 @@ class Control(object):
 
         """
         with self.app.default_connection(connection, connect_timeout) as conn:
-            with self.app.amqp.get_task_consumer(connection=conn) as consumer:
-                return consumer.discard_all()
+            return self.app.amqp.get_task_consumer(connection=conn)\
+                                .discard_all()
 
     def revoke(self, task_id, destination=None, terminate=False,
             signal="SIGTERM", **kwargs):
