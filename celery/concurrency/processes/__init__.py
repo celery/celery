@@ -6,8 +6,6 @@ Process Pools.
 import platform
 import signal as _signal
 
-from os import kill as _kill
-
 from celery.concurrency.base import BasePool
 from celery.concurrency.processes.pool import Pool, RUN
 
@@ -17,6 +15,8 @@ if platform.system() == "Windows":  # pragma: no cover
     # *and its children* (if any).
     from celery.concurrency.processes import _win
     _kill = _win.kill_processtree  # noqa
+else:
+    from os import kill as _kill
 
 
 class TaskPool(BasePool):
