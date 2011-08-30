@@ -166,6 +166,17 @@ the :setting:`CELERY_RESULT_ENGINE_OPTIONS` setting::
     # echo enables verbose logging from SQLAlchemy.
     CELERY_RESULT_ENGINE_OPTIONS = {"echo": True}
 
+
+.. setting:: CELERY_RESULT_DB_SHORT_LIVED_SESSIONS
+    CELERY_RESULT_DB_SHORT_LIVED_SESSIONS = True
+
+Short lived sessions are disabled by default.  If enabled they can drastically reduce 
+performance, especially on systems processing lots of tasks.  This option is useful 
+on low-traffic workers that experience errors as a result of cached database connections 
+going stale through inactivity.  For example, intermittent errors like 
+`(OperationalError) (2006, 'MySQL server has gone away')` can be fixed by enabling
+short lived sessions.  This option only affects the database backend.
+
 .. _`Supported Databases`:
     http://www.sqlalchemy.org/docs/core/engines.html#supported-databases
 
