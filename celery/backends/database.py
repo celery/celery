@@ -29,13 +29,17 @@ class DatabaseBackend(BaseDictBackend):
         self.dburi = dburi or self.app.conf.CELERY_RESULT_DBURI
         self.engine_options = dict(engine_options or {},
                         **self.app.conf.CELERY_RESULT_ENGINE_OPTIONS or {})
+        self.short_lived_sessions = self.app.conf.CELERY_RESULT_DB_SHORT_LIVED_SESSIONS
         if not self.dburi:
             raise ImproperlyConfigured(
                     "Missing connection string! Do you have "
                     "CELERY_RESULT_DBURI set to a real value?")
 
     def ResultSession(self):
-        return ResultSession(dburi=self.dburi, **self.engine_options)
+        return ResultSession(
+                    dburi=self.dburi, 
+                    short_lived_sessions=self.short_lived_sessions, 
+                    **self.engine_options)
 
     def _store_result(self, task_id, result, status, traceback=None):
         """Store return value and status of an executed task."""
