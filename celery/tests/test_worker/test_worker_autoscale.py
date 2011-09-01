@@ -37,7 +37,7 @@ class MockPool(BasePool):
         self._pool._processes -= n
 
     @property
-    def current(self):
+    def num_processes(self):
         return self._pool._processes
 
 
@@ -71,18 +71,18 @@ class test_Autoscaler(unittest.TestCase):
     def test_scale(self):
         x = autoscale.Autoscaler(self.pool, 10, 3, logger=logger)
         x.scale()
-        self.assertEqual(x.pool.current, 3)
+        self.assertEqual(x.pool.num_processes, 3)
         for i in range(20):
             state.reserved_requests.add(i)
         x.scale()
         x.scale()
-        self.assertEqual(x.pool.current, 10)
+        self.assertEqual(x.pool.num_processes, 10)
         state.reserved_requests.clear()
         x.scale()
-        self.assertEqual(x.pool.current, 10)
+        self.assertEqual(x.pool.num_processes, 10)
         x._last_action = time() - 10000
         x.scale()
-        self.assertEqual(x.pool.current, 3)
+        self.assertEqual(x.pool.num_processes, 3)
 
     def test_run(self):
 
