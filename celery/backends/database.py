@@ -21,6 +21,9 @@ _sqlalchemy_installed()
 
 class DatabaseBackend(BaseDictBackend):
     """The database result backend."""
+    # ResultSet.iterate should sleep this much between each pool,
+    # to not bombard the database with queries.
+    subpolling_interval = 0.5
 
     def __init__(self, dburi=None, expires=None,
             engine_options=None, **kwargs):
