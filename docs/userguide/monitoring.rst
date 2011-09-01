@@ -491,6 +491,11 @@ This list contains the events sent by the worker, and their arguments.
 Task Events
 ~~~~~~~~~~~
 
+* ``task-sent(uuid, name, args, kwargs, retries, eta, expires)``
+
+   Sent when a task message is published and
+   the :setting:`CELERY_SEND_TASK_SENT_EVENT` setting is enabled.
+
 * ``task-received(uuid, name, args, kwargs, retries, eta, hostname,
   timestamp)``
 
