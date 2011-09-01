@@ -722,7 +722,7 @@ base class for new task types.
 
 .. code-block:: python
 
-    class DebugTask(object):
+    class DebugTask(Task):
         abstract = True
 
         def after_return(self, \*args, \*\*kwargs):
