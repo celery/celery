@@ -146,7 +146,7 @@ class BaseApp(object):
 
     def __init__(self, main=None, loader=None, backend=None,
             amqp=None, events=None, log=None, control=None,
-            set_as_current=True, accept_magic_kwargs=False):
+            set_as_current=True, accept_magic_kwargs=False, **kwargs):
         self.main = main
         self.amqp_cls = amqp or self.amqp_cls
         self.backend_cls = backend or self.backend_cls
