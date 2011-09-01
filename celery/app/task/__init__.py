@@ -20,6 +20,7 @@ class Context(threading.local):
     # Default context
     logfile = None
     loglevel = None
+    hostname = None
     id = None
     args = None
     kwargs = None

@@ -305,6 +305,7 @@ class TaskRequest(object):
 
     def get_instance_attrs(self, loglevel, logfile):
         return {"logfile": logfile, "loglevel": loglevel,
+                "hostname": self.hostname,
                 "id": self.task_id, "taskset": self.taskset_id,
                 "retries": self.retries, "is_eager": False,
                 "delivery_info": self.delivery_info, "chord": self.chord}
