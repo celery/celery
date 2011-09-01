@@ -24,10 +24,10 @@ class test_TaskPublisher(AppCase):
     def test__exit__(self):
 
         publisher = self.app.amqp.TaskPublisher(self.app.broker_connection())
-        publisher.close = Mock()
+        publisher.release = Mock()
         with publisher:
             pass
-        publisher.close.assert_called_with()
+        publisher.release.assert_called_with()
 
     def test_ensure_declare_queue(self, q="x1242112"):
         publisher = self.app.amqp.TaskPublisher(Mock())
