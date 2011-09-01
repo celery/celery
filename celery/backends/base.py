@@ -21,6 +21,10 @@ class BaseBackend(object):
 
     TimeoutError = TimeoutError
 
+    #: Time to sleep between polling each individual item in `ResultSet.iterate`.
+    #: as opposed to the `interval` argument which is for each pass.
+    subpolling_interval = None
+
     def __init__(self, *args, **kwargs):
         from celery.app import app_or_default
         self.app = app_or_default(kwargs.get("app"))

@@ -11,6 +11,7 @@ from celery import states
 from celery.app import app_or_default
 from celery.exceptions import TimeoutError
 from celery.registry import _unpickle_task
+from celery.utils.compat import OrderedDict
 
 
 def _unpickle_result(task_id, task_name):
@@ -327,15 +328,19 @@ class ResultSet(object):
 
         """
         elapsed = 0.0
-        results = dict((result.task_id, copy(result))
-                            for result in self.results)
+        results = OrderedDict((result.task_id, copy(result))
+                                for result in self.results)
 
         while results:
             removed = set()
             for task_id, result in results.iteritems():
-                yield result.get(timeout=timeout and timeout - elapsed,
-                                 propagate=propagate, interval=0.0)
-                removed.add(task_id)
+                if result.ready():
+                    yield result.get(timeout=timeout and timeout - elapsed,
+                                     propagate=propagate)
+                    removed.add(task_id)
+                else:
+                    if result.backend.subpolling_interval:
+                        time.sleep(result.backend.subpolling_interval)
             for task_id in removed:
                 results.pop(task_id, None)
             time.sleep(interval)
