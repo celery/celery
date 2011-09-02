@@ -93,3 +93,12 @@ class CacheBackend(KeyValueStoreBackend):
     @cached_property
     def client(self):
         return self.Client(self.servers, **self.options)
+
+    def __reduce__(self, args=(), kwargs={}):
+        servers = ";".join(self.servers)
+        backend = "%s://%s/" % (self.backend, servers)
+        kwargs.update(
+            dict(backend=backend, 
+                 expires=self.expires,
+                 options=self.options))
+        return super(CacheBackend, self).__reduce__(args, kwargs)

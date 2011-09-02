@@ -136,3 +136,8 @@ class MongoBackend(BaseDictBackend):
                     "$lt": datetime.now() - self.expires,
                  }
         })
+
+    def __reduce__(self, args=(), kwargs={}):
+        kwargs.update(
+            dict(expires=self.expires))
+        return super(MongoBackend, self).__reduce__(args, kwargs)

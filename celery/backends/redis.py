@@ -91,3 +91,12 @@ class RedisBackend(KeyValueStoreBackend):
     def client(self):
         return self.redis.Redis(host=self.host, port=self.port,
                                 db=self.db, password=self.password)
+
+    def __reduce__(self, args=(), kwargs={}):
+        kwargs.update(
+            dict(host=self.host, 
+                 port=self.port,
+                 db=self.db,
+                 password=self.password,
+                 expires=self.expires))
+        return super(RedisBackend, self).__reduce__(args, kwargs)

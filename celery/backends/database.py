@@ -129,3 +129,10 @@ class DatabaseBackend(BaseDictBackend):
             session.commit()
         finally:
             session.close()
+
+    def __reduce__(self, args=(), kwargs={}):
+        kwargs.update(
+            dict(dburi=self.dburi, 
+                 expires=self.expires,
+                 engine_options=self.engine_options))
+        return super(DatabaseBackend, self).__reduce__(args, kwargs)
