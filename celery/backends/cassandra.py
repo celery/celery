@@ -154,7 +154,7 @@ class CassandraBackend(BaseDictBackend):
 
     def __reduce__(self, args=(), kwargs={}):
         kwargs.update(
-            dict(servers=self.servers, 
+            dict(servers=self.servers,
                  keyspace=self.keyspace,
                  column_family=self.column_family,
                  cassandra_options=self.cassandra_options))

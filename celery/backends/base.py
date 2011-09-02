@@ -12,9 +12,10 @@ from celery.utils.serialization import get_pickleable_exception
 from celery.utils.serialization import create_exception_cls
 from celery.datastructures import LocalCache
 
+
 def unpickle_backend(cls, args, kwargs):
-  """Returns an unpickled backend."""
-  return cls(*args, **kwargs)
+    """Returns an unpickled backend."""
+    return cls(*args, **kwargs)
 
 
 class BaseBackend(object):
@@ -25,8 +26,9 @@ class BaseBackend(object):
 
     TimeoutError = TimeoutError
 
-    #: Time to sleep between polling each individual item in `ResultSet.iterate`.
-    #: as opposed to the `interval` argument which is for each pass.
+    #: Time to sleep between polling each individual item
+    #: in `ResultSet.iterate`. as opposed to the `interval`
+    #: argument which is for each pass.
     subpolling_interval = None
 
     def __init__(self, *args, **kwargs):

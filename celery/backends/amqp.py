@@ -237,7 +237,7 @@ class AMQPBackend(BaseDictBackend):
 
     def __reduce__(self, args=(), kwargs={}):
         kwargs.update(
-            dict(connection=self._connection, 
+            dict(connection=self._connection,
                  exchange=self.exchange.name,
                  exchange_type=self.exchange.type,
                  persistent=self.persistent,

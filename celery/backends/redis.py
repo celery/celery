@@ -94,7 +94,7 @@ class RedisBackend(KeyValueStoreBackend):
 
     def __reduce__(self, args=(), kwargs={}):
         kwargs.update(
-            dict(host=self.host, 
+            dict(host=self.host,
                  port=self.port,
                  db=self.db,
                  password=self.password,

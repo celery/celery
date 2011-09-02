@@ -28,11 +28,13 @@ class DatabaseBackend(BaseDictBackend):
     def __init__(self, dburi=None, expires=None,
             engine_options=None, **kwargs):
         super(DatabaseBackend, self).__init__(**kwargs)
+        conf = self.app.conf
         self.expires = maybe_timedelta(self.prepare_expires(expires))
-        self.dburi = dburi or self.app.conf.CELERY_RESULT_DBURI
+        self.dburi = dburi or conf.CELERY_RESULT_DBURI
         self.engine_options = dict(engine_options or {},
-                        **self.app.conf.CELERY_RESULT_ENGINE_OPTIONS or {})
-        self.short_lived_sessions = self.app.conf.CELERY_RESULT_DB_SHORT_LIVED_SESSIONS
+                        **conf.CELERY_RESULT_ENGINE_OPTIONS or {})
+        self.short_lived_sessions = kwargs.get("short_lived_sessions",
+                                    conf.CELERY_RESULT_DB_SHORT_LIVED_SESSIONS)
         if not self.dburi:
             raise ImproperlyConfigured(
                     "Missing connection string! Do you have "
@@ -40,8 +42,8 @@ class DatabaseBackend(BaseDictBackend):
 
     def ResultSession(self):
         return ResultSession(
-                    dburi=self.dburi, 
-                    short_lived_sessions=self.short_lived_sessions, 
+                    dburi=self.dburi,
+                    short_lived_sessions=self.short_lived_sessions,
                     **self.engine_options)
 
     def _store_result(self, task_id, result, status, traceback=None):
@@ -132,7 +134,7 @@ class DatabaseBackend(BaseDictBackend):
 
     def __reduce__(self, args=(), kwargs={}):
         kwargs.update(
-            dict(dburi=self.dburi, 
+            dict(dburi=self.dburi,
                  expires=self.expires,
                  engine_options=self.engine_options))
         return super(DatabaseBackend, self).__reduce__(args, kwargs)

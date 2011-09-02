@@ -48,7 +48,6 @@ class AppPickler(object):
                     set_as_current=False,
                     accept_magic_kwargs=accept_magic_kwargs)
 
-
     def construct(self, cls, **kwargs):
         return cls(**kwargs)
 

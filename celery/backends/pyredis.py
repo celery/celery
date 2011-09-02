@@ -23,11 +23,11 @@ class RedisBackend(redis.RedisBackend):
                                            password=redis_password))
 
     def __reduce__(self, args=(), kwargs={}):
-        # Not very usefull, but without the following, the redis_* attributes 
+        # Not very useful, but without the following, the redis_* attributes
         # would not be set.
         kwargs.update(
-            dict(redis_host=self.redis_host, 
-                 redis_port=redis_self.redis_port,
-                 redis_db=redis_self.redis_db,
+            dict(redis_host=self.redis_host,
+                 redis_port=self.redis_port,
+                 redis_db=self.redis_db,
                  redis_password=self.redis_password))
         return super(RedisBackend, self).__reduce__(args, kwargs)

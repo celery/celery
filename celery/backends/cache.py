@@ -98,7 +98,7 @@ class CacheBackend(KeyValueStoreBackend):
         servers = ";".join(self.servers)
         backend = "%s://%s/" % (self.backend, servers)
         kwargs.update(
-            dict(backend=backend, 
+            dict(backend=backend,
                  expires=self.expires,
                  options=self.options))
         return super(CacheBackend, self).__reduce__(args, kwargs)

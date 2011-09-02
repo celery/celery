@@ -170,7 +170,8 @@ class Scheduler(object):
                                   traceback.format_stack(),
                                   exc_info=sys.exc_info())
             else:
-                self.logger.debug("%s sent. id->%s", entry.task, result.task_id)
+                self.logger.debug("%s sent. id->%s", entry.task,
+                                                     result.task_id)
         return next_time_to_run
 
     def tick(self):
