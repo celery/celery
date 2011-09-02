@@ -391,7 +391,7 @@ class Consumer(object):
         :param message: The kombu message object.
 
         """
-        # need to guard against errors occuring while acking the message.
+        # need to guard against errors occurring while acking the message.
         def ack():
             try:
                 message.ack()
@@ -557,7 +557,7 @@ class Consumer(object):
                        self.initial_prefetch_count, self.logger)
         self.qos.update()
 
-        # receive_message handles incomsing messages.
+        # receive_message handles incoming messages.
         self.task_consumer.register_callback(self.receive_message)
 
         # Setup the process mailbox.
