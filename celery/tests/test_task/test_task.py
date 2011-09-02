@@ -155,6 +155,7 @@ class TestTaskRetries(unittest.TestCase):
                             args=[4, 4], kwargs=None)
 
     def test_retry_not_eager(self):
+        RetryTaskMockApply.request.called_directly = False
         exc = Exception("baz")
         try:
             RetryTaskMockApply.retry(args=[4, 4], kwargs={"task_retries": 0},

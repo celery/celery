@@ -72,7 +72,7 @@ class TaskTrace(object):
 
     def execute(self):
         self.task.request.update(self.request, args=self.args,
-                                               kwargs=self.kwargs)
+                                 called_directly=False, kwargs=self.kwargs)
         signals.task_prerun.send(sender=self.task, task_id=self.task_id,
                                  task=self.task, args=self.args,
                                  kwargs=self.kwargs)
