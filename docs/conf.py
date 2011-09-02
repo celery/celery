@@ -95,6 +95,5 @@ html_sidebars = {
 ### Issuetracker
 
 issuetracker = "github"
-issuetracker_user = "ask"
-issuetracker_project = "celery"
+issuetracker_project = "ask/celery"
 issuetracker_issue_pattern = r'[Ii]ssue #(\d+)'
