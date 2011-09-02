@@ -29,6 +29,7 @@ class Context(threading.local):
     delivery_info = None
     taskset = None
     chord = None
+    called_directly = True
 
     def update(self, d, **kwargs):
         self.__dict__.update(d, **kwargs)
@@ -495,6 +496,11 @@ class BaseTask(object):
         args = request.args if args is None else args
         kwargs = request.kwargs if kwargs is None else kwargs
         delivery_info = request.delivery_info
+
+        # Not in worker or emulated by (apply/always_eager),
+        # so just raise the original exception.
+        if request.called_directly:
+            raise exc or RetryTaskError("Task can be retried", None)
 
         if delivery_info:
             options.setdefault("exchange", delivery_info.get("exchange"))
