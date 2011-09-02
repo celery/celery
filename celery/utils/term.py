@@ -11,6 +11,8 @@ term utils.
 """
 import platform
 
+from celery.utils.encoding import safe_str
+
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 OP_SEQ = "\033[%dm"
 RESET_SEQ = "\033[0m"
@@ -19,6 +21,7 @@ fg = lambda s: COLOR_SEQ % s
 
 SYSTEM = platform.system()
 IS_WINDOWS = SYSTEM == "Windows"
+
 
 
 class colored(object):
@@ -39,17 +42,17 @@ class colored(object):
                       "white": self.white}
 
     def _add(self, a, b):
-        return str(a) + str(b)
+        return safe_str(a) + safe_str(b)
 
     def _fold_no_color(self, a, b):
         try:
             A = a.no_color()
         except AttributeError:
-            A = str(a)
+            A = safe_str(a)
         try:
             B = b.no_color()
         except AttributeError:
-            B = str(b)
+            B = safe_str(b)
         return A + B
 
     def no_color(self):
@@ -59,7 +62,7 @@ class colored(object):
         prefix = ""
         if self.enabled:
             prefix = self.op
-        return prefix + str(reduce(self._add, self.s))
+        return prefix + safe_str(reduce(self._add, self.s))
 
     def __str__(self):
         suffix = ""
@@ -137,4 +140,4 @@ class colored(object):
         return self.node(s or [""], RESET_SEQ)
 
     def __add__(self, other):
-        return str(self) + str(other)
+        return safe_str(self) + safe_str(other)
