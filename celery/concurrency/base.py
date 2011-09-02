@@ -80,8 +80,8 @@ class BasePool(object):
         on_ready = partial(self.on_ready, callback, errback)
         on_worker_error = partial(self.on_worker_error, errback)
 
-        self.logger.debug("TaskPool: Apply %s (args:%s kwargs:%s)" % (
-            target, args, kwargs))
+        self.logger.debug("TaskPool: Apply %s (args:%s kwargs:%s)",
+                          target, args, kwargs)
 
         return self.on_apply(target, args, kwargs,
                              callback=on_ready,
@@ -112,8 +112,9 @@ class BasePool(object):
             try:
                 fun(*args)
             except BaseException:
-                self.logger.error("Pool callback raised exception: %s" % (
-                    traceback.format_exc(), ), exc_info=sys.exc_info())
+                self.logger.error("Pool callback raised exception: %s",
+                                  traceback.format_exc(),
+                                  exc_info=sys.exc_info())
 
     def _get_info(self):
         return {}

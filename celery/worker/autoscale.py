@@ -71,19 +71,19 @@ class Autoscaler(threading.Thread):
         return self._grow(n)
 
     def _grow(self, n):
-        self.logger.info("Scaling up %s processes." % (n, ))
+        self.logger.info("Scaling up %s processes.", n)
         self.pool.grow(n)
 
     def _shrink(self, n):
-        self.logger.info("Scaling down %s processes." % (n, ))
+        self.logger.info("Scaling down %s processes.", n)
         try:
             self.pool.shrink(n)
         except ValueError:
             self.logger.debug(
                 "Autoscaler won't scale down: all processes busy.")
         except Exception, exc:
-            self.logger.error("Autoscaler: scale_down: %r\n%r" % (
-                                exc, traceback.format_stack()),
+            self.logger.error("Autoscaler: scale_down: %r\n%r",
+                                exc, traceback.format_stack(),
                                 exc_info=sys.exc_info())
 
     def scale_down(self, n):
@@ -99,7 +99,7 @@ class Autoscaler(threading.Thread):
                 self.scale()
                 sleep(1.0)
             except Exception, exc:
-                self.logger.error("Thread Autoscaler crashed: %r" % (exc, ),
+                self.logger.error("Thread Autoscaler crashed: %r", exc,
                                   exc_info=sys.exc_info())
                 os._exit(1)
         self._stopped.set()

@@ -104,7 +104,7 @@ class MockLogger(logging.Logger):
         logging.Logger.__init__(self, *args, **kwargs)
 
     def _log(self, level, msg, args, **kwargs):
-        self.logged.append((level, msg))
+        self.logged.append((level, msg, args, kwargs))
 
 
 class mScheduler(beat.Scheduler):
@@ -189,9 +189,9 @@ class test_Scheduler(unittest.TestCase):
                       schedule=always_due)
         self.assertEqual(scheduler.tick(), 1)
         self.assertTrue(scheduler.logger.logged[0])
-        level, msg = scheduler.logger.logged[0]
+        level, msg, args, kwargs = scheduler.logger.logged[0]
         self.assertEqual(level, logging.ERROR)
-        self.assertIn("Couldn't apply scheduled task", msg)
+        self.assertIn("Couldn't apply scheduled task", args[0].message)
 
     def test_due_tick_RuntimeError(self):
         scheduler = mSchedulerRuntimeError()

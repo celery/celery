@@ -44,8 +44,8 @@ class Mediator(threading.Thread):
         try:
             self.callback(task)
         except Exception, exc:
-            self.logger.error("Mediator callback raised exception %r\n%s" % (
-                                exc, traceback.format_exc()),
+            self.logger.error("Mediator callback raised exception %r\n%s",
+                              exc, traceback.format_exc(),
                               exc_info=sys.exc_info(),
                               extra={"data": {"id": task.task_id,
                                               "name": task.task_name,
@@ -57,8 +57,7 @@ class Mediator(threading.Thread):
             try:
                 self.move()
             except Exception, exc:
-                self.logger.error("Mediator crash: %r" % (exc, ),
-                    exc_info=sys.exc_info())
+                self.logger.error("Mediator crash: %r", exc, exc_info=True)
                 # exiting by normal means does not work here, so force exit.
                 os._exit(1)
         self._stopped.set()

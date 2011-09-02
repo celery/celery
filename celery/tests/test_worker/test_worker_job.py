@@ -423,10 +423,10 @@ class test_TaskRequest(unittest.TestCase):
                 self.errors = []
 
             def warning(self, msg, *args, **kwargs):
-                self.warnings.append(msg)
+                self.warnings.append(msg % args)
 
             def error(self, msg, *args, **kwargs):
-                self.errors.append(msg)
+                self.errors.append(msg % args)
 
         tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
         tw.logger = MockLogger()
