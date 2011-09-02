@@ -80,15 +80,15 @@ class Beat(object):
                   c.blue("        _\n"),
                   c.reset(self.startup_info(beat)))))
         if self.socket_timeout:
-            logger.debug("Setting default socket timeout to %r" % (
-                self.socket_timeout))
+            logger.debug("Setting default socket timeout to %r",
+                         self.socket_timeout)
             socket.setdefaulttimeout(self.socket_timeout)
         try:
             self.install_sync_handler(beat)
             beat.start()
         except Exception, exc:
-            logger.critical("celerybeat raised exception %s: %r\n%s" % (
-                            exc.__class__, exc, traceback.format_exc()),
+            logger.critical("celerybeat raised exception %s: %r\n%s",
+                            exc.__class__, exc, traceback.format_exc(),
                             exc_info=sys.exc_info())
 
     def init_loader(self):

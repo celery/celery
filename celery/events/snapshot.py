@@ -48,7 +48,7 @@ class Polaroid(object):
 
     def shutter(self):
         if self.maxrate is None or self.maxrate.can_consume():
-            self.logger.debug("Shutter: %s" % (self.state, ))
+            self.logger.debug("Shutter: %s", self.state)
             self.shutter_signal.send(self.state)
             self.on_shutter(self.state)
 
