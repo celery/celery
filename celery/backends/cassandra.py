@@ -13,7 +13,6 @@ from datetime import datetime
 
 from celery.backends.base import BaseDictBackend
 from celery.exceptions import ImproperlyConfigured
-from celery.utils.serialization import pickle
 from celery.utils.timeutils import maybe_timedelta, timedelta_seconds
 from celery import states
 
@@ -124,9 +123,9 @@ class CassandraBackend(BaseDictBackend):
             cf = self._get_column_family()
             date_done = datetime.utcnow()
             meta = {"status": status,
-                    "result": pickle.dumps(result),
+                    "result": self.encode(result),
                     "date_done": date_done.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                    "traceback": pickle.dumps(traceback)}
+                    "traceback": self.encode(traceback)}
             cf.insert(task_id, meta,
                       ttl=timedelta_seconds(self.expires))
 
@@ -142,9 +141,9 @@ class CassandraBackend(BaseDictBackend):
                 meta = {
                     "task_id": task_id,
                     "status": obj["status"],
-                    "result": pickle.loads(str(obj["result"])),
+                    "result": self.decode(obj["result"]),
                     "date_done": obj["date_done"],
-                    "traceback": pickle.loads(str(obj["traceback"])),
+                    "traceback": self.decode(obj["traceback"]),
                 }
             except (KeyError, pycassa.NotFoundException):
                 meta = {"status": states.PENDING, "result": None}
