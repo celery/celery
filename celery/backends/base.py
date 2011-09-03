@@ -357,7 +357,6 @@ class KeyValueStoreBackend(BaseDictBackend):
     def _forget(self, task_id):
         self.delete(self.get_key_for_task(task_id))
 
-
     def _store_result(self, task_id, result, status, traceback=None):
         meta = {"status": status, "result": result, "traceback": traceback}
         self.set(self.get_key_for_task(task_id), self.encode(meta))
