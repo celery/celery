@@ -44,6 +44,15 @@ class BaseBackend(object):
          self.content_encoding,
          self.encoder) = serialization.registry._encoders[self.serializer]
 
+    def encode(self, data):
+        _, _, payload = serialization.encode(data, serializer=self.serializer)
+        return payload
+
+    def decode(self, payload):
+        return serialization.decode(str(payload),
+                                    content_type=self.content_type,
+                                    content_encoding=self.content_encoding)
+
     def prepare_expires(self, value, type=None):
         if value is None:
             value = self.app.conf.CELERY_TASK_RESULT_EXPIRES
@@ -348,14 +357,6 @@ class KeyValueStoreBackend(BaseDictBackend):
     def _forget(self, task_id):
         self.delete(self.get_key_for_task(task_id))
 
-    def encode(self, data):
-        _, _, payload = serialization.encode(data, serializer=self.serializer)
-        return payload
-
-    def decode(self, payload):
-        return serialization.decode(str(payload),
-                                    content_type=self.content_type,
-                                    content_encoding=self.content_encoding)
 
     def _store_result(self, task_id, result, status, traceback=None):
         meta = {"status": status, "result": result, "traceback": traceback}
