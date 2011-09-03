@@ -253,6 +253,8 @@ class WorkController(object):
         except SystemTerminate:
             self.terminate()
             raise
+        except SystemExit, e:
+            self.terminate()
         except:
             self.stop()
             try:
