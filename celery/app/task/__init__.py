@@ -7,14 +7,15 @@ from celery.exceptions import MaxRetriesExceededError, RetryTaskError
 from celery.execute.trace import TaskTrace
 from celery.registry import tasks, _unpickle_task
 from celery.result import EagerResult
-from celery.utils import mattrgetter, gen_unique_id, fun_takes_kwargs
+from celery.utils import (mattrgetter, gen_unique_id, fun_takes_kwargs,
+                          get_symbol_by_name)
+from celery.utils.mail import ErrorMailSender
 
 extract_exec_options = mattrgetter("queue", "routing_key",
                                    "exchange", "immediate",
                                    "mandatory", "priority",
                                    "serializer", "delivery_mode",
                                    "compression")
-
 
 class Context(threading.local):
     # Default context
@@ -178,6 +179,7 @@ class BaseTask(object):
 
     #: List of exception types to send error emails for.
     error_whitelist = ()
+    ErrorMailSenderClass = ErrorMailSender
 
     #: The name of a serializer that are registered with
     #: :mod:`kombu.serialization.registry`.  Default is `"pickle"`.
@@ -658,6 +660,11 @@ class BaseTask(object):
 
         """
         pass
+
+    def send_error_email(self, context, exc, **kwargs):
+        if self.send_error_emails and not self.disable_error_emails:
+            sender = self.ErrorMailSenderClass(self, **kwargs)
+            sender.send(context, exc)
 
     def on_success(self, retval, task_id, args, kwargs):
         """Success handler.

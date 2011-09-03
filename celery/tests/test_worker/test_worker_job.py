@@ -513,11 +513,6 @@ class test_TaskRequest(unittest.TestCase):
                            "exc": "FOOBARBAZ",
                            "traceback": "foobarbaz"}
         self.assertTrue(x)
-        x = tw.email_subject % {"name": tw.task_name,
-                                     "id": tw.task_id,
-                                     "exc": "FOOBARBAZ",
-                                     "hostname": "lana"}
-        self.assertTrue(x)
 
     def test_from_message(self):
         body = {"task": mytask.name, "id": gen_unique_id(),

@@ -1,5 +1,6 @@
 import sys
 import smtplib
+from celery.utils import get_symbol_by_name
 
 try:
     from email.mime.text import MIMEText
@@ -77,3 +78,55 @@ class Mailer(object):
 
         client.sendmail(message.sender, message.to, str(message))
         client.quit()
+
+class ErrorMailSender(object):
+
+    # pep8.py borks on a inline signature separator and
+    # says "trailing whitespace" ;)
+    EMAIL_SIGNATURE_SEP = "-- "
+
+    #: Format string used to generate error email subjects.
+    subject = """\
+        [celery@%(hostname)s] Error: Task %(name)s (%(id)s): %(exc)s
+    """
+
+    #: Format string used to generate error email content.
+    body = """
+Task %%(name)s with id %%(id)s raised exception:\n%%(exc)r
+
+
+Task was called with args: %%(args)s kwargs: %%(kwargs)s.
+
+The contents of the full traceback was:
+
+%%(traceback)s
+
+%(EMAIL_SIGNATURE_SEP)s
+Just to let you know,
+celeryd at %%(hostname)s.
+""" % {"EMAIL_SIGNATURE_SEP": EMAIL_SIGNATURE_SEP}
+
+    error_whitelist = None
+
+    def __init__(self, task, **kwargs):
+        #subject=None, body=None, error_whitelist=None
+        self.task = task
+        self.email_subject = kwargs.get("subject", self.subject)
+        self.email_body = kwargs.get("body", self.body)
+        self.error_whitelist = getattr(task, "error_whitelist")
+
+    def should_send(self, context, exc):
+        allow_classes = tuple(map(get_symbol_by_name,  self.error_whitelist))
+        return not self.error_whitelist or isinstance(exc, allow_classes)
+
+    def format_subject(self, context):
+        return self.subject.strip() % context
+
+    def format_body(self, context):
+        return self.body.strip() % context
+
+    def send(self, context, exc, fail_silently=True):
+        if self.should_send(context, exc):
+            self.task.app.mail_admins(self.format_subject(context),
+                                      self.format_body(context),
+                                      fail_silently=fail_silently)
