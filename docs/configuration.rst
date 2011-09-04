@@ -39,8 +39,6 @@ It should contain all you need to run a basic Celery set-up.
     ## number of CPUs on your machine. If not set, the number of CPUs/cores
     ## available will be used.
     CELERYD_CONCURRENCY = 10
-    # CELERYD_LOG_FILE = "celeryd.log"
-    # CELERYD_LOG_LEVEL = "INFO"
 
 
 Configuration Directives
@@ -208,8 +206,12 @@ AMQP backend settings
 
 CELERY_AMQP_TASK_RESULT_EXPIRES
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. deprecated:: 2.5
 
 The time in seconds of which the task result queues should expire.
+
+This setting is deprecated, and will be removed in version 3.0.
+Please use :setting:`CELERY_TASK_RESULT_EXPIRES` instead.
 
 .. note::
 
@@ -720,9 +722,8 @@ A built-in periodic task will delete the results after this time
 
 .. note::
 
-    For the moment this only works with the database, cache, redis and MongoDB
-    backends. For the AMQP backend see
-    :setting:`CELERY_AMQP_TASK_RESULT_EXPIRES`.
+    For the moment this only works with the amqp, database, cache, redis and MongoDB
+    backends.
 
     When using the database or MongoDB backends, `celerybeat` must be
     running for the results to be expired.
@@ -963,7 +964,12 @@ sent to :setting:`ADMINS` by email.
 CELERY_TASK_ERROR_WHITELIST
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. deprecated:: 2.5
+
 A white list of exceptions to send error emails for.
+
+This option is pending deprecation and is scheduled for removal
+in version 3.0.
 
 .. setting:: ADMINS
 
@@ -1154,6 +1160,11 @@ this behavior.
 CELERYD_LOG_FILE
 ~~~~~~~~~~~~~~~~
 
+.. deprecated:: 2.4
+
+This option is deprecated and is scheduled for removal in version 3.0.
+Please use the :option:`--logfile` argument instead.
+
 The default file name the worker daemon logs messages to.  Can be overridden
 using the :option:`--logfile` option to :mod:`~celery.bin.celeryd`.
 
@@ -1163,6 +1174,11 @@ The default is :const:`None` (`stderr`)
 
 CELERYD_LOG_LEVEL
 ~~~~~~~~~~~~~~~~~
+
+.. deprecated:: 2.4
+
+This option is deprecated and is scheduled for removal in version 3.0.
+Please use the :option:`--loglevel` argument instead.
 
 Worker log level, can be one of :const:`DEBUG`, :const:`INFO`, :const:`WARNING`,
 :const:`ERROR` or :const:`CRITICAL`.
@@ -1336,6 +1352,11 @@ between checking the schedule.  Default is 300 seconds (5 minutes).
 CELERYBEAT_LOG_FILE
 ~~~~~~~~~~~~~~~~~~~
 
+.. deprecated:: 2.4
+
+This option is deprecated and is scheduled for removal in version 3.0.
+Please use the :option:`--logfile` argument instead.
+
 The default file name to log messages to.  Can be overridden using
 the `--logfile` option to :mod:`~celery.bin.celerybeat`.
 
@@ -1345,6 +1366,11 @@ The default is :const:`None` (`stderr`).
 
 CELERYBEAT_LOG_LEVEL
 ~~~~~~~~~~~~~~~~~~~~
+
+.. deprecated:: 2.4
+
+This option is deprecated and is scheduled for removal in version 3.0.
+Please use the :option:`--loglevel` argument instead.
 
 Logging level. Can be any of :const:`DEBUG`, :const:`INFO`, :const:`WARNING`,
 :const:`ERROR`, or :const:`CRITICAL`.
@@ -1364,6 +1390,11 @@ Monitor Server: celerymon
 CELERYMON_LOG_FILE
 ~~~~~~~~~~~~~~~~~~
 
+.. deprecated:: 2.4
+
+This option is deprecated and is scheduled for removal in version 3.0.
+Please use the :option:`--logfile` argument instead.
+
 The default file name to log messages to.  Can be overridden using
 the :option:`--logfile` argument to `celerymon`.
 
@@ -1373,6 +1404,11 @@ The default is :const:`None` (`stderr`)
 
 CELERYMON_LOG_LEVEL
 ~~~~~~~~~~~~~~~~~~~
+
+.. deprecated:: 2.4
+
+This option is deprecated and is scheduled for removal in version 3.0.
+Please use the :option:`--loglevel` argument instead.
 
 Logging level. Can be any of :const:`DEBUG`, :const:`INFO`, :const:`WARNING`,
 :const:`ERROR`, or :const:`CRITICAL`.
