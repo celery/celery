@@ -18,6 +18,7 @@ from itertools import islice
 from pprint import pprint
 
 from kombu.utils import cached_property, gen_unique_id  # noqa
+uuid = gen_unique_id
 
 from .compat import StringIO
 from .encoding import safe_repr as _safe_repr

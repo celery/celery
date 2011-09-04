@@ -7,7 +7,7 @@ from nose import SkipTest
 from celery.exceptions import ImproperlyConfigured
 
 from celery import states
-from celery.utils import gen_unique_id
+from celery.utils import uuid
 from celery.backends import tyrant
 from celery.backends.tyrant import TyrantBackend
 
@@ -63,7 +63,7 @@ class TestTyrantBackend(unittest.TestCase):
     def test_mark_as_done(self):
         tb = get_tyrant_or_SkipTest()
 
-        tid = gen_unique_id()
+        tid = uuid()
 
         self.assertEqual(tb.get_status(tid), states.PENDING)
         self.assertIsNone(tb.get_result(tid), None)
@@ -75,7 +75,7 @@ class TestTyrantBackend(unittest.TestCase):
     def test_is_pickled(self):
         tb = get_tyrant_or_SkipTest()
 
-        tid2 = gen_unique_id()
+        tid2 = uuid()
         result = {"foo": "baz", "bar": SomeClass(12345)}
         tb.mark_as_done(tid2, result)
         # is serialized properly.
@@ -86,7 +86,7 @@ class TestTyrantBackend(unittest.TestCase):
     def test_mark_as_failure(self):
         tb = get_tyrant_or_SkipTest()
 
-        tid3 = gen_unique_id()
+        tid3 = uuid()
         try:
             raise KeyError("foo")
         except KeyError, exception:

@@ -18,7 +18,7 @@ from kombu.utils import cached_property
 
 from .. import routes as _routes
 from .. import signals
-from ..utils import gen_unique_id, textindent
+from ..utils import textindent, uuid
 
 #: List of known options to a Kombu producers send method.
 #: Used to extract the message related options out of any `dict`.
@@ -199,7 +199,7 @@ class TaskPublisher(messaging.Publisher):
                     exchange_type or self.exchange_type, retry, _retry_policy)
             _exchanges_declared.add(exchange)
 
-        task_id = task_id or gen_unique_id()
+        task_id = task_id or uuid()
         task_args = task_args or []
         task_kwargs = task_kwargs or {}
         if not isinstance(task_args, (list, tuple)):

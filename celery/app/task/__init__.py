@@ -9,7 +9,7 @@ from ...exceptions import MaxRetriesExceededError, RetryTaskError
 from ...execute.trace import TaskTrace
 from ...registry import tasks, _unpickle_task
 from ...result import EagerResult
-from ...utils import mattrgetter, gen_unique_id, fun_takes_kwargs
+from ...utils import fun_takes_kwargs, mattrgetter, uuid
 
 extract_exec_options = mattrgetter("queue", "routing_key",
                                    "exchange", "immediate",
@@ -547,7 +547,7 @@ class BaseTask(object):
         """
         args = args or []
         kwargs = kwargs or {}
-        task_id = options.get("task_id") or gen_unique_id()
+        task_id = options.get("task_id") or uuid()
         retries = options.get("retries", 0)
         throw = self.app.either("CELERY_EAGER_PROPAGATES_EXCEPTIONS",
                                 options.pop("throw", None))

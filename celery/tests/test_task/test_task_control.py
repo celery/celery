@@ -5,7 +5,7 @@ from kombu.pidbox import Mailbox
 from celery.app import app_or_default
 from celery.task import control
 from celery.task import PingTask
-from celery.utils import gen_unique_id
+from celery.utils import uuid
 from celery.tests.utils import unittest
 
 
@@ -160,9 +160,8 @@ class test_Broadcast(unittest.TestCase):
 
     @with_mock_broadcast
     def test_revoke_from_resultset(self):
-        r = self.app.TaskSetResult(gen_unique_id(),
+        r = self.app.TaskSetResult(uuid(),
                                    map(self.app.AsyncResult,
-                                        [gen_unique_id()
-                                            for i in range(10)]))
+                                        [uuid() for i in range(10)]))
         r.revoke()
         self.assertIn("revoke", MockMailbox.sent)

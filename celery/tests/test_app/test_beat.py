@@ -10,7 +10,7 @@ from celery import registry
 from celery.result import AsyncResult
 from celery.schedules import schedule
 from celery.task.base import Task
-from celery.utils import gen_unique_id
+from celery.utils import uuid
 
 
 class Object(object):
@@ -119,7 +119,7 @@ class mScheduler(beat.Scheduler):
                           "args": args,
                           "kwargs": kwargs,
                           "options": options})
-        return AsyncResult(gen_unique_id())
+        return AsyncResult(uuid())
 
 
 class mSchedulerSchedulingError(mScheduler):

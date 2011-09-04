@@ -5,7 +5,7 @@ from kombu.utils import cached_property
 
 from celery import current_app
 from celery import states
-from celery.utils import gen_unique_id
+from celery.utils import uuid
 from celery.utils.timeutils import timedelta_seconds
 
 from celery.tests.utils import unittest
@@ -134,16 +134,16 @@ class test_RedisBackend(unittest.TestCase):
 
     def test_get_set_forget(self):
         b = self.Backend()
-        uuid = gen_unique_id()
-        b.store_result(uuid, 42, states.SUCCESS)
-        self.assertEqual(b.get_status(uuid), states.SUCCESS)
-        self.assertEqual(b.get_result(uuid), 42)
-        b.forget(uuid)
-        self.assertEqual(b.get_status(uuid), states.PENDING)
+        tid = uuid()
+        b.store_result(tid, 42, states.SUCCESS)
+        self.assertEqual(b.get_status(tid), states.SUCCESS)
+        self.assertEqual(b.get_result(tid), 42)
+        b.forget(tid)
+        self.assertEqual(b.get_status(tid), states.PENDING)
 
     def test_set_expires(self):
         b = self.Backend(expires=512)
-        uuid = gen_unique_id()
-        key = b.get_key_for_task(uuid)
-        b.store_result(uuid, 42, states.SUCCESS)
+        tid = uuid()
+        key = b.get_key_for_task(tid)
+        b.store_result(tid, 42, states.SUCCESS)
         self.assertEqual(b.client.expiry[key], 512)

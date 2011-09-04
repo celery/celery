@@ -9,7 +9,7 @@ from celery import states
 from celery.backends.cache import CacheBackend, DummyClient
 from celery.exceptions import ImproperlyConfigured
 from celery.result import AsyncResult
-from celery.utils import gen_unique_id
+from celery.utils import uuid
 
 from celery.tests.utils import unittest, mask_modules, reset_modules
 
@@ -25,7 +25,7 @@ class test_CacheBackend(unittest.TestCase):
     def test_mark_as_done(self):
         tb = CacheBackend(backend="memory://")
 
-        tid = gen_unique_id()
+        tid = uuid()
 
         self.assertEqual(tb.get_status(tid), states.PENDING)
         self.assertIsNone(tb.get_result(tid))
@@ -37,7 +37,7 @@ class test_CacheBackend(unittest.TestCase):
     def test_is_pickled(self):
         tb = CacheBackend(backend="memory://")
 
-        tid2 = gen_unique_id()
+        tid2 = uuid()
         result = {"foo": "baz", "bar": SomeClass(12345)}
         tb.mark_as_done(tid2, result)
         # is serialized properly.
@@ -48,7 +48,7 @@ class test_CacheBackend(unittest.TestCase):
     def test_mark_as_failure(self):
         tb = CacheBackend(backend="memory://")
 
-        tid3 = gen_unique_id()
+        tid3 = uuid()
         try:
             raise KeyError("foo")
         except KeyError, exception:
@@ -67,7 +67,7 @@ class test_CacheBackend(unittest.TestCase):
 
     def test_forget(self):
         tb = CacheBackend(backend="memory://")
-        tid = gen_unique_id()
+        tid = uuid()
         tb.mark_as_done(tid, {"foo": "bar"})
         x = AsyncResult(tid, backend=tb)
         x.forget()

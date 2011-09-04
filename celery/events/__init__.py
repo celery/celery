@@ -13,7 +13,7 @@ from kombu.entity import Exchange, Queue
 from kombu.messaging import Consumer, Producer
 
 from ..app import app_or_default
-from ..utils import gen_unique_id
+from ..utils import uuid
 
 event_exchange = Exchange("celeryev", type="topic")
 
@@ -145,7 +145,7 @@ class EventReceiver(object):
         if handlers is not None:
             self.handlers = handlers
         self.routing_key = routing_key
-        self.node_id = node_id or gen_unique_id()
+        self.node_id = node_id or uuid()
         self.queue = Queue("%s.%s" % ("celeryev", self.node_id),
                            exchange=event_exchange,
                            routing_key=self.routing_key,

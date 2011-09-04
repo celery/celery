@@ -16,7 +16,7 @@ from celery.concurrency.base import BasePool
 from celery.exceptions import SystemTerminate
 from celery.task import task as task_dec
 from celery.task import periodic_task as periodic_task_dec
-from celery.utils import gen_unique_id
+from celery.utils import uuid
 from celery.worker import WorkController
 from celery.worker.buckets import FastQueue
 from celery.worker.job import TaskRequest
@@ -87,7 +87,7 @@ def foo_periodic_task():
 
 
 def create_message(channel, **data):
-    data.setdefault("id", gen_unique_id())
+    data.setdefault("id", uuid())
     channel.no_ack_consumers = set()
     return Message(channel, body=pickle.dumps(dict(**data)),
                    content_type="application/x-python-serialize",
@@ -497,7 +497,7 @@ class test_Consumer(unittest.TestCase):
         l = MyKombuConsumer(ready_queue, self.eta_schedule, self.logger,
                            send_events=False)
         backend = Mock()
-        id = gen_unique_id()
+        id = uuid()
         t = create_message(backend, task=foo_task.name, args=[2, 4, 8],
                            kwargs={}, id=id)
         from celery.worker.state import revoked

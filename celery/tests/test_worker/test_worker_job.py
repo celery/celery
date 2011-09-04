@@ -21,7 +21,7 @@ from celery.exceptions import RetryTaskError, NotRegistered, WorkerLostError
 from celery.log import setup_logger
 from celery.result import AsyncResult
 from celery.task.base import Task
-from celery.utils import gen_unique_id
+from celery.utils import uuid
 from celery.worker.job import (WorkerTaskTrace, TaskRequest,
                                InvalidTaskError, execute_and_trace,
                                default_encode)
@@ -113,10 +113,10 @@ class test_WorkerTaskTrace(unittest.TestCase):
 
             logger = mytask.app.log.get_default_logger()
             with wrap_logger(logger) as sio:
-                uuid = gen_unique_id()
-                ret = jail(uuid, mytask.name, [2], {})
+                tid = uuid()
+                ret = jail(tid, mytask.name, [2], {})
                 self.assertEqual(ret, 4)
-                mytask.backend.mark_as_done.assert_called_with(uuid, 4)
+                mytask.backend.mark_as_done.assert_called_with(tid, 4)
                 logs = sio.getvalue().strip()
                 self.assertIn("Process cleanup failed", logs)
         finally:
@@ -128,12 +128,12 @@ class test_WorkerTaskTrace(unittest.TestCase):
         mytask.backend.process_cleanup = Mock(side_effect=SystemExit())
         try:
             self.assertRaises(SystemExit,
-                    jail, gen_unique_id(), mytask.name, [2], {})
+                    jail, uuid(), mytask.name, [2], {})
         finally:
             mytask.backend = backend
 
     def test_execute_jail_success(self):
-        ret = jail(gen_unique_id(), mytask.name, [2], {})
+        ret = jail(uuid(), mytask.name, [2], {})
         self.assertEqual(ret, 4)
 
     def test_marked_as_started(self):
@@ -142,33 +142,33 @@ class test_WorkerTaskTrace(unittest.TestCase):
         class Backend(mytask.backend.__class__):
             _started = []
 
-            def mark_as_started(self, uuid, *args, **kwargs):
-                self._started.append(uuid)
+            def mark_as_started(self, tid, *args, **kwargs):
+                self._started.append(tid)
 
         prev, mytask.backend = mytask.backend, Backend()
 
         try:
-            uuid = gen_unique_id()
-            jail(uuid, mytask.name, [2], {})
-            self.assertIn(uuid, Backend._started)
+            tid = uuid()
+            jail(tid, mytask.name, [2], {})
+            self.assertIn(tid, Backend._started)
 
             mytask.ignore_result = True
-            uuid = gen_unique_id()
-            jail(uuid, mytask.name, [2], {})
-            self.assertNotIn(uuid, Backend._started)
+            tid = uuid()
+            jail(tid, mytask.name, [2], {})
+            self.assertNotIn(tid, Backend._started)
         finally:
             mytask.backend = prev
             mytask.track_started = False
             mytask.ignore_result = False
 
     def test_execute_jail_failure(self):
-        ret = jail(gen_unique_id(), mytask_raising.name,
+        ret = jail(uuid(), mytask_raising.name,
                    [4], {})
         self.assertIsInstance(ret, ExceptionInfo)
         self.assertTupleEqual(ret.exception.args, (4, ))
 
     def test_execute_ignore_result(self):
-        task_id = gen_unique_id()
+        task_id = uuid()
         ret = jail(id, MyTaskIgnoreResult.name,
                    [4], {})
         self.assertEqual(ret, 256)
@@ -187,29 +187,29 @@ class MockEventDispatcher(object):
 class test_TaskRequest(unittest.TestCase):
 
     def test_task_wrapper_repr(self):
-        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         self.assertTrue(repr(tw))
 
     def test_sets_store_errors(self):
         mytask.ignore_result = True
         try:
-            tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+            tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
             self.assertFalse(tw._store_errors)
             mytask.store_errors_even_if_ignored = True
-            tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+            tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
             self.assertTrue(tw._store_errors)
         finally:
             mytask.ignore_result = False
             mytask.store_errors_even_if_ignored = False
 
     def test_send_event(self):
-        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         tw.eventer = MockEventDispatcher()
         tw.send_event("task-frobulated")
         self.assertIn("task-frobulated", tw.eventer.sent)
 
     def test_on_retry(self):
-        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         tw.eventer = MockEventDispatcher()
         try:
             raise RetryTaskError("foo", KeyError("moofoobar"))
@@ -220,7 +220,7 @@ class test_TaskRequest(unittest.TestCase):
 
     def test_terminate__task_started(self):
         pool = Mock()
-        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         tw.time_start = time.time()
         tw.worker_pid = 313
         tw.terminate(pool, signal="KILL")
@@ -228,7 +228,7 @@ class test_TaskRequest(unittest.TestCase):
 
     def test_terminate__task_reserved(self):
         pool = Mock()
-        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         tw.time_start = None
         tw.terminate(pool, signal="KILL")
         self.assertFalse(pool.terminate_job.call_count)
@@ -236,7 +236,7 @@ class test_TaskRequest(unittest.TestCase):
         tw.terminate(pool, signal="KILL")
 
     def test_revoked_expires_expired(self):
-        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         tw.expires = datetime.now() - timedelta(days=1)
         tw.revoked()
         self.assertIn(tw.task_id, revoked)
@@ -244,7 +244,7 @@ class test_TaskRequest(unittest.TestCase):
                          states.REVOKED)
 
     def test_revoked_expires_not_expired(self):
-        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         tw.expires = datetime.now() + timedelta(days=1)
         tw.revoked()
         self.assertNotIn(tw.task_id, revoked)
@@ -253,7 +253,7 @@ class test_TaskRequest(unittest.TestCase):
 
     def test_revoked_expires_ignore_result(self):
         mytask.ignore_result = True
-        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         try:
             tw.expires = datetime.now() - timedelta(days=1)
             tw.revoked()
@@ -276,7 +276,7 @@ class test_TaskRequest(unittest.TestCase):
         app.mail_admins = mock_mail_admins
         mytask.send_error_emails = True
         try:
-            tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+            tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
             try:
                 raise KeyError("moofoobar")
             except:
@@ -308,25 +308,25 @@ class test_TaskRequest(unittest.TestCase):
             mytask.error_whitelist = ()
 
     def test_already_revoked(self):
-        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         tw._already_revoked = True
         self.assertTrue(tw.revoked())
 
     def test_revoked(self):
-        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         revoked.add(tw.task_id)
         self.assertTrue(tw.revoked())
         self.assertTrue(tw._already_revoked)
         self.assertTrue(tw.acknowledged)
 
     def test_execute_does_not_execute_revoked(self):
-        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         revoked.add(tw.task_id)
         tw.execute()
 
     def test_execute_acks_late(self):
         mytask_raising.acks_late = True
-        tw = TaskRequest(mytask_raising.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask_raising.name, uuid(), [1], {"f": "x"})
         try:
             tw.execute()
             self.assertTrue(tw.acknowledged)
@@ -334,17 +334,17 @@ class test_TaskRequest(unittest.TestCase):
             mytask_raising.acks_late = False
 
     def test_execute_using_pool_does_not_execute_revoked(self):
-        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         revoked.add(tw.task_id)
         tw.execute_using_pool(None)
 
     def test_on_accepted_acks_early(self):
-        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         tw.on_accepted(pid=os.getpid(), time_accepted=time.time())
         self.assertTrue(tw.acknowledged)
 
     def test_on_accepted_acks_late(self):
-        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         mytask.acks_late = True
         try:
             tw.on_accepted(pid=os.getpid(), time_accepted=time.time())
@@ -353,7 +353,7 @@ class test_TaskRequest(unittest.TestCase):
             mytask.acks_late = False
 
     def test_on_accepted_terminates(self):
-        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         pool = Mock()
         tw.terminate(pool, signal="KILL")
         self.assertFalse(pool.terminate_job.call_count)
@@ -361,13 +361,13 @@ class test_TaskRequest(unittest.TestCase):
         pool.terminate_job.assert_called_with(314, "KILL")
 
     def test_on_success_acks_early(self):
-        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         tw.time_start = 1
         tw.on_success(42)
         self.assertFalse(tw.acknowledged)
 
     def test_on_success_acks_late(self):
-        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         tw.time_start = 1
         mytask.acks_late = True
         try:
@@ -377,7 +377,7 @@ class test_TaskRequest(unittest.TestCase):
             mytask.acks_late = False
 
     def test_on_failure_WorkerLostError(self):
-        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         try:
             raise WorkerLostError("do re mi")
         except WorkerLostError:
@@ -388,7 +388,7 @@ class test_TaskRequest(unittest.TestCase):
 
         mytask.ignore_result = True
         try:
-            tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+            tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
             tw.on_failure(exc_info)
             self.assertEqual(mytask.backend.get_status(tw.task_id),
                              states.PENDING)
@@ -396,7 +396,7 @@ class test_TaskRequest(unittest.TestCase):
             mytask.ignore_result = False
 
     def test_on_failure_acks_late(self):
-        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         tw.time_start = 1
         mytask.acks_late = True
         try:
@@ -428,7 +428,7 @@ class test_TaskRequest(unittest.TestCase):
             def error(self, msg, *args, **kwargs):
                 self.errors.append(msg % args)
 
-        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         tw.logger = MockLogger()
         tw.on_timeout(soft=True, timeout=1337)
         self.assertIn("Soft time limit (1337s) exceeded",
@@ -440,7 +440,7 @@ class test_TaskRequest(unittest.TestCase):
 
         mytask.ignore_result = True
         try:
-            tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
+            tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
             tw.logger = MockLogger()
         finally:
             mytask.ignore_result = False
@@ -449,7 +449,7 @@ class test_TaskRequest(unittest.TestCase):
                              states.PENDING)
 
     def test_execute_and_trace(self):
-        res = execute_and_trace(mytask.name, gen_unique_id(), [4], {})
+        res = execute_and_trace(mytask.name, uuid(), [4], {})
         self.assertEqual(res, 4 ** 4)
 
     def test_execute_safe_catches_exception(self):
@@ -461,7 +461,7 @@ class test_TaskRequest(unittest.TestCase):
         WorkerTaskTrace.execute = _error_exec
         try:
             with catch_warnings(record=True) as log:
-                res = execute_and_trace(mytask.name, gen_unique_id(),
+                res = execute_and_trace(mytask.name, uuid(),
                                         [4], {})
                 self.assertIsInstance(res, ExceptionInfo)
                 self.assertTrue(log)
@@ -478,31 +478,31 @@ class test_TaskRequest(unittest.TestCase):
 
     def test_worker_task_trace_handle_retry(self):
         from celery.exceptions import RetryTaskError
-        uuid = gen_unique_id()
-        w = WorkerTaskTrace(mytask.name, uuid, [4], {})
+        tid = uuid()
+        w = WorkerTaskTrace(mytask.name, tid, [4], {})
         type_, value_, tb_ = self.create_exception(ValueError("foo"))
         type_, value_, tb_ = self.create_exception(RetryTaskError(str(value_),
                                                                   exc=value_))
         w._store_errors = False
         w.handle_retry(value_, type_, tb_, "")
-        self.assertEqual(mytask.backend.get_status(uuid), states.PENDING)
+        self.assertEqual(mytask.backend.get_status(tid), states.PENDING)
         w._store_errors = True
         w.handle_retry(value_, type_, tb_, "")
-        self.assertEqual(mytask.backend.get_status(uuid), states.RETRY)
+        self.assertEqual(mytask.backend.get_status(tid), states.RETRY)
 
     def test_worker_task_trace_handle_failure(self):
-        uuid = gen_unique_id()
-        w = WorkerTaskTrace(mytask.name, uuid, [4], {})
+        tid = uuid()
+        w = WorkerTaskTrace(mytask.name, tid, [4], {})
         type_, value_, tb_ = self.create_exception(ValueError("foo"))
         w._store_errors = False
         w.handle_failure(value_, type_, tb_, "")
-        self.assertEqual(mytask.backend.get_status(uuid), states.PENDING)
+        self.assertEqual(mytask.backend.get_status(tid), states.PENDING)
         w._store_errors = True
         w.handle_failure(value_, type_, tb_, "")
-        self.assertEqual(mytask.backend.get_status(uuid), states.FAILURE)
+        self.assertEqual(mytask.backend.get_status(tid), states.FAILURE)
 
     def test_task_wrapper_mail_attrs(self):
-        tw = TaskRequest(mytask.name, gen_unique_id(), [], {})
+        tw = TaskRequest(mytask.name, uuid(), [], {})
         x = tw.success_msg % {"name": tw.task_name,
                               "id": tw.task_id,
                               "return_value": 10,
@@ -520,7 +520,7 @@ class test_TaskRequest(unittest.TestCase):
         self.assertTrue(x)
 
     def test_from_message(self):
-        body = {"task": mytask.name, "id": gen_unique_id(),
+        body = {"task": mytask.name, "id": uuid(),
                 "args": [2], "kwargs": {u"æØåveéðƒeæ": "bar"}}
         m = Message(None, body=anyjson.serialize(body), backend="foo",
                           content_type="application/json",
@@ -536,7 +536,7 @@ class test_TaskRequest(unittest.TestCase):
         self.assertTrue(tw.logger)
 
     def test_from_message_nonexistant_task(self):
-        body = {"task": "cu.mytask.doesnotexist", "id": gen_unique_id(),
+        body = {"task": "cu.mytask.doesnotexist", "id": uuid(),
                 "args": [2], "kwargs": {u"æØåveéðƒeæ": "bar"}}
         m = Message(None, body=anyjson.serialize(body), backend="foo",
                           content_type="application/json",
@@ -545,7 +545,7 @@ class test_TaskRequest(unittest.TestCase):
                           m, m.decode())
 
     def test_execute(self):
-        tid = gen_unique_id()
+        tid = uuid()
         tw = TaskRequest(mytask.name, tid, [4], {"f": "x"})
         self.assertEqual(tw.execute(), 256)
         meta = mytask.backend.get_task_meta(tid)
@@ -553,7 +553,7 @@ class test_TaskRequest(unittest.TestCase):
         self.assertEqual(meta["status"], states.SUCCESS)
 
     def test_execute_success_no_kwargs(self):
-        tid = gen_unique_id()
+        tid = uuid()
         tw = TaskRequest(mytask_no_kwargs.name, tid, [4], {})
         self.assertEqual(tw.execute(), 256)
         meta = mytask_no_kwargs.backend.get_task_meta(tid)
@@ -561,7 +561,7 @@ class test_TaskRequest(unittest.TestCase):
         self.assertEqual(meta["status"], states.SUCCESS)
 
     def test_execute_success_some_kwargs(self):
-        tid = gen_unique_id()
+        tid = uuid()
         tw = TaskRequest(mytask_some_kwargs.name, tid, [4], {})
         self.assertEqual(tw.execute(logfile="foobaz.log"), 256)
         meta = mytask_some_kwargs.backend.get_task_meta(tid)
@@ -570,7 +570,7 @@ class test_TaskRequest(unittest.TestCase):
         self.assertEqual(meta["status"], states.SUCCESS)
 
     def test_execute_ack(self):
-        tid = gen_unique_id()
+        tid = uuid()
         tw = TaskRequest(mytask.name, tid, [4], {"f": "x"},
                         on_ack=on_ack)
         self.assertEqual(tw.execute(), 256)
@@ -580,7 +580,7 @@ class test_TaskRequest(unittest.TestCase):
         self.assertEqual(meta["status"], states.SUCCESS)
 
     def test_execute_fail(self):
-        tid = gen_unique_id()
+        tid = uuid()
         tw = TaskRequest(mytask_raising.name, tid, [4], {"f": "x"})
         self.assertIsInstance(tw.execute(), ExceptionInfo)
         meta = mytask_raising.backend.get_task_meta(tid)
@@ -588,7 +588,7 @@ class test_TaskRequest(unittest.TestCase):
         self.assertIsInstance(meta["result"], KeyError)
 
     def test_execute_using_pool(self):
-        tid = gen_unique_id()
+        tid = uuid()
         tw = TaskRequest(mytask.name, tid, [4], {"f": "x"})
 
         class MockPool(BasePool):
@@ -615,7 +615,7 @@ class test_TaskRequest(unittest.TestCase):
         self.assertIn([4], p.args)
 
     def test_default_kwargs(self):
-        tid = gen_unique_id()
+        tid = uuid()
         tw = TaskRequest(mytask.name, tid, [4], {"f": "x"})
         self.assertDictEqual(
                 tw.extend_with_default_kwargs(10, "some_logfile"), {
@@ -630,7 +630,7 @@ class test_TaskRequest(unittest.TestCase):
 
     def _test_on_failure(self, exception):
         app = app_or_default()
-        tid = gen_unique_id()
+        tid = uuid()
         tw = TaskRequest(mytask.name, tid, [4], {"f": "x"})
         try:
             raise exception

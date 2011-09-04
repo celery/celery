@@ -6,7 +6,7 @@ from itertools import count
 from celery import states
 from celery.events import Event
 from celery.events.state import State, Worker, Task, HEARTBEAT_EXPIRE
-from celery.utils import gen_unique_id
+from celery.utils import uuid
 
 
 class replay(object):
@@ -49,18 +49,18 @@ class ev_worker_heartbeats(replay):
 
 
 class ev_task_states(replay):
-    uuid = gen_unique_id()
+    tid = uuid()
     events = [
-        Event("task-received", uuid=uuid, name="task1",
+        Event("task-received", uuid=tid, name="task1",
               args="(2, 2)", kwargs="{'foo': 'bar'}",
               retries=0, eta=None, hostname="utest1"),
-        Event("task-started", uuid=uuid, hostname="utest1"),
-        Event("task-revoked", uuid=uuid, hostname="utest1"),
-        Event("task-retried", uuid=uuid, exception="KeyError('bar')",
+        Event("task-started", uuid=tid, hostname="utest1"),
+        Event("task-revoked", uuid=tid, hostname="utest1"),
+        Event("task-retried", uuid=tid, exception="KeyError('bar')",
               traceback="line 2 at main", hostname="utest1"),
-        Event("task-failed", uuid=uuid, exception="KeyError('foo')",
+        Event("task-failed", uuid=tid, exception="KeyError('foo')",
               traceback="line 1 at main", hostname="utest1"),
-        Event("task-succeeded", uuid=uuid, result="4",
+        Event("task-succeeded", uuid=tid, result="4",
               runtime=0.1234, hostname="utest1"),
     ]
 
@@ -75,7 +75,7 @@ class ev_snapshot(replay):
         worker = not i % 2 and "utest2" or "utest1"
         type = not i % 2 and "task2" or "task1"
         events.append(Event("task-received", name=type,
-                      uuid=gen_unique_id(), hostname=worker))
+                      uuid=uuid(), hostname=worker))
 
 
 class test_Worker(unittest.TestCase):

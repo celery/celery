@@ -6,7 +6,7 @@ import warnings
 from .. import registry
 from ..app import app_or_default
 from ..datastructures import AttributeDict
-from ..utils import cached_property, gen_unique_id, reprcall
+from ..utils import cached_property, reprcall, uuid
 from ..utils.compat import UserList
 
 TASKSET_DEPRECATION_TEXT = """\
@@ -152,7 +152,7 @@ class TaskSet(UserList):
             return self.apply(taskset_id=taskset_id)
 
         with app.default_connection(connection, connect_timeout) as conn:
-            setid = taskset_id or gen_unique_id()
+            setid = taskset_id or uuid()
             pub = publisher or self.Publisher(connection=conn)
             try:
                 results = self._async_results(setid, pub)
@@ -168,7 +168,7 @@ class TaskSet(UserList):
 
     def apply(self, taskset_id=None):
         """Applies the taskset locally by blocking until all tasks return."""
-        setid = taskset_id or gen_unique_id()
+        setid = taskset_id or uuid()
         return self.app.TaskSetResult(setid, self._sync_results(setid))
 
     def _sync_results(self, taskset_id):

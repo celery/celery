@@ -11,7 +11,7 @@ from celery.exceptions import RetryTaskError
 from celery.execute import send_task
 from celery.result import EagerResult
 from celery.schedules import crontab, crontab_parser
-from celery.utils import gen_unique_id
+from celery.utils import uuid
 from celery.utils.timeutils import parse_iso8601
 
 from celery.tests.utils import with_eager_tasks, unittest, StringIO
@@ -224,7 +224,7 @@ class TestCeleryTasks(unittest.TestCase):
         return cls
 
     def test_AsyncResult(self):
-        task_id = gen_unique_id()
+        task_id = uuid()
         result = RetryTask.AsyncResult(task_id)
         self.assertEqual(result.backend, RetryTask.backend)
         self.assertEqual(result.task_id, task_id)
@@ -379,7 +379,7 @@ class TestCeleryTasks(unittest.TestCase):
         def yyy():
             pass
 
-        tid = gen_unique_id()
+        tid = uuid()
         yyy.update_state(tid, "FROBULATING", {"fooz": "baaz"})
         self.assertEqual(yyy.AsyncResult(tid).status, "FROBULATING")
         self.assertDictEqual(yyy.AsyncResult(tid).result, {"fooz": "baaz"})
@@ -460,7 +460,7 @@ class TestTaskSet(unittest.TestCase):
     def test_named_taskset(self):
         prefix = "test_named_taskset-"
         ts = task.TaskSet([return_True_task.subtask([1])])
-        res = ts.apply(taskset_id=prefix + gen_unique_id())
+        res = ts.apply(taskset_id=prefix + uuid())
         self.assertTrue(res.taskset_id.startswith(prefix))
 
 

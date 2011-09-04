@@ -4,7 +4,7 @@ from Queue import Queue
 
 from mock import Mock, patch
 
-from celery.utils import gen_unique_id
+from celery.utils import uuid
 from celery.worker.mediator import Mediator
 from celery.worker.state import revoked as revoked_tasks
 
@@ -108,7 +108,7 @@ class test_Mediator(unittest.TestCase):
 
         m = Mediator(ready_queue, mycallback)
         t = MockTask("Jerry Seinfeld")
-        t.task_id = gen_unique_id()
+        t.task_id = uuid()
         revoked_tasks.add(t.task_id)
         ready_queue.put(t)
 

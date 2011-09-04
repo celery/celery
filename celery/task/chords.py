@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from .. import current_app
 from ..result import TaskSetResult
-from ..utils import gen_unique_id
+from ..utils import uuid
 
 from .sets import TaskSet, subtask
 
@@ -27,11 +27,11 @@ class Chord(current_app.Task):
         if not isinstance(set, TaskSet):
             set = TaskSet(set)
         r = []
-        setid = gen_unique_id()
+        setid = uuid()
         for task in set.tasks:
-            uuid = gen_unique_id()
-            task.options.update(task_id=uuid, chord=body)
-            r.append(current_app.AsyncResult(uuid))
+            tid = uuid()
+            task.options.update(task_id=tid, chord=body)
+            r.append(current_app.AsyncResult(tid))
         current_app.TaskSetResult(setid, r).save()
         self.backend.on_chord_apply(setid, body, interval,
                                     max_retries=max_retries,
@@ -47,7 +47,7 @@ class chord(object):
         self.options = options
 
     def __call__(self, body, **options):
-        uuid = body.options.setdefault("task_id", gen_unique_id())
+        tid = body.options.setdefault("task_id", uuid())
         self.Chord.apply_async((list(self.tasks), body), self.options,
                                 **options)
-        return body.type.app.AsyncResult(uuid)
+        return body.type.app.AsyncResult(tid)

@@ -15,7 +15,7 @@ from celery.utils.serialization import get_pickleable_exception as gpe
 from celery import states
 from celery.backends.base import BaseBackend, KeyValueStoreBackend
 from celery.backends.base import BaseDictBackend, DisabledBackend
-from celery.utils import gen_unique_id
+from celery.utils import uuid
 
 from celery.tests.utils import unittest
 
@@ -230,7 +230,7 @@ class test_KeyValueStoreBackend(unittest.TestCase):
         self.b = KVBackend()
 
     def test_get_store_delete_result(self):
-        tid = gen_unique_id()
+        tid = uuid()
         self.b.mark_as_done(tid, "Hello world")
         self.assertEqual(self.b.get_result(tid), "Hello world")
         self.assertEqual(self.b.get_status(tid), states.SUCCESS)
@@ -245,7 +245,7 @@ class test_KeyValueStoreBackend(unittest.TestCase):
     def test_get_many(self):
         for is_dict in True, False:
             self.b.mget_returns_dict = is_dict
-            ids = dict((gen_unique_id(), i) for i in xrange(10))
+            ids = dict((uuid(), i) for i in xrange(10))
             for id, i in ids.items():
                 self.b.mark_as_done(id, i)
             it = self.b.get_many(ids.keys())
@@ -259,7 +259,7 @@ class test_KeyValueStoreBackend(unittest.TestCase):
         self.assertEqual(self.b.get_status("xxx-missing"), states.PENDING)
 
     def test_save_restore_delete_taskset(self):
-        tid = gen_unique_id()
+        tid = uuid()
         self.b.save_taskset(tid, "Hello world")
         self.assertEqual(self.b.restore_taskset(tid), "Hello world")
         self.b.delete_taskset(tid)
