@@ -17,10 +17,8 @@ import threading
 from functools import wraps
 from inspect import getargspec
 
-from kombu.utils import cached_property
-
 from .. import registry
-from ..utils import instantiate
+from ..utils import cached_property, instantiate
 
 from . import base
 

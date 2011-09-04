@@ -171,8 +171,8 @@ class test_State(unittest.TestCase):
 
         # RECEIVED
         r.next()
-        self.assertTrue(r.uuid in r.state.tasks)
-        task = r.state.tasks[r.uuid]
+        self.assertTrue(r.tid in r.state.tasks)
+        task = r.state.tasks[r.tid]
         self.assertEqual(task.state, states.RECEIVED)
         self.assertTrue(task.received)
         self.assertEqual(task.timestamp, task.received)

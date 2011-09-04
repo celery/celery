@@ -1,11 +1,10 @@
 from datetime import timedelta
 
 from mock import Mock, patch
-from kombu.utils import cached_property
 
 from celery import current_app
 from celery import states
-from celery.utils import uuid
+from celery.utils import cached_property, uuid
 from celery.utils.timeutils import timedelta_seconds
 
 from celery.tests.utils import unittest

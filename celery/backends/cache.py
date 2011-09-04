@@ -1,9 +1,8 @@
 from __future__ import absolute_import
 
-from kombu.utils import cached_property
-
 from ..datastructures import LocalCache
 from ..exceptions import ImproperlyConfigured
+from ..utils import cached_property
 
 from .base import KeyValueStoreBackend
 

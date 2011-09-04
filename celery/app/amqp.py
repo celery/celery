@@ -14,11 +14,10 @@ from datetime import datetime, timedelta
 from kombu import BrokerConnection, Exchange
 from kombu import compat as messaging
 from kombu.pools import ProducerPool
-from kombu.utils import cached_property
 
 from .. import routes as _routes
 from .. import signals
-from ..utils import textindent, uuid
+from ..utils import cached_property, textindent, uuid
 
 #: List of known options to a Kombu producers send method.
 #: Used to extract the message related options out of any `dict`.

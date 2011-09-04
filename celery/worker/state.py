@@ -6,10 +6,9 @@ import shelve
 
 from collections import defaultdict
 
-from kombu.utils import cached_property
-
 from .. import __version__
 from ..datastructures import LimitedSet
+from ..utils import cached_property
 
 #: Worker software/platform information.
 SOFTWARE_INFO = {"sw_ident": "celeryd",

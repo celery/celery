@@ -14,8 +14,6 @@ except ImportError:
 
 from datetime import datetime
 
-from kombu.utils import cached_property
-
 from . import __version__
 from . import platforms
 from . import registry
@@ -23,7 +21,7 @@ from . import signals
 from .app import app_or_default
 from .log import SilenceRepeated
 from .schedules import maybe_schedule, crontab
-from .utils import instantiate, maybe_promise
+from .utils import cached_property, instantiate, maybe_promise
 from .utils.timeutils import humanize_seconds
 
 

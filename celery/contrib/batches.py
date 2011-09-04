@@ -42,11 +42,9 @@ Registering the click is done as follows:
 from itertools import count
 from Queue import Queue
 
-from kombu.utils import cached_property
-
 from celery.datastructures import consume_queue
 from celery.task import Task
-from celery.utils import timer2
+from celery.utils import cached_property, timer2
 from celery.worker import state
 
 

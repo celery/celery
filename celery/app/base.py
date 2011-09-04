@@ -20,10 +20,8 @@ from copy import deepcopy
 from functools import wraps
 from threading import Lock
 
-from kombu.utils import cached_property
-
 from .. import datastructures
-from ..utils import instantiate, lpmerge
+from ..utils import cached_property, instantiate, lpmerge
 
 from .defaults import DEFAULTS
 

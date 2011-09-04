@@ -6,11 +6,11 @@ import re
 import warnings
 
 from anyjson import deserialize
-from kombu.utils import cached_property
 
 from ..datastructures import DictAttribute
 from ..exceptions import ImproperlyConfigured
-from ..utils import get_cls_by_name, import_from_cwd as _import_from_cwd
+from ..utils import (cached_property, get_cls_by_name,
+                     import_from_cwd as _import_from_cwd)
 
 BUILTIN_MODULES = frozenset(["celery.task"])
 
