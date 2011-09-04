@@ -38,7 +38,7 @@ class AMQPBackend(BaseDictBackend):
 
     def __init__(self, connection=None, exchange=None, exchange_type=None,
             persistent=None, serializer=None, auto_delete=True,
-            expires=None, connection_max=None, **kwargs):
+            expires=None, **kwargs):
         super(AMQPBackend, self).__init__(**kwargs)
         conf = self.app.conf
         self._connection = connection
@@ -61,8 +61,6 @@ class AMQPBackend(BaseDictBackend):
             self.expires = self.prepare_expires(self.expires)
             # x-expires requires RabbitMQ 2.1.0 or higher.
             self.queue_arguments["x-expires"] = int(self.expires * 1000)
-        self.connection_max = (connection_max or
-                               conf.CELERY_AMQP_TASK_RESULT_CONNECTION_MAX)
         self.mutex = threading.Lock()
 
     def _create_binding(self, task_id):
@@ -243,6 +241,5 @@ class AMQPBackend(BaseDictBackend):
                  persistent=self.persistent,
                  serializer=self.serializer,
                  auto_delete=self.auto_delete,
-                 expires=self.expires,
-                 connection_max=self.connection_max))
+                 expires=self.expires))
         return super(AMQPBackend, self).__reduce__(args, kwargs)

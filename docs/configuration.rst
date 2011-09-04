@@ -124,6 +124,14 @@ Can be one of the following:
 .. _`Redis`: http://code.google.com/p/redis/
 .. _`Tokyo Tyrant`: http://1978th.net/tokyotyrant/
 
+.. setting:: CELERY_RESULT_SERIALIZER
+
+CELERY_RESULT_SERIALIZER
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Result message serialization format.  Default is `"pickle"`. See
+:ref:`executing-serializers`.
+
 .. _conf-database-result-backend:
 
 Database backend settings
@@ -207,15 +215,6 @@ The time in seconds of which the task result queues should expire.
 
     AMQP result expiration requires RabbitMQ versions 2.1.0 and higher.
 
-.. setting:: CELERY_AMQP_TASK_RESULT_CONNECTION_MAX
-
-CELERY_AMQP_TASK_RESULT_CONNECTION_MAX
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Maximum number of connections used by the AMQP result backend simultaneously.
-
-Default is 1 (a single connection per process).
-
 .. setting:: CELERY_RESULT_EXCHANGE
 
 CELERY_RESULT_EXCHANGE
@@ -230,14 +229,6 @@ CELERY_RESULT_EXCHANGE_TYPE
 
 The exchange type of the result exchange.  Default is to use a `direct`
 exchange.
-
-.. setting:: CELERY_RESULT_SERIALIZER
-
-CELERY_RESULT_SERIALIZER
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-Result message serialization format.  Default is `"pickle"`. See
-:ref:`executing-serializers`.
 
 .. setting:: CELERY_RESULT_PERSISTENT
 
