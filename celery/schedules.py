@@ -5,9 +5,9 @@ from dateutil.relativedelta import relativedelta
 from pyparsing import (Word, Literal, ZeroOrMore, Optional,
                        Group, StringEnd, alphas)
 
-from celery.utils import is_iterable
-from celery.utils.timeutils import (timedelta_seconds, weekday,
-                                    remaining, humanize_seconds)
+from .utils import is_iterable
+from .utils.timeutils import (timedelta_seconds, weekday,
+                              remaining, humanize_seconds)
 
 
 class schedule(object):

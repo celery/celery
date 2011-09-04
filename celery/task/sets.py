@@ -3,13 +3,11 @@ from __future__ import with_statement
 
 import warnings
 
-from kombu.utils import cached_property
-
-from celery import registry
-from celery.app import app_or_default
-from celery.datastructures import AttributeDict
-from celery.utils import gen_unique_id, reprcall
-from celery.utils.compat import UserList
+from .. import registry
+from ..app import app_or_default
+from ..datastructures import AttributeDict
+from ..utils import cached_property, gen_unique_id, reprcall
+from ..utils.compat import UserList
 
 TASKSET_DEPRECATION_TEXT = """\
 Using this invocation of TaskSet is deprecated and will be removed
@@ -18,7 +16,7 @@ in Celery v2.4!
 TaskSets now supports multiple types of tasks, the API has to reflect
 this so the syntax has been changed to:
 
-    from celery.task.sets import TaskSet
+    from celery.task import TaskSet
 
     ts = TaskSet(tasks=[
             %(cls)s.subtask(args1, kwargs1, options1),

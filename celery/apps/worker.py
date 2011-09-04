@@ -11,13 +11,11 @@ import socket
 import sys
 import warnings
 
-from celery import __version__
-from celery import platforms
-from celery import signals
-from celery.app import app_or_default
-from celery.exceptions import ImproperlyConfigured, SystemTerminate
-from celery.utils import get_full_cls_name, LOG_LEVELS, cry
-from celery.worker import WorkController
+from .. import __version__, platforms, signals
+from ..app import app_or_default
+from ..exceptions import ImproperlyConfigured, SystemTerminate
+from ..utils import get_full_cls_name, LOG_LEVELS, cry
+from ..worker import WorkController
 
 BANNER = """
  -------------- celery@%(hostname)s v%(version)s
@@ -183,7 +181,7 @@ class Worker(object):
         self.loader.init_worker()
 
     def tasklist(self, include_builtins=True):
-        from celery.registry import tasks
+        from ..registry import tasks
         tasklist = tasks.keys()
         if not include_builtins:
             tasklist = filter(lambda s: not s.startswith("celery."),
@@ -343,7 +341,7 @@ def install_rdb_handler(envvar="CELERY_RDBSIG"):  # pragma: no cover
 
     def rdb_handler(signum, frame):
         """Signal handler setting a rdb breakpoint at the current frame."""
-        from celery.contrib import rdb
+        from ..contrib import rdb
         rdb.set_trace(frame)
 
     if os.environ.get(envvar):

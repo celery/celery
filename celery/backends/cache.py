@@ -1,8 +1,11 @@
+from __future__ import absolute_import
+
 from kombu.utils import cached_property
 
-from celery.backends.base import KeyValueStoreBackend
-from celery.exceptions import ImproperlyConfigured
-from celery.datastructures import LocalCache
+from ..datastructures import LocalCache
+from ..exceptions import ImproperlyConfigured
+
+from .base import KeyValueStoreBackend
 
 _imp = [None]
 

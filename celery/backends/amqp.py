@@ -11,9 +11,10 @@ from itertools import count
 from kombu.entity import Exchange, Queue
 from kombu.messaging import Consumer, Producer
 
-from celery import states
-from celery.backends.base import BaseDictBackend
-from celery.exceptions import TimeoutError
+from .. import states
+from ..exceptions import TimeoutError
+
+from .base import BaseDictBackend
 
 
 class BacklogLimitExceeded(Exception):

@@ -1,8 +1,10 @@
-from kombu.utils import gen_unique_id
+from __future__ import absolute_import
 
-from celery import current_app
-from celery.result import TaskSetResult
-from celery.task.sets import TaskSet, subtask
+from .. import current_app
+from ..result import TaskSetResult
+from ..utils import gen_unique_id
+
+from .sets import TaskSet, subtask
 
 
 @current_app.task(name="celery.chord_unlock", max_retries=None)

@@ -1,4 +1,6 @@
-from celery.worker.state import SOFTWARE_INFO
+from __future__ import absolute_import
+
+from .state import SOFTWARE_INFO
 
 
 class Heart(object):

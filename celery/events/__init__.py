@@ -12,8 +12,8 @@ from itertools import count
 from kombu.entity import Exchange, Queue
 from kombu.messaging import Consumer, Producer
 
-from celery.app import app_or_default
-from celery.utils import gen_unique_id
+from ..app import app_or_default
+from ..utils import gen_unique_id
 
 event_exchange = Exchange("celeryev", type="topic")
 
@@ -240,7 +240,7 @@ class Events(object):
                                app=self.app)
 
     def State(self):
-        from celery.events.state import State as _State
+        from .state import State as _State
         return _State()
 
     @contextmanager

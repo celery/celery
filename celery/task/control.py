@@ -3,7 +3,7 @@ from __future__ import with_statement
 
 from kombu.pidbox import Mailbox
 
-from celery.app import app_or_default
+from ..app import app_or_default
 
 
 def flatten_reply(reply):

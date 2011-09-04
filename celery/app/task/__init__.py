@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-"
+from __future__ import absolute_import
+
 import sys
 import threading
 
-from celery.datastructures import ExceptionInfo
-from celery.exceptions import MaxRetriesExceededError, RetryTaskError
-from celery.execute.trace import TaskTrace
-from celery.registry import tasks, _unpickle_task
-from celery.result import EagerResult
-from celery.utils import mattrgetter, gen_unique_id, fun_takes_kwargs
+from ...datastructures import ExceptionInfo
+from ...exceptions import MaxRetriesExceededError, RetryTaskError
+from ...execute.trace import TaskTrace
+from ...registry import tasks, _unpickle_task
+from ...result import EagerResult
+from ...utils import mattrgetter, gen_unique_id, fun_takes_kwargs
 
 extract_exec_options = mattrgetter("queue", "routing_key",
                                    "exchange", "immediate",
@@ -696,7 +698,7 @@ class BaseTask(object):
         """Returns :class:`~celery.task.sets.subtask` object for
         this task, wrapping arguments and execution options
         for a single task invocation."""
-        from celery.task.sets import subtask
+        from ...task.sets import subtask
         return subtask(cls, *args, **kwargs)
 
     @property

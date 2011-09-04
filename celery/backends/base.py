@@ -1,4 +1,6 @@
 """celery.backends.base"""
+from __future__ import absolute_import
+
 import time
 import sys
 
@@ -6,13 +8,13 @@ from datetime import timedelta
 
 from kombu import serialization
 
-from celery import states
-from celery.exceptions import TimeoutError, TaskRevokedError
-from celery.utils import timeutils
-from celery.utils.serialization import get_pickled_exception
-from celery.utils.serialization import get_pickleable_exception
-from celery.utils.serialization import create_exception_cls
-from celery.datastructures import LocalCache
+from .. import states
+from ..datastructures import LocalCache
+from ..exceptions import TimeoutError, TaskRevokedError
+from ..utils import timeutils
+from ..utils.serialization import (get_pickled_exception,
+                                   get_pickleable_exception,
+                                   create_exception_cls)
 
 EXCEPTION_ABLE_CODECS = frozenset(["pickle", "yaml"])
 
@@ -36,7 +38,7 @@ class BaseBackend(object):
     subpolling_interval = None
 
     def __init__(self, *args, **kwargs):
-        from celery.app import app_or_default
+        from ..app import app_or_default
         self.app = app_or_default(kwargs.get("app"))
         self.serializer = kwargs.get("serializer",
                                      self.app.conf.CELERY_RESULT_SERIALIZER)
@@ -198,7 +200,7 @@ class BaseBackend(object):
         pass
 
     def on_chord_apply(self, setid, body, *args, **kwargs):
-        from celery.registry import tasks
+        from ..registry import tasks
         tasks["celery.chord_unlock"].apply_async((setid, body, ), kwargs,
                                                  countdown=1)
 

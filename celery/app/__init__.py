@@ -8,6 +8,9 @@ Celery Application.
 :license: BSD, see LICENSE for more details.
 
 """
+
+from __future__ import absolute_import
+
 import os
 import threading
 
@@ -16,9 +19,10 @@ from inspect import getargspec
 
 from kombu.utils import cached_property
 
-from celery import registry
-from celery.app import base
-from celery.utils import instantiate
+from .. import registry
+from ..utils import instantiate
+
+from . import base
 
 # Apps with the :attr:`~celery.app.base.BaseApp.set_as_current` attribute
 # sets this, so it will always contain the last instantiated app,
@@ -87,7 +91,7 @@ class App(base.BaseApp):
         taken from this app."""
         conf = self.conf
 
-        from celery.app.task import BaseTask
+        from .task import BaseTask
 
         class Task(BaseTask):
             abstract = True
@@ -119,14 +123,14 @@ class App(base.BaseApp):
 
     def TaskSet(self, *args, **kwargs):
         """Create new :class:`~celery.task.sets.TaskSet`."""
-        from celery.task.sets import TaskSet
+        from ..task.sets import TaskSet
         kwargs["app"] = self
         return TaskSet(*args, **kwargs)
 
     def worker_main(self, argv=None):
         """Run :program:`celeryd` using `argv`.  Uses :data:`sys.argv`
         if `argv` is not specified."""
-        from celery.bin.celeryd import WorkerCommand
+        from ..bin.celeryd import WorkerCommand
         return WorkerCommand(app=self).execute_from_commandline(argv)
 
     def task(self, *args, **options):

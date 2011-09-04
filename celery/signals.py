@@ -1,4 +1,6 @@
+from __future__ import absolute_import
 """
+
 ==============
 celery.signals
 ==============
@@ -347,7 +349,7 @@ Provides arguments:
 
 
 """
-from celery.utils.dispatch import Signal
+from .utils.dispatch import Signal
 
 task_sent = Signal(providing_args=["task_id", "task",
                                    "args", "kwargs",

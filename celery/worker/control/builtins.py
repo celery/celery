@@ -1,14 +1,17 @@
+from __future__ import absolute_import
+
 import sys
 
 from datetime import datetime
 
-from celery.platforms import signals as _signals
-from celery.registry import tasks
-from celery.utils import timeutils
-from celery.worker import state
-from celery.worker.state import revoked
-from celery.worker.control.registry import Panel
-from celery.utils.encoding import safe_repr
+from ...platforms import signals as _signals
+from ...registry import tasks
+from ...utils import timeutils
+from ...utils.encoding import safe_repr
+from .. import state
+from ..state import revoked
+
+from .registry import Panel
 
 TASK_INFO_FIELDS = ("exchange", "routing_key", "rate_limit")
 

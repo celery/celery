@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import os
 import sys
 
@@ -7,8 +9,9 @@ if not os.environ.get("GEVENT_NOPATCH"):
     from gevent import monkey
     monkey.patch_all()
 
-from celery.concurrency.base import apply_target, BasePool
-from celery.utils import timer2
+from ..utils import timer2
+
+from .base import apply_target, BasePool
 
 
 class Schedule(timer2.Schedule):

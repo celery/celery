@@ -23,9 +23,9 @@ from contextlib import contextmanager
 import mock
 from nose import SkipTest
 
-from celery.app import app_or_default
-from celery.utils import noop
-from celery.utils.compat import StringIO, LoggerAdapter
+from ..app import app_or_default
+from ..utils import noop
+from ..utils.compat import StringIO, LoggerAdapter
 
 
 class Mock(mock.Mock):
@@ -57,7 +57,7 @@ def skip_unless_module(module):
 class AppCase(unittest.TestCase):
 
     def setUp(self):
-        from celery.app import current_app
+        from ..app import current_app
         self.app = self._current_app = current_app()
         self.setup()
 

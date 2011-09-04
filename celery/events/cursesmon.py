@@ -1,4 +1,5 @@
-import celery
+from __future__ import absolute_import
+
 import curses
 import sys
 import threading
@@ -9,9 +10,10 @@ from itertools import count
 from textwrap import wrap
 from math import ceil
 
-from celery import states
-from celery.app import app_or_default
-from celery.utils import abbr, abbrtask
+from .. import __version__
+from .. import states
+from ..app import app_or_default
+from ..utils import abbr, abbrtask
 
 BORDER_SPACING = 4
 LEFT_BORDER_OFFSET = 3
@@ -35,7 +37,7 @@ class CursesMonitor(object):
     online_str = "Workers online: "
     help_title = "Keys: "
     help = ("j:up k:down i:info t:traceback r:result c:revoke ^c: quit")
-    greet = "celeryev %s" % celery.__version__
+    greet = "celeryev %s" % __version__
     info_str = "Info: "
 
     def __init__(self, state, keymap=None, app=None):

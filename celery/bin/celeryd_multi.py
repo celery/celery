@@ -85,6 +85,8 @@ Examples
     celeryd -n xuzzy.myhost -c 3
 
 """
+from __future__ import absolute_import
+
 import errno
 import os
 import shlex
@@ -96,8 +98,8 @@ from collections import defaultdict
 from subprocess import Popen
 from time import sleep
 
-from celery import __version__
-from celery.utils import term
+from .. import __version__
+from ..utils import term
 
 SIGNAMES = set(sig for sig in dir(signal)
                         if sig.startswith("SIG") and "_" not in sig)
@@ -286,7 +288,7 @@ class MultiTool(object):
             self.note("")
 
     def getpids(self, p, cmd, callback=None):
-        from celery import platforms
+        from .. import platforms
         pidfile_template = p.options.setdefault("--pidfile", "celeryd@%n.pid")
 
         nodes = []

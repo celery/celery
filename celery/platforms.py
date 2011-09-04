@@ -5,7 +5,7 @@ import sys
 import errno
 import signal as _signal
 
-from celery.local import try_import
+from .local import try_import
 
 _setproctitle = try_import("setproctitle")
 resource = try_import("resource")

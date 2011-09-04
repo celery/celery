@@ -1,8 +1,9 @@
-from celery import current_app
-from celery.app.task import Context, TaskType, BaseTask  # noqa
-from celery.schedules import maybe_schedule
-from celery.utils import deprecated
-from celery.utils import timeutils
+from __future__ import absolute_import
+
+from .. import current_app
+from ..app.task import Context, TaskType, BaseTask  # noqa
+from ..schedules import maybe_schedule
+from ..utils import deprecated, timeutils
 
 Task = current_app.Task
 

@@ -16,9 +16,9 @@ from kombu import compat as messaging
 from kombu.pools import ProducerPool
 from kombu.utils import cached_property
 
-from celery import routes as _routes
-from celery import signals
-from celery.utils import gen_unique_id, textindent
+from .. import routes as _routes
+from .. import signals
+from ..utils import gen_unique_id, textindent
 
 #: List of known options to a Kombu producers send method.
 #: Used to extract the message related options out of any `dict`.

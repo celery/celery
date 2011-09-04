@@ -1,6 +1,8 @@
-from celery import current_app
-from celery.local import LocalProxy
-from celery.utils import get_cls_by_name
+from __future__ import absolute_import
+
+from .. import current_app
+from ..local import LocalProxy
+from ..utils import get_cls_by_name
 
 BACKEND_ALIASES = {
     "amqp": "celery.backends.amqp.AMQPBackend",

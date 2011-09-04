@@ -12,9 +12,11 @@ The new decorators does not support magic keyword arguments.
 :license: BSD, see LICENSE for more details.
 
 """
+from __future__ import absolute_import
+
 import warnings
 
-from celery import task as _task
+from . import task as _task
 
 
 warnings.warn(PendingDeprecationWarning("""

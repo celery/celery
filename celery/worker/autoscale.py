@@ -8,7 +8,7 @@ import traceback
 
 from time import sleep, time
 
-from celery.worker import state
+from . import state
 
 
 class Autoscaler(threading.Thread):

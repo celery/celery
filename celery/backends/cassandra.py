@@ -1,4 +1,6 @@
 """celery.backends.cassandra"""
+from __future__ import absolute_import
+
 try:
     import pycassa
     from thrift import Thrift
@@ -11,10 +13,11 @@ import time
 
 from datetime import datetime
 
-from celery.backends.base import BaseDictBackend
-from celery.exceptions import ImproperlyConfigured
-from celery.utils.timeutils import maybe_timedelta, timedelta_seconds
-from celery import states
+from .. import states
+from ..exceptions import ImproperlyConfigured
+from ..utils.timeutils import maybe_timedelta, timedelta_seconds
+
+from .base import BaseDictBackend
 
 
 class CassandraBackend(BaseDictBackend):

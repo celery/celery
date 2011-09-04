@@ -18,7 +18,7 @@ from itertools import chain
 from Queue import Empty
 from threading import RLock
 
-from celery.utils.compat import OrderedDict
+from .utils.compat import OrderedDict
 
 
 class AttributeDictMixin(object):

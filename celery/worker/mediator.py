@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import os
 import sys
 import threading
@@ -5,7 +7,7 @@ import traceback
 
 from Queue import Empty
 
-from celery.app import app_or_default
+from ..app import app_or_default
 
 
 class Mediator(threading.Thread):

@@ -19,8 +19,8 @@ from pprint import pprint
 
 from kombu.utils import cached_property, gen_unique_id  # noqa
 
-from celery.utils.compat import StringIO
-from celery.utils.encoding import safe_repr as _safe_repr
+from .compat import StringIO
+from .encoding import safe_repr as _safe_repr
 
 LOG_LEVELS = dict(logging._levelNames)
 LOG_LEVELS["FATAL"] = logging.FATAL

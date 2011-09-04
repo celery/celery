@@ -6,12 +6,12 @@ import time
 from copy import copy
 from itertools import imap
 
-from celery import current_app
-from celery import states
-from celery.app import app_or_default
-from celery.exceptions import TimeoutError
-from celery.registry import _unpickle_task
-from celery.utils.compat import OrderedDict
+from . import current_app
+from . import states
+from .app import app_or_default
+from .exceptions import TimeoutError
+from .registry import _unpickle_task
+from .utils.compat import OrderedDict
 
 
 def _unpickle_result(task_id, task_name):

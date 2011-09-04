@@ -8,18 +8,19 @@ import warnings
 
 from datetime import datetime
 
-from celery import current_app
-from celery import exceptions
-from celery import platforms
-from celery import registry
-from celery.app import app_or_default
-from celery.datastructures import ExceptionInfo
-from celery.execute.trace import TaskTrace
-from celery.utils import (noop, kwdict, fun_takes_kwargs,
-                          get_symbol_by_name, truncate_text)
-from celery.utils.encoding import safe_repr, safe_str, default_encoding
-from celery.utils.timeutils import maybe_iso8601
-from celery.worker import state
+from .. import current_app
+from .. import exceptions
+from .. import platforms
+from .. import registry
+from ..app import app_or_default
+from ..datastructures import ExceptionInfo
+from ..execute.trace import TaskTrace
+from ..utils import (noop, kwdict, fun_takes_kwargs,
+                     get_symbol_by_name, truncate_text)
+from ..utils.encoding import safe_repr, safe_str, default_encoding
+from ..utils.timeutils import maybe_iso8601
+
+from . import state
 
 # pep8.py borks on a inline signature separator and
 # says "trailing whitespace" ;)

@@ -76,16 +76,16 @@ import threading
 import traceback
 import warnings
 
-from celery.app import app_or_default
-from celery.datastructures import AttributeDict
-from celery.exceptions import NotRegistered
-from celery.utils import noop
-from celery.utils import timer2
-from celery.utils.encoding import safe_repr
-from celery.worker import state
-from celery.worker.job import TaskRequest, InvalidTaskError
-from celery.worker.control.registry import Panel
-from celery.worker.heartbeat import Heart
+from ..app import app_or_default
+from ..datastructures import AttributeDict
+from ..exceptions import NotRegistered
+from ..utils import noop
+from ..utils import timer2
+from ..utils.encoding import safe_repr
+from . import state
+from .job import TaskRequest, InvalidTaskError
+from .control.registry import Panel
+from .heartbeat import Heart
 
 RUN = 0x1
 CLOSE = 0x2

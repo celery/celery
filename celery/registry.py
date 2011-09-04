@@ -3,7 +3,7 @@ from __future__ import absolute_import
 
 import inspect
 
-from celery.exceptions import NotRegistered
+from .exceptions import NotRegistered
 
 
 class TaskRegistry(dict):

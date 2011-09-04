@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import os
 import sys
 
@@ -9,9 +11,10 @@ if not os.environ.get("EVENTLET_NOPATCH"):
     eventlet.monkey_patch()
     eventlet.debug.hub_prevent_multiple_readers(False)
 
-from celery import signals
-from celery.concurrency import base
-from celery.utils import timer2
+from .. import signals
+from ..utils import timer2
+
+from . import base
 
 
 def apply_target(target, args=(), kwargs={}, callback=None,

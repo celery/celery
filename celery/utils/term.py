@@ -9,9 +9,11 @@ term utils.
               c.green("dog ")))
 
 """
+from __future__ import absolute_import
+
 import platform
 
-from celery.utils.encoding import safe_str
+from .encoding import safe_str
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 OP_SEQ = "\033[%dm"

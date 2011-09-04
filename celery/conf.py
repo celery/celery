@@ -6,8 +6,10 @@ Use :mod:`celery.defaults` instead.
 
 
 """
-from celery import current_app
-from celery.app import defaults
+from __future__ import absolute_import
+
+from . import current_app
+from .app import defaults
 
 _DEFAULTS = defaults.DEFAULTS
 conf = current_app.conf

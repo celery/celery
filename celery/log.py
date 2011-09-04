@@ -12,14 +12,13 @@ try:
 except ImportError:
     current_process = mputil = None  # noqa
 
-from celery import signals
-from celery import current_app
-from celery.utils import LOG_LEVELS, isatty
-from celery.utils.compat import LoggerAdapter
-from celery.utils.compat import WatchedFileHandler
-from celery.utils.encoding import safe_str
-from celery.utils.patch import ensure_process_aware_logger
-from celery.utils.term import colored
+from . import current_app
+from . import signals
+from .utils import LOG_LEVELS, isatty
+from .utils.compat import LoggerAdapter, WatchedFileHandler
+from .utils.encoding import safe_str
+from .utils.patch import ensure_process_aware_logger
+from .utils.term import colored
 
 
 class ColorFormatter(logging.Formatter):

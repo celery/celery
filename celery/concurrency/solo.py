@@ -1,6 +1,8 @@
+from __future__ import absolute_import
+
 import os
 
-from celery.concurrency.base import BasePool, apply_target
+from .base import BasePool, apply_target
 
 
 class TaskPool(BasePool):

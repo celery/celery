@@ -7,9 +7,9 @@ from collections import deque
 from time import time, sleep
 from Queue import Queue, Empty
 
-from celery.datastructures import TokenBucket
-from celery.utils import timeutils
-from celery.utils.compat import izip_longest, chain_from_iterable
+from ..datastructures import TokenBucket
+from ..utils import timeutils
+from ..utils.compat import izip_longest, chain_from_iterable
 
 
 class RateLimitExceeded(Exception):

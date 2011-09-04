@@ -2,6 +2,8 @@
 # :copyright: (c) 2009 - 2011 by Ask Solem.
 # :license:   BSD, see LICENSE for more details.
 
+from __future__ import absolute_import
+
 import os
 import sys
 
@@ -20,14 +22,14 @@ if sys.version_info < (2, 5):
 
 
 def Celery(*args, **kwargs):
-    from celery.app import App
+    from .app import App
     return App(*args, **kwargs)
 
 if not os.environ.get("CELERY_NO_EVAL", False):
-    from celery.local import LocalProxy
+    from .local import LocalProxy
 
     def _get_current_app():
-        from celery.app import current_app
+        from .app import current_app
         return current_app()
 
     current_app = LocalProxy(_get_current_app)

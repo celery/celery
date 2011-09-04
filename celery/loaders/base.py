@@ -8,10 +8,9 @@ import warnings
 from anyjson import deserialize
 from kombu.utils import cached_property
 
-from celery.datastructures import DictAttribute
-from celery.exceptions import ImproperlyConfigured
-from celery.utils import get_cls_by_name
-from celery.utils import import_from_cwd as _import_from_cwd
+from ..datastructures import DictAttribute
+from ..exceptions import ImproperlyConfigured
+from ..utils import get_cls_by_name, import_from_cwd as _import_from_cwd
 
 BUILTIN_MODULES = frozenset(["celery.task"])
 
@@ -47,7 +46,7 @@ class BaseLoader(object):
     _conf = None
 
     def __init__(self, app=None, **kwargs):
-        from celery.app import app_or_default
+        from ..app import app_or_default
         self.app = app_or_default(app)
 
     def on_task_init(self, task_id, task):
@@ -114,7 +113,7 @@ class BaseLoader(object):
                 override_types={"tuple": "json",
                                 "list": "json",
                                 "dict": "json"}):
-        from celery.app.defaults import Option, NAMESPACES
+        from ..app.defaults import Option, NAMESPACES
         namespace = namespace.upper()
         typemap = dict(Option.typemap, **extra_types)
 

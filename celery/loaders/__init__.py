@@ -2,8 +2,8 @@ from __future__ import absolute_import
 
 import os
 
-from celery import current_app
-from celery.utils import get_cls_by_name
+from .. import current_app
+from ..utils import get_cls_by_name
 
 LOADER_ALIASES = {"app": "celery.loaders.app.AppLoader",
                   "default": "celery.loaders.default.Loader",

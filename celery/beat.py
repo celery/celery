@@ -16,15 +16,15 @@ from datetime import datetime
 
 from kombu.utils import cached_property
 
-from celery import __version__
-from celery import platforms
-from celery import registry
-from celery import signals
-from celery.app import app_or_default
-from celery.log import SilenceRepeated
-from celery.schedules import maybe_schedule, crontab
-from celery.utils import instantiate, maybe_promise
-from celery.utils.timeutils import humanize_seconds
+from . import __version__
+from . import platforms
+from . import registry
+from . import signals
+from .app import app_or_default
+from .log import SilenceRepeated
+from .schedules import maybe_schedule, crontab
+from .utils import instantiate, maybe_promise
+from .utils.timeutils import humanize_seconds
 
 
 class SchedulingError(Exception):

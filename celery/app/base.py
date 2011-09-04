@@ -22,9 +22,10 @@ from threading import Lock
 
 from kombu.utils import cached_property
 
-from celery import datastructures
-from celery.app.defaults import DEFAULTS
-from celery.utils import instantiate, lpmerge
+from .. import datastructures
+from ..utils import instantiate, lpmerge
+
+from .defaults import DEFAULTS
 
 import kombu
 if kombu.VERSION < (1, 1, 0):
@@ -236,13 +237,13 @@ class BaseApp(object):
 
     def AsyncResult(self, task_id, backend=None, task_name=None):
         """Create :class:`celery.result.BaseAsyncResult` instance."""
-        from celery.result import BaseAsyncResult
+        from ..result import BaseAsyncResult
         return BaseAsyncResult(task_id, app=self, task_name=task_name,
                                backend=backend or self.backend)
 
     def TaskSetResult(self, taskset_id, results, **kwargs):
         """Create :class:`celery.result.TaskSetResult` instance."""
-        from celery.result import TaskSetResult
+        from ..result import TaskSetResult
         return TaskSetResult(taskset_id, results, app=self)
 
     def broker_connection(self, hostname=None, userid=None,
@@ -346,7 +347,7 @@ class BaseApp(object):
         return lpmerge(l, r)
 
     def _get_backend(self):
-        from celery.backends import get_backend_cls
+        from ..backends import get_backend_cls
         backend_cls = self.backend_cls or self.conf.CELERY_RESULT_BACKEND
         backend_cls = get_backend_cls(backend_cls, loader=self.loader)
         return backend_cls(app=self)
@@ -414,7 +415,7 @@ class BaseApp(object):
     @cached_property
     def loader(self):
         """Current loader."""
-        from celery.loaders import get_loader_cls
+        from ..loaders import get_loader_cls
         return get_loader_cls(self.loader_cls)(app=self)
 
     @cached_property

@@ -6,7 +6,7 @@ Please use :class:`celery.backends.redis.RedisBackend` instead.
 """
 from __future__ import absolute_import
 
-from celery.backends import redis
+from . import redis
 
 
 class RedisBackend(redis.RedisBackend):

@@ -27,8 +27,9 @@ from __future__ import absolute_import
 
 from functools import partial
 
-from celery.platforms import detached
-from celery.bin.base import Command, Option, daemon_options
+from ..platforms import detached
+
+from .base import Command, Option, daemon_options
 
 
 class BeatCommand(Command):

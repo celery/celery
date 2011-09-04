@@ -1,4 +1,4 @@
-from celery import current_app
+from . import current_app
 
 TaskPublisher = current_app.amqp.TaskPublisher
 ConsumerSet = current_app.amqp.ConsumerSet

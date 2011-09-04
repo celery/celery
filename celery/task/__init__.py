@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+
 import warnings
 
-from celery.app import app_or_default
-from celery.task.base import Task, PeriodicTask
-from celery.task.sets import TaskSet, subtask
-from celery.task.chords import chord
-from celery.task.control import discard_all
+from ..app import app_or_default
+
+from .base import Task, PeriodicTask
+from .sets import TaskSet, subtask
+from .chords import chord
+from .control import discard_all
 
 __all__ = ["Task", "TaskSet", "PeriodicTask", "subtask",
            "discard_all", "chord"]

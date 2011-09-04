@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import urllib2
 
 from urllib import urlencode
@@ -9,8 +11,8 @@ except ImportError:  # pragma: no cover
 
 from anyjson import deserialize
 
-from celery import __version__ as celery_version
-from celery.task.base import Task as BaseTask
+from .. import __version__ as celery_version
+from .base import Task as BaseTask
 
 GET_METHODS = frozenset(["GET", "HEAD"])
 

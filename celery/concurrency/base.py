@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import os
 import sys
 import time
@@ -5,9 +7,9 @@ import traceback
 
 from functools import partial
 
-from celery import log
-from celery.datastructures import ExceptionInfo
-from celery.utils import timer2
+from .. import log
+from ..datastructures import ExceptionInfo
+from ..utils import timer2
 
 
 def apply_target(target, args=(), kwargs={}, callback=None,

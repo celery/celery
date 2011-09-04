@@ -3,11 +3,10 @@ from __future__ import absolute_import
 import sys
 import traceback
 
-from celery import states
-from celery import signals
-from celery.registry import tasks
-from celery.exceptions import RetryTaskError
-from celery.datastructures import ExceptionInfo
+from .. import states, signals
+from ..datastructures import ExceptionInfo
+from ..exceptions import RetryTaskError
+from ..registry import tasks
 
 
 class TraceInfo(object):

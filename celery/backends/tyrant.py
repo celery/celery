@@ -1,11 +1,14 @@
 """celery.backends.tyrant"""
+from __future__ import absolute_import
+
 try:
     import pytyrant
 except ImportError:
     pytyrant = None  # noqa
 
-from celery.backends.base import KeyValueStoreBackend
-from celery.exceptions import ImproperlyConfigured
+from ..exceptions import ImproperlyConfigured
+
+from .base import KeyValueStoreBackend
 
 
 class TyrantBackend(KeyValueStoreBackend):

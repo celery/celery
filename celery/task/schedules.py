@@ -1,5 +1,7 @@
+from __future__ import absolute_import
+
 import warnings
-from celery.schedules import schedule, crontab_parser, crontab
+from ..schedules import schedule, crontab_parser, crontab
 
 __all__ = ["schedule", "crontab_parser", "crontab"]
 

@@ -1,9 +1,11 @@
+from __future__ import absolute_import
+
 import sys
 
 from datetime import datetime
 
-from celery.app import app_or_default
-from celery.datastructures import LocalCache
+from ..app import app_or_default
+from ..datastructures import LocalCache
 
 
 TASK_NAMES = LocalCache(0xFFF)

@@ -1,4 +1,6 @@
-from celery.utils.compat import UserDict
+from __future__ import absolute_import
+
+from ...utils.compat import UserDict
 
 
 class Panel(UserDict):

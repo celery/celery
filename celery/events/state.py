@@ -6,9 +6,9 @@ import heapq
 
 from threading import Lock
 
-from celery import states
-from celery.datastructures import AttributeDict, LocalCache
-from celery.utils import kwdict
+from .. import states
+from ..datastructures import AttributeDict, LocalCache
+from ..utils import kwdict
 
 #: Hartbeat expiry time in seconds.  The worker will be considered offline
 #: if no heartbeat is received within this time.

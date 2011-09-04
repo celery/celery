@@ -1,11 +1,14 @@
+from __future__ import absolute_import
+
 from datetime import datetime
 
-from celery import states
-from celery.backends.base import BaseDictBackend
-from celery.db.models import Task, TaskSet
-from celery.db.session import ResultSession
-from celery.exceptions import ImproperlyConfigured
-from celery.utils.timeutils import maybe_timedelta
+from .. import states
+from ..db.models import Task, TaskSet
+from ..db.session import ResultSession
+from ..exceptions import ImproperlyConfigured
+from ..utils.timeutils import maybe_timedelta
+
+from .base import BaseDictBackend
 
 
 def _sqlalchemy_installed():
