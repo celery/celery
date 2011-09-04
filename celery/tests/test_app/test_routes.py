@@ -5,8 +5,8 @@ from functools import wraps
 
 from kombu.utils.functional import maybe_promise
 
-from celery import routes
 from celery import current_app
+from celery.app import routes
 from celery.exceptions import QueueNotFound
 from celery.task import task
 from celery.tests.utils import Case

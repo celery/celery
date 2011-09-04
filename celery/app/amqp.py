@@ -17,10 +17,11 @@ from kombu import BrokerConnection, Exchange
 from kombu import compat as messaging
 from kombu.pools import ProducerPool
 
-from .. import routes as _routes
 from .. import signals
 from ..utils import cached_property, lpmerge, uuid
 from ..utils import text
+
+from . import routes as _routes
 
 #: List of known options to a Kombu producers send method.
 #: Used to extract the message related options out of any `dict`.
