@@ -40,9 +40,66 @@ It should contain all you need to run a basic Celery set-up.
     ## available will be used.
     CELERYD_CONCURRENCY = 10
 
+    CELERY_ANNOTATIONS = {"tasks.add": {"rate_limit": "10/s"}}
+
 
 Configuration Directives
 ========================
+
+.. _conf-tasks:
+
+Task settings
+-------------
+
+.. setting:: CELERY_ANNOTATIONS
+
+CELERY_ANNOTATIONS
+~~~~~~~~~~~~~~~~~~
+
+This setting can be used to rewrite any task attribute from the
+configuration.  The setting can be a dict, or a list of annotation
+objects that filter for tasks and return a map of attributes
+to change.
+
+
+This will change the ``rate_limit`` attribute for the ``tasks.add``
+task:
+
+.. code-block:: python
+
+    CELERY_ANNOTATIONS = {"tasks.add": {"rate_limit": "10/s"}}
+
+or change the same for all tasks:
+
+.. code-block:: python
+
+    CELERY_ANNOTATIONS = {"*": {"rate_limit": "10/s"}}
+
+
+You can change methods too, for example the ``on_failure`` handler:
+
+.. code-block:: python
+
+    def my_on_failure(self, exc, task_id, args, kwargs, einfo):
+        print("Oh no! Task failed: %r" % (exc, ))
+
+    CELERY_ANNOTATIONS = {"*": {"on_failure": my_on_failure}}
+
+
+If you need more flexibility then you can use objects
+instead of a dict to choose which tasks to annotate:
+
+.. code-block:: python
+
+    class MyAnnotate(object):
+
+        def annotate(self, task):
+            if task.name.startswith("tasks."):
+                return {"rate_limit": "10/s"}
+
+    CELERY_ANNOTATIONS = (MyAnnotate(), {...})
+
+
 
 .. _conf-concurrency:
 

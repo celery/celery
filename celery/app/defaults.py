@@ -88,6 +88,7 @@ NAMESPACES = {
                 alt="CELERY_TASK_RESULT_EXPIRES"),
         "AMQP_TASK_RESULT_CONNECTION_MAX": Option(1, type="int",
             remove_by="2.5", alt="BROKER_POOL_LIMIT"),
+        "ANNOTATIONS": Option(type="any"),
         "BROADCAST_QUEUE": Option("celeryctl"),
         "BROADCAST_EXCHANGE": Option("celeryctl"),
         "BROADCAST_EXCHANGE_TYPE": Option("fanout"),

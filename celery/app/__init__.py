@@ -21,6 +21,7 @@ from inspect import getargspec
 from .. import registry
 from ..utils import cached_property, instantiate
 
+from . import annotations
 from . import base
 
 # Apps with the :attr:`~celery.app.base.BaseApp.set_as_current` attribute
@@ -191,10 +192,23 @@ class App(base.BaseApp):
             return inner_create_task_cls(**options)(*args)
         return inner_create_task_cls(**options)
 
+    def annotate_task(self, task):
+        if self.annotations:
+            match = annotations._first_match(self.annotations, task)
+            for attr, value in (match or {}).iteritems():
+                setattr(task, attr, value)
+            match_any = annotations._first_match_any(self.annotations)
+            for attr, value in (match_any or {}).iteritems():
+                setattr(task, attr, value)
+
     @cached_property
     def Task(self):
         """Default Task base class for this application."""
         return self.create_task_cls()
+
+    @cached_property
+    def annotations(self):
+        return annotations.prepare(self.conf.CELERY_ANNOTATIONS)
 
     def __repr__(self):
         return "<Celery: %s:0x%x>" % (self.main or "__main__", id(self), )

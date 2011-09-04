@@ -99,6 +99,9 @@ class TaskType(type):
                 task_name = task_cls.name = '.'.join([task_cls.app.main, name])
             tasks.register(task_cls)
         task = tasks[task_name].__class__
+
+        # decorate with annotations from config.
+        task.app.annotate_task(task)
         return task
 
     def __repr__(cls):
