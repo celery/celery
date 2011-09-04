@@ -71,10 +71,6 @@ class TestLoaders(AppCase):
     def test_load_settings(self):
         self.assertIs(loaders.load_settings(), self.app.conf)
 
-    @with_environ("CELERY_LOADER", "default")
-    def test_detect_loader_CELERY_LOADER(self):
-        self.assertIsInstance(loaders.setup_loader(), default.Loader)
-
 
 class TestLoaderBase(unittest.TestCase):
     message_options = {"subject": "Subject",
