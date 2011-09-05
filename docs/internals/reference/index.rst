@@ -20,8 +20,8 @@
     celery.concurrency.solo
     celery.concurrency.processes
     celery.concurrency.processes.pool
-    celery.concurrency.evlet
-    celery.concurrency.evg
+    celery.concurrency.eventlet
+    celery.concurrency.gevent
     celery.concurrency.base
     celery.concurrency.threads
     celery.beat

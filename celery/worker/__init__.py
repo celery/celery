@@ -254,7 +254,7 @@ class WorkController(object):
             self.terminate()
             raise
         except SystemExit, e:
-            self.terminate()
+            self.stop()
         except:
             self.stop()
             try:

@@ -4,8 +4,8 @@ from ..utils import get_cls_by_name
 
 ALIASES = {
     "processes": "celery.concurrency.processes.TaskPool",
-    "eventlet": "celery.concurrency.evlet.TaskPool",
-    "gevent": "celery.concurrency.evg.TaskPool",
+    "eventlet": "celery.concurrency.eventlet.TaskPool",
+    "gevent": "celery.concurrency.gevent.TaskPool",
     "threads": "celery.concurrency.threads.TaskPool",
     "solo": "celery.concurrency.solo.TaskPool",
 }
