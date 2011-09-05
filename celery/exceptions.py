@@ -61,3 +61,11 @@ class TaskRevokedError(Exception):
 
 class NotConfigured(UserWarning):
     """Celery has not been configured, as no config module has been found."""
+
+
+class CPendingDeprecationWarning(PendingDeprecationWarning):
+    pass
+
+
+class CDeprecationWarning(DeprecationWarning):
+    pass

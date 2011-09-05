@@ -12,7 +12,7 @@ from celery.loaders import default
 from celery.loaders.app import AppLoader
 
 from celery.tests.compat import catch_warnings
-from celery.tests.utils import unittest, AppCase, with_environ
+from celery.tests.utils import unittest, AppCase
 
 
 class ObjectConfig(object):

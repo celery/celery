@@ -2,10 +2,17 @@ from __future__ import absolute_import
 
 import os
 import sys
+import warnings
 
 from optparse import OptionParser, make_option as Option
 
 from .. import __version__, Celery
+from ..exceptions import CDeprecationWarning, CPendingDeprecationWarning
+
+
+# always enable DeprecationWarnings, so our users can see them.
+for warning in (CDeprecationWarning, CPendingDeprecationWarning):
+    warnings.simplefilter("once", warning, 0)
 
 
 class Command(object):

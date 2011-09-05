@@ -6,4 +6,3 @@ from . import registry
 from . import builtins  # noqa
 
 Panel = registry.Panel
-

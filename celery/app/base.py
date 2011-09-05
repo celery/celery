@@ -23,7 +23,7 @@ from threading import Lock
 from .. import datastructures
 from ..utils import cached_property, instantiate, lpmerge
 
-from .defaults import DEFAULTS
+from .defaults import DEFAULTS, find_deprecated_settings
 
 import kombu
 if kombu.VERSION < (1, 1, 0):
@@ -315,6 +315,7 @@ class BaseApp(object):
 
     def prepare_config(self, c):
         """Prepare configuration before it is merged with the defaults."""
+        find_deprecated_settings(c)
         return c
 
     def mail_admins(self, subject, body, fail_silently=False):

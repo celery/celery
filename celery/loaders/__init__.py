@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-import os
-
 from .. import current_app
 from ..utils import deprecated, get_cls_by_name
 

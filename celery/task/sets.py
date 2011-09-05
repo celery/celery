@@ -6,6 +6,7 @@ import warnings
 from .. import registry
 from ..app import app_or_default
 from ..datastructures import AttributeDict
+from ..exceptions import CDeprecationWarning
 from ..utils import cached_property, reprcall, uuid
 from ..utils.compat import UserList
 
@@ -138,7 +139,7 @@ class TaskSet(UserList):
                 self._task_name = task.name
                 warnings.warn(TASKSET_DEPRECATION_TEXT % {
                                 "cls": task.__class__.__name__},
-                              DeprecationWarning)
+                              CDeprecationWarning)
         self.data = list(tasks or [])
         self.total = len(self.tasks)
         self.Publisher = Publisher or self.app.amqp.TaskPublisher
@@ -182,12 +183,12 @@ class TaskSet(UserList):
     def task(self):
         warnings.warn(
             "TaskSet.task is deprecated and will be removed in 1.4",
-            DeprecationWarning)
+            CDeprecationWarning)
         return self._task
 
     @property
     def task_name(self):
         warnings.warn(
             "TaskSet.task_name is deprecated and will be removed in 1.4",
-            DeprecationWarning)
+            CDeprecationWarning)
         return self._task_name
