@@ -15,6 +15,8 @@
 Important Notes
 ---------------
 
+* Now depends on Kombu 1.3.0
+
 * The deprecated :func:`celery.loaders.setup_loader` function has been removed.
 
 * Deprecations
