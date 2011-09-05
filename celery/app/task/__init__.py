@@ -18,6 +18,7 @@ extract_exec_options = mattrgetter("queue", "routing_key",
                                    "serializer", "delivery_mode",
                                    "compression")
 
+
 class Context(threading.local):
     # Default context
     logfile = None
