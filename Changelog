@@ -17,6 +17,21 @@ Important Notes
 
 * Now depends on Kombu 1.3.0
 
+* AMQP Result backend: Now expires results by default.
+
+    The default expiration value is now taken from the
+    :setting:`CELERY_TASK_RESULT_EXPIRES` setting.
+
+    The old :setting:`CELERY_AMQP_TASK_RESULT_EXPIRES` setting has been
+    deprecated and will be removed in version 3.0.
+
+    Note that this means that the result backend requires RabbitMQ 1.1.0 or
+    higher, and that you have to disable expiration if you are running
+    with an older version.  You can do so by disabling the
+    :setting:`CELERY_TASK_RESULT_EXPIRES` setting::
+
+        CELERY_TASK_RESULT_EXPIRES = None
+
 * The deprecated :func:`celery.loaders.setup_loader` function has been removed.
 
 * Deprecations

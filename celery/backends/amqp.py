@@ -39,7 +39,7 @@ class AMQPBackend(BaseDictBackend):
 
     def __init__(self, connection=None, exchange=None, exchange_type=None,
             persistent=None, serializer=None, auto_delete=True,
-            expires=None, **kwargs):
+            **kwargs):
         super(AMQPBackend, self).__init__(**kwargs)
         conf = self.app.conf
         self._connection = connection
@@ -56,11 +56,19 @@ class AMQPBackend(BaseDictBackend):
                                       auto_delete=auto_delete)
         self.serializer = serializer or conf.CELERY_RESULT_SERIALIZER
         self.auto_delete = auto_delete
-        self.expires = (conf.CELERY_AMQP_TASK_RESULT_EXPIRES if expires is None
-                                                             else expires)
-        if self.expires is not None:
-            self.expires = self.prepare_expires(self.expires)
-            # x-expires requires RabbitMQ 2.1.0 or higher.
+
+        # AMQP_TASK_RESULT_EXPIRES setting is deprecated and will be
+        # removed in version 3.0.
+        dexpires = conf.CELERY_AMQP_TASK_RESULT_EXPIRES
+
+        self.expires = None
+        if "expires" in kwargs:
+            if kwargs["expires"] is not None:
+                self.expires = self.prepare_expires(kwargs["expires"])
+        else:
+            self.expires = self.prepare_expires(dexpires)
+
+        if self.expires:
             self.queue_arguments["x-expires"] = int(self.expires * 1000)
         self.mutex = threading.Lock()
 

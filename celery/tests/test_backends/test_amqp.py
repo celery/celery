@@ -74,12 +74,12 @@ class test_AMQPBackend(unittest.TestCase):
             tid = uuid()
             self.assertEqual(repair_uuid(tid.replace("-", "")), tid)
 
-    def test_expires_defaults_to_config(self):
+    def test_expires_defaults_to_config_deprecated_setting(self):
         app = app_or_default()
         prev = app.conf.CELERY_AMQP_TASK_RESULT_EXPIRES
         app.conf.CELERY_AMQP_TASK_RESULT_EXPIRES = 10
         try:
-            b = self.create_backend(expires=None)
+            b = self.create_backend()
             self.assertEqual(b.queue_arguments.get("x-expires"), 10 * 1000.0)
         finally:
             app.conf.CELERY_AMQP_TASK_RESULT_EXPIRES = prev
