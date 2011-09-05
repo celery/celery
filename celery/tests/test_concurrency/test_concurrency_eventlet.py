@@ -22,7 +22,7 @@ class test_eventlet_patch(EventletCase):
         monkey_patched = []
         prev_monkey_patch = self.eventlet.monkey_patch
         self.eventlet.monkey_patch = lambda: monkey_patched.append(True)
-        prev_evlet = sys.modules.pop("celery.concurrency.eventlet", None)
+        prev_eventlet = sys.modules.pop("celery.concurrency.eventlet", None)
         os.environ.pop("EVENTLET_NOPATCH")
         try:
             from celery.concurrency import eventlet

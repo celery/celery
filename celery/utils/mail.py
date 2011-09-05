@@ -79,7 +79,7 @@ class Mailer(object):
         client.sendmail(message.sender, message.to, str(message))
         client.quit()
 
-class ErrorMailSender(object):
+class ErrorMail(object):
 
     # pep8.py borks on a inline signature separator and
     # says "trailing whitespace" ;)

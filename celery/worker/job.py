@@ -210,9 +210,6 @@ class TaskRequest(object):
     #: Format string used to log task retry.
     retry_msg = """Task %(name)s[%(id)s] retry: %(exc)s"""
 
-    email_subject = None
-    email_body = None
-
     #: Timestamp set when the task is started.
     time_start = None
 
@@ -224,8 +221,7 @@ class TaskRequest(object):
 
     def __init__(self, task_name, task_id, args, kwargs,
             on_ack=noop, retries=0, delivery_info=None, hostname=None,
-            email_subject=None, email_body=None, logger=None,
-            eventer=None, eta=None, expires=None, app=None,
+            logger=None, eventer=None, eta=None, expires=None, app=None,
             taskset_id=None, chord=None, **opts):
         self.app = app_or_default(app)
         self.task_name = task_name
@@ -242,8 +238,6 @@ class TaskRequest(object):
         self.hostname = hostname or socket.gethostname()
         self.logger = logger or self.app.log.get_default_logger()
         self.eventer = eventer
-        self.email_subject = email_subject
-        self.email_body = email_body
 
         self.task = registry.tasks[self.task_name]
         self._store_errors = True
@@ -489,10 +483,7 @@ class TaskRequest(object):
                                           "hostname": self.hostname}})
 
         task_obj = registry.tasks.get(self.task_name, object)
-        task_obj.send_error_email(context,
-                                  exc_info.exception,
-                                  subject=self.email_subject,
-                                  body=self.email_body)
+        task_obj.send_error_email(context, exc_info.exception)
 
     def acknowledge(self):
         """Acknowledge task."""

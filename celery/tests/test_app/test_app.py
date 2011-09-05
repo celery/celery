@@ -15,7 +15,7 @@ from celery.utils.serialization import pickle
 from celery.tests import config
 from celery.tests.utils import (unittest, mask_modules, platform_pyimp,
                                 sys_platform, pypy_version)
-from celery.utils.mail import ErrorMailSender
+from celery.utils.mail import ErrorMail
 from kombu.utils import gen_unique_id
 
 THIS_IS_A_KEY = "this is a value"
@@ -245,10 +245,10 @@ class test_App(unittest.TestCase):
         self.assertIn("bar_exchange", amqp._exchanges_declared)
 
     def test_error_mail_sender(self):
-        x = ErrorMailSender.subject % {"name": "task_name",
-                                       "id": gen_unique_id(),
-                                       "exc": "FOOBARBAZ",
-                                       "hostname": "lana"}
+        x = ErrorMail.subject % {"name": "task_name",
+                                 "id": gen_unique_id(),
+                                 "exc": "FOOBARBAZ",
+                                 "hostname": "lana"}
         self.assertTrue(x)
 
 
