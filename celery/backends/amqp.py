@@ -92,12 +92,10 @@ class AMQPBackend(BaseDictBackend):
 
     def _publish_result(self, connection, task_id, meta):
         # cache single channel
-        if hasattr(connection, "_result_producer_chan") and \
-                connection._result_producer_chan is not None and \
-                connection._result_producer_chan.connection is not None:
-            channel = connection._result_producer_chan
-        else:
-            channel = connection._result_producer_chan = connection.channel()
+        if connection._default_channel is not None and \
+                connection._default_channel.connection is None:
+            connection.maybe_close_channel(connection._default_channel)
+        channel = connection.default_channel
 
         self._create_producer(task_id, channel).publish(meta)
 
@@ -112,7 +110,6 @@ class AMQPBackend(BaseDictBackend):
             with self.app.pool.acquire(block=True) as conn:
 
                 def errback(error, delay):
-                    conn._result_producer_chan = None
                     print("Couldn't send result for %r: %r. Retry in %rs." % (
                             task_id, error, delay))
 
