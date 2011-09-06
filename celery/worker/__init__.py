@@ -25,7 +25,6 @@ from kombu.utils.finalize import Finalize
 
 from .. import abstract
 from .. import concurrency as _concurrency
-from .. import registry
 from ..app import app_or_default
 from ..app.abstract import configurated, from_config
 from ..exceptions import SystemTerminate
@@ -131,7 +130,7 @@ class Queues(abstract.Component):
                 # just send task directly to pool, skip the mediator.
                 w.ready_queue.put = w.process_task
         else:
-            w.ready_queue = TaskBucket(task_registry=registry.tasks)
+            w.ready_queue = TaskBucket(task_registry=self.app.tasks)
 
 
 class Timers(abstract.Component):

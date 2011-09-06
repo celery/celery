@@ -89,7 +89,4 @@ def periodic_task(*args, **options):
     """
     return task(**dict({"base": PeriodicTask}, **options))
 
-
-@task(name="celery.backend_cleanup")
-def backend_cleanup():
-    backend_cleanup.backend.cleanup()
+backend_cleanup = Proxy(lambda: current_app.tasks["celery.backend_cleanup"])

@@ -7,6 +7,7 @@ import types
 from mock import Mock
 from nose import SkipTest
 
+from celery import current_app
 from celery.result import AsyncResult
 from celery.utils import serialization
 from celery.utils.serialization import subclass_exception
@@ -98,14 +99,13 @@ class test_BaseBackend_interface(Case):
             b.forget("SOMExx-N0nex1stant-IDxx-")
 
     def test_on_chord_apply(self, unlock="celery.chord_unlock"):
-        from celery.registry import tasks
-        p, tasks[unlock] = tasks.get(unlock), Mock()
+        p, current_app.tasks[unlock] = current_app.tasks.get(unlock), Mock()
         try:
             b.on_chord_apply("dakj221", "sdokqweok",
                              result=map(AsyncResult, [1, 2, 3]))
-            self.assertTrue(tasks[unlock].apply_async.call_count)
+            self.assertTrue(current_app.tasks[unlock].apply_async.call_count)
         finally:
-            tasks[unlock] = p
+            current_app.tasks[unlock] = p
 
 
 class test_exception_pickle(Case):

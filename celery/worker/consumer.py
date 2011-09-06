@@ -85,7 +85,6 @@ from ..abstract import StartStopComponent
 from ..app import app_or_default
 from ..datastructures import AttributeDict
 from ..exceptions import InvalidTaskError
-from ..registry import tasks
 from ..utils import noop
 from ..utils import timer2
 from ..utils.encoding import safe_repr
@@ -317,7 +316,7 @@ class Consumer(object):
 
     def update_strategies(self):
         S = self.strategies
-        for task in tasks.itervalues():
+        for task in self.app.tasks.itervalues():
             S[task.name] = task.start_strategy(self.app, self)
 
     def start(self):

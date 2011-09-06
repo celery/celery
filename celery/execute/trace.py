@@ -30,7 +30,6 @@ from .. import current_app
 from .. import states, signals
 from ..datastructures import ExceptionInfo
 from ..exceptions import RetryTaskError
-from ..registry import tasks
 from ..utils.serialization import get_pickleable_exception
 
 send_prerun = signals.task_prerun.send
@@ -107,7 +106,7 @@ class TraceInfo(object):
 
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         Info=TraceInfo, eager=False, propagate=False):
-    task = task or tasks[name]
+    task = task or current_app.tasks[name]
     loader = loader or current_app.loader
     backend = task.backend
     ignore_result = task.ignore_result

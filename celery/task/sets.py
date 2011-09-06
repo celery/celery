@@ -12,7 +12,7 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-from .. import registry
+from .. import current_app
 from ..app import app_or_default
 from ..datastructures import AttributeDict
 from ..utils import cached_property, reprcall, uuid
@@ -93,7 +93,7 @@ class subtask(AttributeDict):
 
     @cached_property
     def type(self):
-        return registry.tasks[self.task]
+        return current_app.tasks[self.task]
 
 
 def maybe_subtask(t):

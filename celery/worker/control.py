@@ -14,7 +14,6 @@ from __future__ import absolute_import
 from datetime import datetime
 
 from ..platforms import signals as _signals
-from ..registry import tasks
 from ..utils import timeutils
 from ..utils.compat import UserDict
 from ..utils.encoding import safe_repr
@@ -97,7 +96,7 @@ def rate_limit(panel, task_name, rate_limit, **kwargs):
         return {"error": "Invalid rate limit string: %s" % exc}
 
     try:
-        tasks[task_name].rate_limit = rate_limit
+        panel.app.tasks[task_name].rate_limit = rate_limit
     except KeyError:
         panel.logger.error("Rate limit attempt for unknown task %s",
                            task_name, exc_info=True)
@@ -122,7 +121,7 @@ def rate_limit(panel, task_name, rate_limit, **kwargs):
 @Panel.register
 def time_limit(panel, task_name=None, hard=None, soft=None, **kwargs):
     try:
-        task = tasks[task_name]
+        task = panel.app.tasks[task_name]
     except KeyError:
         panel.logger.error("Change time limit attempt for unknown task %s",
                            task_name, exc_info=True)
@@ -195,6 +194,7 @@ def dump_revoked(panel, **kwargs):
 
 @Panel.register
 def dump_tasks(panel, **kwargs):
+    tasks = panel.app.tasks
 
     def _extract_info(task):
         fields = dict((field, str(getattr(task, field, None)))
@@ -206,7 +206,7 @@ def dump_tasks(panel, **kwargs):
         return "%s [%s]" % (task.name, " ".join(info))
 
     info = map(_extract_info, (tasks[task]
-                                        for task in sorted(tasks.keys())))
+                                    for task in sorted(tasks.keys())))
     panel.logger.debug("* Dump of currently registered tasks:\n%s",
                        "\n".join(info))
 

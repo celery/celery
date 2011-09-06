@@ -8,10 +8,10 @@ from contextlib import contextmanager
 
 from mock import Mock, patch
 
+from celery import current_app
 from celery import states
 from celery.backends.cache import CacheBackend, DummyClient
 from celery.exceptions import ImproperlyConfigured
-from celery.registry import tasks
 from celery.result import AsyncResult
 from celery.task import subtask
 from celery.utils import uuid
@@ -70,7 +70,7 @@ class test_CacheBackend(Case):
         task = Mock()
         task.name = "foobarbaz"
         try:
-            tasks["foobarbaz"] = task
+            current_app.tasks["foobarbaz"] = task
             task.request.chord = subtask(task)
             task.request.taskset = "setid"
 
@@ -85,7 +85,7 @@ class test_CacheBackend(Case):
             deps.delete.assert_called_with()
 
         finally:
-            tasks.pop("foobarbaz")
+            current_app.tasks.pop("foobarbaz")
 
     def test_mget(self):
         self.tb.set("foo", 1)

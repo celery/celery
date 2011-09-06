@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-from celery import registry
+from celery.app.registry import TaskRegistry
 from celery.task import Task, PeriodicTask
 from celery.tests.utils import Case
 
@@ -36,7 +36,7 @@ class TestTaskRegistry(Case):
         self.assertIn(task_name, r)
 
     def test_task_registry(self):
-        r = registry.TaskRegistry()
+        r = TaskRegistry()
         self.assertIsInstance(r, dict,
                 "TaskRegistry is mapping")
 
@@ -52,14 +52,6 @@ class TestTaskRegistry(Case):
         self.assertIsInstance(tasks.get(TestTask.name), TestTask)
         self.assertIsInstance(tasks.get(TestPeriodicTask.name),
                                    TestPeriodicTask)
-
-        regular = r.regular()
-        self.assertIn(TestTask.name, regular)
-        self.assertNotIn(TestPeriodicTask.name, regular)
-
-        periodic = r.periodic()
-        self.assertNotIn(TestTask.name, periodic)
-        self.assertIn(TestPeriodicTask.name, periodic)
 
         self.assertIsInstance(r[TestTask.name], TestTask)
         self.assertIsInstance(r[TestPeriodicTask.name],

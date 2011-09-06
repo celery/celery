@@ -7,7 +7,6 @@ from mock import Mock, patch
 from celery import current_app
 from celery import states
 from celery.result import AsyncResult
-from celery.registry import tasks
 from celery.task import subtask
 from celery.utils import cached_property, uuid
 from celery.utils.timeutils import timedelta_seconds
@@ -129,7 +128,7 @@ class test_RedisBackend(Case):
         task = Mock()
         task.name = "foobarbaz"
         try:
-            tasks["foobarbaz"] = task
+            current_app.tasks["foobarbaz"] = task
             task.request.chord = subtask(task)
             task.request.taskset = "setid"
 
@@ -143,7 +142,7 @@ class test_RedisBackend(Case):
 
             self.assertTrue(b.client.expire.call_count)
         finally:
-            tasks.pop("foobarbaz")
+            current_app.tasks.pop("foobarbaz")
 
     def test_process_cleanup(self):
         self.Backend().process_cleanup()

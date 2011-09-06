@@ -14,6 +14,7 @@ from kombu.transport.base import Message
 from mock import Mock
 from nose import SkipTest
 
+from celery import current_app
 from celery import states
 from celery.app import app_or_default
 from celery.concurrency.base import BasePool
@@ -22,7 +23,6 @@ from celery.exceptions import (RetryTaskError,
                                WorkerLostError, InvalidTaskError)
 from celery.execute.trace import eager_trace_task, TraceInfo
 from celery.log import setup_logger
-from celery.registry import tasks
 from celery.result import AsyncResult
 from celery.task import task as task_dec
 from celery.task.base import Task
@@ -39,7 +39,8 @@ some_kwargs_scratchpad = {}
 
 
 def jail(task_id, name, args, kwargs):
-    return eager_trace_task(tasks[name], task_id, args, kwargs, eager=False)[0]
+    return eager_trace_task(current_app.tasks[name],
+                            task_id, args, kwargs, eager=False)[0]
 
 
 def on_ack(*args, **kwargs):

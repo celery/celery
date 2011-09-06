@@ -174,8 +174,7 @@ class Worker(configurated):
         self.loader.init_worker()
 
     def tasklist(self, include_builtins=True):
-        from ..registry import tasks
-        tasklist = tasks.keys()
+        tasklist = self.app.tasks.keys()
         if not include_builtins:
             tasklist = filter(lambda s: not s.startswith("celery."),
                               tasklist)

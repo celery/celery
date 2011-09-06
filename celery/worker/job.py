@@ -19,9 +19,9 @@ import sys
 
 from datetime import datetime
 
+from .. import current_app
 from .. import exceptions
 from ..datastructures import ExceptionInfo
-from ..registry import tasks
 from ..app import app_or_default
 from ..execute.trace import build_tracer, trace_task, report_internal_error
 from ..platforms import set_mp_process_title as setps
@@ -47,7 +47,7 @@ def execute_and_trace(name, uuid, args, kwargs, request=None, **opts):
         >>> trace_task(name, *args, **kwargs)[0]
 
     """
-    task = tasks[name]
+    task = current_app.tasks[name]
     try:
         hostname = opts.get("hostname")
         setps("celeryd", name, hostname, rate_limit=True)
@@ -114,7 +114,7 @@ class Request(object):
         self.logger = logger or self.app.log.get_default_logger()
         self.eventer = eventer
         self.connection_errors = connection_errors or ()
-        self.task = task or tasks[name]
+        self.task = task or self.app.tasks[name]
         self.acknowledged = self._already_revoked = False
         self.time_start = self.worker_pid = self._terminate_on_ack = None
         self._tzlocal = None
@@ -392,7 +392,7 @@ class Request(object):
                                         "name": self.name,
                                         "hostname": self.hostname}})
 
-        task_obj = tasks.get(self.name, object)
+        task_obj = self.app.tasks.get(self.name, object)
         task_obj.send_error_email(context, exc_info.exception)
 
     def acknowledge(self):

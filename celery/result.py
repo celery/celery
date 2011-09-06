@@ -20,8 +20,8 @@ from itertools import imap
 from . import current_app
 from . import states
 from .app import app_or_default
+from .app.registry import _unpickle_task
 from .exceptions import TimeoutError
-from .registry import _unpickle_task
 from .utils.compat import OrderedDict
 
 

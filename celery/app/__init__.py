@@ -15,7 +15,6 @@ from __future__ import absolute_import
 import os
 import threading
 
-from .. import registry
 from ..utils import cached_property, instantiate
 
 from . import annotations
@@ -182,7 +181,7 @@ class App(base.BaseApp):
                         "run": staticmethod(fun),
                         "__doc__": fun.__doc__,
                         "__module__": fun.__module__}, **options))()
-                return registry.tasks[T.name]  # global instance.
+                return self._tasks[T.name]  # global instance.
 
             return _create_task_cls
 

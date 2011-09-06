@@ -7,7 +7,7 @@ import time
 from functools import partial
 from itertools import chain, izip
 
-from celery.registry import TaskRegistry
+from celery.app.registry import TaskRegistry
 from celery.task.base import Task
 from celery.utils import timeutils
 from celery.utils import uuid

@@ -12,21 +12,9 @@
 from __future__ import absolute_import
 
 from .. import current_app
-from ..result import AsyncResult, TaskSetResult
 from ..utils import uuid
 
-from .sets import TaskSet, subtask
-
-
-@current_app.task(name="celery.chord_unlock", max_retries=None)
-def _unlock_chord(setid, callback, interval=1, propagate=False,
-        max_retries=None, result=None):
-    result = TaskSetResult(setid, map(AsyncResult, result))
-    if result.ready():
-        j = result.join_native if result.supports_native_join else result.join
-        subtask(callback).delay(j(propagate=propagate))
-    else:
-        _unlock_chord.retry(countdown=interval, max_retries=max_retries)
+from .sets import TaskSet
 
 
 class Chord(current_app.Task):

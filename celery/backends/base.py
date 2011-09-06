@@ -207,10 +207,9 @@ class BaseBackend(object):
         pass
 
     def on_chord_apply(self, setid, body, result=None, **kwargs):
-        from ..registry import tasks
         kwargs["result"] = [r.task_id for r in result]
-        tasks["celery.chord_unlock"].apply_async((setid, body, ), kwargs,
-                                                 countdown=1)
+        self.app.tasks["celery.chord_unlock"].apply_async((setid, body, ),
+                                                          kwargs, countdown=1)
 
     def __reduce__(self, args=(), kwargs={}):
         return (unpickle_backend, (self.__class__, args, kwargs))
