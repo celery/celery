@@ -73,7 +73,7 @@ class Task(BaseTask):
         return get_task_logger(self.name)
 
     @classmethod
-    def establish_connection(self, connect_timeout=None):
+    def establish_connection(self):
         """Deprecated method used to get a broker connection.
 
         Should be replaced with :meth:`@Celery.connection`
@@ -89,11 +89,10 @@ class Task(BaseTask):
             with celery.connection() as conn:
                 ...
         """
-        return self._get_app().connection(
-                connect_timeout=connect_timeout)
+        return self._get_app().connection()
 
     def get_publisher(self, connection=None, exchange=None,
-            connect_timeout=None, exchange_type=None, **options):
+            exchange_type=None, **options):
         """Deprecated method to get the task publisher (now called producer).
 
         Should be replaced with :class:`@amqp.TaskProducer`:
@@ -108,7 +107,7 @@ class Task(BaseTask):
         exchange = self.exchange if exchange is None else exchange
         if exchange_type is None:
             exchange_type = self.exchange_type
-        connection = connection or self.establish_connection(connect_timeout)
+        connection = connection or self.establish_connection()
         return self._get_app().amqp.TaskProducer(connection,
                 exchange=exchange and Exchange(exchange, exchange_type),
                 routing_key=self.routing_key, **options)
