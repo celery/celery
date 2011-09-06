@@ -824,7 +824,6 @@ class test_WorkController(AppCase):
     def test_on_timer_tick(self):
         worker = WorkController(concurrency=1, loglevel=10)
         worker.logger = Mock()
-        worker.timer_debug = worker.logger.debug
 
         worker.on_timer_tick(30.0)
         xargs = worker.logger.debug.call_args[0]

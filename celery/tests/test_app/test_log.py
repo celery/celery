@@ -8,8 +8,8 @@ from tempfile import mktemp
 from celery import log
 from celery.log import (setup_logger, setup_task_logger,
                         get_default_logger, get_task_logger,
-                        redirect_stdouts_to_logger, LoggingProxy,
-                        setup_logging_subsystem)
+                        redirect_stdouts_to_logger, setup_logging_subsystem)
+from celery.utils.log import LoggingProxy
 from celery.utils import uuid
 from celery.utils.compat import _CompatLoggerAdapter
 from celery.tests.utils import (Case, override_stdouts, wrap_logger,
@@ -28,12 +28,12 @@ class test_default_logger(Case):
         setup_logging_subsystem(colorize=True)
 
     def test_setup_logging_subsystem_no_mputil(self):
-        mputil, log.mputil = log.mputil, None
-        log.mputil
+        from celery.utils import log as logtools
+        mputil, logtools.mputil = logtools.mputil, None
         try:
             log.setup_logging_subsystem()
         finally:
-            log.mputil = mputil
+            logtools.mputil = mputil
 
     def _assertLog(self, logger, logmsg, loglevel=logging.ERROR):
 

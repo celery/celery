@@ -28,7 +28,6 @@ from .. import concurrency as _concurrency
 from ..app import app_or_default
 from ..app.abstract import configurated, from_config
 from ..exceptions import SystemTerminate
-from ..log import SilenceRepeated
 from ..utils import noop, qualname, reload_from_cwd
 
 from . import state
@@ -207,8 +206,6 @@ class WorkController(configurated):
         self.logger = self.app.log.get_default_logger()
         self.hostname = hostname or socket.gethostname()
         self.ready_callback = ready_callback
-        self.timer_debug = SilenceRepeated(self.logger.debug,
-                                           max_iterations=10)
         self._finalize = Finalize(self, self.stop, exitpriority=1)
         self._finalize_db = None
 
@@ -311,7 +308,7 @@ class WorkController(configurated):
         self.logger.error("Timer error: %r", einfo[1], exc_info=einfo)
 
     def on_timer_tick(self, delay):
-        self.timer_debug("Scheduler wake-up! Next eta %s secs.", delay)
+        self.logger.debug("Scheduler wake-up! Next eta %s secs.", delay)
 
     @property
     def state(self):

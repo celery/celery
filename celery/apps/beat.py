@@ -9,7 +9,8 @@ from .. import __version__, platforms
 from .. import beat
 from ..app import app_or_default
 from ..app.abstract import configurated, from_config
-from ..utils import LOG_LEVELS, qualname
+from ..utils import qualname
+from ..utils.log import LOG_LEVELS
 from ..utils.timeutils import humanize_seconds
 
 STARTUP_INFO_FMT = """

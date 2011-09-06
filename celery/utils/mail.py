@@ -19,7 +19,7 @@ try:
 except ImportError:
     from email.MIMEText import MIMEText  # noqa
 
-from celery.utils import get_symbol_by_name
+from . import get_symbol_by_name
 
 supports_timeout = sys.version_info >= (2, 6)
 
