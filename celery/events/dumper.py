@@ -5,10 +5,10 @@ import sys
 from datetime import datetime
 
 from ..app import app_or_default
-from ..datastructures import LocalCache
+from ..datastructures import LRUCache
 
 
-TASK_NAMES = LocalCache(0xFFF)
+TASK_NAMES = LRUCache(limit=0xFFF)
 
 HUMAN_TYPES = {"worker-offline": "shutdown",
                "worker-online": "started",

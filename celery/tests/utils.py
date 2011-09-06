@@ -58,7 +58,12 @@ class AppCase(unittest.TestCase):
 
     def setUp(self):
         from ..app import current_app
-        self.app = self._current_app = current_app()
+        from ..backends.cache import CacheBackend, DummyClient
+        app = self.app = self._current_app = current_app()
+        if isinstance(app.backend, CacheBackend):
+            if isinstance(app.backend.client, DummyClient):
+                app.backend.client.cache.clear()
+        app.backend._cache.clear()
         self.setup()
 
     def tearDown(self):

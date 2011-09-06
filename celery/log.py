@@ -14,6 +14,7 @@ except ImportError:
 
 from . import current_app
 from . import signals
+from .local import Proxy
 from .utils import LOG_LEVELS, isatty
 from .utils.compat import LoggerAdapter, WatchedFileHandler
 from .utils.encoding import safe_str
@@ -219,12 +220,14 @@ class Logging(object):
         return logger
 
 
-setup_logging_subsystem = current_app.log.setup_logging_subsystem
-get_default_logger = current_app.log.get_default_logger
-setup_logger = current_app.log.setup_logger
-setup_task_logger = current_app.log.setup_task_logger
-get_task_logger = current_app.log.get_task_logger
-redirect_stdouts_to_logger = current_app.log.redirect_stdouts_to_logger
+get_default_logger = Proxy(lambda: current_app.log.get_default_logger)
+setup_logger = Proxy(lambda: current_app.log.setup_logger)
+setup_task_logger = Proxy(lambda: current_app.log.setup_task_logger)
+get_task_logger = Proxy(lambda: current_app.log.get_task_logger)
+setup_logging_subsystem = Proxy(
+            lambda: current_app.log.setup_logging_subsystem)
+redirect_stdouts_to_logger = Proxy(
+            lambda: current_app.log.redirect_stdouts_to_logger)
 
 
 class LoggingProxy(object):

@@ -1,8 +1,9 @@
 from __future__ import absolute_import
 
 from .. import current_app
-from ..local import LocalProxy
+from ..local import Proxy
 from ..utils import get_cls_by_name
+from ..utils.functional import memoize
 
 BACKEND_ALIASES = {
     "amqp": "celery.backends.amqp.AMQPBackend",
@@ -15,23 +16,19 @@ BACKEND_ALIASES = {
     "disabled": "celery.backends.base.DisabledBackend",
 }
 
-_backend_cache = {}
 
-
+@memoize(100)
 def get_backend_cls(backend=None, loader=None):
     """Get backend class by name/alias"""
     backend = backend or "disabled"
     loader = loader or current_app.loader
-    if backend not in _backend_cache:
-        aliases = dict(BACKEND_ALIASES, **loader.override_backends)
-        try:
-            _backend_cache[backend] = get_cls_by_name(backend, aliases)
-        except ValueError, exc:
-            raise ValueError("Unknown result backend: %r.  "
-                             "Did you spell it correctly?  (%s)" % (backend,
-                                                                    exc))
-    return _backend_cache[backend]
+    aliases = dict(BACKEND_ALIASES, **loader.override_backends)
+    try:
+        return get_cls_by_name(backend, aliases)
+    except ValueError, exc:
+        raise ValueError("Unknown result backend: %r.  "
+                         "Did you spell it correctly?  (%s)" % (backend, exc))
 
 
 # deprecate this.
-default_backend = LocalProxy(lambda: current_app.backend)
+default_backend = Proxy(lambda: current_app.backend)

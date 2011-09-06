@@ -10,6 +10,7 @@ from celery.backends.cache import CacheBackend
 class TestBackends(unittest.TestCase):
 
     def test_get_backend_aliases(self):
+        from celery import current_app
         expects = [("amqp", AMQPBackend),
                    ("cache", CacheBackend)]
         for expect_name, expect_cls in expects:
@@ -17,11 +18,13 @@ class TestBackends(unittest.TestCase):
                                   expect_cls)
 
     def test_get_backend_cache(self):
-        backends._backend_cache = {}
+        backends.get_backend_cls.clear()
+        hits = backends.get_backend_cls.hits
+        misses = backends.get_backend_cls.misses
         backends.get_backend_cls("amqp")
-        self.assertIn("amqp", backends._backend_cache)
+        self.assertEqual(backends.get_backend_cls.misses, misses + 1)
         amqp_backend = backends.get_backend_cls("amqp")
-        self.assertIs(amqp_backend, backends._backend_cache["amqp"])
+        self.assertEqual(backends.get_backend_cls.hits, hits + 1)
 
     def test_unknown_backend(self):
         with self.assertRaises(ValueError):

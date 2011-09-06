@@ -18,7 +18,7 @@ from itertools import chain
 from Queue import Empty
 from threading import RLock
 
-from .utils.compat import OrderedDict
+from .utils.compat import UserDict, OrderedDict
 
 
 class AttributeDictMixin(object):
@@ -291,27 +291,35 @@ class LimitedSet(object):
         return self.chronologically[0]
 
 
-class LocalCache(OrderedDict):
-    """Dictionary with a finite number of keys.
+class LRUCache(UserDict):
+    """LRU Cache implementation using a doubly linked list to track access.
 
-    Older items expires first.
+    :keyword limit: The maximum number of keys to keep in the cache.
+        When a new key is inserted and the limit has been exceeded,
+        the *Least Recently Used* key will be discarded from the
+        cache.
 
     """
 
     def __init__(self, limit=None):
-        super(LocalCache, self).__init__()
         self.limit = limit
-        self.lock = RLock()
+        self.mutex = RLock()
+        self.data = OrderedDict()
+
+    def __getitem__(self, key):
+        with self.mutex:
+            value = self[key] = self.data.pop(key)
+            return value
 
     def __setitem__(self, key, value):
-        with self.lock:
-            while len(self) >= self.limit:
-                self.popitem(last=False)
-            super(LocalCache, self).__setitem__(key, value)
+        # remove least recently used key.
+        with self.mutex:
+            if self.limit and len(self.data) >= self.limit:
+                self.data.pop(iter(self.data).next())
+            self.data[key] = value
 
-    def pop(self, key, *args):
-        with self.lock:
-            super(LocalCache, self).pop(key, *args)
+    def __iter__(self):
+        return self.data.iterkeys()
 
 
 class TokenBucket(object):

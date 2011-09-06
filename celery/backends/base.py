@@ -9,7 +9,7 @@ from datetime import timedelta
 from kombu import serialization
 
 from .. import states
-from ..datastructures import LocalCache
+from ..datastructures import LRUCache
 from ..exceptions import TimeoutError, TaskRevokedError
 from ..utils import timeutils
 from ..utils.serialization import (get_pickled_exception,
@@ -212,7 +212,7 @@ class BaseDictBackend(BaseBackend):
 
     def __init__(self, *args, **kwargs):
         super(BaseDictBackend, self).__init__(*args, **kwargs)
-        self._cache = LocalCache(limit=kwargs.get("max_cached_results") or
+        self._cache = LRUCache(limit=kwargs.get("max_cached_results") or
                                  self.app.conf.CELERY_MAX_CACHED_RESULTS)
 
     def store_result(self, task_id, result, status, traceback=None, **kwargs):
@@ -245,11 +245,11 @@ class BaseDictBackend(BaseBackend):
             return meta["result"]
 
     def get_task_meta(self, task_id, cache=True):
-        if cache and task_id in self._cache:
+        if cache:
             try:
                 return self._cache[task_id]
             except KeyError:
-                pass   # backend emptied in the meantime
+                pass
 
         meta = self._get_task_meta_for(task_id)
         if cache and meta.get("status") == states.SUCCESS:
@@ -264,11 +264,11 @@ class BaseDictBackend(BaseBackend):
                                                         cache=False)
 
     def get_taskset_meta(self, taskset_id, cache=True):
-        if cache and taskset_id in self._cache:
+        if cache:
             try:
                 return self._cache[taskset_id]
             except KeyError:
-                pass  # backend emptied in the meantime
+                pass
 
         meta = self._restore_taskset(taskset_id)
         if cache and meta is not None:
@@ -387,6 +387,7 @@ class KeyValueStoreBackend(BaseDictBackend):
 
 
 class DisabledBackend(BaseBackend):
+    _cache = {}   # need this attribute to reset cache in tests.
 
     def store_result(self, *args, **kwargs):
         pass

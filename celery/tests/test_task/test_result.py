@@ -6,7 +6,7 @@ from celery.result import AsyncResult, EagerResult, TaskSetResult, ResultSet
 from celery.exceptions import TimeoutError
 from celery.task.base import Task
 
-from celery.tests.utils import unittest
+from celery.tests.utils import AppCase
 from celery.tests.utils import skip_if_quick
 
 
@@ -33,9 +33,9 @@ def make_mock_taskset(size=10):
     return [AsyncResult(task["id"]) for task in tasks]
 
 
-class TestAsyncResult(unittest.TestCase):
+class TestAsyncResult(AppCase):
 
-    def setUp(self):
+    def setup(self):
         self.task1 = mock_task("task1", states.SUCCESS, "the")
         self.task2 = mock_task("task2", states.SUCCESS, "quick")
         self.task3 = mock_task("task3", states.FAILURE, KeyError("brown"))
@@ -144,7 +144,7 @@ class TestAsyncResult(unittest.TestCase):
         self.assertFalse(AsyncResult(uuid()).ready())
 
 
-class test_ResultSet(unittest.TestCase):
+class test_ResultSet(AppCase):
 
     def test_add_discard(self):
         x = ResultSet([])
@@ -208,9 +208,9 @@ class SimpleBackend(object):
             return ((id, {"result": i}) for i, id in enumerate(self.ids))
 
 
-class TestTaskSetResult(unittest.TestCase):
+class TestTaskSetResult(AppCase):
 
-    def setUp(self):
+    def setup(self):
         self.size = 10
         self.ts = TaskSetResult(uuid(), make_mock_taskset(self.size))
 
@@ -325,9 +325,9 @@ class TestTaskSetResult(unittest.TestCase):
         self.assertEqual(self.ts.completed_count(), self.ts.total)
 
 
-class TestPendingAsyncResult(unittest.TestCase):
+class TestPendingAsyncResult(AppCase):
 
-    def setUp(self):
+    def setup(self):
         self.task = AsyncResult(uuid())
 
     def test_result(self):
@@ -336,7 +336,7 @@ class TestPendingAsyncResult(unittest.TestCase):
 
 class TestFailedTaskSetResult(TestTaskSetResult):
 
-    def setUp(self):
+    def setup(self):
         self.size = 11
         subtasks = make_mock_taskset(10)
         failed = mock_task("ts11", states.FAILURE, KeyError("Baz"))
@@ -374,9 +374,9 @@ class TestFailedTaskSetResult(TestTaskSetResult):
         self.assertTrue(self.ts.failed())
 
 
-class TestTaskSetPending(unittest.TestCase):
+class TestTaskSetPending(AppCase):
 
-    def setUp(self):
+    def setup(self):
         self.ts = TaskSetResult(uuid(), [
                                         AsyncResult(uuid()),
                                         AsyncResult(uuid())])
@@ -404,7 +404,7 @@ class RaisingTask(Task):
         raise KeyError("xy")
 
 
-class TestEagerResult(unittest.TestCase):
+class TestEagerResult(AppCase):
 
     def test_wait_raises(self):
         res = RaisingTask.apply(args=[3, 3])
