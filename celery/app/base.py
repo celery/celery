@@ -88,7 +88,7 @@ class BaseApp(object):
     events_cls = "celery.events:Events"
     loader_cls = "celery.loaders.app:AppLoader"
     log_cls = "celery.log:Logging"
-    control_cls = "celery.task.control:Control"
+    control_cls = "celery.app.control:Control"
     registry_cls = "celery.app.registry:TaskRegistry"
 
     _pool = None
@@ -371,7 +371,7 @@ class BaseApp(object):
     @cached_property
     def control(self):
         """Controlling worker nodes.  See
-        :class:`~celery.task.control.Control`."""
+        :class:`~celery.app.control.Control`."""
         return instantiate(self.control_cls, app=self)
 
     @cached_property
