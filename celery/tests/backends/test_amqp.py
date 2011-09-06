@@ -76,16 +76,6 @@ class test_AMQPBackend(AppCase):
             tid = uuid()
             self.assertEqual(repair_uuid(tid.replace('-', '')), tid)
 
-    def test_expires_defaults_to_config_deprecated_setting(self):
-        app = app_or_default()
-        prev = app.conf.CELERY_AMQP_TASK_RESULT_EXPIRES
-        app.conf.CELERY_AMQP_TASK_RESULT_EXPIRES = 10
-        try:
-            b = self.create_backend()
-            self.assertEqual(b.queue_arguments.get('x-expires'), 10 * 1000.0)
-        finally:
-            app.conf.CELERY_AMQP_TASK_RESULT_EXPIRES = prev
-
     def test_expires_is_int(self):
         b = self.create_backend(expires=48)
         self.assertEqual(b.queue_arguments.get('x-expires'), 48 * 1000.0)
@@ -269,14 +259,14 @@ class test_AMQPBackend(AppCase):
     def test_no_expires(self):
         b = self.create_backend(expires=None)
         app = app_or_default()
-        prev = app.conf.CELERY_AMQP_TASK_RESULT_EXPIRES
-        app.conf.CELERY_AMQP_TASK_RESULT_EXPIRES = None
+        prev = app.conf.CELERY_TASK_RESULT_EXPIRES
+        app.conf.CELERY_TASK_RESULT_EXPIRES = None
         try:
             b = self.create_backend(expires=None)
             with self.assertRaises(KeyError):
                 b.queue_arguments['x-expires']
         finally:
-            app.conf.CELERY_AMQP_TASK_RESULT_EXPIRES = prev
+            app.conf.CELERY_TASK_RESULT_EXPIRES = prev
 
     def test_process_cleanup(self):
         self.create_backend().process_cleanup()
