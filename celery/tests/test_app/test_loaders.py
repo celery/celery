@@ -2,11 +2,12 @@ from __future__ import with_statement
 
 import os
 import sys
+import warnings
 
 from celery import task
 from celery import loaders
 from celery.app import app_or_default
-from celery.exceptions import ImproperlyConfigured
+from celery.exceptions import CPendingDeprecationWarning, ImproperlyConfigured
 from celery.loaders import base
 from celery.loaders import default
 from celery.loaders.app import AppLoader
@@ -66,10 +67,22 @@ class TestLoaders(AppCase):
                           default.Loader)
 
     def test_current_loader(self):
-        self.assertIs(loaders.current_loader(), self.app.loader)
+        warnings.resetwarnings()
+        with catch_warnings(record=True) as log:
+            self.assertIs(loaders.current_loader(), self.app.loader)
+            warning = log[0].message
+
+            self.assertIsInstance(warning, CPendingDeprecationWarning)
+            self.assertIn("deprecation", warning.args[0])
 
     def test_load_settings(self):
-        self.assertIs(loaders.load_settings(), self.app.conf)
+        warnings.resetwarnings()
+        with catch_warnings(record=True) as log:
+            self.assertIs(loaders.load_settings(), self.app.conf)
+            warning = log[0].message
+
+            self.assertIsInstance(warning, CPendingDeprecationWarning)
+            self.assertIn("deprecation", warning.args[0])
 
 
 class TestLoaderBase(unittest.TestCase):
