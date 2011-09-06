@@ -45,14 +45,12 @@ class Task(BaseTask):
     immediate = False
     priority = None
     type = 'regular'
-    error_whitelist = ()
     disable_error_emails = False
     accept_magic_kwargs = None  # get default from app
 
     from_config = BaseTask.from_config + (
         ('exchange_type', 'CELERY_DEFAULT_EXCHANGE_TYPE'),
         ('delivery_mode', 'CELERY_DEFAULT_DELIVERY_MODE'),
-        ('error_whitelist', 'CELERY_TASK_ERROR_WHITELIST'),
     )
 
     # In old Celery the @task decorator didn't exist, so one would create

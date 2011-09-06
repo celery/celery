@@ -134,8 +134,6 @@ NAMESPACES = {
         'SEND_TASK_ERROR_EMAILS': Option(False, type='bool'),
         'SEND_TASK_SENT_EVENT': Option(False, type='bool'),
         'STORE_ERRORS_EVEN_IF_IGNORED': Option(False, type='bool'),
-        'TASK_ERROR_WHITELIST': Option((), type='tuple',
-            deprecate_by='2.5', remove_by='4.0'),
         'TASK_PUBLISH_RETRY': Option(True, type='bool'),
         'TASK_PUBLISH_RETRY_POLICY': Option({
                 'max_retries': 100,

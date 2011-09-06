@@ -375,21 +375,12 @@ class test_TaskRequest(Case):
             einfo = get_ei()
             mail_sent[0] = False
             mytask.send_error_emails = True
-            mytask.error_whitelist = [KeyError]
             tw.on_failure(einfo)
             self.assertTrue(mail_sent[0])
-
-            einfo = get_ei()
-            mail_sent[0] = False
-            mytask.send_error_emails = True
-            mytask.error_whitelist = [SyntaxError]
-            tw.on_failure(einfo)
-            self.assertFalse(mail_sent[0])
 
         finally:
             app.mail_admins = old_mail_admins
             mytask.send_error_emails = old_enable_mails
-            mytask.error_whitelist = ()
 
     def test_already_revoked(self):
         tw = TaskRequest(mytask.name, uuid(), [1], {'f': 'x'})
