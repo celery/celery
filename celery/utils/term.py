@@ -23,7 +23,6 @@ SYSTEM = platform.system()
 IS_WINDOWS = SYSTEM == "Windows"
 
 
-
 class colored(object):
 
     def __init__(self, *s, **kwargs):

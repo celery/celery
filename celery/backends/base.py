@@ -21,8 +21,9 @@ class BaseBackend(object):
 
     TimeoutError = TimeoutError
 
-    #: Time to sleep between polling each individual item in `ResultSet.iterate`.
-    #: as opposed to the `interval` argument which is for each pass.
+    #: Time to sleep between polling each individual item
+    #: in `ResultSet.iterate` (as opposed to the `interval`
+    #: argument which is for each pass).
     subpolling_interval = None
 
     def __init__(self, *args, **kwargs):
