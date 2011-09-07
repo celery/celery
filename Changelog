@@ -15,8 +15,6 @@
 Important Notes
 ---------------
 
-* Now depends on Kombu 1.3.0
-
 * AMQP Result backend: Now expires results by default.
 
     The default expiration value is now taken from the
@@ -116,9 +114,6 @@ News
 * Adds :setting:`EMAIL_USE_TLS` to enable secure SMTP connections
   (Issue #418).
 
-* The coloring of log messages didn't handle non-ASCII data well
-  (Issue #427).
-
 * The Cache, Cassandra, MongoDB, Redis and Tyrant backends now respects
   the :setting:`CELERY_RESULT_SERIALIZER` setting (Issue #435).
 
@@ -129,36 +124,58 @@ News
   that to the logging system, so tools like Sentry can easier
   work with the messages (Issue #445).
 
-* ``Task.request`` now contains the current workers hostname (Issue #460).
-
 * ``celeryd_multi`` now supports a ``stop_verify`` command to wait for
   processes to shutdown.
 
 * New setting :setting:`CELERY_RESULT_DB_SHORT_LIVED_SESSIONS` added,
   which if enabled will disable the caching of SQLAlchemy sessions.
 
+* All result backends now implements ``__reduce__`` so that they can
+  be pickled (Issue #441).
+
+.. _version-2.3.2:
+
+2.3.2
+=====
+:release-date: 2011-10-07 05:00 P.M BST
+
+.. _v232-news:
+
+News
+----
+
+* Improved Contributing guide.
+
+    If you'd like to contribute to Celery you should read this
+    guide: http://ask.github.com/celery/contributing.html
+
+    We are looking for contributors of all skill levels, so don't
+    hesitate!
+
+* Now depends on Kombu 1.3.1
+
+* ``Task.request`` now contains the current worker host name (Issue #460).
+
+    Available as ``task.request.hostname``.
+
+* It is now easier for app subclasses to extend how they are pickled.
+    (see :class:`celery.app.AppPickler`).
+
+.. _v232-fixes:
+
 Fixes
 -----
 
-* Fixes case where the worker could become unresponsive because of tasks
-  exceeding the hard time limit.
+* `purge/discard_all` was not working correctly (Issue #455).
 
-* Eventlet no longer crashes if autoscale is enabled.
-
-    growing and shrinking eventlet pools is still not supported.
+* The coloring of log messages didn't handle non-ASCII data well
+  (Issue #427).
 
 * [Windows] the multiprocessing pool tried to import ``os.kill``
   even though this is not available there (Issue #450).
 
-* `purge/discard_all` was not working correctly (Issue #455).
-
-* Retries will no longer be performed when tasks are called directly
-  (using ``__call__``).
-
-   Instead the exception passed to ``retry`` will be re-raised.
-
-* All result backends now implements ``__reduce__`` so that they can
-  be pickled (Issue #441).
+* Fixes case where the worker could become unresponsive because of tasks
+  exceeding the hard time limit.
 
 * The ``task-sent`` event was missing from the event reference.
 
@@ -166,6 +183,18 @@ Fixes
 
     This was not the case previously, even though the documentation
     states this was the expected behavior.
+
+* Retries will no longer be performed when tasks are called directly
+  (using ``__call__``).
+
+   Instead the exception passed to ``retry`` will be re-raised.
+
+* Eventlet no longer crashes if autoscale is enabled.
+
+    growing and shrinking eventlet pools is still not supported.
+
+* py24 target removed from :file:`tox.ini`.
+
 
 .. _version-2.3.1:
 
