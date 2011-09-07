@@ -1,0 +1,268 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>celery.concurrency.eventlet† (experimental) &mdash; Celery v2.4.0a1 documentation</title>
+    <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.4.0a1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Celery v2.4.0a1 documentation" href="../../index.html" />
+    <link rel="up" title="Internal Module Reference" href="index.html" />
+    <link rel="next" title="celery.concurrency.gevent† (experimental)" href="celery.concurrency.gevent.html" />
+    <link rel="prev" title="celery.concurrency.processes.pool" href="celery.concurrency.processes.pool.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.concurrency.gevent.html" title="celery.concurrency.gevent† (experimental)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.concurrency.processes.pool.html" title="celery.concurrency.processes.pool"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.concurrency.eventlet.html">2.1</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="celery-concurrency-eventlet-experimental">
+<h1>celery.concurrency.eventlet† (<em>experimental</em>)<a class="headerlink" href="#celery-concurrency-eventlet-experimental" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-celery.concurrency.eventlet"></span><dl class="class">
+<dt id="celery.concurrency.eventlet.Schedule">
+<em class="property">class </em><tt class="descclassname">celery.concurrency.eventlet.</tt><tt class="descname">Schedule</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.Schedule" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.concurrency.eventlet.Schedule.clear">
+<tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.Schedule.clear" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.eventlet.Schedule.enter">
+<tt class="descname">enter</tt><big>(</big><em>entry</em>, <em>eta=None</em>, <em>priority=0</em><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.Schedule.enter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.concurrency.eventlet.Schedule.queue">
+<tt class="descname">queue</tt><a class="headerlink" href="#celery.concurrency.eventlet.Schedule.queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.concurrency.eventlet.TaskPool">
+<em class="property">class </em><tt class="descclassname">celery.concurrency.eventlet.</tt><tt class="descname">TaskPool</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.TaskPool" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="class">
+<dt id="celery.concurrency.eventlet.TaskPool.Timer">
+<em class="property">class </em><tt class="descname">Timer</tt><big>(</big><em>schedule=None</em>, <em>on_error=None</em>, <em>on_tick=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.TaskPool.Timer" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="class">
+<dt id="celery.concurrency.eventlet.TaskPool.Timer.Schedule">
+<em class="property">class </em><tt class="descname">Schedule</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.TaskPool.Timer.Schedule" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.concurrency.eventlet.TaskPool.Timer.Schedule.clear">
+<tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.TaskPool.Timer.Schedule.clear" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.eventlet.TaskPool.Timer.Schedule.enter">
+<tt class="descname">enter</tt><big>(</big><em>entry</em>, <em>eta=None</em>, <em>priority=0</em><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.TaskPool.Timer.Schedule.enter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.concurrency.eventlet.TaskPool.Timer.Schedule.queue">
+<tt class="descname">queue</tt><a class="headerlink" href="#celery.concurrency.eventlet.TaskPool.Timer.Schedule.queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.eventlet.TaskPool.Timer.cancel">
+<tt class="descclassname">TaskPool.Timer.</tt><tt class="descname">cancel</tt><big>(</big><em>tref</em><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.TaskPool.Timer.cancel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.eventlet.TaskPool.Timer.ensure_started">
+<tt class="descclassname">TaskPool.Timer.</tt><tt class="descname">ensure_started</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.TaskPool.Timer.ensure_started" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.eventlet.TaskPool.Timer.start">
+<tt class="descclassname">TaskPool.Timer.</tt><tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.TaskPool.Timer.start" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.eventlet.TaskPool.Timer.stop">
+<tt class="descclassname">TaskPool.Timer.</tt><tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.TaskPool.Timer.stop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.eventlet.TaskPool.on_apply">
+<tt class="descclassname">TaskPool.</tt><tt class="descname">on_apply</tt><big>(</big><em>target</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>callback=None</em>, <em>accept_callback=None</em>, <em>**_</em><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.TaskPool.on_apply" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.eventlet.TaskPool.on_start">
+<tt class="descclassname">TaskPool.</tt><tt class="descname">on_start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.TaskPool.on_start" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.eventlet.TaskPool.on_stop">
+<tt class="descclassname">TaskPool.</tt><tt class="descname">on_stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.TaskPool.on_stop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.concurrency.eventlet.Timer">
+<em class="property">class </em><tt class="descclassname">celery.concurrency.eventlet.</tt><tt class="descname">Timer</tt><big>(</big><em>schedule=None</em>, <em>on_error=None</em>, <em>on_tick=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.Timer" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="class">
+<dt id="celery.concurrency.eventlet.Timer.Schedule">
+<em class="property">class </em><tt class="descname">Schedule</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.Timer.Schedule" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.concurrency.eventlet.Timer.Schedule.clear">
+<tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.Timer.Schedule.clear" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.eventlet.Timer.Schedule.enter">
+<tt class="descname">enter</tt><big>(</big><em>entry</em>, <em>eta=None</em>, <em>priority=0</em><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.Timer.Schedule.enter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.concurrency.eventlet.Timer.Schedule.queue">
+<tt class="descname">queue</tt><a class="headerlink" href="#celery.concurrency.eventlet.Timer.Schedule.queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.eventlet.Timer.cancel">
+<tt class="descclassname">Timer.</tt><tt class="descname">cancel</tt><big>(</big><em>tref</em><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.Timer.cancel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.eventlet.Timer.ensure_started">
+<tt class="descclassname">Timer.</tt><tt class="descname">ensure_started</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.Timer.ensure_started" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.eventlet.Timer.start">
+<tt class="descclassname">Timer.</tt><tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.Timer.start" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.eventlet.Timer.stop">
+<tt class="descclassname">Timer.</tt><tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.Timer.stop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.concurrency.eventlet.apply_target">
+<tt class="descclassname">celery.concurrency.eventlet.</tt><tt class="descname">apply_target</tt><big>(</big><em>target</em>, <em>args=()</em>, <em>kwargs={}</em>, <em>callback=None</em>, <em>accept_callback=None</em>, <em>getpid=None</em><big>)</big><a class="headerlink" href="#celery.concurrency.eventlet.apply_target" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="celery.concurrency.processes.pool.html"
+                        title="previous chapter">celery.concurrency.processes.pool</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="celery.concurrency.gevent.html"
+                        title="next chapter">celery.concurrency.gevent† (<em>experimental</em>)</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/internals/reference/celery.concurrency.eventlet.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.concurrency.gevent.html" title="celery.concurrency.gevent† (experimental)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.concurrency.processes.pool.html" title="celery.concurrency.processes.pool"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+  </body>
+</html>

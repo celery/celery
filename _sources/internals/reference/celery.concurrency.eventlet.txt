@@ -1,11 +1,11 @@
 =============================================================
- celery.concurrency.evlet† (*experimental*)
+ celery.concurrency.eventlet† (*experimental*)
 =============================================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.concurrency.evlet
+.. currentmodule:: celery.concurrency.eventlet
 
-.. automodule:: celery.concurrency.evlet
+.. automodule:: celery.concurrency.eventlet
     :members:
     :undoc-members:
