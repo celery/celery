@@ -160,7 +160,7 @@ issue tracker.
 If you are unsure of the origin of the bug you can ask the
 :ref:`mailing-list`, or just use the Celery issue tracker.
 
-.. _versions::
+.. _versions:
 
 Versions
 ========
@@ -278,7 +278,19 @@ Experimental releases contain an additional identifier ``vX.Y.Z-id``, e.g.
 Working on Features & Patches
 =============================
 
-Forking and Setting up the Repository
+.. note::
+
+    Contributing to Celery should be as simple as possible,
+    so none of these steps should be considered mandatory.
+
+    You can even send in patches by email if that is your preferred
+    work method. We won't like you any less, any contribution you make
+    is always appreciated!
+
+    However following these steps may make maintainers life easier,
+    and may mean that your changes will be accepted sooner.
+
+Forking and setting up the repository
 -------------------------------------
 
 First you need to fork the Celery repository, a good introduction to this
@@ -320,7 +332,7 @@ For a list of branches see :ref:`git-branches`.
 
 .. _contributing-testing:
 
-Running the Unit Test Suite
+Running the unit test suite
 ---------------------------
 
 To run the Celery test suite you need to install a few dependencies.
@@ -359,9 +371,26 @@ you can do so like this::
 
     $ nosetests celery.tests.test_worker.test_worker_job
 
+.. _contributing-pull-requests:
+
+Creating pull requests
+----------------------
+
+When your feature/bugfix is complete you may want to submit
+a pull requests so that it can be reviewed by the maintainers.
+
+Creating pull requests is easy, and also let you track the progress
+of your contribution.  Read the `Pull Requests`_ section in the Github
+Guide to learn how this is done.
+
+You can also attach pull requests to existing issues by following
+the steps outlined here: http://bit.ly/koJoso
+
+.. _`Pull Requests`: http://help.github.com/send-pull-requests/
+
 .. _contributing-coverage:
 
-Calculating code coverage
+Calculating test coverage
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Code coverage in HTML::
@@ -393,6 +422,24 @@ If you only want to test specific Python versions use the :option:`-e`
 option::
 
     $ tox -e py25,py26
+
+Building the documentation
+--------------------------
+
+To build the documentation you need to install the dependencies
+listed in :file:`requirements/docs.txt`::
+
+    $ pip -E $VIRTUAL_ENV install -U -r requirements/docs.txt
+
+After these dependencies are installed you should be able to
+build the docs by running::
+
+    $ cd docs
+    $ rm -rf .build
+    $ make html
+
+Make sure there are no errors or warnings in the build output.
+After building succeeds the documentation is available at :file:`.build/html`.
 
 .. _contributing-verify:
 
