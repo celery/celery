@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Monitoring and Management Guide &mdash; Celery v2.3.0 documentation</title>
+    <title>Monitoring and Management Guide &mdash; Celery v2.4.0a1 documentation</title>
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.3.0',
+        VERSION:     '2.4.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.0 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.4.0a1 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Optimizing" href="optimizing.html" />
     <link rel="prev" title="Routing Tasks" href="routing.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="routing.html" title="Routing Tasks"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,11 +55,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/userguide/monitoring.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/userguide/monitoring.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="monitoring-and-management-guide">
@@ -242,7 +244,7 @@ automatically get a monitor section as part of the Django admin interface.</p>
 <p>This can also be used if you&#8217;re not using Celery with a Django project.</p>
 <p><em>Screenshot</em></p>
 <div class="figure">
-<img alt="../_images/djangoceleryadmin2.jpg" src="../_images/djangoceleryadmin2.jpg" />
+<img alt="../_images/djangoceleryadmin21.jpg" src="../_images/djangoceleryadmin21.jpg" />
 </div>
 <div class="section" id="starting-the-monitor">
 <span id="monitoring-django-starting"></span><h4><a class="toc-backref" href="#id8">Starting the monitor</a><a class="headerlink" href="#starting-the-monitor" title="Permalink to this headline">¶</a></h4>
@@ -481,7 +483,7 @@ arguments:</p>
 
 <span class="k">class</span> <span class="nc">DumpCam</span><span class="p">(</span><span class="n">Polaroid</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="nf">shutter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">on_shutter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">state</span><span class="o">.</span><span class="n">event_count</span><span class="p">:</span>
             <span class="c"># No new events since last snapshot.</span>
             <span class="k">return</span>
@@ -522,6 +524,12 @@ it with the <cite>-c</cite> option:</p>
 <div class="section" id="task-events">
 <span id="event-reference-task"></span><h4><a class="toc-backref" href="#id20">Task Events</a><a class="headerlink" href="#task-events" title="Permalink to this headline">¶</a></h4>
 <ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">task-sent(uuid,</span> <span class="pre">name,</span> <span class="pre">args,</span> <span class="pre">kwargs,</span> <span class="pre">retries,</span> <span class="pre">eta,</span> <span class="pre">expires)</span></tt></p>
+<blockquote>
+<div><p>Sent when a task message is published and
+the <a class="reference internal" href="../configuration.html#std:setting-CELERY_SEND_TASK_SENT_EVENT"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_SEND_TASK_SENT_EVENT</span></tt></a> setting is enabled.</p>
+</div></blockquote>
+</li>
 <li><p class="first"><tt class="docutils literal"><span class="pre">task-received(uuid,</span> <span class="pre">name,</span> <span class="pre">args,</span> <span class="pre">kwargs,</span> <span class="pre">retries,</span> <span class="pre">eta,</span> <span class="pre">hostname,</span>
 <span class="pre">timestamp)</span></tt></p>
 <blockquote>
@@ -640,7 +648,7 @@ it is considered to be offline.</p>
         <li class="right" >
           <a href="routing.html" title="Routing Tasks"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>

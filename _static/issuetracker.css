@@ -1,11 +1,11 @@
-.issue-closed {
+.xref.issue.closed {
     text-decoration: line-through;
 }
 
-.issue-closed:hover {
+.xref.issue.closed:hover {
     text-decoration: line-through underline;
 }
 
-.issue-closed:visited {
+.xref.issue.closed:visited {
     text-decoration: line-through;
 }

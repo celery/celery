@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.worker.consumer &mdash; Celery v2.3.0 documentation</title>
+    <title>celery.worker.consumer &mdash; Celery v2.4.0a1 documentation</title>
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.3.0',
+        VERSION:     '2.4.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.0 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.4.0a1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.worker.job" href="celery.worker.job.html" />
     <link rel="prev" title="celery.worker" href="celery.worker.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.worker.html" title="celery.worker"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,20 +56,22 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.worker.consumer.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.worker.consumer.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-worker-consumer">
 <h1>celery.worker.consumer<a class="headerlink" href="#celery-worker-consumer" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.worker.consumer"></span><dl class="class">
 <dt id="celery.worker.consumer.Consumer">
-<em class="property">class </em><tt class="descclassname">celery.worker.consumer.</tt><tt class="descname">Consumer</tt><big>(</big><em>ready_queue</em>, <em>eta_schedule</em>, <em>logger</em>, <em>init_callback=&lt;function noop at 0x10188d0c8&gt;</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>initial_prefetch_count=2</em>, <em>pool=None</em>, <em>app=None</em>, <em>priority_timer=None</em>, <em>controller=None</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.Consumer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.consumer.</tt><tt class="descname">Consumer</tt><big>(</big><em>ready_queue</em>, <em>eta_schedule</em>, <em>logger</em>, <em>init_callback=&lt;function noop at 0x1017a0aa0&gt;</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>initial_prefetch_count=2</em>, <em>pool=None</em>, <em>app=None</em>, <em>priority_timer=None</em>, <em>controller=None</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.Consumer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Listen for messages received from the broker and
-move them the the ready queue for task processing.</p>
+move them to the ready queue for task processing.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -271,7 +273,7 @@ heartbeat and the event dispatcher.</p>
 <tt class="descname">restart_heartbeat</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.consumer.Consumer.restart_heartbeat" title="Permalink to this definition">¶</a></dt>
 <dd><p>Restart the heartbeat thread.</p>
 <p>This thread sends heartbeat events at intervals so monitors
-can tell if the worker is offline/missing.</p>
+can tell if the worker is off-line/missing.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -284,7 +286,7 @@ can tell if the worker is offline/missing.</p>
 <dt id="celery.worker.consumer.Consumer.start">
 <tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.consumer.Consumer.start" title="Permalink to this definition">¶</a></dt>
 <dd><p>Start the consumer.</p>
-<p>Automatically surivives intermittent connection failure,
+<p>Automatically survives intermittent connection failure,
 and will retry establishing the connection and restart
 consuming messages.</p>
 </dd></dl>
@@ -444,7 +446,7 @@ when necessary.</p>
         <li class="right" >
           <a href="celery.worker.html" title="celery.worker"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

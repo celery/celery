@@ -197,12 +197,16 @@ to use when sending a task:
 Connections and connection timeouts.
 ====================================
 
-Currently there is no support for broker connection pools, so 
-`apply_async` establishes and closes a new connection every time
-it is called.  This is something you need to be aware of when sending
-more than one task at a time.
+.. admonition:: Automatic Pool Support
 
-You handle the connection manually by creating a
+    In version 2.3 there is now support for automatic connection pools,
+    so you don't have to manually handle connections and publishers
+    to reuse connections.
+
+    See the :setting:`BROKER_POOL_LIMIT` setting.
+    This setting will be enabled by default in version 3.0.
+
+You can handle the connection manually by creating a
 publisher:
 
 .. code-block:: python

@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.task.base &mdash; Celery v2.3.0 documentation</title>
+    <title>celery.task.base &mdash; Celery v2.4.0a1 documentation</title>
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.3.0',
+        VERSION:     '2.4.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.0 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.4.0a1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.task.sets" href="celery.task.sets.html" />
     <link rel="prev" title="celery.task" href="celery.task.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.task.html" title="celery.task"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,11 +55,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/reference/celery.task.base.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/reference/celery.task.base.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-task-base">
@@ -183,7 +185,7 @@ worker server.  Defaults to the
 <tt class="xref py py-attr docutils literal"><span class="pre">routing_key</span></tt> attribute.</li>
 <li><strong>exchange</strong> &#8211; The named exchange to send the task to.
 Defaults to the <tt class="xref py py-attr docutils literal"><span class="pre">exchange</span></tt> attribute.</li>
-<li><strong>exchange_type</strong> &#8211; The exchange type to initalize the exchange
+<li><strong>exchange_type</strong> &#8211; The exchange type to initialize the exchange
 if not already declared.  Defaults to the
 <tt class="xref py py-attr docutils literal"><span class="pre">exchange_type</span></tt> attribute.</li>
 <li><strong>immediate</strong> &#8211; Request immediate delivery.  Will raise an
@@ -418,7 +420,7 @@ or successful if it returns.</li>
 </td>
 </tr>
 <tr class="field"><th class="field-name" colspan="2">Raises <a class="reference internal" href="celery.exceptions.html#celery.exceptions.RetryTaskError" title="celery.exceptions.RetryTaskError">celery.exceptions.RetryTaskError</a>:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first last">To tell the worker that
+<tr class="field"><td>&nbsp;</td><td class="field-body"><p class="first last">To tell the worker that
 the task has been re-sent for retry. This always happens,
 unless the <cite>throw</cite> keyword argument has been explicitly set
 to <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt>, and is considered normal operation.</p>
@@ -504,7 +506,7 @@ are now scheduled by the clock.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name" colspan="2">Raises NotImplementedError:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">if the <a class="reference internal" href="#celery.task.base.PeriodicTask.run_every" title="celery.task.base.PeriodicTask.run_every"><tt class="xref py py-attr docutils literal"><span class="pre">run_every</span></tt></a> attribute is
+<tr class="field"><td>&nbsp;</td><td class="field-body">if the <a class="reference internal" href="#celery.task.base.PeriodicTask.run_every" title="celery.task.base.PeriodicTask.run_every"><tt class="xref py py-attr docutils literal"><span class="pre">run_every</span></tt></a> attribute is
 not defined.</td>
 </tr>
 </tbody>
@@ -574,7 +576,7 @@ where next time to run is in seconds.</p>
 <dl class="class">
 <dt id="celery.task.base.TaskType">
 <em class="property">class </em><tt class="descclassname">celery.task.base.</tt><tt class="descname">TaskType</tt><a class="headerlink" href="#celery.task.base.TaskType" title="Permalink to this definition">¶</a></dt>
-<dd><p>Metaclass for tasks.</p>
+<dd><p>Meta class for tasks.</p>
 <p>Automatically registers the task in the task registry, except
 if the <cite>abstract</cite> attribute is set.</p>
 <p>If no <cite>name</cite> attribute is provided, then no name is automatically
@@ -634,7 +636,7 @@ set to the name of the module it was defined in, and the class name.</p>
         <li class="right" >
           <a href="celery.task.html" title="celery.task"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Optimizing &mdash; Celery v2.3.0 documentation</title>
+    <title>Optimizing &mdash; Celery v2.4.0a1 documentation</title>
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.3.0',
+        VERSION:     '2.4.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.0 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.4.0a1 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Concurrency" href="concurrency/index.html" />
     <link rel="prev" title="Monitoring and Management Guide" href="monitoring.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="monitoring.html" title="Monitoring and Management Guide"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,11 +55,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/userguide/optimizing.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/userguide/optimizing.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="optimizing">
@@ -102,6 +104,12 @@ recommended.</td></tr>
 </div>
 <div class="section" id="worker-settings">
 <span id="optimizing-worker-settings"></span><h2>Worker Settings<a class="headerlink" href="#worker-settings" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="broker-connection-pools">
+<span id="optimizing-connection-pools"></span><h3>Broker Connection Pools<a class="headerlink" href="#broker-connection-pools" title="Permalink to this headline">¶</a></h3>
+<p>You should enable the <a class="reference internal" href="../configuration.html#std:setting-BROKER_POOL_LIMIT"><tt class="xref std std-setting docutils literal"><span class="pre">BROKER_POOL_LIMIT</span></tt></a> setting,
+as this will drastically improve overall performance.</p>
+<p>This setting will be enabled by default in version 3.0.</p>
+</div>
 <div class="section" id="prefetch-limits">
 <span id="optimizing-prefetch-limit"></span><h3>Prefetch Limits<a class="headerlink" href="#prefetch-limits" title="Permalink to this headline">¶</a></h3>
 <p><em>Prefetch</em> is a term inherited from AMQP that is often misunderstood
@@ -117,14 +125,14 @@ of child worker processes[#].</p>
 <p>If you have many tasks with a long duration you want
 the multiplier value to be 1, which means it will only reserve one
 task per worker process at a time.</p>
-<p>However &#8211; If you have many short-running tasks, and throughput/roundtrip
+<p>However &#8211; If you have many short-running tasks, and throughput/round trip
 latency[#] is important to you, this number should be large. The worker is
 able to process more tasks per second if the messages have already been
 prefetched, and is available in memory.  You may have to experiment to find
 the best value that works for you.  Values like 50 or 150 might make sense in
 these circumstances. Say 64, or 128.</p>
 <p>If you have a combination of long- and short-running tasks, the best option
-is to use two worker nodes that are configured separatly, and route
+is to use two worker nodes that are configured separately, and route
 the tasks according to the run-time. (see <a class="reference internal" href="routing.html#guide-routing"><em>Routing Tasks</em></a>).</p>
 <table class="docutils footnote" frame="void" id="id2" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
@@ -228,7 +236,7 @@ the rate limit subsystem:</p>
         <li class="right" >
           <a href="monitoring.html" title="Monitoring and Management Guide"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>

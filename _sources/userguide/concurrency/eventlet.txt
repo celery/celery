@@ -32,7 +32,7 @@ spawn hundreds, or thousands of green threads.  In an informal test with a
 feed hub system the Eventlet pool could fetch and process hundreds of feeds
 every second, while the multiprocessing pool spent 14 seconds processing 100
 feeds.  Note that is one of the applications evented I/O is especially good
-at (asynchronous HTTP requests).  You may want a a mix of both Eventlet and
+at (asynchronous HTTP requests).  You may want a mix of both Eventlet and
 multiprocessing workers, and route tasks according to compatibility or
 what works best.
 

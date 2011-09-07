@@ -160,7 +160,7 @@ issue tracker.
 If you are unsure of the origin of the bug you can ask the
 :ref:`mailing-list`, or just use the Celery issue tracker.
 
-.. _versions::
+.. _versions:
 
 Versions
 ========

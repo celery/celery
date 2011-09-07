@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.app.task &mdash; Celery v2.3.0 documentation</title>
+    <title>celery.app.task &mdash; Celery v2.4.0a1 documentation</title>
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.3.0',
+        VERSION:     '2.4.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.0 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.4.0a1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.app.amqp" href="celery.app.amqp.html" />
     <link rel="prev" title="celery.app" href="celery.app.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.app.html" title="celery.app"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,11 +55,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/reference/celery.app.task.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/reference/celery.app.task.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-app-task">
@@ -67,7 +69,7 @@
 <span class="target" id="module-celery.app.task"></span><dl class="class">
 <dt id="celery.app.task.TaskType">
 <em class="property">class </em><tt class="descclassname">celery.app.task.</tt><tt class="descname">TaskType</tt><a class="headerlink" href="#celery.app.task.TaskType" title="Permalink to this definition">¶</a></dt>
-<dd><p>Metaclass for tasks.</p>
+<dd><p>Meta class for tasks.</p>
 <p>Automatically registers the task in the task registry, except
 if the <cite>abstract</cite> attribute is set.</p>
 <p>If no <cite>name</cite> attribute is provided, then no name is automatically
@@ -123,7 +125,7 @@ default behavior.</p>
 <p>Please note that this means the task may be executed twice if the
 worker crashes mid execution (which may be acceptable for some
 applications).</p>
-<p>The application default can be overriden with the
+<p>The application default can be overridden with the
 <a class="reference internal" href="../configuration.html#std:setting-CELERY_ACKS_LATE"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ACKS_LATE</span></tt></a> setting.</p>
 </dd></dl>
 
@@ -225,7 +227,7 @@ worker server.  Defaults to the
 <a class="reference internal" href="#celery.app.task.BaseTask.routing_key" title="celery.app.task.BaseTask.routing_key"><tt class="xref py py-attr docutils literal"><span class="pre">routing_key</span></tt></a> attribute.</li>
 <li><strong>exchange</strong> &#8211; The named exchange to send the task to.
 Defaults to the <a class="reference internal" href="#celery.app.task.BaseTask.exchange" title="celery.app.task.BaseTask.exchange"><tt class="xref py py-attr docutils literal"><span class="pre">exchange</span></tt></a> attribute.</li>
-<li><strong>exchange_type</strong> &#8211; The exchange type to initalize the exchange
+<li><strong>exchange_type</strong> &#8211; The exchange type to initialize the exchange
 if not already declared.  Defaults to the
 <a class="reference internal" href="#celery.app.task.BaseTask.exchange_type" title="celery.app.task.BaseTask.exchange_type"><tt class="xref py py-attr docutils literal"><span class="pre">exchange_type</span></tt></a> attribute.</li>
 <li><strong>immediate</strong> &#8211; Request immediate delivery.  Will raise an
@@ -574,7 +576,7 @@ or successful if it returns.</li>
 </td>
 </tr>
 <tr class="field"><th class="field-name" colspan="2">Raises <a class="reference internal" href="celery.exceptions.html#celery.exceptions.RetryTaskError" title="celery.exceptions.RetryTaskError">celery.exceptions.RetryTaskError</a>:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first last">To tell the worker that
+<tr class="field"><td>&nbsp;</td><td class="field-body"><p class="first last">To tell the worker that
 the task has been re-sent for retry. This always happens,
 unless the <cite>throw</cite> keyword argument has been explicitly set
 to <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt>, and is considered normal operation.</p>
@@ -747,7 +749,7 @@ running.</p>
         <li class="right" >
           <a href="celery.app.html" title="celery.app"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

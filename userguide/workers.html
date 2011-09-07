@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Workers Guide &mdash; Celery v2.3.0 documentation</title>
+    <title>Workers Guide &mdash; Celery v2.4.0a1 documentation</title>
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.3.0',
+        VERSION:     '2.4.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.0 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.4.0a1 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Periodic Tasks" href="periodic-tasks.html" />
     <link rel="prev" title="Executing Tasks" href="executing.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="executing.html" title="Executing Tasks"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,11 +55,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/userguide/workers.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/userguide/workers.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="workers-guide">
@@ -148,7 +150,7 @@ arguments as it was started with.</p>
 but you can also use <a class="reference internal" href="concurrency/eventlet.html#concurrency-eventlet"><em>Eventlet</em></a>.  The number
 of worker processes/threads can be changed using the <em class="xref std std-option">--concurrency</em>
 argument and defaults to the number of CPUs available on the machine.</p>
-<div class="admonition-number-of-processes-multiprocessing admonition ">
+<div class="admonition-number-of-processes-multiprocessing admonition">
 <p class="first admonition-title">Number of processes (multiprocessing)</p>
 <p class="last">More worker processes are usually better, but there&#8217;s a cut-off point where
 adding more processes affects performance in negative ways.
@@ -294,7 +296,7 @@ using <tt class="xref py py-func docutils literal"><span class="pre">broadcast()
 </pre></div>
 </div>
 <p>Example changing the rate limit on a single host by specifying the
-destination hostname:</p>
+destination host name:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">rate_limit</span><span class="p">(</span><span class="s">&quot;myapp.mytask&quot;</span><span class="p">,</span> <span class="s">&quot;200/m&quot;</span><span class="p">,</span>
 <span class="gp">... </span>           <span class="n">destination</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;worker1.example.com&quot;</span><span class="p">])</span>
 </pre></div>
@@ -529,7 +531,7 @@ executed.</p>
         <li class="right" >
           <a href="executing.html" title="Executing Tasks"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>
