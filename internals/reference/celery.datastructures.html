@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.datastructures &mdash; Celery v2.3.0 documentation</title>
+    <title>celery.datastructures &mdash; Celery v2.4.0a1 documentation</title>
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.3.0',
+        VERSION:     '2.4.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.0 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.4.0a1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.routes" href="celery.routes.html" />
     <link rel="prev" title="celery.execute.trace" href="celery.execute.trace.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.execute.trace.html" title="celery.execute.trace"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,11 +56,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.datastructures.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.datastructures.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <span class="target" id="module-celery.datastructures"></span><div class="section" id="celery-datastructures">
@@ -88,7 +90,7 @@
 <li><a class="reference internal" href="#configurationview" id="id4">ConfigurationView</a></li>
 <li><a class="reference internal" href="#exceptioninfo" id="id5">ExceptionInfo</a></li>
 <li><a class="reference internal" href="#limitedset" id="id6">LimitedSet</a></li>
-<li><a class="reference internal" href="#localcache" id="id7">LocalCache</a></li>
+<li><a class="reference internal" href="#lrucache" id="id7">LRUCache</a></li>
 <li><a class="reference internal" href="#functions" id="id8">Functions</a></li>
 </ul>
 </div>
@@ -101,7 +103,7 @@
 <p>See <a class="reference external" href="http://en.wikipedia.org/wiki/Token_Bucket">http://en.wikipedia.org/wiki/Token_Bucket</a>
 Most of this code was stolen from an entry in the ASPN Python Cookbook:
 <a class="reference external" href="http://code.activestate.com/recipes/511490/">http://code.activestate.com/recipes/511490/</a></p>
-<div class="admonition-thread-safety admonition ">
+<div class="admonition-thread-safety admonition">
 <p class="first admonition-title">Thread safety</p>
 <p class="last">This implementation may not be thread safe.</p>
 </div>
@@ -123,7 +125,7 @@ from the bucket.</p>
 <tt class="descname">expected_time</tt><big>(</big><em>tokens=1</em><big>)</big><a class="headerlink" href="#celery.datastructures.TokenBucket.expected_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the expected time in seconds when a new token should be
 available.</p>
-<div class="admonition-warning admonition ">
+<div class="admonition-warning admonition">
 <p class="first admonition-title">Warning</p>
 <p class="last">This consumes a token from the bucket.</p>
 </div>
@@ -357,18 +359,23 @@ evicting expired members.</li>
 </dd></dl>
 
 </div>
-<div class="section" id="localcache">
-<h2><a class="toc-backref" href="#id7">LocalCache</a><a class="headerlink" href="#localcache" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="lrucache">
+<h2><a class="toc-backref" href="#id7">LRUCache</a><a class="headerlink" href="#lrucache" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="celery.datastructures.LocalCache">
-<em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">LocalCache</tt><big>(</big><em>limit=None</em><big>)</big><a class="headerlink" href="#celery.datastructures.LocalCache" title="Permalink to this definition">¶</a></dt>
-<dd><p>Dictionary with a finite number of keys.</p>
-<p>Older items expires first.</p>
-<dl class="method">
-<dt id="celery.datastructures.LocalCache.pop">
-<tt class="descname">pop</tt><big>(</big><em>key</em>, <em>*args</em><big>)</big><a class="headerlink" href="#celery.datastructures.LocalCache.pop" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<dt id="celery.datastructures.LRUCache">
+<em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">LRUCache</tt><big>(</big><em>limit=None</em><big>)</big><a class="headerlink" href="#celery.datastructures.LRUCache" title="Permalink to this definition">¶</a></dt>
+<dd><p>LRU Cache implementation using a doubly linked list to track access.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>limit</strong> &#8211; The maximum number of keys to keep in the cache.
+When a new key is inserted and the limit has been exceeded,
+the <em>Least Recently Used</em> key will be discarded from the
+cache.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>
@@ -445,7 +452,7 @@ evicting expired members.</li>
         <li class="right" >
           <a href="celery.execute.trace.html" title="celery.execute.trace"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

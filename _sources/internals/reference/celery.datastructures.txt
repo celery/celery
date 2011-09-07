@@ -48,10 +48,10 @@
         :members:
         :undoc-members:
 
-    LocalCache
-    ----------
+    LRUCache
+    --------
 
-    .. autoclass:: LocalCache
+    .. autoclass:: LRUCache
         :members:
         :undoc-members:
 

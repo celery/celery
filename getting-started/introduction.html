@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Introduction &mdash; Celery v2.3.0 documentation</title>
+    <title>Introduction &mdash; Celery v2.4.0a1 documentation</title>
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.3.0',
+        VERSION:     '2.4.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.0 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.4.0a1 documentation" href="../index.html" />
     <link rel="up" title="Getting Started" href="index.html" />
     <link rel="next" title="Broker Installation" href="broker-installation.html" />
     <link rel="prev" title="Getting Started" href="index.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="index.html" title="Getting Started"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Getting Started</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,11 +55,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/getting-started/introduction.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/getting-started/introduction.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="introduction">
@@ -68,7 +70,7 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Version:</th><td class="field-body">2.3.0</td>
+<tr class="field"><th class="field-name">Version:</th><td class="field-body">2.4.0a1</td>
 </tr>
 <tr class="field"><th class="field-name">Web:</th><td class="field-body"><a class="reference external" href="http://celeryproject.org/">http://celeryproject.org/</a></td>
 </tr>
@@ -92,7 +94,7 @@ execute asynchronously (in the background) or synchronously
 <p>Celery is used in production systems to process millions of tasks a day.</p>
 <p>Celery is written in Python, but the protocol can be implemented in any
 language.  It can also <a class="reference external" href="http://ask.github.com/celery/userguide/remote-tasks.html">operate with other languages using webhooks</a>.</p>
-<p>The recommended message broker is <a class="reference external" href="http://www.rabbitmq.com/">RabbitMQ</a>, but limited support for
+<p>The recommended message broker is <a class="reference external" href="http://www.rabbitmq.com/">RabbitMQ</a>, but <a class="reference external" href="http://kombu.readthedocs.org/en/latest/introduction.html#transport-comparison">limited support</a> for
 <a class="reference external" href="http://code.google.com/p/redis/">Redis</a>, <a class="reference external" href="http://kr.github.com/beanstalkd/">Beanstalk</a>, <a class="reference external" href="http://mongodb.org/">MongoDB</a>, <a class="reference external" href="http://couchdb.apache.org/">CouchDB</a> and
 databases (using <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a> or the <a class="reference external" href="http://djangoproject.com/">Django ORM</a>) is also available.</p>
 <p>Celery is easy to integrate with <a class="reference external" href="http://djangoproject.com/">Django</a>, <a class="reference external" href="http://pylonshq.com/">Pylons</a> and <a class="reference external" href="http://flask.pocoo.org/">Flask</a>, using
@@ -340,7 +342,7 @@ $ python setup.py build
         <li class="right" >
           <a href="index.html" title="Getting Started"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >Getting Started</a> &raquo;</li> 
       </ul>
     </div>
