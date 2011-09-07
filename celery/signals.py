@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 """
 
 ==============
@@ -349,6 +348,8 @@ Provides arguments:
 
 
 """
+from __future__ import absolute_import
+
 from .utils.dispatch import Signal
 
 task_sent = Signal(providing_args=["task_id", "task",
