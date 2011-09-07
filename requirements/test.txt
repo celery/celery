@@ -8,3 +8,4 @@ pytyrant
 redis
 pymongo
 SQLAlchemy
+tox
