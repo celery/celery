@@ -5,6 +5,16 @@
 .. contents::
     :local:
 
+.. _version-2.3.3:
+
+2.3.3
+=====
+:release-date: TBA
+
+* Monkey patching :attr:`sys.stdout` could result in the worker
+  crashing if the replacing object did not define :meth:`isatty`
+  (Issue #477).
+
 .. _version-2.3.2:
 
 2.3.2
