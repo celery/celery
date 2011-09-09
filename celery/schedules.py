@@ -96,21 +96,19 @@ class crontab_parser(object):
     _star = r'\*'
 
     def __init__(self, max_=60):
-        _range = self._range
-        _steps = self._steps
-        _star = self._star
-        self.pats = ((re.compile(_range + _steps), self._range_steps),
-                     (re.compile(_range), self._expand_range),
-                     (re.compile(_star + _steps), self._star_steps))
         self.max_ = max_
+        self.pats = (
+                (re.compile(self._range + self._steps), self._range_steps),
+                (re.compile(self._range), self._expand_range),
+                (re.compile(self._star + self._steps), self._star_steps),
+                (re.compile('^' + self._star + '$'), self._expand_star))
 
     def parse(self, spec):
         acc = set()
         for part in spec.split(','):
-            if part:
-                acc |= set(self._parse_part(part))
-            else:
+            if not part:
                 raise self.ParseException("empty part")
+            acc |= set(self._parse_part(part))
         return acc
 
     def _parse_part(self, part):
@@ -118,8 +116,6 @@ class crontab_parser(object):
             m = regex.match(part)
             if m:
                 return handler(m.groups())
-        if part == '*':
-            return self._expand_star()
         return self._expand_range((part, ))
 
     def _expand_range(self, toks):
@@ -127,8 +123,7 @@ class crontab_parser(object):
         if len(toks) > 1:
             to = self._expand_number(toks[1])
             return range(fr, min(to + 1, self.max_ + 1))
-        else:
-            return [fr]
+        return [fr]
 
     def _range_steps(self, toks):
         if len(toks) != 3 or not toks[2]:
@@ -143,7 +138,7 @@ class crontab_parser(object):
     def _filter_steps(self, numbers, steps):
         return [n for n in numbers if n % steps == 0]
 
-    def _expand_star(self):
+    def _expand_star(self, *args):
         return range(self.max_)
 
     def _expand_number(self, s):
