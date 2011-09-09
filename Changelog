@@ -66,6 +66,8 @@ Important Notes
 News
 ----
 
+* No longer depends on :mod:`pyparsing`.
+
 * Broker transports can be now be specified using URLs
 
     The broker hostname can now be given as an URL instead, of the format::

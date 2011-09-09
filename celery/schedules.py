@@ -1,13 +1,17 @@
 from __future__ import absolute_import
 
+import re
+
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
-from pyparsing import (Word, Literal, ZeroOrMore, Optional,
-                       Group, StringEnd, alphas)
 
 from .utils import is_iterable
 from .utils.timeutils import (timedelta_seconds, weekday,
                               remaining, humanize_seconds)
+
+
+class ParseException(Exception):
+    """Raised by crontab_parser when the input can't be parsed."""
 
 
 class schedule(object):
@@ -50,8 +54,8 @@ class schedule(object):
         return False, rem
 
     def __repr__(self):
-        return "<freq: %s>" % humanize_seconds(
-                timedelta_seconds(self.run_every))
+        return "<freq: %s>" % (
+                    humanize_seconds(timedelta_seconds(self.run_every)), )
 
     def __eq__(self, other):
         if isinstance(other, schedule):
@@ -85,70 +89,74 @@ class crontab_parser(object):
         [0, 1, 2, 3, 4, 5, 6]
 
     """
+    ParseException = ParseException
+
+    _range = r'(\w+?)-(\w+)'
+    _steps = r'/(\w+)?'
+    _star = r'\*'
 
     def __init__(self, max_=60):
-        # define the grammar structure
-        digits = "0123456789"
-        star = Literal('*')
-        number = Word(digits) | Word(alphas)
-        steps = number
-        range_ = number + Optional(Literal('-') + number)
-        numspec = star | range_
-        expr = Group(numspec) + Optional(Literal('/') + steps)
-        extra_groups = ZeroOrMore(Literal(',') + expr)
-        groups = expr + extra_groups + StringEnd()
-
-        # define parse actions
-        star.setParseAction(self._expand_star)
-        number.setParseAction(self._expand_number)
-        range_.setParseAction(self._expand_range)
-        expr.setParseAction(self._filter_steps)
-        extra_groups.setParseAction(self._ignore_comma)
-        groups.setParseAction(self._join_to_set)
-
+        _range = self._range
+        _steps = self._steps
+        _star = self._star
+        self.pats = ((re.compile(_range + _steps), self._range_steps),
+                     (re.compile(_range), self._expand_range),
+                     (re.compile(_star + _steps), self._star_steps))
         self.max_ = max_
-        self.parser = groups
 
-    @staticmethod
-    def _expand_number(toks):
-        try:
-            i = int(toks[0])
-        except ValueError:
-            try:
-                i = weekday(toks[0])
-            except KeyError:
-                raise ValueError("Invalid weekday literal '%s'." % toks[0])
-        return [i]
+    def parse(self, spec):
+        acc = set()
+        for part in spec.split(','):
+            if part:
+                acc |= set(self._parse_part(part))
+            else:
+                raise self.ParseException("empty part")
+        return acc
 
-    @staticmethod
-    def _expand_range(toks):
+    def _parse_part(self, part):
+        for regex, handler in self.pats:
+            m = regex.match(part)
+            if m:
+                return handler(m.groups())
+        if part == '*':
+            return self._expand_star()
+        return self._expand_range((part, ))
+
+    def _expand_range(self, toks):
+        fr = self._expand_number(toks[0])
         if len(toks) > 1:
-            return range(toks[0], int(toks[2]) + 1)
+            to = self._expand_number(toks[1])
+            return range(fr, min(to + 1, self.max_ + 1))
         else:
-            return toks[0]
+            return [fr]
 
-    def _expand_star(self, toks):
+    def _range_steps(self, toks):
+        if len(toks) != 3 or not toks[2]:
+            raise self.ParseException("empty filter")
+        return self._filter_steps(self._expand_range(toks[:2]), int(toks[2]))
+
+    def _star_steps(self, toks):
+        if not toks or not toks[0]:
+            raise self.ParseException("empty filter")
+        return self._filter_steps(self._expand_star(), int(toks[0]))
+
+    def _filter_steps(self, numbers, steps):
+        return [n for n in numbers if n % steps == 0]
+
+    def _expand_star(self):
         return range(self.max_)
 
-    @staticmethod
-    def _filter_steps(toks):
-        numbers = toks[0]
-        if len(toks) > 1:
-            steps = toks[2]
-            return [n for n in numbers if n % steps == 0]
-        else:
-            return numbers
-
-    @staticmethod
-    def _ignore_comma(toks):
-        return [x for x in toks if x != ',']
-
-    @staticmethod
-    def _join_to_set(toks):
-        return set(toks.asList())
-
-    def parse(self, cronspec):
-        return self.parser.parseString(cronspec).pop()
+    def _expand_number(self, s):
+        if isinstance(s, basestring) and s[0] == '-':
+            raise self.ParseException("negative numbers not supported")
+        try:
+            i = int(s)
+        except ValueError:
+            try:
+                i = weekday(s)
+            except KeyError:
+                raise ValueError("Invalid weekday literal '%s'." % s)
+        return i
 
 
 class crontab(schedule):
