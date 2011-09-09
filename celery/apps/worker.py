@@ -16,7 +16,7 @@ from celery import platforms
 from celery import signals
 from celery.app import app_or_default
 from celery.exceptions import ImproperlyConfigured, SystemTerminate
-from celery.utils import get_full_cls_name, LOG_LEVELS, cry
+from celery.utils import get_full_cls_name, isatty, LOG_LEVELS, cry
 from celery.worker import WorkController
 
 BANNER = """
@@ -100,7 +100,7 @@ class Worker(object):
         if autoscale:
             max_c, _, min_c = autoscale.partition(",")
             self.autoscale = [int(max_c), min_c and int(min_c) or 0]
-        self._isatty = sys.stdout.isatty()
+        self._isatty = isatty(sys.stdout)
 
         self.colored = app.log.colored(self.logfile)
 
