@@ -30,7 +30,7 @@ class Dumper(object):
         hostname = event.pop("hostname")
         if type.startswith("task-"):
             uuid = event.pop("uuid")
-            if type.startswith("task-received"):
+            if type in ("task-received", "task-sent"):
                 task = TASK_NAMES[uuid] = "%s(%s) args=%s kwargs=%s" % (
                         event.pop("name"), uuid,
                         event.pop("args"),
