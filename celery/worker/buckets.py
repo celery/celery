@@ -24,7 +24,8 @@ from collections import deque
 from time import time, sleep
 from Queue import Queue, Empty
 
-from ..datastructures import TokenBucket
+from kombu.utils.limits import TokenBucket
+
 from ..utils import timeutils
 from ..utils.compat import zip_longest, chain_from_iterable
 

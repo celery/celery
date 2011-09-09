@@ -17,9 +17,10 @@ from __future__ import absolute_import
 
 import atexit
 
+from kombu.utils.limits import TokenBucket
+
 from .. import platforms
 from ..app import app_or_default
-from ..datastructures import TokenBucket
 from ..utils import timer2, instantiate, LOG_LEVELS
 from ..utils.dispatch import Signal
 from ..utils.timeutils import rate
