@@ -1,3 +1,3 @@
 #!/bin/bash
-find "${1:-.}" -name "*.pyc" | xargs rm
-find "${1:-.}" -name "*\$py.class" | xargs rm
+(cd "{$1:-.}";
+        find . -name "*.pyc" | xargs rm -- 2>/dev/null) || echo "ok"
