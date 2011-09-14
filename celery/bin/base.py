@@ -106,6 +106,12 @@ class Command(object):
 
         """
         options, args = self.parse_options(prog_name, argv)
+        for o in vars(options):
+            v = getattr(options, o)
+            if isinstance(v, basestring):
+                setattr(options, o, os.path.expanduser(v))
+        argv = map(lambda a: isinstance(a, basestring)
+                   and os.path.expanduser(a) or a, argv)
         if not self.supports_args and args:
             sys.stderr.write(
                 "\nUnrecognized command line arguments: %s\n" % (
