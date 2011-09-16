@@ -15,6 +15,9 @@
   crashing if the replacing object did not define :meth:`isatty`
   (Issue #477).
 
+* ``CELERYD`` option in :file:`/etc/default/celeryd` should not
+  be used with generic init scripts.
+
 .. _version-2.3.2:
 
 2.3.2
