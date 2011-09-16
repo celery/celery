@@ -9,7 +9,8 @@
 
 2.3.3
 =====
-:release-date: TBA
+:release-date: 2011-16-09 05:00 P.M BST
+:by: Mher Movsisyan
 
 * Monkey patching :attr:`sys.stdout` could result in the worker
   crashing if the replacing object did not define :meth:`isatty`
