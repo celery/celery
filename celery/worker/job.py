@@ -17,6 +17,7 @@ from ..datastructures import ExceptionInfo
 from ..execute.trace import TaskTrace
 from ..utils import noop, kwdict, fun_takes_kwargs, truncate_text
 from ..utils.encoding import safe_repr, safe_str, default_encoding
+from ..utils.serialization import get_pickleable_exception
 from ..utils.timeutils import maybe_iso8601
 
 from . import state
@@ -30,8 +31,14 @@ class InvalidTaskError(Exception):
     """The task has invalid data or is not properly constructed."""
 
 
-def default_encode(obj):
-    return unicode(obj, default_encoding())
+if sys.version_info >= (3, 0):
+
+    def default_encode(obj):
+        return obj
+else:
+
+    def default_encode(obj):  # noqa
+        return unicode(obj, default_encoding())
 
 
 class WorkerTaskTrace(TaskTrace):
@@ -129,9 +136,8 @@ class WorkerTaskTrace(TaskTrace):
     def handle_failure(self, exc, type_, tb, strtb):
         """Handle exception."""
         if self._store_errors:
-            exc = self.task.backend.mark_as_failure(self.task_id, exc, strtb)
-        else:
-            exc = self.task.backend.prepare_exception(exc)
+            self.task.backend.mark_as_failure(self.task_id, exc, strtb)
+        exc = get_pickleable_exception(exc)
         return self.super.handle_failure(exc, type_, tb, strtb)
 
 
@@ -473,11 +479,11 @@ class TaskRequest(object):
                    "name": self.task_name,
                    "exc": safe_repr(exc_info.exception),
                    "traceback": safe_str(exc_info.traceback),
-                   "args": self.args,
-                   "kwargs": self.kwargs}
+                   "args": safe_repr(self.args),
+                   "kwargs": safe_repr(self.kwargs)}
 
         self.logger.error(self.error_msg.strip(), context,
-                          exc_info=exc_info,
+                          exc_info=exc_info.exc_info,
                           extra={"data": {"id": self.task_id,
                                           "name": self.task_name,
                                           "hostname": self.hostname}})

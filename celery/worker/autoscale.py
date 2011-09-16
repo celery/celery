@@ -23,8 +23,8 @@ class Autoscaler(threading.Thread):
         self.keepalive = keepalive
         self.logger = logger
         self._last_action = None
-        self._shutdown = threading.Event()
-        self._stopped = threading.Event()
+        self._is_shutdown = threading.Event()
+        self._is_stopped = threading.Event()
         self.setDaemon(True)
         self.setName(self.__class__.__name__)
 
@@ -94,7 +94,7 @@ class Autoscaler(threading.Thread):
             self._shrink(n)
 
     def run(self):
-        while not self._shutdown.isSet():
+        while not self._is_shutdown.isSet():
             try:
                 self.scale()
                 sleep(1.0)
@@ -102,11 +102,11 @@ class Autoscaler(threading.Thread):
                 self.logger.error("Thread Autoscaler crashed: %r", exc,
                                   exc_info=sys.exc_info())
                 os._exit(1)
-        self._stopped.set()
+        self._is_stopped.set()
 
     def stop(self):
-        self._shutdown.set()
-        self._stopped.wait()
+        self._is_shutdown.set()
+        self._is_stopped.wait()
         if self.isAlive():
             self.join(1e10)
 

@@ -13,7 +13,7 @@ from celery.schedules import crontab, crontab_parser, ParseException
 from celery.utils import uuid
 from celery.utils.timeutils import parse_iso8601
 
-from celery.tests.utils import with_eager_tasks, unittest, StringIO
+from celery.tests.utils import with_eager_tasks, unittest, WhateverIO
 
 
 def return_True(*args, **kwargs):
@@ -407,7 +407,7 @@ class TestCeleryTasks(unittest.TestCase):
     def test_get_logger(self):
         T1 = self.createTaskCls("T1", "c.unittest.t.t1")
         t1 = T1()
-        logfh = StringIO()
+        logfh = WhateverIO()
         logger = t1.get_logger(logfile=logfh, loglevel=0)
         self.assertTrue(logger)
 

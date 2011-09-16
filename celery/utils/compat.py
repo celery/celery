@@ -1,4 +1,6 @@
 ############## py3k #########################################################
+import sys
+
 try:
     from UserList import UserList       # noqa
 except ImportError:
@@ -9,13 +11,21 @@ try:
 except ImportError:
     from collections import UserDict    # noqa
 
-try:
-    from cStringIO import StringIO      # noqa
-except ImportError:
+if sys.version_info >= (3, 0):
+    from io import StringIO, BytesIO
+    from .encoding import bytes_to_str
+
+    class WhateverIO(StringIO):
+
+        def write(self, data):
+            StringIO.write(self, bytes_to_str(data))
+else:
     try:
-        from StringIO import StringIO   # noqa
+        from cStringIO import StringIO  # noqa
     except ImportError:
-        from io import StringIO         # noqa
+        from StringIO import StringIO   # noqa
+    BytesIO = WhateverIO = StringIO     # noqa
+
 
 ############## collections.OrderedDict ######################################
 try:

@@ -53,9 +53,9 @@ class test_CacheBackend(unittest.TestCase):
             raise KeyError("foo")
         except KeyError, exception:
             pass
-        tb.mark_as_failure(tid3, exception)
-        self.assertEqual(tb.get_status(tid3), states.FAILURE)
-        self.assertIsInstance(tb.get_result(tid3), KeyError)
+            tb.mark_as_failure(tid3, exception)
+            self.assertEqual(tb.get_status(tid3), states.FAILURE)
+            self.assertIsInstance(tb.get_result(tid3), KeyError)
 
     def test_mget(self):
         tb = CacheBackend(backend="memory://")

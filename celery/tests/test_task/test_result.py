@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+from __future__ import with_statement
+
 from celery import states
 from celery.app import app_or_default
 from celery.utils import uuid
@@ -351,7 +354,9 @@ class TestFailedTaskSetResult(TestTaskSetResult):
         for i in xrange(self.size - 1):
             t = it.next()
             self.assertEqual(t.get(), i)
-        self.assertRaises(KeyError, it.next().get)
+        with self.assertRaises(KeyError):
+            t = it.next()   # need to do this in two lines or 2to3 borks.
+            t.get()
 
     def test_completed_count(self):
         self.assertEqual(self.ts.completed_count(), self.ts.total - 1)

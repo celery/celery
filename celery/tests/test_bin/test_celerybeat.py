@@ -104,6 +104,11 @@ class test_Beat(AppCase):
         MockService.in_sync = False
 
     def test_setup_logging(self):
+        try:
+            # py3k
+            delattr(sys.stdout, "logger")
+        except AttributeError:
+            pass
         b = beatapp.Beat()
         b.redirect_stdouts = False
         b.setup_logging()

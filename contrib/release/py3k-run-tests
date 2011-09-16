@@ -1,0 +1,39 @@
+#!/bin/bash
+base=${1:-.}
+nosetests -vd celery.tests                                      \
+          --with-coverage3                                      \
+            --cover3-branch                                     \
+            --cover3-xml                                        \
+            --cover3-xml-file="$base/coverage.xml"              \
+            --cover3-html                                       \
+            --cover3-html-dir="$base/cover"                     \
+            --cover3-package=celery                             \
+            --cover3-exclude="                                  \
+              celery                                            \
+              celery.tests.*                                    \
+              celery.bin.celeryd_multi                          \
+              celery.bin.celeryd_detach                         \
+              celery.bin.celeryctl                              \
+              celery.bin.camqadm                                \
+              celery.execute                                    \
+              celery.local                                      \
+              celery.platforms                                  \
+              celery.utils.patch                                \
+              celery.utils.compat                               \
+              celery.utils.mail                                 \
+              celery.utils.functional                           \
+              celery.utils.dispatch*                            \
+              celery.utils.term                                 \
+              celery.db.a805d4bd                                \
+              celery.db.dfd042c7                                \
+              celery.contrib*                                   \
+              celery.concurrency.threads                        \
+              celery.concurrency.processes.pool                 \
+              celery.concurrency.gevent                         \
+              celery.backends.mongodb                           \
+              celery.backends.tyrant                            \
+              celery.backends.cassandra                         \
+              celery.events.dumper                              \
+              celery.events.cursesmon"                          \
+            --with-xunit                                        \
+              --xunit-file="$base/nosetests.xml"

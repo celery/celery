@@ -13,7 +13,9 @@ except ImportError:  # py3k
 from anyjson import serialize
 
 from celery.task import http
-from celery.tests.utils import unittest, StringIO
+from celery.tests.utils import unittest
+from celery.utils.compat import StringIO
+from celery.utils.encoding import from_utf8
 
 
 @contextmanager
@@ -53,8 +55,9 @@ def unknown_response():
 class TestEncodings(unittest.TestCase):
 
     def test_utf8dict(self):
+        uk = "foobar"
         d = {u"følelser ær langé": u"ærbadægzaååÆØÅ",
-              "foobar".encode("utf-8"): "xuzzybaz".encode("utf-8")}
+             from_utf8(uk): from_utf8("xuzzybaz")}
 
         for key, value in http.utf8dict(d.items()).items():
             self.assertIsInstance(key, str)

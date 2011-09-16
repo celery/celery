@@ -100,6 +100,7 @@ from time import sleep
 
 from .. import __version__
 from ..utils import term
+from ..utils.encoding import from_utf8
 
 SIGNAMES = set(sig for sig in dir(signal)
                         if sig.startswith("SIG") and "_" not in sig)
@@ -368,7 +369,7 @@ class MultiTool(object):
 
     def waitexec(self, argv, path=sys.executable):
         args = " ".join([path] + list(argv))
-        argstr = shlex.split(args.encode("utf-8"))
+        argstr = shlex.split(from_utf8(args))
         pipe = Popen(argstr, env=self.env)
         self.info("  %s" % " ".join(argstr))
         retcode = pipe.wait()

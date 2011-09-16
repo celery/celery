@@ -21,6 +21,8 @@ from .utils.encoding import safe_str
 from .utils.patch import ensure_process_aware_logger
 from .utils.term import colored
 
+is_py3k = sys.version_info >= (3, 0)
+
 
 class ColorFormatter(logging.Formatter):
     #: Loglevel -> Color mapping.
@@ -34,8 +36,8 @@ class ColorFormatter(logging.Formatter):
 
     def formatException(self, ei):
         r = logging.Formatter.formatException(self, ei)
-        if isinstance(r, str):
-            return r.decode("utf-8", "replace")    # Convert to unicode
+        if isinstance(r, str) and not is_py3k:
+            return safe_str(r)
         return r
 
     def format(self, record):
@@ -50,16 +52,15 @@ class ColorFormatter(logging.Formatter):
                         type(record.msg), exc)
                 record.exc_info = sys.exc_info()
 
-        # Very ugly, but have to make sure processName is supported
-        # by foreign logger instances.
-        # (processName is always supported by Python 2.7)
-        if "processName" not in record.__dict__:
-            process_name = current_process and current_process()._name or ""
-            record.__dict__["processName"] = process_name
-        t = logging.Formatter.format(self, record)
-        if isinstance(t, unicode):
-            return t.encode("utf-8", "replace")
-        return t
+        if not is_py3k:
+            # Very ugly, but have to make sure processName is supported
+            # by foreign logger instances.
+            # (processName is always supported by Python 2.7)
+            if "processName" not in record.__dict__:
+                process_name = (current_process and
+                                current_process()._name or "")
+                record.__dict__["processName"] = process_name
+        return safe_str(logging.Formatter.format(self, record))
 
 
 class Logging(object):
@@ -105,7 +106,8 @@ class Logging(object):
 
         if mputil and hasattr(mputil, "_logger"):
             mputil._logger = None
-        ensure_process_aware_logger()
+        if not is_py3k:
+            ensure_process_aware_logger()
         receivers = signals.setup_logging.send(sender=None,
                         loglevel=loglevel, logfile=logfile,
                         format=format, colorize=colorize)
@@ -203,9 +205,9 @@ class Logging(object):
         """
         proxy = LoggingProxy(logger, loglevel)
         if stdout:
-            sys.stdout = proxy
+            sys.stdout = sys.__stdout__ = proxy
         if stderr:
-            sys.stderr = proxy
+            sys.stderr = sys.__stderr__ = proxy
         return proxy
 
     def _setup_logger(self, logger, logfile, format, colorize,

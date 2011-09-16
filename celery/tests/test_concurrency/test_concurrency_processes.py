@@ -131,12 +131,15 @@ class test_TaskPool(unittest.TestCase):
             scratch[0] = einfo
 
         pool = TaskPool(10)
-        exc = KeyError("foo")
-        pool.on_worker_error(errback, exc)
+        exc_info = None
+        try:
+            raise KeyError("foo")
+        except KeyError:
+            exc_info = ExceptionInfo(sys.exc_info())
+        pool.on_worker_error(errback, exc_info)
 
         self.assertTrue(scratch[0])
-        self.assertIs(scratch[0].exception, exc)
-        self.assertTrue(scratch[0].traceback)
+        self.assertIs(scratch[0], exc_info)
 
     def test_on_ready_exception(self):
         scratch = [None]

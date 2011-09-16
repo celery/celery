@@ -63,10 +63,10 @@ class test_AMQPBackend(unittest.TestCase):
             raise KeyError("foo")
         except KeyError, exception:
             einfo = ExceptionInfo(sys.exc_info())
-        tb1.mark_as_failure(tid3, exception, traceback=einfo.traceback)
-        self.assertEqual(tb2.get_status(tid3), states.FAILURE)
-        self.assertIsInstance(tb2.get_result(tid3), KeyError)
-        self.assertEqual(tb2.get_traceback(tid3), einfo.traceback)
+            tb1.mark_as_failure(tid3, exception, traceback=einfo.traceback)
+            self.assertEqual(tb2.get_status(tid3), states.FAILURE)
+            self.assertIsInstance(tb2.get_result(tid3), KeyError)
+            self.assertEqual(tb2.get_traceback(tid3), einfo.traceback)
 
     def test_repair_uuid(self):
         from celery.backends.amqp import repair_uuid

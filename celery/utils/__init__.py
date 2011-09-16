@@ -158,15 +158,20 @@ def noop(*args, **kwargs):
     pass
 
 
-def kwdict(kwargs):
-    """Make sure keyword arguments are not in unicode.
+if sys.version_info >= (3, 0):
 
-    This should be fixed in newer Python versions,
-      see: http://bugs.python.org/issue4978.
+    def kwdict(kwargs):
+        return kwargs
+else:
+    def kwdict(kwargs):  # noqa
+        """Make sure keyword arguments are not in unicode.
 
-    """
-    return dict((key.encode("utf-8"), value)
-                    for key, value in kwargs.items())
+        This should be fixed in newer Python versions,
+        see: http://bugs.python.org/issue4978.
+
+        """
+        return dict((key.encode("utf-8"), value)
+                        for key, value in kwargs.items())
 
 
 def first(predicate, iterable):

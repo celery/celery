@@ -112,8 +112,10 @@ class TestLoaderBase(unittest.TestCase):
         self.assertEqual(self.loader.conf["foo"], "bar")
 
     def test_import_default_modules(self):
-        self.assertEqual(sorted(self.loader.import_default_modules()),
-                         sorted([os, sys, task]))
+        modnames = lambda l: [m.__name__ for m in l]
+        self.assertEqual(sorted(modnames(
+                            self.loader.import_default_modules())),
+                         sorted(modnames([os, sys, task])))
 
     def test_import_from_cwd_custom_imp(self):
 

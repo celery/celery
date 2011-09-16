@@ -25,8 +25,8 @@ class Mediator(threading.Thread):
         self.logger = logger or self.app.log.get_default_logger()
         self.ready_queue = ready_queue
         self.callback = callback
-        self._shutdown = threading.Event()
-        self._stopped = threading.Event()
+        self._is_shutdown = threading.Event()
+        self._is_stopped = threading.Event()
         self.setDaemon(True)
         self.setName(self.__class__.__name__)
 
@@ -55,17 +55,17 @@ class Mediator(threading.Thread):
 
     def run(self):
         """Move tasks until :meth:`stop` is called."""
-        while not self._shutdown.isSet():
+        while not self._is_shutdown.isSet():
             try:
                 self.move()
             except Exception, exc:
                 self.logger.error("Mediator crash: %r", exc, exc_info=True)
                 # exiting by normal means does not work here, so force exit.
                 os._exit(1)
-        self._stopped.set()
+        self._is_stopped.set()
 
     def stop(self):
         """Gracefully shutdown the thread."""
-        self._shutdown.set()
-        self._stopped.wait()
+        self._is_shutdown.set()
+        self._is_stopped.wait()
         self.join(1e10)

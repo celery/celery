@@ -25,7 +25,7 @@ from celery.bin.celeryd import WorkerCommand, windows_main, \
 from celery.exceptions import ImproperlyConfigured
 
 from celery.tests.compat import catch_warnings
-from celery.tests.utils import (AppCase, StringIO, mask_modules,
+from celery.tests.utils import (AppCase, WhateverIO, mask_modules,
                                 reset_modules, skip_unless_module)
 
 
@@ -37,7 +37,7 @@ def disable_stdouts(fun):
 
     @wraps(fun)
     def disable(*args, **kwargs):
-        sys.stdout, sys.stderr = StringIO(), StringIO()
+        sys.stdout, sys.stderr = WhateverIO(), WhateverIO()
         try:
             return fun(*args, **kwargs)
         finally:

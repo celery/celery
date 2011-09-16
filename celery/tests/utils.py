@@ -25,7 +25,7 @@ from nose import SkipTest
 
 from ..app import app_or_default
 from ..utils import noop
-from ..utils.compat import StringIO, LoggerAdapter
+from ..utils.compat import WhateverIO, LoggerAdapter
 
 
 class Mock(mock.Mock):
@@ -92,7 +92,7 @@ def set_handlers(logger, new_handlers):
 @contextmanager
 def wrap_logger(logger, loglevel=logging.ERROR):
     old_handlers = get_handlers(logger)
-    sio = StringIO()
+    sio = WhateverIO()
     siohandler = logging.StreamHandler(sio)
     set_handlers(logger, [siohandler])
 
@@ -256,7 +256,7 @@ def mask_modules(*modnames):
 def override_stdouts():
     """Override `sys.stdout` and `sys.stderr` with `StringIO`."""
     prev_out, prev_err = sys.stdout, sys.stderr
-    mystdout, mystderr = StringIO(), StringIO()
+    mystdout, mystderr = WhateverIO(), WhateverIO()
     sys.stdout = sys.__stdout__ = mystdout
     sys.stderr = sys.__stderr__ = mystderr
 

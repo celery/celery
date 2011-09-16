@@ -4,6 +4,7 @@ import sys
 import types
 
 from mock import Mock
+from nose import SkipTest
 
 from celery.utils import serialization
 from celery.utils.serialization import subclass_exception
@@ -25,8 +26,10 @@ class wrapobject(object):
     def __init__(self, *args, **kwargs):
         self.args = args
 
-
-Oldstyle = types.ClassType("Oldstyle", (), {})
+if sys.version_info >= (3, 0):
+    Oldstyle = None
+else:
+    Oldstyle = types.ClassType("Oldstyle", (), {})
 Unpickleable = subclass_exception("Unpickleable", KeyError, "foo.module")
 Impossible = subclass_exception("Impossible", object, "foo.module")
 Lookalike = subclass_exception("Lookalike", wrapobject, "foo.module")
@@ -105,6 +108,8 @@ class test_BaseBackend_interface(unittest.TestCase):
 class test_exception_pickle(unittest.TestCase):
 
     def test_oldstyle(self):
+        if Oldstyle is None:
+            raise SkipTest("py3k does not support old style classes")
         self.assertIsNone(fnpe(Oldstyle()))
 
     def test_BaseException(self):

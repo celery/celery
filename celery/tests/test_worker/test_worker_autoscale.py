@@ -59,7 +59,7 @@ class test_Autoscaler(unittest.TestCase):
                 self.joined = True
 
         x = Scaler(self.pool, 10, 3, logger=logger)
-        x._stopped.set()
+        x._is_stopped.set()
         x.stop()
         self.assertTrue(x.joined)
         x.joined = False
@@ -91,12 +91,12 @@ class test_Autoscaler(unittest.TestCase):
 
             def scale(self):
                 self.scale_called = True
-                self._shutdown.set()
+                self._is_shutdown.set()
 
         x = Scaler(self.pool, 10, 3, logger=logger)
         x.run()
-        self.assertTrue(x._shutdown.isSet())
-        self.assertTrue(x._stopped.isSet())
+        self.assertTrue(x._is_shutdown.isSet())
+        self.assertTrue(x._is_stopped.isSet())
         self.assertTrue(x.scale_called)
 
     def test_shrink_raises_exception(self):
@@ -121,7 +121,7 @@ class test_Autoscaler(unittest.TestCase):
         class _Autoscaler(autoscale.Autoscaler):
 
             def scale(self):
-                self._shutdown.set()
+                self._is_shutdown.set()
                 raise OSError("foo")
 
         x = _Autoscaler(self.pool, 10, 3, logger=logger)
