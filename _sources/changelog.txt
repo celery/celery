@@ -5,160 +5,63 @@
 .. contents::
     :local:
 
-.. _version-2.4.0:
+.. _version-2.3.3:
 
-2.4.0
+2.3.3
 =====
+:release-date: 2011-16-09 05:00 P.M BST
+:by: Mher Movsisyan
 
-.. _v240-important:
+* Monkey patching :attr:`sys.stdout` could result in the worker
+  crashing if the replacing object did not define :meth:`isatty`
+  (Issue #477).
 
-Important Notes
----------------
+* ``CELERYD`` option in :file:`/etc/default/celeryd` should not
+  be used with generic init scripts.
 
-* Now depends on Kombu 1.3.0
+.. _version-2.3.2:
 
-* AMQP Result backend: Now expires results by default.
+2.3.2
+=====
+:release-date: 2011-10-07 05:00 P.M BST
 
-    The default expiration value is now taken from the
-    :setting:`CELERY_TASK_RESULT_EXPIRES` setting.
-
-    The old :setting:`CELERY_AMQP_TASK_RESULT_EXPIRES` setting has been
-    deprecated and will be removed in version 3.0.
-
-    Note that this means that the result backend requires RabbitMQ 1.1.0 or
-    higher, and that you have to disable expiration if you are running
-    with an older version.  You can do so by disabling the
-    :setting:`CELERY_TASK_RESULT_EXPIRES` setting::
-
-        CELERY_TASK_RESULT_EXPIRES = None
-
-* The deprecated :func:`celery.loaders.setup_loader` function has been removed.
-
-* Deprecations
-
-    The following functions has been deprecated and is scheduled for removal in
-    version 3.0:
-
-    =====================================  ===================================
-    **Old function**                       **Alternative**
-    =====================================  ===================================
-    `celery.loaders.current_loader`        `celery.current_app.loader`
-    `celery.loaders.load_settings`         `celery.current_app.conf`
-    `celery.execute.apply`                 `Task.apply`
-    `celery.execute.apply_async`           `Task.apply_async`
-    `celery.execute.delay_task`            `celery.execute.send_task`
-    =====================================  ===================================
-
-    The following settings has been deprecated and is scheduled for removal
-    in version 3.0:
-
-    =====================================  ===================================
-    **Old setting**                        **Alternative**
-    =====================================  ===================================
-    `CELERYD_LOG_LEVEL`                    ``celeryd --loglevel=``
-    `CELERYD_LOG_FILE`                     ``celeryd --logfile=``
-    `CELERYBEAT_LOG_LEVEL`                 ``celerybeat --loglevel=``
-    `CELERYBEAT_LOG_FILE`                  ``celerybeat --logfile=``
-    `CELERYMON_LOG_LEVEL`                  ``celerymon --loglevel=``
-    `CELERYMON_LOG_FILE`                   ``celerymon --logfile=``
-    =====================================  ===================================
-
-.. _v240-news:
+.. _v232-news:
 
 News
 ----
 
-* Broker transports can be now be specified using URLs
+* Improved Contributing guide.
 
-    The broker hostname can now be given as an URL instead, of the format::
+    If you'd like to contribute to Celery you should read this
+    guide: http://ask.github.com/celery/contributing.html
 
-        transport://user:password@hostname:port/virtual_host
+    We are looking for contributors of all skill levels, so don't
+    hesitate!
 
-    for example the default broker is written as::
+* Now depends on Kombu 1.3.1
 
-        amqp://guest:guest@localhost:5672//
+* ``Task.request`` now contains the current worker host name (Issue #460).
 
-    Transport defaults to amqp, and is not required.
-    user, password, port and virtual_host is also not mandatory and
-    will default to the corresponding transport default.
+    Available as ``task.request.hostname``.
 
-    .. note::
+* It is now easier for app subclasses to extend how they are pickled.
+    (see :class:`celery.app.AppPickler`).
 
-        Note that the path component (virtual_host) always starts with a
-        forward-slash.  This is necessary to distinguish between the virtual
-        host '' (empty) and '/', which are both acceptable virtual host names.
-
-        A virtual host of '/' becomes:
-
-            amqp://guest:guest@localhost:5672//
-
-        and a virtual host of '' (empty) becomes::
-
-            amqp://guest:guest@localhost:5672/
-
-        So the leading slash in the path component is **always required**.
-
-   In addition the :setting:`BROKER_URL` setting has been added as an alias
-   to ``BROKER_HOST``.  Any broker setting specified in both the URL and in
-   the configuration will be ignored, if a setting is not provided in the URL
-   then the value from the configuration will be used as default.
-
-   Also, programs now support the :option:`-b|--broker` option to specify
-   a broker URL on the command line::
-
-        $ celeryd -b redis://localhost
-
-        $ celeryctl -b amqp://guest:guest@localhost//e
-
-    The environment variable :envvar:`CELERY_BROKER_URL` can also be used to
-    easily override the default broker used.
-
-* Adds :setting:`EMAIL_USE_TLS` to enable secure SMTP connections
-  (Issue #418).
-
-* The coloring of log messages didn't handle non-ASCII data well
-  (Issue #427).
-
-* The Cache, Cassandra, MongoDB, Redis and Tyrant backends now respects
-  the :setting:`CELERY_RESULT_SERIALIZER` setting (Issue #435).
-
-    This means that only the database (django/sqlalchemy) backends
-    currently does not support using custom serializers.
-
-* Logging calls no longer manually formats messages, but delegates
-  that to the logging system, so tools like Sentry can easier
-  work with the messages (Issue #445).
-
-* ``Task.request`` now contains the current workers hostname (Issue #460).
-
-* ``celeryd_multi`` now supports a ``stop_verify`` command to wait for
-  processes to shutdown.
-
-* New setting :setting:`CELERY_RESULT_DB_SHORT_LIVED_SESSIONS` added,
-  which if enabled will disable the caching of SQLAlchemy sessions.
+.. _v232-fixes:
 
 Fixes
 -----
 
-* Fixes case where the worker could become unresponsive because of tasks
-  exceeding the hard time limit.
+* `purge/discard_all` was not working correctly (Issue #455).
 
-* Eventlet no longer crashes if autoscale is enabled.
-
-    growing and shrinking eventlet pools is still not supported.
+* The coloring of log messages didn't handle non-ASCII data well
+  (Issue #427).
 
 * [Windows] the multiprocessing pool tried to import ``os.kill``
   even though this is not available there (Issue #450).
 
-* `purge/discard_all` was not working correctly (Issue #455).
-
-* Retries will no longer be performed when tasks are called directly
-  (using ``__call__``).
-
-   Instead the exception passed to ``retry`` will be re-raised.
-
-* All result backends now implements ``__reduce__`` so that they can
-  be pickled (Issue #441).
+* Fixes case where the worker could become unresponsive because of tasks
+  exceeding the hard time limit.
 
 * The ``task-sent`` event was missing from the event reference.
 
@@ -167,11 +70,24 @@ Fixes
     This was not the case previously, even though the documentation
     states this was the expected behavior.
 
+* Retries will no longer be performed when tasks are called directly
+  (using ``__call__``).
+
+   Instead the exception passed to ``retry`` will be re-raised.
+
+* Eventlet no longer crashes if autoscale is enabled.
+
+    growing and shrinking eventlet pools is still not supported.
+
+* py24 target removed from :file:`tox.ini`.
+
 .. _version-2.3.1:
 
 2.3.1
 =====
 :release-date: 2011-08-07 08:00 P.M BST
+
+.. v231-fixes:
 
 Fixes
 -----

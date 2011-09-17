@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.worker.job &mdash; Celery v2.4.0a1 documentation</title>
+    <title>celery.worker.job &mdash; Celery v2.3.3 documentation</title>
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.4.0a1',
+        VERSION:     '2.3.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0a1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.3.3 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.worker.mediator" href="celery.worker.mediator.html" />
     <link rel="prev" title="celery.worker.consumer" href="celery.worker.consumer.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.worker.consumer.html" title="celery.worker.consumer"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,13 +56,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.worker.job.html">2.1</a>.
+        <p>
+        This document describes Celery 2.3. For development docs,
+        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.worker.job.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="celery-worker-job">
@@ -73,9 +71,15 @@
 <dd><p>The task has invalid data or is not properly constructed.</p>
 </dd></dl>
 
+<dl class="data">
+<dt id="celery.worker.job.TASK_ERROR_EMAIL_BODY">
+<tt class="descclassname">celery.worker.job.</tt><tt class="descname">TASK_ERROR_EMAIL_BODY</tt><a class="headerlink" href="#celery.worker.job.TASK_ERROR_EMAIL_BODY" title="Permalink to this definition">¶</a></dt>
+<dd><p>format string for the body of an error email.</p>
+</dd></dl>
+
 <dl class="class">
 <dt id="celery.worker.job.TaskRequest">
-<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskRequest</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x1017a0aa0&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>hostname=None</em>, <em>logger=None</em>, <em>eventer=None</em>, <em>eta=None</em>, <em>expires=None</em>, <em>app=None</em>, <em>taskset_id=None</em>, <em>chord=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskRequest</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x101794488&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>hostname=None</em>, <em>email_subject=None</em>, <em>email_body=None</em>, <em>logger=None</em>, <em>eventer=None</em>, <em>eta=None</em>, <em>expires=None</em>, <em>app=None</em>, <em>taskset_id=None</em>, <em>chord=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest" title="Permalink to this definition">¶</a></dt>
 <dd><p>A request for task execution.</p>
 <dl class="method">
 <dt id="celery.worker.job.TaskRequest.acknowledge">
@@ -106,6 +110,18 @@
 <tt class="descname">delivery_info</tt><a class="headerlink" href="#celery.worker.job.TaskRequest.delivery_info" title="Permalink to this definition">¶</a></dt>
 <dd><p>Additional delivery info, e.g. contains the path from
 Producer to consumer.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.job.TaskRequest.email_body">
+<tt class="descname">email_body</tt><a class="headerlink" href="#celery.worker.job.TaskRequest.email_body" title="Permalink to this definition">¶</a></dt>
+<dd><p>Format string used to generate error email content.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.job.TaskRequest.email_subject">
+<tt class="descname">email_subject</tt><a class="headerlink" href="#celery.worker.job.TaskRequest.email_subject" title="Permalink to this definition">¶</a></dt>
+<dd><p>Format string used to generate error email subjects.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -176,7 +192,7 @@ in version 3.0.</p>
 
 <dl class="classmethod">
 <dt id="celery.worker.job.TaskRequest.from_message">
-<em class="property">classmethod </em><tt class="descname">from_message</tt><big>(</big><em>message</em>, <em>body</em>, <em>on_ack=&lt;function noop at 0x1017a0aa0&gt;</em>, <em>**kw</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.from_message" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descname">from_message</tt><big>(</big><em>message</em>, <em>body</em>, <em>on_ack=&lt;function noop at 0x101794488&gt;</em>, <em>**kw</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.from_message" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create request from a task message.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -282,6 +298,11 @@ the message is also rejected.</td>
 <tt class="descname">revoked</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.revoked" title="Permalink to this definition">¶</a></dt>
 <dd><p>If revoked, skip task and mark state.</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.job.TaskRequest.send_error_email">
+<tt class="descname">send_error_email</tt><big>(</big><em>task</em>, <em>context</em>, <em>exc</em>, <em>whitelist=None</em>, <em>enabled=False</em>, <em>fail_silently=True</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.send_error_email" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.job.TaskRequest.send_event">
@@ -490,7 +511,7 @@ the exception instance on failure.</p>
         <li class="right" >
           <a href="celery.worker.consumer.html" title="celery.worker.consumer"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

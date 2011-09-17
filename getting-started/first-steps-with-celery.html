@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>First steps with Celery &mdash; Celery v2.4.0a1 documentation</title>
+    <title>First steps with Celery &mdash; Celery v2.3.3 documentation</title>
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.4.0a1',
+        VERSION:     '2.3.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0a1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.3.3 documentation" href="../index.html" />
     <link rel="up" title="Getting Started" href="index.html" />
     <link rel="next" title="Resources" href="resources.html" />
     <link rel="prev" title="Broker Installation" href="broker-installation.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="broker-installation.html" title="Broker Installation"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Getting Started</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,13 +55,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/getting-started/first-steps-with-celery.html">2.1</a>.
+        <p>
+        This document describes Celery 2.3. For development docs,
+        <a href="http://ask.github.com/celery/en/master/getting-started/first-steps-with-celery.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="first-steps-with-celery">
@@ -120,7 +118,11 @@ the <span class="target" id="index-0"></span><tt class="xref std std-envvar docu
 <p>Let&#8217;s create our <tt class="file docutils literal"><span class="pre">celeryconfig.py</span></tt>.</p>
 <ol class="arabic">
 <li><p class="first">Configure how we communicate with the broker (RabbitMQ in this example):</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">BROKER_URL</span> <span class="o">=</span> <span class="s">&quot;amqp://guest:guest@localhost:5672//&quot;</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">BROKER_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
+<span class="n">BROKER_PORT</span> <span class="o">=</span> <span class="mi">5672</span>
+<span class="n">BROKER_USER</span> <span class="o">=</span> <span class="s">&quot;myuser&quot;</span>
+<span class="n">BROKER_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;mypassword&quot;</span>
+<span class="n">BROKER_VHOST</span> <span class="o">=</span> <span class="s">&quot;myvhost&quot;</span>
 </pre></div>
 </div>
 </li>
@@ -295,7 +297,7 @@ raised by the task.</p>
         <li class="right" >
           <a href="broker-installation.html" title="Broker Installation"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
           <li><a href="index.html" >Getting Started</a> &raquo;</li> 
       </ul>
     </div>

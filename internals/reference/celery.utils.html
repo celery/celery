@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.utils &mdash; Celery v2.4.0a1 documentation</title>
+    <title>celery.utils &mdash; Celery v2.3.3 documentation</title>
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.4.0a1',
+        VERSION:     '2.3.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0a1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.3.3 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.utils.term" href="celery.utils.term.html" />
     <link rel="prev" title="celery.db.session" href="celery.db.session.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.db.session.html" title="celery.db.session"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,13 +56,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.utils.html">2.1</a>.
+        <p>
+        This document describes Celery 2.3. For development docs,
+        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.utils.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="celery-utils">
@@ -167,7 +165,7 @@ of using the <tt class="xref py py-meth docutils literal"><span class="pre">insp
 
 <dl class="function">
 <dt id="celery.utils.get_cls_by_name">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">get_cls_by_name</tt><big>(</big><em>name</em>, <em>aliases={}</em>, <em>imp=None</em>, <em>package=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.get_cls_by_name" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.utils.</tt><tt class="descname">get_cls_by_name</tt><big>(</big><em>name</em>, <em>aliases={}</em>, <em>imp=None</em><big>)</big><a class="headerlink" href="#celery.utils.get_cls_by_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get class by name.</p>
 <p>The name should be the full dot-separated path to the class:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">modulename</span><span class="o">.</span><span class="n">ClassName</span>
@@ -205,7 +203,7 @@ True</p>
 
 <dl class="function">
 <dt id="celery.utils.get_symbol_by_name">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">get_symbol_by_name</tt><big>(</big><em>name</em>, <em>aliases={}</em>, <em>imp=None</em>, <em>package=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.get_symbol_by_name" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.utils.</tt><tt class="descname">get_symbol_by_name</tt><big>(</big><em>name</em>, <em>aliases={}</em>, <em>imp=None</em><big>)</big><a class="headerlink" href="#celery.utils.get_symbol_by_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get class by name.</p>
 <p>The name should be the full dot-separated path to the class:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">modulename</span><span class="o">.</span><span class="n">ClassName</span>
@@ -237,7 +235,7 @@ True</p>
 
 <dl class="function">
 <dt id="celery.utils.import_from_cwd">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">import_from_cwd</tt><big>(</big><em>module</em>, <em>imp=None</em>, <em>package=None</em><big>)</big><a class="headerlink" href="#celery.utils.import_from_cwd" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.utils.</tt><tt class="descname">import_from_cwd</tt><big>(</big><em>module</em>, <em>imp=None</em><big>)</big><a class="headerlink" href="#celery.utils.import_from_cwd" title="Permalink to this definition">¶</a></dt>
 <dd><p>Import module, but make sure it finds modules
 located in the current directory.</p>
 <p>Modules located in the current directory has
@@ -353,12 +351,7 @@ memoized (see <a class="reference internal" href="#celery.utils.mpromise" title=
 
 <dl class="function">
 <dt id="celery.utils.reprcall">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">reprcall</tt><big>(</big><em>name</em>, <em>args=()</em>, <em>kwargs=()</em>, <em>sep='</em>, <em>'</em><big>)</big><a class="headerlink" href="#celery.utils.reprcall" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="celery.utils.reprkwargs">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">reprkwargs</tt><big>(</big><em>kwargs</em>, <em>sep='</em>, <em>'</em>, <em>fmt='%s=%s'</em><big>)</big><a class="headerlink" href="#celery.utils.reprkwargs" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.utils.</tt><tt class="descname">reprcall</tt><big>(</big><em>name</em>, <em>args=()</em>, <em>kwargs=()</em>, <em>sep='</em>, <em>'</em>, <em>kwformat=&lt;function &lt;lambda&gt; at 0x1017a8848&gt;</em><big>)</big><a class="headerlink" href="#celery.utils.reprcall" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -372,11 +365,6 @@ memoized (see <a class="reference internal" href="#celery.utils.mpromise" title=
 <tt class="descclassname">celery.utils.</tt><tt class="descname">truncate_text</tt><big>(</big><em>text</em>, <em>maxlen=128</em>, <em>suffix='...'</em><big>)</big><a class="headerlink" href="#celery.utils.truncate_text" title="Permalink to this definition">¶</a></dt>
 <dd><p>Truncates text to a maximum number of characters.</p>
 </dd></dl>
-
-<dl class="function">
-<dt id="celery.utils.warn_deprecated">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">warn_deprecated</tt><big>(</big><em>description=None</em>, <em>deprecation=None</em>, <em>removal=None</em>, <em>alternative=None</em><big>)</big><a class="headerlink" href="#celery.utils.warn_deprecated" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 </div>
 
@@ -431,7 +419,7 @@ memoized (see <a class="reference internal" href="#celery.utils.mpromise" title=
         <li class="right" >
           <a href="celery.db.session.html" title="celery.db.session"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.signals &mdash; Celery v2.4.0a1 documentation</title>
+    <title>celery.signals &mdash; Celery v2.3.3 documentation</title>
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.4.0a1',
+        VERSION:     '2.3.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0a1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.3.3 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.exceptions" href="celery.exceptions.html" />
     <link rel="prev" title="celery.schedules" href="celery.schedules.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.schedules.html" title="celery.schedules"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,13 +55,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/reference/celery.signals.html">2.1</a>.
+        <p>
+        This document describes Celery 2.3. For development docs,
+        <a href="http://ask.github.com/celery/en/master/reference/celery.signals.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <span class="target" id="module-celery.signals"><span id="signals"></span></span><div class="section" id="celery-signals">
@@ -348,23 +346,23 @@ started as an embedded process.  Sender is the
 <div class="section" id="eventlet-pool-started">
 <span id="std:signal-eventlet_pool_started"></span><h4><a class="toc-backref" href="#id18">eventlet_pool_started</a><a class="headerlink" href="#eventlet-pool-started" title="Permalink to this headline">¶</a></h4>
 <p>Sent when the eventlet pool has been started.</p>
-<p>Sender is the <a class="reference internal" href="../internals/reference/celery.concurrency.eventlet.html#celery.concurrency.eventlet.TaskPool" title="celery.concurrency.eventlet.TaskPool"><tt class="xref py py-class docutils literal"><span class="pre">celery.concurrency.eventlet.TaskPool</span></tt></a> instance.</p>
+<p>Sender is the <a class="reference internal" href="../internals/reference/celery.concurrency.evlet.html#celery.concurrency.evlet.TaskPool" title="celery.concurrency.evlet.TaskPool"><tt class="xref py py-class docutils literal"><span class="pre">celery.concurrency.evlet.TaskPool</span></tt></a> instance.</p>
 </div>
 <div class="section" id="eventlet-pool-preshutdown">
 <span id="std:signal-eventlet_pool_preshutdown"></span><h4><a class="toc-backref" href="#id19">eventlet_pool_preshutdown</a><a class="headerlink" href="#eventlet-pool-preshutdown" title="Permalink to this headline">¶</a></h4>
 <p>Sent when the worker shutdown, just before the eventlet pool
 is requested to wait for remaining workers.</p>
-<p>Sender is the <a class="reference internal" href="../internals/reference/celery.concurrency.eventlet.html#celery.concurrency.eventlet.TaskPool" title="celery.concurrency.eventlet.TaskPool"><tt class="xref py py-class docutils literal"><span class="pre">celery.concurrency.eventlet.TaskPool</span></tt></a> instance.</p>
+<p>Sender is the <a class="reference internal" href="../internals/reference/celery.concurrency.evlet.html#celery.concurrency.evlet.TaskPool" title="celery.concurrency.evlet.TaskPool"><tt class="xref py py-class docutils literal"><span class="pre">celery.concurrency.evlet.TaskPool</span></tt></a> instance.</p>
 </div>
 <div class="section" id="eventlet-pool-postshutdown">
 <span id="std:signal-eventlet_pool_postshutdown"></span><h4><a class="toc-backref" href="#id20">eventlet_pool_postshutdown</a><a class="headerlink" href="#eventlet-pool-postshutdown" title="Permalink to this headline">¶</a></h4>
 <p>Sent when the pool has been joined and the worker is ready to shutdown.</p>
-<p>Sender is the <a class="reference internal" href="../internals/reference/celery.concurrency.eventlet.html#celery.concurrency.eventlet.TaskPool" title="celery.concurrency.eventlet.TaskPool"><tt class="xref py py-class docutils literal"><span class="pre">celery.concurrency.eventlet.TaskPool</span></tt></a> instance.</p>
+<p>Sender is the <a class="reference internal" href="../internals/reference/celery.concurrency.evlet.html#celery.concurrency.evlet.TaskPool" title="celery.concurrency.evlet.TaskPool"><tt class="xref py py-class docutils literal"><span class="pre">celery.concurrency.evlet.TaskPool</span></tt></a> instance.</p>
 </div>
 <div class="section" id="eventlet-pool-apply">
 <span id="std:signal-eventlet_pool_apply"></span><h4><a class="toc-backref" href="#id21">eventlet_pool_apply</a><a class="headerlink" href="#eventlet-pool-apply" title="Permalink to this headline">¶</a></h4>
 <p>Sent whenever a task is applied to the pool.</p>
-<p>Sender is the <a class="reference internal" href="../internals/reference/celery.concurrency.eventlet.html#celery.concurrency.eventlet.TaskPool" title="celery.concurrency.eventlet.TaskPool"><tt class="xref py py-class docutils literal"><span class="pre">celery.concurrency.eventlet.TaskPool</span></tt></a> instance.</p>
+<p>Sender is the <a class="reference internal" href="../internals/reference/celery.concurrency.evlet.html#celery.concurrency.evlet.TaskPool" title="celery.concurrency.evlet.TaskPool"><tt class="xref py py-class docutils literal"><span class="pre">celery.concurrency.evlet.TaskPool</span></tt></a> instance.</p>
 <p>Provides arguments:</p>
 <ul>
 <li><p class="first">target</p>
@@ -554,7 +552,7 @@ Used to augment logging configuration.</p>
         <li class="right" >
           <a href="celery.schedules.html" title="celery.schedules"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

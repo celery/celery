@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.utils.mail &mdash; Celery v2.4.0a1 documentation</title>
+    <title>celery.utils.mail &mdash; Celery v2.3.3 documentation</title>
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.4.0a1',
+        VERSION:     '2.3.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0a1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.3.3 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.utils.patch" href="celery.utils.patch.html" />
     <link rel="prev" title="celery.utils.compat" href="celery.utils.compat.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.utils.compat.html" title="celery.utils.compat"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,57 +56,18 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.utils.mail.html">2.1</a>.
+        <p>
+        This document describes Celery 2.3. For development docs,
+        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.utils.mail.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="celery-utils-mail">
 <h1>celery.utils.mail<a class="headerlink" href="#celery-utils-mail" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.utils.mail"></span><dl class="class">
-<dt id="celery.utils.mail.ErrorMail">
-<em class="property">class </em><tt class="descclassname">celery.utils.mail.</tt><tt class="descname">ErrorMail</tt><big>(</big><em>task</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.mail.ErrorMail" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="attribute">
-<dt id="celery.utils.mail.ErrorMail.body">
-<tt class="descname">body</tt><a class="headerlink" href="#celery.utils.mail.ErrorMail.body" title="Permalink to this definition">¶</a></dt>
-<dd><p>Format string used to generate error email content.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.utils.mail.ErrorMail.format_body">
-<tt class="descname">format_body</tt><big>(</big><em>context</em><big>)</big><a class="headerlink" href="#celery.utils.mail.ErrorMail.format_body" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.utils.mail.ErrorMail.format_subject">
-<tt class="descname">format_subject</tt><big>(</big><em>context</em><big>)</big><a class="headerlink" href="#celery.utils.mail.ErrorMail.format_subject" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.utils.mail.ErrorMail.send">
-<tt class="descname">send</tt><big>(</big><em>context</em>, <em>exc</em>, <em>fail_silently=True</em><big>)</big><a class="headerlink" href="#celery.utils.mail.ErrorMail.send" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.utils.mail.ErrorMail.should_send">
-<tt class="descname">should_send</tt><big>(</big><em>context</em>, <em>exc</em><big>)</big><a class="headerlink" href="#celery.utils.mail.ErrorMail.should_send" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="celery.utils.mail.ErrorMail.subject">
-<tt class="descname">subject</tt><a class="headerlink" href="#celery.utils.mail.ErrorMail.subject" title="Permalink to this definition">¶</a></dt>
-<dd><p>Format string used to generate error email subjects.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
 <dt id="celery.utils.mail.Mailer">
-<em class="property">class </em><tt class="descclassname">celery.utils.mail.</tt><tt class="descname">Mailer</tt><big>(</big><em>host='localhost'</em>, <em>port=0</em>, <em>user=None</em>, <em>password=None</em>, <em>timeout=2</em>, <em>use_ssl=False</em>, <em>use_tls=False</em><big>)</big><a class="headerlink" href="#celery.utils.mail.Mailer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.utils.mail.</tt><tt class="descname">Mailer</tt><big>(</big><em>host='localhost'</em>, <em>port=0</em>, <em>user=None</em>, <em>password=None</em>, <em>timeout=2</em>, <em>use_ssl=False</em><big>)</big><a class="headerlink" href="#celery.utils.mail.Mailer" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="celery.utils.mail.Mailer.send">
 <tt class="descname">send</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#celery.utils.mail.Mailer.send" title="Permalink to this definition">¶</a></dt>
@@ -178,7 +139,7 @@
         <li class="right" >
           <a href="celery.utils.compat.html" title="celery.utils.compat"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0a1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
