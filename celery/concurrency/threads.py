@@ -1,6 +1,14 @@
 from __future__ import absolute_import
 
+from UserDict import UserDict
+
 from .base import apply_target, BasePool
+
+
+class NullDict(UserDict):
+
+    def __setitem__(self, key, value):
+        pass
 
 
 class TaskPool(BasePool):
@@ -17,6 +25,9 @@ class TaskPool(BasePool):
 
     def on_start(self):
         self._pool = self.ThreadPool(self.limit)
+        # threadpool stores all work requests until they are processed
+        # we don't need this dict, and it occupies way too much memory.
+        self._pool.workRequests = NullDict()
 
     def on_stop(self):
         self._pool.dismissWorkers(self.limit, do_join=True)
