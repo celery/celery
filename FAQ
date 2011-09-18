@@ -461,7 +461,7 @@ Tasks
 How can I reuse the same connection when applying tasks?
 --------------------------------------------------------
 
-**Answer**: Yes! See the :setting:`BROKER_POOL_LIMIT` setting.
+**Answer**: See the :setting:`BROKER_POOL_LIMIT` setting.
 This setting will be enabled by default in 3.0.
 
 .. _faq-execute-task-by-name:
