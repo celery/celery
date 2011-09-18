@@ -2,6 +2,17 @@ from __future__ import absolute_import
 
 from .base import apply_target, BasePool
 
+class BlackholeDictionary(object):
+    
+    def __setitem__(self, k, v):
+        pass
+
+    def __delitem__(self, k):
+        pass
+
+    def __getitem__(self, k):
+        raise Exception("Unsupported operation on blackhole dictionary")
+
 
 class TaskPool(BasePool):
 
@@ -17,6 +28,9 @@ class TaskPool(BasePool):
 
     def on_start(self):
         self._pool = self.ThreadPool(self.limit)
+        # threadpool stores all work requests until they are processed
+        # lets overwrite the dict because they are never processed
+        self._pool.workRequests = BlackholeDictionary()
 
     def on_stop(self):
         self._pool.dismissWorkers(self.limit, do_join=True)
