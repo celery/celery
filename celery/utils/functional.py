@@ -5,9 +5,9 @@ from threading import Lock
 
 try:
     from collections import Sequence
-except ImportError:  # noqa
+except ImportError:
     # <= Py2.5
-    Sequence = (list, tuple)
+    Sequence = (list, tuple)  # noqa
 
 from celery.datastructures import LRUCache
 
