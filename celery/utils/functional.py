@@ -3,9 +3,21 @@ from __future__ import absolute_import, with_statement
 from functools import wraps
 from threading import Lock
 
+try:
+    from collections import Sequence
+except ImportError:  # noqa
+    # <= Py2.5
+    Sequence = (list, tuple)
+
 from celery.datastructures import LRUCache
 
 KEYWORD_MARK = object()
+
+
+def maybe_list(l):
+    if isinstance(l, Sequence):
+        return l
+    return [l]
 
 
 def memoize(maxsize=None, Cache=LRUCache):

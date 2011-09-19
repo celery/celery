@@ -11,6 +11,7 @@ from ..datastructures import DictAttribute
 from ..exceptions import ImproperlyConfigured
 from ..utils import (cached_property, get_cls_by_name,
                      import_from_cwd as _import_from_cwd)
+from ..utils.functional import maybe_list
 
 BUILTIN_MODULES = frozenset(["celery.task"])
 
@@ -74,7 +75,7 @@ class BaseLoader(object):
                 package=package)
 
     def import_default_modules(self):
-        imports = set(list(self.conf.get("CELERY_IMPORTS") or ()))
+        imports = set(maybe_list(self.conf.get("CELERY_IMPORTS") or ()))
         return [self.import_task_module(module)
                     for module in imports | self.builtin_modules]
 
