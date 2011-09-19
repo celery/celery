@@ -21,6 +21,7 @@
     celery.task.http
     celery.schedules
     celery.signals
+    celery.utils.mail
     celery.exceptions
     celery.loaders
     celery.loaders.app

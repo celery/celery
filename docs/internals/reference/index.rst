@@ -48,7 +48,6 @@
     celery.utils.timeutils
     celery.utils.encoding
     celery.utils.compat
-    celery.utils.mail
     celery.utils.patch
     celery.utils.serialization
     celery.utils.timer2
