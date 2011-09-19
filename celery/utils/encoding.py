@@ -54,9 +54,9 @@ def _safe_str(s, errors="replace"):
         return s
     encoding = default_encoding()
     try:
-        if isinstance(s, str):
+        if isinstance(s, unicode):
             return s.encode(encoding, errors)
-        return str(s, encoding, errors)
+        return unicode(s, encoding, errors)
     except Exception, exc:
         return "<Unrepresentable %r: %r %r>" % (
                 type(s), exc, "\n".join(traceback.format_stack()))
