@@ -595,7 +595,7 @@ class Pool(object):
                 try:
                     raise WorkerLostError("Worker exited prematurely.")
                 except WorkerLostError:
-                    exc_info = sys.exc_info()
+                    exc_info = ExceptionInfo(sys.exc_info())
                 job._set(None, (False, exc_info))
 
         if shutdown and not len(self._pool):
