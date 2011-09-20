@@ -1,3 +1,18 @@
+"""
+
+celery.mediator
+===============
+
+The mediator is an internal thread that moves tasks
+from an internal :class:`Queue` to the worker pool.
+
+This is only used if rate limits are enabled, as it moves
+messages from the rate limited queue (which holds tasks
+that are allowed to be processed) to the pool. Disabling
+rate limits will also disable this machinery,
+and can improve performance.
+
+"""
 from __future__ import absolute_import
 
 import os
@@ -8,6 +23,8 @@ import traceback
 from Queue import Empty
 
 from ..app import app_or_default
+
+__all__ = ["Mediator"]
 
 
 class Mediator(threading.Thread):

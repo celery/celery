@@ -1,4 +1,12 @@
 # -*- coding: utf-8 -*-
+"""
+
+celery.task
+===========
+
+Creating tasks and subtasks
+
+"""
 from __future__ import absolute_import
 
 import warnings

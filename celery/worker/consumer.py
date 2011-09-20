@@ -1,7 +1,7 @@
-from __future__ import absolute_import
-from __future__ import with_statement
-
 """
+
+celery.worker.consumer
+======================
 
 This module contains the component responsible for consuming messages
 from the broker, processing the messages and keeping the broker connections
@@ -70,6 +70,9 @@ up and running.
   early, *then* close the connection.
 
 """
+from __future__ import absolute_import
+from __future__ import with_statement
+
 import socket
 import sys
 import threading
@@ -86,6 +89,8 @@ from . import state
 from .job import TaskRequest, InvalidTaskError
 from .control.registry import Panel
 from .heartbeat import Heart
+
+__all__ = ["QoS", "Consumer"]
 
 RUN = 0x1
 CLOSE = 0x2

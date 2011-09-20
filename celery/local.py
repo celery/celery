@@ -1,7 +1,20 @@
+"""
+
+celery.local
+============
+
+This module contains critical utilities that
+needs to be loaded as soon as possible, and that
+should not load any third party modules.
+
+"""
+
 from __future__ import absolute_import
 
 
 def try_import(module):
+    """Try to import and return module, or return
+    None if the module does not exist."""
     from importlib import import_module
     try:
         return import_module(module)
@@ -10,7 +23,9 @@ def try_import(module):
 
 
 class Proxy(object):
-    """Code stolen from werkzeug.local.Proxy."""
+    """Proxy to another object."""
+
+    # Code stolen from werkzeug.local.Proxy.
     __slots__ = ('__local', '__dict__', '__name__')
 
     def __init__(self, local, name=None):

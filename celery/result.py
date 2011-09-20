@@ -1,3 +1,10 @@
+"""
+celery.result
+=============
+
+Task results/state, and result groups.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 
@@ -12,6 +19,9 @@ from .app import app_or_default
 from .exceptions import TimeoutError
 from .registry import _unpickle_task
 from .utils.compat import OrderedDict
+
+__all__ = ["BaseAsyncResult", "AsyncResult", "ResultSet",
+           "TaskSetResult", "EagerResult"]
 
 
 def _unpickle_result(task_id, task_name):

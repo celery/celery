@@ -1,3 +1,12 @@
+"""
+celery.execute.trace
+====================
+
+This module defines how the task execution is traced,
+errors are recorded, handlers are applied and so on.
+
+"""
+
 from __future__ import absolute_import
 
 import sys
@@ -7,6 +16,8 @@ from .. import states, signals
 from ..datastructures import ExceptionInfo
 from ..exceptions import RetryTaskError
 from ..registry import tasks
+
+__all__ = ["TraceInfo", "TaskTrace"]
 
 
 class TraceInfo(object):

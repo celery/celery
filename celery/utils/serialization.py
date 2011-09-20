@@ -1,3 +1,11 @@
+"""
+
+celery.utils.serialization
+==========================
+
+Serialization utilities for safely pickling exceptions.
+
+"""
 from __future__ import absolute_import
 
 import inspect
@@ -27,9 +35,12 @@ if sys.version_info < (2, 6):  # pragma: no cover
 else:
     pickle = cpickle or pypickle
 
-
 #: List of base classes we probably don't want to reduce to.
 unwanted_base_classes = (StandardError, Exception, BaseException, object)
+
+__all__ = ["subclass_exception", "find_nearest_unpickleable_exception",
+           "create_exception_cls", "UnpickleableExceptionWrapper",
+           "get_pickleable_exception", "get_pickled_exception"]
 
 
 if sys.version_info < (2, 5):  # pragma: no cover

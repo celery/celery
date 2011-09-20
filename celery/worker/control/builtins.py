@@ -1,3 +1,11 @@
+"""
+
+celery.worker.control.builtins
+==============================
+
+This module contains the built-in remote control commands.
+
+"""
 from __future__ import absolute_import
 
 import sys
@@ -12,6 +20,14 @@ from .. import state
 from ..state import revoked
 
 from .registry import Panel
+
+__all__ = ["revoke", "enable_events", "disable_events",
+           "heartbeat", "rate_limit", "time_limit", "stats",
+           "dump_scheduled", "dump_reserved", "dump_active",
+           "dump_revoked", "dump_tasks", "ping",
+           "pool_grow", "pool_shrink", "autoscale",
+           "shutdown", "add_consumer", "cancel_consumer",
+           "acvtive_queues"]
 
 TASK_INFO_FIELDS = ("exchange", "routing_key", "rate_limit")
 

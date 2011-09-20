@@ -1,3 +1,15 @@
+"""
+
+celery.worker.state
+===================
+
+Internal worker state (global)
+
+This includes the currently active and reserved tasks, statistics,
+and revoked tasks.
+
+"""
+
 from __future__ import absolute_import
 
 import os
@@ -9,6 +21,11 @@ from collections import defaultdict
 from .. import __version__
 from ..datastructures import LimitedSet
 from ..utils import cached_property
+
+__all__ = ["SOFTWARE_INFO", "REVOKES_MAX", "REVOKE_EXPIRES",
+           "reserved_requests", "active_requests", "total_count", "revoked",
+           "task_reserved", "task_accepted", "task_ready",
+           "Persistent"]
 
 #: Worker software/platform information.
 SOFTWARE_INFO = {"sw_ident": "celeryd",

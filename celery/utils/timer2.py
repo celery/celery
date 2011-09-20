@@ -25,6 +25,11 @@ __docformat__ = "restructuredtext"
 
 DEFAULT_MAX_INTERVAL = 2
 
+__all__ = ["TimedFunctionFailed", "to_timestamp",
+           "Entry", "Schedule", "Timer",
+           "default_timer", "apply_after", "apply_at",
+           "apply_interval", "enter_after", "enter",
+           "exit_after", "cancel", "clear"]
 
 class TimedFunctionFailed(UserWarning):
     pass

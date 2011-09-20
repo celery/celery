@@ -1,3 +1,11 @@
+"""
+celery.schedules
+================
+
+Schedules define when periodic tasks should be run.
+
+"""
+
 from __future__ import absolute_import
 
 import re
@@ -8,6 +16,8 @@ from dateutil.relativedelta import relativedelta
 from .utils import is_iterable
 from .utils.timeutils import (timedelta_seconds, weekday,
                               remaining, humanize_seconds)
+
+__all__ = ["ParseException", "schedule", "crontab", "maybe_schedule"]
 
 
 class ParseException(Exception):

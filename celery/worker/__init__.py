@@ -1,3 +1,11 @@
+"""
+
+celery.worker
+=============
+
+This is the Celery worker process.
+
+"""
 from __future__ import absolute_import
 
 import logging
@@ -18,6 +26,8 @@ from ..utils import noop, instantiate
 
 from . import state
 from .buckets import TaskBucket, FastQueue
+
+__all__ = ["WorkController"]
 
 RUN = 0x1
 CLOSE = 0x2

@@ -1,3 +1,10 @@
+"""
+celery.events.cursesmon
+=======================
+
+celeryev is a monitor written in curses using celery events.
+
+"""
 from __future__ import absolute_import
 
 import curses
@@ -14,6 +21,8 @@ from .. import __version__
 from .. import states
 from ..app import app_or_default
 from ..utils import abbr, abbrtask
+
+__all__ = ["CursesMonitor", "evtop"]
 
 BORDER_SPACING = 4
 LEFT_BORDER_OFFSET = 3

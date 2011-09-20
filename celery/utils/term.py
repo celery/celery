@@ -1,12 +1,11 @@
 """
 
-term utils.
+celery.utils.term
+=================
 
->>> c = colored(enabled=True)
->>> print(str(c.red("the quick "), c.blue("brown ", c.bold("fox ")),
-              c.magenta(c.underline("jumps over")),
-              c.yellow(" the lazy "),
-              c.green("dog ")))
+Utilties for terminals and terminal colors.
+
+
 
 """
 from __future__ import absolute_import
@@ -14,6 +13,8 @@ from __future__ import absolute_import
 import platform
 
 from .encoding import safe_str
+
+__all__ = ["colored"]
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 OP_SEQ = "\033[%dm"
@@ -26,6 +27,16 @@ IS_WINDOWS = SYSTEM == "Windows"
 
 
 class colored(object):
+    """Terminal colored text.
+
+    Example::
+        >>> c = colored(enabled=True)
+        >>> print(str(c.red("the quick "), c.blue("brown ", c.bold("fox ")),
+        ...       c.magenta(c.underline("jumps over")),
+        ...       c.yellow(" the lazy "),
+        ...       c.green("dog ")))
+
+    """
 
     def __init__(self, *s, **kwargs):
         self.s = s

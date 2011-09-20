@@ -4,10 +4,6 @@ celery.states
 
 Built-in Task States.
 
-:copyright: (c) 2009 - 2011 by Ask Solem.
-:license: BSD, see LICENSE for more details.
-
-
 .. _states:
 
 States
@@ -60,6 +56,8 @@ Misc.
 
 """
 from __future__ import absolute_import
+
+__all__ = ["precedence", "state"]
 
 #: State precedence.
 #: None represents the precedence of an unknown state.

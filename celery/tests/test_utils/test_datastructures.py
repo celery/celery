@@ -5,7 +5,7 @@ import sys
 from Queue import Queue
 
 from celery.datastructures import ExceptionInfo, LRUCache
-from celery.datastructures import LimitedSet, consume_queue
+from celery.datastructures import LimitedSet
 from celery.datastructures import AttributeDict, DictAttribute
 from celery.datastructures import ConfigurationView
 from celery.tests.utils import unittest
@@ -93,20 +93,6 @@ class test_ExceptionInfo(unittest.TestCase):
 
         r = repr(einfo)
         self.assertTrue(r)
-
-
-class test_utilities(unittest.TestCase):
-
-    def test_consume_queue(self):
-        x = Queue()
-        it = consume_queue(x)
-        with self.assertRaises(StopIteration):
-            it.next()
-        x.put("foo")
-        it = consume_queue(x)
-        self.assertEqual(it.next(), "foo")
-        with self.assertRaises(StopIteration):
-            it.next()
 
 
 class test_LimitedSet(unittest.TestCase):

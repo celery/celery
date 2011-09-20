@@ -1,3 +1,17 @@
+"""
+
+celery.worker.buckets
+=====================
+
+This module implements the rate limiting of tasks,
+by having a token bucket queue for each task type.
+When a task is allowed to be processed it's moved
+over the the ``ready_queue``
+
+The :mod:`celery.worker.mediator` is then responsible
+for moving tasks from the ready_queue to the worker pool.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 
@@ -10,6 +24,9 @@ from Queue import Queue, Empty
 from ..datastructures import TokenBucket
 from ..utils import timeutils
 from ..utils.compat import izip_longest, chain_from_iterable
+
+__all__ = ["RateLimitExceeded", "TaskBucket",
+           "FastQueue", "TokenBucketQueue"]
 
 
 class RateLimitExceeded(Exception):

@@ -1,3 +1,11 @@
+"""
+
+celery.messaging
+================
+
+This module is deprecated, use ``current_app.amqp`` instead.
+
+"""
 from __future__ import absolute_import
 
 from . import current_app

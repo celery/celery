@@ -1,3 +1,11 @@
+"""
+
+celery.utils.functional
+=======================
+
+Functional utilities.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 
@@ -11,6 +19,8 @@ except ImportError:
     Sequence = (list, tuple)  # noqa
 
 from celery.datastructures import LRUCache
+
+__all__ = ["maybe_list", "memoize"]
 
 KEYWORD_MARK = object()
 

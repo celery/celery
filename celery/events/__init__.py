@@ -1,3 +1,13 @@
+"""
+
+celery.events
+=============
+
+Events are messages sent for actions happening
+in the worker (and clients if :setting:`CELERY_SEND_TASK_SENT_EVENT` is
+enabled).  These events can be used for monitoring.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 
@@ -14,6 +24,8 @@ from kombu.messaging import Consumer, Producer
 
 from ..app import app_or_default
 from ..utils import uuid
+
+__all__ = ["event_exchange", "Event", "EventDispatcher", "EventReceiver"]
 
 event_exchange = Exchange("celeryev", type="topic")
 

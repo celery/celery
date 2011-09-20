@@ -1,3 +1,13 @@
+"""
+
+celery.worker.job
+=================
+
+This module defines the :class:`TaskRequest` class,
+which specifies how tasks are executed and task state is
+published.
+
+"""
 from __future__ import absolute_import
 
 import os
@@ -22,6 +32,9 @@ from ..utils.timeutils import maybe_iso8601
 
 from . import state
 
+__all__ = ["InvalidTaskError", "WorkerTaskTrace",
+           "execute_and_trace", "TaskRequest"]
+
 #: Keys to keep from the message delivery info.  The values
 #: of these keys must be pickleable.
 WANTED_DELIVERY_INFO = ("exchange", "routing_key", "consumer_tag", )
@@ -29,6 +42,7 @@ WANTED_DELIVERY_INFO = ("exchange", "routing_key", "consumer_tag", )
 
 class InvalidTaskError(Exception):
     """The task has invalid data or is not properly constructed."""
+    pass
 
 
 if sys.version_info >= (3, 0):

@@ -1,9 +1,22 @@
+"""
+
+celery.task.control
+===================
+
+The worker remote control command client.
+For the server implementation see :mod:`celery.worker.control`.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 
 from kombu.pidbox import Mailbox
 
 from ..app import app_or_default
+
+__all__ = ["flatten_reply", "Inspect", "Control",
+           "broadcast", "rate_limit", "time_limit", "ping", "revoke",
+           "discard_all", "inspect"]
 
 
 def flatten_reply(reply):

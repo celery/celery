@@ -1,3 +1,16 @@
+"""
+
+celery.worker.autoscale
+=======================
+
+This module implements the internal thread responsible
+for growing and shrinking the pool according to the
+current autoscale settings.
+
+The autoscale thread is only enabled if autoscale
+has been enabled on the command line.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 
@@ -9,6 +22,8 @@ import traceback
 from time import sleep, time
 
 from . import state
+
+__all__ = ["Autoscaler"]
 
 
 class Autoscaler(threading.Thread):

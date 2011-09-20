@@ -1,3 +1,11 @@
+"""
+
+celery.task.http
+================
+
+Webhook tasks.
+
+"""
 from __future__ import absolute_import
 
 import sys
@@ -16,6 +24,9 @@ from .. import __version__ as celery_version
 from .base import Task as BaseTask
 
 GET_METHODS = frozenset(["GET", "HEAD"])
+
+__all__ = ["InvalidResponseError", "RemoteExecuteError", "UnknownStatusError",
+           "MutableURL", "HttpDispatch", "HttpDispatchTask", "URL"]
 
 
 class InvalidResponseError(Exception):

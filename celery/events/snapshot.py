@@ -1,3 +1,15 @@
+"""
+
+celery.events.snapshot
+======================
+
+Consuming the events as a stream is not always suitable,
+so this module implements a system to take snapshots of the
+state of a cluster.  There is a full implementation of this
+writing the snapshots to a database in ``django-celery``.
+
+"""
+
 from __future__ import absolute_import
 
 import atexit
@@ -8,6 +20,8 @@ from ..datastructures import TokenBucket
 from ..utils import timer2, instantiate, LOG_LEVELS
 from ..utils.dispatch import Signal
 from ..utils.timeutils import rate
+
+__all__ = ["Polaroid", "evcam"]
 
 
 class Polaroid(object):

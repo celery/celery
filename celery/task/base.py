@@ -1,9 +1,19 @@
+"""
+
+celery.task.base
+================
+
+The task implementation has been moved to :class:`celery.app.task`.
+
+"""
 from __future__ import absolute_import
 
 from .. import current_app
 from ..app.task import Context, TaskType, BaseTask  # noqa
 from ..schedules import maybe_schedule
 from ..utils import deprecated, timeutils
+
+__all__ = ["Task", "PeriodicTask"]
 
 Task = current_app.Task
 

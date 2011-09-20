@@ -1,3 +1,12 @@
+"""
+
+celery.events.dumper
+====================
+
+This is a simple program used to show events as they are happening.
+Like tcpdump just for Celery events.
+
+"""
 from __future__ import absolute_import
 
 import sys
@@ -6,6 +15,8 @@ from datetime import datetime
 
 from ..app import app_or_default
 from ..datastructures import LRUCache
+
+__all__ = ["Dumper", "evdump"]
 
 
 TASK_NAMES = LRUCache(limit=0xFFF)

@@ -1,3 +1,11 @@
+"""
+
+celery.task.sets
+================
+
+Creating and applying task groups.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 
@@ -9,6 +17,8 @@ from ..datastructures import AttributeDict
 from ..exceptions import CDeprecationWarning
 from ..utils import cached_property, reprcall, uuid
 from ..utils.compat import UserList
+
+__all__ = ["subtask", "TaskSet"]
 
 TASKSET_DEPRECATION_TEXT = """\
 Using this invocation of TaskSet is deprecated and will be removed

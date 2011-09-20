@@ -1,3 +1,11 @@
+"""
+
+celery.loader.default
+=====================
+
+The default loader used when no custom app has been initialized.
+
+"""
 from __future__ import absolute_import
 
 import os
@@ -10,6 +18,8 @@ from ..utils import find_module
 from .base import BaseLoader
 
 DEFAULT_CONFIG_MODULE = "celeryconfig"
+
+__all__ = ["Loader"]
 
 
 class Loader(BaseLoader):

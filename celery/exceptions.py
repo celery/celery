@@ -1,4 +1,22 @@
+"""
+
+celery.exceptions
+=================
+
+This module contains Celery-specific exceptions.
+
+"""
+
 from __future__ import absolute_import
+
+__all__ = ["SystemTerminate", "QueueNotFound",
+           "TimeLimitExceeded", "SoftTimeLimitExceeded",
+           "WorkerLostError", "ImproperlyConfigured",
+           "NotRegistered", "AlreadyRegistered",
+           "TimeoutError", "MaxRetriesExceededError",
+           "RetryTaskError", "TaskRevokedError",
+           "NotConfigured", "CPendingDeprecationWarning",
+           "CDeprecationWarning"]
 
 
 UNREGISTERED_FMT = """\

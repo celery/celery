@@ -1,3 +1,11 @@
+"""
+
+celery.task.chords
+==================
+
+Task chords (task set callbacks).
+
+"""
 from __future__ import absolute_import
 
 from .. import current_app
@@ -5,6 +13,8 @@ from ..result import TaskSetResult
 from ..utils import uuid
 
 from .sets import TaskSet, subtask
+
+__all__ = ["Chord", "chord"]
 
 
 @current_app.task(name="celery.chord_unlock", max_retries=None)

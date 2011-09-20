@@ -1,3 +1,11 @@
+"""
+
+celery.utils
+============
+
+Utility functions that has not found a home in a generic module.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 
@@ -39,6 +47,15 @@ DEPRECATION_FMT = """
     %(description)s is deprecated and scheduled for removal in
     version %(removal)s. %(alternative)s
 """
+
+__all__ = ["uuid", "warn_deprecated", "deprecated", "lpmerge",
+           "promise", "mpromise", "maybe_promise", "noop",
+           "kwdict", "first", "firstmethod", "chunks",
+           "padlist", "is_iterable", "mattrgetter", "get_full_cls_name",
+           "fun_takes_kwargs", "get_cls_by_name", "instantiate",
+           "truncate_text", "abbr", "abbrtask", "isatty",
+           "textindent", "cwd_in_path", "find_module", "import_from_cwd",
+           "cry", "reprkwargs", "reprcall"]
 
 
 def warn_deprecated(description=None, deprecation=None, removal=None,
