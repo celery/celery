@@ -18,7 +18,7 @@ RE_MULTILINE_COMMENT_S = r'^\s*(?:\'\'\'|""")'
 RE_MULTILINE_COMMENT_E = r'(?:^|.+?)(?:\'\'\'|""")'
 RE_WITH = r'(?:^|\s+)with\s+'
 RE_WITH_IMPORT = r'''from\s+ __future__\s+ import\s+ with_statement'''
-RE_PRINT = r'''(?:^|\s+)print\((?:"|')\W+?[A-Z0-9:]{2,}'''
+RE_PRINT = r'''(?:^|\s+)print\((?:"|')(?:\W+?)?[A-Z0-9:]{2,}'''
 RE_ABS_IMPORT = r'''from\s+ __future__\s+ import\s+ absolute_import'''
 
 acc = defaultdict(lambda: {"abs": False, "print": False})
