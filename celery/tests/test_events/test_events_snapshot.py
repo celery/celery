@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from celery.app import app_or_default
 from celery.events import Events
 from celery.events.snapshot import Polaroid, evcam
@@ -117,4 +119,5 @@ class test_evcam(unittest.TestCase):
         evcam(Polaroid, timer=timer)
         evcam(Polaroid, timer=timer, loglevel="CRITICAL")
         self.MockReceiver.raise_keyboard_interrupt = True
-        self.assertRaises(SystemExit, evcam, Polaroid, timer=timer)
+        with self.assertRaises(SystemExit):
+            evcam(Polaroid, timer=timer)

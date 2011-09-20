@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from __future__ import with_statement
 
 import anyjson
@@ -132,8 +133,8 @@ class test_WorkerTaskTrace(unittest.TestCase):
         mytask.backend = Mock()
         mytask.backend.process_cleanup = Mock(side_effect=SystemExit())
         try:
-            self.assertRaises(SystemExit,
-                    jail, uuid(), mytask.name, [2], {})
+            with self.assertRaises(SystemExit):
+                jail(uuid(), mytask.name, [2], {})
         finally:
             mytask.backend = backend
 
@@ -416,8 +417,8 @@ class test_TaskRequest(unittest.TestCase):
 
     def test_from_message_invalid_kwargs(self):
         body = dict(task="foo", id=1, args=(), kwargs="foo")
-        self.assertRaises(InvalidTaskError,
-                          TaskRequest.from_message, None, body)
+        with self.assertRaises(InvalidTaskError):
+            TaskRequest.from_message(None, body)
 
     def test_on_timeout(self):
 
@@ -542,8 +543,8 @@ class test_TaskRequest(unittest.TestCase):
         m = Message(None, body=anyjson.serialize(body), backend="foo",
                           content_type="application/json",
                           content_encoding="utf-8")
-        self.assertRaises(NotRegistered, TaskRequest.from_message,
-                          m, m.decode())
+        with self.assertRaises(NotRegistered):
+            TaskRequest.from_message(m, m.decode())
 
     def test_execute(self):
         tid = uuid()

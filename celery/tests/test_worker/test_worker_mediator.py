@@ -1,4 +1,4 @@
-from celery.tests.utils import unittest
+from __future__ import absolute_import
 
 from Queue import Queue
 
@@ -7,6 +7,7 @@ from mock import Mock, patch
 from celery.utils import uuid
 from celery.worker.mediator import Mediator
 from celery.worker.state import revoked as revoked_tasks
+from celery.tests.utils import unittest
 
 
 class MockTask(object):

@@ -1,8 +1,8 @@
+from __future__ import absolute_import
 from __future__ import with_statement
 
 import sys
 import logging
-from celery.tests.utils import unittest
 from tempfile import mktemp
 
 from celery import log
@@ -12,6 +12,7 @@ from celery.log import (setup_logger, setup_task_logger,
                         setup_logging_subsystem)
 from celery.utils import uuid
 from celery.utils.compat import _CompatLoggerAdapter
+from celery.tests.utils import unittest
 from celery.tests.utils import (override_stdouts, wrap_logger,
                                 get_handlers, set_handlers)
 

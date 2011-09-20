@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from __future__ import with_statement
 
 import socket
@@ -112,7 +113,8 @@ class test_QoS(unittest.TestCase):
         self.assertEqual(qos.increment(-30), 14)
         self.assertEqual(qos.decrement(7), 7)
         self.assertEqual(qos.decrement(), 6)
-        self.assertRaises(AssertionError, qos.decrement, 10)
+        with self.assertRaises(AssertionError):
+            qos.decrement(10)
 
     def test_qos_disabled_increment_decrement(self):
         qos = self._QoS(0)
@@ -358,7 +360,8 @@ class test_Consumer(unittest.TestCase):
         l = MockConsumer(self.ready_queue, self.eta_schedule, self.logger,
                              send_events=False, pool=BasePool())
         l.connection_errors = (KeyError, )
-        self.assertRaises(SyntaxError, l.start)
+        with self.assertRaises(SyntaxError):
+            l.start()
         l.heart.stop()
         l.priority_timer.stop()
 
@@ -433,8 +436,8 @@ class test_Consumer(unittest.TestCase):
         l.maybe_conn_error(Mock(side_effect=AttributeError("foo")))
         l.maybe_conn_error(Mock(side_effect=KeyError("foo")))
         l.maybe_conn_error(Mock(side_effect=SyntaxError("foo")))
-        self.assertRaises(IndexError, l.maybe_conn_error,
-                Mock(side_effect=IndexError("foo")))
+        with self.assertRaises(IndexError):
+            l.maybe_conn_error(Mock(side_effect=IndexError("foo")))
 
     def test_apply_eta_task(self):
         from celery.worker import state
@@ -514,7 +517,8 @@ class test_Consumer(unittest.TestCase):
 
         l.event_dispatcher = Mock()
         self.assertFalse(l.receive_message(m.decode(), m))
-        self.assertRaises(Empty, self.ready_queue.get_nowait)
+        with self.assertRaises(Empty):
+            self.ready_queue.get_nowait()
         self.assertTrue(self.eta_schedule.empty())
 
     def test_receieve_message_ack_raises(self):
@@ -532,7 +536,8 @@ class test_Consumer(unittest.TestCase):
             self.assertFalse(l.receive_message(m.decode(), m))
             self.assertTrue(log)
             self.assertIn("unknown message", log[0].message.args[0])
-        self.assertRaises(Empty, self.ready_queue.get_nowait)
+        with self.assertRaises(Empty):
+            self.ready_queue.get_nowait()
         self.assertTrue(self.eta_schedule.empty())
         m.ack.assert_called_with()
         self.assertTrue(l.logger.critical.call_count)
@@ -566,7 +571,8 @@ class test_Consumer(unittest.TestCase):
         self.assertIsInstance(task, TaskRequest)
         self.assertEqual(task.task_name, foo_task.name)
         self.assertEqual(task.execute(), 2 * 4 * 8)
-        self.assertRaises(Empty, self.ready_queue.get_nowait)
+        with self.assertRaises(Empty):
+            self.ready_queue.get_nowait()
 
     def test_reset_pidbox_node(self):
         l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
@@ -654,7 +660,8 @@ class test_Consumer(unittest.TestCase):
                 raise KeyError("foo")
 
         l.consume_messages = raises_KeyError
-        self.assertRaises(KeyError, l.start)
+        with self.assertRaises(KeyError):
+            l.start()
         self.assertTrue(init_callback.call_count)
         self.assertEqual(l.iterations, 1)
         self.assertEqual(l.qos.prev, l.qos.value)
@@ -667,7 +674,8 @@ class test_Consumer(unittest.TestCase):
         l.broadcast_consumer = Mock()
         l.connection = BrokerConnection()
         l.consume_messages = Mock(side_effect=socket.error("foo"))
-        self.assertRaises(socket.error, l.start)
+        with self.assertRaises(socket.error):
+            l.start()
         self.assertTrue(init_callback.call_count)
         self.assertTrue(l.consume_messages.call_count)
 
@@ -799,7 +807,8 @@ class test_WorkController(AppCase):
         task = TaskRequest.from_message(m, m.decode())
         worker.components = []
         worker._state = worker.RUN
-        self.assertRaises(KeyboardInterrupt, worker.process_task, task)
+        with self.assertRaises(KeyboardInterrupt):
+            worker.process_task(task)
         self.assertEqual(worker._state, worker.TERMINATE)
 
     def test_process_task_raise_SystemTerminate(self):
@@ -812,7 +821,8 @@ class test_WorkController(AppCase):
         task = TaskRequest.from_message(m, m.decode())
         worker.components = []
         worker._state = worker.RUN
-        self.assertRaises(SystemExit, worker.process_task, task)
+        with self.assertRaises(SystemExit):
+            worker.process_task(task)
         self.assertEqual(worker._state, worker.TERMINATE)
 
     def test_process_task_raise_regular(self):
@@ -831,7 +841,8 @@ class test_WorkController(AppCase):
         stc = Mock()
         stc.start.side_effect = SystemTerminate()
         worker1.components = [stc]
-        self.assertRaises(SystemExit, worker1.start)
+        with self.assertRaises(SystemExit):
+            worker1.start()
         self.assertTrue(stc.terminate.call_count)
 
         worker2 = self.create_worker()
@@ -839,7 +850,8 @@ class test_WorkController(AppCase):
         sec.start.side_effect = SystemExit()
         sec.terminate = None
         worker2.components = [sec]
-        self.assertRaises(SystemExit, worker2.start)
+        with self.assertRaises(SystemExit):
+            worker2.start()
         self.assertTrue(sec.stop.call_count)
 
     def test_state_db(self):

@@ -1,8 +1,8 @@
+from __future__ import absolute_import
+
 import logging
-from celery.tests.utils import unittest
 
 from datetime import datetime, timedelta
-
 from nose import SkipTest
 
 from celery import beat
@@ -11,6 +11,7 @@ from celery.result import AsyncResult
 from celery.schedules import schedule
 from celery.task.base import Task
 from celery.utils import uuid
+from celery.tests.utils import unittest
 
 
 class Object(object):

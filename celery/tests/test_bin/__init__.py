@@ -1,7 +1,8 @@
+from __future__ import absolute_import
+
 import os
 
 from celery.bin.base import Command
-
 from celery.tests.utils import AppCase
 
 
@@ -35,7 +36,8 @@ class test_Command(AppCase):
         self.assertTupleEqual(cmd.get_options(), (1, 2, 3))
 
     def test_run_interface(self):
-        self.assertRaises(NotImplementedError, Command().run)
+        with self.assertRaises(NotImplementedError):
+            Command().run()
 
     def test_execute_from_commandline(self):
         cmd = MockCommand()

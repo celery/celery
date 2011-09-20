@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from __future__ import with_statement
 
 import logging
@@ -209,8 +210,8 @@ class test_Worker(AppCase):
             self.assertNotIn("celery", app.amqp.queues.consume_from)
 
             c.CELERY_CREATE_MISSING_QUEUES = False
-            self.assertRaises(ImproperlyConfigured,
-                    self.Worker(queues=["image"]).init_queues)
+            with self.assertRaises(ImproperlyConfigured):
+                self.Worker(queues=["image"]).init_queues()
             c.CELERY_CREATE_MISSING_QUEUES = True
             worker = self.Worker(queues=["image"])
             worker.init_queues()
@@ -241,7 +242,8 @@ class test_Worker(AppCase):
 
     @disable_stdouts
     def test_unknown_loglevel(self):
-        self.assertRaises(SystemExit, self.Worker, loglevel="ALIEN")
+        with self.assertRaises(SystemExit):
+            self.Worker(loglevel="ALIEN")
         worker1 = self.Worker(loglevel=0xFFFF)
         self.assertEqual(worker1.loglevel, 0xFFFF)
 
@@ -299,7 +301,8 @@ class test_Worker(AppCase):
         worker = self.Worker()
         worker.redirect_stdouts = False
         worker.redirect_stdouts_to_logger()
-        self.assertRaises(AttributeError, getattr, sys.stdout, "logger")
+        with self.assertRaises(AttributeError):
+            sys.stdout.logger
 
     def test_redirect_stdouts_already_handled(self):
         logging_setup = [False]
@@ -313,7 +316,8 @@ class test_Worker(AppCase):
             worker.app.log.__class__._setup = False
             worker.redirect_stdouts_to_logger()
             self.assertTrue(logging_setup[0])
-            self.assertRaises(AttributeError, getattr, sys.stdout, "logger")
+            with self.assertRaises(AttributeError):
+                sys.stdout.logger
         finally:
             signals.setup_logging.disconnect(on_logging_setup)
 
@@ -470,14 +474,14 @@ class test_signal_handlers(AppCase):
 
         p, platforms.signals = platforms.signals, Signals()
         try:
-            self.assertRaises(SystemExit, handlers["SIGINT"],
-                              "SIGINT", object())
+            with self.assertRaises(SystemExit):
+                handlers["SIGINT"]("SIGINT", object())
             self.assertTrue(worker.stopped)
         finally:
             platforms.signals = p
 
-        self.assertRaises(SystemExit, next_handlers["SIGINT"],
-                          "SIGINT", object())
+        with self.assertRaises(SystemExit):
+            next_handlers["SIGINT"]("SIGINT", object())
         self.assertTrue(worker.terminated)
 
     @disable_stdouts
@@ -489,8 +493,8 @@ class test_signal_handlers(AppCase):
         try:
             worker = self._Worker()
             handlers = self.psig(cd.install_worker_int_handler, worker)
-            self.assertRaises(SystemExit, handlers["SIGINT"],
-                            "SIGINT", object())
+            with self.assertRaises(SystemExit):
+                handlers["SIGINT"]("SIGINT", object())
             self.assertFalse(worker.stopped)
         finally:
             process.name = name
@@ -510,8 +514,8 @@ class test_signal_handlers(AppCase):
         try:
             worker = self._Worker()
             handlers = self.psig(cd.install_worker_int_again_handler, worker)
-            self.assertRaises(SystemExit, handlers["SIGINT"],
-                            "SIGINT", object())
+            with self.assertRaises(SystemExit):
+                handlers["SIGINT"]("SIGINT", object())
             self.assertFalse(worker.terminated)
         finally:
             process.name = name
@@ -520,8 +524,8 @@ class test_signal_handlers(AppCase):
     def test_worker_term_handler(self):
         worker = self._Worker()
         handlers = self.psig(cd.install_worker_term_handler, worker)
-        self.assertRaises(SystemExit, handlers["SIGTERM"],
-                          "SIGTERM", object())
+        with self.assertRaises(SystemExit):
+            handlers["SIGTERM"]("SIGTERM", object())
         self.assertTrue(worker.stopped)
 
     def test_worker_cry_handler(self):
@@ -552,8 +556,8 @@ class test_signal_handlers(AppCase):
         try:
             worker = self._Worker()
             handlers = self.psig(cd.install_worker_term_handler, worker)
-            self.assertRaises(SystemExit, handlers["SIGTERM"],
-                          "SIGTERM", object())
+            with self.assertRaises(SystemExit):
+                handlers["SIGTERM"]("SIGTERM", object())
             self.assertFalse(worker.stopped)
         finally:
             process.name = name

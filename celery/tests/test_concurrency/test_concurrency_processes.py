@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import signal
 import sys
 
@@ -185,7 +187,8 @@ class test_TaskPool(unittest.TestCase):
     def test_on_ready_exit_exception(self):
         pool = TaskPool(10)
         exc = to_excinfo(SystemExit("foo"))
-        self.assertRaises(SystemExit, pool.on_ready, [], [], exc)
+        with self.assertRaises(SystemExit):
+            pool.on_ready([], [], exc)
 
     def test_apply_async(self):
         pool = TaskPool(10)

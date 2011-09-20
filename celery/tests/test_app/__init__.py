@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from __future__ import with_statement
 
 import os
@@ -264,7 +265,8 @@ class test_defaults(unittest.TestCase):
             self.assertFalse(defaults.str_to_bool(s))
         for s in ("true", "yes", "1"):
             self.assertTrue(defaults.str_to_bool(s))
-        self.assertRaises(TypeError, defaults.str_to_bool, "unsure")
+        with self.assertRaises(TypeError):
+            defaults.str_to_bool("unsure")
 
 
 class test_debugging_utils(unittest.TestCase):

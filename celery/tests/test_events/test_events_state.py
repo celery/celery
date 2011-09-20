@@ -1,5 +1,6 @@
+from __future__ import absolute_import
+
 from time import time
-from celery.tests.utils import unittest
 
 from itertools import count
 
@@ -7,6 +8,7 @@ from celery import states
 from celery.events import Event
 from celery.events.state import State, Worker, Task, HEARTBEAT_EXPIRE
 from celery.utils import uuid
+from celery.tests.utils import unittest
 
 
 class replay(object):

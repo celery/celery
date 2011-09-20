@@ -1,11 +1,14 @@
+from __future__ import absolute_import
+from __future__ import with_statement
+
 import sys
-from celery.tests.utils import unittest
 from Queue import Queue
 
 from celery.datastructures import ExceptionInfo, LRUCache
 from celery.datastructures import LimitedSet, consume_queue
 from celery.datastructures import AttributeDict, DictAttribute
 from celery.datastructures import ConfigurationView
+from celery.tests.utils import unittest
 
 
 class Object(object):
@@ -21,7 +24,8 @@ class test_DictAttribute(unittest.TestCase):
         self.assertEqual(x["foo"], x.obj.foo)
         self.assertEqual(x.get("foo"), "The quick brown fox")
         self.assertIsNone(x.get("bar"))
-        self.assertRaises(KeyError, x.__getitem__, "bar")
+        with self.assertRaises(KeyError):
+            x["bar"]
 
     def test_setdefault(self):
         x = DictAttribute(Object())
@@ -96,11 +100,13 @@ class test_utilities(unittest.TestCase):
     def test_consume_queue(self):
         x = Queue()
         it = consume_queue(x)
-        self.assertRaises(StopIteration, it.next)
+        with self.assertRaises(StopIteration):
+            it.next()
         x.put("foo")
         it = consume_queue(x)
         self.assertEqual(it.next(), "foo")
-        self.assertRaises(StopIteration, it.next)
+        with self.assertRaises(StopIteration):
+            it.next()
 
 
 class test_LimitedSet(unittest.TestCase):
@@ -166,6 +172,7 @@ class test_AttributeDict(unittest.TestCase):
     def test_getattr__setattr(self):
         x = AttributeDict({"foo": "bar"})
         self.assertEqual(x["foo"], "bar")
-        self.assertRaises(AttributeError, getattr, x, "bar")
+        with self.assertRaises(AttributeError):
+            x.bar
         x.bar = "foo"
         self.assertEqual(x["bar"], "foo")

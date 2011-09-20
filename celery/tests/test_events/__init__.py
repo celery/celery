@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import socket
 
 from celery import events
@@ -54,7 +56,8 @@ class TestEventDispatcher(unittest.TestCase):
         eventer.enabled = True
         eventer.publisher.raise_on_publish = True
         eventer.buffer_while_offline = False
-        self.assertRaises(KeyError, eventer.send, "Event X")
+        with self.assertRaises(KeyError):
+            eventer.send("Event X")
         eventer.buffer_while_offline = True
         for ev in evs:
             eventer.send(ev)
@@ -142,10 +145,11 @@ class TestEventReceiver(unittest.TestCase):
             self.assertTrue(consumer.queues)
             self.assertEqual(consumer.callbacks[0], r._receive)
 
-            self.assertRaises(socket.timeout, it.next)
+            with self.assertRaises(socket.timeout):
+                it.next()
 
-            self.assertRaises(socket.timeout,
-                              r.capture, timeout=0.00001)
+            with self.assertRaises(socket.timeout):
+                r.capture(timeout=0.00001)
         finally:
             connection.close()
 

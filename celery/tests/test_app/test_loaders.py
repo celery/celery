@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from __future__ import with_statement
 
 import os
@@ -137,8 +138,8 @@ class TestLoaderBase(unittest.TestCase):
             self.assertIsInstance(warning, MockMail.SendmailWarning)
             self.assertIn("KeyError", warning.args[0])
 
-            self.assertRaises(KeyError, self.loader.mail_admins,
-                              fail_silently=False, **opts)
+            with self.assertRaises(KeyError):
+                self.loader.mail_admins(fail_silently=False, **opts)
 
     def test_mail_admins(self):
         MockMail.Mailer.raise_on_send = False
@@ -154,8 +155,8 @@ class TestLoaderBase(unittest.TestCase):
         self.assertIs(loader.mail, mail)
 
     def test_cmdline_config_ValueError(self):
-        self.assertRaises(ValueError, self.loader.cmdline_config_parser,
-                         ["broker.port=foobar"])
+        with self.assertRaises(ValueError):
+            self.loader.cmdline_config_parser(["broker.port=foobar"])
 
 
 class TestDefaultLoader(unittest.TestCase):
@@ -231,17 +232,16 @@ class test_AppLoader(unittest.TestCase):
     def test_config_from_envvar(self, key="CELERY_HARNESS_CFG1"):
         self.assertFalse(self.loader.config_from_envvar("HDSAJIHWIQHEWQU",
                                                         silent=True))
-        self.assertRaises(ImproperlyConfigured,
-                          self.loader.config_from_envvar, "HDSAJIHWIQHEWQU",
-                          silent=False)
+        with self.assertRaises(ImproperlyConfigured):
+            self.loader.config_from_envvar("HDSAJIHWIQHEWQU", silent=False)
         os.environ[key] = __name__ + ".object_config"
         self.assertTrue(self.loader.config_from_envvar(key))
         self.assertEqual(self.loader.conf["FOO"], 1)
         self.assertEqual(self.loader.conf["BAR"], 2)
 
         os.environ[key] = "unknown_asdwqe.asdwqewqe"
-        self.assertRaises(ImportError,
-                          self.loader.config_from_envvar, key, silent=False)
+        with self.assertRaises(ImportError):
+            self.loader.config_from_envvar(key, silent=False)
         self.assertFalse(self.loader.config_from_envvar(key, silent=True))
 
         os.environ[key] = __name__ + ".dict_config"

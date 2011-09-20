@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from __future__ import with_statement
 
 import logging
@@ -112,7 +113,8 @@ class TestHttpDispatch(unittest.TestCase):
         with mock_urlopen(fail_response("Invalid moon alignment")):
             d = http.HttpDispatch("http://example.com/mul", "GET", {
                                     "x": 10, "y": 10}, logger)
-            self.assertRaises(http.RemoteExecuteError, d.dispatch)
+            with self.assertRaises(http.RemoteExecuteError):
+                d.dispatch()
 
     def test_dispatch_empty_response(self):
         logger = logging.getLogger("celery.unittest")
@@ -120,7 +122,8 @@ class TestHttpDispatch(unittest.TestCase):
         with mock_urlopen(_response("")):
             d = http.HttpDispatch("http://example.com/mul", "GET", {
                                     "x": 10, "y": 10}, logger)
-            self.assertRaises(http.InvalidResponseError, d.dispatch)
+            with self.assertRaises(http.InvalidResponseError):
+                d.dispatch()
 
     def test_dispatch_non_json(self):
         logger = logging.getLogger("celery.unittest")
@@ -128,7 +131,8 @@ class TestHttpDispatch(unittest.TestCase):
         with mock_urlopen(_response("{'#{:'''")):
             d = http.HttpDispatch("http://example.com/mul", "GET", {
                                     "x": 10, "y": 10}, logger)
-            self.assertRaises(http.InvalidResponseError, d.dispatch)
+            with self.assertRaises(http.InvalidResponseError):
+                d.dispatch()
 
     def test_dispatch_unknown_status(self):
         logger = logging.getLogger("celery.unittest")
@@ -136,7 +140,8 @@ class TestHttpDispatch(unittest.TestCase):
         with mock_urlopen(unknown_response()):
             d = http.HttpDispatch("http://example.com/mul", "GET", {
                                     "x": 10, "y": 10}, logger)
-            self.assertRaises(http.UnknownStatusError, d.dispatch)
+            with self.assertRaises(http.UnknownStatusError):
+                d.dispatch()
 
     def test_dispatch_POST(self):
         logger = logging.getLogger("celery.unittest")

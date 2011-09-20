@@ -1,7 +1,8 @@
-from celery.tests.utils import unittest
+from __future__ import absolute_import
 
 from celery.states import state
 from celery import states
+from celery.tests.utils import unittest
 
 
 class test_state_precedence(unittest.TestCase):

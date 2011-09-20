@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import logging
 
 from time import time
@@ -7,7 +9,6 @@ from mock import Mock, patch
 from celery.concurrency.base import BasePool
 from celery.worker import state
 from celery.worker import autoscale
-
 from celery.tests.utils import unittest, sleepdeprived
 
 logger = logging.getLogger("celery.tests.autoscale")

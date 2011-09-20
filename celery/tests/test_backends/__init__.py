@@ -1,10 +1,10 @@
+from __future__ import absolute_import
 from __future__ import with_statement
-
-from celery.tests.utils import unittest
 
 from celery import backends
 from celery.backends.amqp import AMQPBackend
 from celery.backends.cache import CacheBackend
+from celery.tests.utils import unittest
 
 
 class TestBackends(unittest.TestCase):

@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+from __future__ import with_statement
+
 from functools import wraps
 
 from kombu.pidbox import Mailbox
@@ -135,8 +138,9 @@ class test_Broadcast(unittest.TestCase):
 
     @with_mock_broadcast
     def test_broadcast_validate(self):
-        self.assertRaises(ValueError, self.control.broadcast, "foobarbaz2",
-                          destination="foo")
+        with self.assertRaises(ValueError):
+            self.control.broadcast("foobarbaz2",
+                                   destination="foo")
 
     @with_mock_broadcast
     def test_rate_limit(self):

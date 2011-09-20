@@ -1,7 +1,8 @@
+from __future__ import absolute_import
+
 from datetime import datetime, timedelta
 
 from celery.utils import timeutils
-
 from celery.tests.utils import unittest
 
 

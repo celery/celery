@@ -121,21 +121,25 @@ class TestAsyncResult(AppCase):
 
         self.assertEqual(ok_res.get(), "the")
         self.assertEqual(ok2_res.get(), "quick")
-        self.assertRaises(KeyError, nok_res.get)
+        with self.assertRaises(KeyError):
+            nok_res.get()
         self.assertIsInstance(nok2_res.result, KeyError)
         self.assertEqual(ok_res.info, "the")
 
     def test_get_timeout(self):
         res = AsyncResult(self.task4["id"])             # has RETRY status
-        self.assertRaises(TimeoutError, res.get, timeout=0.1)
+        with self.assertRaises(TimeoutError):
+            res.get(timeout=0.1)
 
         pending_res = AsyncResult(uuid())
-        self.assertRaises(TimeoutError, pending_res.get, timeout=0.1)
+        with self.assertRaises(TimeoutError):
+            pending_res.get(timeout=0.1)
 
     @skip_if_quick
     def test_get_timeout_longer(self):
         res = AsyncResult(self.task4["id"])             # has RETRY status
-        self.assertRaises(TimeoutError, res.get, timeout=1)
+        with self.assertRaises(TimeoutError):
+            res.get(timeout=1)
 
     def test_ready(self):
         oks = (AsyncResult(self.task1["id"]),
@@ -224,7 +228,8 @@ class TestTaskSetResult(AppCase):
         ar = MockAsyncResultFailure(uuid())
         ts = TaskSetResult(uuid(), [ar])
         it = iter(ts)
-        self.assertRaises(KeyError, it.next)
+        with self.assertRaises(KeyError):
+            it.next()
 
     def test_forget(self):
         subs = [MockAsyncResultSuccess(uuid()),
@@ -245,14 +250,14 @@ class TestTaskSetResult(AppCase):
                 MockAsyncResultSuccess(uuid())]
         ts = TaskSetResult(uuid(), subs)
         ts.save()
-        self.assertRaises(AttributeError, ts.save, backend=object())
+        with self.assertRaises(AttributeError):
+            ts.save(backend=object())
         self.assertEqual(TaskSetResult.restore(ts.taskset_id).subtasks,
                          ts.subtasks)
         ts.delete()
         self.assertIsNone(TaskSetResult.restore(ts.taskset_id))
-        self.assertRaises(AttributeError,
-                          TaskSetResult.restore, ts.taskset_id,
-                          backend=object())
+        with self.assertRaises(AttributeError):
+            TaskSetResult.restore(ts.taskset_id, backend=object())
 
     def test_join_native(self):
         backend = SimpleBackend()
@@ -292,7 +297,8 @@ class TestTaskSetResult(AppCase):
         ar2 = MockAsyncResultSuccess(uuid())
         ar3 = AsyncResult(uuid())
         ts = TaskSetResult(uuid(), [ar, ar2, ar3])
-        self.assertRaises(TimeoutError, ts.join, timeout=0.0000001)
+        with self.assertRaises(TimeoutError):
+            ts.join(timeout=0.0000001)
 
     def test_itersubtasks(self):
 
@@ -367,10 +373,12 @@ class TestFailedTaskSetResult(TestTaskSetResult):
         def consume():
             return list(it)
 
-        self.assertRaises(KeyError, consume)
+        with self.assertRaises(KeyError):
+            consume()
 
     def test_join(self):
-        self.assertRaises(KeyError, self.ts.join)
+        with self.assertRaises(KeyError):
+            self.ts.join()
 
     def test_successful(self):
         self.assertFalse(self.ts.successful())
@@ -396,11 +404,13 @@ class TestTaskSetPending(AppCase):
         self.assertTrue(self.ts.waiting())
 
     def x_join(self):
-        self.assertRaises(TimeoutError, self.ts.join, timeout=0.001)
+        with self.assertRaises(TimeoutError):
+            self.ts.join(timeout=0.001)
 
     @skip_if_quick
     def x_join_longer(self):
-        self.assertRaises(TimeoutError, self.ts.join, timeout=1)
+        with self.assertRaises(TimeoutError):
+            self.ts.join(timeout=1)
 
 
 class RaisingTask(Task):
@@ -413,7 +423,8 @@ class TestEagerResult(AppCase):
 
     def test_wait_raises(self):
         res = RaisingTask.apply(args=[3, 3])
-        self.assertRaises(KeyError, res.wait)
+        with self.assertRaises(KeyError):
+            res.wait()
 
     def test_wait(self):
         res = EagerResult("x", "x", states.RETRY)

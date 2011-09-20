@@ -1,10 +1,10 @@
+from __future__ import absolute_import
 from __future__ import with_statement
 
 from mock import Mock
 
-from celery.tests.utils import AppCase
-
 from celery.app.amqp import MSG_OPTIONS, extract_msg_options
+from celery.tests.utils import AppCase
 
 
 class TestMsgOptions(AppCase):

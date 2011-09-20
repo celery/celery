@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from datetime import datetime, timedelta
 from functools import wraps
 
@@ -150,8 +152,8 @@ class TestTaskRetries(unittest.TestCase):
         self.assertEqual(RetryTaskNoArgs.iterations, 4)
 
     def test_retry_kwargs_can_be_empty(self):
-        self.assertRaises(RetryTaskError, RetryTaskMockApply.retry,
-                            args=[4, 4], kwargs=None)
+        with self.assertRaises(RetryTaskError):
+            RetryTaskMockApply.retry(args=[4, 4], kwargs=None)
 
     def test_retry_not_eager(self):
         RetryTaskMockApply.request.called_directly = False
@@ -164,7 +166,8 @@ class TestTaskRetries(unittest.TestCase):
             RetryTaskMockApply.applied = 0
 
         try:
-            self.assertRaises(RetryTaskError, RetryTaskMockApply.retry,
+            with self.assertRaises(RetryTaskError):
+                RetryTaskMockApply.retry(
                     args=[4, 4], kwargs={"task_retries": 0},
                     exc=exc, throw=True)
             self.assertTrue(RetryTaskMockApply.applied)
@@ -182,23 +185,23 @@ class TestTaskRetries(unittest.TestCase):
         RetryTaskCustomExc.max_retries = 2
         RetryTaskCustomExc.iterations = 0
         result = RetryTaskCustomExc.apply([0xFF, 0xFFFF], {"kwarg": 0xF})
-        self.assertRaises(MyCustomException,
-                          result.get)
+        with self.assertRaises(MyCustomException):
+            result.get()
         self.assertEqual(RetryTaskCustomExc.iterations, 3)
 
     def test_max_retries_exceeded(self):
         RetryTask.max_retries = 2
         RetryTask.iterations = 0
         result = RetryTask.apply([0xFF, 0xFFFF], {"care": False})
-        self.assertRaises(RetryTask.MaxRetriesExceededError,
-                          result.get)
+        with self.assertRaises(RetryTask.MaxRetriesExceededError):
+            result.get()
         self.assertEqual(RetryTask.iterations, 3)
 
         RetryTask.max_retries = 1
         RetryTask.iterations = 0
         result = RetryTask.apply([0xFF, 0xFFFF], {"care": False})
-        self.assertRaises(RetryTask.MaxRetriesExceededError,
-                          result.get)
+        with self.assertRaises(RetryTask.MaxRetriesExceededError):
+            result.get()
         self.assertEqual(RetryTask.iterations, 2)
 
 
@@ -255,15 +258,16 @@ class TestCeleryTasks(unittest.TestCase):
         class IncompleteTask(task.Task):
             name = "c.unittest.t.itask"
 
-        self.assertRaises(NotImplementedError, IncompleteTask().run)
+        with self.assertRaises(NotImplementedError):
+            IncompleteTask().run()
 
     def test_task_kwargs_must_be_dictionary(self):
-        self.assertRaises(ValueError, IncrementCounterTask.apply_async,
-                          [], "str")
+        with self.assertRaises(ValueError):
+            IncrementCounterTask.apply_async([], "str")
 
     def test_task_args_must_be_list(self):
-        self.assertRaises(ValueError, IncrementCounterTask.apply_async,
-                          "str", {})
+        with self.assertRaises(ValueError):
+            IncrementCounterTask.apply_async("str", {})
 
     def test_regular_task(self):
         T1 = self.createTaskCls("T1", "c.unittest.t.t1")
@@ -280,7 +284,8 @@ class TestCeleryTasks(unittest.TestCase):
 
         t1 = T1()
         consumer = t1.get_consumer()
-        self.assertRaises(NotImplementedError, consumer.receive, "foo", "foo")
+        with self.assertRaises(NotImplementedError):
+            consumer.receive("foo", "foo")
         consumer.discard_all()
         self.assertIsNone(consumer.fetch())
 
@@ -466,12 +471,14 @@ class TestTaskSet(unittest.TestCase):
 class TestTaskApply(unittest.TestCase):
 
     def test_apply_throw(self):
-        self.assertRaises(KeyError, RaisingTask.apply, throw=True)
+        with self.assertRaises(KeyError):
+            RaisingTask.apply(throw=True)
 
     def test_apply_with_CELERY_EAGER_PROPAGATES_EXCEPTIONS(self):
         RaisingTask.app.conf.CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
         try:
-            self.assertRaises(KeyError, RaisingTask.apply)
+            with self.assertRaises(KeyError):
+                RaisingTask.apply()
         finally:
             RaisingTask.app.conf.CELERY_EAGER_PROPAGATES_EXCEPTIONS = False
 
@@ -496,7 +503,8 @@ class TestTaskApply(unittest.TestCase):
         self.assertTrue(f.ready())
         self.assertFalse(f.successful())
         self.assertTrue(f.traceback)
-        self.assertRaises(KeyError, f.get)
+        with self.assertRaises(KeyError):
+            f.get()
 
 
 class MyPeriodic(task.PeriodicTask):
@@ -506,8 +514,8 @@ class MyPeriodic(task.PeriodicTask):
 class TestPeriodicTask(unittest.TestCase):
 
     def test_must_have_run_every(self):
-        self.assertRaises(NotImplementedError, type, "Foo",
-            (task.PeriodicTask, ), {"__module__": __name__})
+        with self.assertRaises(NotImplementedError):
+            type("Foo", (task.PeriodicTask, ), {"__module__": __name__})
 
     def test_remaining_estimate(self):
         self.assertIsInstance(
@@ -610,23 +618,28 @@ class test_crontab_parser(unittest.TestCase):
                     20, 25, 30, 35, 40, 45, 50, 55]))
 
     def test_parse_errors_on_empty_string(self):
-        self.assertRaises(ParseException, crontab_parser(60).parse, '')
+        with self.assertRaises(ParseException):
+            crontab_parser(60).parse('')
 
     def test_parse_errors_on_empty_group(self):
-        self.assertRaises(ParseException, crontab_parser(60).parse, '1,,2')
+        with self.assertRaises(ParseException):
+            crontab_parser(60).parse('1,,2')
 
     def test_parse_errors_on_empty_steps(self):
-        self.assertRaises(ParseException, crontab_parser(60).parse, '*/')
+        with self.assertRaises(ParseException):
+            crontab_parser(60).parse('*/')
 
     def test_parse_errors_on_negative_number(self):
-        self.assertRaises(ParseException, crontab_parser(60).parse, '-20')
+        with self.assertRaises(ParseException):
+            crontab_parser(60).parse('-20')
 
     def test_expand_cronspec_eats_iterables(self):
         self.assertEqual(crontab._expand_cronspec(iter([1, 2, 3]), 100),
                          set([1, 2, 3]))
 
     def test_expand_cronspec_invalid_type(self):
-        self.assertRaises(TypeError, crontab._expand_cronspec, object(), 100)
+        with self.assertRaises(TypeError):
+            crontab._expand_cronspec(object(), 100)
 
     def test_repr(self):
         self.assertIn("*", repr(crontab("*")))
@@ -720,8 +733,10 @@ class test_crontab_is_due(unittest.TestCase):
         self.assertEqual(c.minute, set([30, 40, 50]))
 
     def test_crontab_spec_invalid_minute(self):
-        self.assertRaises(ValueError, crontab, minute=60)
-        self.assertRaises(ValueError, crontab, minute='0-100')
+        with self.assertRaises(ValueError):
+            crontab(minute=60)
+        with self.assertRaises(ValueError):
+            crontab(minute='0-100')
 
     def test_crontab_spec_hour_formats(self):
         c = crontab(hour=6)
@@ -732,8 +747,10 @@ class test_crontab_is_due(unittest.TestCase):
         self.assertEqual(c.hour, set([4, 8, 12]))
 
     def test_crontab_spec_invalid_hour(self):
-        self.assertRaises(ValueError, crontab, hour=24)
-        self.assertRaises(ValueError, crontab, hour='0-30')
+        with self.assertRaises(ValueError):
+            crontab(hour=24)
+        with self.assertRaises(ValueError):
+            crontab(hour='0-30')
 
     def test_crontab_spec_dow_formats(self):
         c = crontab(day_of_week=5)
@@ -760,10 +777,14 @@ class test_crontab_is_due(unittest.TestCase):
                 break
 
     def test_crontab_spec_invalid_dow(self):
-        self.assertRaises(ValueError, crontab, day_of_week='fooday-barday')
-        self.assertRaises(ValueError, crontab, day_of_week='1,4,foo')
-        self.assertRaises(ValueError, crontab, day_of_week='7')
-        self.assertRaises(ValueError, crontab, day_of_week='12')
+        with self.assertRaises(ValueError):
+            crontab(day_of_week='fooday-barday')
+        with self.assertRaises(ValueError):
+            crontab(day_of_week='1,4,foo')
+        with self.assertRaises(ValueError):
+            crontab(day_of_week='7')
+        with self.assertRaises(ValueError):
+            crontab(day_of_week='12')
 
     def test_every_minute_execution_is_due(self):
         last_ran = self.now - timedelta(seconds=61)
