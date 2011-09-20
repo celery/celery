@@ -59,6 +59,7 @@ Misc.
 -----
 
 """
+from __future__ import absolute_import
 
 #: State precedence.
 #: None represents the precedence of an unknown state.

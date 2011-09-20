@@ -9,6 +9,8 @@ AMQ related functionality.
 :license: BSD, see LICENSE for more details.
 
 """
+from __future__ import absolute_import
+
 from datetime import datetime, timedelta
 
 from kombu import BrokerConnection, Exchange

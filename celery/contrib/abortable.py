@@ -78,6 +78,8 @@ have it block until the task is finished.
    database backends.
 
 """
+from __future__ import absolute_import
+
 from celery.task.base import Task
 from celery.result import AsyncResult
 

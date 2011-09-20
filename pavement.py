@@ -90,6 +90,17 @@ def flake8(options):
     }{exit $FOUND_FLAKE;
         '""" % (complexity, ), ignore_error=noerror)
 
+
+@task
+@cmdopts([
+    ("noerror", "E", "Ignore errors"),
+])
+def flakeplus(options):
+    noerror = getattr(options, "noerror", False)
+    sh("python contrib/release/flakeplus.py celery",
+       ignore_error=noerror)
+
+
 @task
 def clean_readme(options):
     path("README").unlink()

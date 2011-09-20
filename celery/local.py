@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+
+
 def try_import(module):
     from importlib import import_module
     try:

@@ -5,6 +5,8 @@ SQLAlchemy 0.5.8 version of a805d4bd, see the docstring of that module
 for an explanation of this workaround.
 
 """
+from __future__ import absolute_import
+
 from sqlalchemy.types import PickleType as _PickleType
 from sqlalchemy import util
 

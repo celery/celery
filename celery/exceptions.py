@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+
+
 UNREGISTERED_FMT = """\
 Task of kind %s is not registered, please make sure it's imported.\
 """

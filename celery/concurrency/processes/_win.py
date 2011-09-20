@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import os
 
 __all__ = ["get_processtree_pids", "kill_processtree"]

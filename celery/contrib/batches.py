@@ -39,6 +39,8 @@ Registering the click is done as follows:
 :license: BSD, see LICENSE for more details.
 
 """
+from __future__ import absolute_import
+
 from itertools import count
 from Queue import Queue
 

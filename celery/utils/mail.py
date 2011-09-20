@@ -1,11 +1,14 @@
+from __future__ import absolute_import
+
 import sys
 import smtplib
-from celery.utils import get_symbol_by_name
 
 try:
     from email.mime.text import MIMEText
 except ImportError:
     from email.MIMEText import MIMEText  # noqa
+
+from celery.utils import get_symbol_by_name
 
 supports_timeout = sys.version_info >= (2, 6)
 

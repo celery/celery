@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from collections import defaultdict
 
 from sqlalchemy import create_engine
