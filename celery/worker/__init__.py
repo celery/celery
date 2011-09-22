@@ -1,5 +1,6 @@
-import socket
+import atexit
 import logging
+import socket
 import traceback
 
 from kombu.syn import blocking
@@ -155,9 +156,8 @@ class WorkController(object):
         self._finalize_db = None
 
         if self.db:
-            persistence = state.Persistent(self.db)
-            self._finalize_db = Finalize(persistence, persistence.save,
-                                         exitpriority=5)
+            self._persistence = state.Persistent(self.db)
+            atexit.register(self._persistence.save)
 
         # Queues
         if self.disable_rate_limits:
