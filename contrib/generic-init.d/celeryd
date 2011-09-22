@@ -132,11 +132,6 @@ if [ -n "$CELERYD_GROUP" ]; then
     DAEMON_OPTS="$DAEMON_OPTS --gid=$CELERYD_GROUP"
 fi
 
-if [ -n "$CELERYD_CHDIR" ]; then
-    DAEMON_OPTS="$DAEMON_OPTS --workdir=\"$CELERYD_CHDIR\""
-fi
-
-
 check_dev_null() {
     if [ ! -c /dev/null ]; then
         echo "/dev/null is not a character device!"
@@ -149,11 +144,17 @@ export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 
 
 stop_workers () {
+    if [ -n "$CELERYD_CHDIR" ]; then
+        cd $CELERYD_CHDIR
+    fi
     $CELERYD_MULTI stop $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
 }
 
 
 start_workers () {
+    if [ -n "$CELERYD_CHDIR" ]; then
+        cd $CELERYD_CHDIR
+    fi
     $CELERYD_MULTI start $CELERYD_NODES $DAEMON_OPTS        \
                          --pidfile="$CELERYD_PID_FILE"      \
                          --logfile="$CELERYD_LOG_FILE"      \
@@ -164,6 +165,9 @@ start_workers () {
 
 
 restart_workers () {
+    if [ -n "$CELERYD_CHDIR" ]; then
+        cd $CELERYD_CHDIR
+    fi
     $CELERYD_MULTI restart $CELERYD_NODES $DAEMON_OPTS      \
                            --pidfile="$CELERYD_PID_FILE"    \
                            --logfile="$CELERYD_LOG_FILE"    \
@@ -173,6 +177,13 @@ restart_workers () {
 }
 
 
+
+status_workers () {
+    if [ -n "$CELERYD_CHDIR" ]; then
+        cd $CELERYD_CHDIR
+    fi
+    celeryctl status
+}
 
 case "$1" in
     start)
@@ -190,7 +201,7 @@ case "$1" in
     ;;
 
     status)
-        celeryctl status
+        status_workers
     ;;
 
     restart)
