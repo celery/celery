@@ -42,12 +42,12 @@ def maybe_timedelta(delta):
 if HAVE_TIMEDELTA_TOTAL_SECONDS:   # pragma: no cover
 
     def timedelta_seconds(delta):
-    """Convert :class:`datetime.timedelta` to seconds.
+        """Convert :class:`datetime.timedelta` to seconds.
 
-    Doesn't account for negative values.
+        Doesn't account for negative values.
 
-    """
-    return max(delta.total_seconds(), 0)
+        """
+        return max(delta.total_seconds(), 0)
 else:  # pragma: no cover
 
     def timedelta_seconds(delta):  # noqa

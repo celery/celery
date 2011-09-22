@@ -32,7 +32,7 @@ class MockShelve(dict):
     in_sync = False
     closed = False
 
-    def open(self, filename):
+    def open(self, filename, **kwargs):
         self.filename = filename
         return self
 
