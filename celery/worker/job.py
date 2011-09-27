@@ -276,14 +276,19 @@ class TaskRequest(object):
         delivery_info = dict((key, delivery_info.get(key))
                                 for key in WANTED_DELIVERY_INFO)
 
-        kwargs = body["kwargs"]
+        kwargs = body.get("kwargs", {})
         if not hasattr(kwargs, "items"):
             raise InvalidTaskError("Task keyword arguments is not a mapping.")
+        try:
+            task_name = body["task"]
+            task_id = body["id"]
+        except KeyError, e:
+            raise InvalidTaskError("Task message is missing required field %s" % e)
 
-        return cls(task_name=body["task"],
-                   task_id=body["id"],
+        return cls(task_name=task_name,
+                   task_id=task_id,
                    taskset_id=body.get("taskset", None),
-                   args=body["args"],
+                   args=body.get("args", []),
                    kwargs=kwdict(kwargs),
                    chord=body.get("chord"),
                    retries=body.get("retries", 0),
