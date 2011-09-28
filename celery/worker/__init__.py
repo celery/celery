@@ -267,6 +267,9 @@ class WorkController(object):
         except SystemExit:
             self.stop()
             raise
+        except Exception:
+            self.stop()
+            raise
         except:
             self.stop()
             try:
