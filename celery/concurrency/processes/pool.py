@@ -591,10 +591,11 @@ class Pool(object):
             for job in self._cache.values():
                 for worker_pid in job.worker_pids():
                     if worker_pid in cleaned and not job.ready():
-                        if self._putlock is not None:
-                            self._putlock.release()
                         job._worker_lost = time.time()
                         continue
+            if self._putlock is not None:
+                for worker in cleaned:
+                    self._putlock.release()
             return True
         return False
 

@@ -849,8 +849,7 @@ class test_WorkController(AppCase):
         state.Persistent = Mock()
         try:
             worker = self.create_worker(db="statefilename")
-            self.assertTrue(worker._finalize_db)
-            worker._finalize_db.cancel()
+            self.assertTrue(worker._persistence)
         finally:
             state.Persistent = Persistent
 
