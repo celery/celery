@@ -42,7 +42,7 @@ Example configuration
 
 This is an example configuration for a Python project.
 
-:file:`/etc/default/celeryd`:
+:file:`/etc/default/celeryd`::
 
     # Name of nodes to start
     # here we have a single node
