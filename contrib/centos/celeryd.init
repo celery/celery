@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# chkconfig: - 55 45
+# chkconfig: - 85 15
 # description:  Celery worker daemon
 # processname: celeryd
 # config: /etc/sysconfig/celeryd
