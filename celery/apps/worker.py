@@ -176,6 +176,16 @@ class Worker(object):
         print("discard: Erased %d %s from the queue.\n" % (count, what))
 
     def worker_init(self):
+        # Re-init the logging system.
+        # Workaround for http://bugs.python.org/issue6721#msg140215
+        # In short: Pythons logging module uses RLock() objects.
+        # These are broken after fork.
+        # and can cause a deadlock (Issue #496).
+        logger_names = logging.Logger.manager.loggerDict.keys()
+        for logger_name in logger_names:
+            for handler in logging.getLogger(logger_name).handlers:
+                handler.createLock()
+
         # Run the worker init handler.
         # (Usually imports task modules and such.)
         self.loader.init_worker()
