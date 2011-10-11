@@ -537,6 +537,24 @@ class test_TaskRequest(unittest.TestCase):
         self.assertIsInstance(tw.kwargs.keys()[0], str)
         self.assertTrue(tw.logger)
 
+    def test_from_message_empty_args(self):
+        body = {"task" : mytask.name, "id": uuid()}
+        m = Message(None, body=anyjson.serialize(body), backend="foo",
+                          content_type="application/json",
+                          content_encoding="utf-8")
+        tw = TaskRequest.from_message(m, m.decode())
+        self.assertIsInstance(tw, TaskRequest)
+        self.assertEquals(tw.args, [])
+        self.assertEquals(tw.kwargs, {})
+
+    def test_from_message_missing_required_fields(self):
+        body = {}
+        m = Message(None, body=anyjson.serialize(body), backend="foo",
+                          content_type="application/json",
+                          content_encoding="utf-8")
+        with self.assertRaises(InvalidTaskError):
+            TaskRequest.from_message(m, m.decode())
+ 
     def test_from_message_nonexistant_task(self):
         body = {"task": "cu.mytask.doesnotexist", "id": uuid(),
                 "args": [2], "kwargs": {u"æØåveéðƒeæ": "bar"}}
