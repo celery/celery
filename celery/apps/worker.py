@@ -178,6 +178,17 @@ class Worker(object):
         print("discard: Erased %d %s from the queue.\n" % (count, what))
 
     def worker_init(self):
+
+        # re-init the logging system
+        # Work around for http://bugs.python.org/issue6721#msg140215
+        # in short: python logging module uses RLock() objects. These are broken after
+        # a fork.
+        # this causes your workers to hang, https://github.com/ask/celery/issues/496
+        logger_names = logging.Logger.manager.loggerDict.keys()
+        for logger_name in logger_names:
+            for handler in logging.getLogger(logger_name).handlers:
+                handler.createLock()
+
         # Run the worker init handler.
         # (Usually imports task modules and such.)
         self.loader.init_worker()
