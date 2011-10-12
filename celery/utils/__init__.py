@@ -463,6 +463,9 @@ def cry():  # pragma: no cover
     sep = "=" * 49 + "\n"
     for tid, frame in sys._current_frames().iteritems():
         thread = tmap.get(tid, main_thread)
+        if not thread:
+            # skip old junk (left-overs from a fork)
+            continue
         out.write("%s\n" % (thread.getName(), ))
         out.write(sep)
         traceback.print_stack(frame, file=out)
