@@ -87,16 +87,26 @@ class test_CacheBackend(unittest.TestCase):
             CacheBackend(backend="unknown://")
 
 
-class MyClient(DummyClient):
+class MyMemcachedStringEncodingError(Exception):
     pass
 
 
-class test_get_best_memcache(unittest.TestCase):
+class MemcachedClient(DummyClient):
+
+    def set(self, key, value, *args, **kwargs):
+        if isinstance(key, unicode):
+            raise MyMemcachedStringEncodingError(
+                    "Keys must be str()'s, not unicode.  Convert your unicode "
+                    "strings using mystring.encode(charset)!")
+        return super(MemcachedClient, self).set(key, value, *args, **kwargs)
+
+
+class MockCacheMixin(object):
 
     @contextmanager
     def mock_memcache(self):
         memcache = types.ModuleType("memcache")
-        memcache.Client = MyClient
+        memcache.Client = MemcachedClient
         memcache.Client.__module__ = memcache.__name__
         prev, sys.modules["memcache"] = sys.modules.get("memcache"), memcache
         yield True
@@ -106,13 +116,16 @@ class test_get_best_memcache(unittest.TestCase):
     @contextmanager
     def mock_pylibmc(self):
         pylibmc = types.ModuleType("pylibmc")
-        pylibmc.Client = MyClient
+        pylibmc.Client = MemcachedClient
         pylibmc.Client.__module__ = pylibmc.__name__
         prev = sys.modules.get("pylibmc")
         sys.modules["pylibmc"] = pylibmc
         yield True
         if prev is not None:
             sys.modules["pylibmc"] = prev
+
+
+class test_get_best_memcache(unittest.TestCase, MockCacheMixin):
 
     def test_pylibmc(self):
         with reset_modules("celery.backends.cache"):
@@ -151,3 +164,48 @@ class test_get_best_memcache(unittest.TestCase):
         from celery.backends.cache import backends
         for name, fun in backends.items():
             self.assertTrue(fun())
+
+
+class test_memcache_key(unittest.TestCase, MockCacheMixin):
+
+    def test_memcache_unicode_key(self):
+        with self.mock_memcache():
+            with reset_modules("celery.backends.cache"):
+                with mask_modules("pylibmc"):
+                    from celery.backends import cache
+                    cache._imp = [None]
+                    task_id, result = unicode(uuid()), 42
+                    b = cache.CacheBackend(backend='memcache')
+                    b.store_result(task_id, result, status=states.SUCCESS)
+                    self.assertEqual(b.get_result(task_id), result)
+
+    def test_memcache_bytes_key(self):
+        with self.mock_memcache():
+            with reset_modules("celery.backends.cache"):
+                with mask_modules("pylibmc"):
+                    from celery.backends import cache
+                    cache._imp = [None]
+                    task_id, result = bytes(uuid()), 42
+                    b = cache.CacheBackend(backend='memcache')
+                    b.store_result(task_id, result, status=states.SUCCESS)
+                    self.assertEqual(b.get_result(task_id), result)
+
+    def test_pylibmc_unicode_key(self):
+        with reset_modules("celery.backends.cache"):
+            with self.mock_pylibmc():
+                from celery.backends import cache
+                cache._imp = [None]
+                task_id, result = unicode(uuid()), 42
+                b = cache.CacheBackend(backend='memcache')
+                b.store_result(task_id, result, status=states.SUCCESS)
+                self.assertEqual(b.get_result(task_id), result)
+
+    def test_pylibmc_bytes_key(self):
+        with reset_modules("celery.backends.cache"):
+            with self.mock_pylibmc():
+                from celery.backends import cache
+                cache._imp = [None]
+                task_id, result = bytes(uuid()), 42
+                b = cache.CacheBackend(backend='memcache')
+                b.store_result(task_id, result, status=states.SUCCESS)
+                self.assertEqual(b.get_result(task_id), result)

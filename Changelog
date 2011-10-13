@@ -199,6 +199,10 @@ News
 * ``celeryd_multi`` now supports a ``stop_verify`` command to wait for
   processes to shutdown.
 
+* Cache backend did not work if the cache key was unicode (Issue #504).
+
+    Fix contributed by Neil Chintomby.
+
 * New setting :setting:`CELERY_RESULT_DB_SHORT_LIVED_SESSIONS` added,
   which if enabled will disable the caching of SQLAlchemy sessions
   (Issue #449).
