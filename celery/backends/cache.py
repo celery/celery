@@ -78,6 +78,18 @@ class CacheBackend(KeyValueStoreBackend):
                     "following backends: %s" % (self.backend,
                                                 ", ".join(backends.keys())))
 
+    def get_key_for_task(self, task_id):
+        key = self.task_keyprefix + task_id
+        if isinstance(key, unicode):
+            key = key.encode('utf-8')
+        return key
+
+    def get_key_for_taskset(self, taskset_id):
+        key = self.taskset_keyprefix + taskset_id
+        if isinstance(key, unicode):
+            key = key.encode('utf-8')
+        return key
+
     def get(self, key):
         return self.client.get(key)
 
