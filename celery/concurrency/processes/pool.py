@@ -23,6 +23,7 @@ import collections
 import time
 import signal
 import warnings
+import logging
 
 from multiprocessing import Process, cpu_count, TimeoutError
 from multiprocessing import util
@@ -135,6 +136,17 @@ def soft_timeout_sighandler(signum, frame):
 
 
 def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None):
+    # Re-init logging system.
+    # Workaround for http://bugs.python.org/issue6721#msg140215
+    # Python logging module uses RLock() objects which are broken after
+    # fork. This can result in a deadlock (Issue #496).
+    logger_names = logging.Logger.manager.loggerDict.keys()
+    logger_names.append(None)  # for root logger
+    for name in logger_names:
+        for handler in logging.getLogger(name).handlers:
+            handler.createLock()
+    logging._lock = threading.RLock()
+
     pid = os.getpid()
     assert maxtasks is None or (type(maxtasks) == int and maxtasks > 0)
     put = outqueue.put
