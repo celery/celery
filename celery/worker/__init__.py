@@ -61,6 +61,7 @@ def process_initializer(app, hostname):
     # fork(). Note that init_worker makes sure it's only
     # run once per process.
     app.loader.init_worker()
+    app.loader.init_worker_process()
 
     signals.worker_process_init.send(sender=None)
 

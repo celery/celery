@@ -74,6 +74,10 @@ class BaseLoader(object):
         starts."""
         pass
 
+    def on_worker_process_init(self):
+        """This method is called when a child process starts."""
+        pass
+
     def import_task_module(self, module):
         return self.import_from_cwd(module)
 
@@ -94,6 +98,9 @@ class BaseLoader(object):
         if not self.worker_initialized:
             self.worker_initialized = True
             self.on_worker_init()
+
+    def init_worker_process(self):
+        self.on_worker_process_init()
 
     def config_from_envvar(self, variable_name, silent=False):
         module_name = os.environ.get(variable_name)
