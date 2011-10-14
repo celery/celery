@@ -62,7 +62,7 @@ class BeatCommand(Command):
                     "'.db' will be appended to the filename. Default: %s" % (
                             conf.CELERYBEAT_SCHEDULE_FILENAME, )),
             Option('--max-interval',
-                default=3600.0, type="float", dest="max_interval",
+                default=None, type="float", dest="max_interval",
                 help="Max. seconds to sleep between schedule iterations."),
             Option('-S', '--scheduler',
                 default=None,
