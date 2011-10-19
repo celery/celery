@@ -42,7 +42,7 @@ class RedisBackend(KeyValueStoreBackend):
 
         # For compatability with the old REDIS_* configuration keys.
         def _get(key):
-            for prefix in "REDIS_%s", "CELERY_REDIS_%s":
+            for prefix in "CELERY_REDIS_%s", "REDIS_%s":
                 try:
                     return conf[prefix % key]
                 except KeyError:
