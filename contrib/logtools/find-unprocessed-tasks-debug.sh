@@ -13,7 +13,7 @@
 #
 #     # Using a custom logfile
 #     # bash find-unprocessed-tasks.sh ./celeryd.log
-# 
+#
 #--------------------------------------------------------------------#
 
 DEFAULT_LOGFILE=/var/log/celeryd.log

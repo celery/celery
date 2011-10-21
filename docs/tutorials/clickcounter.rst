@@ -227,7 +227,7 @@ Processing the clicks every 30 minutes is easy using celery periodic tasks.
 
 We subclass from :class:`celery.task.base.PeriodicTask`, set the `run_every`
 attribute and in the body of the task just call the `process_clicks`
-function we wrote earlier. 
+function we wrote earlier.
 
 
 Finishing

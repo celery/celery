@@ -1,12 +1,12 @@
 #!/bin/bash
 #---------------------------------------------------------------------------#
-# 
+#
 # Tool to find race conditions in the Periodic Task system.
 # Outputs times of all runs of a certain task (by searching for task name
 # using a search query).
 #
 # Usage:
-#   
+#
 #   $ bash periodic-task-runtimes.sh query host1 [host2 ... hostN]
 #
 # Example usage:
