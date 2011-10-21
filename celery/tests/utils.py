@@ -286,6 +286,7 @@ def patch(module, name, mocked):
 @contextmanager
 def platform_pyimp(replace=None):
     import platform
+    has_prev = hasattr(platform, "python_implementation")
     prev = getattr(platform, "python_implementation", None)
     if replace:
         platform.python_implementation = replace
@@ -297,6 +298,11 @@ def platform_pyimp(replace=None):
     yield
     if prev is not None:
         platform.python_implementation = prev
+    if not has_prev:
+        try:
+            delattr(platform, "python_implementation")
+        except AttributeError:
+            pass
 
 
 @contextmanager
@@ -308,6 +314,7 @@ def sys_platform(value):
 
 @contextmanager
 def pypy_version(value=None):
+    has_prev = hasattr(sys, "pypy_version_info")
     prev = getattr(sys, "pypy_version_info", None)
     if value:
         sys.pypy_version_info = value
@@ -319,6 +326,11 @@ def pypy_version(value=None):
     yield
     if prev is not None:
         sys.pypy_version_info = prev
+    if not has_prev:
+        try:
+            delattr(sys, "pypy_version_info")
+        except AttributeError:
+            pass
 
 
 @contextmanager
