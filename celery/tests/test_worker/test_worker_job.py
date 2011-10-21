@@ -554,7 +554,7 @@ class test_TaskRequest(unittest.TestCase):
                           content_encoding="utf-8")
         with self.assertRaises(InvalidTaskError):
             TaskRequest.from_message(m, m.decode())
- 
+
     def test_from_message_nonexistant_task(self):
         body = {"task": "cu.mytask.doesnotexist", "id": uuid(),
                 "args": [2], "kwargs": {u"æØåveéðƒeæ": "bar"}}

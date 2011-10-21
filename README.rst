@@ -256,7 +256,7 @@ Mailing list
 ------------
 
 For discussions about the usage, development, and future of celery,
-please join the `celery-users`_ mailing list. 
+please join the `celery-users`_ mailing list.
 
 .. _`celery-users`: http://groups.google.com/group/celery-users/
 
