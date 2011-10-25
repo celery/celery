@@ -240,7 +240,7 @@ Example configuration
 .. code-block:: python
 
     CELERY_RESULT_BACKEND = "amqp"
-    CELERY_AMQP_TASK_RESULT_EXPIRES = 18000  # 5 hours.
+    CELERY_TASK_RESULT_EXPIRES = 18000  # 5 hours.
 
 .. _conf-cache-result-backend:
 
