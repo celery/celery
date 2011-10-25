@@ -528,7 +528,7 @@ backend:
   control.  If you're running RabbitMQ 2.1.1 or higher you can take advantage
   of the ``x-expires`` argument to queues, which will expire queues after a
   certain time limit after they are unused.  The queue expiry can be set (in
-  seconds) by the :setting:`CELERY_AMQP_TASK_RESULT_EXPIRES` setting (not
+  seconds) by the :setting:`CELERY_TASK_RESULT_EXPIRES` setting (not
   enabled by default).
 
 For a list of options supported by the AMQP result backend, please see
