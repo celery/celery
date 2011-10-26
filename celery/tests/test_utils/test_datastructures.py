@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import with_statement
 
 import sys
-from Queue import Queue
 
 from celery.datastructures import ExceptionInfo, LRUCache
 from celery.datastructures import LimitedSet

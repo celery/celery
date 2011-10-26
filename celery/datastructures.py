@@ -13,7 +13,6 @@ import time
 import traceback
 
 from itertools import chain
-from Queue import Empty
 from threading import RLock
 
 from .utils.compat import UserDict, OrderedDict

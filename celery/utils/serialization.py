@@ -38,7 +38,7 @@ else:
 #: List of base classes we probably don't want to reduce to.
 unwanted_base_classes = (StandardError, Exception, BaseException, object)
 
-__all__ = ["subclass_exception", "find_nearest_unpickleable_exception",
+__all__ = ["subclass_exception", "find_nearest_pickleable_exception",
            "create_exception_cls", "UnpickleableExceptionWrapper",
            "get_pickleable_exception", "get_pickled_exception"]
 

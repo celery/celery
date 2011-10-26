@@ -31,6 +31,7 @@ __all__ = ["TimedFunctionFailed", "to_timestamp",
            "apply_interval", "enter_after", "enter",
            "exit_after", "cancel", "clear"]
 
+
 class TimedFunctionFailed(UserWarning):
     pass
 

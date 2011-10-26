@@ -538,7 +538,7 @@ class test_TaskRequest(unittest.TestCase):
         self.assertTrue(tw.logger)
 
     def test_from_message_empty_args(self):
-        body = {"task" : mytask.name, "id": uuid()}
+        body = {"task": mytask.name, "id": uuid()}
         m = Message(None, body=anyjson.serialize(body), backend="foo",
                           content_type="application/json",
                           content_encoding="utf-8")

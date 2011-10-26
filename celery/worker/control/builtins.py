@@ -23,11 +23,11 @@ from .registry import Panel
 
 __all__ = ["revoke", "enable_events", "disable_events",
            "heartbeat", "rate_limit", "time_limit", "stats",
-           "dump_scheduled", "dump_reserved", "dump_active",
+           "dump_schedule", "dump_reserved", "dump_active",
            "dump_revoked", "dump_tasks", "ping",
            "pool_grow", "pool_shrink", "autoscale",
            "shutdown", "add_consumer", "cancel_consumer",
-           "acvtive_queues"]
+           "active_queues"]
 
 TASK_INFO_FIELDS = ("exchange", "routing_key", "rate_limit")
 

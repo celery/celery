@@ -44,6 +44,7 @@
     celery.db.models
     celery.db.session
     celery.utils
+    celery.utils.functional
     celery.utils.term
     celery.utils.timeutils
     celery.utils.encoding
