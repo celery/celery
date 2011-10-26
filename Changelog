@@ -18,6 +18,22 @@
 Important Notes
 ---------------
 
+* Now supports Python 3.
+
+* Fixed deadlock in worker process handling (Issue #496).
+
+    A deadlock could occur after spawning new child processes because
+    the logging library's mutex was not properly reset after fork.
+
+    The symptoms of this bug affecting would be that the worker simply
+    stops processing tasks, as none of the workers child processes
+    are functioning.  There was a greater chance of this bug occurring
+    with ``maxtasksperchild`` or a time-limit enabled.
+
+    This is a workaround for http://bugs.python.org/issue6721#msg140215.
+
+    Fix contributed by Harm Verhagen.
+
 * AMQP Result backend: Now expires results by default.
 
     The default expiration value is now taken from the
@@ -32,44 +48,6 @@ Important Notes
     :setting:`CELERY_TASK_RESULT_EXPIRES` setting::
 
         CELERY_TASK_RESULT_EXPIRES = None
-
-* The deprecated :func:`celery.loaders.setup_loader` function has been removed.
-
-* Deprecations
-
-    The following functions has been deprecated and is scheduled for removal in
-    version 3.0:
-
-    =====================================  ===================================
-    **Old function**                       **Alternative**
-    =====================================  ===================================
-    `celery.loaders.current_loader`        `celery.current_app.loader`
-    `celery.loaders.load_settings`         `celery.current_app.conf`
-    `celery.execute.apply`                 `Task.apply`
-    `celery.execute.apply_async`           `Task.apply_async`
-    `celery.execute.delay_task`            `celery.execute.send_task`
-    =====================================  ===================================
-
-    The following settings has been deprecated and is scheduled for removal
-    in version 3.0:
-
-    =====================================  ===================================
-    **Old setting**                        **Alternative**
-    =====================================  ===================================
-    `CELERYD_LOG_LEVEL`                    ``celeryd --loglevel=``
-    `CELERYD_LOG_FILE`                     ``celeryd --logfile=``
-    `CELERYBEAT_LOG_LEVEL`                 ``celerybeat --loglevel=``
-    `CELERYBEAT_LOG_FILE`                  ``celerybeat --logfile=``
-    `CELERYMON_LOG_LEVEL`                  ``celerymon --loglevel=``
-    `CELERYMON_LOG_FILE`                   ``celerymon --logfile=``
-    =====================================  ===================================
-
-.. _v240-news:
-
-News
-----
-
-* No longer depends on :mod:`pyparsing`.
 
 * Broker transports can be now be specified using URLs
 
@@ -116,8 +94,90 @@ News
     The environment variable :envvar:`CELERY_BROKER_URL` can also be used to
     easily override the default broker used.
 
+* The deprecated :func:`celery.loaders.setup_loader` function has been removed.
+
+* The :setting:`CELERY_TASK_ERROR_WHITELIST` setting has been replaced
+  by a more flexible approach (Issue #447).
+
+  The Mail sending logic is now available as ``Task.ErrorMail``.
+  The actual implementation is in :module:`celery.utils.mail`.
+
+  The error mail class can be sub-classed to gain complete control
+  of when error messages are sent, thus removing the need for a separate
+  white-list setting.
+
+  The :setting:`CELERY_TASK_ERROR_WHITELIST` setting has been deprecated,
+  and will be removed completely in version 3.0.
+
+* Additional Deprecations
+
+    The following functions has been deprecated and is scheduled for removal in
+    version 3.0:
+
+    =====================================  ===================================
+    **Old function**                       **Alternative**
+    =====================================  ===================================
+    `celery.loaders.current_loader`        `celery.current_app.loader`
+    `celery.loaders.load_settings`         `celery.current_app.conf`
+    `celery.execute.apply`                 `Task.apply`
+    `celery.execute.apply_async`           `Task.apply_async`
+    `celery.execute.delay_task`            `celery.execute.send_task`
+    =====================================  ===================================
+
+    The following settings has been deprecated and is scheduled for removal
+    in version 3.0:
+
+    =====================================  ===================================
+    **Old setting**                        **Alternative**
+    =====================================  ===================================
+    `CELERYD_LOG_LEVEL`                    ``celeryd --loglevel=``
+    `CELERYD_LOG_FILE`                     ``celeryd --logfile=``
+    `CELERYBEAT_LOG_LEVEL`                 ``celerybeat --loglevel=``
+    `CELERYBEAT_LOG_FILE`                  ``celerybeat --logfile=``
+    `CELERYMON_LOG_LEVEL`                  ``celerymon --loglevel=``
+    `CELERYMON_LOG_FILE`                   ``celerymon --logfile=``
+    =====================================  ===================================
+
+.. _v240-news:
+
+News
+----
+
+* No longer depends on :mod:`pyparsing`.
+
+* CELERY_IMPORTS can now be a scalar value (Issue #485).
+
+    It is too easy to forget to add the comma after the sole element of a
+    tuple, and this is something that often affects newcomers.
+
+    The docs should probably use a list in examples, as using a tuple
+    for this doesn't even make sense.  Nonetheless, there are many
+    tutorials out there using a tuple, and this change should be a help
+    to new users.
+
+    Suggested by jsaxon-cars.
+
+* Fixed a memory leak when using the thread pool (Issue #486).
+
+    Contributed by Kornelijus Survila.
+
+* The statedb was not saved at exit.
+
+    This has now been fixed and it should again remember previously
+    revoked tasks when a ``--statedb`` is enabled.
+
 * Adds :setting:`EMAIL_USE_TLS` to enable secure SMTP connections
   (Issue #418).
+
+    Contributed by Stefan Kjartansson.
+
+* Now handles missing fields in task messages as documented in the message
+  format documentation.
+
+    * Missing required field throws :exc:`InvalidTaskError`
+    * Missing args/kwargs is assumed empty.
+
+    Contributed by Chris Chamberlin.
 
 * The Cache, Cassandra, MongoDB, Redis and Tyrant backends now respects
   the :setting:`CELERY_RESULT_SERIALIZER` setting (Issue #435).
@@ -125,18 +185,81 @@ News
     This means that only the database (django/sqlalchemy) backends
     currently does not support using custom serializers.
 
+    Contributed by Steeve Morin
+
 * Logging calls no longer manually formats messages, but delegates
   that to the logging system, so tools like Sentry can easier
   work with the messages (Issue #445).
+
+    Contributed by Chris Adams.
 
 * ``celeryd_multi`` now supports a ``stop_verify`` command to wait for
   processes to shutdown.
 
 * New setting :setting:`CELERY_RESULT_DB_SHORT_LIVED_SESSIONS` added,
-  which if enabled will disable the caching of SQLAlchemy sessions.
+  which if enabled will disable the caching of SQLAlchemy sessions
+  (Issue #449).
+
+    Contributed by Leo Dirac.
 
 * All result backends now implements ``__reduce__`` so that they can
   be pickled (Issue #441).
+
+    Fix contributed by Remy Noel
+
+* New-style ``CELERY_REDIS_*`` settings now takes precedence over
+  the old ``REDIS_*`` configuration keys (Issue #508).
+
+    Fix contributed by Joshua Ginsberg
+
+* Generic celerybeat init script no longer sets `bash -e` (Issue #510).
+
+    Fix contributed by Roger Hu.
+
+* Documented that Chords do not work well with redis-server versions
+  before 2.2.
+
+    Contributed by Dan McGee.
+
+* The :setting:`CELERYBEAT_MAX_LOOP_INTERVAL` setting was not respected.
+
+* ``inspect.registered_tasks`` renamed to ``inspect.tasks`` for naming
+  consistency.
+
+    The previous name is still available as an alias.
+
+    Contributed by Mher Movsisyan
+
+* RHEL init script: Changed celeryd startup priority.
+
+    The default start / stop priorities for MySQL on RHEL are
+
+        # chkconfig: - 64 36
+
+    Therefore, if Celery is using a database as a broker / message store, it
+    should be started after the database is up and running, otherwise errors
+    will ensue. This commit changes the priority in the init script to
+
+        # chkconfig: - 85 15
+
+    which are the default recommended settings for 3-rd party applications
+    and assure that Celery will be started after the database service & shut
+    down before it terminates.
+
+    Contributed by Yury V. Zaytsev.
+
+* After deprecating 2.4 support we can now name modules correctly, since we
+  can take use of absolute imports.
+
+    Therefore the following internal modules have been renamed:
+
+        celery.concurrency.evlet    -> celery.concurrency.eventlet
+        celery.concurrency.evg      -> celery.concurrency.gevent
+
+* AUTHORS file is now sorted alphabetically.
+
+    Also, as you may have noticed the contributors of new features/fixes are
+    now mentioned in the Changelog.
 
 .. _version-2.3.2:
 
