@@ -55,12 +55,12 @@ Is Celery dependent on pickle?
 
 **Answer:** No.
 
-Celery can support any serialization scheme and has support for JSON/YAML and
-Pickle by default. And as every task is associated with a content type, you
-can even send one task using pickle, and another using JSON.
+Celery can support any serialization scheme and has built-in support for
+JSON, YAML, Pickle and msgpack. Also, as every task is associated with a
+content type, you can even send one task using pickle, and another using JSON.
 
 The default serialization format is pickle simply because it is
-convenient as it supports sending complex Python objects as task arguments.
+convenient (it supports sending complex Python objects as task arguments).
 
 If you need to communicate with other languages you should change
 to a serialization format that is suitable for that.
@@ -114,7 +114,7 @@ Is Celery multilingual?
 
 **Answer:** Yes.
 
-:mod:`~celery.bin.celeryd` is an implementation of Celery in python. If the
+:mod:`~celery.bin.celeryd` is an implementation of Celery in Python. If the
 language has an AMQP client, there shouldn't be much work to create a worker
 in your language.  A Celery worker is just a program connecting to the broker
 to process messages.
@@ -180,8 +180,8 @@ most systems), it usually contains a message describing the reason.
 
 .. _faq-celeryd-on-freebsd:
 
-Why won't celeryd run on FreeBSD?
----------------------------------
+Does it work on FreeBSD?
+------------------------
 
 **Answer:** The multiprocessing pool requires a working POSIX semaphore
 implementation which isn't enabled in FreeBSD by default. You have to enable
@@ -252,7 +252,7 @@ other error is happening.
 
 .. _faq-periodic-task-does-not-run:
 
-Why won't my Periodic Task run?
+Why won't my periodic task run?
 -------------------------------
 
 **Answer:** See `Why won't my Task run?`_.
