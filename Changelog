@@ -59,33 +59,34 @@ Important Notes
 
         amqp://guest:guest@localhost:5672//
 
-    Transport defaults to amqp, and is not required.
-    user, password, port and virtual_host is also not mandatory and
-    will default to the corresponding transport default.
+    The transport (scheme) defaults to amqp, and is not required.
+    user, password, port and virtual_host is also optional and
+    defaults to the particular transports default value.
 
     .. note::
 
         Note that the path component (virtual_host) always starts with a
         forward-slash.  This is necessary to distinguish between the virtual
-        host '' (empty) and '/', which are both acceptable virtual host names.
+        host ``''`` (empty) and ``'/'``, which are both acceptable virtual
+        host names.
 
-        A virtual host of '/' becomes:
+        A virtual host of ``'/'`` becomes:
 
             amqp://guest:guest@localhost:5672//
 
-        and a virtual host of '' (empty) becomes::
+        and a virtual host of ``''`` (empty) becomes::
 
             amqp://guest:guest@localhost:5672/
 
         So the leading slash in the path component is **always required**.
 
-   In addition the :setting:`BROKER_URL` setting has been added as an alias
-   to ``BROKER_HOST``.  Any broker setting specified in both the URL and in
-   the configuration will be ignored, if a setting is not provided in the URL
-   then the value from the configuration will be used as default.
+    In addition the :setting:`BROKER_URL` setting has been added as an alias
+    to ``BROKER_HOST``.  Any broker setting specified in both the URL and in
+    the configuration will be ignored, if a setting is not provided in the URL
+    then the value from the configuration will be used as default.
 
-   Also, programs now support the :option:`-b|--broker` option to specify
-   a broker URL on the command line::
+    Also, programs now support the :option:`-b|--broker` option to specify
+    a broker URL on the command line::
 
         $ celeryd -b redis://localhost
 
@@ -100,7 +101,7 @@ Important Notes
   by a more flexible approach (Issue #447).
 
   The Mail sending logic is now available as ``Task.ErrorMail``.
-  The actual implementation is in :module:`celery.utils.mail`.
+  The actual implementation is in :mod:`celery.utils.mail`.
 
   The error mail class can be sub-classed to gain complete control
   of when error messages are sent, thus removing the need for a separate
