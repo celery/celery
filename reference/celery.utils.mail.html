@@ -1,0 +1,248 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>celery.utils.mail &mdash; Celery v2.4.0rc1 documentation</title>
+    <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.4.0rc1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../index.html" />
+    <link rel="up" title="API Reference" href="index.html" />
+    <link rel="next" title="celery.exceptions" href="celery.exceptions.html" />
+    <link rel="prev" title="celery.signals" href="celery.signals.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.exceptions.html" title="celery.exceptions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.signals.html" title="celery.signals"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/reference/celery.utils.mail.html">2.1</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="celery-utils-mail">
+<h1>celery.utils.mail<a class="headerlink" href="#celery-utils-mail" title="Permalink to this headline">¶</a></h1>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#id1" id="id2">celery.utils.mail</a></li>
+</ul>
+</div>
+<span class="target" id="module-celery.utils.mail"></span><div class="section" id="id1">
+<h2><a class="toc-backref" href="#id2">celery.utils.mail</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>How task error emails are formatted and sent.</p>
+<dl class="exception">
+<dt id="celery.utils.mail.SendmailWarning">
+<em class="property">exception </em><tt class="descclassname">celery.utils.mail.</tt><tt class="descname">SendmailWarning</tt><a class="headerlink" href="#celery.utils.mail.SendmailWarning" title="Permalink to this definition">¶</a></dt>
+<dd><p>Problem happened while sending the email message.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.utils.mail.Message">
+<em class="property">class </em><tt class="descclassname">celery.utils.mail.</tt><tt class="descname">Message</tt><big>(</big><em>to=None</em>, <em>sender=None</em>, <em>subject=None</em>, <em>body=None</em>, <em>charset='us-ascii'</em><big>)</big><a class="headerlink" href="#celery.utils.mail.Message" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="celery.utils.mail.Mailer">
+<em class="property">class </em><tt class="descclassname">celery.utils.mail.</tt><tt class="descname">Mailer</tt><big>(</big><em>host='localhost'</em>, <em>port=0</em>, <em>user=None</em>, <em>password=None</em>, <em>timeout=2</em>, <em>use_ssl=False</em>, <em>use_tls=False</em><big>)</big><a class="headerlink" href="#celery.utils.mail.Mailer" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.utils.mail.Mailer.send">
+<tt class="descname">send</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#celery.utils.mail.Mailer.send" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.utils.mail.ErrorMail">
+<em class="property">class </em><tt class="descclassname">celery.utils.mail.</tt><tt class="descname">ErrorMail</tt><big>(</big><em>task</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.mail.ErrorMail" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines how and when task error e-mails should be sent.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>task</strong> &#8211; The task instance that raised the error.</td>
+</tr>
+</tbody>
+</table>
+<p><a class="reference internal" href="#celery.utils.mail.ErrorMail.subject" title="celery.utils.mail.ErrorMail.subject"><tt class="xref py py-attr docutils literal"><span class="pre">subject</span></tt></a> and <a class="reference internal" href="#celery.utils.mail.ErrorMail.body" title="celery.utils.mail.ErrorMail.body"><tt class="xref py py-attr docutils literal"><span class="pre">body</span></tt></a> are format strings which
+are passed a context containing the following keys:</p>
+<ul>
+<li><p class="first">name</p>
+<blockquote>
+<div><p>Name of the task.</p>
+</div></blockquote>
+</li>
+<li><p class="first">id</p>
+<blockquote>
+<div><p>UUID of the task.</p>
+</div></blockquote>
+</li>
+<li><p class="first">exc</p>
+<blockquote>
+<div><p>String representation of the exception.</p>
+</div></blockquote>
+</li>
+<li><p class="first">args</p>
+<blockquote>
+<div><p>Positional arguments.</p>
+</div></blockquote>
+</li>
+<li><p class="first">kwargs</p>
+<blockquote>
+<div><p>Keyword arguments.</p>
+</div></blockquote>
+</li>
+<li><p class="first">traceback</p>
+<blockquote>
+<div><p>String representation of the traceback.</p>
+</div></blockquote>
+</li>
+<li><p class="first">hostname</p>
+<blockquote>
+<div><p>Worker hostname.</p>
+</div></blockquote>
+</li>
+</ul>
+<dl class="attribute">
+<dt id="celery.utils.mail.ErrorMail.body">
+<tt class="descname">body</tt><a class="headerlink" href="#celery.utils.mail.ErrorMail.body" title="Permalink to this definition">¶</a></dt>
+<dd><p>Format string used to generate error email content.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.utils.mail.ErrorMail.format_body">
+<tt class="descname">format_body</tt><big>(</big><em>context</em><big>)</big><a class="headerlink" href="#celery.utils.mail.ErrorMail.format_body" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.utils.mail.ErrorMail.format_subject">
+<tt class="descname">format_subject</tt><big>(</big><em>context</em><big>)</big><a class="headerlink" href="#celery.utils.mail.ErrorMail.format_subject" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.utils.mail.ErrorMail.send">
+<tt class="descname">send</tt><big>(</big><em>context</em>, <em>exc</em>, <em>fail_silently=True</em><big>)</big><a class="headerlink" href="#celery.utils.mail.ErrorMail.send" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.utils.mail.ErrorMail.should_send">
+<tt class="descname">should_send</tt><big>(</big><em>context</em>, <em>exc</em><big>)</big><a class="headerlink" href="#celery.utils.mail.ErrorMail.should_send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns true or false depending on if a task error mail
+should be sent for this type of error.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.utils.mail.ErrorMail.subject">
+<tt class="descname">subject</tt><a class="headerlink" href="#celery.utils.mail.ErrorMail.subject" title="Permalink to this definition">¶</a></dt>
+<dd><p>Format string used to generate error email subjects.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="celery.signals.html"
+                        title="previous chapter">celery.signals</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="celery.exceptions.html"
+                        title="next chapter">celery.exceptions</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/reference/celery.utils.mail.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.exceptions.html" title="celery.exceptions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.signals.html" title="celery.signals"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
+    </div>
+  </body>
+</html>
