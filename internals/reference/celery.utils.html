@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.utils &mdash; Celery v2.3.3 documentation</title>
+    <title>celery.utils &mdash; Celery v2.4.0rc1 documentation</title>
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.3.3',
+        VERSION:     '2.4.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,9 +21,9 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.3 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
-    <link rel="next" title="celery.utils.term" href="celery.utils.term.html" />
+    <link rel="next" title="celery.utils.functional" href="celery.utils.functional.html" />
     <link rel="prev" title="celery.db.session" href="celery.db.session.html" /> 
   </head>
   <body>
@@ -37,12 +37,12 @@
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.utils.term.html" title="celery.utils.term"
+          <a href="celery.utils.functional.html" title="celery.utils.functional"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="celery.db.session.html" title="celery.db.session"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,24 +56,122 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.utils.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.utils.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-utils">
 <h1>celery.utils<a class="headerlink" href="#celery-utils" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.utils"></span><dl class="function">
-<dt id="celery.utils.abbr">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">abbr</tt><big>(</big><em>S</em>, <em>max</em>, <em>ellipsis='...'</em><big>)</big><a class="headerlink" href="#celery.utils.abbr" title="Permalink to this definition">¶</a></dt>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#id1" id="id2">celery.utils</a></li>
+</ul>
+</div>
+<span class="target" id="module-celery.utils"></span><div class="section" id="id1">
+<h2><a class="toc-backref" href="#id2">celery.utils</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>Utility functions that has not found a home in a generic module.</p>
+<dl class="function">
+<dt id="celery.utils.uuid">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">uuid</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.uuid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a unique id, having - hopefully - a very small chance of
+collission.</p>
+<p>For now this is provided by <tt class="xref py py-func docutils literal"><span class="pre">uuid.uuid4()</span></tt>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.warn_deprecated">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">warn_deprecated</tt><big>(</big><em>description=None</em>, <em>deprecation=None</em>, <em>removal=None</em>, <em>alternative=None</em><big>)</big><a class="headerlink" href="#celery.utils.warn_deprecated" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
-<dt id="celery.utils.abbrtask">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">abbrtask</tt><big>(</big><em>S</em>, <em>max</em><big>)</big><a class="headerlink" href="#celery.utils.abbrtask" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.utils.deprecated">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">deprecated</tt><big>(</big><em>description=None</em>, <em>deprecation=None</em>, <em>removal=None</em>, <em>alternative=None</em><big>)</big><a class="headerlink" href="#celery.utils.deprecated" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.lpmerge">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">lpmerge</tt><big>(</big><em>L</em>, <em>R</em><big>)</big><a class="headerlink" href="#celery.utils.lpmerge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Left precedent dictionary merge.  Keeps values from <cite>l</cite>, if the value
+in <cite>r</cite> is <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt>.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.utils.promise">
+<em class="property">class </em><tt class="descclassname">celery.utils.</tt><tt class="descname">promise</tt><big>(</big><em>fun</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.promise" title="Permalink to this definition">¶</a></dt>
+<dd><p>A promise.</p>
+<p>Evaluated when called or if the <a class="reference internal" href="#celery.utils.promise.evaluate" title="celery.utils.promise.evaluate"><tt class="xref py py-meth docutils literal"><span class="pre">evaluate()</span></tt></a> method is called.
+The function is evaluated on every access, so the value is not
+memoized (see <a class="reference internal" href="#celery.utils.mpromise" title="celery.utils.mpromise"><tt class="xref py py-class docutils literal"><span class="pre">mpromise</span></tt></a>).</p>
+<dl class="docutils">
+<dt>Overloaded operations that will evaluate the promise:</dt>
+<dd><tt class="xref py py-meth docutils literal"><span class="pre">__str__()</span></tt>, <tt class="xref py py-meth docutils literal"><span class="pre">__repr__()</span></tt>, <tt class="xref py py-meth docutils literal"><span class="pre">__cmp__()</span></tt>.</dd>
+</dl>
+<dl class="method">
+<dt id="celery.utils.promise.evaluate">
+<tt class="descname">evaluate</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.promise.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.utils.mpromise">
+<em class="property">class </em><tt class="descclassname">celery.utils.</tt><tt class="descname">mpromise</tt><big>(</big><em>fun</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.mpromise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Memoized promise.</p>
+<p>The function is only evaluated once, every subsequent access
+will return the same value.</p>
+<dl class="attribute">
+<dt id="celery.utils.mpromise.evaluated">
+<tt class="descname">evaluated</tt><a class="headerlink" href="#celery.utils.mpromise.evaluated" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set to to <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> after the promise has been evaluated.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.utils.mpromise.evaluate">
+<tt class="descname">evaluate</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.mpromise.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.maybe_promise">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">maybe_promise</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#celery.utils.maybe_promise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluates if the value is a promise.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.noop">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">noop</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.noop" title="Permalink to this definition">¶</a></dt>
+<dd><p>No operation.</p>
+<p>Takes any arguments/keyword arguments and does nothing.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.kwdict">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">kwdict</tt><big>(</big><em>kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.kwdict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make sure keyword arguments are not in unicode.</p>
+<p>This should be fixed in newer Python versions,
+see: <a class="reference external" href="http://bugs.python.org/issue4978">http://bugs.python.org/issue4978</a>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.first">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">first</tt><big>(</big><em>predicate</em>, <em>iterable</em><big>)</big><a class="headerlink" href="#celery.utils.first" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the first element in <cite>iterable</cite> that <cite>predicate</cite> returns a
+<tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> value for.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.firstmethod">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">firstmethod</tt><big>(</big><em>method</em><big>)</big><a class="headerlink" href="#celery.utils.firstmethod" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a functions that with a list of instances,
+finds the first instance that returns a value for the given method.</p>
+<p>The list can also contain promises (<a class="reference internal" href="#celery.utils.promise" title="celery.utils.promise"><tt class="xref py py-class docutils literal"><span class="pre">promise</span></tt></a>.)</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="celery.utils.chunks">
@@ -93,41 +191,37 @@
 </dd></dl>
 
 <dl class="function">
-<dt id="celery.utils.cry">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">cry</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.cry" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return stacktrace of all active threads.</p>
-<p>From <a class="reference external" href="https://gist.github.com/737056">https://gist.github.com/737056</a></p>
+<dt id="celery.utils.padlist">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">padlist</tt><big>(</big><em>container</em>, <em>size</em>, <em>default=None</em><big>)</big><a class="headerlink" href="#celery.utils.padlist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pad list with default elements.</p>
+<p>Examples:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">,</span> <span class="n">city</span> <span class="o">=</span> <span class="n">padlist</span><span class="p">([</span><span class="s">&quot;George&quot;</span><span class="p">,</span> <span class="s">&quot;Costanza&quot;</span><span class="p">,</span> <span class="s">&quot;NYC&quot;</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">(&quot;George&quot;, &quot;Costanza&quot;, &quot;NYC&quot;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">,</span> <span class="n">city</span> <span class="o">=</span> <span class="n">padlist</span><span class="p">([</span><span class="s">&quot;George&quot;</span><span class="p">,</span> <span class="s">&quot;Costanza&quot;</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">(&quot;George&quot;, &quot;Costanza&quot;, None)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">,</span> <span class="n">city</span><span class="p">,</span> <span class="n">planet</span> <span class="o">=</span> <span class="n">padlist</span><span class="p">([</span><span class="s">&quot;George&quot;</span><span class="p">,</span> <span class="s">&quot;Costanza&quot;</span><span class="p">,</span>
+<span class="go">                                         &quot;NYC&quot;], 4, default=&quot;Earth&quot;)</span>
+<span class="go">(&quot;George&quot;, &quot;Costanza&quot;, &quot;NYC&quot;, &quot;Earth&quot;)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="function">
-<dt id="celery.utils.cwd_in_path">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">cwd_in_path</tt><big>(</big><em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#celery.utils.cwd_in_path" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.utils.is_iterable">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">is_iterable</tt><big>(</big><em>obj</em><big>)</big><a class="headerlink" href="#celery.utils.is_iterable" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
-<dt id="celery.utils.deprecated">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">deprecated</tt><big>(</big><em>description=None</em>, <em>deprecation=None</em>, <em>removal=None</em>, <em>alternative=None</em><big>)</big><a class="headerlink" href="#celery.utils.deprecated" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="celery.utils.find_module">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">find_module</tt><big>(</big><em>module</em>, <em>path=None</em>, <em>imp=None</em><big>)</big><a class="headerlink" href="#celery.utils.find_module" title="Permalink to this definition">¶</a></dt>
-<dd><p>Version of <tt class="xref py py-func docutils literal"><span class="pre">imp.find_module()</span></tt> supporting dots.</p>
+<dt id="celery.utils.mattrgetter">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">mattrgetter</tt><big>(</big><em>*attrs</em><big>)</big><a class="headerlink" href="#celery.utils.mattrgetter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Like <tt class="xref py py-func docutils literal"><span class="pre">operator.itemgetter()</span></tt> but returns <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> on missing
+attributes instead of raising <tt class="xref py py-exc docutils literal"><span class="pre">AttributeError</span></tt>.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="celery.utils.first">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">first</tt><big>(</big><em>predicate</em>, <em>iterable</em><big>)</big><a class="headerlink" href="#celery.utils.first" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the first element in <cite>iterable</cite> that <cite>predicate</cite> returns a
-<tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> value for.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.utils.firstmethod">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">firstmethod</tt><big>(</big><em>method</em><big>)</big><a class="headerlink" href="#celery.utils.firstmethod" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a functions that with a list of instances,
-finds the first instance that returns a value for the given method.</p>
-<p>The list can also contain promises (<a class="reference internal" href="#celery.utils.promise" title="celery.utils.promise"><tt class="xref py py-class docutils literal"><span class="pre">promise</span></tt></a>.)</p>
+<dt id="celery.utils.get_full_cls_name">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">get_full_cls_name</tt><big>(</big><em>cls</em><big>)</big><a class="headerlink" href="#celery.utils.get_full_cls_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>With a class, get its full module and class name.</p>
 </dd></dl>
 
 <dl class="function">
@@ -165,7 +259,7 @@ of using the <tt class="xref py py-meth docutils literal"><span class="pre">insp
 
 <dl class="function">
 <dt id="celery.utils.get_cls_by_name">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">get_cls_by_name</tt><big>(</big><em>name</em>, <em>aliases={}</em>, <em>imp=None</em><big>)</big><a class="headerlink" href="#celery.utils.get_cls_by_name" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.utils.</tt><tt class="descname">get_cls_by_name</tt><big>(</big><em>name</em>, <em>aliases={}</em>, <em>imp=None</em>, <em>package=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.get_cls_by_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get class by name.</p>
 <p>The name should be the full dot-separated path to the class:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">modulename</span><span class="o">.</span><span class="n">ClassName</span>
@@ -193,53 +287,6 @@ mappings, the name is looked up in the aliases first.</p>
 &gt;&gt;&gt; get_cls_by_name(TaskPool) is TaskPool
 True</p>
 </div></blockquote>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.utils.get_full_cls_name">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">get_full_cls_name</tt><big>(</big><em>cls</em><big>)</big><a class="headerlink" href="#celery.utils.get_full_cls_name" title="Permalink to this definition">¶</a></dt>
-<dd><p>With a class, get its full module and class name.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.utils.get_symbol_by_name">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">get_symbol_by_name</tt><big>(</big><em>name</em>, <em>aliases={}</em>, <em>imp=None</em><big>)</big><a class="headerlink" href="#celery.utils.get_symbol_by_name" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get class by name.</p>
-<p>The name should be the full dot-separated path to the class:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">modulename</span><span class="o">.</span><span class="n">ClassName</span>
-</pre></div>
-</div>
-<p>Example:</p>
-<div class="highlight-python"><pre>celery.concurrency.processes.TaskPool
-                            ^- class name</pre>
-</div>
-<p>If <cite>aliases</cite> is provided, a dict containing short name/long name
-mappings, the name is looked up in the aliases first.</p>
-<p>Examples:</p>
-<blockquote>
-<div><div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">get_cls_by_name</span><span class="p">(</span><span class="s">&quot;celery.concurrency.processes.TaskPool&quot;</span><span class="p">)</span>
-<span class="go">&lt;class &#39;celery.concurrency.processes.TaskPool&#39;&gt;</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">get_cls_by_name</span><span class="p">(</span><span class="s">&quot;default&quot;</span><span class="p">,</span> <span class="p">{</span>
-<span class="gp">... </span>    <span class="s">&quot;default&quot;</span><span class="p">:</span> <span class="s">&quot;celery.concurrency.processes.TaskPool&quot;</span><span class="p">})</span>
-<span class="go">&lt;class &#39;celery.concurrency.processes.TaskPool&#39;&gt;</span>
-</pre></div>
-</div>
-<p># Does not try to look up non-string names.
-&gt;&gt;&gt; from celery.concurrency.processes import TaskPool
-&gt;&gt;&gt; get_cls_by_name(TaskPool) is TaskPool
-True</p>
-</div></blockquote>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.utils.import_from_cwd">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">import_from_cwd</tt><big>(</big><em>module</em>, <em>imp=None</em><big>)</big><a class="headerlink" href="#celery.utils.import_from_cwd" title="Permalink to this definition">¶</a></dt>
-<dd><p>Import module, but make sure it finds modules
-located in the current directory.</p>
-<p>Modules located in the current directory has
-precedence over modules located in <cite>sys.path</cite>.</p>
 </dd></dl>
 
 <dl class="function">
@@ -250,108 +297,24 @@ precedence over modules located in <cite>sys.path</cite>.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="celery.utils.is_iterable">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">is_iterable</tt><big>(</big><em>obj</em><big>)</big><a class="headerlink" href="#celery.utils.is_iterable" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.utils.truncate_text">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">truncate_text</tt><big>(</big><em>text</em>, <em>maxlen=128</em>, <em>suffix='...'</em><big>)</big><a class="headerlink" href="#celery.utils.truncate_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Truncates text to a maximum number of characters.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.abbr">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">abbr</tt><big>(</big><em>S</em>, <em>max</em>, <em>ellipsis='...'</em><big>)</big><a class="headerlink" href="#celery.utils.abbr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.abbrtask">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">abbrtask</tt><big>(</big><em>S</em>, <em>max</em><big>)</big><a class="headerlink" href="#celery.utils.abbrtask" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
 <dt id="celery.utils.isatty">
 <tt class="descclassname">celery.utils.</tt><tt class="descname">isatty</tt><big>(</big><em>fh</em><big>)</big><a class="headerlink" href="#celery.utils.isatty" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="celery.utils.kwdict">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">kwdict</tt><big>(</big><em>kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.kwdict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Make sure keyword arguments are not in unicode.</p>
-<dl class="docutils">
-<dt>This should be fixed in newer Python versions,</dt>
-<dd>see: <a class="reference external" href="http://bugs.python.org/issue4978">http://bugs.python.org/issue4978</a>.</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.utils.lpmerge">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">lpmerge</tt><big>(</big><em>L</em>, <em>R</em><big>)</big><a class="headerlink" href="#celery.utils.lpmerge" title="Permalink to this definition">¶</a></dt>
-<dd><p>Left precedent dictionary merge.  Keeps values from <cite>l</cite>, if the value
-in <cite>r</cite> is <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt>.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.utils.mattrgetter">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">mattrgetter</tt><big>(</big><em>*attrs</em><big>)</big><a class="headerlink" href="#celery.utils.mattrgetter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Like <tt class="xref py py-func docutils literal"><span class="pre">operator.itemgetter()</span></tt> but returns <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> on missing
-attributes instead of raising <tt class="xref py py-exc docutils literal"><span class="pre">AttributeError</span></tt>.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.utils.maybe_promise">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">maybe_promise</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#celery.utils.maybe_promise" title="Permalink to this definition">¶</a></dt>
-<dd><p>Evaluates if the value is a promise.</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.utils.mpromise">
-<em class="property">class </em><tt class="descclassname">celery.utils.</tt><tt class="descname">mpromise</tt><big>(</big><em>fun</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.mpromise" title="Permalink to this definition">¶</a></dt>
-<dd><p>Memoized promise.</p>
-<p>The function is only evaluated once, every subsequent access
-will return the same value.</p>
-<dl class="attribute">
-<dt id="celery.utils.mpromise.evaluated">
-<tt class="descname">evaluated</tt><a class="headerlink" href="#celery.utils.mpromise.evaluated" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set to to <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> after the promise has been evaluated.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.utils.mpromise.evaluate">
-<tt class="descname">evaluate</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.mpromise.evaluate" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.utils.noop">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">noop</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.noop" title="Permalink to this definition">¶</a></dt>
-<dd><p>No operation.</p>
-<p>Takes any arguments/keyword arguments and does nothing.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.utils.padlist">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">padlist</tt><big>(</big><em>container</em>, <em>size</em>, <em>default=None</em><big>)</big><a class="headerlink" href="#celery.utils.padlist" title="Permalink to this definition">¶</a></dt>
-<dd><p>Pad list with default elements.</p>
-<p>Examples:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">,</span> <span class="n">city</span> <span class="o">=</span> <span class="n">padlist</span><span class="p">([</span><span class="s">&quot;George&quot;</span><span class="p">,</span> <span class="s">&quot;Costanza&quot;</span><span class="p">,</span> <span class="s">&quot;NYC&quot;</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span>
-<span class="go">(&quot;George&quot;, &quot;Costanza&quot;, &quot;NYC&quot;)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">,</span> <span class="n">city</span> <span class="o">=</span> <span class="n">padlist</span><span class="p">([</span><span class="s">&quot;George&quot;</span><span class="p">,</span> <span class="s">&quot;Costanza&quot;</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span>
-<span class="go">(&quot;George&quot;, &quot;Costanza&quot;, None)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">,</span> <span class="n">city</span><span class="p">,</span> <span class="n">planet</span> <span class="o">=</span> <span class="n">padlist</span><span class="p">([</span><span class="s">&quot;George&quot;</span><span class="p">,</span> <span class="s">&quot;Costanza&quot;</span><span class="p">,</span>
-<span class="go">                                         &quot;NYC&quot;], 4, default=&quot;Earth&quot;)</span>
-<span class="go">(&quot;George&quot;, &quot;Costanza&quot;, &quot;NYC&quot;, &quot;Earth&quot;)</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.utils.promise">
-<em class="property">class </em><tt class="descclassname">celery.utils.</tt><tt class="descname">promise</tt><big>(</big><em>fun</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.promise" title="Permalink to this definition">¶</a></dt>
-<dd><p>A promise.</p>
-<p>Evaluated when called or if the <a class="reference internal" href="#celery.utils.promise.evaluate" title="celery.utils.promise.evaluate"><tt class="xref py py-meth docutils literal"><span class="pre">evaluate()</span></tt></a> method is called.
-The function is evaluated on every access, so the value is not
-memoized (see <a class="reference internal" href="#celery.utils.mpromise" title="celery.utils.mpromise"><tt class="xref py py-class docutils literal"><span class="pre">mpromise</span></tt></a>).</p>
-<dl class="docutils">
-<dt>Overloaded operations that will evaluate the promise:</dt>
-<dd><tt class="xref py py-meth docutils literal"><span class="pre">__str__()</span></tt>, <tt class="xref py py-meth docutils literal"><span class="pre">__repr__()</span></tt>, <tt class="xref py py-meth docutils literal"><span class="pre">__cmp__()</span></tt>.</dd>
-</dl>
-<dl class="method">
-<dt id="celery.utils.promise.evaluate">
-<tt class="descname">evaluate</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.promise.evaluate" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.utils.reprcall">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">reprcall</tt><big>(</big><em>name</em>, <em>args=()</em>, <em>kwargs=()</em>, <em>sep='</em>, <em>'</em>, <em>kwformat=&lt;function &lt;lambda&gt; at 0x10197a6e0&gt;</em><big>)</big><a class="headerlink" href="#celery.utils.reprcall" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -361,11 +324,43 @@ memoized (see <a class="reference internal" href="#celery.utils.mpromise" title=
 </dd></dl>
 
 <dl class="function">
-<dt id="celery.utils.truncate_text">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">truncate_text</tt><big>(</big><em>text</em>, <em>maxlen=128</em>, <em>suffix='...'</em><big>)</big><a class="headerlink" href="#celery.utils.truncate_text" title="Permalink to this definition">¶</a></dt>
-<dd><p>Truncates text to a maximum number of characters.</p>
+<dt id="celery.utils.cwd_in_path">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">cwd_in_path</tt><big>(</big><em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#celery.utils.cwd_in_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.find_module">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">find_module</tt><big>(</big><em>module</em>, <em>path=None</em>, <em>imp=None</em><big>)</big><a class="headerlink" href="#celery.utils.find_module" title="Permalink to this definition">¶</a></dt>
+<dd><p>Version of <tt class="xref py py-func docutils literal"><span class="pre">imp.find_module()</span></tt> supporting dots.</p>
 </dd></dl>
 
+<dl class="function">
+<dt id="celery.utils.import_from_cwd">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">import_from_cwd</tt><big>(</big><em>module</em>, <em>imp=None</em>, <em>package=None</em><big>)</big><a class="headerlink" href="#celery.utils.import_from_cwd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Import module, but make sure it finds modules
+located in the current directory.</p>
+<p>Modules located in the current directory has
+precedence over modules located in <cite>sys.path</cite>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.cry">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">cry</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.cry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return stacktrace of all active threads.</p>
+<p>From <a class="reference external" href="https://gist.github.com/737056">https://gist.github.com/737056</a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.reprkwargs">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">reprkwargs</tt><big>(</big><em>kwargs</em>, <em>sep='</em>, <em>'</em>, <em>fmt='%s=%s'</em><big>)</big><a class="headerlink" href="#celery.utils.reprkwargs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.reprcall">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">reprcall</tt><big>(</big><em>name</em>, <em>args=()</em>, <em>kwargs=()</em>, <em>sep='</em>, <em>'</em><big>)</big><a class="headerlink" href="#celery.utils.reprcall" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
 </div>
 
 
@@ -380,8 +375,8 @@ memoized (see <a class="reference internal" href="#celery.utils.mpromise" title=
   <p class="topless"><a href="celery.db.session.html"
                         title="previous chapter">celery.db.session</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="celery.utils.term.html"
-                        title="next chapter">celery.utils.term</a></p>
+  <p class="topless"><a href="celery.utils.functional.html"
+                        title="next chapter">celery.utils.functional</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../../_sources/internals/reference/celery.utils.txt"
@@ -390,7 +385,7 @@ memoized (see <a class="reference internal" href="#celery.utils.mpromise" title=
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -414,19 +409,19 @@ memoized (see <a class="reference internal" href="#celery.utils.mpromise" title=
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.utils.term.html" title="celery.utils.term"
+          <a href="celery.utils.functional.html" title="celery.utils.functional"
              >next</a> |</li>
         <li class="right" >
           <a href="celery.db.session.html" title="celery.db.session"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

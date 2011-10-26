@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.task.control &mdash; Celery v2.3.3 documentation</title>
+    <title>celery.task.control &mdash; Celery v2.4.0rc1 documentation</title>
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.3.3',
+        VERSION:     '2.4.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.3 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.task.http" href="celery.task.http.html" />
     <link rel="prev" title="celery.result" href="celery.result.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.result.html" title="celery.result"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,16 +55,102 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/reference/celery.task.control.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/reference/celery.task.control.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-task-control">
 <h1>celery.task.control<a class="headerlink" href="#celery-task-control" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.task.control"></span><dl class="class">
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#id1" id="id2">celery.task.control</a></li>
+</ul>
+</div>
+<span class="target" id="module-celery.task.control"></span><div class="section" id="id1">
+<h2><a class="toc-backref" href="#id2">celery.task.control</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>The worker remote control command client.
+For the server implementation see <tt class="xref py py-mod docutils literal"><span class="pre">celery.worker.control</span></tt>.</p>
+<dl class="function">
+<dt id="celery.task.control.flatten_reply">
+<tt class="descclassname">celery.task.control.</tt><tt class="descname">flatten_reply</tt><big>(</big><em>reply</em><big>)</big><a class="headerlink" href="#celery.task.control.flatten_reply" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="celery.task.control.Inspect">
+<em class="property">class </em><tt class="descclassname">celery.task.control.</tt><tt class="descname">Inspect</tt><big>(</big><em>control</em>, <em>destination=None</em>, <em>timeout=1</em>, <em>callback=None</em><big>)</big><a class="headerlink" href="#celery.task.control.Inspect" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.task.control.Inspect.active">
+<tt class="descname">active</tt><big>(</big><em>safe=False</em><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.active" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.active_queues">
+<tt class="descname">active_queues</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.active_queues" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.add_consumer">
+<tt class="descname">add_consumer</tt><big>(</big><em>queue</em>, <em>exchange=None</em>, <em>exchange_type='direct'</em>, <em>routing_key=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.add_consumer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.cancel_consumer">
+<tt class="descname">cancel_consumer</tt><big>(</big><em>queue</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.cancel_consumer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.disable_events">
+<tt class="descname">disable_events</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.disable_events" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.enable_events">
+<tt class="descname">enable_events</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.enable_events" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.ping">
+<tt class="descname">ping</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.ping" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.registered">
+<tt class="descname">registered</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.registered" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.registered_tasks">
+<tt class="descname">registered_tasks</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.registered_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.reserved">
+<tt class="descname">reserved</tt><big>(</big><em>safe=False</em><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.reserved" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.revoked">
+<tt class="descname">revoked</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.revoked" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.scheduled">
+<tt class="descname">scheduled</tt><big>(</big><em>safe=False</em><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.scheduled" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.Inspect.stats">
+<tt class="descname">stats</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.stats" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="celery.task.control.Control">
 <em class="property">class </em><tt class="descclassname">celery.task.control.</tt><tt class="descname">Control</tt><big>(</big><em>app</em><big>)</big><a class="headerlink" href="#celery.task.control.Control" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="class">
@@ -273,76 +359,7 @@ connection is not provided.</li>
 
 </dd></dl>
 
-<dl class="class">
-<dt id="celery.task.control.Inspect">
-<em class="property">class </em><tt class="descclassname">celery.task.control.</tt><tt class="descname">Inspect</tt><big>(</big><em>control</em>, <em>destination=None</em>, <em>timeout=1</em>, <em>callback=None</em><big>)</big><a class="headerlink" href="#celery.task.control.Inspect" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
-<dt id="celery.task.control.Inspect.active">
-<tt class="descname">active</tt><big>(</big><em>safe=False</em><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.active" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.task.control.Inspect.active_queues">
-<tt class="descname">active_queues</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.active_queues" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.task.control.Inspect.add_consumer">
-<tt class="descname">add_consumer</tt><big>(</big><em>queue</em>, <em>exchange=None</em>, <em>exchange_type='direct'</em>, <em>routing_key=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.add_consumer" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.task.control.Inspect.cancel_consumer">
-<tt class="descname">cancel_consumer</tt><big>(</big><em>queue</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.cancel_consumer" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.task.control.Inspect.disable_events">
-<tt class="descname">disable_events</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.disable_events" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.task.control.Inspect.enable_events">
-<tt class="descname">enable_events</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.enable_events" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.task.control.Inspect.ping">
-<tt class="descname">ping</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.ping" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.task.control.Inspect.registered_tasks">
-<tt class="descname">registered_tasks</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.registered_tasks" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.task.control.Inspect.reserved">
-<tt class="descname">reserved</tt><big>(</big><em>safe=False</em><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.reserved" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.task.control.Inspect.revoked">
-<tt class="descname">revoked</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.revoked" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.task.control.Inspect.scheduled">
-<tt class="descname">scheduled</tt><big>(</big><em>safe=False</em><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.scheduled" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.task.control.Inspect.stats">
-<tt class="descname">stats</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.Inspect.stats" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.task.control.flatten_reply">
-<tt class="descclassname">celery.task.control.</tt><tt class="descname">flatten_reply</tt><big>(</big><em>reply</em><big>)</big><a class="headerlink" href="#celery.task.control.flatten_reply" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+</div>
 </div>
 
 
@@ -367,7 +384,7 @@ connection is not provided.</li>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -396,13 +413,13 @@ connection is not provided.</li>
         <li class="right" >
           <a href="celery.result.html" title="celery.result"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

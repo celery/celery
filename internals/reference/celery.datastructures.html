@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.datastructures &mdash; Celery v2.3.3 documentation</title>
+    <title>celery.datastructures &mdash; Celery v2.4.0rc1 documentation</title>
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.3.3',
+        VERSION:     '2.4.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.3 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.routes" href="celery.routes.html" />
     <link rel="prev" title="celery.execute.trace" href="celery.execute.trace.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.execute.trace.html" title="celery.execute.trace"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,30 +56,18 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.datastructures.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.datastructures.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <span class="target" id="module-celery.datastructures"></span><div class="section" id="celery-datastructures">
 <h1>celery.datastructures<a class="headerlink" href="#celery-datastructures" title="Permalink to this headline">¶</a></h1>
-<p>Custom data structures.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
-<li>2009 - 2011 by Ask Solem.</li>
-</ol>
-</td>
-</tr>
-<tr class="field"><th class="field-name">license:</th><td class="field-body"><p class="first last">BSD, see LICENSE for more details.</p>
-</td>
-</tr>
-</tbody>
-</table>
+<p>Custom types and data structures.</p>
 <div class="contents local topic" id="contents">
 <ul class="simple">
 <li><a class="reference internal" href="#tokenbucket" id="id1">TokenBucket</a></li>
@@ -88,7 +76,7 @@
 <li><a class="reference internal" href="#configurationview" id="id4">ConfigurationView</a></li>
 <li><a class="reference internal" href="#exceptioninfo" id="id5">ExceptionInfo</a></li>
 <li><a class="reference internal" href="#limitedset" id="id6">LimitedSet</a></li>
-<li><a class="reference internal" href="#localcache" id="id7">LocalCache</a></li>
+<li><a class="reference internal" href="#lrucache" id="id7">LRUCache</a></li>
 <li><a class="reference internal" href="#functions" id="id8">Functions</a></li>
 </ul>
 </div>
@@ -170,6 +158,11 @@ available.</p>
 <dl class="method">
 <dt id="celery.datastructures.DictAttribute.get">
 <tt class="descname">get</tt><big>(</big><em>key</em>, <em>default=None</em><big>)</big><a class="headerlink" href="#celery.datastructures.DictAttribute.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.datastructures.DictAttribute.items">
+<tt class="descname">items</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.datastructures.DictAttribute.items" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -271,13 +264,25 @@ is consulted.</p>
 <dl class="attribute">
 <dt id="celery.datastructures.ExceptionInfo.exception">
 <tt class="descname">exception</tt><a class="headerlink" href="#celery.datastructures.ExceptionInfo.exception" title="Permalink to this definition">¶</a></dt>
-<dd><p>The original exception.</p>
+<dd><p>Exception instance.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.datastructures.ExceptionInfo.tb">
+<tt class="descname">tb</tt><a class="headerlink" href="#celery.datastructures.ExceptionInfo.tb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pickleable traceback instance for use with <tt class="xref py py-mod docutils literal"><span class="pre">traceback</span></tt></p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.datastructures.ExceptionInfo.traceback">
 <tt class="descname">traceback</tt><a class="headerlink" href="#celery.datastructures.ExceptionInfo.traceback" title="Permalink to this definition">¶</a></dt>
-<dd><p>A traceback form the point when <a class="reference internal" href="#celery.datastructures.ExceptionInfo.exception" title="celery.datastructures.ExceptionInfo.exception"><tt class="xref py py-attr docutils literal"><span class="pre">exception</span></tt></a> was raised.</p>
+<dd><p>String representation of the traceback.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.datastructures.ExceptionInfo.type">
+<tt class="descname">type</tt><a class="headerlink" href="#celery.datastructures.ExceptionInfo.type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exception type.</p>
 </dd></dl>
 
 </dd></dl>
@@ -357,16 +362,36 @@ evicting expired members.</li>
 </dd></dl>
 
 </div>
-<div class="section" id="localcache">
-<h2><a class="toc-backref" href="#id7">LocalCache</a><a class="headerlink" href="#localcache" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="lrucache">
+<h2><a class="toc-backref" href="#id7">LRUCache</a><a class="headerlink" href="#lrucache" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="celery.datastructures.LocalCache">
-<em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">LocalCache</tt><big>(</big><em>limit=None</em><big>)</big><a class="headerlink" href="#celery.datastructures.LocalCache" title="Permalink to this definition">¶</a></dt>
-<dd><p>Dictionary with a finite number of keys.</p>
-<p>Older items expires first.</p>
+<dt id="celery.datastructures.LRUCache">
+<em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">LRUCache</tt><big>(</big><em>limit=None</em><big>)</big><a class="headerlink" href="#celery.datastructures.LRUCache" title="Permalink to this definition">¶</a></dt>
+<dd><p>LRU Cache implementation using a doubly linked list to track access.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>limit</strong> &#8211; The maximum number of keys to keep in the cache.
+When a new key is inserted and the limit has been exceeded,
+the <em>Least Recently Used</em> key will be discarded from the
+cache.</td>
+</tr>
+</tbody>
+</table>
 <dl class="method">
-<dt id="celery.datastructures.LocalCache.pop">
-<tt class="descname">pop</tt><big>(</big><em>key</em>, <em>*args</em><big>)</big><a class="headerlink" href="#celery.datastructures.LocalCache.pop" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.datastructures.LRUCache.items">
+<tt class="descname">items</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.datastructures.LRUCache.items" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.datastructures.LRUCache.keys">
+<tt class="descname">keys</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.datastructures.LRUCache.keys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.datastructures.LRUCache.values">
+<tt class="descname">values</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.datastructures.LRUCache.values" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -374,23 +399,6 @@ evicting expired members.</li>
 </div>
 <div class="section" id="functions">
 <h2><a class="toc-backref" href="#id8">Functions</a><a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
-<dt id="celery.datastructures.consume_queue">
-<tt class="descclassname">celery.datastructures.</tt><tt class="descname">consume_queue</tt><big>(</big><em>queue</em><big>)</big><a class="headerlink" href="#celery.datastructures.consume_queue" title="Permalink to this definition">¶</a></dt>
-<dd><p>Iterator yielding all immediately available items in a
-<tt class="xref py py-class docutils literal"><span class="pre">Queue.Queue</span></tt>.</p>
-<p>The iterator stops as soon as the queue raises <tt class="xref py py-exc docutils literal"><span class="pre">Queue.Empty</span></tt>.</p>
-<p><em>Examples</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">map</span><span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">put</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">consume_queue</span><span class="p">(</span><span class="n">q</span><span class="p">))</span>
-<span class="go">[0, 1, 2, 3]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">consume_queue</span><span class="p">(</span><span class="n">q</span><span class="p">))</span>
-<span class="go">[]</span>
-</pre></div>
-</div>
-</dd></dl>
-
 </div>
 </div>
 
@@ -416,7 +424,7 @@ evicting expired members.</li>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -445,14 +453,14 @@ evicting expired members.</li>
         <li class="right" >
           <a href="celery.execute.trace.html" title="celery.execute.trace"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

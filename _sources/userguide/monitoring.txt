@@ -444,7 +444,7 @@ Here is an example camera, dumping the snapshot to screen:
 
     class DumpCam(Polaroid):
 
-        def shutter(self, state):
+        def on_shutter(self, state):
             if not state.event_count:
                 # No new events since last snapshot.
                 return

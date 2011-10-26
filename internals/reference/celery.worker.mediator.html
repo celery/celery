@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.worker.mediator &mdash; Celery v2.3.3 documentation</title>
+    <title>celery.worker.mediator &mdash; Celery v2.4.0rc1 documentation</title>
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.3.3',
+        VERSION:     '2.4.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.3 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.worker.buckets" href="celery.worker.buckets.html" />
     <link rel="prev" title="celery.worker.job" href="celery.worker.job.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.worker.job.html" title="celery.worker.job"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,16 +56,32 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.worker.mediator.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.worker.mediator.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-worker-mediator">
 <h1>celery.worker.mediator<a class="headerlink" href="#celery-worker-mediator" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.worker.mediator"></span><dl class="class">
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#celery-mediator" id="id1">celery.mediator</a></li>
+</ul>
+</div>
+<span class="target" id="module-celery.worker.mediator"></span><div class="section" id="celery-mediator">
+<h2><a class="toc-backref" href="#id1">celery.mediator</a><a class="headerlink" href="#celery-mediator" title="Permalink to this headline">¶</a></h2>
+<p>The mediator is an internal thread that moves tasks
+from an internal <tt class="xref py py-class docutils literal"><span class="pre">Queue</span></tt> to the worker pool.</p>
+<p>This is only used if rate limits are enabled, as it moves
+messages from the rate limited queue (which holds tasks
+that are allowed to be processed) to the pool. Disabling
+rate limits will also disable this machinery,
+and can improve performance.</p>
+<dl class="class">
 <dt id="celery.worker.mediator.Mediator">
 <em class="property">class </em><tt class="descclassname">celery.worker.mediator.</tt><tt class="descname">Mediator</tt><big>(</big><em>ready_queue</em>, <em>callback</em>, <em>logger=None</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.worker.mediator.Mediator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Thread continuously moving tasks from the ready queue onto the pool.</p>
@@ -101,6 +117,7 @@
 </dd></dl>
 
 </div>
+</div>
 
 
           </div>
@@ -124,7 +141,7 @@
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -153,14 +170,14 @@
         <li class="right" >
           <a href="celery.worker.job.html" title="celery.worker.job"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

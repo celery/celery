@@ -214,7 +214,7 @@ http://www.slideshare.net/idangazit/an-introduction-to-celery
 
     <div style="width:425px;text-align:left" id="__ss_2089054">
     <a style="font:14px Helvetica,Arial,Sans-serif;display:block;
-    margin:12px 0 3px 0;text-decoration:underline;" 
+    margin:12px 0 3px 0;text-decoration:underline;"
     href="http://www.slideshare.net/idangazit/an-introduction-to-celery"
     title="An Introduction to Celery">An Introduction to Celery</a>
     <object style="margin:0px" width="425" height="355"> <param name="movie"

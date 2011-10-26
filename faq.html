@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Frequently Asked Questions &mdash; Celery v2.3.3 documentation</title>
+    <title>Frequently Asked Questions &mdash; Celery v2.4.0rc1 documentation</title>
     <link rel="stylesheet" href="_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '2.3.3',
+        VERSION:     '2.4.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.3 documentation" href="index.html" />
+    <link rel="top" title="Celery v2.4.0rc1 documentation" href="index.html" />
     <link rel="next" title="Change history" href="changelog.html" />
     <link rel="prev" title="Tutorial: Creating a click counter using Kombu and celery" href="tutorials/clickcounter.html" /> 
   </head>
@@ -41,7 +41,7 @@
         <li class="right" >
           <a href="tutorials/clickcounter.html" title="Tutorial: Creating a click counter using Kombu and celery"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery v2.3.3 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -53,11 +53,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/faq.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/faq.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="frequently-asked-questions">
@@ -80,11 +82,11 @@
 <li><a class="reference internal" href="#celeryd-is-not-doing-anything-just-hanging" id="id10">celeryd is not doing anything, just hanging</a></li>
 <li><a class="reference internal" href="#task-results-aren-t-reliably-returning" id="id11">Task results aren&#8217;t reliably returning</a></li>
 <li><a class="reference internal" href="#why-is-task-delay-apply-celeryd-just-hanging" id="id12">Why is Task.delay/apply*/celeryd just hanging?</a></li>
-<li><a class="reference internal" href="#why-won-t-celeryd-run-on-freebsd" id="id13">Why won&#8217;t celeryd run on FreeBSD?</a></li>
+<li><a class="reference internal" href="#does-it-work-on-freebsd" id="id13">Does it work on FreeBSD?</a></li>
 <li><a class="reference internal" href="#i-m-having-integrityerror-duplicate-key-errors-why" id="id14">I&#8217;m having <cite>IntegrityError: Duplicate Key</cite> errors. Why?</a></li>
 <li><a class="reference internal" href="#why-aren-t-my-tasks-processed" id="id15">Why aren&#8217;t my tasks processed?</a></li>
 <li><a class="reference internal" href="#why-won-t-my-task-run" id="id16">Why won&#8217;t my Task run?</a></li>
-<li><a class="reference internal" href="#why-won-t-my-periodic-task-run" id="id17">Why won&#8217;t my Periodic Task run?</a></li>
+<li><a class="reference internal" href="#why-won-t-my-periodic-task-run" id="id17">Why won&#8217;t my periodic task run?</a></li>
 <li><a class="reference internal" href="#how-do-i-discard-all-waiting-tasks" id="id18">How do I discard all waiting tasks?</a></li>
 <li><a class="reference internal" href="#i-ve-discarded-messages-but-there-are-still-messages-left-in-the-queue" id="id19">I&#8217;ve discarded messages, but there are still messages left in the queue?</a></li>
 </ul>
@@ -161,11 +163,11 @@ retries.</li>
 <div class="section" id="is-celery-dependent-on-pickle">
 <span id="faq-serializion-is-a-choice"></span><h3><a class="toc-backref" href="#id4">Is Celery dependent on pickle?</a><a class="headerlink" href="#is-celery-dependent-on-pickle" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> No.</p>
-<p>Celery can support any serialization scheme and has support for JSON/YAML and
-Pickle by default. And as every task is associated with a content type, you
-can even send one task using pickle, and another using JSON.</p>
+<p>Celery can support any serialization scheme and has built-in support for
+JSON, YAML, Pickle and msgpack. Also, as every task is associated with a
+content type, you can even send one task using pickle, and another using JSON.</p>
 <p>The default serialization format is pickle simply because it is
-convenient as it supports sending complex Python objects as task arguments.</p>
+convenient (it supports sending complex Python objects as task arguments).</p>
 <p>If you need to communicate with other languages you should change
 to a serialization format that is suitable for that.</p>
 <p>You can set a global default serializer, the default serializer for a
@@ -198,7 +200,7 @@ if you need to.</p>
 <div class="section" id="is-celery-multilingual">
 <span id="faq-is-celery-multilingual"></span><h3><a class="toc-backref" href="#id7">Is Celery multilingual?</a><a class="headerlink" href="#is-celery-multilingual" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> Yes.</p>
-<p><a class="reference internal" href="reference/celery.bin.celeryd.html#module-celery.bin.celeryd" title="celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a> is an implementation of Celery in python. If the
+<p><a class="reference internal" href="reference/celery.bin.celeryd.html#module-celery.bin.celeryd" title="celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a> is an implementation of Celery in Python. If the
 language has an AMQP client, there shouldn&#8217;t be much work to create a worker
 in your language.  A Celery worker is just a program connecting to the broker
 to process messages.</p>
@@ -243,8 +245,8 @@ the user does not have access to the virtual host specified. Be sure to check
 your broker logs (for RabbitMQ that is <tt class="file docutils literal"><span class="pre">/var/log/rabbitmq/rabbit.log</span></tt> on
 most systems), it usually contains a message describing the reason.</p>
 </div>
-<div class="section" id="why-won-t-celeryd-run-on-freebsd">
-<span id="faq-celeryd-on-freebsd"></span><h3><a class="toc-backref" href="#id13">Why won&#8217;t celeryd run on FreeBSD?</a><a class="headerlink" href="#why-won-t-celeryd-run-on-freebsd" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="does-it-work-on-freebsd">
+<span id="faq-celeryd-on-freebsd"></span><h3><a class="toc-backref" href="#id13">Does it work on FreeBSD?</a><a class="headerlink" href="#does-it-work-on-freebsd" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> The multiprocessing pool requires a working POSIX semaphore
 implementation which isn&#8217;t enabled in FreeBSD by default. You have to enable
 POSIX semaphores in the kernel and manually recompile multiprocessing.</p>
@@ -297,7 +299,7 @@ task manually:</p>
 other error is happening.</p>
 </div>
 <div class="section" id="why-won-t-my-periodic-task-run">
-<span id="faq-periodic-task-does-not-run"></span><h3><a class="toc-backref" href="#id17">Why won&#8217;t my Periodic Task run?</a><a class="headerlink" href="#why-won-t-my-periodic-task-run" title="Permalink to this headline">¶</a></h3>
+<span id="faq-periodic-task-does-not-run"></span><h3><a class="toc-backref" href="#id17">Why won&#8217;t my periodic task run?</a><a class="headerlink" href="#why-won-t-my-periodic-task-run" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> See <a class="reference internal" href="#why-won-t-my-task-run">Why won&#8217;t my Task run?</a>.</p>
 </div>
 <div class="section" id="how-do-i-discard-all-waiting-tasks">
@@ -458,7 +460,7 @@ using the virtual transports:</p>
 <span id="faq-tasks"></span><h2><a class="toc-backref" href="#id30">Tasks</a><a class="headerlink" href="#tasks" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="how-can-i-reuse-the-same-connection-when-applying-tasks">
 <span id="faq-tasks-connection-reuse"></span><h3><a class="toc-backref" href="#id31">How can I reuse the same connection when applying tasks?</a><a class="headerlink" href="#how-can-i-reuse-the-same-connection-when-applying-tasks" title="Permalink to this headline">¶</a></h3>
-<p><strong>Answer</strong>: Yes! See the <a class="reference internal" href="configuration.html#std:setting-BROKER_POOL_LIMIT"><tt class="xref std std-setting docutils literal"><span class="pre">BROKER_POOL_LIMIT</span></tt></a> setting.
+<p><strong>Answer</strong>: See the <a class="reference internal" href="configuration.html#std:setting-BROKER_POOL_LIMIT"><tt class="xref std std-setting docutils literal"><span class="pre">BROKER_POOL_LIMIT</span></tt></a> setting.
 This setting will be enabled by default in 3.0.</p>
 </div>
 <div class="section" id="can-i-execute-a-task-by-name">
@@ -698,7 +700,7 @@ services instead.</p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -727,12 +729,12 @@ services instead.</p>
         <li class="right" >
           <a href="tutorials/clickcounter.html" title="Tutorial: Creating a click counter using Kombu and celery"
              >previous</a> |</li>
-        <li><a href="index.html">Celery v2.3.3 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

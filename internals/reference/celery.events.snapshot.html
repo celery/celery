@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.events.snapshot &mdash; Celery v2.3.3 documentation</title>
+    <title>celery.events.snapshot &mdash; Celery v2.4.0rc1 documentation</title>
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.3.3',
+        VERSION:     '2.4.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.3 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.events.cursesmon" href="celery.events.cursesmon.html" />
     <link rel="prev" title="celery.log" href="celery.log.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.log.html" title="celery.log"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,16 +56,29 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.events.snapshot.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.events.snapshot.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-events-snapshot">
 <h1>celery.events.snapshot<a class="headerlink" href="#celery-events-snapshot" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.events.snapshot"></span><dl class="class">
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#id1" id="id2">celery.events.snapshot</a></li>
+</ul>
+</div>
+<span class="target" id="module-celery.events.snapshot"></span><div class="section" id="id1">
+<h2><a class="toc-backref" href="#id2">celery.events.snapshot</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>Consuming the events as a stream is not always suitable,
+so this module implements a system to take snapshots of the
+state of a cluster.  There is a full implementation of this
+writing the snapshots to a database in <tt class="docutils literal"><span class="pre">django-celery</span></tt>.</p>
+<dl class="class">
 <dt id="celery.events.snapshot.Polaroid">
 <em class="property">class </em><tt class="descclassname">celery.events.snapshot.</tt><tt class="descname">Polaroid</tt><big>(</big><em>state</em>, <em>freq=1.0</em>, <em>maxrate=None</em>, <em>cleanup_freq=3600.0</em>, <em>logger=None</em>, <em>timer=None</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.events.snapshot.Polaroid" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
@@ -111,6 +124,7 @@
 <dd></dd></dl>
 
 </div>
+</div>
 
 
           </div>
@@ -134,7 +148,7 @@
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -163,14 +177,14 @@
         <li class="right" >
           <a href="celery.log.html" title="celery.log"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

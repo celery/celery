@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.worker.autoscale &mdash; Celery v2.3.3 documentation</title>
+    <title>celery.worker.autoscale &mdash; Celery v2.4.0rc1 documentation</title>
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.3.3',
+        VERSION:     '2.4.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.3 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.concurrency" href="celery.concurrency.html" />
     <link rel="prev" title="celery.worker.state" href="celery.worker.state.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.worker.state.html" title="celery.worker.state"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,16 +56,30 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.worker.autoscale.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.worker.autoscale.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-worker-autoscale">
 <h1>celery.worker.autoscale<a class="headerlink" href="#celery-worker-autoscale" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.worker.autoscale"></span><dl class="class">
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#id1" id="id2">celery.worker.autoscale</a></li>
+</ul>
+</div>
+<span class="target" id="module-celery.worker.autoscale"></span><div class="section" id="id1">
+<h2><a class="toc-backref" href="#id2">celery.worker.autoscale</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>This module implements the internal thread responsible
+for growing and shrinking the pool according to the
+current autoscale settings.</p>
+<p>The autoscale thread is only enabled if autoscale
+has been enabled on the command line.</p>
+<dl class="class">
 <dt id="celery.worker.autoscale.Autoscaler">
 <em class="property">class </em><tt class="descclassname">celery.worker.autoscale.</tt><tt class="descname">Autoscaler</tt><big>(</big><em>pool</em>, <em>max_concurrency</em>, <em>min_concurrency=0</em>, <em>keepalive=30</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#celery.worker.autoscale.Autoscaler" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
@@ -126,6 +140,7 @@
 </dd></dl>
 
 </div>
+</div>
 
 
           </div>
@@ -149,7 +164,7 @@
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -178,14 +193,14 @@
         <li class="right" >
           <a href="celery.worker.state.html" title="celery.worker.state"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

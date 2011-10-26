@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tasks &mdash; Celery v2.3.3 documentation</title>
+    <title>Tasks &mdash; Celery v2.4.0rc1 documentation</title>
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.3.3',
+        VERSION:     '2.4.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.3 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Executing Tasks" href="executing.html" />
     <link rel="prev" title="Overview" href="overview.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="overview.html" title="Overview"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,11 +55,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/userguide/tasks.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/userguide/tasks.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="tasks">
@@ -618,7 +620,7 @@ consume the results or else the number of queues will eventually go out of
 control.  If you&#8217;re running RabbitMQ 2.1.1 or higher you can take advantage
 of the <tt class="docutils literal"><span class="pre">x-expires</span></tt> argument to queues, which will expire queues after a
 certain time limit after they are unused.  The queue expiry can be set (in
-seconds) by the <a class="reference internal" href="../configuration.html#std:setting-CELERY_AMQP_TASK_RESULT_EXPIRES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_AMQP_TASK_RESULT_EXPIRES</span></tt></a> setting (not
+seconds) by the <a class="reference internal" href="../configuration.html#std:setting-CELERY_TASK_RESULT_EXPIRES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TASK_RESULT_EXPIRES</span></tt></a> setting (not
 enabled by default).</li>
 </ul>
 <p>For a list of options supported by the AMQP result backend, please see
@@ -1322,7 +1324,7 @@ need to pay.  You have to sign up to their service to get an API key.</p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -1351,13 +1353,13 @@ need to pay.  You have to sign up to their service to get an API key.</p>
         <li class="right" >
           <a href="overview.html" title="Overview"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

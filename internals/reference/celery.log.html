@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.log &mdash; Celery v2.3.3 documentation</title>
+    <title>celery.log &mdash; Celery v2.4.0rc1 documentation</title>
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.3.3',
+        VERSION:     '2.4.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.3 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.events.snapshot" href="celery.events.snapshot.html" />
     <link rel="prev" title="celery.routes" href="celery.routes.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.routes.html" title="celery.routes"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,16 +56,25 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.log.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.log.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-log">
 <h1>celery.log<a class="headerlink" href="#celery-log" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.log"></span><p>celery.log</p>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#id1" id="id2">celery.log</a></li>
+</ul>
+</div>
+<span class="target" id="module-celery.log"></span><div class="section" id="id1">
+<h2><a class="toc-backref" href="#id2">celery.log</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>Logging utilities.</p>
 <dl class="class">
 <dt id="celery.log.ColorFormatter">
 <em class="property">class </em><tt class="descclassname">celery.log.</tt><tt class="descname">ColorFormatter</tt><big>(</big><em>msg</em>, <em>use_color=True</em><big>)</big><a class="headerlink" href="#celery.log.ColorFormatter" title="Permalink to this definition">¶</a></dt>
@@ -116,7 +125,7 @@
 
 <dl class="method">
 <dt id="celery.log.Logging.redirect_stdouts_to_logger">
-<tt class="descname">redirect_stdouts_to_logger</tt><big>(</big><em>logger</em>, <em>loglevel=None</em><big>)</big><a class="headerlink" href="#celery.log.Logging.redirect_stdouts_to_logger" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">redirect_stdouts_to_logger</tt><big>(</big><em>logger</em>, <em>loglevel=None</em>, <em>stdout=True</em>, <em>stderr=True</em><big>)</big><a class="headerlink" href="#celery.log.Logging.redirect_stdouts_to_logger" title="Permalink to this definition">¶</a></dt>
 <dd><p>Redirect <tt class="xref py py-class docutils literal"><span class="pre">sys.stdout</span></tt> and <tt class="xref py py-class docutils literal"><span class="pre">sys.stderr</span></tt> to a
 logging instance.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -159,6 +168,42 @@ logging instance.</p>
 <tt class="descname">supports_color</tt><big>(</big><em>logfile=None</em><big>)</big><a class="headerlink" href="#celery.log.Logging.supports_color" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.log.get_default_logger">
+<tt class="descclassname">celery.log.</tt><tt class="descname">get_default_logger</tt><a class="headerlink" href="#celery.log.get_default_logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Proxy to another object.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.log.setup_logger">
+<tt class="descclassname">celery.log.</tt><tt class="descname">setup_logger</tt><a class="headerlink" href="#celery.log.setup_logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Proxy to another object.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.log.setup_task_logger">
+<tt class="descclassname">celery.log.</tt><tt class="descname">setup_task_logger</tt><a class="headerlink" href="#celery.log.setup_task_logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Proxy to another object.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.log.get_task_logger">
+<tt class="descclassname">celery.log.</tt><tt class="descname">get_task_logger</tt><a class="headerlink" href="#celery.log.get_task_logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Proxy to another object.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.log.setup_logging_subsystem">
+<tt class="descclassname">celery.log.</tt><tt class="descname">setup_logging_subsystem</tt><a class="headerlink" href="#celery.log.setup_logging_subsystem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Proxy to another object.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.log.redirect_stdouts_to_logger">
+<tt class="descclassname">celery.log.</tt><tt class="descname">redirect_stdouts_to_logger</tt><a class="headerlink" href="#celery.log.redirect_stdouts_to_logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Proxy to another object.</p>
 </dd></dl>
 
 <dl class="class">
@@ -218,12 +263,7 @@ This is equivalent to calling <a class="reference internal" href="#celery.log.Lo
 
 </dd></dl>
 
-<dl class="class">
-<dt id="celery.log.SilenceRepeated">
-<em class="property">class </em><tt class="descclassname">celery.log.</tt><tt class="descname">SilenceRepeated</tt><big>(</big><em>action</em>, <em>max_iterations=10</em><big>)</big><a class="headerlink" href="#celery.log.SilenceRepeated" title="Permalink to this definition">¶</a></dt>
-<dd><p>Only log action every n iterations.</p>
-</dd></dl>
-
+</div>
 </div>
 
 
@@ -248,7 +288,7 @@ This is equivalent to calling <a class="reference internal" href="#celery.log.Lo
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -277,14 +317,14 @@ This is equivalent to calling <a class="reference internal" href="#celery.log.Lo
         <li class="right" >
           <a href="celery.routes.html" title="celery.routes"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

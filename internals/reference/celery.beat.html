@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.beat &mdash; Celery v2.3.3 documentation</title>
+    <title>celery.beat &mdash; Celery v2.4.0rc1 documentation</title>
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.3.3',
+        VERSION:     '2.4.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.3 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.backends" href="celery.backends.html" />
     <link rel="prev" title="celery.concurrency.threads‡ (minefield)" href="celery.concurrency.threads.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.concurrency.threads.html" title="celery.concurrency.threads‡ (minefield)"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,58 +56,29 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.beat.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.beat.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-beat">
 <h1>celery.beat<a class="headerlink" href="#celery-beat" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.beat"></span><dl class="function">
-<dt id="celery.beat.EmbeddedService">
-<tt class="descclassname">celery.beat.</tt><tt class="descname">EmbeddedService</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.beat.EmbeddedService" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return embedded clock service.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>thread</strong> &#8211; Run threaded instead of as a separate process.
-Default is <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt>.</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.beat.PersistentScheduler">
-<em class="property">class </em><tt class="descclassname">celery.beat.</tt><tt class="descname">PersistentScheduler</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.beat.PersistentScheduler" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
-<dt id="celery.beat.PersistentScheduler.close">
-<tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.beat.PersistentScheduler.close" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.beat.PersistentScheduler.get_schedule">
-<tt class="descname">get_schedule</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.beat.PersistentScheduler.get_schedule" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="celery.beat.PersistentScheduler.info">
-<tt class="descname">info</tt><a class="headerlink" href="#celery.beat.PersistentScheduler.info" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.beat.PersistentScheduler.setup_schedule">
-<tt class="descname">setup_schedule</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.beat.PersistentScheduler.setup_schedule" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.beat.PersistentScheduler.sync">
-<tt class="descname">sync</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.beat.PersistentScheduler.sync" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#id1" id="id2">celery.beat</a></li>
+</ul>
+</div>
+<span class="target" id="module-celery.beat"></span><div class="section" id="id1">
+<h2><a class="toc-backref" href="#id2">celery.beat</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>The Celery periodic task scheduler.</p>
+<dl class="exception">
+<dt id="celery.beat.SchedulingError">
+<em class="property">exception </em><tt class="descclassname">celery.beat.</tt><tt class="descname">SchedulingError</tt><a class="headerlink" href="#celery.beat.SchedulingError" title="Permalink to this definition">¶</a></dt>
+<dd><p>An error occured while scheduling a task.</p>
 </dd></dl>
 
 <dl class="class">
@@ -338,12 +309,6 @@ options).</p>
 
 </dd></dl>
 
-<dl class="exception">
-<dt id="celery.beat.SchedulingError">
-<em class="property">exception </em><tt class="descclassname">celery.beat.</tt><tt class="descname">SchedulingError</tt><a class="headerlink" href="#celery.beat.SchedulingError" title="Permalink to this definition">¶</a></dt>
-<dd><p>An error occured while scheduling a task.</p>
-</dd></dl>
-
 <dl class="class">
 <dt id="celery.beat.Service">
 <em class="property">class </em><tt class="descclassname">celery.beat.</tt><tt class="descname">Service</tt><big>(</big><em>logger=None</em>, <em>max_interval=None</em>, <em>schedule_filename=None</em>, <em>scheduler_cls=None</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.beat.Service" title="Permalink to this definition">¶</a></dt>
@@ -360,7 +325,7 @@ options).</p>
 <dl class="attribute">
 <dt id="celery.beat.Service.scheduler_cls">
 <tt class="descname">scheduler_cls</tt><a class="headerlink" href="#celery.beat.Service.scheduler_cls" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <a class="reference internal" href="#celery.beat.PersistentScheduler" title="celery.beat.PersistentScheduler"><tt class="xref py py-class docutils literal"><span class="pre">PersistentScheduler</span></tt></a></p>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">PersistentScheduler</span></tt></p>
 </dd></dl>
 
 <dl class="method">
@@ -380,6 +345,22 @@ options).</p>
 
 </dd></dl>
 
+<dl class="function">
+<dt id="celery.beat.EmbeddedService">
+<tt class="descclassname">celery.beat.</tt><tt class="descname">EmbeddedService</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.beat.EmbeddedService" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return embedded clock service.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>thread</strong> &#8211; Run threaded instead of as a separate process.
+Default is <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
 </div>
 
 
@@ -404,7 +385,7 @@ options).</p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -433,14 +414,14 @@ options).</p>
         <li class="right" >
           <a href="celery.concurrency.threads.html" title="celery.concurrency.threads‡ (minefield)"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

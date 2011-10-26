@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.backends.amqp &mdash; Celery v2.3.3 documentation</title>
+    <title>celery.backends.amqp &mdash; Celery v2.4.0rc1 documentation</title>
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.3.3',
+        VERSION:     '2.4.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.3 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.backends.mongodb" href="celery.backends.mongodb.html" />
     <link rel="prev" title="celery.backends.cache" href="celery.backends.cache.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.backends.cache.html" title="celery.backends.cache"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,18 +56,20 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.backends.amqp.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.backends.amqp.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-backends-amqp">
 <h1>celery.backends.amqp<a class="headerlink" href="#celery-backends-amqp" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.backends.amqp"></span><dl class="class">
 <dt id="celery.backends.amqp.AMQPBackend">
-<em class="property">class </em><tt class="descclassname">celery.backends.amqp.</tt><tt class="descname">AMQPBackend</tt><big>(</big><em>connection=None</em>, <em>exchange=None</em>, <em>exchange_type=None</em>, <em>persistent=None</em>, <em>serializer=None</em>, <em>auto_delete=True</em>, <em>expires=None</em>, <em>connection_max=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.backends.amqp.</tt><tt class="descname">AMQPBackend</tt><big>(</big><em>connection=None</em>, <em>exchange=None</em>, <em>exchange_type=None</em>, <em>persistent=None</em>, <em>serializer=None</em>, <em>auto_delete=True</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend" title="Permalink to this definition">¶</a></dt>
 <dd><p>Publishes results by sending messages.</p>
 <dl class="exception">
 <dt id="celery.backends.amqp.AMQPBackend.BacklogLimitExceeded">
@@ -121,6 +123,11 @@ mean the server will not send any more messages for this consumer.</p>
 <p>This does not affect already delivered messages, but it does
 mean the server will not send any more messages for this consumer.</p>
 </dd></dl>
+
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Consumer.connection">
+<tt class="descname">connection</tt><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Consumer.connection" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Consumer.consume">
@@ -485,13 +492,13 @@ response will not be waited for. Default is <tt class="xref py py-const xref doc
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>channel</strong> &#8211; Connection channel.</li>
-<li><strong>exchange</strong> &#8211; Default exchange.</li>
-<li><strong>routing_key</strong> &#8211; Default routing key.</li>
+<li><strong>channel</strong> &#8211; Connection or channel.</li>
+<li><strong>exchange</strong> &#8211; Optional default exchange.</li>
+<li><strong>routing_key</strong> &#8211; Optional default routing key.</li>
 <li><strong>serializer</strong> &#8211; Default serializer. Default is <cite>&#8220;json&#8221;</cite>.</li>
 <li><strong>compression</strong> &#8211; Default compression method. Default is no
 compression.</li>
-<li><strong>auto_declare</strong> &#8211; Automatically declare the exchange
+<li><strong>auto_declare</strong> &#8211; Automatically declare the default exchange
 at instantiation. Default is <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt>.</li>
 <li><strong>on_return</strong> &#8211; Callback to call for undeliverable messages,
 when the <cite>mandatory</cite> or <cite>immediate</cite> arguments to
@@ -508,6 +515,11 @@ Note that the producer needs to drain events to use this feature.</li>
 <tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.close" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Producer.connection">
+<tt class="descname">connection</tt><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.connection" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Producer.declare">
 <tt class="descname">declare</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.declare" title="Permalink to this definition">¶</a></dt>
@@ -517,8 +529,13 @@ is set to <tt class="xref py py-const xref docutils literal"><span class="pre">T
 </dd></dl>
 
 <dl class="method">
+<dt id="celery.backends.amqp.AMQPBackend.Producer.maybe_declare">
+<tt class="descname">maybe_declare</tt><big>(</big><em>entity</em>, <em>retry=False</em>, <em>**retry_policy</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.maybe_declare" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Producer.publish">
-<tt class="descname">publish</tt><big>(</big><em>body</em>, <em>routing_key=None</em>, <em>delivery_mode=None</em>, <em>mandatory=False</em>, <em>immediate=False</em>, <em>priority=0</em>, <em>content_type=None</em>, <em>content_encoding=None</em>, <em>serializer=None</em>, <em>headers=None</em>, <em>compression=None</em>, <em>exchange=None</em>, <em>**properties</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.publish" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">publish</tt><big>(</big><em>body</em>, <em>routing_key=None</em>, <em>delivery_mode=None</em>, <em>mandatory=False</em>, <em>immediate=False</em>, <em>priority=0</em>, <em>content_type=None</em>, <em>content_encoding=None</em>, <em>serializer=None</em>, <em>headers=None</em>, <em>compression=None</em>, <em>exchange=None</em>, <em>retry=False</em>, <em>retry_policy=None</em>, <em>declare=</em><span class="optional">[</span><span class="optional">]</span>, <em>**properties</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.publish" title="Permalink to this definition">¶</a></dt>
 <dd><p>Publish message to the specified exchange.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -919,7 +936,7 @@ without modifying the server state.</li>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -948,14 +965,14 @@ without modifying the server state.</li>
         <li class="right" >
           <a href="celery.backends.cache.html" title="celery.backends.cache"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

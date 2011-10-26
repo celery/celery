@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Monitoring and Management Guide &mdash; Celery v2.3.3 documentation</title>
+    <title>Monitoring and Management Guide &mdash; Celery v2.4.0rc1 documentation</title>
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.3.3',
+        VERSION:     '2.4.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.3 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Optimizing" href="optimizing.html" />
     <link rel="prev" title="Routing Tasks" href="routing.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="routing.html" title="Routing Tasks"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,11 +55,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/userguide/monitoring.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/userguide/monitoring.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="monitoring-and-management-guide">
@@ -481,7 +483,7 @@ arguments:</p>
 
 <span class="k">class</span> <span class="nc">DumpCam</span><span class="p">(</span><span class="n">Polaroid</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="nf">shutter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">on_shutter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">state</span><span class="o">.</span><span class="n">event_count</span><span class="p">:</span>
             <span class="c"># No new events since last snapshot.</span>
             <span class="k">return</span>
@@ -617,7 +619,7 @@ it is considered to be offline.</p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -646,13 +648,13 @@ it is considered to be offline.</p>
         <li class="right" >
           <a href="routing.html" title="Routing Tasks"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

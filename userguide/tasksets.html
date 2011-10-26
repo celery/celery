@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Sets of tasks, Subtasks and Callbacks &mdash; Celery v2.3.3 documentation</title>
+    <title>Sets of tasks, Subtasks and Callbacks &mdash; Celery v2.4.0rc1 documentation</title>
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.3.3',
+        VERSION:     '2.4.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.3 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="HTTP Callback Tasks (Webhooks)" href="remote-tasks.html" />
     <link rel="prev" title="Periodic Tasks" href="periodic-tasks.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="periodic-tasks.html" title="Periodic Tasks"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,11 +55,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/userguide/tasksets.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/userguide/tasksets.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="sets-of-tasks-subtasks-and-callbacks">
@@ -265,7 +267,7 @@ as possible. Still, the chord is a powerful primitive to have in your toolbox
 as synchronization is a required step for many parallel algorithms.</p>
 <p>Let&#8217;s break the chord expression down:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">callback</span> <span class="o">=</span> <span class="n">tsum</span><span class="o">.</span><span class="n">subtask</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">header</span> <span class="o">=</span> <span class="p">[</span><span class="n">add</span><span class="o">.</span><span class="n">subtask</span><span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">100</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">header</span> <span class="o">=</span> <span class="p">[</span><span class="n">add</span><span class="o">.</span><span class="n">subtask</span><span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">100</span><span class="p">)]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">chord</span><span class="p">(</span><span class="n">header</span><span class="p">)(</span><span class="n">callback</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
 <span class="go">9900</span>
@@ -292,9 +294,11 @@ ready.</p>
 </div>
 <p>This is used by all result backends except Redis, which increments a
 counter after each task in the header, then applying the callback when the
-counter exceeds the number of tasks in the set.</p>
+counter exceeds the number of tasks in the set. <em>Note:</em> chords do not properly
+work with Redis before version 2.2; you will need to upgrade to at least 2.2 to
+use them.</p>
 <p>The Redis approach is a much better solution, but not easily implemented
-in other backends (suggestions welcome!)</p>
+in other backends (suggestions welcome!).</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p>If you are using chords with the Redis result backend and also overriding
@@ -332,7 +336,7 @@ super method or else the chord callback will not be applied.</p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -361,13 +365,13 @@ super method or else the chord callback will not be applied.</p>
         <li class="right" >
           <a href="periodic-tasks.html" title="Periodic Tasks"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

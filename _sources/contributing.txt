@@ -634,6 +634,33 @@ is following the conventions.
 Release Procedure
 =================
 
+Updating the version number
+---------------------------
+
+The version number must be updated two places:
+
+    * :file:`celery/__init__.py`
+    * :file:`docs/include/introduction.txt`
+
+After you have changed these files you must render
+the :file:`README` files.  There is a script to convert sphinx syntax
+to generic reStructured Text syntax, and the paver task `readme`
+does this for you::
+
+    $ paver readme
+
+Now commit the changes::
+
+    $ git commit -a -m "Bumps version to X.Y.Z"
+
+and make a new version tag::
+
+    $ git tag vX.Y.Z
+    $ git push --tags
+
+Releasing
+---------
+
 Commands to make a new public stable release::
 
     $ paver releaseok     # checks pep8, autodoc index and runs tests

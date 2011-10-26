@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.states &mdash; Celery v2.3.3 documentation</title>
+    <title>celery.states &mdash; Celery v2.4.0rc1 documentation</title>
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.3.3',
+        VERSION:     '2.4.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.3 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.contrib.abortable" href="celery.contrib.abortable.html" />
     <link rel="prev" title="celery.registry" href="celery.registry.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.registry.html" title="celery.registry"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,11 +55,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/reference/celery.states.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/reference/celery.states.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="contents local topic" id="contents">
@@ -82,20 +84,6 @@
 <span class="target" id="module-celery.states"></span><div class="section" id="celery-states">
 <h1><a class="toc-backref" href="#id2">celery.states</a><a class="headerlink" href="#celery-states" title="Permalink to this headline">¶</a></h1>
 <p>Built-in Task States.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
-<li>2009 - 2011 by Ask Solem.</li>
-</ol>
-</td>
-</tr>
-<tr class="field"><th class="field-name">license:</th><td class="field-body"><p class="first last">BSD, see LICENSE for more details.</p>
-</td>
-</tr>
-</tbody>
-</table>
 <div class="section" id="states">
 <span id="id1"></span><h2><a class="toc-backref" href="#id3">States</a><a class="headerlink" href="#states" title="Permalink to this headline">¶</a></h2>
 <p>See <a class="reference internal" href="../userguide/tasks.html#task-states"><em>Task States</em></a>.</p>
@@ -125,14 +113,6 @@
 </div>
 <div class="section" id="misc">
 <h2><a class="toc-backref" href="#id10">Misc.</a><a class="headerlink" href="#misc" title="Permalink to this headline">¶</a></h2>
-<dl class="data">
-<dt id="celery.states.PRECEDENCE">
-<tt class="descclassname">celery.states.</tt><tt class="descname">PRECEDENCE</tt><a class="headerlink" href="#celery.states.PRECEDENCE" title="Permalink to this definition">¶</a></dt>
-<dd><p>State precedence.
-None represents the precedence of an unknown state.
-Lower index means higher precedence.</p>
-</dd></dl>
-
 <dl class="function">
 <dt id="celery.states.precedence">
 <tt class="descclassname">celery.states.</tt><tt class="descname">precedence</tt><big>(</big><em>state</em><big>)</big><a class="headerlink" href="#celery.states.precedence" title="Permalink to this definition">¶</a></dt>
@@ -172,7 +152,7 @@ methods adhering to state precedence rules.</p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -201,13 +181,13 @@ methods adhering to state precedence rules.</p>
         <li class="right" >
           <a href="celery.registry.html" title="celery.registry"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

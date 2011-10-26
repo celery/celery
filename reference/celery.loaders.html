@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.loaders &mdash; Celery v2.3.3 documentation</title>
+    <title>celery.loaders &mdash; Celery v2.4.0rc1 documentation</title>
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.3.3',
+        VERSION:     '2.4.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.3 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.loaders.app" href="celery.loaders.app.html" />
     <link rel="prev" title="celery.exceptions" href="celery.exceptions.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.exceptions.html" title="celery.exceptions"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,36 +55,33 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/reference/celery.loaders.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/reference/celery.loaders.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-loaders">
 <h1>celery.loaders<a class="headerlink" href="#celery-loaders" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.loaders"></span><dl class="function">
-<dt id="celery.loaders.current_loader">
-<tt class="descclassname">celery.loaders.</tt><tt class="descname">current_loader</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.loaders.current_loader" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#id1" id="id2">celery.loaders</a></li>
+</ul>
+</div>
+<span class="target" id="module-celery.loaders"></span><div class="section" id="id1">
+<h2><a class="toc-backref" href="#id2">celery.loaders</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>Loaders define how configuration is read, what happens
+when workers start, and when tasks are executed and so on.</p>
 <dl class="function">
 <dt id="celery.loaders.get_loader_cls">
 <tt class="descclassname">celery.loaders.</tt><tt class="descname">get_loader_cls</tt><big>(</big><em>loader</em><big>)</big><a class="headerlink" href="#celery.loaders.get_loader_cls" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get loader class by name/alias</p>
 </dd></dl>
 
-<dl class="function">
-<dt id="celery.loaders.load_settings">
-<tt class="descclassname">celery.loaders.</tt><tt class="descname">load_settings</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.loaders.load_settings" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="celery.loaders.setup_loader">
-<tt class="descclassname">celery.loaders.</tt><tt class="descname">setup_loader</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.loaders.setup_loader" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+</div>
 </div>
 
 
@@ -109,7 +106,7 @@
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -138,13 +135,13 @@
         <li class="right" >
           <a href="celery.exceptions.html" title="celery.exceptions"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

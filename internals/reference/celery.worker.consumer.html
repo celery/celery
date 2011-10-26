@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.worker.consumer &mdash; Celery v2.3.3 documentation</title>
+    <title>celery.worker.consumer &mdash; Celery v2.4.0rc1 documentation</title>
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.3.3',
+        VERSION:     '2.4.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.3 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.worker.job" href="celery.worker.job.html" />
     <link rel="prev" title="celery.worker" href="celery.worker.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.worker.html" title="celery.worker"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,18 +56,140 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.worker.consumer.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.worker.consumer.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-worker-consumer">
 <h1>celery.worker.consumer<a class="headerlink" href="#celery-worker-consumer" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.worker.consumer"></span><dl class="class">
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#id1" id="id2">celery.worker.consumer</a></li>
+</ul>
+</div>
+<span class="target" id="module-celery.worker.consumer"></span><div class="section" id="id1">
+<h2><a class="toc-backref" href="#id2">celery.worker.consumer</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>This module contains the component responsible for consuming messages
+from the broker, processing the messages and keeping the broker connections
+up and running.</p>
+<ul>
+<li><p class="first"><a class="reference internal" href="#celery.worker.consumer.Consumer.start" title="celery.worker.consumer.Consumer.start"><tt class="xref py py-meth docutils literal"><span class="pre">start()</span></tt></a> is an infinite loop, which only iterates
+again if the connection is lost. For each iteration (at start, or if the
+connection is lost) it calls <a class="reference internal" href="#celery.worker.consumer.Consumer.reset_connection" title="celery.worker.consumer.Consumer.reset_connection"><tt class="xref py py-meth docutils literal"><span class="pre">reset_connection()</span></tt></a>,
+and starts the consumer by calling <a class="reference internal" href="#celery.worker.consumer.Consumer.consume_messages" title="celery.worker.consumer.Consumer.consume_messages"><tt class="xref py py-meth docutils literal"><span class="pre">consume_messages()</span></tt></a>.</p>
+</li>
+<li><p class="first"><a class="reference internal" href="#celery.worker.consumer.Consumer.reset_connection" title="celery.worker.consumer.Consumer.reset_connection"><tt class="xref py py-meth docutils literal"><span class="pre">reset_connection()</span></tt></a>, clears the internal queues,
+establishes a new connection to the broker, sets up the task
+consumer (+ QoS), and the broadcast remote control command consumer.</p>
+<p>Also if events are enabled it configures the event dispatcher and starts
+up the heartbeat thread.</p>
+</li>
+<li><p class="first">Finally it can consume messages. <a class="reference internal" href="#celery.worker.consumer.Consumer.consume_messages" title="celery.worker.consumer.Consumer.consume_messages"><tt class="xref py py-meth docutils literal"><span class="pre">consume_messages()</span></tt></a>
+is simply an infinite loop waiting for events on the AMQP channels.</p>
+<p>Both the task consumer and the broadcast consumer uses the same
+callback: <a class="reference internal" href="#celery.worker.consumer.Consumer.receive_message" title="celery.worker.consumer.Consumer.receive_message"><tt class="xref py py-meth docutils literal"><span class="pre">receive_message()</span></tt></a>.</p>
+</li>
+<li><p class="first">So for each message received the <a class="reference internal" href="#celery.worker.consumer.Consumer.receive_message" title="celery.worker.consumer.Consumer.receive_message"><tt class="xref py py-meth docutils literal"><span class="pre">receive_message()</span></tt></a>
+method is called, this checks the payload of the message for either
+a <cite>task</cite> key or a <cite>control</cite> key.</p>
+<p>If the message is a task, it verifies the validity of the message
+converts it to a <a class="reference internal" href="celery.worker.job.html#celery.worker.job.TaskRequest" title="celery.worker.job.TaskRequest"><tt class="xref py py-class docutils literal"><span class="pre">celery.worker.job.TaskRequest</span></tt></a>, and sends
+it to <a class="reference internal" href="#celery.worker.consumer.Consumer.on_task" title="celery.worker.consumer.Consumer.on_task"><tt class="xref py py-meth docutils literal"><span class="pre">on_task()</span></tt></a>.</p>
+<p>If the message is a control command the message is passed to
+<a class="reference internal" href="#celery.worker.consumer.Consumer.on_control" title="celery.worker.consumer.Consumer.on_control"><tt class="xref py py-meth docutils literal"><span class="pre">on_control()</span></tt></a>, which in turn dispatches
+the control command using the control dispatcher.</p>
+<p>It also tries to handle malformed or invalid messages properly,
+so the worker doesn&#8217;t choke on them and die. Any invalid messages
+are acknowledged immediately and logged, so the message is not resent
+again, and again.</p>
+</li>
+<li><p class="first">If the task has an ETA/countdown, the task is moved to the <cite>eta_schedule</cite>
+so the <tt class="xref py py-class docutils literal"><span class="pre">timer2.Timer</span></tt> can schedule it at its
+deadline. Tasks without an eta are moved immediately to the <cite>ready_queue</cite>,
+so they can be picked up by the <a class="reference internal" href="celery.worker.mediator.html#celery.worker.mediator.Mediator" title="celery.worker.mediator.Mediator"><tt class="xref py py-class docutils literal"><span class="pre">Mediator</span></tt></a>
+to be sent to the pool.</p>
+</li>
+<li><p class="first">When a task with an ETA is received the QoS prefetch count is also
+incremented, so another message can be reserved. When the ETA is met
+the prefetch count is decremented again, though this cannot happen
+immediately because amqplib doesn&#8217;t support doing broker requests
+across threads. Instead the current prefetch count is kept as a
+shared counter, so as soon as  <a class="reference internal" href="#celery.worker.consumer.Consumer.consume_messages" title="celery.worker.consumer.Consumer.consume_messages"><tt class="xref py py-meth docutils literal"><span class="pre">consume_messages()</span></tt></a>
+detects that the value has changed it will send out the actual
+QoS event to the broker.</p>
+</li>
+<li><p class="first">Notice that when the connection is lost all internal queues are cleared
+because we can no longer ack the messages reserved in memory.
+However, this is not dangerous as the broker will resend them
+to another worker when the channel is closed.</p>
+</li>
+<li><p class="first"><strong>WARNING</strong>: <a class="reference internal" href="#celery.worker.consumer.Consumer.stop" title="celery.worker.consumer.Consumer.stop"><tt class="xref py py-meth docutils literal"><span class="pre">stop()</span></tt></a> does not close the connection!
+This is because some pre-acked messages may be in processing,
+and they need to be finished before the channel is closed.
+For celeryd this means the pool must finish the tasks it has acked
+early, <em>then</em> close the connection.</p>
+</li>
+</ul>
+<dl class="class">
+<dt id="celery.worker.consumer.QoS">
+<em class="property">class </em><tt class="descclassname">celery.worker.consumer.</tt><tt class="descname">QoS</tt><big>(</big><em>consumer</em>, <em>initial_value</em>, <em>logger</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.QoS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Quality of Service for Channel.</p>
+<p>For thread-safe increment/decrement of a channels prefetch count value.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>consumer</strong> &#8211; A <tt class="xref py py-class docutils literal"><span class="pre">kombu.messaging.Consumer</span></tt> instance.</li>
+<li><strong>initial_value</strong> &#8211; Initial prefetch count value.</li>
+<li><strong>logger</strong> &#8211; Logger used to log debug messages.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="celery.worker.consumer.QoS.decrement">
+<tt class="descname">decrement</tt><big>(</big><em>n=1</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.QoS.decrement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decrement the current prefetch count value by n.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.consumer.QoS.decrement_eventually">
+<tt class="descname">decrement_eventually</tt><big>(</big><em>n=1</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.QoS.decrement_eventually" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decrement the value, but do not update the qos.</p>
+<p>The MainThread will be responsible for calling <a class="reference internal" href="#celery.worker.consumer.QoS.update" title="celery.worker.consumer.QoS.update"><tt class="xref py py-meth docutils literal"><span class="pre">update()</span></tt></a>
+when necessary.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.consumer.QoS.increment">
+<tt class="descname">increment</tt><big>(</big><em>n=1</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.QoS.increment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Increment the current prefetch count value by n.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.consumer.QoS.set">
+<tt class="descname">set</tt><big>(</big><em>pcount</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.QoS.set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set channel prefetch_count setting.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.consumer.QoS.update">
+<tt class="descname">update</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.consumer.QoS.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update prefetch count with current value.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="celery.worker.consumer.Consumer">
-<em class="property">class </em><tt class="descclassname">celery.worker.consumer.</tt><tt class="descname">Consumer</tt><big>(</big><em>ready_queue</em>, <em>eta_schedule</em>, <em>logger</em>, <em>init_callback=&lt;function noop at 0x101964320&gt;</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>initial_prefetch_count=2</em>, <em>pool=None</em>, <em>app=None</em>, <em>priority_timer=None</em>, <em>controller=None</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.Consumer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.consumer.</tt><tt class="descname">Consumer</tt><big>(</big><em>ready_queue</em>, <em>eta_schedule</em>, <em>logger</em>, <em>init_callback=&lt;function noop at 0x1017a7230&gt;</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>initial_prefetch_count=2</em>, <em>pool=None</em>, <em>app=None</em>, <em>priority_timer=None</em>, <em>controller=None</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.Consumer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Listen for messages received from the broker and
 move them to the ready queue for task processing.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -130,7 +252,7 @@ ETA/countdown.</p>
 <tt class="descname">heart</tt><a class="headerlink" href="#celery.worker.consumer.Consumer.heart" title="Permalink to this definition">¶</a></dt>
 <dd><p>The thread that sends event heartbeats at regular intervals.
 The heartbeats are used by monitors to detect that a worker
-went off-line/disappeared.</p>
+went offline/disappeared.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -321,76 +443,7 @@ connection.</td>
 
 </dd></dl>
 
-<dl class="data">
-<dt id="celery.worker.consumer.INVALID_TASK_ERROR">
-<tt class="descclassname">celery.worker.consumer.</tt><tt class="descname">INVALID_TASK_ERROR</tt><a class="headerlink" href="#celery.worker.consumer.INVALID_TASK_ERROR" title="Permalink to this definition">¶</a></dt>
-<dd><p>Error message for when an invalid task message is received.</p>
-</dd></dl>
-
-<dl class="data">
-<dt id="celery.worker.consumer.PREFETCH_COUNT_MAX">
-<tt class="descclassname">celery.worker.consumer.</tt><tt class="descname">PREFETCH_COUNT_MAX</tt><a class="headerlink" href="#celery.worker.consumer.PREFETCH_COUNT_MAX" title="Permalink to this definition">¶</a></dt>
-<dd><p>Prefetch count can&#8217;t exceed short.</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.worker.consumer.QoS">
-<em class="property">class </em><tt class="descclassname">celery.worker.consumer.</tt><tt class="descname">QoS</tt><big>(</big><em>consumer</em>, <em>initial_value</em>, <em>logger</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.QoS" title="Permalink to this definition">¶</a></dt>
-<dd><p>Quality of Service for Channel.</p>
-<p>For thread-safe increment/decrement of a channels prefetch count value.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>consumer</strong> &#8211; A <tt class="xref py py-class docutils literal"><span class="pre">kombu.messaging.Consumer</span></tt> instance.</li>
-<li><strong>initial_value</strong> &#8211; Initial prefetch count value.</li>
-<li><strong>logger</strong> &#8211; Logger used to log debug messages.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<dl class="method">
-<dt id="celery.worker.consumer.QoS.decrement">
-<tt class="descname">decrement</tt><big>(</big><em>n=1</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.QoS.decrement" title="Permalink to this definition">¶</a></dt>
-<dd><p>Decrement the current prefetch count value by n.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.consumer.QoS.decrement_eventually">
-<tt class="descname">decrement_eventually</tt><big>(</big><em>n=1</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.QoS.decrement_eventually" title="Permalink to this definition">¶</a></dt>
-<dd><p>Decrement the value, but do not update the qos.</p>
-<p>The MainThread will be responsible for calling <a class="reference internal" href="#celery.worker.consumer.QoS.update" title="celery.worker.consumer.QoS.update"><tt class="xref py py-meth docutils literal"><span class="pre">update()</span></tt></a>
-when necessary.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.consumer.QoS.increment">
-<tt class="descname">increment</tt><big>(</big><em>n=1</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.QoS.increment" title="Permalink to this definition">¶</a></dt>
-<dd><p>Increment the current prefetch count value by n.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.consumer.QoS.set">
-<tt class="descname">set</tt><big>(</big><em>pcount</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.QoS.set" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set channel prefetch_count setting.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.consumer.QoS.update">
-<tt class="descname">update</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.consumer.QoS.update" title="Permalink to this definition">¶</a></dt>
-<dd><p>Update prefetch count with current value.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="data">
-<dt id="celery.worker.consumer.UNKNOWN_TASK_ERROR">
-<tt class="descclassname">celery.worker.consumer.</tt><tt class="descname">UNKNOWN_TASK_ERROR</tt><a class="headerlink" href="#celery.worker.consumer.UNKNOWN_TASK_ERROR" title="Permalink to this definition">¶</a></dt>
-<dd><p>Error message for when an unregistered task is received.</p>
-</dd></dl>
-
+</div>
 </div>
 
 
@@ -415,7 +468,7 @@ when necessary.</p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -444,14 +497,14 @@ when necessary.</p>
         <li class="right" >
           <a href="celery.worker.html" title="celery.worker"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

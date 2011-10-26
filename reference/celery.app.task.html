@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.app.task &mdash; Celery v2.3.3 documentation</title>
+    <title>celery.app.task &mdash; Celery v2.4.0rc1 documentation</title>
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.3.3',
+        VERSION:     '2.4.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.3 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.app.amqp" href="celery.app.amqp.html" />
     <link rel="prev" title="celery.app" href="celery.app.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.app.html" title="celery.app"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,11 +55,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/reference/celery.app.task.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/reference/celery.app.task.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-app-task">
@@ -95,9 +97,69 @@ is overridden).</p>
 </table>
 </dd></dl>
 
+<dl class="class">
+<dt id="celery.app.task.BaseTask.ErrorMail">
+<em class="property">class </em><tt class="descname">ErrorMail</tt><big>(</big><em>task</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.app.task.BaseTask.ErrorMail" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines how and when task error e-mails should be sent.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>task</strong> &#8211; The task instance that raised the error.</td>
+</tr>
+</tbody>
+</table>
+<p><tt class="xref py py-attr docutils literal"><span class="pre">subject</span></tt> and <tt class="xref py py-attr docutils literal"><span class="pre">body</span></tt> are format strings which
+are passed a context containing the following keys:</p>
+<ul>
+<li><p class="first">name</p>
+<blockquote>
+<div><p>Name of the task.</p>
+</div></blockquote>
+</li>
+<li><p class="first">id</p>
+<blockquote>
+<div><p>UUID of the task.</p>
+</div></blockquote>
+</li>
+<li><p class="first">exc</p>
+<blockquote>
+<div><p>String representation of the exception.</p>
+</div></blockquote>
+</li>
+<li><p class="first">args</p>
+<blockquote>
+<div><p>Positional arguments.</p>
+</div></blockquote>
+</li>
+<li><p class="first">kwargs</p>
+<blockquote>
+<div><p>Keyword arguments.</p>
+</div></blockquote>
+</li>
+<li><p class="first">traceback</p>
+<blockquote>
+<div><p>String representation of the traceback.</p>
+</div></blockquote>
+</li>
+<li><p class="first">hostname</p>
+<blockquote>
+<div><p>Worker hostname.</p>
+</div></blockquote>
+</li>
+</ul>
+<dl class="method">
+<dt id="celery.app.task.BaseTask.ErrorMail.should_send">
+<tt class="descname">should_send</tt><big>(</big><em>context</em>, <em>exc</em><big>)</big><a class="headerlink" href="#celery.app.task.BaseTask.ErrorMail.should_send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns true or false depending on if a task error mail
+should be sent for this type of error.</p>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="exception">
 <dt id="celery.app.task.BaseTask.MaxRetriesExceededError">
-<em class="property">exception </em><tt class="descname">MaxRetriesExceededError</tt><a class="headerlink" href="#celery.app.task.BaseTask.MaxRetriesExceededError" title="Permalink to this definition">¶</a></dt>
+<em class="property">exception </em><tt class="descclassname">BaseTask.</tt><tt class="descname">MaxRetriesExceededError</tt><a class="headerlink" href="#celery.app.task.BaseTask.MaxRetriesExceededError" title="Permalink to this definition">¶</a></dt>
 <dd><p>The tasks max restart limit has been exceeded.</p>
 </dd></dl>
 
@@ -718,7 +780,7 @@ running.</p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -747,13 +809,13 @@ running.</p>
         <li class="right" >
           <a href="celery.app.html" title="celery.app"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

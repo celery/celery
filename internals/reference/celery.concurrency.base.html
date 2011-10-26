@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.concurrency.base &mdash; Celery v2.3.3 documentation</title>
+    <title>celery.concurrency.base &mdash; Celery v2.4.0rc1 documentation</title>
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.3.3',
+        VERSION:     '2.4.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,10 +21,10 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.3 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.concurrency.threads‡ (minefield)" href="celery.concurrency.threads.html" />
-    <link rel="prev" title="celery.concurrency.evg† (experimental)" href="celery.concurrency.evg.html" /> 
+    <link rel="prev" title="celery.concurrency.gevent† (experimental)" href="celery.concurrency.gevent.html" /> 
   </head>
   <body>
     <div class="related">
@@ -40,9 +40,9 @@
           <a href="celery.concurrency.threads.html" title="celery.concurrency.threads‡ (minefield)"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="celery.concurrency.evg.html" title="celery.concurrency.evg† (experimental)"
+          <a href="celery.concurrency.gevent.html" title="celery.concurrency.gevent† (experimental)"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,11 +56,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.concurrency.base.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.concurrency.base.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-concurrency-base">
@@ -227,6 +229,11 @@ otherwise the thread which handles the result will get blocked.</p>
 <tt class="descclassname">BasePool.</tt><tt class="descname">info</tt><a class="headerlink" href="#celery.concurrency.base.BasePool.info" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="attribute">
+<dt id="celery.concurrency.base.BasePool.num_processes">
+<tt class="descclassname">BasePool.</tt><tt class="descname">num_processes</tt><a class="headerlink" href="#celery.concurrency.base.BasePool.num_processes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="celery.concurrency.base.BasePool.on_apply">
 <tt class="descclassname">BasePool.</tt><tt class="descname">on_apply</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.base.BasePool.on_apply" title="Permalink to this definition">¶</a></dt>
@@ -256,7 +263,7 @@ been collected.</p>
 
 <dl class="method">
 <dt id="celery.concurrency.base.BasePool.on_worker_error">
-<tt class="descclassname">BasePool.</tt><tt class="descname">on_worker_error</tt><big>(</big><em>errback</em>, <em>exc</em><big>)</big><a class="headerlink" href="#celery.concurrency.base.BasePool.on_worker_error" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BasePool.</tt><tt class="descname">on_worker_error</tt><big>(</big><em>errback</em>, <em>exc_info</em><big>)</big><a class="headerlink" href="#celery.concurrency.base.BasePool.on_worker_error" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -302,8 +309,8 @@ been collected.</p>
   <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
 </a></p>
   <h4>Previous topic</h4>
-  <p class="topless"><a href="celery.concurrency.evg.html"
-                        title="previous chapter">celery.concurrency.evg† (<em>experimental</em>)</a></p>
+  <p class="topless"><a href="celery.concurrency.gevent.html"
+                        title="previous chapter">celery.concurrency.gevent† (<em>experimental</em>)</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="celery.concurrency.threads.html"
                         title="next chapter">celery.concurrency.threads‡ (<strong>minefield</strong>)</a></p>
@@ -315,7 +322,7 @@ been collected.</p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -342,16 +349,16 @@ been collected.</p>
           <a href="celery.concurrency.threads.html" title="celery.concurrency.threads‡ (minefield)"
              >next</a> |</li>
         <li class="right" >
-          <a href="celery.concurrency.evg.html" title="celery.concurrency.evg† (experimental)"
+          <a href="celery.concurrency.gevent.html" title="celery.concurrency.gevent† (experimental)"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

@@ -5,14 +5,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.utils.encoding &mdash; Celery v2.3.3 documentation</title>
+    <title>celery.utils.encoding &mdash; Celery v2.4.0rc1 documentation</title>
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.3.3',
+        VERSION:     '2.4.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.3.3 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.utils.compat" href="celery.utils.compat.html" />
     <link rel="prev" title="celery.utils.timeutils" href="celery.utils.timeutils.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.utils.timeutils.html" title="celery.utils.timeutils"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,23 +56,45 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.3. For development docs,
-        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.utils.encoding.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.utils.encoding.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-utils-encoding">
 <h1>celery.utils.encoding<a class="headerlink" href="#celery-utils-encoding" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.utils.encoding"></span><dl class="function">
-<dt id="celery.utils.encoding.default_encoding">
-<tt class="descclassname">celery.utils.encoding.</tt><tt class="descname">default_encoding</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.encoding.default_encoding" title="Permalink to this definition">¶</a></dt>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#id1" id="id2">celery.utils.encoding</a></li>
+</ul>
+</div>
+<span class="target" id="module-celery.utils.encoding"></span><div class="section" id="id1">
+<h2><a class="toc-backref" href="#id2">celery.utils.encoding</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>Utilties to encode text, and to safely emit text from running
+applications without crashing with the infamous <tt class="xref py py-exc docutils literal"><span class="pre">UnicodeDecodeError</span></tt>
+exception.</p>
+<dl class="function">
+<dt id="celery.utils.encoding.str_to_bytes">
+<tt class="descclassname">celery.utils.encoding.</tt><tt class="descname">str_to_bytes</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#celery.utils.encoding.str_to_bytes" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
-<dt id="celery.utils.encoding.safe_repr">
-<tt class="descclassname">celery.utils.encoding.</tt><tt class="descname">safe_repr</tt><big>(</big><em>o</em>, <em>errors='replace'</em><big>)</big><a class="headerlink" href="#celery.utils.encoding.safe_repr" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.utils.encoding.bytes_to_str">
+<tt class="descclassname">celery.utils.encoding.</tt><tt class="descname">bytes_to_str</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#celery.utils.encoding.bytes_to_str" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.encoding.from_utf8">
+<tt class="descclassname">celery.utils.encoding.</tt><tt class="descname">from_utf8</tt><big>(</big><em>s</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.encoding.from_utf8" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.encoding.default_encoding">
+<tt class="descclassname">celery.utils.encoding.</tt><tt class="descname">default_encoding</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.encoding.default_encoding" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -80,6 +102,12 @@
 <tt class="descclassname">celery.utils.encoding.</tt><tt class="descname">safe_str</tt><big>(</big><em>s</em>, <em>errors='replace'</em><big>)</big><a class="headerlink" href="#celery.utils.encoding.safe_str" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="function">
+<dt id="celery.utils.encoding.safe_repr">
+<tt class="descclassname">celery.utils.encoding.</tt><tt class="descname">safe_repr</tt><big>(</big><em>o</em>, <em>errors='replace'</em><big>)</big><a class="headerlink" href="#celery.utils.encoding.safe_repr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
 </div>
 
 
@@ -104,7 +132,7 @@
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -133,14 +161,14 @@
         <li class="right" >
           <a href="celery.utils.timeutils.html" title="celery.utils.timeutils"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.3.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>
