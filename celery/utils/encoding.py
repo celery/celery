@@ -1,9 +1,8 @@
 """
-
 celery.utils.encoding
-=====================
+====================
 
-Utilties to encode text, and to safely emit text from running
+Utilities to encode text, and to safely emit text from running
 applications without crashing with the infamous :exc:`UnicodeDecodeError`
 exception.
 
@@ -18,7 +17,7 @@ __all__ = ["str_to_bytes", "bytes_to_str", "from_utf8",
 is_py3k = sys.version_info >= (3, 0)
 
 
-if sys.version_info >= (3, 0):
+if is_py3k:
 
     def str_to_bytes(s):
         if isinstance(s, str):
@@ -34,7 +33,10 @@ if sys.version_info >= (3, 0):
         return s
 
 else:
+
     def str_to_bytes(s):                # noqa
+        if isinstance(s, unicode):
+            return s.encode()
         return s
 
     def bytes_to_str(s):                # noqa
@@ -49,6 +51,7 @@ if sys.platform.startswith("java"):
     def default_encoding():
         return "utf-8"
 else:
+
     def default_encoding():       # noqa
         return sys.getfilesystemencoding()
 
