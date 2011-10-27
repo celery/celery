@@ -51,7 +51,8 @@ Important Notes
 
 * Broker transports can be now be specified using URLs
 
-    The broker hostname can now be given as an URL instead, of the format::
+    The broker can now be specified as an URL instead.
+    This URL must have the format::
 
         transport://user:password@hostname:port/virtual_host
 
@@ -59,8 +60,9 @@ Important Notes
 
         amqp://guest:guest@localhost:5672//
 
-    The transport (scheme) defaults to amqp, and is not required.
-    user, password, port and virtual_host is also optional and
+    The scheme is required, so that the host is identified
+    as an URL and not just a host name.
+    User, password, port and virtual_host are optional and
     defaults to the particular transports default value.
 
     .. note::
