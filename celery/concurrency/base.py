@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import logging
 import os
 import sys
 import time
@@ -10,6 +11,7 @@ from functools import partial
 from .. import log
 from ..datastructures import ExceptionInfo
 from ..utils import timer2
+from ..utils.encoding import safe_repr
 
 
 def apply_target(target, args=(), kwargs={}, callback=None,
@@ -37,6 +39,7 @@ class BasePool(object):
         self.putlocks = putlocks
         self.logger = logger or log.get_default_logger()
         self.options = options
+        self.does_debug = self.logger.isEnabledFor(logging.DEBUG)
 
     def on_start(self):
         pass
@@ -82,8 +85,9 @@ class BasePool(object):
         on_ready = partial(self.on_ready, callback, errback)
         on_worker_error = partial(self.on_worker_error, errback)
 
-        self.logger.debug("TaskPool: Apply %s (args:%s kwargs:%s)",
-                          target, args, kwargs)
+        if self.does_debug:
+            self.logger.debug("TaskPool: Apply %s (args:%s kwargs:%s)",
+                            target, safe_repr(args), safe_repr(kwargs))
 
         return self.on_apply(target, args, kwargs,
                              callback=on_ready,

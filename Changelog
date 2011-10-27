@@ -237,6 +237,9 @@ News
 
     Contributed by Mher Movsisyan
 
+* Worker logged the string representation of args and kwargs
+  without safe guards (Issue #480).
+
 * RHEL init script: Changed celeryd startup priority.
 
     The default start / stop priorities for MySQL on RHEL are
