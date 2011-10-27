@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
+import os
 import sys
 
 from functools import partial
@@ -13,6 +14,8 @@ from .base import Command, Option, daemon_options
 
 class EvCommand(Command):
     supports_args = False
+    preload_options = (Command.preload_options
+                     + daemon_options(default_pidfile="celeryev.pid"))
 
     def run(self, dump=False, camera=None, frequency=1.0, maxrate=None,
             loglevel="INFO", logfile=None, prog_name="celeryev",
@@ -30,6 +33,11 @@ class EvCommand(Command):
                                   working_directory=working_directory,
                                   detach=detach)
         return self.run_evtop()
+
+    def prepare_preload_options(self, options):
+        workdir = options.get("working_directory")
+        if workdir:
+            os.chdir(workdir)
 
     def run_evdump(self):
         from ..events.dumper import evdump
@@ -82,9 +90,7 @@ class EvCommand(Command):
                    help="Recording: Shutter rate limit (e.g. 10/m)"),
             Option('-l', '--loglevel',
                    action="store", dest="loglevel", default="INFO",
-                   help="Loglevel. Default is WARNING."),
-        ) + daemon_options(default_pidfile="celeryev.pid",
-                           default_logfile=None)
+                   help="Loglevel. Default is WARNING."))
 
 
 def main():
