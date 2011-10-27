@@ -146,6 +146,8 @@ News
 
 * No longer depends on :mod:`pyparsing`.
 
+* Now depends on Kombu 1.4.3.
+
 * CELERY_IMPORTS can now be a scalar value (Issue #485).
 
     It is too easy to forget to add the comma after the sole element of a
@@ -248,6 +250,12 @@ News
     down before it terminates.
 
     Contributed by Yury V. Zaytsev.
+
+* KeyValueStoreBackend.get_many did not respect the ``timeout`` argument
+  (Issue #512).
+
+* celerybeat/celeryev's --workdir option did not chdir before after
+  configuration was attempted (Issue #506).
 
 * After deprecating 2.4 support we can now name modules correctly, since we
   can take use of absolute imports.
