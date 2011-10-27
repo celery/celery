@@ -40,7 +40,7 @@ class RedisBackend(KeyValueStoreBackend):
                     "You need to install the redis library in order to use "
                   + "Redis result store backend.")
 
-        # For compatability with the old REDIS_* configuration keys.
+        # For compatibility with the old REDIS_* configuration keys.
         def _get(key):
             for prefix in "CELERY_REDIS_%s", "REDIS_%s":
                 try:
