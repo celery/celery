@@ -349,6 +349,7 @@ class KeyValueStoreBackend(BaseDictBackend):
                     cached_ids.add(task_id)
 
         ids ^= cached_ids
+        iterations = 0
         while ids:
             keys = list(ids)
             r = self._mget_to_results(self.mget([self.get_key_for_task(k)
@@ -357,7 +358,10 @@ class KeyValueStoreBackend(BaseDictBackend):
             ids ^= set(r.keys())
             for key, value in r.iteritems():
                 yield key, value
+            if timeout and iterations * interval >= timeout:
+                raise TimeoutError("Operation timed out (%s)" % (timeout, ))
             time.sleep(interval)  # don't busy loop.
+            iterations += 0
 
     def _forget(self, task_id):
         self.delete(self.get_key_for_task(task_id))
