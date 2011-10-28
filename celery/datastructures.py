@@ -341,10 +341,10 @@ class LRUCache(UserDict):
         return self.data.keys()
 
     def values(self):
-        return self.data.values()
+        return list(self.itervalues())
 
     def items(self):
-        return self.data.items()
+        return list(self.iteritems())
 
     def __setitem__(self, key, value):
         # remove least recently used key.
@@ -355,6 +355,20 @@ class LRUCache(UserDict):
 
     def __iter__(self):
         return self.data.iterkeys()
+
+    def iteritems(self):
+        for k in self.data:
+            try:
+                yield (k, self.data[k])
+            except KeyError:
+                pass
+
+    def itervalues(self):
+        for k in self.data:
+            try:
+                yield self.data[k]
+            except KeyError:
+                pass
 
 
 class TokenBucket(object):

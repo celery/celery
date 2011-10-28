@@ -216,8 +216,9 @@ class State(object):
 
     def _clear_tasks(self, ready=True):
         if ready:
-            self.tasks = dict((uuid, task)
-                                for uuid, task in self.tasks.items()
+            self.tasks.clear()
+            self.tasks.update((uuid, task)
+                                for uuid, task in self.itertasks()
                                     if task.state not in states.READY_STATES)
         else:
             self.tasks.clear()
@@ -286,13 +287,19 @@ class State(object):
         if self.event_callback:
             self.event_callback(self, event)
 
+    def itertasks(self, limit=None):
+        for index, row in enumerate(self.tasks.iteritems()):
+            yield row
+            if limit and index >= limit:
+                break
+
     def tasks_by_timestamp(self, limit=None):
         """Get tasks by timestamp.
 
         Returns a list of `(uuid, task)` tuples.
 
         """
-        return self._sort_tasks_by_time(self.tasks.items()[:limit])
+        return self._sort_tasks_by_time(self.itertasks(limit))
 
     def _sort_tasks_by_time(self, tasks):
         """Sort task items by time."""
@@ -306,7 +313,7 @@ class State(object):
 
         """
         return self._sort_tasks_by_time([(uuid, task)
-                for uuid, task in self.tasks.items()[:limit]
+                for uuid, task in self.itertasks(limit)
                     if task.name == name])
 
     def tasks_by_worker(self, hostname, limit=None):
@@ -316,12 +323,12 @@ class State(object):
 
         """
         return self._sort_tasks_by_time([(uuid, task)
-                for uuid, task in self.tasks.items()[:limit]
+                for uuid, task in self.itertasks(limit)
                     if task.worker.hostname == hostname])
 
     def task_types(self):
         """Returns a list of all seen task types."""
-        return list(sorted(set(task.name for task in self.tasks.values())))
+        return list(sorted(set(task.name for task in self.tasks.itervalues())))
 
     def alive_workers(self):
         """Returns a list of (seemingly) alive workers."""

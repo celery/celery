@@ -184,6 +184,9 @@ News
 
     Contributed by Chris Chamberlin.
 
+* Fixed race condition in celery.events.state (celerymon/celeryev)
+  where task info would be removed while iterating over it (Issue #501).
+
 * The Cache, Cassandra, MongoDB, Redis and Tyrant backends now respects
   the :setting:`CELERY_RESULT_SERIALIZER` setting (Issue #435).
 

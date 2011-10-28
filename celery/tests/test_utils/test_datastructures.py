@@ -151,6 +151,50 @@ class test_LRUCache(unittest.TestCase):
         x[7] = 7
         self.assertEqual(x.keys(), [3, 6, 7])
 
+    def assertSafeIter(self, method, interval=0.01, size=10000):
+        from threading import Thread, Event
+        from time import sleep
+        x = LRUCache(size)
+        x.update(zip(xrange(size), xrange(size)))
+
+        class Burglar(Thread):
+
+            def __init__(self, cache):
+                self.cache = cache
+                self._is_shutdown = Event()
+                self._is_stopped = Event()
+                Thread.__init__(self)
+
+            def run(self):
+                while not self._is_shutdown.isSet():
+                    try:
+                        self.cache.data.popitem(last=False)
+                    except KeyError:
+                        break
+                self._is_stopped.set()
+
+            def stop(self):
+                self._is_shutdown.set()
+                self._is_stopped.wait()
+                self.join(1e10)
+
+        burglar = Burglar(x)
+        burglar.start()
+        try:
+            for _ in getattr(x, method)():
+                sleep(0.0001)
+        finally:
+            burglar.stop()
+
+    def test_safe_to_remove_while_iteritems(self):
+        self.assertSafeIter("iteritems")
+
+    def test_safe_to_remove_while_iterkeys(self):
+        self.assertSafeIter("iterkeys")
+
+    def test_safe_to_remove_while_itervalues(self):
+        self.assertSafeIter("itervalues")
+
 
 class test_AttributeDict(unittest.TestCase):
 
