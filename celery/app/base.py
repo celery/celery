@@ -21,6 +21,7 @@ from functools import wraps
 from threading import Lock
 
 from .. import datastructures
+from .. import platforms
 from ..utils import cached_property, instantiate, lpmerge
 
 from .defaults import DEFAULTS, find_deprecated_settings
@@ -34,20 +35,6 @@ platform -> system:%(system)s arch:%(arch)s imp:%(py_i)s
 software -> celery:%(celery_v)s kombu:%(kombu_v)s py:%(py_v)s
 settings -> transport:%(transport)s results:%(results)s
 """
-
-
-def pyimplementation():
-    if hasattr(_platform, "python_implementation"):
-        return _platform.python_implementation()
-    elif sys.platform.startswith("java"):
-        return "Jython %s" % (sys.platform, )
-    elif hasattr(sys, "pypy_version_info"):
-        v = ".".join(map(str, sys.pypy_version_info[:3]))
-        if sys.pypy_version_info[3:]:
-            v += "-" + "".join(map(str, sys.pypy_version_info[3:]))
-        return "PyPy %s" % (v, )
-    else:
-        return "CPython"
 
 
 class LamportClock(object):
@@ -130,9 +117,9 @@ class Settings(datastructures.ConfigurationView):
 
 class BaseApp(object):
     """Base class for apps."""
-    SYSTEM = _platform.system()
-    IS_OSX = SYSTEM == "Darwin"
-    IS_WINDOWS = SYSTEM == "Windows"
+    SYSTEM = platforms.SYSTEM
+    IS_OSX = platforms.IS_OSX
+    IS_WINDOWS = platforms.IS_WINDOWS
 
     amqp_cls = "celery.app.amqp.AMQP"
     backend_cls = None
@@ -365,7 +352,7 @@ class BaseApp(object):
         import kombu
         return BUGREPORT_INFO % {"system": _platform.system(),
                                  "arch": _platform.architecture(),
-                                 "py_i": pyimplementation(),
+                                 "py_i": platforms.pyimplementation(),
                                  "celery_v": celery.__version__,
                                  "kombu_v": kombu.__version__,
                                  "py_v": _platform.python_version(),

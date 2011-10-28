@@ -9,10 +9,12 @@ groups, etc.
 """
 from __future__ import absolute_import
 
-import os
-import sys
 import errno
+import os
+import platform as _platform
+import shlex
 import signal as _signal
+import sys
 
 from .local import try_import
 
@@ -21,6 +23,10 @@ resource = try_import("resource")
 pwd = try_import("pwd")
 grp = try_import("grp")
 
+SYSTEM = _platform.system()
+IS_OSX = SYSTEM == "Darwin"
+IS_WINDOWS = SYSTEM == "Windows"
+
 DAEMON_UMASK = 0
 DAEMON_WORKDIR = "/"
 DAEMON_REDIRECT_TO = getattr(os, "devnull", "/dev/null")
@@ -28,7 +34,21 @@ DAEMON_REDIRECT_TO = getattr(os, "devnull", "/dev/null")
 __all__ = ["LockFailed", "get_fdmax", "create_pidlock",
            "DaemonContext", "detached", "parse_uid", "parse_gid",
            "setegid", "seteuid", "set_effective_user", "Signals",
-           "set_process_title", "set_mp_process_title"]
+           "set_process_title", "set_mp_process_title", "pyimplementation"]
+
+
+def pyimplementation():
+    if hasattr(_platform, "python_implementation"):
+        return _platform.python_implementation()
+    elif sys.platform.startswith("java"):
+        return "Jython %s" % (sys.platform, )
+    elif hasattr(sys, "pypy_version_info"):
+        v = ".".join(map(str, sys.pypy_version_info[:3]))
+        if sys.pypy_version_info[3:]:
+            v += "-" + "".join(map(str, sys.pypy_version_info[3:]))
+        return "PyPy %s" % (v, )
+    else:
+        return "CPython"
 
 
 class LockFailed(Exception):
@@ -487,3 +507,11 @@ def set_mp_process_title(progname, info=None, hostname=None):
     else:
         return set_process_title("%s:%s" % (progname,
                                             current_process().name), info=info)
+
+
+def shellsplit(s, posix=True):
+    # posix= option to shlex.split first available in Python 2.6+
+    lexer = shlex.shlex(s, posix=not IS_WINDOWS)
+    lexer.whitespace_split = True
+    lexer.commenters = ''
+    return list(lexer)

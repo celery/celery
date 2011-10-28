@@ -219,6 +219,8 @@ News
 
     Fix contributed by Remy Noel
 
+* celeryd-multi did not work on Windows (Issue #472).
+
 * New-style ``CELERY_REDIS_*`` settings now takes precedence over
   the old ``REDIS_*`` configuration keys (Issue #508).
 

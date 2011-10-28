@@ -89,7 +89,6 @@ from __future__ import absolute_import
 
 import errno
 import os
-import shlex
 import signal
 import socket
 import sys
@@ -99,6 +98,7 @@ from subprocess import Popen
 from time import sleep
 
 from .. import __version__
+from ..platforms import shellsplit
 from ..utils import term
 from ..utils.encoding import from_utf8
 
@@ -369,7 +369,7 @@ class MultiTool(object):
 
     def waitexec(self, argv, path=sys.executable):
         args = " ".join([path] + list(argv))
-        argstr = shlex.split(from_utf8(args))
+        argstr = shellsplit(from_utf8(args))
         pipe = Popen(argstr, env=self.env)
         self.info("  %s" % " ".join(argstr))
         retcode = pipe.wait()
