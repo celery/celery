@@ -203,7 +203,7 @@ class Command(object):
         return Celery(*args, **kwargs)
 
 
-def daemon_options(default_pidfile, default_logfile=None):
+def daemon_options(default_pidfile=None, default_logfile=None):
     return (
         Option('-f', '--logfile', default=default_logfile,
                action="store", dest="logfile",
