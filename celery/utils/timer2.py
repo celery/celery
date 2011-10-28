@@ -57,7 +57,7 @@ class Entry(object):
 
     if sys.version_info >= (3, 0):
 
-        def hash(self):
+        def __hash__(self):
             return hash("|".join(map(repr, (self.fun, self.args,
                                             self.kwargs))))
 

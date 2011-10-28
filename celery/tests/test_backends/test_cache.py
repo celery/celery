@@ -11,6 +11,7 @@ from celery.backends.cache import CacheBackend, DummyClient
 from celery.exceptions import ImproperlyConfigured
 from celery.result import AsyncResult
 from celery.utils import uuid
+from celery.utils.encoding import str_to_bytes
 
 from celery.tests.utils import unittest, mask_modules, reset_modules
 
@@ -185,7 +186,7 @@ class test_memcache_key(unittest.TestCase, MockCacheMixin):
                 with mask_modules("pylibmc"):
                     from celery.backends import cache
                     cache._imp = [None]
-                    task_id, result = bytes(uuid()), 42
+                    task_id, result = str_to_bytes(uuid()), 42
                     b = cache.CacheBackend(backend='memcache')
                     b.store_result(task_id, result, status=states.SUCCESS)
                     self.assertEqual(b.get_result(task_id), result)
@@ -205,7 +206,7 @@ class test_memcache_key(unittest.TestCase, MockCacheMixin):
             with self.mock_pylibmc():
                 from celery.backends import cache
                 cache._imp = [None]
-                task_id, result = bytes(uuid()), 42
+                task_id, result = str_to_bytes(uuid()), 42
                 b = cache.CacheBackend(backend='memcache')
                 b.store_result(task_id, result, status=states.SUCCESS)
                 self.assertEqual(b.get_result(task_id), result)

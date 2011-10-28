@@ -156,14 +156,14 @@ try:
 except ImportError:
     LoggerAdapter = _CompatLoggerAdapter  # noqa
 
-############## itertools.izip_longest #######################################
+############## itertools.zip_longest #######################################
 
 try:
-    from itertools import izip_longest
+    from itertools import izip_longest as zip_longest
 except ImportError:
     import itertools
 
-    def izip_longest(*args, **kwds):  # noqa
+    def zip_longest(*args, **kwds):  # noqa
         fillvalue = kwds.get("fillvalue")
 
         def sentinel(counter=([fillvalue] * (len(args) - 1)).pop):

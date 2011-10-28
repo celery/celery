@@ -115,6 +115,12 @@ class subtask(AttributeDict):
         return registry.tasks[self.task]
 
 
+def maybe_subtask(t):
+    if not isinstance(t, subtask):
+        return subtask(t)
+    return t
+
+
 class TaskSet(UserList):
     """A task containing several subtasks, making it possible
     to track how many, or when all of the tasks have been completed.
@@ -139,7 +145,7 @@ class TaskSet(UserList):
         self.app = app_or_default(app)
         if task is not None:
             if hasattr(task, "__iter__"):
-                tasks = [subtask(t) for t in task]
+                tasks = [maybe_subtask(t) for t in task]
             else:
                 # Previously TaskSet only supported applying one kind of task.
                 # the signature then was TaskSet(task, arglist),

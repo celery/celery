@@ -607,9 +607,7 @@ class test_Consumer(unittest.TestCase):
             def __exit__(self, *exc_info):
                 self.cancel()
 
-
         l.pidbox_node.listen = BConsumer()
-
         connections = []
 
         class Connection(object):

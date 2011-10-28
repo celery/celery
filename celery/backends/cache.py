@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from ..datastructures import LRUCache
 from ..exceptions import ImproperlyConfigured
 from ..utils import cached_property
-from ..utils.encoding import str_to_bytes
+from ..utils.encoding import ensure_bytes
 
 from .base import KeyValueStoreBackend
 
@@ -84,10 +84,10 @@ class CacheBackend(KeyValueStoreBackend):
                                                 ", ".join(backends.keys())))
 
     def get_key_for_task(self, task_id):
-        return str_to_bytes(self.task_keyprefix + task_id)
+        return ensure_bytes(self.task_keyprefix) + ensure_bytes(task_id)
 
     def get_key_for_taskset(self, taskset_id):
-        return str_to_bytes(self.taskset_keyprefix + taskset_id)
+        return ensure_bytes(self.taskset_keyprefix) + ensure_bytes(taskset_id)
 
     def get(self, key):
         return self.client.get(key)

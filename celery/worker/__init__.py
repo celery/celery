@@ -11,7 +11,6 @@ from __future__ import absolute_import
 import atexit
 import logging
 import socket
-import sys
 import threading
 import traceback
 
@@ -267,7 +266,6 @@ class WorkController(object):
                 self._running = i + 1
                 blocking(component.start)
         except SystemTerminate:
-            print("GOT TERMINATE")
             self.terminate()
         except:
             self.stop()
