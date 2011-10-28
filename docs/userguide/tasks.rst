@@ -658,6 +658,64 @@ aware of this state that the task is currently in progress, and also where
 it is in the process by having `current` and `total` counts as part of the
 state metadata.  This can then be used to create e.g. progress bars.
 
+.. _pickling_exceptions:
+
+Creating pickleable exceptions
+------------------------------
+
+A little known Python fact is that exceptions must behave a certain
+way to support being pickled.
+
+Tasks that raises exceptions that are not pickleable will not work
+properly when Pickle is used as the serializer.
+
+To make sure that your exceptions are pickleable the exception
+*MUST* provide the original arguments it was instantiated
+with in its ``.args`` attribute.  The simplest way
+to ensure this is to have the exception call ``Exception.__init__``.
+
+Let's look at some examples that work, and one that doesn't:
+
+.. code-block:: python
+
+
+    # OK:
+    class HttpError(Exception):
+        pass
+
+    # BAD:
+    class HttpError(Exception):
+
+        def __init__(self, status_code):
+            self.status_code = status_code
+
+    # OK:
+    class HttpError(Exception):
+
+        def __init__(self, status_code):
+            self.status_code = status_code
+            Exception.__init__(self, status_code)  # <-- REQUIRED
+
+
+So the rule is:
+For any exception that supports custom arguments ``*args``,
+``Exception.__init__(self, *args)`` must be used.
+
+There is no special support for *keyword arguments*, so if you
+want to preserve keyword arguments when the exception is unpickled
+you have to pass them as regular args:
+
+.. code-block:: python
+
+    class HttpError(Exception):
+
+        def __init__(self, status_code, headers=None, body=None):
+            self.status_code = status_code
+            self.headers = headers
+            self.body = body
+
+            super(Exception, self).__init__(status_code, headers, body)
+
 .. _task-custom-classes:
 
 Creating custom task classes
