@@ -405,6 +405,10 @@ When running with the AMQP result backend, every task result will be sent
 as a message. If you don't collect these results, they will build up and
 RabbitMQ will eventually run out of memory.
 
+Results expire after 1 day by default.  It may be a good idea
+to lower this value by configuring the :setting:`CELERY_TASK_RESULT_EXPIRES`
+setting.
+
 If you don't use the results for a task, make sure you set the
 `ignore_result` option:
 
@@ -416,17 +420,6 @@ If you don't use the results for a task, make sure you set the
 
     class MyTask(Task):
         ignore_result = True
-
-Results can also be disabled globally using the
-:setting:`CELERY_IGNORE_RESULT` setting.
-
-.. note::
-
-    Celery version 2.1 added support for automatic expiration of
-    AMQP result backend results.
-
-    To use this you need to run RabbitMQ 2.1 or higher and enable
-    the :setting:`CELERY_AMQP_TASK_RESULT_EXPIRES` setting.
 
 .. _faq-use-celery-with-stomp:
 

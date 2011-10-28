@@ -221,7 +221,8 @@ class inspect(Command):
                "reserved": 1.0,
                "stats": 1.0,
                "revoked": 1.0,
-               "registered_tasks": 1.0,
+               "registered_tasks": 1.0,  # alias to registered
+               "registered": 1.0,
                "enable_events": 1.0,
                "disable_events": 1.0,
                "ping": 0.2,

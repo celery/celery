@@ -127,8 +127,9 @@ Can be one of the following:
 CELERY_RESULT_SERIALIZER
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Result message serialization format.  Default is `"pickle"`. See
-:ref:`executing-serializers`.
+Result serialization format.  Default is `"pickle"`. See
+:ref:`executing-serializers` for information about supported
+serialization formats.
 
 .. _conf-database-result-backend:
 
@@ -533,17 +534,20 @@ built-in transports: ``amqplib``, ``pika``, ``redis``, ``beanstalk``,
 
 .. setting:: BROKER_URL
 
-Default broker URL.  This must be an URL in the format of::
+BROKER_URL
+~~~~~~~~~~
+
+Default broker URL.  This must be an URL in the form of::
 
     transport://userid:password@hostname:port/virtual_host
 
-If this setting is defined it will override a subset of the
-other ``BROKER`` options, these options are :setting:`BROKER_HOST`,
-:setting:`BROKER_USER`, :setting:`BROKER_PASSWORD`, :setting:`BROKER_PORT`,
-and :setting:`BROKER_VHOST`.  The query part of the URL can also be used
-to set options, e.g.::
+Only the scheme part (``transport://``) is required, the rest
+is optional, and defaults to the specific transports default values.
 
-    amqp://localhost/myvhost?ssl=1
+If this setting is defined it will override a subset of the
+other ``BROKER`` options. These options are :setting:`BROKER_HOST`,
+:setting:`BROKER_USER`, :setting:`BROKER_PASSWORD`, :setting:`BROKER_PORT`,
+and :setting:`BROKER_VHOST`.
 
 See the Kombu documentation for more information about broker URLs.
 

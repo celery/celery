@@ -82,8 +82,8 @@ class test_inspect(unittest.TestCase):
         self.assertIn("dump_revoked", MockMailbox.sent)
 
     @with_mock_broadcast
-    def test_registered_tasks(self):
-        self.i.registered_tasks()
+    def test_asks(self):
+        self.i.tasks()
         self.assertIn("dump_tasks", MockMailbox.sent)
 
     @with_mock_broadcast

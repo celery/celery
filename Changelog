@@ -239,7 +239,7 @@ News
 
 * The :setting:`CELERYBEAT_MAX_LOOP_INTERVAL` setting was not respected.
 
-* ``inspect.registered_tasks`` renamed to ``inspect.tasks`` for naming
+* ``inspect.registered_tasks`` renamed to ``inspect.registered`` for naming
   consistency.
 
     The previous name is still available as an alias.
@@ -317,7 +317,7 @@ News
     If you'd like to contribute to Celery you should read this
     guide: http://ask.github.com/celery/contributing.html
 
-    We are looking for contributors of all skill levels, so don't
+    We are looking for contributors at all skill levels, so don't
     hesitate!
 
 * Now depends on Kombu 1.3.1

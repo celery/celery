@@ -93,10 +93,10 @@ Commands
 
         $ celeryctl inspect revoked
 
-* **inspect registered_tasks**: List registered tasks
+* **inspect registered**: List registered tasks
     ::
 
-        $ celeryctl inspect registered_tasks
+        $ celeryctl inspect registered
 
 * **inspect stats**: Show worker statistics
     ::
