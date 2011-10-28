@@ -17,6 +17,13 @@ from ..exceptions import ImproperlyConfigured, SystemTerminate
 from ..utils import get_full_cls_name, isatty, LOG_LEVELS, cry
 from ..worker import WorkController
 
+try:
+    from greenlet import GreenletExit
+    IGNORE_ERRORS = (GreenletExit, )
+except ImportError:
+    IGNORE_ERRORS = ()
+
+
 BANNER = """
  -------------- celery@%(hostname)s v%(version)s
 ---- **** -----
@@ -135,7 +142,10 @@ class Worker(object):
               str(self.colored.reset(self.extra_info())))
         self.set_process_status("-active-")
 
-        self.run_worker()
+        try:
+            self.run_worker()
+        except IGNORE_ERRORS:
+            pass
 
     def on_consumer_ready(self, consumer):
         signals.worker_ready.send(sender=consumer)
