@@ -139,7 +139,7 @@ class TaskSet(UserList):
         self.app = app_or_default(app)
         if task is not None:
             if hasattr(task, "__iter__"):
-                tasks = task
+                tasks = [subtask(t) for t in task]
             else:
                 # Previously TaskSet only supported applying one kind of task.
                 # the signature then was TaskSet(task, arglist),
