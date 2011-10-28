@@ -138,6 +138,16 @@ is available as the tombstone (result) of the task. When
 exception raised.  However, if an `exc` argument is not provided the
 :exc:`~celery.exceptions.RetryTaskError` exception is raised instead.
 
+.. note::
+
+    The :meth:`retry` call will raise an exception so any code after the retry
+    will not be reached.  This is the :exc:`celery.exceptions.RetryTaskError`
+    exception, it is not handled as an error but rather as a semi-predicate
+    to signify to the worker that the task is to be retried.
+
+    This is normal operation and always happens unless the
+    ``throw`` argument to retry is set to :const:`False`.
+
 .. _task-retry-custom-delay:
 
 Using a custom retry delay
