@@ -216,10 +216,10 @@ class State(object):
 
     def _clear_tasks(self, ready=True):
         if ready:
+            in_progress = dict((uuid, task) for uuid, task in self.itertasks()
+                                if task.state not in states.READY_STATES)
             self.tasks.clear()
-            self.tasks.update((uuid, task)
-                                for uuid, task in self.itertasks()
-                                    if task.state not in states.READY_STATES)
+            self.tasks.update(in_progress)
         else:
             self.tasks.clear()
 
