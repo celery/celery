@@ -49,6 +49,8 @@ Important Notes
 
         CELERY_TASK_RESULT_EXPIRES = None
 
+* Eventlet: Fixed problem with shutdown (Issue #457).
+
 * Broker transports can be now be specified using URLs
 
     The broker can now be specified as an URL instead.

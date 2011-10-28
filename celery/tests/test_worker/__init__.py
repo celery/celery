@@ -598,6 +598,18 @@ class test_Consumer(unittest.TestCase):
                           send_events=False)
         l.pidbox_node = Mock()
 
+        class BConsumer(Mock):
+
+            def __enter__(self):
+                self.consume()
+                return self
+
+            def __exit__(self, *exc_info):
+                self.cancel()
+
+
+        l.pidbox_node.listen = BConsumer()
+
         connections = []
 
         class Connection(object):
@@ -605,13 +617,21 @@ class test_Consumer(unittest.TestCase):
             def __init__(self, obj):
                 connections.append(self)
                 self.obj = obj
+                self.default_channel = self.channel()
                 self.closed = False
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc_info):
+                self.close()
 
             def channel(self):
                 return Mock()
 
-            def drain_events(self):
+            def drain_events(self, **kwargs):
                 self.obj.connection = None
+                self.obj._pidbox_node_shutdown.set()
 
             def close(self):
                 self.closed = True
@@ -693,6 +713,7 @@ class test_WorkController(AppCase):
 
     def create_worker(self, **kw):
         worker = WorkController(concurrency=1, loglevel=0, **kw)
+        worker._shutdown_complete.set()
         worker.logger = Mock()
         return worker
 
@@ -841,8 +862,7 @@ class test_WorkController(AppCase):
         stc = Mock()
         stc.start.side_effect = SystemTerminate()
         worker1.components = [stc]
-        with self.assertRaises(SystemExit):
-            worker1.start()
+        worker1.start()
         self.assertTrue(stc.terminate.call_count)
 
         worker2 = self.create_worker()
@@ -850,8 +870,7 @@ class test_WorkController(AppCase):
         sec.start.side_effect = SystemExit()
         sec.terminate = None
         worker2.components = [sec]
-        with self.assertRaises(SystemExit):
-            worker2.start()
+        worker2.start()
         self.assertTrue(sec.stop.call_count)
 
     def test_state_db(self):
@@ -874,6 +893,7 @@ class test_WorkController(AppCase):
 
     def test_start__stop(self):
         worker = self.worker
+        worker._shutdown_complete.set()
         worker.components = [Mock(), Mock(), Mock(), Mock()]
 
         worker.start()
@@ -885,6 +905,7 @@ class test_WorkController(AppCase):
 
     def test_start__terminate(self):
         worker = self.worker
+        worker._shutdown_complete.set()
         worker.components = [Mock(), Mock(), Mock(), Mock(), Mock()]
         for component in worker.components[:3]:
             component.terminate = None

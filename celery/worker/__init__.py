@@ -267,6 +267,7 @@ class WorkController(object):
                 self._running = i + 1
                 blocking(component.start)
         except SystemTerminate:
+            print("GOT TERMINATE")
             self.terminate()
         except:
             self.stop()
@@ -286,7 +287,7 @@ class WorkController(object):
                                  exc_info=True)
         except SystemTerminate:
             self.terminate()
-            sys.exit()
+            raise
         except BaseException, exc:
             self.stop()
             raise exc
