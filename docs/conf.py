@@ -33,8 +33,11 @@ app.conf.update(BROKER_TRANSPORT="memory",
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.coverage',
               'sphinx.ext.pngmath',
+              'sphinx.ext.intersphinx',
               'sphinxcontrib.issuetracker',
               'celerydocs']
+
+html_show_sphinx = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['.templates']
@@ -62,6 +65,12 @@ exclude_trees = ['.build']
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 add_function_parentheses = True
+
+intersphinx_mapping = {
+        "http://docs.python.org/dev": None,
+        "http://kombu.readthedocs.org/en/latest/": None,
+        "http://django-celery.readthedocs.org/en/latest": None,
+}
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'trac'

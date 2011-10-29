@@ -1,6 +1,6 @@
 """
 celery.utils.encoding
-====================
+=====================
 
 Utilities to encode text, and to safely emit text from running
 applications without crashing with the infamous :exc:`UnicodeDecodeError`
