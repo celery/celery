@@ -54,7 +54,11 @@ class colored(object):
                       "white": self.white}
 
     def _add(self, a, b):
-        return safe_str(a) + safe_str(b)
+        if isinstance(a, unicode):
+            a = safe_str(a)
+        if isinstance(b, unicode):
+            b = safe_str(b)
+        return str(a) + str(b)
 
     def _fold_no_color(self, a, b):
         try:
@@ -68,7 +72,9 @@ class colored(object):
         return A + B
 
     def no_color(self):
-        return reduce(self._fold_no_color, self.s)
+        if self.s:
+            return reduce(self._fold_no_color, self.s)
+        return ""
 
     def embed(self):
         prefix = ""
@@ -80,7 +86,7 @@ class colored(object):
         suffix = ""
         if self.enabled:
             suffix = RESET_SEQ
-        return self.embed() + suffix
+        return safe_str(self.embed()) + suffix
 
     def node(self, s, op):
         return self.__class__(enabled=self.enabled, op=op, *s)
@@ -152,4 +158,4 @@ class colored(object):
         return self.node(s or [""], RESET_SEQ)
 
     def __add__(self, other):
-        return safe_str(self) + safe_str(other)
+        return str(self) + str(other)

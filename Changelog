@@ -104,15 +104,15 @@ Important Notes
 * The :setting:`CELERY_TASK_ERROR_WHITELIST` setting has been replaced
   by a more flexible approach (Issue #447).
 
-  The Mail sending logic is now available as ``Task.ErrorMail``.
-  The actual implementation is in :mod:`celery.utils.mail`.
+    The error mail sending logic is now available as ``Task.ErrorMail``,
+    with the implementation (for reference) in :mod:`celery.utils.mail`.
 
-  The error mail class can be sub-classed to gain complete control
-  of when error messages are sent, thus removing the need for a separate
-  white-list setting.
+    The error mail class can be sub-classed to gain complete control
+    of when error messages are sent, thus removing the need for a separate
+    white-list setting.
 
-  The :setting:`CELERY_TASK_ERROR_WHITELIST` setting has been deprecated,
-  and will be removed completely in version 3.0.
+    The :setting:`CELERY_TASK_ERROR_WHITELIST` setting has been deprecated,
+    and will be removed completely in version 3.0.
 
 * Additional Deprecations
 
