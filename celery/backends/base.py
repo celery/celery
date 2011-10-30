@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """celery.backends.base"""
 from __future__ import absolute_import
 

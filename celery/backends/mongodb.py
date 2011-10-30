@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """MongoDB backend for celery."""
 from __future__ import absolute_import
 

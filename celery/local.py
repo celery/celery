@@ -1,14 +1,16 @@
+# -*- coding: utf-8 -*-
 """
+    celery.local
+    ~~~~~~~~~~~~
 
-celery.local
-============
+    This module contains critical utilities that
+    needs to be loaded as soon as possible, and that
+    shall not load any third party modules.
 
-This module contains critical utilities that
-needs to be loaded as soon as possible, and that
-should not load any third party modules.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
-
 from __future__ import absolute_import
 
 

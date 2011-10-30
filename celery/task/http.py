@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
 """
+    celery.task.http
+    ~~~~~~~~~~~~~~~~
 
-celery.task.http
-================
+    Task webhooks implementation.
 
-Webhook tasks.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import
@@ -24,9 +27,6 @@ from .. import __version__ as celery_version
 from .base import Task as BaseTask
 
 GET_METHODS = frozenset(["GET", "HEAD"])
-
-__all__ = ["InvalidResponseError", "RemoteExecuteError", "UnknownStatusError",
-           "MutableURL", "HttpDispatch", "HttpDispatchTask", "URL"]
 
 
 class InvalidResponseError(Exception):

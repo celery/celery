@@ -1,9 +1,13 @@
+# -*- coding: utf-8 -*-
 """
-celery.utils.compat
-===================
+    celery.utils.compat
+    ~~~~~~~~~~~~~~~~~~~
 
-Backward compatible implementations of features
-only available in later Python versions.
+    Backward compatible implementations of features
+    only available in newer Python versions.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import

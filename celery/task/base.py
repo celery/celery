@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
 """
+    celery.task.base
+    ~~~~~~~~~~~~~~~~
 
-celery.task.base
-================
+    The task implementation has been moved to :mod:`celery.app.task`.
 
-The task implementation has been moved to :class:`celery.app.task`.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import
@@ -12,8 +15,6 @@ from .. import current_app
 from ..app.task import Context, TaskType, BaseTask  # noqa
 from ..schedules import maybe_schedule
 from ..utils import deprecated, timeutils
-
-__all__ = ["Task", "PeriodicTask"]
 
 Task = current_app.Task
 

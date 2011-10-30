@@ -1,8 +1,12 @@
+# -*- coding: utf-8 -*-
 """
-celery.datastructures
-=====================
+    celery.datastructures
+    ~~~~~~~~~~~~~~~~~~~~~
 
-Custom types and data structures.
+    Custom types and data structures.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import
@@ -16,10 +20,6 @@ from itertools import chain
 from threading import RLock
 
 from .utils.compat import UserDict, OrderedDict
-
-__all__ = ["AttributeDictMixin", "AttributeDict", "DictAttribute",
-           "ConfigurationView", "ExceptionInfo", "LimitedSet",
-           "LRUCache", "TokenBucket"]
 
 
 class AttributeDictMixin(object):

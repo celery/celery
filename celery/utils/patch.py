@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
 """
+    celery.utils.patch
+    ~~~~~~~~~~~~~~~~~~
 
-celery.utils.path
-=================
+    Monkey-patch to ensure loggers are process aware.
 
-Monkey patch to ensure process aware loggers.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import
@@ -11,8 +14,6 @@ from __future__ import absolute_import
 import logging
 
 _process_aware = False
-
-__all__ = ["ensure_process_aware_logger"]
 
 
 def _patch_logger_class():

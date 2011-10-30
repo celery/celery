@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 This is here for backwards compatibility only.
 

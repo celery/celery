@@ -1,11 +1,14 @@
+# -*- coding: utf-8 -*-
 """
+    celery.worker.consumer
+    ~~~~~~~~~~~~~~~~~~~~~~
 
-celery.worker.consumer
-======================
+    This module contains the component responsible for consuming messages
+    from the broker, processing the messages and keeping the broker connections
+    up and running.
 
-This module contains the component responsible for consuming messages
-from the broker, processing the messages and keeping the broker connections
-up and running.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 
 * :meth:`~Consumer.start` is an infinite loop, which only iterates
@@ -89,8 +92,6 @@ from . import state
 from .job import TaskRequest, InvalidTaskError
 from .control.registry import Panel
 from .heartbeat import Heart
-
-__all__ = ["QoS", "Consumer"]
 
 RUN = 0x1
 CLOSE = 0x2

@@ -1,23 +1,15 @@
+# -*- coding: utf-8 -*-
 """
+    celery.exceptions
+    ~~~~~~~~~~~~~~~~~
 
-celery.exceptions
-=================
+    This module contains Celery-specific exceptions.
 
-This module contains Celery-specific exceptions.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
-
 from __future__ import absolute_import
-
-__all__ = ["SystemTerminate", "QueueNotFound",
-           "TimeLimitExceeded", "SoftTimeLimitExceeded",
-           "WorkerLostError", "ImproperlyConfigured",
-           "NotRegistered", "AlreadyRegistered",
-           "TimeoutError", "MaxRetriesExceededError",
-           "RetryTaskError", "TaskRevokedError",
-           "NotConfigured", "CPendingDeprecationWarning",
-           "CDeprecationWarning"]
-
 
 UNREGISTERED_FMT = """\
 Task of kind %s is not registered, please make sure it's imported.\

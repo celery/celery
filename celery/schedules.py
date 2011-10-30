@@ -1,11 +1,15 @@
+# -*- coding: utf-8 -*-
 """
-celery.schedules
-================
+    celery.schedules
+    ~~~~~~~~~~~~~~~~
 
-Schedules define when periodic tasks should be run.
+    Schedules define the intervals at which periodic tasks
+    should run.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
-
 from __future__ import absolute_import
 
 import re
@@ -16,8 +20,6 @@ from dateutil.relativedelta import relativedelta
 from .utils import is_iterable
 from .utils.timeutils import (timedelta_seconds, weekday,
                               remaining, humanize_seconds)
-
-__all__ = ["ParseException", "schedule", "crontab", "maybe_schedule"]
 
 
 class ParseException(Exception):

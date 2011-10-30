@@ -1,11 +1,13 @@
+# -*- coding: utf-8 -*-
 """
+    celery.worker.job
+    ~~~~~~~~~~~~~~~~~
 
-celery.worker.job
-=================
+    This module defines the :class:`TaskRequest` class,
+    which specifies how tasks are executed.
 
-This module defines the :class:`TaskRequest` class,
-which specifies how tasks are executed and task state is
-published.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import
@@ -31,9 +33,6 @@ from ..utils.serialization import get_pickleable_exception
 from ..utils.timeutils import maybe_iso8601
 
 from . import state
-
-__all__ = ["InvalidTaskError", "WorkerTaskTrace",
-           "execute_and_trace", "TaskRequest"]
 
 #: Keys to keep from the message delivery info.  The values
 #: of these keys must be pickleable.

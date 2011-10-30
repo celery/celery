@@ -1,12 +1,15 @@
+# -*- coding: utf-8 -*-
 """
-celery.execute.trace
-====================
+    celery.execute.trace
+    ~~~~~~~~~~~~~~~~~~~~
 
-This module defines how the task execution is traced,
-errors are recorded, handlers are applied and so on.
+    This module defines how the task execution is traced:
+    errors are recorded, handlers are applied and so on.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
-
 from __future__ import absolute_import
 
 import sys
@@ -16,8 +19,6 @@ from .. import states, signals
 from ..datastructures import ExceptionInfo
 from ..exceptions import RetryTaskError
 from ..registry import tasks
-
-__all__ = ["TraceInfo", "TaskTrace"]
 
 
 class TraceInfo(object):

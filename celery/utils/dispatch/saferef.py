@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 "Safe weakrefs", originally from pyDispatcher.
 

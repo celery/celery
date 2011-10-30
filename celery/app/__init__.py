@@ -1,11 +1,12 @@
+# -*- coding: utf-8 -*-
 """
-celery.app
-==========
+    celery.app
+    ~~~~~~~~~~
 
-Celery Application.
+    Celery Application.
 
-:copyright: (c) 2009 - 2011 by Ask Solem.
-:license: BSD, see LICENSE for more details.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 

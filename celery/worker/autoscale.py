@@ -1,14 +1,17 @@
+# -*- coding: utf-8 -*-
 """
+    celery.worker.autoscale
+    ~~~~~~~~~~~~~~~~~~~~~~~
 
-celery.worker.autoscale
-=======================
+    This module implements the internal thread responsible
+    for growing and shrinking the pool according to the
+    current autoscale settings.
 
-This module implements the internal thread responsible
-for growing and shrinking the pool according to the
-current autoscale settings.
+    The autoscale thread is only enabled if autoscale
+    has been enabled on the command line.
 
-The autoscale thread is only enabled if autoscale
-has been enabled on the command line.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import
@@ -22,8 +25,6 @@ import traceback
 from time import sleep, time
 
 from . import state
-
-__all__ = ["Autoscaler"]
 
 
 class Autoscaler(threading.Thread):

@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
 """
+    celery.worker
+    ~~~~~~~~~~~~~
 
-celery.worker
-=============
+    The worker.
 
-This is the Celery worker process.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import
@@ -27,8 +30,6 @@ from ..utils import noop, instantiate
 
 from . import state
 from .buckets import TaskBucket, FastQueue
-
-__all__ = ["WorkController"]
 
 RUN = 0x1
 CLOSE = 0x2

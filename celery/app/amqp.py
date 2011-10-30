@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-celery.app.amqp
-===============
+    celery.app.amqp
+    ~~~~~~~~~~~~~~~
 
-AMQ related functionality.
+    AMQ related functionality.
 
-:copyright: (c) 2009 - 2011 by Ask Solem.
-:license: BSD, see LICENSE for more details.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import

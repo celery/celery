@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 celery.states
 =============
@@ -10,7 +11,6 @@ States
 ------
 
 See :ref:`task-states`.
-
 
 Sets
 ----
@@ -56,8 +56,6 @@ Misc.
 
 """
 from __future__ import absolute_import
-
-__all__ = ["precedence", "state"]
 
 #: State precedence.
 #: None represents the precedence of an unknown state.

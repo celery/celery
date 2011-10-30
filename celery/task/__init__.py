@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+    celery.task
+    ~~~~~~~~~~~
 
-celery.task
-===========
+    Creating tasks, subtasks, sets and chords.
 
-Creating tasks and subtasks
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import
@@ -14,15 +16,10 @@ import warnings
 from ..app import app_or_default
 from ..exceptions import CDeprecationWarning
 
-from .base import Task, PeriodicTask
-from .sets import TaskSet, subtask
-from .chords import chord
-from .control import discard_all
-
-__all__ = ["Task", "TaskSet", "PeriodicTask", "subtask",
-           "discard_all", "chord", "group"]
-
-group = TaskSet
+from .base import Task, PeriodicTask  # noqa
+from .sets import TaskSet, subtask    # noqa
+from .chords import chord             # noqa
+from .control import discard_all      # noqa
 
 
 def task(*args, **kwargs):

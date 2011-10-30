@@ -1,17 +1,18 @@
+# -*- coding: utf-8 -*-
 """
+    celery.worker.heartbeat
+    ~~~~~~~~~~~~~~~~~~~~~~~
 
-celery.worker.heartbeat
-=======================
+    This is the internal thread that sends heartbeat events
+    at regular intervals.
 
-This is an internal thread that sends heartbeat events
-at recurring intervals.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import
 
 from .state import SOFTWARE_INFO
-
-__all__ = ["Heart"]
 
 
 class Heart(object):

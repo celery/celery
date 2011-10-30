@@ -1,11 +1,4 @@
-"""
-
-celery.log
-==========
-
-Logging utilities.
-
-"""
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
 import logging
@@ -29,11 +22,6 @@ from .utils.patch import ensure_process_aware_logger
 from .utils.term import colored
 
 is_py3k = sys.version_info >= (3, 0)
-
-__all__ = ["ColorFormatter", "Logging", "get_default_logger",
-           "setup_logger", "setup_task_logger", "get_task_logger",
-           "setup_logging_subsystem", "redirect_stdouts_to_logger",
-           "LoggingProxy"]
 
 
 class ColorFormatter(logging.Formatter):

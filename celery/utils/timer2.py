@@ -1,4 +1,14 @@
-"""timer2 - Scheduler for Python functions."""
+# -*- coding: utf-8 -*-
+"""
+    timer2
+    ~~~~~~
+
+    Scheduler for Python functions.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 
@@ -16,20 +26,14 @@ from time import time, sleep, mktime
 
 from datetime import datetime, timedelta
 
-VERSION = (0, 1, 0)
+VERSION = (1, 0, 0)
 __version__ = ".".join(map(str, VERSION))
 __author__ = "Ask Solem"
 __contact__ = "ask@celeryproject.org"
-__homepage__ = "http://github.com/ask/timer/"
+__homepage__ = "http://github.com/ask/timer2/"
 __docformat__ = "restructuredtext"
 
 DEFAULT_MAX_INTERVAL = 2
-
-__all__ = ["TimedFunctionFailed", "to_timestamp",
-           "Entry", "Schedule", "Timer",
-           "default_timer", "apply_after", "apply_at",
-           "apply_interval", "enter_after", "enter",
-           "exit_after", "cancel", "clear"]
 
 
 class TimedFunctionFailed(UserWarning):

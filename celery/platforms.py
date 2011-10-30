@@ -1,10 +1,13 @@
+# -*- coding: utf-8 -*-
 """
+    celery.platforms
+    ~~~~~~~~~~~~~~~~
 
-celery.platforms
-================
+    Utilities dealing with platform specifics: signals, daemonization,
+    users, groups, and so on.
 
-Utilities dealing with platform specifics: signals, daemonization, users &
-groups, etc.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import
@@ -30,11 +33,6 @@ IS_WINDOWS = SYSTEM == "Windows"
 DAEMON_UMASK = 0
 DAEMON_WORKDIR = "/"
 DAEMON_REDIRECT_TO = getattr(os, "devnull", "/dev/null")
-
-__all__ = ["LockFailed", "get_fdmax", "create_pidlock",
-           "DaemonContext", "detached", "parse_uid", "parse_gid",
-           "setegid", "seteuid", "set_effective_user", "Signals",
-           "set_process_title", "set_mp_process_title", "pyimplementation"]
 
 
 def pyimplementation():

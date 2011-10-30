@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Distributed Task Queue"""
 # :copyright: (c) 2009 - 2011 by Ask Solem.
 # :license:   BSD, see LICENSE for more details.

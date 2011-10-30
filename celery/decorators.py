@@ -19,8 +19,6 @@ import warnings
 from . import task as _task
 from .exceptions import CDeprecationWarning
 
-__all__ = ["task", "periodic_task"]
-
 
 warnings.warn(CDeprecationWarning("""
 The `celery.decorators` module and the magic keyword arguments

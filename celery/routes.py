@@ -1,17 +1,19 @@
+# -*- coding: utf-8 -*-
 """
-celery.routes
-=============
+    celery.routes
+    ~~~~~~~~~~~~~
 
-Contains utilities for working with task routes (e.g.
-:setting:`CELERY_ROUTES`).
+    Contains utilities for working with task routes
+    (:setting:`CELERY_ROUTES`).
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import
 
 from .exceptions import QueueNotFound
 from .utils import firstmethod, instantiate, lpmerge, mpromise
-
-_all__ = ["MapRoute", "Router", "prepare"]
 
 _first_route = firstmethod("route_for_task")
 

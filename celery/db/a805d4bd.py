@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 a805d4bd
 This module fixes a bug with pickling and relative imports in Python < 2.6.

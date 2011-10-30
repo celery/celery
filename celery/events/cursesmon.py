@@ -1,8 +1,12 @@
+# -*- coding: utf-8 -*-
 """
-celery.events.cursesmon
-=======================
+    celery.events.cursesmon
+    ~~~~~~~~~~~~~~~~~~~~~~~
 
-celeryev is a monitor written in curses using celery events.
+    Graphical monitor of Celery events using curses.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import
@@ -21,8 +25,6 @@ from .. import __version__
 from .. import states
 from ..app import app_or_default
 from ..utils import abbr, abbrtask
-
-__all__ = ["CursesMonitor", "evtop"]
 
 BORDER_SPACING = 4
 LEFT_BORDER_OFFSET = 3

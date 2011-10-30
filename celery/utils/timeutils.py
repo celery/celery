@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
 """
+    celery.utils.timeutils
+    ~~~~~~~~~~~~~~~~~~~~~~
 
-celery.utils.timeutils
-======================
+    This module contains various utilities relating to dates and times.
 
-This module contains various utilties relating to time and date.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import
@@ -12,10 +15,6 @@ import math
 
 from datetime import datetime, timedelta
 from dateutil.parser import parse as parse_iso8601
-
-__all__ = ["maybe_timedelta", "timedelta_seconds", "delta_resolution",
-           "remaining", "rate", "weekday", "humanize_seconds",
-           "maybe_iso8601"]
 
 DAYNAMES = "sun", "mon", "tue", "wed", "thu", "fri", "sat"
 WEEKDAYS = dict((name, dow) for name, dow in zip(DAYNAMES, range(7)))

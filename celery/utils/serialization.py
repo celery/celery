@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
 """
+    celery.utils.serialization
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-celery.utils.serialization
-==========================
+    Utilities for safely pickling exceptions.
 
-Serialization utilities for safely pickling exceptions.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import
@@ -40,11 +43,6 @@ else:
 
 #: List of base classes we probably don't want to reduce to.
 unwanted_base_classes = (StandardError, Exception, BaseException, object)
-
-__all__ = ["subclass_exception", "find_nearest_pickleable_exception",
-           "create_exception_cls", "UnpickleableExceptionWrapper",
-           "get_pickleable_exception", "get_pickled_exception"]
-
 
 if sys.version_info < (2, 5):  # pragma: no cover
 

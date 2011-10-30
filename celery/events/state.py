@@ -1,22 +1,24 @@
+# -*- coding: utf-8 -*-
 """
+    celery.events.state
+    ~~~~~~~~~~~~~~~~~~~
 
-celery.events.state
-===================
+    This module implements a datastructure used to keep
+    track of the state of a cluster of workers and the tasks
+    it is working on (by consuming events).
 
-This module implements a way to keep track of the
-state of a cluster of workers and the tasks it is working on
-by consuming events.
+    For every event consumed the state is updated,
+    so the state represents the state of the cluster
+    at the time of the last event.
 
-For every event consumed the state is updated, so
-it represents the state of the cluster at the time
-of the last event.
+    Snapshots (:mod:`celery.events.snapshot`) can be used to
+    take "pictures" of this state at regular intervals
+    to e.g. store that in a database.
 
-Snapshots (:mod:`celery.events.snapshot`) can be used
-to take pictures of this state at regular intervals
-and e.g. store it inside a database.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
-
 from __future__ import absolute_import
 from __future__ import with_statement
 
@@ -28,8 +30,6 @@ from threading import Lock
 from .. import states
 from ..datastructures import AttributeDict, LRUCache
 from ..utils import kwdict
-
-__all__ = ["HEARTBEAT_EXPIRE", "Worker", "Task", "State", "state"]
 
 #: Hartbeat expiry time in seconds.  The worker will be considered offline
 #: if no heartbeat is received within this time.

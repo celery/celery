@@ -1,11 +1,14 @@
+# -*- coding: utf-8 -*-
 """
+    celery.events
+    ~~~~~~~~~~~~~
 
-celery.events
-=============
+    Events are messages sent for actions happening
+    in the worker (and clients if :setting:`CELERY_SEND_TASK_SENT_EVENT`
+    is enabled), used for monitoring purposes.
 
-Events are messages sent for actions happening
-in the worker (and clients if :setting:`CELERY_SEND_TASK_SENT_EVENT` is
-enabled).  These events can be used for monitoring.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import
@@ -24,8 +27,6 @@ from kombu.messaging import Consumer, Producer
 
 from ..app import app_or_default
 from ..utils import uuid
-
-__all__ = ["event_exchange", "Event", "EventDispatcher", "EventReceiver"]
 
 event_exchange = Exchange("celeryev", type="topic")
 

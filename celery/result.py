@@ -1,8 +1,12 @@
+# -*- coding: utf-8 -*-
 """
-celery.result
-=============
+    celery.result
+    ~~~~~~~~~~~~~
 
-Task results/state, and result groups.
+    Task results/state and groups of results.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import
@@ -19,9 +23,6 @@ from .app import app_or_default
 from .exceptions import TimeoutError
 from .registry import _unpickle_task
 from .utils.compat import OrderedDict
-
-__all__ = ["BaseAsyncResult", "AsyncResult", "ResultSet",
-           "TaskSetResult", "EagerResult"]
 
 
 def _unpickle_result(task_id, task_name):

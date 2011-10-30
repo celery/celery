@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Module providing the `Pool` class for managing a process pool
 #
@@ -6,8 +7,6 @@
 # Copyright (c) 2007-2008, R Oudkerk --- see COPYING.txt
 #
 from __future__ import absolute_import
-
-__all__ = ['Pool']
 
 #
 # Imports

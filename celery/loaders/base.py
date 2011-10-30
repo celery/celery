@@ -1,12 +1,14 @@
+# -*- coding: utf-8 -*-
 """
+    celery.loaders.base
+    ~~~~~~~~~~~~~~~~~~~
 
-celery.loaders.base
-===================
+    Loader base class.
 
-Loader base class.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
-
 from __future__ import absolute_import
 
 import importlib
@@ -21,8 +23,6 @@ from ..exceptions import ImproperlyConfigured
 from ..utils import (cached_property, get_cls_by_name,
                      import_from_cwd as _import_from_cwd)
 from ..utils.functional import maybe_list
-
-__all__ = ["BaseLoader"]
 
 BUILTIN_MODULES = frozenset(["celery.task"])
 

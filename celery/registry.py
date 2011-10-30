@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
 """
+    celery.registry
+    ~~~~~~~~~~~~~~~
 
-celery.registry
-===============
+    Registry of available tasks.
 
-Registry of available tasks.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import
@@ -11,8 +14,6 @@ from __future__ import absolute_import
 import inspect
 
 from .exceptions import NotRegistered
-
-__all__ = ["TaskRegistry", "tasks"]
 
 
 class TaskRegistry(dict):

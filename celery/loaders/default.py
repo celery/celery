@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
 """
+    celery.loaders.default
+    ~~~~~~~~~~~~~~~~~~~~~~
 
-celery.loader.default
-=====================
+    The default loader used when no custom app has been initialized.
 
-The default loader used when no custom app has been initialized.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import
@@ -18,8 +21,6 @@ from ..utils import find_module
 from .base import BaseLoader
 
 DEFAULT_CONFIG_MODULE = "celeryconfig"
-
-__all__ = ["Loader"]
 
 
 class Loader(BaseLoader):

@@ -1,10 +1,13 @@
+# -*- coding: utf-8 -*-
 """
+    celery.events.dumper
+    ~~~~~~~~~~~~~~~~~~~~
 
-celery.events.dumper
-====================
+    THis is a simple program that dumps events to the console
+    as they happen.  Think of it like a `tcpdump` for Celery events.
 
-This is a simple program used to show events as they are happening.
-Like tcpdump just for Celery events.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import
@@ -15,8 +18,6 @@ from datetime import datetime
 
 from ..app import app_or_default
 from ..datastructures import LRUCache
-
-__all__ = ["Dumper", "evdump"]
 
 
 TASK_NAMES = LRUCache(limit=0xFFF)

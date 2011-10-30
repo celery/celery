@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
 """
+    celery.task.sets
+    ~~~~~~~~~~~~~~~~
 
-celery.task.sets
-================
+    Creating and applying groups of tasks.
 
-Creating and applying task groups.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import
@@ -17,8 +20,6 @@ from ..datastructures import AttributeDict
 from ..exceptions import CDeprecationWarning
 from ..utils import cached_property, reprcall, uuid
 from ..utils.compat import UserList
-
-__all__ = ["subtask", "TaskSet"]
 
 TASKSET_DEPRECATION_TEXT = """\
 Using this invocation of TaskSet is deprecated and will be removed

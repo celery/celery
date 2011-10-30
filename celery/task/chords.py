@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
 """
+    celery.task.chords
+    ~~~~~~~~~~~~~~~~~~
 
-celery.task.chords
-==================
+    Chords (task set callbacks).
 
-Task chords (task set callbacks).
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import
@@ -13,8 +16,6 @@ from ..result import TaskSetResult
 from ..utils import uuid
 
 from .sets import TaskSet, subtask
-
-__all__ = ["Chord", "chord"]
 
 
 @current_app.task(name="celery.chord_unlock", max_retries=None)
