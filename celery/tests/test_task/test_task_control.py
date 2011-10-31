@@ -83,7 +83,7 @@ class test_inspect(unittest.TestCase):
 
     @with_mock_broadcast
     def test_asks(self):
-        self.i.tasks()
+        self.i.registered()
         self.assertIn("dump_tasks", MockMailbox.sent)
 
     @with_mock_broadcast

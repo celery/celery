@@ -189,8 +189,8 @@ class test_LRUCache(unittest.TestCase):
     def test_safe_to_remove_while_iteritems(self):
         self.assertSafeIter("iteritems")
 
-    def test_safe_to_remove_while_iterkeys(self):
-        self.assertSafeIter("iterkeys")
+    def test_safe_to_remove_while_keys(self):
+        self.assertSafeIter("keys")
 
     def test_safe_to_remove_while_itervalues(self):
         self.assertSafeIter("itervalues")
