@@ -1,5 +1,6 @@
-from celery.worker.heartbeat import Heart
+from __future__ import absolute_import
 
+from celery.worker.heartbeat import Heart
 from celery.tests.utils import unittest, sleepdeprived
 
 

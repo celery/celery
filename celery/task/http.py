@@ -1,3 +1,14 @@
+"""
+
+celery.task.http
+================
+
+Webhook tasks.
+
+"""
+from __future__ import absolute_import
+
+import sys
 import urllib2
 
 from urllib import urlencode
@@ -9,10 +20,13 @@ except ImportError:  # pragma: no cover
 
 from anyjson import deserialize
 
-from celery import __version__ as celery_version
-from celery.task.base import Task as BaseTask
+from .. import __version__ as celery_version
+from .base import Task as BaseTask
 
 GET_METHODS = frozenset(["GET", "HEAD"])
+
+__all__ = ["InvalidResponseError", "RemoteExecuteError", "UnknownStatusError",
+           "MutableURL", "HttpDispatch", "HttpDispatchTask", "URL"]
 
 
 class InvalidResponseError(Exception):
@@ -34,11 +48,19 @@ def maybe_utf8(value):
     return value
 
 
-def utf8dict(tup):
-    """With a dict's items() tuple return a new dict with any utf-8
-    keys/values encoded."""
-    return dict((key.encode("utf-8"), maybe_utf8(value))
-                    for key, value in tup)
+if sys.version_info >= (3, 0):
+
+    def utf8dict(tup):
+        if not isinstance(tup, dict):
+            return dict(tup)
+        return tup
+else:
+
+    def utf8dict(tup):  # noqa
+        """With a dict's items() tuple return a new dict with any utf-8
+        keys/values encoded."""
+        return dict((key.encode("utf-8"), maybe_utf8(value))
+                        for key, value in tup)
 
 
 def extract_response(raw_response):

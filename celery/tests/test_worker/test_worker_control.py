@@ -1,25 +1,27 @@
+from __future__ import absolute_import
+from __future__ import with_statement
+
 import socket
-from celery.tests.utils import unittest
 
 from datetime import datetime, timedelta
 
 from kombu import pidbox
 from mock import Mock
 
-from celery.utils.timer2 import Timer
-
 from celery import current_app
 from celery.datastructures import AttributeDict
 from celery.task import task
 from celery.registry import tasks
 from celery.task import PingTask
-from celery.utils import gen_unique_id
+from celery.utils import uuid
+from celery.utils.timer2 import Timer
 from celery.worker.buckets import FastQueue
 from celery.worker.job import TaskRequest
 from celery.worker import state
 from celery.worker.state import revoked
 from celery.worker.control import builtins
 from celery.worker.control.registry import Panel
+from celery.tests.utils import unittest
 
 hostname = socket.gethostname()
 
@@ -38,7 +40,7 @@ class Consumer(object):
     def __init__(self):
         self.ready_queue = FastQueue()
         self.ready_queue.put(TaskRequest(task_name=mytask.name,
-                                         task_id=gen_unique_id(),
+                                         task_id=uuid(),
                                          args=(2, 2),
                                          kwargs={}))
         self.eta_schedule = Timer()
@@ -295,51 +297,52 @@ class test_ControlPanel(unittest.TestCase):
                                 "rate_limit": "1000/s"})
 
     def test_unexposed_command(self):
-        self.assertRaises(KeyError, self.panel.handle, "foo", arguments={})
+        with self.assertRaises(KeyError):
+            self.panel.handle("foo", arguments={})
 
     def test_revoke_with_name(self):
-        uuid = gen_unique_id()
+        tid = uuid()
         m = {"method": "revoke",
              "destination": hostname,
-             "arguments": {"task_id": uuid,
+             "arguments": {"task_id": tid,
                            "task_name": mytask.name}}
         self.panel.dispatch_from_message(m)
-        self.assertIn(uuid, revoked)
+        self.assertIn(tid, revoked)
 
     def test_revoke_with_name_not_in_registry(self):
-        uuid = gen_unique_id()
+        tid = uuid()
         m = {"method": "revoke",
              "destination": hostname,
-             "arguments": {"task_id": uuid,
+             "arguments": {"task_id": tid,
                            "task_name": "xxxxxxxxx33333333388888"}}
         self.panel.dispatch_from_message(m)
-        self.assertIn(uuid, revoked)
+        self.assertIn(tid, revoked)
 
     def test_revoke(self):
-        uuid = gen_unique_id()
+        tid = uuid()
         m = {"method": "revoke",
              "destination": hostname,
-             "arguments": {"task_id": uuid}}
+             "arguments": {"task_id": tid}}
         self.panel.dispatch_from_message(m)
-        self.assertIn(uuid, revoked)
+        self.assertIn(tid, revoked)
 
         m = {"method": "revoke",
              "destination": "does.not.exist",
-             "arguments": {"task_id": uuid + "xxx"}}
+             "arguments": {"task_id": tid + "xxx"}}
         self.panel.dispatch_from_message(m)
-        self.assertNotIn(uuid + "xxx", revoked)
+        self.assertNotIn(tid + "xxx", revoked)
 
     def test_revoke_terminate(self):
         request = Mock()
-        request.task_id = uuid = gen_unique_id()
+        request.task_id = tid = uuid()
         state.active_requests.add(request)
         try:
-            r = builtins.revoke(Mock(), uuid, terminate=True)
-            self.assertIn(uuid, revoked)
+            r = builtins.revoke(Mock(), tid, terminate=True)
+            self.assertIn(tid, revoked)
             self.assertTrue(request.terminate.call_count)
             self.assertIn("terminated", r["ok"])
             # unknown task id only revokes
-            r = builtins.revoke(Mock(), gen_unique_id(), terminate=True)
+            r = builtins.revoke(Mock(), uuid(), terminate=True)
             self.assertIn("revoked", r["ok"])
         finally:
             state.active_requests.discard(request)
@@ -353,7 +356,8 @@ class test_ControlPanel(unittest.TestCase):
     def test_shutdown(self):
         m = {"method": "shutdown",
              "destination": hostname}
-        self.assertRaises(SystemExit, self.panel.dispatch_from_message, m)
+        with self.assertRaises(SystemExit):
+            self.panel.dispatch_from_message(m)
 
     def test_panel_reply(self):
 

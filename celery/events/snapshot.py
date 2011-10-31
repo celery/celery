@@ -1,12 +1,27 @@
+"""
+
+celery.events.snapshot
+======================
+
+Consuming the events as a stream is not always suitable,
+so this module implements a system to take snapshots of the
+state of a cluster.  There is a full implementation of this
+writing the snapshots to a database in ``django-celery``.
+
+"""
+
+from __future__ import absolute_import
+
 import atexit
 
-from celery import platforms
-from celery.app import app_or_default
-from celery.datastructures import TokenBucket
-from celery.utils import timer2
-from celery.utils import instantiate, LOG_LEVELS
-from celery.utils.dispatch import Signal
-from celery.utils.timeutils import rate
+from .. import platforms
+from ..app import app_or_default
+from ..datastructures import TokenBucket
+from ..utils import timer2, instantiate, LOG_LEVELS
+from ..utils.dispatch import Signal
+from ..utils.timeutils import rate
+
+__all__ = ["Polaroid", "evcam"]
 
 
 class Polaroid(object):
@@ -48,7 +63,7 @@ class Polaroid(object):
 
     def shutter(self):
         if self.maxrate is None or self.maxrate.can_consume():
-            self.logger.debug("Shutter: %s" % (self.state, ))
+            self.logger.debug("Shutter: %s", self.state)
             self.shutter_signal.send(self.state)
             self.on_shutter(self.state)
 

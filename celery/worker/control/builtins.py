@@ -1,14 +1,33 @@
+"""
+
+celery.worker.control.builtins
+==============================
+
+This module contains the built-in remote control commands.
+
+"""
+from __future__ import absolute_import
+
 import sys
 
 from datetime import datetime
 
-from celery.platforms import signals as _signals
-from celery.registry import tasks
-from celery.utils import timeutils
-from celery.worker import state
-from celery.worker.state import revoked
-from celery.worker.control.registry import Panel
-from celery.utils.encoding import safe_repr
+from ...platforms import signals as _signals
+from ...registry import tasks
+from ...utils import timeutils
+from ...utils.encoding import safe_repr
+from .. import state
+from ..state import revoked
+
+from .registry import Panel
+
+__all__ = ["revoke", "enable_events", "disable_events",
+           "heartbeat", "rate_limit", "time_limit", "stats",
+           "dump_schedule", "dump_reserved", "dump_active",
+           "dump_revoked", "dump_tasks", "ping",
+           "pool_grow", "pool_shrink", "autoscale",
+           "shutdown", "add_consumer", "cancel_consumer",
+           "active_queues"]
 
 TASK_INFO_FIELDS = ("exchange", "routing_key", "rate_limit")
 
@@ -26,7 +45,7 @@ def revoke(panel, task_id, terminate=False, signal=None, **kwargs):
                 request.terminate(panel.consumer.pool, signal=signum)
                 break
 
-    panel.logger.info("Task %s %s." % (task_id, action))
+    panel.logger.info("Task %s %s.", task_id, action)
     return {"ok": "task %s %s" % (task_id, action)}
 
 
@@ -78,8 +97,8 @@ def rate_limit(panel, task_name, rate_limit, **kwargs):
     try:
         tasks[task_name].rate_limit = rate_limit
     except KeyError:
-        panel.logger.error("Rate limit attempt for unknown task %s" % (
-            task_name, ), exc_info=sys.exc_info())
+        panel.logger.error("Rate limit attempt for unknown task %s",
+                           task_name, exc_info=sys.exc_info())
         return {"error": "unknown task"}
 
     if not hasattr(panel.consumer.ready_queue, "refresh"):
@@ -89,12 +108,12 @@ def rate_limit(panel, task_name, rate_limit, **kwargs):
     panel.consumer.ready_queue.refresh()
 
     if not rate_limit:
-        panel.logger.info("Disabled rate limits for tasks of type %s" % (
-                            task_name, ))
+        panel.logger.info("Disabled rate limits for tasks of type %s",
+                          task_name)
         return {"ok": "rate limit disabled successfully"}
 
-    panel.logger.info("New rate limit for tasks of type %s: %s." % (
-                task_name, rate_limit))
+    panel.logger.info("New rate limit for tasks of type %s: %s.",
+                      task_name, rate_limit)
     return {"ok": "new rate limit set successfully"}
 
 
@@ -103,16 +122,15 @@ def time_limit(panel, task_name=None, hard=None, soft=None, **kwargs):
     try:
         task = tasks[task_name]
     except KeyError:
-        panel.logger.error(
-            "Change time limit attempt for unknown task %s" % (task_name, ))
+        panel.logger.error("Change time limit attempt for unknown task %s",
+                           task_name, exc_info=True)
         return {"error": "unknown task"}
 
     task.soft_time_limit = soft
     task.time_limit = hard
 
-    panel.logger.info(
-        "New time limits for tasks of type %s: soft=%s hard=%s" % (
-            task_name, soft, hard))
+    panel.logger.info("New time limits for tasks of type %s: soft=%s hard=%s",
+                      task_name, soft, hard)
     return {"ok": "time limits set successfully"}
 
 
@@ -128,8 +146,7 @@ def dump_schedule(panel, safe=False, **kwargs):
             item["priority"],
             item["item"])
     info = map(formatitem, enumerate(schedule.info()))
-    panel.logger.debug("* Dump of current schedule:\n%s" % (
-                            "\n".join(info, )))
+    panel.logger.debug("* Dump of current schedule:\n%s", "\n".join(info))
     scheduled_tasks = []
     for item in schedule.info():
         scheduled_tasks.append({"eta": item["eta"],
@@ -146,8 +163,8 @@ def dump_reserved(panel, safe=False, **kwargs):
     if not reserved:
         panel.logger.info("--Empty queue--")
         return []
-    panel.logger.debug("* Dump of currently reserved tasks:\n%s" % (
-                            "\n".join(map(safe_repr, reserved), )))
+    panel.logger.debug("* Dump of currently reserved tasks:\n%s",
+                       "\n".join(map(safe_repr, reserved)))
     return [request.info(safe=safe)
             for request in reserved]
 
@@ -188,8 +205,8 @@ def dump_tasks(panel, **kwargs):
 
     info = map(_extract_info, (tasks[task]
                                         for task in sorted(tasks.keys())))
-    panel.logger.debug("* Dump of currently registered tasks:\n%s" % (
-                    "\n".join(info)))
+    panel.logger.debug("* Dump of currently registered tasks:\n%s",
+                       "\n".join(info))
 
     return info
 
@@ -244,7 +261,7 @@ def add_consumer(panel, queue=None, exchange=None, exchange_type="direct",
                            **options)
         cset.add_consumer_from_dict(**declaration)
         cset.consume()
-        panel.logger.info("Started consuming from %r" % (declaration, ))
+        panel.logger.info("Started consuming from %r", declaration)
         return {"ok": "started consuming from %s" % (queue, )}
     else:
         return {"ok": "already consuming from %s" % (queue, )}

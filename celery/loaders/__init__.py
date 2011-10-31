@@ -1,13 +1,22 @@
+"""
+
+celery.loaders
+==============
+
+Loaders define how configuration is read, what happens
+when workers start, and when tasks are executed and so on.
+
+"""
 from __future__ import absolute_import
 
-import os
-
-from celery import current_app
-from celery.utils import get_cls_by_name
+from .. import current_app
+from ..utils import deprecated, get_cls_by_name
 
 LOADER_ALIASES = {"app": "celery.loaders.app.AppLoader",
                   "default": "celery.loaders.default.Loader",
                   "django": "djcelery.loaders.DjangoLoader"}
+
+__all__ = ["get_loader_cls"]
 
 
 def get_loader_cls(loader):
@@ -15,13 +24,13 @@ def get_loader_cls(loader):
     return get_cls_by_name(loader, LOADER_ALIASES)
 
 
-def setup_loader():     # XXX Deprecate
-    return get_loader_cls(os.environ.setdefault("CELERY_LOADER", "default"))()
-
-
-def current_loader():   # XXX Deprecate
+@deprecated(deprecation="2.5", removal="3.0",
+        alternative="celery.current_app.loader")
+def current_loader():
     return current_app.loader
 
 
-def load_settings():    # XXX Deprecate
+@deprecated(deprecation="2.5", removal="3.0",
+            alternative="celery.current_app.conf")
+def load_settings():
     return current_app.conf

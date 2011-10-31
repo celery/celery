@@ -23,9 +23,9 @@ from contextlib import contextmanager
 import mock
 from nose import SkipTest
 
-from celery.app import app_or_default
-from celery.utils import noop
-from celery.utils.compat import StringIO, LoggerAdapter
+from ..app import app_or_default
+from ..utils import noop
+from ..utils.compat import WhateverIO, LoggerAdapter
 
 
 class Mock(mock.Mock):
@@ -57,8 +57,13 @@ def skip_unless_module(module):
 class AppCase(unittest.TestCase):
 
     def setUp(self):
-        from celery.app import current_app
-        self.app = self._current_app = current_app()
+        from ..app import current_app
+        from ..backends.cache import CacheBackend, DummyClient
+        app = self.app = self._current_app = current_app()
+        if isinstance(app.backend, CacheBackend):
+            if isinstance(app.backend.client, DummyClient):
+                app.backend.client.cache.clear()
+        app.backend._cache.clear()
         self.setup()
 
     def tearDown(self):
@@ -87,7 +92,7 @@ def set_handlers(logger, new_handlers):
 @contextmanager
 def wrap_logger(logger, loglevel=logging.ERROR):
     old_handlers = get_handlers(logger)
-    sio = StringIO()
+    sio = WhateverIO()
     siohandler = logging.StreamHandler(sio)
     set_handlers(logger, [siohandler])
 
@@ -251,7 +256,7 @@ def mask_modules(*modnames):
 def override_stdouts():
     """Override `sys.stdout` and `sys.stderr` with `StringIO`."""
     prev_out, prev_err = sys.stdout, sys.stderr
-    mystdout, mystderr = StringIO(), StringIO()
+    mystdout, mystderr = WhateverIO(), WhateverIO()
     sys.stdout = sys.__stdout__ = mystdout
     sys.stderr = sys.__stderr__ = mystderr
 

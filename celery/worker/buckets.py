@@ -1,3 +1,17 @@
+"""
+
+celery.worker.buckets
+=====================
+
+This module implements the rate limiting of tasks,
+by having a token bucket queue for each task type.
+When a task is allowed to be processed it's moved
+over the the ``ready_queue``
+
+The :mod:`celery.worker.mediator` is then responsible
+for moving tasks from the ready_queue to the worker pool.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 
@@ -7,9 +21,12 @@ from collections import deque
 from time import time, sleep
 from Queue import Queue, Empty
 
-from celery.datastructures import TokenBucket
-from celery.utils import timeutils
-from celery.utils.compat import izip_longest, chain_from_iterable
+from ..datastructures import TokenBucket
+from ..utils import timeutils
+from ..utils.compat import zip_longest, chain_from_iterable
+
+__all__ = ["RateLimitExceeded", "TaskBucket",
+           "FastQueue", "TokenBucketQueue"]
 
 
 class RateLimitExceeded(Exception):
@@ -199,7 +216,7 @@ class TaskBucket(object):
         """Flattens the data in all of the buckets into a single list."""
         # for queues with contents [(1, 2), (3, 4), (5, 6), (7, 8)]
         # zips and flattens to [1, 3, 5, 7, 2, 4, 6, 8]
-        return filter(None, chain_from_iterable(izip_longest(*[bucket.items
+        return filter(None, chain_from_iterable(zip_longest(*[bucket.items
                                     for bucket in self.buckets.values()])))
 
 

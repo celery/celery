@@ -1,4 +1,6 @@
 """MongoDB backend for celery."""
+from __future__ import absolute_import
+
 from datetime import datetime
 
 try:
@@ -6,11 +8,11 @@ try:
 except ImportError:
     pymongo = None  # noqa
 
-from celery import states
-from celery.backends.base import BaseDictBackend
-from celery.exceptions import ImproperlyConfigured
-from celery.utils.serialization import pickle
-from celery.utils.timeutils import maybe_timedelta
+from .. import states
+from ..exceptions import ImproperlyConfigured
+from ..utils.timeutils import maybe_timedelta
+
+from .base import BaseDictBackend
 
 
 class Bunch:
@@ -98,9 +100,9 @@ class MongoBackend(BaseDictBackend):
 
         meta = {"_id": task_id,
                 "status": status,
-                "result": Binary(pickle.dumps(result)),
+                "result": Binary(self.encode(result)),
                 "date_done": datetime.now(),
-                "traceback": Binary(pickle.dumps(traceback))}
+                "traceback": Binary(self.encode(traceback))}
 
         db = self._get_database()
         taskmeta_collection = db[self.mongodb_taskmeta_collection]
@@ -120,9 +122,9 @@ class MongoBackend(BaseDictBackend):
         meta = {
             "task_id": obj["_id"],
             "status": obj["status"],
-            "result": pickle.loads(str(obj["result"])),
+            "result": self.decode(obj["result"]),
             "date_done": obj["date_done"],
-            "traceback": pickle.loads(str(obj["traceback"])),
+            "traceback": self.decode(obj["traceback"]),
         }
 
         return meta
@@ -136,3 +138,8 @@ class MongoBackend(BaseDictBackend):
                     "$lt": datetime.now() - self.expires,
                  }
         })
+
+    def __reduce__(self, args=(), kwargs={}):
+        kwargs.update(
+            dict(expires=self.expires))
+        return super(MongoBackend, self).__reduce__(args, kwargs)

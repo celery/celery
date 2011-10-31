@@ -1,22 +1,34 @@
-import socket
+"""
+
+celery.worker
+=============
+
+This is the Celery worker process.
+
+"""
+from __future__ import absolute_import
+
+import atexit
 import logging
+import socket
+import threading
 import traceback
 
 from kombu.syn import blocking
 from kombu.utils.finalize import Finalize
 
-from celery import beat
-from celery import concurrency as _concurrency
-from celery import registry
-from celery import platforms
-from celery import signals
-from celery.app import app_or_default
-from celery.exceptions import SystemTerminate
-from celery.log import SilenceRepeated
-from celery.utils import noop, instantiate
+from .. import beat
+from .. import concurrency as _concurrency
+from .. import registry, platforms, signals
+from ..app import app_or_default
+from ..exceptions import SystemTerminate
+from ..log import SilenceRepeated
+from ..utils import noop, instantiate
 
-from celery.worker import state
-from celery.worker.buckets import TaskBucket, FastQueue
+from . import state
+from .buckets import TaskBucket, FastQueue
+
+__all__ = ["WorkController"]
 
 RUN = 0x1
 CLOSE = 0x2
@@ -49,6 +61,7 @@ def process_initializer(app, hostname):
     # fork(). Note that init_worker makes sure it's only
     # run once per process.
     app.loader.init_worker()
+    app.loader.init_worker_process()
 
     signals.worker_process_init.send(sender=None)
 
@@ -110,6 +123,7 @@ class WorkController(object):
 
         self.app = app_or_default(app)
         conf = self.app.conf
+        self._shutdown_complete = threading.Event()
 
         # Options
         self.loglevel = loglevel or self.loglevel
@@ -155,11 +169,12 @@ class WorkController(object):
         self._finalize_db = None
 
         if self.db:
-            persistence = state.Persistent(self.db)
-            self._finalize_db = Finalize(persistence, persistence.save,
-                                         exitpriority=5)
+            self._persistence = state.Persistent(self.db)
+            atexit.register(self._persistence.save)
 
         # Queues
+        if not self.pool_cls.rlimit_safe:
+            self.disable_rate_limits = True
         if self.disable_rate_limits:
             self.ready_queue = FastQueue()
             self.ready_queue.put = self.process_task
@@ -246,16 +261,18 @@ class WorkController(object):
 
         try:
             for i, component in enumerate(self.components):
-                self.logger.debug("Starting thread %s..." % (
-                                        component.__class__.__name__))
+                self.logger.debug("Starting thread %s...",
+                                  component.__class__.__name__)
                 self._running = i + 1
                 blocking(component.start)
         except SystemTerminate:
             self.terminate()
-            raise
         except:
             self.stop()
-            raise
+
+        # Will only get here if running green,
+        # makes sure all greenthreads have exited.
+        self._shutdown_complete.wait()
 
     def process_task(self, request):
         """Process task by sending it to the pool of workers."""
@@ -263,11 +280,12 @@ class WorkController(object):
             request.task.execute(request, self.pool,
                                  self.loglevel, self.logfile)
         except Exception, exc:
-            self.logger.critical("Internal error %s: %s\n%s" % (
-                            exc.__class__, exc, traceback.format_exc()))
+            self.logger.critical("Internal error %s: %s\n%s",
+                                 exc.__class__, exc, traceback.format_exc(),
+                                 exc_info=True)
         except SystemTerminate:
             self.terminate()
-            raise SystemExit()
+            raise
         except BaseException, exc:
             self.stop()
             raise exc
@@ -285,17 +303,21 @@ class WorkController(object):
     def _shutdown(self, warm=True):
         what = (warm and "stopping" or "terminating").capitalize()
 
+        if self._state in (self.CLOSE, self.TERMINATE):
+            return
+
         if self._state != self.RUN or self._running != len(self.components):
             # Not fully started, can safely exit.
             self._state = self.TERMINATE
+            self._shutdown_complete.set()
             return
 
         self._state = self.CLOSE
         signals.worker_shutdown.send(sender=self)
 
         for component in reversed(self.components):
-            self.logger.debug("%s thread %s..." % (
-                    what, component.__class__.__name__))
+            self.logger.debug("%s thread %s...", what,
+                              component.__class__.__name__)
             stop = component.stop
             if not warm:
                 stop = getattr(component, "terminate", None) or stop
@@ -303,11 +325,13 @@ class WorkController(object):
 
         self.priority_timer.stop()
         self.consumer.close_connection()
+
         self._state = self.TERMINATE
+        self._shutdown_complete.set()
 
     def on_timer_error(self, exc_info):
         _, exc, _ = exc_info
-        self.logger.error("Timer error: %r" % (exc, ))
+        self.logger.error("Timer error: %r", exc, exc_info=exc_info)
 
     def on_timer_tick(self, delay):
         self.timer_debug("Scheduler wake-up! Next eta %s secs." % delay)

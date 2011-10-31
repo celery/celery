@@ -1,3 +1,5 @@
-from celery.utils.dispatch.signal import Signal
+from __future__ import absolute_import
+
+from .signal import Signal
 
 __all__ = ["Signal"]

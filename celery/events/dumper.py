@@ -1,12 +1,25 @@
+"""
+
+celery.events.dumper
+====================
+
+This is a simple program used to show events as they are happening.
+Like tcpdump just for Celery events.
+
+"""
+from __future__ import absolute_import
+
 import sys
 
 from datetime import datetime
 
-from celery.app import app_or_default
-from celery.datastructures import LocalCache
+from ..app import app_or_default
+from ..datastructures import LRUCache
+
+__all__ = ["Dumper", "evdump"]
 
 
-TASK_NAMES = LocalCache(0xFFF)
+TASK_NAMES = LRUCache(limit=0xFFF)
 
 HUMAN_TYPES = {"worker-offline": "shutdown",
                "worker-online": "started",
@@ -28,7 +41,7 @@ class Dumper(object):
         hostname = event.pop("hostname")
         if type.startswith("task-"):
             uuid = event.pop("uuid")
-            if type.startswith("task-received"):
+            if type in ("task-received", "task-sent"):
                 task = TASK_NAMES[uuid] = "%s(%s) args=%s kwargs=%s" % (
                         event.pop("name"), uuid,
                         event.pop("args"),

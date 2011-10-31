@@ -1,5 +1,8 @@
+from __future__ import absolute_import
+
 import sys
 
+from collections import deque
 from datetime import timedelta
 
 is_jython = sys.platform.startswith("java")
@@ -32,12 +35,17 @@ def str_to_bool(term, table={"false": False, "no": False, "0": False,
 
 
 class Option(object):
+    alt = None
+    deprecate_by = None
+    remove_by = None
     typemap = dict(string=str, int=int, float=float, any=lambda v: v,
                    bool=str_to_bool, dict=dict, tuple=tuple)
 
     def __init__(self, default=None, *args, **kwargs):
         self.default = default
         self.type = kwargs.get("type") or "string"
+        for attr, value in kwargs.iteritems():
+            setattr(self, attr, value)
 
     def to_python(self, value):
         return self.typemap[self.type](value)
@@ -45,6 +53,7 @@ class Option(object):
 
 NAMESPACES = {
     "BROKER": {
+        "URL": Option(None, type="string"),
         "HOST": Option(None, type="string"),
         "PORT": Option(type="int"),
         "USER": Option(None, type="string"),
@@ -54,7 +63,8 @@ NAMESPACES = {
         "CONNECTION_RETRY": Option(True, type="bool"),
         "CONNECTION_MAX_RETRIES": Option(100, type="int"),
         "POOL_LIMIT": Option(None, type="int"),
-        "INSIST": Option(False, type="bool"),
+        "INSIST": Option(False, type="bool",
+                         deprecate_by="2.4", remove_by="3.0"),
         "USE_SSL": Option(False, type="bool"),
         "TRANSPORT": Option(None, type="string"),
         "TRANSPORT_OPTIONS": Option({}, type="dict"),
@@ -62,8 +72,11 @@ NAMESPACES = {
     "CELERY": {
         "ACKS_LATE": Option(False, type="bool"),
         "ALWAYS_EAGER": Option(False, type="bool"),
-        "AMQP_TASK_RESULT_EXPIRES": Option(type="int"),
-        "AMQP_TASK_RESULT_CONNECTION_MAX": Option(1, type="int"),
+        "AMQP_TASK_RESULT_EXPIRES": Option(type="int",
+                deprecate_by="2.5", remove_by="3.0",
+                alt="CELERY_TASK_RESULT_EXPIRES"),
+        "AMQP_TASK_RESULT_CONNECTION_MAX": Option(1, type="int",
+            remove_by="2.5", alt="BROKER_POOL_LIMIT"),
         "BROADCAST_QUEUE": Option("celeryctl"),
         "BROADCAST_EXCHANGE": Option("celeryctl"),
         "BROADCAST_EXCHANGE_TYPE": Option("fanout"),
@@ -89,6 +102,7 @@ NAMESPACES = {
         "REDIS_DB": Option(None, type="int"),
         "REDIS_PASSWORD": Option(None, type="string"),
         "RESULT_BACKEND": Option(None, type="string"),
+        "RESULT_DB_SHORT_LIVED_SESSIONS": Option(False, type="bool"),
         "RESULT_DBURI": Option(),
         "RESULT_ENGINE_OPTIONS": Option(None, type="dict"),
         "RESULT_EXCHANGE": Option("celeryresults"),
@@ -100,7 +114,8 @@ NAMESPACES = {
         "SEND_TASK_ERROR_EMAILS": Option(False, type="bool"),
         "SEND_TASK_SENT_EVENT": Option(False, type="bool"),
         "STORE_ERRORS_EVEN_IF_IGNORED": Option(False, type="bool"),
-        "TASK_ERROR_WHITELIST": Option((), type="tuple"),
+        "TASK_ERROR_WHITELIST": Option((), type="tuple",
+            deprecate_by="2.5", remove_by="3.0"),
         "TASK_PUBLISH_RETRY": Option(True, type="bool"),
         "TASK_PUBLISH_RETRY_POLICY": Option({
                 "max_retries": 100,
@@ -123,8 +138,9 @@ NAMESPACES = {
         "CONSUMER": Option("celery.worker.consumer.Consumer"),
         "LOG_FORMAT": Option(DEFAULT_PROCESS_LOG_FMT),
         "LOG_COLOR": Option(type="bool"),
-        "LOG_LEVEL": Option("WARN"),
-        "LOG_FILE": Option(),
+        "LOG_LEVEL": Option("WARN", deprecate_by="2.4", remove_by="3.0",
+                            alt="--loglevel argument"),
+        "LOG_FILE": Option(deprecate_by="2.4", remove_by="3.0"),
         "MEDIATOR": Option("celery.worker.mediator.Mediator"),
         "MAX_TASKS_PER_CHILD": Option(type="int"),
         "POOL": Option(DEFAULT_POOL),
@@ -140,12 +156,12 @@ NAMESPACES = {
         "SCHEDULER": Option("celery.beat.PersistentScheduler"),
         "SCHEDULE_FILENAME": Option("celerybeat-schedule"),
         "MAX_LOOP_INTERVAL": Option(5 * 60, type="int"),
-        "LOG_LEVEL": Option("INFO"),
-        "LOG_FILE": Option(),
+        "LOG_LEVEL": Option("INFO", deprecate_by="2.4", remove_by="3.0"),
+        "LOG_FILE": Option(deprecate_by="2.4", remove_by="3.0"),
     },
     "CELERYMON": {
-        "LOG_LEVEL": Option("INFO"),
-        "LOG_FILE": Option(),
+        "LOG_LEVEL": Option("INFO", deprecate_by="2.4", remove_by="3.0"),
+        "LOG_FILE": Option(deprecate_by="2.4", remove_by="3.0"),
         "LOG_FORMAT": Option(DEFAULT_LOG_FMT),
     },
     "EMAIL": {
@@ -155,6 +171,7 @@ NAMESPACES = {
         "HOST_PASSWORD": Option(None),
         "TIMEOUT": Option(2, type="int"),
         "USE_SSL": Option(False, type="bool"),
+        "USE_TLS": Option(False, type="bool"),
     },
     "SERVER_EMAIL": Option("celery@localhost"),
     "ADMINS": Option((), type="tuple"),
@@ -165,13 +182,25 @@ NAMESPACES = {
 }
 
 
-def _flatten(d, ns=""):
-    acc = []
-    for key, value in d.iteritems():
-        if isinstance(value, dict):
-            acc.extend(_flatten(value, ns=key + '_'))
-        else:
-            acc.append((ns + key, value.default))
-    return acc
+def flatten(d, ns=""):
+    stack = deque([(ns, d)])
+    while stack:
+        name, space = stack.popleft()
+        for key, value in space.iteritems():
+            if isinstance(value, dict):
+                stack.append((name + key + '_', value))
+            else:
+                yield name + key, value
 
-DEFAULTS = dict(_flatten(NAMESPACES))
+
+def find_deprecated_settings(source):
+    from celery.utils import warn_deprecated
+    for name, opt in flatten(NAMESPACES):
+        if (opt.deprecate_by or opt.remove_by) and getattr(source, name, None):
+            warn_deprecated(description="The %r setting" % (name, ),
+                            deprecation=opt.deprecate_by,
+                            removal=opt.remove_by,
+                            alternative=opt.alt)
+
+
+DEFAULTS = dict((key, value.default) for key, value in flatten(NAMESPACES))

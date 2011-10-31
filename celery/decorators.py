@@ -12,12 +12,17 @@ The new decorators does not support magic keyword arguments.
 :license: BSD, see LICENSE for more details.
 
 """
+from __future__ import absolute_import
+
 import warnings
 
-from celery import task as _task
+from . import task as _task
+from .exceptions import CDeprecationWarning
+
+__all__ = ["task", "periodic_task"]
 
 
-warnings.warn(PendingDeprecationWarning("""
+warnings.warn(CDeprecationWarning("""
 The `celery.decorators` module and the magic keyword arguments
 are pending deprecation and will be deprecated in 2.4, then removed
 in 3.0.

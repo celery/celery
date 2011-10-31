@@ -1,12 +1,13 @@
-from celery.tests.utils import unittest
+from __future__ import absolute_import
 
 from Queue import Queue
 
 from mock import Mock, patch
 
-from celery.utils import gen_unique_id
+from celery.utils import uuid
 from celery.worker.mediator import Mediator
 from celery.worker.state import revoked as revoked_tasks
+from celery.tests.utils import unittest
 
 
 class MockTask(object):
@@ -32,12 +33,12 @@ class test_Mediator(unittest.TestCase):
         ready_queue = Queue()
         m = Mediator(ready_queue, lambda t: t)
         m.start()
-        self.assertFalse(m._shutdown.isSet())
-        self.assertFalse(m._stopped.isSet())
+        self.assertFalse(m._is_shutdown.isSet())
+        self.assertFalse(m._is_stopped.isSet())
         m.stop()
         m.join()
-        self.assertTrue(m._shutdown.isSet())
-        self.assertTrue(m._stopped.isSet())
+        self.assertTrue(m._is_shutdown.isSet())
+        self.assertTrue(m._is_stopped.isSet())
 
     def test_mediator_move(self):
         ready_queue = Queue()
@@ -63,7 +64,7 @@ class test_Mediator(unittest.TestCase):
                 try:
                     raise KeyError("foo")
                 finally:
-                    ms[0]._shutdown.set()
+                    ms[0]._is_shutdown.set()
 
         ready_queue = Queue()
         ms[0] = m = _Mediator(ready_queue, None)
@@ -92,12 +93,12 @@ class test_Mediator(unittest.TestCase):
             condition[0].set()
 
         m = Mediator(ready_queue, mycallback)
-        condition[0] = m._shutdown
+        condition[0] = m._is_shutdown
         ready_queue.put(MockTask("Elaine M. Benes"))
 
         m.run()
-        self.assertTrue(m._shutdown.isSet())
-        self.assertTrue(m._stopped.isSet())
+        self.assertTrue(m._is_shutdown.isSet())
+        self.assertTrue(m._is_stopped.isSet())
 
     def test_mediator_move_revoked(self):
         ready_queue = Queue()
@@ -108,7 +109,7 @@ class test_Mediator(unittest.TestCase):
 
         m = Mediator(ready_queue, mycallback)
         t = MockTask("Jerry Seinfeld")
-        t.task_id = gen_unique_id()
+        t.task_id = uuid()
         revoked_tasks.add(t.task_id)
         ready_queue.put(t)
 

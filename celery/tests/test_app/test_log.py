@@ -1,8 +1,8 @@
+from __future__ import absolute_import
 from __future__ import with_statement
 
 import sys
 import logging
-from celery.tests.utils import unittest
 from tempfile import mktemp
 
 from celery import log
@@ -10,8 +10,9 @@ from celery.log import (setup_logger, setup_task_logger,
                         get_default_logger, get_task_logger,
                         redirect_stdouts_to_logger, LoggingProxy,
                         setup_logging_subsystem)
-from celery.utils import gen_unique_id
+from celery.utils import uuid
 from celery.utils.compat import _CompatLoggerAdapter
+from celery.tests.utils import unittest
 from celery.tests.utils import (override_stdouts, wrap_logger,
                                 get_handlers, set_handlers)
 
@@ -119,7 +120,7 @@ class test_task_logger(test_default_logger):
         logger = get_task_logger()
         logger.handlers = []
         logging.root.manager.loggerDict.pop(logger.name, None)
-        self.uid = gen_unique_id()
+        self.uid = uuid()
 
     def setup_logger(self, *args, **kwargs):
         return setup_task_logger(*args, **dict(kwargs, task_name=self.uid,
@@ -154,7 +155,7 @@ class test_CompatLoggerAdapter(unittest.TestCase):
         self.logger, self.adapter = self.createAdapter()
 
     def createAdapter(self, name=None, extra={"foo": "bar"}):
-        logger = MockLogger(name=name or gen_unique_id())
+        logger = MockLogger(name=name or uuid())
         return logger, _CompatLoggerAdapter(logger, extra)
 
     def test_levels(self):

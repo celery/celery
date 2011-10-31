@@ -1,6 +1,7 @@
-from celery.tests.utils import unittest
+from __future__ import absolute_import
 
 from celery.worker import state
+from celery.tests.utils import unittest
 
 
 class TestRevokeRegistry(unittest.TestCase):

@@ -1,13 +1,11 @@
 """
+
 ==============
 celery.signals
 ==============
 
 Signals allows decoupled applications to receive notifications when
 certain actions occur elsewhere in the application.
-
-:copyright: (c) 2009 - 2011 by Ask Solem.
-:license: BSD, see LICENSE for more details.
 
 .. contents::
     :local:
@@ -221,7 +219,7 @@ eventlet_pool_started
 
 Sent when the eventlet pool has been started.
 
-Sender is the :class:`celery.concurrency.evlet.TaskPool` instance.
+Sender is the :class:`celery.concurrency.eventlet.TaskPool` instance.
 
 .. signal:: eventlet_pool_preshutdown
 
@@ -231,7 +229,7 @@ eventlet_pool_preshutdown
 Sent when the worker shutdown, just before the eventlet pool
 is requested to wait for remaining workers.
 
-Sender is the :class:`celery.concurrency.evlet.TaskPool` instance.
+Sender is the :class:`celery.concurrency.eventlet.TaskPool` instance.
 
 .. signal:: eventlet_pool_postshutdown
 
@@ -240,7 +238,7 @@ eventlet_pool_postshutdown
 
 Sent when the pool has been joined and the worker is ready to shutdown.
 
-Sender is the :class:`celery.concurrency.evlet.TaskPool` instance.
+Sender is the :class:`celery.concurrency.eventlet.TaskPool` instance.
 
 .. signal:: eventlet_pool_apply
 
@@ -249,7 +247,7 @@ eventlet_pool_apply
 
 Sent whenever a task is applied to the pool.
 
-Sender is the :class:`celery.concurrency.evlet.TaskPool` instance.
+Sender is the :class:`celery.concurrency.eventlet.TaskPool` instance.
 
 Provides arguments:
 
@@ -347,7 +345,9 @@ Provides arguments:
 
 
 """
-from celery.utils.dispatch import Signal
+from __future__ import absolute_import
+
+from .utils.dispatch import Signal
 
 task_sent = Signal(providing_args=["task_id", "task",
                                    "args", "kwargs",

@@ -1,6 +1,18 @@
+"""
+
+celery.utils.path
+=================
+
+Monkey patch to ensure process aware loggers.
+
+"""
+from __future__ import absolute_import
+
 import logging
 
 _process_aware = False
+
+__all__ = ["ensure_process_aware_logger"]
 
 
 def _patch_logger_class():

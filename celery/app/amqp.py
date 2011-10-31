@@ -9,16 +9,17 @@ AMQ related functionality.
 :license: BSD, see LICENSE for more details.
 
 """
+from __future__ import absolute_import
+
 from datetime import datetime, timedelta
 
 from kombu import BrokerConnection, Exchange
 from kombu import compat as messaging
 from kombu.pools import ProducerPool
-from kombu.utils import cached_property
 
-from celery import routes as _routes
-from celery import signals
-from celery.utils import gen_unique_id, textindent
+from .. import routes as _routes
+from .. import signals
+from ..utils import cached_property, textindent, uuid
 
 #: List of known options to a Kombu producers send method.
 #: Used to extract the message related options out of any `dict`.
@@ -199,7 +200,7 @@ class TaskPublisher(messaging.Publisher):
                     exchange_type or self.exchange_type, retry, _retry_policy)
             _exchanges_declared.add(exchange)
 
-        task_id = task_id or gen_unique_id()
+        task_id = task_id or uuid()
         task_args = task_args or []
         task_kwargs = task_kwargs or {}
         if not isinstance(task_args, (list, tuple)):

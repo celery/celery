@@ -1,3 +1,16 @@
+"""
+
+celery.worker.autoscale
+=======================
+
+This module implements the internal thread responsible
+for growing and shrinking the pool according to the
+current autoscale settings.
+
+The autoscale thread is only enabled if autoscale
+has been enabled on the command line.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 
@@ -8,7 +21,9 @@ import traceback
 
 from time import sleep, time
 
-from celery.worker import state
+from . import state
+
+__all__ = ["Autoscaler"]
 
 
 class Autoscaler(threading.Thread):
@@ -23,8 +38,8 @@ class Autoscaler(threading.Thread):
         self.keepalive = keepalive
         self.logger = logger
         self._last_action = None
-        self._shutdown = threading.Event()
-        self._stopped = threading.Event()
+        self._is_shutdown = threading.Event()
+        self._is_stopped = threading.Event()
         self.setDaemon(True)
         self.setName(self.__class__.__name__)
 
@@ -71,19 +86,19 @@ class Autoscaler(threading.Thread):
         return self._grow(n)
 
     def _grow(self, n):
-        self.logger.info("Scaling up %s processes." % (n, ))
+        self.logger.info("Scaling up %s processes.", n)
         self.pool.grow(n)
 
     def _shrink(self, n):
-        self.logger.info("Scaling down %s processes." % (n, ))
+        self.logger.info("Scaling down %s processes.", n)
         try:
             self.pool.shrink(n)
         except ValueError:
             self.logger.debug(
                 "Autoscaler won't scale down: all processes busy.")
         except Exception, exc:
-            self.logger.error("Autoscaler: scale_down: %r\n%r" % (
-                                exc, traceback.format_stack()),
+            self.logger.error("Autoscaler: scale_down: %r\n%r",
+                                exc, traceback.format_stack(),
                                 exc_info=sys.exc_info())
 
     def scale_down(self, n):
@@ -94,19 +109,19 @@ class Autoscaler(threading.Thread):
             self._shrink(n)
 
     def run(self):
-        while not self._shutdown.isSet():
+        while not self._is_shutdown.isSet():
             try:
                 self.scale()
                 sleep(1.0)
             except Exception, exc:
-                self.logger.error("Thread Autoscaler crashed: %r" % (exc, ),
+                self.logger.error("Thread Autoscaler crashed: %r", exc,
                                   exc_info=sys.exc_info())
                 os._exit(1)
-        self._stopped.set()
+        self._is_stopped.set()
 
     def stop(self):
-        self._shutdown.set()
-        self._stopped.wait()
+        self._is_shutdown.set()
+        self._is_stopped.wait()
         if self.isAlive():
             self.join(1e10)
 
@@ -122,4 +137,4 @@ class Autoscaler(threading.Thread):
 
     @property
     def processes(self):
-        return self.pool._pool._processes
+        return self.pool.num_processes

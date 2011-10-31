@@ -1,17 +1,21 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
+import os
 import sys
 
 from functools import partial
 
-from celery import platforms
-from celery.platforms import detached
-from celery.bin.base import Command, Option, daemon_options
+from .. import platforms
+from ..platforms import detached
+
+from .base import Command, Option, daemon_options
 
 
 class EvCommand(Command):
     supports_args = False
+    preload_options = (Command.preload_options
+                     + daemon_options(default_pidfile="celeryev.pid"))
 
     def run(self, dump=False, camera=None, frequency=1.0, maxrate=None,
             loglevel="INFO", logfile=None, prog_name="celeryev",
@@ -30,20 +34,25 @@ class EvCommand(Command):
                                   detach=detach)
         return self.run_evtop()
 
+    def prepare_preload_options(self, options):
+        workdir = options.get("working_directory")
+        if workdir:
+            os.chdir(workdir)
+
     def run_evdump(self):
-        from celery.events.dumper import evdump
+        from ..events.dumper import evdump
         self.set_process_status("dump")
         return evdump(app=self.app)
 
     def run_evtop(self):
-        from celery.events.cursesmon import evtop
+        from ..events.cursesmon import evtop
         self.set_process_status("top")
         return evtop(app=self.app)
 
     def run_evcam(self, camera, logfile=None, pidfile=None, uid=None,
             gid=None, umask=None, working_directory=None,
             detach=False, **kwargs):
-        from celery.events.snapshot import evcam
+        from ..events.snapshot import evcam
         workdir = working_directory
         self.set_process_status("cam")
         kwargs["app"] = self.app
@@ -81,9 +90,7 @@ class EvCommand(Command):
                    help="Recording: Shutter rate limit (e.g. 10/m)"),
             Option('-l', '--loglevel',
                    action="store", dest="loglevel", default="INFO",
-                   help="Loglevel. Default is WARNING."),
-        ) + daemon_options(default_pidfile="celeryev.pid",
-                           default_logfile=None)
+                   help="Loglevel. Default is WARNING."))
 
 
 def main():

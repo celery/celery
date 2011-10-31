@@ -1,13 +1,31 @@
+"""
+
+celery.worker.state
+===================
+
+Internal worker state (global)
+
+This includes the currently active and reserved tasks, statistics,
+and revoked tasks.
+
+"""
+
+from __future__ import absolute_import
+
 import os
 import platform
 import shelve
 
 from collections import defaultdict
 
-from kombu.utils import cached_property
+from .. import __version__
+from ..datastructures import LimitedSet
+from ..utils import cached_property
 
-from celery import __version__
-from celery.datastructures import LimitedSet
+__all__ = ["SOFTWARE_INFO", "REVOKES_MAX", "REVOKE_EXPIRES",
+           "reserved_requests", "active_requests", "total_count", "revoked",
+           "task_reserved", "task_accepted", "task_ready",
+           "Persistent"]
 
 #: Worker software/platform information.
 SOFTWARE_INFO = {"sw_ident": "celeryd",
@@ -87,7 +105,8 @@ class Persistent(object):
         self._load()
 
     def save(self):
-        self.sync(self.db).sync()
+        self.sync(self.db)
+        self.db.sync()
         self.close()
 
     def merge(self, d):
@@ -101,7 +120,7 @@ class Persistent(object):
         return d
 
     def open(self):
-        return self.storage.open(self.filename)
+        return self.storage.open(self.filename, writeback=True)
 
     def close(self):
         if self._is_open:
@@ -110,7 +129,6 @@ class Persistent(object):
 
     def _load(self):
         self.merge(self.db)
-        self.close()
 
     @cached_property
     def db(self):

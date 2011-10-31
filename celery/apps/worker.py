@@ -11,13 +11,18 @@ import socket
 import sys
 import warnings
 
-from celery import __version__
-from celery import platforms
-from celery import signals
-from celery.app import app_or_default
-from celery.exceptions import ImproperlyConfigured, SystemTerminate
-from celery.utils import get_full_cls_name, LOG_LEVELS, cry
-from celery.worker import WorkController
+from .. import __version__, platforms, signals
+from ..app import app_or_default
+from ..exceptions import ImproperlyConfigured, SystemTerminate
+from ..utils import get_full_cls_name, isatty, LOG_LEVELS, cry
+from ..worker import WorkController
+
+try:
+    from greenlet import GreenletExit
+    IGNORE_ERRORS = (GreenletExit, )
+except ImportError:
+    IGNORE_ERRORS = ()
+
 
 BANNER = """
  -------------- celery@%(hostname)s v%(version)s
@@ -100,7 +105,7 @@ class Worker(object):
         if autoscale:
             max_c, _, min_c = autoscale.partition(",")
             self.autoscale = [int(max_c), min_c and int(min_c) or 0]
-        self._isatty = sys.stdout.isatty()
+        self._isatty = isatty(sys.stdout)
 
         self.colored = app.log.colored(self.logfile)
 
@@ -137,7 +142,10 @@ class Worker(object):
               str(self.colored.reset(self.extra_info())))
         self.set_process_status("-active-")
 
-        self.run_worker()
+        try:
+            self.run_worker()
+        except IGNORE_ERRORS:
+            pass
 
     def on_consumer_ready(self, consumer):
         signals.worker_ready.send(sender=consumer)
@@ -183,7 +191,7 @@ class Worker(object):
         self.loader.init_worker()
 
     def tasklist(self, include_builtins=True):
-        from celery.registry import tasks
+        from ..registry import tasks
         tasklist = tasks.keys()
         if not include_builtins:
             tasklist = filter(lambda s: not s.startswith("celery."),
@@ -339,14 +347,14 @@ def install_cry_handler(logger):
         platforms.signals["SIGUSR1"] = cry_handler
 
 
-def install_rdb_handler():  # pragma: no cover
+def install_rdb_handler(envvar="CELERY_RDBSIG"):  # pragma: no cover
 
     def rdb_handler(signum, frame):
         """Signal handler setting a rdb breakpoint at the current frame."""
-        from celery.contrib import rdb
+        from ..contrib import rdb
         rdb.set_trace(frame)
 
-    if os.environ.get("CELERY_RDBSIG"):
+    if os.environ.get(envvar):
         platforms.signals["SIGUSR2"] = rdb_handler
 
 

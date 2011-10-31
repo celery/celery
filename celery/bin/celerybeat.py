@@ -25,27 +25,37 @@
 from __future__ import with_statement
 from __future__ import absolute_import
 
+import os
+
 from functools import partial
 
-from celery.platforms import detached
-from celery.bin.base import Command, Option, daemon_options
+from ..platforms import detached
+
+from .base import Command, Option, daemon_options
 
 
 class BeatCommand(Command):
     supports_args = False
+    preload_options = (Command.preload_options
+                     + daemon_options(default_pidfile="celerybeat.pid"))
 
     def run(self, detach=False, logfile=None, pidfile=None, uid=None,
             gid=None, umask=None, working_directory=None, **kwargs):
+        workdir = working_directory
         kwargs.pop("app", None)
         beat = partial(self.app.Beat,
                        logfile=logfile, pidfile=pidfile, **kwargs)
-        workdir = working_directory
 
         if detach:
             with detached(logfile, pidfile, uid, gid, umask, workdir):
                 return beat().run()
         else:
             return beat().run()
+
+    def prepare_preload_options(self, options):
+        workdir = options.get("working_directory")
+        if workdir:
+            os.chdir(workdir)
 
     def get_options(self):
         conf = self.app.conf
@@ -61,7 +71,7 @@ class BeatCommand(Command):
                     "'.db' will be appended to the filename. Default: %s" % (
                             conf.CELERYBEAT_SCHEDULE_FILENAME, )),
             Option('--max-interval',
-                default=3600.0, type="float", dest="max_interval",
+                default=None, type="float", dest="max_interval",
                 help="Max. seconds to sleep between schedule iterations."),
             Option('-S', '--scheduler',
                 default=None,
@@ -71,9 +81,7 @@ class BeatCommand(Command):
             Option('-l', '--loglevel',
                 default=conf.CELERYBEAT_LOG_LEVEL,
                 action="store", dest="loglevel",
-                help="Loglevel. One of DEBUG/INFO/WARNING/ERROR/CRITICAL."),
-        ) + daemon_options(default_pidfile="celerybeat.pid",
-                           default_logfile=conf.CELERYBEAT_LOG_FILE)
+                help="Loglevel. One of DEBUG/INFO/WARNING/ERROR/CRITICAL."))
 
 
 def main():

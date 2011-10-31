@@ -260,7 +260,7 @@ Example changing the rate limit for the `myapp.mytask` task to accept
     >>> rate_limit("myapp.mytask", "200/m")
 
 Example changing the rate limit on a single host by specifying the
-destination hostname::
+destination host name::
 
     >>> rate_limit("myapp.mytask", "200/m",
     ...            destination=["worker1.example.com"])
@@ -411,9 +411,9 @@ Dump of registered tasks
 ------------------------
 
 You can get a list of tasks registered in the worker using the
-:meth:`~celery.task.control.inspect.registered_tasks`::
+:meth:`~celery.task.control.inspect.registered`::
 
-    >>> i.registered_tasks()
+    >>> i.registered()
     [{'worker1.example.com': ['celery.delete_expired_task_meta',
                               'celery.execute_remote',
                               'celery.map_async',

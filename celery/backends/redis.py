@@ -1,9 +1,9 @@
 from __future__ import absolute_import
 
-from kombu.utils import cached_property
+from ..exceptions import ImproperlyConfigured
+from ..utils import cached_property
 
-from celery.backends.base import KeyValueStoreBackend
-from celery.exceptions import ImproperlyConfigured
+from .base import KeyValueStoreBackend
 
 try:
     import redis
@@ -40,9 +40,9 @@ class RedisBackend(KeyValueStoreBackend):
                     "You need to install the redis library in order to use "
                   + "Redis result store backend.")
 
-        # For compatability with the old REDIS_* configuration keys.
+        # For compatibility with the old REDIS_* configuration keys.
         def _get(key):
-            for prefix in "REDIS_%s", "CELERY_REDIS_%s":
+            for prefix in "CELERY_REDIS_%s", "REDIS_%s":
                 try:
                     return conf[prefix % key]
                 except KeyError:
@@ -77,8 +77,8 @@ class RedisBackend(KeyValueStoreBackend):
 
     def on_chord_part_return(self, task, propagate=False,
             keyprefix="chord-unlock-%s"):
-        from celery.task.sets import subtask
-        from celery.result import TaskSetResult
+        from ..task.sets import subtask
+        from ..result import TaskSetResult
         setid = task.request.taskset
         key = keyprefix % setid
         deps = TaskSetResult.restore(setid, backend=task.backend)
@@ -91,3 +91,12 @@ class RedisBackend(KeyValueStoreBackend):
     def client(self):
         return self.redis.Redis(host=self.host, port=self.port,
                                 db=self.db, password=self.password)
+
+    def __reduce__(self, args=(), kwargs={}):
+        kwargs.update(
+            dict(host=self.host,
+                 port=self.port,
+                 db=self.db,
+                 password=self.password,
+                 expires=self.expires))
+        return super(RedisBackend, self).__reduce__(args, kwargs)

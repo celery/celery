@@ -1,6 +1,17 @@
-from celery.worker.control import registry
+"""
 
-Panel = registry.Panel
+celery.worker.control
+=====================
+
+Remote control commands.
+See :mod:`celery.worker.control.builtins`.
+
+"""
+from __future__ import absolute_import
+
+from . import registry
 
 # Loads the built-in remote control commands
-__import__("celery.worker.control.builtins")
+from . import builtins  # noqa
+
+Panel = registry.Panel

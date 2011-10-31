@@ -19,6 +19,8 @@ Hence the random module name "a805d5bd" is taken to decrease the chances of
 a collision.
 
 """
+from __future__ import absolute_import
+
 from sqlalchemy.types import PickleType as _PickleType
 
 

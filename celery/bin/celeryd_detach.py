@@ -6,9 +6,10 @@ import sys
 
 from optparse import OptionParser, BadOptionError
 
-from celery import __version__
-from celery.platforms import detached
-from celery.bin.base import daemon_options
+from .. import __version__
+from ..platforms import detached
+
+from .base import daemon_options
 
 OPTION_LIST = daemon_options(default_pidfile="celeryd.pid")
 
@@ -20,11 +21,10 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
             os.execv(path, [path] + argv)
         except Exception:
             import logging
-            from celery.log import setup_logger
+            from ..log import setup_logger
             logger = setup_logger(logfile=logfile, loglevel=logging.ERROR)
-            logger.critical("Can't exec %r" % (
-                    " ".join([path] + argv), ),
-                    exc_info=sys.exc_info())
+            logger.critical("Can't exec %r", " ".join([path] + argv),
+                            exc_info=sys.exc_info())
 
 
 class PartialOptionParser(OptionParser):

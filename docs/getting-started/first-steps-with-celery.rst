@@ -57,11 +57,7 @@ Let's create our :file:`celeryconfig.py`.
 
 1. Configure how we communicate with the broker (RabbitMQ in this example)::
 
-        BROKER_HOST = "localhost"
-        BROKER_PORT = 5672
-        BROKER_USER = "myuser"
-        BROKER_PASSWORD = "mypassword"
-        BROKER_VHOST = "myvhost"
+        BROKER_URL = "amqp://guest:guest@localhost:5672//"
 
 2. Define the backend used to store task metadata and return values::
 
@@ -164,7 +160,7 @@ you can configure::
     #: We want the results to expire in 5 minutes, note that this requires
     #: RabbitMQ version 2.1.1 or higher, so please comment out if you have
     #: an earlier version.
-    CELERY_AMQP_TASK_RESULT_EXPIRES = 300
+    CELERY_TASK_RESULT_EXPIRES = 300
 
 To read more about result backends please see :ref:`task-result-backends`.
 

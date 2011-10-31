@@ -1,3 +1,11 @@
+"""
+
+celery.utils
+============
+
+Utility functions that has not found a home in a generic module.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 
@@ -18,8 +26,12 @@ from itertools import islice
 from pprint import pprint
 
 from kombu.utils import cached_property, gen_unique_id  # noqa
+uuid = gen_unique_id
 
-from celery.utils.compat import StringIO
+from ..exceptions import CPendingDeprecationWarning, CDeprecationWarning
+
+from .compat import StringIO
+from .encoding import safe_repr as _safe_repr
 
 LOG_LEVELS = dict(logging._levelNames)
 LOG_LEVELS["FATAL"] = logging.FATAL
@@ -36,6 +48,27 @@ DEPRECATION_FMT = """
     version %(removal)s. %(alternative)s
 """
 
+__all__ = ["uuid", "warn_deprecated", "deprecated", "lpmerge",
+           "promise", "mpromise", "maybe_promise", "noop",
+           "kwdict", "first", "firstmethod", "chunks",
+           "padlist", "is_iterable", "mattrgetter", "get_full_cls_name",
+           "fun_takes_kwargs", "get_cls_by_name", "instantiate",
+           "truncate_text", "abbr", "abbrtask", "isatty",
+           "textindent", "cwd_in_path", "find_module", "import_from_cwd",
+           "cry", "reprkwargs", "reprcall"]
+
+
+def warn_deprecated(description=None, deprecation=None, removal=None,
+        alternative=None):
+    ctx = {"description": description,
+           "deprecation": deprecation, "removal": removal,
+           "alternative": alternative}
+    if deprecation is not None:
+        w = CPendingDeprecationWarning(PENDING_DEPRECATION_FMT % ctx)
+    else:
+        w = CDeprecationWarning(DEPRECATION_FMT % ctx)
+    warnings.warn(w)
+
 
 def deprecated(description=None, deprecation=None, removal=None,
         alternative=None):
@@ -44,14 +77,10 @@ def deprecated(description=None, deprecation=None, removal=None,
 
         @wraps(fun)
         def __inner(*args, **kwargs):
-            ctx = {"description": description or get_full_cls_name(fun),
-                   "deprecation": deprecation, "removal": removal,
-                   "alternative": alternative}
-            if deprecation is not None:
-                w = PendingDeprecationWarning(PENDING_DEPRECATION_FMT % ctx)
-            else:
-                w = DeprecationWarning(DEPRECATION_FMT % ctx)
-            warnings.warn(w)
+            warn_deprecated(description=description or get_full_cls_name(fun),
+                            deprecation=deprecation,
+                            removal=removal,
+                            alternative=alternative)
             return fun(*args, **kwargs)
         return __inner
     return _inner
@@ -146,15 +175,20 @@ def noop(*args, **kwargs):
     pass
 
 
-def kwdict(kwargs):
-    """Make sure keyword arguments are not in unicode.
+if sys.version_info >= (3, 0):
 
-    This should be fixed in newer Python versions,
-      see: http://bugs.python.org/issue4978.
+    def kwdict(kwargs):
+        return kwargs
+else:
+    def kwdict(kwargs):  # noqa
+        """Make sure keyword arguments are not in unicode.
 
-    """
-    return dict((key.encode("utf-8"), value)
-                    for key, value in kwargs.items())
+        This should be fixed in newer Python versions,
+        see: http://bugs.python.org/issue4978.
+
+        """
+        return dict((key.encode("utf-8"), value)
+                        for key, value in kwargs.items())
 
 
 def first(predicate, iterable):
@@ -271,7 +305,7 @@ def fun_takes_kwargs(fun, kwlist=[]):
     return filter(partial(operator.contains, args), kwlist)
 
 
-def get_cls_by_name(name, aliases={}, imp=None):
+def get_cls_by_name(name, aliases={}, imp=None, package=None, **kwargs):
     """Get class by name.
 
     The name should be the full dot-separated path to the class::
@@ -309,8 +343,10 @@ def get_cls_by_name(name, aliases={}, imp=None):
 
     name = aliases.get(name) or name
     module_name, _, cls_name = name.rpartition(".")
+    if not module_name and package:
+        module_name = package
     try:
-        module = imp(module_name)
+        module = imp(module_name, package=package, **kwargs)
     except ValueError, exc:
         raise ValueError("Couldn't import %r: %s" % (name, exc))
     return getattr(module, cls_name)
@@ -394,7 +430,7 @@ def find_module(module, path=None, imp=None):
         return _imp.find_module(module)
 
 
-def import_from_cwd(module, imp=None):
+def import_from_cwd(module, imp=None, package=None):
     """Import module, but make sure it finds modules
     located in the current directory.
 
@@ -404,7 +440,7 @@ def import_from_cwd(module, imp=None):
     if imp is None:
         imp = importlib.import_module
     with cwd_in_path():
-        return imp(module)
+        return imp(module, package=package)
 
 
 def cry():  # pragma: no cover
@@ -427,6 +463,9 @@ def cry():  # pragma: no cover
     sep = "=" * 49 + "\n"
     for tid, frame in sys._current_frames().iteritems():
         thread = tmap.get(tid, main_thread)
+        if not thread:
+            # skip old junk (left-overs from a fork)
+            continue
         out.write("%s\n" % (thread.getName(), ))
         out.write(sep)
         traceback.print_stack(frame, file=out)
@@ -438,8 +477,11 @@ def cry():  # pragma: no cover
     return out.getvalue()
 
 
-def reprcall(name, args=(), kwargs=(), sep=', ',
-        kwformat=lambda i: "%s=%r" % i):
-    return "%s(%s%s%s)" % (name, sep.join(map(repr, args)),
-                           kwargs and sep or "",
-                           sep.join(map(kwformat, kwargs.iteritems())))
+def reprkwargs(kwargs, sep=', ', fmt="%s=%s"):
+    return sep.join(fmt % (k, _safe_repr(v)) for k, v in kwargs.iteritems())
+
+
+def reprcall(name, args=(), kwargs=(), sep=', '):
+    return "%s(%s%s%s)" % (name, sep.join(map(_safe_repr, args)),
+                           (args and kwargs) and sep or "",
+                           reprkwargs(kwargs, sep))

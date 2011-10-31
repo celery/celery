@@ -1,9 +1,22 @@
+"""
+
+celery.task.control
+===================
+
+The worker remote control command client.
+For the server implementation see :mod:`celery.worker.control`.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 
 from kombu.pidbox import Mailbox
 
-from celery.app import app_or_default
+from ..app import app_or_default
+
+__all__ = ["flatten_reply", "Inspect", "Control",
+           "broadcast", "rate_limit", "time_limit", "ping", "revoke",
+           "discard_all", "inspect"]
 
 
 def flatten_reply(reply):
@@ -52,7 +65,7 @@ class Inspect(object):
     def revoked(self):
         return self._request("dump_revoked")
 
-    def registered_tasks(self):
+    def registered(self):
         return self._request("dump_tasks")
 
     def enable_events(self):
@@ -76,6 +89,8 @@ class Inspect(object):
     def active_queues(self):
         return self._request("active_queues")
 
+    registered_tasks = registered
+
 
 class Control(object):
     Mailbox = Mailbox
@@ -98,8 +113,8 @@ class Control(object):
 
         """
         with self.app.default_connection(connection, connect_timeout) as conn:
-            with self.app.amqp.get_task_consumer(connection=conn) as consumer:
-                return consumer.discard_all()
+            return self.app.amqp.get_task_consumer(connection=conn)\
+                                .discard_all()
 
     def revoke(self, task_id, destination=None, terminate=False,
             signal="SIGTERM", **kwargs):
@@ -209,9 +224,7 @@ class Control(object):
         """
         with self.app.default_connection(connection, connect_timeout) as conn:
             if channel is None:
-                if not getattr(conn, "_producer_chan", None):
-                    conn._producer_chan = conn.channel()
-                channel = conn._producer_chan
+                channel = conn.default_channel
             return self.mailbox(conn)._broadcast(command, arguments,
                                                  destination, reply, timeout,
                                                  limit, callback,

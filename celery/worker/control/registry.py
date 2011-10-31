@@ -1,4 +1,17 @@
-from celery.utils.compat import UserDict
+"""
+
+celery.worker.control.registry
+==============================
+
+The registry keeps track of available remote control commands,
+and can be used to register new commands.
+
+"""
+from __future__ import absolute_import
+
+from ...utils.compat import UserDict
+
+__all__ = ["Panel"]
 
 
 class Panel(UserDict):

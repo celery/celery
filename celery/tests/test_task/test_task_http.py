@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from __future__ import with_statement
 
 import logging
@@ -13,7 +14,9 @@ except ImportError:  # py3k
 from anyjson import serialize
 
 from celery.task import http
-from celery.tests.utils import unittest, StringIO
+from celery.tests.utils import unittest
+from celery.utils.compat import StringIO
+from celery.utils.encoding import from_utf8
 
 
 @contextmanager
@@ -53,8 +56,9 @@ def unknown_response():
 class TestEncodings(unittest.TestCase):
 
     def test_utf8dict(self):
+        uk = "foobar"
         d = {u"følelser ær langé": u"ærbadægzaååÆØÅ",
-              "foobar".encode("utf-8"): "xuzzybaz".encode("utf-8")}
+             from_utf8(uk): from_utf8("xuzzybaz")}
 
         for key, value in http.utf8dict(d.items()).items():
             self.assertIsInstance(key, str)
@@ -109,7 +113,8 @@ class TestHttpDispatch(unittest.TestCase):
         with mock_urlopen(fail_response("Invalid moon alignment")):
             d = http.HttpDispatch("http://example.com/mul", "GET", {
                                     "x": 10, "y": 10}, logger)
-            self.assertRaises(http.RemoteExecuteError, d.dispatch)
+            with self.assertRaises(http.RemoteExecuteError):
+                d.dispatch()
 
     def test_dispatch_empty_response(self):
         logger = logging.getLogger("celery.unittest")
@@ -117,7 +122,8 @@ class TestHttpDispatch(unittest.TestCase):
         with mock_urlopen(_response("")):
             d = http.HttpDispatch("http://example.com/mul", "GET", {
                                     "x": 10, "y": 10}, logger)
-            self.assertRaises(http.InvalidResponseError, d.dispatch)
+            with self.assertRaises(http.InvalidResponseError):
+                d.dispatch()
 
     def test_dispatch_non_json(self):
         logger = logging.getLogger("celery.unittest")
@@ -125,7 +131,8 @@ class TestHttpDispatch(unittest.TestCase):
         with mock_urlopen(_response("{'#{:'''")):
             d = http.HttpDispatch("http://example.com/mul", "GET", {
                                     "x": 10, "y": 10}, logger)
-            self.assertRaises(http.InvalidResponseError, d.dispatch)
+            with self.assertRaises(http.InvalidResponseError):
+                d.dispatch()
 
     def test_dispatch_unknown_status(self):
         logger = logging.getLogger("celery.unittest")
@@ -133,7 +140,8 @@ class TestHttpDispatch(unittest.TestCase):
         with mock_urlopen(unknown_response()):
             d = http.HttpDispatch("http://example.com/mul", "GET", {
                                     "x": 10, "y": 10}, logger)
-            self.assertRaises(http.UnknownStatusError, d.dispatch)
+            with self.assertRaises(http.UnknownStatusError):
+                d.dispatch()
 
     def test_dispatch_POST(self):
         logger = logging.getLogger("celery.unittest")

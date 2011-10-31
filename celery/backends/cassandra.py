@@ -1,4 +1,6 @@
 """celery.backends.cassandra"""
+from __future__ import absolute_import
+
 try:
     import pycassa
     from thrift import Thrift
@@ -11,11 +13,11 @@ import time
 
 from datetime import datetime
 
-from celery.backends.base import BaseDictBackend
-from celery.exceptions import ImproperlyConfigured
-from celery.utils.serialization import pickle
-from celery.utils.timeutils import maybe_timedelta, timedelta_seconds
-from celery import states
+from .. import states
+from ..exceptions import ImproperlyConfigured
+from ..utils.timeutils import maybe_timedelta, timedelta_seconds
+
+from .base import BaseDictBackend
 
 
 class CassandraBackend(BaseDictBackend):
@@ -100,7 +102,7 @@ class CassandraBackend(BaseDictBackend):
                     Thrift.TException), exc:
                 if time.time() > ts:
                     raise
-                self.logger.warn('Cassandra error: %r. Retrying...' % (exc, ))
+                self.logger.warn('Cassandra error: %r. Retrying...', exc)
                 time.sleep(self._retry_wait)
 
     def _get_column_family(self):
@@ -124,9 +126,9 @@ class CassandraBackend(BaseDictBackend):
             cf = self._get_column_family()
             date_done = datetime.utcnow()
             meta = {"status": status,
-                    "result": pickle.dumps(result),
+                    "result": self.encode(result),
                     "date_done": date_done.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                    "traceback": pickle.dumps(traceback)}
+                    "traceback": self.encode(traceback)}
             cf.insert(task_id, meta,
                       ttl=timedelta_seconds(self.expires))
 
@@ -142,12 +144,20 @@ class CassandraBackend(BaseDictBackend):
                 meta = {
                     "task_id": task_id,
                     "status": obj["status"],
-                    "result": pickle.loads(str(obj["result"])),
+                    "result": self.decode(obj["result"]),
                     "date_done": obj["date_done"],
-                    "traceback": pickle.loads(str(obj["traceback"])),
+                    "traceback": self.decode(obj["traceback"]),
                 }
             except (KeyError, pycassa.NotFoundException):
                 meta = {"status": states.PENDING, "result": None}
             return meta
 
         return self._retry_on_error(_do_get)
+
+    def __reduce__(self, args=(), kwargs={}):
+        kwargs.update(
+            dict(servers=self.servers,
+                 keyspace=self.keyspace,
+                 column_family=self.column_family,
+                 cassandra_options=self.cassandra_options))
+        return super(CassandraBackend, self).__reduce__(args, kwargs)

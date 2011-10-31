@@ -1,14 +1,25 @@
+"""
+
+celery.loader.default
+=====================
+
+The default loader used when no custom app has been initialized.
+
+"""
 from __future__ import absolute_import
 
 import os
 import warnings
 
-from celery.datastructures import AttributeDict
-from celery.exceptions import NotConfigured
-from celery.loaders.base import BaseLoader
-from celery.utils import find_module
+from ..datastructures import AttributeDict
+from ..exceptions import NotConfigured
+from ..utils import find_module
+
+from .base import BaseLoader
 
 DEFAULT_CONFIG_MODULE = "celeryconfig"
+
+__all__ = ["Loader"]
 
 
 class Loader(BaseLoader):

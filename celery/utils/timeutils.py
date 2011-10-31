@@ -1,7 +1,21 @@
+"""
+
+celery.utils.timeutils
+======================
+
+This module contains various utilties relating to time and date.
+
+"""
+from __future__ import absolute_import
+
 import math
 
 from datetime import datetime, timedelta
 from dateutil.parser import parse as parse_iso8601
+
+__all__ = ["maybe_timedelta", "timedelta_seconds", "delta_resolution",
+           "remaining", "rate", "weekday", "humanize_seconds",
+           "maybe_iso8601"]
 
 DAYNAMES = "sun", "mon", "tue", "wed", "thu", "fri", "sat"
 WEEKDAYS = dict((name, dow) for name, dow in zip(DAYNAMES, range(7)))
@@ -25,18 +39,26 @@ def maybe_timedelta(delta):
     return delta
 
 
-def timedelta_seconds(delta):  # pragma: no cover
-    """Convert :class:`datetime.timedelta` to seconds.
+if HAVE_TIMEDELTA_TOTAL_SECONDS:   # pragma: no cover
 
-    Doesn't account for negative values.
+    def timedelta_seconds(delta):
+        """Convert :class:`datetime.timedelta` to seconds.
 
-    """
-    if HAVE_TIMEDELTA_TOTAL_SECONDS:
-        # Should return 0 for negative seconds
+        Doesn't account for negative values.
+
+        """
         return max(delta.total_seconds(), 0)
-    if delta.days < 0:
-        return 0
-    return delta.days * 86400 + delta.seconds + (delta.microseconds / 10e5)
+else:  # pragma: no cover
+
+    def timedelta_seconds(delta):  # noqa
+        """Convert :class:`datetime.timedelta` to seconds.
+
+        Doesn't account for negative values.
+
+        """
+        if delta.days < 0:
+            return 0
+        return delta.days * 86400 + delta.seconds + (delta.microseconds / 10e5)
 
 
 def delta_resolution(dt, delta):

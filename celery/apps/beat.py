@@ -1,14 +1,15 @@
+from __future__ import absolute_import
+
 import atexit
 import socket
 import sys
 import traceback
 
-from celery import __version__
-from celery import beat
-from celery import platforms
-from celery.app import app_or_default
-from celery.utils import get_full_cls_name, LOG_LEVELS
-from celery.utils.timeutils import humanize_seconds
+from .. import __version__, platforms
+from .. import beat
+from ..app import app_or_default
+from ..utils import get_full_cls_name, LOG_LEVELS
+from ..utils.timeutils import humanize_seconds
 
 STARTUP_INFO_FMT = """
 Configuration ->
@@ -80,15 +81,15 @@ class Beat(object):
                   c.blue("        _\n"),
                   c.reset(self.startup_info(beat)))))
         if self.socket_timeout:
-            logger.debug("Setting default socket timeout to %r" % (
-                self.socket_timeout))
+            logger.debug("Setting default socket timeout to %r",
+                         self.socket_timeout)
             socket.setdefaulttimeout(self.socket_timeout)
         try:
             self.install_sync_handler(beat)
             beat.start()
         except Exception, exc:
-            logger.critical("celerybeat raised exception %s: %r\n%s" % (
-                            exc.__class__, exc, traceback.format_exc()),
+            logger.critical("celerybeat raised exception %s: %r\n%s",
+                            exc.__class__, exc, traceback.format_exc(),
                             exc_info=sys.exc_info())
 
     def init_loader(self):

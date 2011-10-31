@@ -1,4 +1,16 @@
+"""
+celery.utils.compat
+===================
+
+Backward compatible implementations of features
+only available in later Python versions.
+
+"""
+from __future__ import absolute_import
+
 ############## py3k #########################################################
+import sys
+
 try:
     from UserList import UserList       # noqa
 except ImportError:
@@ -9,13 +21,21 @@ try:
 except ImportError:
     from collections import UserDict    # noqa
 
-try:
-    from cStringIO import StringIO      # noqa
-except ImportError:
+if sys.version_info >= (3, 0):
+    from io import StringIO, BytesIO
+    from .encoding import bytes_to_str
+
+    class WhateverIO(StringIO):
+
+        def write(self, data):
+            StringIO.write(self, bytes_to_str(data))
+else:
     try:
-        from StringIO import StringIO   # noqa
+        from cStringIO import StringIO  # noqa
     except ImportError:
-        from io import StringIO         # noqa
+        from StringIO import StringIO   # noqa
+    BytesIO = WhateverIO = StringIO     # noqa
+
 
 ############## collections.OrderedDict ######################################
 try:
@@ -136,14 +156,14 @@ try:
 except ImportError:
     LoggerAdapter = _CompatLoggerAdapter  # noqa
 
-############## itertools.izip_longest #######################################
+############## itertools.zip_longest #######################################
 
 try:
-    from itertools import izip_longest
+    from itertools import izip_longest as zip_longest
 except ImportError:
     import itertools
 
-    def izip_longest(*args, **kwds):  # noqa
+    def zip_longest(*args, **kwds):  # noqa
         fillvalue = kwds.get("fillvalue")
 
         def sentinel(counter=([fillvalue] * (len(args) - 1)).pop):

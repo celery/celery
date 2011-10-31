@@ -1,6 +1,7 @@
-from celery.tests.utils import unittest
+from __future__ import absolute_import
 
 from celery.contrib.abortable import AbortableTask, AbortableAsyncResult
+from celery.tests.utils import unittest
 
 
 class MyAbortableTask(AbortableTask):

@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import logging
 
 from time import time
@@ -7,7 +9,6 @@ from mock import Mock, patch
 from celery.concurrency.base import BasePool
 from celery.worker import state
 from celery.worker import autoscale
-
 from celery.tests.utils import unittest, sleepdeprived
 
 logger = logging.getLogger("celery.tests.autoscale")
@@ -37,7 +38,7 @@ class MockPool(BasePool):
         self._pool._processes -= n
 
     @property
-    def current(self):
+    def num_processes(self):
         return self._pool._processes
 
 
@@ -59,7 +60,7 @@ class test_Autoscaler(unittest.TestCase):
                 self.joined = True
 
         x = Scaler(self.pool, 10, 3, logger=logger)
-        x._stopped.set()
+        x._is_stopped.set()
         x.stop()
         self.assertTrue(x.joined)
         x.joined = False
@@ -71,18 +72,18 @@ class test_Autoscaler(unittest.TestCase):
     def test_scale(self):
         x = autoscale.Autoscaler(self.pool, 10, 3, logger=logger)
         x.scale()
-        self.assertEqual(x.pool.current, 3)
+        self.assertEqual(x.pool.num_processes, 3)
         for i in range(20):
             state.reserved_requests.add(i)
         x.scale()
         x.scale()
-        self.assertEqual(x.pool.current, 10)
+        self.assertEqual(x.pool.num_processes, 10)
         state.reserved_requests.clear()
         x.scale()
-        self.assertEqual(x.pool.current, 10)
+        self.assertEqual(x.pool.num_processes, 10)
         x._last_action = time() - 10000
         x.scale()
-        self.assertEqual(x.pool.current, 3)
+        self.assertEqual(x.pool.num_processes, 3)
 
     def test_run(self):
 
@@ -91,12 +92,12 @@ class test_Autoscaler(unittest.TestCase):
 
             def scale(self):
                 self.scale_called = True
-                self._shutdown.set()
+                self._is_shutdown.set()
 
         x = Scaler(self.pool, 10, 3, logger=logger)
         x.run()
-        self.assertTrue(x._shutdown.isSet())
-        self.assertTrue(x._stopped.isSet())
+        self.assertTrue(x._is_shutdown.isSet())
+        self.assertTrue(x._is_stopped.isSet())
         self.assertTrue(x.scale_called)
 
     def test_shrink_raises_exception(self):
@@ -121,7 +122,7 @@ class test_Autoscaler(unittest.TestCase):
         class _Autoscaler(autoscale.Autoscaler):
 
             def scale(self):
-                self._shutdown.set()
+                self._is_shutdown.set()
                 raise OSError("foo")
 
         x = _Autoscaler(self.pool, 10, 3, logger=logger)

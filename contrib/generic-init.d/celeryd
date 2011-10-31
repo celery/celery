@@ -94,17 +94,20 @@
 # Short-Description: celery task worker daemon
 ### END INIT INFO
 
-set -e
+#set -e
 
 DEFAULT_PID_FILE="/var/run/celeryd@%n.pid"
 DEFAULT_LOG_FILE="/var/log/celeryd@%n.log"
-DEFAULT_CELERYD="celeryd"
 DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_NODES="celery"
+DEFAULT_CELERYD="-m celery.bin.celeryd_detach"
 
 # /etc/init.d/celeryd: start and stop the celery task worker daemon.
 
-if test -f /etc/default/celeryd; then
+CELERY_DEFAULTS=${CELERY_DEFAULTS:-"/etc/default/celeryd"}
+
+test -f "$CELERY_DEFAULTS" && . "$CELERY_DEFAULTS"
+if [ -f "/etc/default/celeryd" ]; then
     . /etc/default/celeryd
 fi
 

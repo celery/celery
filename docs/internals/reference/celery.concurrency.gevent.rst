@@ -1,11 +1,11 @@
 =============================================================
- celery.concurrency.evg† (*experimental*)
+ celery.concurrency.gevent† (*experimental*)
 =============================================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.concurrency.evg
+.. currentmodule:: celery.concurrency.gevent
 
-.. automodule:: celery.concurrency.evg
+.. automodule:: celery.concurrency.gevent
     :members:
     :undoc-members:

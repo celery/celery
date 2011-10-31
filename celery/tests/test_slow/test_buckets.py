@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+from __future__ import with_statement
+
 import sys
 import time
 
@@ -7,7 +10,7 @@ from itertools import chain, izip
 from celery.registry import TaskRegistry
 from celery.task.base import Task
 from celery.utils import timeutils
-from celery.utils import gen_unique_id
+from celery.utils import uuid
 from celery.worker import buckets
 
 from celery.tests.utils import skip_if_environ, unittest
@@ -42,7 +45,8 @@ class test_TokenBucketQueue(unittest.TestCase):
     @skip_if_disabled
     def empty_queue_yields_QueueEmpty(self):
         x = buckets.TokenBucketQueue(fill_rate=10)
-        self.assertRaises(buckets.Empty, x.get)
+        with self.assertRaises(buckets.Empty):
+            x.get()
 
     @skip_if_disabled
     def test_bucket__put_get(self):
@@ -73,7 +77,8 @@ class test_TokenBucketQueue(unittest.TestCase):
         time.sleep(0.1)
         # Not yet ready for another token
         x.put("The lazy dog")
-        self.assertRaises(x.RateLimitExceeded, x.get)
+        with self.assertRaises(x.RateLimitExceeded):
+            x.get()
 
     @skip_if_disabled
     def test_expected_time(self):
@@ -132,7 +137,8 @@ class test_TaskBucket(unittest.TestCase):
     @skip_if_disabled
     def test_get_nowait(self):
         x = buckets.TaskBucket(task_registry=self.registry)
-        self.assertRaises(buckets.Empty, x.get_nowait)
+        with self.assertRaises(buckets.Empty):
+            x.get_nowait()
 
     @skip_if_disabled
     def test_refresh(self):
@@ -164,7 +170,7 @@ class test_TaskBucket(unittest.TestCase):
         b = buckets.TaskBucket(task_registry=reg)
         reg["nonexisting.task"] = "foo"
 
-        b.put(MockJob(gen_unique_id(), "nonexisting.task", (), {}))
+        b.put(MockJob(uuid(), "nonexisting.task", (), {}))
         self.assertIn("nonexisting.task", b.buckets)
 
     @skip_if_disabled
@@ -194,13 +200,14 @@ class test_TaskBucket(unittest.TestCase):
     @skip_if_disabled
     def test_on_empty_buckets__get_raises_empty(self):
         b = buckets.TaskBucket(task_registry=self.registry)
-        self.assertRaises(buckets.Empty, b.get, block=False)
+        with self.assertRaises(buckets.Empty):
+            b.get(block=False)
         self.assertEqual(b.qsize(), 0)
 
     @skip_if_disabled
     def test_put__get(self):
         b = buckets.TaskBucket(task_registry=self.registry)
-        job = MockJob(gen_unique_id(), TaskA.name, ["theqbf"], {"foo": "bar"})
+        job = MockJob(uuid(), TaskA.name, ["theqbf"], {"foo": "bar"})
         b.put(job)
         self.assertEqual(b.get(), job)
 
@@ -208,7 +215,7 @@ class test_TaskBucket(unittest.TestCase):
     def test_fill_rate(self):
         b = buckets.TaskBucket(task_registry=self.registry)
 
-        cjob = lambda i: MockJob(gen_unique_id(), TaskA.name, [i], {})
+        cjob = lambda i: MockJob(uuid(), TaskA.name, [i], {})
         jobs = [cjob(i) for i in xrange(20)]
         [b.put(job) for job in jobs]
 
@@ -225,7 +232,7 @@ class test_TaskBucket(unittest.TestCase):
     def test__very_busy_queue_doesnt_block_others(self):
         b = buckets.TaskBucket(task_registry=self.registry)
 
-        cjob = lambda i, t: MockJob(gen_unique_id(), t.name, [i], {})
+        cjob = lambda i, t: MockJob(uuid(), t.name, [i], {})
         ajobs = [cjob(i, TaskA) for i in xrange(10)]
         bjobs = [cjob(i, TaskB) for i in xrange(20)]
         jobs = list(chain(*izip(bjobs, ajobs)))
@@ -245,7 +252,7 @@ class test_TaskBucket(unittest.TestCase):
         try:
             b = buckets.TaskBucket(task_registry=self.registry)
 
-            cjob = lambda i, t: MockJob(gen_unique_id(), t.name, [i], {})
+            cjob = lambda i, t: MockJob(uuid(), t.name, [i], {})
 
             ajobs = [cjob(i, TaskA) for i in xrange(10)]
             bjobs = [cjob(i, TaskB) for i in xrange(10)]
@@ -267,7 +274,7 @@ class test_TaskBucket(unittest.TestCase):
     def test_empty(self):
         x = buckets.TaskBucket(task_registry=self.registry)
         self.assertTrue(x.empty())
-        x.put(MockJob(gen_unique_id(), TaskC.name, [], {}))
+        x.put(MockJob(uuid(), TaskC.name, [], {}))
         self.assertFalse(x.empty())
         x.clear()
         self.assertTrue(x.empty())

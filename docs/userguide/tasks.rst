@@ -67,6 +67,8 @@ attributes:
 
 :loglevel: The current log level used.
 
+:hostname: Hostname of the worker instance executing the task.
+
 :delivery_info: Additional message delivery information. This is a mapping
                 containing the exchange and routing key used to deliver this
                 task.  Used by e.g. :meth:`~celery.task.base.BaseTask.retry`
@@ -136,6 +138,16 @@ is available as the tombstone (result) of the task. When
 exception raised.  However, if an `exc` argument is not provided the
 :exc:`~celery.exceptions.RetryTaskError` exception is raised instead.
 
+.. note::
+
+    The :meth:`retry` call will raise an exception so any code after the retry
+    will not be reached.  This is the :exc:`celery.exceptions.RetryTaskError`
+    exception, it is not handled as an error but rather as a semi-predicate
+    to signify to the worker that the task is to be retried.
+
+    This is normal operation and always happens unless the
+    ``throw`` argument to retry is set to :const:`False`.
+
 .. _task-retry-custom-delay:
 
 Using a custom retry delay
@@ -143,7 +155,7 @@ Using a custom retry delay
 
 When a task is to be retried, it will wait for a given amount of time
 before doing so. The default delay is in the
-:attr:`~celery.task.base.BaseTask.default_retry_delay` 
+:attr:`~celery.task.base.BaseTask.default_retry_delay`
 attribute on the task. By default this is set to 3 minutes. Note that the
 unit for setting the delay is in seconds (int or float).
 
@@ -209,7 +221,7 @@ General
     a given period of time is the task allowed to run.
 
     If this is :const:`None` no rate limit is in effect.
-    If it is an integer, it is interpreted as "tasks per second". 
+    If it is an integer, it is interpreted as "tasks per second".
 
     The rate limits can be specified in seconds, minutes or hours
     by appending `"/s"`, `"/m"` or `"/h"` to the value.
@@ -411,7 +423,7 @@ This is also the case if using Django and using `project.myapp`::
 
     INSTALLED_APPS = ("project.myapp", )
 
-The worker will have the tasks registered as "project.myapp.tasks.*", 
+The worker will have the tasks registered as "project.myapp.tasks.*",
 while this is what happens in the client if the module is imported as
 "myapp.tasks":
 
@@ -461,7 +473,7 @@ result of a successful task, or the exception and traceback information of a
 failed task.
 
 There are several *result backends* to choose from, and they all have
-different strenghts and weaknesses (see :ref:`task-result-backends`).
+different strengths and weaknesses (see :ref:`task-result-backends`).
 
 During its lifetime a task will transition through several possible states,
 and each state may have arbitrary metadata attached to it.  When a task
@@ -490,7 +502,7 @@ built-in backends to choose from: SQLAlchemy/Django ORM, Memcached, Redis,
 AMQP, MongoDB, Tokyo Tyrant and Redis -- or you can define your own.
 
 No backend works well for every use case.
-You should read about the strenghts and weaknesses of each backend, and choose
+You should read about the strengths and weaknesses of each backend, and choose
 the most appropriate for your needs.
 
 
@@ -526,7 +538,7 @@ backend:
   control.  If you're running RabbitMQ 2.1.1 or higher you can take advantage
   of the ``x-expires`` argument to queues, which will expire queues after a
   certain time limit after they are unused.  The queue expiry can be set (in
-  seconds) by the :setting:`CELERY_AMQP_TASK_RESULT_EXPIRES` setting (not
+  seconds) by the :setting:`CELERY_TASK_RESULT_EXPIRES` setting (not
   enabled by default).
 
 For a list of options supported by the AMQP result backend, please see
@@ -549,7 +561,7 @@ limitations.
 
   In MySQL the default transaction isolation level is `REPEATABLE-READ`, which
   means the transaction will not see changes by other transactions until the
-  transaction is commited.  It is recommended that you change to the
+  transaction is committed.  It is recommended that you change to the
   `READ-COMMITTED` isolation level.
 
 
@@ -646,6 +658,64 @@ aware of this state that the task is currently in progress, and also where
 it is in the process by having `current` and `total` counts as part of the
 state metadata.  This can then be used to create e.g. progress bars.
 
+.. _pickling_exceptions:
+
+Creating pickleable exceptions
+------------------------------
+
+A little known Python fact is that exceptions must behave a certain
+way to support being pickled.
+
+Tasks that raises exceptions that are not pickleable will not work
+properly when Pickle is used as the serializer.
+
+To make sure that your exceptions are pickleable the exception
+*MUST* provide the original arguments it was instantiated
+with in its ``.args`` attribute.  The simplest way
+to ensure this is to have the exception call ``Exception.__init__``.
+
+Let's look at some examples that work, and one that doesn't:
+
+.. code-block:: python
+
+
+    # OK:
+    class HttpError(Exception):
+        pass
+
+    # BAD:
+    class HttpError(Exception):
+
+        def __init__(self, status_code):
+            self.status_code = status_code
+
+    # OK:
+    class HttpError(Exception):
+
+        def __init__(self, status_code):
+            self.status_code = status_code
+            Exception.__init__(self, status_code)  # <-- REQUIRED
+
+
+So the rule is:
+For any exception that supports custom arguments ``*args``,
+``Exception.__init__(self, *args)`` must be used.
+
+There is no special support for *keyword arguments*, so if you
+want to preserve keyword arguments when the exception is unpickled
+you have to pass them as regular args:
+
+.. code-block:: python
+
+    class HttpError(Exception):
+
+        def __init__(self, status_code, headers=None, body=None):
+            self.status_code = status_code
+            self.headers = headers
+            self.body = body
+
+            super(Exception, self).__init__(status_code, headers, body)
+
 .. _task-custom-classes:
 
 Creating custom task classes
@@ -722,7 +792,7 @@ base class for new task types.
 
 .. code-block:: python
 
-    class DebugTask(object):
+    class DebugTask(Task):
         abstract = True
 
         def after_return(self, \*args, \*\*kwargs):

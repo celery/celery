@@ -1,3 +1,24 @@
+"""
+
+celery.exceptions
+=================
+
+This module contains Celery-specific exceptions.
+
+"""
+
+from __future__ import absolute_import
+
+__all__ = ["SystemTerminate", "QueueNotFound",
+           "TimeLimitExceeded", "SoftTimeLimitExceeded",
+           "WorkerLostError", "ImproperlyConfigured",
+           "NotRegistered", "AlreadyRegistered",
+           "TimeoutError", "MaxRetriesExceededError",
+           "RetryTaskError", "TaskRevokedError",
+           "NotConfigured", "CPendingDeprecationWarning",
+           "CDeprecationWarning"]
+
+
 UNREGISTERED_FMT = """\
 Task of kind %s is not registered, please make sure it's imported.\
 """
@@ -61,3 +82,11 @@ class TaskRevokedError(Exception):
 
 class NotConfigured(UserWarning):
     """Celery has not been configured, as no config module has been found."""
+
+
+class CPendingDeprecationWarning(PendingDeprecationWarning):
+    pass
+
+
+class CDeprecationWarning(DeprecationWarning):
+    pass

@@ -1,4 +1,5 @@
 """Signal class."""
+from __future__ import absolute_import
 
 import weakref
 try:
@@ -6,7 +7,7 @@ try:
 except NameError:
     from sets import Set as set                 # Python 2.3 fallback
 
-from celery.utils.dispatch import saferef
+from . import saferef
 
 WEAKREF_TYPES = (weakref.ReferenceType, saferef.BoundMethodWeakref)
 

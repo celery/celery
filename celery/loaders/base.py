@@ -1,3 +1,12 @@
+"""
+
+celery.loaders.base
+===================
+
+Loader base class.
+
+"""
+
 from __future__ import absolute_import
 
 import importlib
@@ -6,12 +15,14 @@ import re
 import warnings
 
 from anyjson import deserialize
-from kombu.utils import cached_property
 
-from celery.datastructures import DictAttribute
-from celery.exceptions import ImproperlyConfigured
-from celery.utils import get_cls_by_name
-from celery.utils import import_from_cwd as _import_from_cwd
+from ..datastructures import DictAttribute
+from ..exceptions import ImproperlyConfigured
+from ..utils import (cached_property, get_cls_by_name,
+                     import_from_cwd as _import_from_cwd)
+from ..utils.functional import maybe_list
+
+__all__ = ["BaseLoader"]
 
 BUILTIN_MODULES = frozenset(["celery.task"])
 
@@ -47,7 +58,7 @@ class BaseLoader(object):
     _conf = None
 
     def __init__(self, app=None, **kwargs):
-        from celery.app import app_or_default
+        from ..app import app_or_default
         self.app = app_or_default(app)
 
     def on_task_init(self, task_id, task):
@@ -63,18 +74,23 @@ class BaseLoader(object):
         starts."""
         pass
 
+    def on_worker_process_init(self):
+        """This method is called when a child process starts."""
+        pass
+
     def import_task_module(self, module):
         return self.import_from_cwd(module)
 
-    def import_module(self, module):
-        return importlib.import_module(module)
+    def import_module(self, module, package=None):
+        return importlib.import_module(module, package=package)
 
-    def import_from_cwd(self, module, imp=None):
+    def import_from_cwd(self, module, imp=None, package=None):
         return _import_from_cwd(module,
-                self.import_module if imp is None else imp)
+                self.import_module if imp is None else imp,
+                package=package)
 
     def import_default_modules(self):
-        imports = set(list(self.conf.get("CELERY_IMPORTS") or ()))
+        imports = set(maybe_list(self.conf.get("CELERY_IMPORTS") or ()))
         return [self.import_task_module(module)
                     for module in imports | self.builtin_modules]
 
@@ -82,6 +98,9 @@ class BaseLoader(object):
         if not self.worker_initialized:
             self.worker_initialized = True
             self.on_worker_init()
+
+    def init_worker_process(self):
+        self.on_worker_process_init()
 
     def config_from_envvar(self, variable_name, silent=False):
         module_name = os.environ.get(variable_name)
@@ -113,7 +132,7 @@ class BaseLoader(object):
                 override_types={"tuple": "json",
                                 "list": "json",
                                 "dict": "json"}):
-        from celery.app.defaults import Option, NAMESPACES
+        from ..app.defaults import Option, NAMESPACES
         namespace = namespace.upper()
         typemap = dict(Option.typemap, **extra_types)
 
@@ -155,13 +174,15 @@ class BaseLoader(object):
 
     def mail_admins(self, subject, body, fail_silently=False,
             sender=None, to=None, host=None, port=None,
-            user=None, password=None, timeout=None, use_ssl=False):
+            user=None, password=None, timeout=None,
+            use_ssl=False, use_tls=False):
         try:
             message = self.mail.Message(sender=sender, to=to,
                                         subject=subject, body=body)
             mailer = self.mail.Mailer(host=host, port=port,
                                       user=user, password=password,
-                                      timeout=timeout, use_ssl=use_ssl)
+                                      timeout=timeout, use_ssl=use_ssl,
+                                      use_tls=use_tls)
             mailer.send(message)
         except Exception, exc:
             if not fail_silently:

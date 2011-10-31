@@ -1,81 +1,94 @@
-Ordered by date of first contribution:
-  Ask Solem <ask@celeryproject.org>
-  Grégoire Cachet <gregoire@audacy.fr>
-  Vitaly Babiy <vbabiy86@gmail.com>
-  Brian Rosner <brosner@gmail.com>
-  Sean Creeley <sean.creeley@gmail.com>
-  Ben Firshman <ben@firshman.co.uk>
-  Augusto Becciu <augusto@becciu.org>
-  Jonatan Heyman <jonatan@heyman.info>
-  Mark Hellewell <mark.hellewell@gmail.com>
-  Jerzy Kozera <jerzy.kozera@gmail.com>
-  Brad Jasper <bjasper@gmail.com>
-  Wes Winham <winhamwr@gmail.com>
-  Timo Sugliani
-  Michael Elsdoerfer <michael@elsdoerfer.com>
-  Jason Baker <amnorvend@gmail.com>
-  Wes Turner <wes.turner@gmail.com>
-  Maxim Bodyansky <bodyansky@gmail.com>
-  Rune Halvorsen <runefh@gmail.com>
-  Aaron Ross <aaron@wawd.com>
-  Adam Endicott
-  Jesper Noehr <jesper@noehr.org>
-  Mark Stover <stovenator@gmail.com>
-  Andrew Watts <andrewwatts@gmail.com>
-  Felix Berger <bflat1@gmx.net
-  Reza Lotun <rlotun@gmail.com>
-  Mikhail Korobov <kmike84@gmail.com>
-  Jeff Balogh <me@jeffbalogh.org>
-  Patrick Altman <paltman@gmail.com>
-  Vincent Driessen <vincent@datafox.nl>
-  Hari <haridara@gmail.com>
-  Bartosz Ptaszynski
-  Marcin Lulek <info@webreactor.eu>
-  Honza Kral <honza.kral@gmail.com>
-  Jonas Haag <jonas@lophus.org>
-  Armin Ronacher <armin.ronacher@active-4.com>
-  Gunnlaugur Thor Briem <gunnlaugur@gmail.com>
-  Mikhail Gusarov <dottedmag@dottedmag.net>
-  Frédéric Junod <frederic.junod@camptocamp.com>
-  Lukas Linhart <lukas.linhart@centrumholdings.com>
-  Clay Gerrard
-  David Miller <il.livid.dream@gmail.com>
-  Juarez Bochi <jbochi@gmail.com>
-  Noah Kantrowitz <noah@coderanger.net>
-  Gert Van Gool <gertvangool@gmail.com>
-  sdcooke
-  David Cramer <dcramer@gmail.com>
-  Bryan Berg <bryan@mixedmedialabs.com>
-  Piotr Sikora <piotr.sikora@frickle.com>
-  Sam Cooke <sam@mixcloud.com>
-  John Watson <johnw@mahalo.com>
-  Martin Galpin <m@66laps.com>
-  Chris Rose <offby1@offby1.net>
-  Christopher Peplin <peplin@bueda.com>
-  David White <dpwhite2@ncsu.edu>
-  Vladimir Kryachko <vladimir.kryachko@etvnet.com>
-  Simon Josi <simon.josi@atizo.com>
-  jpellerin
-  Norman Richards <orb@nostacktrace.com>
-  Christoph Burgmer <christoph@nwebs.de>
-  Allan Caffee <allan.caffee@gmail.com>
-  Ales Zoulek <ales.zoulek@gmail.com>
-  Roberto Gaiser <gaiser@geekbunker.org>
-  Balachandran C <balachandran.c@gramvaani.org>
-  Kevin Tran <hekevintran@gmail.com>
-  Branko Čibej <brane@apache.org>
-  Jeff Terrace <jterrace@gmail.com>
-  Ryan Petrello <lists@ryanpetrello.com>
-  Marcin Kuźmiński <marcin@python-works.com>
-  Adriano Petrich <petrich@gmail.com>
-  David Strauss <david@davidstrauss.net>
-  David Arthur <mumrah@gmail.com>
-  Miguel Hernandez Martos <enlavin@gmail.com>
-  Jannis Leidel <jannis@leidel.info>
-  Harm Verhagen <harm.verhagen@gmail.com>
-  lookfwd <lookfwd@gmail.com>
-  Mauro Rocco <fireantology@gmail.com>
-  Matthew J Morrison <mattj.morrison@gmail.com>
-  Daniel Watkins <daniel@daniel-watkins.co.uk>
-  Remy Noel <mocramis@gmail.com>
-  Leo Dirac <leo@banyanbranch.com>
+=========
+ AUTHORS
+=========
+:order: sorted
+
+Aaron Ross <aaron@wawd.com>
+Adam Endicott
+Adriano Petrich <petrich@gmail.com>
+Ales Zoulek <ales.zoulek@gmail.com>
+Allan Caffee <allan.caffee@gmail.com>
+Andrew Watts <andrewwatts@gmail.com>
+Armin Ronacher <armin.ronacher@active-4.com>
+Ask Solem <ask@celeryproject.org>
+Augusto Becciu <augusto@becciu.org>
+Balachandran C <balachandran.c@gramvaani.org>
+Bartosz Ptaszynski
+Ben Firshman <ben@firshman.co.uk>
+Brad Jasper <bjasper@gmail.com>
+Branko Čibej <brane@apache.org>
+Brian Rosner <brosner@gmail.com>
+Bryan Berg <bryan@mixedmedialabs.com>
+Chase Seibert <chase.seibert+github@gmail.com>
+Chris Adams <chris@improbable.org>
+Chris Rose <offby1@offby1.net>
+Christoph Burgmer <christoph@nwebs.de>
+Christopher Peplin <peplin@bueda.com>
+Clay Gerrard
+Dan McGee <dan@archlinux.org>
+Daniel Watkins <daniel@daniel-watkins.co.uk>
+David Arthur <mumrah@gmail.com>
+David Cramer <dcramer@gmail.com>
+David Miller <il.livid.dream@gmail.com>
+David Strauss <david@davidstrauss.net>
+David White <dpwhite2@ncsu.edu>
+Felix Berger <bflat1@gmx.net
+Frédéric Junod <frederic.junod@camptocamp.com>
+Gert Van Gool <gertvangool@gmail.com>
+Greg Haskins <greg@greghaskins.com>
+Grégoire Cachet <gregoire@audacy.fr>
+Gunnlaugur Thor Briem <gunnlaugur@gmail.com>
+Hari <haridara@gmail.com>
+Harm Verhagen <harm.verhagen@gmail.com>
+Honza Kral <honza.kral@gmail.com>
+Jannis Leidel <jannis@leidel.info>
+Jason Baker <amnorvend@gmail.com>
+Jeff Balogh <me@jeffbalogh.org>
+Jeff Terrace <jterrace@gmail.com>
+Jerzy Kozera <jerzy.kozera@gmail.com>
+Jesper Noehr <jesper@noehr.org>
+John Watson <johnw@mahalo.com>
+Jonas Haag <jonas@lophus.org>
+Jonatan Heyman <jonatan@heyman.info>
+Joshua Ginsberg <jag@flowtheory.net>
+Juarez Bochi <jbochi@gmail.com>
+Kevin Tran <hekevintran@gmail.com>
+Kornelijus Survila <kornholijo@gmail.com>
+Leo Dirac <leo@banyanbranch.com>
+Lukas Linhart <lukas.linhart@centrumholdings.com>
+Marcin Kuźmiński <marcin@python-works.com>
+Marcin Lulek <info@webreactor.eu>
+Mark Hellewell <mark.hellewell@gmail.com>
+Mark Stover <stovenator@gmail.com>
+Martin Galpin <m@66laps.com>
+Matthew J Morrison <mattj.morrison@gmail.com>
+Mauro Rocco <fireantology@gmail.com>
+Maxim Bodyansky <bodyansky@gmail.com>
+Michael Elsdoerfer <michael@elsdoerfer.com>
+Miguel Hernandez Martos <enlavin@gmail.com>
+Mikhail Gusarov <dottedmag@dottedmag.net>
+Mikhail Korobov <kmike84@gmail.com>
+Neil Chintomby <neil@mochimedia.com>
+Noah Kantrowitz <noah@coderanger.net>
+Norman Richards <orb@nostacktrace.com>
+Patrick Altman <paltman@gmail.com>
+Piotr Sikora <piotr.sikora@frickle.com>
+Remy Noel <mocramis@gmail.com>
+Reza Lotun <rlotun@gmail.com>
+Roberto Gaiser <gaiser@geekbunker.org>
+Rune Halvorsen <runefh@gmail.com>
+Ryan Petrello <lists@ryanpetrello.com>
+Sam Cooke <sam@mixcloud.com>
+Sean Creeley <sean.creeley@gmail.com>
+Simon Josi <simon.josi@atizo.com>
+Steeve Morin <steeve.morin@gmail.com>
+Stefan Kjartansson <esteban.supreme@gmail.com>
+Timo Sugliani
+Vincent Driessen <vincent@datafox.nl>
+Vitaly Babiy <vbabiy86@gmail.com>
+Vladimir Kryachko <vladimir.kryachko@etvnet.com>
+Wes Turner <wes.turner@gmail.com>
+Wes Winham <winhamwr@gmail.com>
+jpellerin
+lookfwd <lookfwd@gmail.com>
+sdcooke

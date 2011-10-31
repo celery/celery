@@ -39,15 +39,38 @@ Registering the click is done as follows:
 :license: BSD, see LICENSE for more details.
 
 """
+from __future__ import absolute_import
+
 from itertools import count
-from Queue import Queue
+from Queue import Empty, Queue
 
-from kombu.utils import cached_property
-
-from celery.datastructures import consume_queue
 from celery.task import Task
-from celery.utils import timer2
+from celery.utils import cached_property, timer2
 from celery.worker import state
+
+
+def consume_queue(queue):
+    """Iterator yielding all immediately available items in a
+    :class:`Queue.Queue`.
+
+    The iterator stops as soon as the queue raises :exc:`Queue.Empty`.
+
+    *Examples*
+
+        >>> q = Queue()
+        >>> map(q.put, range(4))
+        >>> list(consume_queue(q))
+        [0, 1, 2, 3]
+        >>> list(consume_queue(q))
+        []
+
+    """
+    get = queue.get_nowait
+    while 1:
+        try:
+            yield get()
+        except Empty:
+            break
 
 
 def apply_batches_task(task, args, loglevel, logfile):
@@ -56,7 +79,7 @@ def apply_batches_task(task, args, loglevel, logfile):
         result = task(*args)
     except Exception, exp:
         result = None
-        task.logger.error("There was an Exception: %s" % exp)
+        task.logger.error("There was an Exception: %s", exp, exc_info=True)
     finally:
         task.request.clear()
     return result
@@ -167,7 +190,7 @@ class Batches(Task):
                     callback=acks_late[True] and on_return or None)
 
     def debug(self, msg):
-        self.logger.debug("%s: %s" % (self.name, msg))
+        self.logger.debug("%s: %s", self.name, msg)
 
     @cached_property
     def logger(self):

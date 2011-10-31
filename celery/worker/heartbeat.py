@@ -1,4 +1,17 @@
-from celery.worker.state import SOFTWARE_INFO
+"""
+
+celery.worker.heartbeat
+=======================
+
+This is an internal thread that sends heartbeat events
+at recurring intervals.
+
+"""
+from __future__ import absolute_import
+
+from .state import SOFTWARE_INFO
+
+__all__ = ["Heart"]
 
 
 class Heart(object):

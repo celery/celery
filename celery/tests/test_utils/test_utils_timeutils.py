@@ -1,7 +1,8 @@
+from __future__ import absolute_import
+
 from datetime import datetime, timedelta
 
 from celery.utils import timeutils
-
 from celery.tests.utils import unittest
 
 
@@ -57,6 +58,6 @@ class test_timeutils(unittest.TestCase):
         D = timeutils.maybe_timedelta
 
         for i in (30, 30.6):
-            self.assertEquals(D(i), timedelta(seconds=i))
+            self.assertEqual(D(i), timedelta(seconds=i))
 
         self.assertEqual(D(timedelta(days=2)), timedelta(days=2))

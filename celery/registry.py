@@ -1,9 +1,18 @@
-"""celery.registry"""
+"""
+
+celery.registry
+===============
+
+Registry of available tasks.
+
+"""
 from __future__ import absolute_import
 
 import inspect
 
-from celery.exceptions import NotRegistered
+from .exceptions import NotRegistered
+
+__all__ = ["TaskRegistry", "tasks"]
 
 
 class TaskRegistry(dict):

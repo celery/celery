@@ -5,10 +5,7 @@ TEMPLATE_DEBUG = DEBUG
 
 CARROT_BACKEND = "amqp"
 CELERY_RESULT_BACKEND = "database"
-BROKER_HOST = "localhost"
-BROKER_VHOST = "/"
-BROKER_USER = "guest"
-BROKER_PASSWORD = "guest"
+BROKER_URL = "amqp://guest:guest@localhost:5672//"
 
 ADMINS = (
     # ('Your Name', 'your_email@domain.com'),

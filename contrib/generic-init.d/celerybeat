@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 # =========================================================
 #  celerybeat - Starts the Celery periodic task scheduler.
 # =========================================================
@@ -82,7 +82,9 @@
 # Short-Description: celery periodic task scheduler
 ### END INIT INFO
 
-set -e
+# Cannot use set -e/bash -e since the kill -0 command will abort
+# abnormally in the absence of a valid process ID.
+#set -e
 
 DEFAULT_PID_FILE="/var/run/celerybeat.pid"
 DEFAULT_LOG_FILE="/var/log/celerybeat.log"
@@ -143,7 +145,7 @@ wait_pid () {
     i=0
     while [ $forever -gt 0 ]; do
         kill -0 $pid 1>/dev/null 2>&1
-        if [ ! $? ]; then
+        if [ $? -eq 1 ]; then
             echo "OK"
             forever=0
         else

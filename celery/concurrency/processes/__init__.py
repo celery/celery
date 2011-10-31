@@ -3,20 +3,21 @@
 Process Pools.
 
 """
+from __future__ import absolute_import
+
 import platform
 import signal as _signal
 
-from os import kill as _kill
-
-from celery.concurrency.base import BasePool
-from celery.concurrency.processes.pool import Pool, RUN
+from ..base import BasePool
+from .pool import Pool, RUN
 
 if platform.system() == "Windows":  # pragma: no cover
     # On Windows os.kill calls TerminateProcess which cannot be
     # handled by # any process, so this is needed to terminate the task
     # *and its children* (if any).
-    from celery.concurrency.processes import _win
-    _kill = _win.kill_processtree  # noqa
+    from ._win import kill_processtree as _kill  # noqa
+else:
+    from os import kill as _kill                 # noqa
 
 
 class TaskPool(BasePool):
@@ -74,3 +75,7 @@ class TaskPool(BasePool):
                 "max-tasks-per-child": self._pool._maxtasksperchild,
                 "put-guarded-by-semaphore": self.putlocks,
                 "timeouts": (self._pool.soft_timeout, self._pool.timeout)}
+
+    @property
+    def num_processes(self):
+        return self._pool._processes

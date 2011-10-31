@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-"
+from __future__ import absolute_import
+
 import sys
 import threading
 
-from celery.datastructures import ExceptionInfo
-from celery.exceptions import MaxRetriesExceededError, RetryTaskError
-from celery.execute.trace import TaskTrace
-from celery.registry import tasks, _unpickle_task
-from celery.result import EagerResult
-from celery.utils import mattrgetter, gen_unique_id, fun_takes_kwargs
+from ...datastructures import ExceptionInfo
+from ...exceptions import MaxRetriesExceededError, RetryTaskError
+from ...execute.trace import TaskTrace
+from ...registry import tasks, _unpickle_task
+from ...result import EagerResult
+from ...utils import fun_takes_kwargs, mattrgetter, uuid
+from ...utils.mail import ErrorMail
 
 extract_exec_options = mattrgetter("queue", "routing_key",
                                    "exchange", "immediate",
@@ -20,6 +23,7 @@ class Context(threading.local):
     # Default context
     logfile = None
     loglevel = None
+    hostname = None
     id = None
     args = None
     kwargs = None
@@ -28,6 +32,7 @@ class Context(threading.local):
     delivery_info = None
     taskset = None
     chord = None
+    called_directly = True
 
     def update(self, d, **kwargs):
         self.__dict__.update(d, **kwargs)
@@ -43,7 +48,7 @@ class Context(threading.local):
 
 
 class TaskType(type):
-    """Metaclass for tasks.
+    """Meta class for tasks.
 
     Automatically registers the task in the task registry, except
     if the `abstract` attribute is set.
@@ -99,6 +104,7 @@ class BaseTask(object):
     """
     __metaclass__ = TaskType
 
+    ErrorMail = ErrorMail
     MaxRetriesExceededError = MaxRetriesExceededError
 
     #: The application instance associated with this task class.
@@ -216,7 +222,7 @@ class BaseTask(object):
     #: worker crashes mid execution (which may be acceptable for some
     #: applications).
     #:
-    #: The application default can be overriden with the
+    #: The application default can be overridden with the
     #: :setting:`CELERY_ACKS_LATE` setting.
     acks_late = False
 
@@ -374,7 +380,7 @@ class BaseTask(object):
         :keyword exchange: The named exchange to send the task to.
                            Defaults to the :attr:`exchange` attribute.
 
-        :keyword exchange_type: The exchange type to initalize the exchange
+        :keyword exchange_type: The exchange type to initialize the exchange
                                 if not already declared.  Defaults to the
                                 :attr:`exchange_type` attribute.
 
@@ -495,6 +501,11 @@ class BaseTask(object):
         kwargs = request.kwargs if kwargs is None else kwargs
         delivery_info = request.delivery_info
 
+        # Not in worker or emulated by (apply/always_eager),
+        # so just raise the original exception.
+        if request.called_directly:
+            raise exc or RetryTaskError("Task can be retried", None)
+
         if delivery_info:
             options.setdefault("exchange", delivery_info.get("exchange"))
             options.setdefault("routing_key", delivery_info.get("routing_key"))
@@ -538,7 +549,7 @@ class BaseTask(object):
         """
         args = args or []
         kwargs = kwargs or {}
-        task_id = options.get("task_id") or gen_unique_id()
+        task_id = options.get("task_id") or uuid()
         retries = options.get("retries", 0)
         throw = self.app.either("CELERY_EAGER_PROPAGATES_EXCEPTIONS",
                                 options.pop("throw", None))
@@ -652,6 +663,11 @@ class BaseTask(object):
         """
         pass
 
+    def send_error_email(self, context, exc, **kwargs):
+        if self.send_error_emails and not self.disable_error_emails:
+            sender = self.ErrorMail(self, **kwargs)
+            sender.send(context, exc)
+
     def on_success(self, retval, task_id, args, kwargs):
         """Success handler.
 
@@ -689,7 +705,7 @@ class BaseTask(object):
         """Returns :class:`~celery.task.sets.subtask` object for
         this task, wrapping arguments and execution options
         for a single task invocation."""
-        from celery.task.sets import subtask
+        from ...task.sets import subtask
         return subtask(cls, *args, **kwargs)
 
     @property
