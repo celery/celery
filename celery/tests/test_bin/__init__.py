@@ -18,12 +18,13 @@ APP = MyApp()  # <-- Used by test_with_custom_app
 
 
 class MockCommand(Command):
+    mock_args = ("arg1", "arg2", "arg3")
 
     def parse_options(self, prog_name, arguments):
         options = Object()
         options.foo = "bar"
         options.prog_name = prog_name
-        return options, (10, 20, 30)
+        return options, self.mock_args
 
     def run(self, *args, **kwargs):
         return args, kwargs
@@ -43,13 +44,19 @@ class test_Command(AppCase):
     def test_execute_from_commandline(self):
         cmd = MockCommand()
         args1, kwargs1 = cmd.execute_from_commandline()     # sys.argv
-        self.assertTupleEqual(args1, (10, 20, 30))
+        self.assertTupleEqual(args1, cmd.mock_args)
         self.assertDictContainsSubset({"foo": "bar"}, kwargs1)
         self.assertTrue(kwargs1.get("prog_name"))
         args2, kwargs2 = cmd.execute_from_commandline(["foo"])   # pass list
-        self.assertTupleEqual(args2, (10, 20, 30))
+        self.assertTupleEqual(args2, cmd.mock_args)
         self.assertDictContainsSubset({"foo": "bar", "prog_name": "foo"},
                                       kwargs2)
+
+    def test_with_bogus_args(self):
+        cmd = MockCommand()
+        cmd.supports_args = False
+        self.assertRaises(SystemExit,
+                cmd.execute_from_commandline, argv=["--bogus"])
 
     def test_with_custom_config_module(self):
         prev = os.environ.pop("CELERY_CONFIG_MODULE", None)
