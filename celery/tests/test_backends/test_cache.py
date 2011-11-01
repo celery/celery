@@ -6,10 +6,14 @@ import types
 
 from contextlib import contextmanager
 
+from mock import Mock, patch
+
 from celery import states
 from celery.backends.cache import CacheBackend, DummyClient
 from celery.exceptions import ImproperlyConfigured
+from celery.registry import tasks
 from celery.result import AsyncResult
+from celery.task import subtask
 from celery.utils import uuid
 from celery.utils.encoding import str_to_bytes
 
@@ -51,6 +55,37 @@ class test_CacheBackend(unittest.TestCase):
             self.tb.mark_as_failure(self.tid, exception)
             self.assertEqual(self.tb.get_status(self.tid), states.FAILURE)
             self.assertIsInstance(self.tb.get_result(self.tid), KeyError)
+
+    def test_on_chord_apply(self):
+        tb = CacheBackend(backend="memory://")
+        tb.on_chord_apply("setid", [])
+
+    @patch("celery.result.TaskSetResult")
+    def test_on_chord_part_return(self, setresult):
+        tb = CacheBackend(backend="memory://")
+
+        deps = Mock()
+        deps.total = 2
+        setresult.restore.return_value = deps
+        task = Mock()
+        task.name = "foobarbaz"
+        try:
+            tasks["foobarbaz"] = task
+            task.request.chord = subtask(task)
+            task.request.taskset = "setid"
+
+            tb.on_chord_apply(task.request.taskset, [])
+
+            self.assertFalse(deps.join.called)
+            tb.on_chord_part_return(task)
+            self.assertFalse(deps.join.called)
+
+            tb.on_chord_part_return(task)
+            deps.join.assert_called_with(propagate=False)
+            deps.delete.assert_called_with()
+
+        finally:
+            tasks.pop("foobarbaz")
 
     def test_mget(self):
         self.tb.set("foo", 1)
