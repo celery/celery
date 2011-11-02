@@ -116,6 +116,25 @@ class test_Autoscaler(unittest.TestCase):
         x.scale_down(1)
         self.assertTrue(x.logger.debug.call_count)
 
+    def test_update_and_force(self):
+        x = autoscale.Autoscaler(self.pool, 10, 3, logger=logger)
+        self.assertEqual(x.processes, 3)
+        x.force_scale_up(5)
+        self.assertEqual(x.processes, 8)
+        x.update(5, None)
+        self.assertEqual(x.processes, 5)
+        x.force_scale_down(3)
+        self.assertEqual(x.processes, 2)
+        x.update(3, None)
+        self.assertEqual(x.processes, 3)
+
+    def test_info(self):
+        x = autoscale.Autoscaler(self.pool, 10, 3, logger=logger)
+        info = x.info()
+        self.assertEqual(info['max'], 10)
+        self.assertEqual(info['min'], 3)
+        self.assertEqual(info['current'], 3)
+
     @patch("os._exit")
     def test_thread_crash(self, _exit):
 

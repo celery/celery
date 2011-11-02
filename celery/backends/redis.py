@@ -70,10 +70,7 @@ class RedisBackend(KeyValueStoreBackend):
     def delete(self, key):
         self.client.delete(key)
 
-    def process_cleanup(self):
-        pass
-
-    def on_chord_apply(self, *args, **kwargs):
+    def on_chord_apply(self, setid, *args, **kwargs):
         pass
 
     def on_chord_part_return(self, task, propagate=False,

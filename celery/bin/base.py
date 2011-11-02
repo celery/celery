@@ -108,7 +108,7 @@ class Command(object):
         options, args = self.parse_options(prog_name, argv)
         if not self.supports_args and args:
             sys.stderr.write(
-                "\nUnrecognized command line arguments: %r\n" % (
+                "\nUnrecognized command line arguments: %s\n" % (
                     ", ".join(args), ))
             sys.stderr.write("\nTry --help?\n")
             sys.exit(1)
