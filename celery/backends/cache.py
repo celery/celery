@@ -24,7 +24,7 @@ def import_best_memcache():
                 raise ImproperlyConfigured(
                         "Memcached backend requires either the 'pylibmc' "
                         "or 'memcache' library")
-        _imp[0] = is_pylibmc, memcache
+        _imp[0] = (is_pylibmc, memcache)
     return _imp[0]
 
 

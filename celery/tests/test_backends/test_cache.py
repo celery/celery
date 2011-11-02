@@ -118,8 +118,8 @@ class MockCacheMixin(object):
 class test_get_best_memcache(unittest.TestCase, MockCacheMixin):
 
     def test_pylibmc(self):
-        with reset_modules("celery.backends.cache"):
-            with self.mock_pylibmc():
+        with self.mock_pylibmc():
+            with reset_modules("celery.backends.cache"):
                 from celery.backends import cache
                 cache._imp = [None]
                 self.assertEqual(cache.get_best_memcache().__module__,
@@ -146,6 +146,7 @@ class test_get_best_memcache(unittest.TestCase, MockCacheMixin):
         with self.mock_pylibmc():
             with reset_modules("celery.backends.cache"):
                 from celery.backends import cache
+                cache._imp = [None]
                 cache.get_best_memcache(behaviors={"foo": "bar"})
                 self.assertTrue(cache._imp[0])
                 cache.get_best_memcache()
