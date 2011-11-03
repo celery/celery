@@ -4,7 +4,7 @@ from celery.worker import state
 from celery.tests.utils import unittest
 
 
-class TestRevokeRegistry(unittest.TestCase):
+class test_revoked(unittest.TestCase):
 
     def test_is_working(self):
         state.revoked.add("foo")
