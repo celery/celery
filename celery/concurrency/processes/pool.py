@@ -791,19 +791,21 @@ class Pool(object):
             warnings.warn(UserWarning("Soft timeouts are not supported: "
                     "on this platform: It does not have the SIGUSR1 signal."))
             soft_timeout = None
-        result = ApplyResult(self._cache, callback,
-                             accept_callback, timeout_callback,
-                             error_callback, soft_timeout, timeout)
-
         if waitforslot and self._putlock is not None:
-            self._putlock.acquire()
-            if self._state != RUN:
-                return
-        if timeout or soft_timeout:
-            # start the timeout handler thread when required.
-            self._start_timeout_handler()
-        self._taskqueue.put(([(result._job, None, func, args, kwds)], None))
-        return result
+            while 1:
+                if self._state != RUN or self._putlock.acquire(False):
+                    break
+                time.sleep(1.0)
+        if self._state == RUN:
+            result = ApplyResult(self._cache, callback,
+                                 accept_callback, timeout_callback,
+                                 error_callback, soft_timeout, timeout)
+            if timeout or soft_timeout:
+                # start the timeout handler thread when required.
+                self._start_timeout_handler()
+            self._taskqueue.put(([(result._job, None,
+                                   func, args, kwds)], None))
+            return result
 
     def map_async(self, func, iterable, chunksize=None, callback=None):
         '''
