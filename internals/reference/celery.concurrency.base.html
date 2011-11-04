@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.concurrency.base &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>celery.concurrency.base &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.concurrency.threads‡ (minefield)" href="celery.concurrency.threads.html" />
     <link rel="prev" title="celery.concurrency.gevent† (experimental)" href="celery.concurrency.gevent.html" /> 
@@ -42,7 +45,7 @@
         <li class="right" >
           <a href="celery.concurrency.gevent.html" title="celery.concurrency.gevent† (experimental)"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,13 +59,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.concurrency.base.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.concurrency.base.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="celery-concurrency-base">
@@ -70,7 +71,22 @@
 <span class="target" id="module-celery.concurrency.base"></span><dl class="class">
 <dt id="celery.concurrency.base.BasePool">
 <em class="property">class </em><tt class="descclassname">celery.concurrency.base.</tt><tt class="descname">BasePool</tt><big>(</big><em>limit=None</em>, <em>putlocks=True</em>, <em>logger=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.concurrency.base.BasePool" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="class">
+<dd><dl class="attribute">
+<dt id="celery.concurrency.base.BasePool.CLOSE">
+<tt class="descname">CLOSE</tt><em class="property"> = 2</em><a class="headerlink" href="#celery.concurrency.base.BasePool.CLOSE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.concurrency.base.BasePool.RUN">
+<tt class="descname">RUN</tt><em class="property"> = 1</em><a class="headerlink" href="#celery.concurrency.base.BasePool.RUN" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.concurrency.base.BasePool.TERMINATE">
+<tt class="descname">TERMINATE</tt><em class="property"> = 3</em><a class="headerlink" href="#celery.concurrency.base.BasePool.TERMINATE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
 <dt id="celery.concurrency.base.BasePool.Timer">
 <em class="property">class </em><tt class="descname">Timer</tt><big>(</big><em>schedule=None</em>, <em>on_error=None</em>, <em>on_tick=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.base.BasePool.Timer" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="class">
@@ -79,6 +95,11 @@
 <dd><dl class="method">
 <dt id="celery.concurrency.base.BasePool.Timer.Entry.cancel">
 <tt class="descname">cancel</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.base.BasePool.Timer.Entry.cancel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.concurrency.base.BasePool.Timer.Entry.cancelled">
+<tt class="descname">cancelled</tt><em class="property"> = False</em><a class="headerlink" href="#celery.concurrency.base.BasePool.Timer.Entry.cancelled" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -106,9 +127,9 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>entry</strong> &#8211; Item to enter.</li>
-<li><strong>eta</strong> &#8211; Scheduled time as a <tt class="xref py py-class docutils literal"><span class="pre">datetime.datetime</span></tt> object.</li>
+<li><strong>eta</strong> &#8211; Scheduled time as a <a class="reference external" href="http://docs.python.org/dev/library/datetime.html#datetime.datetime" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">datetime.datetime</span></tt></a> object.</li>
 <li><strong>priority</strong> &#8211; Unused.</li>
 </ul>
 </td>
@@ -125,6 +146,11 @@
 <dl class="method">
 <dt id="celery.concurrency.base.BasePool.Timer.Schedule.info">
 <tt class="descname">info</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.base.BasePool.Timer.Schedule.info" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.concurrency.base.BasePool.Timer.Schedule.on_error">
+<tt class="descname">on_error</tt><em class="property"> = None</em><a class="headerlink" href="#celery.concurrency.base.BasePool.Timer.Schedule.on_error" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -195,6 +221,11 @@
 <dd></dd></dl>
 
 <dl class="attribute">
+<dt id="celery.concurrency.base.BasePool.Timer.on_tick">
+<tt class="descclassname">BasePool.Timer.</tt><tt class="descname">on_tick</tt><em class="property"> = None</em><a class="headerlink" href="#celery.concurrency.base.BasePool.Timer.on_tick" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
 <dt id="celery.concurrency.base.BasePool.Timer.queue">
 <tt class="descclassname">BasePool.Timer.</tt><tt class="descname">queue</tt><a class="headerlink" href="#celery.concurrency.base.BasePool.Timer.queue" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -202,6 +233,11 @@
 <dl class="method">
 <dt id="celery.concurrency.base.BasePool.Timer.run">
 <tt class="descclassname">BasePool.Timer.</tt><tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.base.BasePool.Timer.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.concurrency.base.BasePool.Timer.running">
+<tt class="descclassname">BasePool.Timer.</tt><tt class="descname">running</tt><em class="property"> = False</em><a class="headerlink" href="#celery.concurrency.base.BasePool.Timer.running" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -227,6 +263,11 @@ otherwise the thread which handles the result will get blocked.</p>
 <dl class="attribute">
 <dt id="celery.concurrency.base.BasePool.info">
 <tt class="descclassname">BasePool.</tt><tt class="descname">info</tt><a class="headerlink" href="#celery.concurrency.base.BasePool.info" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.concurrency.base.BasePool.is_green">
+<tt class="descclassname">BasePool.</tt><tt class="descname">is_green</tt><em class="property"> = False</em><a class="headerlink" href="#celery.concurrency.base.BasePool.is_green" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -266,9 +307,19 @@ been collected.</p>
 <tt class="descclassname">BasePool.</tt><tt class="descname">on_worker_error</tt><big>(</big><em>errback</em>, <em>exc_info</em><big>)</big><a class="headerlink" href="#celery.concurrency.base.BasePool.on_worker_error" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="attribute">
+<dt id="celery.concurrency.base.BasePool.rlimit_safe">
+<tt class="descclassname">BasePool.</tt><tt class="descname">rlimit_safe</tt><em class="property"> = True</em><a class="headerlink" href="#celery.concurrency.base.BasePool.rlimit_safe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="celery.concurrency.base.BasePool.safe_apply_callback">
 <tt class="descclassname">BasePool.</tt><tt class="descname">safe_apply_callback</tt><big>(</big><em>fun</em>, <em>*args</em><big>)</big><a class="headerlink" href="#celery.concurrency.base.BasePool.safe_apply_callback" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.concurrency.base.BasePool.signal_safe">
+<tt class="descclassname">BasePool.</tt><tt class="descname">signal_safe</tt><em class="property"> = True</em><a class="headerlink" href="#celery.concurrency.base.BasePool.signal_safe" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -351,14 +402,13 @@ been collected.</p>
         <li class="right" >
           <a href="celery.concurrency.gevent.html" title="celery.concurrency.gevent† (experimental)"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

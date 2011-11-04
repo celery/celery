@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.worker &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>celery.worker &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.worker.consumer" href="celery.worker.consumer.html" />
     <link rel="prev" title="Internal Module Reference" href="index.html" /> 
@@ -42,7 +45,7 @@
         <li class="right" >
           <a href="index.html" title="Internal Module Reference"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,13 +59,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.worker.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.worker.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="celery-worker">
@@ -74,53 +75,94 @@
 </div>
 <span class="target" id="module-celery.worker"></span><div class="section" id="id1">
 <h2><a class="toc-backref" href="#id2">celery.worker</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
-<p>This is the Celery worker process.</p>
+<p>The worker.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
+<li>2009 - 2011 by Ask Solem.</li>
+</ol>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body"><p class="first last">BSD, see LICENSE for more details.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="data">
+<dt id="celery.worker.WORKER_SIGIGNORE">
+<tt class="descclassname">celery.worker.</tt><tt class="descname">WORKER_SIGIGNORE</tt><em class="property"> = frozenset(['SIGINT'])</em><a class="headerlink" href="#celery.worker.WORKER_SIGIGNORE" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of signals to ignore when a child process starts.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.worker.WORKER_SIGRESET">
+<tt class="descclassname">celery.worker.</tt><tt class="descname">WORKER_SIGRESET</tt><em class="property"> = frozenset(['SIGHUP', 'SIGTERM', 'SIGTTOU', 'SIGTTIN', 'SIGUSR1'])</em><a class="headerlink" href="#celery.worker.WORKER_SIGRESET" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of signals to reset when a child process starts.</p>
+</dd></dl>
+
 <dl class="class">
 <dt id="celery.worker.WorkController">
-<em class="property">class </em><tt class="descclassname">celery.worker.</tt><tt class="descname">WorkController</tt><big>(</big><em>concurrency=None</em>, <em>logfile=None</em>, <em>loglevel=None</em>, <em>send_events=None</em>, <em>hostname=None</em>, <em>ready_callback=&lt;function noop at 0x1017a7230&gt;</em>, <em>embed_clockservice=False</em>, <em>pool_cls=None</em>, <em>consumer_cls=None</em>, <em>mediator_cls=None</em>, <em>eta_scheduler_cls=None</em>, <em>schedule_filename=None</em>, <em>task_time_limit=None</em>, <em>task_soft_time_limit=None</em>, <em>max_tasks_per_child=None</em>, <em>pool_putlocks=None</em>, <em>db=None</em>, <em>prefetch_multiplier=None</em>, <em>eta_scheduler_precision=None</em>, <em>disable_rate_limits=None</em>, <em>autoscale=None</em>, <em>autoscaler_cls=None</em>, <em>scheduler_cls=None</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.worker.WorkController" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.</tt><tt class="descname">WorkController</tt><big>(</big><em>concurrency=None</em>, <em>logfile=None</em>, <em>loglevel=None</em>, <em>send_events=None</em>, <em>hostname=None</em>, <em>ready_callback=&lt;function noop at 0x101a3d140&gt;</em>, <em>embed_clockservice=False</em>, <em>pool_cls=None</em>, <em>consumer_cls=None</em>, <em>mediator_cls=None</em>, <em>eta_scheduler_cls=None</em>, <em>schedule_filename=None</em>, <em>task_time_limit=None</em>, <em>task_soft_time_limit=None</em>, <em>max_tasks_per_child=None</em>, <em>pool_putlocks=None</em>, <em>db=None</em>, <em>prefetch_multiplier=None</em>, <em>eta_scheduler_precision=None</em>, <em>disable_rate_limits=None</em>, <em>autoscale=None</em>, <em>autoscaler_cls=None</em>, <em>scheduler_cls=None</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.worker.WorkController" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unmanaged worker instance.</p>
 <dl class="attribute">
+<dt id="celery.worker.WorkController.CLOSE">
+<tt class="descname">CLOSE</tt><em class="property"> = 2</em><a class="headerlink" href="#celery.worker.WorkController.CLOSE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.WorkController.RUN">
+<tt class="descname">RUN</tt><em class="property"> = 1</em><a class="headerlink" href="#celery.worker.WorkController.RUN" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.WorkController.TERMINATE">
+<tt class="descname">TERMINATE</tt><em class="property"> = 3</em><a class="headerlink" href="#celery.worker.WorkController.TERMINATE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
 <dt id="celery.worker.WorkController.concurrency">
-<tt class="descname">concurrency</tt><a class="headerlink" href="#celery.worker.WorkController.concurrency" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">concurrency</tt><em class="property"> = None</em><a class="headerlink" href="#celery.worker.WorkController.concurrency" title="Permalink to this definition">¶</a></dt>
 <dd><p>The number of simultaneous processes doing work (default:
 <a class="reference internal" href="../../configuration.html#std:setting-CELERYD_CONCURRENCY"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYD_CONCURRENCY</span></tt></a>)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.worker.WorkController.consumer">
-<tt class="descname">consumer</tt><a class="headerlink" href="#celery.worker.WorkController.consumer" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">consumer</tt><em class="property"> = None</em><a class="headerlink" href="#celery.worker.WorkController.consumer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Consumer instance.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.worker.WorkController.embed_clockservice">
-<tt class="descname">embed_clockservice</tt><a class="headerlink" href="#celery.worker.WorkController.embed_clockservice" title="Permalink to this definition">¶</a></dt>
-<dd><p>If <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt>, celerybeat is embedded, running in the main worker
+<tt class="descname">embed_clockservice</tt><em class="property"> = None</em><a class="headerlink" href="#celery.worker.WorkController.embed_clockservice" title="Permalink to this definition">¶</a></dt>
+<dd><p>If <tt class="xref py py-const docutils literal"><span class="pre">True</span></tt>, celerybeat is embedded, running in the main worker
 process as a thread.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.worker.WorkController.logfile">
-<tt class="descname">logfile</tt><a class="headerlink" href="#celery.worker.WorkController.logfile" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">logfile</tt><em class="property"> = None</em><a class="headerlink" href="#celery.worker.WorkController.logfile" title="Permalink to this definition">¶</a></dt>
 <dd><p>The logfile used, if no logfile is specified it uses <cite>stderr</cite>
 (default: <a class="reference internal" href="../../configuration.html#std:setting-CELERYD_LOG_FILE"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYD_LOG_FILE</span></tt></a>).</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.worker.WorkController.logger">
-<tt class="descname">logger</tt><a class="headerlink" href="#celery.worker.WorkController.logger" title="Permalink to this definition">¶</a></dt>
-<dd><p>The <tt class="xref py py-class docutils literal"><span class="pre">logging.Logger</span></tt> instance used for logging.</p>
+<tt class="descname">logger</tt><em class="property"> = None</em><a class="headerlink" href="#celery.worker.WorkController.logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference external" href="http://docs.python.org/dev/library/logging.html#logging.Logger" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">logging.Logger</span></tt></a> instance used for logging.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.worker.WorkController.loglevel">
-<tt class="descname">loglevel</tt><a class="headerlink" href="#celery.worker.WorkController.loglevel" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">loglevel</tt><em class="property"> = 40</em><a class="headerlink" href="#celery.worker.WorkController.loglevel" title="Permalink to this definition">¶</a></dt>
 <dd><p>The loglevel used (default: <tt class="xref py py-const docutils literal"><span class="pre">logging.INFO</span></tt>)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.worker.WorkController.mediator">
-<tt class="descname">mediator</tt><a class="headerlink" href="#celery.worker.WorkController.mediator" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">mediator</tt><em class="property"> = None</em><a class="headerlink" href="#celery.worker.WorkController.mediator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Instance of <a class="reference internal" href="celery.worker.mediator.html#celery.worker.mediator.Mediator" title="celery.worker.mediator.Mediator"><tt class="xref py py-class docutils literal"><span class="pre">celery.worker.mediator.Mediator</span></tt></a>.</p>
 </dd></dl>
 
@@ -136,7 +178,7 @@ process as a thread.</p>
 
 <dl class="attribute">
 <dt id="celery.worker.WorkController.pool">
-<tt class="descname">pool</tt><a class="headerlink" href="#celery.worker.WorkController.pool" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">pool</tt><em class="property"> = None</em><a class="headerlink" href="#celery.worker.WorkController.pool" title="Permalink to this definition">¶</a></dt>
 <dd><p>The pool instance used.</p>
 </dd></dl>
 
@@ -148,14 +190,14 @@ process as a thread.</p>
 
 <dl class="attribute">
 <dt id="celery.worker.WorkController.ready_queue">
-<tt class="descname">ready_queue</tt><a class="headerlink" href="#celery.worker.WorkController.ready_queue" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">ready_queue</tt><em class="property"> = None</em><a class="headerlink" href="#celery.worker.WorkController.ready_queue" title="Permalink to this definition">¶</a></dt>
 <dd><p>The internal queue object that holds tasks ready for immediate
 processing.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.worker.WorkController.send_events">
-<tt class="descname">send_events</tt><a class="headerlink" href="#celery.worker.WorkController.send_events" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">send_events</tt><em class="property"> = False</em><a class="headerlink" href="#celery.worker.WorkController.send_events" title="Permalink to this definition">¶</a></dt>
 <dd><p>Enable the sending of monitoring events, these events can be captured
 by monitors (celerymon).</p>
 </dd></dl>
@@ -178,6 +220,13 @@ by monitors (celerymon).</p>
 <dd><p>Not so graceful shutdown of the worker server.</p>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.worker.process_initializer">
+<tt class="descclassname">celery.worker.</tt><tt class="descname">process_initializer</tt><big>(</big><em>app</em>, <em>hostname</em><big>)</big><a class="headerlink" href="#celery.worker.process_initializer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializes the process so it can be used to process tasks.</p>
+<p>Used for multiprocessing environments.</p>
 </dd></dl>
 
 </div>
@@ -234,14 +283,13 @@ by monitors (celerymon).</p>
         <li class="right" >
           <a href="index.html" title="Internal Module Reference"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

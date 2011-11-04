@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Sets of tasks, Subtasks and Callbacks &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>Sets of tasks, Subtasks and Callbacks &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="HTTP Callback Tasks (Webhooks)" href="remote-tasks.html" />
     <link rel="prev" title="Periodic Tasks" href="periodic-tasks.html" /> 
@@ -42,7 +45,7 @@
         <li class="right" >
           <a href="periodic-tasks.html" title="Periodic Tasks"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,13 +58,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/userguide/tasksets.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/userguide/tasksets.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="sets-of-tasks-subtasks-and-callbacks">
@@ -95,7 +96,7 @@ execution options for a single task invocation:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">task</span><span class="o">.</span><span class="n">subtask</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
 </pre></div>
 </div>
-<p><a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.subtask" title="celery.task.sets.subtask"><tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt></a> is actually a <tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt> subclass,
+<p><a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.subtask" title="celery.task.sets.subtask"><tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt></a> is actually a <a class="reference external" href="http://docs.python.org/dev/library/stdtypes.html#dict" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt></a> subclass,
 which means it can be serialized with JSON or other encodings that doesn&#8217;t
 support complex Python objects.</p>
 <p>Also it can be regarded as a type, as the following usage works:</p>
@@ -179,24 +180,24 @@ single task.</p>
 <ul>
 <li><p class="first"><tt class="xref py py-meth docutils literal"><span class="pre">successful()</span></tt></p>
 <blockquote>
-<div><p>Returns <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if all of the subtasks finished
+<div><p>Returns <tt class="xref py py-const docutils literal"><span class="pre">True</span></tt> if all of the subtasks finished
 successfully (e.g. did not raise an exception).</p>
 </div></blockquote>
 </li>
 <li><p class="first"><tt class="xref py py-meth docutils literal"><span class="pre">failed()</span></tt></p>
 <blockquote>
-<div><p>Returns <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if any of the subtasks failed.</p>
+<div><p>Returns <tt class="xref py py-const docutils literal"><span class="pre">True</span></tt> if any of the subtasks failed.</p>
 </div></blockquote>
 </li>
 <li><p class="first"><tt class="xref py py-meth docutils literal"><span class="pre">waiting()</span></tt></p>
 <blockquote>
-<div><p>Returns <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if any of the subtasks
+<div><p>Returns <tt class="xref py py-const docutils literal"><span class="pre">True</span></tt> if any of the subtasks
 is not ready yet.</p>
 </div></blockquote>
 </li>
 <li><p class="first"><tt class="xref py py-meth docutils literal"><span class="pre">ready()</span></tt></p>
 <blockquote>
-<div><p>Return <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if all of the subtasks
+<div><p>Return <tt class="xref py py-const docutils literal"><span class="pre">True</span></tt> if all of the subtasks
 are ready.</p>
 </div></blockquote>
 </li>
@@ -234,7 +235,7 @@ were called.</p>
 finished executing.</p>
 <p>Let&#8217;s calculate the sum of the expression
 <span class="math">1 + 1 + 2 + 2 + 3 + 3 ... n + n</span> up to a hundred digits.</p>
-<p>First we need two tasks, <tt class="xref py py-func docutils literal"><span class="pre">add()</span></tt> and <tt class="xref py py-func docutils literal"><span class="pre">tsum()</span></tt> (<tt class="xref py py-func docutils literal"><span class="pre">sum()</span></tt> is
+<p>First we need two tasks, <tt class="xref py py-func docutils literal"><span class="pre">add()</span></tt> and <tt class="xref py py-func docutils literal"><span class="pre">tsum()</span></tt> (<a class="reference external" href="http://docs.python.org/dev/library/functions.html#sum" title="(in Python v3.3)"><tt class="xref py py-func docutils literal"><span class="pre">sum()</span></tt></a> is
 already a standard function):</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">task</span>
 
@@ -365,13 +366,12 @@ super method or else the chord callback will not be applied.</p>
         <li class="right" >
           <a href="periodic-tasks.html" title="Periodic Tasks"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

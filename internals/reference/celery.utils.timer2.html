@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.utils.timer2 &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>celery.utils.timer2 &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.utils.dispatch" href="celery.utils.dispatch.html" />
     <link rel="prev" title="celery.utils.serialization" href="celery.utils.serialization.html" /> 
@@ -42,7 +45,7 @@
         <li class="right" >
           <a href="celery.utils.serialization.html" title="celery.utils.serialization"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,34 +59,48 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.utils.timer2.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.utils.timer2.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="celery-utils-timer2">
 <h1>celery.utils.timer2<a class="headerlink" href="#celery-utils-timer2" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.utils.timer2"></span><p>timer2 - Scheduler for Python functions.</p>
-<dl class="exception">
-<dt id="celery.utils.timer2.TimedFunctionFailed">
-<em class="property">exception </em><tt class="descclassname">celery.utils.timer2.</tt><tt class="descname">TimedFunctionFailed</tt><a class="headerlink" href="#celery.utils.timer2.TimedFunctionFailed" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="celery.utils.timer2.to_timestamp">
-<tt class="descclassname">celery.utils.timer2.</tt><tt class="descname">to_timestamp</tt><big>(</big><em>d</em><big>)</big><a class="headerlink" href="#celery.utils.timer2.to_timestamp" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#timer2" id="id1">timer2</a></li>
+</ul>
+</div>
+<span class="target" id="module-celery.utils.timer2"></span><div class="section" id="timer2">
+<h2><a class="toc-backref" href="#id1">timer2</a><a class="headerlink" href="#timer2" title="Permalink to this headline">¶</a></h2>
+<p>Scheduler for Python functions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
+<li>2009 - 2011 by Ask Solem.</li>
+</ol>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body"><p class="first last">BSD, see LICENSE for more details.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <dl class="class">
 <dt id="celery.utils.timer2.Entry">
 <em class="property">class </em><tt class="descclassname">celery.utils.timer2.</tt><tt class="descname">Entry</tt><big>(</big><em>fun</em>, <em>args=None</em>, <em>kwargs=None</em><big>)</big><a class="headerlink" href="#celery.utils.timer2.Entry" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="celery.utils.timer2.Entry.cancel">
 <tt class="descname">cancel</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.timer2.Entry.cancel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.utils.timer2.Entry.cancelled">
+<tt class="descname">cancelled</tt><em class="property"> = False</em><a class="headerlink" href="#celery.utils.timer2.Entry.cancelled" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -111,9 +128,9 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>entry</strong> &#8211; Item to enter.</li>
-<li><strong>eta</strong> &#8211; Scheduled time as a <tt class="xref py py-class docutils literal"><span class="pre">datetime.datetime</span></tt> object.</li>
+<li><strong>eta</strong> &#8211; Scheduled time as a <a class="reference external" href="http://docs.python.org/dev/library/datetime.html#datetime.datetime" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">datetime.datetime</span></tt></a> object.</li>
 <li><strong>priority</strong> &#8211; Unused.</li>
 </ul>
 </td>
@@ -133,11 +150,21 @@
 <dd></dd></dl>
 
 <dl class="attribute">
+<dt id="celery.utils.timer2.Schedule.on_error">
+<tt class="descname">on_error</tt><em class="property"> = None</em><a class="headerlink" href="#celery.utils.timer2.Schedule.on_error" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
 <dt id="celery.utils.timer2.Schedule.queue">
 <tt class="descname">queue</tt><a class="headerlink" href="#celery.utils.timer2.Schedule.queue" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
+
+<dl class="exception">
+<dt id="celery.utils.timer2.TimedFunctionFailed">
+<em class="property">exception </em><tt class="descclassname">celery.utils.timer2.</tt><tt class="descname">TimedFunctionFailed</tt><a class="headerlink" href="#celery.utils.timer2.TimedFunctionFailed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="class">
 <dt id="celery.utils.timer2.Timer">
@@ -148,6 +175,11 @@
 <dd><dl class="method">
 <dt id="celery.utils.timer2.Timer.Entry.cancel">
 <tt class="descname">cancel</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.timer2.Timer.Entry.cancel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.utils.timer2.Timer.Entry.cancelled">
+<tt class="descname">cancelled</tt><em class="property"> = False</em><a class="headerlink" href="#celery.utils.timer2.Timer.Entry.cancelled" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -175,9 +207,9 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>entry</strong> &#8211; Item to enter.</li>
-<li><strong>eta</strong> &#8211; Scheduled time as a <tt class="xref py py-class docutils literal"><span class="pre">datetime.datetime</span></tt> object.</li>
+<li><strong>eta</strong> &#8211; Scheduled time as a <a class="reference external" href="http://docs.python.org/dev/library/datetime.html#datetime.datetime" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">datetime.datetime</span></tt></a> object.</li>
 <li><strong>priority</strong> &#8211; Unused.</li>
 </ul>
 </td>
@@ -194,6 +226,11 @@
 <dl class="method">
 <dt id="celery.utils.timer2.Timer.Schedule.info">
 <tt class="descname">info</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.timer2.Timer.Schedule.info" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.utils.timer2.Timer.Schedule.on_error">
+<tt class="descname">on_error</tt><em class="property"> = None</em><a class="headerlink" href="#celery.utils.timer2.Timer.Schedule.on_error" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -264,6 +301,11 @@
 <dd></dd></dl>
 
 <dl class="attribute">
+<dt id="celery.utils.timer2.Timer.on_tick">
+<tt class="descclassname">Timer.</tt><tt class="descname">on_tick</tt><em class="property"> = None</em><a class="headerlink" href="#celery.utils.timer2.Timer.on_tick" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
 <dt id="celery.utils.timer2.Timer.queue">
 <tt class="descclassname">Timer.</tt><tt class="descname">queue</tt><a class="headerlink" href="#celery.utils.timer2.Timer.queue" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -273,6 +315,11 @@
 <tt class="descclassname">Timer.</tt><tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.timer2.Timer.run" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="attribute">
+<dt id="celery.utils.timer2.Timer.running">
+<tt class="descclassname">Timer.</tt><tt class="descname">running</tt><em class="property"> = False</em><a class="headerlink" href="#celery.utils.timer2.Timer.running" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="celery.utils.timer2.Timer.stop">
 <tt class="descclassname">Timer.</tt><tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.timer2.Timer.stop" title="Permalink to this definition">¶</a></dt>
@@ -280,6 +327,12 @@
 
 </dd></dl>
 
+<dl class="function">
+<dt id="celery.utils.timer2.to_timestamp">
+<tt class="descclassname">celery.utils.timer2.</tt><tt class="descname">to_timestamp</tt><big>(</big><em>d</em><big>)</big><a class="headerlink" href="#celery.utils.timer2.to_timestamp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
 </div>
 
 
@@ -333,14 +386,13 @@
         <li class="right" >
           <a href="celery.utils.serialization.html" title="celery.utils.serialization"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

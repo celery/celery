@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.log &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>celery.log &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.events.snapshot" href="celery.events.snapshot.html" />
     <link rel="prev" title="celery.routes" href="celery.routes.html" /> 
@@ -42,7 +45,7 @@
         <li class="right" >
           <a href="celery.routes.html" title="celery.routes"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,33 +59,28 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.log.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.log.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="celery-log">
 <h1>celery.log<a class="headerlink" href="#celery-log" title="Permalink to this headline">¶</a></h1>
-<div class="contents local topic" id="contents">
-<ul class="simple">
-<li><a class="reference internal" href="#id1" id="id2">celery.log</a></li>
-</ul>
-</div>
-<span class="target" id="module-celery.log"></span><div class="section" id="id1">
-<h2><a class="toc-backref" href="#id2">celery.log</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
-<p>Logging utilities.</p>
-<dl class="class">
+<span class="target" id="module-celery.log"></span><dl class="class">
 <dt id="celery.log.ColorFormatter">
 <em class="property">class </em><tt class="descclassname">celery.log.</tt><tt class="descname">ColorFormatter</tt><big>(</big><em>msg</em>, <em>use_color=True</em><big>)</big><a class="headerlink" href="#celery.log.ColorFormatter" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="attribute">
 <dt id="celery.log.ColorFormatter.COLORS">
-<tt class="descname">COLORS</tt><a class="headerlink" href="#celery.log.ColorFormatter.COLORS" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">COLORS</tt><em class="property"> = {'blue': &lt;bound method colored.blue of ''&gt;, 'black': &lt;bound method colored.black of ''&gt;, 'yellow': &lt;bound method colored.yellow of ''&gt;, 'cyan': &lt;bound method colored.cyan of ''&gt;, 'green': &lt;bound method colored.green of ''&gt;, 'magenta': &lt;bound method colored.magenta of ''&gt;, 'white': &lt;bound method colored.white of ''&gt;, 'red': &lt;bound method colored.red of ''&gt;}</em><a class="headerlink" href="#celery.log.ColorFormatter.COLORS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Loglevel -&gt; Color mapping.</p>
 </dd></dl>
+
+<dl class="attribute">
+<dt id="celery.log.ColorFormatter.colors">
+<tt class="descname">colors</tt><em class="property"> = {'DEBUG': &lt;bound method colored.blue of ''&gt;, 'CRITICAL': &lt;bound method colored.magenta of ''&gt;, 'WARNING': &lt;bound method colored.yellow of ''&gt;, 'ERROR': &lt;bound method colored.red of ''&gt;}</em><a class="headerlink" href="#celery.log.ColorFormatter.colors" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.log.ColorFormatter.format">
@@ -112,7 +110,7 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>loglevel</strong> &#8211; Initial log level.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>loglevel</strong> &#8211; Initial log level.</td>
 </tr>
 </tbody>
 </table>
@@ -132,8 +130,8 @@ logging instance.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>logger</strong> &#8211; The <tt class="xref py py-class docutils literal"><span class="pre">logging.Logger</span></tt> instance to redirect to.</li>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>logger</strong> &#8211; The <a class="reference external" href="http://docs.python.org/dev/library/logging.html#logging.Logger" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">logging.Logger</span></tt></a> instance to redirect to.</li>
 <li><strong>loglevel</strong> &#8211; The loglevel redirected messages will be logged as.</li>
 </ul>
 </td>
@@ -145,7 +143,7 @@ logging instance.</p>
 <dl class="method">
 <dt id="celery.log.Logging.setup_logger">
 <tt class="descname">setup_logger</tt><big>(</big><em>loglevel=None</em>, <em>logfile=None</em>, <em>format=None</em>, <em>colorize=None</em>, <em>name='celery'</em>, <em>root=True</em>, <em>app=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.log.Logging.setup_logger" title="Permalink to this definition">¶</a></dt>
-<dd><p>Setup the <tt class="xref py py-mod docutils literal"><span class="pre">multiprocessing</span></tt> logger.</p>
+<dd><p>Setup the <a class="reference external" href="http://docs.python.org/dev/library/multiprocessing.html#multiprocessing" title="(in Python v3.3)"><tt class="xref py py-mod docutils literal"><span class="pre">multiprocessing</span></tt></a> logger.</p>
 <p>If <cite>logfile</cite> is not specified, then <cite>sys.stderr</cite> is used.</p>
 <p>Returns logger object.</p>
 </dd></dl>
@@ -170,52 +168,16 @@ logging instance.</p>
 
 </dd></dl>
 
-<dl class="attribute">
-<dt id="celery.log.get_default_logger">
-<tt class="descclassname">celery.log.</tt><tt class="descname">get_default_logger</tt><a class="headerlink" href="#celery.log.get_default_logger" title="Permalink to this definition">¶</a></dt>
-<dd><p>Proxy to another object.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.log.setup_logger">
-<tt class="descclassname">celery.log.</tt><tt class="descname">setup_logger</tt><a class="headerlink" href="#celery.log.setup_logger" title="Permalink to this definition">¶</a></dt>
-<dd><p>Proxy to another object.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.log.setup_task_logger">
-<tt class="descclassname">celery.log.</tt><tt class="descname">setup_task_logger</tt><a class="headerlink" href="#celery.log.setup_task_logger" title="Permalink to this definition">¶</a></dt>
-<dd><p>Proxy to another object.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.log.get_task_logger">
-<tt class="descclassname">celery.log.</tt><tt class="descname">get_task_logger</tt><a class="headerlink" href="#celery.log.get_task_logger" title="Permalink to this definition">¶</a></dt>
-<dd><p>Proxy to another object.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.log.setup_logging_subsystem">
-<tt class="descclassname">celery.log.</tt><tt class="descname">setup_logging_subsystem</tt><a class="headerlink" href="#celery.log.setup_logging_subsystem" title="Permalink to this definition">¶</a></dt>
-<dd><p>Proxy to another object.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.log.redirect_stdouts_to_logger">
-<tt class="descclassname">celery.log.</tt><tt class="descname">redirect_stdouts_to_logger</tt><a class="headerlink" href="#celery.log.redirect_stdouts_to_logger" title="Permalink to this definition">¶</a></dt>
-<dd><p>Proxy to another object.</p>
-</dd></dl>
-
 <dl class="class">
 <dt id="celery.log.LoggingProxy">
 <em class="property">class </em><tt class="descclassname">celery.log.</tt><tt class="descname">LoggingProxy</tt><big>(</big><em>logger</em>, <em>loglevel=None</em><big>)</big><a class="headerlink" href="#celery.log.LoggingProxy" title="Permalink to this definition">¶</a></dt>
-<dd><p>Forward file object to <tt class="xref py py-class docutils literal"><span class="pre">logging.Logger</span></tt> instance.</p>
+<dd><p>Forward file object to <a class="reference external" href="http://docs.python.org/dev/library/logging.html#logging.Logger" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">logging.Logger</span></tt></a> instance.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>logger</strong> &#8211; The <tt class="xref py py-class docutils literal"><span class="pre">logging.Logger</span></tt> instance to forward to.</li>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>logger</strong> &#8211; The <a class="reference external" href="http://docs.python.org/dev/library/logging.html#logging.Logger" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">logging.Logger</span></tt></a> instance to forward to.</li>
 <li><strong>loglevel</strong> &#8211; Loglevel to use when writing messages.</li>
 </ul>
 </td>
@@ -228,6 +190,11 @@ logging instance.</p>
 <dd><p>When the object is closed, no write requests are forwarded to
 the logging object anymore.</p>
 </dd></dl>
+
+<dl class="attribute">
+<dt id="celery.log.LoggingProxy.closed">
+<tt class="descname">closed</tt><em class="property"> = False</em><a class="headerlink" href="#celery.log.LoggingProxy.closed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.log.LoggingProxy.fileno">
@@ -244,8 +211,23 @@ are ignored.</p>
 <dl class="method">
 <dt id="celery.log.LoggingProxy.isatty">
 <tt class="descname">isatty</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.log.LoggingProxy.isatty" title="Permalink to this definition">¶</a></dt>
-<dd><p>Always returns <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt>. Just here for file support.</p>
+<dd><p>Always returns <tt class="xref py py-const docutils literal"><span class="pre">False</span></tt>. Just here for file support.</p>
 </dd></dl>
+
+<dl class="attribute">
+<dt id="celery.log.LoggingProxy.loglevel">
+<tt class="descname">loglevel</tt><em class="property"> = 40</em><a class="headerlink" href="#celery.log.LoggingProxy.loglevel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.log.LoggingProxy.mode">
+<tt class="descname">mode</tt><em class="property"> = 'w'</em><a class="headerlink" href="#celery.log.LoggingProxy.mode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.log.LoggingProxy.name">
+<tt class="descname">name</tt><em class="property"> = None</em><a class="headerlink" href="#celery.log.LoggingProxy.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.log.LoggingProxy.write">
@@ -263,7 +245,12 @@ This is equivalent to calling <a class="reference internal" href="#celery.log.Lo
 
 </dd></dl>
 
-</div>
+<dl class="class">
+<dt id="celery.log.SilenceRepeated">
+<em class="property">class </em><tt class="descclassname">celery.log.</tt><tt class="descname">SilenceRepeated</tt><big>(</big><em>action</em>, <em>max_iterations=10</em><big>)</big><a class="headerlink" href="#celery.log.SilenceRepeated" title="Permalink to this definition">¶</a></dt>
+<dd><p>Only log action every n iterations.</p>
+</dd></dl>
+
 </div>
 
 
@@ -317,14 +304,13 @@ This is equivalent to calling <a class="reference internal" href="#celery.log.Lo
         <li class="right" >
           <a href="celery.routes.html" title="celery.routes"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

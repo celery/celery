@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.app &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>celery.app &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.app.task" href="celery.app.task.html" />
     <link rel="prev" title="API Reference" href="index.html" /> 
@@ -42,7 +45,7 @@
         <li class="right" >
           <a href="index.html" title="API Reference"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,13 +58,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/reference/celery.app.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/reference/celery.app.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <span class="target" id="module-celery.app"></span><div class="section" id="celery-app">
@@ -71,12 +72,12 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
 <li>2009 - 2011 by Ask Solem.</li>
 </ol>
 </td>
 </tr>
-<tr class="field"><th class="field-name">license:</th><td class="field-body"><p class="first last">BSD, see LICENSE for more details.</p>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body"><p class="first last">BSD, see LICENSE for more details.</p>
 </td>
 </tr>
 </tbody>
@@ -97,7 +98,7 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>main</strong> &#8211; Name of the main module if running as <cite>__main__</cite>.</li>
 <li><strong>loader</strong> &#8211; The loader class, or the name of the loader class to use.
 Default is <a class="reference internal" href="celery.loaders.app.html#celery.loaders.app.AppLoader" title="celery.loaders.app.AppLoader"><tt class="xref py py-class docutils literal"><span class="pre">celery.loaders.app.AppLoader</span></tt></a>.</li>
@@ -244,7 +245,7 @@ taken from this app.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>name</strong> &#8211; Name of task to execute (e.g. <cite>&#8220;tasks.add&#8221;</cite>).</li>
 <li><strong>result_cls</strong> &#8211; Specify custom result class. Default is
 using <a class="reference internal" href="#celery.app.App.AsyncResult" title="celery.app.App.AsyncResult"><tt class="xref py py-meth docutils literal"><span class="pre">AsyncResult()</span></tt></a>.</li>
@@ -272,7 +273,7 @@ using <a class="reference internal" href="#celery.app.App.AsyncResult" title="ce
 <dl class="method">
 <dt id="celery.app.App.worker_main">
 <tt class="descname">worker_main</tt><big>(</big><em>argv=None</em><big>)</big><a class="headerlink" href="#celery.app.App.worker_main" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run <strong class="program">celeryd</strong> using <cite>argv</cite>.  Uses <tt class="xref py py-data docutils literal"><span class="pre">sys.argv</span></tt>
+<dd><p>Run <strong class="program">celeryd</strong> using <cite>argv</cite>.  Uses <a class="reference external" href="http://docs.python.org/dev/library/sys.html#sys.argv" title="(in Python v3.3)"><tt class="xref py py-data docutils literal"><span class="pre">sys.argv</span></tt></a>
 if <cite>argv</cite> is not specified.</p>
 </dd></dl>
 
@@ -296,7 +297,7 @@ if <cite>argv</cite> is not specified.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>hostname</strong> &#8211; defaults to the <a class="reference internal" href="../configuration.html#std:setting-BROKER_HOST"><tt class="xref std std-setting docutils literal"><span class="pre">BROKER_HOST</span></tt></a> setting.</li>
 <li><strong>userid</strong> &#8211; defaults to the <a class="reference internal" href="../configuration.html#std:setting-BROKER_USER"><tt class="xref std std-setting docutils literal"><span class="pre">BROKER_USER</span></tt></a> setting.</li>
 <li><strong>password</strong> &#8211; defaults to the <a class="reference internal" href="../configuration.html#std:setting-BROKER_PASSWORD"><tt class="xref std std-setting docutils literal"><span class="pre">BROKER_PASSWORD</span></tt></a> setting.</li>
@@ -313,7 +314,7 @@ setting.</li>
 </tr>
 </tbody>
 </table>
-<p>:returns <tt class="xref py py-class docutils literal"><span class="pre">kombu.connection.BrokerConnection</span></tt>:</p>
+<p>:returns <a class="reference external" href="http://kombu.readthedocs.org/en/latest/reference/kombu.connection.html#kombu.connection.BrokerConnection" title="(in Kombu v1.4)"><tt class="xref py py-class docutils literal"><span class="pre">kombu.connection.BrokerConnection</span></tt></a>:</p>
 </dd></dl>
 
 <dl class="method">
@@ -351,7 +352,7 @@ the function returns.</p>
 <dt id="celery.app.App.merge">
 <tt class="descname">merge</tt><big>(</big><em>l</em>, <em>r</em><big>)</big><a class="headerlink" href="#celery.app.App.merge" title="Permalink to this definition">¶</a></dt>
 <dd><p>Like <cite>dict(a, **b)</cite> except it will keep values from <cite>a</cite>
-if the value in <cite>b</cite> is <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt>.</p>
+if the value in <cite>b</cite> is <tt class="xref py py-const docutils literal"><span class="pre">None</span></tt>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -422,13 +423,12 @@ is no active app.</p>
         <li class="right" >
           <a href="index.html" title="API Reference"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

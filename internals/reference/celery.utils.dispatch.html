@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.utils.dispatch &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>celery.utils.dispatch &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.utils.dispatch.signal" href="celery.utils.dispatch.signal.html" />
     <link rel="prev" title="celery.utils.timer2" href="celery.utils.timer2.html" /> 
@@ -42,7 +45,7 @@
         <li class="right" >
           <a href="celery.utils.timer2.html" title="celery.utils.timer2"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,150 +59,16 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.utils.dispatch.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.utils.dispatch.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="celery-utils-dispatch">
 <h1>celery.utils.dispatch<a class="headerlink" href="#celery-utils-dispatch" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.utils.dispatch"></span><dl class="class">
-<dt id="celery.utils.dispatch.Signal">
-<em class="property">class </em><tt class="descclassname">celery.utils.dispatch.</tt><tt class="descname">Signal</tt><big>(</big><em>providing_args=None</em><big>)</big><a class="headerlink" href="#celery.utils.dispatch.Signal" title="Permalink to this definition">¶</a></dt>
-<dd><p>Base class for all signals</p>
-<dl class="attribute">
-<dt id="celery.utils.dispatch.Signal.receivers">
-<tt class="descname">receivers</tt><a class="headerlink" href="#celery.utils.dispatch.Signal.receivers" title="Permalink to this definition">¶</a></dt>
-<dt>
-<tt class="descname">Internal attribute, holds a dictionary of</tt></dt>
-<dt>
-<tt class="descname">`{receriverkey (id): weakref(receiver)}` mappings.</tt></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.utils.dispatch.Signal.connect">
-<tt class="descname">connect</tt><big>(</big><em>receiver</em>, <em>sender=None</em>, <em>weak=True</em>, <em>dispatch_uid=None</em><big>)</big><a class="headerlink" href="#celery.utils.dispatch.Signal.connect" title="Permalink to this definition">¶</a></dt>
-<dd><p>Connect receiver to sender for signal.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>receiver</strong> &#8211; <p>A function or an instance method which is to
-receive signals. Receivers must be hashable objects.</p>
-<p>if weak is <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt>, then receiver must be weak-referencable
-(more precisely <a class="reference internal" href="celery.utils.dispatch.saferef.html#celery.utils.dispatch.saferef.safe_ref" title="celery.utils.dispatch.saferef.safe_ref"><tt class="xref py py-func docutils literal"><span class="pre">saferef.safe_ref()</span></tt></a> must be able to create a
-reference to the receiver).</p>
-<p>Receivers must be able to accept keyword arguments.</p>
-<p>If receivers have a <cite>dispatch_uid</cite> attribute, the receiver will
-not be added if another receiver already exists with that
-<cite>dispatch_uid</cite>.</p>
-</li>
-<li><strong>sender</strong> &#8211; The sender to which the receiver should respond.
-Must either be of type <a class="reference internal" href="#celery.utils.dispatch.Signal" title="celery.utils.dispatch.Signal"><tt class="xref py py-class docutils literal"><span class="pre">Signal</span></tt></a>, or <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> to receive
-events from any sender.</li>
-<li><strong>weak</strong> &#8211; Whether to use weak references to the receiver.
-By default, the module will attempt to use weak references to the
-receiver objects. If this parameter is false, then strong
-references will be used.</li>
-<li><strong>dispatch_uid</strong> &#8211; An identifier used to uniquely identify a
-particular instance of a receiver. This will usually be a
-string, though it may be anything hashable.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.utils.dispatch.Signal.disconnect">
-<tt class="descname">disconnect</tt><big>(</big><em>receiver=None</em>, <em>sender=None</em>, <em>weak=True</em>, <em>dispatch_uid=None</em><big>)</big><a class="headerlink" href="#celery.utils.dispatch.Signal.disconnect" title="Permalink to this definition">¶</a></dt>
-<dd><p>Disconnect receiver from sender for signal.</p>
-<p>If weak references are used, disconnect need not be called. The
-receiver will be removed from dispatch automatically.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>receiver</strong> &#8211; The registered receiver to disconnect. May be
-none if <cite>dispatch_uid</cite> is specified.</li>
-<li><strong>sender</strong> &#8211; The registered sender to disconnect.</li>
-<li><strong>weak</strong> &#8211; The weakref state to disconnect.</li>
-<li><strong>dispatch_uid</strong> &#8211; the unique identifier of the receiver
-to disconnect</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.utils.dispatch.Signal.send">
-<tt class="descname">send</tt><big>(</big><em>sender</em>, <em>**named</em><big>)</big><a class="headerlink" href="#celery.utils.dispatch.Signal.send" title="Permalink to this definition">¶</a></dt>
-<dd><p>Send signal from sender to all connected receivers.</p>
-<p>If any receiver raises an error, the error propagates back through
-send, terminating the dispatch loop, so it is quite possible to not
-have all receivers called if a raises an error.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>sender</strong> &#8211; The sender of the signal. Either a specific
-object or <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt>.</li>
-<li><strong>**named</strong> &#8211; Named arguments which will be passed to receivers.</li>
-</ul>
-</td>
-</tr>
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a list of tuple pairs: <cite>[(receiver, response), ... ]</cite>.</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.utils.dispatch.Signal.send_robust">
-<tt class="descname">send_robust</tt><big>(</big><em>sender</em>, <em>**named</em><big>)</big><a class="headerlink" href="#celery.utils.dispatch.Signal.send_robust" title="Permalink to this definition">¶</a></dt>
-<dd><p>Send signal from sender to all connected receivers catching errors.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>sender</strong> &#8211; The sender of the signal. Can be any python object
-(normally one registered with a connect if you actually want
-something to occur).</li>
-<li><strong>**named</strong> &#8211; Named arguments which will be passed to receivers.
-These arguments must be a subset of the argument names defined in
-<tt class="xref py py-attr docutils literal"><span class="pre">providing_args</span></tt>.</li>
-</ul>
-</td>
-</tr>
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">a list of tuple pairs: <cite>[(receiver, response), ... ]</cite>.</p>
-</td>
-</tr>
-<tr class="field"><th class="field-name" colspan="2">Raises DispatcherKeyError:</th></tr>
-<tr class="field"><td>&nbsp;</td><td class="field-body"><p class="first last"></p>
-</td>
-</tr>
-</tbody>
-</table>
-<p>if any receiver raises an error (specifically any subclass of
-<tt class="xref py py-exc docutils literal"><span class="pre">Exception</span></tt>), the error instance is returned as the result
-for that receiver.</p>
-</dd></dl>
-
-</dd></dl>
-
-</div>
+<span class="target" id="module-celery.utils.dispatch"></span></div>
 
 
           </div>
@@ -252,14 +121,13 @@ for that receiver.</p>
         <li class="right" >
           <a href="celery.utils.timer2.html" title="celery.utils.timer2"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

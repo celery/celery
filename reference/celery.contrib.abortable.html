@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.contrib.abortable &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>celery.contrib.abortable &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.contrib.batches" href="celery.contrib.batches.html" />
     <link rel="prev" title="celery.states" href="celery.states.html" /> 
@@ -42,7 +45,7 @@
         <li class="right" >
           <a href="celery.states.html" title="celery.states"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,13 +58,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/reference/celery.contrib.abortable.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/reference/celery.contrib.abortable.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="celery-contrib-abortable">
@@ -160,7 +161,7 @@ all).</p>
 <dl class="method">
 <dt id="celery.contrib.abortable.AbortableAsyncResult.is_aborted">
 <tt class="descname">is_aborted</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.contrib.abortable.AbortableAsyncResult.is_aborted" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if the task is (being) aborted.</p>
+<dd><p>Returns <tt class="xref py py-const docutils literal"><span class="pre">True</span></tt> if the task is (being) aborted.</p>
 </dd></dl>
 
 </dd></dl>
@@ -172,7 +173,7 @@ all).</p>
 that support aborting during execution.</p>
 <p>All subclasses of <a class="reference internal" href="#celery.contrib.abortable.AbortableTask" title="celery.contrib.abortable.AbortableTask"><tt class="xref py py-class docutils literal"><span class="pre">AbortableTask</span></tt></a> must call the
 <a class="reference internal" href="#celery.contrib.abortable.AbortableTask.is_aborted" title="celery.contrib.abortable.AbortableTask.is_aborted"><tt class="xref py py-meth docutils literal"><span class="pre">is_aborted()</span></tt></a> method periodically and act accordingly when
-the call evaluates to <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt>.</p>
+the call evaluates to <tt class="xref py py-const docutils literal"><span class="pre">True</span></tt>.</p>
 <dl class="classmethod">
 <dt id="celery.contrib.abortable.AbortableTask.AsyncResult">
 <em class="property">classmethod </em><tt class="descname">AsyncResult</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.contrib.abortable.AbortableTask.AsyncResult" title="Permalink to this definition">¶</a></dt>
@@ -184,13 +185,18 @@ the call evaluates to <tt class="xref py py-const xref docutils literal"><span c
 <tt class="descname">is_aborted</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.contrib.abortable.AbortableTask.is_aborted" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks against the backend whether this
 <a class="reference internal" href="#celery.contrib.abortable.AbortableAsyncResult" title="celery.contrib.abortable.AbortableAsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">AbortableAsyncResult</span></tt></a> is <tt class="xref py py-const docutils literal"><span class="pre">ABORTED</span></tt>.</p>
-<p>Always returns <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt> in case the <cite>task_id</cite> parameter
+<p>Always returns <tt class="xref py py-const docutils literal"><span class="pre">False</span></tt> in case the <cite>task_id</cite> parameter
 refers to a regular (non-abortable) <tt class="xref py py-class docutils literal"><span class="pre">Task</span></tt>.</p>
 <p>Be aware that invoking this method will cause a hit in the
 backend (for example a database query), so find a good balance
 between calling it regularly (for responsiveness), but not too
 often (for performance).</p>
 </dd></dl>
+
+<dl class="attribute">
+<dt id="celery.contrib.abortable.AbortableTask.name">
+<tt class="descname">name</tt><em class="property"> = 'celery.contrib.abortable.AbortableTask'</em><a class="headerlink" href="#celery.contrib.abortable.AbortableTask.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -249,13 +255,12 @@ often (for performance).</p>
         <li class="right" >
           <a href="celery.states.html" title="celery.states"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.utils.dispatch.saferef &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>celery.utils.dispatch.saferef &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.platforms" href="celery.platforms.html" />
     <link rel="prev" title="celery.utils.dispatch.signal" href="celery.utils.dispatch.signal.html" /> 
@@ -42,7 +45,7 @@
         <li class="right" >
           <a href="celery.utils.dispatch.signal.html" title="celery.utils.dispatch.signal"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,13 +59,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.utils.dispatch.saferef.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.utils.dispatch.saferef.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="celery-utils-dispatch-saferef">
@@ -170,14 +171,14 @@ on the details of the underlying class method implementation.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>target</strong> &#8211; the object to be weakly referenced, if it&#8217;s a
 bound method reference, will create a <a class="reference internal" href="#celery.utils.dispatch.saferef.BoundMethodWeakref" title="celery.utils.dispatch.saferef.BoundMethodWeakref"><tt class="xref py py-class docutils literal"><span class="pre">BoundMethodWeakref</span></tt></a>,
-otherwise creates a simple <tt class="xref py py-class docutils literal"><span class="pre">weakref.ref</span></tt>.</li>
+otherwise creates a simple <a class="reference external" href="http://docs.python.org/dev/library/weakref.html#weakref.ref" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">weakref.ref</span></tt></a>.</li>
 <li><strong>on_delete</strong> &#8211; if provided, will have a hard reference stored
 to the callable to be called after the safe reference
 goes out of scope with the reference object, (either a
-<tt class="xref py py-class docutils literal"><span class="pre">weakref.ref</span></tt> or a <a class="reference internal" href="#celery.utils.dispatch.saferef.BoundMethodWeakref" title="celery.utils.dispatch.saferef.BoundMethodWeakref"><tt class="xref py py-class docutils literal"><span class="pre">BoundMethodWeakref</span></tt></a>) as argument.</li>
+<a class="reference external" href="http://docs.python.org/dev/library/weakref.html#weakref.ref" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">weakref.ref</span></tt></a> or a <a class="reference internal" href="#celery.utils.dispatch.saferef.BoundMethodWeakref" title="celery.utils.dispatch.saferef.BoundMethodWeakref"><tt class="xref py py-class docutils literal"><span class="pre">BoundMethodWeakref</span></tt></a>) as argument.</li>
 </ul>
 </td>
 </tr>
@@ -238,14 +239,13 @@ goes out of scope with the reference object, (either a
         <li class="right" >
           <a href="celery.utils.dispatch.signal.html" title="celery.utils.dispatch.signal"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

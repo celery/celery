@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Introduction &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>Introduction &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../index.html" />
     <link rel="up" title="Getting Started" href="index.html" />
     <link rel="next" title="Broker Installation" href="broker-installation.html" />
     <link rel="prev" title="Getting Started" href="index.html" /> 
@@ -42,7 +45,7 @@
         <li class="right" >
           <a href="index.html" title="Getting Started"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Getting Started</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,13 +58,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/getting-started/introduction.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/getting-started/introduction.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="introduction">
@@ -70,15 +71,15 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Version:</th><td class="field-body">2.4.0rc1</td>
+<tr class="field-odd field"><th class="field-name">Version:</th><td class="field-body">2.4.0</td>
 </tr>
-<tr class="field"><th class="field-name">Web:</th><td class="field-body"><a class="reference external" href="http://celeryproject.org/">http://celeryproject.org/</a></td>
+<tr class="field-even field"><th class="field-name">Web:</th><td class="field-body"><a class="reference external" href="http://celeryproject.org/">http://celeryproject.org/</a></td>
 </tr>
-<tr class="field"><th class="field-name">Download:</th><td class="field-body"><a class="reference external" href="http://pypi.python.org/pypi/celery/">http://pypi.python.org/pypi/celery/</a></td>
+<tr class="field-odd field"><th class="field-name">Download:</th><td class="field-body"><a class="reference external" href="http://pypi.python.org/pypi/celery/">http://pypi.python.org/pypi/celery/</a></td>
 </tr>
-<tr class="field"><th class="field-name">Source:</th><td class="field-body"><a class="reference external" href="http://github.com/ask/celery/">http://github.com/ask/celery/</a></td>
+<tr class="field-even field"><th class="field-name">Source:</th><td class="field-body"><a class="reference external" href="http://github.com/ask/celery/">http://github.com/ask/celery/</a></td>
 </tr>
-<tr class="field"><th class="field-name">Keywords:</th><td class="field-body">task queue, job queue, asynchronous, rabbitmq, amqp, redis,
+<tr class="field-odd field"><th class="field-name">Keywords:</th><td class="field-body">task queue, job queue, asynchronous, rabbitmq, amqp, redis,
 python, webhooks, queue, distributed</td>
 </tr>
 </tbody>
@@ -150,17 +151,17 @@ adding two numbers:</p>
 <col width="75%" />
 </colgroup>
 <tbody valign="top">
-<tr><td>Messaging</td>
+<tr class="row-odd"><td>Messaging</td>
 <td>Supported brokers include <a class="reference external" href="http://www.rabbitmq.com/">RabbitMQ</a>, <a class="reference external" href="http://code.google.com/p/redis/">Redis</a>,
 <a class="reference external" href="http://kr.github.com/beanstalkd/">Beanstalk</a>, <a class="reference external" href="http://mongodb.org/">MongoDB</a>, <a class="reference external" href="http://couchdb.apache.org/">CouchDB</a>, and popular
 SQL databases.</td>
 </tr>
-<tr><td>Fault-tolerant</td>
+<tr class="row-even"><td>Fault-tolerant</td>
 <td>Excellent configurable error recovery when using
 <cite>RabbitMQ</cite>, ensures your tasks are never lost.
 scenarios, and your tasks will never be lost.</td>
 </tr>
-<tr><td>Distributed</td>
+<tr class="row-odd"><td>Distributed</td>
 <td>Runs on one or more machines. Supports
 broker <a class="reference external" href="http://www.rabbitmq.com/clustering.html">clustering</a> and <a class="reference external" href="http://www.rabbitmq.com/pacemaker.html">HA</a> when used in
 combination with <a class="reference external" href="http://www.rabbitmq.com/">RabbitMQ</a>.  You can set up new
@@ -168,87 +169,87 @@ workers without central configuration (e.g. use
 your grandma&#8217;s laptop to help if the queue is
 temporarily congested).</td>
 </tr>
-<tr><td>Concurrency</td>
+<tr class="row-even"><td>Concurrency</td>
 <td>Concurrency is achieved by using multiprocessing,
 <a class="reference external" href="http://eventlet.net/">Eventlet</a>, <cite>gevent</cite> or a mix of these.</td>
 </tr>
-<tr><td>Scheduling</td>
+<tr class="row-odd"><td>Scheduling</td>
 <td>Supports recurring tasks like cron, or specifying
 an exact date or countdown for when after the task
 should be executed.</td>
 </tr>
-<tr><td>Latency</td>
+<tr class="row-even"><td>Latency</td>
 <td>Low latency means you are able to execute tasks
 <em>while the user is waiting</em>.</td>
 </tr>
-<tr><td>Return Values</td>
+<tr class="row-odd"><td>Return Values</td>
 <td>Task return values can be saved to the selected
 result store backend. You can wait for the result,
 retrieve it later, or ignore it.</td>
 </tr>
-<tr><td>Result Stores</td>
+<tr class="row-even"><td>Result Stores</td>
 <td>Database, <a class="reference external" href="http://mongodb.org/">MongoDB</a>, <a class="reference external" href="http://code.google.com/p/redis/">Redis</a>, <cite>Tokyo Tyrant</cite>,
 <cite>Cassandra</cite>, or <a class="reference external" href="http://www.amqp.org/">AMQP</a> (message notification).</td>
 </tr>
-<tr><td>Webhooks</td>
+<tr class="row-odd"><td>Webhooks</td>
 <td>Your tasks can also be HTTP callbacks, enabling
 cross-language communication.</td>
 </tr>
-<tr><td>Rate limiting</td>
+<tr class="row-even"><td>Rate limiting</td>
 <td>Supports rate limiting by using the token bucket
 algorithm, which accounts for bursts of traffic.
 Rate limits can be set for each task type, or
 globally for all.</td>
 </tr>
-<tr><td>Routing</td>
+<tr class="row-odd"><td>Routing</td>
 <td>Using AMQP&#8217;s flexible routing model you can route
 tasks to different workers, or select different
 message topologies, by configuration or even at
 runtime.</td>
 </tr>
-<tr><td>Remote-control</td>
+<tr class="row-even"><td>Remote-control</td>
 <td>Worker nodes can be controlled from remote by
 using broadcast messaging.  A range of built-in
 commands exist in addition to the ability to
 easily define your own. (AMQP/Redis only)</td>
 </tr>
-<tr><td>Monitoring</td>
+<tr class="row-odd"><td>Monitoring</td>
 <td>You can capture everything happening with the
 workers in real-time by subscribing to events.
 A real-time web monitor is in development.</td>
 </tr>
-<tr><td>Serialization</td>
+<tr class="row-even"><td>Serialization</td>
 <td>Supports Pickle, JSON, YAML, or easily defined
 custom schemes. One task invocation can have a
 different scheme than another.</td>
 </tr>
-<tr><td>Tracebacks</td>
+<tr class="row-odd"><td>Tracebacks</td>
 <td>Errors and tracebacks are stored and can be
 investigated after the fact.</td>
 </tr>
-<tr><td>UUID</td>
+<tr class="row-even"><td>UUID</td>
 <td>Every task has an UUID (Universally Unique
 Identifier), which is the task id used to query
 task status and return value.</td>
 </tr>
-<tr><td>Retries</td>
+<tr class="row-odd"><td>Retries</td>
 <td>Tasks can be retried if they fail, with
 configurable maximum number of retries, and delays
 between each retry.</td>
 </tr>
-<tr><td>Task Sets</td>
+<tr class="row-even"><td>Task Sets</td>
 <td>A Task set is a task consisting of several
 sub-tasks. You can find out how many, or if all
 of the sub-tasks has been executed, and even
 retrieve the results in order. Progress bars,
 anyone?</td>
 </tr>
-<tr><td>Made for Web</td>
+<tr class="row-odd"><td>Made for Web</td>
 <td>You can query status and results via URLs,
 enabling the ability to poll task status using
 Ajax.</td>
 </tr>
-<tr><td>Error Emails</td>
+<tr class="row-even"><td>Error Emails</td>
 <td>Can be configured to send emails to the
 administrators when tasks fails.</td>
 </tr>
@@ -342,13 +343,12 @@ $ python setup.py build
         <li class="right" >
           <a href="index.html" title="Getting Started"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" >Getting Started</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

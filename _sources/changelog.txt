@@ -9,9 +9,7 @@
 
 2.4.0
 =====
-:release-date: 2011-10-28 04:00 P.M BST
-:status: FROZEN
-:branch: master
+:release-date: 2011-11-04 04:00 P.M GMT
 
 .. _v240-important:
 
@@ -32,6 +30,10 @@ Important Notes
 
     This is a workaround for http://bugs.python.org/issue6721#msg140215.
 
+    Be aware that while this fixes the logging library lock,
+    there could still be other locks initialized in the parent
+    process, introduced by custom code.
+
     Fix contributed by Harm Verhagen.
 
 * AMQP Result backend: Now expires results by default.
@@ -49,9 +51,12 @@ Important Notes
 
         CELERY_TASK_RESULT_EXPIRES = None
 
+* Eventlet: Fixed problem with shutdown (Issue #457).
+
 * Broker transports can be now be specified using URLs
 
-    The broker hostname can now be given as an URL instead, of the format::
+    The broker can now be specified as an URL instead.
+    This URL must have the format::
 
         transport://user:password@hostname:port/virtual_host
 
@@ -59,33 +64,35 @@ Important Notes
 
         amqp://guest:guest@localhost:5672//
 
-    Transport defaults to amqp, and is not required.
-    user, password, port and virtual_host is also not mandatory and
-    will default to the corresponding transport default.
+    The scheme is required, so that the host is identified
+    as an URL and not just a host name.
+    User, password, port and virtual_host are optional and
+    defaults to the particular transports default value.
 
     .. note::
 
         Note that the path component (virtual_host) always starts with a
         forward-slash.  This is necessary to distinguish between the virtual
-        host '' (empty) and '/', which are both acceptable virtual host names.
+        host ``''`` (empty) and ``'/'``, which are both acceptable virtual
+        host names.
 
-        A virtual host of '/' becomes:
+        A virtual host of ``'/'`` becomes:
 
             amqp://guest:guest@localhost:5672//
 
-        and a virtual host of '' (empty) becomes::
+        and a virtual host of ``''`` (empty) becomes::
 
             amqp://guest:guest@localhost:5672/
 
         So the leading slash in the path component is **always required**.
 
-   In addition the :setting:`BROKER_URL` setting has been added as an alias
-   to ``BROKER_HOST``.  Any broker setting specified in both the URL and in
-   the configuration will be ignored, if a setting is not provided in the URL
-   then the value from the configuration will be used as default.
+    In addition the :setting:`BROKER_URL` setting has been added as an alias
+    to ``BROKER_HOST``.  Any broker setting specified in both the URL and in
+    the configuration will be ignored, if a setting is not provided in the URL
+    then the value from the configuration will be used as default.
 
-   Also, programs now support the :option:`-b|--broker` option to specify
-   a broker URL on the command line::
+    Also, programs now support the :option:`-b|--broker` option to specify
+    a broker URL on the command line::
 
         $ celeryd -b redis://localhost
 
@@ -99,15 +106,15 @@ Important Notes
 * The :setting:`CELERY_TASK_ERROR_WHITELIST` setting has been replaced
   by a more flexible approach (Issue #447).
 
-  The Mail sending logic is now available as ``Task.ErrorMail``.
-  The actual implementation is in :module:`celery.utils.mail`.
+    The error mail sending logic is now available as ``Task.ErrorMail``,
+    with the implementation (for reference) in :mod:`celery.utils.mail`.
 
-  The error mail class can be sub-classed to gain complete control
-  of when error messages are sent, thus removing the need for a separate
-  white-list setting.
+    The error mail class can be sub-classed to gain complete control
+    of when error messages are sent, thus removing the need for a separate
+    white-list setting.
 
-  The :setting:`CELERY_TASK_ERROR_WHITELIST` setting has been deprecated,
-  and will be removed completely in version 3.0.
+    The :setting:`CELERY_TASK_ERROR_WHITELIST` setting has been deprecated,
+    and will be removed completely in version 3.0.
 
 * Additional Deprecations
 
@@ -145,6 +152,8 @@ News
 
 * No longer depends on :mod:`pyparsing`.
 
+* Now depends on Kombu 1.4.3.
+
 * CELERY_IMPORTS can now be a scalar value (Issue #485).
 
     It is too easy to forget to add the comma after the sole element of a
@@ -179,6 +188,9 @@ News
 
     Contributed by Chris Chamberlin.
 
+* Fixed race condition in celery.events.state (celerymon/celeryev)
+  where task info would be removed while iterating over it (Issue #501).
+
 * The Cache, Cassandra, MongoDB, Redis and Tyrant backends now respects
   the :setting:`CELERY_RESULT_SERIALIZER` setting (Issue #435).
 
@@ -196,6 +208,10 @@ News
 * ``celeryd_multi`` now supports a ``stop_verify`` command to wait for
   processes to shutdown.
 
+* Cache backend did not work if the cache key was unicode (Issue #504).
+
+    Fix contributed by Neil Chintomby.
+
 * New setting :setting:`CELERY_RESULT_DB_SHORT_LIVED_SESSIONS` added,
   which if enabled will disable the caching of SQLAlchemy sessions
   (Issue #449).
@@ -206,6 +222,8 @@ News
   be pickled (Issue #441).
 
     Fix contributed by Remy Noel
+
+* celeryd-multi did not work on Windows (Issue #472).
 
 * New-style ``CELERY_REDIS_*`` settings now takes precedence over
   the old ``REDIS_*`` configuration keys (Issue #508).
@@ -223,12 +241,15 @@ News
 
 * The :setting:`CELERYBEAT_MAX_LOOP_INTERVAL` setting was not respected.
 
-* ``inspect.registered_tasks`` renamed to ``inspect.tasks`` for naming
+* ``inspect.registered_tasks`` renamed to ``inspect.registered`` for naming
   consistency.
 
     The previous name is still available as an alias.
 
     Contributed by Mher Movsisyan
+
+* Worker logged the string representation of args and kwargs
+  without safe guards (Issue #480).
 
 * RHEL init script: Changed celeryd startup priority.
 
@@ -248,6 +269,12 @@ News
 
     Contributed by Yury V. Zaytsev.
 
+* KeyValueStoreBackend.get_many did not respect the ``timeout`` argument
+  (Issue #512).
+
+* celerybeat/celeryev's --workdir option did not chdir before after
+  configuration was attempted (Issue #506).
+
 * After deprecating 2.4 support we can now name modules correctly, since we
   can take use of absolute imports.
 
@@ -260,6 +287,21 @@ News
 
     Also, as you may have noticed the contributors of new features/fixes are
     now mentioned in the Changelog.
+
+.. _version-2.3.3:
+
+2.3.3
+=====
+:release-date: 2011-16-09 05:00 P.M BST
+:by: Mher Movsisyan
+
+* Monkey patching :attr:`sys.stdout` could result in the worker
+  crashing if the replacing object did not define :meth:`isatty`
+  (Issue #477).
+
+* ``CELERYD`` option in :file:`/etc/default/celeryd` should not
+  be used with generic init scripts.
+
 
 .. _version-2.3.2:
 
@@ -277,7 +319,7 @@ News
     If you'd like to contribute to Celery you should read this
     guide: http://ask.github.com/celery/contributing.html
 
-    We are looking for contributors of all skill levels, so don't
+    We are looking for contributors at all skill levels, so don't
     hesitate!
 
 * Now depends on Kombu 1.3.1

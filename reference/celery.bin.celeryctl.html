@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celeryctl - celery.bin.celeryctl &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>celeryctl - celery.bin.celeryctl &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.bin.camqadm" href="celery.bin.camqadm.html" />
     <link rel="prev" title="celery.bin.celeryev" href="celery.bin.celeryev.html" /> 
@@ -42,7 +45,7 @@
         <li class="right" >
           <a href="celery.bin.celeryev.html" title="celery.bin.celeryev"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,13 +58,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/reference/celery.bin.celeryctl.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/reference/celery.bin.celeryctl.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="celeryctl-celery-bin-celeryctl">
@@ -69,7 +70,12 @@
 <span class="target" id="module-celery.bin.celeryctl"></span><dl class="class">
 <dt id="celery.bin.celeryctl.Command">
 <em class="property">class </em><tt class="descclassname">celery.bin.celeryctl.</tt><tt class="descname">Command</tt><big>(</big><em>app=None</em>, <em>no_color=False</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.Command" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<dd><dl class="attribute">
+<dt id="celery.bin.celeryctl.Command.args">
+<tt class="descname">args</tt><em class="property"> = ''</em><a class="headerlink" href="#celery.bin.celeryctl.Command.args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.bin.celeryctl.Command.create_parser">
 <tt class="descname">create_parser</tt><big>(</big><em>prog_name</em>, <em>command</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.Command.create_parser" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -77,6 +83,16 @@
 <dl class="method">
 <dt id="celery.bin.celeryctl.Command.error">
 <tt class="descname">error</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.Command.error" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.bin.celeryctl.Command.help">
+<tt class="descname">help</tt><em class="property"> = ''</em><a class="headerlink" href="#celery.bin.celeryctl.Command.help" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.bin.celeryctl.Command.option_list">
+<tt class="descname">option_list</tt><em class="property"> = (&lt;Option at 0x10a3987e8: --app&gt;, &lt;Option at 0x10a398050: -b/--broker&gt;, &lt;Option at 0x10a398a28: --loader&gt;, &lt;Option at 0x10a3982d8: --config&gt;, &lt;Option at 0x10a594c68: -q/--quiet&gt;, &lt;Option at 0x10a5e8950: -C/--no-color&gt;)</em><a class="headerlink" href="#celery.bin.celeryctl.Command.option_list" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -114,6 +130,11 @@
 <tt class="descname">usage</tt><big>(</big><em>command</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.Command.usage" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="attribute">
+<dt id="celery.bin.celeryctl.Command.version">
+<tt class="descname">version</tt><em class="property"> = '2.4.0'</em><a class="headerlink" href="#celery.bin.celeryctl.Command.version" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="exception">
@@ -124,7 +145,17 @@
 <dl class="class">
 <dt id="celery.bin.celeryctl.apply">
 <em class="property">class </em><tt class="descclassname">celery.bin.celeryctl.</tt><tt class="descname">apply</tt><big>(</big><em>app=None</em>, <em>no_color=False</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.apply" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<dd><dl class="attribute">
+<dt id="celery.bin.celeryctl.apply.args">
+<tt class="descname">args</tt><em class="property"> = '&lt;task_name&gt;'</em><a class="headerlink" href="#celery.bin.celeryctl.apply.args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.bin.celeryctl.apply.option_list">
+<tt class="descname">option_list</tt><em class="property"> = (&lt;Option at 0x10a3987e8: --app&gt;, &lt;Option at 0x10a398050: -b/--broker&gt;, &lt;Option at 0x10a398a28: --loader&gt;, &lt;Option at 0x10a3982d8: --config&gt;, &lt;Option at 0x10a594c68: -q/--quiet&gt;, &lt;Option at 0x10a5e8950: -C/--no-color&gt;, &lt;Option at 0x10a5a99e0: -a/--args&gt;, &lt;Option at 0x10a5a8290: -k/--kwargs&gt;, &lt;Option at 0x10a5e0170: --eta&gt;, &lt;Option at 0x10a5ceb00: --countdown&gt;, &lt;Option at 0x10a5ceea8: --expires&gt;, &lt;Option at 0x10a5e76c8: --serializer&gt;, &lt;Option at 0x10a5e7680: --queue&gt;, &lt;Option at 0x10a5e77e8: --exchange&gt;, &lt;Option at 0x10a5e7dd0: --routing-key&gt;)</em><a class="headerlink" href="#celery.bin.celeryctl.apply.option_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.bin.celeryctl.apply.run">
 <tt class="descname">run</tt><big>(</big><em>name</em>, <em>*_</em>, <em>**kw</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.apply.run" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -134,7 +165,12 @@
 <dl class="class">
 <dt id="celery.bin.celeryctl.celeryctl">
 <em class="property">class </em><tt class="descclassname">celery.bin.celeryctl.</tt><tt class="descname">celeryctl</tt><big>(</big><em>app=None</em>, <em>get_app=None</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.celeryctl" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<dd><dl class="attribute">
+<dt id="celery.bin.celeryctl.celeryctl.commands">
+<tt class="descname">commands</tt><em class="property"> = {'status': &lt;class 'celery.bin.celeryctl.status'&gt;, 'help': &lt;class 'celery.bin.celeryctl.help'&gt;, 'inspect': &lt;class 'celery.bin.celeryctl.inspect'&gt;, 'list': &lt;class 'celery.bin.celeryctl.list_'&gt;, 'purge': &lt;class 'celery.bin.celeryctl.purge'&gt;, 'result': &lt;class 'celery.bin.celeryctl.result'&gt;, 'apply': &lt;class 'celery.bin.celeryctl.apply'&gt;}</em><a class="headerlink" href="#celery.bin.celeryctl.celeryctl.commands" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.bin.celeryctl.celeryctl.execute">
 <tt class="descname">execute</tt><big>(</big><em>command</em>, <em>argv=None</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.celeryctl.execute" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -179,7 +215,17 @@
 <dl class="class">
 <dt id="celery.bin.celeryctl.inspect">
 <em class="property">class </em><tt class="descclassname">celery.bin.celeryctl.</tt><tt class="descname">inspect</tt><big>(</big><em>app=None</em>, <em>no_color=False</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.inspect" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<dd><dl class="attribute">
+<dt id="celery.bin.celeryctl.inspect.choices">
+<tt class="descname">choices</tt><em class="property"> = {'scheduled': 1.0, 'reserved': 1.0, 'registered': 1.0, 'active': 1.0, 'cancel_consumer': 1.0, 'active_queues': 1.0, 'add_consumer': 1.0, 'stats': 1.0, 'revoked': 1.0, 'enable_events': 1.0, 'ping': 0.2, 'disable_events': 1.0, 'registered_tasks': 1.0}</em><a class="headerlink" href="#celery.bin.celeryctl.inspect.choices" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.bin.celeryctl.inspect.option_list">
+<tt class="descname">option_list</tt><em class="property"> = (&lt;Option at 0x10a3987e8: --app&gt;, &lt;Option at 0x10a398050: -b/--broker&gt;, &lt;Option at 0x10a398a28: --loader&gt;, &lt;Option at 0x10a3982d8: --config&gt;, &lt;Option at 0x10a594c68: -q/--quiet&gt;, &lt;Option at 0x10a5e8950: -C/--no-color&gt;, &lt;Option at 0x10a5e7710: -t/--timeout&gt;, &lt;Option at 0x10a5e75a8: -d/--destination&gt;)</em><a class="headerlink" href="#celery.bin.celeryctl.inspect.option_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.bin.celeryctl.inspect.run">
 <tt class="descname">run</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.inspect.run" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -187,6 +233,11 @@
 <dl class="method">
 <dt id="celery.bin.celeryctl.inspect.say">
 <tt class="descname">say</tt><big>(</big><em>direction</em>, <em>title</em>, <em>body=''</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.inspect.say" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.bin.celeryctl.inspect.show_body">
+<tt class="descname">show_body</tt><em class="property"> = True</em><a class="headerlink" href="#celery.bin.celeryctl.inspect.show_body" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -199,7 +250,12 @@
 <dl class="class">
 <dt id="celery.bin.celeryctl.list_">
 <em class="property">class </em><tt class="descclassname">celery.bin.celeryctl.</tt><tt class="descname">list_</tt><big>(</big><em>app=None</em>, <em>no_color=False</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.list_" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<dd><dl class="attribute">
+<dt id="celery.bin.celeryctl.list_.args">
+<tt class="descname">args</tt><em class="property"> = '&lt;bindings&gt;'</em><a class="headerlink" href="#celery.bin.celeryctl.list_.args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.bin.celeryctl.list_.list_bindings">
 <tt class="descname">list_bindings</tt><big>(</big><em>channel</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.list_.list_bindings" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -234,7 +290,17 @@
 <dl class="class">
 <dt id="celery.bin.celeryctl.result">
 <em class="property">class </em><tt class="descclassname">celery.bin.celeryctl.</tt><tt class="descname">result</tt><big>(</big><em>app=None</em>, <em>no_color=False</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.result" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<dd><dl class="attribute">
+<dt id="celery.bin.celeryctl.result.args">
+<tt class="descname">args</tt><em class="property"> = '&lt;task_id&gt;'</em><a class="headerlink" href="#celery.bin.celeryctl.result.args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.bin.celeryctl.result.option_list">
+<tt class="descname">option_list</tt><em class="property"> = (&lt;Option at 0x10a3987e8: --app&gt;, &lt;Option at 0x10a398050: -b/--broker&gt;, &lt;Option at 0x10a398a28: --loader&gt;, &lt;Option at 0x10a3982d8: --config&gt;, &lt;Option at 0x10a594c68: -q/--quiet&gt;, &lt;Option at 0x10a5e8950: -C/--no-color&gt;, &lt;Option at 0x10a5e7b48: -t/--task&gt;)</em><a class="headerlink" href="#celery.bin.celeryctl.result.option_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.bin.celeryctl.result.run">
 <tt class="descname">run</tt><big>(</big><em>task_id</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.result.run" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -244,7 +310,12 @@
 <dl class="class">
 <dt id="celery.bin.celeryctl.status">
 <em class="property">class </em><tt class="descclassname">celery.bin.celeryctl.</tt><tt class="descname">status</tt><big>(</big><em>app=None</em>, <em>no_color=False</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.status" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<dd><dl class="attribute">
+<dt id="celery.bin.celeryctl.status.option_list">
+<tt class="descname">option_list</tt><em class="property"> = (&lt;Option at 0x10a3987e8: --app&gt;, &lt;Option at 0x10a398050: -b/--broker&gt;, &lt;Option at 0x10a398a28: --loader&gt;, &lt;Option at 0x10a3982d8: --config&gt;, &lt;Option at 0x10a594c68: -q/--quiet&gt;, &lt;Option at 0x10a5e8950: -C/--no-color&gt;, &lt;Option at 0x10a5e7710: -t/--timeout&gt;, &lt;Option at 0x10a5e75a8: -d/--destination&gt;)</em><a class="headerlink" href="#celery.bin.celeryctl.status.option_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.bin.celeryctl.status.run">
 <tt class="descname">run</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.status.run" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -304,13 +375,12 @@
         <li class="right" >
           <a href="celery.bin.celeryev.html" title="celery.bin.celeryev"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

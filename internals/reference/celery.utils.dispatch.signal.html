@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.utils.dispatch.signal &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>celery.utils.dispatch.signal &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.utils.dispatch.saferef" href="celery.utils.dispatch.saferef.html" />
     <link rel="prev" title="celery.utils.dispatch" href="celery.utils.dispatch.html" /> 
@@ -42,7 +45,7 @@
         <li class="right" >
           <a href="celery.utils.dispatch.html" title="celery.utils.dispatch"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,13 +59,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.utils.dispatch.signal.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.utils.dispatch.signal.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="celery-utils-dispatch-signal">
@@ -89,10 +90,10 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>receiver</strong> &#8211; <p>A function or an instance method which is to
 receive signals. Receivers must be hashable objects.</p>
-<p>if weak is <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt>, then receiver must be weak-referencable
+<p>if weak is <tt class="xref py py-const docutils literal"><span class="pre">True</span></tt>, then receiver must be weak-referencable
 (more precisely <tt class="xref py py-func docutils literal"><span class="pre">saferef.safe_ref()</span></tt> must be able to create a
 reference to the receiver).</p>
 <p>Receivers must be able to accept keyword arguments.</p>
@@ -101,7 +102,7 @@ not be added if another receiver already exists with that
 <cite>dispatch_uid</cite>.</p>
 </li>
 <li><strong>sender</strong> &#8211; The sender to which the receiver should respond.
-Must either be of type <a class="reference internal" href="#celery.utils.dispatch.signal.Signal" title="celery.utils.dispatch.signal.Signal"><tt class="xref py py-class docutils literal"><span class="pre">Signal</span></tt></a>, or <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> to receive
+Must either be of type <a class="reference internal" href="#celery.utils.dispatch.signal.Signal" title="celery.utils.dispatch.signal.Signal"><tt class="xref py py-class docutils literal"><span class="pre">Signal</span></tt></a>, or <tt class="xref py py-const docutils literal"><span class="pre">None</span></tt> to receive
 events from any sender.</li>
 <li><strong>weak</strong> &#8211; Whether to use weak references to the receiver.
 By default, the module will attempt to use weak references to the
@@ -127,7 +128,7 @@ receiver will be removed from dispatch automatically.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>receiver</strong> &#8211; The registered receiver to disconnect. May be
 none if <cite>dispatch_uid</cite> is specified.</li>
 <li><strong>sender</strong> &#8211; The registered sender to disconnect.</li>
@@ -152,14 +153,14 @@ have all receivers called if a raises an error.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>sender</strong> &#8211; The sender of the signal. Either a specific
-object or <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt>.</li>
+object or <tt class="xref py py-const docutils literal"><span class="pre">None</span></tt>.</li>
 <li><strong>**named</strong> &#8211; Named arguments which will be passed to receivers.</li>
 </ul>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a list of tuple pairs: <cite>[(receiver, response), ... ]</cite>.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a list of tuple pairs: <cite>[(receiver, response), ... ]</cite>.</p>
 </td>
 </tr>
 </tbody>
@@ -174,7 +175,7 @@ object or <tt class="xref py py-const xref docutils literal"><span class="pre">N
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>sender</strong> &#8211; The sender of the signal. Can be any python object
 (normally one registered with a connect if you actually want
 something to occur).</li>
@@ -184,17 +185,17 @@ These arguments must be a subset of the argument names defined in
 </ul>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">a list of tuple pairs: <cite>[(receiver, response), ... ]</cite>.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">a list of tuple pairs: <cite>[(receiver, response), ... ]</cite>.</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Raises DispatcherKeyError:</th></tr>
-<tr class="field"><td>&nbsp;</td><td class="field-body"><p class="first last"></p>
+<tr class="field-odd field"><th class="field-name" colspan="2">Raises DispatcherKeyError:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first last"></p>
 </td>
 </tr>
 </tbody>
 </table>
 <p>if any receiver raises an error (specifically any subclass of
-<tt class="xref py py-exc docutils literal"><span class="pre">Exception</span></tt>), the error instance is returned as the result
+<a class="reference external" href="http://docs.python.org/dev/library/exceptions.html#Exception" title="(in Python v3.3)"><tt class="xref py py-exc docutils literal"><span class="pre">Exception</span></tt></a>), the error instance is returned as the result
 for that receiver.</p>
 </dd></dl>
 
@@ -253,14 +254,13 @@ for that receiver.</p>
         <li class="right" >
           <a href="celery.utils.dispatch.html" title="celery.utils.dispatch"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

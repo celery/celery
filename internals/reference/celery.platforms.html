@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.platforms &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>celery.platforms &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="prev" title="celery.utils.dispatch.saferef" href="celery.utils.dispatch.saferef.html" /> 
   </head>
@@ -38,7 +41,7 @@
         <li class="right" >
           <a href="celery.utils.dispatch.saferef.html" title="celery.utils.dispatch.saferef"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -52,13 +55,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.platforms.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.platforms.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="celery-platforms">
@@ -70,55 +71,22 @@
 </div>
 <span class="target" id="module-celery.platforms"></span><div class="section" id="id1">
 <h2><a class="toc-backref" href="#id2">celery.platforms</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
-<p>Utilities dealing with platform specifics: signals, daemonization, users &amp;
-groups, etc.</p>
-<dl class="exception">
-<dt id="celery.platforms.LockFailed">
-<em class="property">exception </em><tt class="descclassname">celery.platforms.</tt><tt class="descname">LockFailed</tt><a class="headerlink" href="#celery.platforms.LockFailed" title="Permalink to this definition">¶</a></dt>
-<dd><p>Raised if a pidlock can&#8217;t be acquired.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.platforms.get_fdmax">
-<tt class="descclassname">celery.platforms.</tt><tt class="descname">get_fdmax</tt><big>(</big><em>default=None</em><big>)</big><a class="headerlink" href="#celery.platforms.get_fdmax" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the maximum number of open file descriptors
-on this system.</p>
+<p>Utilities dealing with platform specifics: signals, daemonization,
+users, groups, and so on.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>default</strong> &#8211; Value returned if there&#8217;s no file
-descriptor limit.</td>
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
+<li>2009 - 2011 by Ask Solem.</li>
+</ol>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body"><p class="first last">BSD, see LICENSE for more details.</p>
+</td>
 </tr>
 </tbody>
 </table>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.platforms.create_pidlock">
-<tt class="descclassname">celery.platforms.</tt><tt class="descname">create_pidlock</tt><big>(</big><em>pidfile</em><big>)</big><a class="headerlink" href="#celery.platforms.create_pidlock" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create and verify pid file.</p>
-<p>If the pid file already exists the program exits with an error message,
-however if the process it refers to is not running anymore, the pid file
-is deleted and the program continues.</p>
-<p>The caller is responsible for releasing the lock before the program
-exits.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref py py-class docutils literal"><span class="pre">PIDFile</span></tt>.</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Example</strong>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">atexit</span>
-<span class="n">pidlock</span> <span class="o">=</span> <span class="n">create_pidlock</span><span class="p">(</span><span class="s">&quot;/var/run/app.pid&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
-<span class="n">atexit</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">pidlock</span><span class="o">.</span><span class="n">release</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
 <dl class="class">
 <dt id="celery.platforms.DaemonContext">
 <em class="property">class </em><tt class="descclassname">celery.platforms.</tt><tt class="descname">DaemonContext</tt><big>(</big><em>pidfile=None</em>, <em>workdir='/'</em>, <em>umask=0</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.platforms.DaemonContext" title="Permalink to this definition">¶</a></dt>
@@ -134,6 +102,173 @@ exits.</p>
 
 </dd></dl>
 
+<dl class="exception">
+<dt id="celery.platforms.LockFailed">
+<em class="property">exception </em><tt class="descclassname">celery.platforms.</tt><tt class="descname">LockFailed</tt><a class="headerlink" href="#celery.platforms.LockFailed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raised if a pidlock can&#8217;t be acquired.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.platforms.PIDFile">
+<em class="property">class </em><tt class="descclassname">celery.platforms.</tt><tt class="descname">PIDFile</tt><big>(</big><em>path</em><big>)</big><a class="headerlink" href="#celery.platforms.PIDFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>PID lock file.</p>
+<p>This is the type returned by <a class="reference internal" href="#celery.platforms.create_pidlock" title="celery.platforms.create_pidlock"><tt class="xref py py-func docutils literal"><span class="pre">create_pidlock()</span></tt></a>.</p>
+<p><strong>Should not be used directly, use the :func:`create_pidlock`
+context instead</strong></p>
+<dl class="method">
+<dt id="celery.platforms.PIDFile.acquire">
+<tt class="descname">acquire</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.platforms.PIDFile.acquire" title="Permalink to this definition">¶</a></dt>
+<dd><p>Acquire lock.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.PIDFile.is_locked">
+<tt class="descname">is_locked</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.platforms.PIDFile.is_locked" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns true if the pid lock exists.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.platforms.PIDFile.path">
+<tt class="descname">path</tt><em class="property"> = None</em><a class="headerlink" href="#celery.platforms.PIDFile.path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to the pid lock file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.PIDFile.read_pid">
+<tt class="descname">read_pid</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.platforms.PIDFile.read_pid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads and returns the current pid.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.PIDFile.release">
+<tt class="descname">release</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#celery.platforms.PIDFile.release" title="Permalink to this definition">¶</a></dt>
+<dd><p>Release lock.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.PIDFile.remove">
+<tt class="descname">remove</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.platforms.PIDFile.remove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the lock.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.PIDFile.remove_if_stale">
+<tt class="descname">remove_if_stale</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.platforms.PIDFile.remove_if_stale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the lock if the process is not running.
+(does not respond to signals).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.PIDFile.write_pid">
+<tt class="descname">write_pid</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.platforms.PIDFile.write_pid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.platforms.Signals">
+<em class="property">class </em><tt class="descclassname">celery.platforms.</tt><tt class="descname">Signals</tt><a class="headerlink" href="#celery.platforms.Signals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience interface to <tt class="xref py py-mod docutils literal"><span class="pre">signals</span></tt>.</p>
+<p>If the requested signal is not supported on the current platform,
+the operation will be ignored.</p>
+<p><strong>Examples</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.platforms</span> <span class="kn">import</span> <span class="n">signals</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signals</span><span class="p">[</span><span class="s">&quot;INT&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">my_handler</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signals</span><span class="p">[</span><span class="s">&quot;INT&quot;</span><span class="p">]</span>
+<span class="go">my_handler</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signals</span><span class="o">.</span><span class="n">supported</span><span class="p">(</span><span class="s">&quot;INT&quot;</span><span class="p">)</span>
+<span class="go">True</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signals</span><span class="o">.</span><span class="n">signum</span><span class="p">(</span><span class="s">&quot;INT&quot;</span><span class="p">)</span>
+<span class="go">2</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signals</span><span class="o">.</span><span class="n">ignore</span><span class="p">(</span><span class="s">&quot;USR1&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signals</span><span class="p">[</span><span class="s">&quot;USR1&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">signals</span><span class="o">.</span><span class="n">ignored</span>
+<span class="go">True</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signals</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="s">&quot;USR1&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signals</span><span class="p">[</span><span class="s">&quot;USR1&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">signals</span><span class="o">.</span><span class="n">default</span>
+<span class="go">True</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signals</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">INT</span><span class="o">=</span><span class="n">exit_handler</span><span class="p">,</span>
+<span class="gp">... </span>               <span class="n">TERM</span><span class="o">=</span><span class="n">exit_handler</span><span class="p">,</span>
+<span class="gp">... </span>               <span class="n">HUP</span><span class="o">=</span><span class="n">hup_handler</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="attribute">
+<dt id="celery.platforms.Signals.default">
+<tt class="descname">default</tt><em class="property"> = 0</em><a class="headerlink" href="#celery.platforms.Signals.default" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.Signals.ignore">
+<tt class="descname">ignore</tt><big>(</big><em>*signal_names</em><big>)</big><a class="headerlink" href="#celery.platforms.Signals.ignore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ignore signal using <tt class="xref py py-const docutils literal"><span class="pre">SIG_IGN</span></tt>.</p>
+<p>Does nothing if the platform doesn&#8217;t support signals,
+or the specified signal in particular.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.platforms.Signals.ignored">
+<tt class="descname">ignored</tt><em class="property"> = 1</em><a class="headerlink" href="#celery.platforms.Signals.ignored" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.Signals.reset">
+<tt class="descname">reset</tt><big>(</big><em>*signal_names</em><big>)</big><a class="headerlink" href="#celery.platforms.Signals.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset signals to the default signal handler.</p>
+<p>Does nothing if the platform doesn&#8217;t support signals,
+or the specified signal in particular.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.Signals.signum">
+<tt class="descname">signum</tt><big>(</big><em>signal_name</em><big>)</big><a class="headerlink" href="#celery.platforms.Signals.signum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get signal number from signal name.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.Signals.supported">
+<tt class="descname">supported</tt><big>(</big><em>signal_name</em><big>)</big><a class="headerlink" href="#celery.platforms.Signals.supported" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns true value if <tt class="docutils literal"><span class="pre">signal_name</span></tt> exists on this platform.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.Signals.update">
+<tt class="descname">update</tt><big>(</big><em>_d_=None</em>, <em>**sigmap</em><big>)</big><a class="headerlink" href="#celery.platforms.Signals.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set signal handlers from a mapping.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.platforms.create_pidlock">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">create_pidlock</tt><big>(</big><em>pidfile</em><big>)</big><a class="headerlink" href="#celery.platforms.create_pidlock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create and verify pid file.</p>
+<p>If the pid file already exists the program exits with an error message,
+however if the process it refers to is not running anymore, the pid file
+is deleted and the program continues.</p>
+<p>The caller is responsible for releasing the lock before the program
+exits.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><a class="reference internal" href="#celery.platforms.PIDFile" title="celery.platforms.PIDFile"><tt class="xref py py-class docutils literal"><span class="pre">PIDFile</span></tt></a>.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">atexit</span>
+<span class="n">pidlock</span> <span class="o">=</span> <span class="n">create_pidlock</span><span class="p">(</span><span class="s">&quot;/var/run/app.pid&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+<span class="n">atexit</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">pidlock</span><span class="o">.</span><span class="n">release</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
 <dl class="function">
 <dt id="celery.platforms.detached">
 <tt class="descclassname">celery.platforms.</tt><tt class="descname">detached</tt><big>(</big><em>logfile=None</em>, <em>pidfile=None</em>, <em>uid=None</em>, <em>gid=None</em>, <em>umask=0</em>, <em>workdir=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.platforms.detached" title="Permalink to this definition">¶</a></dt>
@@ -142,7 +277,7 @@ exits.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>logfile</strong> &#8211; Optional log file.  The ability to write to this file
 will be verified before the process is detached.</li>
 <li><strong>pidfile</strong> &#8211; Optional pid file.  The pid file will not be created,
@@ -179,11 +314,19 @@ privileges to.</li>
 </dd></dl>
 
 <dl class="function">
-<dt id="celery.platforms.parse_uid">
-<tt class="descclassname">celery.platforms.</tt><tt class="descname">parse_uid</tt><big>(</big><em>uid</em><big>)</big><a class="headerlink" href="#celery.platforms.parse_uid" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parse user id.</p>
-<p>uid can be an integer (uid) or a string (user name), if a user name
-the uid is taken from the password file.</p>
+<dt id="celery.platforms.get_fdmax">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">get_fdmax</tt><big>(</big><em>default=None</em><big>)</big><a class="headerlink" href="#celery.platforms.get_fdmax" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the maximum number of open file descriptors
+on this system.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>default</strong> &#8211; Value returned if there&#8217;s no file
+descriptor limit.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -192,6 +335,43 @@ the uid is taken from the password file.</p>
 <dd><p>Parse group id.</p>
 <p>gid can be an integer (gid) or a string (group name), if a group name
 the gid is taken from the password file.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.platforms.parse_uid">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">parse_uid</tt><big>(</big><em>uid</em><big>)</big><a class="headerlink" href="#celery.platforms.parse_uid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse user id.</p>
+<p>uid can be an integer (uid) or a string (user name), if a user name
+the uid is taken from the password file.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.platforms.pyimplementation">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">pyimplementation</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.platforms.pyimplementation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.platforms.set_effective_user">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">set_effective_user</tt><big>(</big><em>uid=None</em>, <em>gid=None</em><big>)</big><a class="headerlink" href="#celery.platforms.set_effective_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change process privileges to new user/group.</p>
+<p>If UID and GID is set the effective user/group is set.</p>
+<p>If only UID is set, the effective user is set, and the group is
+set to the users primary group.</p>
+<p>If only GID is set, the effective group is set.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.platforms.set_mp_process_title">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">set_mp_process_title</tt><big>(</big><em>progname</em>, <em>info=None</em>, <em>hostname=None</em><big>)</big><a class="headerlink" href="#celery.platforms.set_mp_process_title" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the ps name using the multiprocessing process name.</p>
+<p>Only works if <tt class="xref py py-mod docutils literal"><span class="pre">setproctitle</span></tt> is installed.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.platforms.set_process_title">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">set_process_title</tt><big>(</big><em>progname</em>, <em>info=None</em><big>)</big><a class="headerlink" href="#celery.platforms.set_process_title" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the ps name for the currently running process.</p>
+<p>Only works if <tt class="xref py py-mod docutils literal"><span class="pre">setproctitle</span></tt> is installed.</p>
 </dd></dl>
 
 <dl class="function">
@@ -207,97 +387,14 @@ the gid is taken from the password file.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="celery.platforms.set_effective_user">
-<tt class="descclassname">celery.platforms.</tt><tt class="descname">set_effective_user</tt><big>(</big><em>uid=None</em>, <em>gid=None</em><big>)</big><a class="headerlink" href="#celery.platforms.set_effective_user" title="Permalink to this definition">¶</a></dt>
-<dd><p>Change process privileges to new user/group.</p>
-<p>If UID and GID is set the effective user/group is set.</p>
-<p>If only UID is set, the effective user is set, and the group is
-set to the users primary group.</p>
-<p>If only GID is set, the effective group is set.</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.platforms.Signals">
-<em class="property">class </em><tt class="descclassname">celery.platforms.</tt><tt class="descname">Signals</tt><a class="headerlink" href="#celery.platforms.Signals" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convenience interface to <tt class="xref py py-mod docutils literal"><span class="pre">signals</span></tt>.</p>
-<p>If the requested signal is not supported on the current platform,
-the operation will be ignored.</p>
-<p><strong>Examples</strong>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.platforms</span> <span class="kn">import</span> <span class="n">signals</span>
-
-<span class="gp">&gt;&gt;&gt; </span><span class="n">signals</span><span class="p">[</span><span class="s">&quot;INT&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">my_handler</span>
-
-<span class="gp">&gt;&gt;&gt; </span><span class="n">signals</span><span class="p">[</span><span class="s">&quot;INT&quot;</span><span class="p">]</span>
-<span class="go">my_handler</span>
-
-<span class="gp">&gt;&gt;&gt; </span><span class="n">signals</span><span class="o">.</span><span class="n">supported</span><span class="p">(</span><span class="s">&quot;INT&quot;</span><span class="p">)</span>
-<span class="go">True</span>
-
-<span class="gp">&gt;&gt;&gt; </span><span class="n">signals</span><span class="o">.</span><span class="n">signum</span><span class="p">(</span><span class="s">&quot;INT&quot;</span><span class="p">)</span>
-<span class="go">2</span>
-
-<span class="gp">&gt;&gt;&gt; </span><span class="n">signals</span><span class="o">.</span><span class="n">ignore</span><span class="p">(</span><span class="s">&quot;USR1&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">signals</span><span class="p">[</span><span class="s">&quot;USR1&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">signals</span><span class="o">.</span><span class="n">ignored</span>
-<span class="go">True</span>
-
-<span class="gp">&gt;&gt;&gt; </span><span class="n">signals</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="s">&quot;USR1&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">signals</span><span class="p">[</span><span class="s">&quot;USR1&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">signals</span><span class="o">.</span><span class="n">default</span>
-<span class="go">True</span>
-
-<span class="gp">&gt;&gt;&gt; </span><span class="n">signals</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">INT</span><span class="o">=</span><span class="n">exit_handler</span><span class="p">,</span>
-<span class="gp">... </span>               <span class="n">TERM</span><span class="o">=</span><span class="n">exit_handler</span><span class="p">,</span>
-<span class="gp">... </span>               <span class="n">HUP</span><span class="o">=</span><span class="n">hup_handler</span><span class="p">)</span>
-</pre></div>
-</div>
-<dl class="method">
-<dt id="celery.platforms.Signals.ignore">
-<tt class="descname">ignore</tt><big>(</big><em>*signal_names</em><big>)</big><a class="headerlink" href="#celery.platforms.Signals.ignore" title="Permalink to this definition">¶</a></dt>
-<dd><p>Ignore signal using <tt class="xref py py-const docutils literal"><span class="pre">SIG_IGN</span></tt>.</p>
-<p>Does nothing if the platform doesn&#8217;t support signals,
-or the specified signal in particular.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.platforms.Signals.reset">
-<tt class="descname">reset</tt><big>(</big><em>*signal_names</em><big>)</big><a class="headerlink" href="#celery.platforms.Signals.reset" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reset signals to the default signal handler.</p>
-<p>Does nothing if the platform doesn&#8217;t support signals,
-or the specified signal in particular.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.platforms.Signals.signum">
-<tt class="descname">signum</tt><big>(</big><em>signal_name</em><big>)</big><a class="headerlink" href="#celery.platforms.Signals.signum" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get signal number from signal name.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.platforms.Signals.supported">
-<tt class="descname">supported</tt><big>(</big><em>signal_name</em><big>)</big><a class="headerlink" href="#celery.platforms.Signals.supported" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns true value if <tt class="docutils literal"><span class="pre">signal_name</span></tt> exists on this platform.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.platforms.Signals.update">
-<tt class="descname">update</tt><big>(</big><em>_d_=None</em>, <em>**sigmap</em><big>)</big><a class="headerlink" href="#celery.platforms.Signals.update" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set signal handlers from a mapping.</p>
-</dd></dl>
-
-</dd></dl>
+<dt id="celery.platforms.shellsplit">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">shellsplit</tt><big>(</big><em>s</em>, <em>posix=True</em><big>)</big><a class="headerlink" href="#celery.platforms.shellsplit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="function">
-<dt id="celery.platforms.set_process_title">
-<tt class="descclassname">celery.platforms.</tt><tt class="descname">set_process_title</tt><big>(</big><em>progname</em>, <em>info=None</em><big>)</big><a class="headerlink" href="#celery.platforms.set_process_title" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the ps name for the currently running process.</p>
-<p>Only works if <tt class="xref py py-mod docutils literal"><span class="pre">setproctitle</span></tt> is installed.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.platforms.set_mp_process_title">
-<tt class="descclassname">celery.platforms.</tt><tt class="descname">set_mp_process_title</tt><big>(</big><em>progname</em>, <em>info=None</em>, <em>hostname=None</em><big>)</big><a class="headerlink" href="#celery.platforms.set_mp_process_title" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the ps name using the multiprocessing process name.</p>
-<p>Only works if <tt class="xref py py-mod docutils literal"><span class="pre">setproctitle</span></tt> is installed.</p>
-</dd></dl>
+<dt id="celery.platforms.strargv">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">strargv</tt><big>(</big><em>argv</em><big>)</big><a class="headerlink" href="#celery.platforms.strargv" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </div>
 </div>
@@ -347,14 +444,13 @@ or the specified signal in particular.</p>
         <li class="right" >
           <a href="celery.utils.dispatch.saferef.html" title="celery.utils.dispatch.saferef"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

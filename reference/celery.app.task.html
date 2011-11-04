@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.app.task &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>celery.app.task &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.app.amqp" href="celery.app.amqp.html" />
     <link rel="prev" title="celery.app" href="celery.app.html" /> 
@@ -42,7 +45,7 @@
         <li class="right" >
           <a href="celery.app.html" title="celery.app"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,18 +58,38 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/reference/celery.app.task.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/reference/celery.app.task.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="celery-app-task">
 <h1>celery.app.task<a class="headerlink" href="#celery-app-task" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.app.task"></span><dl class="class">
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#id1" id="id2">celery.app.task</a></li>
+</ul>
+</div>
+<span class="target" id="module-celery.app.task"></span><div class="section" id="id1">
+<h2><a class="toc-backref" href="#id2">celery.app.task</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>Tasks Implementation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
+<li>2009 - 2011 by Ask Solem.</li>
+</ol>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body"><p class="first last">BSD, see LICENSE for more details.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
 <dt id="celery.app.task.TaskType">
 <em class="property">class </em><tt class="descclassname">celery.app.task.</tt><tt class="descname">TaskType</tt><a class="headerlink" href="#celery.app.task.TaskType" title="Permalink to this definition">¶</a></dt>
 <dd><p>Meta class for tasks.</p>
@@ -91,7 +114,7 @@ is overridden).</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>task_id</strong> &#8211; Task id to get result for.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>task_id</strong> &#8211; Task id to get result for.</td>
 </tr>
 </tbody>
 </table>
@@ -105,7 +128,7 @@ is overridden).</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>task</strong> &#8211; The task instance that raised the error.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>task</strong> &#8211; The task instance that raised the error.</td>
 </tr>
 </tbody>
 </table>
@@ -165,20 +188,20 @@ should be sent for this type of error.</p>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.abstract">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">abstract</tt><a class="headerlink" href="#celery.app.task.BaseTask.abstract" title="Permalink to this definition">¶</a></dt>
-<dd><p>If <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> the task is an abstract base class.</p>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">abstract</tt><em class="property"> = None</em><a class="headerlink" href="#celery.app.task.BaseTask.abstract" title="Permalink to this definition">¶</a></dt>
+<dd><p>If <tt class="xref py py-const docutils literal"><span class="pre">True</span></tt> the task is an abstract base class.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.accept_magic_kwargs">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">accept_magic_kwargs</tt><a class="headerlink" href="#celery.app.task.BaseTask.accept_magic_kwargs" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">accept_magic_kwargs</tt><em class="property"> = False</em><a class="headerlink" href="#celery.app.task.BaseTask.accept_magic_kwargs" title="Permalink to this definition">¶</a></dt>
 <dd><p>If disabled the worker will not forward magic keyword arguments.
 Deprecated and scheduled for removal in v3.0.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.acks_late">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">acks_late</tt><a class="headerlink" href="#celery.app.task.BaseTask.acks_late" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">acks_late</tt><em class="property"> = False</em><a class="headerlink" href="#celery.app.task.BaseTask.acks_late" title="Permalink to this definition">¶</a></dt>
 <dd><p>When enabled messages for this task will be acknowledged <strong>after</strong>
 the task has been executed, and not <em>just before</em> which is the
 default behavior.</p>
@@ -197,7 +220,7 @@ applications).</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>status</strong> &#8211; Current task state.</li>
 <li><strong>retval</strong> &#8211; Task return value/exception.</li>
 <li><strong>task_id</strong> &#8211; Unique id of the task.</li>
@@ -216,7 +239,7 @@ instance, containing the traceback (if any).</li>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.app">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">app</tt><a class="headerlink" href="#celery.app.task.BaseTask.app" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">app</tt><em class="property"> = None</em><a class="headerlink" href="#celery.app.task.BaseTask.app" title="Permalink to this definition">¶</a></dt>
 <dd><p>The application instance associated with this task class.</p>
 </dd></dl>
 
@@ -228,7 +251,7 @@ instance, containing the traceback (if any).</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>args</strong> &#8211; positional arguments passed on to the task.</li>
 <li><strong>kwargs</strong> &#8211; keyword arguments passed on to the task.</li>
 <li><strong>throw</strong> &#8211; Re-raise task exceptions.  Defaults to
@@ -250,22 +273,22 @@ setting.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>args</strong> &#8211; The positional arguments to pass on to the
 task (a <tt class="xref py py-class docutils literal"><span class="pre">list</span></tt> or <tt class="xref py py-class docutils literal"><span class="pre">tuple</span></tt>).</li>
 <li><strong>kwargs</strong> &#8211; The keyword arguments to pass on to the
-task (a <tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt>)</li>
+task (a <a class="reference external" href="http://docs.python.org/dev/library/stdtypes.html#dict" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt></a>)</li>
 <li><strong>countdown</strong> &#8211; Number of seconds into the future that the
 task should execute. Defaults to immediate
 execution (do not confuse with the
 <cite>immediate</cite> flag, as they are unrelated).</li>
-<li><strong>eta</strong> &#8211; A <tt class="xref py py-class docutils literal"><span class="pre">datetime</span></tt> object describing
+<li><strong>eta</strong> &#8211; A <a class="reference external" href="http://docs.python.org/dev/library/datetime.html#datetime.datetime" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">datetime</span></tt></a> object describing
 the absolute time and date of when the task should
 be executed.  May not be specified if <cite>countdown</cite>
 is also supplied.  (Do not confuse this with the
 <cite>immediate</cite> flag, as they are unrelated).</li>
 <li><strong>expires</strong> &#8211; Either a <tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>, describing the number of
-seconds, or a <tt class="xref py py-class docutils literal"><span class="pre">datetime</span></tt> object
+seconds, or a <a class="reference external" href="http://docs.python.org/dev/library/datetime.html#datetime.datetime" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">datetime</span></tt></a> object
 that describes the absolute time and date of when
 the task should expire.  The task will not be
 executed after the expiration time.</li>
@@ -311,7 +334,7 @@ Defaults to the <a class="reference internal" href="#celery.app.task.BaseTask.se
 <li><strong>compression</strong> &#8211; A string identifying the compression method
 to use.  Can be one of <tt class="docutils literal"><span class="pre">zlib</span></tt>, <tt class="docutils literal"><span class="pre">bzip2</span></tt>,
 or any custom compression methods registered with
-<tt class="xref py py-func docutils literal"><span class="pre">kombu.compression.register()</span></tt>. Defaults to
+<a class="reference external" href="http://kombu.readthedocs.org/en/latest/reference/kombu.compression.html#kombu.compression.register" title="(in Kombu v1.4)"><tt class="xref py py-func docutils literal"><span class="pre">kombu.compression.register()</span></tt></a>. Defaults to
 the <a class="reference internal" href="../configuration.html#std:setting-CELERY_MESSAGE_COMPRESSION"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_MESSAGE_COMPRESSION</span></tt></a>
 setting.</li>
 </ul>
@@ -328,19 +351,19 @@ be replaced by a local <a class="reference internal" href="#celery.app.task.Base
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.autoregister">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">autoregister</tt><a class="headerlink" href="#celery.app.task.BaseTask.autoregister" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">autoregister</tt><em class="property"> = True</em><a class="headerlink" href="#celery.app.task.BaseTask.autoregister" title="Permalink to this definition">¶</a></dt>
 <dd><p>If disabled this task won&#8217;t be registered automatically.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.backend">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">backend</tt><a class="headerlink" href="#celery.app.task.BaseTask.backend" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">backend</tt><em class="property"> = None</em><a class="headerlink" href="#celery.app.task.BaseTask.backend" title="Permalink to this definition">¶</a></dt>
 <dd><p>The result store backend used for this task.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.default_retry_delay">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">default_retry_delay</tt><a class="headerlink" href="#celery.app.task.BaseTask.default_retry_delay" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">default_retry_delay</tt><em class="property"> = 180</em><a class="headerlink" href="#celery.app.task.BaseTask.default_retry_delay" title="Permalink to this definition">¶</a></dt>
 <dd><p>Default time in seconds before a retry of the task should be
 executed.  3 minutes by default.</p>
 </dd></dl>
@@ -354,7 +377,7 @@ executed.  3 minutes by default.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>*args</strong> &#8211; positional arguments passed on to the task.</li>
 <li><strong>**kwargs</strong> &#8211; keyword arguments passed on to the task.</li>
 </ul>
@@ -367,7 +390,7 @@ executed.  3 minutes by default.</p>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.delivery_mode">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">delivery_mode</tt><a class="headerlink" href="#celery.app.task.BaseTask.delivery_mode" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">delivery_mode</tt><em class="property"> = None</em><a class="headerlink" href="#celery.app.task.BaseTask.delivery_mode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Override the apps default delivery mode for this task.  Default is
 <cite>&#8220;persistent&#8221;</cite>, but you can change this to <cite>&#8220;transient&#8221;</cite>, which means
 messages will be lost if the broker is restarted.  Consult your broker
@@ -376,7 +399,7 @@ manual for any additional delivery modes.</p>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.error_whitelist">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">error_whitelist</tt><a class="headerlink" href="#celery.app.task.BaseTask.error_whitelist" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">error_whitelist</tt><em class="property"> = ()</em><a class="headerlink" href="#celery.app.task.BaseTask.error_whitelist" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of exception types to send error emails for.</p>
 </dd></dl>
 
@@ -388,13 +411,13 @@ manual for any additional delivery modes.</p>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.exchange">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">exchange</tt><a class="headerlink" href="#celery.app.task.BaseTask.exchange" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">exchange</tt><em class="property"> = None</em><a class="headerlink" href="#celery.app.task.BaseTask.exchange" title="Permalink to this definition">¶</a></dt>
 <dd><p>Overrides the apps default <cite>exchange</cite> for this task.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.exchange_type">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">exchange_type</tt><a class="headerlink" href="#celery.app.task.BaseTask.exchange_type" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">exchange_type</tt><em class="property"> = None</em><a class="headerlink" href="#celery.app.task.BaseTask.exchange_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>Overrides the apps default exchange type for this task.</p>
 </dd></dl>
 
@@ -406,7 +429,7 @@ manual for any additional delivery modes.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>request</strong> &#8211; A <a class="reference internal" href="../internals/reference/celery.worker.job.html#celery.worker.job.TaskRequest" title="celery.worker.job.TaskRequest"><tt class="xref py py-class docutils literal"><span class="pre">TaskRequest</span></tt></a>.</li>
 <li><strong>pool</strong> &#8211; A task pool.</li>
 <li><strong>loglevel</strong> &#8211; Current loglevel.</li>
@@ -421,7 +444,7 @@ manual for any additional delivery modes.</p>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.expires">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">expires</tt><a class="headerlink" href="#celery.app.task.BaseTask.expires" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">expires</tt><em class="property"> = None</em><a class="headerlink" href="#celery.app.task.BaseTask.expires" title="Permalink to this definition">¶</a></dt>
 <dd><p>Default task expiry time.</p>
 </dd></dl>
 
@@ -429,7 +452,7 @@ manual for any additional delivery modes.</p>
 <dt id="celery.app.task.BaseTask.get_consumer">
 <em class="property">classmethod </em><tt class="descclassname">BaseTask.</tt><tt class="descname">get_consumer</tt><big>(</big><em>connection=None</em>, <em>connect_timeout=None</em><big>)</big><a class="headerlink" href="#celery.app.task.BaseTask.get_consumer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get message consumer.</p>
-<p>:rtype <tt class="xref py py-class docutils literal"><span class="pre">kombu.messaging.Consumer</span></tt>:</p>
+<p>:rtype <a class="reference external" href="http://kombu.readthedocs.org/en/latest/reference/kombu.messaging.html#kombu.messaging.Consumer" title="(in Kombu v1.4)"><tt class="xref py py-class docutils literal"><span class="pre">kombu.messaging.Consumer</span></tt></a>:</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
 <p>If you don&#8217;t specify a connection, one will automatically
@@ -475,7 +498,7 @@ connection after use:</p>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.ignore_result">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">ignore_result</tt><a class="headerlink" href="#celery.app.task.BaseTask.ignore_result" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">ignore_result</tt><em class="property"> = False</em><a class="headerlink" href="#celery.app.task.BaseTask.ignore_result" title="Permalink to this definition">¶</a></dt>
 <dd><p>If enabled the worker will not store task state and return values
 for this task.  Defaults to the <a class="reference internal" href="../configuration.html#std:setting-CELERY_IGNORE_RESULT"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_IGNORE_RESULT</span></tt></a>
 setting.</p>
@@ -483,26 +506,26 @@ setting.</p>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.immediate">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">immediate</tt><a class="headerlink" href="#celery.app.task.BaseTask.immediate" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">immediate</tt><em class="property"> = False</em><a class="headerlink" href="#celery.app.task.BaseTask.immediate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Request immediate delivery.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.mandatory">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">mandatory</tt><a class="headerlink" href="#celery.app.task.BaseTask.mandatory" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">mandatory</tt><em class="property"> = False</em><a class="headerlink" href="#celery.app.task.BaseTask.mandatory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mandatory message routing.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.max_retries">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">max_retries</tt><a class="headerlink" href="#celery.app.task.BaseTask.max_retries" title="Permalink to this definition">¶</a></dt>
-<dd><p>Maximum number of retries before giving up.  If set to <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt>,
+<tt class="descclassname">BaseTask.</tt><tt class="descname">max_retries</tt><em class="property"> = 3</em><a class="headerlink" href="#celery.app.task.BaseTask.max_retries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum number of retries before giving up.  If set to <tt class="xref py py-const docutils literal"><span class="pre">None</span></tt>,
 it will <strong>never</strong> stop retrying.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.name">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">name</tt><a class="headerlink" href="#celery.app.task.BaseTask.name" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">name</tt><em class="property"> = None</em><a class="headerlink" href="#celery.app.task.BaseTask.name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name of the task.</p>
 </dd></dl>
 
@@ -515,7 +538,7 @@ it will <strong>never</strong> stop retrying.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>exc</strong> &#8211; The exception raised by the task.</li>
 <li><strong>task_id</strong> &#8211; Unique id of the failed task.</li>
 <li><strong>args</strong> &#8211; Original arguments for the task that failed.</li>
@@ -540,7 +563,7 @@ instance, containing the traceback.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>exc</strong> &#8211; The exception sent to <a class="reference internal" href="#celery.app.task.BaseTask.retry" title="celery.app.task.BaseTask.retry"><tt class="xref py py-meth docutils literal"><span class="pre">retry()</span></tt></a>.</li>
 <li><strong>task_id</strong> &#8211; Unique id of the retried task.</li>
 <li><strong>args</strong> &#8211; Original arguments for the retried task.</li>
@@ -564,7 +587,7 @@ instance, containing the traceback.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>retval</strong> &#8211; The return value of the task.</li>
 <li><strong>task_id</strong> &#8211; Unique id of the executed task.</li>
 <li><strong>args</strong> &#8211; Original arguments for the executed task.</li>
@@ -579,14 +602,14 @@ instance, containing the traceback.</li>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.priority">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">priority</tt><a class="headerlink" href="#celery.app.task.BaseTask.priority" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">priority</tt><em class="property"> = None</em><a class="headerlink" href="#celery.app.task.BaseTask.priority" title="Permalink to this definition">¶</a></dt>
 <dd><p>Default message priority.  A number between 0 to 9, where 0 is the
 highest.  Note that RabbitMQ does not support priorities.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.queue">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">queue</tt><a class="headerlink" href="#celery.app.task.BaseTask.queue" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">queue</tt><em class="property"> = None</em><a class="headerlink" href="#celery.app.task.BaseTask.queue" title="Permalink to this definition">¶</a></dt>
 <dd><p>Destination queue.  The queue needs to exist
 in <a class="reference internal" href="../configuration.html#std:setting-CELERY_QUEUES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_QUEUES</span></tt></a>.  The <cite>routing_key</cite>, <cite>exchange</cite> and
 <cite>exchange_type</cite> attributes will be ignored if this is set.</p>
@@ -594,15 +617,15 @@ in <a class="reference internal" href="../configuration.html#std:setting-CELERY_
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.rate_limit">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">rate_limit</tt><a class="headerlink" href="#celery.app.task.BaseTask.rate_limit" title="Permalink to this definition">¶</a></dt>
-<dd><p>Rate limit for this task type.  Examples: <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> (no rate
+<tt class="descclassname">BaseTask.</tt><tt class="descname">rate_limit</tt><em class="property"> = None</em><a class="headerlink" href="#celery.app.task.BaseTask.rate_limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rate limit for this task type.  Examples: <tt class="xref py py-const docutils literal"><span class="pre">None</span></tt> (no rate
 limit), <cite>&#8220;100/s&#8221;</cite> (hundred tasks a second), <cite>&#8220;100/m&#8221;</cite> (hundred tasks
 a minute),`&#8221;100/h&#8221;` (hundred tasks an hour)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.request">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">request</tt><a class="headerlink" href="#celery.app.task.BaseTask.request" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">request</tt><em class="property"> = &lt;celery.app.task.Context object at 0x108712258&gt;</em><a class="headerlink" href="#celery.app.task.BaseTask.request" title="Permalink to this definition">¶</a></dt>
 <dd><p>Request context (set when task is applied).</p>
 </dd></dl>
 
@@ -614,7 +637,7 @@ a minute),`&#8221;100/h&#8221;` (hundred tasks an hour)</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>args</strong> &#8211; Positional arguments to retry with.</li>
 <li><strong>kwargs</strong> &#8211; Keyword arguments to retry with.</li>
 <li><strong>exc</strong> &#8211; Optional exception to raise instead of
@@ -622,11 +645,11 @@ a minute),`&#8221;100/h&#8221;` (hundred tasks an hour)</p>
 when the max restart limit has been exceeded.</li>
 <li><strong>countdown</strong> &#8211; Time in seconds to delay the retry for.</li>
 <li><strong>eta</strong> &#8211; Explicit time and date to run the retry at
-(must be a <tt class="xref py py-class docutils literal"><span class="pre">datetime</span></tt> instance).</li>
+(must be a <a class="reference external" href="http://docs.python.org/dev/library/datetime.html#datetime.datetime" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">datetime</span></tt></a> instance).</li>
 <li><strong>max_retries</strong> &#8211; If set, overrides the default retry limit.</li>
 <li><strong>**options</strong> &#8211; Any extra options to pass on to
 meth:<cite>apply_async</cite>.</li>
-<li><strong>throw</strong> &#8211; If this is <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt>, do not raise the
+<li><strong>throw</strong> &#8211; If this is <tt class="xref py py-const docutils literal"><span class="pre">False</span></tt>, do not raise the
 <a class="reference internal" href="celery.exceptions.html#celery.exceptions.RetryTaskError" title="celery.exceptions.RetryTaskError"><tt class="xref py py-exc docutils literal"><span class="pre">RetryTaskError</span></tt></a> exception,
 that tells the worker to mark the task as being
 retried.  Note that this means the task will be
@@ -635,11 +658,11 @@ or successful if it returns.</li>
 </ul>
 </td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Raises <a class="reference internal" href="celery.exceptions.html#celery.exceptions.RetryTaskError" title="celery.exceptions.RetryTaskError">celery.exceptions.RetryTaskError</a>:</th></tr>
-<tr class="field"><td>&nbsp;</td><td class="field-body"><p class="first last">To tell the worker that
+<tr class="field-even field"><th class="field-name" colspan="2">Raises <a class="reference internal" href="celery.exceptions.html#celery.exceptions.RetryTaskError" title="celery.exceptions.RetryTaskError">celery.exceptions.RetryTaskError</a>:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last">To tell the worker that
 the task has been re-sent for retry. This always happens,
 unless the <cite>throw</cite> keyword argument has been explicitly set
-to <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt>, and is considered normal operation.</p>
+to <tt class="xref py py-const docutils literal"><span class="pre">False</span></tt>, and is considered normal operation.</p>
 </td>
 </tr>
 </tbody>
@@ -662,7 +685,7 @@ to convey that the rest of the block will not be executed.</p>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.routing_key">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">routing_key</tt><a class="headerlink" href="#celery.app.task.BaseTask.routing_key" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">routing_key</tt><em class="property"> = None</em><a class="headerlink" href="#celery.app.task.BaseTask.routing_key" title="Permalink to this definition">¶</a></dt>
 <dd><p>Overrides the apps default <cite>routing_key</cite> for this task.</p>
 </dd></dl>
 
@@ -674,28 +697,28 @@ to convey that the rest of the block will not be executed.</p>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.send_error_emails">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">send_error_emails</tt><a class="headerlink" href="#celery.app.task.BaseTask.send_error_emails" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">send_error_emails</tt><em class="property"> = False</em><a class="headerlink" href="#celery.app.task.BaseTask.send_error_emails" title="Permalink to this definition">¶</a></dt>
 <dd><p>If enabled an email will be sent to <a class="reference internal" href="../configuration.html#std:setting-ADMINS"><tt class="xref std std-setting docutils literal"><span class="pre">ADMINS</span></tt></a> whenever a task
 of this type fails.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.serializer">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">serializer</tt><a class="headerlink" href="#celery.app.task.BaseTask.serializer" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">serializer</tt><em class="property"> = 'pickle'</em><a class="headerlink" href="#celery.app.task.BaseTask.serializer" title="Permalink to this definition">¶</a></dt>
 <dd><p>The name of a serializer that are registered with
 <tt class="xref py py-mod docutils literal"><span class="pre">kombu.serialization.registry</span></tt>.  Default is <cite>&#8220;pickle&#8221;</cite>.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.soft_time_limit">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">soft_time_limit</tt><a class="headerlink" href="#celery.app.task.BaseTask.soft_time_limit" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">soft_time_limit</tt><em class="property"> = None</em><a class="headerlink" href="#celery.app.task.BaseTask.soft_time_limit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Soft time limit.
 Defaults to the <tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TASK_SOFT_TIME_LIMIT</span></tt> setting.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.store_errors_even_if_ignored">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">store_errors_even_if_ignored</tt><a class="headerlink" href="#celery.app.task.BaseTask.store_errors_even_if_ignored" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">store_errors_even_if_ignored</tt><em class="property"> = False</em><a class="headerlink" href="#celery.app.task.BaseTask.store_errors_even_if_ignored" title="Permalink to this definition">¶</a></dt>
 <dd><p>When enabled errors will be stored even if the task is otherwise
 configured to ignore results.</p>
 </dd></dl>
@@ -710,14 +733,14 @@ for a single task invocation.</p>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.time_limit">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">time_limit</tt><a class="headerlink" href="#celery.app.task.BaseTask.time_limit" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">time_limit</tt><em class="property"> = None</em><a class="headerlink" href="#celery.app.task.BaseTask.time_limit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Hard time limit.
 Defaults to the <tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TASK_TIME_LIMIT</span></tt> setting.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.track_started">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">track_started</tt><a class="headerlink" href="#celery.app.task.BaseTask.track_started" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">track_started</tt><em class="property"> = False</em><a class="headerlink" href="#celery.app.task.BaseTask.track_started" title="Permalink to this definition">¶</a></dt>
 <dd><p>If enabled the task will report its status as &#8220;started&#8221; when the task
 is executed by a worker.  Disabled by default as the normal behaviour
 is to not report that level of granularity.  Tasks are either pending,
@@ -731,7 +754,7 @@ running.</p>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.type">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">type</tt><a class="headerlink" href="#celery.app.task.BaseTask.type" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">type</tt><em class="property"> = 'regular'</em><a class="headerlink" href="#celery.app.task.BaseTask.type" title="Permalink to this definition">¶</a></dt>
 <dd><p>The type of task <em>(no longer used)</em>.</p>
 </dd></dl>
 
@@ -743,10 +766,10 @@ running.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>task_id</strong> &#8211; Id of the task to update.</li>
 <li><strong>state</strong> &#8211; New state (<tt class="xref py py-class docutils literal"><span class="pre">str</span></tt>).</li>
-<li><strong>meta</strong> &#8211; State metadata (<tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt>).</li>
+<li><strong>meta</strong> &#8211; State metadata (<a class="reference external" href="http://docs.python.org/dev/library/stdtypes.html#dict" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt></a>).</li>
 </ul>
 </td>
 </tr>
@@ -756,6 +779,7 @@ running.</p>
 
 </dd></dl>
 
+</div>
 </div>
 
 
@@ -809,13 +833,12 @@ running.</p>
         <li class="right" >
           <a href="celery.app.html" title="celery.app"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

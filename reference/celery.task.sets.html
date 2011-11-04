@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.task.sets &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>celery.task.sets &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.task.chords" href="celery.task.chords.html" />
     <link rel="prev" title="celery.task.base" href="celery.task.base.html" /> 
@@ -42,7 +45,7 @@
         <li class="right" >
           <a href="celery.task.base.html" title="celery.task.base"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,13 +58,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/reference/celery.task.sets.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/reference/celery.task.sets.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="celery-task-sets">
@@ -73,62 +74,21 @@
 </div>
 <span class="target" id="module-celery.task.sets"></span><div class="section" id="id1">
 <h2><a class="toc-backref" href="#id2">celery.task.sets</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
-<p>Creating and applying task groups.</p>
-<dl class="class">
-<dt id="celery.task.sets.subtask">
-<em class="property">class </em><tt class="descclassname">celery.task.sets.</tt><tt class="descname">subtask</tt><big>(</big><em>task=None</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>options=None</em>, <em>**ex</em><big>)</big><a class="headerlink" href="#celery.task.sets.subtask" title="Permalink to this definition">¶</a></dt>
-<dd><p>Class that wraps the arguments and execution options
-for a single task invocation.</p>
-<p>Used as the parts in a <a class="reference internal" href="#celery.task.sets.TaskSet" title="celery.task.sets.TaskSet"><tt class="xref py py-class docutils literal"><span class="pre">TaskSet</span></tt></a> or to safely
-pass tasks around as callbacks.</p>
+<p>Creating and applying groups of tasks.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>task</strong> &#8211; Either a task class/instance, or the name of a task.</li>
-<li><strong>args</strong> &#8211; Positional arguments to apply.</li>
-<li><strong>kwargs</strong> &#8211; Keyword arguments to apply.</li>
-<li><strong>options</strong> &#8211; Additional options to
-<tt class="xref py py-func docutils literal"><span class="pre">celery.execute.apply_async()</span></tt>.</li>
-</ul>
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
+<li>2009 - 2011 by Ask Solem.</li>
+</ol>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body"><p class="first last">BSD, see LICENSE for more details.</p>
 </td>
 </tr>
 </tbody>
 </table>
-<p>Note that if the first argument is a <tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt>, the other
-arguments will be ignored and the values in the dict will be used
-instead.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">subtask</span><span class="p">(</span><span class="s">&quot;tasks.add&quot;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">subtask</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
-<span class="go">{&quot;task&quot;: &quot;tasks.add&quot;, args=(2, 2), kwargs={}, options={}}</span>
-</pre></div>
-</div>
-<dl class="method">
-<dt id="celery.task.sets.subtask.apply">
-<tt class="descname">apply</tt><big>(</big><em>args=()</em>, <em>kwargs={}</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.sets.subtask.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this task locally.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.task.sets.subtask.apply_async">
-<tt class="descname">apply_async</tt><big>(</big><em>args=()</em>, <em>kwargs={}</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.sets.subtask.apply_async" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this task asynchronously.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.task.sets.subtask.delay">
-<tt class="descname">delay</tt><big>(</big><em>*argmerge</em>, <em>**kwmerge</em><big>)</big><a class="headerlink" href="#celery.task.sets.subtask.delay" title="Permalink to this definition">¶</a></dt>
-<dd><p>Shortcut to <cite>apply_async(argmerge, kwargs)</cite>.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.task.sets.subtask.type">
-<tt class="descname">type</tt><a class="headerlink" href="#celery.task.sets.subtask.type" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
 <dl class="class">
 <dt id="celery.task.sets.TaskSet">
 <em class="property">class </em><tt class="descclassname">celery.task.sets.</tt><tt class="descname">TaskSet</tt><big>(</big><em>task=None</em>, <em>tasks=None</em>, <em>app=None</em>, <em>Publisher=None</em><big>)</big><a class="headerlink" href="#celery.task.sets.TaskSet" title="Permalink to this definition">¶</a></dt>
@@ -138,7 +98,7 @@ to track how many, or when all of the tasks have been completed.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tasks</strong> &#8211; A list of <a class="reference internal" href="#celery.task.sets.subtask" title="celery.task.sets.subtask"><tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt></a> instances.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tasks</strong> &#8211; A list of <a class="reference internal" href="#celery.task.sets.subtask" title="celery.task.sets.subtask"><tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt></a> instances.</td>
 </tr>
 </tbody>
 </table>
@@ -178,9 +138,69 @@ to track how many, or when all of the tasks have been completed.</p>
 
 <dl class="attribute">
 <dt id="celery.task.sets.TaskSet.total">
-<tt class="descname">total</tt><a class="headerlink" href="#celery.task.sets.TaskSet.total" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">total</tt><em class="property"> = None</em><a class="headerlink" href="#celery.task.sets.TaskSet.total" title="Permalink to this definition">¶</a></dt>
 <dd><p>Total number of subtasks in this set.</p>
 </dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.task.sets.maybe_subtask">
+<tt class="descclassname">celery.task.sets.</tt><tt class="descname">maybe_subtask</tt><big>(</big><em>t</em><big>)</big><a class="headerlink" href="#celery.task.sets.maybe_subtask" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="celery.task.sets.subtask">
+<em class="property">class </em><tt class="descclassname">celery.task.sets.</tt><tt class="descname">subtask</tt><big>(</big><em>task=None</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>options=None</em>, <em>**ex</em><big>)</big><a class="headerlink" href="#celery.task.sets.subtask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class that wraps the arguments and execution options
+for a single task invocation.</p>
+<p>Used as the parts in a <a class="reference internal" href="#celery.task.sets.TaskSet" title="celery.task.sets.TaskSet"><tt class="xref py py-class docutils literal"><span class="pre">TaskSet</span></tt></a> or to safely
+pass tasks around as callbacks.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>task</strong> &#8211; Either a task class/instance, or the name of a task.</li>
+<li><strong>args</strong> &#8211; Positional arguments to apply.</li>
+<li><strong>kwargs</strong> &#8211; Keyword arguments to apply.</li>
+<li><strong>options</strong> &#8211; Additional options to
+<tt class="xref py py-func docutils literal"><span class="pre">celery.execute.apply_async()</span></tt>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Note that if the first argument is a <a class="reference external" href="http://docs.python.org/dev/library/stdtypes.html#dict" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt></a>, the other
+arguments will be ignored and the values in the dict will be used
+instead.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">subtask</span><span class="p">(</span><span class="s">&quot;tasks.add&quot;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">subtask</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="go">{&quot;task&quot;: &quot;tasks.add&quot;, args=(2, 2), kwargs={}, options={}}</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="celery.task.sets.subtask.apply">
+<tt class="descname">apply</tt><big>(</big><em>args=()</em>, <em>kwargs={}</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.sets.subtask.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this task locally.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.task.sets.subtask.apply_async">
+<tt class="descname">apply_async</tt><big>(</big><em>args=()</em>, <em>kwargs={}</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.sets.subtask.apply_async" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this task asynchronously.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.task.sets.subtask.delay">
+<tt class="descname">delay</tt><big>(</big><em>*argmerge</em>, <em>**kwmerge</em><big>)</big><a class="headerlink" href="#celery.task.sets.subtask.delay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shortcut to <cite>apply_async(argmerge, kwargs)</cite>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.task.sets.subtask.type">
+<tt class="descname">type</tt><a class="headerlink" href="#celery.task.sets.subtask.type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -238,13 +258,12 @@ to track how many, or when all of the tasks have been completed.</p>
         <li class="right" >
           <a href="celery.task.base.html" title="celery.task.base"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

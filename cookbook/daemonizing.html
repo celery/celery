@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Running celeryd as a daemon &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>Running celeryd as a daemon &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../index.html" />
     <link rel="up" title="Cookbook" href="index.html" />
     <link rel="next" title="Contributing" href="../contributing.html" />
     <link rel="prev" title="Creating Tasks" href="tasks.html" /> 
@@ -42,7 +45,7 @@
         <li class="right" >
           <a href="tasks.html" title="Creating Tasks"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Cookbook</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,13 +58,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/cookbook/daemonizing.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/cookbook/daemonizing.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="running-celeryd-as-a-daemon">
@@ -102,10 +103,10 @@ that should run on Linux, FreeBSD, OpenBSD, and other Unix platforms.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Usage:</th><td class="field-body"><cite>/etc/init.d/celeryd {start|stop|restart|status}</cite></td>
+<tr class="field-odd field"><th class="field-name">Usage:</th><td class="field-body"><cite>/etc/init.d/celeryd {start|stop|restart|status}</cite></td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Configuration file:</th></tr>
-<tr class="field"><td>&nbsp;</td><td class="field-body">/etc/default/celeryd</td>
+<tr class="field-even field"><th class="field-name" colspan="2">Configuration file:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">/etc/default/celeryd</td>
 </tr>
 </tbody>
 </table>
@@ -240,10 +241,10 @@ You can point this to an virtualenv, or even use manage.py for django.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Usage:</th><td class="field-body"><cite>/etc/init.d/celerybeat {start|stop|restart}</cite></td>
+<tr class="field-odd field"><th class="field-name">Usage:</th><td class="field-body"><cite>/etc/init.d/celerybeat {start|stop|restart}</cite></td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Configuration file:</th></tr>
-<tr class="field"><td>&nbsp;</td><td class="field-body">/etc/default/celerybeat or /etc/default/celeryd</td>
+<tr class="field-even field"><th class="field-name" colspan="2">Configuration file:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">/etc/default/celerybeat or /etc/default/celeryd</td>
 </tr>
 </tbody>
 </table>
@@ -421,13 +422,12 @@ actual resulting output:</p>
         <li class="right" >
           <a href="tasks.html" title="Creating Tasks"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" >Cookbook</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

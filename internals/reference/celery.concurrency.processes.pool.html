@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.concurrency.processes.pool &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>celery.concurrency.processes.pool &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.concurrency.eventlet† (experimental)" href="celery.concurrency.eventlet.html" />
     <link rel="prev" title="celery.concurrency.processes" href="celery.concurrency.processes.html" /> 
@@ -42,7 +45,7 @@
         <li class="right" >
           <a href="celery.concurrency.processes.html" title="celery.concurrency.processes"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,18 +59,110 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.concurrency.processes.pool.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.concurrency.processes.pool.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="celery-concurrency-processes-pool">
 <h1>celery.concurrency.processes.pool<a class="headerlink" href="#celery-concurrency-processes-pool" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.concurrency.processes.pool"></span><dl class="class">
+<dt id="celery.concurrency.processes.pool.ApplyResult">
+<em class="property">class </em><tt class="descclassname">celery.concurrency.processes.pool.</tt><tt class="descname">ApplyResult</tt><big>(</big><em>cache</em>, <em>callback</em>, <em>accept_callback=None</em>, <em>timeout_callback=None</em>, <em>error_callback=None</em>, <em>soft_timeout=None</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.ApplyResult" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.concurrency.processes.pool.ApplyResult.accepted">
+<tt class="descname">accepted</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.ApplyResult.accepted" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.processes.pool.ApplyResult.get">
+<tt class="descname">get</tt><big>(</big><em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.ApplyResult.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.processes.pool.ApplyResult.ready">
+<tt class="descname">ready</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.ApplyResult.ready" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.processes.pool.ApplyResult.successful">
+<tt class="descname">successful</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.ApplyResult.successful" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.processes.pool.ApplyResult.wait">
+<tt class="descname">wait</tt><big>(</big><em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.ApplyResult.wait" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.processes.pool.ApplyResult.worker_pids">
+<tt class="descname">worker_pids</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.ApplyResult.worker_pids" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.concurrency.processes.pool.DynamicPool">
+<tt class="descclassname">celery.concurrency.processes.pool.</tt><tt class="descname">DynamicPool</tt><a class="headerlink" href="#celery.concurrency.processes.pool.DynamicPool" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#celery.concurrency.processes.pool.Pool" title="celery.concurrency.processes.pool.Pool"><tt class="xref py py-class docutils literal"><span class="pre">Pool</span></tt></a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.concurrency.processes.pool.IMapIterator">
+<em class="property">class </em><tt class="descclassname">celery.concurrency.processes.pool.</tt><tt class="descname">IMapIterator</tt><big>(</big><em>cache</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.IMapIterator" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.concurrency.processes.pool.IMapIterator.next">
+<tt class="descname">next</tt><big>(</big><em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.IMapIterator.next" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.concurrency.processes.pool.IMapUnorderedIterator">
+<em class="property">class </em><tt class="descclassname">celery.concurrency.processes.pool.</tt><tt class="descname">IMapUnorderedIterator</tt><big>(</big><em>cache</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.IMapUnorderedIterator" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="celery.concurrency.processes.pool.LaxBoundedSemaphore">
+<em class="property">class </em><tt class="descclassname">celery.concurrency.processes.pool.</tt><tt class="descname">LaxBoundedSemaphore</tt><big>(</big><em>value=1</em>, <em>verbose=None</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.LaxBoundedSemaphore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Semaphore that checks that # release is &lt;= # acquires,
+but ignores if # releases &gt;= value.</p>
+<dl class="method">
+<dt id="celery.concurrency.processes.pool.LaxBoundedSemaphore.clear">
+<tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.LaxBoundedSemaphore.clear" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.processes.pool.LaxBoundedSemaphore.release">
+<tt class="descname">release</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.LaxBoundedSemaphore.release" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.concurrency.processes.pool.MapResult">
+<em class="property">class </em><tt class="descclassname">celery.concurrency.processes.pool.</tt><tt class="descname">MapResult</tt><big>(</big><em>cache</em>, <em>chunksize</em>, <em>length</em>, <em>callback</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.MapResult" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.concurrency.processes.pool.MapResult.accepted">
+<tt class="descname">accepted</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.MapResult.accepted" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.processes.pool.MapResult.worker_pids">
+<tt class="descname">worker_pids</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.MapResult.worker_pids" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="celery.concurrency.processes.pool.MaybeEncodingError">
+<em class="property">exception </em><tt class="descclassname">celery.concurrency.processes.pool.</tt><tt class="descname">MaybeEncodingError</tt><big>(</big><em>exc</em>, <em>value</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.MaybeEncodingError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wraps unpickleable object.</p>
+</dd></dl>
+
+<dl class="class">
 <dt id="celery.concurrency.processes.pool.Pool">
 <em class="property">class </em><tt class="descclassname">celery.concurrency.processes.pool.</tt><tt class="descname">Pool</tt><big>(</big><em>processes=None</em>, <em>initializer=None</em>, <em>initargs=()</em>, <em>maxtasksperchild=None</em>, <em>timeout=None</em>, <em>soft_timeout=None</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.Pool" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class which supports an async version of the <cite>apply()</cite> builtin</p>
@@ -263,6 +358,118 @@ than <cite>Pool.map()</cite></p>
 
 </dd></dl>
 
+<dl class="class">
+<dt id="celery.concurrency.processes.pool.PoolThread">
+<em class="property">class </em><tt class="descclassname">celery.concurrency.processes.pool.</tt><tt class="descname">PoolThread</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.PoolThread" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.concurrency.processes.pool.PoolThread.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.PoolThread.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.processes.pool.PoolThread.run">
+<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.PoolThread.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.processes.pool.PoolThread.terminate">
+<tt class="descname">terminate</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.PoolThread.terminate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.concurrency.processes.pool.ResultHandler">
+<em class="property">class </em><tt class="descclassname">celery.concurrency.processes.pool.</tt><tt class="descname">ResultHandler</tt><big>(</big><em>outqueue</em>, <em>get</em>, <em>cache</em>, <em>poll</em>, <em>join_exited_workers</em>, <em>putlock</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.ResultHandler" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.concurrency.processes.pool.ResultHandler.body">
+<tt class="descname">body</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.ResultHandler.body" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.concurrency.processes.pool.Supervisor">
+<em class="property">class </em><tt class="descclassname">celery.concurrency.processes.pool.</tt><tt class="descname">Supervisor</tt><big>(</big><em>pool</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.Supervisor" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.concurrency.processes.pool.Supervisor.body">
+<tt class="descname">body</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.Supervisor.body" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.concurrency.processes.pool.TaskHandler">
+<em class="property">class </em><tt class="descclassname">celery.concurrency.processes.pool.</tt><tt class="descname">TaskHandler</tt><big>(</big><em>taskqueue</em>, <em>put</em>, <em>outqueue</em>, <em>pool</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.TaskHandler" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.concurrency.processes.pool.TaskHandler.body">
+<tt class="descname">body</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.TaskHandler.body" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.concurrency.processes.pool.ThreadPool">
+<em class="property">class </em><tt class="descclassname">celery.concurrency.processes.pool.</tt><tt class="descname">ThreadPool</tt><big>(</big><em>processes=None</em>, <em>initializer=None</em>, <em>initargs=()</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.ThreadPool" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="class">
+<dt id="celery.concurrency.processes.pool.ThreadPool.DummyProcess">
+<em class="property">class </em><tt class="descname">DummyProcess</tt><big>(</big><em>group=None</em>, <em>target=None</em>, <em>name=None</em>, <em>args=()</em>, <em>kwargs={}</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.ThreadPool.DummyProcess" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="celery.concurrency.processes.pool.ThreadPool.DummyProcess.exitcode">
+<tt class="descname">exitcode</tt><a class="headerlink" href="#celery.concurrency.processes.pool.ThreadPool.DummyProcess.exitcode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.processes.pool.ThreadPool.DummyProcess.start">
+<tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.ThreadPool.DummyProcess.start" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.concurrency.processes.pool.ThreadPool.Process">
+<tt class="descclassname">ThreadPool.</tt><tt class="descname">Process</tt><a class="headerlink" href="#celery.concurrency.processes.pool.ThreadPool.Process" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#celery.concurrency.processes.pool.ThreadPool.DummyProcess" title="celery.concurrency.processes.pool.ThreadPool.DummyProcess"><tt class="xref py py-class docutils literal"><span class="pre">DummyProcess</span></tt></a></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.concurrency.processes.pool.TimeoutHandler">
+<em class="property">class </em><tt class="descclassname">celery.concurrency.processes.pool.</tt><tt class="descname">TimeoutHandler</tt><big>(</big><em>processes</em>, <em>cache</em>, <em>t_soft</em>, <em>t_hard</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.TimeoutHandler" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.concurrency.processes.pool.TimeoutHandler.body">
+<tt class="descname">body</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.TimeoutHandler.body" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="celery.concurrency.processes.pool.WorkersJoined">
+<em class="property">exception </em><tt class="descclassname">celery.concurrency.processes.pool.</tt><tt class="descname">WorkersJoined</tt><a class="headerlink" href="#celery.concurrency.processes.pool.WorkersJoined" title="Permalink to this definition">¶</a></dt>
+<dd><p>All workers have terminated.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.concurrency.processes.pool.error">
+<tt class="descclassname">celery.concurrency.processes.pool.</tt><tt class="descname">error</tt><big>(</big><em>msg</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.error" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.concurrency.processes.pool.mapstar">
+<tt class="descclassname">celery.concurrency.processes.pool.</tt><tt class="descname">mapstar</tt><big>(</big><em>args</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.mapstar" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.concurrency.processes.pool.soft_timeout_sighandler">
+<tt class="descclassname">celery.concurrency.processes.pool.</tt><tt class="descname">soft_timeout_sighandler</tt><big>(</big><em>signum</em>, <em>frame</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.soft_timeout_sighandler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.concurrency.processes.pool.worker">
+<tt class="descclassname">celery.concurrency.processes.pool.</tt><tt class="descname">worker</tt><big>(</big><em>inqueue</em>, <em>outqueue</em>, <em>initializer=None</em>, <em>initargs=()</em>, <em>maxtasks=None</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.pool.worker" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </div>
 
 
@@ -316,14 +523,13 @@ than <cite>Pool.map()</cite></p>
         <li class="right" >
           <a href="celery.concurrency.processes.html" title="celery.concurrency.processes"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

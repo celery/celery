@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.events.state &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>celery.events.state &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.apps.worker" href="celery.apps.worker.html" />
     <link rel="prev" title="celery.events" href="celery.events.html" /> 
@@ -42,7 +45,7 @@
         <li class="right" >
           <a href="celery.events.html" title="celery.events"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,13 +58,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/reference/celery.events.state.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/reference/celery.events.state.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="celery-events-state">
@@ -73,48 +74,137 @@
 </div>
 <span class="target" id="module-celery.events.state"></span><div class="section" id="id1">
 <h2><a class="toc-backref" href="#id2">celery.events.state</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
-<p>This module implements a way to keep track of the
-state of a cluster of workers and the tasks it is working on
-by consuming events.</p>
-<p>For every event consumed the state is updated, so
-it represents the state of the cluster at the time
-of the last event.</p>
-<p>Snapshots (<a class="reference internal" href="../internals/reference/celery.events.snapshot.html#module-celery.events.snapshot" title="celery.events.snapshot"><tt class="xref py py-mod docutils literal"><span class="pre">celery.events.snapshot</span></tt></a>) can be used
-to take pictures of this state at regular intervals
-and e.g. store it inside a database.</p>
+<p>This module implements a datastructure used to keep
+track of the state of a cluster of workers and the tasks
+it is working on (by consuming events).</p>
+<p>For every event consumed the state is updated,
+so the state represents the state of the cluster
+at the time of the last event.</p>
+<p>Snapshots (<a class="reference internal" href="../internals/reference/celery.events.snapshot.html#module-celery.events.snapshot" title="celery.events.snapshot"><tt class="xref py py-mod docutils literal"><span class="pre">celery.events.snapshot</span></tt></a>) can be used to
+take &#8220;pictures&#8221; of this state at regular intervals
+to e.g. store that in a database.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
+<li>2009 - 2011 by Ask Solem.</li>
+</ol>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body"><p class="first last">BSD, see LICENSE for more details.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="celery.events.state.Element">
+<em class="property">class </em><tt class="descclassname">celery.events.state.</tt><tt class="descname">Element</tt><a class="headerlink" href="#celery.events.state.Element" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for worker state elements.</p>
+</dd></dl>
+
 <dl class="data">
 <dt id="celery.events.state.HEARTBEAT_EXPIRE">
-<tt class="descclassname">celery.events.state.</tt><tt class="descname">HEARTBEAT_EXPIRE</tt><a class="headerlink" href="#celery.events.state.HEARTBEAT_EXPIRE" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.events.state.</tt><tt class="descname">HEARTBEAT_EXPIRE</tt><em class="property"> = 150</em><a class="headerlink" href="#celery.events.state.HEARTBEAT_EXPIRE" title="Permalink to this definition">¶</a></dt>
 <dd><p>Hartbeat expiry time in seconds.  The worker will be considered offline
 if no heartbeat is received within this time.
 Default is 2:30 minutes.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="celery.events.state.Worker">
-<em class="property">class </em><tt class="descclassname">celery.events.state.</tt><tt class="descname">Worker</tt><big>(</big><em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Worker" title="Permalink to this definition">¶</a></dt>
-<dd><p>Worker State.</p>
-<dl class="attribute">
-<dt id="celery.events.state.Worker.alive">
-<tt class="descname">alive</tt><a class="headerlink" href="#celery.events.state.Worker.alive" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.events.state.State">
+<em class="property">class </em><tt class="descclassname">celery.events.state.</tt><tt class="descname">State</tt><big>(</big><em>callback=None</em>, <em>max_workers_in_memory=5000</em>, <em>max_tasks_in_memory=10000</em><big>)</big><a class="headerlink" href="#celery.events.state.State" title="Permalink to this definition">¶</a></dt>
+<dd><p>Records clusters state.</p>
+<dl class="method">
+<dt id="celery.events.state.State.alive_workers">
+<tt class="descname">alive_workers</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.state.State.alive_workers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of (seemingly) alive workers.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.events.state.State.clear">
+<tt class="descname">clear</tt><big>(</big><em>ready=True</em><big>)</big><a class="headerlink" href="#celery.events.state.State.clear" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="celery.events.state.Worker.on_heartbeat">
-<tt class="descname">on_heartbeat</tt><big>(</big><em>timestamp=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.Worker.on_heartbeat" title="Permalink to this definition">¶</a></dt>
-<dd><p>Callback for the <cite>worker-heartbeat</cite> event.</p>
+<dt id="celery.events.state.State.clear_tasks">
+<tt class="descname">clear_tasks</tt><big>(</big><em>ready=True</em><big>)</big><a class="headerlink" href="#celery.events.state.State.clear_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.state.State.event">
+<tt class="descname">event</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#celery.events.state.State.event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.events.state.State.event_count">
+<tt class="descname">event_count</tt><em class="property"> = 0</em><a class="headerlink" href="#celery.events.state.State.event_count" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.state.State.freeze_while">
+<tt class="descname">freeze_while</tt><big>(</big><em>fun</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.State.freeze_while" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.state.State.get_or_create_task">
+<tt class="descname">get_or_create_task</tt><big>(</big><em>uuid</em><big>)</big><a class="headerlink" href="#celery.events.state.State.get_or_create_task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or create task by uuid.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.events.state.Worker.on_offline">
-<tt class="descname">on_offline</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.Worker.on_offline" title="Permalink to this definition">¶</a></dt>
-<dd><p>Callback for the <cite>worker-offline</cite> event.</p>
+<dt id="celery.events.state.State.get_or_create_worker">
+<tt class="descname">get_or_create_worker</tt><big>(</big><em>hostname</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.State.get_or_create_worker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or create worker by hostname.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.events.state.Worker.on_online">
-<tt class="descname">on_online</tt><big>(</big><em>timestamp=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.Worker.on_online" title="Permalink to this definition">¶</a></dt>
-<dd><p>Callback for the <cite>worker-online</cite> event.</p>
+<dt id="celery.events.state.State.itertasks">
+<tt class="descname">itertasks</tt><big>(</big><em>limit=None</em><big>)</big><a class="headerlink" href="#celery.events.state.State.itertasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.events.state.State.task_count">
+<tt class="descname">task_count</tt><em class="property"> = 0</em><a class="headerlink" href="#celery.events.state.State.task_count" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.state.State.task_event">
+<tt class="descname">task_event</tt><big>(</big><em>type</em>, <em>fields</em><big>)</big><a class="headerlink" href="#celery.events.state.State.task_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process task event.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.events.state.State.task_types">
+<tt class="descname">task_types</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.state.State.task_types" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of all seen task types.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.events.state.State.tasks_by_timestamp">
+<tt class="descname">tasks_by_timestamp</tt><big>(</big><em>limit=None</em><big>)</big><a class="headerlink" href="#celery.events.state.State.tasks_by_timestamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get tasks by timestamp.</p>
+<p>Returns a list of <cite>(uuid, task)</cite> tuples.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.events.state.State.tasks_by_type">
+<tt class="descname">tasks_by_type</tt><big>(</big><em>name</em>, <em>limit=None</em><big>)</big><a class="headerlink" href="#celery.events.state.State.tasks_by_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all tasks by type.</p>
+<p>Returns a list of <cite>(uuid, task)</cite> tuples.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.events.state.State.tasks_by_worker">
+<tt class="descname">tasks_by_worker</tt><big>(</big><em>hostname</em>, <em>limit=None</em><big>)</big><a class="headerlink" href="#celery.events.state.State.tasks_by_worker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all tasks by worker.</p>
+<p>Returns a list of <cite>(uuid, task)</cite> tuples.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.events.state.State.worker_event">
+<tt class="descname">worker_event</tt><big>(</big><em>type</em>, <em>fields</em><big>)</big><a class="headerlink" href="#celery.events.state.State.worker_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process worker event.</p>
 </dd></dl>
 
 </dd></dl>
@@ -137,7 +227,7 @@ Default is 2:30 minutes.</p>
 
 <dl class="attribute">
 <dt id="celery.events.state.Task.merge_rules">
-<tt class="descname">merge_rules</tt><a class="headerlink" href="#celery.events.state.Task.merge_rules" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">merge_rules</tt><em class="property"> = {'RECEIVED': ('name', 'args', 'kwargs', 'retries', 'eta', 'expires')}</em><a class="headerlink" href="#celery.events.state.Task.merge_rules" title="Permalink to this definition">¶</a></dt>
 <dd><p>How to merge out of order events.
 Disorder is detected by logical ordering (e.g. task-received must have
 happened before a task-failed event).</p>
@@ -207,7 +297,7 @@ these fields received before or after is simply ignored.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>state</strong> &#8211; State from event.</li>
 <li><strong>timestamp</strong> &#8211; Timestamp from event.</li>
 <li><strong>fields</strong> &#8211; Event data.</li>
@@ -221,84 +311,35 @@ these fields received before or after is simply ignored.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="celery.events.state.State">
-<em class="property">class </em><tt class="descclassname">celery.events.state.</tt><tt class="descname">State</tt><big>(</big><em>callback=None</em>, <em>max_workers_in_memory=5000</em>, <em>max_tasks_in_memory=10000</em><big>)</big><a class="headerlink" href="#celery.events.state.State" title="Permalink to this definition">¶</a></dt>
-<dd><p>Records clusters state.</p>
-<dl class="method">
-<dt id="celery.events.state.State.alive_workers">
-<tt class="descname">alive_workers</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.state.State.alive_workers" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list of (seemingly) alive workers.</p>
-</dd></dl>
+<dt id="celery.events.state.Worker">
+<em class="property">class </em><tt class="descclassname">celery.events.state.</tt><tt class="descname">Worker</tt><big>(</big><em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Worker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Worker State.</p>
+<dl class="attribute">
+<dt id="celery.events.state.Worker.alive">
+<tt class="descname">alive</tt><a class="headerlink" href="#celery.events.state.Worker.alive" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
-<dl class="method">
-<dt id="celery.events.state.State.clear">
-<tt class="descname">clear</tt><big>(</big><em>ready=True</em><big>)</big><a class="headerlink" href="#celery.events.state.State.clear" title="Permalink to this definition">¶</a></dt>
+<dl class="attribute">
+<dt id="celery.events.state.Worker.heartbeat_max">
+<tt class="descname">heartbeat_max</tt><em class="property"> = 4</em><a class="headerlink" href="#celery.events.state.Worker.heartbeat_max" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="celery.events.state.State.clear_tasks">
-<tt class="descname">clear_tasks</tt><big>(</big><em>ready=True</em><big>)</big><a class="headerlink" href="#celery.events.state.State.clear_tasks" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.events.state.State.event">
-<tt class="descname">event</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#celery.events.state.State.event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.events.state.State.freeze_while">
-<tt class="descname">freeze_while</tt><big>(</big><em>fun</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.State.freeze_while" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.events.state.State.get_or_create_task">
-<tt class="descname">get_or_create_task</tt><big>(</big><em>uuid</em><big>)</big><a class="headerlink" href="#celery.events.state.State.get_or_create_task" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get or create task by uuid.</p>
+<dt id="celery.events.state.Worker.on_heartbeat">
+<tt class="descname">on_heartbeat</tt><big>(</big><em>timestamp=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.Worker.on_heartbeat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback for the <cite>worker-heartbeat</cite> event.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.events.state.State.get_or_create_worker">
-<tt class="descname">get_or_create_worker</tt><big>(</big><em>hostname</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.State.get_or_create_worker" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get or create worker by hostname.</p>
+<dt id="celery.events.state.Worker.on_offline">
+<tt class="descname">on_offline</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.Worker.on_offline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback for the <cite>worker-offline</cite> event.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.events.state.State.task_event">
-<tt class="descname">task_event</tt><big>(</big><em>type</em>, <em>fields</em><big>)</big><a class="headerlink" href="#celery.events.state.State.task_event" title="Permalink to this definition">¶</a></dt>
-<dd><p>Process task event.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.events.state.State.task_types">
-<tt class="descname">task_types</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.state.State.task_types" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list of all seen task types.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.events.state.State.tasks_by_timestamp">
-<tt class="descname">tasks_by_timestamp</tt><big>(</big><em>limit=None</em><big>)</big><a class="headerlink" href="#celery.events.state.State.tasks_by_timestamp" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get tasks by timestamp.</p>
-<p>Returns a list of <cite>(uuid, task)</cite> tuples.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.events.state.State.tasks_by_type">
-<tt class="descname">tasks_by_type</tt><big>(</big><em>name</em>, <em>limit=None</em><big>)</big><a class="headerlink" href="#celery.events.state.State.tasks_by_type" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get all tasks by type.</p>
-<p>Returns a list of <cite>(uuid, task)</cite> tuples.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.events.state.State.tasks_by_worker">
-<tt class="descname">tasks_by_worker</tt><big>(</big><em>hostname</em>, <em>limit=None</em><big>)</big><a class="headerlink" href="#celery.events.state.State.tasks_by_worker" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get all tasks by worker.</p>
-<p>Returns a list of <cite>(uuid, task)</cite> tuples.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.events.state.State.worker_event">
-<tt class="descname">worker_event</tt><big>(</big><em>type</em>, <em>fields</em><big>)</big><a class="headerlink" href="#celery.events.state.State.worker_event" title="Permalink to this definition">¶</a></dt>
-<dd><p>Process worker event.</p>
+<dt id="celery.events.state.Worker.on_online">
+<tt class="descname">on_online</tt><big>(</big><em>timestamp=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.Worker.on_online" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback for the <cite>worker-online</cite> event.</p>
 </dd></dl>
 
 </dd></dl>
@@ -357,13 +398,12 @@ these fields received before or after is simply ignored.</p>
         <li class="right" >
           <a href="celery.events.html" title="celery.events"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

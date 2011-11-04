@@ -447,6 +447,11 @@ dl.glossary dt {
     font-style: oblique;
 }
 
+abbr, acronym {
+    border-bottom: dotted 1px;
+    cursor: help;
+}
+
 /* -- code displays --------------------------------------------------------- */
 
 pre {

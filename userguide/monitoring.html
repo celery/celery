@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Monitoring and Management Guide &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>Monitoring and Management Guide &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Optimizing" href="optimizing.html" />
     <link rel="prev" title="Routing Tasks" href="routing.html" /> 
@@ -42,7 +45,7 @@
         <li class="right" >
           <a href="routing.html" title="Routing Tasks"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,13 +58,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/userguide/monitoring.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/userguide/monitoring.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="monitoring-and-management-guide">
@@ -190,8 +191,8 @@ with an eta).</p>
 </dl>
 </li>
 <li><dl class="first docutils">
-<dt><strong>inspect registered_tasks</strong>: List registered tasks</dt>
-<dd><div class="first last highlight-python"><pre>$ celeryctl inspect registered_tasks</pre>
+<dt><strong>inspect registered</strong>: List registered tasks</dt>
+<dd><div class="first last highlight-python"><pre>$ celeryctl inspect registered</pre>
 </div>
 </dd>
 </dl>
@@ -262,7 +263,7 @@ intervals, storing them in your database (See <a class="reference internal" href
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Tip:</th><td class="field-body">You can enable events when the worker starts using the <cite>-E</cite> argument
+<tr class="field-odd field"><th class="field-name">Tip:</th><td class="field-body">You can enable events when the worker starts using the <cite>-E</cite> argument
 to <a class="reference internal" href="../reference/celery.bin.celeryd.html#module-celery.bin.celeryd" title="celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a>.</td>
 </tr>
 </tbody>
@@ -354,7 +355,7 @@ task and worker history.  You can inspect the result and traceback of tasks,
 and it also supports some management commands like rate limiting and shutting
 down workers.</p>
 <div class="figure">
-<img alt="../_images/celeryevshotsm.jpg" src="../_images/celeryevshotsm.jpg" />
+<img alt="../_images/celeryevshotsm1.jpg" src="../_images/celeryevshotsm1.jpg" />
 </div>
 <p><a class="reference internal" href="../reference/celery.bin.celeryev.html#module-celery.bin.celeryev" title="celery.bin.celeryev"><tt class="xref py py-mod docutils literal"><span class="pre">celeryev</span></tt></a> is also used to start snapshot cameras (see
 <a class="reference internal" href="#monitoring-snapshots"><em>Snapshots</em></a>:</p>
@@ -378,7 +379,7 @@ or help this project in any way, please get in touch!</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Tip:</th><td class="field-body">The Django admin monitor can be used even though you&#8217;re not using
+<tr class="field-odd field"><th class="field-name">Tip:</th><td class="field-body">The Django admin monitor can be used even though you&#8217;re not using
 Celery with a Django project.  See <a class="reference internal" href="#monitoring-nodjango"><em>Using outside of Django</em></a>.</td>
 </tr>
 </tbody>
@@ -421,7 +422,7 @@ not acknowledged yet (meaning it is in progress, or has been reserved).
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Tip:</th><td class="field-body">Adding the <tt class="docutils literal"><span class="pre">-q</span></tt> option to <a class="reference external" href="http://www.rabbitmq.com/man/rabbitmqctl.1.man.html">rabbitmqctl(1)</a> makes the output
+<tr class="field-odd field"><th class="field-name">Tip:</th><td class="field-body">Adding the <tt class="docutils literal"><span class="pre">-q</span></tt> option to <a class="reference external" href="http://www.rabbitmq.com/man/rabbitmqctl.1.man.html">rabbitmqctl(1)</a> makes the output
 easier to parse.</td>
 </tr>
 </tbody>
@@ -648,13 +649,12 @@ it is considered to be offline.</p>
         <li class="right" >
           <a href="routing.html" title="Routing Tasks"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.contrib.batches &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>celery.contrib.batches &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.contrib.rdb" href="celery.contrib.rdb.html" />
     <link rel="prev" title="celery.contrib.abortable" href="celery.contrib.abortable.html" /> 
@@ -42,7 +45,7 @@
         <li class="right" >
           <a href="celery.contrib.abortable.html" title="celery.contrib.abortable"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,13 +58,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/reference/celery.contrib.batches.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/reference/celery.contrib.batches.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <span class="target" id="module-celery.contrib.batches"></span><div class="section" id="celery-contrib-batches">
@@ -98,12 +99,12 @@ to a channel with different QoS requirements than the task channel.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
 <li>2009 - 2011 by Ask Solem.</li>
 </ol>
 </td>
 </tr>
-<tr class="field"><th class="field-name">license:</th><td class="field-body"><p class="first last">BSD, see LICENSE for more details.</p>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body"><p class="first last">BSD, see LICENSE for more details.</p>
 </td>
 </tr>
 </tbody>
@@ -134,13 +135,13 @@ to a channel with different QoS requirements than the task channel.</p>
 
 <dl class="attribute">
 <dt id="celery.contrib.batches.Batches.flush_every">
-<tt class="descname">flush_every</tt><a class="headerlink" href="#celery.contrib.batches.Batches.flush_every" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">flush_every</tt><em class="property"> = 10</em><a class="headerlink" href="#celery.contrib.batches.Batches.flush_every" title="Permalink to this definition">¶</a></dt>
 <dd><p>Maximum number of message in buffer.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.contrib.batches.Batches.flush_interval">
-<tt class="descname">flush_interval</tt><a class="headerlink" href="#celery.contrib.batches.Batches.flush_interval" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">flush_interval</tt><em class="property"> = 30</em><a class="headerlink" href="#celery.contrib.batches.Batches.flush_interval" title="Permalink to this definition">¶</a></dt>
 <dd><p>Timeout in seconds before buffer is flushed anyway.</p>
 </dd></dl>
 
@@ -162,13 +163,13 @@ to a channel with different QoS requirements than the task channel.</p>
 <dd><p>Pickleable request.</p>
 <dl class="attribute">
 <dt id="celery.contrib.batches.SimpleRequest.args">
-<tt class="descname">args</tt><a class="headerlink" href="#celery.contrib.batches.SimpleRequest.args" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">args</tt><em class="property"> = ()</em><a class="headerlink" href="#celery.contrib.batches.SimpleRequest.args" title="Permalink to this definition">¶</a></dt>
 <dd><p>positional arguments</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.contrib.batches.SimpleRequest.delivery_info">
-<tt class="descname">delivery_info</tt><a class="headerlink" href="#celery.contrib.batches.SimpleRequest.delivery_info" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">delivery_info</tt><em class="property"> = None</em><a class="headerlink" href="#celery.contrib.batches.SimpleRequest.delivery_info" title="Permalink to this definition">¶</a></dt>
 <dd><p>message delivery information.</p>
 </dd></dl>
 
@@ -179,25 +180,25 @@ to a channel with different QoS requirements than the task channel.</p>
 
 <dl class="attribute">
 <dt id="celery.contrib.batches.SimpleRequest.hostname">
-<tt class="descname">hostname</tt><a class="headerlink" href="#celery.contrib.batches.SimpleRequest.hostname" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">hostname</tt><em class="property"> = None</em><a class="headerlink" href="#celery.contrib.batches.SimpleRequest.hostname" title="Permalink to this definition">¶</a></dt>
 <dd><p>worker node name</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.contrib.batches.SimpleRequest.id">
-<tt class="descname">id</tt><a class="headerlink" href="#celery.contrib.batches.SimpleRequest.id" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">id</tt><em class="property"> = None</em><a class="headerlink" href="#celery.contrib.batches.SimpleRequest.id" title="Permalink to this definition">¶</a></dt>
 <dd><p>task id</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.contrib.batches.SimpleRequest.kwargs">
-<tt class="descname">kwargs</tt><a class="headerlink" href="#celery.contrib.batches.SimpleRequest.kwargs" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">kwargs</tt><em class="property"> = {}</em><a class="headerlink" href="#celery.contrib.batches.SimpleRequest.kwargs" title="Permalink to this definition">¶</a></dt>
 <dd><p>keyword arguments</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.contrib.batches.SimpleRequest.name">
-<tt class="descname">name</tt><a class="headerlink" href="#celery.contrib.batches.SimpleRequest.name" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">name</tt><em class="property"> = None</em><a class="headerlink" href="#celery.contrib.batches.SimpleRequest.name" title="Permalink to this definition">¶</a></dt>
 <dd><p>task name</p>
 </dd></dl>
 
@@ -256,13 +257,12 @@ to a channel with different QoS requirements than the task channel.</p>
         <li class="right" >
           <a href="celery.contrib.abortable.html" title="celery.contrib.abortable"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

@@ -411,9 +411,9 @@ Dump of registered tasks
 ------------------------
 
 You can get a list of tasks registered in the worker using the
-:meth:`~celery.task.control.inspect.registered_tasks`::
+:meth:`~celery.task.control.inspect.registered`::
 
-    >>> i.registered_tasks()
+    >>> i.registered()
     [{'worker1.example.com': ['celery.delete_expired_task_meta',
                               'celery.execute_remote',
                               'celery.map_async',

@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.backends.amqp &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>celery.backends.amqp &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.backends.mongodb" href="celery.backends.mongodb.html" />
     <link rel="prev" title="celery.backends.cache" href="celery.backends.cache.html" /> 
@@ -42,7 +45,7 @@
         <li class="right" >
           <a href="celery.backends.cache.html" title="celery.backends.cache"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,13 +59,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.backends.amqp.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.backends.amqp.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="celery-backends-amqp">
@@ -85,13 +86,13 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>channel</strong> &#8211; see <tt class="xref py py-attr docutils literal"><span class="pre">channel</span></tt>.</li>
-<li><strong>queues</strong> &#8211; see <tt class="xref py py-attr docutils literal"><span class="pre">queues</span></tt>.</li>
-<li><strong>no_ack</strong> &#8211; see <tt class="xref py py-attr docutils literal"><span class="pre">no_ack</span></tt>.</li>
-<li><strong>auto_declare</strong> &#8211; see <tt class="xref py py-attr docutils literal"><span class="pre">auto_declare</span></tt></li>
-<li><strong>callbacks</strong> &#8211; see <tt class="xref py py-attr docutils literal"><span class="pre">callbacks</span></tt>.</li>
-<li><strong>on_decode_error</strong> &#8211; see <tt class="xref py py-attr docutils literal"><span class="pre">on_decode_error</span></tt>.</li>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>channel</strong> &#8211; see <a class="reference internal" href="#celery.backends.amqp.AMQPBackend.Consumer.channel" title="celery.backends.amqp.AMQPBackend.Consumer.channel"><tt class="xref py py-attr docutils literal"><span class="pre">channel</span></tt></a>.</li>
+<li><strong>queues</strong> &#8211; see <a class="reference internal" href="#celery.backends.amqp.AMQPBackend.Consumer.queues" title="celery.backends.amqp.AMQPBackend.Consumer.queues"><tt class="xref py py-attr docutils literal"><span class="pre">queues</span></tt></a>.</li>
+<li><strong>no_ack</strong> &#8211; see <a class="reference internal" href="#celery.backends.amqp.AMQPBackend.Consumer.no_ack" title="celery.backends.amqp.AMQPBackend.Consumer.no_ack"><tt class="xref py py-attr docutils literal"><span class="pre">no_ack</span></tt></a>.</li>
+<li><strong>auto_declare</strong> &#8211; see <a class="reference internal" href="#celery.backends.amqp.AMQPBackend.Consumer.auto_declare" title="celery.backends.amqp.AMQPBackend.Consumer.auto_declare"><tt class="xref py py-attr docutils literal"><span class="pre">auto_declare</span></tt></a></li>
+<li><strong>callbacks</strong> &#8211; see <a class="reference internal" href="#celery.backends.amqp.AMQPBackend.Consumer.callbacks" title="celery.backends.amqp.AMQPBackend.Consumer.callbacks"><tt class="xref py py-attr docutils literal"><span class="pre">callbacks</span></tt></a>.</li>
+<li><strong>on_decode_error</strong> &#8211; see <a class="reference internal" href="#celery.backends.amqp.AMQPBackend.Consumer.on_decode_error" title="celery.backends.amqp.AMQPBackend.Consumer.on_decode_error"><tt class="xref py py-attr docutils literal"><span class="pre">on_decode_error</span></tt></a>.</li>
 </ul>
 </td>
 </tr>
@@ -100,6 +101,16 @@
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Consumer.add_queue">
 <tt class="descname">add_queue</tt><big>(</big><em>queue</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Consumer.add_queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Consumer.auto_declare">
+<tt class="descname">auto_declare</tt><em class="property"> = True</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Consumer.auto_declare" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Consumer.callbacks">
+<tt class="descname">callbacks</tt><em class="property"> = None</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Consumer.callbacks" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -116,6 +127,11 @@ mean the server will not send any more messages for this consumer.</p>
 <dd><p>Cancel consumer by queue name.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Consumer.channel">
+<tt class="descname">channel</tt><em class="property"> = None</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Consumer.channel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Consumer.close">
 <tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Consumer.close" title="Permalink to this definition">¶</a></dt>
@@ -123,11 +139,6 @@ mean the server will not send any more messages for this consumer.</p>
 <p>This does not affect already delivered messages, but it does
 mean the server will not send any more messages for this consumer.</p>
 </dd></dl>
-
-<dl class="attribute">
-<dt id="celery.backends.amqp.AMQPBackend.Consumer.connection">
-<tt class="descname">connection</tt><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Consumer.connection" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Consumer.consume">
@@ -144,7 +155,7 @@ mean the server will not send any more messages for this consumer.</p>
 <dt id="celery.backends.amqp.AMQPBackend.Consumer.declare">
 <tt class="descname">declare</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Consumer.declare" title="Permalink to this definition">¶</a></dt>
 <dd><p>Declare queues, exchanges and bindings.</p>
-<p>This is done automatically at instantiation if <tt class="xref py py-attr docutils literal"><span class="pre">auto_declare</span></tt>
+<p>This is done automatically at instantiation if <a class="reference internal" href="#celery.backends.amqp.AMQPBackend.Consumer.auto_declare" title="celery.backends.amqp.AMQPBackend.Consumer.auto_declare"><tt class="xref py py-attr docutils literal"><span class="pre">auto_declare</span></tt></a>
 is set.</p>
 </dd></dl>
 
@@ -159,6 +170,16 @@ receiving more messages than it can process.</p>
 will finish sending the current content (if any), and then wait
 until flow is reactivated.</p>
 </dd></dl>
+
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Consumer.no_ack">
+<tt class="descname">no_ack</tt><em class="property"> = None</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Consumer.no_ack" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Consumer.on_decode_error">
+<tt class="descname">on_decode_error</tt><em class="property"> = None</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Consumer.on_decode_error" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Consumer.purge">
@@ -180,12 +201,12 @@ advance so that when the client finishes processing a message,
 the following message is already held locally, rather than needing
 to be sent down the channel. Prefetching gives a performance
 improvement.</p>
-<p>The prefetch window is Ignored if the <tt class="xref py py-attr docutils literal"><span class="pre">no_ack</span></tt> option is set.</p>
+<p>The prefetch window is Ignored if the <a class="reference internal" href="#celery.backends.amqp.AMQPBackend.Consumer.no_ack" title="celery.backends.amqp.AMQPBackend.Consumer.no_ack"><tt class="xref py py-attr docutils literal"><span class="pre">no_ack</span></tt></a> option is set.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>prefetch_size</strong> &#8211; Specify the prefetch window in octets.
 The server will send a message in advance if it is equal to
 or smaller in size than the available prefetch size (and
@@ -203,23 +224,28 @@ Currently not supported by RabbitMQ.</li>
 </table>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Consumer.queues">
+<tt class="descname">queues</tt><em class="property"> = None</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Consumer.queues" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Consumer.receive">
 <tt class="descname">receive</tt><big>(</big><em>body</em>, <em>message</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Consumer.receive" title="Permalink to this definition">¶</a></dt>
 <dd><p>Method called when a message is received.</p>
-<p>This dispatches to the registered <tt class="xref py py-attr docutils literal"><span class="pre">callbacks</span></tt>.</p>
+<p>This dispatches to the registered <a class="reference internal" href="#celery.backends.amqp.AMQPBackend.Consumer.callbacks" title="celery.backends.amqp.AMQPBackend.Consumer.callbacks"><tt class="xref py py-attr docutils literal"><span class="pre">callbacks</span></tt></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>body</strong> &#8211; The decoded message body.</li>
 <li><strong>message</strong> &#8211; The <cite>Message</cite> instance.</li>
 </ul>
 </td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Raises NotImplementedError:</th></tr>
-<tr class="field"><td>&nbsp;</td><td class="field-body"><p class="first last">If no consumer callbacks have been
+<tr class="field-even field"><th class="field-name" colspan="2">Raises <a class="reference external" href="http://docs.python.org/dev/library/exceptions.html#NotImplementedError" title="(in Python v3.3)">NotImplementedError</a>:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last">If no consumer callbacks have been
 registered.</p>
 </td>
 </tr>
@@ -237,7 +263,7 @@ on the specified channel.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>requeue</strong> &#8211; By default the messages will be redelivered
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>requeue</strong> &#8211; By default the messages will be redelivered
 to the original recipient. With <cite>requeue</cite> set to true, the
 server will attempt to requeue the message, potentially then
 delivering it to an alternative subscriber.</td>
@@ -254,7 +280,7 @@ is received.</p>
 <p>The signature of the callback needs to accept two arguments:
 <cite>(body, message)</cite>, which is the decoded message body
 and the <cite>Message</cite> instance (a subclass of
-<tt class="xref py py-class docutils literal"><span class="pre">Message</span></tt>.</p>
+<a class="reference external" href="http://kombu.readthedocs.org/en/latest/reference/kombu.transport.base.html#kombu.transport.base.Message" title="(in Kombu v1.4)"><tt class="xref py py-class docutils literal"><span class="pre">Message</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -273,7 +299,7 @@ and the <cite>Message</cite> instance (a subclass of
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>name</strong> &#8211; See <a class="reference internal" href="#celery.backends.amqp.AMQPBackend.Exchange.name" title="celery.backends.amqp.AMQPBackend.Exchange.name"><tt class="xref py py-attr docutils literal"><span class="pre">name</span></tt></a>.</li>
 <li><strong>type</strong> &#8211; See <a class="reference internal" href="#celery.backends.amqp.AMQPBackend.Exchange.type" title="celery.backends.amqp.AMQPBackend.Exchange.type"><tt class="xref py py-attr docutils literal"><span class="pre">type</span></tt></a>.</li>
 <li><strong>channel</strong> &#8211; See <a class="reference internal" href="#celery.backends.amqp.AMQPBackend.Exchange.channel" title="celery.backends.amqp.AMQPBackend.Exchange.channel"><tt class="xref py py-attr docutils literal"><span class="pre">channel</span></tt></a>.</li>
@@ -351,14 +377,14 @@ Rajith Attapattu. This article is recommended reading.</p>
 <tt class="descname">durable</tt><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Exchange.durable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Durable exchanges remain active when a server restarts. Non-durable
 exchanges (transient exchanges) are purged when a server restarts.
-Default is <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt>.</p>
+Default is <tt class="xref py py-const docutils literal"><span class="pre">True</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.backends.amqp.AMQPBackend.Exchange.auto_delete">
 <tt class="descname">auto_delete</tt><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Exchange.auto_delete" title="Permalink to this definition">¶</a></dt>
 <dd><p>If set, the exchange is deleted when all queues have finished
-using it. Default is <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt>.</p>
+using it. Default is <tt class="xref py py-const docutils literal"><span class="pre">False</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -401,7 +427,7 @@ preserved if the server dies or restarts.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>body</strong> &#8211; Message body.</li>
 <li><strong>delivery_mode</strong> &#8211; Set custom delivery mode. Defaults
 to <a class="reference internal" href="#celery.backends.amqp.AMQPBackend.Exchange.delivery_mode" title="celery.backends.amqp.AMQPBackend.Exchange.delivery_mode"><tt class="xref py py-attr docutils literal"><span class="pre">delivery_mode</span></tt></a>.</li>
@@ -425,6 +451,26 @@ properly sets content_encoding.</li>
 </table>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Exchange.PERSISTENT_DELIVERY_MODE">
+<tt class="descname">PERSISTENT_DELIVERY_MODE</tt><em class="property"> = 2</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Exchange.PERSISTENT_DELIVERY_MODE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Exchange.TRANSIENT_DELIVERY_MODE">
+<tt class="descname">TRANSIENT_DELIVERY_MODE</tt><em class="property"> = 1</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Exchange.TRANSIENT_DELIVERY_MODE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Exchange.attrs">
+<tt class="descname">attrs</tt><em class="property"> = (('name', None), ('type', None), ('arguments', None), ('durable', &lt;type 'bool'&gt;), ('auto_delete', &lt;type 'bool'&gt;), ('delivery_mode', &lt;function &lt;lambda&gt; at 0x1074cc9b0&gt;))</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Exchange.attrs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<tt class="descname">auto_delete</tt><em class="property"> = False</em></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Exchange.declare">
 <tt class="descname">declare</tt><big>(</big><em>nowait=False</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Exchange.declare" title="Permalink to this definition">¶</a></dt>
@@ -434,8 +480,8 @@ properly sets content_encoding.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>nowait</strong> &#8211; If set the server will not respond, and a
-response will not be waited for. Default is <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt>.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>nowait</strong> &#8211; If set the server will not respond, and a
+response will not be waited for. Default is <tt class="xref py py-const docutils literal"><span class="pre">False</span></tt>.</td>
 </tr>
 </tbody>
 </table>
@@ -449,17 +495,32 @@ response will not be waited for. Default is <tt class="xref py py-const xref doc
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>if_unused</strong> &#8211; Delete only if the exchange has no bindings.
-Default is <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt>.</li>
+Default is <tt class="xref py py-const docutils literal"><span class="pre">False</span></tt>.</li>
 <li><strong>nowait</strong> &#8211; If set the server will not respond, and a
-response will not be waited for. Default is <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt>.</li>
+response will not be waited for. Default is <tt class="xref py py-const docutils literal"><span class="pre">False</span></tt>.</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
+
+<dl class="attribute">
+<dt>
+<tt class="descname">delivery_mode</tt><em class="property"> = 2</em></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<tt class="descname">durable</tt><em class="property"> = True</em></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<tt class="descname">name</tt><em class="property"> = ''</em></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Exchange.publish">
@@ -469,7 +530,7 @@ response will not be waited for. Default is <tt class="xref py py-const xref doc
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>message</strong> &#8211; <a class="reference internal" href="#celery.backends.amqp.AMQPBackend.Exchange.Message" title="celery.backends.amqp.AMQPBackend.Exchange.Message"><tt class="xref py py-meth docutils literal"><span class="pre">Message()</span></tt></a> instance to publish.</li>
 <li><strong>routing_key</strong> &#8211; Routing key.</li>
 <li><strong>mandatory</strong> &#8211; Currently not supported.</li>
@@ -481,6 +542,11 @@ response will not be waited for. Default is <tt class="xref py py-const xref doc
 </table>
 </dd></dl>
 
+<dl class="attribute">
+<dt>
+<tt class="descname">type</tt><em class="property"> = 'direct'</em></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -491,15 +557,15 @@ response will not be waited for. Default is <tt class="xref py py-const xref doc
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>channel</strong> &#8211; Connection or channel.</li>
-<li><strong>exchange</strong> &#8211; Optional default exchange.</li>
-<li><strong>routing_key</strong> &#8211; Optional default routing key.</li>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>channel</strong> &#8211; Connection channel.</li>
+<li><strong>exchange</strong> &#8211; Default exchange.</li>
+<li><strong>routing_key</strong> &#8211; Default routing key.</li>
 <li><strong>serializer</strong> &#8211; Default serializer. Default is <cite>&#8220;json&#8221;</cite>.</li>
 <li><strong>compression</strong> &#8211; Default compression method. Default is no
 compression.</li>
-<li><strong>auto_declare</strong> &#8211; Automatically declare the default exchange
-at instantiation. Default is <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt>.</li>
+<li><strong>auto_declare</strong> &#8211; Automatically declare the exchange
+at instantiation. Default is <tt class="xref py py-const docutils literal"><span class="pre">True</span></tt>.</li>
 <li><strong>on_return</strong> &#8211; Callback to call for undeliverable messages,
 when the <cite>mandatory</cite> or <cite>immediate</cite> arguments to
 <a class="reference internal" href="#celery.backends.amqp.AMQPBackend.Producer.publish" title="celery.backends.amqp.AMQPBackend.Producer.publish"><tt class="xref py py-meth docutils literal"><span class="pre">publish()</span></tt></a> is used. This callback needs the following
@@ -510,47 +576,62 @@ Note that the producer needs to drain events to use this feature.</li>
 </tr>
 </tbody>
 </table>
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Producer.auto_declare">
+<tt class="descname">auto_declare</tt><em class="property"> = True</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.auto_declare" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Producer.channel">
+<tt class="descname">channel</tt><em class="property"> = None</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.channel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Producer.close">
 <tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.close" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="celery.backends.amqp.AMQPBackend.Producer.connection">
-<tt class="descname">connection</tt><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.connection" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.backends.amqp.AMQPBackend.Producer.compression">
+<tt class="descname">compression</tt><em class="property"> = None</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.compression" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Producer.declare">
 <tt class="descname">declare</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.declare" title="Permalink to this definition">¶</a></dt>
 <dd><p>Declare the exchange.</p>
-<p>This is done automatically at instantiation if <tt class="xref py py-attr docutils literal"><span class="pre">auto_declare</span></tt>
-is set to <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt>.</p>
+<p>This is done automatically at instantiation if <a class="reference internal" href="#celery.backends.amqp.AMQPBackend.Producer.auto_declare" title="celery.backends.amqp.AMQPBackend.Producer.auto_declare"><tt class="xref py py-attr docutils literal"><span class="pre">auto_declare</span></tt></a>
+is set to <tt class="xref py py-const docutils literal"><span class="pre">True</span></tt>.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="celery.backends.amqp.AMQPBackend.Producer.maybe_declare">
-<tt class="descname">maybe_declare</tt><big>(</big><em>entity</em>, <em>retry=False</em>, <em>**retry_policy</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.maybe_declare" title="Permalink to this definition">¶</a></dt>
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Producer.exchange">
+<tt class="descname">exchange</tt><em class="property"> = None</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.exchange" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Producer.on_return">
+<tt class="descname">on_return</tt><em class="property"> = None</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.on_return" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Producer.publish">
-<tt class="descname">publish</tt><big>(</big><em>body</em>, <em>routing_key=None</em>, <em>delivery_mode=None</em>, <em>mandatory=False</em>, <em>immediate=False</em>, <em>priority=0</em>, <em>content_type=None</em>, <em>content_encoding=None</em>, <em>serializer=None</em>, <em>headers=None</em>, <em>compression=None</em>, <em>exchange=None</em>, <em>retry=False</em>, <em>retry_policy=None</em>, <em>declare=</em><span class="optional">[</span><span class="optional">]</span>, <em>**properties</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.publish" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">publish</tt><big>(</big><em>body</em>, <em>routing_key=None</em>, <em>delivery_mode=None</em>, <em>mandatory=False</em>, <em>immediate=False</em>, <em>priority=0</em>, <em>content_type=None</em>, <em>content_encoding=None</em>, <em>serializer=None</em>, <em>headers=None</em>, <em>compression=None</em>, <em>exchange=None</em>, <em>**properties</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.publish" title="Permalink to this definition">¶</a></dt>
 <dd><p>Publish message to the specified exchange.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>body</strong> &#8211; Message body.</li>
 <li><strong>routing_key</strong> &#8211; Message routing key.</li>
 <li><strong>delivery_mode</strong> &#8211; See <tt class="xref py py-attr docutils literal"><span class="pre">delivery_mode</span></tt>.</li>
 <li><strong>mandatory</strong> &#8211; Currently not supported.</li>
 <li><strong>immediate</strong> &#8211; Currently not supported.</li>
 <li><strong>priority</strong> &#8211; Message priority. A number between 0 and 9.</li>
-<li><strong>content_type</strong> &#8211; Content type. Default is autodetect.</li>
-<li><strong>content_encoding</strong> &#8211; Content encoding. Default is autodetect.</li>
-<li><strong>serializer</strong> &#8211; Serializer to use. Default is autodetect.</li>
+<li><strong>content_type</strong> &#8211; Content type. Default is auto-detect.</li>
+<li><strong>content_encoding</strong> &#8211; Content encoding. Default is auto-detect.</li>
+<li><strong>serializer</strong> &#8211; Serializer to use. Default is auto-detect.</li>
 <li><strong>headers</strong> &#8211; Mapping of arbitrary headers to pass along
 with the message body.</li>
 <li><strong>exchange</strong> &#8211; Override the exchange.  Note that this exchange
@@ -574,6 +655,16 @@ must have been declared.</li>
 <dd><p>Revive the producer after connection loss.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Producer.routing_key">
+<tt class="descname">routing_key</tt><em class="property"> = ''</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.routing_key" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Producer.serializer">
+<tt class="descname">serializer</tt><em class="property"> = None</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.serializer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -584,7 +675,7 @@ must have been declared.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>name</strong> &#8211; See <a class="reference internal" href="#celery.backends.amqp.AMQPBackend.Queue.name" title="celery.backends.amqp.AMQPBackend.Queue.name"><tt class="xref py py-attr docutils literal"><span class="pre">name</span></tt></a>.</li>
 <li><strong>exchange</strong> &#8211; See <a class="reference internal" href="#celery.backends.amqp.AMQPBackend.Queue.exchange" title="celery.backends.amqp.AMQPBackend.Queue.exchange"><tt class="xref py py-attr docutils literal"><span class="pre">exchange</span></tt></a>.</li>
 <li><strong>routing_key</strong> &#8211; See <a class="reference internal" href="#celery.backends.amqp.AMQPBackend.Queue.routing_key" title="celery.backends.amqp.AMQPBackend.Queue.routing_key"><tt class="xref py py-attr docutils literal"><span class="pre">routing_key</span></tt></a>.</li>
@@ -661,7 +752,7 @@ a server restarts.
 Note that durable queues do not necessarily hold persistent
 messages, although it does not make sense to send
 persistent messages to a transient queue.</p>
-<p>Default is <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt>.</p>
+<p>Default is <tt class="xref py py-const docutils literal"><span class="pre">True</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -670,7 +761,7 @@ persistent messages to a transient queue.</p>
 <dd><p>Exclusive queues may only be consumed from by the
 current connection. Setting the &#8216;exclusive&#8217; flag
 always implies &#8216;auto-delete&#8217;.</p>
-<p>Default is <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt>.</p>
+<p>Default is <tt class="xref py py-const docutils literal"><span class="pre">False</span></tt>.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -703,6 +794,16 @@ For example to give alternate names to queues with automatically
 generated queue names.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Queue.attrs">
+<tt class="descname">attrs</tt><em class="property"> = (('name', None), ('exchange', None), ('routing_key', None), ('queue_arguments', None), ('binding_arguments', None), ('durable', &lt;type 'bool'&gt;), ('exclusive', &lt;type 'bool'&gt;), ('auto_delete', &lt;type 'bool'&gt;), ('no_ack', None), ('alias', None))</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Queue.attrs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<tt class="descname">auto_delete</tt><em class="property"> = False</em></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Queue.cancel">
 <tt class="descname">cancel</tt><big>(</big><em>consumer_tag</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Queue.cancel" title="Permalink to this definition">¶</a></dt>
@@ -719,7 +820,7 @@ until the client cancels them.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>consumer_tag</strong> &#8211; Unique identifier for the consumer. The
 consumer tag is local to a connection, so two clients
 can use the same consumer tags. If this field is empty
@@ -750,12 +851,12 @@ the exchange.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>if_unused</strong> &#8211; If set, the server will only delete the queue
 if it has no consumers. A channel error will be raised
 if the queue has consumers.</li>
 <li><strong>if_empty</strong> &#8211; If set, the server will only delete the queue
-if it is empty. If if&#8217;s not empty a channel error will be raised.</li>
+if it is empty. If it is not empty a channel error will be raised.</li>
 <li><strong>nowait</strong> &#8211; Do not wait for a reply.</li>
 </ul>
 </td>
@@ -764,17 +865,32 @@ if it is empty. If if&#8217;s not empty a channel error will be raised.</li>
 </table>
 </dd></dl>
 
+<dl class="attribute">
+<dt>
+<tt class="descname">durable</tt><em class="property"> = True</em></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<tt class="descname">exchange</tt><em class="property"> = None</em></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<tt class="descname">exclusive</tt><em class="property"> = False</em></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Queue.get">
 <tt class="descname">get</tt><big>(</big><em>no_ack=None</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Queue.get" title="Permalink to this definition">¶</a></dt>
 <dd><p>Poll the server for a new message.</p>
 <p>Returns the message instance if a message was available,
-or <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> otherwise.</p>
+or <tt class="xref py py-const docutils literal"><span class="pre">None</span></tt> otherwise.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>no_ack</strong> &#8211; If set messages received does not have to
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>no_ack</strong> &#8211; If set messages received does not have to
 be acknowledged.</td>
 </tr>
 </tbody>
@@ -784,6 +900,16 @@ queue using a synchronous dialogue, designed for
 specific types of applications where synchronous functionality
 is more important than performance.</p>
 </dd></dl>
+
+<dl class="attribute">
+<dt>
+<tt class="descname">name</tt><em class="property"> = ''</em></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Queue.no_ack">
+<tt class="descname">no_ack</tt><em class="property"> = False</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Queue.no_ack" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Queue.purge">
@@ -799,7 +925,7 @@ is more important than performance.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>nowait</strong> &#8211; Do not wait for a reply.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>nowait</strong> &#8211; Do not wait for a reply.</td>
 </tr>
 </tbody>
 </table>
@@ -813,7 +939,7 @@ is more important than performance.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>nowait</strong> &#8211; Do not wait for a reply.</li>
 <li><strong>passive</strong> &#8211; If set, the server will not create the queue.
 The client can use this to check whether a queue exists
@@ -824,6 +950,11 @@ without modifying the server state.</li>
 </tbody>
 </table>
 </dd></dl>
+
+<dl class="attribute">
+<dt>
+<tt class="descname">routing_key</tt><em class="property"> = ''</em></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Queue.unbind">
@@ -965,14 +1096,13 @@ without modifying the server state.</li>
         <li class="right" >
           <a href="celery.backends.cache.html" title="celery.backends.cache"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

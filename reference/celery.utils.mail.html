@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.utils.mail &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>celery.utils.mail &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.exceptions" href="celery.exceptions.html" />
     <link rel="prev" title="celery.signals" href="celery.signals.html" /> 
@@ -42,7 +45,7 @@
         <li class="right" >
           <a href="celery.signals.html" title="celery.signals"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,13 +58,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/reference/celery.utils.mail.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/reference/celery.utils.mail.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="celery-utils-mail">
@@ -74,27 +75,20 @@
 <span class="target" id="module-celery.utils.mail"></span><div class="section" id="id1">
 <h2><a class="toc-backref" href="#id2">celery.utils.mail</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
 <p>How task error emails are formatted and sent.</p>
-<dl class="exception">
-<dt id="celery.utils.mail.SendmailWarning">
-<em class="property">exception </em><tt class="descclassname">celery.utils.mail.</tt><tt class="descname">SendmailWarning</tt><a class="headerlink" href="#celery.utils.mail.SendmailWarning" title="Permalink to this definition">¶</a></dt>
-<dd><p>Problem happened while sending the email message.</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.utils.mail.Message">
-<em class="property">class </em><tt class="descclassname">celery.utils.mail.</tt><tt class="descname">Message</tt><big>(</big><em>to=None</em>, <em>sender=None</em>, <em>subject=None</em>, <em>body=None</em>, <em>charset='us-ascii'</em><big>)</big><a class="headerlink" href="#celery.utils.mail.Message" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="celery.utils.mail.Mailer">
-<em class="property">class </em><tt class="descclassname">celery.utils.mail.</tt><tt class="descname">Mailer</tt><big>(</big><em>host='localhost'</em>, <em>port=0</em>, <em>user=None</em>, <em>password=None</em>, <em>timeout=2</em>, <em>use_ssl=False</em>, <em>use_tls=False</em><big>)</big><a class="headerlink" href="#celery.utils.mail.Mailer" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
-<dt id="celery.utils.mail.Mailer.send">
-<tt class="descname">send</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#celery.utils.mail.Mailer.send" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
+<li>2009 - 2011 by Ask Solem.</li>
+</ol>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body"><p class="first last">BSD, see LICENSE for more details.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <dl class="class">
 <dt id="celery.utils.mail.ErrorMail">
 <em class="property">class </em><tt class="descclassname">celery.utils.mail.</tt><tt class="descname">ErrorMail</tt><big>(</big><em>task</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.mail.ErrorMail" title="Permalink to this definition">¶</a></dt>
@@ -103,7 +97,7 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>task</strong> &#8211; The task instance that raised the error.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>task</strong> &#8211; The task instance that raised the error.</td>
 </tr>
 </tbody>
 </table>
@@ -147,10 +141,20 @@ are passed a context containing the following keys:</p>
 </li>
 </ul>
 <dl class="attribute">
+<dt id="celery.utils.mail.ErrorMail.EMAIL_SIGNATURE_SEP">
+<tt class="descname">EMAIL_SIGNATURE_SEP</tt><em class="property"> = '-- '</em><a class="headerlink" href="#celery.utils.mail.ErrorMail.EMAIL_SIGNATURE_SEP" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
 <dt id="celery.utils.mail.ErrorMail.body">
-<tt class="descname">body</tt><a class="headerlink" href="#celery.utils.mail.ErrorMail.body" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">body</tt><em class="property"> = '\nTask %(name)s with id %(id)s raised exception:\n%(exc)r\n\n\nTask was called with args: %(args)s kwargs: %(kwargs)s.\n\nThe contents of the full traceback was:\n\n%(traceback)s\n\n-- \nJust to let you know,\nceleryd at %(hostname)s.\n'</em><a class="headerlink" href="#celery.utils.mail.ErrorMail.body" title="Permalink to this definition">¶</a></dt>
 <dd><p>Format string used to generate error email content.</p>
 </dd></dl>
+
+<dl class="attribute">
+<dt id="celery.utils.mail.ErrorMail.error_whitelist">
+<tt class="descname">error_whitelist</tt><em class="property"> = None</em><a class="headerlink" href="#celery.utils.mail.ErrorMail.error_whitelist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.utils.mail.ErrorMail.format_body">
@@ -176,10 +180,31 @@ should be sent for this type of error.</p>
 
 <dl class="attribute">
 <dt id="celery.utils.mail.ErrorMail.subject">
-<tt class="descname">subject</tt><a class="headerlink" href="#celery.utils.mail.ErrorMail.subject" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">subject</tt><em class="property"> = '        [celery&#64;%(hostname)s] Error: Task %(name)s (%(id)s): %(exc)s\n    '</em><a class="headerlink" href="#celery.utils.mail.ErrorMail.subject" title="Permalink to this definition">¶</a></dt>
 <dd><p>Format string used to generate error email subjects.</p>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.utils.mail.Mailer">
+<em class="property">class </em><tt class="descclassname">celery.utils.mail.</tt><tt class="descname">Mailer</tt><big>(</big><em>host='localhost'</em>, <em>port=0</em>, <em>user=None</em>, <em>password=None</em>, <em>timeout=2</em>, <em>use_ssl=False</em>, <em>use_tls=False</em><big>)</big><a class="headerlink" href="#celery.utils.mail.Mailer" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.utils.mail.Mailer.send">
+<tt class="descname">send</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#celery.utils.mail.Mailer.send" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.utils.mail.Message">
+<em class="property">class </em><tt class="descclassname">celery.utils.mail.</tt><tt class="descname">Message</tt><big>(</big><em>to=None</em>, <em>sender=None</em>, <em>subject=None</em>, <em>body=None</em>, <em>charset='us-ascii'</em><big>)</big><a class="headerlink" href="#celery.utils.mail.Message" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="celery.utils.mail.SendmailWarning">
+<em class="property">exception </em><tt class="descclassname">celery.utils.mail.</tt><tt class="descname">SendmailWarning</tt><a class="headerlink" href="#celery.utils.mail.SendmailWarning" title="Permalink to this definition">¶</a></dt>
+<dd><p>Problem happened while sending the email message.</p>
 </dd></dl>
 
 </div>
@@ -236,13 +261,12 @@ should be sent for this type of error.</p>
         <li class="right" >
           <a href="celery.signals.html" title="celery.signals"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>

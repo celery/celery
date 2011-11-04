@@ -54,8 +54,3 @@
     .. autoclass:: LRUCache
         :members:
         :undoc-members:
-
-    Functions
-    ---------
-
-    .. autofunction:: consume_queue

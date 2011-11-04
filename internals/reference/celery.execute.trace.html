@@ -1,18 +1,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.execute.trace &mdash; Celery v2.4.0rc1 documentation</title>
+    <title>celery.execute.trace &mdash; Celery 2.4.0 documentation</title>
+    
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.4.0rc1',
+        VERSION:     '2.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery v2.4.0rc1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.4.0 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.datastructures" href="celery.datastructures.html" />
     <link rel="prev" title="celery.backends.tyrant" href="celery.backends.tyrant.html" /> 
@@ -42,7 +45,7 @@
         <li class="right" >
           <a href="celery.backends.tyrant.html" title="celery.backends.tyrant"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,13 +59,11 @@
 <div class="deck">
 
     
-        <p class="developmentversion">
-        This document is for Celery's development version, which can be
-        significantly different from previous releases. Get old docs here:
-
-        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.execute.trace.html">2.1</a>.
+        <p>
+        This document describes Celery 2.4. For development docs,
+        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.execute.trace.html">go here</a>.
         </p>
-        
+    
 
 </div>
     <div class="section" id="celery-execute-trace">
@@ -74,28 +75,22 @@
 </div>
 <span class="target" id="module-celery.execute.trace"></span><div class="section" id="id1">
 <h2><a class="toc-backref" href="#id2">celery.execute.trace</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
-<p>This module defines how the task execution is traced,
+<p>This module defines how the task execution is traced:
 errors are recorded, handlers are applied and so on.</p>
-<dl class="class">
-<dt id="celery.execute.trace.TraceInfo">
-<em class="property">class </em><tt class="descclassname">celery.execute.trace.</tt><tt class="descname">TraceInfo</tt><big>(</big><em>status='PENDING'</em>, <em>retval=None</em>, <em>exc_info=None</em><big>)</big><a class="headerlink" href="#celery.execute.trace.TraceInfo" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="classmethod">
-<dt id="celery.execute.trace.TraceInfo.trace">
-<em class="property">classmethod </em><tt class="descname">trace</tt><big>(</big><em>fun</em>, <em>args</em>, <em>kwargs</em>, <em>propagate=False</em><big>)</big><a class="headerlink" href="#celery.execute.trace.TraceInfo.trace" title="Permalink to this definition">¶</a></dt>
-<dd><p>Trace the execution of a function, calling the appropiate callback
-if the function raises retry, an failure or returned successfully.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>propagate</strong> &#8211; If true, errors will propagate to the caller.</td>
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
+<li>2009 - 2011 by Ask Solem.</li>
+</ol>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body"><p class="first last">BSD, see LICENSE for more details.</p>
+</td>
 </tr>
 </tbody>
 </table>
-</dd></dl>
-
-</dd></dl>
-
 <dl class="class">
 <dt id="celery.execute.trace.TaskTrace">
 <em class="property">class </em><tt class="descclassname">celery.execute.trace.</tt><tt class="descname">TaskTrace</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>task=None</em>, <em>request=None</em>, <em>propagate=None</em>, <em>**_</em><big>)</big><a class="headerlink" href="#celery.execute.trace.TaskTrace" title="Permalink to this definition">¶</a></dt>
@@ -125,6 +120,26 @@ if the function raises retry, an failure or returned successfully.</p>
 <dt id="celery.execute.trace.TaskTrace.handle_success">
 <tt class="descname">handle_success</tt><big>(</big><em>retval</em>, <em>*args</em><big>)</big><a class="headerlink" href="#celery.execute.trace.TaskTrace.handle_success" title="Permalink to this definition">¶</a></dt>
 <dd><p>Handle successful execution.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.execute.trace.TraceInfo">
+<em class="property">class </em><tt class="descclassname">celery.execute.trace.</tt><tt class="descname">TraceInfo</tt><big>(</big><em>status='PENDING'</em>, <em>retval=None</em>, <em>exc_info=None</em><big>)</big><a class="headerlink" href="#celery.execute.trace.TraceInfo" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="classmethod">
+<dt id="celery.execute.trace.TraceInfo.trace">
+<em class="property">classmethod </em><tt class="descname">trace</tt><big>(</big><em>fun</em>, <em>args</em>, <em>kwargs</em>, <em>propagate=False</em><big>)</big><a class="headerlink" href="#celery.execute.trace.TraceInfo.trace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Trace the execution of a function, calling the appropiate callback
+if the function raises retry, an failure or returned successfully.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>propagate</strong> &#8211; If true, errors will propagate to the caller.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -183,14 +198,13 @@ if the function raises retry, an failure or returned successfully.</p>
         <li class="right" >
           <a href="celery.backends.tyrant.html" title="celery.backends.tyrant"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.4.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
     </div>
   </body>
 </html>
