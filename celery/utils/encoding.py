@@ -39,6 +39,7 @@ if is_py3k:
             return str_to_bytes(s)
         return s
 
+    str_t = str
     bytes_t = bytes
 
 else:
@@ -54,6 +55,7 @@ else:
     def from_utf8(s, *args, **kwargs):  # noqa
         return s.encode("utf-8", *args, **kwargs)
 
+    str_t = unicode
     bytes_t = str
     ensure_bytes = str_to_bytes
 

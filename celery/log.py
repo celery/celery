@@ -17,7 +17,7 @@ from . import signals
 from .local import Proxy
 from .utils import LOG_LEVELS, isatty
 from .utils.compat import LoggerAdapter, WatchedFileHandler
-from .utils.encoding import safe_str
+from .utils.encoding import safe_str, str_t
 from .utils.patch import ensure_process_aware_logger
 from .utils.term import colored
 
@@ -46,7 +46,7 @@ class ColorFormatter(logging.Formatter):
 
         if self.use_color and color:
             try:
-                record.msg = str(color(safe_str(record.msg)))
+                record.msg = str_t(color(safe_str(record.msg)))
             except Exception, exc:
                 record.msg = "<Unrepresentable %r: %r>" % (
                         type(record.msg), exc)
