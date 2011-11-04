@@ -68,6 +68,30 @@
 </div>
     <div class="section" id="celery-worker-consumer">
 <h1>celery.worker.consumer<a class="headerlink" href="#celery-worker-consumer" title="Permalink to this headline">¶</a></h1>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#id1" id="id2">celery.worker.consumer</a></li>
+</ul>
+</div>
+<span class="target" id="module-celery.worker.consumer"></span><div class="section" id="id1">
+<h2><a class="toc-backref" href="#id2">celery.worker.consumer</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>This module contains the component responsible for consuming messages
+from the broker, processing the messages and keeping the broker connections
+up and running.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
+<li>2009 - 2011 by Ask Solem.</li>
+</ol>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body"><p class="first last">BSD, see LICENSE for more details.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <ul>
 <li><p class="first"><a class="reference internal" href="#celery.worker.consumer.Consumer.start" title="celery.worker.consumer.Consumer.start"><tt class="xref py py-meth docutils literal"><span class="pre">start()</span></tt></a> is an infinite loop, which only iterates
 again if the connection is lost. For each iteration (at start, or if the
@@ -128,7 +152,7 @@ early, <em>then</em> close the connection.</p>
 </ul>
 <dl class="class">
 <dt id="celery.worker.consumer.Consumer">
-<em class="property">class </em><tt class="descclassname">celery.worker.consumer.</tt><tt class="descname">Consumer</tt><big>(</big><em>ready_queue</em>, <em>eta_schedule</em>, <em>logger</em>, <em>init_callback=&lt;function noop at 0x101a3d140&gt;</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>initial_prefetch_count=2</em>, <em>pool=None</em>, <em>app=None</em>, <em>priority_timer=None</em>, <em>controller=None</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.Consumer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.consumer.</tt><tt class="descname">Consumer</tt><big>(</big><em>ready_queue</em>, <em>eta_schedule</em>, <em>logger</em>, <em>init_callback=&lt;function noop at 0x101a3c0c8&gt;</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>initial_prefetch_count=2</em>, <em>pool=None</em>, <em>app=None</em>, <em>priority_timer=None</em>, <em>controller=None</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.Consumer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Listen for messages received from the broker and
 move them to the ready queue for task processing.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -462,6 +486,7 @@ when necessary.</p>
 <dd><p>Error message for when an unregistered task is received.</p>
 </dd></dl>
 
+</div>
 </div>
 
 
