@@ -9,9 +9,7 @@
 
 2.4.0
 =====
-:release-date: 2011-10-28 04:00 P.M BST
-:status: FROZEN
-:branch: master
+:release-date: 2011-11-04 04:00 P.M GMT
 
 .. _v240-important:
 
@@ -31,6 +29,10 @@ Important Notes
     with ``maxtasksperchild`` or a time-limit enabled.
 
     This is a workaround for http://bugs.python.org/issue6721#msg140215.
+
+    Be aware that while this fixes the logging library lock,
+    there could still be other locks initialized in the parent
+    process, introduced by custom code.
 
     Fix contributed by Harm Verhagen.
 
