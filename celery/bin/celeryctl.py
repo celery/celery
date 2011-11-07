@@ -243,7 +243,7 @@ class inspect(Command):
 
     def run(self, *args, **kwargs):
         self.quiet = kwargs.get("quiet", False)
-        self.show_body = kwargs.get("show_body", False)
+        self.show_body = kwargs.get("show_body", True)
         if not args:
             raise Error("Missing inspect command. See --help")
         command = args[0]
