@@ -16,9 +16,13 @@
 
 * processes pool: Decrease polling interval for less idle CPU usage.
 
-* processes pool: MaybeEncodingError was not wrapped in ExceptionInfo #524.
+* processes pool: MaybeEncodingError was not wrapped in ExceptionInfo
+  (Issue #524).
 
 * celeryd: would silence errors occuring after task consumer started.
+
+* logging: Fixed a bug where unicode in stdout redirected log messages
+  couldn't be written (Issue #522).
 
 .. _version-2.4.0:
 
