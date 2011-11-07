@@ -442,7 +442,7 @@ class ResultHandler(PoolThread):
         debug('result handler starting')
         while 1:
             try:
-                ready, task = poll(0.2)
+                ready, task = poll(1.0)
             except (IOError, EOFError), exc:
                 debug('result handler got %r -- exiting' % (exc, ))
                 return
@@ -462,7 +462,7 @@ class ResultHandler(PoolThread):
         time_terminate = None
         while cache and self._state != TERMINATE:
             try:
-                ready, task = poll(0.2)
+                ready, task = poll(1.0)
             except (IOError, EOFError), exc:
                 debug('result handler got %r -- exiting' % (exc, ))
                 return
