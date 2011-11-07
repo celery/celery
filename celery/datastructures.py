@@ -189,7 +189,9 @@ class _Frame(object):
     Code = _Code
 
     def __init__(self, frame):
-        self.f_globals = {"__file__": frame.f_globals["__file__"]}
+        self.f_globals = {
+            "__file__": frame.f_globals.get("__file__", "__main__")
+        }
         self.f_code = self.Code(frame.f_code)
 
 
