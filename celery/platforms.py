@@ -197,11 +197,13 @@ def create_pidlock(pidfile):
 
 class DaemonContext(object):
     _is_open = False
+    workdir = DAEMON_WORKDIR
+    umask = DAEMON_UMASK
 
-    def __init__(self, pidfile=None, workdir=DAEMON_WORKDIR,
-            umask=DAEMON_UMASK, **kwargs):
-        self.workdir = workdir
-        self.umask = umask
+    def __init__(self, pidfile=None, workdir=None,
+            umask=None, **kwargs):
+        self.workdir = workdir or self.workdir
+        self.umask = self.umask if umask is None else umask
 
     def open(self):
         if not self._is_open:
