@@ -14,6 +14,7 @@ from __future__ import absolute_import
 import atexit
 import logging
 import socket
+import sys
 import threading
 import traceback
 
@@ -268,7 +269,11 @@ class WorkController(object):
                 blocking(component.start)
         except SystemTerminate:
             self.terminate()
-        except:
+        except Exception, exc:
+            self.logger.error("Unrecoverable error: %r" % (exc, ),
+                              exc_info=sys.exc_info())
+            self.stop()
+        except (KeyboardInterrupt, SystemExit):
             self.stop()
 
         # Will only get here if running green,
