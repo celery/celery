@@ -190,7 +190,7 @@ class _Frame(object):
 
     def __init__(self, frame):
         self.f_globals = {
-            "__file__": frame.f_globals.get("__file__", "__main__")
+            "__file__": frame.f_globals.get("__file__", "__main__"),
         }
         self.f_code = self.Code(frame.f_code)
 
