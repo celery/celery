@@ -4,85 +4,9 @@
 # ============================================
 #
 # :Usage: /etc/init.d/celeryd {start|stop|force-reload|restart|try-restart|status}
-#
 # :Configuration file: /etc/default/celeryd
 #
-# To configure celeryd you probably need to tell it where to chdir.
-#
-# EXAMPLE CONFIGURATION
-# =====================
-#
-# this is an example configuration for a Python project:
-#
-# /etc/default/celeryd:
-#
-#   # List of nodes to start
-#   CELERYD_NODES="worker1 worker2 worker3"k
-#   # ... can also be a number of workers
-#   CELERYD_NODES=3
-#
-#   # Where to chdir at start.
-#   CELERYD_CHDIR="/opt/Myproject/"
-#
-#   # Extra arguments to celeryd
-#   CELERYD_OPTS="--time-limit=300"
-#
-#   # Name of the celery config module.#
-#   CELERY_CONFIG_MODULE="celeryconfig"
-#
-# EXAMPLE DJANGO CONFIGURATION
-# ============================
-#
-#   # Where the Django project is.
-#   CELERYD_CHDIR="/opt/Project/"
-#
-#   # Name of the projects settings module.
-#   export DJANGO_SETTINGS_MODULE="settings"
-#
-#   # Path to celeryd
-#   CELERYD="/opt/Project/manage.py celeryd"
-#
-# AVAILABLE OPTIONS
-# =================
-#
-#   * CELERYD_NODES
-#
-#       A space separated list of nodes, or a number describing the number of
-#       nodes, to start
-#
-#   * CELERYD_OPTS
-#       Additional arguments to celeryd-multi, see `celeryd-multi --help`
-#       and `celeryd --help` for help.
-#
-#   * CELERYD_CHDIR
-#       Path to chdir at start. Default is to stay in the current directory.
-#
-#   * CELERYD_PIDFILE
-#       Full path to the pidfile. Default is /var/run/celeryd.pid.
-#
-#   * CELERYD_LOGFILE
-#       Full path to the celeryd logfile. Default is /var/log/celeryd.log
-#
-#   * CELERYD_LOG_LEVEL
-#       Log level to use for celeryd. Default is INFO.
-#
-#   * CELERYD
-#       Path to the celeryd program. Default is `celeryd`.
-#       You can point this to an virtualenv, or even use manage.py for django.
-#
-#   * CELERYD_USER
-#       User to run celeryd as. Default is current user.
-#
-#   * CELERYD_GROUP
-#       Group to run celeryd as. Default is current user.
-
-# VARIABLE EXPANSION
-# ==================
-#
-# The following abbreviations will be expanded
-#
-# * %n -> node name
-# * %h -> host name
+# See http://docs.celeryq.org/en/latest/cookbook/daemonizing.html#init-script-celeryd
 
 
 ### BEGIN INIT INFO

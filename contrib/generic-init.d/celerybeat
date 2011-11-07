@@ -4,74 +4,9 @@
 # =========================================================
 #
 # :Usage: /etc/init.d/celerybeat {start|stop|force-reload|restart|try-restart|status}
-#
 # :Configuration file: /etc/default/celerybeat or /etc/default/celeryd
 #
-# EXAMPLE CONFIGURATION
-# =====================
-#
-# this is an example configuration for a Python project:
-#
-# /etc/default/celeryd:
-#
-#   # Where to chdir at start.
-#   CELERYD_CHDIR="/opt/Myproject/"
-#
-#   # Extra arguments to celeryd
-#   CELERYD_OPTS="--time-limit=300"
-#
-#   # Extra arguments to celerybeat
-#   CELERYBEAT_OPTS="--schedule=/var/run/celerybeat-schedule"
-#
-#   # Name of the celery config module.#
-#   CELERY_CONFIG_MODULE="celeryconfig"
-#
-# EXAMPLE DJANGO CONFIGURATION
-# ============================
-#
-#   # Where the Django project is.
-#   CELERYD_CHDIR="/opt/Project/"
-#
-#   # Name of the projects settings module.
-#   export DJANGO_SETTINGS_MODULE="settings"
-#
-#   # Path to celeryd
-#   CELERYD="/opt/Project/manage.py celeryd"
-#
-#   # Path to celerybeat
-#   CELERYBEAT="/opt/Project/manage.py"
-#
-#   # Extra arguments to celerybeat
-#   CELERYBEAT_OPTS="celerybeat --schedule=/var/run/celerybeat-schedule"
-#
-# AVAILABLE OPTIONS
-# =================
-#
-#   * CELERYBEAT_OPTS
-#       Additional arguments to celerybeat, see `celerybeat --help` for a
-#       list.
-#
-#   * CELERYBEAT_PID_FILE
-#       Full path to the pidfile. Default is /var/run/celeryd.pid.
-#
-#   * CELERYBEAT_LOG_FILE
-#       Full path to the celeryd logfile. Default is /var/log/celeryd.log
-#
-#   * CELERYBEAT_LOG_LEVEL
-#       Log level to use for celeryd. Default is INFO.
-#
-#   * CELERYBEAT
-#       Path to the celeryd program. Default is `celeryd`.
-#       You can point this to an virtualenv, or even use manage.py for django.
-#
-#   * CELERYBEAT_USER
-#       User to run celeryd as. Default is current user.
-#
-#   * CELERYBEAT_GROUP
-#       Group to run celeryd as. Default is current user.
-#
-#   * VIRTUALENV
-#       Full path to the virtualenv environment to activate. Default is none.
+# See http://docs.celeryq.org/en/latest/cookbook/daemonizing.html#init-script-celerybeat
 
 ### BEGIN INIT INFO
 # Provides:          celerybeat
