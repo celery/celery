@@ -5,6 +5,20 @@
 .. contents::
     :local:
 
+.. _version-2.4.1:
+
+2.4.1
+=====
+:release-date: 2011-11-07 06:00 P.M GMT
+
+* celeryctl inspect commands was missing output.
+
+* processes pool: Decrease polling interval for less idle CPU usage.
+
+* processes pool: MaybeEncodingError was not wrapped in ExceptionInfo #524.
+
+* celeryd: would silence errors occuring after task consumer started.
+
 .. _version-2.4.0:
 
 2.4.0
