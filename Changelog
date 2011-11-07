@@ -10,6 +10,7 @@
 2.4.1
 =====
 :release-date: 2011-11-07 06:00 P.M GMT
+:by: Ask Solem
 
 * celeryctl inspect commands was missing output.
 
@@ -24,6 +25,7 @@
 2.4.0
 =====
 :release-date: 2011-11-04 04:00 P.M GMT
+:by: Ask Solem
 
 .. _v240-important:
 
