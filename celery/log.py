@@ -46,7 +46,7 @@ class ColorFormatter(logging.Formatter):
 
         if self.use_color and color:
             try:
-                record.msg = str_t(color(safe_str(record.msg)))
+                record.msg = safe_str(str_t(color(record.msg)))
             except Exception, exc:
                 record.msg = "<Unrepresentable %r: %r>" % (
                         type(record.msg), exc)
@@ -205,9 +205,9 @@ class Logging(object):
         """
         proxy = LoggingProxy(logger, loglevel)
         if stdout:
-            sys.stdout = sys.__stdout__ = proxy
+            sys.stdout = proxy
         if stderr:
-            sys.stderr = sys.__stderr__ = proxy
+            sys.stderr = proxy
         return proxy
 
     def _setup_logger(self, logger, logfile, format, colorize,
@@ -287,7 +287,7 @@ class LoggingProxy(object):
         if data and not self.closed:
             self._thread.recurse_protection = True
             try:
-                self.logger.log(self.loglevel, data)
+                self.logger.log(self.loglevel, safe_str(data))
             finally:
                 self._thread.recurse_protection = False
 
