@@ -198,8 +198,10 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None):
         try:
             put((READY, (job, i, result)))
         except Exception, exc:
+            _, _, tb = sys.exc_info()
             wrapped = MaybeEncodingError(exc, result[1])
-            put((READY, (job, i, (False, wrapped))))
+            einfo = ExceptionInfo((MaybeEncodingError, wrapped, tb))
+            put((READY, (job, i, (False, einfo))))
 
         completed += 1
     debug('worker exiting after %d tasks' % completed)
