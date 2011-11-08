@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from nose import SkipTest
 
 from celery.exceptions import ImproperlyConfigured

@@ -1,7 +1,21 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.worker
+    ~~~~~~~~~~~~~
+
+    The worker.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
 from __future__ import absolute_import
 
-import socket
+import atexit
 import logging
+import socket
+import sys
+import threading
 import traceback
 
 from kombu.syn import blocking
@@ -49,6 +63,7 @@ def process_initializer(app, hostname):
     # fork(). Note that init_worker makes sure it's only
     # run once per process.
     app.loader.init_worker()
+    app.loader.init_worker_process()
 
     signals.worker_process_init.send(sender=None)
 
@@ -110,6 +125,7 @@ class WorkController(object):
 
         self.app = app_or_default(app)
         conf = self.app.conf
+        self._shutdown_complete = threading.Event()
 
         # Options
         self.loglevel = loglevel or self.loglevel
@@ -155,11 +171,12 @@ class WorkController(object):
         self._finalize_db = None
 
         if self.db:
-            persistence = state.Persistent(self.db)
-            self._finalize_db = Finalize(persistence, persistence.save,
-                                         exitpriority=5)
+            self._persistence = state.Persistent(self.db)
+            atexit.register(self._persistence.save)
 
         # Queues
+        if not self.pool_cls.rlimit_safe:
+            self.disable_rate_limits = True
         if self.disable_rate_limits:
             self.ready_queue = FastQueue()
             self.ready_queue.put = self.process_task
@@ -252,14 +269,16 @@ class WorkController(object):
                 blocking(component.start)
         except SystemTerminate:
             self.terminate()
-            raise
-        except:
+        except Exception, exc:
+            self.logger.error("Unrecoverable error: %r" % (exc, ),
+                              exc_info=sys.exc_info())
             self.stop()
-            try:
-                raise
-            except TypeError:
-                # eventlet borks here saying that the exception is None(?)
-                pass
+        except (KeyboardInterrupt, SystemExit):
+            self.stop()
+
+        # Will only get here if running green,
+        # makes sure all greenthreads have exited.
+        self._shutdown_complete.wait()
 
     def process_task(self, request):
         """Process task by sending it to the pool of workers."""
@@ -272,7 +291,7 @@ class WorkController(object):
                                  exc_info=True)
         except SystemTerminate:
             self.terminate()
-            raise SystemExit()
+            raise
         except BaseException, exc:
             self.stop()
             raise exc
@@ -290,9 +309,13 @@ class WorkController(object):
     def _shutdown(self, warm=True):
         what = (warm and "stopping" or "terminating").capitalize()
 
+        if self._state in (self.CLOSE, self.TERMINATE):
+            return
+
         if self._state != self.RUN or self._running != len(self.components):
             # Not fully started, can safely exit.
             self._state = self.TERMINATE
+            self._shutdown_complete.set()
             return
 
         self._state = self.CLOSE
@@ -308,7 +331,9 @@ class WorkController(object):
 
         self.priority_timer.stop()
         self.consumer.close_connection()
+
         self._state = self.TERMINATE
+        self._shutdown_complete.set()
 
     def on_timer_error(self, exc_info):
         _, exc, _ = exc_info

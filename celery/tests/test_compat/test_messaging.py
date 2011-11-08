@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from celery import messaging
 from celery.tests.utils import unittest
 

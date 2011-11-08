@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """celery.backends.tyrant"""
 from __future__ import absolute_import
 

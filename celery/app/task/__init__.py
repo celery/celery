@@ -1,4 +1,15 @@
-# -*- coding: utf-8 -*-"
+# -*- coding: utf-8 -*-
+"""
+    celery.app.task
+    ~~~~~~~~~~~~~~~
+
+    Tasks Implementation.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
+
 from __future__ import absolute_import
 
 import sys
@@ -10,6 +21,7 @@ from ...execute.trace import TaskTrace
 from ...registry import tasks, _unpickle_task
 from ...result import EagerResult
 from ...utils import fun_takes_kwargs, mattrgetter, uuid
+from ...utils.mail import ErrorMail
 
 extract_exec_options = mattrgetter("queue", "routing_key",
                                    "exchange", "immediate",
@@ -103,6 +115,7 @@ class BaseTask(object):
     """
     __metaclass__ = TaskType
 
+    ErrorMail = ErrorMail
     MaxRetriesExceededError = MaxRetriesExceededError
 
     #: The application instance associated with this task class.
@@ -660,6 +673,11 @@ class BaseTask(object):
 
         """
         pass
+
+    def send_error_email(self, context, exc, **kwargs):
+        if self.send_error_emails and not self.disable_error_emails:
+            sender = self.ErrorMail(self, **kwargs)
+            sender.send(context, exc)
 
     def on_success(self, retval, task_id, args, kwargs):
         """Success handler.

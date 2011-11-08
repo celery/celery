@@ -37,9 +37,11 @@ class AMQPBackend(BaseDictBackend):
 
     BacklogLimitExceeded = BacklogLimitExceeded
 
+    supports_native_join = True
+
     def __init__(self, connection=None, exchange=None, exchange_type=None,
             persistent=None, serializer=None, auto_delete=True,
-            expires=None, **kwargs):
+            **kwargs):
         super(AMQPBackend, self).__init__(**kwargs)
         conf = self.app.conf
         self._connection = connection
@@ -56,11 +58,19 @@ class AMQPBackend(BaseDictBackend):
                                       auto_delete=auto_delete)
         self.serializer = serializer or conf.CELERY_RESULT_SERIALIZER
         self.auto_delete = auto_delete
-        self.expires = (conf.CELERY_AMQP_TASK_RESULT_EXPIRES if expires is None
-                                                             else expires)
-        if self.expires is not None:
-            self.expires = self.prepare_expires(self.expires)
-            # x-expires requires RabbitMQ 2.1.0 or higher.
+
+        # AMQP_TASK_RESULT_EXPIRES setting is deprecated and will be
+        # removed in version 3.0.
+        dexpires = conf.CELERY_AMQP_TASK_RESULT_EXPIRES
+
+        self.expires = None
+        if "expires" in kwargs:
+            if kwargs["expires"] is not None:
+                self.expires = self.prepare_expires(kwargs["expires"])
+        else:
+            self.expires = self.prepare_expires(dexpires)
+
+        if self.expires:
             self.queue_arguments["x-expires"] = int(self.expires * 1000)
         self.mutex = threading.Lock()
 
@@ -84,12 +94,10 @@ class AMQPBackend(BaseDictBackend):
 
     def _publish_result(self, connection, task_id, meta):
         # cache single channel
-        if hasattr(connection, "_result_producer_chan") and \
-                connection._result_producer_chan is not None and \
-                connection._result_producer_chan.connection is not None:
-            channel = connection._result_producer_chan
-        else:
-            channel = connection._result_producer_chan = connection.channel()
+        if connection._default_channel is not None and \
+                connection._default_channel.connection is None:
+            connection.maybe_close_channel(connection._default_channel)
+        channel = connection.default_channel
 
         self._create_producer(task_id, channel).publish(meta)
 
@@ -104,7 +112,6 @@ class AMQPBackend(BaseDictBackend):
             with self.app.pool.acquire(block=True) as conn:
 
                 def errback(error, delay):
-                    conn._result_producer_chan = None
                     print("Couldn't send result for %r: %r. Retry in %rs." % (
                             task_id, error, delay))
 

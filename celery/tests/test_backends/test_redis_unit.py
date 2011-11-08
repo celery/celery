@@ -1,9 +1,14 @@
+from __future__ import absolute_import
+
 from datetime import timedelta
 
 from mock import Mock, patch
 
 from celery import current_app
 from celery import states
+from celery.result import AsyncResult
+from celery.registry import tasks
+from celery.task import subtask
 from celery.utils import cached_property, uuid
 from celery.utils.timeutils import timedelta_seconds
 
@@ -89,7 +94,8 @@ class test_RedisBackend(unittest.TestCase):
         self.assertEqual(b.expires, 60)
 
     def test_on_chord_apply(self):
-        self.Backend().on_chord_apply()
+        self.Backend().on_chord_apply("setid", {},
+                                      result=map(AsyncResult, [1, 2, 3]))
 
     def test_mget(self):
         b = self.MockBackend()
@@ -103,8 +109,6 @@ class test_RedisBackend(unittest.TestCase):
 
     @patch("celery.result.TaskSetResult")
     def test_on_chord_part_return(self, setresult):
-        from celery.registry import tasks
-        from celery.task import subtask
         b = self.MockBackend()
         deps = Mock()
         deps.total = 10
@@ -115,6 +119,7 @@ class test_RedisBackend(unittest.TestCase):
         try:
             tasks["foobarbaz"] = task
             task.request.chord = subtask(task)
+            task.request.taskset = "setid"
 
             b.on_chord_part_return(task)
             self.assertTrue(b.client.incr.call_count)

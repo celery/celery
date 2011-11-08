@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """MongoDB backend for celery."""
 from __future__ import absolute_import
 
@@ -13,6 +14,7 @@ from ..exceptions import ImproperlyConfigured
 from ..utils.timeutils import maybe_timedelta
 
 from .base import BaseDictBackend
+
 
 class Bunch:
 

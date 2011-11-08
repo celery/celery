@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.task.sets
+    ~~~~~~~~~~~~~~~~
+
+    Creating and applying groups of tasks.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 
@@ -6,6 +17,7 @@ import warnings
 from .. import registry
 from ..app import app_or_default
 from ..datastructures import AttributeDict
+from ..exceptions import CDeprecationWarning
 from ..utils import cached_property, reprcall, uuid
 from ..utils.compat import UserList
 
@@ -104,6 +116,12 @@ class subtask(AttributeDict):
         return registry.tasks[self.task]
 
 
+def maybe_subtask(t):
+    if not isinstance(t, subtask):
+        return subtask(t)
+    return t
+
+
 class TaskSet(UserList):
     """A task containing several subtasks, making it possible
     to track how many, or when all of the tasks have been completed.
@@ -128,7 +146,7 @@ class TaskSet(UserList):
         self.app = app_or_default(app)
         if task is not None:
             if hasattr(task, "__iter__"):
-                tasks = task
+                tasks = [maybe_subtask(t) for t in task]
             else:
                 # Previously TaskSet only supported applying one kind of task.
                 # the signature then was TaskSet(task, arglist),
@@ -138,7 +156,7 @@ class TaskSet(UserList):
                 self._task_name = task.name
                 warnings.warn(TASKSET_DEPRECATION_TEXT % {
                                 "cls": task.__class__.__name__},
-                              DeprecationWarning)
+                              CDeprecationWarning)
         self.data = list(tasks or [])
         self.total = len(self.tasks)
         self.Publisher = Publisher or self.app.amqp.TaskPublisher
@@ -182,12 +200,12 @@ class TaskSet(UserList):
     def task(self):
         warnings.warn(
             "TaskSet.task is deprecated and will be removed in 1.4",
-            DeprecationWarning)
+            CDeprecationWarning)
         return self._task
 
     @property
     def task_name(self):
         warnings.warn(
             "TaskSet.task_name is deprecated and will be removed in 1.4",
-            DeprecationWarning)
+            CDeprecationWarning)
         return self._task_name

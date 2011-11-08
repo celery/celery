@@ -1,11 +1,13 @@
-import sys
-from celery.tests.utils import unittest
-from Queue import Queue
+from __future__ import absolute_import
+from __future__ import with_statement
 
-from celery.datastructures import ExceptionInfo, LocalCache
-from celery.datastructures import LimitedSet, consume_queue
+import sys
+
+from celery.datastructures import ExceptionInfo, LRUCache
+from celery.datastructures import LimitedSet
 from celery.datastructures import AttributeDict, DictAttribute
 from celery.datastructures import ConfigurationView
+from celery.tests.utils import unittest
 
 
 class Object(object):
@@ -21,7 +23,8 @@ class test_DictAttribute(unittest.TestCase):
         self.assertEqual(x["foo"], x.obj.foo)
         self.assertEqual(x.get("foo"), "The quick brown fox")
         self.assertIsNone(x.get("bar"))
-        self.assertRaises(KeyError, x.__getitem__, "bar")
+        with self.assertRaises(KeyError):
+            x["bar"]
 
     def test_setdefault(self):
         x = DictAttribute(Object())
@@ -91,18 +94,6 @@ class test_ExceptionInfo(unittest.TestCase):
         self.assertTrue(r)
 
 
-class test_utilities(unittest.TestCase):
-
-    def test_consume_queue(self):
-        x = Queue()
-        it = consume_queue(x)
-        self.assertRaises(StopIteration, it.next)
-        x.put("foo")
-        it = consume_queue(x)
-        self.assertEqual(it.next(), "foo")
-        self.assertRaises(StopIteration, it.next)
-
-
 class test_LimitedSet(unittest.TestCase):
 
     def test_add(self):
@@ -133,15 +124,76 @@ class test_LimitedSet(unittest.TestCase):
         self.assertIn("LimitedSet(", repr(s))
 
 
-class test_LocalCache(unittest.TestCase):
+class test_LRUCache(unittest.TestCase):
 
     def test_expires(self):
         limit = 100
-        x = LocalCache(limit=limit)
-        slots = list(range(limit * 2))
+        x = LRUCache(limit=limit)
+        slots = list(xrange(limit * 2))
         for i in slots:
             x[i] = i
-        self.assertListEqual(x.keys(), slots[limit:])
+        self.assertListEqual(x.keys(), list(slots[limit:]))
+
+    def test_least_recently_used(self):
+        x = LRUCache(3)
+
+        x[1], x[2], x[3] = 1, 2, 3
+        self.assertEqual(x.keys(), [1, 2, 3])
+
+        x[4], x[5] = 4, 5
+        self.assertEqual(x.keys(), [3, 4, 5])
+
+        # access 3, which makes it the last used key.
+        x[3]
+        x[6] = 6
+        self.assertEqual(x.keys(), [5, 3, 6])
+
+        x[7] = 7
+        self.assertEqual(x.keys(), [3, 6, 7])
+
+    def assertSafeIter(self, method, interval=0.01, size=10000):
+        from threading import Thread, Event
+        from time import sleep
+        x = LRUCache(size)
+        x.update(zip(xrange(size), xrange(size)))
+
+        class Burglar(Thread):
+
+            def __init__(self, cache):
+                self.cache = cache
+                self._is_shutdown = Event()
+                self._is_stopped = Event()
+                Thread.__init__(self)
+
+            def run(self):
+                while not self._is_shutdown.isSet():
+                    try:
+                        self.cache.data.popitem(last=False)
+                    except KeyError:
+                        break
+                self._is_stopped.set()
+
+            def stop(self):
+                self._is_shutdown.set()
+                self._is_stopped.wait()
+                self.join(1e10)
+
+        burglar = Burglar(x)
+        burglar.start()
+        try:
+            for _ in getattr(x, method)():
+                sleep(0.0001)
+        finally:
+            burglar.stop()
+
+    def test_safe_to_remove_while_iteritems(self):
+        self.assertSafeIter("iteritems")
+
+    def test_safe_to_remove_while_keys(self):
+        self.assertSafeIter("keys")
+
+    def test_safe_to_remove_while_itervalues(self):
+        self.assertSafeIter("itervalues")
 
 
 class test_AttributeDict(unittest.TestCase):
@@ -149,6 +201,7 @@ class test_AttributeDict(unittest.TestCase):
     def test_getattr__setattr(self):
         x = AttributeDict({"foo": "bar"})
         self.assertEqual(x["foo"], "bar")
-        self.assertRaises(AttributeError, getattr, x, "bar")
+        with self.assertRaises(AttributeError):
+            x.bar
         x.bar = "foo"
         self.assertEqual(x["bar"], "foo")

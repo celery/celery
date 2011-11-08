@@ -1,8 +1,8 @@
+from __future__ import absolute_import
+
 import logging
-from celery.tests.utils import unittest
 
 from datetime import datetime, timedelta
-
 from nose import SkipTest
 
 from celery import beat
@@ -11,6 +11,7 @@ from celery.result import AsyncResult
 from celery.schedules import schedule
 from celery.task.base import Task
 from celery.utils import uuid
+from celery.tests.utils import unittest
 
 
 class Object(object):
@@ -191,7 +192,7 @@ class test_Scheduler(unittest.TestCase):
         self.assertTrue(scheduler.logger.logged[0])
         level, msg, args, kwargs = scheduler.logger.logged[0]
         self.assertEqual(level, logging.ERROR)
-        self.assertIn("Couldn't apply scheduled task", args[0].message)
+        self.assertIn("Couldn't apply scheduled task", args[0].args[0])
 
     def test_due_tick_RuntimeError(self):
         scheduler = mSchedulerRuntimeError()
@@ -262,7 +263,7 @@ class test_Service(unittest.TestCase):
                 if self.tick_raises_exit:
                     raise SystemExit()
                 if self.shutdown_service:
-                    self.shutdown_service._shutdown.set()
+                    self.shutdown_service._is_shutdown.set()
                 return 0.0
 
         return beat.Service(scheduler_cls=PersistentScheduler), sh
@@ -279,12 +280,12 @@ class test_Service(unittest.TestCase):
         s.sync()
         self.assertTrue(sh.closed)
         self.assertTrue(sh.synced)
-        self.assertTrue(s._stopped.isSet())
+        self.assertTrue(s._is_stopped.isSet())
         s.sync()
         s.stop(wait=False)
-        self.assertTrue(s._shutdown.isSet())
+        self.assertTrue(s._is_shutdown.isSet())
         s.stop(wait=True)
-        self.assertTrue(s._shutdown.isSet())
+        self.assertTrue(s._is_shutdown.isSet())
 
         p = s.scheduler._store
         s.scheduler._store = None
@@ -295,25 +296,25 @@ class test_Service(unittest.TestCase):
 
     def test_start_embedded_process(self):
         s, sh = self.get_service()
-        s._shutdown.set()
+        s._is_shutdown.set()
         s.start(embedded_process=True)
 
     def test_start_thread(self):
         s, sh = self.get_service()
-        s._shutdown.set()
+        s._is_shutdown.set()
         s.start(embedded_process=False)
 
     def test_start_tick_raises_exit_error(self):
         s, sh = self.get_service()
         s.scheduler.tick_raises_exit = True
         s.start()
-        self.assertTrue(s._shutdown.isSet())
+        self.assertTrue(s._is_shutdown.isSet())
 
     def test_start_manages_one_tick_before_shutdown(self):
         s, sh = self.get_service()
         s.scheduler.shutdown_service = s
         s.start()
-        self.assertTrue(s._shutdown.isSet())
+        self.assertTrue(s._is_shutdown.isSet())
 
 
 class test_EmbeddedService(unittest.TestCase):

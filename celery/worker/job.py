@@ -1,3 +1,15 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.worker.job
+    ~~~~~~~~~~~~~~~~~
+
+    This module defines the :class:`TaskRequest` class,
+    which specifies how tasks are executed.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
 from __future__ import absolute_import
 
 import os
@@ -15,33 +27,12 @@ from .. import registry
 from ..app import app_or_default
 from ..datastructures import ExceptionInfo
 from ..execute.trace import TaskTrace
-from ..utils import (noop, kwdict, fun_takes_kwargs,
-                     get_symbol_by_name, truncate_text)
+from ..utils import noop, kwdict, fun_takes_kwargs, truncate_text
 from ..utils.encoding import safe_repr, safe_str, default_encoding
 from ..utils.timeutils import maybe_iso8601, timezone
+from ..utils.serialization import get_pickleable_exception
 
 from . import state
-
-# pep8.py borks on a inline signature separator and
-# says "trailing whitespace" ;)
-EMAIL_SIGNATURE_SEP = "-- "
-
-#: format string for the body of an error email.
-TASK_ERROR_EMAIL_BODY = """
-Task %%(name)s with id %%(id)s raised exception:\n%%(exc)r
-
-
-Task was called with args: %%(args)s kwargs: %%(kwargs)s.
-
-The contents of the full traceback was:
-
-%%(traceback)s
-
-%(EMAIL_SIGNATURE_SEP)s
-Just to let you know,
-celeryd at %%(hostname)s.
-""" % {"EMAIL_SIGNATURE_SEP": EMAIL_SIGNATURE_SEP}
-
 
 #: Keys to keep from the message delivery info.  The values
 #: of these keys must be pickleable.
@@ -50,10 +41,17 @@ WANTED_DELIVERY_INFO = ("exchange", "routing_key", "consumer_tag", )
 
 class InvalidTaskError(Exception):
     """The task has invalid data or is not properly constructed."""
+    pass
 
 
-def default_encode(obj):
-    return unicode(obj, default_encoding())
+if sys.version_info >= (3, 0):
+
+    def default_encode(obj):
+        return obj
+else:
+
+    def default_encode(obj):  # noqa
+        return unicode(obj, default_encoding())
 
 
 class WorkerTaskTrace(TaskTrace):
@@ -151,9 +149,8 @@ class WorkerTaskTrace(TaskTrace):
     def handle_failure(self, exc, type_, tb, strtb):
         """Handle exception."""
         if self._store_errors:
-            exc = self.task.backend.mark_as_failure(self.task_id, exc, strtb)
-        else:
-            exc = self.task.backend.prepare_exception(exc)
+            self.task.backend.mark_as_failure(self.task_id, exc, strtb)
+        exc = get_pickleable_exception(exc)
         return self.super.handle_failure(exc, type_, tb, strtb)
 
 
@@ -232,14 +229,6 @@ class TaskRequest(object):
     #: Format string used to log task retry.
     retry_msg = """Task %(name)s[%(id)s] retry: %(exc)s"""
 
-    #: Format string used to generate error email subjects.
-    email_subject = """\
-        [celery@%(hostname)s] Error: Task %(name)s (%(id)s): %(exc)s
-    """
-
-    #: Format string used to generate error email content.
-    email_body = TASK_ERROR_EMAIL_BODY
-
     #: Timestamp set when the task is started.
     time_start = None
 
@@ -251,8 +240,7 @@ class TaskRequest(object):
 
     def __init__(self, task_name, task_id, args, kwargs,
             on_ack=noop, retries=0, delivery_info=None, hostname=None,
-            email_subject=None, email_body=None, logger=None,
-            eventer=None, eta=None, expires=None, app=None,
+            logger=None, eventer=None, eta=None, expires=None, app=None,
             taskset_id=None, chord=None, tz=0x1, **opts):
         self.app = app_or_default(app)
         self.task_name = task_name
@@ -269,8 +257,6 @@ class TaskRequest(object):
         self.hostname = hostname or socket.gethostname()
         self.logger = logger or self.app.log.get_default_logger()
         self.eventer = eventer
-        self.email_subject = email_subject or self.email_subject
-        self.email_body = email_body or self.email_body
 
         self.task = registry.tasks[self.task_name]
         self._store_errors = True
@@ -298,14 +284,20 @@ class TaskRequest(object):
         delivery_info = dict((key, delivery_info.get(key))
                                 for key in WANTED_DELIVERY_INFO)
 
-        kwargs = body["kwargs"]
+        kwargs = body.get("kwargs", {})
         if not hasattr(kwargs, "items"):
             raise InvalidTaskError("Task keyword arguments is not a mapping.")
+        try:
+            task_name = body["task"]
+            task_id = body["id"]
+        except KeyError, exc:
+            raise InvalidTaskError(
+                "Task message is missing required field %r" % (exc, ))
 
-        return cls(task_name=body["task"],
-                   task_id=body["id"],
+        return cls(task_name=task_name,
+                   task_id=task_id,
                    taskset_id=body.get("taskset", None),
-                   args=body["args"],
+                   args=body.get("args", []),
                    kwargs=kwdict(kwargs),
                    chord=body.get("chord"),
                    retries=body.get("retries", 0),
@@ -518,35 +510,23 @@ class TaskRequest(object):
                    "name": self.task_name,
                    "exc": safe_repr(exc_info.exception),
                    "traceback": safe_str(exc_info.traceback),
-                   "args": self.args,
-                   "kwargs": self.kwargs}
+                   "args": safe_repr(self.args),
+                   "kwargs": safe_repr(self.kwargs)}
 
         self.logger.error(self.error_msg.strip(), context,
-                          exc_info=exc_info,
+                          exc_info=exc_info.exc_info,
                           extra={"data": {"id": self.task_id,
                                           "name": self.task_name,
                                           "hostname": self.hostname}})
 
         task_obj = registry.tasks.get(self.task_name, object)
-        self.send_error_email(task_obj, context, exc_info.exception,
-                              enabled=task_obj.send_error_emails,
-                              whitelist=task_obj.error_whitelist)
+        task_obj.send_error_email(context, exc_info.exception)
 
     def acknowledge(self):
         """Acknowledge task."""
         if not self.acknowledged:
             self.on_ack()
             self.acknowledged = True
-
-    def send_error_email(self, task, context, exc,
-            whitelist=None, enabled=False, fail_silently=True):
-        if enabled and not task.disable_error_emails:
-            if not whitelist or isinstance(exc,
-                    tuple(map(get_symbol_by_name, whitelist))):
-                subject = self.email_subject.strip() % context
-                body = self.email_body.strip() % context
-                self.app.mail_admins(subject, body,
-                                     fail_silently=fail_silently)
 
     def repr_result(self, result, maxlen=46):
         # 46 is the length needed to fit

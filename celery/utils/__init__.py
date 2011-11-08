@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.utils
+    ~~~~~~~~~~~~
+
+    Utility functions.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 
@@ -20,6 +31,8 @@ from pprint import pprint
 from kombu.utils import cached_property, gen_unique_id  # noqa
 uuid = gen_unique_id
 
+from ..exceptions import CPendingDeprecationWarning, CDeprecationWarning
+
 from .compat import StringIO
 from .encoding import safe_repr as _safe_repr
 
@@ -39,6 +52,18 @@ DEPRECATION_FMT = """
 """
 
 
+def warn_deprecated(description=None, deprecation=None, removal=None,
+        alternative=None):
+    ctx = {"description": description,
+           "deprecation": deprecation, "removal": removal,
+           "alternative": alternative}
+    if deprecation is not None:
+        w = CPendingDeprecationWarning(PENDING_DEPRECATION_FMT % ctx)
+    else:
+        w = CDeprecationWarning(DEPRECATION_FMT % ctx)
+    warnings.warn(w)
+
+
 def deprecated(description=None, deprecation=None, removal=None,
         alternative=None):
 
@@ -46,14 +71,10 @@ def deprecated(description=None, deprecation=None, removal=None,
 
         @wraps(fun)
         def __inner(*args, **kwargs):
-            ctx = {"description": description or get_full_cls_name(fun),
-                   "deprecation": deprecation, "removal": removal,
-                   "alternative": alternative}
-            if deprecation is not None:
-                w = PendingDeprecationWarning(PENDING_DEPRECATION_FMT % ctx)
-            else:
-                w = DeprecationWarning(DEPRECATION_FMT % ctx)
-            warnings.warn(w)
+            warn_deprecated(description=description or get_full_cls_name(fun),
+                            deprecation=deprecation,
+                            removal=removal,
+                            alternative=alternative)
             return fun(*args, **kwargs)
         return __inner
     return _inner
@@ -148,15 +169,20 @@ def noop(*args, **kwargs):
     pass
 
 
-def kwdict(kwargs):
-    """Make sure keyword arguments are not in unicode.
+if sys.version_info >= (3, 0):
 
-    This should be fixed in newer Python versions,
-      see: http://bugs.python.org/issue4978.
+    def kwdict(kwargs):
+        return kwargs
+else:
+    def kwdict(kwargs):  # noqa
+        """Make sure keyword arguments are not in unicode.
 
-    """
-    return dict((key.encode("utf-8"), value)
-                    for key, value in kwargs.items())
+        This should be fixed in newer Python versions,
+        see: http://bugs.python.org/issue4978.
+
+        """
+        return dict((key.encode("utf-8"), value)
+                        for key, value in kwargs.items())
 
 
 def first(predicate, iterable):
@@ -431,6 +457,9 @@ def cry():  # pragma: no cover
     sep = "=" * 49 + "\n"
     for tid, frame in sys._current_frames().iteritems():
         thread = tmap.get(tid, main_thread)
+        if not thread:
+            # skip old junk (left-overs from a fork)
+            continue
         out.write("%s\n" % (thread.getName(), ))
         out.write(sep)
         traceback.print_stack(frame, file=out)

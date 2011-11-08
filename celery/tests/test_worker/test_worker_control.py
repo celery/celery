@@ -1,12 +1,12 @@
+from __future__ import absolute_import
+from __future__ import with_statement
+
 import socket
-from celery.tests.utils import unittest
 
 from datetime import datetime, timedelta
 
 from kombu import pidbox
 from mock import Mock
-
-from celery.utils.timer2 import Timer
 
 from celery import current_app
 from celery.datastructures import AttributeDict
@@ -14,12 +14,14 @@ from celery.task import task
 from celery.registry import tasks
 from celery.task import PingTask
 from celery.utils import uuid
+from celery.utils.timer2 import Timer
 from celery.worker.buckets import FastQueue
 from celery.worker.job import TaskRequest
 from celery.worker import state
 from celery.worker.state import revoked
-from celery.worker.control import builtins
-from celery.worker.control.registry import Panel
+from celery.worker import control
+from celery.worker.control import Panel
+from celery.tests.utils import unittest
 
 hostname = socket.gethostname()
 
@@ -295,7 +297,8 @@ class test_ControlPanel(unittest.TestCase):
                                 "rate_limit": "1000/s"})
 
     def test_unexposed_command(self):
-        self.assertRaises(KeyError, self.panel.handle, "foo", arguments={})
+        with self.assertRaises(KeyError):
+            self.panel.handle("foo", arguments={})
 
     def test_revoke_with_name(self):
         tid = uuid()
@@ -334,12 +337,12 @@ class test_ControlPanel(unittest.TestCase):
         request.task_id = tid = uuid()
         state.active_requests.add(request)
         try:
-            r = builtins.revoke(Mock(), tid, terminate=True)
+            r = control.revoke(Mock(), tid, terminate=True)
             self.assertIn(tid, revoked)
             self.assertTrue(request.terminate.call_count)
             self.assertIn("terminated", r["ok"])
             # unknown task id only revokes
-            r = builtins.revoke(Mock(), uuid(), terminate=True)
+            r = control.revoke(Mock(), uuid(), terminate=True)
             self.assertIn("revoked", r["ok"])
         finally:
             state.active_requests.discard(request)
@@ -353,7 +356,8 @@ class test_ControlPanel(unittest.TestCase):
     def test_shutdown(self):
         m = {"method": "shutdown",
              "destination": hostname}
-        self.assertRaises(SystemExit, self.panel.dispatch_from_message, m)
+        with self.assertRaises(SystemExit):
+            self.panel.dispatch_from_message(m)
 
     def test_panel_reply(self):
 

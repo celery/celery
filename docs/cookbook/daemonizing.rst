@@ -42,7 +42,7 @@ Example configuration
 
 This is an example configuration for a Python project.
 
-:file:`/etc/default/celeryd`:
+:file:`/etc/default/celeryd`::
 
     # Name of nodes to start
     # here we have a single node
@@ -150,13 +150,10 @@ Example configuration
 
 This is an example configuration for a Python project:
 
-`/etc/default/celeryd`::
+`/etc/default/celerybeat`::
 
     # Where to chdir at start.
-    CELERYD_CHDIR="/opt/Myproject/"
-
-    # Extra arguments to celeryd
-    CELERYD_OPTS="--time-limit=300"
+    CELERYBEAT_CHDIR="/opt/Myproject/"
 
     # Extra arguments to celerybeat
     CELERYBEAT_OPTS="--schedule=/var/run/celerybeat-schedule"
@@ -169,16 +166,15 @@ This is an example configuration for a Python project:
 Example Django configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This is an example configuration for those using `django-celery`::
+This is an example configuration for those using `django-celery`
+
+`/etc/default/celerybeat`::
 
     # Where the Django project is.
-    CELERYD_CHDIR="/opt/Project/"
+    CELERYBEAT_CHDIR="/opt/Project/"
 
     # Name of the projects settings module.
     export DJANGO_SETTINGS_MODULE="settings"
-
-    # Path to celeryd
-    CELERYD="/opt/Project/manage.py celeryd"
 
     # Path to celerybeat
     CELERYBEAT="/opt/Project/manage.py celerybeat"

@@ -25,7 +25,7 @@ from nose import SkipTest
 
 from ..app import app_or_default
 from ..utils import noop
-from ..utils.compat import StringIO, LoggerAdapter
+from ..utils.compat import WhateverIO, LoggerAdapter
 
 
 class Mock(mock.Mock):
@@ -58,7 +58,12 @@ class AppCase(unittest.TestCase):
 
     def setUp(self):
         from ..app import current_app
-        self.app = self._current_app = current_app()
+        from ..backends.cache import CacheBackend, DummyClient
+        app = self.app = self._current_app = current_app()
+        if isinstance(app.backend, CacheBackend):
+            if isinstance(app.backend.client, DummyClient):
+                app.backend.client.cache.clear()
+        app.backend._cache.clear()
         self.setup()
 
     def tearDown(self):
@@ -87,7 +92,7 @@ def set_handlers(logger, new_handlers):
 @contextmanager
 def wrap_logger(logger, loglevel=logging.ERROR):
     old_handlers = get_handlers(logger)
-    sio = StringIO()
+    sio = WhateverIO()
     siohandler = logging.StreamHandler(sio)
     set_handlers(logger, [siohandler])
 
@@ -251,7 +256,7 @@ def mask_modules(*modnames):
 def override_stdouts():
     """Override `sys.stdout` and `sys.stderr` with `StringIO`."""
     prev_out, prev_err = sys.stdout, sys.stderr
-    mystdout, mystderr = StringIO(), StringIO()
+    mystdout, mystderr = WhateverIO(), WhateverIO()
     sys.stdout = sys.__stdout__ = mystdout
     sys.stderr = sys.__stderr__ = mystderr
 
@@ -281,6 +286,7 @@ def patch(module, name, mocked):
 @contextmanager
 def platform_pyimp(replace=None):
     import platform
+    has_prev = hasattr(platform, "python_implementation")
     prev = getattr(platform, "python_implementation", None)
     if replace:
         platform.python_implementation = replace
@@ -292,6 +298,11 @@ def platform_pyimp(replace=None):
     yield
     if prev is not None:
         platform.python_implementation = prev
+    if not has_prev:
+        try:
+            delattr(platform, "python_implementation")
+        except AttributeError:
+            pass
 
 
 @contextmanager
@@ -303,6 +314,7 @@ def sys_platform(value):
 
 @contextmanager
 def pypy_version(value=None):
+    has_prev = hasattr(sys, "pypy_version_info")
     prev = getattr(sys, "pypy_version_info", None)
     if value:
         sys.pypy_version_info = value
@@ -314,6 +326,11 @@ def pypy_version(value=None):
     yield
     if prev is not None:
         sys.pypy_version_info = prev
+    if not has_prev:
+        try:
+            delattr(sys, "pypy_version_info")
+        except AttributeError:
+            pass
 
 
 @contextmanager

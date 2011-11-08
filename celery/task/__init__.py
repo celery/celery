@@ -1,17 +1,25 @@
 # -*- coding: utf-8 -*-
+"""
+    celery.task
+    ~~~~~~~~~~~
+
+    Creating tasks, subtasks, sets and chords.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
 from __future__ import absolute_import
 
 import warnings
 
 from ..app import app_or_default
+from ..exceptions import CDeprecationWarning
 
-from .base import Task, PeriodicTask
-from .sets import TaskSet, subtask
-from .chords import chord
-from .control import discard_all
-
-__all__ = ["Task", "TaskSet", "PeriodicTask", "subtask",
-           "discard_all", "chord"]
+from .base import Task, PeriodicTask  # noqa
+from .sets import TaskSet, subtask    # noqa
+from .chords import chord             # noqa
+from .control import discard_all      # noqa
 
 
 def task(*args, **kwargs):
@@ -98,7 +106,7 @@ def ping():  # ✞
     Please use :meth:`celery.task.control.ping` instead.
 
     """
-    warnings.warn(DeprecationWarning(
+    warnings.warn(CDeprecationWarning(
         "The ping task has been deprecated and will be removed in Celery "
         "v2.3.  Please use inspect.ping instead."))
     return PingTask.apply_async().get()

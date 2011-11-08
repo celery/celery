@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
 from ..exceptions import ImproperlyConfigured
@@ -31,6 +32,8 @@ class RedisBackend(KeyValueStoreBackend):
     #: default Redis password (:const:`None`)
     password = None
 
+    supports_native_join = True
+
     def __init__(self, host=None, port=None, db=None, password=None,
             expires=None, **kwargs):
         super(RedisBackend, self).__init__(**kwargs)
@@ -40,9 +43,9 @@ class RedisBackend(KeyValueStoreBackend):
                     "You need to install the redis library in order to use "
                   + "Redis result store backend.")
 
-        # For compatability with the old REDIS_* configuration keys.
+        # For compatibility with the old REDIS_* configuration keys.
         def _get(key):
-            for prefix in "REDIS_%s", "CELERY_REDIS_%s":
+            for prefix in "CELERY_REDIS_%s", "REDIS_%s":
                 try:
                     return conf[prefix % key]
                 except KeyError:
@@ -69,10 +72,8 @@ class RedisBackend(KeyValueStoreBackend):
     def delete(self, key):
         self.client.delete(key)
 
-    def process_cleanup(self):
-        pass
-
-    def on_chord_apply(self, *args, **kwargs):
+    def on_chord_apply(self, setid, body, result=None, **kwargs):
+        self.app.TaskSetResult(setid, result).save()
         pass
 
     def on_chord_part_return(self, task, propagate=False,

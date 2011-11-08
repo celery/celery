@@ -1,3 +1,15 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.execute.trace
+    ~~~~~~~~~~~~~~~~~~~~
+
+    This module defines how the task execution is traced:
+    errors are recorded, handlers are applied and so on.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
 from __future__ import absolute_import
 
 import sys
@@ -91,13 +103,14 @@ class TaskTrace(object):
         handler = self._trace_handlers[trace.status]
         r = handler(trace.retval, trace.exc_type, trace.tb, trace.strtb)
         self.handle_after_return(trace.status, trace.retval,
-                                 trace.exc_type, trace.tb, trace.strtb)
+                                 trace.exc_type, trace.tb, trace.strtb,
+                                 einfo=trace.exc_info)
         return r
 
     def handle_after_return(self, status, retval, type_, tb, strtb,
             einfo=None):
         if status in states.EXCEPTION_STATES:
-            einfo = ExceptionInfo((retval, type_, tb))
+            einfo = ExceptionInfo(einfo)
         self.task.after_return(status, retval, self.task_id,
                                self.args, self.kwargs, einfo)
 

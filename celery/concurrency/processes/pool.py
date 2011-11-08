@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Module providing the `Pool` class for managing a process pool
 #
@@ -5,8 +6,7 @@
 #
 # Copyright (c) 2007-2008, R Oudkerk --- see COPYING.txt
 #
-
-__all__ = ['Pool']
+from __future__ import absolute_import
 
 #
 # Imports
@@ -22,11 +22,13 @@ import collections
 import time
 import signal
 import warnings
+import logging
 
 from multiprocessing import Process, cpu_count, TimeoutError
 from multiprocessing import util
 from multiprocessing.util import Finalize, debug
 
+from celery.datastructures import ExceptionInfo
 from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded
 from celery.exceptions import WorkerLostError
 
@@ -74,16 +76,30 @@ class LaxBoundedSemaphore(threading._Semaphore):
         _Semaphore.__init__(self, value, verbose)
         self._initial_value = value
 
-    def release(self):
-        if self._Semaphore__value < self._initial_value:
-            _Semaphore.release(self)
-        if __debug__:
-            self._note("%s.release: success, value=%s (unchanged)" % (
-                self, self._Semaphore__value))
+    if sys.version_info >= (3, 0):
 
-    def clear(self):
-        while self._Semaphore__value < self._initial_value:
-            _Semaphore.release(self)
+        def release(self):
+            if self._value < self._initial_value:
+                _Semaphore.release(self)
+            if __debug__:
+                self._note("%s.release: success, value=%s (unchanged)" % (
+                    self, self._value))
+
+        def clear(self):
+            while self._value < self._initial_value:
+                _Semaphore.release(self)
+    else:
+
+        def release(self):  # noqa
+            if self._Semaphore__value < self._initial_value:
+                _Semaphore.release(self)
+            if __debug__:
+                self._note("%s.release: success, value=%s (unchanged)" % (
+                    self, self._Semaphore__value))
+
+        def clear(self):  # noqa
+            while self._Semaphore__value < self._initial_value:
+                _Semaphore.release(self)
 
 #
 # Exceptions
@@ -119,6 +135,17 @@ def soft_timeout_sighandler(signum, frame):
 
 
 def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None):
+    # Re-init logging system.
+    # Workaround for http://bugs.python.org/issue6721#msg140215
+    # Python logging module uses RLock() objects which are broken after
+    # fork. This can result in a deadlock (Issue #496).
+    logger_names = logging.Logger.manager.loggerDict.keys()
+    logger_names.append(None)  # for root logger
+    for name in logger_names:
+        for handler in logging.getLogger(name).handlers:
+            handler.createLock()
+    logging._lock = threading.RLock()
+
     pid = os.getpid()
     assert maxtasks is None or (type(maxtasks) == int and maxtasks > 0)
     put = outqueue.put
@@ -166,13 +193,15 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None):
         put((ACK, (job, i, time.time(), pid)))
         try:
             result = (True, func(*args, **kwds))
-        except Exception, e:
-            result = (False, e)
+        except Exception:
+            result = (False, ExceptionInfo(sys.exc_info()))
         try:
             put((READY, (job, i, result)))
         except Exception, exc:
+            _, _, tb = sys.exc_info()
             wrapped = MaybeEncodingError(exc, result[1])
-            put((READY, (job, i, (False, wrapped))))
+            einfo = ExceptionInfo((MaybeEncodingError, wrapped, tb))
+            put((READY, (job, i, (False, einfo))))
 
         completed += 1
     debug('worker exiting after %d tasks' % completed)
@@ -320,7 +349,12 @@ class TimeoutHandler(PoolThread):
                 return
             debug('hard time limit exceeded for %i', i)
             # Remove from cache and set return value to an exception
-            job._set(i, (False, TimeLimitExceeded(hard_timeout)))
+            exc_info = None
+            try:
+                raise TimeLimitExceeded(hard_timeout)
+            except TimeLimitExceeded:
+                exc_info = sys.exc_info()
+            job._set(i, (False, ExceptionInfo(exc_info)))
 
             # Remove from _pool
             process, _index = _process_by_pid(job._worker_pid)
@@ -408,7 +442,7 @@ class ResultHandler(PoolThread):
         debug('result handler starting')
         while 1:
             try:
-                ready, task = poll(0.2)
+                ready, task = poll(1.0)
             except (IOError, EOFError), exc:
                 debug('result handler got %r -- exiting' % (exc, ))
                 return
@@ -428,7 +462,7 @@ class ResultHandler(PoolThread):
         time_terminate = None
         while cache and self._state != TERMINATE:
             try:
-                ready, task = poll(0.2)
+                ready, task = poll(1.0)
             except (IOError, EOFError), exc:
                 debug('result handler got %r -- exiting' % (exc, ))
                 return
@@ -571,8 +605,12 @@ class Pool(object):
                 if not job.ready() and job._worker_lost]:
             now = now or time.time()
             if now - job._worker_lost > lost_worker_timeout:
-                err = WorkerLostError("Worker exited prematurely.")
-                job._set(None, (False, err))
+                exc_info = None
+                try:
+                    raise WorkerLostError("Worker exited prematurely.")
+                except WorkerLostError:
+                    exc_info = ExceptionInfo(sys.exc_info())
+                job._set(None, (False, exc_info))
 
         if shutdown and not len(self._pool):
             raise WorkersJoined()

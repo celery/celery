@@ -1,6 +1,8 @@
+from __future__ import absolute_import
 from __future__ import with_statement
 
 import anyjson
+import warnings
 
 from celery import registry
 from celery.app import app_or_default
@@ -102,6 +104,7 @@ class test_subtask(unittest.TestCase):
 class test_TaskSet(unittest.TestCase):
 
     def test_interface__compat(self):
+        warnings.resetwarnings()
         with catch_warnings(record=True) as log:
             ts = TaskSet(MockTask, [[(2, 2)], [(4, 4)], [(8, 8)]])
             self.assertListEqual(ts.tasks,

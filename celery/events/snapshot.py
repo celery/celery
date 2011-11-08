@@ -1,3 +1,18 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.events.snapshot
+    ~~~~~~~~~~~~~~~~~~~~~~
+
+    Consuming the events as a stream is not always suitable
+    so this module implements a system to take snapshots of the
+    state of a cluster at regular intervals.  There is a full
+    implementation of this writing the snapshots to a database
+    in :mod:`djcelery.snapshots` in the `django-celery` distribution.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
 from __future__ import absolute_import
 
 import atexit

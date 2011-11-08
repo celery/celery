@@ -1,6 +1,16 @@
-from __future__ import absolute_import
+# -*- coding: utf-8 -*-
+"""
+    celery.loaders
+    ~~~~~~~~~~~~~~
 
-import os
+    Loaders define how configuration is read, what happens
+    when workers start, when tasks are executed and so on.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
+from __future__ import absolute_import
 
 from .. import current_app
 from ..utils import deprecated, get_cls_by_name

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from __future__ import with_statement
 
 import sys
@@ -142,16 +143,16 @@ class test_Timer(unittest.TestCase):
     @patch("os._exit")
     def test_thread_crash(self, _exit):
         t = timer2.Timer()
-        t.next = Mock()
-        t.next.side_effect = OSError(131)
+        t._next_entry = Mock()
+        t._next_entry.side_effect = OSError(131)
         t.run()
         _exit.assert_called_with(1)
 
     def test_gc_race_lost(self):
         t = timer2.Timer()
-        t._stopped.set = Mock()
-        t._stopped.set.side_effect = TypeError()
+        t._is_stopped.set = Mock()
+        t._is_stopped.set.side_effect = TypeError()
 
-        t._shutdown.set()
+        t._is_shutdown.set()
         t.run()
-        t._stopped.set.assert_called_with()
+        t._is_stopped.set.assert_called_with()

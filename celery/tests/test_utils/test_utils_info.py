@@ -1,7 +1,8 @@
-from celery.tests.utils import unittest
+from __future__ import absolute_import
 
 from celery import Celery
 from celery.utils import textindent
+from celery.tests.utils import unittest
 
 RANDTEXT = """\
 The quick brown

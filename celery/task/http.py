@@ -1,5 +1,17 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.task.http
+    ~~~~~~~~~~~~~~~~
+
+    Task webhooks implementation.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
 from __future__ import absolute_import
 
+import sys
 import urllib2
 
 from urllib import urlencode
@@ -36,11 +48,19 @@ def maybe_utf8(value):
     return value
 
 
-def utf8dict(tup):
-    """With a dict's items() tuple return a new dict with any utf-8
-    keys/values encoded."""
-    return dict((key.encode("utf-8"), maybe_utf8(value))
-                    for key, value in tup)
+if sys.version_info >= (3, 0):
+
+    def utf8dict(tup):
+        if not isinstance(tup, dict):
+            return dict(tup)
+        return tup
+else:
+
+    def utf8dict(tup):  # noqa
+        """With a dict's items() tuple return a new dict with any utf-8
+        keys/values encoded."""
+        return dict((key.encode("utf-8"), maybe_utf8(value))
+                        for key, value in tup)
 
 
 def extract_response(raw_response):

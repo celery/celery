@@ -1,4 +1,14 @@
-"""timer2 - Scheduler for Python functions."""
+# -*- coding: utf-8 -*-
+"""
+    timer2
+    ~~~~~~
+
+    Scheduler for Python functions.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 
@@ -16,11 +26,11 @@ from time import time, sleep, mktime
 
 from datetime import datetime, timedelta
 
-VERSION = (0, 1, 0)
+VERSION = (1, 0, 0)
 __version__ = ".".join(map(str, VERSION))
 __author__ = "Ask Solem"
 __contact__ = "ask@celeryproject.org"
-__homepage__ = "http://github.com/ask/timer/"
+__homepage__ = "http://github.com/ask/timer2/"
 __docformat__ = "restructuredtext"
 
 DEFAULT_MAX_INTERVAL = 2
@@ -48,6 +58,21 @@ class Entry(object):
     def __repr__(self):
         return "<TimerEntry: %s(*%r, **%r)" % (
                 self.fun.__name__, self.args, self.kwargs)
+
+    if sys.version_info >= (3, 0):
+
+        def __hash__(self):
+            return hash("|".join(map(repr, (self.fun, self.args,
+                                            self.kwargs))))
+
+        def __lt__(self, other):
+            return hash(self) < hash(other)
+
+        def __gt__(self, other):
+            return hash(self) > hash(other)
+
+        def __eq__(self, other):
+            return hash(self) == hash(other)
 
 
 def to_timestamp(d):
@@ -152,8 +177,8 @@ class Timer(Thread):
         self.on_tick = on_tick or self.on_tick
 
         Thread.__init__(self)
-        self._shutdown = Event()
-        self._stopped = Event()
+        self._is_shutdown = Event()
+        self._is_stopped = Event()
         self.mutex = Lock()
         self.logger = logging.getLogger("timer2.Timer")
         self.not_empty = Condition(self.mutex)
@@ -169,7 +194,7 @@ class Timer(Thread):
                 warnings.warn(TimedFunctionFailed(repr(exc))),
                 traceback.print_exception(typ, val, tb)
 
-    def next(self):
+    def _next_entry(self):
         with self.not_empty:
             delay, entry = self.scheduler.next()
             if entry is None:
@@ -177,15 +202,15 @@ class Timer(Thread):
                     self.not_empty.wait(1.0)
                 return delay
         return self.apply_entry(entry)
-    __next__ = next  # for 2to3
+    __next__ = next = _next_entry  # for 2to3
 
     def run(self):
         try:
             self.running = True
             self.scheduler = iter(self.schedule)
 
-            while not self._shutdown.isSet():
-                delay = self.next()
+            while not self._is_shutdown.isSet():
+                delay = self._next_entry()
                 if delay:
                     if self.on_tick:
                         self.on_tick(delay)
@@ -193,7 +218,7 @@ class Timer(Thread):
                         break
                     sleep(delay)
             try:
-                self._stopped.set()
+                self._is_stopped.set()
             except TypeError:  # pragma: no cover
                 # we lost the race at interpreter shutdown,
                 # so gc collected built-in modules.
@@ -205,8 +230,8 @@ class Timer(Thread):
 
     def stop(self):
         if self.running:
-            self._shutdown.set()
-            self._stopped.wait()
+            self._is_shutdown.set()
+            self._is_stopped.wait()
             self.join(1e10)
             self.running = False
 

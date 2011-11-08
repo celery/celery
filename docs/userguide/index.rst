@@ -21,3 +21,4 @@
     monitoring
     optimizing
     concurrency/index
+    signals

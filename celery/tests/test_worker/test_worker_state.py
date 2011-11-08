@@ -1,7 +1,8 @@
-from celery.tests.utils import unittest
+from __future__ import absolute_import
 
 from celery.datastructures import LimitedSet
 from celery.worker import state
+from celery.tests.utils import unittest
 
 
 class StateResetCase(unittest.TestCase):
@@ -31,7 +32,7 @@ class MockShelve(dict):
     in_sync = False
     closed = False
 
-    def open(self, filename):
+    def open(self, filename, **kwargs):
         self.filename = filename
         return self
 

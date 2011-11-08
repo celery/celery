@@ -1,3 +1,17 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.worker.state
+    ~~~~~~~~~~~~~~~~~~~
+
+    Internal worker state (global)
+
+    This includes the currently active and reserved tasks,
+    statistics, and revoked tasks.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
 from __future__ import absolute_import
 
 import os
@@ -88,7 +102,8 @@ class Persistent(object):
         self._load()
 
     def save(self):
-        self.sync(self.db).sync()
+        self.sync(self.db)
+        self.db.sync()
         self.close()
 
     def merge(self, d):
@@ -102,7 +117,7 @@ class Persistent(object):
         return d
 
     def open(self):
-        return self.storage.open(self.filename)
+        return self.storage.open(self.filename, writeback=True)
 
     def close(self):
         if self._is_open:
@@ -111,7 +126,6 @@ class Persistent(object):
 
     def _load(self):
         self.merge(self.db)
-        self.close()
 
     @cached_property
     def db(self):

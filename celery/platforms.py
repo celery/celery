@@ -1,9 +1,23 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.platforms
+    ~~~~~~~~~~~~~~~~
+
+    Utilities dealing with platform specifics: signals, daemonization,
+    users, groups, and so on.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
 from __future__ import absolute_import
 
-import os
-import sys
 import errno
+import os
+import platform as _platform
+import shlex
 import signal as _signal
+import sys
 
 from .local import try_import
 
@@ -12,16 +26,42 @@ resource = try_import("resource")
 pwd = try_import("pwd")
 grp = try_import("grp")
 
+SYSTEM = _platform.system()
+IS_OSX = SYSTEM == "Darwin"
+IS_WINDOWS = SYSTEM == "Windows"
+
 DAEMON_UMASK = 0
 DAEMON_WORKDIR = "/"
 DAEMON_REDIRECT_TO = getattr(os, "devnull", "/dev/null")
 
 
+def pyimplementation():
+    if hasattr(_platform, "python_implementation"):
+        return _platform.python_implementation()
+    elif sys.platform.startswith("java"):
+        return "Jython %s" % (sys.platform, )
+    elif hasattr(sys, "pypy_version_info"):
+        v = ".".join(map(str, sys.pypy_version_info[:3]))
+        if sys.pypy_version_info[3:]:
+            v += "-" + "".join(map(str, sys.pypy_version_info[3:]))
+        return "PyPy %s" % (v, )
+    else:
+        return "CPython"
+
+
 class LockFailed(Exception):
+    """Raised if a pidlock can't be acquired."""
     pass
 
 
 def get_fdmax(default=None):
+    """Returns the maximum number of open file descriptors
+    on this system.
+
+    :keyword default: Value returned if there's no file
+                      descriptor limit.
+
+    """
     fdmax = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
     if fdmax == resource.RLIM_INFINITY:
         return default
@@ -29,22 +69,23 @@ def get_fdmax(default=None):
 
 
 class PIDFile(object):
+    """PID lock file.
+
+    This is the type returned by :func:`create_pidlock`.
+
+    **Should not be used directly, use the :func:`create_pidlock`
+    context instead**
+
+    """
+
+    #: Path to the pid lock file.
+    path = None
 
     def __init__(self, path):
         self.path = os.path.abspath(path)
 
-    def write_pid(self):
-        open_flags = (os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        open_mode = (((os.R_OK | os.W_OK) << 6) |
-                        ((os.R_OK) << 3) |
-                        ((os.R_OK)))
-        pidfile_fd = os.open(self.path, open_flags, open_mode)
-        pidfile = os.fdopen(pidfile_fd, "w")
-        pid = os.getpid()
-        pidfile.write("%d\n" % (pid, ))
-        pidfile.close()
-
     def acquire(self):
+        """Acquire lock."""
         try:
             self.write_pid()
         except OSError, exc:
@@ -53,13 +94,16 @@ class PIDFile(object):
     __enter__ = acquire
 
     def is_locked(self):
+        """Returns true if the pid lock exists."""
         return os.path.exists(self.path)
 
     def release(self, *args):
+        """Release lock."""
         self.remove()
     __exit__ = release
 
     def read_pid(self):
+        """Reads and returns the current pid."""
         try:
             fh = open(self.path, "r")
         except IOError, exc:
@@ -76,6 +120,7 @@ class PIDFile(object):
             raise ValueError("PID file %r contents invalid." % self.path)
 
     def remove(self):
+        """Removes the lock."""
         try:
             os.unlink(self.path)
         except OSError, exc:
@@ -84,6 +129,8 @@ class PIDFile(object):
             raise
 
     def remove_if_stale(self):
+        """Removes the lock if the process is not running.
+        (does not respond to signals)."""
         try:
             pid = self.read_pid()
         except ValueError, exc:
@@ -103,13 +150,39 @@ class PIDFile(object):
                 return True
         return False
 
+    def write_pid(self):
+        open_flags = (os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        open_mode = (((os.R_OK | os.W_OK) << 6) |
+                        ((os.R_OK) << 3) |
+                        ((os.R_OK)))
+        pidfile_fd = os.open(self.path, open_flags, open_mode)
+        pidfile = os.fdopen(pidfile_fd, "w")
+        try:
+            pid = os.getpid()
+            pidfile.write("%d\n" % (pid, ))
+        finally:
+            pidfile.close()
+
 
 def create_pidlock(pidfile):
-    """Create and verify pidfile.
+    """Create and verify pid file.
 
-    If the pidfile already exists the program exits with an error message,
-    however if the process it refers to is not running anymore, the pidfile
-    is just deleted.
+    If the pid file already exists the program exits with an error message,
+    however if the process it refers to is not running anymore, the pid file
+    is deleted and the program continues.
+
+    The caller is responsible for releasing the lock before the program
+    exits.
+
+    :returns: :class:`PIDFile`.
+
+    **Example**:
+
+    .. code-block:: python
+
+        import atexit
+        pidlock = create_pidlock("/var/run/app.pid").acquire()
+        atexit.register(pidlock.release)
 
     """
 
@@ -124,11 +197,13 @@ def create_pidlock(pidfile):
 
 class DaemonContext(object):
     _is_open = False
+    workdir = DAEMON_WORKDIR
+    umask = DAEMON_UMASK
 
-    def __init__(self, pidfile=None, workdir=DAEMON_WORKDIR,
-            umask=DAEMON_UMASK, **kwargs):
-        self.workdir = workdir
-        self.umask = umask
+    def __init__(self, pidfile=None, workdir=None,
+            umask=None, **kwargs):
+        self.workdir = workdir or self.workdir
+        self.umask = self.umask if umask is None else umask
 
     def open(self):
         if not self._is_open:
@@ -168,6 +243,41 @@ class DaemonContext(object):
 
 def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
              workdir=None, **opts):
+    """Detach the current process in the background (daemonize).
+
+    :keyword logfile: Optional log file.  The ability to write to this file
+       will be verified before the process is detached.
+    :keyword pidfile: Optional pid file.  The pid file will not be created,
+      as this is the responsibility of the child.  But the process will
+      exit if the pid lock exists and the pid written is still running.
+    :keyword uid: Optional user id or user name to change
+      effective privileges to.
+    :keyword gid: Optional group id or group name to change effective
+      privileges to.
+    :keyword umask: Optional umask that will be effective in the child process.
+    :keyword workdir: Optional new working directory.
+    :keyword \*\*opts: Ignored.
+
+    **Example**:
+
+    .. code-block:: python
+
+        import atexit
+        from celery.platforms import detached, create_pidlock
+
+        with detached(logfile="/var/log/app.log", pidfile="/var/run/app.pid",
+                      uid="nobody"):
+            # Now in detached child process with effective user set to nobody,
+            # and we know that our logfile can be written to, and that
+            # the pidfile is not locked.
+            pidlock = create_pidlock("/var/run/app.pid").acquire()
+            atexit.register(pidlock.release)
+
+            # Run the program
+            program.run(logfile="/var/log/app.log")
+
+    """
+
     if not resource:
         raise RuntimeError("This platform does not support detach.")
     workdir = os.getcwd() if workdir is None else workdir
@@ -187,7 +297,7 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
 def parse_uid(uid):
     """Parse user id.
 
-    uid can be an interger (uid) or a string (username), if a username
+    uid can be an integer (uid) or a string (user name), if a user name
     the uid is taken from the password file.
 
     """
@@ -237,19 +347,19 @@ def seteuid(uid):
 def set_effective_user(uid=None, gid=None):
     """Change process privileges to new user/group.
 
-    If uid and gid is set the effective user/group is set.
+    If UID and GID is set the effective user/group is set.
 
-    If only uid is set, the effective uer is set, and the group is
+    If only UID is set, the effective user is set, and the group is
     set to the users primary group.
 
-    If only gid is set, the effective group is set.
+    If only GID is set, the effective group is set.
 
     """
     uid = uid and parse_uid(uid)
     gid = gid and parse_gid(gid)
 
     if uid:
-        # If gid isn't defined, get the primary gid of the uer.
+        # If GID isn't defined, get the primary GID of the user.
         if not gid and pwd:
             gid = pwd.getpwuid(uid).pw_gid
         setegid(gid)
@@ -259,6 +369,42 @@ def set_effective_user(uid=None, gid=None):
 
 
 class Signals(object):
+    """Convenience interface to :mod:`signals`.
+
+    If the requested signal is not supported on the current platform,
+    the operation will be ignored.
+
+    **Examples**:
+
+    .. code-block:: python
+
+        >>> from celery.platforms import signals
+
+        >>> signals["INT"] = my_handler
+
+        >>> signals["INT"]
+        my_handler
+
+        >>> signals.supported("INT")
+        True
+
+        >>> signals.signum("INT")
+        2
+
+        >>> signals.ignore("USR1")
+        >>> signals["USR1"] == signals.ignored
+        True
+
+        >>> signals.reset("USR1")
+        >>> signals["USR1"] == signals.default
+        True
+
+        >>> signals.update(INT=exit_handler,
+        ...                TERM=exit_handler,
+        ...                HUP=hup_handler)
+
+    """
+
     ignored = _signal.SIG_IGN
     default = _signal.SIG_DFL
 
@@ -361,3 +507,11 @@ def set_mp_process_title(progname, info=None, hostname=None):
     else:
         return set_process_title("%s:%s" % (progname,
                                             current_process().name), info=info)
+
+
+def shellsplit(s, posix=True):
+    # posix= option to shlex.split first available in Python 2.6+
+    lexer = shlex.shlex(s, posix=not IS_WINDOWS)
+    lexer.whitespace_split = True
+    lexer.commenters = ''
+    return list(lexer)

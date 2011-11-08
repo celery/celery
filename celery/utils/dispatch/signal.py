@@ -1,4 +1,6 @@
+# -*- coding: utf-8 -*-
 """Signal class."""
+from __future__ import absolute_import
 
 import weakref
 try:

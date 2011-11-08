@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 celery.contrib.batches
 ======================
@@ -39,13 +40,38 @@ Registering the click is done as follows:
 :license: BSD, see LICENSE for more details.
 
 """
-from itertools import count
-from Queue import Queue
+from __future__ import absolute_import
 
-from celery.datastructures import consume_queue
+from itertools import count
+from Queue import Empty, Queue
+
 from celery.task import Task
 from celery.utils import cached_property, timer2
 from celery.worker import state
+
+
+def consume_queue(queue):
+    """Iterator yielding all immediately available items in a
+    :class:`Queue.Queue`.
+
+    The iterator stops as soon as the queue raises :exc:`Queue.Empty`.
+
+    *Examples*
+
+        >>> q = Queue()
+        >>> map(q.put, range(4))
+        >>> list(consume_queue(q))
+        [0, 1, 2, 3]
+        >>> list(consume_queue(q))
+        []
+
+    """
+    get = queue.get_nowait
+    while 1:
+        try:
+            yield get()
+        except Empty:
+            break
 
 
 def apply_batches_task(task, args, loglevel, logfile):

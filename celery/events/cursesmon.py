@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.events.cursesmon
+    ~~~~~~~~~~~~~~~~~~~~~~~
+
+    Graphical monitor of Celery events using curses.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
 from __future__ import absolute_import
 
 import curses

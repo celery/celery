@@ -1,7 +1,9 @@
-from celery.tests.utils import unittest
+from __future__ import absolute_import
+from __future__ import with_statement
 
 from celery import registry
 from celery.task import Task, PeriodicTask
+from celery.tests.utils import unittest
 
 
 class TestTask(Task):
@@ -22,12 +24,14 @@ class TestPeriodicTask(PeriodicTask):
 class TestTaskRegistry(unittest.TestCase):
 
     def assertRegisterUnregisterCls(self, r, task):
-        self.assertRaises(r.NotRegistered, r.unregister, task)
+        with self.assertRaises(r.NotRegistered):
+            r.unregister(task)
         r.register(task)
         self.assertIn(task.name, r)
 
     def assertRegisterUnregisterFunc(self, r, task, task_name):
-        self.assertRaises(r.NotRegistered, r.unregister, task_name)
+        with self.assertRaises(r.NotRegistered):
+            r.unregister(task_name)
         r.register(task, task_name)
         self.assertIn(task_name, r)
 

@@ -1,3 +1,15 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.task.control
+    ~~~~~~~~~~~~~~~~~~~
+
+    Client for worker remote control commands.
+    Server implementation is in :mod:`celery.worker.control`.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 
@@ -52,7 +64,7 @@ class Inspect(object):
     def revoked(self):
         return self._request("dump_revoked")
 
-    def registered_tasks(self):
+    def registered(self):
         return self._request("dump_tasks")
 
     def enable_events(self):
@@ -75,6 +87,8 @@ class Inspect(object):
 
     def active_queues(self):
         return self._request("active_queues")
+
+    registered_tasks = registered
 
 
 class Control(object):
@@ -209,9 +223,7 @@ class Control(object):
         """
         with self.app.default_connection(connection, connect_timeout) as conn:
             if channel is None:
-                if not getattr(conn, "_producer_chan", None):
-                    conn._producer_chan = conn.channel()
-                channel = conn._producer_chan
+                channel = conn.default_channel
             return self.mailbox(conn)._broadcast(command, arguments,
                                                  destination, reply, timeout,
                                                  limit, callback,

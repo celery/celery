@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from __future__ import with_statement
 
 import sys
@@ -220,7 +222,8 @@ class inspect(Command):
                "reserved": 1.0,
                "stats": 1.0,
                "revoked": 1.0,
-               "registered_tasks": 1.0,
+               "registered_tasks": 1.0,  # alias to registered
+               "registered": 1.0,
                "enable_events": 1.0,
                "disable_events": 1.0,
                "ping": 0.2,
@@ -232,6 +235,7 @@ class inspect(Command):
                     help="Timeout in seconds (float) waiting for reply"),
                 Option("--destination", "-d", dest="destination",
                     help="Comma separated list of destination node names."))
+    show_body = True
 
     def usage(self, command):
         return "%%prog %s [options] %s [%s]" % (
@@ -239,6 +243,7 @@ class inspect(Command):
 
     def run(self, *args, **kwargs):
         self.quiet = kwargs.get("quiet", False)
+        self.show_body = kwargs.get("show_body", True)
         if not args:
             raise Error("Missing inspect command. See --help")
         command = args[0]
@@ -274,7 +279,7 @@ class inspect(Command):
             return
         dirstr = not self.quiet and c.bold(c.white(direction), " ") or ""
         self.out(c.reset(dirstr, title))
-        if body and not self.quiet:
+        if body and self.show_body:
             self.out(body)
 inspect = command(inspect)
 
@@ -290,7 +295,7 @@ class status(Command):
     def run(self, *args, **kwargs):
         replies = inspect(app=self.app,
                           no_color=kwargs.get("no_color", False)) \
-                    .run("ping", **dict(kwargs, quiet=True))
+                    .run("ping", **dict(kwargs, quiet=True, show_body=False))
         if not replies:
             raise Error("No nodes replied within time constraint")
         nodecount = len(replies)

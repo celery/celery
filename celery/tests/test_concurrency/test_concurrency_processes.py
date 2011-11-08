@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+from __future__ import with_statement
+
 import signal
 import sys
 
@@ -131,12 +134,15 @@ class test_TaskPool(unittest.TestCase):
             scratch[0] = einfo
 
         pool = TaskPool(10)
-        exc = KeyError("foo")
-        pool.on_worker_error(errback, exc)
+        exc_info = None
+        try:
+            raise KeyError("foo")
+        except KeyError:
+            exc_info = ExceptionInfo(sys.exc_info())
+        pool.on_worker_error(errback, exc_info)
 
         self.assertTrue(scratch[0])
-        self.assertIs(scratch[0].exception, exc)
-        self.assertTrue(scratch[0].traceback)
+        self.assertIs(scratch[0], exc_info)
 
     def test_on_ready_exception(self):
         scratch = [None]
@@ -182,7 +188,8 @@ class test_TaskPool(unittest.TestCase):
     def test_on_ready_exit_exception(self):
         pool = TaskPool(10)
         exc = to_excinfo(SystemExit("foo"))
-        self.assertRaises(SystemExit, pool.on_ready, [], [], exc)
+        with self.assertRaises(SystemExit):
+            pool.on_ready([], [], exc)
 
     def test_apply_async(self):
         pool = TaskPool(10)

@@ -90,6 +90,26 @@ def flake8(options):
     }{exit $FOUND_FLAKE;
         '""" % (complexity, ), ignore_error=noerror)
 
+
+@task
+@cmdopts([
+    ("noerror", "E", "Ignore errors"),
+])
+def flakeplus(options):
+    noerror = getattr(options, "noerror", False)
+    sh("python contrib/release/flakeplus.py celery",
+       ignore_error=noerror)
+
+
+@task
+@cmdopts([
+    ("noerror", "E", "Ignore errors")
+])
+def flakes(options):
+    flake8(options)
+    flakeplus(options)
+
+
 @task
 def clean_readme(options):
     path("README").unlink()
@@ -155,7 +175,7 @@ def gitcleanforce(options):
 
 
 @task
-@needs("flake8", "autodoc", "verifyindex",
+@needs("flakes", "autodoc", "verifyindex",
        "verifyconfigref", "test", "gitclean")
 def releaseok(options):
     pass

@@ -1,4 +1,14 @@
-"""celery.registry"""
+# -*- coding: utf-8 -*-
+"""
+    celery.registry
+    ~~~~~~~~~~~~~~~
+
+    Registry of available tasks.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
 from __future__ import absolute_import
 
 import inspect

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from __future__ import with_statement
 
 import anyjson
@@ -11,6 +12,7 @@ from datetime import datetime, timedelta
 
 from kombu.transport.base import Message
 from mock import Mock
+from nose import SkipTest
 
 from celery import states
 from celery.app import app_or_default
@@ -22,6 +24,7 @@ from celery.log import setup_logger
 from celery.result import AsyncResult
 from celery.task.base import Task
 from celery.utils import uuid
+from celery.utils.encoding import from_utf8
 from celery.worker.job import (WorkerTaskTrace, TaskRequest,
                                InvalidTaskError, execute_and_trace,
                                default_encode)
@@ -29,7 +32,7 @@ from celery.worker.state import revoked
 
 from celery.tests.compat import catch_warnings
 from celery.tests.utils import unittest
-from celery.tests.utils import StringIO, wrap_logger
+from celery.tests.utils import WhateverIO, wrap_logger
 
 
 scratch = {"ACK": False}
@@ -74,6 +77,10 @@ def mytask_raising(i, **kwargs):
 
 class test_default_encode(unittest.TestCase):
 
+    def setUp(self):
+        if sys.version_info >= (3, 0):
+            raise SkipTest("py3k: not relevant")
+
     def test_jython(self):
         prev, sys.platform = sys.platform, "java 1.6.1"
         try:
@@ -99,8 +106,7 @@ class test_RetryTaskError(unittest.TestCase):
             raise Exception("foo")
         except Exception, exc:
             ret = RetryTaskError("Retrying task", exc)
-
-        self.assertEqual(ret.exc, exc)
+            self.assertEqual(ret.exc, exc)
 
 
 class test_WorkerTaskTrace(unittest.TestCase):
@@ -127,8 +133,8 @@ class test_WorkerTaskTrace(unittest.TestCase):
         mytask.backend = Mock()
         mytask.backend.process_cleanup = Mock(side_effect=SystemExit())
         try:
-            self.assertRaises(SystemExit,
-                    jail, uuid(), mytask.name, [2], {})
+            with self.assertRaises(SystemExit):
+                jail(uuid(), mytask.name, [2], {})
         finally:
             mytask.backend = backend
 
@@ -215,8 +221,8 @@ class test_TaskRequest(unittest.TestCase):
             raise RetryTaskError("foo", KeyError("moofoobar"))
         except:
             einfo = ExceptionInfo(sys.exc_info())
-        tw.on_failure(einfo)
-        self.assertIn("task-retried", tw.eventer.sent)
+            tw.on_failure(einfo)
+            self.assertIn("task-retried", tw.eventer.sent)
 
     def test_terminate__task_started(self):
         pool = Mock()
@@ -382,9 +388,9 @@ class test_TaskRequest(unittest.TestCase):
             raise WorkerLostError("do re mi")
         except WorkerLostError:
             exc_info = ExceptionInfo(sys.exc_info())
-        tw.on_failure(exc_info)
-        self.assertEqual(mytask.backend.get_status(tw.task_id),
-                         states.FAILURE)
+            tw.on_failure(exc_info)
+            self.assertEqual(mytask.backend.get_status(tw.task_id),
+                             states.FAILURE)
 
         mytask.ignore_result = True
         try:
@@ -404,15 +410,15 @@ class test_TaskRequest(unittest.TestCase):
                 raise KeyError("foo")
             except KeyError:
                 exc_info = ExceptionInfo(sys.exc_info())
-            tw.on_failure(exc_info)
-            self.assertTrue(tw.acknowledged)
+                tw.on_failure(exc_info)
+                self.assertTrue(tw.acknowledged)
         finally:
             mytask.acks_late = False
 
     def test_from_message_invalid_kwargs(self):
         body = dict(task="foo", id=1, args=(), kwargs="foo")
-        self.assertRaises(InvalidTaskError,
-                          TaskRequest.from_message, None, body)
+        with self.assertRaises(InvalidTaskError):
+            TaskRequest.from_message(None, body)
 
     def test_on_timeout(self):
 
@@ -513,15 +519,11 @@ class test_TaskRequest(unittest.TestCase):
                            "exc": "FOOBARBAZ",
                            "traceback": "foobarbaz"}
         self.assertTrue(x)
-        x = tw.email_subject % {"name": tw.task_name,
-                                     "id": tw.task_id,
-                                     "exc": "FOOBARBAZ",
-                                     "hostname": "lana"}
-        self.assertTrue(x)
 
     def test_from_message(self):
+        us = u"æØåveéðƒeæ"
         body = {"task": mytask.name, "id": uuid(),
-                "args": [2], "kwargs": {u"æØåveéðƒeæ": "bar"}}
+                "args": [2], "kwargs": {us: "bar"}}
         m = Message(None, body=anyjson.serialize(body), backend="foo",
                           content_type="application/json",
                           content_encoding="utf-8")
@@ -530,10 +532,28 @@ class test_TaskRequest(unittest.TestCase):
         self.assertEqual(tw.task_name, body["task"])
         self.assertEqual(tw.task_id, body["id"])
         self.assertEqual(tw.args, body["args"])
-        self.assertEqual(tw.kwargs.keys()[0],
-                          u"æØåveéðƒeæ".encode("utf-8"))
-        self.assertNotIsInstance(tw.kwargs.keys()[0], unicode)
+        us = from_utf8(us)
+        self.assertEqual(tw.kwargs.keys()[0], us)
+        self.assertIsInstance(tw.kwargs.keys()[0], str)
         self.assertTrue(tw.logger)
+
+    def test_from_message_empty_args(self):
+        body = {"task": mytask.name, "id": uuid()}
+        m = Message(None, body=anyjson.serialize(body), backend="foo",
+                          content_type="application/json",
+                          content_encoding="utf-8")
+        tw = TaskRequest.from_message(m, m.decode())
+        self.assertIsInstance(tw, TaskRequest)
+        self.assertEquals(tw.args, [])
+        self.assertEquals(tw.kwargs, {})
+
+    def test_from_message_missing_required_fields(self):
+        body = {}
+        m = Message(None, body=anyjson.serialize(body), backend="foo",
+                          content_type="application/json",
+                          content_encoding="utf-8")
+        with self.assertRaises(InvalidTaskError):
+            TaskRequest.from_message(m, m.decode())
 
     def test_from_message_nonexistant_task(self):
         body = {"task": "cu.mytask.doesnotexist", "id": uuid(),
@@ -541,8 +561,8 @@ class test_TaskRequest(unittest.TestCase):
         m = Message(None, body=anyjson.serialize(body), backend="foo",
                           content_type="application/json",
                           content_encoding="utf-8")
-        self.assertRaises(NotRegistered, TaskRequest.from_message,
-                          m, m.decode())
+        with self.assertRaises(NotRegistered):
+            TaskRequest.from_message(m, m.decode())
 
     def test_execute(self):
         tid = uuid()
@@ -637,20 +657,20 @@ class test_TaskRequest(unittest.TestCase):
         except Exception:
             exc_info = ExceptionInfo(sys.exc_info())
 
-        logfh = StringIO()
-        tw.logger.handlers = []
-        tw.logger = setup_logger(logfile=logfh, loglevel=logging.INFO,
-                                 root=False)
+            logfh = WhateverIO()
+            tw.logger.handlers = []
+            tw.logger = setup_logger(logfile=logfh, loglevel=logging.INFO,
+                                     root=False)
 
-        app.conf.CELERY_SEND_TASK_ERROR_EMAILS = True
+            app.conf.CELERY_SEND_TASK_ERROR_EMAILS = True
 
-        tw.on_failure(exc_info)
-        logvalue = logfh.getvalue()
-        self.assertIn(mytask.name, logvalue)
-        self.assertIn(tid, logvalue)
-        self.assertIn("ERROR", logvalue)
+            tw.on_failure(exc_info)
+            logvalue = logfh.getvalue()
+            self.assertIn(mytask.name, logvalue)
+            self.assertIn(tid, logvalue)
+            self.assertIn("ERROR", logvalue)
 
-        app.conf.CELERY_SEND_TASK_ERROR_EMAILS = False
+            app.conf.CELERY_SEND_TASK_ERROR_EMAILS = False
 
     def test_on_failure(self):
         self._test_on_failure(Exception("Inside unit tests"))
@@ -660,4 +680,4 @@ class test_TaskRequest(unittest.TestCase):
 
     def test_on_failure_utf8_exception(self):
         self._test_on_failure(Exception(
-            u"Бобры атакуют".encode('utf8')))
+            from_utf8(u"Бобры атакуют")))

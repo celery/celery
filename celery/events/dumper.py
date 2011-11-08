@@ -1,3 +1,15 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.events.dumper
+    ~~~~~~~~~~~~~~~~~~~~
+
+    THis is a simple program that dumps events to the console
+    as they happen.  Think of it like a `tcpdump` for Celery events.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
 from __future__ import absolute_import
 
 import sys
@@ -5,10 +17,10 @@ import sys
 from datetime import datetime
 
 from ..app import app_or_default
-from ..datastructures import LocalCache
+from ..datastructures import LRUCache
 
 
-TASK_NAMES = LocalCache(0xFFF)
+TASK_NAMES = LRUCache(limit=0xFFF)
 
 HUMAN_TYPES = {"worker-offline": "shutdown",
                "worker-online": "started",
@@ -30,7 +42,7 @@ class Dumper(object):
         hostname = event.pop("hostname")
         if type.startswith("task-"):
             uuid = event.pop("uuid")
-            if type.startswith("task-received"):
+            if type in ("task-received", "task-sent"):
                 task = TASK_NAMES[uuid] = "%s(%s) args=%s kwargs=%s" % (
                         event.pop("name"), uuid,
                         event.pop("args"),

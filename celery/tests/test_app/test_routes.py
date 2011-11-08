@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+from __future__ import with_statement
+
 from functools import wraps
 
 from celery import routes
@@ -65,7 +68,8 @@ class test_MapRoute(unittest.TestCase):
     def test_expand_route_not_found(self):
         expand = E(current_app.conf.CELERY_QUEUES)
         route = routes.MapRoute({"a": {"queue": "x"}})
-        self.assertRaises(QueueNotFound, expand, route.route_for_task("a"))
+        with self.assertRaises(QueueNotFound):
+            expand(route.route_for_task("a"))
 
 
 class test_lookup_route(unittest.TestCase):
@@ -124,14 +128,14 @@ class test_lookup_route(unittest.TestCase):
 class test_prepare(unittest.TestCase):
 
     def test_prepare(self):
-        from celery.datastructures import LocalCache
+        from celery.datastructures import LRUCache
         o = object()
         R = [{"foo": "bar"},
-                  "celery.datastructures.LocalCache",
+                  "celery.datastructures.LRUCache",
                   o]
         p = routes.prepare(R)
         self.assertIsInstance(p[0], routes.MapRoute)
-        self.assertIsInstance(maybe_promise(p[1]), LocalCache)
+        self.assertIsInstance(maybe_promise(p[1]), LRUCache)
         self.assertIs(p[2], o)
 
         self.assertEqual(routes.prepare(o), [o])

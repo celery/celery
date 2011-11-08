@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from __future__ import with_statement
 
 import sys
@@ -43,7 +44,8 @@ class test_DatabaseBackend(unittest.TestCase):
     def test_missing_SQLAlchemy_raises_ImproperlyConfigured(self):
         with mask_modules("sqlalchemy"):
             from celery.backends.database import _sqlalchemy_installed
-            self.assertRaises(ImproperlyConfigured, _sqlalchemy_installed)
+            with self.assertRaises(ImproperlyConfigured):
+                _sqlalchemy_installed()
 
     def test_pickle_hack_for_sqla_05(self):
         import sqlalchemy as sa
@@ -66,7 +68,8 @@ class test_DatabaseBackend(unittest.TestCase):
         conf = app_or_default().conf
         prev, conf.CELERY_RESULT_DBURI = conf.CELERY_RESULT_DBURI, None
         try:
-            self.assertRaises(ImproperlyConfigured, DatabaseBackend)
+            with self.assertRaises(ImproperlyConfigured):
+                DatabaseBackend()
         finally:
             conf.CELERY_RESULT_DBURI = prev
 

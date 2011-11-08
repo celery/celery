@@ -1,5 +1,6 @@
+from __future__ import absolute_import
+
 from time import time
-from celery.tests.utils import unittest
 
 from itertools import count
 
@@ -7,6 +8,7 @@ from celery import states
 from celery.events import Event
 from celery.events.state import State, Worker, Task, HEARTBEAT_EXPIRE
 from celery.utils import uuid
+from celery.tests.utils import unittest
 
 
 class replay(object):
@@ -14,15 +16,20 @@ class replay(object):
     def __init__(self, state):
         self.state = state
         self.rewind()
+        self.setup()
+
+    def setup(self):
+        pass
 
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         try:
             self.state.event(self.events[self.position()])
         except IndexError:
             raise StopIteration()
+    next = __next__
 
     def rewind(self):
         self.position = count(0).next
@@ -34,48 +41,56 @@ class replay(object):
 
 
 class ev_worker_online_offline(replay):
-    events = [
-        Event("worker-online", hostname="utest1"),
-        Event("worker-offline", hostname="utest1"),
-    ]
+
+    def setup(self):
+        self.events = [
+            Event("worker-online", hostname="utest1"),
+            Event("worker-offline", hostname="utest1"),
+        ]
 
 
 class ev_worker_heartbeats(replay):
-    events = [
-        Event("worker-heartbeat", hostname="utest1",
-              timestamp=time() - HEARTBEAT_EXPIRE * 2),
-        Event("worker-heartbeat", hostname="utest1"),
-    ]
+
+    def setup(self):
+        self.events = [
+            Event("worker-heartbeat", hostname="utest1",
+                timestamp=time() - HEARTBEAT_EXPIRE * 2),
+            Event("worker-heartbeat", hostname="utest1"),
+        ]
 
 
 class ev_task_states(replay):
-    tid = uuid()
-    events = [
-        Event("task-received", uuid=tid, name="task1",
-              args="(2, 2)", kwargs="{'foo': 'bar'}",
-              retries=0, eta=None, hostname="utest1"),
-        Event("task-started", uuid=tid, hostname="utest1"),
-        Event("task-revoked", uuid=tid, hostname="utest1"),
-        Event("task-retried", uuid=tid, exception="KeyError('bar')",
-              traceback="line 2 at main", hostname="utest1"),
-        Event("task-failed", uuid=tid, exception="KeyError('foo')",
-              traceback="line 1 at main", hostname="utest1"),
-        Event("task-succeeded", uuid=tid, result="4",
-              runtime=0.1234, hostname="utest1"),
-    ]
+
+    def setup(self):
+        tid = self.tid = uuid()
+        self.events = [
+            Event("task-received", uuid=tid, name="task1",
+                args="(2, 2)", kwargs="{'foo': 'bar'}",
+                retries=0, eta=None, hostname="utest1"),
+            Event("task-started", uuid=tid, hostname="utest1"),
+            Event("task-revoked", uuid=tid, hostname="utest1"),
+            Event("task-retried", uuid=tid, exception="KeyError('bar')",
+                traceback="line 2 at main", hostname="utest1"),
+            Event("task-failed", uuid=tid, exception="KeyError('foo')",
+                traceback="line 1 at main", hostname="utest1"),
+            Event("task-succeeded", uuid=tid, result="4",
+                runtime=0.1234, hostname="utest1"),
+        ]
 
 
 class ev_snapshot(replay):
-    events = [
-        Event("worker-online", hostname="utest1"),
-        Event("worker-online", hostname="utest2"),
-        Event("worker-online", hostname="utest3"),
-    ]
-    for i in range(20):
-        worker = not i % 2 and "utest2" or "utest1"
-        type = not i % 2 and "task2" or "task1"
-        events.append(Event("task-received", name=type,
-                      uuid=uuid(), hostname=worker))
+
+    def setup(self):
+        self.events = [
+            Event("worker-online", hostname="utest1"),
+            Event("worker-online", hostname="utest2"),
+            Event("worker-online", hostname="utest3"),
+        ]
+        for i in range(20):
+            worker = not i % 2 and "utest2" or "utest1"
+            type = not i % 2 and "task2" or "task1"
+            self.events.append(Event("task-received", name=type,
+                          uuid=uuid(), hostname=worker))
 
 
 class test_Worker(unittest.TestCase):

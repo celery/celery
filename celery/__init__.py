@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Distributed Task Queue"""
 # :copyright: (c) 2009 - 2011 by Ask Solem.
 # :license:   BSD, see LICENSE for more details.
@@ -7,7 +8,7 @@ from __future__ import absolute_import
 import os
 import sys
 
-VERSION = (2, 3, 1)
+VERSION = (2, 4, 1)
 
 __version__ = ".".join(map(str, VERSION[0:3])) + "".join(VERSION[3:])
 __author__ = "Ask Solem"
@@ -26,10 +27,10 @@ def Celery(*args, **kwargs):
     return App(*args, **kwargs)
 
 if not os.environ.get("CELERY_NO_EVAL", False):
-    from .local import LocalProxy
+    from .local import Proxy
 
     def _get_current_app():
         from .app import current_app
         return current_app()
 
-    current_app = LocalProxy(_get_current_app)
+    current_app = Proxy(_get_current_app)

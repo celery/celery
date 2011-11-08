@@ -1,6 +1,7 @@
+from __future__ import absolute_import
+
 import sys
 import socket
-from celery.tests.utils import unittest
 
 from nose import SkipTest
 
@@ -10,6 +11,7 @@ from celery import states
 from celery.utils import uuid
 from celery.backends import tyrant
 from celery.backends.tyrant import TyrantBackend
+from celery.tests.utils import unittest
 
 _no_tyrant_msg = "* Tokyo Tyrant %s. Will not execute related tests."
 _no_tyrant_msg_emitted = False

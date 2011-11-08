@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 
 Examples
@@ -89,7 +90,6 @@ from __future__ import absolute_import
 
 import errno
 import os
-import shlex
 import signal
 import socket
 import sys
@@ -99,7 +99,9 @@ from subprocess import Popen
 from time import sleep
 
 from .. import __version__
+from ..platforms import shellsplit
 from ..utils import term
+from ..utils.encoding import from_utf8
 
 SIGNAMES = set(sig for sig in dir(signal)
                         if sig.startswith("SIG") and "_" not in sig)
@@ -368,7 +370,7 @@ class MultiTool(object):
 
     def waitexec(self, argv, path=sys.executable):
         args = " ".join([path] + list(argv))
-        argstr = shlex.split(args.encode("utf-8"))
+        argstr = shellsplit(from_utf8(args))
         pipe = Popen(argstr, env=self.env)
         self.info("  %s" % " ".join(argstr))
         retcode = pipe.wait()

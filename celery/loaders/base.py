@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.loaders.base
+    ~~~~~~~~~~~~~~~~~~~
+
+    Loader base class.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
 from __future__ import absolute_import
 
 import importlib
@@ -11,6 +22,7 @@ from ..datastructures import DictAttribute
 from ..exceptions import ImproperlyConfigured
 from ..utils import (cached_property, get_cls_by_name,
                      import_from_cwd as _import_from_cwd)
+from ..utils.functional import maybe_list
 
 BUILTIN_MODULES = frozenset(["celery.task"])
 
@@ -62,6 +74,10 @@ class BaseLoader(object):
         starts."""
         pass
 
+    def on_worker_process_init(self):
+        """This method is called when a child process starts."""
+        pass
+
     def import_task_module(self, module):
         return self.import_from_cwd(module)
 
@@ -74,7 +90,7 @@ class BaseLoader(object):
                 package=package)
 
     def import_default_modules(self):
-        imports = set(list(self.conf.get("CELERY_IMPORTS") or ()))
+        imports = set(maybe_list(self.conf.get("CELERY_IMPORTS") or ()))
         return [self.import_task_module(module)
                     for module in imports | self.builtin_modules]
 
@@ -82,6 +98,9 @@ class BaseLoader(object):
         if not self.worker_initialized:
             self.worker_initialized = True
             self.on_worker_init()
+
+    def init_worker_process(self):
+        self.on_worker_process_init()
 
     def config_from_envvar(self, variable_name, silent=False):
         module_name = os.environ.get(variable_name)

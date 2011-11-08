@@ -3,7 +3,6 @@ from __future__ import with_statement
 
 import sys
 import socket
-from celery.tests.utils import unittest
 
 from nose import SkipTest
 
@@ -13,8 +12,8 @@ from celery import states
 from celery.utils import uuid
 from celery.backends import redis
 from celery.backends.redis import RedisBackend
-
 from celery.tests.utils import mask_modules
+from celery.tests.utils import unittest
 
 _no_redis_msg = "* Redis %s. Will not execute related tests."
 _no_redis_msg_emitted = False
@@ -112,6 +111,7 @@ class TestRedisBackendNoRedis(unittest.TestCase):
         prev = redis.RedisBackend.redis
         redis.RedisBackend.redis = None
         try:
-            self.assertRaises(ImproperlyConfigured, redis.RedisBackend)
+            with self.assertRaises(ImproperlyConfigured):
+                redis.RedisBackend()
         finally:
             redis.RedisBackend.redis = prev

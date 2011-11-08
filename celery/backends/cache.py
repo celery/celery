@@ -1,8 +1,10 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-from ..datastructures import LocalCache
+from ..datastructures import LRUCache
 from ..exceptions import ImproperlyConfigured
 from ..utils import cached_property
+from ..utils.encoding import ensure_bytes
 
 from .base import KeyValueStoreBackend
 
@@ -38,7 +40,7 @@ def get_best_memcache(*args, **kwargs):
 class DummyClient(object):
 
     def __init__(self, *args, **kwargs):
-        self.cache = LocalCache(5000)
+        self.cache = LRUCache(limit=5000)
 
     def get(self, key, *args, **kwargs):
         return self.cache.get(key)
@@ -61,6 +63,8 @@ backends = {"memcache": lambda: get_best_memcache,
 
 
 class CacheBackend(KeyValueStoreBackend):
+    servers = None
+    supports_native_join = True
 
     def __init__(self, expires=None, backend=None, options={}, **kwargs):
         super(CacheBackend, self).__init__(self, **kwargs)
@@ -68,10 +72,11 @@ class CacheBackend(KeyValueStoreBackend):
         self.options = dict(self.app.conf.CELERY_CACHE_BACKEND_OPTIONS,
                             **options)
 
-        backend = backend or self.app.conf.CELERY_CACHE_BACKEND
-        self.backend, _, servers = backend.partition("://")
+        self.backend = backend or self.app.conf.CELERY_CACHE_BACKEND
+        if self.backend:
+            self.backend, _, servers = self.backend.partition("://")
+            self.servers = servers.rstrip('/').split(";")
         self.expires = self.prepare_expires(expires, type=int)
-        self.servers = servers.rstrip('/').split(";")
         try:
             self.Client = backends[self.backend]()
         except KeyError:
@@ -79,6 +84,12 @@ class CacheBackend(KeyValueStoreBackend):
                     "Unknown cache backend: %s. Please use one of the "
                     "following backends: %s" % (self.backend,
                                                 ", ".join(backends.keys())))
+
+    def get_key_for_task(self, task_id):
+        return ensure_bytes(self.task_keyprefix) + ensure_bytes(task_id)
+
+    def get_key_for_taskset(self, taskset_id):
+        return ensure_bytes(self.taskset_keyprefix) + ensure_bytes(taskset_id)
 
     def get(self, key):
         return self.client.get(key)

@@ -4,7 +4,7 @@
 
 .. image:: http://cloud.github.com/downloads/ask/celery/celery_128.png
 
-:Version: 2.3.1
+:Version: 2.4.1
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/ask/celery/
@@ -256,7 +256,7 @@ Mailing list
 ------------
 
 For discussions about the usage, development, and future of celery,
-please join the `celery-users`_ mailing list. 
+please join the `celery-users`_ mailing list.
 
 .. _`celery-users`: http://groups.google.com/group/celery-users/
 

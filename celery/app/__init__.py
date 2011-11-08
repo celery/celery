@@ -1,11 +1,12 @@
+# -*- coding: utf-8 -*-
 """
-celery.app
-==========
+    celery.app
+    ~~~~~~~~~~
 
-Celery Application.
+    Celery Application.
 
-:copyright: (c) 2009 - 2011 by Ask Solem.
-:license: BSD, see LICENSE for more details.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
 
@@ -247,12 +248,12 @@ def _app_or_default_trace(app=None):  # pragma: no cover
     from multiprocessing import current_process
     if app is None:
         if getattr(_tls, "current_app", None):
-            print("-- RETURNING TO CURRENT APP --")
+            print("-- RETURNING TO CURRENT APP --")  # noqa+
             print_stack()
             return _tls.current_app
         if current_process()._name == "MainProcess":
             raise Exception("DEFAULT APP")
-        print("-- RETURNING TO DEFAULT APP --")
+        print("-- RETURNING TO DEFAULT APP --")      # noqa+
         print_stack()
         return default_app
     return app

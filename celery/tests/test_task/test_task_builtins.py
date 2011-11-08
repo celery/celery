@@ -1,8 +1,10 @@
+from __future__ import absolute_import
 from __future__ import with_statement
 
 import warnings
 
 from celery.task import ping, PingTask, backend_cleanup
+from celery.exceptions import CDeprecationWarning
 from celery.tests.compat import catch_warnings
 from celery.tests.utils import unittest
 
@@ -23,7 +25,7 @@ class test_deprecated(unittest.TestCase):
                 pong = ping()
                 warning = log[0].message
                 self.assertEqual(pong, "pong")
-                self.assertIsInstance(warning, DeprecationWarning)
+                self.assertIsInstance(warning, CDeprecationWarning)
                 self.assertIn("ping task has been deprecated",
                               warning.args[0])
             finally:
@@ -37,7 +39,7 @@ class test_deprecated(unittest.TestCase):
             TaskSet()
             subtask(PingTask)
             for w in (log[0].message, log[1].message):
-                self.assertIsInstance(w, DeprecationWarning)
+                self.assertIsInstance(w, CDeprecationWarning)
                 self.assertIn("is deprecated", w.args[0])
 
 

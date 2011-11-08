@@ -47,10 +47,10 @@ like adding new worker nodes, or revoking unnecessary tasks.
 .. _`The back of the envelope`:
     http://books.google.com/books?id=kse_7qbWbjsC&pg=PA67
 
-.. _optimizing-worker-settings:
+.. _optimizing-general-settings:
 
-Worker Settings
-===============
+General Settings
+================
 
 .. _optimizing-connection-pools:
 
@@ -60,7 +60,15 @@ Broker Connection Pools
 You should enable the :setting:`BROKER_POOL_LIMIT` setting,
 as this will drastically improve overall performance.
 
+The value should be based on how many threads will use
+connections at the same time.
+
 This setting will be enabled by default in version 3.0.
+
+.. _optimizing-worker-settings:
+
+Worker Settings
+===============
 
 .. _optimizing-prefetch-limit:
 
