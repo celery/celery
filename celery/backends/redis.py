@@ -73,7 +73,7 @@ class RedisBackend(KeyValueStoreBackend):
         self.client.delete(key)
 
     def on_chord_apply(self, setid, body, result=None, **kwargs):
-        self.app.TaskSetResult(setid, r).save()
+        self.app.TaskSetResult(setid, result).save()
         pass
 
     def on_chord_part_return(self, task, propagate=False,

@@ -6,6 +6,7 @@ from mock import Mock, patch
 
 from celery import current_app
 from celery import states
+from celery.result import AsyncResult
 from celery.registry import tasks
 from celery.task import subtask
 from celery.utils import cached_property, uuid
@@ -93,7 +94,8 @@ class test_RedisBackend(unittest.TestCase):
         self.assertEqual(b.expires, 60)
 
     def test_on_chord_apply(self):
-        self.Backend().on_chord_apply("setid")
+        self.Backend().on_chord_apply("setid", {},
+                                      result=map(AsyncResult, [1, 2, 3]))
 
     def test_mget(self):
         b = self.MockBackend()

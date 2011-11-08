@@ -7,6 +7,7 @@ import types
 from mock import Mock
 from nose import SkipTest
 
+from celery.result import AsyncResult
 from celery.utils import serialization
 from celery.utils.serialization import subclass_exception
 from celery.utils.serialization import \
@@ -100,7 +101,8 @@ class test_BaseBackend_interface(unittest.TestCase):
         from celery.registry import tasks
         p, tasks[unlock] = tasks.get(unlock), Mock()
         try:
-            b.on_chord_apply("dakj221", "sdokqweok")
+            b.on_chord_apply("dakj221", "sdokqweok",
+                             result=map(AsyncResult, [1, 2, 3]))
             self.assertTrue(tasks[unlock].apply_async.call_count)
         finally:
             tasks[unlock] = p
