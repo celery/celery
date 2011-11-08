@@ -241,7 +241,7 @@ class TaskRequest(object):
     def __init__(self, task_name, task_id, args, kwargs,
             on_ack=noop, retries=0, delivery_info=None, hostname=None,
             logger=None, eventer=None, eta=None, expires=None, app=None,
-            taskset_id=None, chord=None, tz=0x1, **opts):
+            taskset_id=None, chord=None, tz=0x0, **opts):
         self.app = app_or_default(app)
         self.task_name = task_name
         self.task_id = task_id

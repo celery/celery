@@ -22,6 +22,8 @@ from .. import signals
 from ..utils import cached_property, textindent, uuid
 
 # UTC timezone mark.
+# Defaults to local in 2.5, and UTC in 3.x.
+TZ_LOCAL = 0x0
 TZ_UTC = 0x1
 
 #: List of known options to a Kombu producers send method.
@@ -226,7 +228,7 @@ class TaskPublisher(messaging.Publisher):
                 "retries": retries or 0,
                 "eta": eta,
                 "expires": expires,
-                "tz": TZ_UTC}
+                "tz": TZ_LOCAL}
         if taskset_id:
             body["taskset"] = taskset_id
         if chord:
