@@ -64,6 +64,7 @@ backends = {"memcache": lambda: get_best_memcache,
 
 class CacheBackend(KeyValueStoreBackend):
     servers = None
+    supports_native_join = True
 
     def __init__(self, expires=None, backend=None, options={}, **kwargs):
         super(CacheBackend, self).__init__(self, **kwargs)

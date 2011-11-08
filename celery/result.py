@@ -451,6 +451,10 @@ class ResultSet(object):
         """Deprecated alias to :attr:`results`."""
         return self.results
 
+    @property
+    def supports_native_join(self):
+        return self.results[0].backend.supports_native_join
+
 
 class TaskSetResult(ResultSet):
     """An instance of this class is returned by

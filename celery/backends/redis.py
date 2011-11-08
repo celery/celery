@@ -32,6 +32,8 @@ class RedisBackend(KeyValueStoreBackend):
     #: default Redis password (:const:`None`)
     password = None
 
+    supports_native_join = True
+
     def __init__(self, host=None, port=None, db=None, password=None,
             expires=None, **kwargs):
         super(RedisBackend, self).__init__(**kwargs)
@@ -70,7 +72,8 @@ class RedisBackend(KeyValueStoreBackend):
     def delete(self, key):
         self.client.delete(key)
 
-    def on_chord_apply(self, setid, *args, **kwargs):
+    def on_chord_apply(self, setid, body, result=None, **kwargs):
+        self.app.TaskSetResult(setid, r).save()
         pass
 
     def on_chord_part_return(self, task, propagate=False,

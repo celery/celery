@@ -40,6 +40,9 @@ class BaseBackend(object):
     #: argument which is for each pass.
     subpolling_interval = None
 
+    #: If true the backend must implement :meth:`get_many`.
+    supports_native_join = False
+
     def __init__(self, *args, **kwargs):
         from ..app import app_or_default
         self.app = app_or_default(kwargs.get("app"))
@@ -203,8 +206,9 @@ class BaseBackend(object):
     def on_chord_part_return(self, task):
         pass
 
-    def on_chord_apply(self, setid, body, *args, **kwargs):
+    def on_chord_apply(self, setid, body, result=None, **kwargs):
         from ..registry import tasks
+        kwargs["result"] = [r.task_id for r in result]
         tasks["celery.chord_unlock"].apply_async((setid, body, ), kwargs,
                                                  countdown=1)
 
