@@ -1,2 +1,16 @@
 Please see our Issue Tracker at GitHub:
     http://github.com/ask/celery/issues
+
+Kombu
+=====
+
+Redis: Better acks by moving reserved messages into a temporary queue.
+       Can we use multi commands for anything?
+
+Celerymon
+=========
+
+Create a UI for celerymon using js, with statistics and so on.
+Needs a graphing library, maybe highcharts
+(http://www.highcharts.com/: awesome but weird license) or InfoVis
+(http://thejit.org/; BSD licensed).
