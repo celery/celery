@@ -19,8 +19,8 @@ from celery.worker.buckets import FastQueue
 from celery.worker.job import TaskRequest
 from celery.worker import state
 from celery.worker.state import revoked
-from celery.worker.control import builtins
-from celery.worker.control.registry import Panel
+from celery.worker import control
+from celery.worker.control import Panel
 from celery.tests.utils import unittest
 
 hostname = socket.gethostname()
@@ -337,12 +337,12 @@ class test_ControlPanel(unittest.TestCase):
         request.task_id = tid = uuid()
         state.active_requests.add(request)
         try:
-            r = builtins.revoke(Mock(), tid, terminate=True)
+            r = control.revoke(Mock(), tid, terminate=True)
             self.assertIn(tid, revoked)
             self.assertTrue(request.terminate.call_count)
             self.assertIn("terminated", r["ok"])
             # unknown task id only revokes
-            r = builtins.revoke(Mock(), uuid(), terminate=True)
+            r = control.revoke(Mock(), uuid(), terminate=True)
             self.assertIn("revoked", r["ok"])
         finally:
             state.active_requests.discard(request)

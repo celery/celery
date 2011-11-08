@@ -90,7 +90,7 @@ from ..utils import timer2
 from ..utils.encoding import safe_repr
 from . import state
 from .job import TaskRequest, InvalidTaskError
-from .control.registry import Panel
+from .control import Panel
 from .heartbeat import Heart
 
 RUN = 0x1

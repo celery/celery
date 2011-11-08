@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-    celery.worker.control.builtins
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    celery.worker.control
+    ~~~~~~~~~~~~~~~~~~~~~
 
-    THis module contains the built-in remote control commands.
+    Remote control commands.
 
     :copyright: (c) 2009 - 2011 by Ask Solem.
     :license: BSD, see LICENSE for more details.
@@ -15,16 +15,25 @@ import sys
 
 from datetime import datetime
 
-from ...platforms import signals as _signals
-from ...registry import tasks
-from ...utils import timeutils
-from ...utils.encoding import safe_repr
-from .. import state
-from ..state import revoked
+from ..platforms import signals as _signals
+from ..registry import tasks
+from ..utils import timeutils
+from ..utils.compat import UserDict
+from ..utils.encoding import safe_repr
 
-from .registry import Panel
+from . import state
+from .state import revoked
 
 TASK_INFO_FIELDS = ("exchange", "routing_key", "rate_limit")
+
+
+class Panel(UserDict):
+    data = dict()  # Global registry.
+
+    @classmethod
+    def register(cls, method, name=None):
+        cls.data[name or method.__name__] = method
+        return method
 
 
 @Panel.register
