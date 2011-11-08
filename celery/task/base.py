@@ -114,6 +114,9 @@ class PeriodicTask(Task):
                 "kwargs": {},
                 "options": self.options or {},
                 "relative": self.relative,
+                "routing_key": self.routing_key,
+                "queue": self.queue,
+                "exchange": self.exchange,
         }
 
         super(PeriodicTask, self).__init__()
