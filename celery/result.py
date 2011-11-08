@@ -29,11 +29,11 @@ def _unpickle_result(task_id, task_name):
     return _unpickle_task(task_name).AsyncResult(task_id)
 
 
-class BaseAsyncResult(object):
-    """Base class for pending result, supports custom task result backend.
+class AsyncResult(object):
+    """Query task state.
 
     :param task_id: see :attr:`task_id`.
-    :param backend: see :attr:`backend`.
+    :keyword backend: see :attr:`backend`.
 
     """
 
@@ -46,10 +46,10 @@ class BaseAsyncResult(object):
     #: The task result backend to use.
     backend = None
 
-    def __init__(self, task_id, backend, task_name=None, app=None):
+    def __init__(self, task_id, backend=None, task_name=None, app=None):
         self.app = app_or_default(app)
         self.task_id = task_id
-        self.backend = backend
+        self.backend = backend or self.app.backend
         self.task_name = task_name
 
     def forget(self):
@@ -194,23 +194,7 @@ class BaseAsyncResult(object):
     def status(self):
         """Deprecated alias of :attr:`state`."""
         return self.state
-
-
-class AsyncResult(BaseAsyncResult):
-    """Pending task result using the default backend.
-
-    :param task_id: The task uuid.
-
-    """
-
-    #: Task result store backend to use.
-    backend = None
-
-    def __init__(self, task_id, backend=None, task_name=None, app=None):
-        app = app_or_default(app)
-        backend = backend or app.backend
-        super(AsyncResult, self).__init__(task_id, backend,
-                                          task_name=task_name, app=app)
+BaseAsyncResult = AsyncResult  # for backwards compatibility.
 
 
 class ResultSet(object):
