@@ -24,60 +24,49 @@ class SomeClass(object):
 
 class test_CacheBackend(unittest.TestCase):
 
+    def setUp(self):
+        self.tb = CacheBackend(backend="memory://")
+        self.tid = uuid()
+
     def test_mark_as_done(self):
-        tb = CacheBackend(backend="memory://")
+        self.assertEqual(self.tb.get_status(self.tid), states.PENDING)
+        self.assertIsNone(self.tb.get_result(self.tid))
 
-        tid = uuid()
-
-        self.assertEqual(tb.get_status(tid), states.PENDING)
-        self.assertIsNone(tb.get_result(tid))
-
-        tb.mark_as_done(tid, 42)
-        self.assertEqual(tb.get_status(tid), states.SUCCESS)
-        self.assertEqual(tb.get_result(tid), 42)
+        self.tb.mark_as_done(self.tid, 42)
+        self.assertEqual(self.tb.get_status(self.tid), states.SUCCESS)
+        self.assertEqual(self.tb.get_result(self.tid), 42)
 
     def test_is_pickled(self):
-        tb = CacheBackend(backend="memory://")
-
-        tid2 = uuid()
         result = {"foo": "baz", "bar": SomeClass(12345)}
-        tb.mark_as_done(tid2, result)
+        self.tb.mark_as_done(self.tid, result)
         # is serialized properly.
-        rindb = tb.get_result(tid2)
+        rindb = self.tb.get_result(self.tid)
         self.assertEqual(rindb.get("foo"), "baz")
         self.assertEqual(rindb.get("bar").data, 12345)
 
     def test_mark_as_failure(self):
-        tb = CacheBackend(backend="memory://")
-
-        tid3 = uuid()
         try:
             raise KeyError("foo")
         except KeyError, exception:
-            pass
-            tb.mark_as_failure(tid3, exception)
-            self.assertEqual(tb.get_status(tid3), states.FAILURE)
-            self.assertIsInstance(tb.get_result(tid3), KeyError)
+            self.tb.mark_as_failure(self.tid, exception)
+            self.assertEqual(self.tb.get_status(self.tid), states.FAILURE)
+            self.assertIsInstance(self.tb.get_result(self.tid), KeyError)
 
     def test_mget(self):
-        tb = CacheBackend(backend="memory://")
-        tb.set("foo", 1)
-        tb.set("bar", 2)
+        self.tb.set("foo", 1)
+        self.tb.set("bar", 2)
 
-        self.assertDictEqual(tb.mget(["foo", "bar"]),
+        self.assertDictEqual(self.tb.mget(["foo", "bar"]),
                              {"foo": 1, "bar": 2})
 
     def test_forget(self):
-        tb = CacheBackend(backend="memory://")
-        tid = uuid()
-        tb.mark_as_done(tid, {"foo": "bar"})
-        x = AsyncResult(tid, backend=tb)
+        self.tb.mark_as_done(self.tid, {"foo": "bar"})
+        x = AsyncResult(self.tid, backend=self.tb)
         x.forget()
         self.assertIsNone(x.result)
 
     def test_process_cleanup(self):
-        tb = CacheBackend(backend="memory://")
-        tb.process_cleanup()
+        self.tb.process_cleanup()
 
     def test_expires_as_int(self):
         tb = CacheBackend(backend="memory://", expires=10)
