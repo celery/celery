@@ -74,19 +74,21 @@ class RedisBackend(KeyValueStoreBackend):
 
     def on_chord_apply(self, setid, body, result=None, **kwargs):
         self.app.TaskSetResult(setid, result).save()
-        pass
 
-    def on_chord_part_return(self, task, propagate=False,
-            keyprefix="chord-unlock-%s"):
+    def on_chord_part_return(self, task, propagate=False):
         from ..task.sets import subtask
         from ..result import TaskSetResult
         setid = task.request.taskset
-        key = keyprefix % setid
+        if not setid:
+            return
+        key = self.get_key_for_chord(setid)
         deps = TaskSetResult.restore(setid, backend=task.backend)
         if self.client.incr(key) >= deps.total:
             subtask(task.request.chord).delay(deps.join(propagate=propagate))
             deps.delete()
-        self.client.expire(key, 86400)
+            self.client.delete(key)
+        else:
+            self.client.expire(key, 86400)
 
     @cached_property
     def client(self):

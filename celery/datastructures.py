@@ -374,6 +374,14 @@ class LRUCache(UserDict):
                 pass
     itervalues = _iterate_values
 
+    def incr(self, key, delta=1):
+        with self.mutex:
+            # this acts as memcached does- store as a string, but return a
+            # integer as long as it exists and we can cast it
+            newval = int(self.data.pop(key)) + delta
+            self[key] = str(newval)
+            return newval
+
 
 class TokenBucket(object):
     """Token Bucket Algorithm.

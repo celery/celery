@@ -4,7 +4,6 @@ from __future__ import absolute_import
 from ..datastructures import LRUCache
 from ..exceptions import ImproperlyConfigured
 from ..utils import cached_property
-from ..utils.encoding import ensure_bytes
 
 from .base import KeyValueStoreBackend
 
@@ -24,7 +23,7 @@ def import_best_memcache():
                 raise ImproperlyConfigured(
                         "Memcached backend requires either the 'pylibmc' "
                         "or 'memcache' library")
-        _imp[0] = is_pylibmc, memcache
+        _imp[0] = (is_pylibmc, memcache)
     return _imp[0]
 
 
@@ -54,6 +53,9 @@ class DummyClient(object):
 
     def delete(self, key, *args, **kwargs):
         self.cache.pop(key, None)
+
+    def incr(self, key, delta=1):
+        return self.cache.incr(key, delta)
 
 
 backends = {"memcache": lambda: get_best_memcache,
@@ -85,12 +87,6 @@ class CacheBackend(KeyValueStoreBackend):
                     "following backends: %s" % (self.backend,
                                                 ", ".join(backends.keys())))
 
-    def get_key_for_task(self, task_id):
-        return ensure_bytes(self.task_keyprefix) + ensure_bytes(task_id)
-
-    def get_key_for_taskset(self, taskset_id):
-        return ensure_bytes(self.taskset_keyprefix) + ensure_bytes(taskset_id)
-
     def get(self, key):
         return self.client.get(key)
 
@@ -102,6 +98,23 @@ class CacheBackend(KeyValueStoreBackend):
 
     def delete(self, key):
         return self.client.delete(key)
+
+    def on_chord_apply(self, setid, body, result=None, **kwargs):
+        key = self.get_key_for_chord(setid)
+        self.client.set(key, '0', time=86400)
+
+    def on_chord_part_return(self, task, propagate=False):
+        from ..task.sets import subtask
+        from ..result import TaskSetResult
+        setid = task.request.taskset
+        if not setid:
+            return
+        key = self.get_key_for_chord(setid)
+        deps = TaskSetResult.restore(setid, backend=task.backend)
+        if self.client.incr(key) >= deps.total:
+            subtask(task.request.chord).delay(deps.join(propagate=propagate))
+            deps.delete()
+            self.client.delete(key)
 
     @cached_property
     def client(self):
