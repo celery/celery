@@ -80,7 +80,7 @@ try:
 except ImportError:  # pragma: no cover
     freeze_support = lambda: True  # noqa
 
-from .base import Command, Option
+from celery.bin.base import Command, Option
 
 
 class WorkerCommand(Command):
@@ -92,7 +92,7 @@ class WorkerCommand(Command):
         kwargs.pop("app", None)
         # Pools like eventlet/gevent needs to patch libs as early
         # as possible.
-        from .. import concurrency
+        from celery import concurrency
         kwargs["pool"] = concurrency.get_implementation(
                     kwargs.get("pool") or self.app.conf.CELERYD_POOL)
         return self.app.Worker(**kwargs).run()

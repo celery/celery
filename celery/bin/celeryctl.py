@@ -10,11 +10,11 @@ from textwrap import wrap
 
 from anyjson import deserialize
 
-from .. import __version__
-from ..app import app_or_default, current_app
-from ..utils import term
+from celery import __version__
+from celery.app import app_or_default, current_app
+from celeryutils import term
 
-from .base import Command as CeleryCommand
+from celery.bin.base import Command as CeleryCommand
 
 
 commands = {}
@@ -204,7 +204,7 @@ class result(Command):
     )
 
     def run(self, task_id, *args, **kwargs):
-        from .. import registry
+        from celery import registry
         result_cls = self.app.AsyncResult
         task = kwargs.get("task")
 

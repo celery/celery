@@ -7,10 +7,10 @@ import sys
 
 from functools import partial
 
-from .. import platforms
-from ..platforms import detached
+from celery import platforms
+from celery.platforms import detached
 
-from .base import Command, Option, daemon_options
+from celery.bin.base import Command, Option, daemon_options
 
 
 class EvCommand(Command):
@@ -41,19 +41,19 @@ class EvCommand(Command):
             os.chdir(workdir)
 
     def run_evdump(self):
-        from ..events.dumper import evdump
+        from celery.events.dumper import evdump
         self.set_process_status("dump")
         return evdump(app=self.app)
 
     def run_evtop(self):
-        from ..events.cursesmon import evtop
+        from celery.events.cursesmon import evtop
         self.set_process_status("top")
         return evtop(app=self.app)
 
     def run_evcam(self, camera, logfile=None, pidfile=None, uid=None,
             gid=None, umask=None, working_directory=None,
             detach=False, **kwargs):
-        from ..events.snapshot import evcam
+        from celery.events.snapshot import evcam
         workdir = working_directory
         self.set_process_status("cam")
         kwargs["app"] = self.app
