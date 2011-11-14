@@ -15,10 +15,10 @@ from itertools import count
 
 from amqplib import client_0_8 as amqp
 
-from ..app import app_or_default
-from ..utils import padlist
+from celery.app import app_or_default
+from celery.utils import padlist
 
-from .base import Command
+from celery.bin.base import Command
 
 # Valid string -> bool coercions.
 BOOLS = {"1": True, "0": False,

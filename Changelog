@@ -5,6 +5,15 @@
 .. contents::
     :local:
 
+.. _version-2.4.2:
+
+2.4.2
+=====
+:release-date: 2011-11-14 12:00 P.M GMT
+
+* Program module no longer uses relative imports so that it is
+  possible to do ``python -m celery.bin.name``.
+
 .. _version-2.4.1:
 
 2.4.1

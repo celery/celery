@@ -7,10 +7,10 @@ import sys
 
 from optparse import OptionParser, BadOptionError
 
-from .. import __version__
-from ..platforms import detached
+from celery import __version__
+from celery.platforms import detached
 
-from .base import daemon_options
+from celery.bin.base import daemon_options
 
 OPTION_LIST = daemon_options(default_pidfile="celeryd.pid")
 
