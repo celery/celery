@@ -584,7 +584,7 @@ STARTED
 ~~~~~~~
 
 Task has been started.
-Not reported by default, to enable please see :attr`Task.track_started`.
+Not reported by default, to enable please see :attr:`Task.track_started`.
 
 :metadata: `pid` and `hostname` of the worker process executing
            the task.
