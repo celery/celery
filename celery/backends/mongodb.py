@@ -94,6 +94,7 @@ class MongoBackend(BaseDictBackend):
             # MongoDB connection will not get closed when using eventlet pool,
             # make sure to close it
             self._connection.disconnect()
+            self._connection = None
 
     def _store_result(self, task_id, result, status, traceback=None):
         """Store return value and status of an executed task."""
