@@ -91,8 +91,9 @@ class MongoBackend(BaseDictBackend):
 
     def process_cleanup(self):
         if self._connection is not None:
-            # MongoDB connection will be closed automatically when object
-            # goes out of scope
+            # MongoDB connection will not get closed when using eventlet pool,
+            # make sure to close it
+            self._connection.disconnect()
             self._connection = None
 
     def _store_result(self, task_id, result, status, traceback=None):
