@@ -12,7 +12,7 @@ from anyjson import deserialize
 
 from celery import __version__
 from celery.app import app_or_default, current_app
-from celeryutils import term
+from celery.utils import term
 
 from celery.bin.base import Command as CeleryCommand
 
