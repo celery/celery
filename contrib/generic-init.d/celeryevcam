@@ -110,14 +110,12 @@ CELERYEV_LOG_LEVEL=${CELERYEV_LOG_LEVEL:-${CELERYEV_LOG_LEVEL:-$DEFAULT_LOG_LEVE
 
 export CELERY_LOADER
 
-CELERYEV_OPTS="$CELERYEV_OPTS -f $CELERYEV_LOG_FILE -l $CELERYEV_LOG_LEVEL"
-
 if [ -z "$CELERYEV_CAM" ]; then
     echo "Missing CELERYEV_CAM variable" 1>&2
     exit
 fi
 
-CELERYEV_OPTS="$CELERYEV_OPTS -c $CELERYEV_CAM"
+CELERYEV_OPTS="$CELERYEV_OPTS -f $CELERYEV_LOG_FILE -l $CELERYEV_LOG_LEVEL -c $CELERYEV_CAM"
 
 if [ -n "$2" ]; then
     CELERYEV_OPTS="$CELERYEV_OPTS $2"
@@ -142,10 +140,9 @@ if [ -n "$CELERYEV_GROUP" ]; then
     chown "$CELERYEV_GROUP" $CELERYBEAT_LOG_DIR $CELERYEV_PID_DIR
 fi
 
+CELERYEV_CHDIR=${CELERYEV_CHDIR:-$CELERYD_CHDIR}
 if [ -n "$CELERYEV_CHDIR" ]; then
     DAEMON_OPTS="$DAEMON_OPTS --workdir $CELERYEV_CHDIR"
-elif [ -n "$CELERYD_CHDIR" ]; then
-    DAEMON_OPTS="$DAEMON_OPTS --workdir $CELERYD_CHDIR"
 fi
 
 
@@ -164,7 +161,7 @@ wait_pid () {
     i=0
     while [ $forever -gt 0 ]; do
         kill -0 $pid 1>/dev/null 2>&1
-        if [ ! $? ]; then
+        if [ $? -eq 1 ]; then
             echo "OK"
             forever=0
         else
@@ -180,7 +177,6 @@ wait_pid () {
         fi
     done
 }
-
 
 
 stop_evcam () {
