@@ -74,16 +74,14 @@ if [ -n "$CELERYBEAT_CHDIR" ]; then
 fi
 
 
+export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
+
 check_dev_null() {
     if [ ! -c /dev/null ]; then
         echo "/dev/null is not a character device!"
         exit 1
     fi
 }
-
-
-export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
-
 
 wait_pid () {
     pid=$1
@@ -143,6 +141,7 @@ case "$1" in
   restart)
     echo "Restarting celery periodic task scheduler"
     stop_beat
+    check_dev_null
     start_beat
     ;;
 
