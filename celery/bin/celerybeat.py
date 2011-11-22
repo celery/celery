@@ -40,14 +40,16 @@ class BeatCommand(Command):
                      + daemon_options(default_pidfile="celerybeat.pid"))
 
     def run(self, detach=False, logfile=None, pidfile=None, uid=None,
-            gid=None, umask=None, working_directory=None, **kwargs):
+            gid=None, use_real_ids=False, umask=None, working_directory=None,
+            **kwargs):
         workdir = working_directory
         kwargs.pop("app", None)
         beat = partial(self.app.Beat,
                        logfile=logfile, pidfile=pidfile, **kwargs)
 
         if detach:
-            with detached(logfile, pidfile, uid, gid, umask, workdir):
+            with detached(logfile, pidfile, uid, gid, use_real_ids, umask,
+                          workdir):
                 return beat().run()
         else:
             return beat().run()

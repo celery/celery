@@ -20,7 +20,7 @@ class EvCommand(Command):
 
     def run(self, dump=False, camera=None, frequency=1.0, maxrate=None,
             loglevel="INFO", logfile=None, prog_name="celeryev",
-            pidfile=None, uid=None, gid=None, umask=None,
+            pidfile=None, uid=None, gid=None, use_real_ids=False, umask=None,
             working_directory=None, detach=False, **kwargs):
         self.prog_name = prog_name
 
@@ -30,6 +30,7 @@ class EvCommand(Command):
             return self.run_evcam(camera, freq=frequency, maxrate=maxrate,
                                   loglevel=loglevel, logfile=logfile,
                                   pidfile=pidfile, uid=uid, gid=gid,
+                                  use_real_ids=use_real_ids,
                                   umask=umask,
                                   working_directory=working_directory,
                                   detach=detach)
@@ -51,7 +52,7 @@ class EvCommand(Command):
         return evtop(app=self.app)
 
     def run_evcam(self, camera, logfile=None, pidfile=None, uid=None,
-            gid=None, umask=None, working_directory=None,
+            gid=None, use_real_ids=False, umask=None, working_directory=None,
             detach=False, **kwargs):
         from celery.events.snapshot import evcam
         workdir = working_directory
@@ -61,7 +62,8 @@ class EvCommand(Command):
                       logfile=logfile, pidfile=pidfile, **kwargs)
 
         if detach:
-            with detached(logfile, pidfile, uid, gid, umask, workdir):
+            with detached(logfile, pidfile, uid, gid, use_real_ids, umask,
+                          workdir):
                 return cam()
         else:
             return cam()

@@ -16,8 +16,9 @@ OPTION_LIST = daemon_options(default_pidfile="celeryd.pid")
 
 
 def detach(path, argv, logfile=None, pidfile=None, uid=None,
-           gid=None, umask=0, working_directory=None):
-    with detached(logfile, pidfile, uid, gid, umask, working_directory):
+           gid=None, use_real_ids=False, umask=0, working_directory=None):
+    with detached(logfile, pidfile, uid, gid, use_real_ids, umask,
+                  working_directory):
         try:
             os.execv(path, [path] + argv)
         except Exception:
