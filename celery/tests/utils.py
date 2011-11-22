@@ -254,7 +254,7 @@ def mask_modules(*modnames):
 
 @contextmanager
 def override_stdouts():
-    """Override `sys.stdout` and `sys.stderr` with `StringIO`."""
+    """Override `sys.stdout` and `sys.stderr` with `WhateverIO`."""
     prev_out, prev_err = sys.stdout, sys.stderr
     mystdout, mystderr = WhateverIO(), WhateverIO()
     sys.stdout = sys.__stdout__ = mystdout
