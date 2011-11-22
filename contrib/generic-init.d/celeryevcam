@@ -207,12 +207,11 @@ case "$1" in
   stop)
     stop_evcam
     ;;
-
   reload|force-reload)
     echo "Use start+stop"
     ;;
   restart)
-    log_daemon_msg "Restarting celery event snapshots" "celeryev"
+    echo "Restarting celery event snapshots" "celeryev"
     stop_evcam
     check_dev_null
     start_evcam
