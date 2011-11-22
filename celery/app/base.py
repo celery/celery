@@ -233,7 +233,8 @@ class BaseApp(object):
 
     def broker_connection(self, hostname=None, userid=None,
             password=None, virtual_host=None, port=None, ssl=None,
-            insist=None, connect_timeout=None, transport=None, **kwargs):
+            insist=None, connect_timeout=None, transport=None,
+            transport_options=None, **kwargs):
         """Establish a connection to the message broker.
 
         :keyword hostname: defaults to the :setting:`BROKER_HOST` setting.
@@ -251,18 +252,20 @@ class BaseApp(object):
         :returns :class:`kombu.connection.BrokerConnection`:
 
         """
+        conf = self.conf
         return self.amqp.BrokerConnection(
-                    hostname or self.conf.BROKER_HOST,
-                    userid or self.conf.BROKER_USER,
-                    password or self.conf.BROKER_PASSWORD,
-                    virtual_host or self.conf.BROKER_VHOST,
-                    port or self.conf.BROKER_PORT,
-                    transport=transport or self.conf.BROKER_TRANSPORT,
+                    hostname or conf.BROKER_HOST,
+                    userid or conf.BROKER_USER,
+                    password or conf.BROKER_PASSWORD,
+                    virtual_host or conf.BROKER_VHOST,
+                    port or conf.BROKER_PORT,
+                    transport=transport or conf.BROKER_TRANSPORT,
                     insist=self.either("BROKER_INSIST", insist),
                     ssl=self.either("BROKER_USE_SSL", ssl),
                     connect_timeout=self.either(
                                 "BROKER_CONNECTION_TIMEOUT", connect_timeout),
-                    transport_options=self.conf.BROKER_TRANSPORT_OPTIONS)
+                    transport_options=dict(conf.BROKER_TRANSPORT_OPTIONS,
+                                           **transport_options or {}))
 
     @contextmanager
     def default_connection(self, connection=None, connect_timeout=None):
