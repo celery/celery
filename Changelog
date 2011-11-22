@@ -5,6 +5,15 @@
 .. contents::
     :local:
 
+.. _version-2.4.3:
+
+2.4.3
+=====
+
+* Fixes module import typo in `celeryctl` (Issue #538).
+
+    Fix contributed by Chris Streeter.
+
 .. _version-2.4.2:
 
 2.4.2
