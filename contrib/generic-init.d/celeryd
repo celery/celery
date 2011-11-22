@@ -48,12 +48,23 @@ if [ -n "$2" ]; then
     CELERYD_OPTS="$CELERYD_OPTS $2"
 fi
 
+CELERYD_LOG_DIR=`dirname $CELERYD_LOG_FILE`
+CELERYD_PID_DIR=`dirname $CELERYD_PID_FILE`
+if [ ! -d "$CELERYD_LOG_DIR" ]; then
+    mkdir -p $CELERYD_LOG_DIR
+fi
+if [ ! -d "$CELERYD_PID_DIR" ]; then
+    mkdir -p $CELERYD_PID_DIR
+fi
+
 # Extra start-stop-daemon options, like user/group.
 if [ -n "$CELERYD_USER" ]; then
     DAEMON_OPTS="$DAEMON_OPTS --uid=$CELERYD_USER"
+    chown "$CELERYD_USER" $CELERYD_LOG_DIR $CELERYD_PID_DIR
 fi
 if [ -n "$CELERYD_GROUP" ]; then
     DAEMON_OPTS="$DAEMON_OPTS --gid=$CELERYD_GROUP"
+    chown ":$CELERYD_GROUP" $CELERYD_LOG_DIR $CELERYD_PID_DIR
 fi
 
 if [ -n "$CELERYD_CHDIR" ]; then
