@@ -796,9 +796,12 @@ class Pool(object):
                              error_callback, soft_timeout, timeout)
 
         if waitforslot and self._putlock is not None:
-            self._putlock.acquire()
-            if self._state != RUN:
-                return
+            while True:
+                if self._putlock.acquire(False):
+                    break
+                if self._state != RUN:
+                    return
+                time.sleep(0.2)
         if timeout or soft_timeout:
             # start the timeout handler thread when required.
             self._start_timeout_handler()
