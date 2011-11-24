@@ -130,9 +130,9 @@ class Worker(object):
         self.worker_init()
         self.redirect_stdouts_to_logger()
 
-        if getattr(os, "geteuid", None) and os.geteuid() == 0:
+        if getattr(os, "getuid", None) and os.getuid() == 0:
             warnings.warn(
-                "Running celeryd with superuser privileges is not encouraged!")
+                "Running celeryd with superuser privileges is discouraged!")
 
         if self.discard:
             self.purge_messages()
