@@ -330,6 +330,14 @@ def parse_gid(gid):
         raise
 
 
+def setgroups(uid):
+    if grp and pwd:
+        user_name = pwd.getpwuid(uid)[0]
+        user_groups = [gr.gr_gid for gr in grp.getgrall()
+                                                if user_name in gr.gr_mem]
+        os.setgroups(user_groups)
+
+
 def setegid(gid):
     """Set effective group id."""
     gid = parse_gid(gid)
@@ -363,6 +371,7 @@ def set_effective_user(uid=None, gid=None):
         if not gid and pwd:
             gid = pwd.getpwuid(uid).pw_gid
         setegid(gid)
+        setgroups(uid)
         seteuid(uid)
     else:
         gid and setegid(gid)
