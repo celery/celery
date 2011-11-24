@@ -69,8 +69,20 @@ class MongoBackend(BaseDictBackend):
         """Connect to the MongoDB server."""
         if self._connection is None:
             from pymongo.connection import Connection
-            self._connection = Connection(self.mongodb_host,
-                                          self.mongodb_port)
+
+            # The first pymongo.Connection() argument (host) can be
+            # a list of ['host:port'] elements or a mongodb connection
+            # URI. If this is the case, don't use self.mongodb_port
+            # but let pymongo get the port(s) from the URI instead.
+            # This enables the use of replica sets and sharding.
+            # See pymongo.Connection() for more info.
+            args = [self.mongodb_host]
+            if (isinstance(self.mongodb_host, basestring) and
+                not self.mongodb_host.startswith('mongodb://')):
+                args.append(self.mongodb_port)
+
+            self._connection = Connection(*args)
+
         return self._connection
 
     def _get_database(self):
