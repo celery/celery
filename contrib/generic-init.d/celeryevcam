@@ -121,12 +121,23 @@ if [ -n "$2" ]; then
     CELERYEV_OPTS="$CELERYEV_OPTS $2"
 fi
 
+CELERYEV_LOG_DIR=`dirname $CELERYEV_LOG_FILE`
+CELERYEV_PID_DIR=`dirname $CELERYEV_PID_FILE`
+if [ ! -d "$CELERYEV_LOG_DIR" ]; then
+    mkdir $CELERYEV_LOG_DIR
+fi
+if [ ! -d "$CELERYEV_PID_DIR" ]; then
+    mkdir $CELERYEV_PID_DIR
+fi
+
 # Extra start-stop-daemon options, like user/group.
 if [ -n "$CELERYEV_USER" ]; then
     DAEMON_OPTS="$DAEMON_OPTS --uid $CELERYEV_USER"
+    chown "$CELERYEV_USER" $CELERYBEAT_LOG_DIR $CELERYEV_PID_DIR
 fi
 if [ -n "$CELERYEV_GROUP" ]; then
     DAEMON_OPTS="$DAEMON_OPTS --gid $CELERYEV_GROUP"
+    chown "$CELERYEV_GROUP" $CELERYBEAT_LOG_DIR $CELERYEV_PID_DIR
 fi
 
 if [ -n "$CELERYEV_CHDIR" ]; then
