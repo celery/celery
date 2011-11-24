@@ -245,15 +245,23 @@ def parse_gid(gid):
 def setegid(gid):
     """Set effective group id."""
     gid = parse_gid(gid)
-    if gid != os.getgid():
+    if gid != os.getegid():
         os.setegid(gid)
 
 
 def seteuid(uid):
     """Set effective user id."""
     uid = parse_uid(uid)
-    if uid != os.getuid():
+    if uid != os.geteuid():
         os.seteuid(uid)
+
+
+def setgid(gid):
+    os.setgid(parse_gid(gid))
+
+
+def setuid(uid):
+    os.setuid(parse_uid(uid))
 
 
 def set_effective_user(uid=None, gid=None):
@@ -274,10 +282,10 @@ def set_effective_user(uid=None, gid=None):
         # If gid isn't defined, get the primary gid of the uer.
         if not gid and pwd:
             gid = pwd.getpwuid(uid).pw_gid
-        setegid(gid)
-        seteuid(uid)
+            setgid(gid)
+        setuid(uid)
     else:
-        gid and setegid(gid)
+        gid and setgid(gid)
 
 
 def get_signal(signal_name):
