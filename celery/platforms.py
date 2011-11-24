@@ -241,8 +241,8 @@ class DaemonContext(object):
         return self
 
 
-def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
-             workdir=None, **opts):
+def detached(logfile=None, pidfile=None, uid=None, gid=None,
+             use_real_ids=False, umask=0, workdir=None, **opts):
     """Detach the current process in the background (daemonize).
 
     :keyword logfile: Optional log file.  The ability to write to this file
@@ -254,6 +254,8 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
       effective privileges to.
     :keyword gid: Optional group id or group name to change effective
       privileges to.
+    :keyword use_real_ids: Optional flag. If true, uid and gid will change the
+      real user and group id, respectively, instead of the effective ids.
     :keyword umask: Optional umask that will be effective in the child process.
     :keyword workdir: Optional new working directory.
     :keyword \*\*opts: Ignored.
@@ -283,7 +285,7 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
     workdir = os.getcwd() if workdir is None else workdir
 
     signals.reset("SIGCLD")  # Make sure SIGCLD is using the default handler.
-    set_effective_user(uid=uid, gid=gid)
+    set_user(uid=uid, gid=gid, use_real_ids=use_real_ids)
 
     # Since without stderr any errors will be silently suppressed,
     # we need to know that we have access to the logfile.
@@ -330,29 +332,38 @@ def parse_gid(gid):
         raise
 
 
-def setegid(gid):
-    """Set effective group id."""
+def setgid(gid, use_real_ids=False):
+    """Set the group id."""
     gid = parse_gid(gid)
     if gid != os.getgid():
-        os.setegid(gid)
+        if use_real_ids:
+            os.setgid(gid)
+        else:
+            os.setegid(gid)
 
 
-def seteuid(uid):
-    """Set effective user id."""
+def setuid(uid, use_real_ids=False):
+    """Set the user id."""
     uid = parse_uid(uid)
     if uid != os.getuid():
-        os.seteuid(uid)
+        if use_real_ids:
+            os.setuid(uid)
+        else:
+            os.seteuid(uid)
 
 
-def set_effective_user(uid=None, gid=None):
+def set_user(uid=None, gid=None, use_real_ids=False):
     """Change process privileges to new user/group.
 
-    If UID and GID is set the effective user/group is set.
+    If use_real_ids is False, the effective user and group will be set.
+    If it is true, the real user and group will be set.
 
-    If only UID is set, the effective user is set, and the group is
+    If UID and GID is set the user/group is set.
+
+    If only UID is set, the user is set, and the group is
     set to the users primary group.
 
-    If only GID is set, the effective group is set.
+    If only GID is set, the group is set.
 
     """
     uid = uid and parse_uid(uid)
@@ -362,10 +373,10 @@ def set_effective_user(uid=None, gid=None):
         # If GID isn't defined, get the primary GID of the user.
         if not gid and pwd:
             gid = pwd.getpwuid(uid).pw_gid
-        setegid(gid)
-        seteuid(uid)
+        setgid(gid, use_real_ids=use_real_ids)
+        setuid(uid, use_real_ids=use_real_ids)
     else:
-        gid and setegid(gid)
+        gid and setgid(gid, use_real_ids=use_real_ids)
 
 
 class Signals(object):
