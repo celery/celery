@@ -34,6 +34,7 @@ class TSR(chords.TaskSetResult):
     def join_native(self, **kwargs):
         return self.value
 
+
 class test_unlock_chord_task(AppCase):
 
     @patch("celery.task.chords._unlock_chord.retry")

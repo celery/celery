@@ -22,7 +22,7 @@ from dateutil.parser import parse as parse_iso8601
 try:
     import pytz
 except ImportError:
-    pytz = None
+    pytz = None  # noqa
 
 
 DAYNAMES = "sun", "mon", "tue", "wed", "thu", "fri", "sat"
