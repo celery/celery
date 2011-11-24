@@ -77,8 +77,8 @@ class MongoBackend(BaseDictBackend):
             # This enables the use of replica sets and sharding.
             # See pymongo.Connection() for more info.
             args = [self.mongodb_host]
-            if (isinstance(self.mongodb_host, basestring) and
-                not self.mongodb_host.startswith('mongodb://')):
+            if isinstance(self.mongodb_host, basestring) \
+                    and not self.mongodb_host.startswith("mongodb://"):
                 args.append(self.mongodb_port)
 
             self._connection = Connection(*args)
