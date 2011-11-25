@@ -141,8 +141,9 @@ class HttpDispatch(object):
 
     def make_request(self, url, method, params):
         """Makes an HTTP request and returns the response."""
-        request = urllib2.Request(url, params, headers=self.http_headers)
-        request.headers.update(self.http_headers)
+        request = urllib2.Request(url, params)
+        for key, val in self.http_headers.items():
+            request.add_header(key, val)
         response = urllib2.urlopen(request)         # user catches errors.
         return response.read()
 
@@ -159,8 +160,7 @@ class HttpDispatch(object):
 
     @property
     def http_headers(self):
-        headers = {"Content-Type": "application/json",
-                   "User-Agent": self.user_agent}
+        headers = {"User-Agent": self.user_agent}
         return headers
 
 
