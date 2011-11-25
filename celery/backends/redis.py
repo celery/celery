@@ -32,6 +32,9 @@ class RedisBackend(KeyValueStoreBackend):
     #: default Redis password (:const:`None`)
     password = None
 
+    #: Maximium number of connections in the pool.
+    max_connections = None
+
     supports_native_join = True
 
     def __init__(self, host=None, port=None, db=None, password=None,
@@ -56,8 +59,9 @@ class RedisBackend(KeyValueStoreBackend):
         self.db = db or _get("DB") or self.db
         self.password = password or _get("PASSWORD") or self.password
         self.expires = self.prepare_expires(expires, type=int)
-        self.max_connections = max_connections or _get("MAX_CONNECTIONS") \
-                               or self.max_connections
+        self.max_connections = (max_connections
+                                or _get("MAX_CONNECTIONS")
+                                or self.max_connections)
     def get(self, key):
         return self.client.get(key)
 
