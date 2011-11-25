@@ -112,6 +112,7 @@ NAMESPACES = {
         "REDIS_PORT": Option(None, type="int"),
         "REDIS_DB": Option(None, type="int"),
         "REDIS_PASSWORD": Option(None, type="string"),
+        "REDIS_MAX_CONNECTIONS": Options(None, type="int"),
         "RESULT_BACKEND": Option(None, type="string"),
         "RESULT_DB_SHORT_LIVED_SESSIONS": Option(False, type="bool"),
         "RESULT_DBURI": Option(),

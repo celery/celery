@@ -371,6 +371,14 @@ CELERY_REDIS_PASSWORD
 
 Password used to connect to the database.
 
+.. setting:: CELERY_REDIS_MAX_CONNECTIONS
+
+CELERY_REDIS_MAX_CONNECTIONS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Maximum number of connections available in the Redis connection
+pool used for sending and retrieving results.
+
 Example configuration
 ~~~~~~~~~~~~~~~~~~~~~
 
