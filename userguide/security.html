@@ -89,8 +89,8 @@
 </div>
 <div class="section" id="introduction">
 <h2><a class="toc-backref" href="#id2">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
-<p>While Celery is written with security in mind, it should, like everything
-else, be treated as an unsafe component.</p>
+<p>While Celery is written with security in mind, it should be treated as an
+unsafe component.</p>
 <p>Depending on your <a class="reference external" href="http://en.wikipedia.org/wiki/Security_policy">Security Policy</a>, there are
 various steps you can take to make your Celery installation more secure.</p>
 </div>
@@ -98,39 +98,37 @@ various steps you can take to make your Celery installation more secure.</p>
 <h2><a class="toc-backref" href="#id3">Areas of Concern</a><a class="headerlink" href="#areas-of-concern" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="broker">
 <h3><a class="toc-backref" href="#id4">Broker</a><a class="headerlink" href="#broker" title="Permalink to this headline">¶</a></h3>
-<p>It is imperative that the broker is guarded from unwanted access.
-The worker must not automatically trust the messages it receives
-from the broker, especially if the broker is publicly accessible.</p>
-<p>If possible, the first step should be to use a firewall to deny access
-to the broker, so that only white-listed machines have access to the port
-the broker is listening on.</p>
-<p>While firewalls are usually effective, they don&#8217;t help
-if someone temporarily disables them,  leaving a statistically enough short
-window of attack to be fairly safe, but then that same someone forgets
-to re-enable it and it&#8217;s not detected until months later.
-This along with firewall misconfiguration
-happens frequently in the real world, and with all the other possible
-ways to get behind private networks, this is why you should never
-trust that something behind a firewall is protected, and does not need
-further security measures.</p>
+<p>It is imperative that the broker is guarded from unwanted access, especially
+if it is publically accesible.
+By default, workers trust that the data they get from the broker has not
+been tampered with. See <a class="reference internal" href="#message-signing">Message Signing</a> for information on how to make
+the broker connection more trusthworthy.</p>
+<p>The first line of defence should be to put a firewall in front of the broker,
+allowing only white-listed machines to access it.</p>
+<p>Keep in mind that both firewall misconfiguration, and temproraily disabling
+the firewall, is common in the real world. Solid security policy includes
+monitoring of firewall equipment to detect if they have been disabled, be it
+accidentally or on purpose.</p>
+<p>In other words, one should not blindly trust the firewall either.</p>
 <p>If your broker supports fine-grained access control, like RabbitMQ,
-this is something you should look at enabling.  See for example
+this is something you should look at enabling. See for example
 <a class="reference external" href="http://www.rabbitmq.com/access-control.html">http://www.rabbitmq.com/access-control.html</a>.</p>
 </div>
 <div class="section" id="client">
 <h3><a class="toc-backref" href="#id5">Client</a><a class="headerlink" href="#client" title="Permalink to this headline">¶</a></h3>
-<p>In Celery, &#8220;client&#8221; refers to anything that sends
-messages to the broker, e.g. web-servers that apply tasks.</p>
-<p>Having your broker properly secured doesn&#8217;t matter if arbitrary messages
+<p>In Celery, &#8220;client&#8221; refers to anything that sends messages to the
+broker, e.g. web-servers that apply tasks.</p>
+<p>Having the broker properly secured doesn&#8217;t matter if arbitrary messages
 can be sent through a client.</p>
 <p><em>[Need more text here]</em></p>
 </div>
 <div class="section" id="worker">
 <h3><a class="toc-backref" href="#id6">Worker</a><a class="headerlink" href="#worker" title="Permalink to this headline">¶</a></h3>
-<p>By default any task executed in the worker has the same access to the workers
-memory space, file-system and devices as the privileges of the
-current user.  That is except when using the multiprocessing pool, where
-dedicated worker processes for tasks means it will have access to
+<p>The default permissions of tasks running inside a worker are the same ones as
+the privileges of the worker itself. This applies to resources such as
+memory, file-systems and devices.</p>
+<p>An exception to this rule is when using the multiprocessing based task pool,
+which is currently the default. In this case, the task will have access to
 any memory copied as a result of the <tt class="xref py py-func docutils literal"><span class="pre">fork()</span></tt> call (does not apply
 under MS Windows), and access to memory contents written
 by parent tasks in the same worker child process.</p>
@@ -139,10 +137,10 @@ in a subprocess (<tt class="xref py py-func docutils literal"><span class="pre">
 <p>Limiting file-system and device access can be accomplished by using
 <a class="reference external" href="http://en.wikipedia.org/wiki/Chroot">chroot</a>, <a class="reference external" href="http://en.wikipedia.org/wiki/FreeBSD_jail">jail</a>, <a class="reference external" href="http://en.wikipedia.org/wiki/Sandbox_(computer_security)">sandboxing</a>, virtual machines or other
 mechanisms as enabled by the platform or additional software.</p>
-<p>Also remember that any task executed in the worker will have the
-same network access as the machine it is running on, so if the worker is
-located on an internal network adding firewall rules to the workers
-outbound traffic is a good idea.</p>
+<p>Note also that any task executed in the worker will have the
+same network access as the machine on which it&#8217;s running. If the worker
+is located on an internal network it&#8217;s recommended to add firewall rules for
+outbound traffic.</p>
 </div>
 </div>
 <div class="section" id="serializers">
@@ -159,15 +157,15 @@ outbound traffic is a good idea.</p>
 intruders is being able to detect if the system has been compromised.</p>
 <div class="section" id="logs">
 <h3><a class="toc-backref" href="#id10">Logs</a><a class="headerlink" href="#logs" title="Permalink to this headline">¶</a></h3>
-<p>Logs are often the first place we go to to find evidence
-of security breaches, but the logs are useless if they can be tampered with.</p>
-<p>The best solution is to set up centralized logging with a dedicated logging
-server with restricted access that all your servers can log to.
+<p>Logs are usually the first place to look for evidence
+of security breaches, but they are useless if they can be tampered with.</p>
+<p>A good solution is to set up centralized logging with a dedicated logging
+server. Acess to it should be restricted.
 In addition to having all of the logs in a single place, if configured
-correctly it can make it harder for intruders to tamper with your logs.</p>
+correctly, it can make it harder for intruders to tamper with your logs.</p>
 <p>This should be fairly easy to setup using syslog (see also <a class="reference external" href="http://en.wikipedia.org/wiki/Syslog-ng">syslog-ng</a> and
 <a class="reference external" href="http://www.rsyslog.com/">rsyslog</a>.).  Celery uses the <a class="reference external" href="http://docs.python.org/dev/library/logging.html#logging" title="(in Python v3.3)"><tt class="xref py py-mod docutils literal"><span class="pre">logging</span></tt></a> library, and already has
-built-in support for using syslog.</p>
+support for using syslog.</p>
 <p>A tip for the paranoid is to send logs using UDP and cut the
 transmit part of the logging servers network cable :-)</p>
 </div>
@@ -176,11 +174,11 @@ transmit part of the logging servers network cable :-)</p>
 <p><a class="reference external" href="http://tripwire.com/">Tripwire</a> is a (now commercial) data integrity tool, with several
 open source implementations, used to keep
 cryptographic hashes of files in the file-system, so that administrators
-can be alerted when they change.  This way when the damage is done and your
-system has been compromised you can tell exactly what files the intruders
-changed  (password files, logs, backdoors, rootkits and so on).
+can be alerted when they change. This way when the damage is done and your
+system has been compromised you can tell exactly what files intruders
+have changed  (password files, logs, backdoors, rootkits and so on).
 Often this is the only way you will be able to detect an intrusion.</p>
-<p>Some of the open source implementations include:</p>
+<p>Some open source implementations include:</p>
 <ul class="simple">
 <li><a class="reference external" href="http://www.ossec.net/">OSSEC</a></li>
 <li><a class="reference external" href="http://la-samhna.de/samhain/index.html">Samhain</a></li>
