@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.backends.base &mdash; Celery 2.4.0 documentation</title>
+    <title>celery.backends.base &mdash; Celery 2.5.0a1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.4.0',
+        VERSION:     '2.5.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.4.0 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.5.0a1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.backends.database" href="celery.backends.database.html" />
     <link rel="prev" title="celery.backends" href="celery.backends.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.backends.html" title="celery.backends"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -59,11 +59,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.4. For development docs,
-        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.backends.base.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.backends.base.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-backends-base">
@@ -182,12 +184,12 @@ exception (if any).</p>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.on_chord_apply">
-<tt class="descclassname">BaseBackend.</tt><tt class="descname">on_chord_apply</tt><big>(</big><em>setid</em>, <em>body</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.on_chord_apply" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseBackend.</tt><tt class="descname">on_chord_apply</tt><big>(</big><em>setid</em>, <em>body</em>, <em>result=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.on_chord_apply" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.on_chord_part_return">
-<tt class="descclassname">BaseBackend.</tt><tt class="descname">on_chord_part_return</tt><big>(</big><em>task</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.on_chord_part_return" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseBackend.</tt><tt class="descname">on_chord_part_return</tt><big>(</big><em>task</em>, <em>propagate=False</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.on_chord_part_return" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -249,6 +251,12 @@ exception (if any).</p>
 <dd><p>Time to sleep between polling each individual item
 in <cite>ResultSet.iterate</cite>. as opposed to the <cite>interval</cite>
 argument which is for each pass.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.backends.base.BaseBackend.supports_native_join">
+<tt class="descclassname">BaseBackend.</tt><tt class="descname">supports_native_join</tt><em class="property"> = False</em><a class="headerlink" href="#celery.backends.base.BaseBackend.supports_native_join" title="Permalink to this definition">¶</a></dt>
+<dd><p>If true the backend must implement <tt class="xref py py-meth docutils literal"><span class="pre">get_many()</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -368,7 +376,12 @@ takes longer than <cite>timeout</cite> seconds.</p>
 <dl class="class">
 <dt id="celery.backends.base.KeyValueStoreBackend">
 <em class="property">class </em><tt class="descclassname">celery.backends.base.</tt><tt class="descname">KeyValueStoreBackend</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.base.KeyValueStoreBackend" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<dd><dl class="attribute">
+<dt id="celery.backends.base.KeyValueStoreBackend.chord_keyprefix">
+<tt class="descname">chord_keyprefix</tt><em class="property"> = 'chord-unlock-'</em><a class="headerlink" href="#celery.backends.base.KeyValueStoreBackend.chord_keyprefix" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.backends.base.KeyValueStoreBackend.delete">
 <tt class="descname">delete</tt><big>(</big><em>key</em><big>)</big><a class="headerlink" href="#celery.backends.base.KeyValueStoreBackend.delete" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -379,6 +392,12 @@ takes longer than <cite>timeout</cite> seconds.</p>
 <dd></dd></dl>
 
 <dl class="method">
+<dt id="celery.backends.base.KeyValueStoreBackend.get_key_for_chord">
+<tt class="descname">get_key_for_chord</tt><big>(</big><em>taskset_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.KeyValueStoreBackend.get_key_for_chord" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the cache key for the chord waiting on taskset with given id.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="celery.backends.base.KeyValueStoreBackend.get_key_for_task">
 <tt class="descname">get_key_for_task</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.KeyValueStoreBackend.get_key_for_task" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the cache key for a task by id.</p>
@@ -387,7 +406,7 @@ takes longer than <cite>timeout</cite> seconds.</p>
 <dl class="method">
 <dt id="celery.backends.base.KeyValueStoreBackend.get_key_for_taskset">
 <tt class="descname">get_key_for_taskset</tt><big>(</big><em>taskset_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.KeyValueStoreBackend.get_key_for_taskset" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the cache key for a task by id.</p>
+<dd><p>Get the cache key for a taskset by id.</p>
 </dd></dl>
 
 <dl class="method">
@@ -476,7 +495,7 @@ takes longer than <cite>timeout</cite> seconds.</p>
         <li class="right" >
           <a href="celery.backends.html" title="celery.backends"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Configuration and defaults &mdash; Celery 2.4.0 documentation</title>
+    <title>Configuration and defaults &mdash; Celery 2.5.0a1 documentation</title>
     
     <link rel="stylesheet" href="_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '2.4.0',
+        VERSION:     '2.5.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.4.0 documentation" href="index.html" />
+    <link rel="top" title="Celery 2.5.0a1 documentation" href="index.html" />
     <link rel="next" title="Cookbook" href="cookbook/index.html" />
     <link rel="prev" title="Signals" href="userguide/signals.html" /> 
   </head>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="userguide/signals.html" title="Signals"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery 2.4.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery 2.5.0a1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -56,11 +56,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.4. For development docs,
-        <a href="http://ask.github.com/celery/en/master/configuration.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/configuration.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="configuration-and-defaults">
@@ -370,6 +372,11 @@ setting:</p>
 <div class="section" id="celery-redis-password">
 <span id="std:setting-CELERY_REDIS_PASSWORD"></span><h4>CELERY_REDIS_PASSWORD<a class="headerlink" href="#celery-redis-password" title="Permalink to this headline">¶</a></h4>
 <p>Password used to connect to the database.</p>
+</div>
+<div class="section" id="celery-redis-max-connections">
+<span id="std:setting-CELERY_REDIS_MAX_CONNECTIONS"></span><h4>CELERY_REDIS_MAX_CONNECTIONS<a class="headerlink" href="#celery-redis-max-connections" title="Permalink to this headline">¶</a></h4>
+<p>Maximum number of connections available in the Redis connection
+pool used for sending and retrieving results.</p>
 </div>
 <div class="section" id="id3">
 <h4>Example configuration<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
@@ -1189,7 +1196,7 @@ Please use the <em class="xref std std-option">--loglevel</em> argument instead.
         <li class="right" >
           <a href="userguide/signals.html" title="Signals"
              >previous</a> |</li>
-        <li><a href="index.html">Celery 2.4.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery 2.5.0a1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

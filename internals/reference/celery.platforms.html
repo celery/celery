@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.platforms &mdash; Celery 2.4.0 documentation</title>
+    <title>celery.platforms &mdash; Celery 2.5.0a1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.4.0',
+        VERSION:     '2.5.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.4.0 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.5.0a1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="prev" title="celery.utils.dispatch.saferef" href="celery.utils.dispatch.saferef.html" /> 
   </head>
@@ -41,7 +41,7 @@
         <li class="right" >
           <a href="celery.utils.dispatch.saferef.html" title="celery.utils.dispatch.saferef"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -55,11 +55,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.4. For development docs,
-        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.platforms.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.platforms.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-platforms">
@@ -89,7 +91,7 @@ users, groups, and so on.</p>
 </table>
 <dl class="class">
 <dt id="celery.platforms.DaemonContext">
-<em class="property">class </em><tt class="descclassname">celery.platforms.</tt><tt class="descname">DaemonContext</tt><big>(</big><em>pidfile=None</em>, <em>workdir='/'</em>, <em>umask=0</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.platforms.DaemonContext" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.platforms.</tt><tt class="descname">DaemonContext</tt><big>(</big><em>pidfile=None</em>, <em>workdir=None</em>, <em>umask=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.platforms.DaemonContext" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="celery.platforms.DaemonContext.close">
 <tt class="descname">close</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#celery.platforms.DaemonContext.close" title="Permalink to this definition">¶</a></dt>
@@ -98,6 +100,16 @@ users, groups, and so on.</p>
 <dl class="method">
 <dt id="celery.platforms.DaemonContext.open">
 <tt class="descname">open</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.platforms.DaemonContext.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.platforms.DaemonContext.umask">
+<tt class="descname">umask</tt><em class="property"> = 0</em><a class="headerlink" href="#celery.platforms.DaemonContext.umask" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.platforms.DaemonContext.workdir">
+<tt class="descname">workdir</tt><em class="property"> = '/'</em><a class="headerlink" href="#celery.platforms.DaemonContext.workdir" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -330,6 +342,21 @@ descriptor limit.</td>
 </dd></dl>
 
 <dl class="function">
+<dt id="celery.platforms.initgroups">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">initgroups</tt><big>(</big><em>uid</em>, <em>gid</em><big>)</big><a class="headerlink" href="#celery.platforms.initgroups" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.platforms.maybe_drop_privileges">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">maybe_drop_privileges</tt><big>(</big><em>uid=None</em>, <em>gid=None</em><big>)</big><a class="headerlink" href="#celery.platforms.maybe_drop_privileges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change process privileges to new user/group.</p>
+<p>If UID and GID is specified, the real user/group is changed.</p>
+<p>If only UID is specified, the real user is changed, and the group is
+changed to the users primary group.</p>
+<p>If only GID is specified, only the group is changed.</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="celery.platforms.parse_gid">
 <tt class="descclassname">celery.platforms.</tt><tt class="descname">parse_gid</tt><big>(</big><em>gid</em><big>)</big><a class="headerlink" href="#celery.platforms.parse_gid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parse group id.</p>
@@ -349,16 +376,6 @@ the uid is taken from the password file.</p>
 <dt id="celery.platforms.pyimplementation">
 <tt class="descclassname">celery.platforms.</tt><tt class="descname">pyimplementation</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.platforms.pyimplementation" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
-
-<dl class="function">
-<dt id="celery.platforms.set_effective_user">
-<tt class="descclassname">celery.platforms.</tt><tt class="descname">set_effective_user</tt><big>(</big><em>uid=None</em>, <em>gid=None</em><big>)</big><a class="headerlink" href="#celery.platforms.set_effective_user" title="Permalink to this definition">¶</a></dt>
-<dd><p>Change process privileges to new user/group.</p>
-<p>If UID and GID is set the effective user/group is set.</p>
-<p>If only UID is set, the effective user is set, and the group is
-set to the users primary group.</p>
-<p>If only GID is set, the effective group is set.</p>
-</dd></dl>
 
 <dl class="function">
 <dt id="celery.platforms.set_mp_process_title">
@@ -385,6 +402,21 @@ set to the users primary group.</p>
 <tt class="descclassname">celery.platforms.</tt><tt class="descname">seteuid</tt><big>(</big><em>uid</em><big>)</big><a class="headerlink" href="#celery.platforms.seteuid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set effective user id.</p>
 </dd></dl>
+
+<dl class="function">
+<dt id="celery.platforms.setgid">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">setgid</tt><big>(</big><em>gid</em><big>)</big><a class="headerlink" href="#celery.platforms.setgid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.platforms.setgroups">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">setgroups</tt><big>(</big><em>groups</em><big>)</big><a class="headerlink" href="#celery.platforms.setgroups" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.platforms.setuid">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">setuid</tt><big>(</big><em>uid</em><big>)</big><a class="headerlink" href="#celery.platforms.setuid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="function">
 <dt id="celery.platforms.shellsplit">
@@ -444,7 +476,7 @@ set to the users primary group.</p>
         <li class="right" >
           <a href="celery.utils.dispatch.saferef.html" title="celery.utils.dispatch.saferef"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

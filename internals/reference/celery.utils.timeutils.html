@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.utils.timeutils &mdash; Celery 2.4.0 documentation</title>
+    <title>celery.utils.timeutils &mdash; Celery 2.5.0a1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.4.0',
+        VERSION:     '2.5.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.4.0 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.5.0a1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.utils.encoding" href="celery.utils.encoding.html" />
     <link rel="prev" title="celery.utils.term" href="celery.utils.term.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.utils.term.html" title="celery.utils.term"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -59,11 +59,13 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.4. For development docs,
-        <a href="http://ask.github.com/celery/en/master/internals/reference/celery.utils.timeutils.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.utils.timeutils.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="celery-utils-timeutils">
@@ -90,6 +92,13 @@
 </tr>
 </tbody>
 </table>
+<dl class="exception">
+<dt id="celery.utils.timeutils.UnknownTimezone">
+<em class="property">exception </em><tt class="descclassname">celery.utils.timeutils.</tt><tt class="descname">UnknownTimezone</tt><a class="headerlink" href="#celery.utils.timeutils.UnknownTimezone" title="Permalink to this definition">¶</a></dt>
+<dd><p>No specification exists for the timezone specified.  Consider
+installing the pytz library to get access to more timezones.</p>
+</dd></dl>
+
 <dl class="function">
 <dt id="celery.utils.timeutils.delta_resolution">
 <tt class="descclassname">celery.utils.timeutils.</tt><tt class="descname">delta_resolution</tt><big>(</big><em>dt</em>, <em>delta</em><big>)</big><a class="headerlink" href="#celery.utils.timeutils.delta_resolution" title="Permalink to this definition">¶</a></dt>
@@ -142,7 +151,7 @@ and converts them to seconds.</p>
 calculated using <a class="reference internal" href="#celery.utils.timeutils.delta_resolution" title="celery.utils.timeutils.delta_resolution"><tt class="xref py py-func docutils literal"><span class="pre">delta_resolution()</span></tt></a> (i.e. rounded to the
 resolution of <cite>ends_in</cite>).</li>
 <li><strong>now</strong> &#8211; Function returning the current time and date,
-defaults to <tt class="xref py py-func docutils literal"><span class="pre">datetime.now()</span></tt>.</li>
+defaults to <tt class="xref py py-func docutils literal"><span class="pre">datetime.utcnow()</span></tt>.</li>
 </ul>
 </td>
 </tr>
@@ -222,7 +231,7 @@ defaults to <tt class="xref py py-func docutils literal"><span class="pre">datet
         <li class="right" >
           <a href="celery.utils.term.html" title="celery.utils.term"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

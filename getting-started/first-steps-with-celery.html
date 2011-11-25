@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>First steps with Celery &mdash; Celery 2.4.0 documentation</title>
+    <title>First steps with Celery &mdash; Celery 2.5.0a1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.4.0',
+        VERSION:     '2.5.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.4.0 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.5.0a1 documentation" href="../index.html" />
     <link rel="up" title="Getting Started" href="index.html" />
     <link rel="next" title="Resources" href="resources.html" />
     <link rel="prev" title="Broker Installation" href="broker-installation.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="broker-installation.html" title="Broker Installation"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Getting Started</a> &raquo;</li> 
       </ul>
     </div>  
@@ -58,29 +58,64 @@
 <div class="deck">
 
     
-        <p>
-        This document describes Celery 2.4. For development docs,
-        <a href="http://ask.github.com/celery/en/master/getting-started/first-steps-with-celery.html">go here</a>.
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/getting-started/first-steps-with-celery.html">2.1</a>.
         </p>
-    
+        
 
 </div>
     <div class="section" id="first-steps-with-celery">
 <span id="tut-celery"></span><h1>First steps with Celery<a class="headerlink" href="#first-steps-with-celery" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference internal" href="#creating-a-simple-task" id="id1">Creating a simple task</a></li>
-<li><a class="reference internal" href="#configuration" id="id2">Configuration</a></li>
-<li><a class="reference internal" href="#running-the-celery-worker-server" id="id3">Running the celery worker server</a></li>
-<li><a class="reference internal" href="#executing-the-task" id="id4">Executing the task</a><ul>
-<li><a class="reference internal" href="#keeping-results" id="id5">Keeping Results</a></li>
+<li><a class="reference internal" href="#choosing-your-broker" id="id1">Choosing your Broker</a></li>
+<li><a class="reference internal" href="#creating-a-simple-task" id="id2">Creating a simple task</a></li>
+<li><a class="reference internal" href="#configuration" id="id3">Configuration</a></li>
+<li><a class="reference internal" href="#running-the-celery-worker-server" id="id4">Running the celery worker server</a></li>
+<li><a class="reference internal" href="#executing-the-task" id="id5">Executing the task</a><ul>
+<li><a class="reference internal" href="#keeping-results" id="id6">Keeping Results</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#where-to-go-from-here" id="id6">Where to go from here</a></li>
+<li><a class="reference internal" href="#where-to-go-from-here" id="id7">Where to go from here</a></li>
 </ul>
 </div>
+<div class="section" id="choosing-your-broker">
+<span id="celerytut-broker"></span><h2><a class="toc-backref" href="#id1">Choosing your Broker</a><a class="headerlink" href="#choosing-your-broker" title="Permalink to this headline">¶</a></h2>
+<p>Before you can use Celery you need to choose, install and run a broker.
+The broker is the service responsible for receiving and delivering task
+messages.</p>
+<p>There are several choices available, including:</p>
+<ul class="simple">
+<li><a class="reference external" href="http://www.rabbitmq.com/">RabbitMQ</a></li>
+</ul>
+<p>Feature-complete, safe and durable. If not losing tasks
+is important to you, then this is your best option.</p>
+<p>See <a class="reference internal" href="broker-installation.html#broker-installation"><em>Broker Installation</em></a> for more about installing and configuring
+RabbitMQ.</p>
+<ul class="simple">
+<li><a class="reference external" href="http://redis.io/">Redis</a></li>
+</ul>
+<p>Also feature-complete, but power failures or abrubt termination
+may result in data loss.</p>
+<p>See <a class="reference internal" href="../tutorials/otherqueues.html#otherqueues-redis"><em>Redis</em></a> for configuration details.</p>
+<ul class="simple">
+<li>Databases</li>
+</ul>
+<p>Using a database as a message queue is not recommended, but can be sufficient
+for very small installations.  Celery can use the SQLAlchemy and Django ORMS.
+See <a class="reference internal" href="../tutorials/otherqueues.html#otherqueues-sqlalchemy"><em>SQLAlchemy</em></a> or <a class="reference internal" href="../tutorials/otherqueues.html#otherqueues-django"><em>Django Database</em></a>.</p>
+<ul class="simple">
+<li>and more.</li>
+</ul>
+<p>In addition to the above, there are several other transport implementations
+to choose from, including CouchDB, Beanstalk, MongoDB, and SQS.  See the Kombu
+documentation for more information.</p>
+</div>
 <div class="section" id="creating-a-simple-task">
-<span id="celerytut-simple-tasks"></span><h2><a class="toc-backref" href="#id1">Creating a simple task</a><a class="headerlink" href="#creating-a-simple-task" title="Permalink to this headline">¶</a></h2>
+<span id="celerytut-simple-tasks"></span><h2><a class="toc-backref" href="#id2">Creating a simple task</a><a class="headerlink" href="#creating-a-simple-task" title="Permalink to this headline">¶</a></h2>
 <p>In this tutorial we are creating a simple task that adds two
 numbers.  Tasks are defined in normal Python modules.</p>
 <p>By convention we will call our module <tt class="file docutils literal"><span class="pre">tasks.py</span></tt>, and it looks
@@ -111,7 +146,7 @@ and use the decorator to define tasks.</p>
 </div>
 </div>
 <div class="section" id="configuration">
-<span id="celerytut-conf"></span><h2><a class="toc-backref" href="#id2">Configuration</a><a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
+<span id="celerytut-conf"></span><h2><a class="toc-backref" href="#id3">Configuration</a><a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
 <p>Celery is configured by using a configuration module.  By default
 this module is called <tt class="file docutils literal"><span class="pre">celeryconfig.py</span></tt>.</p>
 <p>The configuration module must either be in the current directory
@@ -158,7 +193,7 @@ when <strong class="program">celeryd</strong> starts.</p>
 </div>
 </div>
 <div class="section" id="running-the-celery-worker-server">
-<span id="celerytut-running-celeryd"></span><h2><a class="toc-backref" href="#id3">Running the celery worker server</a><a class="headerlink" href="#running-the-celery-worker-server" title="Permalink to this headline">¶</a></h2>
+<span id="celerytut-running-celeryd"></span><h2><a class="toc-backref" href="#id4">Running the celery worker server</a><a class="headerlink" href="#running-the-celery-worker-server" title="Permalink to this headline">¶</a></h2>
 <p>To test we will run the worker server in the foreground, so we can
 see what&#8217;s going on in the terminal:</p>
 <div class="highlight-python"><pre>$ celeryd --loglevel=INFO</pre>
@@ -172,7 +207,7 @@ for more information).</p>
 </div>
 </div>
 <div class="section" id="executing-the-task">
-<span id="celerytut-executing-task"></span><h2><a class="toc-backref" href="#id4">Executing the task</a><a class="headerlink" href="#executing-the-task" title="Permalink to this headline">¶</a></h2>
+<span id="celerytut-executing-task"></span><h2><a class="toc-backref" href="#id5">Executing the task</a><a class="headerlink" href="#executing-the-task" title="Permalink to this headline">¶</a></h2>
 <p>Whenever we want to execute our task, we use the
 <tt class="xref py py-meth docutils literal"><span class="pre">delay()</span></tt> method of the task class.</p>
 <p>This is a handy shortcut to the <tt class="xref py py-meth docutils literal"><span class="pre">apply_async()</span></tt>
@@ -193,7 +228,7 @@ the <a class="reference internal" href="../reference/celery.result.html#celery.r
 the task, wait for the task to finish, get its return value
 or exception/traceback if the task failed, and more.</p>
 <div class="section" id="keeping-results">
-<h3><a class="toc-backref" href="#id5">Keeping Results</a><a class="headerlink" href="#keeping-results" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id6">Keeping Results</a><a class="headerlink" href="#keeping-results" title="Permalink to this headline">¶</a></h3>
 <p>If you want to keep track of the tasks state, Celery needs to store or send
 the states somewhere.  There are several
 built-in backends to choose from: SQLAlchemy/Django ORM, Memcached, Redis,
@@ -239,7 +274,7 @@ raised by the task.</p>
 </div>
 </div>
 <div class="section" id="where-to-go-from-here">
-<h2><a class="toc-backref" href="#id6">Where to go from here</a><a class="headerlink" href="#where-to-go-from-here" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id7">Where to go from here</a><a class="headerlink" href="#where-to-go-from-here" title="Permalink to this headline">¶</a></h2>
 <p>After this you should read the <a class="reference internal" href="../userguide/index.html#guide"><em>User Guide</em></a>. Specifically
 <a class="reference internal" href="../userguide/tasks.html#guide-tasks"><em>Tasks</em></a> and <a class="reference internal" href="../userguide/executing.html#guide-executing"><em>Executing Tasks</em></a>.</p>
 </div>
@@ -296,7 +331,7 @@ raised by the task.</p>
         <li class="right" >
           <a href="broker-installation.html" title="Broker Installation"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.4.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >Getting Started</a> &raquo;</li> 
       </ul>
     </div>

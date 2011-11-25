@@ -7,6 +7,47 @@
 .. contents::
     :local:
 
+.. _celerytut-broker:
+
+Choosing your Broker
+====================
+
+Before you can use Celery you need to choose, install and run a broker.
+The broker is the service responsible for receiving and delivering task
+messages.
+
+There are several choices available, including:
+
+* `RabbitMQ`_
+
+Feature-complete, safe and durable. If not losing tasks
+is important to you, then this is your best option.
+
+See :ref:`broker-installation` for more about installing and configuring
+RabbitMQ.
+
+* `Redis`_
+
+Also feature-complete, but power failures or abrubt termination
+may result in data loss.
+
+See :ref:`otherqueues-redis` for configuration details.
+
+* Databases
+
+Using a database as a message queue is not recommended, but can be sufficient
+for very small installations.  Celery can use the SQLAlchemy and Django ORMS.
+See :ref:`otherqueues-sqlalchemy` or :ref:`otherqueues-django`.
+
+* and more.
+
+In addition to the above, there are several other transport implementations
+to choose from, including CouchDB, Beanstalk, MongoDB, and SQS.  See the Kombu
+documentation for more information.
+
+.. _`RabbitMQ`: http://www.rabbitmq.com/
+.. _`Redis`: http://redis.io/
+
 .. _celerytut-simple-tasks:
 
 Creating a simple task
