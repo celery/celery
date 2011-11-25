@@ -5,10 +5,59 @@
 .. contents::
     :local:
 
+.. _version-2.4.4:
+
+2.4.4
+=====
+:release-date: 2011-11-25 16:00 P.M GMT
+:by: Ask Solem
+
+.. _v244-security-fixes:
+
+Security Fixes
+--------------
+
+* [Security] Daemons would set effective id's rather than
+  real id's when the :option:`--uid`/:option:`--gid` arguments to
+  :program:`celeryd-multi`, :program:`celeryd_detach`,
+  :program:`celerybeat` and :program:`celeryev` were used.
+
+  This means privileges weren't properly dropped, and that it would
+  be possible to regain supervisor privileges later.
+
+.. _v244-fixes:
+
+Fixes
+-----
+
+* Processes pool: Fixed rare deadlock at shutdown (Issue #523).
+
+    Fix contributed by Ionel Maries Christian.
+
+* Webhook tasks issued the wrong HTTP POST headers (Issue #515).
+
+    The *Content-Type* header has been changed from
+    ``application/json`` ⇒  ``application/x-www-form-urlencoded``,
+    and adds a proper *Content-Length* header.
+
+    Fix contributed by Mitar.
+
+* Daemonization cookbook: Adds a configuration example using Django and
+  virtualenv together (Issue #505).
+
+    Contributed by Juan Ignacio Catalano.
+
+* generic init scripts now automatically creates log and pid file
+  directories (Issue #545).
+
+    Contributed by Chris Streeter.
+
 .. _version-2.4.3:
 
 2.4.3
 =====
+:release-date: 2011-11-22 18:00 P.M GMT
+:by: Ask Solem
 
 * Fixes module import typo in `celeryctl` (Issue #538).
 
@@ -19,6 +68,7 @@
 2.4.2
 =====
 :release-date: 2011-11-14 12:00 P.M GMT
+:by: Ask Solem
 
 * Program module no longer uses relative imports so that it is
   possible to do ``python -m celery.bin.name``.
