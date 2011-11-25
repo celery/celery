@@ -33,13 +33,17 @@
 Security Fixes
 --------------
 
-* [Security] Daemons would set effective id's rather than
+* [Security: `CELERYSA-0001`_] Daemons would set effective id's rather than
   real id's when the :option:`--uid`/:option:`--gid` arguments to
   :program:`celeryd-multi`, :program:`celeryd_detach`,
   :program:`celerybeat` and :program:`celeryev` were used.
 
   This means privileges weren't properly dropped, and that it would
   be possible to regain supervisor privileges later.
+
+
+.. _`CELERYSA-0001`:
+    http://github.com/ask/celery/tree/master/docs/sec/CELERYSA-0001.txt
 
 .. _v244-fixes:
 
@@ -392,6 +396,40 @@ News
     Also, as you may have noticed the contributors of new features/fixes are
     now mentioned in the Changelog.
 
+.. _version-2.3.4:
+
+2.3.4
+=====
+:release-date: 2011-11-25 16:00 P.M GMT
+:by: Ask Solem
+
+.. _v234-security-fixes:
+
+Security Fixes
+--------------
+
+* [Security: `CELERYSA-0001`_] Daemons would set effective id's rather than
+  real id's when the :option:`--uid`/:option:`--gid` arguments to
+  :program:`celeryd-multi`, :program:`celeryd_detach`,
+  :program:`celerybeat` and :program:`celeryev` were used.
+
+  This means privileges weren't properly dropped, and that it would
+  be possible to regain supervisor privileges later.
+
+
+.. _`CELERYSA-0001`:
+    http://github.com/ask/celery/tree/master/docs/sec/CELERYSA-0001.txt
+
+Fixes
+-----
+
+* Backported fix for #455 from 2.4 to 2.3.
+
+* Statedb was not saved at shutdown.
+
+* Fixes worker sometimes hanging when hard time limit exceeded.
+
+
 .. _version-2.3.3:
 
 2.3.3
@@ -714,6 +752,29 @@ Fixes
 * Remote control command ``add_consumer`` now does nothing if the
   queue is already being consumed from.
 
+.. _version-2.2.8:
+
+2.2.8
+=====
+:release-date: 2011-11-25 16:00 P.M GMT
+:by: Ask Solem
+
+.. _v228-security-fixes:
+
+Security Fixes
+--------------
+
+* [Security: `CELERYSA-0001`_] Daemons would set effective id's rather than
+  real id's when the :option:`--uid`/:option:`--gid` arguments to
+  :program:`celeryd-multi`, :program:`celeryd_detach`,
+  :program:`celerybeat` and :program:`celeryev` were used.
+
+  This means privileges weren't properly dropped, and that it would
+  be possible to regain supervisor privileges later.
+
+
+.. _`CELERYSA-0001`:
+    http://github.com/ask/celery/tree/master/docs/sec/CELERYSA-0001.txt
 
 .. _version-2.2.7:
 
