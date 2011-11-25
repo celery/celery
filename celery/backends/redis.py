@@ -62,6 +62,7 @@ class RedisBackend(KeyValueStoreBackend):
         self.max_connections = (max_connections
                                 or _get("MAX_CONNECTIONS")
                                 or self.max_connections)
+
     def get(self, key):
         return self.client.get(key)
 
