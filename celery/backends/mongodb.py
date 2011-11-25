@@ -61,6 +61,7 @@ class MongoBackend(BaseDictBackend):
                     "database", self.mongodb_database)
             self.mongodb_taskmeta_collection = config.get(
                 "taskmeta_collection", self.mongodb_taskmeta_collection)
+            self.mongodb_replicaset = config.get('replicaset')
 
         self._connection = None
         self._database = None
@@ -69,8 +70,13 @@ class MongoBackend(BaseDictBackend):
         """Connect to the MongoDB server."""
         if self._connection is None:
             from pymongo.connection import Connection
-            self._connection = Connection(self.mongodb_host,
-                                          self.mongodb_port)
+            if self.mongodb_replicaset:
+                self.connection = Connection(self.mongodb_host,
+                                            self.mongodb_port,
+                                            replicaset=self.mongodb_replicaset)
+            else:
+                self._connection = Connection(self.mongodb_host,
+                                              self.mongodb_port)
         return self._connection
 
     def _get_database(self):
