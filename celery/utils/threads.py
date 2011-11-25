@@ -1,0 +1,59 @@
+import os
+import sys
+import threading
+
+_Thread = threading.Thread
+_Event = threading._Event
+
+
+class Event(_Event):
+
+    if not hasattr(_Event, "is_set"):
+        is_set = _Event.isSet
+
+
+class Thread(_Thread):
+
+    if not hasattr(_Thread, "is_alive"):
+        is_alive = _Thread.isAlive
+
+    if not hasattr(_Thread, "daemon"):
+        daemon = property(_Thread.isDaemon, _Thread.setDaemon)
+
+    if not hasattr(_Thread, "name"):
+        name = property(_Thread.getName, _Thread.setName)
+
+
+class bgThread(Thread):
+
+    def __init__(self, name=None, **kwargs):
+        super(bgThread, self).__init__()
+        self._is_shutdown = Event()
+        self._is_stopped = Event()
+        self.daemon = True
+        self.name = name or self.__class__.__name__
+
+    def next(self):
+        raise NotImplementedError("subclass responsibility")
+    __next__ = next  # 2to3.
+
+    def on_crash(self, msg, *fmt, **kwargs):
+        sys.stderr.write(msg + "\n" % fmt)
+
+    def run(self):
+        shutdown = self._is_shutdown
+        while not shutdown.is_set():
+            try:
+                self.next()
+            except Exception, exc:
+                self.on_crash("%r crashed: %r", self.name, exc, exc_info=True)
+                # exiting by normal means does not work here, so force exit.
+                os._exit(1)
+        self._is_stopped.set()
+
+    def stop(self):
+        """Graceful shutdown."""
+        self._is_shutdown.set()
+        self._is_stopped.wait()
+        if self.is_alive:
+            self.join(1e100)

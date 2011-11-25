@@ -18,17 +18,15 @@
 """
 from __future__ import absolute_import
 
-import os
-import sys
-import threading
 import traceback
 
 from Queue import Empty
 
 from ..app import app_or_default
+from ..utils.threads import bgThread
 
 
-class Mediator(threading.Thread):
+class Mediator(bgThread):
 
     #: The task queue, a :class:`~Queue.Queue` instance.
     ready_queue = None
@@ -37,17 +35,13 @@ class Mediator(threading.Thread):
     callback = None
 
     def __init__(self, ready_queue, callback, logger=None, app=None):
-        threading.Thread.__init__(self)
         self.app = app_or_default(app)
         self.logger = logger or self.app.log.get_default_logger()
         self.ready_queue = ready_queue
         self.callback = callback
-        self._is_shutdown = threading.Event()
-        self._is_stopped = threading.Event()
-        self.setDaemon(True)
-        self.setName(self.__class__.__name__)
+        super(Mediator, self).__init__()
 
-    def move(self):
+    def next(self):
         try:
             task = self.ready_queue.get(timeout=1.0)
         except Empty:
@@ -69,20 +63,4 @@ class Mediator(threading.Thread):
                               extra={"data": {"id": task.task_id,
                                               "name": task.task_name,
                                               "hostname": task.hostname}})
-
-    def run(self):
-        """Move tasks until :meth:`stop` is called."""
-        while not self._is_shutdown.isSet():
-            try:
-                self.move()
-            except Exception, exc:
-                self.logger.error("Mediator crash: %r", exc, exc_info=True)
-                # exiting by normal means does not work here, so force exit.
-                os._exit(1)
-        self._is_stopped.set()
-
-    def stop(self):
-        """Gracefully shutdown the thread."""
-        self._is_shutdown.set()
-        self._is_stopped.wait()
-        self.join(1e10)
+    move = next   # XXX compat
