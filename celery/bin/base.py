@@ -110,6 +110,8 @@ class Command(object):
             sys.stderr.write(
                 "\nUnrecognized command line arguments: %s\n" % (
                     ", ".join(args), ))
+            import traceback
+            traceback.print_stack(file=sys.stderr)
             sys.stderr.write("\nTry --help?\n")
             sys.exit(1)
         return self.run(*args, **vars(options))

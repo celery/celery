@@ -42,7 +42,7 @@ class Autoscaler(bgThread):
 
         assert self.keepalive, "can't scale down too fast."
 
-    def next(self):
+    def body(self):
         with self.mutex:
             current = min(self.qty, self.max_concurrency)
             if current > self.processes:
@@ -51,7 +51,7 @@ class Autoscaler(bgThread):
                 self.scale_down(
                     (self.processes - current) - self.min_concurrency)
         sleep(1.0)
-    scale = next  # XXX compat
+    scale = body  # XXX compat
 
     def update(self, max=None, min=None):
         with self.mutex:

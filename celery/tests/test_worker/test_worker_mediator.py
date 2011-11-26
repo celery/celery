@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+import sys
+
 from Queue import Queue
 
 from mock import Mock, patch
@@ -40,7 +42,7 @@ class test_Mediator(unittest.TestCase):
         self.assertTrue(m._is_shutdown.isSet())
         self.assertTrue(m._is_stopped.isSet())
 
-    def test_mediator_move(self):
+    def test_mediator_body(self):
         ready_queue = Queue()
         got = {}
 
@@ -50,7 +52,7 @@ class test_Mediator(unittest.TestCase):
         m = Mediator(ready_queue, mycallback)
         ready_queue.put(MockTask("George Costanza"))
 
-        m.move()
+        m.body()
 
         self.assertEqual(got["value"], "George Costanza")
 
@@ -60,7 +62,7 @@ class test_Mediator(unittest.TestCase):
 
         class _Mediator(Mediator):
 
-            def move(self):
+            def body(self):
                 try:
                     raise KeyError("foo")
                 finally:
@@ -69,11 +71,17 @@ class test_Mediator(unittest.TestCase):
         ready_queue = Queue()
         ms[0] = m = _Mediator(ready_queue, None)
         ready_queue.put(MockTask("George Constanza"))
-        m.run()
 
+        stderr = Mock()
+        p, sys.stderr = sys.stderr, stderr
+        try:
+            m.run()
+        finally:
+            sys.stderr = p
         self.assertTrue(_exit.call_count)
+        self.assertTrue(stderr.write.call_count)
 
-    def test_mediator_move_exception(self):
+    def test_mediator_body_exception(self):
         ready_queue = Queue()
 
         def mycallback(value):
@@ -82,7 +90,7 @@ class test_Mediator(unittest.TestCase):
         m = Mediator(ready_queue, mycallback)
         ready_queue.put(MockTask("Elaine M. Benes"))
 
-        m.move()
+        m.body()
 
     def test_run(self):
         ready_queue = Queue()
@@ -100,7 +108,7 @@ class test_Mediator(unittest.TestCase):
         self.assertTrue(m._is_shutdown.isSet())
         self.assertTrue(m._is_stopped.isSet())
 
-    def test_mediator_move_revoked(self):
+    def test_mediator_body_revoked(self):
         ready_queue = Queue()
         got = {}
 
@@ -113,7 +121,7 @@ class test_Mediator(unittest.TestCase):
         revoked_tasks.add(t.task_id)
         ready_queue.put(t)
 
-        m.move()
+        m.body()
 
         self.assertNotIn("value", got)
         self.assertTrue(t.on_ack.call_count)

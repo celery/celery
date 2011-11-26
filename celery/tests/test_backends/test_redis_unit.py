@@ -44,9 +44,19 @@ class Redis(object):
     def delete(self, key):
         self.keyspace.pop(key)
 
+    def publish(self, key, value):
+        pass
+
 
 class redis(object):
     Redis = Redis
+
+    class ConnectionPool(object):
+
+        def __init__(self, **kwargs):
+            pass
+
+
 
 
 class test_RedisBackend(unittest.TestCase):

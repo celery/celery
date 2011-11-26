@@ -14,7 +14,6 @@ __docformat__ = "restructuredtext"
 
 # -eof meta-
 
-import os
 import sys
 
 if sys.version_info < (2, 5):

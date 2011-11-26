@@ -18,6 +18,7 @@
 """
 from __future__ import absolute_import
 
+import sys
 import traceback
 
 from Queue import Empty
@@ -41,7 +42,7 @@ class Mediator(bgThread):
         self.callback = callback
         super(Mediator, self).__init__()
 
-    def next(self):
+    def body(self):
         try:
             task = self.ready_queue.get(timeout=1.0)
         except Empty:
@@ -63,4 +64,4 @@ class Mediator(bgThread):
                               extra={"data": {"id": task.task_id,
                                               "name": task.task_name,
                                               "hostname": task.hostname}})
-    move = next   # XXX compat
+    move = body   # XXX compat

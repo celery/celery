@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import os
 import sys
 import threading
@@ -33,18 +35,17 @@ class bgThread(Thread):
         self.daemon = True
         self.name = name or self.__class__.__name__
 
-    def next(self):
+    def body(self):
         raise NotImplementedError("subclass responsibility")
-    __next__ = next  # 2to3.
 
     def on_crash(self, msg, *fmt, **kwargs):
-        sys.stderr.write(msg + "\n" % fmt)
+        sys.stderr.write((msg + "\n") % fmt)
 
     def run(self):
         shutdown = self._is_shutdown
         while not shutdown.is_set():
             try:
-                self.next()
+                self.body()
             except Exception, exc:
                 self.on_crash("%r crashed: %r", self.name, exc, exc_info=True)
                 # exiting by normal means does not work here, so force exit.
@@ -61,5 +62,6 @@ class bgThread(Thread):
         """Graceful shutdown."""
         self._is_shutdown.set()
         self._is_stopped.wait()
-        if self.is_alive:
+        if self.is_alive():
+            print("JOINING")
             self.join(1e100)
