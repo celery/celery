@@ -141,6 +141,9 @@ NAMESPACES = {
         "REDIRECT_STDOUTS": Option(True, type="bool"),
         "REDIRECT_STDOUTS_LEVEL": Option("WARNING"),
         "QUEUES": Option(None, type="dict"),
+        "SECURITY_KEY": Option(None, type="string"),
+        "SECURITY_CERTIFICATE": Option(None, type="string"),
+        "SECURITY_CERT_STORE": Option(None, type="string"),
     },
     "CELERYD": {
         "AUTOSCALER": Option("celery.worker.autoscale.Autoscaler"),
