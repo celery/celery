@@ -49,6 +49,12 @@ class bgThread(Thread):
                 self.on_crash("%r crashed: %r", self.name, exc, exc_info=True)
                 # exiting by normal means does not work here, so force exit.
                 os._exit(1)
+        try:
+            self._is_stopped.set()
+        except TypeError:  # pragma: no cover
+            # we lost the race at interpreter shutdown,
+            # so gc collected built-in modules.
+            pass
         self._is_stopped.set()
 
     def stop(self):
