@@ -1221,8 +1221,8 @@ CELERY_SECURITY_KEY
 
 .. versionadded:: 2.5
 
-Name of the private key file used for message signing.
-Can be a relative or absolute path. See :ref:`message-signing`
+The relative or absolute path to a file containing the private key
+used to sign messages when :ref:`message-signing` is used.
 
 .. setting:: CELERY_SECURITY_CERTIFICATE
 
@@ -1231,8 +1231,8 @@ CELERY_SECURITY_CERTIFICATE
 
 .. versionadded:: 2.5
 
-Name of the X.509 certificate file used for message signing.
-Can be a relative or absolute path. See :ref:`message-signing`
+The relative or absolute path to an X.509 certificate file
+used to sign messages when :ref:`message-signing` is used.
 
 .. setting:: CELERY_SECURITY_CERT_STORE
 
@@ -1241,9 +1241,9 @@ CELERY_SECURITY_CERT_STORE
 
 .. versionadded:: 2.5
 
-Path to a directory containing X.509 certificates used for
-message signing. Can be path pattern. e.g. `/etc/certs/*.pem`.
-See :ref:`message-signing`
+The directory containing X.509 certificates used for
+:ref:`message signing`.  Can be a glob with wildcards,
+(for example :file:`/etc/certs/*.pem`).
 
 Custom Component Classes (advanced)
 -----------------------------------

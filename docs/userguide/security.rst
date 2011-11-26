@@ -90,57 +90,75 @@ outbound traffic.
 Serializers
 ===========
 
-Celery uses `pickle` as default serializer. `pickle`_ is an insecure
-serialization method and should be avoided in cases when clients are
-untrusted or unauthenticated.
+The default `pickle` serializer is convenient because it supports
+arbitrary Python objects, whereas other serializers only
+work with a restricted set of types.
 
-Celery has a special `auth` serializer which is intended for authenticating
-the communication between Celery clients and workers. The `auth` serializer
-uses public-key cryptography to check the authenticity of senders. See
-`Message Signing`_ for information on how to enable the `auth` serializer.
+But for the same reasons the `pickle` serializer is inherently insecure[*]_,
+and should be avoided whenever clients are untrusted or
+unauthenticated.
+
+.. [*] http://nadiana.com/python-pickle-insecure
+
+Celery comes with a special `auth` serializer that validates
+communication between Celery clients and workers, making sure
+that messages originates from trusted sources.
+Using `Public-key cryptography` the `auth` serializer can verify the
+authenticity of senders, to enable this read :ref:`message-signing`
+for more information.
 
 .. _`pickle`: http://docs.python.org/library/pickle.html
+.. _`Public-key cryptography`:
+    http://en.wikipedia.org/wiki/Public-key_cryptography
 
 .. _message-signing:
 
 Message Signing
 ===============
 
-Celery uses public-key cryptography to sign messages. Messages exchanged
-between clients and workers are signed with private key and
-verified with public certificate.
+Celery can use the `pyOpenSSL`_ library to sign message using
+`Public-key cryptography`, where
+messages sent by clients are signed using a private key
+and then later verified by the worker using a public certificate.
 
-Celery uses `X.509`_ certificates and `pyOpenSSL`_ library for message signing.
-Normally, the certificates should be signed by a Certificate Authority,
-but they can be self-signed or signed by an untrusted third party.
+Optimally certificates should be signed by an official
+`Certificate Authority`_, but they can also be self-signed.
 
-The message signing is implemented in the `auth` serializer.
-The `auth` serializer can be enabled with :setting:`CELERY_TASK_SERIALIZER`
-configuration option. The `auth` serializer requires
-:setting:`CELERY_SECURITY_KEY`, :setting:`CELERY_SECURITY_CERTIFICATE` and
-:setting:`CELERY_SECURITY_CERT_STORE` configuration options to be provided.
-They are used for locating private-keys and certificates.
-After providing :setting:`CELERY_SECURITY_*` options it is necessary to call
-:meth:`celery.security.setup_security` method. :meth:`celery.security.setup_security`
-disables all insecure serializers.
+To enable this you should configure the :setting:`CELERY_TASK_SERIALIZER`
+setting to use the `auth` serializer.
+Also required is configuring the
+paths used to locate private keys and certificates on the file-system:
+the :setting:`CELERY_SECURITY_KEY`,
+:setting:`CELERY_SECURITY_CERTIFICATE` and :setting:`CELERY_SECURITY_CERT_STORE`
+settings respectively.
+With these configured it is also necessary to call the
+:func:`celery.security.setup_security` function.  Note that this will also
+disable all insucure serializers so that the worker won't accept
+messages with untrusted content types.
+
+This is an example configuration using the `auth` serializer,
+with the private key and certificate files located in :`/etc/ssl`.
 
 .. code-block:: python
 
-    # sample Celery auth configuration
     CELERY_SECURITY_KEY = "/etc/ssl/private/worker.key"
     CELERY_SECURITY_CERTIFICATE = "/etc/ssl/certs/worker.pem"
-    CELERY_SECURITY_CERT_STORE = "/etc/ssl/certs/*.pem"
+    CELERY_SECURITY_CERT_STORE = "/etc/ssl/certs/\*.pem"
     from celery.security import setup_security
     setup_security()
 
 .. note::
 
-    The `auth` serializer doesn't encrypt the content of a message
+    While relative paths are not disallowed, using absolute paths
+    is recommended for these files.
 
-.. setting:: CELERY_TASK_ERROR_WHITELIST
+    Also note that the `auth` serializer won't encrypt the contents of
+    a message, so if needed this will have to be enabled separately.
 
 .. _`pyOpenSSL`: http://pypi.python.org/pypi/pyOpenSSL
 .. _`X.509`: http://en.wikipedia.org/wiki/X.509
+.. _`Certificate Authority`:
+    http://en.wikipedia.org/wiki/Certificate_authority
 
 Intrusion Detection
 ===================
