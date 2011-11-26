@@ -63,5 +63,4 @@ class bgThread(Thread):
         self._is_shutdown.set()
         self._is_stopped.wait()
         if self.is_alive():
-            print("JOINING")
             self.join(1e100)
