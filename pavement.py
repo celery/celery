@@ -126,8 +126,9 @@ def readme(options):
 
 @task
 def bump(options):
-    sh("bump -c celery")
-
+    sh("contrib/release/bump_version.py \
+            celery/__init__.py docs/includes/introduction.txt \
+            --before-commit='paver readme'")
 
 @task
 @cmdopts([
