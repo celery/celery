@@ -17,9 +17,9 @@ class PrivateKey(object):
         except crypto.Error, exc:
             raise SecurityError("Invalid private key: %r" % (exc, ))
 
-    def sign(self, data):
+    def sign(self, data, digest):
         """sign string containing data."""
         try:
-            return crypto.sign(self._key, data, "sha1")
+            return crypto.sign(self._key, data, digest)
         except crypto.Error, exc:
             raise SecurityError("Unable to sign data: %r" % (exc, ))

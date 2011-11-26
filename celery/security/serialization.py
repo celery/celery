@@ -24,12 +24,14 @@ class SecureSerializer(object):
 
     def __init__(self, key=None, cert=None, cert_store=None,
             serialize=anyjson.serialize,
-            deserialize=anyjson.deserialize):
+            deserialize=anyjson.deserialize,
+            digest='sha1'):
         self._key = key
         self._cert = cert
         self._cert_store = cert_store
         self._serialize = serialize
         self._deserialize = deserialize
+        self._digest = digest
 
     def serialize(self, data):
         """serialize data structure into string"""
@@ -37,7 +39,7 @@ class SecureSerializer(object):
         assert self._cert is not None
         try:
             data = self._serialize(data)
-            signature = b64encode(self._key.sign(data))
+            signature = b64encode(self._key.sign(data, self._digest))
             signer = self._cert.get_id()
             return self._serialize(dict(data=data,
                                         signer=signer,
@@ -53,7 +55,7 @@ class SecureSerializer(object):
             signature = b64decode(data["signature"])
             signer = data["signer"]
             data = data["data"]
-            self._cert_store[signer].verify(data, signature)
+            self._cert_store[signer].verify(data, signature, self._digest)
             return self._deserialize(data)
         except Exception, exc:
             raise SecurityError("Unable to deserialize: %r" % (exc, ))

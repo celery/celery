@@ -39,10 +39,10 @@ class Certificate(object):
         """Serial number/issuer pair uniquely identifies a certificate"""
         return "%s %s" % (self.get_issuer(), self.get_serial_number())
 
-    def verify(self, data, signature):
+    def verify(self, data, signature, digest):
         """Verifies the signature for string containing data."""
         try:
-            crypto.verify(self._cert, signature, data, 'sha1')
+            crypto.verify(self._cert, signature, data, digest)
         except crypto.Error, exc:
             raise SecurityError("Bad signature: %r" % (exc, ))
 
