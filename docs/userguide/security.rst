@@ -90,12 +90,57 @@ outbound traffic.
 Serializers
 ===========
 
-*[To be written]*
+Celery uses `pickle` as default serializer. `pickle`_ is an insecure
+serialization method and should be avoided in cases when clients are
+untrusted or unauthenticated.
+
+Celery has a special `auth` serializer which is intended for authenticating
+the communication between Celery clients and workers. The `auth` serializer
+uses public-key cryptography to check the authenticity of senders. See
+`Message Signing`_ for information on how to enable the `auth` serializer.
+
+.. _`pickle`: http://docs.python.org/library/pickle.html
+
+.. _message-signing:
 
 Message Signing
 ===============
 
-*[To be written]*
+Celery uses public-key cryptography to sign messages. Messages exchanged
+between clients and workers are signed with private key and
+verified with public certificate.
+
+Celery uses `X.509`_ certificates and `pyOpenSSL`_ library for message signing.
+Normally, the certificates should be signed by a Certificate Authority,
+but they can be self-signed or signed by an untrusted third party.
+
+The message signing is implemented in the `auth` serializer.
+The `auth` serializer can be enabled with :setting:`CELERY_TASK_SERIALIZER`
+configuration option. The `auth` serializer requires
+:setting:`CELERY_SECURITY_KEY`, :setting:`CELERY_SECURITY_CERTIFICATE` and
+:setting:`CELERY_SECURITY_CERT_STORE` configuration options to be provided.
+They are used for locating private-keys and certificates.
+After providing :setting:`CELERY_SECURITY_*` options it is necessary to call
+:meth:`celery.security.setup_security` method. :meth:`celery.security.setup_security`
+disables all insecure serializers.
+
+.. code-block:: python
+
+    # sample Celery auth configuration
+    CELERY_SECURITY_KEY = "/etc/ssl/private/worker.key"
+    CELERY_SECURITY_CERTIFICATE = "/etc/ssl/certs/worker.pem"
+    CELERY_SECURITY_CERT_STORE = "/etc/ssl/certs/*.pem"
+    from celery.security import setup_security
+    setup_security()
+
+.. note::
+
+    The `auth` serializer doesn't encrypt the content of a message
+
+.. setting:: CELERY_TASK_ERROR_WHITELIST
+
+.. _`pyOpenSSL`: http://pypi.python.org/pypi/pyOpenSSL
+.. _`X.509`: http://en.wikipedia.org/wiki/X.509
 
 Intrusion Detection
 ===================
