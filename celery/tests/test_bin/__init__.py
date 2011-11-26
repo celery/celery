@@ -4,7 +4,7 @@ from __future__ import with_statement
 import os
 
 from celery.bin.base import Command
-from celery.tests.utils import AppCase
+from celery.tests.utils import AppCase, override_stdouts
 
 
 class Object(object):
@@ -55,8 +55,11 @@ class test_Command(AppCase):
     def test_with_bogus_args(self):
         cmd = MockCommand()
         cmd.supports_args = False
-        self.assertRaises(SystemExit,
-                cmd.execute_from_commandline, argv=["--bogus"])
+        with override_stdouts() as (_, stderr):
+            with self.assertRaises(SystemExit):
+                cmd.execute_from_commandline(argv=["--bogus"])
+        self.assertTrue(stderr.getvalue())
+        self.assertIn("Unrecognized", stderr.getvalue())
 
     def test_with_custom_config_module(self):
         prev = os.environ.pop("CELERY_CONFIG_MODULE", None)
