@@ -7,3 +7,4 @@ mock>=0.7.0
 redis
 pymongo
 SQLAlchemy
+PyOpenSSL

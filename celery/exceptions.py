@@ -16,6 +16,14 @@ Task of kind %s is not registered, please make sure it's imported.\
 """
 
 
+class SecurityError(Exception):
+    """Security related exceptions.
+
+    Handle with care.
+
+    """
+
+
 class SystemTerminate(SystemExit):
     """Signals that the worker should terminate."""
 
