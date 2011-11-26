@@ -1,23 +1,30 @@
 from __future__ import absolute_import
 
-from base64 import b64encode, b64decode
-
 import anyjson
 import base64
 
 from kombu.serialization import registry
 
 from ..exceptions import SecurityError
+from ..utils.encoding import bytes_to_str, str_to_bytes
 
 from .certificate import Certificate, FSCertStore
 from .key import PrivateKey
 
 
+def b64encode(s):
+    return bytes_to_str(base64.b64encode(str_to_bytes(s)))
+
+
+def b64decode(s):
+    return base64.b64decode(str_to_bytes(s))
+
+
 class SecureSerializer(object):
 
     def __init__(self, key=None, cert=None, cert_store=None,
-                       serialize=anyjson.serialize,
-                       deserialize=anyjson.deserialize):
+            serialize=anyjson.serialize,
+            deserialize=anyjson.deserialize):
         self._key = key
         self._cert = cert
         self._cert_store = cert_store
