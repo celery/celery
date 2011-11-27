@@ -73,7 +73,7 @@ NAMESPACES = {
         "CONNECTION_TIMEOUT": Option(4, type="int"),
         "CONNECTION_RETRY": Option(True, type="bool"),
         "CONNECTION_MAX_RETRIES": Option(100, type="int"),
-        "POOL_LIMIT": Option(None, type="int"),
+        "POOL_LIMIT": Option(10, type="int"),
         "INSIST": Option(False, type="bool",
                          deprecate_by="2.4", remove_by="3.0"),
         "USE_SSL": Option(False, type="bool"),

@@ -612,13 +612,16 @@ BROKER_POOL_LIMIT
 
 The maximum number of connections that can be open in the connection pool.
 
-A good default value could be 10, or more if you're using eventlet/gevent
-or lots of threads.
+The pool is enabled by default since version 2.5, with a default limit of ten
+connections.  This number can be tweaked depending on the number of
+threads/greenthreads (eventlet/gevent) using a connection.  For example
+running eventlet with 1000 greenlets that use a connection to the broker,
+contention can arise and you should consider increasing the limit.
 
 If set to :const:`None` or 0 the connection pool will be disabled and
 connections will be established and closed for every use.
 
-**Disabled by default.**
+Default (since 2.5) is to use a pool of 10 connections.
 
 .. setting:: BROKER_CONNECTION_TIMEOUT
 

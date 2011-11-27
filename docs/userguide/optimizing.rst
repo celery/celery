@@ -57,13 +57,11 @@ General Settings
 Broker Connection Pools
 -----------------------
 
-You should enable the :setting:`BROKER_POOL_LIMIT` setting,
-as this will drastically improve overall performance.
+The broker connection pool is enabled by default since version 2.5.
 
-The value should be based on how many threads will use
-connections at the same time.
-
-This setting will be enabled by default in version 3.0.
+You can tweak the :setting:`BROKER_POOL_LIMIT` setting to minimize
+contention, and the value should be based on the number of
+active threads/greenthreads using broker connections.
 
 .. _optimizing-worker-settings:
 

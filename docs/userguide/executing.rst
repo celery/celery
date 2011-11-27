@@ -199,12 +199,13 @@ Connections and connection timeouts.
 
 .. admonition:: Automatic Pool Support
 
-    In version 2.3 there is now support for automatic connection pools,
+    Since version 2.3 there is support for automatic connection pools,
     so you don't have to manually handle connections and publishers
     to reuse connections.
 
-    See the :setting:`BROKER_POOL_LIMIT` setting.
-    This setting will be enabled by default in version 3.0.
+    The connection pool is enabled by default since version 2.5.
+
+    See the :setting:`BROKER_POOL_LIMIT` setting for more information.
 
 You can handle the connection manually by creating a
 publisher:
