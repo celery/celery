@@ -9,15 +9,15 @@ from ..exceptions import ImproperlyConfigured
 from .serialization import register_auth
 
 
-def _disable_insecure_serializers():
-    for name in ("pickle", "json", "yaml", "msgpack"):
+def _disable_insecure_serializers(whitelist=[]):
+    for name in set("pickle", "json", "yaml", "msgpack") - set(whitelist):
         try:
             unregister(name)
         except SerializerNotInstalled:
             pass
 
 
-def setup_security():
+def setup_security(allowed_serializers=[]):
     """setup secure serialization"""
     conf = current_app.conf
     if conf.CELERY_TASK_SERIALIZER != "auth":
@@ -43,4 +43,4 @@ def setup_security():
     with open(key) as kf:
         with open(cert) as cf:
             register_auth(kf.read(), cf.read(), store)
-    _disable_insecure_serializers()
+    _disable_insecure_serializers(allowed_serializers)
