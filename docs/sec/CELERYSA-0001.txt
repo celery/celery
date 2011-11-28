@@ -3,6 +3,7 @@
 =========================================
 :contact: security@celeryproject.org
 :author: Ask Solem
+:CVE id: CVE-2011-4356
 :date: 2011-11-25 04:35:00 P.M GMT
 
 Details
