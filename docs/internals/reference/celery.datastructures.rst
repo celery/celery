@@ -5,13 +5,6 @@
     .. contents::
         :local:
 
-    TokenBucket
-    -----------
-
-    .. autoclass:: TokenBucket
-        :members:
-        :undoc-members:
-
     AttributeDict
     -------------
 
