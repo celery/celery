@@ -1,4 +1,4 @@
-:Version: 2.5.0a1
+:Version: 2.5.0b1
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/ask/celery/

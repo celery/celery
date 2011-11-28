@@ -12,14 +12,182 @@
 :status: DEVELOPMENT
 :branch: master
 
-* Adds Chord support for the memcached backend (Issue #533).
+.. _v250-important:
+
+Important Notes
+===============
+
+* The broker connection pool is now enabled by default with a limit
+  of 10 connections.
+
+    If you have many threads/green-threads using connections you may want
+    to tweak the limit to avoid contention.
+
+    See :settings:`BROKER_POOL_LIMIT` for more information.
+
+* AMQP Result Backend: Exchange no longer *auto delete*.
+
+    The exchange used for results used to have the *auto_delete* flag set,
+    that could result in annoying race conditions.
+
+    .. admonition:: For RabbitMQ users
+
+        Old exchanges created with the *auto_delete* flag enabled has
+        to be removed, this is because they are no longer equivalent to the
+        exchanges created by this version.
+
+        The :program:`camqadm` command can be used to delete the
+        previous exchange::
+
+            $ camqadm exchange.delete celeryresults
+
+        As an alternative to deleting the old exchange you can
+        configure a new name for the exchange::
+
+            CELERY_RESULT_EXCHANGE = "celeryresults2"
+
+        But you have to make sure that both clients and workers
+        use this new setting, so they are updated to use the same
+        exchange name.
+
+.. _v250-news:
+
+News
+====
+
+* Timezone support.
+
+    The local timezone is still used by default, because enabling
+    time zone support means that workers running versions pre 2.5
+    will be out of sync with upgraded workers.  UTC will be the default
+    version in 3.0, since it is essentially a backward incompatible change.
+
+    To enable UTC you have to set :setting:`CELERY_ENABLE_UTC`::
+
+        CELERY_ENABLE_UTC
+
+    With that enabled dates and times in task message will now be
+    converted to UTC, and then converted back to the local timezone
+    when received by a worker.
+
+    You can also change the local timezone by the :setting:`CELERY_TIMEZONE`
+    setting. Custom timezones requires the :mod:`pytz` library to be installed.
+
+    .. note::
+
+        A new ``utc`` header extension has been added to the task message
+        format.  It is a boolean that if set means the timezone of dates
+        and times in the message are in UTC.
+
+* New Message Signing Serializer.
+
+    A new serializer has been added that signs and verifies the signature
+    of messages.
+
+    The name of the new serializer is ``auth``, and needs additional
+    configuration to work (see :ref:`conf-security`).
+
+    [ TODO need to add EXAMPLE configuration here, and also to the
+    configuration docs]
+
+* New :setting:`CELERY_ANNOTATIONS` setting enables changing of arbitrary
+    task attributes from the configuration.
+
+    The setting can be a dict, or a list of annotation
+    objects that filter for tasks and return a map of attributes
+    to change.
+
+    For example this is an annotation to change the ``rate_limit`` attribute
+    for the ``tasks.add`` task:
+
+    .. code-block:: python
+
+        CELERY_ANNOTATIONS = {"tasks.add": {"rate_limit": "10/s"}}
+
+    or change the same for all tasks:
+
+    .. code-block:: python
+
+        CELERY_ANNOTATIONS = {"*": {"rate_limit": "10/s"}}
+
+    You can change methods too, for example the ``on_failure`` handler:
+
+    .. code-block:: python
+
+        def my_on_failure(self, exc, task_id, args, kwargs, einfo):
+            print("Oh no! Task failed: %r" % (exc, ))
+
+        CELERY_ANNOTATIONS = {"*": {"on_failure": my_on_failure}}
+
+    If you need more flexibility then you can also create objects
+    that select the tasks to annotate, instead of a dict:
+
+    .. code-block:: python
+
+        class MyAnnotate(object):
+
+            def annotate(self, task):
+                if task.name.startswith("tasks."):
+                    return {"rate_limit": "10/s"}
+
+        CELERY_ANNOTATIONS = (MyAnnotate(), {...})
+
+* Adds efficient Chord support for the memcached backend (Issue #533).
 
     Contributed by Dan McGee.
+
+* Adds fallback Chord support for the AMQP backend.
 
 * The `--uid` argument to daemons now uses ``initgroups()`` to set
   groups to all the groups the user is a member of.
 
-    Fix contributed by Łukasz Oleś.
+    Contributed by Łukasz Oleś.
+
+* Redis result backend: Adds support for a ``max_connections`` parameter.
+
+    It is now possible to configure the maximum number of
+    simultaneous connections in the Redis connection pool used for
+    results.
+
+    The default max connections setting can be configured using the
+    :setting:`CELERY_REDIS_MAX_CONNECTIONS` setting,
+    or it can be changed individually by ``RedisBackend(max_connections=int)``.
+
+    Contributed by Steeve Morin.
+
+* Redis result backend: Adds the ability to wait for results without polling.
+
+    Contributed by Steeve Morin.
+
+* There's a new :ref:`guide-security` in the documentation.
+
+* The init scripts has been updated, and many bugs fixed.
+
+    Contributed by Chris Streeter.
+
+* User (tilde) is now expanded in command line arguments.
+
+* Can now configure CELERYCTL envvar in :file:`/etc/default/celeryd`.
+
+    While not necessary for operation, :program:`celeryctl` is used for the
+    ``celeryd status`` command, and the path to :program:`celeryctl` must be
+    configured for that to work.
+
+    The daemonization cookbook contains examples.
+
+    Contributed by Jude Nagurney.
+
+* The MongoDB result backend can now use Replica Sets.
+
+    Contributed by Ivan Metzlar.
+
+* ``celery.worker.control`` is now a single module.
+
+* ``BaseAsyncResult`` and ``AsyncResult`` is now merged into a single
+  ``AsyncResult``.
+
+* Moved some common threading functionality to new module
+  :mod:`celery.utils.threads`
 
 .. _version-2.4.4:
 
