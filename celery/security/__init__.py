@@ -26,7 +26,7 @@ Please see the configuration reference for more information.
 """
 
 
-def _disable_insecure_serializers(whitelist=None):
+def disable_untrusted_serializers(whitelist=None):
     for name in set(registry._decoders.keys()) - set(whitelist or []):
         try:
             registry.disable(name)
@@ -36,8 +36,30 @@ def _disable_insecure_serializers(whitelist=None):
 
 def setup_security(allowed_serializers=None, key=None, cert=None, store=None,
         digest="sha1", serializer="json"):
-    """setup secure serialization"""
-    _disable_insecure_serializers(allowed_serializers)
+    """Setup the message-signing serializer.
+
+    Disables untrusted serializers and if configured to use the ``auth``
+    serializer will register the auth serializer with the provided settings
+    into the Kombu serializer registry.
+
+    :keyword allowed_serializers:  List of serializer names, or content_types
+        that should be exempt from being disabled.
+    :keyword key: Name of private key file to use.
+        Defaults to the :setting:`CELERY_SECURITY_KEY` setting.
+    :keyword cert: Name of certificate file to use.
+        Defaults to the :setting:`CELERY_SECURITY_CERTIFICATE` setting.
+    :keyword store: Directory containing certificates.
+        Defaults to the :setting:`CELERY_SECURITY_CERT_STORE` setting.
+    :keyword digest: Digest algorithm used when signing messages.
+        Default is ``sha1``.
+    :keyword serializer: Serializer used to encode messages after
+        they have been signed.  See :setting:`CELERY_TASK_SERIALIZER` for
+        the serializers supported.
+        Default is ``json``.
+
+    """
+
+    disable_untrusted_serializers(allowed_serializers)
 
     conf = current_app.conf
     if conf.CELERY_TASK_SERIALIZER != "auth":
