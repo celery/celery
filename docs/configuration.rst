@@ -1269,7 +1269,7 @@ Can be one of :const:`DEBUG`, :const:`INFO`, :const:`WARNING`,
 
 Default is :const:`WARNING`.
 
-.. _conf-custom-components:
+.. _conf-security:
 
 Security
 --------
@@ -1304,6 +1304,8 @@ CELERY_SECURITY_CERT_STORE
 The directory containing X.509 certificates used for
 :ref:`message signing`.  Can be a glob with wildcards,
 (for example :file:`/etc/certs/*.pem`).
+
+.. _conf-custom-components:
 
 Custom Component Classes (advanced)
 -----------------------------------
