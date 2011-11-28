@@ -85,6 +85,9 @@ This is an example configuration for those using `django-celery`::
     # How to call "manage.py celeryd_multi"
     CELERYD_MULTI="$CELERYD_CHDIR/manage.py celeryd_multi"
 
+    # How to call "manage.py celeryctl"
+    CELERYCTL="$CELERYD_CHDIR/manage.py celeryctl"
+
     # Extra arguments to celeryd
     CELERYD_OPTS="--time-limit=300 --concurrency=8"
 
@@ -123,6 +126,9 @@ environment's python interpreter::
     
     # How to call "manage.py celeryd_multi"
     CELERYD_MULTI="$ENV_PYTHON $CELERYD_CHDIR/manage.py celeryd_multi"
+
+    # How to call "manage.py celeryctl"
+    CELERYCTL=$ENV_PYTHON $CELERYD_CHDIR/manage.py celeryctl"
     
     # Extra arguments to celeryd
     CELERYD_OPTS="--time-limit=300 --concurrency=8"
@@ -167,7 +173,11 @@ Available options
 
 * CELERYD_MULTI
     Path to the celeryd-multi program. Default is `celeryd-multi`.
-    You can point this to an virtualenv, or even use manage.py for django.
+    You can point this to a virtualenv, or even use manage.py for django.
+
+* CELERYCTL
+    Path to the celeryctl program.  Default is `celeryctl`.
+    You can point this to a virtualenv, or even use manage.py for django.
 
 * CELERYD_USER
     User to run celeryd as. Default is current user.
