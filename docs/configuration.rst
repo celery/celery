@@ -46,6 +46,37 @@ It should contain all you need to run a basic Celery set-up.
 Configuration Directives
 ========================
 
+.. _conf-datetime:
+
+Time and date settings
+----------------------
+
+.. setting:: CELERY_ENABLE_UTC
+
+CELERY_ENABLE_UTC
+~~~~~~~~~~~~~~~~~
+
+If enabled dates and times in messages will be converted to use
+the UTC timezone.
+
+Note that workers running Celery versions below 2.5 will assume a local
+timezone for all messages, so only enable if all workers have been
+upgraded.
+
+Disabled by default.  UTC will be enabled by default in version 3.0.
+
+.. setting:: CELERY_TIMEZONE
+
+CELERY_TIMEZONE
+---------------
+
+Configure Celery to use a custom time zone.
+The timezone value can be any time zone supported by the :mod:`pytz`
+library.  :mod:`pytz` must be installed for the selected zone
+to be used.
+
+If not set then the systems default local time zone is used.
+
 .. _conf-tasks:
 
 Task settings
