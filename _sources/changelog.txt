@@ -5,7 +5,7 @@
 .. contents::
     :local:
 
-.. _version-2.5.0
+.. _version-2.5.0:
 
 2.5.0
 =====
@@ -159,7 +159,7 @@ News
 
     Contributed by Steeve Morin.
 
-* There's a new :ref:`guide-security` in the documentation.
+* There's a new :ref:`guide-security` guide in the documentation.
 
 * The init scripts has been updated, and many bugs fixed.
 
