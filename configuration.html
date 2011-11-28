@@ -74,28 +74,30 @@ module and make sure it is available on the Python path.</p>
 <ul class="simple">
 <li><a class="reference internal" href="#example-configuration-file" id="id5">Example configuration file</a></li>
 <li><a class="reference internal" href="#configuration-directives" id="id6">Configuration Directives</a><ul>
-<li><a class="reference internal" href="#task-settings" id="id7">Task settings</a></li>
-<li><a class="reference internal" href="#concurrency-settings" id="id8">Concurrency settings</a></li>
-<li><a class="reference internal" href="#task-result-backend-settings" id="id9">Task result backend settings</a></li>
-<li><a class="reference internal" href="#database-backend-settings" id="id10">Database backend settings</a></li>
-<li><a class="reference internal" href="#amqp-backend-settings" id="id11">AMQP backend settings</a></li>
-<li><a class="reference internal" href="#cache-backend-settings" id="id12">Cache backend settings</a></li>
-<li><a class="reference internal" href="#tokyo-tyrant-backend-settings" id="id13">Tokyo Tyrant backend settings</a></li>
-<li><a class="reference internal" href="#redis-backend-settings" id="id14">Redis backend settings</a></li>
-<li><a class="reference internal" href="#mongodb-backend-settings" id="id15">MongoDB backend settings</a></li>
-<li><a class="reference internal" href="#message-routing" id="id16">Message Routing</a></li>
-<li><a class="reference internal" href="#broker-settings" id="id17">Broker Settings</a></li>
-<li><a class="reference internal" href="#task-execution-settings" id="id18">Task execution settings</a></li>
-<li><a class="reference internal" href="#worker-celeryd" id="id19">Worker: celeryd</a></li>
-<li><a class="reference internal" href="#error-e-mails" id="id20">Error E-Mails</a></li>
-<li><a class="reference internal" href="#events" id="id21">Events</a></li>
-<li><a class="reference internal" href="#broadcast-commands" id="id22">Broadcast Commands</a></li>
-<li><a class="reference internal" href="#logging" id="id23">Logging</a></li>
-<li><a class="reference internal" href="#security" id="id24">Security</a></li>
-<li><a class="reference internal" href="#custom-component-classes-advanced" id="id25">Custom Component Classes (advanced)</a></li>
-<li><a class="reference internal" href="#periodic-task-server-celerybeat" id="id26">Periodic Task Server: celerybeat</a></li>
-<li><a class="reference internal" href="#monitor-server-celerymon" id="id27">Monitor Server: celerymon</a></li>
-<li><a class="reference internal" href="#deprecated-settings" id="id28">Deprecated Settings</a></li>
+<li><a class="reference internal" href="#time-and-date-settings" id="id7">Time and date settings</a></li>
+<li><a class="reference internal" href="#celery-timezone" id="id8">CELERY_TIMEZONE</a></li>
+<li><a class="reference internal" href="#task-settings" id="id9">Task settings</a></li>
+<li><a class="reference internal" href="#concurrency-settings" id="id10">Concurrency settings</a></li>
+<li><a class="reference internal" href="#task-result-backend-settings" id="id11">Task result backend settings</a></li>
+<li><a class="reference internal" href="#database-backend-settings" id="id12">Database backend settings</a></li>
+<li><a class="reference internal" href="#amqp-backend-settings" id="id13">AMQP backend settings</a></li>
+<li><a class="reference internal" href="#cache-backend-settings" id="id14">Cache backend settings</a></li>
+<li><a class="reference internal" href="#tokyo-tyrant-backend-settings" id="id15">Tokyo Tyrant backend settings</a></li>
+<li><a class="reference internal" href="#redis-backend-settings" id="id16">Redis backend settings</a></li>
+<li><a class="reference internal" href="#mongodb-backend-settings" id="id17">MongoDB backend settings</a></li>
+<li><a class="reference internal" href="#message-routing" id="id18">Message Routing</a></li>
+<li><a class="reference internal" href="#broker-settings" id="id19">Broker Settings</a></li>
+<li><a class="reference internal" href="#task-execution-settings" id="id20">Task execution settings</a></li>
+<li><a class="reference internal" href="#worker-celeryd" id="id21">Worker: celeryd</a></li>
+<li><a class="reference internal" href="#error-e-mails" id="id22">Error E-Mails</a></li>
+<li><a class="reference internal" href="#events" id="id23">Events</a></li>
+<li><a class="reference internal" href="#broadcast-commands" id="id24">Broadcast Commands</a></li>
+<li><a class="reference internal" href="#logging" id="id25">Logging</a></li>
+<li><a class="reference internal" href="#security" id="id26">Security</a></li>
+<li><a class="reference internal" href="#custom-component-classes-advanced" id="id27">Custom Component Classes (advanced)</a></li>
+<li><a class="reference internal" href="#periodic-task-server-celerybeat" id="id28">Periodic Task Server: celerybeat</a></li>
+<li><a class="reference internal" href="#monitor-server-celerymon" id="id29">Monitor Server: celerymon</a></li>
+<li><a class="reference internal" href="#deprecated-settings" id="id30">Deprecated Settings</a></li>
 </ul>
 </li>
 </ul>
@@ -127,8 +129,28 @@ It should contain all you need to run a basic Celery set-up.</p>
 </div>
 <div class="section" id="configuration-directives">
 <h2><a class="toc-backref" href="#id6">Configuration Directives</a><a class="headerlink" href="#configuration-directives" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="time-and-date-settings">
+<span id="conf-datetime"></span><h3><a class="toc-backref" href="#id7">Time and date settings</a><a class="headerlink" href="#time-and-date-settings" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="celery-enable-utc">
+<span id="std:setting-CELERY_ENABLE_UTC"></span><h4>CELERY_ENABLE_UTC<a class="headerlink" href="#celery-enable-utc" title="Permalink to this headline">¶</a></h4>
+<p>If enabled dates and times in messages will be converted to use
+the UTC timezone.</p>
+<p>Note that workers running Celery versions below 2.5 will assume a local
+timezone for all messages, so only enable if all workers have been
+upgraded.</p>
+<p>Disabled by default.  UTC will be enabled by default in version 3.0.</p>
+</div>
+</div>
+<div class="section" id="celery-timezone">
+<span id="std:setting-CELERY_TIMEZONE"></span><h3><a class="toc-backref" href="#id8">CELERY_TIMEZONE</a><a class="headerlink" href="#celery-timezone" title="Permalink to this headline">¶</a></h3>
+<p>Configure Celery to use a custom time zone.
+The timezone value can be any time zone supported by the <tt class="xref py py-mod docutils literal"><span class="pre">pytz</span></tt>
+library.  <tt class="xref py py-mod docutils literal"><span class="pre">pytz</span></tt> must be installed for the selected zone
+to be used.</p>
+<p>If not set then the systems default local time zone is used.</p>
+</div>
 <div class="section" id="task-settings">
-<span id="conf-tasks"></span><h3><a class="toc-backref" href="#id7">Task settings</a><a class="headerlink" href="#task-settings" title="Permalink to this headline">¶</a></h3>
+<span id="conf-tasks"></span><h3><a class="toc-backref" href="#id9">Task settings</a><a class="headerlink" href="#task-settings" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="celery-annotations">
 <span id="std:setting-CELERY_ANNOTATIONS"></span><h4>CELERY_ANNOTATIONS<a class="headerlink" href="#celery-annotations" title="Permalink to this headline">¶</a></h4>
 <p>This setting can be used to rewrite any task attribute from the
@@ -165,7 +187,7 @@ instead of a dict to choose which tasks to annotate:</p>
 </div>
 </div>
 <div class="section" id="concurrency-settings">
-<span id="conf-concurrency"></span><h3><a class="toc-backref" href="#id8">Concurrency settings</a><a class="headerlink" href="#concurrency-settings" title="Permalink to this headline">¶</a></h3>
+<span id="conf-concurrency"></span><h3><a class="toc-backref" href="#id10">Concurrency settings</a><a class="headerlink" href="#concurrency-settings" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="celeryd-concurrency">
 <span id="std:setting-CELERYD_CONCURRENCY"></span><h4>CELERYD_CONCURRENCY<a class="headerlink" href="#celeryd-concurrency" title="Permalink to this headline">¶</a></h4>
 <p>The number of concurrent worker processes/threads/green threads, executing
@@ -184,7 +206,7 @@ to the workers.</p>
 </div>
 </div>
 <div class="section" id="task-result-backend-settings">
-<span id="conf-result-backend"></span><h3><a class="toc-backref" href="#id9">Task result backend settings</a><a class="headerlink" href="#task-result-backend-settings" title="Permalink to this headline">¶</a></h3>
+<span id="conf-result-backend"></span><h3><a class="toc-backref" href="#id11">Task result backend settings</a><a class="headerlink" href="#task-result-backend-settings" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="celery-result-backend">
 <span id="std:setting-CELERY_RESULT_BACKEND"></span><h4>CELERY_RESULT_BACKEND<a class="headerlink" href="#celery-result-backend" title="Permalink to this headline">¶</a></h4>
 <table class="docutils field-list" frame="void" rules="none">
@@ -252,7 +274,7 @@ serialization formats.</p>
 </div>
 </div>
 <div class="section" id="database-backend-settings">
-<span id="conf-database-result-backend"></span><h3><a class="toc-backref" href="#id10">Database backend settings</a><a class="headerlink" href="#database-backend-settings" title="Permalink to this headline">¶</a></h3>
+<span id="conf-database-result-backend"></span><h3><a class="toc-backref" href="#id12">Database backend settings</a><a class="headerlink" href="#database-backend-settings" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="celery-result-dburi">
 <span id="std:setting-CELERY_RESULT_DBURI"></span><h4>CELERY_RESULT_DBURI<a class="headerlink" href="#celery-result-dburi" title="Permalink to this headline">¶</a></h4>
 <p>Please see <a class="reference external" href="http://www.sqlalchemy.org/docs/core/engines.html#supported-databases">Supported Databases</a> for a table of supported databases.
@@ -298,7 +320,7 @@ short lived sessions.  This option only affects the database backend.</p>
 </div>
 </div>
 <div class="section" id="amqp-backend-settings">
-<span id="conf-amqp-result-backend"></span><h3><a class="toc-backref" href="#id11">AMQP backend settings</a><a class="headerlink" href="#amqp-backend-settings" title="Permalink to this headline">¶</a></h3>
+<span id="conf-amqp-result-backend"></span><h3><a class="toc-backref" href="#id13">AMQP backend settings</a><a class="headerlink" href="#amqp-backend-settings" title="Permalink to this headline">¶</a></h3>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p>The AMQP backend requires RabbitMQ 1.1.0 or higher to automatically
@@ -331,7 +353,7 @@ results to be transient.</p>
 </div>
 </div>
 <div class="section" id="cache-backend-settings">
-<span id="conf-cache-result-backend"></span><h3><a class="toc-backref" href="#id12">Cache backend settings</a><a class="headerlink" href="#cache-backend-settings" title="Permalink to this headline">¶</a></h3>
+<span id="conf-cache-result-backend"></span><h3><a class="toc-backref" href="#id14">Cache backend settings</a><a class="headerlink" href="#cache-backend-settings" title="Permalink to this headline">¶</a></h3>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">The cache backend supports the <a class="reference external" href="http://sendapatch.se/projects/pylibmc/">pylibmc</a> and <cite>python-memcached</cite>
@@ -363,7 +385,7 @@ setting:</p>
 </div>
 </div>
 <div class="section" id="tokyo-tyrant-backend-settings">
-<span id="conf-tyrant-result-backend"></span><h3><a class="toc-backref" href="#id13">Tokyo Tyrant backend settings</a><a class="headerlink" href="#tokyo-tyrant-backend-settings" title="Permalink to this headline">¶</a></h3>
+<span id="conf-tyrant-result-backend"></span><h3><a class="toc-backref" href="#id15">Tokyo Tyrant backend settings</a><a class="headerlink" href="#tokyo-tyrant-backend-settings" title="Permalink to this headline">¶</a></h3>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">The Tokyo Tyrant backend requires the <tt class="xref py py-mod docutils literal"><span class="pre">pytyrant</span></tt> library:
@@ -388,7 +410,7 @@ setting:</p>
 </div>
 </div>
 <div class="section" id="redis-backend-settings">
-<span id="conf-redis-result-backend"></span><h3><a class="toc-backref" href="#id14">Redis backend settings</a><a class="headerlink" href="#redis-backend-settings" title="Permalink to this headline">¶</a></h3>
+<span id="conf-redis-result-backend"></span><h3><a class="toc-backref" href="#id16">Redis backend settings</a><a class="headerlink" href="#redis-backend-settings" title="Permalink to this headline">¶</a></h3>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p>The Redis backend requires the <tt class="xref py py-mod docutils literal"><span class="pre">redis</span></tt> library:
@@ -430,7 +452,7 @@ pool used for sending and retrieving results.</p>
 </div>
 </div>
 <div class="section" id="mongodb-backend-settings">
-<span id="conf-mongodb-result-backend"></span><h3><a class="toc-backref" href="#id15">MongoDB backend settings</a><a class="headerlink" href="#mongodb-backend-settings" title="Permalink to this headline">¶</a></h3>
+<span id="conf-mongodb-result-backend"></span><h3><a class="toc-backref" href="#id17">MongoDB backend settings</a><a class="headerlink" href="#mongodb-backend-settings" title="Permalink to this headline">¶</a></h3>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">The MongoDB backend requires the <tt class="xref py py-mod docutils literal"><span class="pre">pymongo</span></tt> library:
@@ -493,7 +515,7 @@ Defaults to &#8220;celery_taskmeta&#8221;.</p>
 </div>
 </div>
 <div class="section" id="message-routing">
-<span id="conf-messaging"></span><h3><a class="toc-backref" href="#id16">Message Routing</a><a class="headerlink" href="#message-routing" title="Permalink to this headline">¶</a></h3>
+<span id="conf-messaging"></span><h3><a class="toc-backref" href="#id18">Message Routing</a><a class="headerlink" href="#message-routing" title="Permalink to this headline">¶</a></h3>
 <span class="target" id="conf-messaging-routing"></span><div class="section" id="celery-queues">
 <span id="std:setting-CELERY_QUEUES"></span><h4>CELERY_QUEUES<a class="headerlink" href="#celery-queues" title="Permalink to this headline">¶</a></h4>
 <p>The mapping of queues the worker consumes from.  This is a dictionary
@@ -545,7 +567,7 @@ persistent messages.</p>
 </div>
 </div>
 <div class="section" id="broker-settings">
-<span id="conf-broker-connection"></span><h3><a class="toc-backref" href="#id17">Broker Settings</a><a class="headerlink" href="#broker-settings" title="Permalink to this headline">¶</a></h3>
+<span id="conf-broker-connection"></span><h3><a class="toc-backref" href="#id19">Broker Settings</a><a class="headerlink" href="#broker-settings" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="broker-transport">
 <span id="std:setting-BROKER_TRANSPORT"></span><h4>BROKER_TRANSPORT<a class="headerlink" href="#broker-transport" title="Permalink to this headline">¶</a></h4>
 <table class="docutils field-list" frame="void" rules="none">
@@ -646,7 +668,7 @@ to the AMQP broker.</p>
 </div>
 </div>
 <div class="section" id="task-execution-settings">
-<span id="conf-task-execution"></span><h3><a class="toc-backref" href="#id18">Task execution settings</a><a class="headerlink" href="#task-execution-settings" title="Permalink to this headline">¶</a></h3>
+<span id="conf-task-execution"></span><h3><a class="toc-backref" href="#id20">Task execution settings</a><a class="headerlink" href="#task-execution-settings" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="celery-always-eager">
 <span id="std:setting-CELERY_ALWAYS_EAGER"></span><h4>CELERY_ALWAYS_EAGER<a class="headerlink" href="#celery-always-eager" title="Permalink to this headline">¶</a></h4>
 <p>If this is <tt class="xref py py-const docutils literal"><span class="pre">True</span></tt>, all tasks will be executed locally by blocking until
@@ -796,7 +818,7 @@ has been executed, not <em>just before</em>, which is the default behavior.</p>
 </div>
 </div>
 <div class="section" id="worker-celeryd">
-<span id="conf-celeryd"></span><h3><a class="toc-backref" href="#id19">Worker: celeryd</a><a class="headerlink" href="#worker-celeryd" title="Permalink to this headline">¶</a></h3>
+<span id="conf-celeryd"></span><h3><a class="toc-backref" href="#id21">Worker: celeryd</a><a class="headerlink" href="#worker-celeryd" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="celery-imports">
 <span id="std:setting-CELERY_IMPORTS"></span><h4>CELERY_IMPORTS<a class="headerlink" href="#celery-imports" title="Permalink to this headline">¶</a></h4>
 <p>A sequence of modules to import when the celery daemon starts.</p>
@@ -855,7 +877,7 @@ be 1 second. If you need near millisecond precision you can set this to 0.1.</p>
 </div>
 </div>
 <div class="section" id="error-e-mails">
-<span id="conf-error-mails"></span><h3><a class="toc-backref" href="#id20">Error E-Mails</a><a class="headerlink" href="#error-e-mails" title="Permalink to this headline">¶</a></h3>
+<span id="conf-error-mails"></span><h3><a class="toc-backref" href="#id22">Error E-Mails</a><a class="headerlink" href="#error-e-mails" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="celery-send-task-error-emails">
 <span id="std:setting-CELERY_SEND_TASK_ERROR_EMAILS"></span><h4>CELERY_SEND_TASK_ERROR_EMAILS<a class="headerlink" href="#celery-send-task-error-emails" title="Permalink to this headline">¶</a></h4>
 <p>The default value for the <cite>Task.send_error_emails</cite> attribute, which if
@@ -928,7 +950,7 @@ to the SMTP server when sending emails.</p>
 </div>
 </div>
 <div class="section" id="events">
-<span id="conf-events"></span><h3><a class="toc-backref" href="#id21">Events</a><a class="headerlink" href="#events" title="Permalink to this headline">¶</a></h3>
+<span id="conf-events"></span><h3><a class="toc-backref" href="#id23">Events</a><a class="headerlink" href="#events" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="celery-send-events">
 <span id="std:setting-CELERY_SEND_EVENTS"></span><h4>CELERY_SEND_EVENTS<a class="headerlink" href="#celery-send-events" title="Permalink to this headline">¶</a></h4>
 <p>Send events so the worker can be monitored by tools like <cite>celerymon</cite>.</p>
@@ -948,7 +970,7 @@ Default is <cite>&#8220;json&#8221;</cite>. See <a class="reference internal" hr
 </div>
 </div>
 <div class="section" id="broadcast-commands">
-<span id="conf-broadcast"></span><h3><a class="toc-backref" href="#id22">Broadcast Commands</a><a class="headerlink" href="#broadcast-commands" title="Permalink to this headline">¶</a></h3>
+<span id="conf-broadcast"></span><h3><a class="toc-backref" href="#id24">Broadcast Commands</a><a class="headerlink" href="#broadcast-commands" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="celery-broadcast-queue">
 <span id="std:setting-CELERY_BROADCAST_QUEUE"></span><h4>CELERY_BROADCAST_QUEUE<a class="headerlink" href="#celery-broadcast-queue" title="Permalink to this headline">¶</a></h4>
 <p>Name prefix for the queue used when listening for broadcast messages.
@@ -967,7 +989,7 @@ queue name.</p>
 </div>
 </div>
 <div class="section" id="logging">
-<span id="conf-logging"></span><h3><a class="toc-backref" href="#id23">Logging</a><a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h3>
+<span id="conf-logging"></span><h3><a class="toc-backref" href="#id25">Logging</a><a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="celeryd-hijack-root-logger">
 <span id="std:setting-CELERYD_HIJACK_ROOT_LOGGER"></span><h4>CELERYD_HIJACK_ROOT_LOGGER<a class="headerlink" href="#celeryd-hijack-root-logger" title="Permalink to this headline">¶</a></h4>
 <p class="versionadded">
@@ -1027,7 +1049,7 @@ Can be one of <tt class="xref py py-const docutils literal"><span class="pre">DE
 </div>
 </div>
 <div class="section" id="security">
-<span id="conf-security"></span><h3><a class="toc-backref" href="#id24">Security</a><a class="headerlink" href="#security" title="Permalink to this headline">¶</a></h3>
+<span id="conf-security"></span><h3><a class="toc-backref" href="#id26">Security</a><a class="headerlink" href="#security" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="celery-security-key">
 <span id="std:setting-CELERY_SECURITY_KEY"></span><h4>CELERY_SECURITY_KEY<a class="headerlink" href="#celery-security-key" title="Permalink to this headline">¶</a></h4>
 <p class="versionadded">
@@ -1052,7 +1074,7 @@ used to sign messages when <a class="reference internal" href="userguide/securit
 </div>
 </div>
 <div class="section" id="custom-component-classes-advanced">
-<span id="conf-custom-components"></span><h3><a class="toc-backref" href="#id25">Custom Component Classes (advanced)</a><a class="headerlink" href="#custom-component-classes-advanced" title="Permalink to this headline">¶</a></h3>
+<span id="conf-custom-components"></span><h3><a class="toc-backref" href="#id27">Custom Component Classes (advanced)</a><a class="headerlink" href="#custom-component-classes-advanced" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="celeryd-pool">
 <span id="std:setting-CELERYD_POOL"></span><h4>CELERYD_POOL<a class="headerlink" href="#celeryd-pool" title="Permalink to this headline">¶</a></h4>
 <p>Name of the pool class used by the worker.</p>
@@ -1085,7 +1107,7 @@ by the pool implementation.</p>
 </div>
 </div>
 <div class="section" id="periodic-task-server-celerybeat">
-<span id="conf-celerybeat"></span><h3><a class="toc-backref" href="#id26">Periodic Task Server: celerybeat</a><a class="headerlink" href="#periodic-task-server-celerybeat" title="Permalink to this headline">¶</a></h3>
+<span id="conf-celerybeat"></span><h3><a class="toc-backref" href="#id28">Periodic Task Server: celerybeat</a><a class="headerlink" href="#periodic-task-server-celerybeat" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="celerybeat-schedule">
 <span id="std:setting-CELERYBEAT_SCHEDULE"></span><h4>CELERYBEAT_SCHEDULE<a class="headerlink" href="#celerybeat-schedule" title="Permalink to this headline">¶</a></h4>
 <p>The periodic task schedule used by <a class="reference internal" href="reference/celery.bin.celerybeat.html#module-celery.bin.celerybeat" title="celery.bin.celerybeat"><tt class="xref py py-mod docutils literal"><span class="pre">celerybeat</span></tt></a>.
@@ -1113,7 +1135,7 @@ between checking the schedule.  Default is 300 seconds (5 minutes).</p>
 </div>
 </div>
 <div class="section" id="monitor-server-celerymon">
-<span id="conf-celerymon"></span><h3><a class="toc-backref" href="#id27">Monitor Server: celerymon</a><a class="headerlink" href="#monitor-server-celerymon" title="Permalink to this headline">¶</a></h3>
+<span id="conf-celerymon"></span><h3><a class="toc-backref" href="#id29">Monitor Server: celerymon</a><a class="headerlink" href="#monitor-server-celerymon" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="celerymon-log-format">
 <span id="std:setting-CELERYMON_LOG_FORMAT"></span><h4>CELERYMON_LOG_FORMAT<a class="headerlink" href="#celerymon-log-format" title="Permalink to this headline">¶</a></h4>
 <p>The format to use for log messages.</p>
@@ -1123,7 +1145,7 @@ formats.</p>
 </div>
 </div>
 <div class="section" id="deprecated-settings">
-<span id="conf-deprecated"></span><h3><a class="toc-backref" href="#id28">Deprecated Settings</a><a class="headerlink" href="#deprecated-settings" title="Permalink to this headline">¶</a></h3>
+<span id="conf-deprecated"></span><h3><a class="toc-backref" href="#id30">Deprecated Settings</a><a class="headerlink" href="#deprecated-settings" title="Permalink to this headline">¶</a></h3>
 <p>These settings have been deprecated and should no longer used,
 as they will be removed in future versions.</p>
 <div class="section" id="celery-amqp-task-result-expires">

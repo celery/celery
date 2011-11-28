@@ -35,6 +35,10 @@
     celery.backends.cassandra
     celery.backends.tyrant
     celery.execute.trace
+    celery.app.annotations
+    celery.security.certificate
+    celery.security.key
+    celery.security.serialization
     celery.datastructures
     celery.routes
     celery.log
@@ -51,6 +55,7 @@
     celery.utils.compat
     celery.utils.patch
     celery.utils.serialization
+    celery.utils.threads
     celery.utils.timer2
     celery.utils.dispatch
     celery.utils.dispatch.signal

@@ -180,7 +180,7 @@ the <a class="reference internal" href="../configuration.html#std:setting-CELERY
 <a class="reference internal" href="../configuration.html#std:setting-CELERY_SECURITY_CERTIFICATE"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_SECURITY_CERTIFICATE</span></tt></a> and <a class="reference internal" href="../configuration.html#std:setting-CELERY_SECURITY_CERT_STORE"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_SECURITY_CERT_STORE</span></tt></a>
 settings respectively.
 With these configured it is also necessary to call the
-<tt class="xref py py-func docutils literal"><span class="pre">celery.security.setup_security()</span></tt> function.  Note that this will also
+<a class="reference internal" href="../reference/celery.security.html#celery.security.setup_security" title="celery.security.setup_security"><tt class="xref py py-func docutils literal"><span class="pre">celery.security.setup_security()</span></tt></a> function.  Note that this will also
 disable all insucure serializers so that the worker won&#8217;t accept
 messages with untrusted content types.</p>
 <p>This is an example configuration using the <cite>auth</cite> serializer,

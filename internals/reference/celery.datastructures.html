@@ -27,7 +27,7 @@
     <link rel="top" title="Celery 2.5.0b1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.routes" href="celery.routes.html" />
-    <link rel="prev" title="celery.execute.trace" href="celery.execute.trace.html" /> 
+    <link rel="prev" title="celery.security.serialization" href="celery.security.serialization.html" /> 
   </head>
   <body>
     <div class="related">
@@ -43,7 +43,7 @@
           <a href="celery.routes.html" title="celery.routes"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="celery.execute.trace.html" title="celery.execute.trace"
+          <a href="celery.security.serialization.html" title="celery.security.serialization"
              accesskey="P">previous</a> |</li>
         <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
@@ -87,20 +87,16 @@
 </table>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference internal" href="#tokenbucket" id="id1">TokenBucket</a></li>
-<li><a class="reference internal" href="#attributedict" id="id2">AttributeDict</a></li>
-<li><a class="reference internal" href="#dictattribute" id="id3">DictAttribute</a></li>
-<li><a class="reference internal" href="#configurationview" id="id4">ConfigurationView</a></li>
-<li><a class="reference internal" href="#exceptioninfo" id="id5">ExceptionInfo</a></li>
-<li><a class="reference internal" href="#limitedset" id="id6">LimitedSet</a></li>
-<li><a class="reference internal" href="#lrucache" id="id7">LRUCache</a></li>
+<li><a class="reference internal" href="#attributedict" id="id1">AttributeDict</a></li>
+<li><a class="reference internal" href="#dictattribute" id="id2">DictAttribute</a></li>
+<li><a class="reference internal" href="#configurationview" id="id3">ConfigurationView</a></li>
+<li><a class="reference internal" href="#exceptioninfo" id="id4">ExceptionInfo</a></li>
+<li><a class="reference internal" href="#limitedset" id="id5">LimitedSet</a></li>
+<li><a class="reference internal" href="#lrucache" id="id6">LRUCache</a></li>
 </ul>
 </div>
-<div class="section" id="tokenbucket">
-<h2><a class="toc-backref" href="#id1">TokenBucket</a><a class="headerlink" href="#tokenbucket" title="Permalink to this headline">¶</a></h2>
-</div>
 <div class="section" id="attributedict">
-<h2><a class="toc-backref" href="#id2">AttributeDict</a><a class="headerlink" href="#attributedict" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id1">AttributeDict</a><a class="headerlink" href="#attributedict" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="celery.datastructures.AttributeDict">
 <em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">AttributeDict</tt><a class="headerlink" href="#celery.datastructures.AttributeDict" title="Permalink to this definition">¶</a></dt>
@@ -116,7 +112,7 @@
 
 </div>
 <div class="section" id="dictattribute">
-<h2><a class="toc-backref" href="#id3">DictAttribute</a><a class="headerlink" href="#dictattribute" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id2">DictAttribute</a><a class="headerlink" href="#dictattribute" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="celery.datastructures.DictAttribute">
 <em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">DictAttribute</tt><big>(</big><em>obj</em><big>)</big><a class="headerlink" href="#celery.datastructures.DictAttribute" title="Permalink to this definition">¶</a></dt>
@@ -146,7 +142,7 @@
 
 </div>
 <div class="section" id="configurationview">
-<h2><a class="toc-backref" href="#id4">ConfigurationView</a><a class="headerlink" href="#configurationview" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id3">ConfigurationView</a><a class="headerlink" href="#configurationview" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="celery.datastructures.ConfigurationView">
 <em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">ConfigurationView</tt><big>(</big><em>changes</em>, <em>defaults</em><big>)</big><a class="headerlink" href="#celery.datastructures.ConfigurationView" title="Permalink to this definition">¶</a></dt>
@@ -224,7 +220,7 @@ is consulted.</p>
 
 </div>
 <div class="section" id="exceptioninfo">
-<h2><a class="toc-backref" href="#id5">ExceptionInfo</a><a class="headerlink" href="#exceptioninfo" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id4">ExceptionInfo</a><a class="headerlink" href="#exceptioninfo" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="celery.datastructures.ExceptionInfo">
 <em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">ExceptionInfo</tt><big>(</big><em>exc_info</em><big>)</big><a class="headerlink" href="#celery.datastructures.ExceptionInfo" title="Permalink to this definition">¶</a></dt>
@@ -266,7 +262,7 @@ is consulted.</p>
 
 </div>
 <div class="section" id="limitedset">
-<h2><a class="toc-backref" href="#id6">LimitedSet</a><a class="headerlink" href="#limitedset" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id5">LimitedSet</a><a class="headerlink" href="#limitedset" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="celery.datastructures.LimitedSet">
 <em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">LimitedSet</tt><big>(</big><em>maxlen=None</em>, <em>expires=None</em><big>)</big><a class="headerlink" href="#celery.datastructures.LimitedSet" title="Permalink to this definition">¶</a></dt>
@@ -340,7 +336,7 @@ evicting expired members.</li>
 
 </div>
 <div class="section" id="lrucache">
-<h2><a class="toc-backref" href="#id7">LRUCache</a><a class="headerlink" href="#lrucache" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id6">LRUCache</a><a class="headerlink" href="#lrucache" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="celery.datastructures.LRUCache">
 <em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">LRUCache</tt><big>(</big><em>limit=None</em><big>)</big><a class="headerlink" href="#celery.datastructures.LRUCache" title="Permalink to this definition">¶</a></dt>
@@ -400,8 +396,8 @@ cache.</td>
   <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
 </a></p>
   <h4>Previous topic</h4>
-  <p class="topless"><a href="celery.execute.trace.html"
-                        title="previous chapter">celery.execute.trace</a></p>
+  <p class="topless"><a href="celery.security.serialization.html"
+                        title="previous chapter">celery.security.serialization</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="celery.routes.html"
                         title="next chapter">celery.routes</a></p>
@@ -440,7 +436,7 @@ cache.</td>
           <a href="celery.routes.html" title="celery.routes"
              >next</a> |</li>
         <li class="right" >
-          <a href="celery.execute.trace.html" title="celery.execute.trace"
+          <a href="celery.security.serialization.html" title="celery.security.serialization"
              >previous</a> |</li>
         <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
