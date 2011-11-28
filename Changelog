@@ -15,15 +15,15 @@
 .. _v250-important:
 
 Important Notes
-===============
+---------------
 
-* The broker connection pool is now enabled by default with a limit
-  of 10 connections.
+* The broker connection pool is now enabled by default.
 
-    If you have many threads/green-threads using connections you may want
-    to tweak the limit to avoid contention.
+    The default limit is 10 connections,
+    if you have many threads/green-threads using connections you may want
+    to tweak this limit to avoid contention.
 
-    See :settings:`BROKER_POOL_LIMIT` for more information.
+    See the :setting:`BROKER_POOL_LIMIT` for more information.
 
 * AMQP Result Backend: Exchange no longer *auto delete*.
 
@@ -53,7 +53,7 @@ Important Notes
 .. _v250-news:
 
 News
-====
+----
 
 * Timezone support.
 

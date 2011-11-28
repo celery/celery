@@ -29,7 +29,7 @@ def prepare(annotations):
             return MapAnnotation(annotation)
         elif isinstance(annotation, basestring):
             return mpromise(instantiate, annotation)
-        return route
+        return annotation
 
     if annotations is None:
         return ()

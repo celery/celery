@@ -18,7 +18,6 @@ import platform as _platform
 from contextlib import contextmanager
 from copy import deepcopy
 from functools import wraps
-from threading import Lock
 
 from kombu.clocks import LamportClock
 
@@ -37,19 +36,6 @@ platform -> system:%(system)s arch:%(arch)s imp:%(py_i)s
 software -> celery:%(celery_v)s kombu:%(kombu_v)s py:%(py_v)s
 settings -> transport:%(transport)s results:%(results)s
 """
-
-def pyimplementation():
-    if hasattr(_platform, "python_implementation"):
-        return _platform.python_implementation()
-    elif sys.platform.startswith("java"):
-        return "Jython %s" % (sys.platform, )
-    elif hasattr(sys, "pypy_version_info"):
-        v = ".".join(map(str, sys.pypy_version_info[:3]))
-        if sys.pypy_version_info[3:]:
-            v += "-" + "".join(map(str, sys.pypy_version_info[3:]))
-        return "PyPy %s" % (v, )
-    else:
-        return "CPython"
 
 
 class Settings(datastructures.ConfigurationView):
