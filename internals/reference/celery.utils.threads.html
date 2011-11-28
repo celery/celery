@@ -1,0 +1,171 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>celery.utils.threads &mdash; Celery 2.5.0b1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.5.0b1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Celery 2.5.0b1 documentation" href="../../index.html" />
+    <link rel="up" title="Internal Module Reference" href="index.html" />
+    <link rel="next" title="celery.utils.timer2" href="celery.utils.timer2.html" />
+    <link rel="prev" title="celery.utils.serialization" href="celery.utils.serialization.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.utils.timer2.html" title="celery.utils.timer2"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.utils.serialization.html" title="celery.utils.serialization"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.utils.threads.html">2.1</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="celery-utils-threads">
+<h1>celery.utils.threads<a class="headerlink" href="#celery-utils-threads" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-celery.utils.threads"></span><dl class="class">
+<dt id="celery.utils.threads.Event">
+<em class="property">class </em><tt class="descclassname">celery.utils.threads.</tt><tt class="descname">Event</tt><big>(</big><em>verbose=None</em><big>)</big><a class="headerlink" href="#celery.utils.threads.Event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="celery.utils.threads.Thread">
+<em class="property">class </em><tt class="descclassname">celery.utils.threads.</tt><tt class="descname">Thread</tt><big>(</big><em>group=None</em>, <em>target=None</em>, <em>name=None</em>, <em>args=()</em>, <em>kwargs=None</em>, <em>verbose=None</em><big>)</big><a class="headerlink" href="#celery.utils.threads.Thread" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="celery.utils.threads.bgThread">
+<em class="property">class </em><tt class="descclassname">celery.utils.threads.</tt><tt class="descname">bgThread</tt><big>(</big><em>name=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.threads.bgThread" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.utils.threads.bgThread.body">
+<tt class="descname">body</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.threads.bgThread.body" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.utils.threads.bgThread.on_crash">
+<tt class="descname">on_crash</tt><big>(</big><em>msg</em>, <em>*fmt</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.threads.bgThread.on_crash" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.utils.threads.bgThread.run">
+<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.threads.bgThread.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.utils.threads.bgThread.stop">
+<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.threads.bgThread.stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Graceful shutdown.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="celery.utils.serialization.html"
+                        title="previous chapter">celery.utils.serialization</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="celery.utils.timer2.html"
+                        title="next chapter">celery.utils.timer2</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/internals/reference/celery.utils.threads.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.utils.timer2.html" title="celery.utils.timer2"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.utils.serialization.html" title="celery.utils.serialization"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
+    </div>
+  </body>
+</html>

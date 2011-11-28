@@ -1,0 +1,168 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>celery.security.serialization &mdash; Celery 2.5.0b1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.5.0b1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Celery 2.5.0b1 documentation" href="../../index.html" />
+    <link rel="up" title="Internal Module Reference" href="index.html" />
+    <link rel="next" title="celery.datastructures" href="celery.datastructures.html" />
+    <link rel="prev" title="celery.security.key" href="celery.security.key.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.datastructures.html" title="celery.datastructures"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.security.key.html" title="celery.security.key"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.security.serialization.html">2.1</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="celery-security-serialization">
+<h1>celery.security.serialization<a class="headerlink" href="#celery-security-serialization" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-celery.security.serialization"></span><dl class="class">
+<dt id="celery.security.serialization.SecureSerializer">
+<em class="property">class </em><tt class="descclassname">celery.security.serialization.</tt><tt class="descname">SecureSerializer</tt><big>(</big><em>key=None</em>, <em>cert=None</em>, <em>cert_store=None</em>, <em>digest='sha1'</em>, <em>serializer='json'</em><big>)</big><a class="headerlink" href="#celery.security.serialization.SecureSerializer" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.security.serialization.SecureSerializer.deserialize">
+<tt class="descname">deserialize</tt><big>(</big><em>data</em><big>)</big><a class="headerlink" href="#celery.security.serialization.SecureSerializer.deserialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>deserialize data structure from string</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.security.serialization.SecureSerializer.serialize">
+<tt class="descname">serialize</tt><big>(</big><em>data</em><big>)</big><a class="headerlink" href="#celery.security.serialization.SecureSerializer.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>serialize data structure into string</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.security.serialization.b64decode">
+<tt class="descclassname">celery.security.serialization.</tt><tt class="descname">b64decode</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#celery.security.serialization.b64decode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.security.serialization.b64encode">
+<tt class="descclassname">celery.security.serialization.</tt><tt class="descname">b64encode</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#celery.security.serialization.b64encode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.security.serialization.register_auth">
+<tt class="descclassname">celery.security.serialization.</tt><tt class="descname">register_auth</tt><big>(</big><em>key=None</em>, <em>cert=None</em>, <em>store=None</em>, <em>digest='sha1'</em>, <em>serializer='json'</em><big>)</big><a class="headerlink" href="#celery.security.serialization.register_auth" title="Permalink to this definition">¶</a></dt>
+<dd><p>register security serializer</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="celery.security.key.html"
+                        title="previous chapter">celery.security.key</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="celery.datastructures.html"
+                        title="next chapter">celery.datastructures</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/internals/reference/celery.security.serialization.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.datastructures.html" title="celery.datastructures"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.security.key.html" title="celery.security.key"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
+    </div>
+  </body>
+</html>
