@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Security &mdash; Celery 2.5.0a1 documentation</title>
+    <title>Security &mdash; Celery 2.5.0b1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0a1',
+        VERSION:     '2.5.0b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0a1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.5.0b1 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Optimizing" href="optimizing.html" />
     <link rel="prev" title="Monitoring and Management Guide" href="monitoring.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="monitoring.html" title="Monitoring and Management Guide"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -71,37 +71,37 @@
 <span id="guide-security"></span><h1>Security<a class="headerlink" href="#security" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference internal" href="#introduction" id="id2">Introduction</a></li>
-<li><a class="reference internal" href="#areas-of-concern" id="id3">Areas of Concern</a><ul>
-<li><a class="reference internal" href="#broker" id="id4">Broker</a></li>
-<li><a class="reference internal" href="#client" id="id5">Client</a></li>
-<li><a class="reference internal" href="#worker" id="id6">Worker</a></li>
+<li><a class="reference internal" href="#introduction" id="id4">Introduction</a></li>
+<li><a class="reference internal" href="#areas-of-concern" id="id5">Areas of Concern</a><ul>
+<li><a class="reference internal" href="#broker" id="id6">Broker</a></li>
+<li><a class="reference internal" href="#client" id="id7">Client</a></li>
+<li><a class="reference internal" href="#worker" id="id8">Worker</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#serializers" id="id7">Serializers</a></li>
-<li><a class="reference internal" href="#message-signing" id="id8">Message Signing</a></li>
-<li><a class="reference internal" href="#intrusion-detection" id="id9">Intrusion Detection</a><ul>
-<li><a class="reference internal" href="#logs" id="id10">Logs</a></li>
-<li><a class="reference internal" href="#tripwire" id="id11">Tripwire</a></li>
+<li><a class="reference internal" href="#serializers" id="id9">Serializers</a></li>
+<li><a class="reference internal" href="#message-signing" id="id10">Message Signing</a></li>
+<li><a class="reference internal" href="#intrusion-detection" id="id11">Intrusion Detection</a><ul>
+<li><a class="reference internal" href="#logs" id="id12">Logs</a></li>
+<li><a class="reference internal" href="#tripwire" id="id13">Tripwire</a></li>
 </ul>
 </li>
 </ul>
 </div>
 <div class="section" id="introduction">
-<h2><a class="toc-backref" href="#id2">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id4">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
 <p>While Celery is written with security in mind, it should be treated as an
 unsafe component.</p>
 <p>Depending on your <a class="reference external" href="http://en.wikipedia.org/wiki/Security_policy">Security Policy</a>, there are
 various steps you can take to make your Celery installation more secure.</p>
 </div>
 <div class="section" id="areas-of-concern">
-<h2><a class="toc-backref" href="#id3">Areas of Concern</a><a class="headerlink" href="#areas-of-concern" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id5">Areas of Concern</a><a class="headerlink" href="#areas-of-concern" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="broker">
-<h3><a class="toc-backref" href="#id4">Broker</a><a class="headerlink" href="#broker" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id6">Broker</a><a class="headerlink" href="#broker" title="Permalink to this headline">¶</a></h3>
 <p>It is imperative that the broker is guarded from unwanted access, especially
 if it is publically accesible.
 By default, workers trust that the data they get from the broker has not
-been tampered with. See <a class="reference internal" href="#message-signing">Message Signing</a> for information on how to make
+been tampered with. See <a class="reference internal" href="#id2">Message Signing</a> for information on how to make
 the broker connection more trusthworthy.</p>
 <p>The first line of defence should be to put a firewall in front of the broker,
 allowing only white-listed machines to access it.</p>
@@ -115,7 +115,7 @@ this is something you should look at enabling. See for example
 <a class="reference external" href="http://www.rabbitmq.com/access-control.html">http://www.rabbitmq.com/access-control.html</a>.</p>
 </div>
 <div class="section" id="client">
-<h3><a class="toc-backref" href="#id5">Client</a><a class="headerlink" href="#client" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id7">Client</a><a class="headerlink" href="#client" title="Permalink to this headline">¶</a></h3>
 <p>In Celery, &#8220;client&#8221; refers to anything that sends messages to the
 broker, e.g. web-servers that apply tasks.</p>
 <p>Having the broker properly secured doesn&#8217;t matter if arbitrary messages
@@ -123,7 +123,7 @@ can be sent through a client.</p>
 <p><em>[Need more text here]</em></p>
 </div>
 <div class="section" id="worker">
-<h3><a class="toc-backref" href="#id6">Worker</a><a class="headerlink" href="#worker" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id8">Worker</a><a class="headerlink" href="#worker" title="Permalink to this headline">¶</a></h3>
 <p>The default permissions of tasks running inside a worker are the same ones as
 the privileges of the worker itself. This applies to resources such as
 memory, file-systems and devices.</p>
@@ -144,19 +144,68 @@ outbound traffic.</p>
 </div>
 </div>
 <div class="section" id="serializers">
-<h2><a class="toc-backref" href="#id7">Serializers</a><a class="headerlink" href="#serializers" title="Permalink to this headline">¶</a></h2>
-<p><em>[To be written]</em></p>
+<h2><a class="toc-backref" href="#id9">Serializers</a><a class="headerlink" href="#serializers" title="Permalink to this headline">¶</a></h2>
+<p>The default <cite>pickle</cite> serializer is convenient because it supports
+arbitrary Python objects, whereas other serializers only
+work with a restricted set of types.</p>
+<p>But for the same reasons the <cite>pickle</cite> serializer is inherently insecure[*]_,
+and should be avoided whenever clients are untrusted or
+unauthenticated.</p>
+<table class="docutils footnote" frame="void" id="id1" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[*]</td><td><a class="reference external" href="http://nadiana.com/python-pickle-insecure">http://nadiana.com/python-pickle-insecure</a></td></tr>
+</tbody>
+</table>
+<p>Celery comes with a special <cite>auth</cite> serializer that validates
+communication between Celery clients and workers, making sure
+that messages originates from trusted sources.
+Using <cite>Public-key cryptography</cite> the <cite>auth</cite> serializer can verify the
+authenticity of senders, to enable this read <a class="reference internal" href="#message-signing"><em>Message Signing</em></a>
+for more information.</p>
 </div>
 <div class="section" id="message-signing">
-<h2><a class="toc-backref" href="#id8">Message Signing</a><a class="headerlink" href="#message-signing" title="Permalink to this headline">¶</a></h2>
-<p><em>[To be written]</em></p>
+<span id="id2"></span><h2><a class="toc-backref" href="#id10">Message Signing</a><a class="headerlink" href="#message-signing" title="Permalink to this headline">¶</a></h2>
+<p>Celery can use the <a class="reference external" href="http://pypi.python.org/pypi/pyOpenSSL">pyOpenSSL</a> library to sign message using
+<cite>Public-key cryptography</cite>, where
+messages sent by clients are signed using a private key
+and then later verified by the worker using a public certificate.</p>
+<p>Optimally certificates should be signed by an official
+<a class="reference external" href="http://en.wikipedia.org/wiki/Certificate_authority">Certificate Authority</a>, but they can also be self-signed.</p>
+<p>To enable this you should configure the <a class="reference internal" href="../configuration.html#std:setting-CELERY_TASK_SERIALIZER"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TASK_SERIALIZER</span></tt></a>
+setting to use the <cite>auth</cite> serializer.
+Also required is configuring the
+paths used to locate private keys and certificates on the file-system:
+the <a class="reference internal" href="../configuration.html#std:setting-CELERY_SECURITY_KEY"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_SECURITY_KEY</span></tt></a>,
+<a class="reference internal" href="../configuration.html#std:setting-CELERY_SECURITY_CERTIFICATE"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_SECURITY_CERTIFICATE</span></tt></a> and <a class="reference internal" href="../configuration.html#std:setting-CELERY_SECURITY_CERT_STORE"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_SECURITY_CERT_STORE</span></tt></a>
+settings respectively.
+With these configured it is also necessary to call the
+<tt class="xref py py-func docutils literal"><span class="pre">celery.security.setup_security()</span></tt> function.  Note that this will also
+disable all insucure serializers so that the worker won&#8217;t accept
+messages with untrusted content types.</p>
+<p>This is an example configuration using the <cite>auth</cite> serializer,
+with the private key and certificate files located in :<cite>/etc/ssl</cite>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_SECURITY_KEY</span> <span class="o">=</span> <span class="s">&quot;/etc/ssl/private/worker.key&quot;</span>
+<span class="n">CELERY_SECURITY_CERTIFICATE</span> <span class="o">=</span> <span class="s">&quot;/etc/ssl/certs/worker.pem&quot;</span>
+<span class="n">CELERY_SECURITY_CERT_STORE</span> <span class="o">=</span> <span class="s">&quot;/etc/ssl/certs/\*.pem&quot;</span>
+<span class="kn">from</span> <span class="nn">celery.security</span> <span class="kn">import</span> <span class="n">setup_security</span>
+<span class="n">setup_security</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>While relative paths are not disallowed, using absolute paths
+is recommended for these files.</p>
+<p class="last">Also note that the <cite>auth</cite> serializer won&#8217;t encrypt the contents of
+a message, so if needed this will have to be enabled separately.</p>
+</div>
 </div>
 <div class="section" id="intrusion-detection">
-<h2><a class="toc-backref" href="#id9">Intrusion Detection</a><a class="headerlink" href="#intrusion-detection" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id11">Intrusion Detection</a><a class="headerlink" href="#intrusion-detection" title="Permalink to this headline">¶</a></h2>
 <p>The most important part when defending your systems against
 intruders is being able to detect if the system has been compromised.</p>
 <div class="section" id="logs">
-<h3><a class="toc-backref" href="#id10">Logs</a><a class="headerlink" href="#logs" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id12">Logs</a><a class="headerlink" href="#logs" title="Permalink to this headline">¶</a></h3>
 <p>Logs are usually the first place to look for evidence
 of security breaches, but they are useless if they can be tampered with.</p>
 <p>A good solution is to set up centralized logging with a dedicated logging
@@ -170,7 +219,7 @@ support for using syslog.</p>
 transmit part of the logging servers network cable :-)</p>
 </div>
 <div class="section" id="tripwire">
-<h3><a class="toc-backref" href="#id11">Tripwire</a><a class="headerlink" href="#tripwire" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id13">Tripwire</a><a class="headerlink" href="#tripwire" title="Permalink to this headline">¶</a></h3>
 <p><a class="reference external" href="http://tripwire.com/">Tripwire</a> is a (now commercial) data integrity tool, with several
 open source implementations, used to keep
 cryptographic hashes of files in the file-system, so that administrators
@@ -242,7 +291,7 @@ that can be used.</p>
         <li class="right" >
           <a href="monitoring.html" title="Monitoring and Management Guide"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>

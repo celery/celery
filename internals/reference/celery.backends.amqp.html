@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.backends.amqp &mdash; Celery 2.5.0a1 documentation</title>
+    <title>celery.backends.amqp &mdash; Celery 2.5.0b1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.5.0a1',
+        VERSION:     '2.5.0b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0a1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.5.0b1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.backends.mongodb" href="celery.backends.mongodb.html" />
     <link rel="prev" title="celery.backends.cache" href="celery.backends.cache.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.backends.cache.html" title="celery.backends.cache"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -141,6 +141,11 @@ mean the server will not send any more messages for this consumer.</p>
 <p>This does not affect already delivered messages, but it does
 mean the server will not send any more messages for this consumer.</p>
 </dd></dl>
+
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Consumer.connection">
+<tt class="descname">connection</tt><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Consumer.connection" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Consumer.consume">
@@ -282,7 +287,7 @@ is received.</p>
 <p>The signature of the callback needs to accept two arguments:
 <cite>(body, message)</cite>, which is the decoded message body
 and the <cite>Message</cite> instance (a subclass of
-<a class="reference external" href="http://kombu.readthedocs.org/en/latest/reference/kombu.transport.base.html#kombu.transport.base.Message" title="(in Kombu v1.4)"><tt class="xref py py-class docutils literal"><span class="pre">Message</span></tt></a>.</p>
+<a class="reference external" href="http://kombu.readthedocs.org/en/latest/reference/kombu.transport.base.html#kombu.transport.base.Message" title="(in Kombu v2.0)"><tt class="xref py py-class docutils literal"><span class="pre">Message</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -465,7 +470,7 @@ properly sets content_encoding.</li>
 
 <dl class="attribute">
 <dt id="celery.backends.amqp.AMQPBackend.Exchange.attrs">
-<tt class="descname">attrs</tt><em class="property"> = (('name', None), ('type', None), ('arguments', None), ('durable', &lt;type 'bool'&gt;), ('auto_delete', &lt;type 'bool'&gt;), ('delivery_mode', &lt;function &lt;lambda&gt; at 0x107c56668&gt;))</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Exchange.attrs" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">attrs</tt><em class="property"> = (('name', None), ('type', None), ('arguments', None), ('durable', &lt;type 'bool'&gt;), ('auto_delete', &lt;type 'bool'&gt;), ('delivery_mode', &lt;function &lt;lambda&gt; at 0x106bff410&gt;))</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Exchange.attrs" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -560,13 +565,13 @@ response will not be waited for. Default is <tt class="xref py py-const docutils
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>channel</strong> &#8211; Connection channel.</li>
-<li><strong>exchange</strong> &#8211; Default exchange.</li>
-<li><strong>routing_key</strong> &#8211; Default routing key.</li>
+<li><strong>channel</strong> &#8211; Connection or channel.</li>
+<li><strong>exchange</strong> &#8211; Optional default exchange.</li>
+<li><strong>routing_key</strong> &#8211; Optional default routing key.</li>
 <li><strong>serializer</strong> &#8211; Default serializer. Default is <cite>&#8220;json&#8221;</cite>.</li>
 <li><strong>compression</strong> &#8211; Default compression method. Default is no
 compression.</li>
-<li><strong>auto_declare</strong> &#8211; Automatically declare the exchange
+<li><strong>auto_declare</strong> &#8211; Automatically declare the default exchange
 at instantiation. Default is <tt class="xref py py-const docutils literal"><span class="pre">True</span></tt>.</li>
 <li><strong>on_return</strong> &#8211; Callback to call for undeliverable messages,
 when the <cite>mandatory</cite> or <cite>immediate</cite> arguments to
@@ -598,6 +603,11 @@ Note that the producer needs to drain events to use this feature.</li>
 <tt class="descname">compression</tt><em class="property"> = None</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.compression" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Producer.connection">
+<tt class="descname">connection</tt><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.connection" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Producer.declare">
 <tt class="descname">declare</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.declare" title="Permalink to this definition">¶</a></dt>
@@ -611,6 +621,11 @@ is set to <tt class="xref py py-const docutils literal"><span class="pre">True</
 <tt class="descname">exchange</tt><em class="property"> = None</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.exchange" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="method">
+<dt id="celery.backends.amqp.AMQPBackend.Producer.maybe_declare">
+<tt class="descname">maybe_declare</tt><big>(</big><em>entity</em>, <em>retry=False</em>, <em>**retry_policy</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.maybe_declare" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="attribute">
 <dt id="celery.backends.amqp.AMQPBackend.Producer.on_return">
 <tt class="descname">on_return</tt><em class="property"> = None</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.on_return" title="Permalink to this definition">¶</a></dt>
@@ -618,7 +633,7 @@ is set to <tt class="xref py py-const docutils literal"><span class="pre">True</
 
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Producer.publish">
-<tt class="descname">publish</tt><big>(</big><em>body</em>, <em>routing_key=None</em>, <em>delivery_mode=None</em>, <em>mandatory=False</em>, <em>immediate=False</em>, <em>priority=0</em>, <em>content_type=None</em>, <em>content_encoding=None</em>, <em>serializer=None</em>, <em>headers=None</em>, <em>compression=None</em>, <em>exchange=None</em>, <em>**properties</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.publish" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">publish</tt><big>(</big><em>body</em>, <em>routing_key=None</em>, <em>delivery_mode=None</em>, <em>mandatory=False</em>, <em>immediate=False</em>, <em>priority=0</em>, <em>content_type=None</em>, <em>content_encoding=None</em>, <em>serializer=None</em>, <em>headers=None</em>, <em>compression=None</em>, <em>exchange=None</em>, <em>retry=False</em>, <em>retry_policy=None</em>, <em>declare=</em><span class="optional">[</span><span class="optional">]</span>, <em>**properties</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Producer.publish" title="Permalink to this definition">¶</a></dt>
 <dd><p>Publish message to the specified exchange.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1103,7 +1118,7 @@ without modifying the server state.</li>
         <li class="right" >
           <a href="celery.backends.cache.html" title="celery.backends.cache"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

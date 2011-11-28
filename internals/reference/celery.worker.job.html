@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.worker.job &mdash; Celery 2.5.0a1 documentation</title>
+    <title>celery.worker.job &mdash; Celery 2.5.0b1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.5.0a1',
+        VERSION:     '2.5.0b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0a1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.5.0b1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.worker.mediator" href="celery.worker.mediator.html" />
     <link rel="prev" title="celery.worker.consumer" href="celery.worker.consumer.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.worker.consumer.html" title="celery.worker.consumer"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -101,7 +101,7 @@ which specifies how tasks are executed.</p>
 
 <dl class="class">
 <dt id="celery.worker.job.TaskRequest">
-<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskRequest</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x101a3c0c8&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>hostname=None</em>, <em>logger=None</em>, <em>eventer=None</em>, <em>eta=None</em>, <em>expires=None</em>, <em>app=None</em>, <em>taskset_id=None</em>, <em>chord=None</em>, <em>tz=0</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskRequest</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x101a3b140&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>hostname=None</em>, <em>logger=None</em>, <em>eventer=None</em>, <em>eta=None</em>, <em>expires=None</em>, <em>app=None</em>, <em>taskset_id=None</em>, <em>chord=None</em>, <em>utc=False</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest" title="Permalink to this definition">¶</a></dt>
 <dd><p>A request for task execution.</p>
 <dl class="method">
 <dt id="celery.worker.job.TaskRequest.acknowledge">
@@ -202,7 +202,7 @@ in version 3.0.</p>
 
 <dl class="classmethod">
 <dt id="celery.worker.job.TaskRequest.from_message">
-<em class="property">classmethod </em><tt class="descname">from_message</tt><big>(</big><em>message</em>, <em>body</em>, <em>on_ack=&lt;function noop at 0x101a3c0c8&gt;</em>, <em>**kw</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.from_message" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descname">from_message</tt><big>(</big><em>message</em>, <em>body</em>, <em>on_ack=&lt;function noop at 0x101a3b140&gt;</em>, <em>**kw</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.from_message" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create request from a task message.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -517,7 +517,7 @@ the exception instance on failure.</p>
         <li class="right" >
           <a href="celery.worker.consumer.html" title="celery.worker.consumer"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

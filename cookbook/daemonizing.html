@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Running celeryd as a daemon &mdash; Celery 2.5.0a1 documentation</title>
+    <title>Running celeryd as a daemon &mdash; Celery 2.5.0b1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0a1',
+        VERSION:     '2.5.0b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0a1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.5.0b1 documentation" href="../index.html" />
     <link rel="up" title="Cookbook" href="index.html" />
     <link rel="next" title="Contributing" href="../contributing.html" />
     <link rel="prev" title="Creating Tasks" href="tasks.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="tasks.html" title="Creating Tasks"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Cookbook</a> &raquo;</li> 
       </ul>
     </div>  
@@ -158,6 +158,9 @@ CELERYD_CHDIR="/opt/Myproject/"
 # How to call "manage.py celeryd_multi"
 CELERYD_MULTI="$CELERYD_CHDIR/manage.py celeryd_multi"
 
+# How to call "manage.py celeryctl"
+CELERYCTL="$CELERYD_CHDIR/manage.py celeryctl"
+
 # Extra arguments to celeryd
 CELERYD_OPTS="--time-limit=300 --concurrency=8"
 
@@ -193,6 +196,9 @@ ENV_PYTHON="$CELERYD_CHDIR/env/bin/python"
 
 # How to call "manage.py celeryd_multi"
 CELERYD_MULTI="$ENV_PYTHON $CELERYD_CHDIR/manage.py celeryd_multi"
+
+# How to call "manage.py celeryctl"
+CELERYCTL=$ENV_PYTHON $CELERYD_CHDIR/manage.py celeryctl"
 
 # Extra arguments to celeryd
 CELERYD_OPTS="--time-limit=300 --concurrency=8"
@@ -255,7 +261,14 @@ directory.</p>
 <li><dl class="first docutils">
 <dt>CELERYD_MULTI</dt>
 <dd><p class="first last">Path to the celeryd-multi program. Default is <cite>celeryd-multi</cite>.
-You can point this to an virtualenv, or even use manage.py for django.</p>
+You can point this to a virtualenv, or even use manage.py for django.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERYCTL</dt>
+<dd><p class="first last">Path to the celeryctl program.  Default is <cite>celeryctl</cite>.
+You can point this to a virtualenv, or even use manage.py for django.</p>
 </dd>
 </dl>
 </li>
@@ -461,7 +474,7 @@ actual resulting output:</p>
         <li class="right" >
           <a href="tasks.html" title="Creating Tasks"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" >Cookbook</a> &raquo;</li> 
       </ul>
     </div>

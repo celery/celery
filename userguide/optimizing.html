@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Optimizing &mdash; Celery 2.5.0a1 documentation</title>
+    <title>Optimizing &mdash; Celery 2.5.0b1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0a1',
+        VERSION:     '2.5.0b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0a1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.5.0b1 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Concurrency" href="concurrency/index.html" />
     <link rel="prev" title="Security" href="security.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="security.html" title="Security"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -109,11 +109,10 @@ recommended.</td></tr>
 <span id="optimizing-general-settings"></span><h2>General Settings<a class="headerlink" href="#general-settings" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="broker-connection-pools">
 <span id="optimizing-connection-pools"></span><h3>Broker Connection Pools<a class="headerlink" href="#broker-connection-pools" title="Permalink to this headline">¶</a></h3>
-<p>You should enable the <a class="reference internal" href="../configuration.html#std:setting-BROKER_POOL_LIMIT"><tt class="xref std std-setting docutils literal"><span class="pre">BROKER_POOL_LIMIT</span></tt></a> setting,
-as this will drastically improve overall performance.</p>
-<p>The value should be based on how many threads will use
-connections at the same time.</p>
-<p>This setting will be enabled by default in version 3.0.</p>
+<p>The broker connection pool is enabled by default since version 2.5.</p>
+<p>You can tweak the <a class="reference internal" href="../configuration.html#std:setting-BROKER_POOL_LIMIT"><tt class="xref std std-setting docutils literal"><span class="pre">BROKER_POOL_LIMIT</span></tt></a> setting to minimize
+contention, and the value should be based on the number of
+active threads/greenthreads using broker connections.</p>
 </div>
 </div>
 <div class="section" id="worker-settings">
@@ -244,7 +243,7 @@ the rate limit subsystem:</p>
         <li class="right" >
           <a href="security.html" title="Security"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>

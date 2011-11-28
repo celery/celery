@@ -455,7 +455,7 @@ How can I reuse the same connection when applying tasks?
 --------------------------------------------------------
 
 **Answer**: See the :setting:`BROKER_POOL_LIMIT` setting.
-This setting will be enabled by default in 3.0.
+The connection pool is enabled by default since version 2.5.
 
 .. _faq-execute-task-by-name:
 

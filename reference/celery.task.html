@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.task &mdash; Celery 2.5.0a1 documentation</title>
+    <title>celery.task &mdash; Celery 2.5.0b1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0a1',
+        VERSION:     '2.5.0b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0a1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.5.0b1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.task.base" href="celery.task.base.html" />
     <link rel="prev" title="celery.app.defaults" href="celery.app.defaults.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.app.defaults.html" title="celery.app.defaults"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -132,11 +132,11 @@
 </div>
 <p>With setting extra options and using retry.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">(</span><span class="n">exchange</span><span class="o">=</span><span class="s">&quot;feeds&quot;</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">refresh_feed</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">refresh_feed</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
     <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="n">exc</span><span class="p">:</span>
-        <span class="n">refresh_feed</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">url</span><span class="p">],</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">exc</span><span class="o">=</span><span class="n">exc</span><span class="p">)</span>
+        <span class="n">refresh_feed</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">exc</span><span class="o">=</span><span class="n">exc</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Calling the resulting task:</p>
@@ -216,7 +216,7 @@ is overridden).</p>
         <li class="right" >
           <a href="celery.app.defaults.html" title="celery.app.defaults"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

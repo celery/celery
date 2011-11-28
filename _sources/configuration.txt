@@ -40,9 +40,66 @@ It should contain all you need to run a basic Celery set-up.
     ## available will be used.
     CELERYD_CONCURRENCY = 10
 
+    CELERY_ANNOTATIONS = {"tasks.add": {"rate_limit": "10/s"}}
+
 
 Configuration Directives
 ========================
+
+.. _conf-tasks:
+
+Task settings
+-------------
+
+.. setting:: CELERY_ANNOTATIONS
+
+CELERY_ANNOTATIONS
+~~~~~~~~~~~~~~~~~~
+
+This setting can be used to rewrite any task attribute from the
+configuration.  The setting can be a dict, or a list of annotation
+objects that filter for tasks and return a map of attributes
+to change.
+
+
+This will change the ``rate_limit`` attribute for the ``tasks.add``
+task:
+
+.. code-block:: python
+
+    CELERY_ANNOTATIONS = {"tasks.add": {"rate_limit": "10/s"}}
+
+or change the same for all tasks:
+
+.. code-block:: python
+
+    CELERY_ANNOTATIONS = {"*": {"rate_limit": "10/s"}}
+
+
+You can change methods too, for example the ``on_failure`` handler:
+
+.. code-block:: python
+
+    def my_on_failure(self, exc, task_id, args, kwargs, einfo):
+        print("Oh no! Task failed: %r" % (exc, ))
+
+    CELERY_ANNOTATIONS = {"*": {"on_failure": my_on_failure}}
+
+
+If you need more flexibility then you can use objects
+instead of a dict to choose which tasks to annotate:
+
+.. code-block:: python
+
+    class MyAnnotate(object):
+
+        def annotate(self, task):
+            if task.name.startswith("tasks."):
+                return {"rate_limit": "10/s"}
+
+    CELERY_ANNOTATIONS = (MyAnnotate(), {...})
+
+
 
 .. _conf-concurrency:
 
@@ -612,13 +669,16 @@ BROKER_POOL_LIMIT
 
 The maximum number of connections that can be open in the connection pool.
 
-A good default value could be 10, or more if you're using eventlet/gevent
-or lots of threads.
+The pool is enabled by default since version 2.5, with a default limit of ten
+connections.  This number can be tweaked depending on the number of
+threads/greenthreads (eventlet/gevent) using a connection.  For example
+running eventlet with 1000 greenlets that use a connection to the broker,
+contention can arise and you should consider increasing the limit.
 
 If set to :const:`None` or 0 the connection pool will be disabled and
 connections will be established and closed for every use.
 
-**Disabled by default.**
+Default (since 2.5) is to use a pool of 10 connections.
 
 .. setting:: BROKER_CONNECTION_TIMEOUT
 
@@ -1208,6 +1268,42 @@ Can be one of :const:`DEBUG`, :const:`INFO`, :const:`WARNING`,
 :const:`ERROR` or :const:`CRITICAL`.
 
 Default is :const:`WARNING`.
+
+.. _conf-security:
+
+Security
+--------
+
+.. setting:: CELERY_SECURITY_KEY
+
+CELERY_SECURITY_KEY
+~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.5
+
+The relative or absolute path to a file containing the private key
+used to sign messages when :ref:`message-signing` is used.
+
+.. setting:: CELERY_SECURITY_CERTIFICATE
+
+CELERY_SECURITY_CERTIFICATE
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.5
+
+The relative or absolute path to an X.509 certificate file
+used to sign messages when :ref:`message-signing` is used.
+
+.. setting:: CELERY_SECURITY_CERT_STORE
+
+CELERY_SECURITY_CERT_STORE
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.5
+
+The directory containing X.509 certificates used for
+:ref:`message signing`.  Can be a glob with wildcards,
+(for example :file:`/etc/certs/*.pem`).
 
 .. _conf-custom-components:
 

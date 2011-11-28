@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.worker.mediator &mdash; Celery 2.5.0a1 documentation</title>
+    <title>celery.worker.mediator &mdash; Celery 2.5.0b1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.5.0a1',
+        VERSION:     '2.5.0b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0a1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.5.0b1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.worker.buckets" href="celery.worker.buckets.html" />
     <link rel="prev" title="celery.worker.job" href="celery.worker.job.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.worker.job.html" title="celery.worker.job"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -101,7 +101,12 @@ and can improve performance.</p>
 <dl class="class">
 <dt id="celery.worker.mediator.Mediator">
 <em class="property">class </em><tt class="descclassname">celery.worker.mediator.</tt><tt class="descname">Mediator</tt><big>(</big><em>ready_queue</em>, <em>callback</em>, <em>logger=None</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.worker.mediator.Mediator" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="attribute">
+<dd><dl class="method">
+<dt id="celery.worker.mediator.Mediator.body">
+<tt class="descname">body</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.mediator.Mediator.body" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
 <dt id="celery.worker.mediator.Mediator.callback">
 <tt class="descname">callback</tt><em class="property"> = None</em><a class="headerlink" href="#celery.worker.mediator.Mediator.callback" title="Permalink to this definition">¶</a></dt>
 <dd><p>Callback called when a task is obtained.</p>
@@ -116,18 +121,6 @@ and can improve performance.</p>
 <dt id="celery.worker.mediator.Mediator.ready_queue">
 <tt class="descname">ready_queue</tt><em class="property"> = None</em><a class="headerlink" href="#celery.worker.mediator.Mediator.ready_queue" title="Permalink to this definition">¶</a></dt>
 <dd><p>The task queue, a <tt class="xref py py-class docutils literal"><span class="pre">Queue</span></tt> instance.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.mediator.Mediator.run">
-<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.mediator.Mediator.run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Move tasks until <a class="reference internal" href="#celery.worker.mediator.Mediator.stop" title="celery.worker.mediator.Mediator.stop"><tt class="xref py py-meth docutils literal"><span class="pre">stop()</span></tt></a> is called.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.mediator.Mediator.stop">
-<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.mediator.Mediator.stop" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gracefully shutdown the thread.</p>
 </dd></dl>
 
 </dd></dl>
@@ -186,7 +179,7 @@ and can improve performance.</p>
         <li class="right" >
           <a href="celery.worker.job.html" title="celery.worker.job"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

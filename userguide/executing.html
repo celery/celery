@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Executing Tasks &mdash; Celery 2.5.0a1 documentation</title>
+    <title>Executing Tasks &mdash; Celery 2.5.0b1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0a1',
+        VERSION:     '2.5.0b1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0a1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.5.0b1 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Workers Guide" href="workers.html" />
     <link rel="prev" title="Tasks" href="tasks.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="tasks.html" title="Tasks"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -231,11 +231,11 @@ to use when sending a task:</p>
 <span id="executing-connections"></span><h2><a class="toc-backref" href="#id5">Connections and connection timeouts.</a><a class="headerlink" href="#connections-and-connection-timeouts" title="Permalink to this headline">¶</a></h2>
 <div class="admonition-automatic-pool-support admonition">
 <p class="first admonition-title">Automatic Pool Support</p>
-<p>In version 2.3 there is now support for automatic connection pools,
+<p>Since version 2.3 there is support for automatic connection pools,
 so you don&#8217;t have to manually handle connections and publishers
 to reuse connections.</p>
-<p class="last">See the <a class="reference internal" href="../configuration.html#std:setting-BROKER_POOL_LIMIT"><tt class="xref std std-setting docutils literal"><span class="pre">BROKER_POOL_LIMIT</span></tt></a> setting.
-This setting will be enabled by default in version 3.0.</p>
+<p>The connection pool is enabled by default since version 2.5.</p>
+<p class="last">See the <a class="reference internal" href="../configuration.html#std:setting-BROKER_POOL_LIMIT"><tt class="xref std std-setting docutils literal"><span class="pre">BROKER_POOL_LIMIT</span></tt></a> setting for more information.</p>
 </div>
 <p>You can handle the connection manually by creating a
 publisher:</p>
@@ -402,7 +402,7 @@ if the task cannot be routed to a worker immediately.</p>
         <li class="right" >
           <a href="tasks.html" title="Tasks"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0a1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>
