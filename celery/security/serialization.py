@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-import anyjson
 import base64
 
 from kombu.serialization import registry, encode, decode
@@ -28,8 +27,6 @@ class SecureSerializer(object):
         self._cert = cert
         self._cert_store = cert_store
         self._digest = digest
-        self._serialize = anyjson.serialize
-        self._deserialize = anyjson.deserialize
         self._serializer = serializer
 
     def serialize(self, data):
@@ -43,15 +40,9 @@ class SecureSerializer(object):
             # this way the receiver doesn't have to decode the contents
             # to verify the signature (and thus avoiding potential flaws
             # in the decoding step).
-            signature = b64encode(self._key.sign(body, self._digest))
-            signer = self._cert.get_id()
-            return self._serialize({
-                    "body": body,
-                    "signer": self._cert.get_id(),
-                    "signature": signature,
-                    "content_type": content_type,
-                    "content_encoding": content_encoding,
-            })
+            return self._pack(body, content_type, content_encoding,
+                              signature=self._key.sign(body, self._digest),
+                              signer=self._cert.get_id())
         except Exception, exc:
             raise SecurityError("Unable to serialize: %r" % (exc, ))
 
@@ -59,16 +50,27 @@ class SecureSerializer(object):
         """deserialize data structure from string"""
         assert self._cert_store is not None
         try:
-            data = self._deserialize(data)
-            signature = b64decode(data["signature"])
-            signer = data["signer"]
-            body = data["body"]
+            payload = self._unpack(data)
+            signature, signer, body = (payload["signature"],
+                                       payload["signer"],
+                                       payload["body"])
             self._cert_store[signer].verify(body,
                                             signature, self._digest)
-            return decode(body, data["content_type"],
-                                data["content_encoding"], force=True)
         except Exception, exc:
             raise SecurityError("Unable to deserialize: %r" % (exc, ))
+
+        return decode(body, payload["content_type"],
+                            payload["content_encoding"], force=True)
+
+    def _pack(self, body, content_type, content_encoding, signer, signature,
+            sep='\x00\x01'):
+        return b64encode(sep.join([signer, signature,
+                                   content_type, content_encoding, body]))
+
+    def _unpack(self, payload, sep='\x00\x01',
+            fields=("signer", "signature", "content_type",
+                    "content_encoding", "body")):
+        return dict(zip(fields, b64decode(payload).split(sep)))
 
 
 def register_auth(key=None, cert=None, store=None, digest="sha1",
