@@ -21,11 +21,6 @@ from .. import routes as _routes
 from .. import signals
 from ..utils import cached_property, textindent, uuid
 
-# UTC timezone mark.
-# Defaults to local in 2.5, and UTC in 3.x.
-TZ_LOCAL = 0x0
-TZ_UTC = 0x1
-
 #: List of known options to a Kombu producers send method.
 #: Used to extract the message related options out of any `dict`.
 MSG_OPTIONS = ("mandatory", "priority", "immediate", "routing_key",
@@ -159,6 +154,7 @@ class TaskPublisher(messaging.Publisher):
         self.retry = kwargs.pop("retry", self.retry)
         self.retry_policy = kwargs.pop("retry_policy",
                                         self.retry_policy or {})
+        self.utc = kwargs.pop("enable_utc", False)
         super(TaskPublisher, self).__init__(*args, **kwargs)
 
     def declare(self):
@@ -228,7 +224,7 @@ class TaskPublisher(messaging.Publisher):
                 "retries": retries or 0,
                 "eta": eta,
                 "expires": expires,
-                "tz": TZ_LOCAL}
+                "utc": self.utc}
         if taskset_id:
             body["taskset"] = taskset_id
         if chord:
@@ -326,6 +322,7 @@ class AMQP(object):
                     "serializer": conf.CELERY_TASK_SERIALIZER,
                     "retry": conf.CELERY_TASK_PUBLISH_RETRY,
                     "retry_policy": conf.CELERY_TASK_PUBLISH_RETRY_POLICY,
+                    "enable_utc": conf.CELERY_ENABLE_UTC,
                     "app": self}
         return TaskPublisher(*args, **self.app.merge(defaults, kwargs))
 

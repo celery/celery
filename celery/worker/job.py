@@ -241,7 +241,7 @@ class TaskRequest(object):
     def __init__(self, task_name, task_id, args, kwargs,
             on_ack=noop, retries=0, delivery_info=None, hostname=None,
             logger=None, eventer=None, eta=None, expires=None, app=None,
-            taskset_id=None, chord=None, tz=0x0, **opts):
+            taskset_id=None, chord=None, utc=False, **opts):
         self.app = app_or_default(app)
         self.task_name = task_name
         self.task_id = task_id
@@ -266,7 +266,7 @@ class TaskRequest(object):
         # timezone means the message is timezone-aware, and the only timezone
         # supported at this point is UTC.
         self.tzlocal = timezone.tz_or_local(self.app.conf.CELERY_TIMEZONE)
-        tz = tz and timezone.utc or self.tzlocal
+        tz = timezone.utc if utc else self.tzlocal
         if self.eta is not None:
             self.eta = timezone.to_local(self.eta, self.tzlocal, tz)
         if self.expires is not None:
@@ -305,7 +305,7 @@ class TaskRequest(object):
                    expires=maybe_iso8601(body.get("expires")),
                    on_ack=on_ack,
                    delivery_info=delivery_info,
-                   tz=body.get("tz", None),
+                   utc=body.get("utc", None),
                    **kw)
 
     def get_instance_attrs(self, loglevel, logfile):
