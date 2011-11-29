@@ -19,6 +19,8 @@ import traceback
 from itertools import chain
 from threading import RLock
 
+from kombu.utils.limits import TokenBucket  # noqa
+
 from .utils.compat import UserDict, OrderedDict
 
 

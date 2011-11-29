@@ -64,20 +64,15 @@ News
 
     To enable UTC you have to set :setting:`CELERY_ENABLE_UTC`::
 
-        CELERY_ENABLE_UTC
+        CELERY_ENABLE_UTC = True
 
-    With that enabled dates and times in task message will now be
+    With that enabled dates and times in task messages will be
     converted to UTC, and then converted back to the local timezone
     when received by a worker.
 
-    You can also change the local timezone by the :setting:`CELERY_TIMEZONE`
-    setting. Custom timezones requires the :mod:`pytz` library to be installed.
-
-    .. note::
-
-        A new ``utc`` header extension has been added to the task message
-        format.  It is a boolean that if set means the timezone of dates
-        and times in the message are in UTC.
+    You can change the local timezone with the :setting:`CELERY_TIMEZONE`
+    setting.  Custom timezones requires the :mod:`pytz` library to
+    be installed.
 
 * New Message Signing Serializer.
 
