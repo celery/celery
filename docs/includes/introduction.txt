@@ -106,7 +106,6 @@ Features
     +-----------------+----------------------------------------------------+
     | Fault-tolerant  | Excellent configurable error recovery when using   |
     |                 | `RabbitMQ`, ensures your tasks are never lost.     |
-    |                 | scenarios, and your tasks will never be lost.      |
     +-----------------+----------------------------------------------------+
     | Distributed     | Runs on one or more machines. Supports             |
     |                 | broker `clustering`_ and `HA`_ when used in        |
