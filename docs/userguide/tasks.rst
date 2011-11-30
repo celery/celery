@@ -74,7 +74,7 @@ attributes:
                 task.  Used by e.g. :meth:`~celery.task.base.BaseTask.retry`
                 to resend the task to the same destination queue.
 
-  **NOTE** As some messaging backends doesn't have advanced routing
+  **NOTE** As some messaging backends don't have advanced routing
   capabilities, you can't trust the availability of keys in this mapping.
 
 
