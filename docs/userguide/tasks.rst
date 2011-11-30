@@ -556,7 +556,7 @@ limitations.
   increase the polling intervals of operations such as `result.wait()`, and
   `tasksetresult.join()`
 
-* Some databases uses a default transaction isolation level that
+* Some databases use a default transaction isolation level that
   is not suitable for polling tables for changes.
 
   In MySQL the default transaction isolation level is `REPEATABLE-READ`, which
@@ -576,7 +576,7 @@ PENDING
 ~~~~~~~
 
 Task is waiting for execution or unknown.
-Any task id that is not know is implied to be in the pending state.
+Any task id that is not known is implied to be in the pending state.
 
 .. state:: STARTED
 
@@ -644,7 +644,7 @@ you could have a look at :mod:`abortable tasks <~celery.contrib.abortable>`
 which defines its own custom :state:`ABORTED` state.
 
 Use :meth:`Task.update_state <celery.task.base.BaseTask.update_state>` to
-update a tasks state::
+update a task's state::
 
     @task
     def upload_files(filenames):
@@ -666,7 +666,7 @@ Creating pickleable exceptions
 A little known Python fact is that exceptions must behave a certain
 way to support being pickled.
 
-Tasks that raises exceptions that are not pickleable will not work
+Tasks that raise exceptions that are not pickleable will not work
 properly when Pickle is used as the serializer.
 
 To make sure that your exceptions are pickleable the exception
@@ -722,7 +722,7 @@ Creating custom task classes
 ============================
 
 All tasks inherit from the :class:`celery.task.Task` class.
-The tasks body is its :meth:`run` method.
+The task's body is its :meth:`run` method.
 
 The following code,
 
