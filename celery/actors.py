@@ -6,8 +6,8 @@ import cl.presence
 
 def construct(cls, instance, connection=None, *args, **kwargs):
     app = instance.app = app_or_default(kwargs.pop("app", None))
-    connection = app.broker_connection(connection)
-    super(cls, instance).__init__(connection, *args, **kwargs)
+    super(cls, instance).__init__(connection or app.broker_connection(),
+                                  *args, **kwargs)
 
 
 class Actor(cl.Actor):
