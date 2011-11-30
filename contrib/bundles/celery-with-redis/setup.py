@@ -1,13 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
-import sys
 import codecs
-import platform
-
-
-if sys.version_info < (2, 5):
-    raise Exception("Celery requires Python 2.5 or higher.")
 
 try:
     from setuptools import setup, find_packages
@@ -23,7 +17,6 @@ if os.path.exists("README.rst"):
     long_description = codecs.open("README.rst", "r", "utf-8").read()
 else:
     long_description = "See http://pypi.python.org/pypi/celery"
-
 
 setup(
     name="celery-with-redis",
