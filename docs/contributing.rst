@@ -553,15 +553,15 @@ is following the conventions.
 
 * Lines should not exceed 78 columns.
 
-  You can enforce this in :program:`vim` by setting the ``textwidth`` option::
+  You can enforce this in :program:`vim` by setting the ``textwidth`` option:
 
   .. code-block:: vim
 
         set textwidth=78
 
-    If adhering to this limit makes the code less readable, you have one more
-    character to go on, which means 78 is a soft limit, and 79 is the hard
-    limit :)
+  If adhering to this limit makes the code less readable, you have one more
+  character to go on, which means 78 is a soft limit, and 79 is the hard
+  limit :)
 
 * Import order
 
