@@ -44,7 +44,7 @@
 #   CELERYEV_OPTS="celeryev"
 #
 #   # Camera class to use (required)
-#   CELERYEV_CAM = "djcelery.snapshot.Camera"
+#   CELERYEV_CAM="djcelery.snapshot.Camera"
 #
 # AVAILABLE OPTIONS
 # =================
