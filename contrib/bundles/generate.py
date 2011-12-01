@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.abspath(
 
 from celery import VERSION
 
-from bundle.gen import Bundle
+from bundle import Bundle
 
 series = "{}.{}".format(*VERSION[:2])
 
@@ -27,6 +27,7 @@ bundles = [
 
 def main():
     for bundle in bundles:
+        bundle.bump_if_exists()
         print(bundle.render_readme())
 
 if __name__ == "__main__":
