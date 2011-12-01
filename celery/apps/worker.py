@@ -45,6 +45,14 @@ EXTRA_INFO_FMT = """
 %(tasks)s
 """
 
+UNKNOWN_QUEUE_ERROR = """\
+Trying to select queue subset of %r, but queue %s is not
+defined in the CELERY_QUEUES setting.
+
+If you want to automatically declare unknown queues you can
+enable the CELERY_CREATE_MISSING_QUEUES setting.
+"""
+
 
 def cpu_count():
     if multiprocessing is not None:
@@ -153,18 +161,11 @@ class Worker(object):
         print("celery@%s has started." % self.hostname)
 
     def init_queues(self):
-        if self.use_queues:
-            create_missing = self.app.conf.CELERY_CREATE_MISSING_QUEUES
-            try:
-                self.app.amqp.queues.select_subset(self.use_queues,
-                                                   create_missing)
-            except KeyError, exc:
-                raise ImproperlyConfigured(
-                    "Trying to select queue subset of %r, but queue %s"
-                    "is not defined in CELERY_QUEUES. If you want to "
-                    "automatically declare unknown queues you have to "
-                    "enable CELERY_CREATE_MISSING_QUEUES" % (
-                        self.use_queues, exc))
+        try:
+            self.app.select_queues(self.use_queues)
+        except KeyError, exc:
+            raise ImproperlyConfigured(
+                        UNKNOWN_QUEUE_ERROR % (self.use_queues, exc))
 
     def init_loader(self):
         self.loader = self.app.loader

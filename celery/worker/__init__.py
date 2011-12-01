@@ -120,11 +120,12 @@ class WorkController(object):
             pool_putlocks=None, db=None, prefetch_multiplier=None,
             eta_scheduler_precision=None, disable_rate_limits=None,
             autoscale=None, autoscaler_cls=None, scheduler_cls=None,
-            app=None):
+            queues=None, app=None):
 
         self.app = app_or_default(app)
         conf = self.app.conf
         self._shutdown_complete = threading.Event()
+        self.app.select_queues(queues)  # select queues subset.
 
         # Options
         self.loglevel = loglevel or self.loglevel
