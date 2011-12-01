@@ -1,8 +1,8 @@
-.. _broker-installation:
+.. _broker-rabbitmq:
 
-=====================
- Broker Installation
-=====================
+================
+ Using RabbitMQ
+================
 
 .. contents::
     :local:
