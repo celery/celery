@@ -2,7 +2,6 @@ import os
 import sys
 
 from celery import VERSION
-from bundle import Bundle
 from bundle.extensions import Dist
 
 

@@ -682,3 +682,20 @@ following:
     for series 2.4.
 
 * Also add the previous version under the "versions" tab.
+
+
+Updating bundles
+----------------
+
+First you need to make sure the bundle entrypoints have been installed,
+but either running `develop`, or `install`::
+
+    $ python setup.py develop
+
+Then make sure that you have your PyPI credentials stored in
+:file:`~/.pypirc`, and execute the command::
+
+    $ python setup.py upload_bundles
+
+If you broke something and need to update new versions of the bundles,
+then you can use ``upload_bundles_fix``.
