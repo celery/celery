@@ -1,9 +1,9 @@
 #!/bin/bash
 # ============================================
-#  celeryd - Starts the Celery worker daemon.
+#  celeryevcam - Starts the Celery Event Camera.
 # ============================================
 #
-# :Usage: /etc/init.d/celeryd {start|stop|force-reload|restart|try-restart|status}
+# :Usage: /etc/init.d/celeryevcam {start|stop|force-reload|restart|try-restart|status}
 #
 # :Configuration file: /etc/default/celeryev | /etc/default/celeryd
 #
@@ -137,7 +137,7 @@ if [ -n "$CELERYEV_USER" ]; then
 fi
 if [ -n "$CELERYEV_GROUP" ]; then
     DAEMON_OPTS="$DAEMON_OPTS --gid $CELERYEV_GROUP"
-    chown "$CELERYEV_GROUP" $CELERYBEAT_LOG_DIR $CELERYEV_PID_DIR
+    chown ":$CELERYEV_GROUP" $CELERYBEAT_LOG_DIR $CELERYEV_PID_DIR
 fi
 
 CELERYEV_CHDIR=${CELERYEV_CHDIR:-$CELERYD_CHDIR}
@@ -218,7 +218,7 @@ case "$1" in
     ;;
 
   *)
-    echo "Usage: /etc/init.d/celeryev {start|stop|restart}"
+    echo "Usage: /etc/init.d/celeryevcam {start|stop|restart}"
     exit 1
 esac
 
