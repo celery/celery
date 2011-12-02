@@ -1,5 +1,4 @@
-import os
-import sys
+from __future__ import absolute_import
 
 from celery import VERSION
 from bundle.extensions import Dist
