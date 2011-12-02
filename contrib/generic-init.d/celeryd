@@ -64,7 +64,7 @@ if [ -n "$CELERYD_USER" ]; then
 fi
 if [ -n "$CELERYD_GROUP" ]; then
     DAEMON_OPTS="$DAEMON_OPTS --gid=$CELERYD_GROUP"
-    chown ":$CELERYD_GROUP" $CELERYD_LOG_DIR $CELERYD_PID_DIR
+    chgrp "$CELERYD_GROUP" $CELERYD_LOG_DIR $CELERYD_PID_DIR
 fi
 
 if [ -n "$CELERYD_CHDIR" ]; then
