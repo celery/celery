@@ -2,3 +2,4 @@ paver
 flake8
 tox
 Sphinx-PyPI-upload
+bundle>=1.1.0
