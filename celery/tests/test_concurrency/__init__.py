@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import with_statement
 
 import os
 
@@ -63,3 +64,8 @@ class test_BasePool(unittest.TestCase):
         self.assertFalse(p.active)
         p._state = p.RUN
         self.assertTrue(p.active)
+
+    def test_restart(self):
+        p = BasePool(10)
+        with self.assertRaises(NotImplementedError):
+            p.restart()
