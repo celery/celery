@@ -5,6 +5,22 @@
 .. contents::
     :local:
 
+.. _version-2.4.5:
+
+2.4.5
+=====
+:release-date: 2011-12-02 17:00 P.M GMT
+:by: Ask Solem
+
+* Periodic task interval schedules were accidentally rounded down.
+
+* Logging of humanized times in the celerybeat log is now more detailed.
+
+* New :ref:`brokers` section in the Getting Started part of the Documentation
+
+    This replaces the old :ref:`tut-otherqueues` tutorial, and adds
+    documentation for MongoDB, Beanstalk and CouchDB.
+
 .. _version-2.4.4:
 
 2.4.4

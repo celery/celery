@@ -1,4 +1,4 @@
-.. _broker-installation:
+.. _brokers:
 
 =====================
  Brokers
