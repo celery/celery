@@ -61,6 +61,14 @@ Results
 To store results in the database as well, you should configure the result
 backend.  See :ref:`conf-database-result-backend`.
 
-If you don't intend to consume results you should disable them::
+.. _broker-sqlalchemy-limitations:
 
-    CELERY_IGNORE_RESULT = True
+Limitations
+===========
+
+The SQLAlchemy database transport does not currently support:
+
+    * Remote control commands (celeryev, broadcast)
+    * Events, including the Django Admin monitor.
+    * Using more than a few workers (can lead to messages being executed
+      multiple times).

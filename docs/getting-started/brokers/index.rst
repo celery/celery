@@ -1,7 +1,7 @@
 .. _broker-installation:
 
 =====================
- Broker Installation
+ Brokers
 =====================
 
 :Release: |version|
@@ -14,3 +14,8 @@ Celery supports several message transport alternatives.
 
     rabbitmq
     redis
+    sqlalchemy
+    django
+    mongodb
+    couchdb
+    beanstalk

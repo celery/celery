@@ -40,7 +40,8 @@ Where the URL is in the format of::
 Results
 -------
 
-You probably also want to store results in Redis::
+If you also want to store the state and return values of tasks in Redis,
+you should configure these settings::
 
     CELERY_RESULT_BACKEND = "redis"
     CELERY_REDIS_HOST = "localhost"
@@ -49,7 +50,3 @@ You probably also want to store results in Redis::
 
 For a complete list of options supported by the Redis result backend see
 :ref:`conf-redis-result-backend`
-
-If you don't intend to consume results you should disable them::
-
-    CELERY_IGNORE_RESULT = True

@@ -7,10 +7,23 @@
 .. contents::
     :local:
 
+Installation & Configuration
+============================
+
+RabbitMQ is the default broker so it does not require any additional
+dependencies or initial configuration, other than the URL location of
+the broker instance you want to use::
+
+    >>> BROKER_URL = "amqp://guest:guest@localhost:5672//"
+
+For a description of broker URLs and a full list of the
+various broker configuration options available to Celery,
+see :ref:`conf-broker-settings`.
+
 .. _installing-rabbitmq:
 
-Installing RabbitMQ
-===================
+Installing the RabbitMQ Server
+==============================
 
 See `Installing RabbitMQ`_ over at RabbitMQ's website. For Mac OS X
 see `Installing RabbitMQ on OS X`_.
@@ -28,7 +41,7 @@ see `Installing RabbitMQ on OS X`_.
 .. _rabbitmq-configuration:
 
 Setting up RabbitMQ
-===================
+-------------------
 
 To use celery we need to create a RabbitMQ user, a virtual host and
 allow that user access to that virtual host::
@@ -48,7 +61,7 @@ See the RabbitMQ `Admin Guide`_ for more information about `access control`_.
 .. _rabbitmq-osx-installation:
 
 Installing RabbitMQ on OS X
-===========================
+---------------------------
 
 The easiest way to install RabbitMQ on Snow Leopard is using `Homebrew`_; the new
 and shiny package management system for OS X.
@@ -89,7 +102,7 @@ Finally, we can install rabbitmq using :program:`brew`::
 .. _rabbitmq-osx-system-hostname:
 
 Configuring the system host name
---------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you're using a DHCP server that is giving you a random host name, you need
 to permanently configure the host name. This is because RabbitMQ uses the host name
@@ -126,7 +139,7 @@ then RabbitMQ will try to use `rabbit@23`, which is an illegal host name.
 .. _rabbitmq-osx-start-stop:
 
 Starting/Stopping the RabbitMQ server
--------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To start the server::
 
@@ -143,4 +156,3 @@ Never use :program:`kill` to stop the RabbitMQ server, but rather use the
     $ sudo rabbitmqctl stop
 
 When the server is running, you can continue reading `Setting up RabbitMQ`_.
-

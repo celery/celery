@@ -44,3 +44,15 @@ configuration values.
 #. Sync your database schema::
 
     $ python manage.py syncdb
+
+.. _broker-django-limitations:
+
+Limitations
+===========
+
+The Django database transport does not currently support:
+
+    * Remote control commands (celeryev, broadcast)
+    * Events, including the Django Admin monitor.
+    * Using more than a few workers (can lead to messages being executed
+      multiple times).

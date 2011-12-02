@@ -514,7 +514,7 @@ CELERY_DEFAULT_DELIVERY_MODE
 Can be `transient` or `persistent`.  The default is to send
 persistent messages.
 
-.. _conf-broker-connection:
+.. _conf-broker-settings:
 
 Broker Settings
 ---------------
