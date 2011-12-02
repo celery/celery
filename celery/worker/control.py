@@ -239,20 +239,17 @@ def pool_shrink(panel, n=1, **kwargs):
 
 
 @Panel.register
-def pool_restart(panel, imports=[], reload_imports=False, **kwargs):
-    imports = set(imports)
-    celery_imports = set(panel.app.conf.CELERY_IMPORTS)
-    for m in imports - celery_imports:
-        panel.app.loader.import_from_cwd(m)
-        panel.logger.debug("imported %s module" % m)
-    if reload_imports:
-        for m in celery_imports:
+def pool_restart(panel, imports=None, reload_imports=False,
+                 reload=reload, **kwargs):
+    imports = set(imports or [])
+    for m in imports:
+        if m not in sys.modules:
+            panel.app.loader.import_from_cwd(m)
+            panel.logger.debug("imported %s module" % m)
+        elif reload_imports:
             reload(sys.modules[m])
             panel.logger.debug("reloaded %s module" % m)
-    else:
-        for m in imports & celery_imports:
-            reload(sys.modules[m])
-            panel.logger.debug("reloaded %s module" % m)
+
     panel.consumer.pool.restart()
     return {"ok": "started restarting worker processes"}
 
