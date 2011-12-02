@@ -9,10 +9,11 @@
 
 2.4.5
 =====
-:release-date: 2011-12-02 17:00 P.M GMT
+:release-date: 2011-12-02 05:00 P.M GMT
 :by: Ask Solem
 
-* Periodic task interval schedules were accidentally rounded down.
+* Periodic task interval schedules were accidentally rounded down,
+  resulting in some periodic tasks being executed early.
 
 * Logging of humanized times in the celerybeat log is now more detailed.
 

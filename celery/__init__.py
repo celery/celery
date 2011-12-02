@@ -8,7 +8,7 @@ from __future__ import absolute_import
 import os
 import sys
 
-VERSION = (2, 4, 4)
+VERSION = (2, 4, 5)
 
 __version__ = ".".join(map(str, VERSION[0:3])) + "".join(VERSION[3:])
 __author__ = "Ask Solem"
