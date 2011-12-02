@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
 from .utils import is_iterable
-from .utils.timeutils import (timedelta_seconds, weekday,
+from .utils.timeutils import (timedelta_seconds, weekday, maybe_timedelta,
                               remaining, humanize_seconds)
 
 
@@ -30,7 +30,7 @@ class schedule(object):
     relative = False
 
     def __init__(self, run_every=None, relative=False):
-        self.run_every = run_every
+        self.run_every = maybe_timedelta(run_every)
         self.relative = relative
 
     def remaining_estimate(self, last_run_at):
@@ -62,17 +62,24 @@ class schedule(object):
         rem_delta = self.remaining_estimate(last_run_at)
         rem = timedelta_seconds(rem_delta)
         if rem == 0:
-            return True, timedelta_seconds(self.run_every)
+            return True, self.seconds
         return False, rem
 
     def __repr__(self):
-        return "<freq: %s>" % (
-                    humanize_seconds(timedelta_seconds(self.run_every)), )
+        return "<freq: %s>" % self.human_seconds
 
     def __eq__(self, other):
         if isinstance(other, schedule):
             return self.run_every == other.run_every
         return self.run_every == other
+
+    @property
+    def seconds(self):
+        return timedelta_seconds(self.run_every)
+
+    @property
+    def human_seconds(self):
+        return humanize_seconds(self.seconds)
 
 
 class crontab_parser(object):

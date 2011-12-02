@@ -11,8 +11,6 @@
 """
 from __future__ import absolute_import
 
-import math
-
 from datetime import datetime, timedelta
 from dateutil.parser import parse as parse_iso8601
 
@@ -25,10 +23,10 @@ RATE_MODIFIER_MAP = {"s": lambda n: n,
 
 HAVE_TIMEDELTA_TOTAL_SECONDS = hasattr(timedelta, "total_seconds")
 
-TIME_UNITS = (("day", 60 * 60 * 24, lambda n: int(math.ceil(n))),
-              ("hour", 60 * 60, lambda n: int(math.ceil(n))),
-              ("minute", 60, lambda n: int(math.ceil(n))),
-              ("second", 1, lambda n: "%.2f" % n))
+TIME_UNITS = (("day", 60 * 60 * 24.0, lambda n: "%.2f" % n),
+              ("hour", 60 * 60.0, lambda n: "%.2f" % n),
+              ("minute", 60.0, lambda n: "%.2f" % n),
+              ("second", 1.0, lambda n: "%.2f" % n))
 
 
 def maybe_timedelta(delta):
@@ -82,14 +80,14 @@ def delta_resolution(dt, delta):
     return dt
 
 
-def remaining(start, ends_in, now=None, relative=True):
+def remaining(start, ends_in, now=None, relative=False):
     """Calculate the remaining time for a start date and a timedelta.
 
     e.g. "how many seconds left for 30 seconds after start?"
 
     :param start: Start :class:`~datetime.datetime`.
     :param ends_in: The end delta as a :class:`~datetime.timedelta`.
-    :keyword relative: If set to :const:`False`, the end time will be
+    :keyword relative: If enabled the end time will be
         calculated using :func:`delta_resolution` (i.e. rounded to the
         resolution of `ends_in`).
     :keyword now: Function returning the current time and date,
@@ -99,7 +97,7 @@ def remaining(start, ends_in, now=None, relative=True):
     now = now or datetime.now()
 
     end_date = start + ends_in
-    if not relative:
+    if relative:
         end_date = delta_resolution(end_date, ends_in)
     return end_date - now
 
@@ -135,6 +133,7 @@ def weekday(name):
 def humanize_seconds(secs, prefix=""):
     """Show seconds in human form, e.g. 60 is "1 minute", 7200 is "2
     hours"."""
+    secs = float(secs)
     for unit, divider, formatter in TIME_UNITS:
         if secs >= divider:
             w = secs / divider
