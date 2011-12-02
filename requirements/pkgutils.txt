@@ -1,3 +1,4 @@
 paver
 flake8
 tox
+Sphinx-PyPI-upload
