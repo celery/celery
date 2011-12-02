@@ -1,13 +1,27 @@
-# -*- coding: utf-8 -*-"
+# -*- coding: utf-8 -*-
+"""
+    celery.app.task
+    ~~~~~~~~~~~~~~~
+
+    Tasks Implementation.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
+
+from __future__ import absolute_import
+
 import sys
 import threading
 
-from celery.datastructures import ExceptionInfo
-from celery.exceptions import MaxRetriesExceededError, RetryTaskError
-from celery.execute.trace import TaskTrace
-from celery.registry import tasks, _unpickle_task
-from celery.result import EagerResult
-from celery.utils import mattrgetter, gen_unique_id, fun_takes_kwargs
+from ...datastructures import ExceptionInfo
+from ...exceptions import MaxRetriesExceededError, RetryTaskError
+from ...execute.trace import TaskTrace
+from ...registry import tasks, _unpickle_task
+from ...result import EagerResult
+from ...utils import fun_takes_kwargs, mattrgetter, uuid
+from ...utils.mail import ErrorMail
 
 extract_exec_options = mattrgetter("queue", "routing_key",
                                    "exchange", "immediate",
@@ -20,6 +34,7 @@ class Context(threading.local):
     # Default context
     logfile = None
     loglevel = None
+    hostname = None
     id = None
     args = None
     kwargs = None
@@ -28,6 +43,7 @@ class Context(threading.local):
     delivery_info = None
     taskset = None
     chord = None
+    called_directly = True
 
     def update(self, d, **kwargs):
         self.__dict__.update(d, **kwargs)
@@ -36,18 +52,19 @@ class Context(threading.local):
         self.__dict__.clear()
 
     def get(self, key, default=None):
-        if not hasattr(self, key):
+        try:
+            return getattr(self, key)
+        except AttributeError:
             return default
-        return getattr(self, key)
 
 
 class TaskType(type):
-    """Metaclass for tasks.
+    """Meta class for tasks.
 
     Automatically registers the task in the task registry, except
     if the `abstract` attribute is set.
 
-    If no `name` attribute is provided, the name is automatically
+    If no `name` attribute is provided, then no name is automatically
     set to the name of the module it was defined in, and the class name.
 
     """
@@ -65,7 +82,7 @@ class TaskType(type):
         if not attrs.get("name"):
             try:
                 module_name = sys.modules[task_module].__name__
-            except KeyError:
+            except KeyError:  # pragma: no cover
                 # Fix for manage.py shell_plus (Issue #366).
                 module_name = task_module
             attrs["name"] = '.'.join([module_name, name])
@@ -82,6 +99,9 @@ class TaskType(type):
                 task_name = task_cls.name = '.'.join([task_cls.app.main, name])
             tasks.register(task_cls)
         task = tasks[task_name].__class__
+
+        # decorate with annotations from config.
+        task.app.annotate_task(task)
         return task
 
     def __repr__(cls):
@@ -98,6 +118,7 @@ class BaseTask(object):
     """
     __metaclass__ = TaskType
 
+    ErrorMail = ErrorMail
     MaxRetriesExceededError = MaxRetriesExceededError
 
     #: The application instance associated with this task class.
@@ -215,7 +236,7 @@ class BaseTask(object):
     #: worker crashes mid execution (which may be acceptable for some
     #: applications).
     #:
-    #: The application default can be overriden with the
+    #: The application default can be overridden with the
     #: :setting:`CELERY_ACKS_LATE` setting.
     acks_late = False
 
@@ -239,15 +260,10 @@ class BaseTask(object):
     def get_logger(self, loglevel=None, logfile=None, propagate=False,
             **kwargs):
         """Get task-aware logger object."""
-        if loglevel is None:
-            loglevel = self.request.loglevel
-        if logfile is None:
-            logfile = self.request.logfile
-        return self.app.log.setup_task_logger(loglevel=loglevel,
-                                              logfile=logfile,
-                                              propagate=propagate,
-                                              task_name=self.name,
-                                              task_id=self.request.id)
+        return self.app.log.setup_task_logger(
+            loglevel=self.request.loglevel if loglevel is None else loglevel,
+            logfile=self.request.logfile if logfile is None else logfile,
+            propagate=propagate, task_name=self.name, task_id=self.request.id)
 
     @classmethod
     def establish_connection(self, connect_timeout=None):
@@ -277,8 +293,7 @@ class BaseTask(object):
                 ...     # ... do something with publisher
 
         """
-        if exchange is None:
-            exchange = self.exchange
+        exchange = self.exchange if exchange is None else exchange
         if exchange_type is None:
             exchange_type = self.exchange_type
         connection = connection or self.establish_connection(connect_timeout)
@@ -340,7 +355,7 @@ class BaseTask(object):
 
         :keyword countdown: Number of seconds into the future that the
                             task should execute. Defaults to immediate
-                            delivery (do not confuse with the
+                            execution (do not confuse with the
                             `immediate` flag, as they are unrelated).
 
         :keyword eta: A :class:`~datetime.datetime` object describing
@@ -379,7 +394,7 @@ class BaseTask(object):
         :keyword exchange: The named exchange to send the task to.
                            Defaults to the :attr:`exchange` attribute.
 
-        :keyword exchange_type: The exchange type to initalize the exchange
+        :keyword exchange_type: The exchange type to initialize the exchange
                                 if not already declared.  Defaults to the
                                 :attr:`exchange_type` attribute.
 
@@ -495,13 +510,15 @@ class BaseTask(object):
 
         """
         request = self.request
-        if max_retries is None:
-            max_retries = self.max_retries
-        if args is None:
-            args = request.args
-        if kwargs is None:
-            kwargs = request.kwargs
+        max_retries = self.max_retries if max_retries is None else max_retries
+        args = request.args if args is None else args
+        kwargs = request.kwargs if kwargs is None else kwargs
         delivery_info = request.delivery_info
+
+        # Not in worker or emulated by (apply/always_eager),
+        # so just raise the original exception.
+        if request.called_directly:
+            raise exc or RetryTaskError("Task can be retried", None)
 
         if delivery_info:
             options.setdefault("exchange", delivery_info.get("exchange"))
@@ -533,8 +550,7 @@ class BaseTask(object):
 
     @classmethod
     def apply(self, args=None, kwargs=None, **options):
-        """Execute this task locally, by blocking until the task
-        returns.
+        """Execute this task locally, by blocking until the task returns.
 
         :param args: positional arguments passed on to the task.
         :param kwargs: keyword arguments passed on to the task.
@@ -547,7 +563,7 @@ class BaseTask(object):
         """
         args = args or []
         kwargs = kwargs or {}
-        task_id = options.get("task_id") or gen_unique_id()
+        task_id = options.get("task_id") or uuid()
         retries = options.get("retries", 0)
         throw = self.app.either("CELERY_EAGER_PROPAGATES_EXCEPTIONS",
                                 options.pop("throw", None))
@@ -661,6 +677,11 @@ class BaseTask(object):
         """
         pass
 
+    def send_error_email(self, context, exc, **kwargs):
+        if self.send_error_emails and not self.disable_error_emails:
+            sender = self.ErrorMail(self, **kwargs)
+            sender.send(context, exc)
+
     def on_success(self, retval, task_id, args, kwargs):
         """Success handler.
 
@@ -698,7 +719,7 @@ class BaseTask(object):
         """Returns :class:`~celery.task.sets.subtask` object for
         this task, wrapping arguments and execution options
         for a single task invocation."""
-        from celery.task.sets import subtask
+        from ...task.sets import subtask
         return subtask(cls, *args, **kwargs)
 
     @property

@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
 """MongoDB backend for celery."""
+from __future__ import absolute_import
+
 from datetime import datetime
 
 try:
@@ -6,11 +9,11 @@ try:
 except ImportError:
     pymongo = None  # noqa
 
-from celery import states
-from celery.backends.base import BaseDictBackend
-from celery.exceptions import ImproperlyConfigured
-from celery.utils.serialization import pickle
-from celery.utils.timeutils import maybe_timedelta
+from .. import states
+from ..exceptions import ImproperlyConfigured
+from ..utils.timeutils import maybe_timedelta
+
+from .base import BaseDictBackend
 
 
 class Bunch:
@@ -66,8 +69,20 @@ class MongoBackend(BaseDictBackend):
         """Connect to the MongoDB server."""
         if self._connection is None:
             from pymongo.connection import Connection
-            self._connection = Connection(self.mongodb_host,
-                                          self.mongodb_port)
+
+            # The first pymongo.Connection() argument (host) can be
+            # a list of ['host:port'] elements or a mongodb connection
+            # URI. If this is the case, don't use self.mongodb_port
+            # but let pymongo get the port(s) from the URI instead.
+            # This enables the use of replica sets and sharding.
+            # See pymongo.Connection() for more info.
+            args = [self.mongodb_host]
+            if isinstance(self.mongodb_host, basestring) \
+                    and not self.mongodb_host.startswith("mongodb://"):
+                args.append(self.mongodb_port)
+
+            self._connection = Connection(*args)
+
         return self._connection
 
     def _get_database(self):
@@ -98,9 +113,9 @@ class MongoBackend(BaseDictBackend):
 
         meta = {"_id": task_id,
                 "status": status,
-                "result": Binary(pickle.dumps(result)),
-                "date_done": datetime.now(),
-                "traceback": Binary(pickle.dumps(traceback))}
+                "result": Binary(self.encode(result)),
+                "date_done": datetime.utcnow(),
+                "traceback": Binary(self.encode(traceback))}
 
         db = self._get_database()
         taskmeta_collection = db[self.mongodb_taskmeta_collection]
@@ -120,9 +135,9 @@ class MongoBackend(BaseDictBackend):
         meta = {
             "task_id": obj["_id"],
             "status": obj["status"],
-            "result": pickle.loads(str(obj["result"])),
+            "result": self.decode(obj["result"]),
             "date_done": obj["date_done"],
-            "traceback": pickle.loads(str(obj["traceback"])),
+            "traceback": self.decode(obj["traceback"]),
         }
 
         return meta
@@ -133,6 +148,11 @@ class MongoBackend(BaseDictBackend):
         taskmeta_collection = db[self.mongodb_taskmeta_collection]
         taskmeta_collection.remove({
                 "date_done": {
-                    "$lt": datetime.now() - self.expires,
+                    "$lt": datetime.utcnow() - self.expires,
                  }
         })
+
+    def __reduce__(self, args=(), kwargs={}):
+        kwargs.update(
+            dict(expires=self.expires))
+        return super(MongoBackend, self).__reduce__(args, kwargs)

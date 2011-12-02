@@ -25,6 +25,8 @@ Given a function create_user`, that takes two arguments: `username` and
 
     from django.contrib.auth import User
 
+    from celery.task import task
+
     @task
     def create_user(username, password):
         User.objects.create(username=username, password=password)
@@ -65,6 +67,8 @@ attributes:
 
 :loglevel: The current log level used.
 
+:hostname: Hostname of the worker instance executing the task.
+
 :delivery_info: Additional message delivery information. This is a mapping
                 containing the exchange and routing key used to deliver this
                 task.  Used by e.g. :meth:`~celery.task.base.BaseTask.retry`
@@ -78,6 +82,8 @@ Example Usage
 -------------
 
 ::
+
+    from celery.task import task
 
     @task
     def add(x, y):
@@ -132,6 +138,16 @@ is available as the tombstone (result) of the task. When
 exception raised.  However, if an `exc` argument is not provided the
 :exc:`~celery.exceptions.RetryTaskError` exception is raised instead.
 
+.. note::
+
+    The :meth:`retry` call will raise an exception so any code after the retry
+    will not be reached.  This is the :exc:`celery.exceptions.RetryTaskError`
+    exception, it is not handled as an error but rather as a semi-predicate
+    to signify to the worker that the task is to be retried.
+
+    This is normal operation and always happens unless the
+    ``throw`` argument to retry is set to :const:`False`.
+
 .. _task-retry-custom-delay:
 
 Using a custom retry delay
@@ -139,7 +155,7 @@ Using a custom retry delay
 
 When a task is to be retried, it will wait for a given amount of time
 before doing so. The default delay is in the
-:attr:`~celery.task.base.BaseTask.default_retry_delay` 
+:attr:`~celery.task.base.BaseTask.default_retry_delay`
 attribute on the task. By default this is set to 3 minutes. Note that the
 unit for setting the delay is in seconds (int or float).
 
@@ -205,7 +221,7 @@ General
     a given period of time is the task allowed to run.
 
     If this is :const:`None` no rate limit is in effect.
-    If it is an integer, it is interpreted as "tasks per second". 
+    If it is an integer, it is interpreted as "tasks per second".
 
     The rate limits can be specified in seconds, minutes or hours
     by appending `"/s"`, `"/m"` or `"/h"` to the value.
@@ -407,7 +423,7 @@ This is also the case if using Django and using `project.myapp`::
 
     INSTALLED_APPS = ("project.myapp", )
 
-The worker will have the tasks registered as "project.myapp.tasks.*", 
+The worker will have the tasks registered as "project.myapp.tasks.*",
 while this is what happens in the client if the module is imported as
 "myapp.tasks":
 
@@ -457,7 +473,7 @@ result of a successful task, or the exception and traceback information of a
 failed task.
 
 There are several *result backends* to choose from, and they all have
-different strenghts and weaknesses (see :ref:`task-result-backends`).
+different strengths and weaknesses (see :ref:`task-result-backends`).
 
 During its lifetime a task will transition through several possible states,
 and each state may have arbitrary metadata attached to it.  When a task
@@ -486,7 +502,7 @@ built-in backends to choose from: SQLAlchemy/Django ORM, Memcached, Redis,
 AMQP, MongoDB, Tokyo Tyrant and Redis -- or you can define your own.
 
 No backend works well for every use case.
-You should read about the strenghts and weaknesses of each backend, and choose
+You should read about the strengths and weaknesses of each backend, and choose
 the most appropriate for your needs.
 
 
@@ -522,7 +538,7 @@ backend:
   control.  If you're running RabbitMQ 2.1.1 or higher you can take advantage
   of the ``x-expires`` argument to queues, which will expire queues after a
   certain time limit after they are unused.  The queue expiry can be set (in
-  seconds) by the :setting:`CELERY_AMQP_TASK_RESULT_EXPIRES` setting (not
+  seconds) by the :setting:`CELERY_TASK_RESULT_EXPIRES` setting (not
   enabled by default).
 
 For a list of options supported by the AMQP result backend, please see
@@ -545,7 +561,7 @@ limitations.
 
   In MySQL the default transaction isolation level is `REPEATABLE-READ`, which
   means the transaction will not see changes by other transactions until the
-  transaction is commited.  It is recommended that you change to the
+  transaction is committed.  It is recommended that you change to the
   `READ-COMMITTED` isolation level.
 
 
@@ -568,7 +584,7 @@ STARTED
 ~~~~~~~
 
 Task has been started.
-Not reported by default, to enable please see :attr`Task.track_started`.
+Not reported by default, to enable please see :attr:`Task.track_started`.
 
 :metadata: `pid` and `hostname` of the worker process executing
            the task.
@@ -641,6 +657,223 @@ Here we created the state `"PROGRESS"`, which tells any application
 aware of this state that the task is currently in progress, and also where
 it is in the process by having `current` and `total` counts as part of the
 state metadata.  This can then be used to create e.g. progress bars.
+
+.. _pickling_exceptions:
+
+Creating pickleable exceptions
+------------------------------
+
+A little known Python fact is that exceptions must behave a certain
+way to support being pickled.
+
+Tasks that raises exceptions that are not pickleable will not work
+properly when Pickle is used as the serializer.
+
+To make sure that your exceptions are pickleable the exception
+*MUST* provide the original arguments it was instantiated
+with in its ``.args`` attribute.  The simplest way
+to ensure this is to have the exception call ``Exception.__init__``.
+
+Let's look at some examples that work, and one that doesn't:
+
+.. code-block:: python
+
+
+    # OK:
+    class HttpError(Exception):
+        pass
+
+    # BAD:
+    class HttpError(Exception):
+
+        def __init__(self, status_code):
+            self.status_code = status_code
+
+    # OK:
+    class HttpError(Exception):
+
+        def __init__(self, status_code):
+            self.status_code = status_code
+            Exception.__init__(self, status_code)  # <-- REQUIRED
+
+
+So the rule is:
+For any exception that supports custom arguments ``*args``,
+``Exception.__init__(self, *args)`` must be used.
+
+There is no special support for *keyword arguments*, so if you
+want to preserve keyword arguments when the exception is unpickled
+you have to pass them as regular args:
+
+.. code-block:: python
+
+    class HttpError(Exception):
+
+        def __init__(self, status_code, headers=None, body=None):
+            self.status_code = status_code
+            self.headers = headers
+            self.body = body
+
+            super(Exception, self).__init__(status_code, headers, body)
+
+.. _task-custom-classes:
+
+Creating custom task classes
+============================
+
+All tasks inherit from the :class:`celery.task.Task` class.
+The tasks body is its :meth:`run` method.
+
+The following code,
+
+.. code-block:: python
+
+    @task
+    def add(x, y):
+        return x + y
+
+
+will do roughly this behind the scenes:
+
+.. code-block:: python
+
+    @task
+    def AddTask(Task):
+
+        def run(self, x, y):
+            return x + y
+    add = registry.tasks[AddTask.name]
+
+
+Instantiation
+-------------
+
+A task is **not** instantiated for every request, but is registered
+in the task registry as a global instance.
+
+This means that the ``__init__`` constructor will only be called
+once per process, and that the task class is semantically closer to an
+Actor.
+
+If you have a task,
+
+.. code-block:: python
+
+    class NaiveAuthenticateServer(Task):
+
+        def __init__(self):
+            self.users = {"george": "password"}
+
+        def run(self, username, password):
+            try:
+                return self.users[username] == password
+            except KeyError:
+                return False
+
+And you route every request to the same process, then it
+will keep state between requests.
+
+This can also be useful to keep cached resources::
+
+    class DatabaseTask(Task):
+        _db = None
+
+        @property
+        def db(self):
+            if self._db = None:
+                self._db = Database.connect()
+            return self._db
+
+Abstract classes
+----------------
+
+Abstract classes are not registered, but are used as the
+base class for new task types.
+
+.. code-block:: python
+
+    class DebugTask(Task):
+        abstract = True
+
+        def after_return(self, \*args, \*\*kwargs):
+            print("Task returned: %r" % (self.request, ))
+
+
+    @task(base=DebugTask)
+    def add(x, y):
+        return x + y
+
+
+Handlers
+--------
+
+.. method:: execute(self, request, pool, loglevel, logfile, \*\*kw):
+
+    :param request: A :class:`~celery.worker.job.TaskRequest`.
+    :param pool: The task pool.
+    :param loglevel: Current loglevel.
+    :param logfile: Name of the currently used logfile.
+
+    :keyword consumer: The :class:`~celery.worker.consumer.Consumer`.
+
+.. method:: after_return(self, status, retval, task_id, args, kwargs, einfo)
+
+    Handler called after the task returns.
+
+    :param status: Current task state.
+    :param retval: Task return value/exception.
+    :param task_id: Unique id of the task.
+    :param args: Original arguments for the task that failed.
+    :param kwargs: Original keyword arguments for the task
+                   that failed.
+
+    :keyword einfo: :class:`~celery.datastructures.ExceptionInfo`
+                    instance, containing the traceback (if any).
+
+    The return value of this handler is ignored.
+
+.. method:: on_failure(self, exc, task_id, args, kwargs, einfo)
+
+    This is run by the worker when the task fails.
+
+    :param exc: The exception raised by the task.
+    :param task_id: Unique id of the failed task.
+    :param args: Original arguments for the task that failed.
+    :param kwargs: Original keyword arguments for the task
+                       that failed.
+
+    :keyword einfo: :class:`~celery.datastructures.ExceptionInfo`
+                           instance, containing the traceback.
+
+    The return value of this handler is ignored.
+
+.. method:: on_retry(self, exc, task_id, args, kwargs, einfo)
+
+    This is run by the worker when the task is to be retried.
+
+    :param exc: The exception sent to :meth:`retry`.
+    :param task_id: Unique id of the retried task.
+    :param args: Original arguments for the retried task.
+    :param kwargs: Original keyword arguments for the retried task.
+
+    :keyword einfo: :class:`~celery.datastructures.ExceptionInfo`
+                    instance, containing the traceback.
+
+    The return value of this handler is ignored.
+
+.. method:: on_success(self, retval, task_id, args, kwargs)
+
+    Run by the worker if the task executes successfully.
+
+    :param retval: The return value of the task.
+    :param task_id: Unique id of the executed task.
+    :param args: Original arguments for the executed task.
+    :param kwargs: Original keyword arguments for the executed task.
+
+    The return value of this handler is ignored.
+
+on_retry
+~~~~~~~~
 
 .. _task-how-they-work:
 

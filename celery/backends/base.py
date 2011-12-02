@@ -1,14 +1,30 @@
+# -*- coding: utf-8 -*-
 """celery.backends.base"""
+from __future__ import absolute_import
+
 import time
+import sys
 
 from datetime import timedelta
 
-from celery import states
-from celery.exceptions import TimeoutError, TaskRevokedError
-from celery.utils import timeutils
-from celery.utils.serialization import pickle, get_pickled_exception
-from celery.utils.serialization import get_pickleable_exception
-from celery.datastructures import LocalCache
+from kombu import serialization
+
+from .. import states
+from ..datastructures import LRUCache
+from ..exceptions import TimeoutError, TaskRevokedError
+from ..utils import timeutils
+from ..utils.encoding import ensure_bytes, from_utf8
+from ..utils.serialization import (get_pickled_exception,
+                                   get_pickleable_exception,
+                                   create_exception_cls)
+
+EXCEPTION_ABLE_CODECS = frozenset(["pickle", "yaml"])
+is_py3k = sys.version_info >= (3, 0)
+
+
+def unpickle_backend(cls, args, kwargs):
+    """Returns an unpickled backend."""
+    return cls(*args, **kwargs)
 
 
 class BaseBackend(object):
@@ -19,9 +35,32 @@ class BaseBackend(object):
 
     TimeoutError = TimeoutError
 
+    #: Time to sleep between polling each individual item
+    #: in `ResultSet.iterate`. as opposed to the `interval`
+    #: argument which is for each pass.
+    subpolling_interval = None
+
+    #: If true the backend must implement :meth:`get_many`.
+    supports_native_join = False
+
     def __init__(self, *args, **kwargs):
-        from celery.app import app_or_default
+        from ..app import app_or_default
         self.app = app_or_default(kwargs.get("app"))
+        self.serializer = kwargs.get("serializer",
+                                     self.app.conf.CELERY_RESULT_SERIALIZER)
+        (self.content_type,
+         self.content_encoding,
+         self.encoder) = serialization.registry._encoders[self.serializer]
+
+    def encode(self, data):
+        _, _, payload = serialization.encode(data, serializer=self.serializer)
+        return payload
+
+    def decode(self, payload):
+        payload = is_py3k and payload or str(payload)
+        return serialization.decode(payload,
+                                    content_type=self.content_type,
+                                    content_encoding=self.content_encoding)
 
     def prepare_expires(self, value, type=None):
         if value is None:
@@ -33,7 +72,7 @@ class BaseBackend(object):
         return value
 
     def encode_result(self, result, status):
-        if status in self.EXCEPTION_STATES:
+        if status in self.EXCEPTION_STATES and isinstance(result, Exception):
             return self.prepare_exception(result)
         else:
             return self.prepare_value(result)
@@ -68,11 +107,16 @@ class BaseBackend(object):
 
     def prepare_exception(self, exc):
         """Prepare exception for serialization."""
-        return get_pickleable_exception(exc)
+        if self.serializer in EXCEPTION_ABLE_CODECS:
+            return get_pickleable_exception(exc)
+        return {"exc_type": type(exc).__name__, "exc_message": str(exc)}
 
     def exception_to_python(self, exc):
         """Convert serialized exception to Python exception."""
-        return get_pickled_exception(exc)
+        if self.serializer in EXCEPTION_ABLE_CODECS:
+            return get_pickled_exception(exc)
+        return create_exception_cls(from_utf8(exc["exc_type"]),
+                                    sys.modules[__name__])
 
     def prepare_value(self, result):
         """Prepare value for storage."""
@@ -159,23 +203,24 @@ class BaseBackend(object):
         raise NotImplementedError(
                 "reload_taskset_result is not supported by this backend.")
 
-    def on_chord_part_return(self, task):
+    def on_chord_part_return(self, task, propagate=False):
         pass
 
-    def on_chord_apply(self, setid, body, **kwargs):
-        from celery.registry import tasks
+    def on_chord_apply(self, setid, body, result=None, **kwargs):
+        from ..registry import tasks
+        kwargs["result"] = [r.task_id for r in result]
         tasks["celery.chord_unlock"].apply_async((setid, body, ), kwargs,
                                                  countdown=1)
 
-    def __reduce__(self):
-        return (self.__class__, ())
+    def __reduce__(self, args=(), kwargs={}):
+        return (unpickle_backend, (self.__class__, args, kwargs))
 
 
 class BaseDictBackend(BaseBackend):
 
     def __init__(self, *args, **kwargs):
         super(BaseDictBackend, self).__init__(*args, **kwargs)
-        self._cache = LocalCache(limit=kwargs.get("max_cached_results") or
+        self._cache = LRUCache(limit=kwargs.get("max_cached_results") or
                                  self.app.conf.CELERY_MAX_CACHED_RESULTS)
 
     def store_result(self, task_id, result, status, traceback=None, **kwargs):
@@ -208,8 +253,11 @@ class BaseDictBackend(BaseBackend):
             return meta["result"]
 
     def get_task_meta(self, task_id, cache=True):
-        if cache and task_id in self._cache:
-            return self._cache[task_id]
+        if cache:
+            try:
+                return self._cache[task_id]
+            except KeyError:
+                pass
 
         meta = self._get_task_meta_for(task_id)
         if cache and meta.get("status") == states.SUCCESS:
@@ -224,8 +272,11 @@ class BaseDictBackend(BaseBackend):
                                                         cache=False)
 
     def get_taskset_meta(self, taskset_id, cache=True):
-        if cache and taskset_id in self._cache:
-            return self._cache[taskset_id]
+        if cache:
+            try:
+                return self._cache[taskset_id]
+            except KeyError:
+                pass
 
         meta = self._restore_taskset(taskset_id)
         if cache and meta is not None:
@@ -250,6 +301,7 @@ class BaseDictBackend(BaseBackend):
 class KeyValueStoreBackend(BaseDictBackend):
     task_keyprefix = "celery-task-meta-"
     taskset_keyprefix = "celery-taskset-meta-"
+    chord_keyprefix = "chord-unlock-"
 
     def get(self, key):
         raise NotImplementedError("Must implement the get method.")
@@ -265,11 +317,15 @@ class KeyValueStoreBackend(BaseDictBackend):
 
     def get_key_for_task(self, task_id):
         """Get the cache key for a task by id."""
-        return self.task_keyprefix + task_id
+        return ensure_bytes(self.task_keyprefix) + ensure_bytes(task_id)
 
     def get_key_for_taskset(self, taskset_id):
-        """Get the cache key for a task by id."""
-        return self.taskset_keyprefix + taskset_id
+        """Get the cache key for a taskset by id."""
+        return ensure_bytes(self.taskset_keyprefix) + ensure_bytes(taskset_id)
+
+    def get_key_for_chord(self, taskset_id):
+        """Get the cache key for the chord waiting on taskset with given id."""
+        return ensure_bytes(self.chord_keyprefix) + ensure_bytes(taskset_id)
 
     def _strip_prefix(self, key):
         for prefix in self.task_keyprefix, self.taskset_keyprefix:
@@ -280,12 +336,12 @@ class KeyValueStoreBackend(BaseDictBackend):
     def _mget_to_results(self, values, keys):
         if hasattr(values, "items"):
             # client returns dict so mapping preserved.
-            return dict((self._strip_prefix(k), pickle.loads(str(v)))
+            return dict((self._strip_prefix(k), self.decode(v))
                             for k, v in values.iteritems()
                                 if v is not None)
         else:
             # client returns list so need to recreate mapping.
-            return dict((keys[i], pickle.loads(str(value)))
+            return dict((keys[i], self.decode(value))
                             for i, value in enumerate(values)
                                 if value is not None)
 
@@ -303,6 +359,7 @@ class KeyValueStoreBackend(BaseDictBackend):
                     cached_ids.add(task_id)
 
         ids ^= cached_ids
+        iterations = 0
         while ids:
             keys = list(ids)
             r = self._mget_to_results(self.mget([self.get_key_for_task(k)
@@ -311,19 +368,22 @@ class KeyValueStoreBackend(BaseDictBackend):
             ids ^= set(r.keys())
             for key, value in r.iteritems():
                 yield key, value
+            if timeout and iterations * interval >= timeout:
+                raise TimeoutError("Operation timed out (%s)" % (timeout, ))
             time.sleep(interval)  # don't busy loop.
+            iterations += 0
 
     def _forget(self, task_id):
         self.delete(self.get_key_for_task(task_id))
 
     def _store_result(self, task_id, result, status, traceback=None):
         meta = {"status": status, "result": result, "traceback": traceback}
-        self.set(self.get_key_for_task(task_id), pickle.dumps(meta))
+        self.set(self.get_key_for_task(task_id), self.encode(meta))
         return result
 
     def _save_taskset(self, taskset_id, result):
         self.set(self.get_key_for_taskset(taskset_id),
-                 pickle.dumps({"result": result}))
+                 self.encode({"result": result}))
         return result
 
     def _delete_taskset(self, taskset_id):
@@ -334,17 +394,17 @@ class KeyValueStoreBackend(BaseDictBackend):
         meta = self.get(self.get_key_for_task(task_id))
         if not meta:
             return {"status": states.PENDING, "result": None}
-        return pickle.loads(str(meta))
+        return self.decode(meta)
 
     def _restore_taskset(self, taskset_id):
         """Get task metadata for a task by id."""
         meta = self.get(self.get_key_for_taskset(taskset_id))
         if meta:
-            meta = pickle.loads(str(meta))
-            return meta
+            return self.decode(meta)
 
 
 class DisabledBackend(BaseBackend):
+    _cache = {}   # need this attribute to reset cache in tests.
 
     def store_result(self, *args, **kwargs):
         pass
@@ -352,8 +412,4 @@ class DisabledBackend(BaseBackend):
     def _is_disabled(self, *args, **kwargs):
         raise NotImplementedError("No result backend configured.  "
                 "Please see the documentation for more information.")
-
-    wait_for = _is_disabled
-    get_status = _is_disabled
-    get_result = _is_disabled
-    get_traceback = _is_disabled
+    wait_for = get_status = get_result = get_traceback = _is_disabled

@@ -1,3 +1,16 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.utils.serialization
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    Utilities for safely pickling exceptions.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
+from __future__ import absolute_import
+
 import inspect
 import sys
 import types
@@ -9,6 +22,9 @@ try:
     import cPickle as cpickle
 except ImportError:
     cpickle = None  # noqa
+
+from .encoding import safe_repr
+
 
 if sys.version_info < (2, 6):  # pragma: no cover
     # cPickle is broken in Python <= 2.6.
@@ -25,10 +41,8 @@ if sys.version_info < (2, 6):  # pragma: no cover
 else:
     pickle = cpickle or pypickle
 
-
 #: List of base classes we probably don't want to reduce to.
 unwanted_base_classes = (StandardError, Exception, BaseException, object)
-
 
 if sys.version_info < (2, 5):  # pragma: no cover
 
@@ -119,21 +133,26 @@ class UnpickleableExceptionWrapper(Exception):
     #: The arguments for the original exception.
     exc_args = None
 
-    def __init__(self, exc_module, exc_cls_name, exc_args):
+    def __init__(self, exc_module, exc_cls_name, exc_args, text=None):
         self.exc_module = exc_module
         self.exc_cls_name = exc_cls_name
         self.exc_args = exc_args
-        Exception.__init__(self, exc_module, exc_cls_name, exc_args)
+        self.text = text
+        Exception.__init__(self, exc_module, exc_cls_name, exc_args, text)
+
+    def restore(self):
+        return create_exception_cls(self.exc_cls_name,
+                                    self.exc_module)(*self.exc_args)
+
+    def __str__(self):
+        return self.text
 
     @classmethod
     def from_exception(cls, exc):
         return cls(exc.__class__.__module__,
                    exc.__class__.__name__,
-                   getattr(exc, "args", []))
-
-    def restore(self):
-        return create_exception_cls(self.exc_cls_name,
-                                    self.exc_module)(*self.exc_args)
+                   getattr(exc, "args", []),
+                   safe_repr(exc))
 
 
 def get_pickleable_exception(exc):

@@ -1,14 +1,25 @@
-from __future__ import absolute_import, with_statement
+# -*- coding: utf-8 -*-
+"""
+    celery.task.sets
+    ~~~~~~~~~~~~~~~~
+
+    Creating and applying groups of tasks.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
+from __future__ import absolute_import
+from __future__ import with_statement
 
 import warnings
 
-from kombu.utils import cached_property
-
-from celery import registry
-from celery.app import app_or_default
-from celery.datastructures import AttributeDict
-from celery.utils import gen_unique_id
-from celery.utils.compat import UserList
+from .. import registry
+from ..app import app_or_default
+from ..datastructures import AttributeDict
+from ..exceptions import CDeprecationWarning
+from ..utils import cached_property, reprcall, uuid
+from ..utils.compat import UserList
 
 TASKSET_DEPRECATION_TEXT = """\
 Using this invocation of TaskSet is deprecated and will be removed
@@ -17,7 +28,7 @@ in Celery v2.4!
 TaskSets now supports multiple types of tasks, the API has to reflect
 this so the syntax has been changed to:
 
-    from celery.task.sets import TaskSet
+    from celery.task import TaskSet
 
     ts = TaskSet(tasks=[
             %(cls)s.subtask(args1, kwargs1, options1),
@@ -92,22 +103,23 @@ class subtask(AttributeDict):
         options = dict(self.options, **options)
         return self.type.apply_async(args, kwargs, **options)
 
-    def get_type(self):
-        return self.type
-
     def __reduce__(self):
         # for serialization, the task type is lazily loaded,
         # and not stored in the dict itself.
         return (self.__class__, (dict(self), ), None)
 
-    def __repr__(self, kwformat=lambda i: "%s=%r" % i, sep=', '):
-        kw = self["kwargs"]
-        return "%s(%s%s%s)" % (self["task"], sep.join(map(repr, self["args"])),
-                kw and sep or "", sep.join(map(kwformat, kw.iteritems())))
+    def __repr__(self):
+        return reprcall(self["task"], self["args"], self["kwargs"])
 
     @cached_property
     def type(self):
         return registry.tasks[self.task]
+
+
+def maybe_subtask(t):
+    if not isinstance(t, subtask):
+        return subtask(t)
+    return t
 
 
 class TaskSet(UserList):
@@ -134,7 +146,7 @@ class TaskSet(UserList):
         self.app = app_or_default(app)
         if task is not None:
             if hasattr(task, "__iter__"):
-                tasks = task
+                tasks = [maybe_subtask(t) for t in task]
             else:
                 # Previously TaskSet only supported applying one kind of task.
                 # the signature then was TaskSet(task, arglist),
@@ -144,7 +156,7 @@ class TaskSet(UserList):
                 self._task_name = task.name
                 warnings.warn(TASKSET_DEPRECATION_TEXT % {
                                 "cls": task.__class__.__name__},
-                              DeprecationWarning)
+                              CDeprecationWarning)
         self.data = list(tasks or [])
         self.total = len(self.tasks)
         self.Publisher = Publisher or self.app.amqp.TaskPublisher
@@ -158,7 +170,7 @@ class TaskSet(UserList):
             return self.apply(taskset_id=taskset_id)
 
         with app.default_connection(connection, connect_timeout) as conn:
-            setid = taskset_id or gen_unique_id()
+            setid = taskset_id or uuid()
             pub = publisher or self.Publisher(connection=conn)
             try:
                 results = self._async_results(setid, pub)
@@ -174,7 +186,7 @@ class TaskSet(UserList):
 
     def apply(self, taskset_id=None):
         """Applies the taskset locally by blocking until all tasks return."""
-        setid = taskset_id or gen_unique_id()
+        setid = taskset_id or uuid()
         return self.app.TaskSetResult(setid, self._sync_results(setid))
 
     def _sync_results(self, taskset_id):
@@ -188,12 +200,12 @@ class TaskSet(UserList):
     def task(self):
         warnings.warn(
             "TaskSet.task is deprecated and will be removed in 1.4",
-            DeprecationWarning)
+            CDeprecationWarning)
         return self._task
 
     @property
     def task_name(self):
         warnings.warn(
             "TaskSet.task_name is deprecated and will be removed in 1.4",
-            DeprecationWarning)
+            CDeprecationWarning)
         return self._task_name

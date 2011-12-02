@@ -1,3 +1,4 @@
-from celery.utils.dispatch.signal import Signal
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
 
-__all__ = ["Signal"]
+from .signal import Signal  # noqa

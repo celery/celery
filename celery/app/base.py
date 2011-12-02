@@ -1,28 +1,31 @@
+# -*- coding: utf-8 -*-
 """
-celery.app.base
-===============
+    celery.app.base
+    ~~~~~~~~~~~~~~~
 
-Application Base Class.
+    Application Base Class.
 
-:copyright: (c) 2009 - 2011 by Ask Solem.
-:license: BSD, see LICENSE for more details.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
-from __future__ import absolute_import, with_statement
+from __future__ import absolute_import
+from __future__ import with_statement
 
+import os
 import platform as _platform
-import sys
 
 from contextlib import contextmanager
 from copy import deepcopy
 from functools import wraps
-from threading import Lock
 
-from kombu.utils import cached_property
+from kombu.clocks import LamportClock
 
-from celery import datastructures
-from celery.app.defaults import DEFAULTS
-from celery.utils import instantiate, lpmerge
+from .. import datastructures
+from .. import platforms
+from ..utils import cached_property, instantiate, lpmerge
+
+from .defaults import DEFAULTS, find_deprecated_settings
 
 import kombu
 if kombu.VERSION < (1, 1, 0):
@@ -33,70 +36,6 @@ platform -> system:%(system)s arch:%(arch)s imp:%(py_i)s
 software -> celery:%(celery_v)s kombu:%(kombu_v)s py:%(py_v)s
 settings -> transport:%(transport)s results:%(results)s
 """
-
-
-def pyimplementation():
-    if hasattr(_platform, "python_implementation"):
-        return _platform.python_implementation()
-    elif sys.platform.startswith("java"):
-        return "Jython %s" % (sys.platform, )
-    elif hasattr(sys, "pypy_version_info"):
-        v = ".".join(map(str, sys.pypy_version_info[:3]))
-        if sys.pypy_version_info[3:]:
-            v += "-" + "".join(map(str, sys.pypy_version_info[3:]))
-        return "PyPy %s" % (v, )
-    else:
-        return "CPython"
-
-
-class LamportClock(object):
-    """Lamports logical clock.
-
-    From Wikipedia:
-
-    "A Lamport logical clock is a monotonically incrementing software counter
-    maintained in each process.  It follows some simple rules:
-
-        * A process increments its counter before each event in that process;
-        * When a process sends a message, it includes its counter value with
-          the message;
-        * On receiving a message, the receiver process sets its counter to be
-          greater than the maximum of its own value and the received value
-          before it considers the message received.
-
-    Conceptually, this logical clock can be thought of as a clock that only
-    has meaning in relation to messages moving between processes.  When a
-    process receives a message, it resynchronizes its logical clock with
-    the sender.
-
-    .. seealso::
-
-        http://en.wikipedia.org/wiki/Lamport_timestamps
-        http://en.wikipedia.org/wiki/Lamport's_Distributed_
-            Mutual_Exclusion_Algorithm
-
-    *Usage*
-
-    When sending a message use :meth:`forward` to increment the clock,
-    when receiving a message use :meth:`adjust` to sync with
-    the timestamp of the incoming message.
-
-    """
-    #: The clocks current value.
-    value = 0
-
-    def __init__(self, initial_value=0):
-        self.value = initial_value
-        self.mutex = Lock()
-
-    def adjust(self, other):
-        with self.mutex:
-            self.value = max(self.value, other) + 1
-
-    def forward(self):
-        with self.mutex:
-            self.value += 1
-        return self.value
 
 
 class Settings(datastructures.ConfigurationView):
@@ -119,17 +58,24 @@ class Settings(datastructures.ConfigurationView):
         """Deprecated compat alias to :attr:`BROKER_TRANSPORT`."""
         return self.BROKER_TRANSPORT
 
+    @property
+    def BROKER_HOST(self):
+
+        return (os.environ.get("CELERY_BROKER_URL") or
+                self.get("BROKER_URL") or
+                self.get("BROKER_HOST"))
+
 
 class BaseApp(object):
     """Base class for apps."""
-    SYSTEM = _platform.system()
-    IS_OSX = SYSTEM == "Darwin"
-    IS_WINDOWS = SYSTEM == "Windows"
+    SYSTEM = platforms.SYSTEM
+    IS_OSX = platforms.IS_OSX
+    IS_WINDOWS = platforms.IS_WINDOWS
 
     amqp_cls = "celery.app.amqp.AMQP"
     backend_cls = None
     events_cls = "celery.events.Events"
-    loader_cls = "app"
+    loader_cls = "celery.loaders.app.AppLoader"
     log_cls = "celery.log.Logging"
     control_cls = "celery.task.control.Control"
 
@@ -137,7 +83,7 @@ class BaseApp(object):
 
     def __init__(self, main=None, loader=None, backend=None,
             amqp=None, events=None, log=None, control=None,
-            set_as_current=True, accept_magic_kwargs=False):
+            set_as_current=True, accept_magic_kwargs=False, **kwargs):
         self.main = main
         self.amqp_cls = amqp or self.amqp_cls
         self.backend_cls = backend or self.backend_cls
@@ -147,8 +93,9 @@ class BaseApp(object):
         self.control_cls = control or self.control_cls
         self.set_as_current = set_as_current
         self.accept_magic_kwargs = accept_magic_kwargs
-        self.on_init()
         self.clock = LamportClock()
+
+        self.on_init()
 
     def on_init(self):
         """Called at the end of the constructor."""
@@ -156,7 +103,7 @@ class BaseApp(object):
 
     def config_from_object(self, obj, silent=False):
         """Read configuration from object, where object is either
-        a real object, or the name of an object to import.
+        a object, or the name of a module to import.
 
             >>> celery.config_from_object("myapp.celeryconfig")
 
@@ -171,7 +118,7 @@ class BaseApp(object):
         """Read configuration from environment variable.
 
         The value of the environment variable must be the name
-        of an object to import.
+        of a module to import.
 
             >>> os.environ["CELERY_CONFIG_MODULE"] = "myapp.celeryconfig"
             >>> celery.config_from_envvar("CELERY_CONFIG_MODULE")
@@ -226,19 +173,19 @@ class BaseApp(object):
 
     def AsyncResult(self, task_id, backend=None, task_name=None):
         """Create :class:`celery.result.BaseAsyncResult` instance."""
-        from celery.result import BaseAsyncResult
-        return BaseAsyncResult(task_id, app=self,
-                               task_name=task_name,
+        from ..result import BaseAsyncResult
+        return BaseAsyncResult(task_id, app=self, task_name=task_name,
                                backend=backend or self.backend)
 
     def TaskSetResult(self, taskset_id, results, **kwargs):
         """Create :class:`celery.result.TaskSetResult` instance."""
-        from celery.result import TaskSetResult
+        from ..result import TaskSetResult
         return TaskSetResult(taskset_id, results, app=self)
 
     def broker_connection(self, hostname=None, userid=None,
             password=None, virtual_host=None, port=None, ssl=None,
-            insist=None, connect_timeout=None, transport=None, **kwargs):
+            insist=None, connect_timeout=None, transport=None,
+            transport_options=None, **kwargs):
         """Establish a connection to the message broker.
 
         :keyword hostname: defaults to the :setting:`BROKER_HOST` setting.
@@ -256,23 +203,31 @@ class BaseApp(object):
         :returns :class:`kombu.connection.BrokerConnection`:
 
         """
+        conf = self.conf
         return self.amqp.BrokerConnection(
-                    hostname or self.conf.BROKER_HOST,
-                    userid or self.conf.BROKER_USER,
-                    password or self.conf.BROKER_PASSWORD,
-                    virtual_host or self.conf.BROKER_VHOST,
-                    port or self.conf.BROKER_PORT,
-                    transport=transport or self.conf.BROKER_TRANSPORT,
+                    hostname or conf.BROKER_HOST,
+                    userid or conf.BROKER_USER,
+                    password or conf.BROKER_PASSWORD,
+                    virtual_host or conf.BROKER_VHOST,
+                    port or conf.BROKER_PORT,
+                    transport=transport or conf.BROKER_TRANSPORT,
                     insist=self.either("BROKER_INSIST", insist),
                     ssl=self.either("BROKER_USE_SSL", ssl),
                     connect_timeout=self.either(
                                 "BROKER_CONNECTION_TIMEOUT", connect_timeout),
-                    transport_options=self.conf.BROKER_TRANSPORT_OPTIONS)
+                    transport_options=dict(conf.BROKER_TRANSPORT_OPTIONS,
+                                           **transport_options or {}))
 
     @contextmanager
     def default_connection(self, connection=None, connect_timeout=None):
         """For use within a with-statement to get a connection from the pool
-        if one is not already provided."""
+        if one is not already provided.
+
+        :keyword connection: If not provided, then a connection will be
+                             acquired from the connection pool.
+        :keyword connect_timeout: *No longer used.*
+
+        """
         if connection:
             yield connection
         else:
@@ -295,13 +250,13 @@ class BaseApp(object):
         @wraps(fun)
         def _inner(*args, **kwargs):
             connection = kwargs.pop("connection", None)
-            connect_timeout = kwargs.get("connect_timeout")
-            with self.default_connection(connection, connect_timeout) as c:
+            with self.default_connection(connection) as c:
                 return fun(*args, **dict(kwargs, connection=c))
         return _inner
 
     def prepare_config(self, c):
         """Prepare configuration before it is merged with the defaults."""
+        find_deprecated_settings(c)
         return c
 
     def mail_admins(self, subject, body, fail_silently=False):
@@ -314,7 +269,14 @@ class BaseApp(object):
                                        port=self.conf.EMAIL_PORT,
                                        user=self.conf.EMAIL_HOST_USER,
                                        password=self.conf.EMAIL_HOST_PASSWORD,
-                                       timeout=self.conf.EMAIL_TIMEOUT)
+                                       timeout=self.conf.EMAIL_TIMEOUT,
+                                       use_ssl=self.conf.EMAIL_USE_SSL,
+                                       use_tls=self.conf.EMAIL_USE_TLS)
+
+    def select_queues(self, queues=None):
+        if queues is not None:
+            return self.amqp.queues.select_subset(queues,
+                  self.conf.CELERY_CREATE_MISSING_QUEUES)
 
     def either(self, default_key, *values):
         """Fallback to the value of a configuration key if none of the
@@ -330,7 +292,7 @@ class BaseApp(object):
         return lpmerge(l, r)
 
     def _get_backend(self):
-        from celery.backends import get_backend_cls
+        from ..backends import get_backend_cls
         backend_cls = self.backend_cls or self.conf.CELERY_RESULT_BACKEND
         backend_cls = get_backend_cls(backend_cls, loader=self.loader)
         return backend_cls(app=self)
@@ -349,7 +311,7 @@ class BaseApp(object):
         import kombu
         return BUGREPORT_INFO % {"system": _platform.system(),
                                  "arch": _platform.architecture(),
-                                 "py_i": pyimplementation(),
+                                 "py_i": platforms.pyimplementation(),
                                  "celery_v": celery.__version__,
                                  "kombu_v": kombu.__version__,
                                  "py_v": _platform.python_version(),
@@ -364,8 +326,8 @@ class BaseApp(object):
                 register_after_fork(self, self._after_fork)
             except ImportError:
                 pass
-            self._pool = self.broker_connection().Pool(
-                            self.conf.BROKER_POOL_LIMIT)
+            limit = self.conf.BROKER_POOL_LIMIT
+            self._pool = self.broker_connection().Pool(limit)
         return self._pool
 
     @cached_property
@@ -375,7 +337,7 @@ class BaseApp(object):
 
     @cached_property
     def backend(self):
-        """Storing/retreiving task state.  See
+        """Storing/retrieving task state.  See
         :class:`~celery.backend.base.BaseBackend`."""
         return self._get_backend()
 
@@ -398,7 +360,7 @@ class BaseApp(object):
     @cached_property
     def loader(self):
         """Current loader."""
-        from celery.loaders import get_loader_cls
+        from ..loaders import get_loader_cls
         return get_loader_cls(self.loader_cls)(app=self)
 
     @cached_property

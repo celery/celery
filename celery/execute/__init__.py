@@ -1,7 +1,8 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-from celery import current_app
-from celery.utils import deprecated
+from .. import current_app
+from ..utils import deprecated
 
 send_task = current_app.send_task
 
@@ -21,5 +22,5 @@ def apply(task, *args, **kwargs):
 @deprecated(removal="2.3",
             alternative="Use registry.tasks[name].delay instead.")
 def delay_task(task, *args, **kwargs):
-    from celery.registry import tasks
+    from ..registry import tasks
     return tasks[task].apply_async(args, kwargs)

@@ -1,4 +1,20 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.utils.compat
+    ~~~~~~~~~~~~~~~~~~~
+
+    Backward compatible implementations of features
+    only available in newer Python versions.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
+from __future__ import absolute_import
+
 ############## py3k #########################################################
+import sys
+
 try:
     from UserList import UserList       # noqa
 except ImportError:
@@ -9,231 +25,27 @@ try:
 except ImportError:
     from collections import UserDict    # noqa
 
-try:
-    from cStringIO import StringIO      # noqa
-except ImportError:
+if sys.version_info >= (3, 0):
+    from io import StringIO, BytesIO
+    from .encoding import bytes_to_str
+
+    class WhateverIO(StringIO):
+
+        def write(self, data):
+            StringIO.write(self, bytes_to_str(data))
+else:
     try:
-        from StringIO import StringIO   # noqa
+        from cStringIO import StringIO  # noqa
     except ImportError:
-        from io import StringIO         # noqa
+        from StringIO import StringIO   # noqa
+    BytesIO = WhateverIO = StringIO     # noqa
+
 
 ############## collections.OrderedDict ######################################
-
-import weakref
-try:
-    from collections import MutableMapping
-except ImportError:
-    from UserDict import DictMixin as MutableMapping  # noqa
-from itertools import imap as _imap
-from operator import eq as _eq
-
-
-class _Link(object):
-    """Doubly linked list."""
-    # next can't be lowercase because 2to3 thinks it's a generator
-    # and renames it to __next__.
-    __slots__ = 'PREV', 'NEXT', 'key', '__weakref__'
-
-
-class CompatOrderedDict(dict, MutableMapping):
-    """Dictionary that remembers insertion order"""
-    # An inherited dict maps keys to values.
-    # The inherited dict provides __getitem__, __len__, __contains__, and get.
-    # The remaining methods are order-aware.
-    # Big-O running times for all methods are the same as for regular
-    # dictionaries.
-
-    # The internal self.__map dictionary maps keys to links in a doubly
-    # linked list.
-    # The circular doubly linked list starts and ends with a sentinel element.
-    # The sentinel element never gets deleted (this simplifies the algorithm).
-    # The prev/next links are weakref proxies (to prevent circular
-    # references).
-    # Individual links are kept alive by the hard reference in self.__map.
-    # Those hard references disappear when a key is deleted from
-    # an OrderedDict.
-
-    __marker = object()
-
-    def __init__(self, *args, **kwds):
-        """Initialize an ordered dictionary.
-
-        Signature is the same as for regular dictionaries, but keyword
-        arguments are not recommended because their insertion order is
-        arbitrary.
-
-        """
-        if len(args) > 1:
-            raise TypeError("expected at most 1 arguments, got %d" % (
-                                len(args)))
-        try:
-            self._root
-        except AttributeError:
-            # sentinel node for the doubly linked list
-            self._root = root = _Link()
-            root.PREV = root.NEXT = root
-            self.__map = {}
-        self.update(*args, **kwds)
-
-    def clear(self):
-        "od.clear() -> None.  Remove all items from od."
-        root = self._root
-        root.PREV = root.NEXT = root
-        self.__map.clear()
-        dict.clear(self)
-
-    def __setitem__(self, key, value):
-        "od.__setitem__(i, y) <==> od[i]=y"
-        # Setting a new item creates a new link which goes at the end of the
-        # linked list, and the inherited dictionary is updated with the new
-        # key/value pair.
-        if key not in self:
-            self.__map[key] = link = _Link()
-            root = self._root
-            last = root.PREV
-            link.PREV, link.NEXT, link.key = last, root, key
-            last.NEXT = root.PREV = weakref.proxy(link)
-        dict.__setitem__(self, key, value)
-
-    def __delitem__(self, key):
-        """od.__delitem__(y) <==> del od[y]"""
-        # Deleting an existing item uses self.__map to find the
-        # link which is then removed by updating the links in the
-        # predecessor and successor nodes.
-        dict.__delitem__(self, key)
-        link = self.__map.pop(key)
-        link.PREV.NEXT = link.NEXT
-        link.NEXT.PREV = link.PREV
-
-    def __iter__(self):
-        """od.__iter__() <==> iter(od)"""
-        # Traverse the linked list in order.
-        root = self._root
-        curr = root.NEXT
-        while curr is not root:
-            yield curr.key
-            curr = curr.NEXT
-
-    def __reversed__(self):
-        """od.__reversed__() <==> reversed(od)"""
-        # Traverse the linked list in reverse order.
-        root = self._root
-        curr = root.PREV
-        while curr is not root:
-            yield curr.key
-            curr = curr.PREV
-
-    def __reduce__(self):
-        """Return state information for pickling"""
-        items = [[k, self[k]] for k in self]
-        tmp = self.__map, self._root
-        del(self.__map, self._root)
-        inst_dict = vars(self).copy()
-        self.__map, self._root = tmp
-        if inst_dict:
-            return (self.__class__, (items,), inst_dict)
-        return self.__class__, (items,)
-
-    def setdefault(self, key, default=None):
-        try:
-            return self[key]
-        except KeyError:
-            self[key] = default
-        return default
-
-    def update(self, other=(), **kwds):
-        if isinstance(other, dict):
-            for key in other:
-                self[key] = other[key]
-        elif hasattr(other, "keys"):
-            for key in other.keys():
-                self[key] = other[key]
-        else:
-            for key, value in other:
-                self[key] = value
-        for key, value in kwds.items():
-            self[key] = value
-
-    def pop(self, key, default=__marker):
-        try:
-            value = self[key]
-        except KeyError:
-            if default is self.__marker:
-                raise
-            return default
-        else:
-            del self[key]
-            return value
-
-    def values(self):
-        return [self[key] for key in self]
-
-    def items(self):
-        return [(key, self[key]) for key in self]
-
-    def itervalues(self):
-        for key in self:
-            yield self[key]
-
-    def iteritems(self):
-        for key in self:
-            yield (key, self[key])
-
-    def iterkeys(self):
-        return iter(self)
-
-    def keys(self):
-        return list(self)
-
-    def popitem(self, last=True):
-        """od.popitem() -> (k, v)
-
-        Return and remove a (key, value) pair.
-        Pairs are returned in LIFO order if last is true or FIFO
-        order if false.
-
-        """
-        if not self:
-            raise KeyError('dictionary is empty')
-        key = (last and reversed(self) or iter(self)).next()
-        value = self.pop(key)
-        return key, value
-
-    def __repr__(self):
-        "od.__repr__() <==> repr(od)"
-        if not self:
-            return '%s()' % (self.__class__.__name__,)
-        return '%s(%r)' % (self.__class__.__name__, self.items())
-
-    def copy(self):
-        "od.copy() -> a shallow copy of od"
-        return self.__class__(self)
-
-    @classmethod
-    def fromkeys(cls, iterable, value=None):
-        """OD.fromkeys(S[, v]) -> New ordered dictionary with keys from S
-        and values equal to v (which defaults to None)."""
-        d = cls()
-        for key in iterable:
-            d[key] = value
-        return d
-
-    def __eq__(self, other):
-        """od.__eq__(y) <==> od==y.  Comparison to another OD is
-        order-sensitive while comparison to a regular mapping
-        is order-insensitive."""
-        if isinstance(other, OrderedDict):
-            return len(self) == len(other) and \
-                   all(_imap(_eq, self.iteritems(), other.iteritems()))
-        return dict.__eq__(self, other)
-
-    def __ne__(self, other):
-        return not (self == other)
-
 try:
     from collections import OrderedDict
 except ImportError:
-    OrderedDict = CompatOrderedDict  # noqa
+    from ordereddict import OrderedDict  # noqa
 
 ############## logging.LoggerAdapter ########################################
 import logging
@@ -348,14 +160,14 @@ try:
 except ImportError:
     LoggerAdapter = _CompatLoggerAdapter  # noqa
 
-############## itertools.izip_longest #######################################
+############## itertools.zip_longest #######################################
 
 try:
-    from itertools import izip_longest
+    from itertools import izip_longest as zip_longest
 except ImportError:
     import itertools
 
-    def izip_longest(*args, **kwds):  # noqa
+    def zip_longest(*args, **kwds):  # noqa
         fillvalue = kwds.get("fillvalue")
 
         def sentinel(counter=([fillvalue] * (len(args) - 1)).pop):

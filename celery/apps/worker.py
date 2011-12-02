@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
 import atexit
@@ -11,13 +12,18 @@ import socket
 import sys
 import warnings
 
-from celery import __version__
-from celery import platforms
-from celery import signals
-from celery.app import app_or_default
-from celery.exceptions import ImproperlyConfigured, SystemTerminate
-from celery.utils import get_full_cls_name, LOG_LEVELS, cry
-from celery.worker import WorkController
+from .. import __version__, platforms, signals
+from ..app import app_or_default
+from ..exceptions import ImproperlyConfigured, SystemTerminate
+from ..utils import get_full_cls_name, isatty, LOG_LEVELS, cry
+from ..worker import WorkController
+
+try:
+    from greenlet import GreenletExit
+    IGNORE_ERRORS = (GreenletExit, )
+except ImportError:
+    IGNORE_ERRORS = ()
+
 
 BANNER = """
  -------------- celery@%(hostname)s v%(version)s
@@ -39,6 +45,14 @@ EXTRA_INFO_FMT = """
 %(tasks)s
 """
 
+UNKNOWN_QUEUE_ERROR = """\
+Trying to select queue subset of %r, but queue %s is not
+defined in the CELERY_QUEUES setting.
+
+If you want to automatically declare unknown queues you can
+enable the CELERY_CREATE_MISSING_QUEUES setting.
+"""
+
 
 def cpu_count():
     if multiprocessing is not None:
@@ -47,6 +61,11 @@ def cpu_count():
         except NotImplementedError:
             pass
     return 2
+
+
+def get_process_name():
+    if multiprocessing is not None:
+        return multiprocessing.current_process().name
 
 
 class Worker(object):
@@ -95,7 +114,7 @@ class Worker(object):
         if autoscale:
             max_c, _, min_c = autoscale.partition(",")
             self.autoscale = [int(max_c), min_c and int(min_c) or 0]
-        self._isatty = sys.stdout.isatty()
+        self._isatty = isatty(sys.stdout)
 
         self.colored = app.log.colored(self.logfile)
 
@@ -119,9 +138,9 @@ class Worker(object):
         self.worker_init()
         self.redirect_stdouts_to_logger()
 
-        if getattr(os, "geteuid", None) and os.geteuid() == 0:
+        if getattr(os, "getuid", None) and os.getuid() == 0:
             warnings.warn(
-                "Running celeryd with superuser privileges is not encouraged!")
+                "Running celeryd with superuser privileges is discouraged!")
 
         if self.discard:
             self.purge_messages()
@@ -132,25 +151,21 @@ class Worker(object):
               str(self.colored.reset(self.extra_info())))
         self.set_process_status("-active-")
 
-        self.run_worker()
+        try:
+            self.run_worker()
+        except IGNORE_ERRORS:
+            pass
 
     def on_consumer_ready(self, consumer):
         signals.worker_ready.send(sender=consumer)
         print("celery@%s has started." % self.hostname)
 
     def init_queues(self):
-        if self.use_queues:
-            create_missing = self.app.conf.CELERY_CREATE_MISSING_QUEUES
-            try:
-                self.app.amqp.queues.select_subset(self.use_queues,
-                                                   create_missing)
-            except KeyError, exc:
-                raise ImproperlyConfigured(
-                    "Trying to select queue subset of %r, but queue %s"
-                    "is not defined in CELERY_QUEUES. If you want to "
-                    "automatically declare unknown queues you have to "
-                    "enable CELERY_CREATE_MISSING_QUEUES" % (
-                        self.use_queues, exc))
+        try:
+            self.app.select_queues(self.use_queues)
+        except KeyError, exc:
+            raise ImproperlyConfigured(
+                        UNKNOWN_QUEUE_ERROR % (self.use_queues, exc))
 
     def init_loader(self):
         self.loader = self.app.loader
@@ -178,7 +193,7 @@ class Worker(object):
         self.loader.init_worker()
 
     def tasklist(self, include_builtins=True):
-        from celery.registry import tasks
+        from ..registry import tasks
         tasklist = tasks.keys()
         if not include_builtins:
             tasklist = filter(lambda s: not s.startswith("celery."),
@@ -274,16 +289,12 @@ class Worker(object):
 def install_worker_int_handler(worker):
 
     def _stop(signum, frame):
-        process_name = None
-        if multiprocessing:
-            process_name = multiprocessing.current_process().name
+        process_name = get_process_name()
         if not process_name or process_name == "MainProcess":
-            worker.logger.warn(
-                "celeryd: Hitting Ctrl+C again will terminate "
-                "all running tasks!")
+            print("celeryd: Hitting Ctrl+C again will terminate "
+                  "all running tasks!")
             install_worker_int_again_handler(worker)
-            worker.logger.warn("celeryd: Warm shutdown (%s)" % (
-                process_name))
+            print("celeryd: Warm shutdown (%s)" % (process_name, ))
             worker.stop(in_sighandler=True)
         raise SystemExit()
 
@@ -293,12 +304,9 @@ def install_worker_int_handler(worker):
 def install_worker_int_again_handler(worker):
 
     def _stop(signum, frame):
-        process_name = None
-        if multiprocessing:
-            process_name = multiprocessing.current_process().name
+        process_name = get_process_name()
         if not process_name or process_name == "MainProcess":
-            worker.logger.warn("celeryd: Cold shutdown (%s)" % (
-                process_name))
+            print("celeryd: Cold shutdown (%s)" % (process_name, ))
             worker.terminate(in_sighandler=True)
         raise SystemTerminate()
 
@@ -308,12 +316,9 @@ def install_worker_int_again_handler(worker):
 def install_worker_term_handler(worker):
 
     def _stop(signum, frame):
-        process_name = None
-        if multiprocessing:
-            process_name = multiprocessing.current_process().name
+        process_name = get_process_name()
         if not process_name or process_name == "MainProcess":
-            worker.logger.warn("celeryd: Warm shutdown (%s)" % (
-                process_name))
+            print("celeryd: Warm shutdown (%s)" % (process_name, ))
             worker.stop(in_sighandler=True)
         raise SystemExit()
 
@@ -324,8 +329,7 @@ def install_worker_restart_handler(worker):
 
     def restart_worker_sig_handler(signum, frame):
         """Signal handler restarting the current python program."""
-        worker.logger.warn("Restarting celeryd (%s)" % (
-            " ".join(sys.argv)))
+        print("Restarting celeryd (%s)" % (" ".join(sys.argv), ))
         worker.stop(in_sighandler=True)
         os.execv(sys.executable, [sys.executable] + sys.argv)
 
@@ -345,14 +349,14 @@ def install_cry_handler(logger):
         platforms.signals["SIGUSR1"] = cry_handler
 
 
-def install_rdb_handler():  # pragma: no cover
+def install_rdb_handler(envvar="CELERY_RDBSIG"):  # pragma: no cover
 
     def rdb_handler(signum, frame):
         """Signal handler setting a rdb breakpoint at the current frame."""
-        from celery.contrib import rdb
+        from ..contrib import rdb
         rdb.set_trace(frame)
 
-    if os.environ.get("CELERY_RDBSIG"):
+    if os.environ.get(envvar):
         platforms.signals["SIGUSR2"] = rdb_handler
 
 

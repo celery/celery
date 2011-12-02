@@ -1,9 +1,11 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """camqadm
 
 .. program:: camqadm
 
 """
+from __future__ import absolute_import
+
 import cmd
 import sys
 import shlex
@@ -14,8 +16,9 @@ from itertools import count
 from amqplib import client_0_8 as amqp
 
 from celery.app import app_or_default
-from celery.bin.base import Command
 from celery.utils import padlist
+
+from celery.bin.base import Command
 
 # Valid string -> bool coercions.
 BOOLS = {"1": True, "0": False,

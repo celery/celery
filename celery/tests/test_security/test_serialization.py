@@ -1,12 +1,16 @@
-from celery.tests.utils import unittest
+from __future__ import absolute_import
+
+from celery.exceptions import SecurityError
 
 from celery.security.serialization import SecureSerializer
 from celery.security.certificate import Certificate, CertStore
 from celery.security.key import PrivateKey
-from celery.security.exceptions import SecurityError
-from celery.tests.test_security import CERT1, CERT2, KEY1, KEY2
 
-class TestSecureSerializer(unittest.TestCase):
+from . import CERT1, CERT2, KEY1, KEY2
+from .case import SecurityCase
+
+
+class TestSecureSerializer(SecurityCase):
 
     def _get_s(self, key, cert, certs):
         store = CertStore()
@@ -44,4 +48,3 @@ class TestSecureSerializer(unittest.TestCase):
         s1 = self._get_s(KEY1, CERT1, [CERT2])
         s2 = self._get_s(KEY2, CERT2, [CERT1])
         self.assertEqual(s2.deserialize(s1.serialize("foo")), "foo")
-

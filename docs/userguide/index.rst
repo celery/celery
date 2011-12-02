@@ -19,5 +19,7 @@
     remote-tasks
     routing
     monitoring
+    security
     optimizing
     concurrency/index
+    signals

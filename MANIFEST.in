@@ -22,3 +22,5 @@ prune celery/*.pyc
 prune examples/*.pyc
 prune bin/*.pyc
 prune docs/.build
+prune docs/graffles
+prune .tox/*

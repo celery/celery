@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 =========================
 Abortable tasks overview
@@ -29,7 +30,7 @@ In the consumer:
 
    from celery.contrib.abortable import AbortableTask
 
-   def MyLongRunningTask(AbortableTask):
+   class MyLongRunningTask(AbortableTask):
 
        def run(self, **kwargs):
            logger = self.get_logger(**kwargs)
@@ -78,6 +79,8 @@ have it block until the task is finished.
    database backends.
 
 """
+from __future__ import absolute_import
+
 from celery.task.base import Task
 from celery.result import AsyncResult
 

@@ -13,9 +13,9 @@
 {% set code_font_stack = "'Consolas', 'Menlo', 'Deja Vu Sans Mono', 'Bitstream Vera Sans Mono', monospace" %}
 
 @import url("basic.css");
- 
+
 /* -- page layout ----------------------------------------------------------- */
- 
+
 body {
     font-family: {{ body_font_stack }};
     font-size: 17px;
@@ -61,7 +61,7 @@ div.sphinxsidebar {
 hr {
     border: 1px solid #B1B4B6;
 }
- 
+
 div.body {
     background-color: #ffffff;
     color: #3E4349;
@@ -72,7 +72,7 @@ img.celerylogo {
     padding: 0 0 10px 10px;
     float: right;
 }
- 
+
 div.footer {
     width: {{ page_width - 15 }}px;
     margin: 10px auto 30px auto;
@@ -95,7 +95,7 @@ div.sphinxsidebar a {
 div.sphinxsidebar a:hover {
     border-bottom: 1px solid #999;
 }
- 
+
 div.sphinxsidebar {
     font-size: 14px;
     line-height: 1.5;
@@ -109,7 +109,7 @@ div.sphinxsidebarwrapper p.logo {
     padding: 0 0 20px 0;
     margin: 0;
 }
- 
+
 div.sphinxsidebar h3,
 div.sphinxsidebar h4 {
     font-family: {{ headline_font_stack }};
@@ -134,7 +134,7 @@ div.sphinxsidebar p.logo a:hover,
 div.sphinxsidebar h3 a:hover {
     border: none;
 }
- 
+
 div.sphinxsidebar p {
     color: #555;
     margin: 10px 0;
@@ -145,25 +145,25 @@ div.sphinxsidebar ul {
     padding: 0;
     color: #000;
 }
- 
+
 div.sphinxsidebar input {
     border: 1px solid #ccc;
     font-family: {{ body_font_stack }};
     font-size: 1em;
 }
- 
+
 /* -- body styles ----------------------------------------------------------- */
- 
+
 a {
     color: #348613;
     text-decoration: underline;
 }
- 
+
 a:hover {
     color: #59B833;
     text-decoration: underline;
 }
- 
+
 div.body h1,
 div.body h2,
 div.body h3,
@@ -175,7 +175,7 @@ div.body h6 {
     margin: 30px 0px 10px 0px;
     padding: 0;
 }
- 
+
 div.body h1 { margin-top: 0; padding-top: 0; font-size: 200%; }
 div.body h2 { font-size: 180%; }
 div.body h3 { font-size: 150%; }
@@ -192,18 +192,18 @@ div.body h6 a.toc-backref {
     color: inherit!important;
     text-decoration: none;
 }
- 
+
 a.headerlink {
     color: #ddd;
     padding: 0 4px;
     text-decoration: none;
 }
- 
+
 a.headerlink:hover {
     color: #444;
     background: #eaeaea;
 }
- 
+
 div.body p, div.body dd, div.body li {
     line-height: 1.4em;
 }
@@ -241,25 +241,25 @@ div.note {
     background-color: #eee;
     border: 1px solid #ccc;
 }
- 
+
 div.seealso {
     background-color: #ffc;
     border: 1px solid #ff6;
 }
- 
+
 div.topic {
     background-color: #eee;
 }
- 
+
 div.warning {
     background-color: #ffe4e4;
     border: 1px solid #f66;
 }
- 
+
 p.admonition-title {
     display: inline;
 }
- 
+
 p.admonition-title:after {
     content: ":";
 }
@@ -353,7 +353,7 @@ ul {
     margin: 10px 0 10px 30px;
     padding: 0;
 }
- 
+
 pre {
     background: #F0FFEB;
     padding: 7px 10px;
@@ -364,7 +364,7 @@ pre {
     -webkit-border-radius: 2px;
     line-height: 1.3em;
 }
- 
+
 tt {
     background: #F0FFEB;
     color: #222;

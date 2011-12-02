@@ -1,15 +1,19 @@
+# -*- coding: utf-8 -*-
 """
+    celery.utils.term
+    ~~~~~~~~~~~~~~~~~
 
-term utils.
+    Terminals and colors.
 
->>> c = colored(enabled=True)
->>> print(str(c.red("the quick "), c.blue("brown ", c.bold("fox ")),
-              c.magenta(c.underline("jumps over")),
-              c.yellow(" the lazy "),
-              c.green("dog ")))
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
+from __future__ import absolute_import
+
 import platform
+
+from .encoding import safe_str
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 OP_SEQ = "\033[%dm"
@@ -22,6 +26,16 @@ IS_WINDOWS = SYSTEM == "Windows"
 
 
 class colored(object):
+    """Terminal colored text.
+
+    Example::
+        >>> c = colored(enabled=True)
+        >>> print(str(c.red("the quick "), c.blue("brown ", c.bold("fox ")),
+        ...       c.magenta(c.underline("jumps over")),
+        ...       c.yellow(" the lazy "),
+        ...       c.green("dog ")))
+
+    """
 
     def __init__(self, *s, **kwargs):
         self.s = s
@@ -39,27 +53,42 @@ class colored(object):
                       "white": self.white}
 
     def _add(self, a, b):
+        if isinstance(a, unicode):
+            a = safe_str(a)
+        if isinstance(b, unicode):
+            b = safe_str(b)
         return str(a) + str(b)
 
     def _fold_no_color(self, a, b):
         try:
             A = a.no_color()
         except AttributeError:
-            A = str(a)
+            A = safe_str(a)
         try:
             B = b.no_color()
         except AttributeError:
-            B = str(b)
+            B = safe_str(b)
         return A + B
 
     def no_color(self):
-        return reduce(self._fold_no_color, self.s)
+        if self.s:
+            return reduce(self._fold_no_color, self.s)
+        return ""
+
+    def embed(self):
+        prefix = ""
+        if self.enabled:
+            prefix = self.op
+        return prefix + safe_str(reduce(self._add, self.s))
+
+    def __unicode__(self):
+        suffix = ""
+        if self.enabled:
+            suffix = RESET_SEQ
+        return self.embed() + suffix
 
     def __str__(self):
-        prefix, suffix = "", ""
-        if self.enabled:
-            prefix, suffix = self.op, RESET_SEQ
-        return prefix + str(reduce(self._add, self.s)) + suffix
+        return safe_str(self.__unicode__())
 
     def node(self, s, op):
         return self.__class__(enabled=self.enabled, op=op, *s)
@@ -128,7 +157,7 @@ class colored(object):
         return self.node(s, fg(40 + WHITE))
 
     def reset(self, *s):
-        return self.node(s, RESET_SEQ)
+        return self.node(s or [""], RESET_SEQ)
 
     def __add__(self, other):
         return str(self) + str(other)

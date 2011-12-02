@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.beat
+    ~~~~~~~~~~~
+
+    The Celery periodic task scheduler.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
 from __future__ import absolute_import
 
 import errno
@@ -14,17 +25,15 @@ except ImportError:
 
 from datetime import datetime
 
-from kombu.utils import cached_property
-
-from celery import __version__
-from celery import platforms
-from celery import registry
-from celery import signals
-from celery.app import app_or_default
-from celery.log import SilenceRepeated
-from celery.schedules import maybe_schedule, crontab
-from celery.utils import instantiate, maybe_promise
-from celery.utils.timeutils import humanize_seconds
+from . import __version__
+from . import platforms
+from . import registry
+from . import signals
+from .app import app_or_default
+from .log import SilenceRepeated
+from .schedules import maybe_schedule, crontab
+from .utils import cached_property, instantiate, maybe_promise
+from .utils.timeutils import humanize_seconds
 
 
 class SchedulingError(Exception):
@@ -79,14 +88,15 @@ class ScheduleEntry(object):
         self.total_run_count = total_run_count or 0
 
     def _default_now(self):
-        return datetime.now()
+        return datetime.utcnow()
 
-    def next(self, last_run_at=None):
+    def _next_instance(self, last_run_at=None):
         """Returns a new instance of the same class, but with
         its date and count fields updated."""
         return self.__class__(**dict(self,
-                                     last_run_at=last_run_at or datetime.now(),
-                                     total_run_count=self.total_run_count + 1))
+                                last_run_at=last_run_at or datetime.utcnow(),
+                                total_run_count=self.total_run_count + 1))
+    __next__ = next = _next_instance  # for 2to3
 
     def update(self, other):
         """Update values from another entry.
@@ -161,15 +171,16 @@ class Scheduler(object):
         is_due, next_time_to_run = entry.is_due()
 
         if is_due:
-            self.logger.debug("Scheduler: Sending due task %s" % entry.task)
+            self.logger.debug("Scheduler: Sending due task %s", entry.task)
             try:
                 result = self.apply_async(entry, publisher=publisher)
             except Exception, exc:
-                self.logger.error("Message Error: %s\n%s" % (exc,
-                    traceback.format_stack()), exc_info=sys.exc_info())
+                self.logger.error("Message Error: %s\n%s", exc,
+                                  traceback.format_stack(),
+                                  exc_info=sys.exc_info())
             else:
-                self.logger.debug("%s sent. id->%s" % (entry.task,
-                                                       result.task_id))
+                self.logger.debug("%s sent. id->%s", entry.task,
+                                                     result.task_id)
         return next_time_to_run
 
     def tick(self):
@@ -276,13 +287,23 @@ class Scheduler(object):
     def set_schedule(self, schedule):
         self.data = schedule
 
+    def _ensure_connected(self):
+        # callback called for each retry while the connection
+        # can't be established.
+        def _error_handler(exc, interval):
+            self.logger.error("Celerybeat: Connection error: %s. "
+                              "Trying again in %s seconds...", exc, interval)
+
+        return self.connection.ensure_connection(_error_handler,
+                    self.app.conf.BROKER_CONNECTION_MAX_RETRIES)
+
     @cached_property
     def connection(self):
         return self.app.broker_connection()
 
     @cached_property
     def publisher(self):
-        return self.Publisher(connection=self.connection)
+        return self.Publisher(connection=self._ensure_connected())
 
     @property
     def schedule(self):
@@ -316,8 +337,8 @@ class PersistentScheduler(Scheduler):
                                                 writeback=True)
             entries = self._store.setdefault("entries", {})
         except Exception, exc:
-            self.logger.error("Removing corrupted schedule file %r: %r" % (
-                self.schedule_filename, exc))
+            self.logger.error("Removing corrupted schedule file %r: %r",
+                              self.schedule_filename, exc, exc_info=True)
             self._remove_db()
             self._store = self.persistence.open(self.schedule_filename,
                                                 writeback=True)
@@ -362,15 +383,15 @@ class Service(object):
         self.schedule_filename = schedule_filename or \
                                     app.conf.CELERYBEAT_SCHEDULE_FILENAME
 
-        self._shutdown = threading.Event()
-        self._stopped = threading.Event()
+        self._is_shutdown = threading.Event()
+        self._is_stopped = threading.Event()
         self.debug = SilenceRepeated(self.logger.debug,
                         10 if self.max_interval < 60 else 1)
 
     def start(self, embedded_process=False):
         self.logger.info("Celerybeat: Starting...")
-        self.logger.debug("Celerybeat: Ticking with max interval->%s" % (
-                    humanize_seconds(self.scheduler.max_interval)))
+        self.logger.debug("Celerybeat: Ticking with max interval->%s",
+                          humanize_seconds(self.scheduler.max_interval))
 
         signals.beat_init.send(sender=self)
         if embedded_process:
@@ -378,24 +399,24 @@ class Service(object):
             platforms.set_process_title("celerybeat")
 
         try:
-            while not self._shutdown.isSet():
+            while not self._is_shutdown.isSet():
                 interval = self.scheduler.tick()
                 self.debug("Celerybeat: Waking up %s." % (
                         humanize_seconds(interval, prefix="in ")))
                 time.sleep(interval)
         except (KeyboardInterrupt, SystemExit):
-            self._shutdown.set()
+            self._is_shutdown.set()
         finally:
             self.sync()
 
     def sync(self):
         self.scheduler.close()
-        self._stopped.set()
+        self._is_stopped.set()
 
     def stop(self, wait=False):
         self.logger.info("Celerybeat: Shutting down...")
-        self._shutdown.set()
-        wait and self._stopped.wait()  # block until shutdown done.
+        self._is_shutdown.set()
+        wait and self._is_stopped.wait()  # block until shutdown done.
 
     def get_scheduler(self, lazy=False):
         filename = self.schedule_filename

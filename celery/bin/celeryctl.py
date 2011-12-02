@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
+from __future__ import with_statement
+
 import sys
 
 from optparse import OptionParser, make_option as Option
@@ -8,8 +12,9 @@ from anyjson import deserialize
 
 from celery import __version__
 from celery.app import app_or_default, current_app
-from celery.bin.base import Command as CeleryCommand
 from celery.utils import term
+
+from celery.bin.base import Command as CeleryCommand
 
 
 commands = {}
@@ -19,8 +24,8 @@ class Error(Exception):
     pass
 
 
-def command(fun):
-    commands[fun.__name__] = fun
+def command(fun, name=None):
+    commands[name or fun.__name__] = fun
     return fun
 
 
@@ -102,6 +107,28 @@ class Command(object):
         if isinstance(n, basestring):
             return OK, unicode(n)
         return OK, pformat(n)
+
+
+class list_(Command):
+    args = "<bindings>"
+
+    def list_bindings(self, channel):
+        fmt = lambda q, e, r: self.out("%s %s %s" % (q.ljust(28),
+                                                     e.ljust(28), r))
+        fmt("Queue", "Exchange", "Routing Key")
+        fmt("-" * 16, "-" * 16, "-" * 16)
+        for binding in channel.list_bindings():
+            fmt(*binding)
+
+    def run(self, what, *_, **kw):
+        topics = {"bindings": self.list_bindings}
+        if what not in topics:
+            raise ValueError("%r not in %r" % (what, topics.keys()))
+        with self.app.broker_connection() as conn:
+            self.app.amqp.get_task_consumer(conn).declare()
+            with conn.channel() as channel:
+                return topics[what](channel)
+list_ = command(list_, "list")
 
 
 class apply(Command):
@@ -195,7 +222,8 @@ class inspect(Command):
                "reserved": 1.0,
                "stats": 1.0,
                "revoked": 1.0,
-               "registered_tasks": 1.0,
+               "registered_tasks": 1.0,  # alias to registered
+               "registered": 1.0,
                "enable_events": 1.0,
                "disable_events": 1.0,
                "ping": 0.2,
@@ -207,6 +235,7 @@ class inspect(Command):
                     help="Timeout in seconds (float) waiting for reply"),
                 Option("--destination", "-d", dest="destination",
                     help="Comma separated list of destination node names."))
+    show_body = True
 
     def usage(self, command):
         return "%%prog %s [options] %s [%s]" % (
@@ -214,6 +243,7 @@ class inspect(Command):
 
     def run(self, *args, **kwargs):
         self.quiet = kwargs.get("quiet", False)
+        self.show_body = kwargs.get("show_body", True)
         if not args:
             raise Error("Missing inspect command. See --help")
         command = args[0]
@@ -249,7 +279,7 @@ class inspect(Command):
             return
         dirstr = not self.quiet and c.bold(c.white(direction), " ") or ""
         self.out(c.reset(dirstr, title))
-        if body and not self.quiet:
+        if body and self.show_body:
             self.out(body)
 inspect = command(inspect)
 
@@ -265,7 +295,7 @@ class status(Command):
     def run(self, *args, **kwargs):
         replies = inspect(app=self.app,
                           no_color=kwargs.get("no_color", False)) \
-                    .run("ping", **dict(kwargs, quiet=True))
+                    .run("ping", **dict(kwargs, quiet=True, show_body=False))
         if not replies:
             raise Error("No nodes replied within time constraint")
         nodecount = len(replies)
@@ -307,8 +337,22 @@ class celeryctl(CeleryCommand):
         except Error:
             return self.execute("help", argv)
 
+    def remove_options_at_beginning(self, argv, index=0):
+        if argv:
+            while index <= len(argv):
+                value = argv[index]
+                if value.startswith("--"):
+                    pass
+                elif value.startswith("-"):
+                    index += 1
+                else:
+                    return argv[index:]
+                index += 1
+        return []
+
     def handle_argv(self, prog_name, argv):
         self.prog_name = prog_name
+        argv = self.remove_options_at_beginning(argv)
         try:
             command = argv[0]
         except IndexError:

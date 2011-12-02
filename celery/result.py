@@ -1,26 +1,39 @@
-from __future__ import absolute_import, with_statement
+# -*- coding: utf-8 -*-
+"""
+    celery.result
+    ~~~~~~~~~~~~~
+
+    Task results/state and groups of results.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
+from __future__ import absolute_import
+from __future__ import with_statement
 
 import time
 
 from copy import copy
 from itertools import imap
 
-from celery import current_app
-from celery import states
-from celery.app import app_or_default
-from celery.exceptions import TimeoutError
-from celery.registry import _unpickle_task
+from . import current_app
+from . import states
+from .app import app_or_default
+from .exceptions import TimeoutError
+from .registry import _unpickle_task
+from .utils.compat import OrderedDict
 
 
 def _unpickle_result(task_id, task_name):
     return _unpickle_task(task_name).AsyncResult(task_id)
 
 
-class BaseAsyncResult(object):
-    """Base class for pending result, supports custom task result backend.
+class AsyncResult(object):
+    """Query task state.
 
     :param task_id: see :attr:`task_id`.
-    :param backend: see :attr:`backend`.
+    :keyword backend: see :attr:`backend`.
 
     """
 
@@ -33,10 +46,10 @@ class BaseAsyncResult(object):
     #: The task result backend to use.
     backend = None
 
-    def __init__(self, task_id, backend, task_name=None, app=None):
+    def __init__(self, task_id, backend=None, task_name=None, app=None):
         self.app = app_or_default(app)
         self.task_id = task_id
-        self.backend = backend
+        self.backend = backend or self.app.backend
         self.task_name = task_name
 
     def forget(self):
@@ -181,23 +194,7 @@ class BaseAsyncResult(object):
     def status(self):
         """Deprecated alias of :attr:`state`."""
         return self.state
-
-
-class AsyncResult(BaseAsyncResult):
-    """Pending task result using the default backend.
-
-    :param task_id: The task uuid.
-
-    """
-
-    #: Task result store backend to use.
-    backend = None
-
-    def __init__(self, task_id, backend=None, task_name=None, app=None):
-        app = app_or_default(app)
-        backend = backend or app.backend
-        super(AsyncResult, self).__init__(task_id, backend,
-                                          task_name=task_name, app=app)
+BaseAsyncResult = AsyncResult  # for backwards compatibility.
 
 
 class ResultSet(object):
@@ -326,15 +323,19 @@ class ResultSet(object):
 
         """
         elapsed = 0.0
-        results = dict((result.task_id, copy(result))
-                            for result in self.results)
+        results = OrderedDict((result.task_id, copy(result))
+                                for result in self.results)
 
         while results:
             removed = set()
             for task_id, result in results.iteritems():
-                yield result.get(timeout=timeout and timeout - elapsed,
-                                 propagate=propagate, interval=0.0)
-                removed.add(task_id)
+                if result.ready():
+                    yield result.get(timeout=timeout and timeout - elapsed,
+                                     propagate=propagate)
+                    removed.add(task_id)
+                else:
+                    if result.backend.subpolling_interval:
+                        time.sleep(result.backend.subpolling_interval)
             for task_id in removed:
                 results.pop(task_id, None)
             time.sleep(interval)
@@ -433,6 +434,10 @@ class ResultSet(object):
     def subtasks(self):
         """Deprecated alias to :attr:`results`."""
         return self.results
+
+    @property
+    def supports_native_join(self):
+        return self.results[0].backend.supports_native_join
 
 
 class TaskSetResult(ResultSet):

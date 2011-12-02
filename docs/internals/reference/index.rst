@@ -20,8 +20,8 @@
     celery.concurrency.solo
     celery.concurrency.processes
     celery.concurrency.processes.pool
-    celery.concurrency.evlet
-    celery.concurrency.evg
+    celery.concurrency.eventlet
+    celery.concurrency.gevent
     celery.concurrency.base
     celery.concurrency.threads
     celery.beat
@@ -31,10 +31,14 @@
     celery.backends.cache
     celery.backends.amqp
     celery.backends.mongodb
-    celery.backends.pyredis
+    celery.backends.redis
     celery.backends.cassandra
     celery.backends.tyrant
     celery.execute.trace
+    celery.app.annotations
+    celery.security.certificate
+    celery.security.key
+    celery.security.serialization
     celery.datastructures
     celery.routes
     celery.log
@@ -44,14 +48,14 @@
     celery.db.models
     celery.db.session
     celery.utils
+    celery.utils.functional
     celery.utils.term
     celery.utils.timeutils
     celery.utils.encoding
     celery.utils.compat
-    celery.utils.mail
     celery.utils.patch
-    celery.utils.functional
     celery.utils.serialization
+    celery.utils.threads
     celery.utils.timer2
     celery.utils.dispatch
     celery.utils.dispatch.signal

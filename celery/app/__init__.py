@@ -1,30 +1,63 @@
+# -*- coding: utf-8 -*-
 """
-celery.app
-==========
+    celery.app
+    ~~~~~~~~~~
 
-Celery Application.
+    Celery Application.
 
-:copyright: (c) 2009 - 2011 by Ask Solem.
-:license: BSD, see LICENSE for more details.
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
 
 """
+
+from __future__ import absolute_import
+
 import os
 import threading
 
 from functools import wraps
 from inspect import getargspec
 
-from kombu.utils import cached_property
+from .. import registry
+from ..utils import cached_property, instantiate
 
-from celery import registry
-from celery.app import base
-from celery.utils import instantiate
+from . import annotations
+from . import base
 
 # Apps with the :attr:`~celery.app.base.BaseApp.set_as_current` attribute
 # sets this, so it will always contain the last instantiated app,
 # and is the default app returned by :func:`app_or_default`.
 _tls = threading.local()
 _tls.current_app = None
+
+
+class AppPickler(object):
+
+    def __call__(self, cls, *args):
+        kwargs = self.build_kwargs(*args)
+        app = self.construct(cls, **kwargs)
+        self.prepare(app, **kwargs)
+        return app
+
+    def prepare(self, app, **kwargs):
+        app.conf.update(kwargs["changes"])
+
+    def build_kwargs(self, *args):
+        return self.build_standard_kwargs(*args)
+
+    def build_standard_kwargs(self, main, changes, loader, backend, amqp,
+            events, log, control, accept_magic_kwargs):
+        return dict(main=main, loader=loader, backend=backend, amqp=amqp,
+                    changes=changes, events=events, log=log, control=control,
+                    set_as_current=False,
+                    accept_magic_kwargs=accept_magic_kwargs)
+
+    def construct(self, cls, **kwargs):
+        return cls(**kwargs)
+
+
+def _unpickle_app(cls, pickler, *args):
+    return pickler()(cls, *args)
 
 
 class App(base.BaseApp):
@@ -43,8 +76,10 @@ class App(base.BaseApp):
     :keyword set_as_current:  Make this the global current app.
 
     """
+    Pickler = AppPickler
 
     def set_current(self):
+        """Make this the current app for this thread."""
         _tls.current_app = self
 
     def on_init(self):
@@ -56,7 +91,7 @@ class App(base.BaseApp):
         taken from this app."""
         conf = self.conf
 
-        from celery.app.task import BaseTask
+        from .task import BaseTask
 
         class Task(BaseTask):
             abstract = True
@@ -82,20 +117,23 @@ class App(base.BaseApp):
         """Create new :class:`~celery.apps.worker.Worker` instance."""
         return instantiate("celery.apps.worker.Worker", app=self, **kwargs)
 
+    def WorkController(self, **kwargs):
+        return instantiate("celery.worker.WorkController", app=self, **kwargs)
+
     def Beat(self, **kwargs):
         """Create new :class:`~celery.apps.beat.Beat` instance."""
         return instantiate("celery.apps.beat.Beat", app=self, **kwargs)
 
     def TaskSet(self, *args, **kwargs):
         """Create new :class:`~celery.task.sets.TaskSet`."""
-        from celery.task.sets import TaskSet
+        from ..task.sets import TaskSet
         kwargs["app"] = self
         return TaskSet(*args, **kwargs)
 
     def worker_main(self, argv=None):
         """Run :program:`celeryd` using `argv`.  Uses :data:`sys.argv`
         if `argv` is not specified."""
-        from celery.bin.celeryd import WorkerCommand
+        from ..bin.celeryd import WorkerCommand
         return WorkerCommand(app=self).execute_from_commandline(argv)
 
     def task(self, *args, **options):
@@ -157,10 +195,23 @@ class App(base.BaseApp):
             return inner_create_task_cls(**options)(*args)
         return inner_create_task_cls(**options)
 
+    def annotate_task(self, task):
+        if self.annotations:
+            match = annotations._first_match(self.annotations, task)
+            for attr, value in (match or {}).iteritems():
+                setattr(task, attr, value)
+            match_any = annotations._first_match_any(self.annotations)
+            for attr, value in (match_any or {}).iteritems():
+                setattr(task, attr, value)
+
     @cached_property
     def Task(self):
         """Default Task base class for this application."""
         return self.create_task_cls()
+
+    @cached_property
+    def annotations(self):
+        return annotations.prepare(self.conf.CELERY_ANNOTATIONS)
 
     def __repr__(self):
         return "<Celery: %s:0x%x>" % (self.main or "__main__", id(self), )
@@ -169,26 +220,19 @@ class App(base.BaseApp):
         # Reduce only pickles the configuration changes,
         # so the default configuration doesn't have to be passed
         # between processes.
-        return (_unpickle_app, (self.__class__,
-                                self.main,
-                                self.conf.changes,
-                                self.loader_cls,
-                                self.backend_cls,
-                                self.amqp_cls,
-                                self.events_cls,
-                                self.log_cls,
-                                self.control_cls,
-                                self.accept_magic_kwargs))
+        return (_unpickle_app, (self.__class__, self.Pickler)
+                              + self.__reduce_args__())
 
-
-def _unpickle_app(cls, main, changes, loader, backend, amqp,
-        events, log, control, accept_magic_kwargs):
-    app = cls(main, loader=loader, backend=backend, amqp=amqp,
-                    events=events, log=log, control=control,
-                    set_as_current=False,
-                    accept_magic_kwargs=accept_magic_kwargs)
-    app.conf.update(changes)
-    return app
+    def __reduce_args__(self):
+        return (self.main,
+                self.conf.changes,
+                self.loader_cls,
+                self.backend_cls,
+                self.amqp_cls,
+                self.events_cls,
+                self.log_cls,
+                self.control_cls,
+                self.accept_magic_kwargs)
 
 
 #: The "default" loader is the default loader used by old applications.
@@ -221,12 +265,12 @@ def _app_or_default_trace(app=None):  # pragma: no cover
     from multiprocessing import current_process
     if app is None:
         if getattr(_tls, "current_app", None):
-            print("-- RETURNING TO CURRENT APP --")
+            print("-- RETURNING TO CURRENT APP --")  # noqa+
             print_stack()
             return _tls.current_app
         if current_process()._name == "MainProcess":
             raise Exception("DEFAULT APP")
-        print("-- RETURNING TO DEFAULT APP --")
+        print("-- RETURNING TO DEFAULT APP --")      # noqa+
         print_stack()
         return default_app
     return app

@@ -1,6 +1,7 @@
-import os
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
 
-__all__ = ["get_processtree_pids", "kill_processtree"]
+import os
 
 # psutil is painfully slow in win32. So to avoid adding big
 # dependencies like pywin32 a ctypes based solution is preferred

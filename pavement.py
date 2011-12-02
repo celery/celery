@@ -40,7 +40,6 @@ def qhtml(options):
 @needs("clean_docs", "paver.doctools.html")
 def ghdocs(options):
     builtdocs = sphinx_builddir(options)
-    sh("sphinx-to-github", cwd=builtdocs)
     sh("git checkout gh-pages && \
             cp -r %s/* .    && \
             git commit . -m 'Rendered documentation for Github Pages.' && \
@@ -91,6 +90,26 @@ def flake8(options):
     }{exit $FOUND_FLAKE;
         '""" % (complexity, ), ignore_error=noerror)
 
+
+@task
+@cmdopts([
+    ("noerror", "E", "Ignore errors"),
+])
+def flakeplus(options):
+    noerror = getattr(options, "noerror", False)
+    sh("python contrib/release/flakeplus.py celery",
+       ignore_error=noerror)
+
+
+@task
+@cmdopts([
+    ("noerror", "E", "Ignore errors")
+])
+def flakes(options):
+    flake8(options)
+    flakeplus(options)
+
+
 @task
 def clean_readme(options):
     path("README").unlink()
@@ -107,8 +126,9 @@ def readme(options):
 
 @task
 def bump(options):
-    sh("bump -c celery")
-
+    sh("contrib/release/bump_version.py \
+            celery/__init__.py docs/includes/introduction.txt \
+            --before-commit='paver readme'")
 
 @task
 @cmdopts([
@@ -156,7 +176,7 @@ def gitcleanforce(options):
 
 
 @task
-@needs("flake8", "autodoc", "verifyindex",
+@needs("flakes", "autodoc", "verifyindex",
        "verifyconfigref", "test", "gitclean")
 def releaseok(options):
     pass

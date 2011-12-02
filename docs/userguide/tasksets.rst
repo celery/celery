@@ -164,6 +164,7 @@ It supports the following operations:
 Chords
 ======
 
+.. versionadded:: 2.3
 
 A chord is a task that only executes after all of the tasks in a taskset has
 finished executing.
@@ -211,7 +212,7 @@ as synchronization is a required step for many parallel algorithms.
 Let's break the chord expression down::
 
     >>> callback = tsum.subtask()
-    >>> header = [add.subtask((i, i)) for i in xrange(100])
+    >>> header = [add.subtask((i, i)) for i in xrange(100)]
     >>> result = chord(header)(callback)
     >>> result.get()
     9900
@@ -243,12 +244,14 @@ Example implementation:
         unlock_chord.retry(countdown=interval, max_retries=max_retries)
 
 
-This is used by all result backends except Redis, which increments a
+This is used by all result backends except Redis and Memcached, which increment a
 counter after each task in the header, then applying the callback when the
-counter exceeds the number of tasks in the set.
+counter exceeds the number of tasks in the set. *Note:* chords do not properly
+work with Redis before version 2.2; you will need to upgrade to at least 2.2 to
+use them.
 
-The Redis approach is a much better solution, but not easily implemented
-in other backends (suggestions welcome!)
+The Redis and Memcached approach is a much better solution, but not easily
+implemented in other backends (suggestions welcome!).
 
 
 .. note::

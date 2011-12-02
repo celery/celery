@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+from __future__ import with_statement
+
 import operator
 
 from celery import states
@@ -20,7 +23,8 @@ class test_TraceInfo(unittest.TestCase):
         self.assertEqual(info.retval, 4)
 
     def test_trace_SystemExit(self):
-        self.assertRaises(SystemExit, trace, raises, (SystemExit(), ), {})
+        with self.assertRaises(SystemExit):
+            trace(raises, (SystemExit(), ), {})
 
     def test_trace_RetryTaskError(self):
         exc = RetryTaskError("foo", "bar")
@@ -35,5 +39,5 @@ class test_TraceInfo(unittest.TestCase):
         self.assertIs(info.retval, exc)
 
     def test_trace_exception_propagate(self):
-        self.assertRaises(KeyError, trace, raises, (KeyError("foo"), ), {},
-                          propagate=True)
+        with self.assertRaises(KeyError):
+            trace(raises, (KeyError("foo"), ), {}, propagate=True)

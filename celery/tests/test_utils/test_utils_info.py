@@ -1,8 +1,8 @@
-from celery.tests.utils import unittest
+from __future__ import absolute_import
 
 from celery import Celery
 from celery.utils import textindent
-from celery.utils.timeutils import humanize_seconds
+from celery.tests.utils import unittest
 
 RANDTEXT = """\
 The quick brown
@@ -34,29 +34,11 @@ QUEUE_FORMAT2 = """. queue2:      exchange:exchange2 (type2) binding:bind2"""
 
 class TestInfo(unittest.TestCase):
 
-    def test_humanize_seconds(self):
-        t = ((4 * 60 * 60 * 24, "4 days"),
-             (1 * 60 * 60 * 24, "1 day"),
-             (4 * 60 * 60, "4 hours"),
-             (1 * 60 * 60, "1 hour"),
-             (4 * 60, "4 minutes"),
-             (1 * 60, "1 minute"),
-             (4, "4.00 seconds"),
-             (1, "1.00 second"),
-             (4.3567631221, "4.36 seconds"),
-             (0, "now"))
-
-        for seconds, human in t:
-            self.assertEqual(humanize_seconds(seconds), human)
-
-        self.assertEqual(humanize_seconds(4, prefix="about "),
-                          "about 4.00 seconds")
-
     def test_textindent(self):
         self.assertEqual(textindent(RANDTEXT, 4), RANDTEXT_RES)
 
     def test_format_queues(self):
         celery = Celery(set_as_current=False)
         celery.amqp.queues = celery.amqp.Queues(QUEUES)
-        self.assertItemsEqual(celery.amqp.queues.format().split("\n"),
-                              [QUEUE_FORMAT1, QUEUE_FORMAT2])
+        self.assertEqual(sorted(celery.amqp.queues.format().split("\n")),
+                         sorted([QUEUE_FORMAT1, QUEUE_FORMAT2]))

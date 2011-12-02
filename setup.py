@@ -6,8 +6,9 @@ import codecs
 import platform
 
 extra = {}
-tests_require = ["nose", "nose-cover3", "sqlalchemy"]
-if sys.version_info >= (3, 0):
+tests_require = ["nose", "nose-cover3", "sqlalchemy", "mock"]
+is_py3k  = sys.version_info >= (3, 0)
+if is_py3k:
     extra.update(use_2to3=True)
 elif sys.version_info < (2, 7):
     tests_require.append("unittest2")
@@ -18,20 +19,52 @@ if sys.version_info < (2, 5):
     raise Exception("Celery requires Python 2.5 or higher.")
 
 try:
-    from setuptools import setup, find_packages, Command
+    from setuptools import setup, find_packages
     from setuptools.command.test import test
-    from setuptools.command.install import install
 except ImportError:
+    raise
     from ez_setup import use_setuptools
     use_setuptools()
-    from setuptools import setup, find_packages, Command
-    from setuptools.command.test import test
-    from setuptools.command.install import install
+    from setuptools import setup, find_packages           # noqa
+    from setuptools.command.test import test              # noqa
 
-os.environ["CELERY_NO_EVAL"] = "yes"
-import celery as distmeta
-os.environ.pop("CELERY_NO_EVAL", None)
-sys.modules.pop("celery", None)
+# -- Parse meta
+import re
+re_meta = re.compile(r'__(\w+?)__\s*=\s*(.*)')
+re_vers = re.compile(r'VERSION\s*=\s*\((.*?)\)')
+re_doc = re.compile(r'^"""(.+?)"""')
+rq = lambda s: s.strip("\"'")
+
+def add_default(m):
+    attr_name, attr_value = m.groups()
+    return ((attr_name, rq(attr_value)), )
+
+
+def add_version(m):
+    v = list(map(rq, m.groups()[0].split(", ")))
+    return (("VERSION", ".".join(v[0:3]) + "".join(v[3:])), )
+
+
+def add_doc(m):
+    return (("doc", m.groups()[0]), )
+
+pats = {re_meta: add_default,
+        re_vers: add_version,
+        re_doc: add_doc}
+here = os.path.abspath(os.path.dirname(__file__))
+meta_fh = open(os.path.join(here, "celery/__init__.py"))
+try:
+    meta = {}
+    for line in meta_fh:
+        if line.strip() == '# -eof meta-':
+            break
+        for pattern, handler in pats.items():
+            m = pattern.match(line.strip())
+            if m:
+                meta.update(handler(m))
+finally:
+    meta_fh.close()
+# --
 
 
 class quicktest(test):
@@ -44,22 +77,25 @@ class quicktest(test):
 
 install_requires = []
 try:
-    import importlib
+    import importlib  # noqa
 except ImportError:
     install_requires.append("importlib")
 install_requires.extend([
-    "python-dateutil>=1.5.0,<2.0.0",
     "anyjson>=0.3.1",
-    "kombu>=1.1.0,<2.0.0",
-    "pyparsing>=1.5.0,<2.0.0",
+    "kombu>=1.4.3,<3.0.0",
 ])
+if is_py3k:
+    install_requires.append("python-dateutil>=2.0.0")
+else:
+    install_requires.append("python-dateutil>=1.5.0,<2.0.0")
+
 py_version = sys.version_info
 is_jython = sys.platform.startswith("java")
 is_pypy = hasattr(sys, "pypy_version_info")
+if sys.version_info < (2, 7):
+    install_requires.append("ordereddict") # Replacement for the ordered dict
 if sys.version_info < (2, 6) and not (is_jython or is_pypy):
     install_requires.append("multiprocessing")
-if sys.version_info < (2, 5):
-    install_requires.append("uuid")
 
 if is_jython:
     install_requires.append("threadpool")
@@ -86,11 +122,11 @@ else:
 
 setup(
     name="celery",
-    version=distmeta.__version__,
-    description=distmeta.__doc__,
-    author=distmeta.__author__,
-    author_email=distmeta.__contact__,
-    url=distmeta.__homepage__,
+    version=meta["VERSION"],
+    description=meta["doc"],
+    author=meta["author"],
+    author_email=meta["contact"],
+    url=meta["homepage"],
     platforms=["any"],
     license="BSD",
     packages=find_packages(exclude=['ez_setup', 'tests', 'tests.*']),
@@ -102,23 +138,33 @@ setup(
     test_suite="nose.collector",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
-        "Operating System :: OS Independent",
-        "Environment :: No Input/Output (Daemon)",
-        "Intended Audience :: Developers",
         "License :: OSI Approved :: BSD License",
-        "Operating System :: POSIX",
-        "Topic :: Communications",
         "Topic :: System :: Distributed Computing",
-        "Topic :: Software Development :: Libraries :: Python Modules",
+        "Topic :: Software Development :: Object Brokering",
+        "Intended Audience :: Developers",
+        "Intended Audience :: Information Technology",
+        "Intended Audience :: Science/Research",
+        "Intended Audience :: Financial and Insurance Industry",
+        "Intended Audience :: Healthcare Industry",
+        "Environment :: No Input/Output (Daemon)",
+        "Environment :: Console",
         "Programming Language :: Python",
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 2.5",
         "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.2",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Programming Language :: Python :: Implementation :: PyPy",
+        "Programming Language :: Python :: Implementation :: Jython",
+        "Operating System :: OS Independent",
+        "Operating System :: POSIX",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: MacOS :: MacOS X",
     ],
     entry_points={
         'console_scripts': console_scripts,
     },
     long_description=long_description,
-    **extra
-)
+    **extra)

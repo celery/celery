@@ -1,18 +1,20 @@
+from __future__ import absolute_import
 from __future__ import with_statement
 
 import os
 import sys
+import warnings
 
 from celery import task
 from celery import loaders
 from celery.app import app_or_default
-from celery.exceptions import ImproperlyConfigured
+from celery.exceptions import CPendingDeprecationWarning, ImproperlyConfigured
 from celery.loaders import base
 from celery.loaders import default
 from celery.loaders.app import AppLoader
 
 from celery.tests.compat import catch_warnings
-from celery.tests.utils import unittest, AppCase, with_environ
+from celery.tests.utils import unittest, AppCase
 
 
 class ObjectConfig(object):
@@ -66,14 +68,22 @@ class TestLoaders(AppCase):
                           default.Loader)
 
     def test_current_loader(self):
-        self.assertIs(loaders.current_loader(), self.app.loader)
+        warnings.resetwarnings()
+        with catch_warnings(record=True) as log:
+            self.assertIs(loaders.current_loader(), self.app.loader)
+            warning = log[0].message
+
+            self.assertIsInstance(warning, CPendingDeprecationWarning)
+            self.assertIn("deprecation", warning.args[0])
 
     def test_load_settings(self):
-        self.assertIs(loaders.load_settings(), self.app.conf)
+        warnings.resetwarnings()
+        with catch_warnings(record=True) as log:
+            self.assertIs(loaders.load_settings(), self.app.conf)
+            warning = log[0].message
 
-    @with_environ("CELERY_LOADER", "default")
-    def test_detect_loader_CELERY_LOADER(self):
-        self.assertIsInstance(loaders.setup_loader(), default.Loader)
+            self.assertIsInstance(warning, CPendingDeprecationWarning)
+            self.assertIn("deprecation", warning.args[0])
 
 
 class TestLoaderBase(unittest.TestCase):
@@ -103,12 +113,14 @@ class TestLoaderBase(unittest.TestCase):
         self.assertEqual(self.loader.conf["foo"], "bar")
 
     def test_import_default_modules(self):
-        self.assertItemsEqual(self.loader.import_default_modules(),
-                              [os, sys, task])
+        modnames = lambda l: [m.__name__ for m in l]
+        self.assertEqual(sorted(modnames(
+                            self.loader.import_default_modules())),
+                         sorted(modnames([os, sys, task])))
 
     def test_import_from_cwd_custom_imp(self):
 
-        def imp(module):
+        def imp(module, package=None):
             imp.called = True
         imp.called = False
 
@@ -126,8 +138,8 @@ class TestLoaderBase(unittest.TestCase):
             self.assertIsInstance(warning, MockMail.SendmailWarning)
             self.assertIn("KeyError", warning.args[0])
 
-            self.assertRaises(KeyError, self.loader.mail_admins,
-                              fail_silently=False, **opts)
+            with self.assertRaises(KeyError):
+                self.loader.mail_admins(fail_silently=False, **opts)
 
     def test_mail_admins(self):
         MockMail.Mailer.raise_on_send = False
@@ -143,8 +155,8 @@ class TestLoaderBase(unittest.TestCase):
         self.assertIs(loader.mail, mail)
 
     def test_cmdline_config_ValueError(self):
-        self.assertRaises(ValueError, self.loader.cmdline_config_parser,
-                         ["broker.port=foobar"])
+        with self.assertRaises(ValueError):
+            self.loader.cmdline_config_parser(["broker.port=foobar"])
 
 
 class TestDefaultLoader(unittest.TestCase):
@@ -220,17 +232,16 @@ class test_AppLoader(unittest.TestCase):
     def test_config_from_envvar(self, key="CELERY_HARNESS_CFG1"):
         self.assertFalse(self.loader.config_from_envvar("HDSAJIHWIQHEWQU",
                                                         silent=True))
-        self.assertRaises(ImproperlyConfigured,
-                          self.loader.config_from_envvar, "HDSAJIHWIQHEWQU",
-                          silent=False)
+        with self.assertRaises(ImproperlyConfigured):
+            self.loader.config_from_envvar("HDSAJIHWIQHEWQU", silent=False)
         os.environ[key] = __name__ + ".object_config"
         self.assertTrue(self.loader.config_from_envvar(key))
         self.assertEqual(self.loader.conf["FOO"], 1)
         self.assertEqual(self.loader.conf["BAR"], 2)
 
         os.environ[key] = "unknown_asdwqe.asdwqewqe"
-        self.assertRaises(ImportError,
-                          self.loader.config_from_envvar, key, silent=False)
+        with self.assertRaises(ImportError):
+            self.loader.config_from_envvar(key, silent=False)
         self.assertFalse(self.loader.config_from_envvar(key, silent=True))
 
         os.environ[key] = __name__ + ".dict_config"

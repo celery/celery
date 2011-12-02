@@ -1,23 +1,27 @@
+from __future__ import absolute_import
+from __future__ import with_statement
+
 import socket
-from celery.tests.utils import unittest
 
 from datetime import datetime, timedelta
 
 from kombu import pidbox
 from mock import Mock
 
-from celery.utils.timer2 import Timer
-
-from celery.app import app_or_default
+from celery import current_app
 from celery.datastructures import AttributeDict
 from celery.task import task
 from celery.registry import tasks
 from celery.task import PingTask
-from celery.utils import gen_unique_id
+from celery.utils import uuid
+from celery.utils.timer2 import Timer
 from celery.worker.buckets import FastQueue
 from celery.worker.job import TaskRequest
+from celery.worker import state
 from celery.worker.state import revoked
-from celery.worker.control.registry import Panel
+from celery.worker import control
+from celery.worker.control import Panel
+from celery.tests.utils import unittest
 
 hostname = socket.gethostname()
 
@@ -27,17 +31,22 @@ def mytask():
     pass
 
 
+class WorkController(object):
+    autoscaler = None
+
+
 class Consumer(object):
 
     def __init__(self):
         self.ready_queue = FastQueue()
         self.ready_queue.put(TaskRequest(task_name=mytask.name,
-                                         task_id=gen_unique_id(),
+                                         task_id=uuid(),
                                          args=(2, 2),
                                          kwargs={}))
         self.eta_schedule = Timer()
-        self.app = app_or_default()
+        self.app = current_app
         self.event_dispatcher = Mock()
+        self.controller = WorkController()
 
         from celery.concurrency.base import BasePool
         self.pool = BasePool(10)
@@ -50,7 +59,7 @@ class Consumer(object):
 class test_ControlPanel(unittest.TestCase):
 
     def setUp(self):
-        self.app = app_or_default()
+        self.app = current_app
         self.panel = self.create_panel(consumer=Consumer())
 
     def create_state(self, **kwargs):
@@ -71,7 +80,8 @@ class test_ControlPanel(unittest.TestCase):
         self.assertTrue(consumer.event_dispatcher.enable.call_count)
         self.assertIn(("worker-online", ),
                 consumer.event_dispatcher.send.call_args)
-        self.assertTrue(panel.handle("enable_events")["ok"])
+        consumer.event_dispatcher.enabled = True
+        self.assertIn("already enabled", panel.handle("enable_events")["ok"])
 
     def test_disable_events(self):
         consumer = Consumer()
@@ -81,7 +91,8 @@ class test_ControlPanel(unittest.TestCase):
         self.assertTrue(consumer.event_dispatcher.disable.call_count)
         self.assertIn(("worker-offline", ),
                       consumer.event_dispatcher.send.call_args)
-        self.assertTrue(panel.handle("disable_events")["ok"])
+        consumer.event_dispatcher.enabled = False
+        self.assertIn("already disabled", panel.handle("disable_events")["ok"])
 
     def test_heartbeat(self):
         consumer = Consumer()
@@ -91,13 +102,47 @@ class test_ControlPanel(unittest.TestCase):
         self.assertIn(("worker-heartbeat", ),
                       consumer.event_dispatcher.send.call_args)
 
+    def test_time_limit(self):
+        panel = self.create_panel(consumer=Mock())
+        th, ts = mytask.time_limit, mytask.soft_time_limit
+        try:
+            r = panel.handle("time_limit", arguments=dict(
+                task_name=mytask.name, hard=30, soft=10))
+            self.assertEqual((mytask.time_limit, mytask.soft_time_limit),
+                             (30, 10))
+            self.assertIn("ok", r)
+            r = panel.handle("time_limit", arguments=dict(
+                task_name=mytask.name, hard=None, soft=None))
+            self.assertEqual((mytask.time_limit, mytask.soft_time_limit),
+                             (None, None))
+            self.assertIn("ok", r)
+
+            r = panel.handle("time_limit", arguments=dict(
+                task_name="248e8afya9s8dh921eh928", hard=30))
+            self.assertIn("error", r)
+        finally:
+            mytask.time_limit, mytask.soft_time_limit = th, ts
+
+    def test_active_queues(self):
+        import kombu
+
+        x = kombu.Consumer(current_app.broker_connection(),
+                           [kombu.Queue("foo", kombu.Exchange("foo"), "foo"),
+                            kombu.Queue("bar", kombu.Exchange("bar"), "bar")],
+                           auto_declare=False)
+        consumer = Mock()
+        consumer.task_consumer = x
+        panel = self.create_panel(consumer=consumer)
+        r = panel.handle("active_queues")
+        self.assertListEqual(list(sorted(q["name"] for q in r)),
+                             ["bar", "foo"])
+
     def test_dump_tasks(self):
         info = "\n".join(self.panel.handle("dump_tasks"))
         self.assertIn("mytask", info)
         self.assertIn("rate_limit=200", info)
 
     def test_stats(self):
-        from celery.worker import state
         prev_count, state.total_count = state.total_count, 100
         try:
             self.assertDictContainsSubset({"total": 100,
@@ -107,7 +152,6 @@ class test_ControlPanel(unittest.TestCase):
             state.total_count = prev_count
 
     def test_active(self):
-        from celery.worker import state
         from celery.worker.job import TaskRequest
 
         r = TaskRequest(PingTask.name, "do re mi", (), {})
@@ -155,6 +199,9 @@ class test_ControlPanel(unittest.TestCase):
             def cancel_by_queue(self, queue):
                 self.cancelled.append(queue)
 
+            def consuming_from(self, queue):
+                return queue in self.queues
+
         consumer = Consumer()
         consumer.task_consumer = MockConsumer()
         panel = self.create_panel(consumer=consumer)
@@ -166,14 +213,13 @@ class test_ControlPanel(unittest.TestCase):
         self.assertIn("MyQueue", consumer.task_consumer.cancelled)
 
     def test_revoked(self):
-        from celery.worker import state
         state.revoked.clear()
         state.revoked.add("a1")
         state.revoked.add("a2")
 
         try:
-            self.assertItemsEqual(self.panel.handle("dump_revoked"),
-                                  ["a1", "a2"])
+            self.assertEqual(sorted(self.panel.handle("dump_revoked")),
+                             ["a1", "a2"])
         finally:
             state.revoked.clear()
 
@@ -200,7 +246,7 @@ class test_ControlPanel(unittest.TestCase):
         self.assertFalse(panel.handle("dump_reserved"))
 
     def test_rate_limit_when_disabled(self):
-        app = app_or_default()
+        app = current_app
         app.conf.CELERY_DISABLE_RATE_LIMITS = True
         try:
             e = self.panel.handle("rate_limit", arguments=dict(
@@ -251,39 +297,55 @@ class test_ControlPanel(unittest.TestCase):
                                 "rate_limit": "1000/s"})
 
     def test_unexposed_command(self):
-        self.assertRaises(KeyError, self.panel.handle, "foo", arguments={})
+        with self.assertRaises(KeyError):
+            self.panel.handle("foo", arguments={})
 
     def test_revoke_with_name(self):
-        uuid = gen_unique_id()
+        tid = uuid()
         m = {"method": "revoke",
              "destination": hostname,
-             "arguments": {"task_id": uuid,
+             "arguments": {"task_id": tid,
                            "task_name": mytask.name}}
         self.panel.dispatch_from_message(m)
-        self.assertIn(uuid, revoked)
+        self.assertIn(tid, revoked)
 
     def test_revoke_with_name_not_in_registry(self):
-        uuid = gen_unique_id()
+        tid = uuid()
         m = {"method": "revoke",
              "destination": hostname,
-             "arguments": {"task_id": uuid,
+             "arguments": {"task_id": tid,
                            "task_name": "xxxxxxxxx33333333388888"}}
         self.panel.dispatch_from_message(m)
-        self.assertIn(uuid, revoked)
+        self.assertIn(tid, revoked)
 
     def test_revoke(self):
-        uuid = gen_unique_id()
+        tid = uuid()
         m = {"method": "revoke",
              "destination": hostname,
-             "arguments": {"task_id": uuid}}
+             "arguments": {"task_id": tid}}
         self.panel.dispatch_from_message(m)
-        self.assertIn(uuid, revoked)
+        self.assertIn(tid, revoked)
 
         m = {"method": "revoke",
              "destination": "does.not.exist",
-             "arguments": {"task_id": uuid + "xxx"}}
+             "arguments": {"task_id": tid + "xxx"}}
         self.panel.dispatch_from_message(m)
-        self.assertNotIn(uuid + "xxx", revoked)
+        self.assertNotIn(tid + "xxx", revoked)
+
+    def test_revoke_terminate(self):
+        request = Mock()
+        request.task_id = tid = uuid()
+        state.active_requests.add(request)
+        try:
+            r = control.revoke(Mock(), tid, terminate=True)
+            self.assertIn(tid, revoked)
+            self.assertTrue(request.terminate.call_count)
+            self.assertIn("terminated", r["ok"])
+            # unknown task id only revokes
+            r = control.revoke(Mock(), uuid(), terminate=True)
+            self.assertIn("revoked", r["ok"])
+        finally:
+            state.active_requests.discard(request)
 
     def test_ping(self):
         m = {"method": "ping",
@@ -294,7 +356,8 @@ class test_ControlPanel(unittest.TestCase):
     def test_shutdown(self):
         m = {"method": "shutdown",
              "destination": hostname}
-        self.assertRaises(SystemExit, self.panel.dispatch_from_message, m)
+        with self.assertRaises(SystemExit):
+            self.panel.dispatch_from_message(m)
 
     def test_panel_reply(self):
 

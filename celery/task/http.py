@@ -1,16 +1,30 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.task.http
+    ~~~~~~~~~~~~~~~~
+
+    Task webhooks implementation.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
+from __future__ import absolute_import
+
+import sys
 import urllib2
 
 from urllib import urlencode
 from urlparse import urlparse
 try:
     from urlparse import parse_qsl
-except ImportError:
+except ImportError:  # pragma: no cover
     from cgi import parse_qsl  # noqa
 
 from anyjson import deserialize
 
-from celery import __version__ as celery_version
-from celery.task.base import Task as BaseTask
+from .. import __version__ as celery_version
+from .base import Task as BaseTask
 
 GET_METHODS = frozenset(["GET", "HEAD"])
 
@@ -34,11 +48,19 @@ def maybe_utf8(value):
     return value
 
 
-def utf8dict(tup):
-    """With a dict's items() tuple return a new dict with any utf-8
-    keys/values encoded."""
-    return dict((key.encode("utf-8"), maybe_utf8(value))
-                    for key, value in tup)
+if sys.version_info >= (3, 0):
+
+    def utf8dict(tup):
+        if not isinstance(tup, dict):
+            return dict(tup)
+        return tup
+else:
+
+    def utf8dict(tup):  # noqa
+        """With a dict's items() tuple return a new dict with any utf-8
+        keys/values encoded."""
+        return dict((key.encode("utf-8"), maybe_utf8(value))
+                        for key, value in tup)
 
 
 def extract_response(raw_response):
@@ -119,8 +141,9 @@ class HttpDispatch(object):
 
     def make_request(self, url, method, params):
         """Makes an HTTP request and returns the response."""
-        request = urllib2.Request(url, params, headers=self.http_headers)
-        request.headers.update(self.http_headers)
+        request = urllib2.Request(url, params)
+        for key, val in self.http_headers.items():
+            request.add_header(key, val)
         response = urllib2.urlopen(request)         # user catches errors.
         return response.read()
 
@@ -137,8 +160,7 @@ class HttpDispatch(object):
 
     @property
     def http_headers(self):
-        headers = {"Content-Type": "application/json",
-                   "User-Agent": self.user_agent}
+        headers = {"User-Agent": self.user_agent}
         return headers
 
 

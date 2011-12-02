@@ -1,16 +1,30 @@
-from kombu.utils import gen_unique_id
+# -*- coding: utf-8 -*-
+"""
+    celery.task.chords
+    ~~~~~~~~~~~~~~~~~~
 
-from celery import current_app
-from celery.result import TaskSetResult
-from celery.task.sets import TaskSet, subtask
+    Chords (task set callbacks).
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
+from __future__ import absolute_import
+
+from .. import current_app
+from ..result import AsyncResult, TaskSetResult
+from ..utils import uuid
+
+from .sets import TaskSet, subtask
 
 
 @current_app.task(name="celery.chord_unlock", max_retries=None)
-def _unlock_chord(setid, callback, interval=1, max_retries=None):
-    result = TaskSetResult.restore(setid)
+def _unlock_chord(setid, callback, interval=1, propagate=False,
+        max_retries=None, result=None):
+    result = TaskSetResult(setid, map(AsyncResult, result))
     if result.ready():
-        subtask(callback).delay(result.join())
-        result.delete()
+        j = result.join_native if result.supports_native_join else result.join
+        subtask(callback).delay(j(propagate=propagate))
     else:
         _unlock_chord.retry(countdown=interval, max_retries=max_retries)
 
@@ -19,17 +33,21 @@ class Chord(current_app.Task):
     accept_magic_kwargs = False
     name = "celery.chord"
 
-    def run(self, set, body, interval=1, max_retries=None, **kwargs):
+    def run(self, set, body, interval=1, max_retries=None,
+            propagate=False, **kwargs):
         if not isinstance(set, TaskSet):
             set = TaskSet(set)
         r = []
-        setid = gen_unique_id()
+        setid = uuid()
         for task in set.tasks:
-            uuid = gen_unique_id()
-            task.options.update(task_id=uuid, chord=body)
-            r.append(current_app.AsyncResult(uuid))
-        current_app.TaskSetResult(setid, r).save()
-        self.backend.on_chord_apply(setid, body, interval, max_retries)
+            tid = uuid()
+            task.options.update(task_id=tid, chord=body)
+            r.append(current_app.AsyncResult(tid))
+        self.backend.on_chord_apply(setid, body,
+                                    interval=interval,
+                                    max_retries=max_retries,
+                                    propagate=propagate,
+                                    result=r)
         return set.apply_async(taskset_id=setid)
 
 
@@ -41,7 +59,7 @@ class chord(object):
         self.options = options
 
     def __call__(self, body, **options):
-        uuid = body.options.setdefault("task_id", gen_unique_id())
+        tid = body.options.setdefault("task_id", uuid())
         self.Chord.apply_async((list(self.tasks), body), self.options,
                                 **options)
-        return body.type.app.AsyncResult(uuid)
+        return body.type.app.AsyncResult(tid)

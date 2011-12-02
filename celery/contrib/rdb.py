@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 celery.contrib.rdb
 ==================
@@ -36,6 +37,7 @@ Inspired by http://snippets.dzone.com/posts/show/7248
 :license: BSD, see LICENSE for more details.
 
 """
+from __future__ import absolute_import
 
 import errno
 import os

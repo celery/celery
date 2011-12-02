@@ -1,6 +1,27 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.exceptions
+    ~~~~~~~~~~~~~~~~~
+
+    This module contains Celery-specific exceptions.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
+from __future__ import absolute_import
+
 UNREGISTERED_FMT = """\
 Task of kind %s is not registered, please make sure it's imported.\
 """
+
+
+class SecurityError(Exception):
+    """Security related exceptions.
+
+    Handle with care.
+
+    """
 
 
 class SystemTerminate(SystemExit):
@@ -61,3 +82,11 @@ class TaskRevokedError(Exception):
 
 class NotConfigured(UserWarning):
     """Celery has not been configured, as no config module has been found."""
+
+
+class CPendingDeprecationWarning(PendingDeprecationWarning):
+    pass
+
+
+class CDeprecationWarning(DeprecationWarning):
+    pass

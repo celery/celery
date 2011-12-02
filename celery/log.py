@@ -1,4 +1,4 @@
-"""celery.log"""
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
 import logging
@@ -12,14 +12,16 @@ try:
 except ImportError:
     current_process = mputil = None  # noqa
 
-from celery import signals
-from celery import current_app
-from celery.utils import LOG_LEVELS, isatty
-from celery.utils.compat import LoggerAdapter
-from celery.utils.compat import WatchedFileHandler
-from celery.utils.encoding import safe_str
-from celery.utils.patch import ensure_process_aware_logger
-from celery.utils.term import colored
+from . import current_app
+from . import signals
+from .local import Proxy
+from .utils import LOG_LEVELS, isatty
+from .utils.compat import LoggerAdapter, WatchedFileHandler
+from .utils.encoding import safe_str, str_t
+from .utils.patch import ensure_process_aware_logger
+from .utils.term import colored
+
+is_py3k = sys.version_info >= (3, 0)
 
 
 class ColorFormatter(logging.Formatter):
@@ -34,8 +36,8 @@ class ColorFormatter(logging.Formatter):
 
     def formatException(self, ei):
         r = logging.Formatter.formatException(self, ei)
-        if isinstance(r, str):
-            return r.decode("utf-8", "replace")    # Convert to unicode
+        if isinstance(r, str) and not is_py3k:
+            return safe_str(r)
         return r
 
     def format(self, record):
@@ -44,21 +46,21 @@ class ColorFormatter(logging.Formatter):
 
         if self.use_color and color:
             try:
-                record.msg = color(safe_str(record.msg))
-            except Exception:
+                record.msg = safe_str(str_t(color(record.msg)))
+            except Exception, exc:
                 record.msg = "<Unrepresentable %r: %r>" % (
-                        type(record.msg), traceback.format_stack())
+                        type(record.msg), exc)
+                record.exc_info = sys.exc_info()
 
-        # Very ugly, but have to make sure processName is supported
-        # by foreign logger instances.
-        # (processName is always supported by Python 2.7)
-        if "processName" not in record.__dict__:
-            process_name = current_process and current_process()._name or ""
-            record.__dict__["processName"] = process_name
-        t = logging.Formatter.format(self, record)
-        if isinstance(t, unicode):
-            return t.encode("utf-8", "replace")
-        return t
+        if not is_py3k:
+            # Very ugly, but have to make sure processName is supported
+            # by foreign logger instances.
+            # (processName is always supported by Python 2.7)
+            if "processName" not in record.__dict__:
+                process_name = (current_process and
+                                current_process()._name or "")
+                record.__dict__["processName"] = process_name
+        return safe_str(logging.Formatter.format(self, record))
 
 
 class Logging(object):
@@ -104,7 +106,8 @@ class Logging(object):
 
         if mputil and hasattr(mputil, "_logger"):
             mputil._logger = None
-        ensure_process_aware_logger()
+        if not is_py3k:
+            ensure_process_aware_logger()
         receivers = signals.setup_logging.send(sender=None,
                         loglevel=loglevel, logfile=logfile,
                         format=format, colorize=colorize)
@@ -118,7 +121,11 @@ class Logging(object):
             for logger in filter(None, (root, mp)):
                 self._setup_logger(logger, logfile, format, colorize, **kwargs)
                 logger.setLevel(loglevel)
+                signals.after_setup_logger.send(sender=None, logger=logger,
+                                        loglevel=loglevel, logfile=logfile,
+                                        format=format, colorize=colorize)
         Logging._setup = True
+
         return receivers
 
     def _detect_handler(self, logfile=None):
@@ -181,10 +188,14 @@ class Logging(object):
                                     logfile, format, colorize, **kwargs)
         logger.propagate = int(propagate)    # this is an int for some reason.
                                              # better to not question why.
+        signals.after_setup_task_logger.send(sender=None, logger=logger,
+                                     loglevel=loglevel, logfile=logfile,
+                                     format=format, colorize=colorize)
         return LoggerAdapter(logger, {"task_id": task_id,
                                       "task_name": task_name})
 
-    def redirect_stdouts_to_logger(self, logger, loglevel=None):
+    def redirect_stdouts_to_logger(self, logger, loglevel=None,
+            stdout=True, stderr=True):
         """Redirect :class:`sys.stdout` and :class:`sys.stderr` to a
         logging instance.
 
@@ -193,7 +204,10 @@ class Logging(object):
 
         """
         proxy = LoggingProxy(logger, loglevel)
-        sys.stdout = sys.stderr = proxy
+        if stdout:
+            sys.stdout = proxy
+        if stderr:
+            sys.stderr = proxy
         return proxy
 
     def _setup_logger(self, logger, logfile, format, colorize,
@@ -208,12 +222,14 @@ class Logging(object):
         return logger
 
 
-setup_logging_subsystem = current_app.log.setup_logging_subsystem
-get_default_logger = current_app.log.get_default_logger
-setup_logger = current_app.log.setup_logger
-setup_task_logger = current_app.log.setup_task_logger
-get_task_logger = current_app.log.get_task_logger
-redirect_stdouts_to_logger = current_app.log.redirect_stdouts_to_logger
+get_default_logger = Proxy(lambda: current_app.log.get_default_logger)
+setup_logger = Proxy(lambda: current_app.log.setup_logger)
+setup_task_logger = Proxy(lambda: current_app.log.setup_task_logger)
+get_task_logger = Proxy(lambda: current_app.log.get_task_logger)
+setup_logging_subsystem = Proxy(
+            lambda: current_app.log.setup_logging_subsystem)
+redirect_stdouts_to_logger = Proxy(
+            lambda: current_app.log.redirect_stdouts_to_logger)
 
 
 class LoggingProxy(object):
@@ -271,7 +287,7 @@ class LoggingProxy(object):
         if data and not self.closed:
             self._thread.recurse_protection = True
             try:
-                self.logger.log(self.loglevel, data)
+                self.logger.log(self.loglevel, safe_str(data))
             finally:
                 self._thread.recurse_protection = False
 

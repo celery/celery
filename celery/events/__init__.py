@@ -1,4 +1,18 @@
-from __future__ import absolute_import, with_statement
+# -*- coding: utf-8 -*-
+"""
+    celery.events
+    ~~~~~~~~~~~~~
+
+    Events are messages sent for actions happening
+    in the worker (and clients if :setting:`CELERY_SEND_TASK_SENT_EVENT`
+    is enabled), used for monitoring purposes.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
+from __future__ import absolute_import
+from __future__ import with_statement
 
 import time
 import socket
@@ -11,8 +25,8 @@ from itertools import count
 from kombu.entity import Exchange, Queue
 from kombu.messaging import Consumer, Producer
 
-from celery.app import app_or_default
-from celery.utils import gen_unique_id
+from ..app import app_or_default
+from ..utils import uuid
 
 event_exchange = Exchange("celeryev", type="topic")
 
@@ -144,7 +158,7 @@ class EventReceiver(object):
         if handlers is not None:
             self.handlers = handlers
         self.routing_key = routing_key
-        self.node_id = node_id or gen_unique_id()
+        self.node_id = node_id or uuid()
         self.queue = Queue("%s.%s" % ("celeryev", self.node_id),
                            exchange=event_exchange,
                            routing_key=self.routing_key,
@@ -239,7 +253,7 @@ class Events(object):
                                app=self.app)
 
     def State(self):
-        from celery.events.state import State as _State
+        from .state import State as _State
         return _State()
 
     @contextmanager

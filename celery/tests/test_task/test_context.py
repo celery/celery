@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-"
+from __future__ import absolute_import
+
 import threading
 
-from celery.tests.utils import unittest
-
 from celery.task.base import Context
+from celery.tests.utils import unittest
 
 
 # Retreive the values of all context attributes as a

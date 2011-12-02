@@ -1,0 +1,153 @@
+#!/bin/bash
+# =========================================================
+#  celerybeat - Starts the Celery periodic task scheduler.
+# =========================================================
+#
+# :Usage: /etc/init.d/celerybeat {start|stop|force-reload|restart|try-restart|status}
+# :Configuration file: /etc/default/celerybeat or /etc/default/celeryd
+#
+# See http://docs.celeryq.org/en/latest/cookbook/daemonizing.html#init-script-celerybeat
+
+### BEGIN INIT INFO
+# Provides:          celerybeat
+# Required-Start:    $network $local_fs $remote_fs
+# Required-Stop:     $network $local_fs $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: celery periodic task scheduler
+### END INIT INFO
+
+# Cannot use set -e/bash -e since the kill -0 command will abort
+# abnormally in the absence of a valid process ID.
+#set -e
+
+DEFAULT_PID_FILE="/var/run/celerybeat.pid"
+DEFAULT_LOG_FILE="/var/log/celerybeat.log"
+DEFAULT_LOG_LEVEL="INFO"
+DEFAULT_CELERYBEAT="celerybeat"
+
+# /etc/init.d/ssh: start and stop the celery task worker daemon.
+
+if test -f /etc/default/celeryd; then
+    . /etc/default/celeryd
+fi
+
+if test -f /etc/default/celerybeat; then
+    . /etc/default/celerybeat
+fi
+
+CELERYBEAT=${CELERYBEAT:-$DEFAULT_CELERYBEAT}
+CELERYBEAT_PID_FILE=${CELERYBEAT_PID_FILE:-${CELERYBEAT_PIDFILE:-$DEFAULT_PID_FILE}}
+CELERYBEAT_LOG_FILE=${CELERYBEAT_LOG_FILE:-${CELERYBEAT_LOGFILE:-$DEFAULT_LOG_FILE}}
+CELERYBEAT_LOG_LEVEL=${CELERYBEAT_LOG_LEVEL:-${CELERYBEAT_LOGLEVEL:-$DEFAULT_LOG_LEVEL}}
+
+export CELERY_LOADER
+
+CELERYBEAT_OPTS="$CELERYBEAT_OPTS -f $CELERYBEAT_LOG_FILE -l $CELERYBEAT_LOG_LEVEL"
+
+if [ -n "$2" ]; then
+    CELERYBEAT_OPTS="$CELERYBEAT_OPTS $2"
+fi
+
+CELERYBEAT_LOG_DIR=`dirname $CELERYBEAT_LOG_FILE`
+CELERYBEAT_PID_DIR=`dirname $CELERYBEAT_PID_FILE`
+if [ ! -d "$CELERYBEAT_LOG_DIR" ]; then
+    mkdir -p $CELERYBEAT_LOG_DIR
+fi
+if [ ! -d "$CELERYBEAT_PID_DIR" ]; then
+    mkdir -p $CELERYBEAT_PID_DIR
+fi
+
+# Extra start-stop-daemon options, like user/group.
+if [ -n "$CELERYBEAT_USER" ]; then
+    DAEMON_OPTS="$DAEMON_OPTS --uid $CELERYBEAT_USER"
+    chown "$CELERYBEAT_USER" $CELERYBEAT_LOG_DIR $CELERYBEAT_PID_DIR
+fi
+if [ -n "$CELERYBEAT_GROUP" ]; then
+    DAEMON_OPTS="$DAEMON_OPTS --gid $CELERYBEAT_GROUP"
+    chown ":$CELERYBEAT_GROUP" $CELERYBEAT_LOG_DIR $CELERYBEAT_PID_DIR
+fi
+
+CELERYBEAT_CHDIR=${CELERYBEAT_CHDIR:-$CELERYD_CHDIR}
+if [ -n "$CELERYBEAT_CHDIR" ]; then
+    DAEMON_OPTS="$DAEMON_OPTS --workdir $CELERYBEAT_CHDIR"
+fi
+
+
+export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
+
+check_dev_null() {
+    if [ ! -c /dev/null ]; then
+        echo "/dev/null is not a character device!"
+        exit 1
+    fi
+}
+
+wait_pid () {
+    pid=$1
+    forever=1
+    i=0
+    while [ $forever -gt 0 ]; do
+        kill -0 $pid 1>/dev/null 2>&1
+        if [ $? -eq 1 ]; then
+            echo "OK"
+            forever=0
+        else
+            kill -TERM "$pid"
+            i=$((i + 1))
+            if [ $i -gt 60 ]; then
+                echo "ERROR"
+                echo "Timed out while stopping (30s)"
+                forever=0
+            else
+                sleep 0.5
+            fi
+        fi
+    done
+}
+
+
+stop_beat () {
+    echo -n "Stopping celerybeat... "
+    if [ -f "$CELERYBEAT_PID_FILE" ]; then
+        wait_pid $(cat "$CELERYBEAT_PID_FILE")
+    else
+        echo "NOT RUNNING"
+    fi
+}
+
+start_beat () {
+    echo "Starting celerybeat..."
+    if [ -n "$VIRTUALENV" ]; then
+        source $VIRTUALENV/bin/activate
+    fi
+    $CELERYBEAT $CELERYBEAT_OPTS $DAEMON_OPTS --detach \
+                --pidfile="$CELERYBEAT_PID_FILE"
+}
+
+
+
+case "$1" in
+  start)
+    check_dev_null
+    start_beat
+    ;;
+  stop)
+    stop_beat
+    ;;
+  reload|force-reload)
+    echo "Use start+stop"
+    ;;
+  restart)
+    echo "Restarting celery periodic task scheduler"
+    stop_beat
+    check_dev_null
+    start_beat
+    ;;
+
+  *)
+    echo "Usage: /etc/init.d/celerybeat {start|stop|restart}"
+    exit 1
+esac
+
+exit 0

@@ -1,7 +1,7 @@
 .. _internals-task-message-protocol:
 
 =======================
- Task Message Protocol
+ Task Messages
 =======================
 
 .. contents::
@@ -44,8 +44,9 @@ Message format
     format. If not provided the message is not scheduled, but will be
     executed asap.
 
-* expires (introduced after v2.0.2)
+* expires
     `string` (ISO 8601)
+    .. versionadded:: 2.0.2
 
     Expiration date. This is the date and time in ISO 8601 format.
     If not provided the message will never expire. The message
@@ -63,14 +64,24 @@ to process it.
 
 
 * taskset_id
+  `string`
 
   The taskset this task is part of.
 
 * chord
+  `object`
+  .. versionadded:: 2.3
 
-  Siginifies that this task is one of the header parts of a chord.  The value
+  Signifies that this task is one of the header parts of a chord.  The value
   of this key is the body of the cord that should be executed when all of
   the tasks in the header has returned.
+
+* utc
+  `bool`
+  .. versionadded:: 2.5
+
+  If true time uses the UTC timezone, if not the current local timezone
+  should be used.
 
 Example message
 ===============
@@ -90,7 +101,7 @@ format:
 Serialization
 =============
 
-The protocol supports several serialization formats using the
+Several types of serialization formats are supported using the
 `content_type` message header.
 
 The MIME-types supported by default are shown in the following table.

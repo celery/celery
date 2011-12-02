@@ -1,14 +1,25 @@
 # -*- coding: utf-8 -*-
+"""
+    celery.task
+    ~~~~~~~~~~~
+
+    Creating tasks, subtasks, sets and chords.
+
+    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :license: BSD, see LICENSE for more details.
+
+"""
+from __future__ import absolute_import
+
 import warnings
 
-from celery.app import app_or_default
-from celery.task.base import Task, PeriodicTask
-from celery.task.sets import TaskSet, subtask
-from celery.task.chords import chord
-from celery.task.control import discard_all
+from ..app import app_or_default
+from ..exceptions import CDeprecationWarning
 
-__all__ = ["Task", "TaskSet", "PeriodicTask", "subtask",
-           "discard_all", "chord"]
+from .base import Task, PeriodicTask  # noqa
+from .sets import TaskSet, subtask    # noqa
+from .chords import chord             # noqa
+from .control import discard_all      # noqa
 
 
 def task(*args, **kwargs):
@@ -18,7 +29,7 @@ def task(*args, **kwargs):
 
     .. code-block:: python
 
-        @task()
+        @task
         def refresh_feed(url):
             return Feed.objects.get(url=url).refresh()
 
@@ -51,7 +62,7 @@ def periodic_task(*args, **options):
 
             .. code-block:: python
 
-                @task()
+                @task
                 def refresh_feed(url):
                     return Feed.objects.get(url=url).refresh()
 
@@ -60,11 +71,11 @@ def periodic_task(*args, **options):
             .. code-block:: python
 
                 @task(exchange="feeds")
-                def refresh_feed(url, **kwargs):
+                def refresh_feed(url):
                     try:
                         return Feed.objects.get(url=url).refresh()
                     except socket.error, exc:
-                        refresh_feed.retry(args=[url], kwargs=kwargs, exc=exc)
+                        refresh_feed.retry(exc=exc)
 
             Calling the resulting task:
 
@@ -95,7 +106,7 @@ def ping():  # ✞
     Please use :meth:`celery.task.control.ping` instead.
 
     """
-    warnings.warn(DeprecationWarning(
+    warnings.warn(CDeprecationWarning(
         "The ping task has been deprecated and will be removed in Celery "
         "v2.3.  Please use inspect.ping instead."))
     return PingTask.apply_async().get()

@@ -66,3 +66,14 @@ Celery aims to hide the complexity of AMQP through features like
 :ref:`routing-automatic`, while still preserving the ability to go
 low level if that should be necessary.
 
+Ecosystem
+=========
+
+Kombu
+-----
+
+cyme
+----
+
+celerymon
+---------

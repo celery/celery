@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 a805d4bd
 This module fixes a bug with pickling and relative imports in Python < 2.6.
@@ -19,6 +20,8 @@ Hence the random module name "a805d5bd" is taken to decrease the chances of
 a collision.
 
 """
+from __future__ import absolute_import
+
 from sqlalchemy.types import PickleType as _PickleType
 
 

@@ -160,6 +160,347 @@ issue tracker.
 If you are unsure of the origin of the bug you can ask the
 :ref:`mailing-list`, or just use the Celery issue tracker.
 
+.. _versions:
+
+Versions
+========
+
+Version numbers consists of a major version, minor version and a release number.
+Since version 2.1.0 we use the versioning semantics described by
+semver: http://semver.org.
+
+Stable releases are published at PyPI
+while development releases are only available in the GitHub git repository as tags.
+All version tags starts with “v”, so version 0.8.0 is the tag v0.8.0.
+
+.. _git-branches:
+
+Branches
+========
+
+Current active version branches:
+
+* master (http://github.com/ask/celery/tree/master)
+* 3.0-devel (http://github.com/ask/celery/tree/3.0-devel)
+
+You can see the state of any branch by looking at the Changelog:
+
+    https://github.com/ask/celery/blob/master/Changelog
+
+If the branch is in active development the topmost version info should
+contain metadata like::
+
+    2.4.0
+    ======
+    :release-date: TBA
+    :status: DEVELOPMENT
+    :branch: master
+
+The ``status`` field can be one of:
+
+* ``PLANNING``
+
+    The branch is currently experimental and in the planning stage.
+
+* ``DEVELOPMENT``
+
+    The branch is in active development, but the test suite should
+    be passing and the product should be working and possible for users to test.
+
+* ``FROZEN``
+
+    The branch is frozen, and no more features will be accepted.
+    When a branch is frozen the focus is on testing the version as much
+    as possible before it is released.
+
+``master`` branch
+-----------------
+
+The master branch is where development of the next version happens.
+
+Maintenance branches
+--------------------
+
+Maintenance branches are named after the version, e.g. the maintenance branch
+for the 2.2.x series is named ``2.2``.  Previously these were named
+``releaseXX-maint``.
+
+The versions we currently maintain is:
+
+* 2.3
+
+  This is the current series.
+
+* 2.2
+
+  This is the previous series, and the last version to support Python 2.4.
+
+* 2.1
+
+  This is the last version to use the ``carrot`` AMQP framework.
+  Recent versions use ``kombu``.
+
+Archived branches
+-----------------
+
+Archived branches are kept for preserving history only,
+and theoretically someone could provide patches for these if they depend
+on a series that is no longer officially supported.
+
+An archived version is named ``X.Y-archived``.
+
+Our currently archived branches are:
+
+* 2.1-archived
+
+* 2.0-archived
+
+* 1.0-archived
+
+Feature branches
+----------------
+
+Major new features are worked on in dedicated branches.
+There is no strict naming requirement for these branches.
+
+Feature branches are removed once they have been merged into a release branch.
+
+Tags
+====
+
+Tags are used exclusively for tagging releases.  A release tag is
+named with the format ``vX.Y.Z``, e.g. ``v2.3.1``.
+Experimental releases contain an additional identifier ``vX.Y.Z-id``, e.g.
+``v3.0.0-rc1``.  Experimental tags may be removed after the official release.
+
+.. _contributing-changes:
+
+Working on Features & Patches
+=============================
+
+.. note::
+
+    Contributing to Celery should be as simple as possible,
+    so none of these steps should be considered mandatory.
+
+    You can even send in patches by email if that is your preferred
+    work method. We won't like you any less, any contribution you make
+    is always appreciated!
+
+    However following these steps may make maintainers life easier,
+    and may mean that your changes will be accepted sooner.
+
+Forking and setting up the repository
+-------------------------------------
+
+First you need to fork the Celery repository, a good introduction to this
+is in the Github Guide: `Fork a Repo`_.
+
+After you have cloned the repository you should checkout your copy
+to a directory on your machine::
+
+    $ git clone git@github.com:username/celery.git
+
+When the repository is cloned enter the directory to set up easy access
+to upstream changes::
+
+    $ cd celery
+    $ git remote add upstream git://github.com/ask/celery.git
+    $ git fetch upstream
+
+If you need to pull in new changes from upstream you should
+always use the :option:`--rebase` option to ``git pull``::
+
+    git pull --rebase upstream master
+
+With this option you don't clutter the history with merging
+commit notes. See `Rebasing merge commits in git`_.
+If you want to learn more about rebasing see the `Rebase`_
+section in the Github guides.
+
+If you need to work on a different branch than ``master`` you can
+fetch and checkout a remote branch like this::
+
+    git checkout --track -b 3.0-devel origin/3.0-devel
+
+For a list of branches see :ref:`git-branches`.
+
+.. _`Fork a Repo`: http://help.github.com/fork-a-repo/
+.. _`Rebasing merge commits in git`:
+    http://notes.envato.com/developers/rebasing-merge-commits-in-git/
+.. _`Rebase`: http://help.github.com/rebase/
+
+.. _contributing-testing:
+
+Running the unit test suite
+---------------------------
+
+To run the Celery test suite you need to install a few dependencies.
+A complete list of the dependencies needed are located in
+:file:`requirements/test.txt`.
+
+Installing the test requirements::
+
+    $ pip -E $VIRTUAL_ENV install -U -r requirements/test.txt
+
+When installation of dependencies is complete you can execute
+the test suite by calling ``nosetests``::
+
+    $ nosetests
+
+Some useful options to :program:`nosetests` are:
+
+* :option:`-x`
+
+    Stop running the tests at the first test that fails.
+
+* :option:`-s`
+
+    Don't capture output
+
+* :option:`--nologcapture`
+
+    Don't capture log output.
+
+* :option:`-v`
+
+    Run with verbose output.
+
+If you want to run the tests for a single test file only
+you can do so like this::
+
+    $ nosetests celery.tests.test_worker.test_worker_job
+
+.. _contributing-pull-requests:
+
+Creating pull requests
+----------------------
+
+When your feature/bugfix is complete you may want to submit
+a pull requests so that it can be reviewed by the maintainers.
+
+Creating pull requests is easy, and also let you track the progress
+of your contribution.  Read the `Pull Requests`_ section in the Github
+Guide to learn how this is done.
+
+You can also attach pull requests to existing issues by following
+the steps outlined here: http://bit.ly/koJoso
+
+.. _`Pull Requests`: http://help.github.com/send-pull-requests/
+
+.. _contributing-coverage:
+
+Calculating test coverage
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Code coverage in HTML::
+
+    $ nosetests --with-coverage3 --cover3-html
+
+The coverage output will then be located at
+:file:`celery/tests/cover/index.html`.
+
+Code coverage in XML (Cobertura-style)::
+
+    $ nosetests --with-coverage3 --cover3-xml --cover3-xml-file=coverage.xml
+
+The coverage XML output will then be located at :file:`coverage.xml`
+
+.. _contributing-tox:
+
+Running the tests on all supported Python versions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There is a ``tox`` configuration file in the top directory of the
+distribution.
+
+To run the tests for all supported Python versions simply execute::
+
+    $ tox
+
+If you only want to test specific Python versions use the :option:`-e`
+option::
+
+    $ tox -e py25,py26
+
+Building the documentation
+--------------------------
+
+To build the documentation you need to install the dependencies
+listed in :file:`requirements/docs.txt`::
+
+    $ pip -E $VIRTUAL_ENV install -U -r requirements/docs.txt
+
+After these dependencies are installed you should be able to
+build the docs by running::
+
+    $ cd docs
+    $ rm -rf .build
+    $ make html
+
+Make sure there are no errors or warnings in the build output.
+After building succeeds the documentation is available at :file:`.build/html`.
+
+.. _contributing-verify:
+
+Verifying your contribution
+---------------------------
+
+To use these tools you need to install a few dependencies.  These dependencies
+can be found in :file:`requirements/pkgutils.txt`.
+
+Installing the dependencies::
+
+    $ pip -E $VIRTUAL_ENV install -U -r requirements/pkgutils.txt
+
+pyflakes & PEP8
+~~~~~~~~~~~~~~~
+
+To ensure that your changes conform to PEP8 and to run pyflakes
+execute::
+
+    $ paver flake8
+
+To not return a negative exit code when this command fails use the
+:option:`-E` option, this can be convenient while developing::
+
+    $ paver flake8 -E
+
+API reference
+~~~~~~~~~~~~~
+
+To make sure that all modules have a corresponding section in the API
+reference please execute::
+
+    $ paver autodoc
+    $ paver verifyindex
+
+If files are missing you can add them by copying an existing reference file.
+
+If the module is internal it should be part of the internal reference
+located in :file:`docs/internals/reference/`.  If the module is public
+it should be located in :file:`docs/reference/`.
+
+For example if reference is missing for the module ``celery.worker.awesome``
+and this module is considered part of the public API, use the following steps::
+
+    $ cd docs/reference/
+    $ cp celery.schedules.rst celery.worker.awesome.rst
+    $ vim celery.worker.awesome.rst
+
+        # change every occurance of ``celery.schedules`` to
+        # ``celery.worker.awesome``
+
+    $ vim index.rst
+
+        # Add ``celery.worker.awesome`` to the index.
+
+    # Add the file to git
+    $ git add celery.worker.awesome.rst
+    $ git add index.rst
+    $ git commit celery.worker.awesome.rst index.rst \
+        -m "Adds reference for celery.worker.awesome"
+
 .. _coding-style:
 
 Coding Style
@@ -212,6 +553,16 @@ is following the conventions.
 
 * Lines should not exceed 78 columns.
 
+  You can enforce this in :program:`vim` by setting the ``textwidth`` option::
+
+  .. code-block:: vim
+
+        set textwidth=78
+
+    If adhering to this limit makes the code less readable, you have one more
+    character to go on, which means 78 is a soft limit, and 79 is the hard
+    limit :)
+
 * Import order
 
     * Python standard library (`import xxx`)
@@ -227,7 +578,7 @@ is following the conventions.
     * Django packages.
     * Other modules from the current package.
 
-    Within these sections imports should be sorted by name.
+    Within these sections the imports should be sorted by module name.
 
     Example:
 
@@ -239,8 +590,95 @@ is following the conventions.
         from collections import deque
         from Queue import Queue, Empty
 
-        from celery.datastructures import TokenBucket
-        from celery.utils import timeutils
-        from celery.utils.compat import all, izip_longest, chain_from_iterable
+        from .datastructures import TokenBucket
+        from .utils import timeutils
+        from .utils.compat import all, izip_longest, chain_from_iterable
 
 * Wildcard imports must not be used (`from xxx import *`).
+
+* For distributions where Python 2.5 is the oldest support version
+  additional rules apply:
+
+    * Absolute imports must be enabled at the top of every module::
+
+        from __future__ import absolute_import
+
+    * If the module uses the with statement it must also enable that::
+
+        from __future__ import with_statement
+
+    * Every future import must be on its own line, as older Python 2.5
+      releases did not support importing multiple features on the
+      same future import line::
+
+        # Good
+        from __future__ import absolute_import
+        from __future__ import with_statement
+
+        # Bad
+        from __future__ import absolute_import, with_statement
+
+     (Note that this rule does not apply if the package does not include
+     support for Python 2.5)
+
+
+* Note that we use "new-style` relative imports when the distribution
+  does not support Python versions below 2.5
+
+.. code-block:: python
+
+        from . import submodule
+
+.. _release-procedure:
+
+Release Procedure
+=================
+
+Updating the version number
+---------------------------
+
+The version number must be updated two places:
+
+    * :file:`celery/__init__.py`
+    * :file:`docs/include/introduction.txt`
+
+After you have changed these files you must render
+the :file:`README` files.  There is a script to convert sphinx syntax
+to generic reStructured Text syntax, and the paver task `readme`
+does this for you::
+
+    $ paver readme
+
+Now commit the changes::
+
+    $ git commit -a -m "Bumps version to X.Y.Z"
+
+and make a new version tag::
+
+    $ git tag vX.Y.Z
+    $ git push --tags
+
+Releasing
+---------
+
+Commands to make a new public stable release::
+
+    $ paver releaseok     # checks pep8, autodoc index and runs tests
+    $ paver removepyc  # Remove .pyc files.
+    $ git clean -xdn # Check that there's no left-over files in the repository.
+    $ python2.5 setup.py sdist upload # Upload package to PyPI
+    $ paver upload_pypi_docs
+    $ paver ghdocs # Build and upload documentation to Github.
+
+If this is a new release series then you also need to do the
+following:
+
+* Go to the Read The Docs management interface at:
+    http://readthedocs.org/projects/celery/?fromdocs=celery
+
+* Enter "Edit project"
+
+    Change default branch to the branch of this series, e.g. ``2.4``
+    for series 2.4.
+
+* Also add the previous version under the "versions" tab.

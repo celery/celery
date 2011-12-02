@@ -1,5 +1,6 @@
-from celery.worker.heartbeat import Heart
+from __future__ import absolute_import
 
+from celery.worker.heartbeat import Heart
 from celery.tests.utils import unittest, sleepdeprived
 
 
@@ -37,6 +38,9 @@ class MockTimer(object):
 
         return entry((msecs, fun, args, kwargs))
 
+    def cancel(self, entry):
+        entry.cancel()
+
 
 class TestHeart(unittest.TestCase):
 
@@ -48,6 +52,7 @@ class TestHeart(unittest.TestCase):
         self.assertTrue(h.tref)
         h.stop()
         self.assertIsNone(h.tref)
+        h.stop()
 
     @sleepdeprived
     def test_run_manages_cycle(self):

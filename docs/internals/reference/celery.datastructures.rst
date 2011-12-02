@@ -5,13 +5,6 @@
     .. contents::
         :local:
 
-    TokenBucket
-    -----------
-
-    .. autoclass:: TokenBucket
-        :members:
-        :undoc-members:
-
     AttributeDict
     -------------
 
@@ -48,14 +41,9 @@
         :members:
         :undoc-members:
 
-    LocalCache
-    ----------
+    LRUCache
+    --------
 
-    .. autoclass:: LocalCache
+    .. autoclass:: LRUCache
         :members:
         :undoc-members:
-
-    Functions
-    ---------
-
-    .. autofunction:: consume_queue

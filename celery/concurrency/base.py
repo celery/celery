@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
+
+import logging
 import os
 import sys
 import time
@@ -5,9 +9,10 @@ import traceback
 
 from functools import partial
 
-from celery import log
-from celery.datastructures import ExceptionInfo
-from celery.utils import timer2
+from .. import log
+from ..datastructures import ExceptionInfo
+from ..utils import timer2
+from ..utils.encoding import safe_repr
 
 
 def apply_target(target, args=(), kwargs={}, callback=None,
@@ -25,6 +30,7 @@ class BasePool(object):
     Timer = timer2.Timer
 
     signal_safe = True
+    rlimit_safe = True
     is_green = False
 
     _state = None
@@ -35,6 +41,7 @@ class BasePool(object):
         self.putlocks = putlocks
         self.logger = logger or log.get_default_logger()
         self.options = options
+        self.does_debug = self.logger.isEnabledFor(logging.DEBUG)
 
     def on_start(self):
         pass
@@ -74,7 +81,7 @@ class BasePool(object):
             soft_timeout=None, timeout=None, **compat):
         """Equivalent of the :func:`apply` built-in function.
 
-        Callbacks should optimally return as soon as possible ince
+        Callbacks should optimally return as soon as possible since
         otherwise the thread which handles the result will get blocked.
 
         """
@@ -84,8 +91,9 @@ class BasePool(object):
         on_ready = partial(self.on_ready, callback, errback)
         on_worker_error = partial(self.on_worker_error, errback)
 
-        self.logger.debug("TaskPool: Apply %s (args:%s kwargs:%s)" % (
-            target, args, kwargs))
+        if self.does_debug:
+            self.logger.debug("TaskPool: Apply %s (args:%s kwargs:%s)",
+                            target, safe_repr(args), safe_repr(kwargs))
 
         return self.on_apply(target, args, kwargs,
                              callback=on_ready,
@@ -108,16 +116,17 @@ class BasePool(object):
         else:
             self.safe_apply_callback(callback, ret_value)
 
-    def on_worker_error(self, errback, exc):
-        errback(ExceptionInfo((exc.__class__, exc, None)))
+    def on_worker_error(self, errback, exc_info):
+        errback(exc_info)
 
     def safe_apply_callback(self, fun, *args):
         if fun:
             try:
                 fun(*args)
             except BaseException:
-                self.logger.error("Pool callback raised exception: %s" % (
-                    traceback.format_exc(), ), exc_info=sys.exc_info())
+                self.logger.error("Pool callback raised exception: %s",
+                                  traceback.format_exc(),
+                                  exc_info=sys.exc_info())
 
     def _get_info(self):
         return {}
@@ -129,3 +138,7 @@ class BasePool(object):
     @property
     def active(self):
         return self._state == self.RUN
+
+    @property
+    def num_processes(self):
+        return self.limit

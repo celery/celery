@@ -47,6 +47,22 @@ like adding new worker nodes, or revoking unnecessary tasks.
 .. _`The back of the envelope`:
     http://books.google.com/books?id=kse_7qbWbjsC&pg=PA67
 
+.. _optimizing-general-settings:
+
+General Settings
+================
+
+.. _optimizing-connection-pools:
+
+Broker Connection Pools
+-----------------------
+
+The broker connection pool is enabled by default since version 2.5.
+
+You can tweak the :setting:`BROKER_POOL_LIMIT` setting to minimize
+contention, and the value should be based on the number of
+active threads/greenthreads using broker connections.
+
 .. _optimizing-worker-settings:
 
 Worker Settings
@@ -74,7 +90,7 @@ If you have many tasks with a long duration you want
 the multiplier value to be 1, which means it will only reserve one
 task per worker process at a time.
 
-However -- If you have many short-running tasks, and throughput/roundtrip
+However -- If you have many short-running tasks, and throughput/round trip
 latency[#] is important to you, this number should be large. The worker is
 able to process more tasks per second if the messages have already been
 prefetched, and is available in memory.  You may have to experiment to find
@@ -82,7 +98,7 @@ the best value that works for you.  Values like 50 or 150 might make sense in
 these circumstances. Say 64, or 128.
 
 If you have a combination of long- and short-running tasks, the best option
-is to use two worker nodes that are configured separatly, and route
+is to use two worker nodes that are configured separately, and route
 the tasks according to the run-time. (see :ref:`guide-routing`).
 
 .. [*] RabbitMQ and other brokers deliver messages round-robin,

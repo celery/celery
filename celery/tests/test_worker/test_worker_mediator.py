@@ -1,12 +1,15 @@
-from celery.tests.utils import unittest
+from __future__ import absolute_import
+
+import sys
 
 from Queue import Queue
 
-from mock import Mock
+from mock import Mock, patch
 
-from celery.utils import gen_unique_id
+from celery.utils import uuid
 from celery.worker.mediator import Mediator
 from celery.worker.state import revoked as revoked_tasks
+from celery.tests.utils import unittest
 
 
 class MockTask(object):
@@ -32,14 +35,14 @@ class test_Mediator(unittest.TestCase):
         ready_queue = Queue()
         m = Mediator(ready_queue, lambda t: t)
         m.start()
-        self.assertFalse(m._shutdown.isSet())
-        self.assertFalse(m._stopped.isSet())
+        self.assertFalse(m._is_shutdown.isSet())
+        self.assertFalse(m._is_stopped.isSet())
         m.stop()
         m.join()
-        self.assertTrue(m._shutdown.isSet())
-        self.assertTrue(m._stopped.isSet())
+        self.assertTrue(m._is_shutdown.isSet())
+        self.assertTrue(m._is_stopped.isSet())
 
-    def test_mediator_move(self):
+    def test_mediator_body(self):
         ready_queue = Queue()
         got = {}
 
@@ -49,11 +52,36 @@ class test_Mediator(unittest.TestCase):
         m = Mediator(ready_queue, mycallback)
         ready_queue.put(MockTask("George Costanza"))
 
-        m.move()
+        m.body()
 
         self.assertEqual(got["value"], "George Costanza")
 
-    def test_mediator_move_exception(self):
+    @patch("os._exit")
+    def test_mediator_crash(self, _exit):
+        ms = [None]
+
+        class _Mediator(Mediator):
+
+            def body(self):
+                try:
+                    raise KeyError("foo")
+                finally:
+                    ms[0]._is_shutdown.set()
+
+        ready_queue = Queue()
+        ms[0] = m = _Mediator(ready_queue, None)
+        ready_queue.put(MockTask("George Constanza"))
+
+        stderr = Mock()
+        p, sys.stderr = sys.stderr, stderr
+        try:
+            m.run()
+        finally:
+            sys.stderr = p
+        self.assertTrue(_exit.call_count)
+        self.assertTrue(stderr.write.call_count)
+
+    def test_mediator_body_exception(self):
         ready_queue = Queue()
 
         def mycallback(value):
@@ -62,7 +90,7 @@ class test_Mediator(unittest.TestCase):
         m = Mediator(ready_queue, mycallback)
         ready_queue.put(MockTask("Elaine M. Benes"))
 
-        m.move()
+        m.body()
 
     def test_run(self):
         ready_queue = Queue()
@@ -73,14 +101,14 @@ class test_Mediator(unittest.TestCase):
             condition[0].set()
 
         m = Mediator(ready_queue, mycallback)
-        condition[0] = m._shutdown
+        condition[0] = m._is_shutdown
         ready_queue.put(MockTask("Elaine M. Benes"))
 
         m.run()
-        self.assertTrue(m._shutdown.isSet())
-        self.assertTrue(m._stopped.isSet())
+        self.assertTrue(m._is_shutdown.isSet())
+        self.assertTrue(m._is_stopped.isSet())
 
-    def test_mediator_move_revoked(self):
+    def test_mediator_body_revoked(self):
         ready_queue = Queue()
         got = {}
 
@@ -89,11 +117,11 @@ class test_Mediator(unittest.TestCase):
 
         m = Mediator(ready_queue, mycallback)
         t = MockTask("Jerry Seinfeld")
-        t.task_id = gen_unique_id()
+        t.task_id = uuid()
         revoked_tasks.add(t.task_id)
         ready_queue.put(t)
 
-        m.move()
+        m.body()
 
         self.assertNotIn("value", got)
         self.assertTrue(t.on_ack.call_count)

@@ -1,0 +1,93 @@
+=========================================
+ CELERYSA-0001: Celery Security Advisory
+=========================================
+:contact: security@celeryproject.org
+:author: Ask Solem
+:CVE id: CVE-2011-4356
+:date: 2011-11-25 04:35:00 P.M GMT
+
+Details
+=======
+
+:package: celery
+:vulnerability: privilege escalation
+:problem type: local
+:risk: medium
+:bug-no: Celery #544
+:versions-affected: 2.1, 2.2, 2.3, 2.4
+
+Description
+===========
+
+The --uid and --gid arguments to the celeryd-multi,
+celeryd_detach, celerybeat and celeryev programs shipped
+with Celery versions 2.1 and later was not handled properly:
+only the effective user was changed, with the real id remaining
+unchanged.
+
+In practice for affected users the vulnerability means that malicious code
+loaded in the worker process would be allowed to escalate privileges.
+
+We take this issue seriously since the Pickle serializer used by
+default makes it possible to execute arbitrary code.
+
+We recommend that users takes steps to secure their systems so that
+malicious users cannot abuse the message broker to send messages,
+or disable the pickle serializer used in Celery so that arbitrary code
+execution is not possible.
+
+Patches are now available for all maintained versions (see below),
+and users are urged to upgrade, even if not directly
+affected.
+
+Systems affected
+================
+
+Users of Celery versions 2.1, 2.2, 2.3, 2.4 except the recently
+released 2.2.8, 2.3.4 and 2.4.4, daemonizing the celery programs
+as the root user, using either:
+    1) the --uid or --gid arguments, or
+    2) the provided generic init scripts with the environment variables
+       CELERYD_USER or CELERYD_GROUP defined,
+are affected.
+
+Users using the Debian init scripts, CentOS init scripts, OS X launchctl
+scripts, Supervisor, or users not starting the programs as the root user
+are *not* affected.
+
+Solution
+========
+
+Users of the 2.4 series should upgrade to 2.4.4:
+
+    * ``pip install -U celery``, or
+    * ``easy_install -U celery``, or
+    * http://pypi.python.org/pypi/celery/2.4.4
+
+Users of the 2.3 series should upgrade to 2.3.4:
+
+    * ``pip install -U celery==2.3.4``, or
+    * ``easy_install -U celery==2.3.4``, or
+    * http://pypi.python.org/pypi/celery/2.3.4
+
+Users of the 2.2 series should upgrade to 2.2.8:
+
+    * ``pip install -U celery==2.2.8``, or
+    * ``easy_install -U celery==2.2.8``, or
+    * http://pypi.python.org/pypi/celery/2.2.8
+
+The 2.1 series is no longer being maintained, so we urge users
+of that series to upgrade to a more recent version.
+
+Distribution package maintainers are urged to provide their users
+with updated packages.
+
+
+Please direct questions to the celery-users mailing-list:
+http://groups.google.com/group/celery-users/,
+
+or if you are planning to report a security issue we request that
+you keep the information confidential by contacting
+security@celeryproject.org, so that a fix can be issued as quickly as possible.
+
+Thank you!

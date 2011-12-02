@@ -1,19 +1,19 @@
-from __future__ import absolute_import, with_statement
+from __future__ import absolute_import
+from __future__ import with_statement
 
 import sys
 import socket
-from celery.tests.utils import unittest
 
 from nose import SkipTest
 
 from celery.exceptions import ImproperlyConfigured
 
 from celery import states
-from celery.utils import gen_unique_id
+from celery.utils import uuid
 from celery.backends import redis
 from celery.backends.redis import RedisBackend
-
 from celery.tests.utils import mask_modules
+from celery.tests.utils import unittest
 
 _no_redis_msg = "* Redis %s. Will not execute related tests."
 _no_redis_msg_emitted = False
@@ -46,7 +46,7 @@ def get_redis_or_SkipTest():
         tb = RedisBackend(redis_db="celery_unittest")
         try:
             # Evaluate lazy connection
-            tb.client.connection.connect(tb.client)
+            tb.client.info()
         except ConnectionError, exc:
             emit_no_redis_msg("not running")
             raise SkipTest("can't connect to redis: %s" % (exc, ))
@@ -62,7 +62,7 @@ class TestRedisBackend(unittest.TestCase):
     def test_mark_as_done(self):
         tb = get_redis_or_SkipTest()
 
-        tid = gen_unique_id()
+        tid = uuid()
 
         self.assertEqual(tb.get_status(tid), states.PENDING)
         self.assertIsNone(tb.get_result(tid))
@@ -74,7 +74,7 @@ class TestRedisBackend(unittest.TestCase):
     def test_is_pickled(self):
         tb = get_redis_or_SkipTest()
 
-        tid2 = gen_unique_id()
+        tid2 = uuid()
         result = {"foo": "baz", "bar": SomeClass(12345)}
         tb.mark_as_done(tid2, result)
         # is serialized properly.
@@ -85,7 +85,7 @@ class TestRedisBackend(unittest.TestCase):
     def test_mark_as_failure(self):
         tb = get_redis_or_SkipTest()
 
-        tid3 = gen_unique_id()
+        tid3 = uuid()
         try:
             raise KeyError("foo")
         except KeyError, exception:
@@ -93,16 +93,6 @@ class TestRedisBackend(unittest.TestCase):
         tb.mark_as_failure(tid3, exception)
         self.assertEqual(tb.get_status(tid3), states.FAILURE)
         self.assertIsInstance(tb.get_result(tid3), KeyError)
-
-    def test_connection_close_if_connected(self):
-        tb = get_redis_or_SkipTest()
-
-        client = tb.client
-        self.assertIsNotNone(client)
-        tb.process_cleanup()
-        self.assertRaises(KeyError, tb.__dict__.__getitem__, "client")
-        tb.process_cleanup()
-        self.assertRaises(KeyError, tb.__dict__.__getitem__, "client")
 
 
 class TestRedisBackendNoRedis(unittest.TestCase):
@@ -121,6 +111,7 @@ class TestRedisBackendNoRedis(unittest.TestCase):
         prev = redis.RedisBackend.redis
         redis.RedisBackend.redis = None
         try:
-            self.assertRaises(ImproperlyConfigured, redis.RedisBackend)
+            with self.assertRaises(ImproperlyConfigured):
+                redis.RedisBackend()
         finally:
             redis.RedisBackend.redis = prev

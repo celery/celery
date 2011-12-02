@@ -1,8 +1,17 @@
+from __future__ import absolute_import
+from __future__ import with_statement
+
+import sys
 import time
-from celery.tests.utils import unittest
+import warnings
+
+from kombu.tests.utils import redirect_stdouts
+from mock import Mock, patch
+
 import celery.utils.timer2 as timer2
 
-from celery.tests.utils import skip_if_quick
+from celery.tests.utils import unittest, skip_if_quick
+from celery.tests.compat import catch_warnings
 
 
 class test_Entry(unittest.TestCase):
@@ -43,6 +52,12 @@ class test_Schedule(unittest.TestCase):
         try:
             s.enter(timer2.Entry(lambda: None, (), {}),
                     eta=datetime.now())
+            s.enter(timer2.Entry(lambda: None, (), {}),
+                    eta=None)
+            s.on_error = None
+            with self.assertRaises(OverflowError):
+                s.enter(timer2.Entry(lambda: None, (), {}),
+                        eta=datetime.now())
         finally:
             timer2.mktime = mktime
 
@@ -66,3 +81,78 @@ class test_Timer(unittest.TestCase):
                 time.sleep(0.1)
         finally:
             t.stop()
+
+    def test_exit_after(self):
+        t = timer2.Timer()
+        t.apply_after = Mock()
+        t.exit_after(300, priority=10)
+        t.apply_after.assert_called_with(300, sys.exit, 10)
+
+    def test_apply_interval(self):
+        t = timer2.Timer()
+        t.enter_after = Mock()
+
+        myfun = Mock()
+        t.apply_interval(30, myfun)
+
+        self.assertEqual(t.enter_after.call_count, 1)
+        args1, _ = t.enter_after.call_args_list[0]
+        msec1, tref1, _ = args1
+        self.assertEqual(msec1, 30)
+        tref1()
+
+        self.assertEqual(t.enter_after.call_count, 2)
+        args2, _ = t.enter_after.call_args_list[1]
+        msec2, tref2, _ = args2
+        self.assertEqual(msec2, 30)
+        tref2.cancelled = True
+        tref2()
+
+        self.assertEqual(t.enter_after.call_count, 2)
+
+    @redirect_stdouts
+    def test_apply_entry_error_handled(self, stdout, stderr):
+        t = timer2.Timer()
+        t.schedule.on_error = None
+
+        fun = Mock()
+        fun.side_effect = ValueError()
+        warnings.resetwarnings()
+
+        with catch_warnings(record=True) as log:
+            t.apply_entry(fun)
+            fun.assert_called_with()
+            self.assertTrue(log)
+            self.assertTrue(stderr.getvalue())
+
+    @redirect_stdouts
+    def test_apply_entry_error_not_handled(self, stdout, stderr):
+        t = timer2.Timer()
+        t.schedule.on_error = Mock()
+
+        fun = Mock()
+        fun.side_effect = ValueError()
+        warnings.resetwarnings()
+
+        with catch_warnings(record=True) as log:
+            t.apply_entry(fun)
+            fun.assert_called_with()
+            self.assertFalse(log)
+            self.assertFalse(stderr.getvalue())
+
+    @patch("os._exit")
+    def test_thread_crash(self, _exit):
+        t = timer2.Timer()
+        t._next_entry = Mock()
+        t._next_entry.side_effect = OSError(131)
+        t.run()
+        _exit.assert_called_with(1)
+
+    def test_gc_race_lost(self):
+        t = timer2.Timer()
+        t._is_stopped.set = Mock()
+        t._is_stopped.set.side_effect = TypeError()
+
+        t._is_shutdown.set()
+        t.run()
+        t._is_stopped.set.assert_called_with()

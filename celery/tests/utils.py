@@ -23,9 +23,9 @@ from contextlib import contextmanager
 import mock
 from nose import SkipTest
 
-from celery.app import app_or_default
-from celery.utils import noop
-from celery.utils.compat import StringIO, LoggerAdapter
+from ..app import app_or_default
+from ..utils import noop
+from ..utils.compat import WhateverIO, LoggerAdapter
 
 
 class Mock(mock.Mock):
@@ -37,11 +37,33 @@ class Mock(mock.Mock):
             setattr(self, attr_name, attr_value)
 
 
+def skip_unless_module(module):
+
+    def _inner(fun):
+
+        @wraps(fun)
+        def __inner(*args, **kwargs):
+            try:
+                importlib.import_module(module)
+            except ImportError:
+                raise SkipTest("Does not have %s" % (module, ))
+
+            return fun(*args, **kwargs)
+
+        return __inner
+    return _inner
+
+
 class AppCase(unittest.TestCase):
 
     def setUp(self):
-        from celery.app import current_app
-        self.app = self._current_app = current_app()
+        from ..app import current_app
+        from ..backends.cache import CacheBackend, DummyClient
+        app = self.app = self._current_app = current_app()
+        if isinstance(app.backend, CacheBackend):
+            if isinstance(app.backend.client, DummyClient):
+                app.backend.client.cache.clear()
+        app.backend._cache.clear()
         self.setup()
 
     def tearDown(self):
@@ -70,7 +92,7 @@ def set_handlers(logger, new_handlers):
 @contextmanager
 def wrap_logger(logger, loglevel=logging.ERROR):
     old_handlers = get_handlers(logger)
-    sio = StringIO()
+    sio = WhateverIO()
     siohandler = logging.StreamHandler(sio)
     set_handlers(logger, [siohandler])
 
@@ -232,9 +254,9 @@ def mask_modules(*modnames):
 
 @contextmanager
 def override_stdouts():
-    """Override `sys.stdout` and `sys.stderr` with `StringIO`."""
+    """Override `sys.stdout` and `sys.stderr` with `WhateverIO`."""
     prev_out, prev_err = sys.stdout, sys.stderr
-    mystdout, mystderr = StringIO(), StringIO()
+    mystdout, mystderr = WhateverIO(), WhateverIO()
     sys.stdout = sys.__stdout__ = mystdout
     sys.stderr = sys.__stderr__ = mystderr
 
@@ -259,3 +281,75 @@ def patch(module, name, mocked):
                 setattr(module, name, prev)
         return __patched
     return _patch
+
+
+@contextmanager
+def platform_pyimp(replace=None):
+    import platform
+    has_prev = hasattr(platform, "python_implementation")
+    prev = getattr(platform, "python_implementation", None)
+    if replace:
+        platform.python_implementation = replace
+    else:
+        try:
+            delattr(platform, "python_implementation")
+        except AttributeError:
+            pass
+    yield
+    if prev is not None:
+        platform.python_implementation = prev
+    if not has_prev:
+        try:
+            delattr(platform, "python_implementation")
+        except AttributeError:
+            pass
+
+
+@contextmanager
+def sys_platform(value):
+    prev, sys.platform = sys.platform, value
+    yield
+    sys.platform = prev
+
+
+@contextmanager
+def pypy_version(value=None):
+    has_prev = hasattr(sys, "pypy_version_info")
+    prev = getattr(sys, "pypy_version_info", None)
+    if value:
+        sys.pypy_version_info = value
+    else:
+        try:
+            delattr(sys, "pypy_version_info")
+        except AttributeError:
+            pass
+    yield
+    if prev is not None:
+        sys.pypy_version_info = prev
+    if not has_prev:
+        try:
+            delattr(sys, "pypy_version_info")
+        except AttributeError:
+            pass
+
+
+@contextmanager
+def reset_modules(*modules):
+    prev = dict((k, sys.modules.pop(k)) for k in modules if k in sys.modules)
+    yield
+    sys.modules.update(prev)
+
+
+@contextmanager
+def patch_modules(*modules):
+    from types import ModuleType
+
+    prev = {}
+    for mod in modules:
+        prev[mod], sys.modules[mod] = sys.modules[mod], ModuleType(mod)
+    yield
+    for name, mod in prev.iteritems():
+        if mod is None:
+            sys.modules.pop(name, None)
+        else:
+            sys.modules[name] = mod
