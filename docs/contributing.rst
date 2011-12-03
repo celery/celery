@@ -553,15 +553,15 @@ is following the conventions.
 
 * Lines should not exceed 78 columns.
 
-  You can enforce this in :program:`vim` by setting the ``textwidth`` option::
+  You can enforce this in :program:`vim` by setting the ``textwidth`` option:
 
   .. code-block:: vim
 
         set textwidth=78
 
-    If adhering to this limit makes the code less readable, you have one more
-    character to go on, which means 78 is a soft limit, and 79 is the hard
-    limit :)
+  If adhering to this limit makes the code less readable, you have one more
+  character to go on, which means 78 is a soft limit, and 79 is the hard
+  limit :)
 
 * Import order
 
@@ -682,3 +682,20 @@ following:
     for series 2.4.
 
 * Also add the previous version under the "versions" tab.
+
+
+Updating bundles
+----------------
+
+First you need to make sure the bundle entrypoints have been installed,
+but either running `develop`, or `install`::
+
+    $ python setup.py develop
+
+Then make sure that you have your PyPI credentials stored in
+:file:`~/.pypirc`, and execute the command::
+
+    $ python setup.py upload_bundles
+
+If you broke something and need to update new versions of the bundles,
+then you can use ``upload_bundles_fix``.
