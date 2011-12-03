@@ -274,9 +274,9 @@ class BaseApp(object):
                                        use_tls=self.conf.EMAIL_USE_TLS)
 
     def select_queues(self, queues=None):
-        if queues is not None:
+        if queues:
             return self.amqp.queues.select_subset(queues,
-                  self.conf.CELERY_CREATE_MISSING_QUEUES)
+                                    self.conf.CELERY_CREATE_MISSING_QUEUES)
 
     def either(self, default_key, *values):
         """Fallback to the value of a configuration key if none of the
