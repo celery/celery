@@ -791,11 +791,8 @@ class Pool(object):
             warnings.warn(UserWarning("Soft timeouts are not supported: "
                     "on this platform: It does not have the SIGUSR1 signal."))
             soft_timeout = None
-        if waitforslot and self._putlock is not None:
-            while 1:
-                if self._state != RUN or self._putlock.acquire(False):
-                    break
-                time.sleep(1.0)
+        if waitforslot and self._putlock is not None and self._state == RUN:
+            self._putlock.acquire()
         if self._state == RUN:
             result = ApplyResult(self._cache, callback,
                                  accept_callback, timeout_callback,
