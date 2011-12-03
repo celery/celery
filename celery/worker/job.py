@@ -12,6 +12,7 @@
 """
 from __future__ import absolute_import
 
+import logging
 import os
 import sys
 import time
@@ -272,6 +273,10 @@ class TaskRequest(object):
         if self.expires is not None:
             self.expires = timezone.to_local(self.expires, self.tzlocal, tz)
 
+        # shortcuts
+        self._does_debug = self.logger.isEnabledFor(logging.DEBUG)
+        self._does_info = self.logger.isEnabledFor(logging.INFO)
+
     @classmethod
     def from_message(cls, message, body, on_ack=noop, **kw):
         """Create request from a task message.
@@ -435,8 +440,9 @@ class TaskRequest(object):
         if not self.task.acks_late:
             self.acknowledge()
         self.send_event("task-started", uuid=self.task_id, pid=pid)
-        self.logger.debug("Task accepted: %s[%s] pid:%r",
-                          self.task_name, self.task_id, pid)
+        if self._does_debug:
+            self.logger.debug("Task accepted: %s[%s] pid:%r",
+                              self.task_name, self.task_id, pid)
         if self._terminate_on_ack is not None:
             _, pool, signal = self._terminate_on_ack
             self.terminate(pool, signal)
@@ -467,11 +473,12 @@ class TaskRequest(object):
         self.send_event("task-succeeded", uuid=self.task_id,
                         result=safe_repr(ret_value), runtime=runtime)
 
-        self.logger.info(self.success_msg.strip(),
-                         {"id": self.task_id,
-                          "name": self.task_name,
-                          "return_value": self.repr_result(ret_value),
-                          "runtime": runtime})
+        if self._does_info:
+            self.logger.info(self.success_msg.strip(),
+                            {"id": self.task_id,
+                             "name": self.task_name,
+                             "return_value": self.repr_result(ret_value),
+                             "runtime": runtime})
 
     def on_retry(self, exc_info):
         """Handler called if the task should be retried."""
@@ -479,11 +486,12 @@ class TaskRequest(object):
                          exception=safe_repr(exc_info.exception.exc),
                          traceback=safe_str(exc_info.traceback))
 
-        self.logger.info(self.retry_msg.strip(),
-                         {"id": self.task_id,
-                         "name": self.task_name,
-                         "exc": safe_repr(exc_info.exception.exc)},
-                         exc_info=exc_info)
+        if self._does_info:
+            self.logger.info(self.retry_msg.strip(),
+                            {"id": self.task_id,
+                             "name": self.task_name,
+                             "exc": safe_repr(exc_info.exception.exc)},
+                            exc_info=exc_info)
 
     def on_failure(self, exc_info):
         """Handler called if the task raised an exception."""

@@ -21,10 +21,17 @@ import sys
 
 from .local import try_import
 
+from kombu.utils.limits import TokenBucket
+
 _setproctitle = try_import("setproctitle")
 resource = try_import("resource")
 pwd = try_import("pwd")
 grp = try_import("grp")
+
+try:
+    from multiprocessing.process import current_process
+except ImportError:
+    current_process = None  # noqa
 
 SYSTEM = _platform.system()
 IS_OSX = SYSTEM == "Darwin"
@@ -33,6 +40,8 @@ IS_WINDOWS = SYSTEM == "Windows"
 DAEMON_UMASK = 0
 DAEMON_WORKDIR = "/"
 DAEMON_REDIRECT_TO = getattr(os, "devnull", "/dev/null")
+
+_setps_bucket = TokenBucket(0.5)  # 30/m, every 2 seconds
 
 
 def pyimplementation():
@@ -558,15 +567,14 @@ def set_mp_process_title(progname, info=None, hostname=None):
     Only works if :mod:`setproctitle` is installed.
 
     """
-    if hostname:
-        progname = "%s@%s" % (progname, hostname.split(".")[0])
-    try:
-        from multiprocessing.process import current_process
-    except ImportError:
-        return set_process_title(progname, info=info)
-    else:
-        return set_process_title("%s:%s" % (progname,
-                                            current_process().name), info=info)
+    if _setps_bucket.can_consume(1):
+        if hostname:
+            progname = "%s@%s" % (progname, hostname.split(".")[0])
+        if current_process is not None:
+            return set_process_title("%s:%s" % (progname,
+                                                current_process().name), info=info)
+        else:
+            return set_process_title(progname, info=info)
 
 
 def shellsplit(s, posix=True):

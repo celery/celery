@@ -76,6 +76,7 @@ up and running.
 from __future__ import absolute_import
 from __future__ import with_statement
 
+import logging
 import socket
 import sys
 import threading
@@ -293,6 +294,8 @@ class Consumer(object):
         self.connection_errors = conninfo.connection_errors
         self.channel_errors = conninfo.channel_errors
 
+        self._does_info = self.logger.isEnabledFor(logging.INFO)
+
     def start(self):
         """Start the consumer.
 
@@ -341,7 +344,8 @@ class Consumer(object):
         if task.revoked():
             return
 
-        self.logger.info("Got task from broker: %s", task.shortinfo())
+        if self._does_info:
+            self.logger.info("Got task from broker: %s", task.shortinfo())
 
         if self.event_dispatcher.enabled:
             self.event_dispatcher.send("task-received", uuid=task.task_id,
