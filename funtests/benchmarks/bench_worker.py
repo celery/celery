@@ -10,16 +10,16 @@ from celery import Celery
 DEFAULT_ITS = 20000
 
 celery = Celery(__name__)
-celery.conf.update(#BROKER_TRANSPORT="librabbitmq",
+celery.conf.update(BROKER_TRANSPORT="librabbitmq",
                    BROKER_POOL_LIMIT=10,
                    CELERY_PREFETCH_MULTIPLIER=0,
                    CELERY_DISABLE_RATE_LIMITS=True,
-                   #CELERY_DEFAULT_DELIVERY_MODE="transient",
+                   CELERY_DEFAULT_DELIVERY_MODE="transient",
                    CELERY_QUEUES = {
                        "bench.worker": {
                            "exchange": "bench.worker",
                            "routing_key": "bench.worker",
-                           #"no_ack": True,
+                           "no_ack": True,
                         }
                    },
                    CELERY_TASK_SERIALIZER="json",

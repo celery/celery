@@ -86,6 +86,7 @@ import warnings
 from ..app import app_or_default
 from ..datastructures import AttributeDict
 from ..exceptions import NotRegistered
+from ..registry import tasks
 from ..utils import noop
 from ..utils import timer2
 from ..utils.encoding import safe_repr
@@ -295,6 +296,15 @@ class Consumer(object):
         self.channel_errors = conninfo.channel_errors
 
         self._does_info = self.logger.isEnabledFor(logging.INFO)
+        self.strategies = {}
+
+    def update_strategies(self, eventer):
+        S = self.strategies
+        for task in tasks.itervalues():
+            S[task.name] = task.execution_strategy(self.app,
+                                                   self.logger,
+                                                   self.hostname,
+                                                   eventer)
 
     def start(self):
         """Start the consumer.
@@ -414,7 +424,7 @@ class Consumer(object):
                         self._message_report(body, message), exc)
 
         try:
-            body["task"]
+            name = body["task"]
         except (KeyError, TypeError):
             warnings.warn(RuntimeWarning(
                 "Received and deleted unknown message. Wrong destination?!? \
@@ -424,12 +434,7 @@ class Consumer(object):
             return
 
         try:
-            task = TaskRequest.from_message(message, body, ack,
-                                            app=self.app,
-                                            logger=self.logger,
-                                            hostname=self.hostname,
-                                            eventer=self.event_dispatcher)
-
+            task = self.strategies[name](message, body, ack)
         except NotRegistered, exc:
             self.logger.error(UNKNOWN_TASK_ERROR, exc, safe_repr(body),
                               exc_info=sys.exc_info())
@@ -603,6 +608,9 @@ class Consumer(object):
         if prev_event_dispatcher:
             self.event_dispatcher.copy_buffer(prev_event_dispatcher)
             self.event_dispatcher.flush()
+
+        # reload all task's execution strategies.
+        self.update_strategies(self.event_dispatcher)
 
         # Restart heartbeat thread.
         self.restart_heartbeat()

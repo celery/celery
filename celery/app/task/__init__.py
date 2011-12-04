@@ -256,6 +256,18 @@ class BaseTask(object):
         """The body of the task executed by workers."""
         raise NotImplementedError("Tasks must define the run method.")
 
+    def execution_strategy(self, app, logger, hostname, eventer):
+        from celery.worker.job import TaskRequest
+        create = TaskRequest.from_message
+
+        def handle_message(message, body, ack):
+            return create(message, body, ack,
+                          app=app, logger=logger,
+                          hostname=hostname, eventer=eventer)
+
+        return handle_message
+
+
     @classmethod
     def get_logger(self, loglevel=None, logfile=None, propagate=False,
             **kwargs):
