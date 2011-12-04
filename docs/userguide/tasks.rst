@@ -483,12 +483,11 @@ in the :state:`FAILED` state, is implied to have been in the
 :state:`STARTED` state at some point).
 
 There are also sets of states, like the set of
-:state:`failure states <FAILURE_STATES>`, and the set of
-:state:`ready states <READY_STATES>`.
+:state:`FAILURE_STATES`, and the set of :state:`READY_STATES`.
 
 The client uses the membership of these sets to decide whether
 the exception should be re-raised (:state:`PROPAGATE_STATES`), or whether
-the result can be cached (it can if the task is ready).
+the state can be cached (it can if the task is ready).
 
 You can also define :ref:`custom-states`.
 
@@ -533,13 +532,10 @@ backend:
   may have to increase the Erlang process limit, and the maximum number of file
   descriptors your OS allows.
 
-* Old results will not be cleaned automatically, so you must make sure to
-  consume the results or else the number of queues will eventually go out of
-  control.  If you're running RabbitMQ 2.1.1 or higher you can take advantage
-  of the ``x-expires`` argument to queues, which will expire queues after a
-  certain time limit after they are unused.  The queue expiry can be set (in
-  seconds) by the :setting:`CELERY_TASK_RESULT_EXPIRES` setting (not
-  enabled by default).
+* Old results will be cleaned automatically, based on the
+  :setting:`CELERY_TASK_RESULT_EXPIRES` setting.  By default this is set to
+  expire after 1 day: if you have a very busy cluster you should lower
+  this value.
 
 For a list of options supported by the AMQP result backend, please see
 :ref:`conf-amqp-result-backend`.
