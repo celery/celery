@@ -142,6 +142,44 @@ class MongoBackend(BaseDictBackend):
 
         return meta
 
+    def _save_taskset(self, taskset_id, result):
+        """Save the taskset result."""
+        from pymongo.binary import Binary
+
+        meta = {
+            "_id": taskset_id,
+            "result": Binary(self.encode(result)),
+            "date_done": datetime.utcnow()
+        }
+
+        db = self._get_database()
+        taskmeta_collection = db[self.mongodb_taskmeta_collection]
+        taskmeta_collection.save(meta, safe=True)
+
+        return result
+
+    def _restore_taskset(self, taskset_id):
+        """Get the result for a taskset by id."""
+        db = self._get_database()
+        taskmeta_collection = db[self.mongodb_taskmeta_collection]
+        obj = taskmeta_collection.find_one({"_id": taskset_id})
+        if not obj:
+            return None
+
+        meta = {
+            "task_id": obj["_id"],
+            "result": self.decode(obj["result"]),
+            "date_done": obj["date_done"],
+        }
+
+        return meta
+
+    def _delete_taskset(self, taskset_id):
+        """Delete a taskset by id."""
+        db = self._get_database()
+        taskmeta_collection = db[self.mongodb_taskmeta_collection]
+        taskmeta_collection.remove({"_id": taskset_id})
+
     def cleanup(self):
         """Delete expired metadata."""
         db = self._get_database()
