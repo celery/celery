@@ -21,12 +21,13 @@ from celery.datastructures import ExceptionInfo
 from celery.task import task as task_dec
 from celery.exceptions import (RetryTaskError, NotRegistered,
                                WorkerLostError, InvalidTaskError)
+from celery.execute.trace import TaskTrace
 from celery.log import setup_logger
 from celery.result import AsyncResult
 from celery.task.base import Task
 from celery.utils import uuid
 from celery.utils.encoding import from_utf8, default_encode
-from celery.worker.job import WorkerTaskTrace, TaskRequest, execute_and_trace
+from celery.worker.job import TaskRequest, execute_and_trace
 from celery.worker.state import revoked
 
 from celery.tests.compat import catch_warnings
@@ -39,7 +40,7 @@ some_kwargs_scratchpad = {}
 
 
 def jail(task_id, task_name, args, kwargs):
-    return WorkerTaskTrace(task_name, task_id, args, kwargs)()
+    return TaskTrace(task_name, task_id, args, kwargs)()
 
 
 def on_ack():
@@ -108,7 +109,7 @@ class test_RetryTaskError(unittest.TestCase):
             self.assertEqual(ret.exc, exc)
 
 
-class test_WorkerTaskTrace(unittest.TestCase):
+class test_TaskTrace(unittest.TestCase):
 
     def test_process_cleanup_fails(self):
         backend = mytask.backend
@@ -458,12 +459,12 @@ class test_TaskRequest(unittest.TestCase):
         self.assertEqual(res, 4 ** 4)
 
     def test_execute_safe_catches_exception(self):
-        old_exec = WorkerTaskTrace.execute
+        old_exec = TaskTrace.__call__
 
         def _error_exec(self, *args, **kwargs):
             raise KeyError("baz")
 
-        WorkerTaskTrace.execute = _error_exec
+        TaskTrace.__call__ = _error_exec
         try:
             with catch_warnings(record=True) as log:
                 res = execute_and_trace(mytask.name, uuid(),
@@ -473,7 +474,7 @@ class test_TaskRequest(unittest.TestCase):
                 self.assertIn("Exception outside", log[0].message.args[0])
                 self.assertIn("KeyError", log[0].message.args[0])
         finally:
-            WorkerTaskTrace.execute = old_exec
+            TaskTrace.__call__ = old_exec
 
     def create_exception(self, exc):
         try:
@@ -484,7 +485,7 @@ class test_TaskRequest(unittest.TestCase):
     def test_worker_task_trace_handle_retry(self):
         from celery.exceptions import RetryTaskError
         tid = uuid()
-        w = WorkerTaskTrace(mytask.name, tid, [4], {})
+        w = TaskTrace(mytask.name, tid, [4], {})
         type_, value_, tb_ = self.create_exception(ValueError("foo"))
         type_, value_, tb_ = self.create_exception(RetryTaskError(str(value_),
                                                                   exc=value_))
@@ -497,7 +498,7 @@ class test_TaskRequest(unittest.TestCase):
 
     def test_worker_task_trace_handle_failure(self):
         tid = uuid()
-        w = WorkerTaskTrace(mytask.name, tid, [4], {})
+        w = TaskTrace(mytask.name, tid, [4], {})
         type_, value_, tb_ = self.create_exception(ValueError("foo"))
         w._store_errors = False
         w.handle_failure(value_, type_, tb_, "")
