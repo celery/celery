@@ -13,7 +13,7 @@ from time import time
 
 from celery.exceptions import TimeoutError
 from celery.task.control import ping, flatten_reply, inspect
-from celery.utils import get_full_cls_name
+from celery.utils import qualname
 
 from celery.tests.utils import unittest
 
@@ -84,7 +84,7 @@ class Worker(object):
     def managed(cls, hostname=None, caller=None):
         hostname = hostname or socket.gethostname()
         if caller:
-            hostname = ".".join([get_full_cls_name(caller), hostname])
+            hostname = ".".join([qualname(caller), hostname])
         else:
             hostname += str(cls.next_worker_id())
         worker = cls(hostname)

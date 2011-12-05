@@ -71,7 +71,7 @@ def deprecated(description=None, deprecation=None, removal=None,
 
         @wraps(fun)
         def __inner(*args, **kwargs):
-            warn_deprecated(description=description or get_full_cls_name(fun),
+            warn_deprecated(description=description or qualname(fun),
                             deprecation=deprecation,
                             removal=removal,
                             alternative=alternative)
@@ -272,8 +272,11 @@ if sys.version_info >= (3, 3):
 else:
 
     def qualname(obj):  # noqa
-        return '.'.join([cls.__module__, cls.__name__])
-get_full_cls_name = qualname
+        if not hasattr(obj, "__name__") and hasattr(obj, "__class__"):
+            return qualname(obj.__class__)
+
+        return '.'.join([obj.__module__, obj.__name__])
+get_full_cls_name = qualname  # XXX Compat
 
 
 def fun_takes_kwargs(fun, kwlist=[]):

@@ -9,7 +9,7 @@ import traceback
 from .. import __version__, platforms
 from .. import beat
 from ..app import app_or_default
-from ..utils import get_full_cls_name, LOG_LEVELS
+from ..utils import LOG_LEVELS, qualname
 from ..utils.timeutils import humanize_seconds
 
 STARTUP_INFO_FMT = """
@@ -104,8 +104,8 @@ class Beat(object):
             "conninfo": self.app.broker_connection().as_uri(),
             "logfile": self.logfile or "[stderr]",
             "loglevel": LOG_LEVELS[self.loglevel],
-            "loader": get_full_cls_name(self.app.loader.__class__),
-            "scheduler": get_full_cls_name(scheduler.__class__),
+            "loader": qualname(self.app.loader),
+            "scheduler": qualname(scheduler),
             "scheduler_info": scheduler.info,
             "hmax_interval": humanize_seconds(beat.max_interval),
             "max_interval": beat.max_interval,

@@ -58,6 +58,9 @@ else:
     def from_utf8(s, *args, **kwargs):  # noqa
         return s.encode("utf-8", *args, **kwargs)
 
+    def default_encode(obj):            # noqa
+        return unicode(obj, default_encoding())
+
     str_t = unicode
     bytes_t = str
     ensure_bytes = str_to_bytes
