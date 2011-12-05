@@ -264,10 +264,16 @@ def mattrgetter(*attrs):
                                 for attr in attrs)
 
 
-def get_full_cls_name(cls):
-    """With a class, get its full module and class name."""
-    return ".".join([cls.__module__,
-                     cls.__name__])
+if sys.version_info >= (3, 3):
+
+    def qualname(obj):
+        return obj.__qualname__
+
+else:
+
+    def qualname(obj):  # noqa
+        return '.'.join([cls.__module__, cls.__name__])
+get_full_cls_name = qualname
 
 
 def fun_takes_kwargs(fun, kwlist=[]):
@@ -299,7 +305,8 @@ def fun_takes_kwargs(fun, kwlist=[]):
     return filter(partial(operator.contains, args), kwlist)
 
 
-def get_cls_by_name(name, aliases={}, imp=None, package=None, **kwargs):
+def get_cls_by_name(name, aliases={}, imp=None, package=None,
+        sep='.', **kwargs):
     """Get class by name.
 
     The name should be the full dot-separated path to the class::
@@ -310,6 +317,10 @@ def get_cls_by_name(name, aliases={}, imp=None, package=None, **kwargs):
 
         celery.concurrency.processes.TaskPool
                                     ^- class name
+
+    or using ':' to separate module and symbol::
+
+        celery.concurrency.processes:TaskPool
 
     If `aliases` is provided, a dict containing short name/long name
     mappings, the name is looked up in the aliases first.
@@ -336,7 +347,8 @@ def get_cls_by_name(name, aliases={}, imp=None, package=None, **kwargs):
         return name                                 # already a class
 
     name = aliases.get(name) or name
-    module_name, _, cls_name = name.rpartition(".")
+    sep = ':' if ':' in name else sep
+    module_name, _, cls_name = name.rpartition(sep)
     if not module_name and package:
         module_name = package
     try:

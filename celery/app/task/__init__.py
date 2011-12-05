@@ -20,7 +20,7 @@ from ...exceptions import MaxRetriesExceededError, RetryTaskError
 from ...execute.trace import TaskTrace
 from ...registry import tasks, _unpickle_task
 from ...result import EagerResult
-from ...utils import fun_takes_kwargs, mattrgetter, uuid
+from ...utils import fun_takes_kwargs, instantiate, mattrgetter, uuid
 from ...utils.mail import ErrorMail
 
 extract_exec_options = mattrgetter("queue", "routing_key",
@@ -246,6 +246,9 @@ class BaseTask(object):
     #: The type of task *(no longer used)*.
     type = "regular"
 
+    #: Execution strategy used, or the qualified name of one.
+    Strategy = "celery.worker.strategy:default"
+
     def __call__(self, *args, **kwargs):
         return self.run(*args, **kwargs)
 
@@ -256,17 +259,8 @@ class BaseTask(object):
         """The body of the task executed by workers."""
         raise NotImplementedError("Tasks must define the run method.")
 
-    def execution_strategy(self, app, logger, hostname, eventer):
-        from celery.worker.job import TaskRequest
-        create = TaskRequest.from_message
-
-        def handle_message(message, body, ack):
-            return create(message, body, ack,
-                          app=app, logger=logger,
-                          hostname=hostname, eventer=eventer)
-
-        return handle_message
-
+    def start_strategy(self, app, consumer):
+        return instantiate(self.Strategy, self, app, consumer)
 
     @classmethod
     def get_logger(self, loglevel=None, logfile=None, propagate=False,

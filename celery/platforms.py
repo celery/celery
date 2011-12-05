@@ -561,18 +561,18 @@ def set_process_title(progname, info=None):
     return proctitle
 
 
-def set_mp_process_title(progname, info=None, hostname=None):
+def set_mp_process_title(progname, info=None, hostname=None, rate_limit=False):
     """Set the ps name using the multiprocessing process name.
 
     Only works if :mod:`setproctitle` is installed.
 
     """
-    if _setps_bucket.can_consume(1):
+    if not rate_limit or _setps_bucket.can_consume(1):
         if hostname:
             progname = "%s@%s" % (progname, hostname.split(".")[0])
         if current_process is not None:
-            return set_process_title("%s:%s" % (progname,
-                                                current_process().name), info=info)
+            return set_process_title(
+                "%s:%s" % (progname, current_process().name), info=info)
         else:
             return set_process_title(progname, info=info)
 

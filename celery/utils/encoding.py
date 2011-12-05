@@ -39,6 +39,9 @@ if is_py3k:
             return str_to_bytes(s)
         return s
 
+    def default_encode(obj):
+        return obj
+
     str_t = str
     bytes_t = bytes
 

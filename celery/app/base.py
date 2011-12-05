@@ -72,12 +72,12 @@ class BaseApp(object):
     IS_OSX = platforms.IS_OSX
     IS_WINDOWS = platforms.IS_WINDOWS
 
-    amqp_cls = "celery.app.amqp.AMQP"
+    amqp_cls = "celery.app.amqp:AMQP"
     backend_cls = None
-    events_cls = "celery.events.Events"
-    loader_cls = "celery.loaders.app.AppLoader"
-    log_cls = "celery.log.Logging"
-    control_cls = "celery.task.control.Control"
+    events_cls = "celery.events:Events"
+    loader_cls = "celery.loaders.app:AppLoader"
+    log_cls = "celery.log:Logging"
+    control_cls = "celery.task.control:Control"
 
     _pool = None
 

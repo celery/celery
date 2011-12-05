@@ -115,14 +115,14 @@ class App(base.BaseApp):
 
     def Worker(self, **kwargs):
         """Create new :class:`~celery.apps.worker.Worker` instance."""
-        return instantiate("celery.apps.worker.Worker", app=self, **kwargs)
+        return instantiate("celery.apps.worker:Worker", app=self, **kwargs)
 
     def WorkController(self, **kwargs):
-        return instantiate("celery.worker.WorkController", app=self, **kwargs)
+        return instantiate("celery.worker:WorkController", app=self, **kwargs)
 
     def Beat(self, **kwargs):
         """Create new :class:`~celery.apps.beat.Beat` instance."""
-        return instantiate("celery.apps.beat.Beat", app=self, **kwargs)
+        return instantiate("celery.apps.beat:Beat", app=self, **kwargs)
 
     def TaskSet(self, *args, **kwargs):
         """Create new :class:`~celery.task.sets.TaskSet`."""

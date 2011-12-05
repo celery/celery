@@ -23,13 +23,13 @@ from datetime import datetime
 
 from .. import current_app
 from .. import exceptions
-from .. import platforms
 from .. import registry
 from ..app import app_or_default
 from ..datastructures import ExceptionInfo
 from ..execute.trace import TaskTrace
+from ..platforms import set_mp_process_title as setps
 from ..utils import noop, kwdict, fun_takes_kwargs, truncate_text
-from ..utils.encoding import safe_repr, safe_str, default_encoding
+from ..utils.encoding import safe_repr, safe_str, default_encode
 from ..utils.timeutils import maybe_iso8601, timezone
 from ..utils.serialization import get_pickleable_exception
 
@@ -38,21 +38,6 @@ from . import state
 #: Keys to keep from the message delivery info.  The values
 #: of these keys must be pickleable.
 WANTED_DELIVERY_INFO = ("exchange", "routing_key", "consumer_tag", )
-
-
-class InvalidTaskError(Exception):
-    """The task has invalid data or is not properly constructed."""
-    pass
-
-
-if sys.version_info >= (3, 0):
-
-    def default_encode(obj):
-        return obj
-else:
-
-    def default_encode(obj):  # noqa
-        return unicode(obj, default_encoding())
 
 
 class WorkerTaskTrace(TaskTrace):
@@ -164,11 +149,11 @@ def execute_and_trace(task_name, *args, **kwargs):
 
     """
     hostname = kwargs.get("hostname")
-    platforms.set_mp_process_title("celeryd", task_name, hostname=hostname)
+    setps("celeryd", task_name, hostname, rate_limit=True)
     try:
         return WorkerTaskTrace(task_name, *args, **kwargs).execute_safe()
     finally:
-        platforms.set_mp_process_title("celeryd", "-idle-", hostname)
+        setps("celeryd", "-idle-", hostname, rate_limit=True)
 
 
 class TaskRequest(object):
@@ -291,12 +276,13 @@ class TaskRequest(object):
 
         kwargs = body.get("kwargs", {})
         if not hasattr(kwargs, "items"):
-            raise InvalidTaskError("Task keyword arguments is not a mapping.")
+            raise exceptions.InvalidTaskError(
+                    "Task keyword arguments is not a mapping.")
         try:
             task_name = body["task"]
             task_id = body["id"]
         except KeyError, exc:
-            raise InvalidTaskError(
+            raise exceptions.InvalidTaskError(
                 "Task message is missing required field %r" % (exc, ))
 
         return cls(task_name=task_name,

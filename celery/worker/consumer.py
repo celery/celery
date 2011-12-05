@@ -85,13 +85,12 @@ import warnings
 
 from ..app import app_or_default
 from ..datastructures import AttributeDict
-from ..exceptions import NotRegistered
+from ..exceptions import InvalidTaskError
 from ..registry import tasks
 from ..utils import noop
 from ..utils import timer2
 from ..utils.encoding import safe_repr
 from . import state
-from .job import TaskRequest, InvalidTaskError
 from .control import Panel
 from .heartbeat import Heart
 
@@ -298,13 +297,10 @@ class Consumer(object):
         self._does_info = self.logger.isEnabledFor(logging.INFO)
         self.strategies = {}
 
-    def update_strategies(self, eventer):
+    def update_strategies(self):
         S = self.strategies
         for task in tasks.itervalues():
-            S[task.name] = task.execution_strategy(self.app,
-                                                   self.logger,
-                                                   self.hostname,
-                                                   eventer)
+            S[task.name] = task.start_strategy(self.app, self)
 
     def start(self):
         """Start the consumer.
@@ -434,8 +430,8 @@ class Consumer(object):
             return
 
         try:
-            task = self.strategies[name](message, body, ack)
-        except NotRegistered, exc:
+            self.strategies[name].send(message, body, ack)
+        except KeyError, exc:
             self.logger.error(UNKNOWN_TASK_ERROR, exc, safe_repr(body),
                               exc_info=sys.exc_info())
             ack()
@@ -443,8 +439,6 @@ class Consumer(object):
             self.logger.error(INVALID_TASK_ERROR, str(exc), safe_repr(body),
                               exc_info=sys.exc_info())
             ack()
-        else:
-            self.on_task(task)
 
     def maybe_conn_error(self, fun):
         """Applies function but ignores any connection or channel
@@ -609,11 +603,11 @@ class Consumer(object):
             self.event_dispatcher.copy_buffer(prev_event_dispatcher)
             self.event_dispatcher.flush()
 
-        # reload all task's execution strategies.
-        self.update_strategies(self.event_dispatcher)
-
         # Restart heartbeat thread.
         self.restart_heartbeat()
+
+        # reload all task's execution strategies.
+        self.update_strategies()
 
         # We're back!
         self._state = RUN

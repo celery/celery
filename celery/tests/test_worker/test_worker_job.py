@@ -19,15 +19,14 @@ from celery.app import app_or_default
 from celery.concurrency.base import BasePool
 from celery.datastructures import ExceptionInfo
 from celery.task import task as task_dec
-from celery.exceptions import RetryTaskError, NotRegistered, WorkerLostError
+from celery.exceptions import (RetryTaskError, NotRegistered,
+                               WorkerLostError, InvalidTaskError)
 from celery.log import setup_logger
 from celery.result import AsyncResult
 from celery.task.base import Task
 from celery.utils import uuid
-from celery.utils.encoding import from_utf8
-from celery.worker.job import (WorkerTaskTrace, TaskRequest,
-                               InvalidTaskError, execute_and_trace,
-                               default_encode)
+from celery.utils.encoding import from_utf8, default_encode
+from celery.worker.job import WorkerTaskTrace, TaskRequest, execute_and_trace
 from celery.worker.state import revoked
 
 from celery.tests.compat import catch_warnings
