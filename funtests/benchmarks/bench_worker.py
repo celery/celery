@@ -31,8 +31,8 @@ celery.conf.update(BROKER_TRANSPORT="librabbitmq",
 def it(_, n):
     i = it.cur  # use internal counter, as ordering can be skewed
                 # by previous runs, or the broker.
-    if i and not i % 1000:
-        print >> sys.stderr, "(%s so far)"% (i, )
+    if i and not i % 5000:
+        print >> sys.stderr, "(%s so far)" % (i, )
     if not i:
         it.time_start = time.time()
     elif i == n - 1:
@@ -51,7 +51,9 @@ def bench_work(n=DEFAULT_ITS):
     from celery.worker import WorkController
     from celery.worker import state
 
-    worker = celery.WorkController(concurrency=15, #pool_cls="solo",
+    #import logging
+    #celery.log.setup_logging_subsystem(loglevel=logging.DEBUG)
+    worker = celery.WorkController(concurrency=15, pool_cls="solo",
                                    queues=["bench.worker"])
 
     try:
