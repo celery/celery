@@ -150,7 +150,7 @@ class TaskTrace(object):
                             args=args, kwargs=kwargs)
                 loader.on_task_init(uuid, task)
                 if not eager and (task.track_started and not ignore_result):
-                    backend.mark_as_started(id, pid=os.getpid(),
+                    backend.mark_as_started(uuid, pid=os.getpid(),
                                             hostname=self.hostname)
 
                 # -*- TRACE -*-

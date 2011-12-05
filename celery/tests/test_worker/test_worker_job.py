@@ -7,6 +7,7 @@ import logging
 import os
 import sys
 import time
+import warnings
 
 from datetime import datetime, timedelta
 
@@ -459,22 +460,24 @@ class test_TaskRequest(unittest.TestCase):
         self.assertEqual(res, 4 ** 4)
 
     def test_execute_safe_catches_exception(self):
-        old_exec = TaskTrace.__call__
+        old_exec = mytask.__call__
+        warnings.resetwarnings()
 
         def _error_exec(self, *args, **kwargs):
             raise KeyError("baz")
 
-        TaskTrace.__call__ = _error_exec
-        try:
-            with catch_warnings(record=True) as log:
-                res = execute_and_trace(mytask.name, uuid(),
-                                        [4], {})
-                self.assertIsInstance(res, ExceptionInfo)
-                self.assertTrue(log)
-                self.assertIn("Exception outside", log[0].message.args[0])
-                self.assertIn("KeyError", log[0].message.args[0])
-        finally:
-            TaskTrace.__call__ = old_exec
+        @task_dec
+        def raising():
+            raise KeyError("baz")
+        raising.request = None
+
+        with catch_warnings(record=True) as log:
+            res = execute_and_trace(raising.name, uuid(),
+                                    [], {})
+            self.assertIsInstance(res, ExceptionInfo)
+            self.assertTrue(log)
+            self.assertIn("Exception outside", log[0].message.args[0])
+            self.assertIn("AttributeError", log[0].message.args[0])
 
     def create_exception(self, exc):
         try:

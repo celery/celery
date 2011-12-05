@@ -73,11 +73,15 @@ class TaskType(type):
         new = super(TaskType, cls).__new__
         task_module = attrs.get("__module__") or "__main__"
 
-        # Abstract class: abstract attribute should not be inherited.
+        if "__call__" in attrs:
+            # see note about __call__ below.
+            attrs["__defines_call__"] = True
+
+        # - Abstract class: abstract attribute should not be inherited.
         if attrs.pop("abstract", None) or not attrs.get("autoregister", True):
             return new(cls, name, bases, attrs)
 
-        # Automatically generate missing/empty name.
+        # - Automatically generate missing/empty name.
         autoname = False
         if not attrs.get("name"):
             try:
@@ -88,6 +92,22 @@ class TaskType(type):
             attrs["name"] = '.'.join([module_name, name])
             autoname = True
 
+        # - Automatically generate __call__.
+        # If this or none of its bases define __call__, we simply
+        # alias it to the ``run`` method, as
+        # this means we can skip a stacktrace frame :)
+        if not (attrs.get("__call__")
+                or any(getattr(b, "__defines_call__", False) for b in bases)):
+            try:
+                attrs["__call__"] = attrs["run"]
+            except KeyError:
+                # the class does not yet define run,
+                # so we can't optimize this case.
+                def __call__(self, *args, **kwargs):
+                    return self.run(*args, **kwargs)
+                attrs["__call__"] = __call__
+
+        # - Create and register class.
         # Because of the way import happens (recursively)
         # we may or may not be the first time the task tries to register
         # with the framework.  There should only be one class for each task
@@ -248,9 +268,6 @@ class BaseTask(object):
 
     #: Execution strategy used, or the qualified name of one.
     Strategy = "celery.worker.strategy:default"
-
-    def __call__(self, *args, **kwargs):
-        return self.run(*args, **kwargs)
 
     def __reduce__(self):
         return (_unpickle_task, (self.name, ), None)
@@ -597,12 +614,13 @@ class BaseTask(object):
                                         if key in supported_keys)
             kwargs.update(extend_with)
 
-        trace = TaskTrace(task.name, task_id, args, kwargs,
-                          task=task, request=request, propagate=throw)
-        retval = trace.execute()
+        trace = TaskTrace(task.name, task_id, args, kwargs, eager=True,
+                          task=task, request=request, propagate=throw,
+                          propagate_internal=True)
+        retval = trace()
         if isinstance(retval, ExceptionInfo):
             retval = retval.exception
-        return EagerResult(task_id, retval, trace.status,
+        return EagerResult(task_id, retval, trace.state,
                            traceback=trace.strtb)
 
     @classmethod
