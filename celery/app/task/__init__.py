@@ -15,6 +15,7 @@ from __future__ import absolute_import
 import sys
 import threading
 
+from ... import states
 from ...datastructures import ExceptionInfo
 from ...exceptions import MaxRetriesExceededError, RetryTaskError
 from ...execute.trace import trace_task
@@ -621,8 +622,10 @@ class BaseTask(object):
                                   task=task, request=request, propagate=throw)
         if isinstance(retval, ExceptionInfo):
             retval = retval.exception
-        return EagerResult(task_id, retval, info.state,
-                           traceback=info.strtb)
+        state, tb = states.SUCCESS, ''
+        if info is not None:
+            state, tb = info.state, info.strtb
+        return EagerResult(task_id, retval, state, traceback=tb)
 
     @classmethod
     def AsyncResult(self, task_id):
@@ -680,8 +683,7 @@ class BaseTask(object):
         The return value of this handler is ignored.
 
         """
-        if self.request.chord:
-            self.backend.on_chord_part_return(self)
+        pass
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         """Error handler.

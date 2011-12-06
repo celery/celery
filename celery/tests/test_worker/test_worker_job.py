@@ -19,12 +19,12 @@ from celery import states
 from celery.app import app_or_default
 from celery.concurrency.base import BasePool
 from celery.datastructures import ExceptionInfo
-from celery.task import task as task_dec
 from celery.exceptions import (RetryTaskError, NotRegistered,
                                WorkerLostError, InvalidTaskError)
-from celery.execute.trace import TaskTrace
+from celery.execute.trace import trace_task, TraceInfo
 from celery.log import setup_logger
 from celery.result import AsyncResult
+from celery.task import task as task_dec
 from celery.task.base import Task
 from celery.utils import uuid
 from celery.utils.encoding import from_utf8, default_encode
@@ -41,7 +41,7 @@ some_kwargs_scratchpad = {}
 
 
 def jail(task_id, task_name, args, kwargs):
-    return TaskTrace(task_name, task_id, args, kwargs)()
+    return trace_task(task_name, task_id, args, kwargs)[0]
 
 
 def on_ack():
@@ -110,7 +110,7 @@ class test_RetryTaskError(unittest.TestCase):
             self.assertEqual(ret.exc, exc)
 
 
-class test_TaskTrace(unittest.TestCase):
+class test_trace_task(unittest.TestCase):
 
     def test_process_cleanup_fails(self):
         backend = mytask.backend
@@ -169,17 +169,26 @@ class test_TaskTrace(unittest.TestCase):
             mytask.ignore_result = False
 
     def test_execute_jail_failure(self):
-        ret = jail(uuid(), mytask_raising.name,
-                   [4], {})
-        self.assertIsInstance(ret, ExceptionInfo)
-        self.assertTupleEqual(ret.exception.args, (4, ))
+        u = uuid()
+        mytask_raising.request.update({"id": u})
+        try:
+            ret = jail(u, mytask_raising.name,
+                    [4], {})
+            self.assertIsInstance(ret, ExceptionInfo)
+            self.assertTupleEqual(ret.exception.args, (4, ))
+        finally:
+            mytask_raising.request.clear()
 
     def test_execute_ignore_result(self):
         task_id = uuid()
-        ret = jail(id, MyTaskIgnoreResult.name,
-                   [4], {})
-        self.assertEqual(ret, 256)
-        self.assertFalse(AsyncResult(task_id).ready())
+        MyTaskIgnoreResult.request.update({"id": task_id})
+        try:
+            ret = jail(task_id, MyTaskIgnoreResult.name,
+                       [4], {})
+            self.assertEqual(ret, 256)
+            self.assertFalse(AsyncResult(task_id).ready())
+        finally:
+            MyTaskIgnoreResult.request.clear()
 
 
 class MockEventDispatcher(object):
@@ -488,27 +497,31 @@ class test_TaskRequest(unittest.TestCase):
     def test_worker_task_trace_handle_retry(self):
         from celery.exceptions import RetryTaskError
         tid = uuid()
-        w = TaskTrace(mytask.name, tid, [4], {})
-        type_, value_, tb_ = self.create_exception(ValueError("foo"))
-        type_, value_, tb_ = self.create_exception(RetryTaskError(str(value_),
-                                                                  exc=value_))
-        w._store_errors = False
-        w.handle_retry(value_, type_, tb_, "")
-        self.assertEqual(mytask.backend.get_status(tid), states.PENDING)
-        w._store_errors = True
-        w.handle_retry(value_, type_, tb_, "")
-        self.assertEqual(mytask.backend.get_status(tid), states.RETRY)
+        mytask.request.update({"id": tid})
+        try:
+            _, value_, _ = self.create_exception(ValueError("foo"))
+            einfo = self.create_exception(RetryTaskError(str(value_),
+                                          exc=value_))
+            w = TraceInfo(states.RETRY, einfo[1], einfo)
+            w.handle_retry(mytask, store_errors=False)
+            self.assertEqual(mytask.backend.get_status(tid), states.PENDING)
+            w.handle_retry(mytask, store_errors=True)
+            self.assertEqual(mytask.backend.get_status(tid), states.RETRY)
+        finally:
+            mytask.request.clear()
 
     def test_worker_task_trace_handle_failure(self):
         tid = uuid()
-        w = TaskTrace(mytask.name, tid, [4], {})
-        type_, value_, tb_ = self.create_exception(ValueError("foo"))
-        w._store_errors = False
-        w.handle_failure(value_, type_, tb_, "")
-        self.assertEqual(mytask.backend.get_status(tid), states.PENDING)
-        w._store_errors = True
-        w.handle_failure(value_, type_, tb_, "")
-        self.assertEqual(mytask.backend.get_status(tid), states.FAILURE)
+        mytask.request.update({"id": tid})
+        try:
+            einfo = self.create_exception(ValueError("foo"))
+            w = TraceInfo(states.FAILURE, einfo[1], einfo)
+            w.handle_failure(mytask, store_errors=False)
+            self.assertEqual(mytask.backend.get_status(tid), states.PENDING)
+            w.handle_failure(mytask, store_errors=True)
+            self.assertEqual(mytask.backend.get_status(tid), states.FAILURE)
+        finally:
+            mytask.request.clear()
 
     def test_task_wrapper_mail_attrs(self):
         tw = TaskRequest(mytask.name, uuid(), [], {})

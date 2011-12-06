@@ -341,3 +341,7 @@ class WorkController(object):
 
     def on_timer_tick(self, delay):
         self.timer_debug("Scheduler wake-up! Next eta %s secs." % delay)
+
+    @property
+    def state(self):
+        return state

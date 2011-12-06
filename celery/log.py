@@ -24,6 +24,12 @@ from .utils.term import colored
 is_py3k = sys.version_info >= (3, 0)
 
 
+def mlevel(level):
+    if level and not isinstance(level, int):
+        return LOG_LEVELS[level.upper()]
+    return level
+
+
 class ColorFormatter(logging.Formatter):
     #: Loglevel -> Color mapping.
     COLORS = colored().names
@@ -71,7 +77,7 @@ class Logging(object):
 
     def __init__(self, app):
         self.app = app
-        self.loglevel = self.app.conf.CELERYD_LOG_LEVEL
+        self.loglevel = mlevel(self.app.conf.CELERYD_LOG_LEVEL)
         self.format = self.app.conf.CELERYD_LOG_FORMAT
         self.task_format = self.app.conf.CELERYD_TASK_LOG_FORMAT
         self.colorize = self.app.conf.CELERYD_LOG_COLOR
@@ -92,14 +98,14 @@ class Logging(object):
     def get_task_logger(self, loglevel=None, name=None):
         logger = logging.getLogger(name or "celery.task.default")
         if loglevel is not None:
-            logger.setLevel(loglevel)
+            logger.setLevel(mlevel(loglevel))
         return logger
 
     def setup_logging_subsystem(self, loglevel=None, logfile=None,
             format=None, colorize=None, **kwargs):
         if Logging._setup:
             return
-        loglevel = loglevel or self.loglevel
+        loglevel = mlevel(loglevel or self.loglevel)
         format = format or self.format
         if colorize is None:
             colorize = self.supports_color(logfile)
@@ -120,7 +126,7 @@ class Logging(object):
             mp = mputil.get_logger() if mputil else None
             for logger in filter(None, (root, mp)):
                 self._setup_logger(logger, logfile, format, colorize, **kwargs)
-                logger.setLevel(loglevel)
+                logger.setLevel(mlevel(loglevel))
                 signals.after_setup_logger.send(sender=None, logger=logger,
                                         loglevel=loglevel, logfile=logfile,
                                         format=format, colorize=colorize)
@@ -144,7 +150,7 @@ class Logging(object):
         """
         logger = logging.getLogger(name)
         if loglevel is not None:
-            logger.setLevel(loglevel)
+            logger.setLevel(mlevel(loglevel))
         return logger
 
     def setup_logger(self, loglevel=None, logfile=None,
@@ -157,7 +163,7 @@ class Logging(object):
         Returns logger object.
 
         """
-        loglevel = loglevel or self.loglevel
+        loglevel = mlevel(loglevel or self.loglevel)
         format = format or self.format
         if colorize is None:
             colorize = self.supports_color(logfile)
@@ -179,7 +185,7 @@ class Logging(object):
         Returns logger object.
 
         """
-        loglevel = loglevel or self.loglevel
+        loglevel = mlevel(loglevel or self.loglevel)
         format = format or self.task_format
         if colorize is None:
             colorize = self.supports_color(logfile)
@@ -247,9 +253,7 @@ class LoggingProxy(object):
 
     def __init__(self, logger, loglevel=None):
         self.logger = logger
-        self.loglevel = loglevel or self.logger.level or self.loglevel
-        if not isinstance(self.loglevel, int):
-            self.loglevel = LOG_LEVELS[self.loglevel.upper()]
+        self.loglevel = mlevel(loglevel or self.logger.level or self.loglevel)
         self._safewrap_handlers()
 
     def _safewrap_handlers(self):

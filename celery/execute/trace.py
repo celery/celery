@@ -12,6 +12,14 @@
 """
 from __future__ import absolute_import
 
+# ## ---
+# BE WARNED: You are probably going to suffer a heartattack just
+#            by looking at this code!
+#
+# This is the heart of the worker, the inner loop so to speak.
+# It used to be split up into nice little classes and methods,
+# but in the end it only resulted in bad performance, and horrible tracebacks.
+
 import os
 import socket
 import sys
@@ -26,11 +34,21 @@ from ..registry import tasks
 from ..utils.serialization import get_pickleable_exception
 
 send_prerun = signals.task_prerun.send
+prerun_receivers = signals.task_prerun.receivers
 send_postrun = signals.task_postrun.send
+postrun_receivers = signals.task_postrun.receivers
 SUCCESS = states.SUCCESS
 RETRY = states.RETRY
 FAILURE = states.FAILURE
 EXCEPTION_STATES = states.EXCEPTION_STATES
+_pid = None
+
+
+def getpid():
+    global _pid
+    if _pid is None:
+        _pid = os.getpid()
+    return _pid
 
 
 class TraceInfo(object):
@@ -46,38 +64,56 @@ class TraceInfo(object):
         else:
             self.exc_type = self.exc_value = self.tb = None
 
+    def handle_error_state(self, task, eager=False):
+        store_errors = not eager
+        if task.ignore_result:
+            store_errors = task.store_errors_even_if_ignored
+
+        return {
+            RETRY: self.handle_retry,
+            FAILURE: self.handle_failure,
+        }[self.state](task, store_errors=store_errors)
+
+    def handle_retry(self, task, store_errors=True):
+        """Handle retry exception."""
+        # Create a simpler version of the RetryTaskError that stringifies
+        # the original exception instead of including the exception instance.
+        # This is for reporting the retry in logs, email etc, while
+        # guaranteeing pickleability.
+        req = task.request
+        exc, type_, tb = self.retval, self.exc_type, self.tb
+        message, orig_exc = self.retval.args
+        if store_errors:
+            task.backend.mark_as_retry(req.id, orig_exc, self.strtb)
+        expanded_msg = "%s: %s" % (message, str(orig_exc))
+        einfo = ExceptionInfo((type_, type_(expanded_msg, None), tb))
+        task.on_retry(exc, req.id, req.args, req.kwargs, einfo)
+        return einfo
+
+    def handle_failure(self, task, store_errors=True):
+        """Handle exception."""
+        req = task.request
+        exc, type_, tb = self.retval, self.exc_type, self.tb
+        if store_errors:
+            task.backend.mark_as_failure(req.id, exc, self.strtb)
+        exc = get_pickleable_exception(exc)
+        einfo = ExceptionInfo((type_, exc, tb))
+        task.on_failure(exc, req.id, req.args, req.kwargs, einfo)
+        signals.task_failure.send(sender=task, task_id=req.id,
+                                  exception=exc, args=req.args,
+                                  kwargs=req.kwargs, traceback=tb,
+                                  einfo=einfo)
+        return einfo
+
     @property
     def strtb(self):
         if self.exc_info:
-            return "\n".join(traceback.format_exception(*self.exc_info))
+            return '\n'.join(traceback.format_exception(*self.exc_info))
+        return ''
 
-
-def trace(fun, args, kwargs, propagate=False, Info=TraceInfo):
-    """Trace the execution of a function, calling the appropiate callback
-    if the function raises retry, an failure or returned successfully.
-
-    :keyword propagate: If true, errors will propagate to the caller.
-
-    """
-    try:
-        return Info(states.SUCCESS, retval=fun(*args, **kwargs))
-    except RetryTaskError, exc:
-        return Info(states.RETRY, retval=exc, exc_info=sys.exc_info())
-    except Exception, exc:
-        if propagate:
-            raise
-        return Info(states.FAILURE, retval=exc, exc_info=sys.exc_info())
-    except BaseException, exc:
-        raise
-    except:  # pragma: no cover
-        # For Python2.5 where raising strings are still allowed
-        # (but deprecated)
-        if propagate:
-            raise
-        return Info(states.FAILURE, retval=None, exc_info=sys.exc_info())
-
-
-class TaskTrace(object):
+def trace_task(name, uuid, args, kwargs, task=None, request=None,
+        eager=False, propagate=False, loader=None, hostname=None,
+        store_errors=True, Info=TraceInfo):
     """Wraps the task in a jail, catches all exceptions, and
     saves the status and result of the task execution to the task
     meta backend.
@@ -104,131 +140,83 @@ class TaskTrace(object):
 
     :returns: the evaluated functions return value on success, or
         the exception instance on failure.
-
     """
-
-    def __init__(self, task_name, task_id, args, kwargs, task=None,
-            request=None, propagate=None, propagate_internal=False,
-            eager=False, **_):
-        self.task_id = task_id
-        self.task_name = task_name
-        self.args = args
-        self.kwargs = kwargs
-        self.task = task or tasks[self.task_name]
-        self.request = request or {}
-        self.propagate = propagate
-        self.propagate_internal = propagate_internal
-        self.eager = eager
-        self._trace_handlers = {FAILURE: self.handle_failure,
-                                RETRY: self.handle_retry}
-        self.loader = kwargs.get("loader") or current_app.loader
-        self.hostname = kwargs.get("hostname") or socket.gethostname()
-        self._store_errors = True
-        if eager:
-            self._store_errors = False
-        elif self.task.ignore_result:
-            self._store_errors = self.task.store_errors_even_if_ignored
-
-        # Used by always_eager
-        self.state = None
-        self.strtb = None
-
-    def __call__(self):
+    R = I = None
+    try:
+        task = task or tasks[name]
+        backend = task.backend
+        ignore_result = task.ignore_result
+        loader = loader or current_app.loader
+        hostname = hostname or socket.gethostname()
+        task.request.update(request or {}, args=args,
+                            called_directly=False, kwargs=kwargs)
         try:
-            task, uuid, args, kwargs, eager = (self.task, self.task_id,
-                                               self.args, self.kwargs,
-                                               self.eager)
-            backend = task.backend
-            ignore_result = task.ignore_result
-            loader = self.loader
+            # -*- PRE -*-
+            send_prerun(sender=task, task_id=uuid, task=task,
+                        args=args, kwargs=kwargs)
+            loader.on_task_init(uuid, task)
+            if not eager and (task.track_started and not ignore_result):
+                backend.mark_as_started(uuid, pid=getpid(),
+                                        hostname=hostname)
 
-            task.request.update(self.request, args=args,
-                                called_directly=False, kwargs=kwargs)
+            # -*- TRACE -*-
             try:
-                # -*- PRE -*-
-                send_prerun(sender=task, task_id=uuid, task=task,
-                            args=args, kwargs=kwargs)
-                loader.on_task_init(uuid, task)
-                if not eager and (task.track_started and not ignore_result):
-                    backend.mark_as_started(uuid, pid=os.getpid(),
-                                            hostname=self.hostname)
-
-                # -*- TRACE -*-
-                # self.info is used by always_eager
-                info = self.info = trace(task, args, kwargs, self.propagate)
-                state, retval, einfo = info.state, info.retval, info.exc_info
-                if eager:
-                    self.state, self.strtb = info.state, info.strtb
-
-                if state == SUCCESS:
-                    task.on_success(retval, uuid, args, kwargs)
-                    if not eager and not ignore_result:
-                        backend.mark_as_done(uuid, retval)
-                    R = retval
-                else:
-                    R = self.handle_trace(info)
-
-                # -* POST *-
-                if state in EXCEPTION_STATES:
-                    einfo = ExceptionInfo(einfo)
-                task.after_return(state, retval, self.task_id,
-                                  self.args, self.kwargs, einfo)
-                send_postrun(sender=task, task_id=uuid, task=task,
-                             args=args, kwargs=kwargs, retval=retval)
-            finally:
-                task.request.clear()
-                if not eager:
-                    try:
-                        backend.process_cleanup()
-                        loader.on_process_cleanup()
-                    except (KeyboardInterrupt, SystemExit, MemoryError):
-                        raise
-                    except Exception, exc:
-                        logger = current_app.log.get_default_logger()
-                        logger.error("Process cleanup failed: %r", exc,
-                                    exc_info=sys.exc_info())
-        except Exception, exc:
-            if self.propagate_internal:
+                R = retval = task(*args, **kwargs)
+                state, einfo = SUCCESS, None
+                task.on_success(retval, uuid, args, kwargs)
+                if not eager and not ignore_result:
+                    backend.mark_as_done(uuid, retval)
+            except RetryTaskError, exc:
+                I = Info(RETRY, exc, sys.exc_info())
+                state, retval, einfo = I.state, I.retval, I.exc_info
+                R = I.handle_error_state(task, eager=eager)
+            except Exception, exc:
+                if propagate:
+                    raise
+                I = Info(FAILURE, exc, sys.exc_info())
+                state, retval, einfo = I.state, I.retval, I.exc_info
+                R = I.handle_error_state(task, eager=eager)
+            except BaseException, exc:
                 raise
-            return self.report_internal_error(exc)
-        return R
-    execute = __call__
+            except:
+                # pragma: no cover
+                # For Python2.5 where raising strings are still allowed
+                # (but deprecated)
+                if propagate:
+                    raise
+                I = Info(FAILURE, None, sys.exc_info())
+                state, retval, einfo = I.state, I.retval, I.exc_info
+                R = I.handle_error_state(task, eager=eager)
 
-    def report_internal_error(self, exc):
-        _type, _value, _tb = sys.exc_info()
-        _value = self.task.backend.prepare_exception(exc)
-        exc_info = ExceptionInfo((_type, _value, _tb))
-        warnings.warn("Exception outside body: %s: %s\n%s" % tuple(
-            map(str, (exc.__class__, exc, exc_info.traceback))))
-        return exc_info
+            # -* POST *-
+            if task.request.chord:
+                backend.on_chord_part_return(task)
+            task.after_return(state, retval, uuid, args, kwargs, einfo)
+            send_postrun(sender=task, task_id=uuid, task=task,
+                         args=args, kwargs=kwargs, retval=retval)
+        finally:
+            task.request.clear()
+            if not eager:
+                try:
+                    backend.process_cleanup()
+                    loader.on_process_cleanup()
+                except (KeyboardInterrupt, SystemExit, MemoryError):
+                    raise
+                except Exception, exc:
+                    logger = current_app.log.get_default_logger()
+                    logger.error("Process cleanup failed: %r", exc,
+                                 exc_info=sys.exc_info())
+    except Exception, exc:
+        if eager:
+            raise
+        R = report_internal_error(task, exc)
+    return R, I
 
-    def handle_trace(self, trace):
-        return self._trace_handlers[trace.state](trace.retval, trace.exc_type,
-                                                 trace.tb, trace.strtb)
 
-    def handle_retry(self, exc, type_, tb, strtb):
-        """Handle retry exception."""
-        # Create a simpler version of the RetryTaskError that stringifies
-        # the original exception instead of including the exception instance.
-        # This is for reporting the retry in logs, email etc, while
-        # guaranteeing pickleability.
-        message, orig_exc = exc.args
-        if self._store_errors:
-            self.task.backend.mark_as_retry(self.task_id, orig_exc, strtb)
-        expanded_msg = "%s: %s" % (message, str(orig_exc))
-        einfo = ExceptionInfo((type_, type_(expanded_msg, None), tb))
-        self.task.on_retry(exc, self.task_id, self.args, self.kwargs, einfo)
-        return einfo
-
-    def handle_failure(self, exc, type_, tb, strtb):
-        """Handle exception."""
-        if self._store_errors:
-            self.task.backend.mark_as_failure(self.task_id, exc, strtb)
-        exc = get_pickleable_exception(exc)
-        einfo = ExceptionInfo((type_, exc, tb))
-        self.task.on_failure(exc, self.task_id, self.args, self.kwargs, einfo)
-        signals.task_failure.send(sender=self.task, task_id=self.task_id,
-                                  exception=exc, args=self.args,
-                                  kwargs=self.kwargs, traceback=tb,
-                                  einfo=einfo)
-        return einfo
+def report_internal_error(task, exc):
+    _type, _value, _tb = sys.exc_info()
+    _value = task.backend.prepare_exception(exc)
+    exc_info = ExceptionInfo((_type, _value, _tb))
+    warnings.warn("Exception outside body: %s: %s\n%s" % tuple(
+        map(str, (exc.__class__, exc, exc_info.traceback))))
+    return exc_info

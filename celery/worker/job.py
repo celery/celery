@@ -21,7 +21,7 @@ from datetime import datetime
 from .. import exceptions
 from .. import registry
 from ..app import app_or_default
-from ..execute.trace import TaskTrace
+from ..execute.trace import trace_task
 from ..platforms import set_mp_process_title as setps
 from ..utils import noop, kwdict, fun_takes_kwargs, truncate_text
 from ..utils.encoding import safe_repr, safe_str
@@ -39,13 +39,13 @@ def execute_and_trace(task_name, *args, **kwargs):
 
     It's the same as::
 
-        >>> TaskTrace(task_name, *args, **kwargs)()
+        >>> trace_task(task_name, *args, **kwargs)[0]
 
     """
     hostname = kwargs.get("hostname")
     setps("celeryd", task_name, hostname, rate_limit=True)
     try:
-        return TaskTrace(task_name, *args, **kwargs)()
+        return trace_task(task_name, *args, **kwargs)[0]
     finally:
         setps("celeryd", "-idle-", hostname, rate_limit=True)
 
@@ -257,7 +257,7 @@ class TaskRequest(object):
         return result
 
     def execute(self, loglevel=None, logfile=None):
-        """Execute the task in a :class:`TaskTrace`.
+        """Execute the task in a :func:`~celery.execute.trace.trace_task`.
 
         :keyword loglevel: The loglevel used by the task.
 
@@ -272,11 +272,10 @@ class TaskRequest(object):
             self.acknowledge()
 
         instance_attrs = self.get_instance_attrs(loglevel, logfile)
-        tracer = TaskTrace(*self._get_tracer_args(loglevel, logfile),
-                           **{"hostname": self.hostname,
-                              "loader": self.app.loader,
-                              "request": instance_attrs})
-        retval = tracer.execute()
+        retval, _ = trace_task(*self._get_tracer_args(loglevel, logfile),
+                               **{"hostname": self.hostname,
+                                  "loader": self.app.loader,
+                                  "request": instance_attrs})
         self.acknowledge()
         return retval
 
@@ -446,6 +445,6 @@ class TaskRequest(object):
                 self.task_name, self.task_id, self.args, self.kwargs)
 
     def _get_tracer_args(self, loglevel=None, logfile=None):
-        """Get the :class:`TaskTrace` tracer for this task."""
+        """Get the task trace args for this task."""
         task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
         return self.task_name, self.task_id, self.args, task_func_kwargs
