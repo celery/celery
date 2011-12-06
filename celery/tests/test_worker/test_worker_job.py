@@ -21,8 +21,9 @@ from celery.concurrency.base import BasePool
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import (RetryTaskError, NotRegistered,
                                WorkerLostError, InvalidTaskError)
-from celery.execute.trace import trace_task, TraceInfo
+from celery.execute.trace import eager_trace_task, TraceInfo
 from celery.log import setup_logger
+from celery.registry import tasks
 from celery.result import AsyncResult
 from celery.task import task as task_dec
 from celery.task.base import Task
@@ -40,8 +41,8 @@ scratch = {"ACK": False}
 some_kwargs_scratchpad = {}
 
 
-def jail(task_id, task_name, args, kwargs):
-    return trace_task(task_name, task_id, args, kwargs)[0]
+def jail(task_id, name, args, kwargs):
+    return eager_trace_task(tasks[name], task_id, args, kwargs, eager=False)[0]
 
 
 def on_ack():
@@ -123,7 +124,8 @@ class test_trace_task(unittest.TestCase):
                 tid = uuid()
                 ret = jail(tid, mytask.name, [2], {})
                 self.assertEqual(ret, 4)
-                mytask.backend.mark_as_done.assert_called_with(tid, 4)
+                mytask.backend.store_result.assert_called_with(tid, 4,
+                                                               states.SUCCESS)
                 logs = sio.getvalue().strip()
                 self.assertIn("Process cleanup failed", logs)
         finally:
@@ -144,15 +146,16 @@ class test_trace_task(unittest.TestCase):
         self.assertEqual(ret, 4)
 
     def test_marked_as_started(self):
-        mytask.track_started = True
 
         class Backend(mytask.backend.__class__):
             _started = []
 
-            def mark_as_started(self, tid, *args, **kwargs):
-                self._started.append(tid)
+            def store_result(self, tid, meta, state):
+                if state == states.STARTED:
+                    self._started.append(tid)
 
         prev, mytask.backend = mytask.backend, Backend()
+        mytask.track_started = True
 
         try:
             tid = uuid()
@@ -469,7 +472,6 @@ class test_TaskRequest(unittest.TestCase):
         self.assertEqual(res, 4 ** 4)
 
     def test_execute_safe_catches_exception(self):
-        old_exec = mytask.__call__
         warnings.resetwarnings()
 
         def _error_exec(self, *args, **kwargs):

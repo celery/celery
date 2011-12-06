@@ -430,7 +430,7 @@ class Consumer(object):
             return
 
         try:
-            self.strategies[name].send(message, body, ack)
+            self.strategies[name](message, body, ack)
         except KeyError, exc:
             self.logger.error(UNKNOWN_TASK_ERROR, exc, safe_repr(body),
                               exc_info=sys.exc_info())

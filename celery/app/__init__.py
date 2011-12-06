@@ -15,9 +15,6 @@ from __future__ import absolute_import
 import os
 import threading
 
-from functools import wraps
-from inspect import getargspec
-
 from .. import registry
 from ..utils import cached_property, instantiate
 

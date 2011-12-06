@@ -1,13 +1,12 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-import operator
-
 from celery import current_app
 from celery import states
 from celery.exceptions import RetryTaskError
-from celery.execute.trace import trace_task
+from celery.execute.trace import eager_trace_task
 from celery.tests.utils import unittest
+
 
 @current_app.task
 def add(x, y):
@@ -20,9 +19,8 @@ def raises(exc):
 
 
 def trace(task, args=(), kwargs={}, propagate=False):
-    return trace_task(task.__name__, "id-1", args, kwargs, task,
-                      propagate=propagate, eager=True)
-
+    return eager_trace_task(task, "id-1", args, kwargs,
+                      propagate=propagate)
 
 
 class test_trace(unittest.TestCase):

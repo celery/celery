@@ -37,6 +37,7 @@ send_prerun = signals.task_prerun.send
 prerun_receivers = signals.task_prerun.receivers
 send_postrun = signals.task_postrun.send
 postrun_receivers = signals.task_postrun.receivers
+STARTED = states.STARTED
 SUCCESS = states.SUCCESS
 RETRY = states.RETRY
 FAILURE = states.FAILURE
@@ -111,106 +112,117 @@ class TraceInfo(object):
             return '\n'.join(traceback.format_exception(*self.exc_info))
         return ''
 
-def trace_task(name, uuid, args, kwargs, task=None, request=None,
-        eager=False, propagate=False, loader=None, hostname=None,
-        store_errors=True, Info=TraceInfo):
-    """Wraps the task in a jail, catches all exceptions, and
-    saves the status and result of the task execution to the task
-    meta backend.
 
-    If the call was successful, it saves the result to the task result
-    backend, and sets the task status to `"SUCCESS"`.
+def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
+        Info=TraceInfo, eager=False, propagate=False):
+    task = task or tasks[name]
+    loader = loader or current_app.loader
+    backend = task.backend
+    ignore_result = task.ignore_result
+    track_started = task.track_started
+    track_started = not eager and (task.track_started and not ignore_result)
+    publish_result = not eager and not ignore_result
+    hostname = hostname or socket.gethostname()
 
-    If the call raises :exc:`~celery.exceptions.RetryTaskError`, it extracts
-    the original exception, uses that as the result and sets the task status
-    to `"RETRY"`.
+    loader_task_init = loader.on_task_init
+    loader_cleanup = loader.on_process_cleanup
 
-    If the call results in an exception, it saves the exception as the task
-    result, and sets the task status to `"FAILURE"`.
+    task_on_success = task.on_success
+    task_after_return = task.after_return
+    task_request = task.request
 
-    :param task_name: The name of the task to execute.
-    :param task_id: The unique id of the task.
-    :param args: List of positional args to pass on to the function.
-    :param kwargs: Keyword arguments mapping to pass on to the function.
+    store_result = backend.store_result
+    backend_cleanup = backend.process_cleanup
 
-    :keyword loader: Custom loader to use, if not specified the current app
-      loader will be used.
-    :keyword hostname: Custom hostname to use, if not specified the system
-      hostname will be used.
+    pid = os.getpid()
 
-    :returns: the evaluated functions return value on success, or
-        the exception instance on failure.
-    """
-    R = I = None
-    try:
-        task = task or tasks[name]
-        backend = task.backend
-        ignore_result = task.ignore_result
-        loader = loader or current_app.loader
-        hostname = hostname or socket.gethostname()
-        task.request.update(request or {}, args=args,
-                            called_directly=False, kwargs=kwargs)
+    update_request = task_request.update
+    clear_request = task_request.clear
+    on_chord_part_return = backend.on_chord_part_return
+
+    def trace_task(uuid, args, kwargs, request=None):
+        R = I = None
         try:
-            # -*- PRE -*-
-            send_prerun(sender=task, task_id=uuid, task=task,
-                        args=args, kwargs=kwargs)
-            loader.on_task_init(uuid, task)
-            if not eager and (task.track_started and not ignore_result):
-                backend.mark_as_started(uuid, pid=getpid(),
-                                        hostname=hostname)
-
-            # -*- TRACE -*-
+            update_request(request or {}, args=args,
+                           called_directly=False, kwargs=kwargs)
             try:
-                R = retval = task(*args, **kwargs)
-                state, einfo = SUCCESS, None
-                task.on_success(retval, uuid, args, kwargs)
-                if not eager and not ignore_result:
-                    backend.mark_as_done(uuid, retval)
-            except RetryTaskError, exc:
-                I = Info(RETRY, exc, sys.exc_info())
-                state, retval, einfo = I.state, I.retval, I.exc_info
-                R = I.handle_error_state(task, eager=eager)
-            except Exception, exc:
-                if propagate:
-                    raise
-                I = Info(FAILURE, exc, sys.exc_info())
-                state, retval, einfo = I.state, I.retval, I.exc_info
-                R = I.handle_error_state(task, eager=eager)
-            except BaseException, exc:
-                raise
-            except:
-                # pragma: no cover
-                # For Python2.5 where raising strings are still allowed
-                # (but deprecated)
-                if propagate:
-                    raise
-                I = Info(FAILURE, None, sys.exc_info())
-                state, retval, einfo = I.state, I.retval, I.exc_info
-                R = I.handle_error_state(task, eager=eager)
+                # -*- PRE -*-
+                send_prerun(sender=task, task_id=uuid, task=task,
+                            args=args, kwargs=kwargs)
+                loader_task_init(uuid, task)
+                if track_started:
+                    store_result(uuid, {"pid": pid,
+                                        "hostname": hostname}, STARTED)
 
-            # -* POST *-
-            if task.request.chord:
-                backend.on_chord_part_return(task)
-            task.after_return(state, retval, uuid, args, kwargs, einfo)
-            send_postrun(sender=task, task_id=uuid, task=task,
-                         args=args, kwargs=kwargs, retval=retval)
-        finally:
-            task.request.clear()
-            if not eager:
+                # -*- TRACE -*-
                 try:
-                    backend.process_cleanup()
-                    loader.on_process_cleanup()
-                except (KeyboardInterrupt, SystemExit, MemoryError):
-                    raise
+                    R = retval = task(*args, **kwargs)
+                    state, einfo = SUCCESS, None
+                    task_on_success(retval, uuid, args, kwargs)
+                    if publish_result:
+                        store_result(uuid, retval, SUCCESS)
+                except RetryTaskError, exc:
+                    I = Info(RETRY, exc, sys.exc_info())
+                    state, retval, einfo = I.state, I.retval, I.exc_info
+                    R = I.handle_error_state(task, eager=eager)
                 except Exception, exc:
-                    logger = current_app.log.get_default_logger()
-                    logger.error("Process cleanup failed: %r", exc,
-                                 exc_info=sys.exc_info())
+                    if propagate:
+                        raise
+                    I = Info(FAILURE, exc, sys.exc_info())
+                    state, retval, einfo = I.state, I.retval, I.exc_info
+                    R = I.handle_error_state(task, eager=eager)
+                except BaseException, exc:
+                    raise
+                except:
+                    # pragma: no cover
+                    # For Python2.5 where raising strings are still allowed
+                    # (but deprecated)
+                    if propagate:
+                        raise
+                    I = Info(FAILURE, None, sys.exc_info())
+                    state, retval, einfo = I.state, I.retval, I.exc_info
+                    R = I.handle_error_state(task, eager=eager)
+
+                # -* POST *-
+                if task_request.chord:
+                    on_chord_part_return(task)
+                task_after_return(state, retval, uuid, args, kwargs, einfo)
+                send_postrun(sender=task, task_id=uuid, task=task,
+                            args=args, kwargs=kwargs, retval=retval)
+            finally:
+                clear_request()
+                if not eager:
+                    try:
+                        backend_cleanup()
+                        loader_cleanup()
+                    except (KeyboardInterrupt, SystemExit, MemoryError):
+                        raise
+                    except Exception, exc:
+                        logger = current_app.log.get_default_logger()
+                        logger.error("Process cleanup failed: %r", exc,
+                                     exc_info=sys.exc_info())
+        except Exception, exc:
+            if eager:
+                raise
+            R = report_internal_error(task, exc)
+        return R, I
+
+    return trace_task
+
+
+def trace_task(task, uuid, args, kwargs, request=None, **opts):
+    try:
+        if task.__tracer__ is None:
+            task.__tracer__ = build_tracer(task.name, task, **opts)
+        return task.__tracer__(uuid, args, kwargs, request)
     except Exception, exc:
-        if eager:
-            raise
-        R = report_internal_error(task, exc)
-    return R, I
+        return report_internal_error(task, exc), None
+
+
+def eager_trace_task(task, uuid, args, kwargs, request=None, **opts):
+    opts.setdefault("eager", True)
+    return build_tracer(task.name, task, **opts)(
+            uuid, args, kwargs, request)
 
 
 def report_internal_error(task, exc):

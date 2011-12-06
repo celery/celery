@@ -4,8 +4,6 @@ from __future__ import with_statement
 from datetime import datetime, timedelta
 from functools import wraps
 
-from mock import Mock
-
 from celery import task
 from celery.app import app_or_default
 from celery.task import task as task_dec

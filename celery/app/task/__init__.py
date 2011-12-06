@@ -18,7 +18,7 @@ import threading
 from ... import states
 from ...datastructures import ExceptionInfo
 from ...exceptions import MaxRetriesExceededError, RetryTaskError
-from ...execute.trace import trace_task
+from ...execute.trace import eager_trace_task
 from ...registry import tasks, _unpickle_task
 from ...result import EagerResult
 from ...utils import fun_takes_kwargs, instantiate, mattrgetter, uuid
@@ -105,6 +105,7 @@ class TaskType(type):
             try:
                 attrs["__call__"] = attrs["run"]
             except KeyError:
+
                 # the class does not yet define run,
                 # so we can't optimize this case.
                 def __call__(self, *args, **kwargs):
@@ -141,6 +142,7 @@ class BaseTask(object):
 
     """
     __metaclass__ = TaskType
+    __tracer__ = None
 
     ErrorMail = ErrorMail
     MaxRetriesExceededError = MaxRetriesExceededError
@@ -618,8 +620,8 @@ class BaseTask(object):
                                         if key in supported_keys)
             kwargs.update(extend_with)
 
-        retval, info = trace_task(task.name, task_id, args, kwargs, eager=True,
-                                  task=task, request=request, propagate=throw)
+        retval, info = eager_trace_task(task, task_id, args, kwargs,
+                                        request=request, propagate=throw)
         if isinstance(retval, ExceptionInfo):
             retval = retval.exception
         state, tb = states.SUCCESS, ''

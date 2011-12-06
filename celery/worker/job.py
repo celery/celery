@@ -19,9 +19,9 @@ import socket
 from datetime import datetime
 
 from .. import exceptions
-from .. import registry
+from ..registry import tasks
 from ..app import app_or_default
-from ..execute.trace import trace_task
+from ..execute.trace import build_tracer, trace_task, report_internal_error
 from ..platforms import set_mp_process_title as setps
 from ..utils import noop, kwdict, fun_takes_kwargs, truncate_text
 from ..utils.encoding import safe_repr, safe_str
@@ -34,7 +34,7 @@ from . import state
 WANTED_DELIVERY_INFO = ("exchange", "routing_key", "consumer_tag", )
 
 
-def execute_and_trace(task_name, *args, **kwargs):
+def execute_and_trace(name, uuid, args, kwargs, request=None, **opts):
     """This is a pickleable method used as a target when applying to pools.
 
     It's the same as::
@@ -42,12 +42,18 @@ def execute_and_trace(task_name, *args, **kwargs):
         >>> trace_task(task_name, *args, **kwargs)[0]
 
     """
-    hostname = kwargs.get("hostname")
-    setps("celeryd", task_name, hostname, rate_limit=True)
+    task = tasks[name]
     try:
-        return trace_task(task_name, *args, **kwargs)[0]
-    finally:
-        setps("celeryd", "-idle-", hostname, rate_limit=True)
+        hostname = opts.get("hostname")
+        setps("celeryd", name, hostname, rate_limit=True)
+        try:
+            if task.__tracer__ is None:
+                task.__tracer__ = build_tracer(name, task, **opts)
+            return task.__tracer__(uuid, args, kwargs, request)[0]
+        finally:
+            setps("celeryd", "-idle-", hostname, rate_limit=True)
+    except Exception, exc:
+        return report_internal_error(task, exc)
 
 
 class TaskRequest(object):
@@ -138,7 +144,7 @@ class TaskRequest(object):
         self.logger = logger or self.app.log.get_default_logger()
         self.eventer = eventer
 
-        self.task = registry.tasks[self.task_name]
+        self.task = tasks[self.task_name]
         self._store_errors = True
         if self.task.ignore_result:
             self._store_errors = self.task.store_errors_even_if_ignored
@@ -272,7 +278,7 @@ class TaskRequest(object):
             self.acknowledge()
 
         instance_attrs = self.get_instance_attrs(loglevel, logfile)
-        retval, _ = trace_task(*self._get_tracer_args(loglevel, logfile),
+        retval, _ = trace_task(*self._get_tracer_args(loglevel, logfile, True),
                                **{"hostname": self.hostname,
                                   "loader": self.app.loader,
                                   "request": instance_attrs})
@@ -406,7 +412,7 @@ class TaskRequest(object):
                                           "name": self.task_name,
                                           "hostname": self.hostname}})
 
-        task_obj = registry.tasks.get(self.task_name, object)
+        task_obj = tasks.get(self.task_name, object)
         task_obj.send_error_email(context, exc_info.exception)
 
     def acknowledge(self):
@@ -444,7 +450,8 @@ class TaskRequest(object):
                 self.__class__.__name__,
                 self.task_name, self.task_id, self.args, self.kwargs)
 
-    def _get_tracer_args(self, loglevel=None, logfile=None):
+    def _get_tracer_args(self, loglevel=None, logfile=None, use_real=False):
         """Get the task trace args for this task."""
         task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
-        return self.task_name, self.task_id, self.args, task_func_kwargs
+        first = self.task if use_real else self.task_name
+        return first, self.task_id, self.args, task_func_kwargs
