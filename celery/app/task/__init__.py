@@ -17,7 +17,7 @@ import threading
 
 from ...datastructures import ExceptionInfo
 from ...exceptions import MaxRetriesExceededError, RetryTaskError
-from ...execute.trace import TaskTrace
+from ...execute.trace import trace_task
 from ...registry import tasks, _unpickle_task
 from ...result import EagerResult
 from ...utils import fun_takes_kwargs, instantiate, mattrgetter, uuid
@@ -56,6 +56,9 @@ class Context(threading.local):
             return getattr(self, key)
         except AttributeError:
             return default
+
+    def __repr__(self):
+        return "<Context: %r>" % (vars(self, ))
 
 
 class TaskType(type):
@@ -614,14 +617,12 @@ class BaseTask(object):
                                         if key in supported_keys)
             kwargs.update(extend_with)
 
-        trace = TaskTrace(task.name, task_id, args, kwargs, eager=True,
-                          task=task, request=request, propagate=throw,
-                          propagate_internal=True)
-        retval = trace()
+        retval, info = trace_task(task.name, task_id, args, kwargs, eager=True,
+                                  task=task, request=request, propagate=throw)
         if isinstance(retval, ExceptionInfo):
             retval = retval.exception
-        return EagerResult(task_id, retval, trace.state,
-                           traceback=trace.strtb)
+        return EagerResult(task_id, retval, info.state,
+                           traceback=info.strtb)
 
     @classmethod
     def AsyncResult(self, task_id):
