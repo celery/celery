@@ -561,20 +561,26 @@ def set_process_title(progname, info=None):
     return proctitle
 
 
-def set_mp_process_title(progname, info=None, hostname=None, rate_limit=False):
-    """Set the ps name using the multiprocessing process name.
+if os.environ.get("NOSETPS"):
 
-    Only works if :mod:`setproctitle` is installed.
+    def set_mp_process_title(*a, **k):
+        pass
+else:
 
-    """
-    if not rate_limit or _setps_bucket.can_consume(1):
-        if hostname:
-            progname = "%s@%s" % (progname, hostname.split(".")[0])
-        if current_process is not None:
-            return set_process_title(
-                "%s:%s" % (progname, current_process().name), info=info)
-        else:
-            return set_process_title(progname, info=info)
+    def set_mp_process_title(progname, info=None, hostname=None, rate_limit=False):
+        """Set the ps name using the multiprocessing process name.
+
+        Only works if :mod:`setproctitle` is installed.
+
+        """
+        if not rate_limit or _setps_bucket.can_consume(1):
+            if hostname:
+                progname = "%s@%s" % (progname, hostname.split(".")[0])
+            if current_process is not None:
+                return set_process_title(
+                    "%s:%s" % (progname, current_process().name), info=info)
+            else:
+                return set_process_title(progname, info=info)
 
 
 def shellsplit(s, posix=True):

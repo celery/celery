@@ -48,16 +48,14 @@ total_count = defaultdict(lambda: 0)
 #: the list of currently revoked tasks.  Persistent if statedb set.
 revoked = LimitedSet(maxlen=REVOKES_MAX, expires=REVOKE_EXPIRES)
 
-
-def task_reserved(request):
-    """Updates global state when a task has been reserved."""
-    reserved_requests.add(request)
+#: Updates global state when a task has been reserved.
+task_reserved = reserved_requests.add
 
 
 def task_accepted(request):
     """Updates global state when a task has been accepted."""
     active_requests.add(request)
-    total_count[request.task_name] += 1
+    #total_count[request.task_name] += 1
 
 
 def task_ready(request):

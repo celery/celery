@@ -19,7 +19,7 @@ from celery import states
 from celery.app import app_or_default
 from celery.concurrency.base import BasePool
 from celery.datastructures import ExceptionInfo
-from celery.exceptions import (RetryTaskError, NotRegistered,
+from celery.exceptions import (RetryTaskError,
                                WorkerLostError, InvalidTaskError)
 from celery.execute.trace import eager_trace_task, TraceInfo
 from celery.log import setup_logger
@@ -579,7 +579,7 @@ class test_TaskRequest(unittest.TestCase):
         m = Message(None, body=anyjson.serialize(body), backend="foo",
                           content_type="application/json",
                           content_encoding="utf-8")
-        with self.assertRaises(NotRegistered):
+        with self.assertRaises(KeyError):
             TaskRequest.from_message(m, m.decode())
 
     def test_execute(self):

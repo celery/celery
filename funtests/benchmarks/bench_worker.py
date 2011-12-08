@@ -2,6 +2,39 @@ import os
 import sys
 import time
 
+os.environ["NOSETPS"] = "yes"
+
+from threading import Lock
+
+class DLock(object):
+
+    def __init__(self):
+        self.l = Lock()
+
+    def acquire(self, *args, **kwargs):
+        print("ACQUIRE: %r %r" % (args, kwargs))
+        import traceback
+        traceback.print_stack()
+        return self.l.acquire(*args, **kwargs)
+
+    def release(self):
+        print("RELEASE")
+        return self.l.release()
+
+    def __enter__(self):
+        self.acquire()
+        return self
+
+    def __exit__(self, *exc_info):
+        self.release()
+
+
+import threading
+#threading.Lock = DLock
+
+
+
+
 import anyjson
 JSONIMP = os.environ.get("JSONIMP")
 if JSONIMP:
@@ -29,7 +62,8 @@ celery.conf.update(BROKER_TRANSPORT="librabbitmq",
                    },
                    CELERY_TASK_SERIALIZER="json",
                    CELERY_DEFAULT_QUEUE="bench.worker",
-                   CELERY_BACKEND=None)
+                   CELERY_BACKEND=None,
+                   )#CELERY_MESSAGE_COMPRESSION="zlib")
 
 
 def tdiff(then):
@@ -47,6 +81,7 @@ def it(_, n):
         it.subt = it.time_start = time.time()
     elif i == n - 1:
         total = tdiff(it.time_start)
+        print >> sys.stderr, "(%s so far: %ss)" % (i, tdiff(it.subt))
         print("-- process %s tasks: %ss total, %s tasks/s} " % (
                 n, total, n / (total + .0)))
         sys.exit()
@@ -60,6 +95,7 @@ def bench_apply(n=DEFAULT_ITS):
 
 
 def bench_work(n=DEFAULT_ITS, loglevel=None):
+    loglevel = os.environ.get("BENCH_LOGLEVEL") or loglevel
     if loglevel:
         celery.log.setup_logging_subsystem(loglevel=loglevel)
     worker = celery.WorkController(concurrency=15,

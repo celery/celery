@@ -409,16 +409,6 @@ class Consumer(object):
         :param message: The kombu message object.
 
         """
-        # need to guard against errors occurring while acking the message.
-        def ack():
-            try:
-                message.ack()
-            except self.connection_errors + (AttributeError, ), exc:
-                self.logger.critical(
-                    "Couldn't ack %r: %s reason:%r",
-                        message.delivery_tag,
-                        self._message_report(body, message), exc)
-
         try:
             name = body["task"]
         except (KeyError, TypeError):
@@ -430,7 +420,7 @@ class Consumer(object):
             return
 
         try:
-            self.strategies[name](message, body, ack)
+            self.strategies[name](message, body, message.ack_log_error)
         except KeyError, exc:
             self.logger.error(UNKNOWN_TASK_ERROR, exc, safe_repr(body),
                               exc_info=sys.exc_info())
