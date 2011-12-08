@@ -169,7 +169,7 @@ def noop(*args, **kwargs):
     pass
 
 
-if sys.version_info >= (3, 0):
+if sys.version_info >= (2, 6):
 
     def kwdict(kwargs):
         return kwargs
