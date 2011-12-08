@@ -252,7 +252,6 @@ class WorkController(object):
         # and they must be stopped in reverse order.
         self.components = filter(None, (self.pool,
                                         self.mediator,
-                                        self.scheduler,
                                         self.beat,
                                         self.autoscaler,
                                         self.consumer))

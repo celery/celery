@@ -31,16 +31,23 @@ class Heart(object):
         self.interval = interval or 30
         self.tref = None
 
+        # Make event dispatcher start/stop us when it's
+        # enabled/disabled.
+        self.eventer.on_enabled.add(self.start)
+        self.eventer.on_disabled.add(self.stop)
+
     def _send(self, event):
         return self.eventer.send(event, **SOFTWARE_INFO)
 
     def start(self):
-        self._send("worker-online")
-        self.tref = self.timer.apply_interval(self.interval * 1000.0,
-                self._send, ("worker-heartbeat", ))
+        if self.eventer.enabled:
+            self._send("worker-online")
+            self.tref = self.timer.apply_interval(self.interval * 1000.0,
+                    self._send, ("worker-heartbeat", ))
 
     def stop(self):
         if self.tref is not None:
             self.timer.cancel(self.tref)
             self.tref = None
-        self._send("worker-offline")
+        if self.eventer.enabled:
+            self._send("worker-offline")
