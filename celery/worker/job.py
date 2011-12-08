@@ -17,7 +17,6 @@ import time
 import socket
 
 from datetime import datetime
-from operator import itemgetter
 
 from .. import exceptions
 from ..registry import tasks
