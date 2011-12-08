@@ -15,6 +15,8 @@
     celery.worker.buckets
     celery.worker.heartbeat
     celery.worker.state
+    celery.worker.strategy
+    celery.worker.autoreload
     celery.worker.autoscale
     celery.concurrency
     celery.concurrency.solo
