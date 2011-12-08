@@ -135,6 +135,11 @@ class TaskRequest(object):
             logger=None, eventer=None, eta=None, expires=None, app=None,
             taskset=None, chord=None, utc=False, connection_errors=None,
             **opts):
+        try:
+            kwargs.items
+        except AttributeError:
+            raise exceptions.InvalidTaskError(
+                    "Task keyword arguments is not a mapping")
         self.app = app or app_or_default(app)
         self.name = task
         self.id = id

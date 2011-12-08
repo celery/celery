@@ -39,8 +39,8 @@ class Consumer(object):
 
     def __init__(self):
         self.ready_queue = FastQueue()
-        self.ready_queue.put(TaskRequest(task_name=mytask.name,
-                                         task_id=uuid(),
+        self.ready_queue.put(TaskRequest(mytask.name,
+                                         uuid(),
                                          args=(2, 2),
                                          kwargs={}))
         self.eta_schedule = Timer()

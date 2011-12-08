@@ -45,7 +45,7 @@ def jail(task_id, name, args, kwargs):
     return eager_trace_task(tasks[name], task_id, args, kwargs, eager=False)[0]
 
 
-def on_ack():
+def on_ack(*args, **kwargs):
     scratch["ACK"] = True
 
 
@@ -213,10 +213,10 @@ class test_TaskRequest(unittest.TestCase):
         mytask.ignore_result = True
         try:
             tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
-            self.assertFalse(tw._store_errors)
+            self.assertFalse(tw.store_errors)
             mytask.store_errors_even_if_ignored = True
             tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
-            self.assertTrue(tw._store_errors)
+            self.assertTrue(tw.store_errors)
         finally:
             mytask.ignore_result = False
             mytask.store_errors_even_if_ignored = False
@@ -462,10 +462,10 @@ class test_TaskRequest(unittest.TestCase):
             tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
             tw.logger = MockLogger()
         finally:
-            mytask.ignore_result = False
             tw.on_timeout(soft=True, timeout=1336)
             self.assertEqual(mytask.backend.get_status(tw.task_id),
                              states.PENDING)
+            mytask.ignore_result = False
 
     def test_execute_and_trace(self):
         res = execute_and_trace(mytask.name, uuid(), [4], {})
@@ -551,8 +551,9 @@ class test_TaskRequest(unittest.TestCase):
         self.assertEqual(tw.task_id, body["id"])
         self.assertEqual(tw.args, body["args"])
         us = from_utf8(us)
-        self.assertEqual(tw.kwargs.keys()[0], us)
-        self.assertIsInstance(tw.kwargs.keys()[0], str)
+        if sys.version_info < (2, 6):
+            self.assertEqual(tw.kwargs.keys()[0], us)
+            self.assertIsInstance(tw.kwargs.keys()[0], str)
         self.assertTrue(tw.logger)
 
     def test_from_message_empty_args(self):

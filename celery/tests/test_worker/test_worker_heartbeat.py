@@ -10,6 +10,9 @@ class MockDispatcher(object):
 
     def __init__(self):
         self.sent = []
+        self.on_enabled = set()
+        self.on_disabled = set()
+        self.enabled = True
 
     def send(self, msg, **_fields):
         self.sent.append(msg)

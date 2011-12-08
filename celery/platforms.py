@@ -567,7 +567,8 @@ if os.environ.get("NOSETPS"):
         pass
 else:
 
-    def set_mp_process_title(progname, info=None, hostname=None, rate_limit=False):
+    def set_mp_process_title(progname, info=None, hostname=None,  # noqa
+            rate_limit=False):
         """Set the ps name using the multiprocessing process name.
 
         Only works if :mod:`setproctitle` is installed.
