@@ -1,12 +1,13 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
+import sys
 import socket
 
 from datetime import datetime, timedelta
 
 from kombu import pidbox
-from mock import Mock
+from mock import Mock, patch
 
 from celery import current_app
 from celery.datastructures import AttributeDict
@@ -376,3 +377,61 @@ class test_ControlPanel(unittest.TestCase):
                                              "routing_key": "x"})
         self.assertEqual(r, "pong")
         self.assertDictEqual(replies[0], {panel.hostname: "pong"})
+
+    def test_pool_restart(self):
+        consumer = Consumer()
+        consumer.pool.restart = Mock()
+        panel = self.create_panel(consumer=consumer)
+        panel.app = self.app
+        _import = panel.app.loader.import_from_cwd = Mock()
+        _reload = Mock()
+
+        panel.handle("pool_restart", {"reload": _reload})
+        self.assertTrue(consumer.pool.restart.called)
+        self.assertFalse(_reload.called)
+        self.assertFalse(_import.called)
+
+    def test_pool_restart_import_modules(self):
+        consumer = Consumer()
+        consumer.pool.restart = Mock()
+        panel = self.create_panel(consumer=consumer)
+        panel.app = self.app
+        _import = panel.app.loader.import_from_cwd = Mock()
+        _reload = Mock()
+
+        panel.handle("pool_restart", {"imports": ["foo", "bar"],
+                                      "reload": _reload})
+
+        self.assertTrue(consumer.pool.restart.called)
+        self.assertFalse(_reload.called)
+        self.assertEqual([(("foo",), {}), (("bar",), {})],
+                          _import.call_args_list)
+
+    def test_pool_restart_relaod_modules(self):
+        consumer = Consumer()
+        consumer.pool.restart = Mock()
+        panel = self.create_panel(consumer=consumer)
+        panel.app = self.app
+        _import = panel.app.loader.import_from_cwd = Mock()
+        _reload = Mock()
+
+        with patch.dict(sys.modules, {"foo": None}):
+            panel.handle("pool_restart", {"imports": ["foo"],
+                                          "reload_imports": False,
+                                          "reload": _reload})
+
+            self.assertTrue(consumer.pool.restart.called)
+            self.assertFalse(_reload.called)
+            self.assertFalse(_import.called)
+
+            _import.reset_mock()
+            _reload.reset_mock()
+            consumer.pool.restart.reset_mock()
+
+            panel.handle("pool_restart", {"imports": ["foo"],
+                                          "reload_imports": True,
+                                          "reload": _reload})
+
+            self.assertTrue(consumer.pool.restart.called)
+            self.assertTrue(_reload.called)
+            self.assertFalse(_import.called)

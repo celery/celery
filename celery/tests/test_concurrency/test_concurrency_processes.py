@@ -3,6 +3,7 @@ from __future__ import with_statement
 
 import signal
 import sys
+import time
 
 from itertools import cycle
 
@@ -226,3 +227,15 @@ class test_TaskPool(unittest.TestCase):
         self.assertEqual(info["max-concurrency"], pool.limit)
         self.assertIsNone(info["max-tasks-per-child"])
         self.assertEqual(info["timeouts"], (5, 10))
+
+    def test_restart(self):
+        def get_pids(pool):
+            return set([p.pid for p in pool._pool._pool])
+
+        tp = self.TaskPool(5)
+        time.sleep(0.5)
+        tp.start()
+        pids = get_pids(tp)
+        tp.restart()
+        time.sleep(0.5)
+        self.assertEqual(pids, get_pids(tp))
