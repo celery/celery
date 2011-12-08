@@ -33,9 +33,10 @@ class test_chunks(unittest.TestCase):
 
 class test_utils(unittest.TestCase):
 
-    def test_get_full_cls_name(self):
+    def test_qualname(self):
         Class = type("Fox", (object, ), {"__module__": "quick.brown"})
-        self.assertEqual(utils.get_full_cls_name(Class), "quick.brown.Fox")
+        self.assertEqual(utils.qualname(Class), "quick.brown.Fox")
+        self.assertEqual(utils.qualname(Class()), "quick.brown.Fox")
 
     def test_is_iterable(self):
         for a in "f", ["f"], ("f", ), {"f": "f"}:

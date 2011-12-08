@@ -77,7 +77,7 @@ class BeatCommand(Command):
                 default=None,
                 action="store", dest="scheduler_cls",
                 help="Scheduler class. Default is "
-                     "celery.beat.PersistentScheduler"),
+                     "celery.beat:PersistentScheduler"),
             Option('-l', '--loglevel',
                 default=conf.CELERYBEAT_LOG_LEVEL,
                 action="store", dest="loglevel",

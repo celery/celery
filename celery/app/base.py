@@ -72,12 +72,12 @@ class BaseApp(object):
     IS_OSX = platforms.IS_OSX
     IS_WINDOWS = platforms.IS_WINDOWS
 
-    amqp_cls = "celery.app.amqp.AMQP"
+    amqp_cls = "celery.app.amqp:AMQP"
     backend_cls = None
-    events_cls = "celery.events.Events"
-    loader_cls = "celery.loaders.app.AppLoader"
-    log_cls = "celery.log.Logging"
-    control_cls = "celery.task.control.Control"
+    events_cls = "celery.events:Events"
+    loader_cls = "celery.loaders.app:AppLoader"
+    log_cls = "celery.log:Logging"
+    control_cls = "celery.task.control:Control"
 
     _pool = None
 
@@ -274,9 +274,9 @@ class BaseApp(object):
                                        use_tls=self.conf.EMAIL_USE_TLS)
 
     def select_queues(self, queues=None):
-        if queues is not None:
+        if queues:
             return self.amqp.queues.select_subset(queues,
-                  self.conf.CELERY_CREATE_MISSING_QUEUES)
+                                    self.conf.CELERY_CREATE_MISSING_QUEUES)
 
     def either(self, default_key, *values):
         """Fallback to the value of a configuration key if none of the

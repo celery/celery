@@ -140,7 +140,7 @@ class WorkerCommand(Command):
                 default=None,
                 action="store", dest="scheduler_cls",
                 help="Scheduler class. Default is "
-                     "celery.beat.PersistentScheduler"),
+                     "celery.beat:PersistentScheduler"),
             Option('-S', '--statedb', default=conf.CELERYD_STATE_DB,
                 action="store", dest="db",
                 help="Path to the state database. The extension '.db' will "

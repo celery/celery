@@ -7,14 +7,14 @@ from ..utils import get_cls_by_name
 from ..utils.functional import memoize
 
 BACKEND_ALIASES = {
-    "amqp": "celery.backends.amqp.AMQPBackend",
-    "cache": "celery.backends.cache.CacheBackend",
-    "redis": "celery.backends.redis.RedisBackend",
-    "mongodb": "celery.backends.mongodb.MongoBackend",
-    "tyrant": "celery.backends.tyrant.TyrantBackend",
-    "database": "celery.backends.database.DatabaseBackend",
-    "cassandra": "celery.backends.cassandra.CassandraBackend",
-    "disabled": "celery.backends.base.DisabledBackend",
+    "amqp": "celery.backends.amqp:AMQPBackend",
+    "cache": "celery.backends.cache:CacheBackend",
+    "redis": "celery.backends.redis:RedisBackend",
+    "mongodb": "celery.backends.mongodb:MongoBackend",
+    "tyrant": "celery.backends.tyrant:TyrantBackend",
+    "database": "celery.backends.database:DatabaseBackend",
+    "cassandra": "celery.backends.cassandra:CassandraBackend",
+    "disabled": "celery.backends.base:DisabledBackend",
 }
 
 

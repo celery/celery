@@ -15,9 +15,6 @@ from __future__ import absolute_import
 import os
 import threading
 
-from functools import wraps
-from inspect import getargspec
-
 from .. import registry
 from ..utils import cached_property, instantiate
 
@@ -115,14 +112,14 @@ class App(base.BaseApp):
 
     def Worker(self, **kwargs):
         """Create new :class:`~celery.apps.worker.Worker` instance."""
-        return instantiate("celery.apps.worker.Worker", app=self, **kwargs)
+        return instantiate("celery.apps.worker:Worker", app=self, **kwargs)
 
     def WorkController(self, **kwargs):
-        return instantiate("celery.worker.WorkController", app=self, **kwargs)
+        return instantiate("celery.worker:WorkController", app=self, **kwargs)
 
     def Beat(self, **kwargs):
         """Create new :class:`~celery.apps.beat.Beat` instance."""
-        return instantiate("celery.apps.beat.Beat", app=self, **kwargs)
+        return instantiate("celery.apps.beat:Beat", app=self, **kwargs)
 
     def TaskSet(self, *args, **kwargs):
         """Create new :class:`~celery.task.sets.TaskSet`."""
@@ -170,23 +167,14 @@ class App(base.BaseApp):
         def inner_create_task_cls(**options):
 
             def _create_task_cls(fun):
-                options["app"] = self
-                options.setdefault("accept_magic_kwargs", False)
                 base = options.pop("base", None) or self.Task
 
-                @wraps(fun, assigned=("__module__", "__name__"))
-                def run(self, *args, **kwargs):
-                    return fun(*args, **kwargs)
-
-                # Save the argspec for this task so we can recognize
-                # which default task kwargs we're going to pass to it later.
-                # (this happens in celery.utils.fun_takes_kwargs)
-                run.argspec = getargspec(fun)
-
-                cls_dict = dict(options, run=run,
-                                __module__=fun.__module__,
-                                __doc__=fun.__doc__)
-                T = type(fun.__name__, (base, ), cls_dict)()
+                T = type(fun.__name__, (base, ), dict({
+                        "app": self,
+                        "accept_magic_kwargs": False,
+                        "run": staticmethod(fun),
+                        "__doc__": fun.__doc__,
+                        "__module__": fun.__module__}, **options))()
                 return registry.tasks[T.name]             # global instance.
 
             return _create_task_cls

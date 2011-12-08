@@ -297,6 +297,7 @@ class test_Consumer(unittest.TestCase):
                                    eta=datetime.now().isoformat())
         l.event_dispatcher = Mock()
         l.pidbox_node = MockNode()
+        l.update_strategies()
 
         l.receive_message(m.decode(), m)
         self.assertTrue(m.acknowledged)
@@ -308,6 +309,7 @@ class test_Consumer(unittest.TestCase):
                            send_events=False)
         m = create_message(Mock(), task=foo_task.name,
                            args=(1, 2), kwargs="foobarbaz", id=1)
+        l.update_strategies()
         l.event_dispatcher = Mock()
         l.pidbox_node = MockNode()
 
@@ -336,6 +338,7 @@ class test_Consumer(unittest.TestCase):
                            send_events=False)
         m = create_message(Mock(), task=foo_task.name,
                            args=[2, 4, 8], kwargs={})
+        l.update_strategies()
 
         l.event_dispatcher = Mock()
         l.receive_message(m.decode(), m)
@@ -463,6 +466,7 @@ class test_Consumer(unittest.TestCase):
         l.qos = QoS(l.task_consumer, l.initial_prefetch_count, l.logger)
         l.event_dispatcher = Mock()
         l.enabled = False
+        l.update_strategies()
         l.receive_message(m.decode(), m)
         l.eta_schedule.stop()
 

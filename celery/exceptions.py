@@ -84,6 +84,10 @@ class NotConfigured(UserWarning):
     """Celery has not been configured, as no config module has been found."""
 
 
+class InvalidTaskError(Exception):
+    """The task has invalid data or is not properly constructed."""
+
+
 class CPendingDeprecationWarning(PendingDeprecationWarning):
     pass
 

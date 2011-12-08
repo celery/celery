@@ -77,6 +77,8 @@ class EventDispatcher(object):
         self.publisher = None
         self._outbound_buffer = deque()
         self.serializer = serializer or self.app.conf.CELERY_EVENT_SERIALIZER
+        self.on_enabled = set()
+        self.on_disabled = set()
 
         self.enabled = enabled
         if self.enabled:
@@ -93,11 +95,15 @@ class EventDispatcher(object):
                                   exchange=event_exchange,
                                   serializer=self.serializer)
         self.enabled = True
+        for callback in self.on_enabled:
+            callback()
 
     def disable(self):
         if self.enabled:
             self.enabled = False
             self.close()
+            for callback in self.on_disabled:
+                callback()
 
     def send(self, type, **fields):
         """Send event.

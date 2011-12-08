@@ -12,7 +12,6 @@ class test_solo_TaskPool(unittest.TestCase):
     def test_on_start(self):
         x = solo.TaskPool()
         x.on_start()
-        self.assertTrue(x.pid)
 
     def test_on_apply(self):
         x = solo.TaskPool()

@@ -7,7 +7,7 @@ SKIP_FILES="celery.backends.pyredis.rst
             celery.bin.celeryd_detach.rst
             celery.concurrency.processes._win.rst
             celery.contrib.rst
-            celery.contrib.batches.rst
+            celery.contrib.bundles.rst
             celery.worker.control.rst
             celery.worker.control.builtins.rst
             celery.worker.control.registry.rst

@@ -76,6 +76,7 @@ up and running.
 from __future__ import absolute_import
 from __future__ import with_statement
 
+import logging
 import socket
 import sys
 import threading
@@ -84,12 +85,12 @@ import warnings
 
 from ..app import app_or_default
 from ..datastructures import AttributeDict
-from ..exceptions import NotRegistered
+from ..exceptions import InvalidTaskError
+from ..registry import tasks
 from ..utils import noop
 from ..utils import timer2
 from ..utils.encoding import safe_repr
 from . import state
-from .job import TaskRequest, InvalidTaskError
 from .control import Panel
 from .heartbeat import Heart
 
@@ -293,6 +294,14 @@ class Consumer(object):
         self.connection_errors = conninfo.connection_errors
         self.channel_errors = conninfo.channel_errors
 
+        self._does_info = self.logger.isEnabledFor(logging.INFO)
+        self.strategies = {}
+
+    def update_strategies(self):
+        S = self.strategies
+        for task in tasks.itervalues():
+            S[task.name] = task.start_strategy(self.app, self)
+
     def start(self):
         """Start the consumer.
 
@@ -341,7 +350,8 @@ class Consumer(object):
         if task.revoked():
             return
 
-        self.logger.info("Got task from broker: %s", task.shortinfo())
+        if self._does_info:
+            self.logger.info("Got task from broker: %s", task.shortinfo())
 
         if self.event_dispatcher.enabled:
             self.event_dispatcher.send("task-received", uuid=task.task_id,
@@ -399,43 +409,26 @@ class Consumer(object):
         :param message: The kombu message object.
 
         """
-        # need to guard against errors occurring while acking the message.
-        def ack():
-            try:
-                message.ack()
-            except self.connection_errors + (AttributeError, ), exc:
-                self.logger.critical(
-                    "Couldn't ack %r: %s reason:%r",
-                        message.delivery_tag,
-                        self._message_report(body, message), exc)
-
         try:
-            body["task"]
+            name = body["task"]
         except (KeyError, TypeError):
             warnings.warn(RuntimeWarning(
                 "Received and deleted unknown message. Wrong destination?!? \
                 the full contents of the message body was: %s" % (
                  self._message_report(body, message), )))
-            ack()
+            message.ack_log_error(self.logger, self.connection_errors)
             return
 
         try:
-            task = TaskRequest.from_message(message, body, ack,
-                                            app=self.app,
-                                            logger=self.logger,
-                                            hostname=self.hostname,
-                                            eventer=self.event_dispatcher)
-
-        except NotRegistered, exc:
+            self.strategies[name](message, body, message.ack_log_error)
+        except KeyError, exc:
             self.logger.error(UNKNOWN_TASK_ERROR, exc, safe_repr(body),
                               exc_info=sys.exc_info())
-            ack()
+            message.ack_log_error(self.logger, self.connection_errors)
         except InvalidTaskError, exc:
             self.logger.error(INVALID_TASK_ERROR, str(exc), safe_repr(body),
                               exc_info=sys.exc_info())
-            ack()
-        else:
-            self.on_task(task)
+            message.ack_log_error(self.logger, self.connection_errors)
 
     def maybe_conn_error(self, fun):
         """Applies function but ignores any connection or channel
@@ -602,6 +595,9 @@ class Consumer(object):
 
         # Restart heartbeat thread.
         self.restart_heartbeat()
+
+        # reload all task's execution strategies.
+        self.update_strategies()
 
         # We're back!
         self._state = RUN

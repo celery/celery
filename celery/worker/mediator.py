@@ -18,6 +18,7 @@
 """
 from __future__ import absolute_import
 
+import logging
 import sys
 import traceback
 
@@ -40,6 +41,7 @@ class Mediator(bgThread):
         self.logger = logger or self.app.log.get_default_logger()
         self.ready_queue = ready_queue
         self.callback = callback
+        self._does_debug = self.logger.isEnabledFor(logging.DEBUG)
         super(Mediator, self).__init__()
 
     def body(self):
@@ -51,9 +53,10 @@ class Mediator(bgThread):
         if task.revoked():
             return
 
-        self.logger.debug(
-            "Mediator: Running callback for task: %s[%s]" % (
-                task.task_name, task.task_id))
+        if self._does_debug:
+            self.logger.debug(
+                "Mediator: Running callback for task: %s[%s]" % (
+                    task.task_name, task.task_id))
 
         try:
             self.callback(task)

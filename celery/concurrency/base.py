@@ -16,7 +16,7 @@ from ..utils.encoding import safe_repr
 
 
 def apply_target(target, args=(), kwargs={}, callback=None,
-        accept_callback=None, pid=None):
+        accept_callback=None, pid=None, **_):
     if accept_callback:
         accept_callback(pid or os.getpid(), time.time())
     callback(target(*args, **kwargs))
@@ -41,7 +41,7 @@ class BasePool(object):
         self.putlocks = putlocks
         self.logger = logger or log.get_default_logger()
         self.options = options
-        self.does_debug = self.logger.isEnabledFor(logging.DEBUG)
+        self._does_debug = self.logger.isEnabledFor(logging.DEBUG)
 
     def on_start(self):
         pass
@@ -91,7 +91,7 @@ class BasePool(object):
         on_ready = partial(self.on_ready, callback, errback)
         on_worker_error = partial(self.on_worker_error, errback)
 
-        if self.does_debug:
+        if self._does_debug:
             self.logger.debug("TaskPool: Apply %s (args:%s kwargs:%s)",
                             target, safe_repr(args), safe_repr(kwargs))
 

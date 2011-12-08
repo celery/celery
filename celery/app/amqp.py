@@ -145,7 +145,7 @@ class Queues(dict):
 
 
 class TaskPublisher(messaging.Publisher):
-    auto_declare = True
+    auto_declare = False
     retry = False
     retry_policy = None
 

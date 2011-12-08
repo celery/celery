@@ -4,8 +4,6 @@ from __future__ import with_statement
 from datetime import datetime, timedelta
 from functools import wraps
 
-from mock import Mock
-
 from celery import task
 from celery.app import app_or_default
 from celery.task import task as task_dec
@@ -343,10 +341,8 @@ class TestCeleryTasks(unittest.TestCase):
 
     def test_after_return(self):
         task = self.createTaskCls("T1", "c.unittest.t.after_return")()
-        task.backend = Mock()
         task.request.chord = return_True_task.subtask()
         task.after_return("SUCCESS", 1.0, "foobar", (), {}, None)
-        task.backend.on_chord_part_return.assert_called_with(task)
         task.request.clear()
 
     def test_send_task_sent_event(self):

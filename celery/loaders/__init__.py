@@ -15,9 +15,9 @@ from __future__ import absolute_import
 from .. import current_app
 from ..utils import deprecated, get_cls_by_name
 
-LOADER_ALIASES = {"app": "celery.loaders.app.AppLoader",
-                  "default": "celery.loaders.default.Loader",
-                  "django": "djcelery.loaders.DjangoLoader"}
+LOADER_ALIASES = {"app": "celery.loaders.app:AppLoader",
+                  "default": "celery.loaders.default:Loader",
+                  "django": "djcelery.loaders:DjangoLoader"}
 
 
 def get_loader_cls(loader):

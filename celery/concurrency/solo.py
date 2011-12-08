@@ -15,7 +15,7 @@ class TaskPool(BasePool):
 
     def _get_info(self):
         return {"max-concurrency": 1,
-                "processes": [self.pid],
+                "processes": [os.getpid()],
                 "max-tasks-per-child": None,
                 "put-guarded-by-semaphore": True,
                 "timeouts": ()}

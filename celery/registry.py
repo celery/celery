@@ -17,7 +17,6 @@ from .exceptions import NotRegistered
 
 
 class TaskRegistry(dict):
-
     NotRegistered = NotRegistered
 
     def regular(self):
@@ -58,12 +57,6 @@ class TaskRegistry(dict):
         """Return all tasks of a specific type."""
         return dict((name, task) for name, task in self.iteritems()
                                     if task.type == type)
-
-    def __getitem__(self, key):
-        try:
-            return dict.__getitem__(self, key)
-        except KeyError:
-            raise self.NotRegistered(key)
 
     def pop(self, key, *args):
         try:

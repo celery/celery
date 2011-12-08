@@ -15,7 +15,7 @@ import warnings
 from .. import __version__, platforms, signals
 from ..app import app_or_default
 from ..exceptions import ImproperlyConfigured, SystemTerminate
-from ..utils import get_full_cls_name, isatty, LOG_LEVELS, cry
+from ..utils import isatty, LOG_LEVELS, cry, qualname
 from ..worker import WorkController
 
 try:
@@ -222,7 +222,7 @@ class Worker(object):
             "logfile": self.logfile or "[stderr]",
             "celerybeat": "ON" if self.run_clockservice else "OFF",
             "events": "ON" if self.events else "OFF",
-            "loader": get_full_cls_name(self.loader.__class__),
+            "loader": qualname(self.loader),
             "queues": app.amqp.queues.format(indent=18, indent_first=False),
         }
 

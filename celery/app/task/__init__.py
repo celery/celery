@@ -15,12 +15,13 @@ from __future__ import absolute_import
 import sys
 import threading
 
+from ... import states
 from ...datastructures import ExceptionInfo
 from ...exceptions import MaxRetriesExceededError, RetryTaskError
-from ...execute.trace import TaskTrace
+from ...execute.trace import eager_trace_task
 from ...registry import tasks, _unpickle_task
 from ...result import EagerResult
-from ...utils import fun_takes_kwargs, mattrgetter, uuid
+from ...utils import fun_takes_kwargs, instantiate, mattrgetter, uuid
 from ...utils.mail import ErrorMail
 
 extract_exec_options = mattrgetter("queue", "routing_key",
@@ -57,6 +58,9 @@ class Context(threading.local):
         except AttributeError:
             return default
 
+    def __repr__(self):
+        return "<Context: %r>" % (vars(self, ))
+
 
 class TaskType(type):
     """Meta class for tasks.
@@ -73,11 +77,15 @@ class TaskType(type):
         new = super(TaskType, cls).__new__
         task_module = attrs.get("__module__") or "__main__"
 
-        # Abstract class: abstract attribute should not be inherited.
+        if "__call__" in attrs:
+            # see note about __call__ below.
+            attrs["__defines_call__"] = True
+
+        # - Abstract class: abstract attribute should not be inherited.
         if attrs.pop("abstract", None) or not attrs.get("autoregister", True):
             return new(cls, name, bases, attrs)
 
-        # Automatically generate missing/empty name.
+        # - Automatically generate missing/empty name.
         autoname = False
         if not attrs.get("name"):
             try:
@@ -88,6 +96,23 @@ class TaskType(type):
             attrs["name"] = '.'.join([module_name, name])
             autoname = True
 
+        # - Automatically generate __call__.
+        # If this or none of its bases define __call__, we simply
+        # alias it to the ``run`` method, as
+        # this means we can skip a stacktrace frame :)
+        if not (attrs.get("__call__")
+                or any(getattr(b, "__defines_call__", False) for b in bases)):
+            try:
+                attrs["__call__"] = attrs["run"]
+            except KeyError:
+
+                # the class does not yet define run,
+                # so we can't optimize this case.
+                def __call__(self, *args, **kwargs):
+                    return self.run(*args, **kwargs)
+                attrs["__call__"] = __call__
+
+        # - Create and register class.
         # Because of the way import happens (recursively)
         # we may or may not be the first time the task tries to register
         # with the framework.  There should only be one class for each task
@@ -117,6 +142,7 @@ class BaseTask(object):
 
     """
     __metaclass__ = TaskType
+    __tracer__ = None
 
     ErrorMail = ErrorMail
     MaxRetriesExceededError = MaxRetriesExceededError
@@ -246,8 +272,8 @@ class BaseTask(object):
     #: The type of task *(no longer used)*.
     type = "regular"
 
-    def __call__(self, *args, **kwargs):
-        return self.run(*args, **kwargs)
+    #: Execution strategy used, or the qualified name of one.
+    Strategy = "celery.worker.strategy:default"
 
     def __reduce__(self):
         return (_unpickle_task, (self.name, ), None)
@@ -255,6 +281,9 @@ class BaseTask(object):
     def run(self, *args, **kwargs):
         """The body of the task executed by workers."""
         raise NotImplementedError("Tasks must define the run method.")
+
+    def start_strategy(self, app, consumer):
+        return instantiate(self.Strategy, self, app, consumer)
 
     @classmethod
     def get_logger(self, loglevel=None, logfile=None, propagate=False,
@@ -533,9 +562,11 @@ class BaseTask(object):
                         "eta": eta})
 
         if max_retries is not None and options["retries"] > max_retries:
-            raise exc or self.MaxRetriesExceededError(
-                            "Can't retry %s[%s] args:%s kwargs:%s" % (
-                                self.name, options["task_id"], args, kwargs))
+            if exc:
+                raise
+            raise self.MaxRetriesExceededError(
+                    "Can't retry %s[%s] args:%s kwargs:%s" % (
+                        self.name, options["task_id"], args, kwargs))
 
         # If task was executed eagerly using apply(),
         # then the retry must also be executed eagerly.
@@ -591,13 +622,14 @@ class BaseTask(object):
                                         if key in supported_keys)
             kwargs.update(extend_with)
 
-        trace = TaskTrace(task.name, task_id, args, kwargs,
-                          task=task, request=request, propagate=throw)
-        retval = trace.execute()
+        retval, info = eager_trace_task(task, task_id, args, kwargs,
+                                        request=request, propagate=throw)
         if isinstance(retval, ExceptionInfo):
             retval = retval.exception
-        return EagerResult(task_id, retval, trace.status,
-                           traceback=trace.strtb)
+        state, tb = states.SUCCESS, ''
+        if info is not None:
+            state, tb = info.state, info.strtb
+        return EagerResult(task_id, retval, state, traceback=tb)
 
     @classmethod
     def AsyncResult(self, task_id):
@@ -655,8 +687,7 @@ class BaseTask(object):
         The return value of this handler is ignored.
 
         """
-        if self.request.chord:
-            self.backend.on_chord_part_return(self)
+        pass
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         """Error handler.

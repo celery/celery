@@ -74,7 +74,7 @@ attributes:
                 task.  Used by e.g. :meth:`~celery.task.base.BaseTask.retry`
                 to resend the task to the same destination queue.
 
-  **NOTE** As some messaging backends doesn't have advanced routing
+  **NOTE** As some messaging backends don't have advanced routing
   capabilities, you can't trust the availability of keys in this mapping.
 
 
@@ -483,12 +483,11 @@ in the :state:`FAILED` state, is implied to have been in the
 :state:`STARTED` state at some point).
 
 There are also sets of states, like the set of
-:state:`failure states <FAILURE_STATES>`, and the set of
-:state:`ready states <READY_STATES>`.
+:state:`FAILURE_STATES`, and the set of :state:`READY_STATES`.
 
 The client uses the membership of these sets to decide whether
 the exception should be re-raised (:state:`PROPAGATE_STATES`), or whether
-the result can be cached (it can if the task is ready).
+the state can be cached (it can if the task is ready).
 
 You can also define :ref:`custom-states`.
 
@@ -533,13 +532,10 @@ backend:
   may have to increase the Erlang process limit, and the maximum number of file
   descriptors your OS allows.
 
-* Old results will not be cleaned automatically, so you must make sure to
-  consume the results or else the number of queues will eventually go out of
-  control.  If you're running RabbitMQ 2.1.1 or higher you can take advantage
-  of the ``x-expires`` argument to queues, which will expire queues after a
-  certain time limit after they are unused.  The queue expiry can be set (in
-  seconds) by the :setting:`CELERY_TASK_RESULT_EXPIRES` setting (not
-  enabled by default).
+* Old results will be cleaned automatically, based on the
+  :setting:`CELERY_TASK_RESULT_EXPIRES` setting.  By default this is set to
+  expire after 1 day: if you have a very busy cluster you should lower
+  this value.
 
 For a list of options supported by the AMQP result backend, please see
 :ref:`conf-amqp-result-backend`.
@@ -556,7 +552,7 @@ limitations.
   increase the polling intervals of operations such as `result.wait()`, and
   `tasksetresult.join()`
 
-* Some databases uses a default transaction isolation level that
+* Some databases use a default transaction isolation level that
   is not suitable for polling tables for changes.
 
   In MySQL the default transaction isolation level is `REPEATABLE-READ`, which
@@ -576,7 +572,7 @@ PENDING
 ~~~~~~~
 
 Task is waiting for execution or unknown.
-Any task id that is not know is implied to be in the pending state.
+Any task id that is not known is implied to be in the pending state.
 
 .. state:: STARTED
 
@@ -644,7 +640,7 @@ you could have a look at :mod:`abortable tasks <~celery.contrib.abortable>`
 which defines its own custom :state:`ABORTED` state.
 
 Use :meth:`Task.update_state <celery.task.base.BaseTask.update_state>` to
-update a tasks state::
+update a task's state::
 
     @task
     def upload_files(filenames):
@@ -666,7 +662,7 @@ Creating pickleable exceptions
 A little known Python fact is that exceptions must behave a certain
 way to support being pickled.
 
-Tasks that raises exceptions that are not pickleable will not work
+Tasks that raise exceptions that are not pickleable will not work
 properly when Pickle is used as the serializer.
 
 To make sure that your exceptions are pickleable the exception
@@ -722,7 +718,7 @@ Creating custom task classes
 ============================
 
 All tasks inherit from the :class:`celery.task.Task` class.
-The tasks body is its :meth:`run` method.
+The task's body is its :meth:`run` method.
 
 The following code,
 
