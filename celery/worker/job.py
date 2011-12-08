@@ -31,10 +31,7 @@ from ..utils.timeutils import maybe_iso8601, timezone
 
 from . import state
 
-#: Keys to keep from the message delivery info.  The values
-#: of these keys must be pickleable.
-WANTED_DELIVERY_INFO = itemgetter("exchange", "routing_key")
-
+# Localize
 tz_to_local = timezone.to_local
 tz_or_local = timezone.tz_or_local
 tz_utc = timezone.utc
@@ -175,10 +172,6 @@ class TaskRequest(object):
                              "id": id, "taskset": taskset,
                              "retries": retries, "is_eager": False,
                              "delivery_info": delivery_info, "chord": chord}
-
-    @cached_property
-    def tzlocal(self):
-        return tz_or_local(self.app.conf.CELERY_TIMEZONE)
 
     @classmethod
     def from_message(cls, message, body, on_ack=noop, delivery_info={},
@@ -465,6 +458,10 @@ class TaskRequest(object):
             kwargs = self.extend_with_default_kwargs(loglevel, logfile)
         first = self.task if use_real else self.name
         return first, self.id, self.args, kwargs
+
+    @cached_property
+    def tzlocal(self):
+        return tz_or_local(self.app.conf.CELERY_TIMEZONE)
 
     @property
     def store_errors(self):

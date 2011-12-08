@@ -737,7 +737,6 @@ class BaseTask(object):
         :keyword consumer: The :class:`~celery.worker.consumer.Consumer`.
 
         """
-        #request.execute(loglevel, logfile)
         request.execute_using_pool(pool, loglevel, logfile)
 
     def __repr__(self):
