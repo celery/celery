@@ -229,6 +229,7 @@ class test_TaskPool(unittest.TestCase):
         self.assertEqual(info["timeouts"], (5, 10))
 
     def test_restart(self):
+        raise SkipTest("functional test")
         def get_pids(pool):
             return set([p.pid for p in pool._pool._pool])
 

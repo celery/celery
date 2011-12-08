@@ -146,11 +146,9 @@ class MongoBackend(BaseDictBackend):
         """Save the taskset result."""
         from pymongo.binary import Binary
 
-        meta = {
-            "_id": taskset_id,
-            "result": Binary(self.encode(result)),
-            "date_done": datetime.utcnow()
-        }
+        meta = {"_id": taskset_id,
+                "result": Binary(self.encode(result)),
+                "date_done": datetime.utcnow()}
 
         db = self._get_database()
         taskmeta_collection = db[self.mongodb_taskmeta_collection]

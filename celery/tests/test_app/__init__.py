@@ -230,13 +230,14 @@ class test_App(unittest.TestCase):
         assert conn.transport_cls == "memory"
 
         pub = self.app.amqp.TaskPublisher(conn, exchange="foo_exchange")
-        self.assertIn("foo_exchange", amqp._exchanges_declared)
+        self.assertNotIn("foo_exchange", amqp._exchanges_declared)
 
         dispatcher = Dispatcher()
         self.assertTrue(pub.delay_task("footask", (), {},
                                        exchange="moo_exchange",
                                        routing_key="moo_exchange",
                                        event_dispatcher=dispatcher))
+        self.assertIn("moo_exchange", amqp._exchanges_declared)
         self.assertTrue(dispatcher.sent)
         self.assertEqual(dispatcher.sent[0][0], "task-sent")
         self.assertTrue(pub.delay_task("footask", (), {},

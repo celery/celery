@@ -17,7 +17,8 @@ _no_mongo_msg_emitted = False
 try:
     from pymongo.errors import AutoReconnect
 except ImportError:
-    class AutoReconnect(Exception):
+
+    class AutoReconnect(Exception):  # noqa
         pass
 
 
