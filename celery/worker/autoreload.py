@@ -3,8 +3,9 @@
     celery.worker.autoreload
     ~~~~~~~~~~~~~~~~~~~~~~~~
 
-    This module implements the automatic module reloading
+    This module implements automatic module reloading
 """
+from __future__ import absolute_import
 from __future__ import with_statement
 
 import os
@@ -15,7 +16,7 @@ import hashlib
 
 from collections import defaultdict
 
-from celery.task.control import broadcast
+from .. import current_app
 
 
 def file_hash(filename, algorithm='md5'):
@@ -170,7 +171,7 @@ class AutoReloader(object):
             self._reload(map(self._module_name, modified))
 
     def _reload(self, modules):
-        broadcast("pool_restart",
+        current_app.control.broadcast("pool_restart",
                 arguments={"imports": modules, "reload_modules": True})
 
     @classmethod
