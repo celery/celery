@@ -1,152 +1,142 @@
-#! /bin/sh
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides: celeryd
+# Required-Start: $network $local_fs $remote_fs
+# Required-Stop: $network $local_fs $remote_fs
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: celery task worker daemon
+### END INIT INFO
 #
-# chkconfig: - 85 15
-# description:  Celery worker daemon
-# processname: celeryd
-# config: /etc/sysconfig/celeryd
-# pidfile: /var/run/celeryd.pid
+# ============================================
+# celeryd - Starts the Celery worker daemon.
+# ============================================
 #
-# To configure celeryd you probably need to tell it where to chdir.
+# :Usage: /etc/init.d/${basename $0} {start|stop|restart|status}
+# :Configuration file: /etc/default/celeryd
 #
-# EXAMPLE CONFIGURATION
-# =====================
+# To implement separate init scripts, do NOT copy this script.  Instead,
+# symlink it.  I.e., if my new application, "little-worker" needs an init, I
+# should just use:
 #
-# this is an example configuration for a Python project:
+#   ln -s /etc/init.d/celeryd /etc/init.d/little-worker
 #
-# /etc/sysconfig/celeryd:
+# You can then configure this by manipulating /etc/sysconfig/little-worker.  It
+# will still read defaults from /etc/defaults/celeryd, but everything can be
+# overriden by sysconfig.
 #
-#   # Where to chdir at start.
-#   CELERYD_CHDIR="/opt/Myproject/"
-#
-#   # Extra arguments to celeryd
-#   CELERYD_OPTS="--time-limit=300"
-#
-#   # Name of the celery config module.#
-#   CELERY_CONFIG_MODULE="celeryconfig"
-#
-# EXAMPLE DJANGO CONFIGURATION
-# ============================
-#
-#   # Where the Django project is.
-#   CELERYD_CHDIR="/opt/Project/"
-#
-#   # Name of the projects settings module.
-#   export DJANGO_SETTINGS_MODULE="settings"
-#
-#   # Path to celeryd
-#   CELERYD="/opt/Project/manage.py"
-#
-#   # Extra arguments to manage.py
-#   CELERYD_OPTS="celeryd"
-#
-# AVAILABLE OPTIONS
-# =================
-#
-#   * CELERYD_OPTS
-#       Additional arguments to celeryd, see `celeryd --help` for a list.
-#
-#   * CELERYD_CHDIR
-#       Path to chdir at start. Default is to stay in the current directory.
-#
-#   * CELERYD_PID_FILE
-#       Full path to the pidfile. Default is /var/run/celeryd.pid.
-#
-#   * CELERYD_LOG_FILE
-#       Full path to the celeryd logfile. Default is /var/log/celeryd.log
-#
-#   * CELERYD_LOG_LEVEL
-#       Log level to use for celeryd. Default is INFO.
-#
-#   * CELERYD
-#       Path to the celeryd program. Default is `celeryd`.
-#       You can point this to an virtualenv, or even use manage.py for django.
-#
-#   * CELERYD_USER
-#       User to run celeryd as. Default is current user.
-#
-#   * CELERYD_GROUP
-#       Group to run celeryd as. Default is current user.
-#
-#   * VIRTUALENV
-#       Full path to the virtualenv environment to activate. Default is none.
-#
-#   * PYTHONPATH
-#       A directory to add to the Python path.
 
-# Source function library.
+# Setting `prog` here allows you to symlink this init script, making it easy
+# to run multiple processes on the system.
+prog="$(basename $0)"
+
+# Source the centos stuff
 . /etc/init.d/functions
 
-if test -f /etc/sysconfig/celeryd; then
-    . /etc/sysconfig/celeryd
-fi
+# Also look at sysconfig; this is where environmental variables should be set
+# on RHEL systems.
+[ -f "/etc/sysconfig/$prog" ] && . /etc/sysconfig/$prog
 
-RETVAL=0
+CELERYD=${CELERYD:-"-m celery.bin.celeryd_detach"}
+CELERYD_MULTI=${CELERYD_MULTI:-"/usr/bin/celeryd-multi"}
+CELERYD_PID_FILE=${CELERYD_PID_FILE:-"/var/run/celeryd/$prog.pid"}
+CELERYD_LOG_FILE=${CELERYD_LOG_FILE:-"/var/log/celeryd/$prog.log"}
+CELERYD_LOG_LEVEL=${CELERYD_LOG_LEVEL:-"INFO"}
 
-DEFAULT_CELERYD="/usr/bin/celeryd"
-CELERYD_LOG_FILE=${CELERYD_LOG_FILE:-${CELERYD_LOGFILE:-"/var/log/celeryd.log"}}
-CELERYD_PID_FILE=${CELERYD_PID_FILE:-${CELERYD_PIDFILE:-"/var/run/celeryd.pid"}}
-CELERYD_LOG_LEVEL=${CELERYD_LOG_LEVEL:-${CELERYD_LOGLEVEL:-"INFO"}}
-CELERYD_USER=${CELERYD_USER:-${CELERYD_USER:-"celeryd"}}
-
-CELERYD=${CELERYD:-$DEFAULT_CELERYD}
-
+# This is used to change how Celery loads in the configs.  It does not need to
+# be set to be run.
 export CELERY_LOADER
 
-CELERYD_OPTS="$CELERYD_OPTS -f $CELERYD_LOG_FILE -l $CELERYD_LOG_LEVEL --pidfile=$CELERYD_PID_FILE"
+start_workers () {
+    CELERYD_LOG_DIR=$(dirname $CELERYD_LOG_FILE)
+    CELERYD_PID_DIR=$(dirname $CELERYD_PID_FILE)
+    # Ensure that the directories exist.
+    mkdir -p $CELERYD_LOG_DIR $CELERYD_PID_DIR
 
-if [ -n "$2" ]; then
-    CELERYD_OPTS="$CELERYD_OPTS $2"
-fi
+    # If we specified a user, and/or a group, chown as needed
+    if [ -n "$CELERYD_USER" ]; then
+        CHOWN_UG="${CELERYD_USER}"
 
-# Append the Django settings module to use, if specified
-if [ -n "$DJANGO_SETTINGS_MODULE" ]; then
-    CELERYD_OPTS="$CELERYD_OPTS --settings=$DJANGO_SETTINGS_MODULE"
-fi
+        # If the group is specified, also use that in the chown.
+        [ -n "$CELERYD_GROUP" ] && CHOWN_UG="$CHOWN_UG:$CELERYD_GROUP"
 
-start_worker () {
-    echo -n $"Starting celeryd: "
-    daemon --pidfile=$CELERYD_PID_FILE --user=$CELERYD_USER \
-      PYTHONPATH=$PYTHONPATH:$CELERY_PYTHONPATH $CELERYD $CELERYD_OPTS 2>/dev/null &
-    RETVAL=$?
-    sleep 3; echo
-    if [ -n "$VIRTUALENV" ]; then
-        source $VIRTUALENV/bin/activate
+        # Execute the chown on the directory only
+        chown $CHOWN_UG $CELERYD_LOG_DIR $CELERYD_PID_DIR
+
+        CELERYD_OPTS="$CELERYD_OPTS --uid=$CELERYD_USER"
     fi
-    [ $RETVAL -eq 0 ] && touch /var/lock/subsys/celeryd
+
+    # If we need to be run from a specific location, cd to it before launch
+    if [ -n "$CELERYD_CHDIR" ]; then
+        cd $CELERYD_CHDIR
+    fi
+
+    echo -n $"Starting $prog: "
+    $CELERYD_MULTI start $prog \
+                               --pidfile=$CELERYD_PID_FILE \
+                               --logfile=$CELERYD_LOG_FILE \
+                               --loglevel=$CELERYD_LOG_LEVEL \
+                               --cmd="$CELERYD" \
+			                   --quiet \
+                               $CELERYD_OPTS
+    RETVAL=$?
+
+    if [ "$RETVAL" == "0" ]; then
+        touch /var/lock/subsys/$prog
+        success
+    else
+        failure
+    fi
+    echo
 }
 
-stop_worker () {
-    echo -n $"Stopping celeryd: "
-    killproc -p $CELERYD_PID_FILE $CELERYD 2>/dev/null
-    RETVAL=$?
-    sleep 3; echo
-    if [ $RETVAL -eq 0 ]; then
-        rm -f /var/lock/subsys/celeryd
-        rm -f $CELERYD_PID_FILE
+stop_workers () {
+    echo -n $"Stopping $prog: "
+
+    # If we haven't ended, explicitly kill it!
+    if [ ! -f $CELERYD_PID_FILE ] || [ ! -e /proc/$(cat $CELERYD_PID_FILE) ]; then
+        failure
+	echo
+        return
     fi
+
+    # First, try to nicely shut it down.
+    $CELERYD_MULTI stop $prog --pidfile=$CELERYD_PID_FILE --quiet
+    RETVAL=$?
+
+    # SLeep a few seconds. (this was part of the original script; we can't
+    # trust that it will end immediately, or that running the command will
+    # stop it.
+    sleep 3
+
+    # If we haven't ended, explicitly kill it!
+    if [ -f $CELERYD_PID_FILE ] && [ -e /proc/$(cat $CELERYD_PID_FILE) ]; then
+        $CELERYD_MULTI stop $prog -KILL --pidfile=$CELERYD_PID_FILE --quiet
+    fi
+
+    if [ "$RETVAL" == "0" ]; then
+        rm -f /var/lock/sybsys/$prog
+        success
+    else
+        failure
+    fi
+    echo
 }
 
 case "$1" in
-  start)
-    start_worker
+    start)
+        start_workers ;;
+    stop)
+        stop_workers ;;
+    status)
+        status -p $CELERYD_PID_FILE $prog ;;
+    restart)
+        stop_workers
+        start_workers ;;
+    *)
+        echo "Usage: /etc/init.d/$prog {start|stop|restart|status}"
+        exit 1
     ;;
-
-  stop)
-    stop_worker
-    ;;
-
-  restart)
-    stop_worker
-    start_worker
-    ;;
-
-  status)
-    status celeryd
-    ;;
-
-  *)
-    echo $"Usage: $0 {start|stop|restart|status}"
-    exit 1
 esac
 
-exit $?
+exit 0
