@@ -9,6 +9,7 @@
 
 2.5.0
 =====
+:release-date: 2011-12-16 04:00 P.M GMT
 :status: FROZEN
 :branch: master
 
@@ -85,6 +86,17 @@ News
     [ TODO need to add EXAMPLE configuration here, and also to the
     configuration docs]
 
+* Optimizations
+
+    * The solo pool can now process 15000 tasks/s when using
+      the `pylibrabbitmq`_ transport.  This optimization
+      also means the worker can handle over double the amount
+      of tasks tasks/s overall.
+
+    * The task error tracebacks are now much shorter.
+
+.. _`pylibrabbitmq`: http://pypi.python.org/pylibrabbitmq/
+
 * New :setting:`CELERY_ANNOTATIONS` setting enables changing of arbitrary
     task attributes from the configuration.
 
@@ -133,6 +145,11 @@ News
 
 * Adds fallback Chord support for the AMQP backend.
 
+* ``task.retry()`` now reraises the original exception thus keeping
+  the original stacktrace.
+
+    Suggested by ojii.
+
 * The `--uid` argument to daemons now uses ``initgroups()`` to set
   groups to all the groups the user is a member of.
 
@@ -153,6 +170,10 @@ News
 * Redis result backend: Adds the ability to wait for results without polling.
 
     Contributed by Steeve Morin.
+
+* MongoDB result backend: Now supports save and restore taskset.
+
+    Contributed by Julien Poissonnier.
 
 * There's a new :ref:`guide-security` guide in the documentation.
 
