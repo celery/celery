@@ -1,19 +1,23 @@
 from __future__ import absolute_import
 
-from .job import TaskRequest
+from .job import Request
+
+from celery.execute.trace import trace_task
 
 
 def default(task, app, consumer):
     logger = consumer.logger
     hostname = consumer.hostname
     eventer = consumer.event_dispatcher
-    Request = TaskRequest.from_message
+    Req = Request
     handle = consumer.on_task
     connection_errors = consumer.connection_errors
 
     def task_message_handler(M, B, A):
-        handle(Request(M, B, A, app=app, logger=logger,
-                                hostname=hostname, eventer=eventer,
-                                connection_errors=connection_errors))
+        handle(Req(B, on_ack=A, app=app, hostname=hostname,
+                         eventer=eventer, logger=logger,
+                         connection_errors=connection_errors,
+                         delivery_info=M.delivery_info,
+                         task=task))
 
     return task_message_handler

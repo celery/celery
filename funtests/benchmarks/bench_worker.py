@@ -29,6 +29,7 @@ celery.conf.update(BROKER_TRANSPORT="librabbitmq",
                            "no_ack": True,
                            #"exchange_durable": False,
                            #"queue_durable": False,
+                           "auto_delete": True,
                         }
                    },
                    CELERY_TASK_SERIALIZER="json",
@@ -65,7 +66,7 @@ def bench_apply(n=DEFAULT_ITS):
     print("-- apply %s tasks: %ss" % (n, time.time() - time_start, ))
 
 
-def bench_work(n=DEFAULT_ITS, loglevel=None):
+def bench_work(n=DEFAULT_ITS, loglevel="CRITICAL"):
     loglevel = os.environ.get("BENCH_LOGLEVEL") or loglevel
     if loglevel:
         celery.log.setup_logging_subsystem(loglevel=loglevel)

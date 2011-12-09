@@ -29,7 +29,7 @@ from celery.task import task as task_dec
 from celery.task.base import Task
 from celery.utils import uuid
 from celery.utils.encoding import from_utf8, default_encode
-from celery.worker.job import TaskRequest, execute_and_trace
+from celery.worker.job import Request, execute_and_trace
 from celery.worker.state import revoked
 
 from celery.tests.compat import catch_warnings

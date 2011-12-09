@@ -34,7 +34,7 @@ up and running.
   a `task` key or a `control` key.
 
   If the message is a task, it verifies the validity of the message
-  converts it to a :class:`celery.worker.job.TaskRequest`, and sends
+  converts it to a :class:`celery.worker.job.Request`, and sends
   it to :meth:`~Consumer.on_task`.
 
   If the message is a control command the message is passed to
@@ -356,7 +356,8 @@ class Consumer(object):
         if self.event_dispatcher.enabled:
             self.event_dispatcher.send("task-received", uuid=task.task_id,
                     name=task.task_name, args=safe_repr(task.args),
-                    kwargs=safe_repr(task.kwargs), retries=task.retries,
+                    kwargs=safe_repr(task.kwargs),
+                    retries=task.request_dict.get("retries", 0),
                     eta=task.eta and task.eta.isoformat(),
                     expires=task.expires and task.expires.isoformat())
 

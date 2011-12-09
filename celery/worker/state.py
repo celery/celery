@@ -36,10 +36,10 @@ REVOKES_MAX = 10000
 #: being expired when the max limit has been exceeded.
 REVOKE_EXPIRES = 3600
 
-#: set of all reserved :class:`~celery.worker.job.TaskRequest`'s.
+#: set of all reserved :class:`~celery.worker.job.Request`'s.
 reserved_requests = set()
 
-#: set of currently active :class:`~celery.worker.job.TaskRequest`'s.
+#: set of currently active :class:`~celery.worker.job.Request`'s.
 active_requests = set()
 
 #: count of tasks executed by the worker, sorted by type.

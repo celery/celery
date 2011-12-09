@@ -70,7 +70,7 @@ class TaskBucket(object):
         self.not_empty = threading.Condition(self.mutex)
 
     def put(self, request):
-        """Put a :class:`~celery.worker.job.TaskRequest` into
+        """Put a :class:`~celery.worker.job.Request` into
         the appropiate bucket."""
         with self.mutex:
             if request.task_name not in self.buckets:

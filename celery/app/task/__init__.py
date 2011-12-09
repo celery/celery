@@ -731,7 +731,7 @@ class BaseTask(object):
     def execute(self, request, pool, loglevel, logfile, **kwargs):
         """The method the worker calls to execute the task.
 
-        :param request: A :class:`~celery.worker.job.TaskRequest`.
+        :param request: A :class:`~celery.worker.job.Request`.
         :param pool: A task pool.
         :param loglevel: Current loglevel.
         :param logfile: Name of the currently used logfile.

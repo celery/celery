@@ -20,7 +20,7 @@ from celery.task import periodic_task as periodic_task_dec
 from celery.utils import uuid
 from celery.worker import WorkController
 from celery.worker.buckets import FastQueue
-from celery.worker.job import TaskRequest
+from celery.worker.job import Request
 from celery.worker.consumer import Consumer as MainConsumer
 from celery.worker.consumer import QoS, RUN, PREFETCH_COUNT_MAX, CLOSE
 from celery.utils.serialization import pickle
@@ -344,7 +344,7 @@ class test_Consumer(unittest.TestCase):
         l.receive_message(m.decode(), m)
 
         in_bucket = self.ready_queue.get_nowait()
-        self.assertIsInstance(in_bucket, TaskRequest)
+        self.assertIsInstance(in_bucket, Request)
         self.assertEqual(in_bucket.task_name, foo_task.name)
         self.assertEqual(in_bucket.execute(), 2 * 4 * 8)
         self.assertTrue(self.eta_schedule.empty())
@@ -572,7 +572,7 @@ class test_Consumer(unittest.TestCase):
         self.assertEqual(len(in_hold), 3)
         eta, priority, entry = in_hold
         task = entry.args[0]
-        self.assertIsInstance(task, TaskRequest)
+        self.assertIsInstance(task, Request)
         self.assertEqual(task.task_name, foo_task.name)
         self.assertEqual(task.execute(), 2 * 4 * 8)
         with self.assertRaises(Empty):
@@ -815,7 +815,7 @@ class test_WorkController(AppCase):
         backend = Mock()
         m = create_message(backend, task=foo_task.name, args=[4, 8, 10],
                            kwargs={})
-        task = TaskRequest.from_message(m, m.decode())
+        task = Request.from_message(m, m.decode())
         worker.process_task(task)
         self.assertEqual(worker.pool.apply_async.call_count, 1)
         worker.pool.stop()
@@ -827,7 +827,7 @@ class test_WorkController(AppCase):
         backend = Mock()
         m = create_message(backend, task=foo_task.name, args=[4, 8, 10],
                            kwargs={})
-        task = TaskRequest.from_message(m, m.decode())
+        task = Request.from_message(m, m.decode())
         worker.components = []
         worker._state = worker.RUN
         with self.assertRaises(KeyboardInterrupt):
@@ -841,7 +841,7 @@ class test_WorkController(AppCase):
         backend = Mock()
         m = create_message(backend, task=foo_task.name, args=[4, 8, 10],
                            kwargs={})
-        task = TaskRequest.from_message(m, m.decode())
+        task = Request.from_message(m, m.decode())
         worker.components = []
         worker._state = worker.RUN
         with self.assertRaises(SystemExit):
@@ -855,7 +855,7 @@ class test_WorkController(AppCase):
         backend = Mock()
         m = create_message(backend, task=foo_task.name, args=[4, 8, 10],
                            kwargs={})
-        task = TaskRequest.from_message(m, m.decode())
+        task = Request.from_message(m, m.decode())
         worker.process_task(task)
         worker.pool.stop()
 
