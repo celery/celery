@@ -198,6 +198,7 @@ class MockEventDispatcher(object):
 
     def __init__(self):
         self.sent = []
+        self.enabled = True
 
     def send(self, event, **fields):
         self.sent.append(event)

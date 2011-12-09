@@ -12,17 +12,18 @@ from __future__ import absolute_import
 # Imports
 #
 
-import os
-import sys
-import errno
-import threading
-import Queue
-import itertools
 import collections
-import time
-import signal
-import warnings
+import errno
+import itertools
 import logging
+import os
+import signal
+import sys
+import threading
+import time
+import traceback
+import Queue
+import warnings
 
 from multiprocessing import Process, cpu_count, TimeoutError, Event
 from multiprocessing import util
@@ -66,6 +67,15 @@ def mapstar(args):
 def error(msg, *args, **kwargs):
     if util._logger:
         util._logger.error(msg, *args, **kwargs)
+
+
+def safe_apply_callback(fun, *args):
+    if fun:
+        try:
+            fun(*args)
+        except BaseException, exc:
+            error("Pool callback raised exception: %r", exc,
+                  exc_info=sys.exc_info())
 
 
 class LaxBoundedSemaphore(threading._Semaphore):
@@ -1020,9 +1030,11 @@ class ApplyResult(object):
 
             # apply callbacks last
             if self._callback and self._success:
-                self._callback(self._value)
+                safe_apply_callback(
+                    self._callback, self._value)
             if self._errback and not self._success:
-                self._errback(self._value)
+                safe_apply_callback(
+                    self._errback, self._value)
         finally:
             self._mutex.release()
 
@@ -1035,7 +1047,8 @@ class ApplyResult(object):
             if self._ready:
                 self._cache.pop(self._job, None)
             if self._accept_callback:
-                self._accept_callback(pid, time_accepted)
+                safe_apply_callback(
+                    self._accept_callback, pid, time_accepted)
         finally:
             self._mutex.release()
 

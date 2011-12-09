@@ -19,6 +19,7 @@ import socket
 from datetime import datetime
 
 from .. import exceptions
+from ..datastructures import ExceptionInfo
 from ..registry import tasks
 from ..app import app_or_default
 from ..execute.trace import build_tracer, trace_task, report_internal_error
@@ -258,7 +259,7 @@ class TaskRequest(object):
                                   accept_callback=self.on_accepted,
                                   timeout_callback=self.on_timeout,
                                   callback=self.on_success,
-                                  errback=self.on_failure,
+                                  error_callback=self.on_failure,
                                   soft_timeout=self.task.soft_time_limit,
                                   timeout=self.task.time_limit)
         return result
@@ -315,7 +316,7 @@ class TaskRequest(object):
         return False
 
     def send_event(self, type, **fields):
-        if self.eventer:
+        if self.eventer and self.eventer.enabled:
             self.eventer.send(type, **fields)
 
     def on_accepted(self, pid, time_accepted):
@@ -348,23 +349,32 @@ class TaskRequest(object):
         if self.store_errors:
             self.task.backend.mark_as_failure(self.id, exc)
 
-    def on_success(self, ret_value):
+    def on_success(self, ret_value, now=None):
         """Handler called if the task was successfully processed."""
+        if isinstance(ret_value, ExceptionInfo):
+            if isinstance(ret_value.exception, (
+                    SystemExit, KeyboardInterrupt)):
+                raise ret_value.exception
+            return self.on_failure(ret_value)
         state.task_ready(self)
 
         if self.task.acks_late:
             self.acknowledge()
 
-        runtime = self.time_start and (time.time() - self.time_start) or 0
-        self.send_event("task-succeeded", uuid=self.id,
-                        result=safe_repr(ret_value), runtime=runtime)
+        if self.eventer and self.eventer.enabled:
+            now = time.time()
+            runtime = self.time_start and (time.time() - self.time_start) or 0
+            self.send_event("task-succeeded", uuid=self.id,
+                            result=safe_repr(ret_value), runtime=runtime)
 
         if self._does_info:
+            now = now or time.time()
+            runtime = self.time_start and (time.time() - self.time_start) or 0
             self.logger.info(self.success_msg.strip(),
-                            {"id": self.id,
-                             "name": self.name,
-                             "return_value": self.repr_result(ret_value),
-                             "runtime": runtime})
+                        {"id": self.id,
+                        "name": self.name,
+                        "return_value": self.repr_result(ret_value),
+                        "runtime": runtime})
 
     def on_retry(self, exc_info):
         """Handler called if the task should be retried."""
