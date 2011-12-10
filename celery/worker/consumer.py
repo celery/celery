@@ -305,7 +305,7 @@ class Consumer(object):
             try:
                 self.reset_connection()
                 self.consume_messages()
-            except self.connection_errors:
+            except self.connection_errors + self.channel_errors:
                 self.logger.error("Consumer: Connection to broker lost."
                                 + " Trying to re-establish the connection...",
                                 exc_info=sys.exc_info())

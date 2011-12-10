@@ -365,6 +365,26 @@ class test_Consumer(unittest.TestCase):
         l.heart.stop()
         l.priority_timer.stop()
 
+    def test_start_channel_error(self):
+        # Regression test for AMQPChannelExceptions that can occur within the consumer. (i.e. 404 errors)
+
+        class MockConsumer(MainConsumer):
+            iterations = 0
+
+            def consume_messages(self):
+                if not self.iterations:
+                    self.iterations = 1
+                    raise KeyError("foo")
+                raise SyntaxError("bar")
+
+        l = MockConsumer(self.ready_queue, self.eta_schedule, self.logger,
+                             send_events=False, pool=BasePool())
+
+        l.channel_errors = (KeyError, )
+        self.assertRaises(SyntaxError, l.start)
+        l.heart.stop()
+        l.priority_timer.stop()
+
     def test_consume_messages_ignores_socket_timeout(self):
 
         class Connection(current_app.broker_connection().__class__):
