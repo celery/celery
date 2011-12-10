@@ -8,7 +8,7 @@ ignore = frozenset(["BROKER_INSIST", "CELERYD_POOL_PUTLOCKS",
 
 
 def find_undocumented_settings(directive=".. setting:: "):
-    all = set(DEFAULTS.keys())
+    all = set(DEFAULTS)
     documented = set(line.strip()[len(directive):].strip()
                         for line in input()
                             if line.strip().startswith(directive))

@@ -267,7 +267,7 @@ class Scheduler(object):
 
     def merge_inplace(self, b):
         schedule = self.schedule
-        A, B = set(schedule.keys()), set(b.keys())
+        A, B = set(schedule), set(b)
 
         # Remove items from disk not in the schedule anymore.
         for key in A ^ B:

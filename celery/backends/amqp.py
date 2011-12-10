@@ -216,7 +216,7 @@ class AMQPBackend(BaseDictBackend):
             with self._create_consumer(bindings, channel) as consumer:
                 while ids:
                     r = self.drain_events(conn, consumer, timeout)
-                    ids ^= set(r.keys())
+                    ids ^= set(r)
                     for ready_id, ready_meta in r.iteritems():
                         yield ready_id, ready_meta
 
