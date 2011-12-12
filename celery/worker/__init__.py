@@ -22,7 +22,7 @@ from kombu.utils.finalize import Finalize
 
 from .. import beat
 from .. import concurrency as _concurrency
-from .. import registry, platforms, signals
+from .. import registry, signals
 from ..app import app_or_default
 from ..app.abstract import configured, from_config
 from ..exceptions import SystemTerminate
@@ -35,37 +35,6 @@ from .buckets import TaskBucket, FastQueue
 RUN = 0x1
 CLOSE = 0x2
 TERMINATE = 0x3
-
-#: List of signals to reset when a child process starts.
-WORKER_SIGRESET = frozenset(["SIGTERM",
-                             "SIGHUP",
-                             "SIGTTIN",
-                             "SIGTTOU",
-                             "SIGUSR1"])
-
-#: List of signals to ignore when a child process starts.
-WORKER_SIGIGNORE = frozenset(["SIGINT"])
-
-
-def process_initializer(app, hostname):
-    """Initializes the process so it can be used to process tasks.
-
-    Used for multiprocessing environments.
-
-    """
-    app = app_or_default(app)
-    app.set_current()
-    platforms.signals.reset(*WORKER_SIGRESET)
-    platforms.signals.ignore(*WORKER_SIGIGNORE)
-    platforms.set_mp_process_title("celeryd", hostname=hostname)
-
-    # This is for Windows and other platforms not supporting
-    # fork(). Note that init_worker makes sure it's only
-    # run once per process.
-    app.loader.init_worker()
-    app.loader.init_worker_process()
-
-    signals.worker_process_init.send(sender=None)
 
 
 class WorkController(configurated):
@@ -143,7 +112,6 @@ class WorkController(configurated):
 
         self.pool = instantiate(self.pool_cls, min_concurrency,
                                 logger=self.logger,
-                                initializer=process_initializer,
                                 initargs=(self.app, self.hostname),
                                 maxtasksperchild=self.max_tasks_per_child,
                                 timeout=self.task_time_limit,
