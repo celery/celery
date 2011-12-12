@@ -81,7 +81,6 @@ class Worker(configurated):
             queues=None, include=None, app=None, pidfile=None,
             autoscale=None, **kwargs):
         self.app = app = app_or_default(app)
-        conf = app.conf
         self.setup_defaults(kwargs, namespace="celeryd")
         if not self.concurrency:
             self.concurrency = cpu_count()
