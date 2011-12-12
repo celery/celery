@@ -2,8 +2,6 @@ from __future__ import absolute_import
 
 from .job import Request
 
-from celery.execute.trace import trace_task
-
 
 def default(task, app, consumer):
     logger = consumer.logger

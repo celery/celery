@@ -33,7 +33,7 @@ except ImportError:
             def apply_async(self, *args, **kwargs):
                 pass
     mp = _mp()  # noqa
-    safe_apply_callback = None
+    safe_apply_callback = None  # noqa
 
 from celery.datastructures import ExceptionInfo
 from celery.utils import noop
@@ -199,6 +199,7 @@ class test_TaskPool(unittest.TestCase):
 
     def test_restart(self):
         raise SkipTest("functional test")
+
         def get_pids(pool):
             return set([p.pid for p in pool._pool._pool])
 

@@ -85,7 +85,6 @@ class Request(object):
     #: Format string used to log task retry.
     retry_msg = """Task %(name)s[%(id)s] retry: %(exc)s"""
 
-
     def __init__(self, body, on_ack=noop,
             hostname=None, logger=None, eventer=None, app=None,
             connection_errors=None, request_dict=None,
@@ -95,6 +94,8 @@ class Request(object):
         self.id = body["id"]
         self.args = body.get("args", [])
         self.kwargs = body.get("kwargs", {})
+        if NEEDS_KWDICT:
+            self.kwargs = kwdict(self.kwargs)
         eta = body.get("eta")
         expires = body.get("expires")
         utc = body.get("utc", False)
@@ -447,4 +448,3 @@ class TaskRequest(Request):
             "task": name, "id": id, "args": args,
             "kwargs": kwargs, "eta": eta,
             "expires": expires}, **options)
-

@@ -24,8 +24,24 @@ import traceback
 
 from Queue import Empty
 
+from ..abstract import StartStopComponent
 from ..app import app_or_default
 from ..utils.threads import bgThread
+
+
+class WorkerComponent(StartStopComponent):
+    name = "worker.mediator"
+    requires = ("pool", "queues", )
+
+    def __init__(self, w, **kwargs):
+        w.mediator = None
+        self.enabled = not w.disable_rate_limits
+
+    def create(self, w):
+        m = w.mediator = self.instantiate(w.mediator_cls, w.ready_queue,
+                                          app=w.app, callback=w.process_task,
+                                          logger=w.logger)
+        return m
 
 
 class Mediator(bgThread):

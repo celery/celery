@@ -3,12 +3,9 @@ from __future__ import absolute_import
 
 import logging
 import os
-import sys
 import time
-import traceback
 
 from .. import log
-from ..datastructures import ExceptionInfo
 from ..utils import timer2
 from ..utils.encoding import safe_repr
 

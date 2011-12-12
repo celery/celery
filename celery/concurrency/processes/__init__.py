@@ -29,6 +29,7 @@ WORKER_SIGRESET = frozenset(["SIGTERM",
 #: List of signals to ignore when a child process starts.
 WORKER_SIGIGNORE = frozenset(["SIGINT"])
 
+
 def process_initializer(app, hostname):
     """Initializes the process so it can be used to process tasks."""
     app = app_or_default(app)
@@ -42,6 +43,7 @@ def process_initializer(app, hostname):
     app.loader.init_worker()
     app.loader.init_worker_process()
     signals.worker_process_init.send(sender=None)
+
 
 class TaskPool(BasePool):
     """Process Pool for processing tasks in parallel.

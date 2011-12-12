@@ -10,11 +10,10 @@ class from_config(object):
         return attr if self.key is None else self.key
 
 
-
 class _configurated(type):
 
     def __new__(cls, name, bases, attrs):
-        C = attrs["__confopts__"] = dict((attr, spec.get_key(attr))
+        attrs["__confopts__"] = dict((attr, spec.get_key(attr))
                                           for attr, spec in attrs.iteritems()
                                               if isinstance(spec, from_config))
         inherit_from = attrs.get("inherit_confopts", ())
@@ -27,7 +26,6 @@ class _configurated(type):
 
 class configurated(object):
     __metaclass__ = _configurated
-
 
     def setup_defaults(self, kwargs, namespace="celery"):
         confopts = self.__confopts__

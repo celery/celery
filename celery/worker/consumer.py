@@ -83,6 +83,7 @@ import threading
 import traceback
 import warnings
 
+from ..abstract import StartStopComponent
 from ..app import app_or_default
 from ..datastructures import AttributeDict
 from ..exceptions import InvalidTaskError
@@ -128,6 +129,25 @@ The full contents of the message body was:
 MESSAGE_REPORT_FMT = """\
 body: %s {content_type:%s content_encoding:%s delivery_info:%s}\
 """
+
+
+class Component(StartStopComponent):
+    name = "worker.consumer"
+    last = True
+
+    def create(self, w):
+        prefetch_count = w.concurrency * w.prefetch_multiplier
+        c = w.consumer = self.instantiate(
+                w.consumer_cls, w.ready_queue, w.scheduler,
+                logger=w.logger, hostname=w.hostname,
+                send_events=w.send_events,
+                init_callback=w.ready_callback,
+                initial_prefetch_count=prefetch_count,
+                pool=w.pool,
+                priority_timer=w.priority_timer,
+                app=w.app,
+                controller=w)
+        return c
 
 
 class QoS(object):

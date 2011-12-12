@@ -20,14 +20,14 @@ import traceback
 
 from kombu.utils.finalize import Finalize
 
-from .. import beat
+from .. import abstract
 from .. import concurrency as _concurrency
-from .. import registry, signals
+from .. import registry
 from ..app import app_or_default
 from ..app.abstract import configurated, from_config
 from ..exceptions import SystemTerminate
 from ..log import SilenceRepeated
-from ..utils import noop, instantiate
+from ..utils import noop, qualname
 
 from . import state
 from .buckets import TaskBucket, FastQueue
@@ -35,6 +35,97 @@ from .buckets import TaskBucket, FastQueue
 RUN = 0x1
 CLOSE = 0x2
 TERMINATE = 0x3
+
+
+class Namespace(abstract.Namespace):
+    name = "worker"
+    builtin_boot_steps = ("celery.worker.autoscale",
+                          "celery.worker.consumer",
+                          "celery.worker.mediator")
+
+    def modules(self):
+        return (self.builtin_boot_steps
+              + self.app.conf.CELERYD_BOOT_STEPS)
+
+
+class Pool(abstract.StartStopComponent):
+    name = "worker.pool"
+    requires = ("queues", )
+
+    def __init__(self, w, autoscale=None, **kwargs):
+        w.autoscale = autoscale
+        w.pool = None
+        w.max_concurrency = None
+        w.min_concurrency = w.concurrency
+        if w.autoscale:
+            w.max_concurrency, w.min_concurrency = w.autoscale
+
+    def create(self, w):
+        pool = w.pool = self.instantiate(w.pool_cls, w.min_concurrency,
+                                logger=w.logger,
+                                initargs=(w.app, w.hostname),
+                                maxtasksperchild=w.max_tasks_per_child,
+                                timeout=w.task_time_limit,
+                                soft_timeout=w.task_soft_time_limit,
+                                putlocks=w.pool_putlocks)
+        return pool
+
+
+class Beat(abstract.StartStopComponent):
+    name = "worker.beat"
+
+    def __init__(self, w, embed_clockservice=False, **kwargs):
+        self.enabled = w.embed_clockservice = embed_clockservice
+        w.beat = None
+
+    def create(self, w):
+        from celery.beat import EmbeddedService
+        b = w.beat = EmbeddedService(app=w.app,
+                                     logger=w.logger,
+                                     schedule_filename=w.schedule_filename,
+                                     scheduler_cls=w.scheduler_cls)
+        return b
+
+
+class Queues(abstract.Component):
+    name = "worker.queues"
+
+    def create(self, w):
+        if not w.pool_cls.rlimit_safe:
+            w.disable_rate_limits = True
+        if w.disable_rate_limits:
+            w.ready_queue = FastQueue()
+            w.ready_queue.put = w.process_task
+        else:
+            w.ready_queue = TaskBucket(task_registry=registry.tasks)
+
+
+class Timers(abstract.Component):
+    name = "worker.timers"
+    requires = ("pool", )
+
+    def create(self, w):
+        w.priority_timer = self.instantiate(w.pool.Timer)
+        if not w.eta_scheduler_cls:
+            # Default Timer is set by the pool, as e.g. eventlet
+            # needs a custom implementation.
+            w.eta_scheduler_cls = w.pool.Timer
+            w.scheduler = self.instantiate(w.eta_scheduler_cls,
+                                    precision=w.eta_scheduler_precision,
+                                    on_error=w.on_timer_error,
+                                    on_tick=w.on_timer_tick)
+
+
+class StateDB(abstract.Component):
+    name = "worker.state-db"
+
+    def __init__(self, w, **kwargs):
+        self.enabled = w.state_db
+        w._persistence = None
+
+    def create(self, w):
+        w._persistence = state.Persistent(w.state_db)
+        atexit.register(w._persistence.save)
 
 
 class WorkController(configurated):
@@ -65,114 +156,30 @@ class WorkController(configurated):
 
     _state = None
     _running = 0
-    _persistence = None
 
     def __init__(self, loglevel=None, hostname=None, logger=None,
-            ready_callback=noop, embed_clockservice=False, autoscale=None,
+            ready_callback=noop,
             queues=None, app=None, **kwargs):
         self.app = app_or_default(app)
-        conf = self.app.conf
         self._shutdown_complete = threading.Event()
         self.setup_defaults(kwargs, namespace="celeryd")
         self.app.select_queues(queues)  # select queues subset.
 
         # Options
-        self.pool_cls = _concurrency.get_implementation(self.pool_cls)
-        self.autoscale = autoscale
         self.loglevel = loglevel or self.loglevel
         self.logger = self.app.log.get_default_logger()
         self.hostname = hostname or socket.gethostname()
-        self.embed_clockservice = embed_clockservice
         self.ready_callback = ready_callback
         self.timer_debug = SilenceRepeated(self.logger.debug,
                                            max_iterations=10)
         self._finalize = Finalize(self, self.stop, exitpriority=1)
         self._finalize_db = None
 
-        if self.state_db:
-            self._persistence = state.Persistent(self.state_db)
-            atexit.register(self._persistence.save)
-
-        # Queues
-        if not self.pool_cls.rlimit_safe:
-            self.disable_rate_limits = True
-        if self.disable_rate_limits:
-            self.ready_queue = FastQueue()
-            self.ready_queue.put = self.process_task
-        else:
-            self.ready_queue = TaskBucket(task_registry=registry.tasks)
-
-        self.logger.debug("Instantiating thread components...")
-
-        # Threads + Pool + Consumer
-        self.autoscaler = None
-        max_concurrency = None
-        min_concurrency = self.concurrency
-        if autoscale:
-            max_concurrency, min_concurrency = autoscale
-
-        self.pool = instantiate(self.pool_cls, min_concurrency,
-                                logger=self.logger,
-                                initargs=(self.app, self.hostname),
-                                maxtasksperchild=self.max_tasks_per_child,
-                                timeout=self.task_time_limit,
-                                soft_timeout=self.task_soft_time_limit,
-                                putlocks=self.pool_putlocks)
-        self.priority_timer = instantiate(self.pool.Timer)
-
-        if not self.eta_scheduler_cls:
-            # Default Timer is set by the pool, as e.g. eventlet
-            # needs a custom implementation.
-            self.eta_scheduler_cls = self.pool.Timer
-
-        self.autoscaler = None
-        if autoscale:
-            self.autoscaler = instantiate(self.autoscaler_cls, self.pool,
-                                          max_concurrency=max_concurrency,
-                                          min_concurrency=min_concurrency,
-                                          logger=self.logger)
-
-        self.mediator = None
-        if not self.disable_rate_limits:
-            self.mediator = instantiate(self.mediator_cls, self.ready_queue,
-                                        app=self.app,
-                                        callback=self.process_task,
-                                        logger=self.logger)
-
-        self.scheduler = instantiate(self.eta_scheduler_cls,
-                                precision=self.eta_scheduler_precision,
-                                on_error=self.on_timer_error,
-                                on_tick=self.on_timer_tick)
-
-        self.beat = None
-        if self.embed_clockservice:
-            self.beat = beat.EmbeddedService(app=self.app,
-                                logger=self.logger,
-                                schedule_filename=self.schedule_filename,
-                                scheduler_cls=self.scheduler_cls)
-
-        prefetch_count = self.concurrency * self.prefetch_multiplier
-        self.consumer = instantiate(self.consumer_cls,
-                                    self.ready_queue,
-                                    self.scheduler,
-                                    logger=self.logger,
-                                    hostname=self.hostname,
-                                    send_events=self.send_events,
-                                    init_callback=self.ready_callback,
-                                    initial_prefetch_count=prefetch_count,
-                                    pool=self.pool,
-                                    priority_timer=self.priority_timer,
-                                    app=self.app,
-                                    controller=self)
-
-        # The order is important here;
-        #   the first in the list is the first to start,
-        # and they must be stopped in reverse order.
-        self.components = filter(None, (self.pool,
-                                        self.mediator,
-                                        self.beat,
-                                        self.autoscaler,
-                                        self.consumer))
+        # Initialize boot steps
+        self.pool_cls = _concurrency.get_implementation(self.pool_cls)
+        self.components = []
+        self.namespace = Namespace(app=self.app,
+                                   logger=self.logger).apply(self, **kwargs)
 
     def start(self):
         """Starts the workers main loop."""
@@ -180,8 +187,7 @@ class WorkController(configurated):
 
         try:
             for i, component in enumerate(self.components):
-                self.logger.debug("Starting thread %s...",
-                                  component.__class__.__name__)
+                self.logger.debug("Starting %s...", qualname(component))
                 self._running = i + 1
                 component.start()
         except SystemTerminate:
@@ -236,11 +242,9 @@ class WorkController(configurated):
             return
 
         self._state = self.CLOSE
-        signals.worker_shutdown.send(sender=self)
 
         for component in reversed(self.components):
-            self.logger.debug("%s thread %s...", what,
-                              component.__class__.__name__)
+            self.logger.debug("%s %s...", what, qualname(component))
             stop = component.stop
             if not warm:
                 stop = getattr(component, "terminate", None) or stop
