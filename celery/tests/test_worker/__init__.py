@@ -473,7 +473,7 @@ class test_Consumer(unittest.TestCase):
         items = [entry[2] for entry in self.eta_schedule.queue]
         found = 0
         for item in items:
-            if item.args[0].task_name == foo_task.name:
+            if item.args[0].name == foo_task.name:
                 found = True
         self.assertTrue(found)
         self.assertTrue(l.task_consumer.qos.call_count)
@@ -725,8 +725,9 @@ class test_WorkController(AppCase):
         from celery import Celery
         from celery import signals
         from celery.app import _tls
-        from celery.worker import process_initializer
-        from celery.worker import WORKER_SIGRESET, WORKER_SIGIGNORE
+        from celery.concurrency.processes import process_initializer
+        from celery.concurrency.processes import (WORKER_SIGRESET,
+                                                  WORKER_SIGIGNORE)
 
         def on_worker_process_init(**kwargs):
             on_worker_process_init.called = True
@@ -881,7 +882,7 @@ class test_WorkController(AppCase):
 
         state.Persistent = Mock()
         try:
-            worker = self.create_worker(db="statefilename")
+            worker = self.create_worker(state_db="statefilename")
             self.assertTrue(worker._persistence)
         finally:
             state.Persistent = Persistent

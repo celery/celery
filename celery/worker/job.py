@@ -70,7 +70,7 @@ class Request(object):
                  "_does_debug", "_does_info", "request_dict",
                  "acknowledged", "success_msg", "error_msg",
                  "retry_msg", "time_start", "worker_pid",
-                 "_already_revoked", "_terminate_on_ack", "_tzinfo")
+                 "_already_revoked", "_terminate_on_ack", "_tzlocal")
 
     #: Format string used to log task success.
     success_msg = """\
@@ -97,6 +97,7 @@ class Request(object):
         self.kwargs = body.get("kwargs", {})
         eta = body.get("eta")
         expires = body.get("expires")
+        utc = body.get("utc", False)
         self.on_ack = on_ack
         self.hostname = hostname or socket.gethostname()
         self.logger = logger or self.app.log.get_default_logger()
@@ -105,7 +106,7 @@ class Request(object):
         self.task = task or tasks[name]
         self.acknowledged = self._already_revoked = False
         self.time_start = self.worker_pid = self._terminate_on_ack = None
-        self._tzinfo = None
+        self._tzlocal = None
 
         # timezone means the message is timezone-aware, and the only timezone
         # supported at this point is UTC.
@@ -121,6 +122,7 @@ class Request(object):
         else:
             self.expires = None
 
+        delivery_info = {} if delivery_info is None else delivery_info
         self.delivery_info = {
             "exchange": delivery_info.get("exchange"),
             "routing_key": delivery_info.get("routing_key"),
@@ -141,7 +143,9 @@ class Request(object):
     @classmethod
     def from_message(cls, message, body, **kwargs):
         # should be deprecated
-        return cls(body, delivery_info=message.delivery_info, **kwargs)
+        return Request(body,
+                   delivery_info=getattr(message, "delivery_info", None),
+                   **kwargs)
 
     def extend_with_default_kwargs(self, loglevel, logfile):
         """Extend the tasks keyword arguments with standard task arguments.
@@ -160,7 +164,7 @@ class Request(object):
                           "loglevel": loglevel,
                           "task_id": self.id,
                           "task_name": self.name,
-                          "task_retries": self.request_dict["retries"],
+                          "task_retries": self.request_dict.get("retries", 0),
                           "task_is_eager": False,
                           "delivery_info": self.delivery_info}
         fun = self.task.run
@@ -435,7 +439,7 @@ class Request(object):
 
 class TaskRequest(Request):
 
-    def __init__(name, id, args=(), kwargs={},
+    def __init__(self, name, id, args=(), kwargs={},
             eta=None, expires=None, **options):
         """Compatibility class."""
 

@@ -29,7 +29,7 @@ from celery.task import task as task_dec
 from celery.task.base import Task
 from celery.utils import uuid
 from celery.utils.encoding import from_utf8, default_encode
-from celery.worker.job import Request, execute_and_trace
+from celery.worker.job import Request, TaskRequest, execute_and_trace
 from celery.worker.state import revoked
 
 from celery.tests.compat import catch_warnings
@@ -430,7 +430,7 @@ class test_TaskRequest(unittest.TestCase):
             mytask.acks_late = False
 
     def test_from_message_invalid_kwargs(self):
-        body = dict(task="foo", id=1, args=(), kwargs="foo")
+        body = dict(task=mytask.name, id=1, args=(), kwargs="foo")
         with self.assertRaises(InvalidTaskError):
             TaskRequest.from_message(None, body)
 
@@ -547,7 +547,7 @@ class test_TaskRequest(unittest.TestCase):
                           content_type="application/json",
                           content_encoding="utf-8")
         tw = TaskRequest.from_message(m, m.decode())
-        self.assertIsInstance(tw, TaskRequest)
+        self.assertIsInstance(tw, Request)
         self.assertEqual(tw.task_name, body["task"])
         self.assertEqual(tw.task_id, body["id"])
         self.assertEqual(tw.args, body["args"])
@@ -563,7 +563,7 @@ class test_TaskRequest(unittest.TestCase):
                           content_type="application/json",
                           content_encoding="utf-8")
         tw = TaskRequest.from_message(m, m.decode())
-        self.assertIsInstance(tw, TaskRequest)
+        self.assertIsInstance(tw, Request)
         self.assertEquals(tw.args, [])
         self.assertEquals(tw.kwargs, {})
 
@@ -572,7 +572,7 @@ class test_TaskRequest(unittest.TestCase):
         m = Message(None, body=anyjson.serialize(body), backend="foo",
                           content_type="application/json",
                           content_encoding="utf-8")
-        with self.assertRaises(InvalidTaskError):
+        with self.assertRaises(KeyError):
             TaskRequest.from_message(m, m.decode())
 
     def test_from_message_nonexistant_task(self):
@@ -665,7 +665,7 @@ class test_TaskRequest(unittest.TestCase):
                     "task_id": tw.task_id,
                     "task_retries": 0,
                     "task_is_eager": False,
-                    "delivery_info": {},
+                    "delivery_info": {"exchange": None, "routing_key": None},
                     "task_name": tw.task_name})
 
     def _test_on_failure(self, exception):

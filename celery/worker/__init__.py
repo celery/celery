@@ -24,7 +24,7 @@ from .. import beat
 from .. import concurrency as _concurrency
 from .. import registry, signals
 from ..app import app_or_default
-from ..app.abstract import configured, from_config
+from ..app.abstract import configurated, from_config
 from ..exceptions import SystemTerminate
 from ..log import SilenceRepeated
 from ..utils import noop, instantiate
@@ -65,6 +65,7 @@ class WorkController(configurated):
 
     _state = None
     _running = 0
+    _persistence = None
 
     def __init__(self, loglevel=None, hostname=None, logger=None,
             ready_callback=noop, embed_clockservice=False, autoscale=None,
@@ -106,7 +107,7 @@ class WorkController(configurated):
         # Threads + Pool + Consumer
         self.autoscaler = None
         max_concurrency = None
-        min_concurrency = concurrency
+        min_concurrency = self.concurrency
         if autoscale:
             max_concurrency, min_concurrency = autoscale
 
@@ -139,7 +140,7 @@ class WorkController(configurated):
                                         logger=self.logger)
 
         self.scheduler = instantiate(self.eta_scheduler_cls,
-                                precision=eta_scheduler_precision,
+                                precision=self.eta_scheduler_precision,
                                 on_error=self.on_timer_error,
                                 on_tick=self.on_timer_tick)
 
