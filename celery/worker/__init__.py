@@ -24,6 +24,7 @@ from .. import beat
 from .. import concurrency as _concurrency
 from .. import registry, platforms, signals
 from ..app import app_or_default
+from ..app.abstract import configured, from_config
 from ..exceptions import SystemTerminate
 from ..log import SilenceRepeated
 from ..utils import noop, instantiate
@@ -67,111 +68,59 @@ def process_initializer(app, hostname):
     signals.worker_process_init.send(sender=None)
 
 
-class WorkController(object):
+class WorkController(configurated):
     """Unmanaged worker instance."""
     RUN = RUN
     CLOSE = CLOSE
     TERMINATE = TERMINATE
 
-    #: The number of simultaneous processes doing work (default:
-    #: :setting:`CELERYD_CONCURRENCY`)
-    concurrency = None
-
-    #: The loglevel used (default: :const:`logging.INFO`)
+    concurrency = from_config()
     loglevel = logging.ERROR
-
-    #: The logfile used, if no logfile is specified it uses `stderr`
-    #: (default: :setting:`CELERYD_LOG_FILE`).
-    logfile = None
-
-    #: If :const:`True`, celerybeat is embedded, running in the main worker
-    #: process as a thread.
-    embed_clockservice = None
-
-    #: Enable the sending of monitoring events, these events can be captured
-    #: by monitors (celerymon).
-    send_events = False
-
-    #: The :class:`logging.Logger` instance used for logging.
-    logger = None
-
-    #: The pool instance used.
-    pool = None
-
-    #: The internal queue object that holds tasks ready for immediate
-    #: processing.
-    ready_queue = None
-
-    #: Instance of :class:`celery.worker.mediator.Mediator`.
-    mediator = None
-
-    #: Consumer instance.
-    consumer = None
+    logfile = from_config("log_file")
+    send_events = from_config()
+    pool_cls = from_config("pool")
+    consumer_cls = from_config("consumer")
+    mediator_cls = from_config("mediator")
+    eta_scheduler_cls = from_config("eta_scheduler")
+    eta_scheduler_precision = from_config()
+    autoscaler_cls = from_config("autoscaler")
+    schedule_filename = from_config()
+    scheduler_cls = from_config("celerybeat_scheduler")
+    task_time_limit = from_config()
+    task_soft_time_limit = from_config()
+    max_tasks_per_child = from_config()
+    pool_putlocks = from_config()
+    prefetch_multiplier = from_config()
+    state_db = from_config()
+    disable_rate_limits = from_config()
 
     _state = None
     _running = 0
 
-    def __init__(self, concurrency=None, logfile=None, loglevel=None,
-            send_events=None, hostname=None, ready_callback=noop,
-            embed_clockservice=False, pool_cls=None, consumer_cls=None,
-            mediator_cls=None, eta_scheduler_cls=None,
-            schedule_filename=None, task_time_limit=None,
-            task_soft_time_limit=None, max_tasks_per_child=None,
-            pool_putlocks=None, db=None, prefetch_multiplier=None,
-            eta_scheduler_precision=None, disable_rate_limits=None,
-            autoscale=None, autoscaler_cls=None, scheduler_cls=None,
-            queues=None, app=None):
-
+    def __init__(self, loglevel=None, hostname=None, logger=None,
+            ready_callback=noop, embed_clockservice=False, autoscale=None,
+            queues=None, app=None, **kwargs):
         self.app = app_or_default(app)
         conf = self.app.conf
         self._shutdown_complete = threading.Event()
+        self.setup_defaults(kwargs, namespace="celeryd")
         self.app.select_queues(queues)  # select queues subset.
 
         # Options
+        self.pool_cls = _concurrency.get_implementation(self.pool_cls)
+        self.autoscale = autoscale
         self.loglevel = loglevel or self.loglevel
-        self.concurrency = concurrency or conf.CELERYD_CONCURRENCY
-        self.logfile = logfile or conf.CELERYD_LOG_FILE
         self.logger = self.app.log.get_default_logger()
-        if send_events is None:
-            send_events = conf.CELERY_SEND_EVENTS
-        self.send_events = send_events
-        self.pool_cls = _concurrency.get_implementation(
-                            pool_cls or conf.CELERYD_POOL)
-        self.consumer_cls = consumer_cls or conf.CELERYD_CONSUMER
-        self.mediator_cls = mediator_cls or conf.CELERYD_MEDIATOR
-        self.eta_scheduler_cls = eta_scheduler_cls or \
-                                    conf.CELERYD_ETA_SCHEDULER
-
-        self.autoscaler_cls = autoscaler_cls or \
-                                    conf.CELERYD_AUTOSCALER
-        self.schedule_filename = schedule_filename or \
-                                    conf.CELERYBEAT_SCHEDULE_FILENAME
-        self.scheduler_cls = scheduler_cls or conf.CELERYBEAT_SCHEDULER
         self.hostname = hostname or socket.gethostname()
         self.embed_clockservice = embed_clockservice
         self.ready_callback = ready_callback
-        self.task_time_limit = task_time_limit or \
-                                conf.CELERYD_TASK_TIME_LIMIT
-        self.task_soft_time_limit = task_soft_time_limit or \
-                                conf.CELERYD_TASK_SOFT_TIME_LIMIT
-        self.max_tasks_per_child = max_tasks_per_child or \
-                                conf.CELERYD_MAX_TASKS_PER_CHILD
-        self.pool_putlocks = pool_putlocks or \
-                                conf.CELERYD_POOL_PUTLOCKS
-        self.eta_scheduler_precision = eta_scheduler_precision or \
-                                conf.CELERYD_ETA_SCHEDULER_PRECISION
-        self.prefetch_multiplier = prefetch_multiplier or \
-                                conf.CELERYD_PREFETCH_MULTIPLIER
         self.timer_debug = SilenceRepeated(self.logger.debug,
                                            max_iterations=10)
-        self.db = db or conf.CELERYD_STATE_DB
-        self.disable_rate_limits = disable_rate_limits or \
-                                conf.CELERY_DISABLE_RATE_LIMITS
         self._finalize = Finalize(self, self.stop, exitpriority=1)
         self._finalize_db = None
 
-        if self.db:
-            self._persistence = state.Persistent(self.db)
+        if self.state_db:
+            self._persistence = state.Persistent(self.state_db)
             atexit.register(self._persistence.save)
 
         # Queues

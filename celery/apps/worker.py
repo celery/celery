@@ -14,6 +14,7 @@ import warnings
 
 from .. import __version__, platforms, signals
 from ..app import app_or_default
+from ..app.abstract import configurated, from_config
 from ..exceptions import ImproperlyConfigured, SystemTerminate
 from ..utils import isatty, LOG_LEVELS, cry, qualname
 from ..worker import WorkController
@@ -68,44 +69,28 @@ def get_process_name():
         return multiprocessing.current_process().name
 
 
-class Worker(object):
+class Worker(configurated):
     WorkController = WorkController
 
-    def __init__(self, concurrency=None, loglevel=None, logfile=None,
-            hostname=None, discard=False, run_clockservice=False,
-            schedule=None, task_time_limit=None, task_soft_time_limit=None,
-            max_tasks_per_child=None, queues=None, events=None, db=None,
-            include=None, app=None, pidfile=None,
-            redirect_stdouts=None, redirect_stdouts_level=None,
-            autoscale=None, scheduler_cls=None, pool=None, **kwargs):
+    inherit_confopts = (WorkController, )
+    loglevel = from_config("log_level")
+    redirect_stdouts = from_config()
+    redirect_stdouts_level = from_config()
+
+    def __init__(self, hostname=None, discard=False, embed_clockservice=False,
+            queues=None, include=None, app=None, pidfile=None,
+            autoscale=None, **kwargs):
         self.app = app = app_or_default(app)
         conf = app.conf
-        self.concurrency = (concurrency or
-                            conf.CELERYD_CONCURRENCY or cpu_count())
-        self.loglevel = loglevel or conf.CELERYD_LOG_LEVEL
-        self.logfile = logfile or conf.CELERYD_LOG_FILE
-
+        self.setup_defaults(kwargs, namespace="celeryd")
+        if not self.concurrency:
+            self.concurrency = cpu_count()
         self.hostname = hostname or socket.gethostname()
         self.discard = discard
-        self.run_clockservice = run_clockservice
-        if self.app.IS_WINDOWS and self.run_clockservice:
+        self.embed_clockservice = embed_clockservice
+        if self.app.IS_WINDOWS and self.embed_clockservice:
             self.die("-B option does not work on Windows.  "
                      "Please run celerybeat as a separate service.")
-        self.schedule = schedule or conf.CELERYBEAT_SCHEDULE_FILENAME
-        self.scheduler_cls = scheduler_cls or conf.CELERYBEAT_SCHEDULER
-        self.events = events if events is not None else conf.CELERY_SEND_EVENTS
-        self.task_time_limit = (task_time_limit or
-                                conf.CELERYD_TASK_TIME_LIMIT)
-        self.task_soft_time_limit = (task_soft_time_limit or
-                                     conf.CELERYD_TASK_SOFT_TIME_LIMIT)
-        self.max_tasks_per_child = (max_tasks_per_child or
-                                    conf.CELERYD_MAX_TASKS_PER_CHILD)
-        self.redirect_stdouts = (redirect_stdouts or
-                                 conf.CELERY_REDIRECT_STDOUTS)
-        self.redirect_stdouts_level = (redirect_stdouts_level or
-                                       conf.CELERY_REDIRECT_STDOUTS_LEVEL)
-        self.pool = pool or conf.CELERYD_POOL
-        self.db = db
         self.use_queues = [] if queues is None else queues
         self.queues = None
         self.include = [] if include is None else include
@@ -220,8 +205,8 @@ class Worker(object):
             "concurrency": concurrency,
             "loglevel": LOG_LEVELS[self.loglevel],
             "logfile": self.logfile or "[stderr]",
-            "celerybeat": "ON" if self.run_clockservice else "OFF",
-            "events": "ON" if self.events else "OFF",
+            "celerybeat": "ON" if self.embed_clockservice else "OFF",
+            "events": "ON" if self.send_events else "OFF",
             "loader": qualname(self.loader),
             "queues": app.amqp.queues.format(indent=18, indent_first=False),
         }
@@ -231,21 +216,11 @@ class Worker(object):
             pidlock = platforms.create_pidlock(self.pidfile).acquire()
             atexit.register(pidlock.release)
         worker = self.WorkController(app=self.app,
-                                concurrency=self.concurrency,
-                                loglevel=self.loglevel,
-                                logfile=self.logfile,
-                                hostname=self.hostname,
-                                ready_callback=self.on_consumer_ready,
-                                embed_clockservice=self.run_clockservice,
-                                schedule_filename=self.schedule,
-                                scheduler_cls=self.scheduler_cls,
-                                send_events=self.events,
-                                db=self.db,
-                                max_tasks_per_child=self.max_tasks_per_child,
-                                task_time_limit=self.task_time_limit,
-                                task_soft_time_limit=self.task_soft_time_limit,
-                                autoscale=self.autoscale,
-                                pool_cls=self.pool)
+                                    hostname=self.hostname,
+                                    ready_callback=self.on_consumer_ready,
+                                    embed_clockservice=self.embed_clockservice,
+                                    autoscale=self.autoscale,
+                                    **self.confopts_as_dict())
         self.install_platform_tweaks(worker)
         worker.start()
 

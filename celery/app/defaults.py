@@ -16,6 +16,8 @@ import sys
 from collections import deque
 from datetime import timedelta
 
+from ..utils.functional import memoize
+
 is_jython = sys.platform.startswith("java")
 is_pypy = hasattr(sys, "pypy_version_info")
 
@@ -209,6 +211,7 @@ def flatten(d, ns=""):
                 stack.append((name + key + '_', value))
             else:
                 yield name + key, value
+DEFAULTS = dict((key, value.default) for key, value in flatten(NAMESPACES))
 
 
 def find_deprecated_settings(source):
@@ -221,4 +224,24 @@ def find_deprecated_settings(source):
                             alternative=opt.alt)
 
 
-DEFAULTS = dict((key, value.default) for key, value in flatten(NAMESPACES))
+@memoize(maxsize=None)
+def find(name, namespace="celery"):
+    # - Try specified namespace first.
+    namespace = namespace.upper()
+    for key, value in NAMESPACES[namespace].iteritems():
+        if key.lower() == name.lower():
+            return namespace, key, value
+
+    # - Try all the other namespaces.
+    for ns, keys in NAMESPACES.iteritems():
+        if isinstance(keys, dict):
+            if ns != namespace:
+                for key, value in keys.iteritems():
+                    if key.lower() == name.lower():
+                        return ns, key, value
+        else:
+            if ns.lower() == name.lower():
+                return None, key, value
+
+    # - See if name is a qualname last.
+    return None, name.upper(), DEFAULTS[name.upper()]

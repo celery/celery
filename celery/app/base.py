@@ -25,7 +25,7 @@ from .. import datastructures
 from .. import platforms
 from ..utils import cached_property, instantiate, lpmerge
 
-from .defaults import DEFAULTS, find_deprecated_settings
+from .defaults import DEFAULTS, find_deprecated_settings, find
 
 import kombu
 if kombu.VERSION < (1, 1, 0):
@@ -60,10 +60,19 @@ class Settings(datastructures.ConfigurationView):
 
     @property
     def BROKER_HOST(self):
-
         return (os.environ.get("CELERY_BROKER_URL") or
                 self.get("BROKER_URL") or
                 self.get("BROKER_HOST"))
+
+    def find_option(self, name, namespace="celery"):
+        return find(name, namespace)
+
+    def get_by_parts(self, *parts):
+        return self["_".join(filter(None, parts))]
+
+    def find_value_for_key(self, name, namespace="celery"):
+        ns, key, _ = self.find_option(name, namespace=namespace)
+        return self.get_by_parts(ns, key)
 
 
 class BaseApp(object):
