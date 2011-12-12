@@ -110,10 +110,10 @@ class Timers(abstract.Component):
             # Default Timer is set by the pool, as e.g. eventlet
             # needs a custom implementation.
             w.eta_scheduler_cls = w.pool.Timer
-            w.scheduler = self.instantiate(w.eta_scheduler_cls,
-                                    precision=w.eta_scheduler_precision,
-                                    on_error=w.on_timer_error,
-                                    on_tick=w.on_timer_tick)
+        w.scheduler = self.instantiate(w.eta_scheduler_cls,
+                                precision=w.eta_scheduler_precision,
+                                on_error=w.on_timer_error,
+                                on_tick=w.on_timer_tick)
 
 
 class StateDB(abstract.Component):

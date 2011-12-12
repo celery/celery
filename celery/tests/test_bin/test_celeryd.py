@@ -120,7 +120,7 @@ class test_Worker(AppCase):
         celery = Celery(set_as_current=False)
         celery.IS_WINDOWS = True
         with self.assertRaises(SystemExit):
-            celery.Worker(run_clockservice=True)
+            celery.Worker(embed_clockservice=True)
 
     def test_tasklist(self):
         celery = Celery(set_as_current=False)

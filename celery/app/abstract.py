@@ -17,6 +17,11 @@ class _configurated(type):
                                           for attr, spec in attrs.iteritems()
                                               if isinstance(spec, from_config))
         inherit_from = attrs.get("inherit_confopts", ())
+        for subcls in bases:
+            try:
+                attrs["__confopts__"].update(subcls.__confopts__)
+            except AttributeError:
+                pass
         for subcls in inherit_from:
             attrs["__confopts__"].update(subcls.__confopts__)
         attrs = dict((k, v if not isinstance(v, from_config) else None)
