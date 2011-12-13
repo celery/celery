@@ -370,7 +370,7 @@ def set_effective_user(uid=None, gid=None):
         # If GID isn't defined, get the primary GID of the user.
         if not gid and pwd:
             gid = pwd.getpwuid(uid).pw_gid
-            setgid(gid)
+        setgid(gid)
         setuid(uid)
     else:
         gid and setgid(gid)
