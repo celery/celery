@@ -5,6 +5,14 @@
 .. contents::
     :local:
 
+.. _version-2.2.9:
+
+2.2.9
+=====
+:release-date: 2011-12-13 11:00 A.M GMT
+
+* The group id was not changed if both ``--uid`` and ``--gid`` specified.
+
 .. _version-2.2.8:
 
 2.2.8
