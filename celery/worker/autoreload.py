@@ -13,10 +13,27 @@ import sys
 import time
 import select
 import hashlib
+import threading
 
 from collections import defaultdict
 
 from .. import current_app
+from ..abstract import StartStopComponent
+
+
+class WorkerComponent(StartStopComponent):
+    name = "worker.autoreloader"
+    requires = ("pool", )
+
+    def __init__(self, w, **kwargs):
+        self.enabled = w.autoreload
+        w.autoreloader = None
+
+    def create(self, w):
+        w.autoreloader = self.instantiate(w.autoreloader_cls,
+                                          modules=w.autoreload,
+                                          logger=w.logger)
+        return w.autoreloader
 
 
 def file_hash(filename, algorithm='md5'):
@@ -151,11 +168,16 @@ else:
     _monitor_cls = StatMonitor
 
 
-class AutoReloader(object):
+class AutoReloader(threading.Thread):
     """Tracks changes in modules and fires reload commands"""
-    def __init__(self, modules, monitor_cls=_monitor_cls, *args, **kwargs):
-        self._monitor = monitor_cls(modules, self.on_change, *args, **kwargs)
-        self._hashes = dict([(f, file_hash(f)) for f in modules])
+    def __init__(self, modules, monitor_cls=_monitor_cls, logger=None,
+                 *args, **kwargs):
+        super(AutoReloader, self).__init__()
+        self.daemon = True
+        self.logger = logger
+        files = [sys.modules[m].__file__ for m in modules]
+        self._monitor = monitor_cls(files, self.on_change, *args, **kwargs)
+        self._hashes = dict([(f, file_hash(f)) for f in files])
 
     def start(self):
         self._monitor.start()
@@ -168,6 +190,8 @@ class AutoReloader(object):
                 modified.append(f)
                 self._hashes[f] = fhash
         if modified:
+            self.logger.debug("Detected modified modules: %s" %\
+                    map(self._module_name, modified))
             self._reload(map(self._module_name, modified))
 
     def _reload(self, modules):
@@ -177,3 +201,7 @@ class AutoReloader(object):
     @classmethod
     def _module_name(cls, path):
         return os.path.splitext(os.path.basename(path))[0]
+
+    def stop(self):
+        if hasattr(self._monitor, 'stop'):
+            self._monitor.stop()
