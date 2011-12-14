@@ -40,6 +40,7 @@ TERMINATE = 0x3
 class Namespace(abstract.Namespace):
     name = "worker"
     builtin_boot_steps = ("celery.worker.autoscale",
+                          "celery.worker.autoreload",
                           "celery.worker.consumer",
                           "celery.worker.mediator")
 
@@ -144,6 +145,7 @@ class WorkController(configurated):
     eta_scheduler_cls = from_config("eta_scheduler")
     eta_scheduler_precision = from_config()
     autoscaler_cls = from_config("autoscaler")
+    autoreloader_cls = from_config("autoreloader")
     schedule_filename = from_config()
     scheduler_cls = from_config("celerybeat_scheduler")
     task_time_limit = from_config()

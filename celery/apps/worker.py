@@ -17,6 +17,7 @@ from ..app import app_or_default
 from ..app.abstract import configurated, from_config
 from ..exceptions import ImproperlyConfigured, SystemTerminate
 from ..utils import isatty, LOG_LEVELS, cry, qualname
+from ..utils.functional import maybe_list
 from ..worker import WorkController
 
 try:
@@ -79,7 +80,7 @@ class Worker(configurated):
 
     def __init__(self, hostname=None, discard=False, embed_clockservice=False,
             queues=None, include=None, app=None, pidfile=None,
-            autoscale=None, **kwargs):
+            autoscale=None, autoreload=False, **kwargs):
         self.app = app = app_or_default(app)
         self.setup_defaults(kwargs, namespace="celeryd")
         if not self.concurrency:
@@ -106,6 +107,13 @@ class Worker(configurated):
             self.use_queues = self.use_queues.split(",")
         if isinstance(self.include, basestring):
             self.include = self.include.split(",")
+
+        self.autoreload = autoreload
+        if autoreload:
+            imports = list(self.include)
+            imports.extend(maybe_list(
+                self.app.conf.get("CELERY_IMPORTS") or ()))
+            self.autoreload = set(imports)
 
         if not isinstance(self.loglevel, int):
             try:
@@ -219,6 +227,7 @@ class Worker(configurated):
                                     ready_callback=self.on_consumer_ready,
                                     embed_clockservice=self.embed_clockservice,
                                     autoscale=self.autoscale,
+                                    autoreload=self.autoreload,
                                     **self.confopts_as_dict())
         self.install_platform_tweaks(worker)
         worker.start()

@@ -181,6 +181,9 @@ class WorkerCommand(Command):
                      "max_concurrency,min_concurrency. Example: "
                      "--autoscale=10,3 (always keep 3 processes, "
                      "but grow to 10 if necessary)."),
+            Option('--autoreload', dest="autoreload",
+                    action="store_true", default=False,
+                help="Enable autoreloading."),
         )
 
 
