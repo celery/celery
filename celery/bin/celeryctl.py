@@ -156,10 +156,10 @@ class apply(Command):
         if isinstance(kwargs, basestring):
             kwargs = deserialize(kwargs)
 
-        # Expires can be int.
+        # Expires can be float.
         expires = kw.get("expires") or None
         try:
-            expires = int(expires)
+            expires = float(expires)
         except (TypeError, ValueError):
             pass
 

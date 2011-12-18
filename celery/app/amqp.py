@@ -211,7 +211,7 @@ class TaskPublisher(messaging.Publisher):
         if countdown:                           # Convert countdown to ETA.
             now = now or datetime.utcnow()
             eta = now + timedelta(seconds=countdown)
-        if isinstance(expires, int):
+        if isinstance(expires, (int, float)):
             now = now or datetime.utcnow()
             expires = now + timedelta(seconds=expires)
         eta = eta and eta.isoformat()

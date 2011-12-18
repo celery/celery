@@ -89,6 +89,10 @@ class test_AMQPBackend(unittest.TestCase):
         b = self.create_backend(expires=48)
         self.assertEqual(b.queue_arguments.get("x-expires"), 48 * 1000.0)
 
+    def test_expires_is_float(self):
+        b = self.create_backend(expires=48.3)
+        self.assertEqual(b.queue_arguments.get("x-expires"), 48.3 * 1000.0)
+
     def test_expires_is_timedelta(self):
         b = self.create_backend(expires=timedelta(minutes=1))
         self.assertEqual(b.queue_arguments.get("x-expires"), 60 * 1000.0)
