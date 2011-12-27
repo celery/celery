@@ -367,8 +367,15 @@ class _Frame(object):
     def __init__(self, frame):
         self.f_globals = {
             "__file__": frame.f_globals.get("__file__", "__main__"),
+            "__name__": frame.f_globals.get("__name__"),
+            "__loader__": frame.f_globals.get("__loader__"),
         }
         self.f_code = self.Code(frame.f_code)
+        self.f_locals = {}
+        if '__traceback_hide__' in frame.f_locals:
+            self.f_locals['__traceback_hide__'] = frame.f_locals['__traceback_hide__']
+        self.f_lineno = frame.f_lineno
+        self.f_code = _Code(code=frame.f_code)
 
 
 class Traceback(object):
