@@ -1,15 +1,21 @@
-CELERY_PYTHONPATH="/srv/platform/lib"
-CELERYD_NODES="w1"
+# Passed into celeryd multi
+#CELERYD="-m celery.bin.celeryd_detach"
 
-# 5 minute hard time limit for tasks + enable events at startup.
-CELERYD_OPTS="--time-limit=300 -E --beat -s /tmp/celerybeat-schedule"
+# Path to the celerd multi
+#CELERYD_MULTI="/usr/bin/celeryd-multi"
 
-# Full path to the Django project directory.
-CELERYD_CHDIR="/srv/platform/lib/atizo"
+# Sets the verbosity of the celeryd logging.
+#CELERYD_LOG_LEVEL="INFO"
 
-CELERYD="$CELERYD_CHDIR/manage.py celeryd"
-CELERYD_LOG_FILE=/var/log/celeryd/celeryd.log
-CELERYD_PID_FILE=/var/run/celeryd/celeryd.pid
+# Define the loader that celeryd should use for loading in configs.
+#CELERY_LOADER=""
 
-CELERYD_USER="celeryd"
-CELERYD_GROUP="celeryd"
+# User and group information for directories
+#CELERYD_USER="celery"
+#CELERYD_GROUP="celery"
+
+# Default arguments to be passed into celeryd.
+#CELERYD_OPTS=""
+
+# Change to this directory first before launching celeryd.
+#CELERYD_CHDIR=""
