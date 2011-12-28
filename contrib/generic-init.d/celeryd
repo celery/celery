@@ -126,7 +126,7 @@ case "$1" in
     ;;
 
     status)
-        $CELERYCTL status
+        $CELERYCTL status $CELERYCTL_OPTS
     ;;
 
     restart)
