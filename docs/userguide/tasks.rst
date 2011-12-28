@@ -710,7 +710,7 @@ you have to pass them as regular args:
             self.headers = headers
             self.body = body
 
-            super(Exception, self).__init__(status_code, headers, body)
+            super(HttpError, self).__init__(status_code, headers, body)
 
 .. _task-custom-classes:
 
