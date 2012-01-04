@@ -1474,7 +1474,7 @@ Please use :setting:`CELERY_TASK_RESULT_EXPIRES` instead.
 
 .. note::
 
-    AMQP result expiration requires RabbitMQ versions 2.1.0 and higher.
+    AMQP result expiration requires RabbitMQ versions 2.1.0 or higher.
 
 .. setting:: CELERY_TASK_ERROR_WHITELIST
 
