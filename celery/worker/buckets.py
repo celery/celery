@@ -11,7 +11,7 @@
     The :mod:`celery.worker.mediator` is then responsible
     for moving tasks from the ``ready_queue`` to the worker pool.
 
-    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :copyright: (c) 2009 - 2012 by Ask Solem.
     :license: BSD, see LICENSE for more details.
 
 """

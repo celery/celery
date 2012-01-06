@@ -7,7 +7,7 @@ This module contains the component responsible for consuming messages
 from the broker, processing the messages and keeping the broker connections
 up and running.
 
-:copyright: (c) 2009 - 2011 by Ask Solem.
+:copyright: (c) 2009 - 2012 by Ask Solem.
 :license: BSD, see LICENSE for more details.
 
 

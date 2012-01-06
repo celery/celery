@@ -6,7 +6,7 @@
     THis is a simple program that dumps events to the console
     as they happen.  Think of it like a `tcpdump` for Celery events.
 
-    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :copyright: (c) 2009 - 2012 by Ask Solem.
     :license: BSD, see LICENSE for more details.
 
 """

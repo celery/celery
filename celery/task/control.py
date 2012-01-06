@@ -6,7 +6,7 @@
     Client for worker remote control commands.
     Server implementation is in :mod:`celery.worker.control`.
 
-    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :copyright: (c) 2009 - 2012 by Ask Solem.
     :license: BSD, see LICENSE for more details.
 
 """

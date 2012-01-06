@@ -7,7 +7,7 @@
     needs to be loaded as soon as possible, and that
     shall not load any third party modules.
 
-    :copyright: (c) 2009 - 2011 by Ask Solem.
+    :copyright: (c) 2009 - 2012 by Ask Solem.
     :license: BSD, see LICENSE for more details.
 
 """
