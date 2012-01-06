@@ -29,8 +29,7 @@ class test_eventlet_patch(EventletCase):
         prev_eventlet = sys.modules.pop("celery.concurrency.eventlet", None)
         os.environ.pop("EVENTLET_NOPATCH")
         try:
-            from celery.concurrency import eventlet
-            self.assertTrue(eventlet)
+            import celery.concurrency.eventlet
             self.assertTrue(monkey_patched)
         finally:
             sys.modules["celery.concurrency.eventlet"] = prev_eventlet

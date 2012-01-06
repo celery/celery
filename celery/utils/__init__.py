@@ -494,3 +494,11 @@ def reprcall(name, args=(), kwargs=(), sep=', '):
     return "%s(%s%s%s)" % (name, sep.join(map(_safe_repr, args)),
                            (args and kwargs) and sep or "",
                            reprkwargs(kwargs, sep))
+
+
+def uniq(it):
+    seen = set()
+    for obj in it:
+        if obj not in seen:
+            yield obj
+            seen.add(obj)

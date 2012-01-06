@@ -22,6 +22,7 @@ from threading import RLock
 
 from kombu.utils.limits import TokenBucket  # noqa
 
+from .utils import uniq
 from .utils.compat import UserDict, OrderedDict
 
 
@@ -262,7 +263,7 @@ class DictAttribute(object):
         return vars(self.obj).iteritems()
     iteritems = _iterate_items
 
-    if sys.version_info >= (3, 0):
+    if sys.version_info >= (3, 0):  # pragma: no cover
         items = _iterate_items
     else:
 
@@ -333,15 +334,15 @@ class ConfigurationView(AttributeDictMixin):
         return chain(*[op(d) for d in reversed(self._order)])
 
     def _iterate_keys(self):
-        return self._iter(lambda d: d.iterkeys())
+        return uniq(self._iter(lambda d: d.iterkeys()))
     iterkeys = _iterate_keys
 
     def _iterate_items(self):
-        return self._iter(lambda d: d.iteritems())
+        return ((key, self[key]) for key in self)
     iteritems = _iterate_items
 
     def _iterate_values(self):
-        return self._iter(lambda d: d.itervalues())
+        return (self[key] for key in self)
     itervalues = _iterate_values
 
     def keys(self):
@@ -370,12 +371,13 @@ class _Frame(object):
             "__name__": frame.f_globals.get("__name__"),
             "__loader__": frame.f_globals.get("__loader__"),
         }
+        self.f_locals = fl = {}
+        try:
+            fl["__traceback_hide__"] = frame.f_locals["__traceback_hide__"]
+        except KeyError:
+            pass
         self.f_code = self.Code(frame.f_code)
-        self.f_locals = {}
-        if '__traceback_hide__' in frame.f_locals:
-            self.f_locals['__traceback_hide__'] = frame.f_locals['__traceback_hide__']
         self.f_lineno = frame.f_lineno
-        self.f_code = _Code(code=frame.f_code)
 
 
 class Traceback(object):
@@ -477,7 +479,8 @@ class LimitedSet(object):
         if isinstance(other, self.__class__):
             self._data.update(other._data)
         else:
-            self._data.update(other)
+            for obj in other:
+                self.add(obj)
 
     def as_dict(self):
         return self._data
@@ -519,7 +522,7 @@ class LRUCache(UserDict):
     def __getitem__(self, key):
         with self.mutex:
             value = self[key] = self.data.pop(key)
-            return value
+        return value
 
     def keys(self):
         # userdict.keys in py3k calls __getitem__
@@ -542,7 +545,7 @@ class LRUCache(UserDict):
         return self.data.iterkeys()
 
     def _iterate_items(self):
-        for k in self.data:
+        for k in self:
             try:
                 yield (k, self.data[k])
             except KeyError:
@@ -550,10 +553,10 @@ class LRUCache(UserDict):
     iteritems = _iterate_items
 
     def _iterate_values(self):
-        for k in self.data:
+        for k in self:
             try:
                 yield self.data[k]
-            except KeyError:
+            except KeyError:  # pragma: no cover
                 pass
     itervalues = _iterate_values
 
@@ -563,4 +566,4 @@ class LRUCache(UserDict):
             # integer as long as it exists and we can cast it
             newval = int(self.data.pop(key)) + delta
             self[key] = str(newval)
-            return newval
+        return newval
