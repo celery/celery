@@ -44,7 +44,7 @@ class Namespace(object):
     def modules(self):
         """Subclasses can override this to return a
         list of modules to import before components are claimed."""
-        pass
+        return []
 
     def load_modules(self):
         """Will load the component modules this namespace depends on."""
@@ -202,7 +202,9 @@ class StartStopComponent(Component):
         return self.obj.stop()
 
     def terminate(self):
-        return self.obj.terminate()
+        if self.terminable:
+            return self.obj.terminate()
+        return self.obj.stop()
 
     def include(self, parent):
         if super(StartStopComponent, self).include(parent):
