@@ -1,14 +1,24 @@
 from __future__ import absolute_import
+from __future__ import with_statement
 
 import pickle
 
 from celery import utils
 from celery.utils import promise, mpromise, maybe_promise
+from celery.utils.threads import bgThread
 from celery.tests.utils import unittest
 
 
 def double(x):
     return x * 2
+
+
+class test_bgThread_interface(unittest.TestCase):
+
+    def test_body(self):
+        x = bgThread()
+        with self.assertRaises(NotImplementedError):
+            x.body()
 
 
 class test_chunks(unittest.TestCase):

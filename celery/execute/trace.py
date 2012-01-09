@@ -42,14 +42,6 @@ SUCCESS = states.SUCCESS
 RETRY = states.RETRY
 FAILURE = states.FAILURE
 EXCEPTION_STATES = states.EXCEPTION_STATES
-_pid = None
-
-
-def getpid():
-    global _pid
-    if _pid is None:
-        _pid = os.getpid()
-    return _pid
 
 
 class TraceInfo(object):

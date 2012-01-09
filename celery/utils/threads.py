@@ -10,19 +10,19 @@ _Event = threading._Event
 
 class Event(_Event):
 
-    if not hasattr(_Event, "is_set"):
+    if not hasattr(_Event, "is_set"):     # pragma: no cover
         is_set = _Event.isSet
 
 
 class Thread(_Thread):
 
-    if not hasattr(_Thread, "is_alive"):
+    if not hasattr(_Thread, "is_alive"):  # pragma: no cover
         is_alive = _Thread.isAlive
 
-    if not hasattr(_Thread, "daemon"):
+    if not hasattr(_Thread, "daemon"):    # pragma: no cover
         daemon = property(_Thread.isDaemon, _Thread.setDaemon)
 
-    if not hasattr(_Thread, "name"):
+    if not hasattr(_Thread, "name"):      # pragma: no cover
         name = property(_Thread.getName, _Thread.setName)
 
 
