@@ -8,6 +8,7 @@
 .. toctree::
     :maxdepth: 1
 
+    celery.abstract
     celery.worker
     celery.worker.consumer
     celery.worker.job
@@ -37,6 +38,7 @@
     celery.backends.cassandra
     celery.backends.tyrant
     celery.execute.trace
+    celery.app.abstract
     celery.app.annotations
     celery.security.certificate
     celery.security.key
