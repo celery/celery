@@ -369,7 +369,8 @@ class test_Consumer(unittest.TestCase):
         l.priority_timer.stop()
 
     def test_start_channel_error(self):
-        # Regression test for AMQPChannelExceptions that can occur within the consumer. (i.e. 404 errors)
+        # Regression test for AMQPChannelExceptions that can occur within the
+        # consumer. (i.e. 404 errors)
 
         class MockConsumer(MainConsumer):
             iterations = 0

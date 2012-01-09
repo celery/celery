@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import uuid
 
 from mock import MagicMock, Mock, patch, sentinel
@@ -11,7 +13,7 @@ from celery.tests.utils import unittest
 try:
     import pymongo
 except ImportError:
-    pymongo = None
+    pymongo = None  # noqa
 
 
 COLLECTION = "taskmeta_celery"
@@ -214,7 +216,7 @@ class TestBackendMongoDb(unittest.TestCase):
         mock_get_database.return_value = mock_database
         mock_database.__getitem__.return_value = mock_collection
 
-        ret_val = self.backend._delete_taskset(sentinel.taskset_id)
+        self.backend._delete_taskset(sentinel.taskset_id)
 
         mock_get_database.assert_called_once_with()
         mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
@@ -248,7 +250,7 @@ class TestBackendMongoDb(unittest.TestCase):
 
         mock_get_database.return_value = mock_database
         mock_database.__getitem__.return_value = mock_collection
-        
+
         self.backend.cleanup()
 
         mock_get_database.assert_called_once_with()

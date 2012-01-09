@@ -20,6 +20,13 @@ from .. import current_app
 from ..abstract import StartStopComponent
 from ..utils.threads import bgThread, Event
 
+try:
+    import pyinotify
+    _ProcessEvent = pyinotify.ProcessEvent
+except ImportError:
+    pyinotify = None        # noqa
+    _ProcessEvent = object  # noqa
+
 
 class WorkerComponent(StartStopComponent):
     name = "worker.autoreloader"
@@ -90,6 +97,7 @@ class StatMonitor(BaseMonitor):
         except Exception:
             pass
 
+
 class KQueueMonitor(BaseMonitor):
     """File change monitor based on BSD kernel event notifications"""
 
@@ -127,15 +135,6 @@ class KQueueMonitor(BaseMonitor):
             if self._files[f] is not None:
                 os.close(self._files[f])
                 self._files[f] = None
-
-
-
-try:
-    import pyinotify
-    _ProcessEvent = pyinotify.ProcessEvent
-except ImportError:
-    pyinotify = None        # noqa
-    _ProcessEvent = object  # noqa
 
 
 class InotifyMonitor(_ProcessEvent):
@@ -215,4 +214,3 @@ class Autoreloader(bgThread):
     @staticmethod
     def _module_name(path):
         return os.path.splitext(os.path.basename(path))[0]
-

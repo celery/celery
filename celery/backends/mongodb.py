@@ -181,14 +181,14 @@ class MongoBackend(BaseDictBackend):
     def _forget(self, task_id):
         """
         Remove result from MongoDB.
-        
+
         :raises celery.exceptions.OperationsError: if the task_id could not be
                                                    removed.
         """
 
         db = self._get_database()
         taskmeta_collection = db[self.mongodb_taskmeta_collection]
-        
+
         # By using safe=True, this will wait until it receives a response from
         # the server.  Likewise, it will raise an OperationsError if the
         # response was unable to be completed.

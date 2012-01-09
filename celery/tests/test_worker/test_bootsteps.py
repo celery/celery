@@ -124,7 +124,6 @@ class test_StartStopComponent(unittest.TestCase):
         self.assertFalse(x.obj.terminate.call_count)
 
 
-
 class test_Namespace(AppCase):
 
     class NS(abstract.Namespace):
@@ -141,7 +140,6 @@ class test_Namespace(AppCase):
 
         def import_module(self, module):
             self.imported.append(module)
-
 
     def test_components_added_to_unclaimed(self):
 
@@ -227,5 +225,3 @@ class test_Namespace(AppCase):
         x = MyNS(app=self.app)
         x.apply(self)
         self.assertIsNone(x._find_last())
-
-

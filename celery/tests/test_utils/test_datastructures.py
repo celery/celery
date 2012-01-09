@@ -264,7 +264,7 @@ class test_DependencyGraph(unittest.TestCase):
             ("A", []),
             ("B", []),
             ("C", ["A"]),
-            ("D", ["C", "B"])
+            ("D", ["C", "B"]),
         ])
 
     def test_repr(self):
@@ -272,7 +272,6 @@ class test_DependencyGraph(unittest.TestCase):
 
     def test_topsort(self):
         order = self.graph1().topsort()
-        print("ORDER: %r" % (order, ))
         # C must start before D
         self.assertLess(order.index("C"), order.index("D"))
         # and B must start before D
@@ -293,4 +292,3 @@ class test_DependencyGraph(unittest.TestCase):
         s = WhateverIO()
         self.graph1().to_dot(s)
         self.assertTrue(s.getvalue())
-
