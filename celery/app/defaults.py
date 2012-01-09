@@ -151,7 +151,7 @@ NAMESPACES = {
     },
     "CELERYD": {
         "AUTOSCALER": Option("celery.worker.autoscale.Autoscaler"),
-        "AUTORELOADER": Option("celery.worker.autoreload.AutoReloader"),
+        "AUTORELOADER": Option("celery.worker.autoreload.Autoreloader"),
         "BOOT_STEPS": Option((), type="tuple"),
         "CONCURRENCY": Option(0, type="int"),
         "ETA_SCHEDULER": Option(None, type="string"),
