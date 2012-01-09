@@ -1341,6 +1341,15 @@ The directory containing X.509 certificates used for
 Custom Component Classes (advanced)
 -----------------------------------
 
+.. setting:: CELERYD_BOOT_STEPS
+
+CELERYD_BOOT_STEPS
+~~~~~~~~~~~~~~~~~~
+
+This setting enables you to add additional components to the worker process.
+It should be a list of module names with :class:`celery.abstract.Component`
+classes, that augments functionality in the worker.
+
 .. setting:: CELERYD_POOL
 
 CELERYD_POOL
@@ -1363,6 +1372,16 @@ CELERYD_AUTOSCALER
 Name of the autoscaler class to use.
 
 Default is ``"celery.worker.autoscale.Autoscaler"``.
+
+.. setting:: CELERYD_AUTORELOADER
+
+CELERYD_AUTORELOADER
+~~~~~~~~~~~~~~~~~~~~
+
+Name of the autoreloader class used by the worker to reload
+Python modules and files that have changed.
+
+Default is: ``"celery.worker.autoreload.Autoreloader"``.
 
 .. setting:: CELERYD_CONSUMER
 
