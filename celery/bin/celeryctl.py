@@ -13,6 +13,7 @@ from anyjson import deserialize
 from celery import __version__
 from celery.app import app_or_default, current_app
 from celery.utils import term
+from celery.utils.timeutils import maybe_iso8601
 
 from celery.bin.base import Command as CeleryCommand
 
@@ -156,12 +157,16 @@ class apply(Command):
         if isinstance(kwargs, basestring):
             kwargs = deserialize(kwargs)
 
-        # Expires can be float.
+        # Expires can be int/float.
         expires = kw.get("expires") or None
         try:
             expires = float(expires)
         except (TypeError, ValueError):
-            pass
+            # or a string describing an ISO 8601 datetime.
+            try:
+                expires = maybe_iso8601(expires)
+            except (TypeError, ValueError):
+                pass
 
         res = self.app.send_task(name, args=args, kwargs=kwargs,
                                  countdown=kw.get("countdown"),
@@ -169,7 +174,7 @@ class apply(Command):
                                  queue=kw.get("queue"),
                                  exchange=kw.get("exchange"),
                                  routing_key=kw.get("routing_key"),
-                                 eta=kw.get("eta"),
+                                 eta=maybe_iso8601(kw.get("eta")),
                                  expires=expires)
         self.out(res.task_id)
 apply = command(apply)
