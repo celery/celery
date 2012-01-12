@@ -17,6 +17,7 @@ import platform as _platform
 
 from contextlib import contextmanager
 from copy import deepcopy
+from datetime import datetime
 from functools import wraps
 
 from kombu.clocks import LamportClock
@@ -267,6 +268,9 @@ class BaseApp(object):
         """Prepare configuration before it is merged with the defaults."""
         find_deprecated_settings(c)
         return c
+
+    def now(self):
+        return self.loader.now()
 
     def mail_admins(self, subject, body, fail_silently=False):
         """Send an email to the admins in the :setting:`ADMINS` setting."""

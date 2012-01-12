@@ -17,6 +17,7 @@ import re
 import warnings
 
 from anyjson import deserialize
+from datetime import datetime
 
 from ..datastructures import DictAttribute
 from ..exceptions import ImproperlyConfigured
@@ -60,6 +61,9 @@ class BaseLoader(object):
     def __init__(self, app=None, **kwargs):
         from ..app import app_or_default
         self.app = app_or_default(app)
+
+    def now(self):
+        return datetime.utcnow()
 
     def on_task_init(self, task_id, task):
         """This method is called before a task is executed."""

@@ -17,6 +17,7 @@ import re
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
+from . import current_app
 from .utils import is_iterable
 from .utils.timeutils import (timedelta_seconds, weekday, maybe_timedelta,
                               remaining, humanize_seconds)
@@ -29,13 +30,15 @@ class ParseException(Exception):
 class schedule(object):
     relative = False
 
-    def __init__(self, run_every=None, relative=False):
+    def __init__(self, run_every=None, relative=False, nowfun=None):
         self.run_every = maybe_timedelta(run_every)
         self.relative = relative
+        self.nowfun = nowfun or current_app.now
 
     def remaining_estimate(self, last_run_at):
         """Returns when the periodic task should run next as a timedelta."""
-        return remaining(last_run_at, self.run_every, relative=self.relative)
+        return remaining(last_run_at, self.run_every, relative=self.relative,
+                         now=self.nowfun())
 
     def is_due(self, last_run_at):
         """Returns tuple of two items `(is_due, next_time_to_run)`,
@@ -257,15 +260,14 @@ class crontab(schedule):
 
         return result
 
-    def __init__(self, minute='*', hour='*', day_of_week='*',
-            nowfun=datetime.utcnow):
+    def __init__(self, minute='*', hour='*', day_of_week='*', nowfun=None):
         self._orig_minute = minute
         self._orig_hour = hour
         self._orig_day_of_week = day_of_week
         self.hour = self._expand_cronspec(hour, 24)
         self.minute = self._expand_cronspec(minute, 60)
         self.day_of_week = self._expand_cronspec(day_of_week, 7)
-        self.nowfun = nowfun
+        self.nowfun = nowfun or current_app.now
 
     def __repr__(self):
         return "<crontab: %s %s %s (m/h/d)>" % (self._orig_minute or "*",

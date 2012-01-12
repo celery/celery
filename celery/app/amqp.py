@@ -164,7 +164,7 @@ class TaskPublisher(messaging.Publisher):
             _exchanges_declared.add(self.exchange.name)
 
     def _declare_queue(self, name, retry=False, retry_policy={}):
-        options = self.app.queues[name]
+        options = self.app.amqp.queues[name]
         queue = messaging.entry_to_queue(name, **options)(self.channel)
         if retry:
             self.connection.ensure(queue, queue.declare, **retry_policy)()
@@ -209,10 +209,10 @@ class TaskPublisher(messaging.Publisher):
         if not isinstance(task_kwargs, dict):
             raise ValueError("task kwargs must be a dictionary")
         if countdown:                           # Convert countdown to ETA.
-            now = now or datetime.utcnow()
+            now = now or self.app.now()
             eta = now + timedelta(seconds=countdown)
         if isinstance(expires, (int, float)):
-            now = now or datetime.utcnow()
+            now = now or self.app.now()
             expires = now + timedelta(seconds=expires)
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
@@ -323,7 +323,7 @@ class AMQP(object):
                     "retry": conf.CELERY_TASK_PUBLISH_RETRY,
                     "retry_policy": conf.CELERY_TASK_PUBLISH_RETRY_POLICY,
                     "enable_utc": conf.CELERY_ENABLE_UTC,
-                    "app": self}
+                    "app": self.app}
         return TaskPublisher(*args, **self.app.merge(defaults, kwargs))
 
     def get_task_consumer(self, connection, queues=None, **kwargs):

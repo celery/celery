@@ -29,6 +29,7 @@ from . import __version__
 from . import platforms
 from . import registry
 from . import signals
+from . import current_app
 from .app import app_or_default
 from .log import SilenceRepeated
 from .schedules import maybe_schedule, crontab
@@ -88,13 +89,13 @@ class ScheduleEntry(object):
         self.total_run_count = total_run_count or 0
 
     def _default_now(self):
-        return datetime.utcnow()
+        return current_app.now()
 
     def _next_instance(self, last_run_at=None):
         """Returns a new instance of the same class, but with
         its date and count fields updated."""
         return self.__class__(**dict(self,
-                                last_run_at=last_run_at or datetime.utcnow(),
+                                last_run_at=last_run_at or self._default_now(),
                                 total_run_count=self.total_run_count + 1))
     __next__ = next = _next_instance  # for 2to3
 

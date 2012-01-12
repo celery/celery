@@ -125,7 +125,7 @@ class CassandraBackend(BaseDictBackend):
 
         def _do_store():
             cf = self._get_column_family()
-            date_done = datetime.utcnow()
+            date_done = self.app.now()
             meta = {"status": status,
                     "result": self.encode(result),
                     "date_done": date_done.strftime('%Y-%m-%dT%H:%M:%SZ'),

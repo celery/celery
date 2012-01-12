@@ -200,7 +200,7 @@ class MongoBackend(BaseDictBackend):
         taskmeta_collection = db[self.mongodb_taskmeta_collection]
         taskmeta_collection.remove({
                 "date_done": {
-                    "$lt": datetime.utcnow() - self.expires,
+                    "$lt": self.app.now() - self.expires,
                  }
         })
 
