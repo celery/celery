@@ -314,8 +314,9 @@ class CursesMonitor(object):
         timestamp = datetime.utcfromtimestamp(
                         task.timestamp or time.time())
         timef = timestamp.strftime("%H:%M:%S")
+        hostname = task.worker.hostname if task.worker else '*NONE*'
         line = self.format_row(task.uuid, task.name,
-                               task.worker.hostname,
+                               hostname,
                                timef, task.state)
         self.win.addstr(lineno, LEFT_BORDER_OFFSET, line, attr)
 
