@@ -31,6 +31,7 @@ from multiprocessing.util import Finalize, debug
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded
 from celery.exceptions import WorkerLostError
+from celery.app import app_or_default
 
 _Semaphore = threading._Semaphore
 
@@ -526,6 +527,7 @@ class Pool(object):
         self._maxtasksperchild = maxtasksperchild
         self._initializer = initializer
         self._initargs = initargs
+        self.app = app_or_default()
 
         if soft_timeout and SIG_SOFT_TIMEOUT is None:
             warnings.warn(UserWarning("Soft timeouts are not supported: "
@@ -592,11 +594,13 @@ class Pool(object):
         w.start()
         return w
 
-    def _join_exited_workers(self, shutdown=False, lost_worker_timeout=10.0):
+    def _join_exited_workers(self, shutdown=False, lost_worker_timeout=None):
         """Cleanup after any worker processes which have exited due to
         reaching their specified lifetime. Returns True if any workers were
         cleaned up.
         """
+        if lost_worker_timeout is None:
+            lost_worker_timeout = self.app.conf.CELERYD_WORKER_LOST_WAIT
         now = None
         # The worker may have published a result before being terminated,
         # but we have no way to accurately tell if it did.  So we wait for
