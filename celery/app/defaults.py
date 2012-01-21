@@ -181,6 +181,7 @@ NAMESPACES = {
         "TASK_LOG_FORMAT": Option(DEFAULT_TASK_LOG_FMT),
         "TASK_SOFT_TIME_LIMIT": Option(type="int"),
         "TASK_TIME_LIMIT": Option(type="int"),
+        "WORKER_LOST_WAIT": Option(10.0, type="float")
     },
     "CELERYBEAT": {
         "SCHEDULE": Option({}, type="dict"),

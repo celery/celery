@@ -90,7 +90,8 @@ class Pool(abstract.StartStopComponent):
                                 timeout=w.task_time_limit,
                                 soft_timeout=w.task_soft_time_limit,
                                 putlocks=w.pool_putlocks,
-                                force_execv=w.force_execv)
+                                force_execv=w.force_execv,
+                                lost_worker_timeout=w.worker_lost_wait)
         return pool
 
 
@@ -191,6 +192,7 @@ class WorkController(configurated):
     prefetch_multiplier = from_config()
     state_db = from_config()
     disable_rate_limits = from_config()
+    worker_lost_wait = from_config()
 
     _state = None
     _running = 0

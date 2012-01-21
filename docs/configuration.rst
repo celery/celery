@@ -1066,6 +1066,18 @@ This option will be enabled by default in a later version.
 
 This is not a problem on Windows, as it does not have `fork()`.
 
+.. setting:: CELERYD_WORKER_LOST_WAIT
+
+CELERYD_WORKER_LOST_WAIT
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+In some cases a worker may be killed without proper cleanup,
+and the worker may have published a result before terminating.
+This value specifies how long we wait for any missing results before
+raising a :exc:`@WorkerLostError` exception.
+
+Default is 10.0
+
 .. setting:: CELERYD_MAX_TASKS_PER_CHILD
 
 CELERYD_MAX_TASKS_PER_CHILD
