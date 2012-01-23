@@ -1,0 +1,257 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Using RabbitMQ &mdash; Celery 2.5.0rc1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.5.0rc1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Celery 2.5.0rc1 documentation" href="../../index.html" />
+    <link rel="up" title="Brokers" href="index.html" />
+    <link rel="next" title="Using Redis" href="redis.html" />
+    <link rel="prev" title="Brokers" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="redis.html" title="Using Redis"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Brokers"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Getting Started</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Brokers</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/getting-started/brokers/rabbitmq.html">2.4</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="using-rabbitmq">
+<span id="broker-rabbitmq"></span><h1>Using RabbitMQ<a class="headerlink" href="#using-rabbitmq" title="Permalink to this headline">¶</a></h1>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#installation-configuration" id="id2">Installation &amp; Configuration</a></li>
+<li><a class="reference internal" href="#installing-the-rabbitmq-server" id="id3">Installing the RabbitMQ Server</a><ul>
+<li><a class="reference internal" href="#setting-up-rabbitmq" id="id4">Setting up RabbitMQ</a></li>
+<li><a class="reference internal" href="#installing-rabbitmq-on-os-x" id="id5">Installing RabbitMQ on OS X</a><ul>
+<li><a class="reference internal" href="#configuring-the-system-host-name" id="id6">Configuring the system host name</a></li>
+<li><a class="reference internal" href="#starting-stopping-the-rabbitmq-server" id="id7">Starting/Stopping the RabbitMQ server</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="installation-configuration">
+<h2><a class="toc-backref" href="#id2">Installation &amp; Configuration</a><a class="headerlink" href="#installation-configuration" title="Permalink to this headline">¶</a></h2>
+<p>RabbitMQ is the default broker so it does not require any additional
+dependencies or initial configuration, other than the URL location of
+the broker instance you want to use:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">BROKER_URL</span> <span class="o">=</span> <span class="s">&quot;amqp://guest:guest@localhost:5672//&quot;</span>
+</pre></div>
+</div>
+<p>For a description of broker URLs and a full list of the
+various broker configuration options available to Celery,
+see <a class="reference internal" href="../../configuration.html#conf-broker-settings"><em>Broker Settings</em></a>.</p>
+</div>
+<div class="section" id="installing-the-rabbitmq-server">
+<span id="installing-rabbitmq"></span><h2><a class="toc-backref" href="#id3">Installing the RabbitMQ Server</a><a class="headerlink" href="#installing-the-rabbitmq-server" title="Permalink to this headline">¶</a></h2>
+<p>See <a class="reference external" href="http://www.rabbitmq.com/install.html">Installing RabbitMQ</a> over at RabbitMQ&#8217;s website. For Mac OS X
+see <a class="reference internal" href="#installing-rabbitmq-on-os-x">Installing RabbitMQ on OS X</a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>If you&#8217;re getting <cite>nodedown</cite> errors after installing and using
+<strong class="program">rabbitmqctl</strong> then this blog post can help you identify
+the source of the problem:</p>
+<blockquote class="last">
+<div><a class="reference external" href="http://somic.org/2009/02/19/on-rabbitmqctl-and-badrpcnodedown/">http://somic.org/2009/02/19/on-rabbitmqctl-and-badrpcnodedown/</a></div></blockquote>
+</div>
+<div class="section" id="setting-up-rabbitmq">
+<span id="rabbitmq-configuration"></span><h3><a class="toc-backref" href="#id4">Setting up RabbitMQ</a><a class="headerlink" href="#setting-up-rabbitmq" title="Permalink to this headline">¶</a></h3>
+<p>To use celery we need to create a RabbitMQ user, a virtual host and
+allow that user access to that virtual host:</p>
+<div class="highlight-python"><pre>$ rabbitmqctl add_user myuser mypassword
+
+$ rabbitmqctl add_vhost myvhost
+
+$ rabbitmqctl set_permissions -p myvhost myuser ".*" ".*" ".*"</pre>
+</div>
+<p>See the RabbitMQ <a class="reference external" href="http://www.rabbitmq.com/admin-guide.html">Admin Guide</a> for more information about <a class="reference external" href="http://www.rabbitmq.com/admin-guide.html#access-control">access control</a>.</p>
+</div>
+<div class="section" id="installing-rabbitmq-on-os-x">
+<span id="rabbitmq-osx-installation"></span><h3><a class="toc-backref" href="#id5">Installing RabbitMQ on OS X</a><a class="headerlink" href="#installing-rabbitmq-on-os-x" title="Permalink to this headline">¶</a></h3>
+<p>The easiest way to install RabbitMQ on Snow Leopard is using <a class="reference external" href="http://github.com/mxcl/homebrew/">Homebrew</a>; the new
+and shiny package management system for OS X.</p>
+<p>In this example we&#8217;ll install Homebrew into <tt class="file docutils literal"><span class="pre">/lol</span></tt>, but you can
+choose whichever destination, even in your home directory if you want, as one of
+the strengths of Homebrew is that it&#8217;s relocatable.</p>
+<p>Homebrew is actually a <a class="reference external" href="http://git-scm.org">git</a> repository, so to install Homebrew, you first need to
+install git. Download and install from the disk image at
+<a class="reference external" href="http://code.google.com/p/git-osx-installer/downloads/list?can=3">http://code.google.com/p/git-osx-installer/downloads/list?can=3</a></p>
+<p>When git is installed you can finally clone the repository, storing it at the
+<tt class="file docutils literal"><span class="pre">/lol</span></tt> location:</p>
+<div class="highlight-python"><pre>$ git clone git://github.com/mxcl/homebrew /lol</pre>
+</div>
+<p>Brew comes with a simple utility called <strong class="program">brew</strong>, used to install, remove and
+query packages. To use it you first have to add it to <span class="target" id="index-0"></span><tt class="xref std std-envvar docutils literal"><span class="pre">PATH</span></tt>, by
+adding the following line to the end of your <tt class="file docutils literal"><span class="pre">~/.profile</span></tt>:</p>
+<div class="highlight-python"><pre>export PATH="/lol/bin:/lol/sbin:$PATH"</pre>
+</div>
+<p>Save your profile and reload it:</p>
+<div class="highlight-python"><pre>$ source ~/.profile</pre>
+</div>
+<p>Finally, we can install rabbitmq using <strong class="program">brew</strong>:</p>
+<div class="highlight-python"><pre>$ brew install rabbitmq</pre>
+</div>
+<div class="section" id="configuring-the-system-host-name">
+<span id="rabbitmq-osx-system-hostname"></span><h4><a class="toc-backref" href="#id6">Configuring the system host name</a><a class="headerlink" href="#configuring-the-system-host-name" title="Permalink to this headline">¶</a></h4>
+<p>If you&#8217;re using a DHCP server that is giving you a random host name, you need
+to permanently configure the host name. This is because RabbitMQ uses the host name
+to communicate with nodes.</p>
+<p>Use the <strong class="program">scutil</strong> command to permanently set your host name:</p>
+<div class="highlight-python"><pre>sudo scutil --set HostName myhost.local</pre>
+</div>
+<p>Then add that host name to <tt class="file docutils literal"><span class="pre">/etc/hosts</span></tt> so it&#8217;s possible to resolve it
+back into an IP address:</p>
+<div class="highlight-python"><pre>127.0.0.1       localhost myhost myhost.local</pre>
+</div>
+<p>If you start the rabbitmq server, your rabbit node should now be <cite>rabbit&#64;myhost</cite>,
+as verified by <strong class="program">rabbitmqctl</strong>:</p>
+<div class="highlight-python"><pre>$ sudo rabbitmqctl status
+Status of node rabbit@myhost ...
+[{running_applications,[{rabbit,"RabbitMQ","1.7.1"},
+                    {mnesia,"MNESIA  CXC 138 12","4.4.12"},
+                    {os_mon,"CPO  CXC 138 46","2.2.4"},
+                    {sasl,"SASL  CXC 138 11","2.1.8"},
+                    {stdlib,"ERTS  CXC 138 10","1.16.4"},
+                    {kernel,"ERTS  CXC 138 10","2.13.4"}]},
+{nodes,[rabbit@myhost]},
+{running_nodes,[rabbit@myhost]}]
+...done.</pre>
+</div>
+<p>This is especially important if your DHCP server gives you a host name
+starting with an IP address, (e.g. <cite>23.10.112.31.comcast.net</cite>), because
+then RabbitMQ will try to use <cite>rabbit&#64;23</cite>, which is an illegal host name.</p>
+</div>
+<div class="section" id="starting-stopping-the-rabbitmq-server">
+<span id="rabbitmq-osx-start-stop"></span><h4><a class="toc-backref" href="#id7">Starting/Stopping the RabbitMQ server</a><a class="headerlink" href="#starting-stopping-the-rabbitmq-server" title="Permalink to this headline">¶</a></h4>
+<p>To start the server:</p>
+<div class="highlight-python"><pre>$ sudo rabbitmq-server</pre>
+</div>
+<p>you can also run it in the background by adding the <em class="xref std std-option">-detached</em> option
+(note: only one dash):</p>
+<div class="highlight-python"><pre>$ sudo rabbitmq-server -detached</pre>
+</div>
+<p>Never use <strong class="program">kill</strong> to stop the RabbitMQ server, but rather use the
+<strong class="program">rabbitmqctl</strong> command:</p>
+<div class="highlight-python"><pre>$ sudo rabbitmqctl stop</pre>
+</div>
+<p>When the server is running, you can continue reading <a class="reference internal" href="#setting-up-rabbitmq">Setting up RabbitMQ</a>.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Brokers</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="redis.html"
+                        title="next chapter">Using Redis</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/getting-started/brokers/rabbitmq.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="redis.html" title="Using Redis"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Brokers"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Getting Started</a> &raquo;</li>
+          <li><a href="index.html" >Brokers</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2012, Ask Solem &amp; Contributors.
+    </div>
+  </body>
+</html>

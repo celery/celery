@@ -1,0 +1,170 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Using CouchDB &mdash; Celery 2.5.0rc1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.5.0rc1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Celery 2.5.0rc1 documentation" href="../../index.html" />
+    <link rel="up" title="Brokers" href="index.html" />
+    <link rel="next" title="Using Beanstalk" href="beanstalk.html" />
+    <link rel="prev" title="Using MongoDB" href="mongodb.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="beanstalk.html" title="Using Beanstalk"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="mongodb.html" title="Using MongoDB"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Getting Started</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Brokers</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/getting-started/brokers/couchdb.html">2.4</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="using-couchdb">
+<span id="broker-couchdb"></span><h1>Using CouchDB<a class="headerlink" href="#using-couchdb" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="installation">
+<span id="broker-couchdb-installation"></span><h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>For the CouchDB support you have to install additional dependencies.
+You can install both Celery and these dependencies in one go using
+either the <a class="reference external" href="http://pypi.python.org/pypi/celery-with-couchdb">celery-with-couchdb</a>, or the <cite>django-celery-with-couchdb</cite> bundles:</p>
+<div class="highlight-python"><pre>$ pip install -U celery-with-couchdb</pre>
+</div>
+</div>
+<div class="section" id="configuration">
+<span id="broker-couchdb-configuration"></span><h2>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
+<p>Configuration is easy, set the transport, and configure the location of
+your CouchDB database:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">BROKER_URL</span> <span class="o">=</span> <span class="s">&quot;couchdb://localhost:5984/database_name&quot;</span>
+</pre></div>
+</div>
+<p>Where the URL is in the format of:</p>
+<div class="highlight-python"><pre>couchdb://userid:password@hostname:port/database_name</pre>
+</div>
+<p>The host name will default to <tt class="docutils literal"><span class="pre">localhost</span></tt> and the port to 5984,
+and so they are optional.  userid and password are also optional,
+but needed if your CouchDB server requires authentication.</p>
+<div class="section" id="results">
+<span id="couchdb-results-configuration"></span><h3>Results<a class="headerlink" href="#results" title="Permalink to this headline">¶</a></h3>
+<p>Storing task state and results in CouchDB is currently <strong>not supported</strong>.</p>
+</div>
+</div>
+<div class="section" id="limitations">
+<span id="broker-couchdb-limitations"></span><h2>Limitations<a class="headerlink" href="#limitations" title="Permalink to this headline">¶</a></h2>
+<p>The Beanstalk message transport does not currently support:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Remote control commands (celeryctl, broadcast)</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="mongodb.html"
+                        title="previous chapter">Using MongoDB</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="beanstalk.html"
+                        title="next chapter">Using Beanstalk</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/getting-started/brokers/couchdb.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="beanstalk.html" title="Using Beanstalk"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="mongodb.html" title="Using MongoDB"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Getting Started</a> &raquo;</li>
+          <li><a href="index.html" >Brokers</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2012, Ask Solem &amp; Contributors.
+    </div>
+  </body>
+</html>
