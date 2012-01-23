@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-from datetime import datetime
-
 from .. import states
 from ..db.models import Task, TaskSet
 from ..db.session import ResultSession

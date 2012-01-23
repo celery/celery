@@ -23,8 +23,6 @@ try:
 except ImportError:
     multiprocessing = None  # noqa
 
-from datetime import datetime
-
 from . import __version__
 from . import platforms
 from . import registry

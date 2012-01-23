@@ -34,9 +34,7 @@ from kombu.utils.functional import promise, maybe_promise       # noqa
 uuid = gen_unique_id
 
 from ..exceptions import CPendingDeprecationWarning, CDeprecationWarning
-
 from .compat import StringIO
-from .encoding import safe_repr as _safe_repr
 
 LOG_LEVELS = dict(logging._levelNames)
 LOG_LEVELS["FATAL"] = logging.FATAL

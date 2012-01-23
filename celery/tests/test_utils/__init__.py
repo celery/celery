@@ -1,8 +1,6 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-import pickle
-
 from celery import utils
 from celery.utils import promise, mpromise
 from celery.utils.threads import bgThread

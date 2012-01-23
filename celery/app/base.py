@@ -17,7 +17,6 @@ import platform as _platform
 
 from contextlib import contextmanager
 from copy import deepcopy
-from datetime import datetime
 from functools import wraps
 
 from kombu.clocks import LamportClock

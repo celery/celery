@@ -12,8 +12,6 @@ except ImportError:
 import socket
 import time
 
-from datetime import datetime
-
 from .. import states
 from ..exceptions import ImproperlyConfigured
 from ..utils.timeutils import maybe_timedelta, timedelta_seconds

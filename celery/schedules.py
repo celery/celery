@@ -14,7 +14,7 @@ from __future__ import absolute_import
 
 import re
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 
 from . import current_app

@@ -11,7 +11,7 @@
 """
 from __future__ import absolute_import
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from kombu import BrokerConnection, Exchange
 from kombu import compat as messaging
