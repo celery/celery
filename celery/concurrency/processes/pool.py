@@ -24,13 +24,15 @@ import time
 import Queue
 import warnings
 
-from multiprocessing import Process, cpu_count, TimeoutError, Event
+from multiprocessing import cpu_count, TimeoutError, Event
 from multiprocessing import util
 from multiprocessing.util import Finalize, debug
 
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded
 from celery.exceptions import WorkerLostError
+
+from .process import Process
 
 _Semaphore = threading._Semaphore
 
@@ -597,6 +599,7 @@ class Pool(object):
     def _create_worker_process(self):
         sentinel = Event()
         w = self.Process(
+            should_fork=False,
             target=worker,
             args=(self._inqueue, self._outqueue,
                     self._initializer, self._initargs,
