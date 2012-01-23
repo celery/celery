@@ -13,12 +13,10 @@
 from __future__ import absolute_import
 
 # ## ---
-# BE WARNED: You are probably going to suffer a heartattack just
-#            by looking at this code!
-#
 # This is the heart of the worker, the inner loop so to speak.
 # It used to be split up into nice little classes and methods,
-# but in the end it only resulted in bad performance, and horrible tracebacks.
+# but in the end it only resulted in bad performance and horrible tracebacks,
+# so instead we now use one closure per task class.
 
 import os
 import socket
