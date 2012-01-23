@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.schedules &mdash; Celery 2.5.0b1 documentation</title>
+    <title>celery.schedules &mdash; Celery 2.5.0rc1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0b1',
+        VERSION:     '2.5.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0b1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.5.0rc1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.signals" href="celery.signals.html" />
     <link rel="prev" title="celery.task.http" href="celery.task.http.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.task.http.html" title="celery.task.http"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -62,7 +62,7 @@
         This document is for Celery's development version, which can be
         significantly different from previous releases. Get old docs here:
 
-        <a href="http://docs.celeryproject.org/en/latest/reference/celery.schedules.html">2.1</a>.
+        <a href="http://docs.celeryproject.org/en/latest/reference/celery.schedules.html">2.4</a>.
         </p>
         
 
@@ -83,7 +83,7 @@ should run.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
-<li>2009 - 2011 by Ask Solem.</li>
+<li>2009 - 2012 by Ask Solem.</li>
 </ol>
 </td>
 </tr>
@@ -100,7 +100,7 @@ should run.</p>
 
 <dl class="class">
 <dt id="celery.schedules.crontab">
-<em class="property">class </em><tt class="descclassname">celery.schedules.</tt><tt class="descname">crontab</tt><big>(</big><em>minute='*'</em>, <em>hour='*'</em>, <em>day_of_week='*'</em>, <em>nowfun=&lt;built-in method utcnow of type object at 0x1007af5c0&gt;</em><big>)</big><a class="headerlink" href="#celery.schedules.crontab" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.schedules.</tt><tt class="descname">crontab</tt><big>(</big><em>minute='*'</em>, <em>hour='*'</em>, <em>day_of_week='*'</em>, <em>nowfun=None</em><big>)</big><a class="headerlink" href="#celery.schedules.crontab" title="Permalink to this definition">¶</a></dt>
 <dd><p>A crontab can be used as the <cite>run_every</cite> value of a
 <tt class="xref py py-class docutils literal"><span class="pre">PeriodicTask</span></tt> to add cron-like scheduling.</p>
 <p>Like a <em class="manpage">cron</em> job, you can specify units of time of when
@@ -210,8 +210,13 @@ day_of_week expressions.  Example usage:</p>
 
 <dl class="class">
 <dt id="celery.schedules.schedule">
-<em class="property">class </em><tt class="descclassname">celery.schedules.</tt><tt class="descname">schedule</tt><big>(</big><em>run_every=None</em>, <em>relative=False</em><big>)</big><a class="headerlink" href="#celery.schedules.schedule" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<em class="property">class </em><tt class="descclassname">celery.schedules.</tt><tt class="descname">schedule</tt><big>(</big><em>run_every=None</em>, <em>relative=False</em>, <em>nowfun=None</em><big>)</big><a class="headerlink" href="#celery.schedules.schedule" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="celery.schedules.schedule.human_seconds">
+<tt class="descname">human_seconds</tt><a class="headerlink" href="#celery.schedules.schedule.human_seconds" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.schedules.schedule.is_due">
 <tt class="descname">is_due</tt><big>(</big><em>last_run_at</em><big>)</big><a class="headerlink" href="#celery.schedules.schedule.is_due" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns tuple of two items <cite>(is_due, next_time_to_run)</cite>,
@@ -248,6 +253,11 @@ importance to you.</p>
 <tt class="descname">remaining_estimate</tt><big>(</big><em>last_run_at</em><big>)</big><a class="headerlink" href="#celery.schedules.schedule.remaining_estimate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns when the periodic task should run next as a timedelta.</p>
 </dd></dl>
+
+<dl class="attribute">
+<dt id="celery.schedules.schedule.seconds">
+<tt class="descname">seconds</tt><a class="headerlink" href="#celery.schedules.schedule.seconds" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -305,12 +315,12 @@ importance to you.</p>
         <li class="right" >
           <a href="celery.task.http.html" title="celery.task.http"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
+        &copy; Copyright 2009-2012, Ask Solem &amp; Contributors.
     </div>
   </body>
 </html>

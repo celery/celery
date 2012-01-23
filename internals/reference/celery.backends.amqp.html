@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.backends.amqp &mdash; Celery 2.5.0b1 documentation</title>
+    <title>celery.backends.amqp &mdash; Celery 2.5.0rc1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.5.0b1',
+        VERSION:     '2.5.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0b1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.5.0rc1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.backends.mongodb" href="celery.backends.mongodb.html" />
     <link rel="prev" title="celery.backends.cache" href="celery.backends.cache.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.backends.cache.html" title="celery.backends.cache"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -63,7 +63,7 @@
         This document is for Celery's development version, which can be
         significantly different from previous releases. Get old docs here:
 
-        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.backends.amqp.html">2.1</a>.
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.backends.amqp.html">2.4</a>.
         </p>
         
 
@@ -82,7 +82,7 @@
 
 <dl class="class">
 <dt id="celery.backends.amqp.AMQPBackend.Consumer">
-<em class="property">class </em><tt class="descclassname">AMQPBackend.</tt><tt class="descname">Consumer</tt><big>(</big><em>channel</em>, <em>queues</em>, <em>no_ack=None</em>, <em>auto_declare=None</em>, <em>callbacks=None</em>, <em>on_decode_error=None</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Consumer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">AMQPBackend.</tt><tt class="descname">Consumer</tt><big>(</big><em>channel</em>, <em>queues=None</em>, <em>no_ack=None</em>, <em>auto_declare=None</em>, <em>callbacks=None</em>, <em>on_decode_error=None</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Consumer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Message consumer.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -470,12 +470,17 @@ properly sets content_encoding.</li>
 
 <dl class="attribute">
 <dt id="celery.backends.amqp.AMQPBackend.Exchange.attrs">
-<tt class="descname">attrs</tt><em class="property"> = (('name', None), ('type', None), ('arguments', None), ('durable', &lt;type 'bool'&gt;), ('auto_delete', &lt;type 'bool'&gt;), ('delivery_mode', &lt;function &lt;lambda&gt; at 0x105471a28&gt;))</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Exchange.attrs" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">attrs</tt><em class="property"> = (('name', None), ('type', None), ('arguments', None), ('durable', &lt;type 'bool'&gt;), ('auto_delete', &lt;type 'bool'&gt;), ('delivery_mode', &lt;function &lt;lambda&gt; at 0x10123fc08&gt;))</em><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Exchange.attrs" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt>
 <tt class="descname">auto_delete</tt><em class="property"> = False</em></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Exchange.can_cache_declaration">
+<tt class="descname">can_cache_declaration</tt><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Exchange.can_cache_declaration" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -821,6 +826,11 @@ generated queue names.</p>
 <tt class="descname">auto_delete</tt><em class="property"> = False</em></dt>
 <dd></dd></dl>
 
+<dl class="attribute">
+<dt id="celery.backends.amqp.AMQPBackend.Queue.can_cache_declaration">
+<tt class="descname">can_cache_declaration</tt><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Queue.can_cache_declaration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="celery.backends.amqp.AMQPBackend.Queue.cancel">
 <tt class="descname">cancel</tt><big>(</big><em>consumer_tag</em><big>)</big><a class="headerlink" href="#celery.backends.amqp.AMQPBackend.Queue.cancel" title="Permalink to this definition">¶</a></dt>
@@ -889,7 +899,7 @@ if it is empty. If it is not empty a channel error will be raised.</li>
 
 <dl class="attribute">
 <dt>
-<tt class="descname">exchange</tt><em class="property"> = None</em></dt>
+<tt class="descname">exchange</tt><em class="property"> = &lt;unbound Exchange (direct)&gt;</em></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -1118,13 +1128,13 @@ without modifying the server state.</li>
         <li class="right" >
           <a href="celery.backends.cache.html" title="celery.backends.cache"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
+        &copy; Copyright 2009-2012, Ask Solem &amp; Contributors.
     </div>
   </body>
 </html>

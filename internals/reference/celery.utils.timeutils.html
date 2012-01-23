@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.utils.timeutils &mdash; Celery 2.5.0b1 documentation</title>
+    <title>celery.utils.timeutils &mdash; Celery 2.5.0rc1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.5.0b1',
+        VERSION:     '2.5.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0b1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.5.0rc1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.utils.encoding" href="celery.utils.encoding.html" />
     <link rel="prev" title="celery.utils.term" href="celery.utils.term.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.utils.term.html" title="celery.utils.term"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -63,7 +63,7 @@
         This document is for Celery's development version, which can be
         significantly different from previous releases. Get old docs here:
 
-        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.utils.timeutils.html">2.1</a>.
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.utils.timeutils.html">2.4</a>.
         </p>
         
 
@@ -83,7 +83,7 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
-<li>2009 - 2011 by Ask Solem.</li>
+<li>2009 - 2012 by Ask Solem.</li>
 </ol>
 </td>
 </tr>
@@ -137,7 +137,7 @@ and converts them to seconds.</p>
 
 <dl class="function">
 <dt id="celery.utils.timeutils.remaining">
-<tt class="descclassname">celery.utils.timeutils.</tt><tt class="descname">remaining</tt><big>(</big><em>start</em>, <em>ends_in</em>, <em>now=None</em>, <em>relative=True</em><big>)</big><a class="headerlink" href="#celery.utils.timeutils.remaining" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.utils.timeutils.</tt><tt class="descname">remaining</tt><big>(</big><em>start</em>, <em>ends_in</em>, <em>now=None</em>, <em>relative=False</em><big>)</big><a class="headerlink" href="#celery.utils.timeutils.remaining" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate the remaining time for a start date and a timedelta.</p>
 <p>e.g. &#8220;how many seconds left for 30 seconds after start?&#8221;</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -147,7 +147,7 @@ and converts them to seconds.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>start</strong> &#8211; Start <a class="reference external" href="http://docs.python.org/dev/library/datetime.html#datetime.datetime" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">datetime</span></tt></a>.</li>
 <li><strong>ends_in</strong> &#8211; The end delta as a <a class="reference external" href="http://docs.python.org/dev/library/datetime.html#datetime.timedelta" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">timedelta</span></tt></a>.</li>
-<li><strong>relative</strong> &#8211; If set to <tt class="xref py py-const docutils literal"><span class="pre">False</span></tt>, the end time will be
+<li><strong>relative</strong> &#8211; If enabled the end time will be
 calculated using <a class="reference internal" href="#celery.utils.timeutils.delta_resolution" title="celery.utils.timeutils.delta_resolution"><tt class="xref py py-func docutils literal"><span class="pre">delta_resolution()</span></tt></a> (i.e. rounded to the
 resolution of <cite>ends_in</cite>).</li>
 <li><strong>now</strong> &#8211; Function returning the current time and date,
@@ -231,13 +231,13 @@ defaults to <tt class="xref py py-func docutils literal"><span class="pre">datet
         <li class="right" >
           <a href="celery.utils.term.html" title="celery.utils.term"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
+        &copy; Copyright 2009-2012, Ask Solem &amp; Contributors.
     </div>
   </body>
 </html>

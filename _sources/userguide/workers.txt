@@ -354,6 +354,56 @@ a worker using :program:`celeryev`/:program:`celerymon`.
     >>> broadcast("enable_events")
     >>> broadcast("disable_events")
 
+Adding/Reloading modules
+------------------------
+
+.. versionadded:: 2.5
+
+The remote control command ``pool_restart`` sends restart requests to
+the workers child processes.  It is particularly useful for forcing
+the worker to import new modules, or for reloading already imported
+modules.  This command does not interrupt executing tasks.
+
+Example
+~~~~~~~
+
+Runnig the following command will result in the `foo` and `bar` modules
+being imported by the worker processes:
+
+.. code-block:: python
+
+    >>> from celery.task.control import broadcast
+    >>> broadcast("pool_restart", arguments={"imports":["foo", "bar"]})
+
+If you want to reload all modules you can use:
+
+.. code-block:: python
+
+    >>> from celery.task.control import broadcast
+    >>> from celery import current_app
+    >>> modules = current_app.conf.CELERY_IMPORTS
+    >>> broadcast("pool_restart",
+                  arguments={"imports":modules, "reload_modules":True})
+
+`imports` argument is a list of modules to modify. `reload_modules`
+specifies whether to reload modules if they are previously imported.
+By default `reload_modules` is `False`. `pool_restart` command uses the
+`reload`_ built in function to reload modules, but you can provide custom
+reloader as well.
+
+.. note::
+
+Module reloading comes with some caveats that are documented in :fun:`reload`.
+Make sure your modules are suitable for reloading.
+
+.. seealso::
+
+http://pyunit.sourceforge.net/notes/reloading.html
+
+http://www.indelible.org/ink/python-reloading/
+
+http://docs.python.org/library/functions.html#reload
+
 .. _worker-custom-control-commands:
 
 Writing your own remote control commands

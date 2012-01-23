@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.apps.beat &mdash; Celery 2.5.0b1 documentation</title>
+    <title>celery.apps.beat &mdash; Celery 2.5.0rc1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0b1',
+        VERSION:     '2.5.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0b1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.5.0rc1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.bin.base" href="celery.bin.base.html" />
     <link rel="prev" title="celery.apps.worker" href="celery.apps.worker.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.apps.worker.html" title="celery.apps.worker"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -62,7 +62,7 @@
         This document is for Celery's development version, which can be
         significantly different from previous releases. Get old docs here:
 
-        <a href="http://docs.celeryproject.org/en/latest/reference/celery.apps.beat.html">2.1</a>.
+        <a href="http://docs.celeryproject.org/en/latest/reference/celery.apps.beat.html">2.4</a>.
         </p>
         
 
@@ -71,7 +71,7 @@
 <h1>celery.apps.beat<a class="headerlink" href="#celery-apps-beat" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.apps.beat"></span><dl class="class">
 <dt id="celery.apps.beat.Beat">
-<em class="property">class </em><tt class="descclassname">celery.apps.beat.</tt><tt class="descname">Beat</tt><big>(</big><em>loglevel=None</em>, <em>logfile=None</em>, <em>schedule=None</em>, <em>max_interval=None</em>, <em>scheduler_cls=None</em>, <em>app=None</em>, <em>socket_timeout=30</em>, <em>redirect_stdouts=None</em>, <em>redirect_stdouts_level=None</em>, <em>pidfile=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.apps.beat.Beat" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.apps.beat.</tt><tt class="descname">Beat</tt><big>(</big><em>max_interval=None</em>, <em>app=None</em>, <em>socket_timeout=30</em>, <em>pidfile=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.apps.beat.Beat" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="class">
 <dt id="celery.apps.beat.Beat.Service">
 <em class="property">class </em><tt class="descname">Service</tt><big>(</big><em>logger=None</em>, <em>max_interval=None</em>, <em>schedule_filename=None</em>, <em>scheduler_cls=None</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.apps.beat.Beat.Service" title="Permalink to this definition">¶</a></dt>
@@ -120,9 +120,39 @@
 the celerybeat schedule.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="celery.apps.beat.Beat.logfile">
+<tt class="descclassname">Beat.</tt><tt class="descname">logfile</tt><em class="property"> = None</em><a class="headerlink" href="#celery.apps.beat.Beat.logfile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.apps.beat.Beat.loglevel">
+<tt class="descclassname">Beat.</tt><tt class="descname">loglevel</tt><em class="property"> = None</em><a class="headerlink" href="#celery.apps.beat.Beat.loglevel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.apps.beat.Beat.redirect_stdouts">
+<tt class="descclassname">Beat.</tt><tt class="descname">redirect_stdouts</tt><em class="property"> = None</em><a class="headerlink" href="#celery.apps.beat.Beat.redirect_stdouts" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.apps.beat.Beat.redirect_stdouts_level">
+<tt class="descclassname">Beat.</tt><tt class="descname">redirect_stdouts_level</tt><em class="property"> = None</em><a class="headerlink" href="#celery.apps.beat.Beat.redirect_stdouts_level" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="celery.apps.beat.Beat.run">
 <tt class="descclassname">Beat.</tt><tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.apps.beat.Beat.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.apps.beat.Beat.schedule">
+<tt class="descclassname">Beat.</tt><tt class="descname">schedule</tt><em class="property"> = None</em><a class="headerlink" href="#celery.apps.beat.Beat.schedule" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.apps.beat.Beat.scheduler_cls">
+<tt class="descclassname">Beat.</tt><tt class="descname">scheduler_cls</tt><em class="property"> = None</em><a class="headerlink" href="#celery.apps.beat.Beat.scheduler_cls" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -200,12 +230,12 @@ the celerybeat schedule.</p>
         <li class="right" >
           <a href="celery.apps.worker.html" title="celery.apps.worker"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
+        &copy; Copyright 2009-2012, Ask Solem &amp; Contributors.
     </div>
   </body>
 </html>

@@ -63,7 +63,7 @@ it should optimally reject the message so another worker gets a chance
 to process it.
 
 
-* taskset_id
+* taskset
   `string`
 
   The taskset this task is part of.

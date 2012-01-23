@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.worker.buckets &mdash; Celery 2.5.0b1 documentation</title>
+    <title>celery.worker.buckets &mdash; Celery 2.5.0rc1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.5.0b1',
+        VERSION:     '2.5.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0b1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.5.0rc1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.worker.heartbeat" href="celery.worker.heartbeat.html" />
     <link rel="prev" title="celery.worker.mediator" href="celery.worker.mediator.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.worker.mediator.html" title="celery.worker.mediator"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -63,7 +63,7 @@
         This document is for Celery's development version, which can be
         significantly different from previous releases. Get old docs here:
 
-        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.worker.buckets.html">2.1</a>.
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.worker.buckets.html">2.4</a>.
         </p>
         
 
@@ -88,7 +88,7 @@ for moving tasks from the <tt class="docutils literal"><span class="pre">ready_q
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
-<li>2009 - 2011 by Ask Solem.</li>
+<li>2009 - 2012 by Ask Solem.</li>
 </ol>
 </td>
 </tr>
@@ -215,14 +215,14 @@ consume tokens from it.</p>
 <dl class="method">
 <dt id="celery.worker.buckets.TaskBucket.put">
 <tt class="descname">put</tt><big>(</big><em>request</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.TaskBucket.put" title="Permalink to this definition">¶</a></dt>
-<dd><p>Put a <a class="reference internal" href="celery.worker.job.html#celery.worker.job.TaskRequest" title="celery.worker.job.TaskRequest"><tt class="xref py py-class docutils literal"><span class="pre">TaskRequest</span></tt></a> into
+<dd><p>Put a <a class="reference internal" href="celery.worker.job.html#celery.worker.job.Request" title="celery.worker.job.Request"><tt class="xref py py-class docutils literal"><span class="pre">Request</span></tt></a> into
 the appropiate bucket.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.buckets.TaskBucket.put_nowait">
 <tt class="descname">put_nowait</tt><big>(</big><em>request</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.TaskBucket.put_nowait" title="Permalink to this definition">¶</a></dt>
-<dd><p>Put a <a class="reference internal" href="celery.worker.job.html#celery.worker.job.TaskRequest" title="celery.worker.job.TaskRequest"><tt class="xref py py-class docutils literal"><span class="pre">TaskRequest</span></tt></a> into
+<dd><p>Put a <a class="reference internal" href="celery.worker.job.html#celery.worker.job.Request" title="celery.worker.job.Request"><tt class="xref py py-class docutils literal"><span class="pre">Request</span></tt></a> into
 the appropiate bucket.</p>
 </dd></dl>
 
@@ -434,13 +434,13 @@ that evaluates lazily.</p>
         <li class="right" >
           <a href="celery.worker.mediator.html" title="celery.worker.mediator"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
+        &copy; Copyright 2009-2012, Ask Solem &amp; Contributors.
     </div>
   </body>
 </html>

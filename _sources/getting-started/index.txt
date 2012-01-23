@@ -9,6 +9,6 @@
     :maxdepth: 2
 
     introduction
-    broker-installation
+    brokers/index
     first-steps-with-celery
     resources

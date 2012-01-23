@@ -128,7 +128,7 @@ environment's python interpreter::
     CELERYD_MULTI="$ENV_PYTHON $CELERYD_CHDIR/manage.py celeryd_multi"
 
     # How to call "manage.py celeryctl"
-    CELERYCTL=$ENV_PYTHON $CELERYD_CHDIR/manage.py celeryctl"
+    CELERYCTL="$ENV_PYTHON $CELERYD_CHDIR/manage.py celeryctl"
     
     # Extra arguments to celeryd
     CELERYD_OPTS="--time-limit=300 --concurrency=8"

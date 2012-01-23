@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.worker.consumer &mdash; Celery 2.5.0b1 documentation</title>
+    <title>celery.worker.consumer &mdash; Celery 2.5.0rc1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.5.0b1',
+        VERSION:     '2.5.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0b1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.5.0rc1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.worker.job" href="celery.worker.job.html" />
     <link rel="prev" title="celery.worker" href="celery.worker.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.worker.html" title="celery.worker"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -63,7 +63,7 @@
         This document is for Celery's development version, which can be
         significantly different from previous releases. Get old docs here:
 
-        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.worker.consumer.html">2.1</a>.
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.worker.consumer.html">2.4</a>.
         </p>
         
 
@@ -85,7 +85,7 @@ up and running.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
-<li>2009 - 2011 by Ask Solem.</li>
+<li>2009 - 2012 by Ask Solem.</li>
 </ol>
 </td>
 </tr>
@@ -115,7 +115,7 @@ callback: <a class="reference internal" href="#celery.worker.consumer.Consumer.r
 method is called, this checks the payload of the message for either
 a <cite>task</cite> key or a <cite>control</cite> key.</p>
 <p>If the message is a task, it verifies the validity of the message
-converts it to a <a class="reference internal" href="celery.worker.job.html#celery.worker.job.TaskRequest" title="celery.worker.job.TaskRequest"><tt class="xref py py-class docutils literal"><span class="pre">celery.worker.job.TaskRequest</span></tt></a>, and sends
+converts it to a <a class="reference internal" href="celery.worker.job.html#celery.worker.job.Request" title="celery.worker.job.Request"><tt class="xref py py-class docutils literal"><span class="pre">celery.worker.job.Request</span></tt></a>, and sends
 it to <a class="reference internal" href="#celery.worker.consumer.Consumer.on_task" title="celery.worker.consumer.Consumer.on_task"><tt class="xref py py-meth docutils literal"><span class="pre">on_task()</span></tt></a>.</p>
 <p>If the message is a control command the message is passed to
 <a class="reference internal" href="#celery.worker.consumer.Consumer.on_control" title="celery.worker.consumer.Consumer.on_control"><tt class="xref py py-meth docutils literal"><span class="pre">on_control()</span></tt></a>, which in turn dispatches
@@ -153,8 +153,33 @@ early, <em>then</em> close the connection.</p>
 </li>
 </ul>
 <dl class="class">
+<dt id="celery.worker.consumer.Component">
+<em class="property">class </em><tt class="descclassname">celery.worker.consumer.</tt><tt class="descname">Component</tt><big>(</big><em>parent</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.Component" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.worker.consumer.Component.create">
+<tt class="descname">create</tt><big>(</big><em>w</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.Component.create" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.consumer.Component.last">
+<tt class="descname">last</tt><em class="property"> = True</em><a class="headerlink" href="#celery.worker.consumer.Component.last" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.consumer.Component.name">
+<tt class="descname">name</tt><em class="property"> = 'consumer'</em><a class="headerlink" href="#celery.worker.consumer.Component.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.consumer.Component.namespace">
+<tt class="descname">namespace</tt><em class="property"> = 'worker'</em><a class="headerlink" href="#celery.worker.consumer.Component.namespace" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="celery.worker.consumer.Consumer">
-<em class="property">class </em><tt class="descclassname">celery.worker.consumer.</tt><tt class="descname">Consumer</tt><big>(</big><em>ready_queue</em>, <em>eta_schedule</em>, <em>logger</em>, <em>init_callback=&lt;function noop at 0x101a3b140&gt;</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>initial_prefetch_count=2</em>, <em>pool=None</em>, <em>app=None</em>, <em>priority_timer=None</em>, <em>controller=None</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.Consumer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.consumer.</tt><tt class="descname">Consumer</tt><big>(</big><em>ready_queue</em>, <em>eta_schedule</em>, <em>logger</em>, <em>init_callback=&lt;function noop at 0x1017d9140&gt;</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>initial_prefetch_count=2</em>, <em>pool=None</em>, <em>app=None</em>, <em>priority_timer=None</em>, <em>controller=None</em><big>)</big><a class="headerlink" href="#celery.worker.consumer.Consumer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Listen for messages received from the broker and
 move them to the ready queue for task processing.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -411,6 +436,11 @@ connection.</td>
 <dd><p>The consumer used to consume task messages.</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="celery.worker.consumer.Consumer.update_strategies">
+<tt class="descname">update_strategies</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.consumer.Consumer.update_strategies" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="data">
@@ -542,13 +572,13 @@ when necessary.</p>
         <li class="right" >
           <a href="celery.worker.html" title="celery.worker"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
+        &copy; Copyright 2009-2012, Ask Solem &amp; Contributors.
     </div>
   </body>
 </html>

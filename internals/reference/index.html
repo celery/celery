@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Internal Module Reference &mdash; Celery 2.5.0b1 documentation</title>
+    <title>Internal Module Reference &mdash; Celery 2.5.0rc1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.5.0b1',
+        VERSION:     '2.5.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,9 +24,9 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0b1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.5.0rc1 documentation" href="../../index.html" />
     <link rel="up" title="Internals" href="../index.html" />
-    <link rel="next" title="celery.worker" href="celery.worker.html" />
+    <link rel="next" title="celery.abstract" href="celery.abstract.html" />
     <link rel="prev" title="“The Big Instance” Refactor" href="../app-overview.html" /> 
   </head>
   <body>
@@ -40,12 +40,12 @@
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.worker.html" title="celery.worker"
+          <a href="celery.abstract.html" title="celery.abstract"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="../app-overview.html" title="“The Big Instance” Refactor"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Internals</a> &raquo;</li> 
       </ul>
     </div>  
@@ -62,7 +62,7 @@
         This document is for Celery's development version, which can be
         significantly different from previous releases. Get old docs here:
 
-        <a href="http://docs.celeryproject.org/en/latest/internals/reference/index.html">2.1</a>.
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/index.html">2.4</a>.
         </p>
         
 
@@ -75,12 +75,13 @@
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Release:</th><td class="field-body">2.5</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Date:</th><td class="field-body">November 28, 2011</td>
+<tr class="field-even field"><th class="field-name">Date:</th><td class="field-body">January 23, 2012</td>
 </tr>
 </tbody>
 </table>
 <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="celery.abstract.html">celery.abstract</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.worker.html">celery.worker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.worker.consumer.html">celery.worker.consumer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.worker.job.html">celery.worker.job</a></li>
@@ -88,6 +89,8 @@
 <li class="toctree-l1"><a class="reference internal" href="celery.worker.buckets.html">celery.worker.buckets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.worker.heartbeat.html">celery.worker.heartbeat</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.worker.state.html">celery.worker.state</a></li>
+<li class="toctree-l1"><a class="reference internal" href="celery.worker.strategy.html">celery.worker.strategy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="celery.worker.autoreload.html">celery.worker.autoreload</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.worker.autoscale.html">celery.worker.autoscale</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.concurrency.html">celery.concurrency</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.concurrency.solo.html">celery.concurrency.solo</a></li>
@@ -108,6 +111,7 @@
 <li class="toctree-l1"><a class="reference internal" href="celery.backends.cassandra.html">celery.backends.cassandra</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.backends.tyrant.html">celery.backends.tyrant</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.execute.trace.html">celery.execute.trace</a></li>
+<li class="toctree-l1"><a class="reference internal" href="celery.app.abstract.html">celery.app.abstract</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.app.annotations.html">celery.app.annotations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.security.certificate.html">celery.security.certificate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.security.key.html">celery.security.key</a></li>
@@ -150,8 +154,8 @@
   <p class="topless"><a href="../app-overview.html"
                         title="previous chapter">&#8220;The Big Instance&#8221; Refactor</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="celery.worker.html"
-                        title="next chapter">celery.worker</a></p>
+  <p class="topless"><a href="celery.abstract.html"
+                        title="next chapter">celery.abstract</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../../_sources/internals/reference/index.txt"
@@ -184,17 +188,17 @@
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.worker.html" title="celery.worker"
+          <a href="celery.abstract.html" title="celery.abstract"
              >next</a> |</li>
         <li class="right" >
           <a href="../app-overview.html" title="“The Big Instance” Refactor"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
+        &copy; Copyright 2009-2012, Ask Solem &amp; Contributors.
     </div>
   </body>
 </html>

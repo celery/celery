@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.events &mdash; Celery 2.5.0b1 documentation</title>
+    <title>celery.events &mdash; Celery 2.5.0rc1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0b1',
+        VERSION:     '2.5.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0b1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.5.0rc1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.events.state" href="celery.events.state.html" />
     <link rel="prev" title="celery.contrib.rdb" href="celery.contrib.rdb.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.contrib.rdb.html" title="celery.contrib.rdb"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -62,7 +62,7 @@
         This document is for Celery's development version, which can be
         significantly different from previous releases. Get old docs here:
 
-        <a href="http://docs.celeryproject.org/en/latest/reference/celery.events.html">2.1</a>.
+        <a href="http://docs.celeryproject.org/en/latest/reference/celery.events.html">2.4</a>.
         </p>
         
 
@@ -84,7 +84,7 @@ is enabled), used for monitoring purposes.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
-<li>2009 - 2011 by Ask Solem.</li>
+<li>2009 - 2012 by Ask Solem.</li>
 </ol>
 </td>
 </tr>
@@ -202,16 +202,11 @@ stop unless forced via <a class="reference external" href="http://docs.python.or
 <dt id="celery.events.EventReceiver.consumer">
 <tt class="descname">consumer</tt><big>(</big><em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#celery.events.EventReceiver.consumer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create event consumer.</p>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">This creates a new channel that needs to be closed
-by calling <cite>consumer.channel.close()</cite>.</p>
-</div>
 </dd></dl>
 
 <dl class="method">
 <dt id="celery.events.EventReceiver.drain_events">
-<tt class="descname">drain_events</tt><big>(</big><em>limit=None</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.events.EventReceiver.drain_events" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">drain_events</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.EventReceiver.drain_events" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -317,12 +312,12 @@ handler.</p>
         <li class="right" >
           <a href="celery.contrib.rdb.html" title="celery.contrib.rdb"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
+        &copy; Copyright 2009-2012, Ask Solem &amp; Contributors.
     </div>
   </body>
 </html>

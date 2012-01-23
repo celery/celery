@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Introduction &mdash; Celery 2.5.0b1 documentation</title>
+    <title>Introduction &mdash; Celery 2.5.0rc1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0b1',
+        VERSION:     '2.5.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,9 +24,9 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0b1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.5.0rc1 documentation" href="../index.html" />
     <link rel="up" title="Getting Started" href="index.html" />
-    <link rel="next" title="Broker Installation" href="broker-installation.html" />
+    <link rel="next" title="Brokers" href="brokers/index.html" />
     <link rel="prev" title="Getting Started" href="index.html" /> 
   </head>
   <body>
@@ -40,12 +40,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="broker-installation.html" title="Broker Installation"
+          <a href="brokers/index.html" title="Brokers"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Getting Started"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Getting Started</a> &raquo;</li> 
       </ul>
     </div>  
@@ -62,7 +62,7 @@
         This document is for Celery's development version, which can be
         significantly different from previous releases. Get old docs here:
 
-        <a href="http://docs.celeryproject.org/en/latest/getting-started/introduction.html">2.1</a>.
+        <a href="http://docs.celeryproject.org/en/latest/getting-started/introduction.html">2.4</a>.
         </p>
         
 
@@ -73,7 +73,7 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Version:</th><td class="field-body">2.5.0b1</td>
+<tr class="field-odd field"><th class="field-name">Version:</th><td class="field-body">2.5.0rc1</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Web:</th><td class="field-body"><a class="reference external" href="http://celeryproject.org/">http://celeryproject.org/</a></td>
 </tr>
@@ -109,8 +109,9 @@ the <a class="reference external" href="http://pypi.python.org/pypi/django-celer
 <li><a class="reference internal" href="#features" id="id3">Features</a></li>
 <li><a class="reference internal" href="#documentation" id="id4">Documentation</a></li>
 <li><a class="reference internal" href="#installation" id="id5">Installation</a><ul>
-<li><a class="reference internal" href="#downloading-and-installing-from-source" id="id6">Downloading and installing from source</a></li>
-<li><a class="reference internal" href="#using-the-development-version" id="id7">Using the development version</a></li>
+<li><a class="reference internal" href="#bundles" id="id6">Bundles</a></li>
+<li><a class="reference internal" href="#downloading-and-installing-from-source" id="id7">Downloading and installing from source</a></li>
+<li><a class="reference internal" href="#using-the-development-version" id="id8">Using the development version</a></li>
 </ul>
 </li>
 </ul>
@@ -160,8 +161,7 @@ SQL databases.</td>
 </tr>
 <tr class="row-even"><td>Fault-tolerant</td>
 <td>Excellent configurable error recovery when using
-<cite>RabbitMQ</cite>, ensures your tasks are never lost.
-scenarios, and your tasks will never be lost.</td>
+<cite>RabbitMQ</cite>, ensures your tasks are never lost.</td>
 </tr>
 <tr class="row-odd"><td>Distributed</td>
 <td>Runs on one or more machines. Supports
@@ -269,13 +269,39 @@ is hosted at Github.</p>
 <p>You can install Celery either via the Python Package Index (PyPI)
 or from source.</p>
 <p>To install using <cite>pip</cite>,:</p>
-<div class="highlight-python"><pre>$ pip install Celery</pre>
+<div class="highlight-python"><pre>$ pip install -U Celery</pre>
 </div>
 <p>To install using <cite>easy_install</cite>,:</p>
-<div class="highlight-python"><pre>$ easy_install Celery</pre>
+<div class="highlight-python"><pre>$ easy_install -U Celery</pre>
+</div>
+<div class="section" id="bundles">
+<h3><a class="toc-backref" href="#id6">Bundles</a><a class="headerlink" href="#bundles" title="Permalink to this headline">¶</a></h3>
+<p>Celery also defines a group of bundles that can be used
+to install Celery and the dependencies for a given feature.</p>
+<p>The following bundles are available:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2"><a class="reference external" href="http://pypi.python.org/pypi/celery-with-redis/">celery-with-redis</a>:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">for using Redis as a broker.</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2"><a class="reference external" href="http://pypi.python.org/pypi/celery-with-mongdb/">celery-with-mongodb</a>:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">for using MongoDB as a broker.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2"><a class="reference external" href="http://pypi.python.org/pypi/django-celery-with-redis/">django-celery-with-redis</a>:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">for Django, and using Redis as a broker.</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2"><a class="reference external" href="http://pypi.python.org/pypi/django-celery-with-mongdb/">django-celery-with-mongodb</a>:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">for Django, and using MongoDB as a broker.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name"><a class="reference external" href="http://pypi.python.org/pypi/bundle-celery/">bundle-celery</a>:</th><td class="field-body">convenience bundle installing <em>Celery</em> and related packages.</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section" id="downloading-and-installing-from-source">
-<span id="celery-installing-from-source"></span><h3><a class="toc-backref" href="#id6">Downloading and installing from source</a><a class="headerlink" href="#downloading-and-installing-from-source" title="Permalink to this headline">¶</a></h3>
+<span id="celery-installing-from-source"></span><h3><a class="toc-backref" href="#id7">Downloading and installing from source</a><a class="headerlink" href="#downloading-and-installing-from-source" title="Permalink to this headline">¶</a></h3>
 <p>Download the latest version of Celery from
 <a class="reference external" href="http://pypi.python.org/pypi/celery/">http://pypi.python.org/pypi/celery/</a></p>
 <p>You can install it by doing the following,:</p>
@@ -286,7 +312,7 @@ $ python setup.py build
 </div>
 </div>
 <div class="section" id="using-the-development-version">
-<span id="celery-installing-from-git"></span><h3><a class="toc-backref" href="#id7">Using the development version</a><a class="headerlink" href="#using-the-development-version" title="Permalink to this headline">¶</a></h3>
+<span id="celery-installing-from-git"></span><h3><a class="toc-backref" href="#id8">Using the development version</a><a class="headerlink" href="#using-the-development-version" title="Permalink to this headline">¶</a></h3>
 <p>You can clone the repository by doing the following:</p>
 <div class="highlight-python"><pre>$ git clone git://github.com/ask/celery.git</pre>
 </div>
@@ -306,8 +332,8 @@ $ python setup.py build
   <p class="topless"><a href="index.html"
                         title="previous chapter">Getting Started</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="broker-installation.html"
-                        title="next chapter">Broker Installation</a></p>
+  <p class="topless"><a href="brokers/index.html"
+                        title="next chapter">Brokers</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/getting-started/introduction.txt"
@@ -340,17 +366,17 @@ $ python setup.py build
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="broker-installation.html" title="Broker Installation"
+          <a href="brokers/index.html" title="Brokers"
              >next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Getting Started"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" >Getting Started</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
+        &copy; Copyright 2009-2012, Ask Solem &amp; Contributors.
     </div>
   </body>
 </html>

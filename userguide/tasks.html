@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tasks &mdash; Celery 2.5.0b1 documentation</title>
+    <title>Tasks &mdash; Celery 2.5.0rc1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0b1',
+        VERSION:     '2.5.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0b1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.5.0rc1 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Executing Tasks" href="executing.html" />
     <link rel="prev" title="Overview" href="overview.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="overview.html" title="Overview"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -62,7 +62,7 @@
         This document is for Celery's development version, which can be
         significantly different from previous releases. Get old docs here:
 
-        <a href="http://docs.celeryproject.org/en/latest/userguide/tasks.html">2.1</a>.
+        <a href="http://docs.celeryproject.org/en/latest/userguide/tasks.html">2.4</a>.
         </p>
         
 
@@ -210,7 +210,7 @@ task.  Used by e.g. <a class="reference internal" href="../reference/celery.task
 to resend the task to the same destination queue.</p>
 </dd>
 </dl>
-<p class="last"><strong>NOTE</strong> As some messaging backends doesn&#8217;t have advanced routing
+<p class="last"><strong>NOTE</strong> As some messaging backends don&#8217;t have advanced routing
 capabilities, you can&#8217;t trust the availability of keys in this mapping.</p>
 </td>
 </tr>
@@ -591,11 +591,10 @@ forgotten about, but some transitions can be deducted, (e.g. a task now
 in the <tt class="xref std std-state docutils literal"><span class="pre">FAILED</span></tt> state, is implied to have been in the
 <a class="reference internal" href="#std:state-STARTED"><tt class="xref std std-state docutils literal"><span class="pre">STARTED</span></tt></a> state at some point).</p>
 <p>There are also sets of states, like the set of
-<tt class="xref std std-state docutils literal"><span class="pre">failure</span> <span class="pre">states</span></tt>, and the set of
-<a class="reference internal" href="../reference/celery.states.html#std:state-READY_STATES"><tt class="xref std std-state docutils literal"><span class="pre">ready</span> <span class="pre">states</span></tt></a>.</p>
+<tt class="xref std std-state docutils literal"><span class="pre">FAILURE_STATES</span></tt>, and the set of <a class="reference internal" href="../reference/celery.states.html#std:state-READY_STATES"><tt class="xref std std-state docutils literal"><span class="pre">READY_STATES</span></tt></a>.</p>
 <p>The client uses the membership of these sets to decide whether
 the exception should be re-raised (<a class="reference internal" href="../reference/celery.states.html#std:state-PROPAGATE_STATES"><tt class="xref std std-state docutils literal"><span class="pre">PROPAGATE_STATES</span></tt></a>), or whether
-the result can be cached (it can if the task is ready).</p>
+the state can be cached (it can if the task is ready).</p>
 <p>You can also define <a class="reference internal" href="#custom-states"><em>Custom states</em></a>.</p>
 <div class="section" id="result-backends">
 <span id="task-result-backends"></span><h3><a class="toc-backref" href="#id18">Result Backends</a><a class="headerlink" href="#result-backends" title="Permalink to this headline">¶</a></h3>
@@ -628,13 +627,10 @@ negative ways. If you&#8217;re using RabbitMQ then each queue will be a separate
 Erlang process, so if you&#8217;re planning to keep many results simultaneously you
 may have to increase the Erlang process limit, and the maximum number of file
 descriptors your OS allows.</li>
-<li>Old results will not be cleaned automatically, so you must make sure to
-consume the results or else the number of queues will eventually go out of
-control.  If you&#8217;re running RabbitMQ 2.1.1 or higher you can take advantage
-of the <tt class="docutils literal"><span class="pre">x-expires</span></tt> argument to queues, which will expire queues after a
-certain time limit after they are unused.  The queue expiry can be set (in
-seconds) by the <a class="reference internal" href="../configuration.html#std:setting-CELERY_TASK_RESULT_EXPIRES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TASK_RESULT_EXPIRES</span></tt></a> setting (not
-enabled by default).</li>
+<li>Old results will be cleaned automatically, based on the
+<a class="reference internal" href="../configuration.html#std:setting-CELERY_TASK_RESULT_EXPIRES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TASK_RESULT_EXPIRES</span></tt></a> setting.  By default this is set to
+expire after 1 day: if you have a very busy cluster you should lower
+this value.</li>
 </ul>
 <p>For a list of options supported by the AMQP result backend, please see
 <a class="reference internal" href="../configuration.html#conf-amqp-result-backend"><em>AMQP backend settings</em></a>.</p>
@@ -649,7 +645,7 @@ limitations.</p>
 increase the polling intervals of operations such as <cite>result.wait()</cite>, and
 <cite>tasksetresult.join()</cite></p>
 </li>
-<li><p class="first">Some databases uses a default transaction isolation level that
+<li><p class="first">Some databases use a default transaction isolation level that
 is not suitable for polling tables for changes.</p>
 <p>In MySQL the default transaction isolation level is <cite>REPEATABLE-READ</cite>, which
 means the transaction will not see changes by other transactions until the
@@ -664,7 +660,7 @@ transaction is committed.  It is recommended that you change to the
 <div class="section" id="pending">
 <span id="std:state-PENDING"></span><h4><a class="toc-backref" href="#id22">PENDING</a><a class="headerlink" href="#pending" title="Permalink to this headline">¶</a></h4>
 <p>Task is waiting for execution or unknown.
-Any task id that is not know is implied to be in the pending state.</p>
+Any task id that is not known is implied to be in the pending state.</p>
 </div>
 <div class="section" id="started">
 <span id="std:state-STARTED"></span><h4><a class="toc-backref" href="#id23">STARTED</a><a class="headerlink" href="#started" title="Permalink to this headline">¶</a></h4>
@@ -748,7 +744,7 @@ The name of the state is usually an uppercase string.  As an example
 you could have a look at <tt class="xref py py-mod docutils literal"><span class="pre">abortable</span> <span class="pre">tasks</span></tt>
 which defines its own custom <tt class="xref std std-state docutils literal"><span class="pre">ABORTED</span></tt> state.</p>
 <p>Use <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.BaseTask.update_state" title="celery.task.base.BaseTask.update_state"><tt class="xref py py-meth docutils literal"><span class="pre">Task.update_state</span></tt></a> to
-update a tasks state:</p>
+update a task&#8217;s state:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span>
 <span class="k">def</span> <span class="nf">upload_files</span><span class="p">(</span><span class="n">filenames</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="nb">file</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">filenames</span><span class="p">):</span>
@@ -765,7 +761,7 @@ state metadata.  This can then be used to create e.g. progress bars.</p>
 <span id="pickling-exceptions"></span><h3><a class="toc-backref" href="#id29">Creating pickleable exceptions</a><a class="headerlink" href="#creating-pickleable-exceptions" title="Permalink to this headline">¶</a></h3>
 <p>A little known Python fact is that exceptions must behave a certain
 way to support being pickled.</p>
-<p>Tasks that raises exceptions that are not pickleable will not work
+<p>Tasks that raise exceptions that are not pickleable will not work
 properly when Pickle is used as the serializer.</p>
 <p>To make sure that your exceptions are pickleable the exception
 <em>MUST</em> provide the original arguments it was instantiated
@@ -803,7 +799,7 @@ you have to pass them as regular args:</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">headers</span> <span class="o">=</span> <span class="n">headers</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">body</span> <span class="o">=</span> <span class="n">body</span>
 
-        <span class="nb">super</span><span class="p">(</span><span class="ne">Exception</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">status_code</span><span class="p">,</span> <span class="n">headers</span><span class="p">,</span> <span class="n">body</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">HttpError</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">status_code</span><span class="p">,</span> <span class="n">headers</span><span class="p">,</span> <span class="n">body</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -811,7 +807,7 @@ you have to pass them as regular args:</p>
 <div class="section" id="creating-custom-task-classes">
 <span id="task-custom-classes"></span><h2><a class="toc-backref" href="#id30">Creating custom task classes</a><a class="headerlink" href="#creating-custom-task-classes" title="Permalink to this headline">¶</a></h2>
 <p>All tasks inherit from the <a class="reference internal" href="../reference/celery.task.html#celery.task.Task" title="celery.task.Task"><tt class="xref py py-class docutils literal"><span class="pre">celery.task.Task</span></tt></a> class.
-The tasks body is its <tt class="xref py py-meth docutils literal"><span class="pre">run()</span></tt> method.</p>
+The task&#8217;s body is its <tt class="xref py py-meth docutils literal"><span class="pre">run()</span></tt> method.</p>
 <p>The following code,</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span>
 <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
@@ -820,7 +816,7 @@ The tasks body is its <tt class="xref py py-meth docutils literal"><span class="
 </div>
 <p>will do roughly this behind the scenes:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span>
-<span class="k">def</span> <span class="nf">AddTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">AddTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
@@ -1412,12 +1408,12 @@ need to pay.  You have to sign up to their service to get an API key.</p>
         <li class="right" >
           <a href="overview.html" title="Overview"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
+        &copy; Copyright 2009-2012, Ask Solem &amp; Contributors.
     </div>
   </body>
 </html>

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.app.task &mdash; Celery 2.5.0b1 documentation</title>
+    <title>celery.app.task &mdash; Celery 2.5.0rc1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0b1',
+        VERSION:     '2.5.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0b1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.5.0rc1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.app.amqp" href="celery.app.amqp.html" />
     <link rel="prev" title="celery.app" href="celery.app.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.app.html" title="celery.app"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -62,7 +62,7 @@
         This document is for Celery's development version, which can be
         significantly different from previous releases. Get old docs here:
 
-        <a href="http://docs.celeryproject.org/en/latest/reference/celery.app.task.html">2.1</a>.
+        <a href="http://docs.celeryproject.org/en/latest/reference/celery.app.task.html">2.4</a>.
         </p>
         
 
@@ -82,7 +82,7 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
-<li>2009 - 2011 by Ask Solem.</li>
+<li>2009 - 2012 by Ask Solem.</li>
 </ol>
 </td>
 </tr>
@@ -186,6 +186,12 @@ should be sent for this type of error.</p>
 <dt id="celery.app.task.BaseTask.MaxRetriesExceededError">
 <em class="property">exception </em><tt class="descclassname">BaseTask.</tt><tt class="descname">MaxRetriesExceededError</tt><a class="headerlink" href="#celery.app.task.BaseTask.MaxRetriesExceededError" title="Permalink to this definition">¶</a></dt>
 <dd><p>The tasks max restart limit has been exceeded.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.app.task.BaseTask.Strategy">
+<tt class="descclassname">BaseTask.</tt><tt class="descname">Strategy</tt><em class="property"> = 'celery.worker.strategy:default'</em><a class="headerlink" href="#celery.app.task.BaseTask.Strategy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execution strategy used, or the qualified name of one.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -432,7 +438,7 @@ manual for any additional delivery modes.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>request</strong> &#8211; A <a class="reference internal" href="../internals/reference/celery.worker.job.html#celery.worker.job.TaskRequest" title="celery.worker.job.TaskRequest"><tt class="xref py py-class docutils literal"><span class="pre">TaskRequest</span></tt></a>.</li>
+<li><strong>request</strong> &#8211; A <a class="reference internal" href="../internals/reference/celery.worker.job.html#celery.worker.job.Request" title="celery.worker.job.Request"><tt class="xref py py-class docutils literal"><span class="pre">Request</span></tt></a>.</li>
 <li><strong>pool</strong> &#8211; A task pool.</li>
 <li><strong>loglevel</strong> &#8211; Current loglevel.</li>
 <li><strong>logfile</strong> &#8211; Name of the currently used logfile.</li>
@@ -627,7 +633,7 @@ a minute),`&#8221;100/h&#8221;` (hundred tasks an hour)</p>
 
 <dl class="attribute">
 <dt id="celery.app.task.BaseTask.request">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">request</tt><em class="property"> = &lt;celery.app.task.Context object at 0x1092c60b8&gt;</em><a class="headerlink" href="#celery.app.task.BaseTask.request" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">request</tt><em class="property"> = &lt;Context: {}&gt;</em><a class="headerlink" href="#celery.app.task.BaseTask.request" title="Permalink to this definition">¶</a></dt>
 <dd><p>Request context (set when task is applied).</p>
 </dd></dl>
 
@@ -835,12 +841,12 @@ running.</p>
         <li class="right" >
           <a href="celery.app.html" title="celery.app"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
+        &copy; Copyright 2009-2012, Ask Solem &amp; Contributors.
     </div>
   </body>
 </html>

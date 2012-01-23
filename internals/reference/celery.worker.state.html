@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.worker.state &mdash; Celery 2.5.0b1 documentation</title>
+    <title>celery.worker.state &mdash; Celery 2.5.0rc1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.5.0b1',
+        VERSION:     '2.5.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,9 +24,9 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0b1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.5.0rc1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
-    <link rel="next" title="celery.worker.autoscale" href="celery.worker.autoscale.html" />
+    <link rel="next" title="celery.worker.strategy" href="celery.worker.strategy.html" />
     <link rel="prev" title="celery.worker.heartbeat" href="celery.worker.heartbeat.html" /> 
   </head>
   <body>
@@ -40,12 +40,12 @@
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.worker.autoscale.html" title="celery.worker.autoscale"
+          <a href="celery.worker.strategy.html" title="celery.worker.strategy"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="celery.worker.heartbeat.html" title="celery.worker.heartbeat"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -63,7 +63,7 @@
         This document is for Celery's development version, which can be
         significantly different from previous releases. Get old docs here:
 
-        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.worker.state.html">2.1</a>.
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.worker.state.html">2.4</a>.
         </p>
         
 
@@ -85,7 +85,7 @@ statistics, and revoked tasks.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
-<li>2009 - 2011 by Ask Solem.</li>
+<li>2009 - 2012 by Ask Solem.</li>
 </ol>
 </td>
 </tr>
@@ -149,20 +149,20 @@ being expired when the max limit has been exceeded.</p>
 
 <dl class="data">
 <dt id="celery.worker.state.SOFTWARE_INFO">
-<tt class="descclassname">celery.worker.state.</tt><tt class="descname">SOFTWARE_INFO</tt><em class="property"> = {'sw_sys': 'Darwin', 'sw_ident': 'celeryd', 'sw_ver': '2.5.0b1'}</em><a class="headerlink" href="#celery.worker.state.SOFTWARE_INFO" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.worker.state.</tt><tt class="descname">SOFTWARE_INFO</tt><em class="property"> = {'sw_sys': 'Darwin', 'sw_ident': 'celeryd', 'sw_ver': '2.5.0rc1'}</em><a class="headerlink" href="#celery.worker.state.SOFTWARE_INFO" title="Permalink to this definition">¶</a></dt>
 <dd><p>Worker software/platform information.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="celery.worker.state.active_requests">
 <tt class="descclassname">celery.worker.state.</tt><tt class="descname">active_requests</tt><em class="property"> = set([])</em><a class="headerlink" href="#celery.worker.state.active_requests" title="Permalink to this definition">¶</a></dt>
-<dd><p>set of currently active <a class="reference internal" href="celery.worker.job.html#celery.worker.job.TaskRequest" title="celery.worker.job.TaskRequest"><tt class="xref py py-class docutils literal"><span class="pre">TaskRequest</span></tt></a>&#8216;s.</p>
+<dd><p>set of currently active <a class="reference internal" href="celery.worker.job.html#celery.worker.job.Request" title="celery.worker.job.Request"><tt class="xref py py-class docutils literal"><span class="pre">Request</span></tt></a>&#8216;s.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="celery.worker.state.reserved_requests">
 <tt class="descclassname">celery.worker.state.</tt><tt class="descname">reserved_requests</tt><em class="property"> = set([])</em><a class="headerlink" href="#celery.worker.state.reserved_requests" title="Permalink to this definition">¶</a></dt>
-<dd><p>set of all reserved <a class="reference internal" href="celery.worker.job.html#celery.worker.job.TaskRequest" title="celery.worker.job.TaskRequest"><tt class="xref py py-class docutils literal"><span class="pre">TaskRequest</span></tt></a>&#8216;s.</p>
+<dd><p>set of all reserved <a class="reference internal" href="celery.worker.job.html#celery.worker.job.Request" title="celery.worker.job.Request"><tt class="xref py py-class docutils literal"><span class="pre">Request</span></tt></a>&#8216;s.</p>
 </dd></dl>
 
 <dl class="data">
@@ -185,13 +185,13 @@ being expired when the max limit has been exceeded.</p>
 
 <dl class="function">
 <dt id="celery.worker.state.task_reserved">
-<tt class="descclassname">celery.worker.state.</tt><tt class="descname">task_reserved</tt><big>(</big><em>request</em><big>)</big><a class="headerlink" href="#celery.worker.state.task_reserved" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.worker.state.</tt><tt class="descname">task_reserved</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.state.task_reserved" title="Permalink to this definition">¶</a></dt>
 <dd><p>Updates global state when a task has been reserved.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="celery.worker.state.total_count">
-<tt class="descclassname">celery.worker.state.</tt><tt class="descname">total_count</tt><em class="property"> = defaultdict(&lt;function &lt;lambda&gt; at 0x1074f2230&gt;, {})</em><a class="headerlink" href="#celery.worker.state.total_count" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.worker.state.</tt><tt class="descname">total_count</tt><em class="property"> = defaultdict(&lt;function &lt;lambda&gt; at 0x109d98410&gt;, {})</em><a class="headerlink" href="#celery.worker.state.total_count" title="Permalink to this definition">¶</a></dt>
 <dd><p>count of tasks executed by the worker, sorted by type.</p>
 </dd></dl>
 
@@ -210,8 +210,8 @@ being expired when the max limit has been exceeded.</p>
   <p class="topless"><a href="celery.worker.heartbeat.html"
                         title="previous chapter">celery.worker.heartbeat</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="celery.worker.autoscale.html"
-                        title="next chapter">celery.worker.autoscale</a></p>
+  <p class="topless"><a href="celery.worker.strategy.html"
+                        title="next chapter">celery.worker.strategy</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../../_sources/internals/reference/celery.worker.state.txt"
@@ -244,18 +244,18 @@ being expired when the max limit has been exceeded.</p>
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.worker.autoscale.html" title="celery.worker.autoscale"
+          <a href="celery.worker.strategy.html" title="celery.worker.strategy"
              >next</a> |</li>
         <li class="right" >
           <a href="celery.worker.heartbeat.html" title="celery.worker.heartbeat"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
+        &copy; Copyright 2009-2012, Ask Solem &amp; Contributors.
     </div>
   </body>
 </html>

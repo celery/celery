@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Internals &mdash; Celery 2.5.0b1 documentation</title>
+    <title>Internals &mdash; Celery 2.5.0rc1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0b1',
+        VERSION:     '2.5.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0b1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.5.0rc1 documentation" href="../index.html" />
     <link rel="next" title="Celery Deprecation Timeline" href="deprecation.html" />
     <link rel="prev" title="celery.bin.celeryd_multi" href="../reference/celery.bin.celeryd_multi.html" /> 
   </head>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../reference/celery.bin.celeryd_multi.html" title="celery.bin.celeryd_multi"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -60,7 +60,7 @@
         This document is for Celery's development version, which can be
         significantly different from previous releases. Get old docs here:
 
-        <a href="http://docs.celeryproject.org/en/latest/internals/index.html">2.1</a>.
+        <a href="http://docs.celeryproject.org/en/latest/internals/index.html">2.4</a>.
         </p>
         
 
@@ -73,7 +73,7 @@
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Release:</th><td class="field-body">2.5</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Date:</th><td class="field-body">November 28, 2011</td>
+<tr class="field-even field"><th class="field-name">Date:</th><td class="field-body">January 23, 2012</td>
 </tr>
 </tbody>
 </table>
@@ -105,6 +105,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="reference/index.html">Internal Module Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="reference/celery.abstract.html">celery.abstract</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.worker.html">celery.worker</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.worker.consumer.html">celery.worker.consumer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.worker.job.html">celery.worker.job</a></li>
@@ -112,6 +113,8 @@
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.worker.buckets.html">celery.worker.buckets</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.worker.heartbeat.html">celery.worker.heartbeat</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.worker.state.html">celery.worker.state</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/celery.worker.strategy.html">celery.worker.strategy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/celery.worker.autoreload.html">celery.worker.autoreload</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.worker.autoscale.html">celery.worker.autoscale</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.concurrency.html">celery.concurrency</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.concurrency.solo.html">celery.concurrency.solo</a></li>
@@ -132,6 +135,7 @@
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.backends.cassandra.html">celery.backends.cassandra</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.backends.tyrant.html">celery.backends.tyrant</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.execute.trace.html">celery.execute.trace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/celery.app.abstract.html">celery.app.abstract</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.app.annotations.html">celery.app.annotations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.security.certificate.html">celery.security.certificate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.security.key.html">celery.security.key</a></li>
@@ -215,11 +219,11 @@
         <li class="right" >
           <a href="../reference/celery.bin.celeryd_multi.html" title="celery.bin.celeryd_multi"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0b1 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2009-2011, Ask Solem &amp; Contributors.
+        &copy; Copyright 2009-2012, Ask Solem &amp; Contributors.
     </div>
   </body>
 </html>

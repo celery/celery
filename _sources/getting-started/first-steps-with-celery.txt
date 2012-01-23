@@ -18,35 +18,32 @@ messages.
 
 There are several choices available, including:
 
-* `RabbitMQ`_
+* :ref:`broker-rabbitmq`
 
-Feature-complete, safe and durable. If not losing tasks
+`RabbitMQ`_ is feature-complete, safe and durable. If not losing tasks
 is important to you, then this is your best option.
 
-See :ref:`broker-installation` for more about installing and configuring
-RabbitMQ.
+* :ref:`broker-redis`
 
-* `Redis`_
-
-Also feature-complete, but power failures or abrubt termination
+`Redis`_ is also feature-complete, but power failures or abrupt termination
 may result in data loss.
 
-See :ref:`otherqueues-redis` for configuration details.
-
-* Databases
+* :ref:`broker-sqlalchemy`
+* :ref:`broker-django`
 
 Using a database as a message queue is not recommended, but can be sufficient
-for very small installations.  Celery can use the SQLAlchemy and Django ORMS.
-See :ref:`otherqueues-sqlalchemy` or :ref:`otherqueues-django`.
+for very small installations.  Celery can use the SQLAlchemy and Django ORM.
 
 * and more.
 
 In addition to the above, there are several other transport implementations
-to choose from, including CouchDB, Beanstalk, MongoDB, and SQS.  See the Kombu
-documentation for more information.
+to choose from, including :ref:`broker-couchdb`, :ref:`broker-beanstalk`,
+:ref:`broker-mongodb`, and SQS.  There is a `Transport Comparison`_
+in the Kombu documentation.
 
 .. _`RabbitMQ`: http://www.rabbitmq.com/
 .. _`Redis`: http://redis.io/
+.. _`Transport Comparison`: http://kombu.rtfd.org/transport-comparison
 
 .. _celerytut-simple-tasks:
 
