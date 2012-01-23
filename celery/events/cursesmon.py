@@ -471,27 +471,42 @@ class DisplayThread(threading.Thread):
             self.display.nap()
 
 
+def capture_events(app, state, display):
+
+    def on_connection_error(exc, interval):
+        sys.stderr.write("Connection Error: %r. Retry in %ss." % (
+            exc, interval))
+
+    while 1:
+        sys.stderr.write("-> evtop: starting capture...\n")
+        with app.broker_connection() as conn:
+            try:
+                conn.ensure_connection(on_connection_error,
+                                       app.conf.BROKER_CONNECTION_MAX_RETRIES)
+                recv = app.events.Receiver(conn, handlers={"*": state.event})
+                display.resetscreen()
+                display.init_screen()
+                with recv.consumer():
+                    recv.drain_events(timeout=1, ignore_timeouts=True)
+            except (conn.connection_errors, conn.channel_errors), exc:
+                sys.stderr.write("Connection lost: %r" % (exc, ))
+
+
 def evtop(app=None):
-    sys.stderr.write("-> evtop: starting capture...\n")
     app = app_or_default(app)
     state = app.events.State()
-    conn = app.broker_connection()
-    recv = app.events.Receiver(conn, handlers={"*": state.event})
-    capture = recv.itercapture()
-    capture.next()
     display = CursesMonitor(state, app=app)
     display.init_screen()
     refresher = DisplayThread(display)
     refresher.start()
     try:
-        capture.next()
+        capture_events(app, state, display)
     except Exception:
         refresher.shutdown = True
         refresher.join()
         display.resetscreen()
         raise
     except (KeyboardInterrupt, SystemExit):
-        conn and conn.close()
         refresher.shutdown = True
         refresher.join()
         display.resetscreen()

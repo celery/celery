@@ -22,6 +22,7 @@ from collections import deque
 from contextlib import contextmanager
 from itertools import count
 
+from kombu.common import eventloop
 from kombu.entity import Exchange, Queue
 from kombu.messaging import Consumer, Producer
 
@@ -178,29 +179,19 @@ class EventReceiver(object):
         handler and handler(event)
 
     @contextmanager
-    def consumer(self):
-        """Create event consumer.
-
-        .. warning::
-
-            This creates a new channel that needs to be closed
-            by calling `consumer.channel.close()`.
-
-        """
-        consumer = Consumer(self.connection.channel(),
+    def consumer(self, wakeup=True):
+        """Create event consumer."""
+        consumer = Consumer(self.connection,
                             queues=[self.queue], no_ack=True)
         consumer.register_callback(self._receive)
         with consumer:
-            yield consumer
-        consumer.channel.close()
-
-    def itercapture(self, limit=None, timeout=None, wakeup=True):
-        with self.consumer() as consumer:
             if wakeup:
                 self.wakeup_workers(channel=consumer.channel)
-
             yield consumer
 
+    def itercapture(self, limit=None, timeout=None, wakeup=True):
+        with self.consumer(wakeup=wakeup) as consumer:
+            yield consumer
             self.drain_events(limit=limit, timeout=timeout)
 
     def capture(self, limit=None, timeout=None, wakeup=True):
@@ -217,17 +208,9 @@ class EventReceiver(object):
                                    connection=self.connection,
                                    channel=channel)
 
-    def drain_events(self, limit=None, timeout=None):
-        for iteration in count(0):
-            if limit and iteration >= limit:
-                break
-            try:
-                self.connection.drain_events(timeout=timeout)
-            except socket.timeout:
-                if timeout:
-                    raise
-            except socket.error:
-                pass
+    def drain_events(self, **kwargs):
+        for _ in eventloop(self.connection, **kwargs):
+            pass
 
     def _receive(self, body, message):
         type = body.pop("type").lower()
