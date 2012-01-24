@@ -199,6 +199,10 @@ Can be one of the following:
     Send results back as AMQP messages
     See :ref:`conf-amqp-result-backend`.
 
+* cassandra
+    Use `Cassandra`_ to store the results.
+    See :ref:`conf-cassandra-result-backend`.
+
 .. warning:
 
     While the AMQP result backend is very efficient, you must make sure
@@ -209,6 +213,7 @@ Can be one of the following:
 .. _`MongoDB`: http://mongodb.org
 .. _`Redis`: http://code.google.com/p/redis/
 .. _`Tokyo Tyrant`: http://1978th.net/tokyotyrant/
+.. _`Cassandra`: http://cassandra.apache.org/
 
 .. setting:: CELERY_RESULT_SERIALIZER
 
@@ -527,6 +532,82 @@ Example configuration
         "database": "mydb",
         "taskmeta_collection": "my_taskmeta_collection",
     }
+
+.. _conf-cassandra-result-backend:
+
+Cassandra backend settings
+--------------------------
+
+.. note::
+
+    The Cassandra backend requires the :mod:`pycassa` library:
+    http://pypi.python.org/pypi/pycassa/
+
+    To install the pycassa package use `pip` or `easy_install`::
+
+        $ pip install pycassa
+
+This backend requires the following configuration directives to be set.
+
+.. setting:: CASSANDRA_SERVERS
+
+CASSANDRA_SERVERS
+~~~~~~~~~~~~~~~~~
+
+List of `host:port` Cassandra servers. e.g. `["localhost:9160]"`.
+
+.. setting:: CASSANDRA_KEYSPACE
+
+CASSANDRA_KEYSPACE
+~~~~~~~~~~~~~~~~~~
+
+The keyspace in which to store the results. e.g. `"tasks_keyspace"`.
+
+.. setting:: CASSANDRA_COLUMN_FAMILY
+
+CASSANDRA_COLUMN_FAMILY
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The column family in which to store the results. eg `"tasks"`
+
+.. setting:: CASSANDRA_READ_CONSISTENCY
+
+CASSANDRA_READ_CONSISTENCY
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The read consistency used. Values can be `"ONE"`, `"QUORUM"` or `"ALL"`.
+
+.. setting:: CASSANDRA_WRITE_CONSISTENCY
+
+CASSANDRA_WRITE_CONSISTENCY
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The write consistency used. Values can be `"ONE"`, `"QUORUM"` or `"ALL"`.
+
+.. setting:: CASSANDRA_WRITE_CONSISTENCY
+
+CASSANDRA_DETAILED_MODE
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Enable or disable detailed mode. Default is `"False"`.
+This mode allows to use the power of Cassandra wide columns to store all states for a task as a wide column, instead of only the last one.
+
+To use this mode, you need to configure your ColumnFamily to use the `TimeUUID` type as a comparator::
+
+    create column family task_results with comparator = TimeUUIDType;
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    CASSANDRA_SERVERS = ["localhost:9160"]
+    CASSANDRA_KEYSPACE = "celery"
+    CASSANDRA_COLUMN_FAMILY = "task_results"
+    CASSANDRA_READ_CONSISTENCY = "ONE"
+    CASSANDRA_WRITE_CONSISTENCY = "ONE"
+    CASSANDRA_DETAILED_MODE = True
+
 
 .. _conf-messaging:
 
