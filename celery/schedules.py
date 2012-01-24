@@ -33,12 +33,15 @@ class schedule(object):
     def __init__(self, run_every=None, relative=False, nowfun=None):
         self.run_every = maybe_timedelta(run_every)
         self.relative = relative
-        self.nowfun = nowfun or current_app.now
+        self.nowfun = nowfun
+
+    def now(self):
+        return (self.nowfun or current_app.now)()
 
     def remaining_estimate(self, last_run_at):
         """Returns when the periodic task should run next as a timedelta."""
         return remaining(last_run_at, self.run_every, relative=self.relative,
-                         now=self.nowfun())
+                         now=self.now())
 
     def is_due(self, last_run_at):
         """Returns tuple of two items `(is_due, next_time_to_run)`,
