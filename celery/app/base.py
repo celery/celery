@@ -28,7 +28,7 @@ from ..utils import cached_property, instantiate, lpmerge
 from .defaults import DEFAULTS, find_deprecated_settings, find
 
 import kombu
-if kombu.VERSION < (1, 1, 0):
+if kombu.VERSION < (2, 0):
     raise ImportError("Celery requires Kombu version 1.1.0 or higher.")
 
 BUGREPORT_INFO = """
@@ -305,9 +305,9 @@ class BaseApp(object):
 
     def _get_backend(self):
         from ..backends import get_backend_cls
-        backend_cls = self.backend_cls or self.conf.CELERY_RESULT_BACKEND
-        backend_cls = get_backend_cls(backend_cls, loader=self.loader)
-        return backend_cls(app=self)
+        return get_backend_cls(
+                    self.backend_cls or self.conf.CELERY_RESULT_BACKEND,
+                    loader=self.loader)(app=self)
 
     def _get_config(self):
         return Settings({}, [self.prepare_config(self.loader.conf),
@@ -338,8 +338,8 @@ class BaseApp(object):
                 register_after_fork(self, self._after_fork)
             except ImportError:
                 pass
-            limit = self.conf.BROKER_POOL_LIMIT
-            self._pool = self.broker_connection().Pool(limit)
+            self._pool = self.broker_connection().Pool(
+                            limit=self.conf.BROKER_POOL_LIMIT)
         return self._pool
 
     @cached_property

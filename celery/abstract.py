@@ -27,8 +27,8 @@ class Namespace(object):
     mapping of unclaimed components.  The components will be
     claimed when the namespace they belong to is created.
 
-    :keyword name:  Set the name of this namespace.
-    :keyword app:  Set the Celery app for this namespace.
+    :keyword name: Set the name of this namespace.
+    :keyword app: Set the Celery app for this namespace.
 
     """
     name = None
@@ -67,7 +67,7 @@ class Namespace(object):
         self.components = self._claim()
         self._debug("Building boot step graph.")
         self.boot_steps = [self.bind_component(name, parent, **kwargs)
-                            for name in self._finalize_boot_steps()]
+                                for name in self._finalize_boot_steps()]
         self._debug("New boot order: %r" % (
             [c.name for c in self.boot_steps], ))
 
@@ -75,14 +75,14 @@ class Namespace(object):
             component.include(parent)
         return self
 
-    def import_module(self, module):
-        return import_module(module)
-
     def bind_component(self, name, parent, **kwargs):
         """Bind component to parent object and this namespace."""
         comp = self[name](parent, **kwargs)
         comp.namespace = self
         return comp
+
+    def import_module(self, module):
+        return import_module(module)
 
     def __getitem__(self, name):
         return self.components[name]
@@ -132,10 +132,10 @@ class ComponentType(type):
 class Component(object):
     """A component.
 
-    The :meth:`__init__` method called when the component
+    The :meth:`__init__` method is called when the component
     is bound to a parent object, and can as such be used
     to initialize attributes in the parent object at
-    parent-instantiaton time.
+    parent instantiation-time.
 
     """
     __metaclass__ = ComponentType

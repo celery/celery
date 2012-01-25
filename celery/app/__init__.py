@@ -29,6 +29,7 @@ _tls.current_app = None
 
 
 class AppPickler(object):
+    """Default application pickler/unpickler."""
 
     def __call__(self, cls, *args):
         kwargs = self.build_kwargs(*args)
@@ -123,15 +124,14 @@ class App(base.BaseApp):
 
     def TaskSet(self, *args, **kwargs):
         """Create new :class:`~celery.task.sets.TaskSet`."""
-        from ..task.sets import TaskSet
-        kwargs["app"] = self
-        return TaskSet(*args, **kwargs)
+        return instantiate("celery.task.sets:TaskSet",
+                           app=self, *args, **kwargs)
 
     def worker_main(self, argv=None):
         """Run :program:`celeryd` using `argv`.  Uses :data:`sys.argv`
         if `argv` is not specified."""
-        from ..bin.celeryd import WorkerCommand
-        return WorkerCommand(app=self).execute_from_commandline(argv)
+        return instantiate("celery.bin.celeryd:WorkerCommand", app=self) \
+                    .execute_from_commandline(argv)
 
     def task(self, *args, **options):
         """Decorator to create a task class out of any callable.
@@ -175,7 +175,7 @@ class App(base.BaseApp):
                         "run": staticmethod(fun),
                         "__doc__": fun.__doc__,
                         "__module__": fun.__module__}, **options))()
-                return registry.tasks[T.name]             # global instance.
+                return registry.tasks[T.name]  # global instance.
 
             return _create_task_cls
 
