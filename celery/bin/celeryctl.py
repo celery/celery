@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
+import os
 import sys
 
 from optparse import OptionParser, make_option as Option
@@ -12,17 +13,32 @@ from anyjson import deserialize
 
 from celery import __version__
 from celery.app import app_or_default, current_app
+from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE
 from celery.utils import term
 from celery.utils.timeutils import maybe_iso8601
 
 from celery.bin.base import Command as CeleryCommand
 
+HELP = """
+Type '%(prog_name)s <command> --help' for help using
+a specific command.
+
+Available commands:
+%(commands)s
+"""
 
 commands = {}
 
 
 class Error(Exception):
-    pass
+
+    def __init__(self, reason, status=EX_FAILURE):
+        self.reason = reason
+        self.status = status
+        super(Error, self).__init__(reason, status)
+
+    def __str__(self):
+        return self.reason
 
 
 def command(fun, name=None):
@@ -48,18 +64,21 @@ class Command(object):
 
     def __call__(self, *args, **kwargs):
         try:
-            self.run(*args, **kwargs)
+            ret = self.run(*args, **kwargs)
         except Error, exc:
             self.error(self.colored.red("Error: %s" % exc))
+            return exc.status
+
+        return ret if ret is not None else EX_OK
 
     def error(self, s):
-        return self.out(s, fh=sys.stderr)
+        self.out(s, fh=sys.stderr)
 
     def out(self, s, fh=sys.stdout):
         s = str(s)
         if not s.endswith("\n"):
             s += "\n"
-        sys.stdout.write(s)
+        fh.write(s)
 
     def create_parser(self, prog_name, command):
         return OptionParser(prog=prog_name,
@@ -74,7 +93,7 @@ class Command(object):
         self.parser = self.create_parser(self.prog_name, self.command)
         options, args = self.parser.parse_args(self.arglist)
         self.colored = term.colored(enabled=not options.no_color)
-        self(*args, **options.__dict__)
+        return self(*args, **options.__dict__)
 
     def run(self, *args, **kwargs):
         raise NotImplementedError()
@@ -275,7 +294,8 @@ class inspect(Command):
                                      callback=on_reply)
         replies = getattr(i, command)(*args[1:])
         if not replies:
-            raise Error("No nodes replied within time constraint.")
+            raise Error("No nodes replied within time constraint.",
+                        status=EX_UNAVAILABLE)
         return replies
 
     def say(self, direction, title, body=""):
@@ -302,7 +322,8 @@ class status(Command):
                           no_color=kwargs.get("no_color", False)) \
                     .run("ping", **dict(kwargs, quiet=True, show_body=False))
         if not replies:
-            raise Error("No nodes replied within time constraint")
+            raise Error("No nodes replied within time constraint",
+                        status=EX_UNAVAILABLE)
         nodecount = len(replies)
         if not kwargs.get("quiet", False):
             self.out("\n%s %s online." % (nodecount,
@@ -317,14 +338,11 @@ class help(Command):
 
     def run(self, *args, **kwargs):
         self.parser.print_help()
-        usage = ["",
-                "Type '%s <command> --help' for help on a "
-                "specific command." % (self.prog_name, ),
-                "",
-                "Available commands:"]
-        for command in list(sorted(commands.keys())):
-            usage.append("    %s" % command)
-        self.out("\n".join(usage))
+        self.out(HELP % {"prog_name": self.prog_name,
+                         "commands": "\n".join(indent(command)
+                                             for command in sorted(commands))})
+
+        return os.EX_USAGE
 help = command(help)
 
 
@@ -338,7 +356,7 @@ class celeryctl(CeleryCommand):
             cls, argv = self.commands["help"], ["help"]
         cls = self.commands.get(command) or self.commands["help"]
         try:
-            cls(app=self.app).run_from_argv(self.prog_name, argv)
+            return cls(app=self.app).run_from_argv(self.prog_name, argv)
         except Error:
             return self.execute("help", argv)
 
@@ -367,7 +385,7 @@ class celeryctl(CeleryCommand):
 
 def main():
     try:
-        celeryctl().execute_from_commandline()
+        sys.exit(celeryctl().execute_from_commandline())
     except KeyboardInterrupt:
         pass
 
