@@ -119,7 +119,7 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
                 % (exc_name, self.obj_name))
         else:
             raise self.failureException("%s not triggered"
-                % exc_name )
+                % exc_name)
 
 
 class Case(unittest.TestCase):
@@ -130,6 +130,7 @@ class Case(unittest.TestCase):
     def assertWarnsRegex(self, expected_warning, expected_regex):
         return _AssertWarnsContext(expected_warning, self,
                                    None, expected_regex)
+
 
 class AppCase(Case):
 

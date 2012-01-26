@@ -7,7 +7,6 @@ import logging
 import os
 import sys
 import time
-import warnings
 
 from datetime import datetime, timedelta
 
@@ -480,7 +479,8 @@ class test_TaskRequest(Case):
             raise KeyError("baz")
         raising.request = None
 
-        with self.assertWarnsRegex(RuntimeWarning, r'Exception raised outside'):
+        with self.assertWarnsRegex(RuntimeWarning,
+                r'Exception raised outside'):
             res = execute_and_trace(raising.name, uuid(),
                                     [], {})
             self.assertIsInstance(res, ExceptionInfo)
