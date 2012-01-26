@@ -131,8 +131,8 @@ class Worker(configurated):
         self.redirect_stdouts_to_logger()
 
         if getattr(os, "getuid", None) and os.getuid() == 0:
-            warnings.warn(
-                "Running celeryd with superuser privileges is discouraged!")
+            warnings.warn(RuntimeWarning(
+                "Running celeryd with superuser privileges is discouraged!"))
 
         if self.discard:
             self.purge_messages()

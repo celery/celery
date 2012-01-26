@@ -32,9 +32,7 @@ from celery.utils.encoding import from_utf8, default_encode
 from celery.worker.job import Request, TaskRequest, execute_and_trace
 from celery.worker.state import revoked
 
-from celery.tests.compat import catch_warnings
-from celery.tests.utils import unittest
-from celery.tests.utils import WhateverIO, wrap_logger
+from celery.tests.utils import Case, WhateverIO, wrap_logger
 
 
 scratch = {"ACK": False}
@@ -77,7 +75,7 @@ def mytask_raising(i, **kwargs):
     raise KeyError(i)
 
 
-class test_default_encode(unittest.TestCase):
+class test_default_encode(Case):
 
     def setUp(self):
         if sys.version_info >= (3, 0):
@@ -101,7 +99,7 @@ class test_default_encode(unittest.TestCase):
             sys.getfilesystemencoding = gfe
 
 
-class test_RetryTaskError(unittest.TestCase):
+class test_RetryTaskError(Case):
 
     def test_retry_task_error(self):
         try:
@@ -111,7 +109,7 @@ class test_RetryTaskError(unittest.TestCase):
             self.assertEqual(ret.exc, exc)
 
 
-class test_trace_task(unittest.TestCase):
+class test_trace_task(Case):
 
     def test_process_cleanup_fails(self):
         backend = mytask.backend
@@ -204,7 +202,7 @@ class MockEventDispatcher(object):
         self.sent.append(event)
 
 
-class test_TaskRequest(unittest.TestCase):
+class test_TaskRequest(Case):
 
     def test_task_wrapper_repr(self):
         tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
@@ -473,7 +471,6 @@ class test_TaskRequest(unittest.TestCase):
         self.assertEqual(res, 4 ** 4)
 
     def test_execute_safe_catches_exception(self):
-        warnings.resetwarnings()
 
         def _error_exec(self, *args, **kwargs):
             raise KeyError("baz")
@@ -483,13 +480,10 @@ class test_TaskRequest(unittest.TestCase):
             raise KeyError("baz")
         raising.request = None
 
-        with catch_warnings(record=True) as log:
+        with self.assertWarnsRegex(RuntimeWarning, r'Exception raised outside'):
             res = execute_and_trace(raising.name, uuid(),
                                     [], {})
             self.assertIsInstance(res, ExceptionInfo)
-            self.assertTrue(log)
-            self.assertIn("Exception outside", log[0].message.args[0])
-            self.assertIn("AttributeError", log[0].message.args[0])
 
     def create_exception(self, exc):
         try:

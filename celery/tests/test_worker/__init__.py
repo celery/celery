@@ -26,9 +26,7 @@ from celery.worker.consumer import QoS, RUN, PREFETCH_COUNT_MAX, CLOSE
 from celery.utils.serialization import pickle
 from celery.utils.timer2 import Timer
 
-from celery.tests.compat import catch_warnings
-from celery.tests.utils import unittest
-from celery.tests.utils import AppCase
+from celery.tests.utils import AppCase, Case
 
 
 class PlaceHolder(object):
@@ -96,7 +94,7 @@ def create_message(channel, **data):
                    delivery_info={"consumer_tag": "mock"})
 
 
-class test_QoS(unittest.TestCase):
+class test_QoS(Case):
 
     class _QoS(QoS):
         def __init__(self, value):
@@ -202,7 +200,7 @@ class test_QoS(unittest.TestCase):
         qos.set(qos.prev)
 
 
-class test_Consumer(unittest.TestCase):
+class test_Consumer(Case):
 
     def setUp(self):
         self.ready_queue = FastQueue()
@@ -281,10 +279,8 @@ class test_Consumer(unittest.TestCase):
         l.event_dispatcher = Mock()
         l.pidbox_node = MockNode()
 
-        with catch_warnings(record=True) as log:
+        with self.assertWarnsRegex(RuntimeWarning, r'unknown message'):
             l.receive_message(m.decode(), m)
-            self.assertTrue(log)
-            self.assertIn("unknown message", log[0].message.args[0])
 
     @patch("celery.utils.timer2.to_timestamp")
     def test_receive_message_eta_OverflowError(self, to_timestamp):
@@ -557,10 +553,8 @@ class test_Consumer(unittest.TestCase):
         l.logger = Mock()
         m.ack = Mock()
         m.ack.side_effect = socket.error("foo")
-        with catch_warnings(record=True) as log:
+        with self.assertWarnsRegex(RuntimeWarning, r'unknown message'):
             self.assertFalse(l.receive_message(m.decode(), m))
-            self.assertTrue(log)
-            self.assertIn("unknown message", log[0].message.args[0])
         with self.assertRaises(Empty):
             self.ready_queue.get_nowait()
         self.assertTrue(self.eta_schedule.empty())

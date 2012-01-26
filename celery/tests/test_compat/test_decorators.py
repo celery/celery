@@ -1,23 +1,19 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-import warnings
-
 from celery.task import base
 
 from celery.tests.compat import catch_warnings
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
 def add(x, y):
     return x + y
 
 
-class test_decorators(unittest.TestCase):
+class test_decorators(Case):
 
     def setUp(self):
-        warnings.resetwarnings()
-
         with catch_warnings(record=True):
             from celery import decorators
             self.decorators = decorators

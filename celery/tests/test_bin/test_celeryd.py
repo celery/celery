@@ -4,7 +4,6 @@ from __future__ import with_statement
 import logging
 import os
 import sys
-import warnings
 
 from functools import wraps
 try:
@@ -25,7 +24,6 @@ from celery.bin.celeryd import WorkerCommand, windows_main, \
                                main as celeryd_main
 from celery.exceptions import ImproperlyConfigured
 
-from celery.tests.compat import catch_warnings
 from celery.tests.utils import (AppCase, WhateverIO, mask_modules,
                                 reset_modules, skip_unless_module)
 
@@ -251,19 +249,16 @@ class test_Worker(AppCase):
         app = current_app
         if app.IS_WINDOWS:
             raise SkipTest("Not applicable on Windows")
-        warnings.resetwarnings()
 
         def getuid():
             return 0
 
         prev, os.getuid = os.getuid, getuid
         try:
-            with catch_warnings(record=True) as log:
+            with self.assertWarnsRegex(RuntimeWarning,
+                    r'superuser privileges is discouraged'):
                 worker = self.Worker()
                 worker.run()
-                self.assertTrue(log)
-                self.assertIn("superuser privileges is discouraged",
-                              log[0].message.args[0])
         finally:
             os.getuid = prev
 

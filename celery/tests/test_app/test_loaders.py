@@ -3,18 +3,19 @@ from __future__ import with_statement
 
 import os
 import sys
-import warnings
 
 from celery import task
 from celery import loaders
 from celery.app import app_or_default
-from celery.exceptions import CPendingDeprecationWarning, ImproperlyConfigured
+from celery.exceptions import (
+        CPendingDeprecationWarning,
+        ImproperlyConfigured)
 from celery.loaders import base
 from celery.loaders import default
 from celery.loaders.app import AppLoader
 
+from celery.tests.utils import AppCase, Case
 from celery.tests.compat import catch_warnings
-from celery.tests.utils import unittest, AppCase
 
 
 class ObjectConfig(object):
@@ -68,25 +69,17 @@ class TestLoaders(AppCase):
                           default.Loader)
 
     def test_current_loader(self):
-        warnings.resetwarnings()
-        with catch_warnings(record=True) as log:
+        with self.assertWarnsRegex(CPendingDeprecationWarning,
+                r'deprecation'):
             self.assertIs(loaders.current_loader(), self.app.loader)
-            warning = log[0].message
-
-            self.assertIsInstance(warning, CPendingDeprecationWarning)
-            self.assertIn("deprecation", warning.args[0])
 
     def test_load_settings(self):
-        warnings.resetwarnings()
-        with catch_warnings(record=True) as log:
+        with self.assertWarnsRegex(CPendingDeprecationWarning,
+                r'deprecation'):
             self.assertIs(loaders.load_settings(), self.app.conf)
-            warning = log[0].message
-
-            self.assertIsInstance(warning, CPendingDeprecationWarning)
-            self.assertIn("deprecation", warning.args[0])
 
 
-class TestLoaderBase(unittest.TestCase):
+class TestLoaderBase(Case):
     message_options = {"subject": "Subject",
                        "body": "Body",
                        "sender": "x@x.com",
@@ -131,15 +124,11 @@ class TestLoaderBase(unittest.TestCase):
         MockMail.Mailer.raise_on_send = True
         opts = dict(self.message_options, **self.server_options)
 
-        with catch_warnings(record=True) as log:
+        with self.assertWarnsRegex(MockMail.SendmailWarning, r'KeyError'):
             self.loader.mail_admins(fail_silently=True, **opts)
-            warning = log[0].message
 
-            self.assertIsInstance(warning, MockMail.SendmailWarning)
-            self.assertIn("KeyError", warning.args[0])
-
-            with self.assertRaises(KeyError):
-                self.loader.mail_admins(fail_silently=False, **opts)
+        with self.assertRaises(KeyError):
+            self.loader.mail_admins(fail_silently=False, **opts)
 
     def test_mail_admins(self):
         MockMail.Mailer.raise_on_send = False
@@ -159,7 +148,7 @@ class TestLoaderBase(unittest.TestCase):
             self.loader.cmdline_config_parser(["broker.port=foobar"])
 
 
-class TestDefaultLoader(unittest.TestCase):
+class TestDefaultLoader(Case):
 
     def test_wanted_module_item(self):
         l = default.Loader()
@@ -223,7 +212,7 @@ class TestDefaultLoader(unittest.TestCase):
         self.assertTrue(context_executed[0])
 
 
-class test_AppLoader(unittest.TestCase):
+class test_AppLoader(Case):
 
     def setUp(self):
         self.app = app_or_default()

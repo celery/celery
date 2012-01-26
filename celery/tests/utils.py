@@ -9,8 +9,10 @@ except AttributeError:
 import importlib
 import logging
 import os
+import re
 import sys
 import time
+import warnings
 try:
     import __builtin__ as builtins
 except ImportError:  # py3k
@@ -19,13 +21,14 @@ except ImportError:  # py3k
 from functools import wraps
 from contextlib import contextmanager
 
-
 import mock
 from nose import SkipTest
 
 from ..app import app_or_default
 from ..utils import noop
 from ..utils.compat import WhateverIO, LoggerAdapter
+
+from .compat import catch_warnings
 
 
 class Mock(mock.Mock):
@@ -54,7 +57,81 @@ def skip_unless_module(module):
     return _inner
 
 
-class AppCase(unittest.TestCase):
+# -- adds assertWarns from recent unittest2, not in Python 2.7.
+
+class _AssertRaisesBaseContext(object):
+
+    def __init__(self, expected, test_case, callable_obj=None,
+                 expected_regex=None):
+        self.expected = expected
+        self.failureException = test_case.failureException
+        self.obj_name = None
+        if isinstance(expected_regex, basestring):
+            expected_regex = re.compile(expected_regex)
+        self.expected_regex = expected_regex
+
+
+class _AssertWarnsContext(_AssertRaisesBaseContext):
+    """A context manager used to implement TestCase.assertWarns* methods."""
+
+    def __enter__(self):
+        # The __warningregistry__'s need to be in a pristine state for tests
+        # to work properly.
+        warnings.resetwarnings()
+        for v in sys.modules.values():
+            if getattr(v, '__warningregistry__', None):
+                v.__warningregistry__ = {}
+        self.warnings_manager = catch_warnings(record=True)
+        self.warnings = self.warnings_manager.__enter__()
+        warnings.simplefilter("always", self.expected)
+        return self
+
+    def __exit__(self, exc_type, exc_value, tb):
+        self.warnings_manager.__exit__(exc_type, exc_value, tb)
+        if exc_type is not None:
+            # let unexpected exceptions pass through
+            return
+        try:
+            exc_name = self.expected.__name__
+        except AttributeError:
+            exc_name = str(self.expected)
+        first_matching = None
+        for m in self.warnings:
+            w = m.message
+            if not isinstance(w, self.expected):
+                continue
+            if first_matching is None:
+                first_matching = w
+            if (self.expected_regex is not None and
+                not self.expected_regex.search(str(w))):
+                continue
+            # store warning for later retrieval
+            self.warning = w
+            self.filename = m.filename
+            self.lineno = m.lineno
+            return
+        # Now we simply try to choose a helpful failure message
+        if first_matching is not None:
+            raise self.failureException('%r does not match %r' %
+                     (self.expected_regex.pattern, str(first_matching)))
+        if self.obj_name:
+            raise self.failureException("%s not triggered by %s"
+                % (exc_name, self.obj_name))
+        else:
+            raise self.failureException("%s not triggered"
+                % exc_name )
+
+
+class Case(unittest.TestCase):
+
+    def assertWarns(self, expected_warning):
+        return _AssertWarnsContext(expected_warning, self, None)
+
+    def assertWarnsRegex(self, expected_warning, expected_regex):
+        return _AssertWarnsContext(expected_warning, self,
+                                   None, expected_regex)
+
+class AppCase(Case):
 
     def setUp(self):
         from ..app import current_app

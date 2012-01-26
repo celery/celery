@@ -22,7 +22,8 @@ import os
 import socket
 import sys
 import traceback
-import warnings
+
+from warnings import warn
 
 from .. import current_app
 from .. import states, signals
@@ -219,6 +220,6 @@ def report_internal_error(task, exc):
     _type, _value, _tb = sys.exc_info()
     _value = task.backend.prepare_exception(exc)
     exc_info = ExceptionInfo((_type, _value, _tb))
-    warnings.warn("Exception outside body: %s: %s\n%s" % tuple(
-        map(str, (exc.__class__, exc, exc_info.traceback))))
+    warn(RuntimeWarning(
+        "Exception raised outside body: %r:\n%s" % (exc, exc_info.traceback)))
     return exc_info

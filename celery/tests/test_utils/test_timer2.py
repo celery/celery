@@ -3,18 +3,16 @@ from __future__ import with_statement
 
 import sys
 import time
-import warnings
 
 from kombu.tests.utils import redirect_stdouts
 from mock import Mock, patch
 
 import celery.utils.timer2 as timer2
 
-from celery.tests.utils import unittest, skip_if_quick
-from celery.tests.compat import catch_warnings
+from celery.tests.utils import Case, skip_if_quick
 
 
-class test_Entry(unittest.TestCase):
+class test_Entry(Case):
 
     def test_call(self):
         scratch = [None]
@@ -33,7 +31,7 @@ class test_Entry(unittest.TestCase):
         self.assertTrue(tref.cancelled)
 
 
-class test_Schedule(unittest.TestCase):
+class test_Schedule(Case):
 
     def test_handle_error(self):
         from datetime import datetime
@@ -65,7 +63,7 @@ class test_Schedule(unittest.TestCase):
         self.assertIsInstance(exc, OverflowError)
 
 
-class test_Timer(unittest.TestCase):
+class test_Timer(Case):
 
     @skip_if_quick
     def test_enter_after(self):
@@ -117,13 +115,10 @@ class test_Timer(unittest.TestCase):
 
         fun = Mock()
         fun.side_effect = ValueError()
-        warnings.resetwarnings()
 
-        with catch_warnings(record=True) as log:
+        with self.assertWarns(timer2.TimedFunctionFailed):
             t.apply_entry(fun)
             fun.assert_called_with()
-            self.assertTrue(log)
-            self.assertTrue(stderr.getvalue())
 
     @redirect_stdouts
     def test_apply_entry_error_not_handled(self, stdout, stderr):
@@ -132,13 +127,9 @@ class test_Timer(unittest.TestCase):
 
         fun = Mock()
         fun.side_effect = ValueError()
-        warnings.resetwarnings()
-
-        with catch_warnings(record=True) as log:
-            t.apply_entry(fun)
-            fun.assert_called_with()
-            self.assertFalse(log)
-            self.assertFalse(stderr.getvalue())
+        t.apply_entry(fun)
+        fun.assert_called_with()
+        self.assertFalse(stderr.getvalue())
 
     @patch("os._exit")
     def test_thread_crash(self, _exit):
