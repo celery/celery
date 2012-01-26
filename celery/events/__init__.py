@@ -20,7 +20,6 @@ import threading
 
 from collections import deque
 from contextlib import contextmanager
-from itertools import count
 
 from kombu.common import eventloop
 from kombu.entity import Exchange, Queue

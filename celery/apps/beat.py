@@ -40,8 +40,6 @@ class Beat(configurated):
         self.app = app = app_or_default(app)
         self.setup_defaults(kwargs, namespace="celerybeat")
 
-        print("SCHEDULE: %r" % (self.schedule, ))
-
         self.max_interval = max_interval
         self.socket_timeout = socket_timeout
         self.colored = app.log.colored(self.logfile)
