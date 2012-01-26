@@ -2,10 +2,10 @@ from __future__ import absolute_import
 
 from nose import SkipTest
 
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
-class SecurityCase(unittest.TestCase):
+class SecurityCase(Case):
 
     def setUp(self):
         try:

@@ -4,7 +4,7 @@ from __future__ import with_statement
 from celery.app import app_or_default
 from celery.events import Events
 from celery.events.snapshot import Polaroid, evcam
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
 class TRef(object):
@@ -27,7 +27,7 @@ class MockTimer(object):
 timer = MockTimer()
 
 
-class test_Polaroid(unittest.TestCase):
+class test_Polaroid(Case):
 
     def setUp(self):
         self.app = app_or_default()
@@ -98,7 +98,7 @@ class test_Polaroid(unittest.TestCase):
         self.assertEqual(shutter_signal_sent[0], 1)
 
 
-class test_evcam(unittest.TestCase):
+class test_evcam(Case):
 
     class MockReceiver(object):
         raise_keyboard_interrupt = False

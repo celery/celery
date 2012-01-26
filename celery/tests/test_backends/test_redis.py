@@ -12,8 +12,7 @@ from celery import states
 from celery.utils import uuid
 from celery.backends import redis
 from celery.backends.redis import RedisBackend
-from celery.tests.utils import mask_modules
-from celery.tests.utils import unittest
+from celery.tests.utils import Case, mask_modules
 
 _no_redis_msg = "* Redis %s. Will not execute related tests."
 _no_redis_msg_emitted = False
@@ -57,7 +56,7 @@ def get_redis_or_SkipTest():
         return emit_no_redis_msg("not configured")
 
 
-class TestRedisBackend(unittest.TestCase):
+class TestRedisBackend(Case):
 
     def test_mark_as_done(self):
         tb = get_redis_or_SkipTest()
@@ -95,7 +94,7 @@ class TestRedisBackend(unittest.TestCase):
         self.assertIsInstance(tb.get_result(tid3), KeyError)
 
 
-class TestRedisBackendNoRedis(unittest.TestCase):
+class TestRedisBackendNoRedis(Case):
 
     def test_redis_None_if_redis_not_installed(self):
         prev = sys.modules.pop("celery.backends.redis")

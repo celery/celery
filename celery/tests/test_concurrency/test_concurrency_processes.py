@@ -37,7 +37,7 @@ except ImportError:
 
 from celery.datastructures import ExceptionInfo
 from celery.utils import noop
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
 class Object(object):   # for writeable attributes.
@@ -117,7 +117,7 @@ class ExeMockTaskPool(mp.TaskPool):
     Pool = ExeMockPool
 
 
-class test_TaskPool(unittest.TestCase):
+class test_TaskPool(Case):
 
     def setUp(self):
         try:

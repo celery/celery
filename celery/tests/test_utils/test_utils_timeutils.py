@@ -3,10 +3,10 @@ from __future__ import absolute_import
 from datetime import datetime, timedelta
 
 from celery.utils import timeutils
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
-class test_timeutils(unittest.TestCase):
+class test_timeutils(Case):
 
     def test_delta_resolution(self):
         D = timeutils.delta_resolution

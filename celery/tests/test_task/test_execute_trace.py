@@ -5,7 +5,7 @@ from celery import current_app
 from celery import states
 from celery.exceptions import RetryTaskError
 from celery.execute.trace import eager_trace_task
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
 @current_app.task
@@ -23,7 +23,7 @@ def trace(task, args=(), kwargs={}, propagate=False):
                       propagate=propagate)
 
 
-class test_trace(unittest.TestCase):
+class test_trace(Case):
 
     def test_trace_successful(self):
         retval, info = trace(add, (2, 2), {})

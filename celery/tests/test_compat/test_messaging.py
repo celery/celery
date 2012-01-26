@@ -1,10 +1,10 @@
 from __future__ import absolute_import
 
 from celery import messaging
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
-class test_compat_messaging_module(unittest.TestCase):
+class test_compat_messaging_module(Case):
 
     def test_with_connection(self):
 

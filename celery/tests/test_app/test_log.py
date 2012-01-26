@@ -12,12 +12,11 @@ from celery.log import (setup_logger, setup_task_logger,
                         setup_logging_subsystem)
 from celery.utils import uuid
 from celery.utils.compat import _CompatLoggerAdapter
-from celery.tests.utils import unittest
-from celery.tests.utils import (override_stdouts, wrap_logger,
+from celery.tests.utils import (Case, override_stdouts, wrap_logger,
                                 get_handlers, set_handlers)
 
 
-class test_default_logger(unittest.TestCase):
+class test_default_logger(Case):
 
     def setUp(self):
         self.setup_logger = setup_logger
@@ -144,7 +143,7 @@ class MockLogger(logging.Logger):
         return True
 
 
-class test_CompatLoggerAdapter(unittest.TestCase):
+class test_CompatLoggerAdapter(Case):
     levels = ("debug",
               "info",
               "warn", "warning",

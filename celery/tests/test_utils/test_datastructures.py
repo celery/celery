@@ -6,15 +6,14 @@ import sys
 from celery.datastructures import (ExceptionInfo, LRUCache, LimitedSet,
                                    AttributeDict, DictAttribute,
                                    ConfigurationView, DependencyGraph)
-from celery.tests.utils import unittest
-from celery.tests.utils import WhateverIO
+from celery.tests.utils import Case, WhateverIO
 
 
 class Object(object):
     pass
 
 
-class test_DictAttribute(unittest.TestCase):
+class test_DictAttribute(Case):
 
     def test_get_set(self):
         x = DictAttribute(Object())
@@ -48,7 +47,7 @@ class test_DictAttribute(unittest.TestCase):
                              dict(attr1=1, attr2=2))
 
 
-class test_ConfigurationView(unittest.TestCase):
+class test_ConfigurationView(Case):
 
     def setUp(self):
         self.view = ConfigurationView({"changed_key": 1,
@@ -91,7 +90,7 @@ class test_ConfigurationView(unittest.TestCase):
         self.assertItemsEqual(self.view.values(), expected.values())
 
 
-class test_ExceptionInfo(unittest.TestCase):
+class test_ExceptionInfo(Case):
 
     def test_exception_info(self):
 
@@ -111,7 +110,7 @@ class test_ExceptionInfo(unittest.TestCase):
         self.assertTrue(r)
 
 
-class test_LimitedSet(unittest.TestCase):
+class test_LimitedSet(Case):
 
     def test_add(self):
         s = LimitedSet(maxlen=2)
@@ -169,7 +168,7 @@ class test_LimitedSet(unittest.TestCase):
         self.assertIsInstance(s.as_dict(), dict)
 
 
-class test_LRUCache(unittest.TestCase):
+class test_LRUCache(Case):
 
     def test_expires(self):
         limit = 100
@@ -246,7 +245,7 @@ class test_LRUCache(unittest.TestCase):
         self.assertTrue(c.items())
 
 
-class test_AttributeDict(unittest.TestCase):
+class test_AttributeDict(Case):
 
     def test_getattr__setattr(self):
         x = AttributeDict({"foo": "bar"})
@@ -257,7 +256,7 @@ class test_AttributeDict(unittest.TestCase):
         self.assertEqual(x["bar"], "foo")
 
 
-class test_DependencyGraph(unittest.TestCase):
+class test_DependencyGraph(Case):
 
     def graph1(self):
         return DependencyGraph([

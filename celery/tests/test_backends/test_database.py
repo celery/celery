@@ -13,8 +13,7 @@ from celery.exceptions import ImproperlyConfigured
 from celery.result import AsyncResult
 from celery.utils import uuid
 
-from celery.tests.utils import mask_modules
-from celery.tests.utils import unittest
+from celery.tests.utils import Case, mask_modules
 
 try:
     import sqlalchemy  # noqa
@@ -31,7 +30,7 @@ class SomeClass(object):
         self.data = data
 
 
-class test_DatabaseBackend(unittest.TestCase):
+class test_DatabaseBackend(Case):
 
     def setUp(self):
         if sys.platform.startswith("java"):

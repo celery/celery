@@ -2,10 +2,10 @@ from __future__ import absolute_import
 
 from celery.states import state
 from celery import states
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
-class test_state_precedence(unittest.TestCase):
+class test_state_precedence(Case):
 
     def test_gt(self):
         self.assertGreater(state(states.SUCCESS),

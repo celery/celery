@@ -4,7 +4,7 @@ from celery.app.annotations import MapAnnotation, prepare
 from celery.task import task
 from celery.utils import qualname
 
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
 @task
@@ -21,7 +21,7 @@ class MyAnnotation(object):
     foo = 65
 
 
-class test_MapAnnotation(unittest.TestCase):
+class test_MapAnnotation(Case):
 
     def test_annotate(self):
         x = MapAnnotation({add.name: {"foo": 1}})
@@ -36,7 +36,7 @@ class test_MapAnnotation(unittest.TestCase):
         self.assertIsNone(x.annotate_any())
 
 
-class test_prepare(unittest.TestCase):
+class test_prepare(Case):
 
     def test_dict_to_MapAnnotation(self):
         x = prepare({add.name: {"foo": 3}})

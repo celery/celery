@@ -8,7 +8,7 @@ from celery import states
 from celery.events import Event
 from celery.events.state import State, Worker, Task, HEARTBEAT_EXPIRE
 from celery.utils import uuid
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
 class replay(object):
@@ -93,7 +93,7 @@ class ev_snapshot(replay):
                           uuid=uuid(), hostname=worker))
 
 
-class test_Worker(unittest.TestCase):
+class test_Worker(Case):
 
     def test_survives_missing_timestamp(self):
         worker = Worker(hostname="foo")
@@ -104,7 +104,7 @@ class test_Worker(unittest.TestCase):
         self.assertTrue(repr(Worker(hostname="foo")))
 
 
-class test_Task(unittest.TestCase):
+class test_Task(Case):
 
     def test_info(self):
         task = Task(uuid="abcdefg",
@@ -158,7 +158,7 @@ class test_Task(unittest.TestCase):
         self.assertTrue(repr(Task(uuid="xxx", name="tasks.add")))
 
 
-class test_State(unittest.TestCase):
+class test_State(Case):
 
     def test_repr(self):
         self.assertTrue(repr(State()))

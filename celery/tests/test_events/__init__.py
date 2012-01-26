@@ -5,7 +5,7 @@ import socket
 
 from celery import events
 from celery.app import app_or_default
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
 class MockProducer(object):
@@ -29,7 +29,7 @@ class MockProducer(object):
         return False
 
 
-class TestEvent(unittest.TestCase):
+class TestEvent(Case):
 
     def test_constructor(self):
         event = events.Event("world war II")
@@ -37,7 +37,7 @@ class TestEvent(unittest.TestCase):
         self.assertTrue(event["timestamp"])
 
 
-class TestEventDispatcher(unittest.TestCase):
+class TestEventDispatcher(Case):
 
     def setUp(self):
         self.app = app_or_default()
@@ -99,7 +99,7 @@ class TestEventDispatcher(unittest.TestCase):
             connection.close()
 
 
-class TestEventReceiver(unittest.TestCase):
+class TestEventReceiver(Case):
 
     def setUp(self):
         self.app = app_or_default()
@@ -181,7 +181,7 @@ class TestEventReceiver(unittest.TestCase):
             connection.close()
 
 
-class test_misc(unittest.TestCase):
+class test_misc(Case):
 
     def setUp(self):
         self.app = app_or_default()

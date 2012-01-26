@@ -6,10 +6,10 @@ import os
 from itertools import count
 
 from celery.concurrency.base import apply_target, BasePool
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
-class test_BasePool(unittest.TestCase):
+class test_BasePool(Case):
 
     def test_apply_target(self):
 

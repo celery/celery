@@ -1,10 +1,10 @@
 from __future__ import absolute_import
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 import celery
 
 
-class TestInitFile(unittest.TestCase):
+class TestInitFile(Case):
 
     def test_version(self):
         self.assertTrue(celery.VERSION)

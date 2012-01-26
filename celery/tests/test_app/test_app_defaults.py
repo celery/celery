@@ -5,10 +5,10 @@ import sys
 
 from importlib import import_module
 
-from celery.tests.utils import unittest, pypy_version, sys_platform
+from celery.tests.utils import Case, pypy_version, sys_platform
 
 
-class test_defaults(unittest.TestCase):
+class test_defaults(Case):
 
     def setUp(self):
         self._prev = sys.modules.pop("celery.app.defaults", None)

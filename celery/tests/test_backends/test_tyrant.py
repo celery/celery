@@ -11,7 +11,7 @@ from celery import states
 from celery.utils import uuid
 from celery.backends import tyrant
 from celery.backends.tyrant import TyrantBackend
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 _no_tyrant_msg = "* Tokyo Tyrant %s. Will not execute related tests."
 _no_tyrant_msg_emitted = False
@@ -51,7 +51,7 @@ def get_tyrant_or_SkipTest():
         raise SkipTest("Tokyo Tyrant not configured")
 
 
-class TestTyrantBackend(unittest.TestCase):
+class TestTyrantBackend(Case):
 
     def test_cached_connection(self):
         tb = get_tyrant_or_SkipTest()

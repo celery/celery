@@ -12,7 +12,7 @@ from celery.task import subtask
 from celery.utils import cached_property, uuid
 from celery.utils.timeutils import timedelta_seconds
 
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
 class Redis(object):
@@ -57,7 +57,7 @@ class redis(object):
             pass
 
 
-class test_RedisBackend(unittest.TestCase):
+class test_RedisBackend(Case):
 
     def get_backend(self):
         from celery.backends import redis

@@ -10,7 +10,7 @@ from mock import Mock, patch
 from celery.concurrency.base import BasePool
 from celery.worker import state
 from celery.worker import autoscale
-from celery.tests.utils import unittest, sleepdeprived
+from celery.tests.utils import Case, sleepdeprived
 
 logger = logging.getLogger("celery.tests.autoscale")
 
@@ -43,7 +43,7 @@ class MockPool(BasePool):
         return self._pool._processes
 
 
-class test_Autoscaler(unittest.TestCase):
+class test_Autoscaler(Case):
 
     def setUp(self):
         self.pool = MockPool(3)

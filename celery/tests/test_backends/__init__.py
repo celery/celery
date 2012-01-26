@@ -4,10 +4,10 @@ from __future__ import with_statement
 from celery import backends
 from celery.backends.amqp import AMQPBackend
 from celery.backends.cache import CacheBackend
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
-class TestBackends(unittest.TestCase):
+class TestBackends(Case):
 
     def test_get_backend_aliases(self):
         expects = [("amqp", AMQPBackend),

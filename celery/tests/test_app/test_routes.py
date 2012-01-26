@@ -7,7 +7,7 @@ from celery import routes
 from celery import current_app
 from celery.exceptions import QueueNotFound
 from celery.utils import maybe_promise
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
 def E(queues):
@@ -47,7 +47,7 @@ d_queue = {"exchange": current_app.conf.CELERY_DEFAULT_EXCHANGE,
            "routing_key": current_app.conf.CELERY_DEFAULT_ROUTING_KEY}
 
 
-class test_MapRoute(unittest.TestCase):
+class test_MapRoute(Case):
 
     @with_queues(foo=a_queue, bar=b_queue)
     def test_route_for_task_expanded_route(self):
@@ -72,7 +72,7 @@ class test_MapRoute(unittest.TestCase):
             expand(route.route_for_task("a"))
 
 
-class test_lookup_route(unittest.TestCase):
+class test_lookup_route(Case):
 
     def test_init_queues(self):
         router = routes.Router(queues=None)
@@ -125,7 +125,7 @@ class test_lookup_route(unittest.TestCase):
                 dict(d_queue, queue=current_app.conf.CELERY_DEFAULT_QUEUE))
 
 
-class test_prepare(unittest.TestCase):
+class test_prepare(Case):
 
     def test_prepare(self):
         from celery.datastructures import LRUCache

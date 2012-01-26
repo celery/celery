@@ -5,10 +5,10 @@ import sys
 from nose import SkipTest
 
 from celery.utils import encoding
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
-class test_encoding(unittest.TestCase):
+class test_encoding(Case):
 
     def test_safe_str(self):
         self.assertTrue(encoding.safe_str(object()))

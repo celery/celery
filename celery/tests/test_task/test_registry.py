@@ -3,7 +3,7 @@ from __future__ import with_statement
 
 from celery import registry
 from celery.task import Task, PeriodicTask
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
 class TestTask(Task):
@@ -21,7 +21,7 @@ class TestPeriodicTask(PeriodicTask):
         return True
 
 
-class TestTaskRegistry(unittest.TestCase):
+class TestTaskRegistry(Case):
 
     def assertRegisterUnregisterCls(self, r, task):
         with self.assertRaises(r.NotRegistered):

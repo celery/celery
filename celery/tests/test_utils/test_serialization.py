@@ -3,11 +3,10 @@ from __future__ import with_statement
 
 import sys
 
-from celery.tests.utils import unittest
-from celery.tests.utils import mask_modules
+from celery.tests.utils import Case, mask_modules
 
 
-class TestAAPickle(unittest.TestCase):
+class TestAAPickle(Case):
 
     def test_no_cpickle(self):
         prev = sys.modules.pop("celery.utils.serialization", None)

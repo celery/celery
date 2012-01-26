@@ -14,7 +14,7 @@ from celery.schedules import crontab, crontab_parser, ParseException
 from celery.utils import uuid
 from celery.utils.timeutils import parse_iso8601
 
-from celery.tests.utils import with_eager_tasks, unittest, WhateverIO
+from celery.tests.utils import Case, with_eager_tasks, WhateverIO
 
 
 def return_True(*args, **kwargs):
@@ -128,7 +128,7 @@ class RetryTaskCustomExc(task.Task):
                                   countdown=0, exc=exc)
 
 
-class TestTaskRetries(unittest.TestCase):
+class TestTaskRetries(Case):
 
     def test_retry(self):
         RetryTask.max_retries = 3
@@ -204,7 +204,7 @@ class TestTaskRetries(unittest.TestCase):
         self.assertEqual(RetryTask.iterations, 2)
 
 
-class TestCeleryTasks(unittest.TestCase):
+class TestCeleryTasks(Case):
 
     def test_unpickle_task(self):
         import pickle
@@ -420,7 +420,7 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertTrue(logger)
 
 
-class TestTaskSet(unittest.TestCase):
+class TestTaskSet(Case):
 
     @with_eager_tasks
     def test_function_taskset(self):
@@ -467,7 +467,7 @@ class TestTaskSet(unittest.TestCase):
         self.assertTrue(res.taskset_id.startswith(prefix))
 
 
-class TestTaskApply(unittest.TestCase):
+class TestTaskApply(Case):
 
     def test_apply_throw(self):
         with self.assertRaises(KeyError):
@@ -510,7 +510,7 @@ class MyPeriodic(task.PeriodicTask):
     run_every = timedelta(hours=1)
 
 
-class TestPeriodicTask(unittest.TestCase):
+class TestPeriodicTask(Case):
 
     def test_must_have_run_every(self):
         with self.assertRaises(NotImplementedError):
@@ -578,7 +578,7 @@ def patch_crontab_nowfun(cls, retval):
     return create_patcher
 
 
-class test_crontab_parser(unittest.TestCase):
+class test_crontab_parser(Case):
 
     def test_parse_star(self):
         self.assertEqual(crontab_parser(24).parse('*'), set(range(24)))
@@ -653,7 +653,7 @@ class test_crontab_parser(unittest.TestCase):
         self.assertFalse(crontab(minute="1") == object())
 
 
-class test_crontab_remaining_estimate(unittest.TestCase):
+class test_crontab_remaining_estimate(Case):
 
     def next_ocurrance(self, crontab, now):
         crontab.nowfun = lambda: now
@@ -703,7 +703,7 @@ class test_crontab_remaining_estimate(unittest.TestCase):
         self.assertEqual(next, datetime(2010, 9, 13, 0, 5))
 
 
-class test_crontab_is_due(unittest.TestCase):
+class test_crontab_is_due(Case):
 
     def setUp(self):
         self.now = datetime.utcnow()

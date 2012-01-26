@@ -5,8 +5,7 @@ from nose import SkipTest
 from celery.app import app_or_default
 from celery.bin import celeryev
 
-from celery.tests.utils import unittest
-from celery.tests.utils import patch
+from celery.tests.utils import Case, patch
 
 
 class MockCommand(object):
@@ -21,7 +20,7 @@ def proctitle(prog, info=None):
 proctitle.last = ()
 
 
-class test_EvCommand(unittest.TestCase):
+class test_EvCommand(Case):
 
     def setUp(self):
         self.app = app_or_default()

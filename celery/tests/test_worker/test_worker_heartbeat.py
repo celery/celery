@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from celery.worker.heartbeat import Heart
-from celery.tests.utils import unittest, sleepdeprived
+from celery.tests.utils import Case, sleepdeprived
 
 
 class MockDispatcher(object):
@@ -45,7 +45,7 @@ class MockTimer(object):
         entry.cancel()
 
 
-class TestHeart(unittest.TestCase):
+class TestHeart(Case):
 
     def test_stop(self):
         timer = MockTimer()

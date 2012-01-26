@@ -7,7 +7,7 @@ from nose import SkipTest
 
 from celery import states
 from celery.backends.mongodb import MongoBackend
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
 try:
@@ -30,7 +30,7 @@ MONGODB_COLLECTION = "collection1"
 @patch("celery.backends.mongodb.MongoBackend.encode", Mock())
 @patch("pymongo.binary.Binary", Mock())
 @patch("datetime.datetime", Mock())
-class TestBackendMongoDb(unittest.TestCase):
+class TestBackendMongoDb(Case):
 
     def setUp(self):
         if pymongo is None:

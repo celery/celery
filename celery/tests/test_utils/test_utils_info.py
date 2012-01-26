@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from celery import Celery
 from celery.utils import textindent
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 RANDTEXT = """\
 The quick brown
@@ -32,7 +32,7 @@ QUEUE_FORMAT1 = """. queue1:      exchange:exchange1 (type1) binding:bind1"""
 QUEUE_FORMAT2 = """. queue2:      exchange:exchange2 (type2) binding:bind2"""
 
 
-class TestInfo(unittest.TestCase):
+class TestInfo(Case):
 
     def test_textindent(self):
         self.assertEqual(textindent(RANDTEXT, 4), RANDTEXT_RES)

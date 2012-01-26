@@ -3,10 +3,10 @@ from __future__ import absolute_import
 from nose import SkipTest
 
 from celery.exceptions import ImproperlyConfigured
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
-class test_RedisBackend(unittest.TestCase):
+class test_RedisBackend(Case):
 
     def test_constructor(self):
         from celery.backends import pyredis

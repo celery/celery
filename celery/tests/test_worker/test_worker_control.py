@@ -22,7 +22,7 @@ from celery.worker import state
 from celery.worker.state import revoked
 from celery.worker import control
 from celery.worker.control import Panel
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 hostname = socket.gethostname()
 
@@ -57,7 +57,7 @@ class Consumer(object):
         return {"xyz": "XYZ"}
 
 
-class test_ControlPanel(unittest.TestCase):
+class test_ControlPanel(Case):
 
     def setUp(self):
         self.app = current_app

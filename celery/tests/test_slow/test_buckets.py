@@ -13,7 +13,7 @@ from celery.utils import timeutils
 from celery.utils import uuid
 from celery.worker import buckets
 
-from celery.tests.utils import skip_if_environ, unittest
+from celery.tests.utils import Case, skip_if_environ
 
 skip_if_disabled = partial(skip_if_environ("SKIP_RLIMITS"))
 
@@ -40,7 +40,7 @@ class MockJob(object):
                 self.task_name, self.task_id, self.args, self.kwargs)
 
 
-class test_TokenBucketQueue(unittest.TestCase):
+class test_TokenBucketQueue(Case):
 
     @skip_if_disabled
     def empty_queue_yields_QueueEmpty(self):
@@ -95,7 +95,7 @@ class test_TokenBucketQueue(unittest.TestCase):
         self.assertEqual(x.get_nowait(), "The quick brown fox")
 
 
-class test_rate_limit_string(unittest.TestCase):
+class test_rate_limit_string(Case):
 
     @skip_if_disabled
     def test_conversion(self):
@@ -126,7 +126,7 @@ class TaskD(Task):
     rate_limit = "1000/m"
 
 
-class test_TaskBucket(unittest.TestCase):
+class test_TaskBucket(Case):
 
     def setUp(self):
         self.registry = TaskRegistry()
@@ -288,7 +288,7 @@ class test_TaskBucket(unittest.TestCase):
         self.assertEqual(sorted(x.items), [1, 2, 3])
 
 
-class test_FastQueue(unittest.TestCase):
+class test_FastQueue(Case):
 
     def test_items(self):
         x = buckets.FastQueue()

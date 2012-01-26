@@ -5,10 +5,10 @@ import sys
 
 from nose import SkipTest
 
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
-class EventletCase(unittest.TestCase):
+class EventletCase(Case):
 
     def setUp(self):
         if getattr(sys, "pypy_version_info", None):

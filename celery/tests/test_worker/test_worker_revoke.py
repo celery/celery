@@ -1,10 +1,10 @@
 from __future__ import absolute_import
 
 from celery.worker import state
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
-class test_revoked(unittest.TestCase):
+class test_revoked(Case):
 
     def test_is_working(self):
         state.revoked.add("foo")

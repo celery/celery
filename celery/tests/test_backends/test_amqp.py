@@ -15,8 +15,7 @@ from celery.datastructures import ExceptionInfo
 from celery.exceptions import TimeoutError
 from celery.utils import uuid
 
-from celery.tests.utils import unittest
-from celery.tests.utils import sleepdeprived
+from celery.tests.utils import Case, sleepdeprived
 
 
 class SomeClass(object):
@@ -25,7 +24,7 @@ class SomeClass(object):
         self.data = data
 
 
-class test_AMQPBackend(unittest.TestCase):
+class test_AMQPBackend(Case):
 
     def create_backend(self, **opts):
         opts = dict(dict(serializer="pickle", persistent=False), **opts)

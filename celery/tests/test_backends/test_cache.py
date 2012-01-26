@@ -17,7 +17,7 @@ from celery.task import subtask
 from celery.utils import uuid
 from celery.utils.encoding import str_to_bytes
 
-from celery.tests.utils import unittest, mask_modules, reset_modules
+from celery.tests.utils import Case, mask_modules, reset_modules
 
 
 class SomeClass(object):
@@ -26,7 +26,7 @@ class SomeClass(object):
         self.data = data
 
 
-class test_CacheBackend(unittest.TestCase):
+class test_CacheBackend(Case):
 
     def setUp(self):
         self.tb = CacheBackend(backend="memory://")
@@ -150,7 +150,7 @@ class MockCacheMixin(object):
             sys.modules["pylibmc"] = prev
 
 
-class test_get_best_memcache(unittest.TestCase, MockCacheMixin):
+class test_get_best_memcache(Case, MockCacheMixin):
 
     def test_pylibmc(self):
         with self.mock_pylibmc():
@@ -192,7 +192,7 @@ class test_get_best_memcache(unittest.TestCase, MockCacheMixin):
             self.assertTrue(fun())
 
 
-class test_memcache_key(unittest.TestCase, MockCacheMixin):
+class test_memcache_key(Case, MockCacheMixin):
 
     def test_memcache_unicode_key(self):
         with self.mock_memcache():

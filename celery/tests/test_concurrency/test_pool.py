@@ -8,7 +8,7 @@ import itertools
 from nose import SkipTest
 
 from celery.datastructures import ExceptionInfo
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
 def do_something(i):
@@ -26,7 +26,7 @@ def raise_something(i):
         return ExceptionInfo(sys.exc_info())
 
 
-class TestTaskPool(unittest.TestCase):
+class TestTaskPool(Case):
 
     def setUp(self):
         try:

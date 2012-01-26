@@ -20,7 +20,7 @@ from celery.backends.base import BaseBackend, KeyValueStoreBackend
 from celery.backends.base import BaseDictBackend, DisabledBackend
 from celery.utils import uuid
 
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
 class wrapobject(object):
@@ -38,7 +38,7 @@ Lookalike = subclass_exception("Lookalike", wrapobject, "foo.module")
 b = BaseBackend()
 
 
-class test_serialization(unittest.TestCase):
+class test_serialization(Case):
 
     def test_create_exception_cls(self):
         self.assertTrue(serialization.create_exception_cls("FooError", "m"))
@@ -47,7 +47,7 @@ class test_serialization(unittest.TestCase):
                                                             KeyError))
 
 
-class test_BaseBackend_interface(unittest.TestCase):
+class test_BaseBackend_interface(Case):
 
     def test_get_status(self):
         with self.assertRaises(NotImplementedError):
@@ -108,7 +108,7 @@ class test_BaseBackend_interface(unittest.TestCase):
             tasks[unlock] = p
 
 
-class test_exception_pickle(unittest.TestCase):
+class test_exception_pickle(Case):
 
     def test_oldstyle(self):
         if Oldstyle is None:
@@ -127,7 +127,7 @@ class test_exception_pickle(unittest.TestCase):
         self.assertIsNone(fnpe(Impossible()))
 
 
-class test_prepare_exception(unittest.TestCase):
+class test_prepare_exception(Case):
 
     def test_unpickleable(self):
         x = b.prepare_exception(Unpickleable(1, 2, "foo"))
@@ -193,7 +193,7 @@ class DictBackend(BaseDictBackend):
         self._data.pop(taskset_id, None)
 
 
-class test_BaseDictBackend(unittest.TestCase):
+class test_BaseDictBackend(Case):
 
     def setUp(self):
         self.b = DictBackend()
@@ -232,7 +232,7 @@ class test_BaseDictBackend(unittest.TestCase):
         self.b._cache["task-exists"] = {"result": "task"}
 
 
-class test_KeyValueStoreBackend(unittest.TestCase):
+class test_KeyValueStoreBackend(Case):
 
     def setUp(self):
         self.b = KVBackend()
@@ -277,7 +277,7 @@ class test_KeyValueStoreBackend(unittest.TestCase):
         self.assertIsNone(self.b.restore_taskset("xxx-nonexistant"))
 
 
-class test_KeyValueStoreBackend_interface(unittest.TestCase):
+class test_KeyValueStoreBackend_interface(Case):
 
     def test_get(self):
         with self.assertRaises(NotImplementedError):
@@ -303,7 +303,7 @@ class test_KeyValueStoreBackend_interface(unittest.TestCase):
             KeyValueStoreBackend().forget("a")
 
 
-class test_DisabledBackend(unittest.TestCase):
+class test_DisabledBackend(Case):
 
     def test_store_result(self):
         DisabledBackend().store_result()

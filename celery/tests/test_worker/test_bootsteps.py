@@ -5,11 +5,10 @@ from mock import Mock
 
 from celery import abstract
 
-from celery.tests.utils import unittest
-from celery.tests.utils import AppCase
+from celery.tests.utils import AppCase, Case
 
 
-class test_Component(unittest.TestCase):
+class test_Component(Case):
 
     class Def(abstract.Component):
         name = "test_Component.Def"
@@ -72,7 +71,7 @@ class test_Component(unittest.TestCase):
         self.assertFalse(x.create.call_count)
 
 
-class test_StartStopComponent(unittest.TestCase):
+class test_StartStopComponent(Case):
 
     class Def(abstract.StartStopComponent):
         name = "test_StartStopComponent.Def"

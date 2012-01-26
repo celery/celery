@@ -15,7 +15,7 @@ from celery.exceptions import TimeoutError
 from celery.task.control import ping, flatten_reply, inspect
 from celery.utils import qualname
 
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 HOSTNAME = socket.gethostname()
 
@@ -103,7 +103,7 @@ class Worker(object):
         return worker
 
 
-class WorkerCase(unittest.TestCase):
+class WorkerCase(Case):
     hostname = HOSTNAME
     worker = None
 

@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from celery.contrib.abortable import AbortableTask, AbortableAsyncResult
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
 class MyAbortableTask(AbortableTask):
@@ -10,7 +10,7 @@ class MyAbortableTask(AbortableTask):
         return True
 
 
-class TestAbortableTask(unittest.TestCase):
+class TestAbortableTask(Case):
 
     def test_async_result_is_abortable(self):
         t = MyAbortableTask()

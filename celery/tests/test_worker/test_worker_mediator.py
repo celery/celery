@@ -9,7 +9,7 @@ from mock import Mock, patch
 from celery.utils import uuid
 from celery.worker.mediator import Mediator
 from celery.worker.state import revoked as revoked_tasks
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
 class MockTask(object):
@@ -29,7 +29,7 @@ class MockTask(object):
         return False
 
 
-class test_Mediator(unittest.TestCase):
+class test_Mediator(Case):
 
     def test_mediator_start__stop(self):
         ready_queue = Queue()

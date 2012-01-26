@@ -14,7 +14,7 @@ except ImportError:  # py3k
 from anyjson import serialize
 
 from celery.task import http
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 from celery.utils.compat import StringIO
 from celery.utils.encoding import from_utf8
 
@@ -53,7 +53,7 @@ def unknown_response():
     return _response(serialize({"status": "u.u.u.u", "retval": True}))
 
 
-class TestEncodings(unittest.TestCase):
+class TestEncodings(Case):
 
     def test_utf8dict(self):
         uk = "foobar"
@@ -65,7 +65,7 @@ class TestEncodings(unittest.TestCase):
             self.assertIsInstance(value, str)
 
 
-class TestMutableURL(unittest.TestCase):
+class TestMutableURL(Case):
 
     def test_url_query(self):
         url = http.MutableURL("http://example.com?x=10&y=20&z=Foo")
@@ -97,7 +97,7 @@ class TestMutableURL(unittest.TestCase):
         self.assertEqual(url.query, {"zzz": "xxx"})
 
 
-class TestHttpDispatch(unittest.TestCase):
+class TestHttpDispatch(Case):
 
     def test_dispatch_success(self):
         logger = logging.getLogger("celery.unittest")
@@ -152,7 +152,7 @@ class TestHttpDispatch(unittest.TestCase):
             self.assertEqual(d.dispatch(), 100)
 
 
-class TestURL(unittest.TestCase):
+class TestURL(Case):
 
     def test_URL_get_async(self):
         http.HttpDispatchTask.app.conf.CELERY_ALWAYS_EAGER = True

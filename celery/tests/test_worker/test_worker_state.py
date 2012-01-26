@@ -2,10 +2,10 @@ from __future__ import absolute_import
 
 from celery.datastructures import LimitedSet
 from celery.worker import state
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
-class StateResetCase(unittest.TestCase):
+class StateResetCase(Case):
 
     def setUp(self):
         self.reset_state()

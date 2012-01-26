@@ -4,14 +4,14 @@ from __future__ import with_statement
 from celery import utils
 from celery.utils import promise, mpromise
 from celery.utils.threads import bgThread
-from celery.tests.utils import unittest
+from celery.tests.utils import Case
 
 
 def double(x):
     return x * 2
 
 
-class test_bgThread_interface(unittest.TestCase):
+class test_bgThread_interface(Case):
 
     def test_body(self):
         x = bgThread()
@@ -19,7 +19,7 @@ class test_bgThread_interface(unittest.TestCase):
             x.body()
 
 
-class test_chunks(unittest.TestCase):
+class test_chunks(Case):
 
     def test_chunks(self):
 
@@ -39,7 +39,7 @@ class test_chunks(unittest.TestCase):
             [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]])
 
 
-class test_utils(unittest.TestCase):
+class test_utils(Case):
 
     def test_qualname(self):
         Class = type("Fox", (object, ), {"__module__": "quick.brown"})
@@ -127,7 +127,7 @@ class test_utils(unittest.TestCase):
         self.assertIs(x.__delete__(None), x)
 
 
-class test_mpromise(unittest.TestCase):
+class test_mpromise(Case):
 
     def test_is_memoized(self):
 
