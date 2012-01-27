@@ -348,7 +348,7 @@ Finding the number of tasks in a queue::
 
 
     $ rabbitmqctl list_queues name messages messages_ready \
-                              messages_unacknowlged
+                              messages_unacknowledged
 
 
 Here `messages_ready` is the number of messages ready
