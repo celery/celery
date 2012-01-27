@@ -118,3 +118,7 @@ class TaskPool(BasePool):
         self._pool._semaphore.counter -= n
         self._pool.size -= n
         return None
+
+    @property
+    def num_processes(self):
+        return len(self._pool)
