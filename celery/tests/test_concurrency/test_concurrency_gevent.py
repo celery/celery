@@ -31,3 +31,9 @@ class test_TaskPool(GeventCase):
         self.assertEqual(pool._pool.size, 10)
         pool.shrink()
         self.assertEqual(pool._pool.size, 9)
+
+    def test_num_processes(self):
+        pool = TaskPool(10)
+        pool.start()
+        pool.apply_async(lambda x: x, (2, ), {})
+        self.assertEqual(pool.num_processes, 1)
