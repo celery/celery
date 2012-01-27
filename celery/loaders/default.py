@@ -16,12 +16,20 @@ import warnings
 
 from ..datastructures import AttributeDict
 from ..exceptions import NotConfigured
-from ..utils import find_module
+from ..utils import find_module, NotAPackage
 
 from .base import BaseLoader
 
 DEFAULT_CONFIG_MODULE = "celeryconfig"
 
+CONFIG_INVALID_NAME = """
+Error: Module '%(module)s' doesn't exist, or it's not a valid \
+Python module name.
+"""
+
+CONFIG_WITH_SUFFIX = CONFIG_INVALID_NAME + """
+Did you mean '%(suggest)s'?
+"""
 
 class Loader(BaseLoader):
     """The loader used by the default app."""
@@ -39,6 +47,11 @@ class Loader(BaseLoader):
                                      DEFAULT_CONFIG_MODULE)
         try:
             self.find_module(configname)
+        except NotAPackage:
+            if configname.endswith('.py'):
+                raise NotAPackage(CONFIG_WITH_SUFFIX % {
+                    "module": configname, "suggest": configname[:-3]})
+                raise NotAPackage(CONFIG_INVALID_NAME % {"module": configname})
         except ImportError:
             warnings.warn(NotConfigured(
                 "No %r module found! Please make sure it exists and "

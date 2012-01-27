@@ -355,6 +355,10 @@ def cwd_in_path():
                 pass
 
 
+class NotAPackage(Exception):
+    pass
+
+
 def find_module(module, path=None, imp=None):
     """Version of :func:`imp.find_module` supporting dots."""
     if imp is None:
@@ -364,7 +368,11 @@ def find_module(module, path=None, imp=None):
             last = None
             parts = module.split(".")
             for i, part in enumerate(parts[:-1]):
-                path = imp(".".join(parts[:i + 1])).__path__
+                mpart = imp(".".join(parts[:i + 1]))
+                try:
+                    path = mpart.__path__
+                except AttributeError:
+                    raise NotAPackage(module)
                 last = _imp.find_module(parts[i + 1], path)
             return last
         return _imp.find_module(module)
