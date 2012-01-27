@@ -18,11 +18,16 @@ class GeventCase(unittest.TestCase):
 
 class test_TaskPool(GeventCase):
 
-    def test_grow_shrink(self):
+    def test_grow(self):
         pool = TaskPool(10)
         pool.start()
         self.assertEqual(pool._pool.size, 10)
         pool.grow()
         self.assertEqual(pool._pool.size, 11)
-        pool.shrink(2)
+
+    def test_shrink(self):
+        pool = TaskPool(10)
+        pool.start()
+        self.assertEqual(pool._pool.size, 10)
+        pool.shrink()
         self.assertEqual(pool._pool.size, 9)
