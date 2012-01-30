@@ -164,8 +164,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     R = I.handle_error_state(task, eager=eager)
                 except BaseException, exc:
                     raise
-                except:
-                    # pragma: no cover
+                except:  # pragma: no cover
                     # For Python2.5 where raising strings are still allowed
                     # (but deprecated)
                     if propagate:

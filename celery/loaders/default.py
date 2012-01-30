@@ -31,6 +31,7 @@ CONFIG_WITH_SUFFIX = CONFIG_INVALID_NAME + """
 Did you mean '%(suggest)s'?
 """
 
+
 class Loader(BaseLoader):
     """The loader used by the default app."""
 

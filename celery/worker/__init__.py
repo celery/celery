@@ -224,6 +224,7 @@ class WorkController(configurated):
                 self.logger.debug("Starting %s...", qualname(component))
                 self._running = i + 1
                 component.start()
+                self.logger.debug("%s OK!", qualname(component))
         except SystemTerminate:
             self.terminate()
         except Exception, exc:
