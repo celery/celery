@@ -1,15 +1,22 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
+from mock import patch
+
 from celery import current_app
 from celery import states
 from celery.exceptions import RetryTaskError
-from celery.execute.trace import eager_trace_task
-from celery.tests.utils import Case
+from celery.execute.trace import TraceInfo, eager_trace_task, trace_task
+from celery.tests.utils import Case, Mock
 
 
 @current_app.task
 def add(x, y):
+    return x + y
+
+
+@current_app.task(ignore_result=True)
+def add_cast(x, y):
     return x + y
 
 
@@ -49,3 +56,38 @@ class test_trace(Case):
     def test_trace_exception_propagate(self):
         with self.assertRaises(KeyError):
             trace(raises, (KeyError("foo"), ), {}, propagate=True)
+
+    @patch("celery.execute.trace.build_tracer")
+    @patch("celery.execute.trace.report_internal_error")
+    def test_outside_body_error(self, report_internal_error, build_tracer):
+        tracer = Mock()
+        tracer.side_effect = KeyError("foo")
+        build_tracer.return_value = tracer
+
+        @current_app.task
+        def xtask():
+            pass
+
+        trace_task(xtask, "uuid", (), {})
+        self.assertTrue(report_internal_error.call_count)
+        self.assertIs(xtask.__tracer__, tracer)
+
+
+class test_TraceInfo(Case):
+
+    class TI(TraceInfo):
+        __slots__ = TraceInfo.__slots__ + ("__dict__", )
+
+    def test_without_exc_info(self):
+        x = TraceInfo(states.SUCCESS)
+        self.assertIsNone(x.exc_type)
+        self.assertIsNone(x.exc_value)
+        self.assertIsNone(x.tb)
+        self.assertEqual(x.strtb, '')
+
+    def test_handle_error_state(self):
+        x = self.TI(states.FAILURE)
+        x.handle_failure = Mock()
+        x.handle_error_state(add_cast)
+        x.handle_failure.assert_called_with(add_cast,
+                store_errors=add_cast.store_errors_even_if_ignored)
