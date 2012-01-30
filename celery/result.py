@@ -510,7 +510,7 @@ class EagerResult(AsyncResult):
     def get(self, timeout=None, propagate=True, **kwargs):
         if self.successful():
             return self.result
-        elif self._state in states.PROPAGATE_STATES:
+        elif self.state in states.PROPAGATE_STATES:
             if propagate:
                 raise self.result
             return self.result
