@@ -320,6 +320,7 @@ class AMQP(object):
                     "exchange_type": default_queue["exchange_type"],
                     "routing_key": conf.CELERY_DEFAULT_ROUTING_KEY,
                     "serializer": conf.CELERY_TASK_SERIALIZER,
+                    "compression": conf.CELERY_MESSAGE_COMPRESSION,
                     "retry": conf.CELERY_TASK_PUBLISH_RETRY,
                     "retry_policy": conf.CELERY_TASK_PUBLISH_RETRY_POLICY,
                     "enable_utc": conf.CELERY_ENABLE_UTC,
