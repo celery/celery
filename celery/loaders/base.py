@@ -24,6 +24,7 @@ from ..exceptions import ImproperlyConfigured
 from ..utils import (cached_property, get_cls_by_name,
                      import_from_cwd as _import_from_cwd)
 from ..utils.functional import maybe_list
+from ..utils.encoding import safe_str
 
 BUILTIN_MODULES = frozenset(["celery.task"])
 
@@ -182,7 +183,8 @@ class BaseLoader(object):
             use_ssl=False, use_tls=False):
         try:
             message = self.mail.Message(sender=sender, to=to,
-                                        subject=subject, body=body)
+                                        subject=safe_str(subject),
+                                        body=safe_str(body))
             mailer = self.mail.Mailer(host=host, port=port,
                                       user=user, password=password,
                                       timeout=timeout, use_ssl=use_ssl,
