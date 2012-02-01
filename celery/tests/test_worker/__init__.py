@@ -11,6 +11,7 @@ from Queue import Empty
 from kombu.transport.base import Message
 from kombu.connection import BrokerConnection
 from mock import Mock, patch
+from nose import SkipTest
 
 from celery import current_app
 from celery.concurrency.base import BasePool
@@ -902,12 +903,22 @@ class test_WorkController(AppCase):
         finally:
             state.Persistent = Persistent
 
-    def test_disable_rate_limits(self):
-        from celery.worker.buckets import FastQueue
-        worker = self.create_worker(disable_rate_limits=True)
+    def test_disable_rate_limits_solo(self):
+        worker = self.create_worker(disable_rate_limits=True,
+                                    pool_cls="solo")
         self.assertIsInstance(worker.ready_queue, FastQueue)
         self.assertIsNone(worker.mediator)
         self.assertEqual(worker.ready_queue.put, worker.process_task)
+
+    def test_disable_rate_limits_processes(self):
+        try:
+            worker = self.create_worker(disable_rate_limits=True,
+                                        pool_cls="processes")
+        except ImportError:
+            raise SkipTest("multiprocessing not supported")
+        self.assertIsInstance(worker.ready_queue, FastQueue)
+        self.assertTrue(worker.mediator)
+        self.assertNotEqual(worker.ready_queue.put, worker.process_task)
 
     def test_start__stop(self):
         worker = self.worker
