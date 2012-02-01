@@ -370,6 +370,37 @@ Finding the amount of memory allocated to a queue::
       easier to parse.
 
 
+.. _monitoring-redis:
+
+Redis
+=====
+
+If you're using Redis as the broker, you can monitor the Celery cluster using
+the `redis-cli(1)` command to list lengths of queues.
+
+.. _monitoring-redis-queues:
+
+Inspecting queues
+-----------------
+
+Finding the number of tasks in a queue::
+
+    $ redis-cli -h HOST -p PORT -n DATABASE_NUMBER llen QUEUE_NAME
+
+The default queue is named `celery`. To get all available queues, invoke::
+
+    $ redis-cli -h HOST -p PORT -n DATABASE_NUMBER keys \*
+
+.. note::
+
+  If a list has no elements in Redis, it doesn't exist. Hence it won't show up
+  in the `keys` command output. `llen` for that list returns 0 in that case.
+  
+  On the other hand, if you're also using Redis for other purposes, the output
+  of the `keys` command will include unrelated values stored in the database.
+  The recommended way around this is to use a dedicated `DATABASE_NUMBER` for
+  Celery.
+
 .. _monitoring-munin:
 
 Munin
