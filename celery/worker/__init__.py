@@ -126,7 +126,9 @@ class Queues(abstract.Component):
             w.disable_rate_limits = True
         if w.disable_rate_limits:
             w.ready_queue = FastQueue()
-            w.ready_queue.put = w.process_task
+            if not w.pool_cls.requires_mediator:
+                # just send task directly to pool, skip the mediator.
+                w.ready_queue.put = w.process_task
         else:
             w.ready_queue = TaskBucket(task_registry=registry.tasks)
 

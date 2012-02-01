@@ -46,22 +46,10 @@ def process_initializer(app, hostname):
 
 
 class TaskPool(BasePool):
-    """Process Pool for processing tasks in parallel.
-
-    :param processes: see :attr:`processes`.
-    :param logger: see :attr:`logger`.
-
-
-    .. attribute:: limit
-
-        The number of processes that can run simultaneously.
-
-    .. attribute:: logger
-
-        The logger used for debugging.
-
-    """
+    """Multiprocessing Pool implementation."""
     Pool = Pool
+
+    requires_mediator = True
 
     def on_start(self):
         """Run the task pool.
