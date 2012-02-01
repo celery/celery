@@ -296,6 +296,7 @@ class inspect(Command):
         if not replies:
             raise Error("No nodes replied within time constraint.",
                         status=EX_UNAVAILABLE)
+        return replies
 
     def say(self, direction, title, body=""):
         c = self.colored
@@ -382,11 +383,18 @@ class celeryctl(CeleryCommand):
         return self.execute(command, argv)
 
 
+def determine_exit_status(ret):
+    if isinstance(ret, int):
+        return ret
+    return EX_OK if ret else W_FAILURE
+
+
 def main():
     try:
-        sys.exit(celeryctl().execute_from_commandline())
+        sys.exit(determine_exit_status(
+            celeryctl().execute_from_commandline()))
     except KeyboardInterrupt:
-        pass
+        sys.exit(EX_FAILURE)
 
 if __name__ == "__main__":          # pragma: no cover
     main()
