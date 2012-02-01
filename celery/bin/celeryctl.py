@@ -296,7 +296,6 @@ class inspect(Command):
         if not replies:
             raise Error("No nodes replied within time constraint.",
                         status=EX_UNAVAILABLE)
-        return replies
 
     def say(self, direction, title, body=""):
         c = self.colored
