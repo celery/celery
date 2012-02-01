@@ -386,7 +386,7 @@ class celeryctl(CeleryCommand):
 def determine_exit_status(ret):
     if isinstance(ret, int):
         return ret
-    return EX_OK if ret else W_FAILURE
+    return EX_OK if ret else EX_FAILURE
 
 
 def main():

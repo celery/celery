@@ -45,7 +45,7 @@ def Process32First(hSnapshot):
     success = windll.kernel32.Process32First(hSnapshot, byref(pe))
     if not success:
         if windll.kernel32.GetLastError() == ERROR_NO_MORE_FILES:
-            return None
+            return
         raise WinError()
     return pe
 
@@ -57,7 +57,7 @@ def Process32Next(hSnapshot, pe=None):
     success = windll.kernel32.Process32Next(hSnapshot, byref(pe))
     if not success:
         if windll.kernel32.GetLastError() == ERROR_NO_MORE_FILES:
-            return None
+            return
         raise WinError()
     return pe
 

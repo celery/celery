@@ -197,7 +197,6 @@ class BoundMethodWeakref(object):
             function = self.weak_func()
             if function is not None:
                 return function.__get__(target)
-        return None
 
 
 class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):
@@ -268,7 +267,6 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):
                 # arguments it supports, and pydispatcher needs this
                 # information.
                 return getattr(target, function.__name__)
-        return None
 
 
 def get_bound_method_weakref(target, on_delete):

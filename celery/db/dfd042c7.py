@@ -17,15 +17,13 @@ class PickleType(_PickleType):
     def process_bind_param(self, value, dialect):
         dumps = self.pickler.dumps
         protocol = self.protocol
-        if value is None:
-            return None
-        return dumps(value, protocol)
+        if value is not None:
+            return dumps(value, protocol)
 
     def process_result_value(self, value, dialect):
         loads = self.pickler.loads
-        if value is None:
-            return None
-        return loads(str(value))
+        if value is not None:
+            return loads(str(value))
 
     def copy_value(self, value):
         if self.mutable:

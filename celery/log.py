@@ -322,7 +322,7 @@ class LoggingProxy(object):
         return False
 
     def fileno(self):
-        return None
+        pass
 
 
 class SilenceRepeated(object):

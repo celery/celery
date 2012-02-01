@@ -42,7 +42,7 @@ In the consumer:
                        # Respect the aborted status and terminate
                        # gracefully
                        logger.warning("Task aborted.")
-                       return None
+                       return
                y = do_something_expensive(x)
                results.append(y)
            logger.info("Task finished.")

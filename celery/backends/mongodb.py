@@ -162,7 +162,7 @@ class MongoBackend(BaseDictBackend):
         taskmeta_collection = db[self.mongodb_taskmeta_collection]
         obj = taskmeta_collection.find_one({"_id": taskset_id})
         if not obj:
-            return None
+            return
 
         meta = {
             "task_id": obj["_id"],

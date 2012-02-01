@@ -53,15 +53,13 @@ class PickleType(_PickleType):
 
             def process(value):
                 value = impl_processor(value)
-                if value is None:
-                    return None
-                return loads(value)
+                if value is not None:
+                    return loads(value)
         else:
 
             def process(value):  # noqa
-                if value is None:
-                    return None
-                return loads(value)
+                if value is not None:
+                    return loads(value)
         return process
 
     def copy_value(self, value):
