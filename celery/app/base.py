@@ -13,6 +13,7 @@ from __future__ import absolute_import
 from __future__ import with_statement
 
 import os
+import warnings
 import platform as _platform
 
 from contextlib import contextmanager
@@ -23,6 +24,7 @@ from kombu.clocks import LamportClock
 
 from .. import datastructures
 from .. import platforms
+from ..exceptions import AlwaysEagerIgnored
 from ..utils import cached_property, instantiate, lpmerge
 
 from .defaults import DEFAULTS, find_deprecated_settings, find
@@ -158,6 +160,10 @@ class BaseApp(object):
         :meth:`~celery.app.task.BaseTask.apply_async`.
 
         """
+        if self.conf.CELERY_ALWAYS_EAGER:
+            warnings.warn(AlwaysEagerIgnored(
+                "CELERY_ALWAYS_EAGER has no effect on send_task"))
+
         router = self.amqp.Router(queues)
         result_cls = result_cls or self.AsyncResult
 
