@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-from kombu.serialization import registry, SerializerNotInstalled
+from kombu.serialization import registry
 
 from .. import current_app
 from ..exceptions import ImproperlyConfigured
@@ -28,10 +28,7 @@ Please see the configuration reference for more information.
 
 def disable_untrusted_serializers(whitelist=None):
     for name in set(registry._decoders) - set(whitelist or []):
-        try:
-            registry.disable(name)
-        except SerializerNotInstalled:
-            pass
+        registry.disable(name)
 
 
 def setup_security(allowed_serializers=None, key=None, cert=None, store=None,
