@@ -2,9 +2,10 @@ from __future__ import absolute_import
 
 from celery.exceptions import SecurityError
 
-from celery.security.serialization import SecureSerializer
+from celery.security.serialization import SecureSerializer, register_auth
 from celery.security.certificate import Certificate, CertStore
 from celery.security.key import PrivateKey
+from kombu.serialization import registry
 
 from . import CERT1, CERT2, KEY1, KEY2
 from .case import SecurityCase
@@ -48,3 +49,7 @@ class TestSecureSerializer(SecurityCase):
         s1 = self._get_s(KEY1, CERT1, [CERT2])
         s2 = self._get_s(KEY2, CERT2, [CERT1])
         self.assertEqual(s2.deserialize(s1.serialize("foo")), "foo")
+
+    def test_register_auth(self):
+        register_auth(KEY1, CERT1, '')
+        self.assertIn('application/data', registry._decoders)

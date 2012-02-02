@@ -20,6 +20,9 @@ class TestCertificate(SecurityCase):
         self.assertRaises(SecurityError, Certificate, CERT1[:20] + CERT1[21:])
         self.assertRaises(SecurityError, Certificate, KEY1)
 
+    def test_has_expired(self):
+        self.assertFalse(Certificate(CERT1).has_expired())
+
 
 class TestCertStore(SecurityCase):
 

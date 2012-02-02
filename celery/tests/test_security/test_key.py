@@ -19,3 +19,8 @@ class TestKey(SecurityCase):
         self.assertRaises(SecurityError, PrivateKey, "foo")
         self.assertRaises(SecurityError, PrivateKey, KEY1[:20] + KEY1[21:])
         self.assertRaises(SecurityError, PrivateKey, CERT1)
+
+    def test_sign(self):
+        pkey = PrivateKey(KEY1)
+        pkey.sign('test', 'sha1')
+        self.assertRaises(ValueError, pkey.sign, 'test', 'unknown')
