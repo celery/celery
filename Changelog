@@ -26,6 +26,11 @@ Important Notes
 
     See the :setting:`BROKER_POOL_LIMIT` for more information.
 
+    Also note that publishing tasks will be retried by default,
+    to change this default or the default retry policy see
+    :setting:`CELERY_TASK_PUBLISH_RETRY` and
+    :setting:`CELERY_TASK_PUBLISH_RETRY_POLICY`.
+
 * AMQP Result Backend: Exchange no longer *auto delete*.
 
     The exchange used for results used to have the *auto_delete* flag set,
@@ -197,6 +202,24 @@ News
 
     Contributed by Ivan Metzlar.
 
+* gevent: Now supports autoscaling (Issue #599).
+
+* multiprocessing: Mediator thread is now always enabled,
+  even though rate limits are disabled, as the pool semaphore
+  is known to block the mainthread, causing broadcast commands and
+  shutdown to depend on the semaphore being released.
+
+    Contributed by Mark Lavin.
+
+* Cassandra backend: No longer uses :func:`pycassa.connect` which is
+  deprecated since :mod:`pycassa` 1.4.
+
+    Fix contributed by Jeff Terrace.
+
+* Fixed unicode decode errors that could occur while sending error emails.
+
+    Fix contributed by Seong Wun Mun.
+
 * ``celery.worker.control`` is now a single module.
 
 * ``BaseAsyncResult`` and ``AsyncResult`` is now merged into a single
@@ -204,6 +227,37 @@ News
 
 * Moved some common threading functionality to new module
   :mod:`celery.utils.threads`
+
+* ``celery.bin`` programs now always defines ``__package__`` as recommended
+  by PEP-366.
+
+* ``send_task`` now emits a warning when used in combination with
+  :setting:`CELERY_ALWAYS_EAGER` (Issue #581).
+
+    Contributed by Mher Movsisyan.
+
+* ``apply_async`` now forwards the original keyword arguments to ``apply``
+  when :setting:`CELERY_ALWAYS_EAGER` is enabled.
+
+* celeryev now retries reestablishing the broker connection if the connection
+  is lost (Issue #574).
+
+* celeryev: Fixed a crash occuring if a task has no associated worker
+  information.
+
+    Fix contributed by Matt Williamson.
+
+* The current date and time is now consistently taken from the current loaders
+  ``now`` method.
+
+* Now shows helpful error message when given a config module ending in
+  ``.py`` that can't be imported.
+
+* celeryctl: The ``--expires`` and ``-eta`` arguments to the apply command
+  can now be an ISO-8601 formatted string.
+
+* celeryctl now exits with exit status ``EX_UNAVAILABLE`` (69) if no replies
+  have been received.
 
 .. _version-2.4.5:
 
