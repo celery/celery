@@ -2,6 +2,9 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "celery.bin.celeryctl"
+
 import os
 import sys
 
@@ -11,13 +14,13 @@ from textwrap import wrap
 
 from anyjson import deserialize
 
-from celery import __version__
-from celery.app import app_or_default, current_app
-from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE
-from celery.utils import term
-from celery.utils.timeutils import maybe_iso8601
+from .. import __version__
+from ..app import app_or_default, current_app
+from ..platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE
+from ..utils import term
+from ..utils.timeutils import maybe_iso8601
 
-from celery.bin.base import Command as CeleryCommand
+from ..bin.base import Command as CeleryCommand
 
 HELP = """
 Type '%(prog_name)s <command> --help' for help using
@@ -228,7 +231,7 @@ class result(Command):
     )
 
     def run(self, task_id, *args, **kwargs):
-        from celery import registry
+        from .. import registry
         result_cls = self.app.AsyncResult
         task = kwargs.get("task")
 

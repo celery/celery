@@ -73,6 +73,9 @@
 """
 from __future__ import absolute_import
 
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "celery.bin.celeryd"
+
 import sys
 
 try:
@@ -80,7 +83,7 @@ try:
 except ImportError:  # pragma: no cover
     freeze_support = lambda: True  # noqa
 
-from celery.bin.base import Command, Option
+from .base import Command, Option
 
 
 class WorkerCommand(Command):
@@ -92,7 +95,7 @@ class WorkerCommand(Command):
         kwargs.pop("app", None)
         # Pools like eventlet/gevent needs to patch libs as early
         # as possible.
-        from celery import concurrency
+        from .. import concurrency
         kwargs["pool"] = concurrency.get_implementation(
                     kwargs.get("pool") or self.app.conf.CELERYD_POOL)
         return self.app.Worker(**kwargs).run()

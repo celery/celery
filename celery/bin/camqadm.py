@@ -6,6 +6,9 @@
 """
 from __future__ import absolute_import
 
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "celery.bin.celeryctl"
+
 import cmd
 import sys
 import shlex
@@ -15,10 +18,10 @@ from itertools import count
 
 from amqplib import client_0_8 as amqp
 
-from celery.app import app_or_default
-from celery.utils import padlist
+from ..app import app_or_default
+from ..utils import padlist
 
-from celery.bin.base import Command
+from .base import Command
 
 # Valid string -> bool coercions.
 BOOLS = {"1": True, "0": False,
