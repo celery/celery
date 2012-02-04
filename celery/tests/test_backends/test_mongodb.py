@@ -26,17 +26,29 @@ MONGODB_DATABASE = "testing"
 MONGODB_COLLECTION = "collection1"
 
 
-@patch("celery.backends.mongodb.MongoBackend.decode", Mock())
-@patch("celery.backends.mongodb.MongoBackend.encode", Mock())
-@patch("pymongo.binary.Binary", Mock())
-@patch("datetime.datetime", Mock())
 class TestBackendMongoDb(Case):
 
     def setUp(self):
         if pymongo is None:
             raise SkipTest("pymongo is not installed.")
+        import datetime
+        from pymongo import binary
+
+        R = self._reset = {}
+        R["encode"], MongoBackend.encode = MongoBackend.encode, Mock()
+        R["decode"], MongoBackend.decode = MongoBackend.decode, Mock()
+        R["Binary"], binary.Binary = binary.Binary, Mock()
+        R["datetime"], datetime.datetime = datetime.datetime, Mock()
 
         self.backend = MongoBackend()
+
+    def tearDown(self):
+        import datetime
+        from pymongo import binary
+        MongoBackend.encode = self._reset["encode"]
+        MongoBackend.decode = self._reset["decode"]
+        binary.Binary = self._reset["Binary"]
+        datetime.datetime = self._reset["datetime"]
 
     @patch("pymongo.connection.Connection")
     def test_get_connection_connection_exists(self, mock_Connection):

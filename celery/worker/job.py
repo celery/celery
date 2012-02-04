@@ -94,6 +94,11 @@ class Request(object):
         self.id = body["id"]
         self.args = body.get("args", [])
         self.kwargs = body.get("kwargs", {})
+        try:
+            self.kwargs.items
+        except AttributeError:
+            raise exceptions.InvalidTaskError(
+                    "Task keyword arguments is not a mapping")
         if NEEDS_KWDICT:
             self.kwargs = kwdict(self.kwargs)
         eta = body.get("eta")
@@ -134,12 +139,6 @@ class Request(object):
         self._does_info = self.logger.isEnabledFor(logging.INFO)
 
         self.request_dict = body
-
-        try:
-            self.kwargs.items
-        except AttributeError:
-            raise exceptions.InvalidTaskError(
-                    "Task keyword arguments is not a mapping")
 
     @classmethod
     def from_message(cls, message, body, **kwargs):
