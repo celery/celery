@@ -1,3 +1,3 @@
 python-dateutil>=1.5.0,<2.0.0
 anyjson>=0.3.1
-kombu>=2.0.0rc1,<3.0
+kombu>=2.1.0,<3.0
