@@ -224,8 +224,9 @@ class Scheduler(object):
                                         publisher=publisher,
                                         **entry.options)
         except Exception, exc:
-            raise SchedulingError("Couldn't apply scheduled task %s: %s" % (
-                    entry.name, exc))
+            raise SchedulingError, SchedulingError(
+                "Couldn't apply scheduled task %s: %s" % (
+                    entry.name, exc)), sys.exc_info()[2]
 
         if self.should_sync():
             self._do_sync()
