@@ -3,8 +3,10 @@ from __future__ import absolute_import
 try:
     import unittest
     unittest.skip
+    from unittest.util import safe_repr, unorderable_list_difference
 except AttributeError:
     import unittest2 as unittest
+    from unittest2.util import safe_repr, unorderable_list_difference  # noqa
 
 import importlib
 import logging
@@ -130,6 +132,56 @@ class Case(unittest.TestCase):
     def assertWarnsRegex(self, expected_warning, expected_regex):
         return _AssertWarnsContext(expected_warning, self,
                                    None, expected_regex)
+
+    def assertDictContainsSubset(self, expected, actual, msg=None):
+        missing, mismatched = [], []
+
+        for key, value in expected.iteritems():
+            if key not in actual:
+                missing.append(key)
+            elif value != actual[key]:
+                mismatched.append("%s, expected: %s, actual: %s" % (
+                    safe_repr(key), safe_repr(value),
+                    safe_repr(actual[key])))
+
+        if not (missing or mismatched):
+            return
+
+        standard_msg = ""
+        if missing:
+            standard_msg = "Missing: %s" % ','.join(map(safe_repr, missing))
+
+        if mismatched:
+            if standard_msg:
+                standard_msg += "; "
+            standard_msg += "Mismatched values: %s" % (
+                ','.join(mismatched))
+
+        self.fail(self._formatMessage(msg, standard_msg))
+
+    def assertItemsEqual(self, expected_seq, actual_seq, msg=None):
+        try:
+            expected = sorted(expected_seq)
+            actual = sorted(actual_seq)
+        except TypeError:
+            # Unsortable items (example: set(), complex(), ...)
+            expected = list(expected_seq)
+            actual = list(actual_seq)
+            missing, unexpected = unorderable_list_difference(
+                expected, actual)
+        else:
+            return self.assertSequenceEqual(expected, actual, msg=msg)
+
+        errors = []
+        if missing:
+            errors.append('Expected, but missing:\n    %s' % (
+                           safe_repr(missing)))
+        if unexpected:
+            errors.append('Unexpected, but present:\n    %s' % (
+                           safe_repr(unexpected)))
+        if errors:
+            standardMsg = '\n'.join(errors)
+            self.fail(self._formatMessage(msg, standardMsg))
 
 
 class AppCase(Case):

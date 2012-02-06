@@ -192,7 +192,8 @@ class test_Scheduler(Case):
         self.assertTrue(scheduler.logger.logged[0])
         level, msg, args, kwargs = scheduler.logger.logged[0]
         self.assertEqual(level, logging.ERROR)
-        self.assertIn("Couldn't apply scheduled task", args[0].args[0])
+        self.assertIn("Couldn't apply scheduled task",
+                      repr(args[0].args[0]))
 
     def test_due_tick_RuntimeError(self):
         scheduler = mSchedulerRuntimeError()

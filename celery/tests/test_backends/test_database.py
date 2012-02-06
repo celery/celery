@@ -128,7 +128,7 @@ class test_DatabaseBackend(Case):
         except KeyError, exception:
             import traceback
             trace = "\n".join(traceback.format_stack())
-        tb.mark_as_retry(tid, exception, traceback=trace)
+            tb.mark_as_retry(tid, exception, traceback=trace)
         self.assertEqual(tb.get_status(tid), states.RETRY)
         self.assertIsInstance(tb.get_result(tid), KeyError)
         self.assertEqual(tb.get_traceback(tid), trace)
@@ -142,7 +142,7 @@ class test_DatabaseBackend(Case):
         except KeyError, exception:
             import traceback
             trace = "\n".join(traceback.format_stack())
-        tb.mark_as_failure(tid3, exception, traceback=trace)
+            tb.mark_as_failure(tid3, exception, traceback=trace)
         self.assertEqual(tb.get_status(tid3), states.FAILURE)
         self.assertIsInstance(tb.get_result(tid3), KeyError)
         self.assertEqual(tb.get_traceback(tid3), trace)

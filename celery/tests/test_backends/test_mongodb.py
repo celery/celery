@@ -50,38 +50,47 @@ class TestBackendMongoDb(Case):
         binary.Binary = self._reset["Binary"]
         datetime.datetime = self._reset["datetime"]
 
-    @patch("pymongo.connection.Connection")
-    def test_get_connection_connection_exists(self, mock_Connection):
-        self.backend._connection = sentinel._connection
+    def test_get_connection_connection_exists(self):
 
-        connection = self.backend._get_connection()
+        @patch("pymongo.connection.Connection")
+        def do_test(mock_Connection):
+            self.backend._connection = sentinel._connection
 
-        self.assertEquals(sentinel._connection, connection)
-        self.assertFalse(mock_Connection.called)
+            connection = self.backend._get_connection()
 
-    @patch("pymongo.connection.Connection")
-    def test_get_connection_no_connection_host(self, mock_Connection):
-        self.backend._connection = None
-        self.backend.mongodb_host = MONGODB_HOST
-        self.backend.mongodb_port = MONGODB_PORT
-        mock_Connection.return_value = sentinel.connection
+            self.assertEquals(sentinel._connection, connection)
+            self.assertFalse(mock_Connection.called)
+        do_test()
 
-        connection = self.backend._get_connection()
-        mock_Connection.assert_called_once_with(
-            MONGODB_HOST, MONGODB_PORT)
-        self.assertEquals(sentinel.connection, connection)
+    def test_get_connection_no_connection_host(self):
 
-    @patch("pymongo.connection.Connection")
-    def test_get_connection_no_connection_mongodb_uri(self, mock_Connection):
-        mongodb_uri = "mongodb://%s:%d" % (MONGODB_HOST, MONGODB_PORT)
-        self.backend._connection = None
-        self.backend.mongodb_host = mongodb_uri
+        @patch("pymongo.connection.Connection")
+        def do_test(mock_Connection):
+            self.backend._connection = None
+            self.backend.mongodb_host = MONGODB_HOST
+            self.backend.mongodb_port = MONGODB_PORT
+            mock_Connection.return_value = sentinel.connection
 
-        mock_Connection.return_value = sentinel.connection
+            connection = self.backend._get_connection()
+            mock_Connection.assert_called_once_with(
+                MONGODB_HOST, MONGODB_PORT)
+            self.assertEquals(sentinel.connection, connection)
+        do_test()
 
-        connection = self.backend._get_connection()
-        mock_Connection.assert_called_once_with(mongodb_uri)
-        self.assertEquals(sentinel.connection, connection)
+    def test_get_connection_no_connection_mongodb_uri(self):
+
+        @patch("pymongo.connection.Connection")
+        def do_test(mock_Connection):
+            mongodb_uri = "mongodb://%s:%d" % (MONGODB_HOST, MONGODB_PORT)
+            self.backend._connection = None
+            self.backend.mongodb_host = mongodb_uri
+
+            mock_Connection.return_value = sentinel.connection
+
+            connection = self.backend._get_connection()
+            mock_Connection.assert_called_once_with(mongodb_uri)
+            self.assertEquals(sentinel.connection, connection)
+        do_test()
 
     @patch("celery.backends.mongodb.MongoBackend._get_connection")
     def test_get_database_no_existing(self, mock_get_connection):

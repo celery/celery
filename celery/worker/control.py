@@ -24,6 +24,11 @@ from ..utils.encoding import safe_repr
 from . import state
 from .state import revoked
 
+try:
+    reload
+except NameError:
+    from imp import reload
+
 TASK_INFO_FIELDS = ("exchange", "routing_key", "rate_limit")
 
 
