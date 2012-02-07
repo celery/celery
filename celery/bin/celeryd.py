@@ -191,26 +191,14 @@ class WorkerCommand(Command):
 
 
 def main():
+    # Fix for setuptools generated scripts, so that it will
+    # work with multiprocessing fork emulation.
+    # (see multiprocessing.forking.get_preparation_data())
+    if __name__ != "__main__":
+        sys.modules["__main__"] = sys.modules[__name__]
     freeze_support()
     worker = WorkerCommand()
     worker.execute_from_commandline()
-
-
-def windows_main():
-    sys.stderr.write("""
-
-The celeryd command does not work on Windows.
-
-Instead, please use:
-
-    ..> python -m celery.bin.celeryd
-
-You can also supply arguments:
-
-    ..> python -m celery.bin.celeryd --concurrency=10 --loglevel=DEBUG
-
-
-    """.strip())
 
 
 if __name__ == "__main__":          # pragma: no cover

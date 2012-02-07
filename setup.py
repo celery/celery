@@ -152,16 +152,13 @@ else:
 # -*- Entry Points -*- #
 
 console_scripts = entrypoints["console_scripts"] = [
+        'celeryd = celery.bin.celeryd:main',
         'celerybeat = celery.bin.celerybeat:main',
         'camqadm = celery.bin.camqadm:main',
         'celeryev = celery.bin.celeryev:main',
         'celeryctl = celery.bin.celeryctl:main',
         'celeryd-multi = celery.bin.celeryd_multi:main',
 ]
-if platform.system() == "Windows":
-    console_scripts.append('celeryd = celery.bin.celeryd:windows_main')
-else:
-    console_scripts.append('celeryd = celery.bin.celeryd:main')
 
 # bundles: Only relevant for Celery developers.
 entrypoints["bundle.bundles"] = ["celery = celery.contrib.bundles:bundles"]
