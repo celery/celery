@@ -90,7 +90,8 @@ class Pool(abstract.StartStopComponent):
                                 maxtasksperchild=w.max_tasks_per_child,
                                 timeout=w.task_time_limit,
                                 soft_timeout=w.task_soft_time_limit,
-                                putlocks=w.pool_putlocks)
+                                putlocks=w.pool_putlocks,
+                                force_execv=w.force_execv)
         return pool
 
 
@@ -186,6 +187,7 @@ class WorkController(configurated):
     task_soft_time_limit = from_config()
     max_tasks_per_child = from_config()
     pool_putlocks = from_config()
+    force_execv = from_config()
     prefetch_multiplier = from_config()
     state_db = from_config()
     disable_rate_limits = from_config()

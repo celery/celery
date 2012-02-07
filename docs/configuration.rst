@@ -966,6 +966,24 @@ A sequence of modules to import when the celery daemon starts.
 This is used to specify the task modules to import, but also
 to import signal handlers and additional remote control commands, etc.
 
+.. setting:: CELERYD_FORCE_EXECV
+
+CELERYD_FORCE_EXECV
+~~~~~~~~~~~~~~~~~~~
+
+On Unix the processes pool will fork, so that child processes
+start with the same memory as the parent process.
+
+This can cause problems as there is a known deadlock condition
+with pthread locking primitives when `fork()` is combined with threads.
+
+You should enable this setting if you are experiencing hangs (deadlocks),
+especially in combination with time limits or having a max tasks per child limit.
+
+This option will be enabled by default in a later version.
+
+This is not a problem on Windows, as it does not have `fork()`.
+
 .. setting:: CELERYD_MAX_TASKS_PER_CHILD
 
 CELERYD_MAX_TASKS_PER_CHILD

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
+import os
 import platform
 import signal as _signal
 
@@ -40,6 +41,10 @@ def process_initializer(app, hostname):
     # This is for Windows and other platforms not supporting
     # fork(). Note that init_worker makes sure it's only
     # run once per process.
+    app.log.setup(int(os.environ.get("CELERY_LOG_LEVEL", 0)),
+                  os.environ.get("CELERY_LOG_FILE") or None,
+                  bool(os.environ.get("CELERY_LOG_REDIRECT", False)),
+                  str(os.environ.get("CELERY_LOG_REDIRECT_LEVEL")))
     app.loader.init_worker()
     app.loader.init_worker_process()
     signals.worker_process_init.send(sender=None)
