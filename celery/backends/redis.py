@@ -71,9 +71,10 @@ class RedisBackend(KeyValueStoreBackend):
 
     def set(self, key, value):
         client = self.client
-        client.set(key, value)
         if self.expires is not None:
-            client.expire(key, self.expires)
+            client.setex(key, value, self.expires)
+        else:
+            client.set(key, value)
         client.publish(key, value)
 
     def delete(self, key):

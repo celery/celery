@@ -35,6 +35,10 @@ class Redis(object):
     def get(self, key):
         return self.keyspace.get(key)
 
+    def setex(self, key, value, expires):
+        self.set(key, value)
+        self.expire(key, expires)
+
     def set(self, key, value):
         self.keyspace[key] = value
 
