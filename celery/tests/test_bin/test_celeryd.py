@@ -182,21 +182,21 @@ class test_Worker(AppCase):
             raise SkipTest("Not applicable on Windows")
         warnings.resetwarnings()
 
-        def geteuid():
+        def getuid():
             return 0
 
-        prev, os.geteuid = os.geteuid, geteuid
+        prev, os.getuid = os.getuid, getuid
         try:
             def with_catch_warnings(log):
                 worker = self.Worker()
                 worker.run()
                 self.assertTrue(log)
-                self.assertIn("superuser privileges is not encouraged",
+                self.assertIn("superuser privileges is discouraged",
                               log[0].message.args[0])
             context = catch_warnings(record=True)
             execute_context(context, with_catch_warnings)
         finally:
-            os.geteuid = prev
+            os.getuid = prev
 
     @disable_stdouts
     def test_use_pidfile(self):

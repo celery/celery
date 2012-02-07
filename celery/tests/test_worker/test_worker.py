@@ -121,6 +121,7 @@ class MockLogger(object):
 
 class MockBackend(object):
     _acked = False
+    no_ack_consumers = set()
 
     def basic_ack(self, delivery_tag):
         self._acked = True
