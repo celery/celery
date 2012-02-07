@@ -74,6 +74,10 @@ class Command(object):
 
         return ret if ret is not None else EX_OK
 
+    def show_help(self, command):
+        self.run_from_argv(self.prog_name, [command, "--help"])
+        return EX_USAGE
+
     def error(self, s):
         self.out(s, fh=sys.stderr)
 
@@ -332,6 +336,17 @@ class status(Command):
             self.out("\n%s %s online." % (nodecount,
                                           nodecount > 1 and "nodes" or "node"))
 status = command(status)
+
+
+class migrate(Command):
+
+    def usage(self, command):
+        return "%%prog %s <source_url> <dest_url>" % (command, )
+
+    def run(self, *args, **kwargs):
+        if len(args) < 2:
+            return self.show_help("migrate")
+migrate = command(migrate)
 
 
 class help(Command):
