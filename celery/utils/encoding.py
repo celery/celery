@@ -11,17 +11,22 @@ def default_encoding():
 def safe_str(s, errors="replace"):
     if not isinstance(s, basestring):
         return safe_repr(s, errors)
+    return _safe_str(s, errors)
+
+
+def _safe_str(s, errors="replace"):
     encoding = default_encoding()
     try:
         if isinstance(s, unicode):
             return s.encode(encoding, errors)
         return unicode(s, encoding, errors)
-    except Exception:
-        return "<Unrepresentable %r: %r>" % (type(s), traceback.format_stack())
+    except Exception, exc:
+        return "<Unrepresentable %r: %r %r>" % (
+                type(s), exc, "\n".join(traceback.format_stack()))
 
 
 def safe_repr(o, errors="replace"):
     try:
         return repr(o)
     except Exception:
-        return safe_str(o, errors)
+        return _safe_str(o, errors)
