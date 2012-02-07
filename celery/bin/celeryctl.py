@@ -348,6 +348,71 @@ class migrate(Command):
 migrate = command(migrate)
 
 
+class shell(Command):
+    option_list = Command.option_list + (
+                Option("--ipython", "-I", action="store_true",
+                    dest="force_ipython", default=False,
+                    help="Force IPython."),
+                Option("--bpython", "-B", action="store_true",
+                    dest="force_bpython", default=False,
+                    help="Force bpython."),
+                Option("--python", "-P", action="store_true",
+                    dest="force_python", default=False,
+                    help="Force default Python shell.")
+    )
+
+    def run(self, force_ipython=False, force_bpython=False,
+            force_python=False, **kwargs):
+        self.locals = {"celery": current_app()}
+        if force_python:
+            return self.invoke_fallback_shell()
+        elif force_bpython:
+            return self.invoke_bpython_shell()
+        elif force_ipython:
+            return self.invoke_ipython_shell()
+        return self.invoke_default_shell()
+
+    def invoke_default_shell(self):
+        try:
+            import IPython  # noqa
+        except ImportError:
+            try:
+                import bpython  # noqa
+            except ImportError:
+                return self.invoke_fallback_shell()
+            else:
+                return self.invoke_bpython_shell()
+        else:
+            return self.invoke_ipython_shell()
+
+    def invoke_fallback_shell(self):
+        import code
+        try:
+            import readline
+        except ImportError:
+            pass
+        else:
+            import rlcompleter
+            readline.set_completer(
+                    rlcompleter.Completer(self.locals).complete)
+            readline.parse_and_bind("tab:complete")
+        code.interact(local=self.locals)
+
+    def invoke_ipython_shell(self):
+        try:
+            from IPython.frontend.terminal import embed
+            embed.TerminalInteractiveShell(user_ns=self.locals).mainloop()
+        except ImportError:  # ipython < 0.11
+            from IPython.Shell import IPShell
+            IPShell(argv=[], user_ns=self.locals).mainloop()
+
+    def invoke_bpython_shell(self):
+        import bpython
+        bpython.embed(self.locals)
+
+shell = command(shell)
+
+
 class help(Command):
 
     def usage(self, command):
