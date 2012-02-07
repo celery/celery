@@ -1,8 +1,9 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-import os
 import glob
+import os
+import sys
 
 try:
     from OpenSSL import crypto
@@ -20,7 +21,8 @@ class Certificate(object):
         try:
             self._cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert)
         except crypto.Error, exc:
-            raise SecurityError("Invalid certificate: %r" % (exc, ))
+            raise SecurityError, SecurityError(
+                    "Invalid certificate: %r" % (exc, )), sys.exc_info()[2]
 
     def has_expired(self):
         """Check if the certificate has expired."""
@@ -44,7 +46,8 @@ class Certificate(object):
         try:
             crypto.verify(self._cert, signature, data, digest)
         except crypto.Error, exc:
-            raise SecurityError("Bad signature: %r" % (exc, ))
+            raise SecurityError, SecurityError(
+                    "Bad signature: %r" % (exc, )), sys.exc_info()[2]
 
 
 class CertStore(object):

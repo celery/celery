@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import base64
+import sys
 
 from kombu.serialization import registry, encode, decode
 
@@ -44,7 +45,8 @@ class SecureSerializer(object):
                               signature=self._key.sign(body, self._digest),
                               signer=self._cert.get_id())
         except Exception, exc:
-            raise SecurityError("Unable to serialize: %r" % (exc, ))
+            raise SecurityError, SecurityError(
+                    "Unable to serialize: %r" % (exc, )), sys.exc_info()[2]
 
     def deserialize(self, data):
         """deserialize data structure from string"""
@@ -57,7 +59,8 @@ class SecureSerializer(object):
             self._cert_store[signer].verify(body,
                                             signature, self._digest)
         except Exception, exc:
-            raise SecurityError("Unable to deserialize: %r" % (exc, ))
+            raise SecurityError, SecurityError(
+                    "Unable to deserialize: %r" % (exc, )), sys.exc_info()[2]
 
         return decode(body, payload["content_type"],
                             payload["content_encoding"], force=True)

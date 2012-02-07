@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
+import sys
+
 from .. import current_app
 from ..local import Proxy
 from ..utils import get_cls_by_name
 from ..utils.functional import memoize
+
+UNKNOWN_BACKEND = """\
+Unknown result backend: %r.  Did you spell that correctly? (%r)\
+"""
 
 BACKEND_ALIASES = {
     "amqp": "celery.backends.amqp:AMQPBackend",
@@ -27,8 +33,8 @@ def get_backend_cls(backend=None, loader=None):
     try:
         return get_cls_by_name(backend, aliases)
     except ValueError, exc:
-        raise ValueError("Unknown result backend: %r.  "
-                         "Did you spell it correctly?  (%s)" % (backend, exc))
+        raise ValueError, ValueError(UNKNOWN_BACKEND % (
+                    backend, exc)), sys.exc_info()[2]
 
 
 # deprecate this.

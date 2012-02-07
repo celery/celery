@@ -70,7 +70,8 @@ def extract_response(raw_response):
     try:
         payload = deserialize(raw_response)
     except ValueError, exc:
-        raise InvalidResponseError(str(exc))
+        raise InvalidResponseError, InvalidResponseError(
+                str(exc)), sys.exc_info()[2]
 
     status = payload["status"]
     if status == "success":

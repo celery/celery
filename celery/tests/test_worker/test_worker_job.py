@@ -290,29 +290,35 @@ class test_TaskRequest(Case):
         def mock_mail_admins(*args, **kwargs):
             mail_sent[0] = True
 
+        def get_ei():
+            try:
+                raise KeyError("moofoobar")
+            except:
+                return ExceptionInfo(sys.exc_info())
+
         app.mail_admins = mock_mail_admins
         mytask.send_error_emails = True
         try:
             tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
-            try:
-                raise KeyError("moofoobar")
-            except:
-                einfo = ExceptionInfo(sys.exc_info())
 
+            einfo = get_ei()
             tw.on_failure(einfo)
             self.assertTrue(mail_sent[0])
 
+            einfo = get_ei()
             mail_sent[0] = False
             mytask.send_error_emails = False
             tw.on_failure(einfo)
             self.assertFalse(mail_sent[0])
 
+            einfo = get_ei()
             mail_sent[0] = False
             mytask.send_error_emails = True
             mytask.error_whitelist = [KeyError]
             tw.on_failure(einfo)
             self.assertTrue(mail_sent[0])
 
+            einfo = get_ei()
             mail_sent[0] = False
             mytask.send_error_emails = True
             mytask.error_whitelist = [SyntaxError]
@@ -394,17 +400,22 @@ class test_TaskRequest(Case):
             mytask.acks_late = False
 
     def test_on_failure_WorkerLostError(self):
+
+        def get_ei():
+            try:
+                raise WorkerLostError("do re mi")
+            except WorkerLostError:
+                return ExceptionInfo(sys.exc_info())
+
         tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
-        try:
-            raise WorkerLostError("do re mi")
-        except WorkerLostError:
-            exc_info = ExceptionInfo(sys.exc_info())
-            tw.on_failure(exc_info)
-            self.assertEqual(mytask.backend.get_status(tw.task_id),
-                             states.FAILURE)
+        exc_info = get_ei()
+        tw.on_failure(exc_info)
+        self.assertEqual(mytask.backend.get_status(tw.task_id),
+                         states.FAILURE)
 
         mytask.ignore_result = True
         try:
+            exc_info = get_ei()
             tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
             tw.on_failure(exc_info)
             self.assertEqual(mytask.backend.get_status(tw.task_id),

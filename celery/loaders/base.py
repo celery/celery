@@ -14,6 +14,7 @@ from __future__ import absolute_import
 import importlib
 import os
 import re
+import traceback
 import warnings
 
 from anyjson import deserialize
@@ -194,8 +195,9 @@ class BaseLoader(object):
             if not fail_silently:
                 raise
             warnings.warn(self.mail.SendmailWarning(
-                "Mail could not be sent: %r %r" % (
-                    exc, {"To": to, "Subject": subject})))
+                "Mail could not be sent: %r %r\n%r" % (
+                    exc, {"To": to, "Subject": subject},
+                    traceback.format_stack())))
 
     @property
     def conf(self):

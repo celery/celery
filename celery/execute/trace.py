@@ -217,8 +217,12 @@ def eager_trace_task(task, uuid, args, kwargs, request=None, **opts):
 
 def report_internal_error(task, exc):
     _type, _value, _tb = sys.exc_info()
-    _value = task.backend.prepare_exception(exc)
-    exc_info = ExceptionInfo((_type, _value, _tb))
-    warn(RuntimeWarning(
-        "Exception raised outside body: %r:\n%s" % (exc, exc_info.traceback)))
-    return exc_info
+    try:
+        _value = task.backend.prepare_exception(exc)
+        exc_info = ExceptionInfo((_type, _value, _tb))
+        warn(RuntimeWarning(
+            "Exception raised outside body: %r:\n%s" % (
+                exc, exc_info.traceback)))
+        return exc_info
+    finally:
+        del(_tb)

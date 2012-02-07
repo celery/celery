@@ -102,7 +102,7 @@ class PIDFile(object):
         try:
             self.write_pid()
         except OSError, exc:
-            raise LockFailed(str(exc))
+            raise LockFailed, LockFailed(str(exc)), sys.exc_info()[2]
         return self
     __enter__ = acquire
 

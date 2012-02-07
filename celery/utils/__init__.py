@@ -288,7 +288,8 @@ def get_cls_by_name(name, aliases={}, imp=None, package=None,
     try:
         module = imp(module_name, package=package, **kwargs)
     except ValueError, exc:
-        raise ValueError("Couldn't import %r: %s" % (name, exc))
+        raise ValueError, ValueError(
+                "Couldn't import %r: %s" % (name, exc)), sys.exc_info()[2]
     return getattr(module, cls_name)
 
 get_symbol_by_name = get_cls_by_name
@@ -431,3 +432,16 @@ def uniq(it):
         if obj not in seen:
             yield obj
             seen.add(obj)
+
+
+
+def maybe_reraise():
+    """Reraise if an exception is currently being handled, or return
+    otherwise."""
+    type_, exc, tb = sys.exc_info()
+    try:
+        if tb:
+            raise type_, exc, tb
+    finally:
+        # see http://docs.python.org/library/sys.html#sys.exc_info
+        del(tb)

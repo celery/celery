@@ -21,7 +21,8 @@ from ...exceptions import MaxRetriesExceededError, RetryTaskError
 from ...execute.trace import eager_trace_task
 from ...registry import tasks, _unpickle_task
 from ...result import EagerResult
-from ...utils import fun_takes_kwargs, instantiate, mattrgetter, uuid
+from ...utils import (fun_takes_kwargs, instantiate,
+                      mattrgetter, uuid, maybe_reraise)
 from ...utils.mail import ErrorMail
 
 extract_exec_options = mattrgetter("queue", "routing_key",
@@ -535,6 +536,7 @@ class BaseTask(object):
         # Not in worker or emulated by (apply/always_eager),
         # so just raise the original exception.
         if request.called_directly:
+            maybe_reraise()
             raise exc or RetryTaskError("Task can be retried", None)
 
         if delivery_info:
@@ -551,7 +553,7 @@ class BaseTask(object):
 
         if max_retries is not None and options["retries"] > max_retries:
             if exc:
-                raise
+                maybe_reraise()
             raise self.MaxRetriesExceededError(
                     "Can't retry %s[%s] args:%s kwargs:%s" % (
                         self.name, options["task_id"], args, kwargs))

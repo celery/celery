@@ -50,9 +50,13 @@ class Loader(BaseLoader):
             self.find_module(configname)
         except NotAPackage:
             if configname.endswith('.py'):
-                raise NotAPackage(CONFIG_WITH_SUFFIX % {
-                    "module": configname, "suggest": configname[:-3]})
-                raise NotAPackage(CONFIG_INVALID_NAME % {"module": configname})
+                raise NotAPackage, NotAPackage(
+                        CONFIG_WITH_SUFFIX % {
+                            "module": configname,
+                            "suggest": configname[:-3]}), sys.exc_info()[2]
+            raise NotAPackage, NotAPackage(
+                    CONFIG_INVALID_NAME % {
+                        "module": configname}), sys.exc_info()[2]
         except ImportError:
             warnings.warn(NotConfigured(
                 "No %r module found! Please make sure it exists and "

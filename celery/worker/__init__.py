@@ -293,9 +293,8 @@ class WorkController(configurated):
         self._state = self.TERMINATE
         self._shutdown_complete.set()
 
-    def on_timer_error(self, exc_info):
-        _, exc, _ = exc_info
-        self.logger.error("Timer error: %r", exc, exc_info=exc_info)
+    def on_timer_error(self, einfo):
+        self.logger.error("Timer error: %r", einfo[1], exc_info=einfo)
 
     def on_timer_tick(self, delay):
         self.timer_debug("Scheduler wake-up! Next eta %s secs." % delay)
