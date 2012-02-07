@@ -106,8 +106,9 @@ class CassandraBackend(BaseDictBackend):
 
     def _get_column_family(self):
         if self._column_family is None:
-            conn = pycassa.ConnectionPool(self.keyspace, server_list=self.servers,
-                                   **self.cassandra_options)
+            conn = pycassa.ConnectionPool(self.keyspace,
+                                          server_list=self.servers,
+                                          **self.cassandra_options)
             self._column_family = \
               pycassa.ColumnFamily(conn, self.column_family,
                     read_consistency_level=self.read_consistency,

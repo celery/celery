@@ -5,7 +5,6 @@ from __future__ import with_statement
 if __name__ == "__main__" and __package__ is None:
     __package__ = "celery.bin.celeryctl"
 
-import os
 import sys
 
 from optparse import OptionParser, make_option as Option
@@ -16,7 +15,7 @@ from anyjson import deserialize
 
 from .. import __version__
 from ..app import app_or_default, current_app
-from ..platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE
+from ..platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
 from ..utils import term
 from ..utils.timeutils import maybe_iso8601
 
@@ -360,7 +359,7 @@ class help(Command):
                          "commands": "\n".join(indent(command)
                                              for command in sorted(commands))})
 
-        return os.EX_USAGE
+        return EX_USAGE
 help = command(help)
 
 

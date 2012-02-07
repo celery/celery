@@ -434,7 +434,6 @@ def uniq(it):
             seen.add(obj)
 
 
-
 def maybe_reraise():
     """Reraise if an exception is currently being handled, or return
     otherwise."""
