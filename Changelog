@@ -5,6 +5,14 @@
 .. contents::
     :local:
 
+.. _version-2.2.10:
+
+2.2.10
+======
+:release-date: 2012-02-07 04:40 P.M GMT
+
+* Fixes infinite loop in ``safe_str`` (Issue #481).
+
 .. _version-2.2.9:
 
 2.2.9
