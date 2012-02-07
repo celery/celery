@@ -532,7 +532,8 @@ class Pool(object):
     SoftTimeLimitExceeded = SoftTimeLimitExceeded
 
     def __init__(self, processes=None, initializer=None, initargs=(),
-            maxtasksperchild=None, timeout=None, soft_timeout=None):
+            maxtasksperchild=None, timeout=None, soft_timeout=None,
+            force_execv=False):
         self._setup_queues()
         self._taskqueue = Queue.Queue()
         self._cache = {}
@@ -542,6 +543,7 @@ class Pool(object):
         self._maxtasksperchild = maxtasksperchild
         self._initializer = initializer
         self._initargs = initargs
+        self._force_execv = force_execv
 
         if soft_timeout and SIG_SOFT_TIMEOUT is None:
             warnings.warn(UserWarning("Soft timeouts are not supported: "
@@ -599,7 +601,7 @@ class Pool(object):
     def _create_worker_process(self):
         sentinel = Event()
         w = self.Process(
-            should_fork=False,
+            force_execv=self._force_execv,
             target=worker,
             args=(self._inqueue, self._outqueue,
                     self._initializer, self._initargs,

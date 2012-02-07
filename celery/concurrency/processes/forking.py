@@ -57,9 +57,9 @@ if sys.platform != "win32":
         returncode = None
 
         def __init__(self, process_obj):
-            self.should_fork = process_obj.should_fork
+            self.force_execv = process_obj.force_execv
 
-            if not self.should_fork:
+            if self.force_execv:
                 sys.stdout.flush()
                 sys.stderr.flush()
                 r, w = os.pipe()
