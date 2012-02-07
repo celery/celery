@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 import logging
 import threading
+import os
 import sys
 import traceback
 
@@ -130,9 +131,30 @@ class Logging(object):
                 signals.after_setup_logger.send(sender=None, logger=logger,
                                         loglevel=loglevel, logfile=logfile,
                                         format=format, colorize=colorize)
+
+        # This is a hack for multiprocessing's fork+exec, so that
+        # logging before Process.run works.
+        os.environ.update(_MP_FORK_LOGLEVEL_=str(loglevel),
+                          _MP_FORK_LOGFILE_=logfile or "",
+                          _MP_FORK_LOGFORMAT_=format)
         Logging._setup = True
 
         return receivers
+
+    def setup(self, loglevel=None, logfile=None, redirect_stdouts=False,
+            redirect_level="WARNING"):
+        handled = self.setup_logging_subsystem(loglevel=loglevel,
+                                               logfile=logfile)
+        if not handled:
+            logger = self.get_default_logger()
+            if redirect_stdouts:
+                self.redirect_stdouts_to_logger(logger,
+                                loglevel=redirect_level)
+        os.environ.update(
+            CELERY_LOG_LEVEL=str(loglevel) if loglevel else "",
+            CELERY_LOG_FILE=str(logfile) if logfile else "",
+            CELERY_LOG_REDIRECT="1" if redirect_stdouts else "",
+            CELERY_LOG_REDIRECT_LEVEL=str(redirect_level))
 
     def _detect_handler(self, logfile=None):
         """Create log handler with either a filename, an open stream
@@ -216,10 +238,13 @@ class Logging(object):
             sys.stderr = proxy
         return proxy
 
+    def _is_configured(self, logger):
+        return logger.handlers and not getattr(
+                logger, "_rudimentary_setup", False)
+
     def _setup_logger(self, logger, logfile, format, colorize,
             formatter=ColorFormatter, **kwargs):
-
-        if logger.handlers:  # Logger already configured
+        if self._is_configured(logger):
             return logger
 
         handler = self._detect_handler(logfile)

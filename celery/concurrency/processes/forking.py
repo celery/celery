@@ -125,6 +125,28 @@ from celery.concurrency.processes.forking import main; main()"""
         current_process()._inheriting = True
         preparation_data = load(from_parent)
         _forking.prepare(preparation_data)
+
+        # Huge hack to make logging before Process.run work.
+        loglevel = os.environ.get("_MP_FORK_LOGLEVEL_")
+        logfile = os.environ.get("_MP_FORK_LOGFILE_") or None
+        format = os.environ.get("_MP_FORK_LOGFORMAT_")
+        if loglevel:
+            from multiprocessing import util
+            import logging
+            logger = util.get_logger()
+            logger.setLevel(int(loglevel))
+            if not logger.handlers:
+                logger._rudimentary_setup = True
+                logfile = logfile or sys.__stderr__
+                if hasattr(logfile, "write"):
+                    handler = logging.StreamHandler(logfile)
+                else:
+                    handler = logging.FileHandler(logfile)
+                formatter = logging.Formatter(
+                        format or util.DEFAULT_LOGGING_FORMAT)
+                handler.setFormatter(formatter)
+                logger.addHandler(handler)
+
         self = load(from_parent)
         current_process()._inheriting = False
 
@@ -163,6 +185,3 @@ from celery.concurrency.processes.forking import main; main()"""
     _forking.Popen = Popen
 else:
     from multiprocessing.forking import freeze_support
-
-
-

@@ -166,13 +166,9 @@ class Worker(configurated):
             self.loader.import_from_cwd(module)
 
     def redirect_stdouts_to_logger(self):
-        handled = self.app.log.setup_logging_subsystem(loglevel=self.loglevel,
-                                                       logfile=self.logfile)
-        if not handled:
-            logger = self.app.log.get_default_logger()
-            if self.redirect_stdouts:
-                self.app.log.redirect_stdouts_to_logger(logger,
-                                loglevel=self.redirect_stdouts_level)
+        self.app.log.setup(self.loglevel, self.logfile,
+                           self.redirect_stdouts,
+                           self.redirect_stdouts_level)
 
     def purge_messages(self):
         count = self.app.control.discard_all()
