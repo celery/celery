@@ -13,15 +13,13 @@ except ImportError:
 
 from mock import patch
 from nose import SkipTest
-from kombu.tests.utils import redirect_stdouts
 
 from celery import Celery
 from celery import platforms
 from celery import signals
 from celery import current_app
 from celery.apps import worker as cd
-from celery.bin.celeryd import WorkerCommand, windows_main, \
-                               main as celeryd_main
+from celery.bin.celeryd import WorkerCommand, main as celeryd_main
 from celery.exceptions import ImproperlyConfigured
 
 from celery.tests.utils import (AppCase, WhateverIO, mask_modules,
@@ -379,12 +377,6 @@ class test_Worker(AppCase):
 
 
 class test_funs(AppCase):
-
-    @redirect_stdouts
-    def test_windows_main(self, stdout, stderr):
-        windows_main()
-        self.assertIn("celeryd command does not work on Windows",
-                      stderr.getvalue())
 
     @disable_stdouts
     def test_set_process_status(self):

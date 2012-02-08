@@ -14,7 +14,9 @@ from mock import Mock, patch
 from nose import SkipTest
 
 from celery import current_app
+from celery.app.defaults import DEFAULTS
 from celery.concurrency.base import BasePool
+from celery.datastructures import AttributeDict
 from celery.exceptions import SystemTerminate
 from celery.task import task as task_dec
 from celery.task import periodic_task as periodic_task_dec
@@ -750,7 +752,9 @@ class test_WorkController(AppCase):
         on_worker_process_init.called = False
         signals.worker_process_init.connect(on_worker_process_init)
 
-        app = Celery(loader=Mock(), set_as_current=False)
+        loader = Mock()
+        app = Celery(loader=loader, set_as_current=False)
+        app.conf = AttributeDict(DEFAULTS)
         process_initializer(app, "awesome.worker.com")
         self.assertIn((tuple(WORKER_SIGIGNORE), {}),
                       _signals.ignore.call_args_list)

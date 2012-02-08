@@ -5,6 +5,8 @@ SKIP_PACKAGES="$PACKAGE tests management urls"
 SKIP_FILES="celery.backends.pyredis.rst
             celery.bin.rst
             celery.bin.celeryd_detach.rst
+            celery.concurrency.processes.forking.rst
+            celery.concurrency.processes.process.rst
             celery.concurrency.processes._win.rst
             celery.contrib.rst
             celery.contrib.bundles.rst
