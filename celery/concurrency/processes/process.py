@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from multiprocessing.process import Process as _Process
 
 from .forking import Popen

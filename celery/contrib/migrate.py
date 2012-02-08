@@ -34,7 +34,6 @@ class State(object):
         return unicode(self.total_apx)
 
 
-
 def migrate_task(producer, body_, message,
         remove_props=["application_headers",
                       "content_type",
