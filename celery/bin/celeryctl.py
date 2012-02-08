@@ -342,9 +342,19 @@ class migrate(Command):
     def usage(self, command):
         return "%%prog %s <source_url> <dest_url>" % (command, )
 
+    def on_migrate_task(self, state, body, message):
+        self.out("Migrating task %s/%s: %s[%s]" % (
+            state.count, state.strtotal, body["task"], body["id"]))
+
     def run(self, *args, **kwargs):
-        if len(args) < 2:
+        if len(args) != 2:
             return self.show_help("migrate")
+        from kombu import BrokerConnection
+        from ..contrib.migrate import migrate_tasks
+
+        migrate_tasks(BrokerConnection(args[0]),
+                      BrokerConnection(args[1]),
+                      callback=self.on_migrate_task)
 migrate = command(migrate)
 
 
