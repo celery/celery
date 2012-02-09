@@ -1,0 +1,186 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>celery.contrib.migrate &mdash; Celery 2.5.0rc2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.5.0rc2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Celery 2.5.0rc2 documentation" href="../index.html" />
+    <link rel="up" title="API Reference" href="index.html" />
+    <link rel="next" title="celery.contrib.rdb" href="celery.contrib.rdb.html" />
+    <link rel="prev" title="celery.contrib.batches" href="celery.contrib.batches.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.contrib.rdb.html" title="celery.contrib.rdb"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.contrib.batches.html" title="celery.contrib.batches"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/reference/celery.contrib.migrate.html">2.4</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="celery-contrib-migrate">
+<h1>celery.contrib.migrate<a class="headerlink" href="#celery-contrib-migrate" title="Permalink to this headline">¶</a></h1>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#id1" id="id2">celery.contrib.migrate</a></li>
+</ul>
+</div>
+<span class="target" id="module-celery.contrib.migrate"></span><div class="section" id="id1">
+<h2><a class="toc-backref" href="#id2">celery.contrib.migrate</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>Migration tools.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
+<li>2009 - 2012 by Ask Solem.</li>
+</ol>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body"><p class="first last">BSD, see LICENSE for more details.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="celery.contrib.migrate.State">
+<em class="property">class </em><tt class="descclassname">celery.contrib.migrate.</tt><tt class="descname">State</tt><a class="headerlink" href="#celery.contrib.migrate.State" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="celery.contrib.migrate.State.count">
+<tt class="descname">count</tt><em class="property"> = 0</em><a class="headerlink" href="#celery.contrib.migrate.State.count" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.contrib.migrate.State.strtotal">
+<tt class="descname">strtotal</tt><a class="headerlink" href="#celery.contrib.migrate.State.strtotal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.contrib.migrate.State.total_apx">
+<tt class="descname">total_apx</tt><em class="property"> = 0</em><a class="headerlink" href="#celery.contrib.migrate.State.total_apx" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.contrib.migrate.migrate_task">
+<tt class="descclassname">celery.contrib.migrate.</tt><tt class="descname">migrate_task</tt><big>(</big><em>producer, body_, message, remove_props=['application_headers', 'content_type', 'content_encoding']</em><big>)</big><a class="headerlink" href="#celery.contrib.migrate.migrate_task" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.contrib.migrate.migrate_tasks">
+<tt class="descclassname">celery.contrib.migrate.</tt><tt class="descname">migrate_tasks</tt><big>(</big><em>source</em>, <em>dest</em>, <em>timeout=1.0</em>, <em>app=None</em>, <em>migrate=None</em>, <em>callback=None</em><big>)</big><a class="headerlink" href="#celery.contrib.migrate.migrate_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="celery.contrib.batches.html"
+                        title="previous chapter">celery.contrib.batches</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="celery.contrib.rdb.html"
+                        title="next chapter">celery.contrib.rdb</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/reference/celery.contrib.migrate.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.contrib.rdb.html" title="celery.contrib.rdb"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.contrib.batches.html" title="celery.contrib.batches"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+          <li><a href="index.html" >API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2012, Ask Solem &amp; Contributors.
+    </div>
+  </body>
+</html>
