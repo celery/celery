@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import os
 import sys
 import threading
+import traceback
 
 _Thread = threading.Thread
 _Event = threading._Event
@@ -40,6 +41,7 @@ class bgThread(Thread):
 
     def on_crash(self, msg, *fmt, **kwargs):
         sys.stderr.write((msg + "\n") % fmt)
+        traceback.print_stack(file=sys.stderr)
 
     def run(self):
         shutdown = self._is_shutdown
