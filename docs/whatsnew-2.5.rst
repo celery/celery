@@ -236,7 +236,7 @@ In Other News
 
     Contributed by Andrew McFague
 
-- ``task.retry()`` now re-raises the original exception thus keeping
+- ``task.retry()`` now re-raises the original exception keeping
   the original stack trace.
 
     Suggested by ojii.
