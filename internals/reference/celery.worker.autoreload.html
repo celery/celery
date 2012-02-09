@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.worker.autoreload &mdash; Celery 2.5.0rc1 documentation</title>
+    <title>celery.worker.autoreload &mdash; Celery 2.5.0rc2 documentation</title>
     
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.5.0rc1',
+        VERSION:     '2.5.0rc2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0rc1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.5.0rc2 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.worker.autoscale" href="celery.worker.autoscale.html" />
     <link rel="prev" title="celery.worker.strategy" href="celery.worker.strategy.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.worker.strategy.html" title="celery.worker.strategy"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -85,7 +85,7 @@
 <dl class="attribute">
 <dt id="celery.worker.autoreload.Autoreloader.Monitor">
 <tt class="descname">Monitor</tt><a class="headerlink" href="#celery.worker.autoreload.Autoreloader.Monitor" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <a class="reference internal" href="#celery.worker.autoreload.KQueueMonitor" title="celery.worker.autoreload.KQueueMonitor"><tt class="xref py py-class docutils literal"><span class="pre">KQueueMonitor</span></tt></a></p>
+<dd><p>alias of <a class="reference internal" href="#celery.worker.autoreload.StatMonitor" title="celery.worker.autoreload.StatMonitor"><tt class="xref py py-class docutils literal"><span class="pre">StatMonitor</span></tt></a></p>
 </dd></dl>
 
 <dl class="method">
@@ -128,7 +128,7 @@
 <dl class="class">
 <dt id="celery.worker.autoreload.InotifyMonitor">
 <em class="property">class </em><tt class="descclassname">celery.worker.autoreload.</tt><tt class="descname">InotifyMonitor</tt><big>(</big><em>modules</em>, <em>on_change=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.worker.autoreload.InotifyMonitor" title="Permalink to this definition">¶</a></dt>
-<dd><p>File change monitor based on  Linux kernel <cite>inotify</cite> subsystem</p>
+<dd><p>File change monitor based on Linux kernel <cite>inotify</cite> subsystem</p>
 <dl class="method">
 <dt id="celery.worker.autoreload.InotifyMonitor.close">
 <tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.autoreload.InotifyMonitor.close" title="Permalink to this definition">¶</a></dt>
@@ -170,7 +170,7 @@
 <dl class="attribute">
 <dt id="celery.worker.autoreload.Monitor">
 <tt class="descclassname">celery.worker.autoreload.</tt><tt class="descname">Monitor</tt><a class="headerlink" href="#celery.worker.autoreload.Monitor" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <a class="reference internal" href="#celery.worker.autoreload.KQueueMonitor" title="celery.worker.autoreload.KQueueMonitor"><tt class="xref py py-class docutils literal"><span class="pre">KQueueMonitor</span></tt></a></p>
+<dd><p>alias of <a class="reference internal" href="#celery.worker.autoreload.StatMonitor" title="celery.worker.autoreload.StatMonitor"><tt class="xref py py-class docutils literal"><span class="pre">StatMonitor</span></tt></a></p>
 </dd></dl>
 
 <dl class="class">
@@ -268,7 +268,7 @@
         <li class="right" >
           <a href="celery.worker.strategy.html" title="celery.worker.strategy"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

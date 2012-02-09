@@ -33,6 +33,7 @@
     celery.states
     celery.contrib.abortable
     celery.contrib.batches
+    celery.contrib.migrate
     celery.contrib.rdb
     celery.events
     celery.events.state

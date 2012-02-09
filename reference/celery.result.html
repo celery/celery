@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.result &mdash; Celery 2.5.0rc1 documentation</title>
+    <title>celery.result &mdash; Celery 2.5.0rc2 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0rc1',
+        VERSION:     '2.5.0rc2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0rc1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.5.0rc2 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.actors" href="celery.actors.html" />
     <link rel="prev" title="celery.task.chords" href="celery.task.chords.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.task.chords.html" title="celery.task.chords"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -170,7 +170,9 @@ be re-raised.</p>
 <dl class="attribute">
 <dt id="celery.result.AsyncResult.info">
 <tt class="descclassname">AsyncResult.</tt><tt class="descname">info</tt><a class="headerlink" href="#celery.result.AsyncResult.info" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get state metadata.  Alias to <a class="reference internal" href="#celery.result.AsyncResult.result" title="celery.result.AsyncResult.result"><tt class="xref py py-meth docutils literal"><span class="pre">result()</span></tt></a>.</p>
+<dd><p>When the task has been executed, this contains the return value.
+If the task raised an exception, this will be the exception
+instance.</p>
 </dd></dl>
 
 <dl class="method">
@@ -227,7 +229,28 @@ then contains the tasks return value.</div></blockquote>
 <dl class="attribute">
 <dt id="celery.result.AsyncResult.status">
 <tt class="descclassname">AsyncResult.</tt><tt class="descname">status</tt><a class="headerlink" href="#celery.result.AsyncResult.status" title="Permalink to this definition">¶</a></dt>
-<dd><p>Deprecated alias of <a class="reference internal" href="#celery.result.AsyncResult.state" title="celery.result.AsyncResult.state"><tt class="xref py py-attr docutils literal"><span class="pre">state</span></tt></a>.</p>
+<dd><p>The tasks current state.</p>
+<p>Possible values includes:</p>
+<blockquote>
+<div><p><em>PENDING</em></p>
+<blockquote>
+<div>The task is waiting for execution.</div></blockquote>
+<p><em>STARTED</em></p>
+<blockquote>
+<div>The task has been started.</div></blockquote>
+<p><em>RETRY</em></p>
+<blockquote>
+<div>The task is to be retried, possibly because of failure.</div></blockquote>
+<p><em>FAILURE</em></p>
+<blockquote>
+<div>The task raised an exception, or has exceeded the retry limit.
+The <a class="reference internal" href="#celery.result.AsyncResult.result" title="celery.result.AsyncResult.result"><tt class="xref py py-attr docutils literal"><span class="pre">result</span></tt></a> attribute then contains the
+exception raised by the task.</div></blockquote>
+<p><em>SUCCESS</em></p>
+<blockquote>
+<div>The task executed successfully. The <a class="reference internal" href="#celery.result.AsyncResult.result" title="celery.result.AsyncResult.result"><tt class="xref py py-attr docutils literal"><span class="pre">result</span></tt></a> attribute
+then contains the tasks return value.</div></blockquote>
+</div></blockquote>
 </dd></dl>
 
 <dl class="method">
@@ -250,8 +273,38 @@ then contains the tasks return value.</div></blockquote>
 
 <dl class="method">
 <dt id="celery.result.AsyncResult.wait">
-<tt class="descclassname">AsyncResult.</tt><tt class="descname">wait</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.result.AsyncResult.wait" title="Permalink to this definition">¶</a></dt>
-<dd><p>Deprecated alias to <a class="reference internal" href="#celery.result.AsyncResult.get" title="celery.result.AsyncResult.get"><tt class="xref py py-meth docutils literal"><span class="pre">get()</span></tt></a>.</p>
+<tt class="descclassname">AsyncResult.</tt><tt class="descname">wait</tt><big>(</big><em>timeout=None</em>, <em>propagate=True</em>, <em>interval=0.5</em><big>)</big><a class="headerlink" href="#celery.result.AsyncResult.wait" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait until task is ready, and return its result.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Waiting for tasks within a task may lead to deadlocks.
+Please read <a class="reference internal" href="../userguide/tasks.html#task-synchronous-subtasks"><em>Avoid launching synchronous subtasks</em></a>.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>timeout</strong> &#8211; How long to wait, in seconds, before the
+operation times out.</li>
+<li><strong>propagate</strong> &#8211; Re-raise exception if the task failed.</li>
+<li><strong>interval</strong> &#8211; Time to wait (in seconds) before retrying to
+retrieve the result.  Note that this does not have any effect
+when using the AMQP result store backend, as it does not
+use polling.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises <a class="reference internal" href="celery.exceptions.html#celery.exceptions.TimeoutError" title="celery.exceptions.TimeoutError">celery.exceptions.TimeoutError</a>:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last">if <cite>timeout</cite> is not
+<tt class="xref py py-const docutils literal"><span class="pre">None</span></tt> and the result does not arrive within <cite>timeout</cite>
+seconds.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>If the remote call raised an exception then that exception will
+be re-raised.</p>
 </dd></dl>
 
 </dd></dl>
@@ -266,58 +319,54 @@ then contains the tasks return value.</div></blockquote>
 <dt id="celery.result.EagerResult">
 <em class="property">class </em><tt class="descclassname">celery.result.</tt><tt class="descname">EagerResult</tt><big>(</big><em>task_id</em>, <em>ret_value</em>, <em>state</em>, <em>traceback=None</em><big>)</big><a class="headerlink" href="#celery.result.EagerResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Result that we know has already been executed.</p>
-<dl class="exception">
-<dt id="celery.result.EagerResult.TimeoutError">
-<em class="property">exception </em><tt class="descname">TimeoutError</tt><a class="headerlink" href="#celery.result.EagerResult.TimeoutError" title="Permalink to this definition">¶</a></dt>
-<dd><p>The operation timed out.</p>
-</dd></dl>
+<dl class="method">
+<dt id="celery.result.EagerResult.forget">
+<tt class="descname">forget</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.EagerResult.forget" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.result.EagerResult.get">
-<tt class="descclassname">EagerResult.</tt><tt class="descname">get</tt><big>(</big><em>timeout=None</em>, <em>propagate=True</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.result.EagerResult.get" title="Permalink to this definition">¶</a></dt>
-<dd><p>Wait until the task has been executed and return its result.</p>
-</dd></dl>
+<tt class="descname">get</tt><big>(</big><em>timeout=None</em>, <em>propagate=True</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.result.EagerResult.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.result.EagerResult.ready">
-<tt class="descclassname">EagerResult.</tt><tt class="descname">ready</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.EagerResult.ready" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns <tt class="xref py py-const docutils literal"><span class="pre">True</span></tt> if the task has been executed.</p>
-</dd></dl>
+<tt class="descname">ready</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.EagerResult.ready" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="celery.result.EagerResult.result">
-<tt class="descclassname">EagerResult.</tt><tt class="descname">result</tt><a class="headerlink" href="#celery.result.EagerResult.result" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">result</tt><a class="headerlink" href="#celery.result.EagerResult.result" title="Permalink to this definition">¶</a></dt>
 <dd><p>The tasks return value</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="celery.result.EagerResult.revoke">
-<tt class="descclassname">EagerResult.</tt><tt class="descname">revoke</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.EagerResult.revoke" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">revoke</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.EagerResult.revoke" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="celery.result.EagerResult.state">
-<tt class="descclassname">EagerResult.</tt><tt class="descname">state</tt><a class="headerlink" href="#celery.result.EagerResult.state" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">state</tt><a class="headerlink" href="#celery.result.EagerResult.state" title="Permalink to this definition">¶</a></dt>
 <dd><p>The tasks state.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.result.EagerResult.status">
-<tt class="descclassname">EagerResult.</tt><tt class="descname">status</tt><a class="headerlink" href="#celery.result.EagerResult.status" title="Permalink to this definition">¶</a></dt>
-<dd><p>The tasks status (alias to <a class="reference internal" href="#celery.result.EagerResult.state" title="celery.result.EagerResult.state"><tt class="xref py py-attr docutils literal"><span class="pre">state</span></tt></a>).</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.result.EagerResult.successful">
-<tt class="descclassname">EagerResult.</tt><tt class="descname">successful</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.EagerResult.successful" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns <tt class="xref py py-const docutils literal"><span class="pre">True</span></tt> if the task executed without failure.</p>
+<tt class="descname">status</tt><a class="headerlink" href="#celery.result.EagerResult.status" title="Permalink to this definition">¶</a></dt>
+<dd><p>The tasks state.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.result.EagerResult.traceback">
-<tt class="descclassname">EagerResult.</tt><tt class="descname">traceback</tt><a class="headerlink" href="#celery.result.EagerResult.traceback" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">traceback</tt><a class="headerlink" href="#celery.result.EagerResult.traceback" title="Permalink to this definition">¶</a></dt>
 <dd><p>The traceback if the task failed.</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="celery.result.EagerResult.wait">
+<tt class="descname">wait</tt><big>(</big><em>timeout=None</em>, <em>propagate=True</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.result.EagerResult.wait" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -540,7 +589,7 @@ successfully (i.e. did not raise an exception).</td>
 <dl class="attribute">
 <dt id="celery.result.ResultSet.total">
 <tt class="descname">total</tt><a class="headerlink" href="#celery.result.ResultSet.total" title="Permalink to this definition">¶</a></dt>
-<dd><p>Total number of tasks in the set.</p>
+<dd><p>Deprecated: Use <tt class="docutils literal"><span class="pre">len(r)</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -683,7 +732,7 @@ a single entity.</p>
         <li class="right" >
           <a href="celery.task.chords.html" title="celery.task.chords"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

@@ -41,6 +41,13 @@ or if there was an error::
 
     {"status": "failure": "reason": "Invalid moon alignment."}
 
+Enabling the HTTP task
+----------------------
+
+To enable the HTTP dispatch task you have to add :mod:`celery.task.http`
+to :setting:`CELERY_IMPORTS`, or start ``celeryd`` with ``-I
+celery.task.http``.
+
 
 .. _webhook-django-example:
 

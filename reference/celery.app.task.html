@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.app.task &mdash; Celery 2.5.0rc1 documentation</title>
+    <title>celery.app.task &mdash; Celery 2.5.0rc2 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0rc1',
+        VERSION:     '2.5.0rc2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0rc1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.5.0rc2 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.app.amqp" href="celery.app.amqp.html" />
     <link rel="prev" title="celery.app" href="celery.app.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.app.html" title="celery.app"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -275,7 +275,7 @@ setting.</li>
 
 <dl class="classmethod">
 <dt id="celery.app.task.BaseTask.apply_async">
-<em class="property">classmethod </em><tt class="descclassname">BaseTask.</tt><tt class="descname">apply_async</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>countdown=None</em>, <em>eta=None</em>, <em>task_id=None</em>, <em>publisher=None</em>, <em>connection=None</em>, <em>connect_timeout=None</em>, <em>router=None</em>, <em>expires=None</em>, <em>queues=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.app.task.BaseTask.apply_async" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descclassname">BaseTask.</tt><tt class="descname">apply_async</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>task_id=None</em>, <em>publisher=None</em>, <em>connection=None</em>, <em>router=None</em>, <em>queues=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.app.task.BaseTask.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply tasks asynchronously by sending a message.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -301,11 +301,7 @@ that describes the absolute time and date of when
 the task should expire.  The task will not be
 executed after the expiration time.</li>
 <li><strong>connection</strong> &#8211; Re-use existing broker connection instead
-of establishing a new one.  The <cite>connect_timeout</cite>
-argument is not respected if this is set.</li>
-<li><strong>connect_timeout</strong> &#8211; The timeout in seconds, before we give up
-on establishing a connection to the AMQP
-server.</li>
+of establishing a new one.</li>
 <li><strong>retry</strong> &#8211; If enabled sending of the task message will be retried
 in the event of connection loss or failure.  Default
 is taken from the <a class="reference internal" href="../configuration.html#std:setting-CELERY_TASK_PUBLISH_RETRY"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TASK_PUBLISH_RETRY</span></tt></a>
@@ -342,7 +338,7 @@ Defaults to the <a class="reference internal" href="#celery.app.task.BaseTask.se
 <li><strong>compression</strong> &#8211; A string identifying the compression method
 to use.  Can be one of <tt class="docutils literal"><span class="pre">zlib</span></tt>, <tt class="docutils literal"><span class="pre">bzip2</span></tt>,
 or any custom compression methods registered with
-<a class="reference external" href="http://kombu.readthedocs.org/en/latest/reference/kombu.compression.html#kombu.compression.register" title="(in Kombu v2.0)"><tt class="xref py py-func docutils literal"><span class="pre">kombu.compression.register()</span></tt></a>. Defaults to
+<a class="reference external" href="http://kombu.readthedocs.org/en/latest/reference/kombu.compression.html#kombu.compression.register" title="(in Kombu v2.1)"><tt class="xref py py-func docutils literal"><span class="pre">kombu.compression.register()</span></tt></a>. Defaults to
 the <a class="reference internal" href="../configuration.html#std:setting-CELERY_MESSAGE_COMPRESSION"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_MESSAGE_COMPRESSION</span></tt></a>
 setting.</li>
 </ul>
@@ -460,7 +456,7 @@ manual for any additional delivery modes.</p>
 <dt id="celery.app.task.BaseTask.get_consumer">
 <em class="property">classmethod </em><tt class="descclassname">BaseTask.</tt><tt class="descname">get_consumer</tt><big>(</big><em>connection=None</em>, <em>connect_timeout=None</em><big>)</big><a class="headerlink" href="#celery.app.task.BaseTask.get_consumer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get message consumer.</p>
-<p>:rtype <a class="reference external" href="http://kombu.readthedocs.org/en/latest/reference/kombu.messaging.html#kombu.messaging.Consumer" title="(in Kombu v2.0)"><tt class="xref py py-class docutils literal"><span class="pre">kombu.messaging.Consumer</span></tt></a>:</p>
+<p>:rtype <a class="reference external" href="http://kombu.readthedocs.org/en/latest/reference/kombu.messaging.html#kombu.messaging.Consumer" title="(in Kombu v2.1)"><tt class="xref py py-class docutils literal"><span class="pre">kombu.messaging.Consumer</span></tt></a>:</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
 <p>If you don&#8217;t specify a connection, one will automatically
@@ -841,7 +837,7 @@ running.</p>
         <li class="right" >
           <a href="celery.app.html" title="celery.app"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

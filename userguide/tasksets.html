@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Sets of tasks, Subtasks and Callbacks &mdash; Celery 2.5.0rc1 documentation</title>
+    <title>Sets of tasks, Subtasks and Callbacks &mdash; Celery 2.5.0rc2 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0rc1',
+        VERSION:     '2.5.0rc2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0rc1 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.5.0rc2 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="HTTP Callback Tasks (Webhooks)" href="remote-tasks.html" />
     <link rel="prev" title="Periodic Tasks" href="periodic-tasks.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="periodic-tasks.html" title="Periodic Tasks"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -141,8 +141,8 @@ will be prepended to the arguments specified by the subtask itself!</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">add</span><span class="o">.</span><span class="n">subtask</span><span class="p">((</span><span class="mi">8</span><span class="p">,</span> <span class="p">)))</span>
 </pre></div>
 </div>
-<p>As expected this will first launch one task calculating <span class="math">2 + 2</span>, then
-another task calculating <span class="math">4 + 8</span>.</p>
+<p>As expected this will first launch one task calculating <img class="math" src="../_images/math/2da3a5ecd44fdb54a9a30c87a48a5b1638c139b0.png" alt="2 + 2"/>, then
+another task calculating <img class="math" src="../_images/math/c67562ae31bb2d1017a9b0240c012edc474851c3.png" alt="4 + 8"/>.</p>
 </div>
 </div>
 <div class="section" id="task-sets">
@@ -236,7 +236,7 @@ were called.</p>
 <p>A chord is a task that only executes after all of the tasks in a taskset has
 finished executing.</p>
 <p>Let&#8217;s calculate the sum of the expression
-<span class="math">1 + 1 + 2 + 2 + 3 + 3 ... n + n</span> up to a hundred digits.</p>
+<img class="math" src="../_images/math/c9bf2df3c397d6399241c37fc9887ca50bc8fa09.png" alt="1 + 1 + 2 + 2 + 3 + 3 ... n + n"/> up to a hundred digits.</p>
 <p>First we need two tasks, <tt class="xref py py-func docutils literal"><span class="pre">add()</span></tt> and <tt class="xref py py-func docutils literal"><span class="pre">tsum()</span></tt> (<a class="reference external" href="http://docs.python.org/dev/library/functions.html#sum" title="(in Python v3.3)"><tt class="xref py py-func docutils literal"><span class="pre">sum()</span></tt></a> is
 already a standard function):</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">task</span>
@@ -368,7 +368,7 @@ super method or else the chord callback will not be applied.</p>
         <li class="right" >
           <a href="periodic-tasks.html" title="Periodic Tasks"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>

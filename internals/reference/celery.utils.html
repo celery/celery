@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.utils &mdash; Celery 2.5.0rc1 documentation</title>
+    <title>celery.utils &mdash; Celery 2.5.0rc2 documentation</title>
     
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.5.0rc1',
+        VERSION:     '2.5.0rc2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0rc1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.5.0rc2 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.utils.functional" href="celery.utils.functional.html" />
     <link rel="prev" title="celery.db.session" href="celery.db.session.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.db.session.html" title="celery.db.session"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -92,6 +92,11 @@
 </tr>
 </tbody>
 </table>
+<dl class="exception">
+<dt id="celery.utils.NotAPackage">
+<em class="property">exception </em><tt class="descclassname">celery.utils.</tt><tt class="descname">NotAPackage</tt><a class="headerlink" href="#celery.utils.NotAPackage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="function">
 <dt id="celery.utils.abbr">
 <tt class="descclassname">celery.utils.</tt><tt class="descname">abbr</tt><big>(</big><em>S</em>, <em>max</em>, <em>ellipsis='...'</em><big>)</big><a class="headerlink" href="#celery.utils.abbr" title="Permalink to this definition">¶</a></dt>
@@ -305,6 +310,13 @@ in <cite>r</cite> is <tt class="xref py py-const docutils literal"><span class="
 attributes instead of raising <a class="reference external" href="http://docs.python.org/dev/library/exceptions.html#AttributeError" title="(in Python v3.3)"><tt class="xref py py-exc docutils literal"><span class="pre">AttributeError</span></tt></a>.</p>
 </dd></dl>
 
+<dl class="function">
+<dt id="celery.utils.maybe_reraise">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">maybe_reraise</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.maybe_reraise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reraise if an exception is currently being handled, or return
+otherwise.</p>
+</dd></dl>
+
 <dl class="class">
 <dt id="celery.utils.mpromise">
 <em class="property">class </em><tt class="descclassname">celery.utils.</tt><tt class="descname">mpromise</tt><big>(</big><em>fun</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.mpromise" title="Permalink to this definition">¶</a></dt>
@@ -433,7 +445,7 @@ will return the same value.</p>
         <li class="right" >
           <a href="celery.db.session.html" title="celery.db.session"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
