@@ -387,22 +387,21 @@ If you want to reload all modules you can use:
 
 `imports` argument is a list of modules to modify. `reload_modules`
 specifies whether to reload modules if they are previously imported.
-By default `reload_modules` is `False`. `pool_restart` command uses the
-`reload`_ built in function to reload modules, but you can provide custom
-reloader as well.
+By default `reload_modules` is `False`. The `pool_restart` command uses the
+Python :func:`reload` function to reload modules, or you can provide
+your own custom reloader.
 
 .. note::
 
-Module reloading comes with some caveats that are documented in :fun:`reload`.
-Make sure your modules are suitable for reloading.
+    Module reloading comes with caveats that are documented in :func:`reload`.
+    Please read this documentation and make sure your modules are suitable
+    for reloading.
 
 .. seealso::
 
-http://pyunit.sourceforge.net/notes/reloading.html
-
-http://www.indelible.org/ink/python-reloading/
-
-http://docs.python.org/library/functions.html#reload
+    - http://pyunit.sourceforge.net/notes/reloading.html
+    - http://www.indelible.org/ink/python-reloading/
+    - http://docs.python.org/library/functions.html#reload
 
 .. _worker-custom-control-commands:
 

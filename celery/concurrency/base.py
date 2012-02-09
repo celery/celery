@@ -30,7 +30,7 @@ class BasePool(object):
 
     #: set to true if pool supports rate limits.
     #: (this is here for gevent, which currently does not implement
-    #:  the necessary timers).
+    #: the necessary timers).
     rlimit_safe = True
 
     #: set to true if pool requires the use of a mediator

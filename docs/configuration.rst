@@ -584,15 +584,17 @@ CASSANDRA_WRITE_CONSISTENCY
 
 The write consistency used. Values can be `"ONE"`, `"QUORUM"` or `"ALL"`.
 
-.. setting:: CASSANDRA_WRITE_CONSISTENCY
+.. setting:: CASSANDRA_DETAILED_MODE
 
 CASSANDRA_DETAILED_MODE
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Enable or disable detailed mode. Default is `"False"`.
-This mode allows to use the power of Cassandra wide columns to store all states for a task as a wide column, instead of only the last one.
+This mode allows to use the power of Cassandra wide columns to
+store all states for a task as a wide column, instead of only the last one.
 
-To use this mode, you need to configure your ColumnFamily to use the `TimeUUID` type as a comparator::
+To use this mode, you need to configure your ColumnFamily to
+use the `TimeUUID` type as a comparator::
 
     create column family task_results with comparator = TimeUUIDType;
 
@@ -1434,7 +1436,7 @@ CELERY_SECURITY_CERT_STORE
 .. versionadded:: 2.5
 
 The directory containing X.509 certificates used for
-:ref:`message signing`.  Can be a glob with wildcards,
+:ref:`message-signing`.  Can be a glob with wildcards,
 (for example :file:`/etc/certs/*.pem`).
 
 .. _conf-custom-components:
