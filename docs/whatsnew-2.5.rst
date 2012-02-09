@@ -64,17 +64,17 @@ together:
     CELERYD_FORCE_EXECV = True
 
 This setting is recommended for all users using the processes pool,
-but especially users also using time limits and max tasks per child,
-or users experiencing workers that hang.
+but especially users also using time limits or a max tasks per child
+setting.
 
-- See `Python issue 6721` to read more about the details, and why
+- See `Python Issue 6721`_ to read more about this issue, and why
   resorting to execv is the only safe solution.
 
 Enabling this option will result in a slight performance penalty
 when new child worker processes are started, and it will also increase
 memory usage (but many platforms are optimized, so the impact may be
-minimal).  However, this should be worth it considering that it ensures
-reliability when replacing lost worker processes.
+minimal).  Considering that it ensures reliability when replacing
+lost worker processes, it should be worth it.
 
 - It is already the default behavior on Windows.
 - It will be the default behavior for all platforms in a future version.
@@ -203,7 +203,7 @@ In Other News
 - Efficient Chord support for the memcached backend (Issue #533)
 
     This means memcached joins Redis in the ability to do non-polling
-    chord support.
+    chords.
 
     Contributed by Dan McGee.
 
@@ -266,9 +266,9 @@ In Other News
 * Routers can now override the ``exchange`` and ``routing_key`` used
   to create missing queues (Issue #577).
 
-    Previously this would always be named the same as the queue,
+    By default this will always use the name of the queue,
     but you can now have a router return exchange and routing_key keys
-    to set the explicitly.
+    to set them.
 
     This is useful when using routing classes which decides a destination
     at runtime.
