@@ -42,6 +42,16 @@ or to get help for a specific command do::
 Commands
 ~~~~~~~~
 
+* **shell**: Drop into a Python shell.
+
+  The locals will include the ``celery`` variable, which is the current app.
+  Also all known tasks will be automatically added to locals (unless the
+  ``--without-tasks`` flag is set).
+
+  Uses Ipython, bpython, or regular python in that order if installed.
+  You can force an implementation using ``--force-ipython|-I``,
+  ``--force-bpython|-B``, or ``--force-python|-P``.
+
 * **status**: List active nodes in this cluster
     ::
 
@@ -113,6 +123,14 @@ Commands
 
         $ celeryctl inspect disable_events
 
+* **migrate**: Migrate tasks from one broker to another (**EXPERIMENTAL**).
+  ::
+
+        $ celeryctl migrate redis://localhost amqp://localhost
+
+  This command will migrate all the tasks on one broker to another.
+  As this command is new and experimental you should be sure to have
+  a backup of the data before proceeding.
 
 .. note::
 
