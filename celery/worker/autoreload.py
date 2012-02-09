@@ -8,11 +8,12 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
+import errno
+import hashlib
 import os
+import select
 import sys
 import time
-import select
-import hashlib
 
 from collections import defaultdict
 
@@ -75,19 +76,19 @@ class BaseMonitor(object):
 class StatMonitor(BaseMonitor):
     """File change monitor based on the ``stat`` system call."""
 
+    def _mtimes(self):
+        return ((f, self._mtime(f)) for f in self.files)
+
+    def _maybe_modified(self, f, mt):
+        return mt is not None and self.modify_times[f] != mt
+
     def start(self):
         while not self.shutdown_event.is_set():
-            modified = {}
-            for m in self.files:
-                mt = self._mtime(m)
-                if mt is None:
-                    break
-                if self.modify_times[m] != mt:
-                    modified[m] = mt
-            else:
-                if modified:
-                    self.on_change(modified.keys())
-                    self.modify_times.update(modified)
+            modified = dict((f, mt) for f, mt in self._mtimes()
+                                if self._maybe_modified(f, mt))
+            if modified:
+                self.on_change(modified.keys())
+                self.modify_times.update(modified)
             time.sleep(self.interval)
 
     @staticmethod
@@ -131,14 +132,19 @@ class KQueueMonitor(BaseMonitor):
 
     def stop(self):
         self._kq.close()
-        for f in self._files:
-            if self._files[f] is not None:
-                os.close(self._files[f])
-                self._files[f] = None
+        fds = filter(None, self.filemap.values())
+        for fd in filter(None, self.filemap.values()):
+            try:
+                os.close(fd)
+            except OSError, exc:
+                if exc != errno.EBADF:
+                    raise
+            self.filemap[fd] = None
+        self.filemap.clear()
 
 
 class InotifyMonitor(_ProcessEvent):
-    """File change monitor based on  Linux kernel `inotify` subsystem"""
+    """File change monitor based on Linux kernel `inotify` subsystem"""
 
     def __init__(self, modules, on_change=None, **kwargs):
         assert pyinotify
@@ -167,9 +173,10 @@ class InotifyMonitor(_ProcessEvent):
             return self._on_change(modified)
 
 
-if hasattr(select, "kqueue"):
-    Monitor = KQueueMonitor
-elif sys.platform.startswith("linux") and pyinotify:
+# kqueue monitor not working properly at this time.
+#if hasattr(select, "kqueue"):
+#    Monitor = KQueueMonitor
+if sys.platform.startswith("linux") and pyinotify:
     Monitor = InotifyMonitor
 else:
     Monitor = StatMonitor
@@ -190,17 +197,23 @@ class Autoreloader(bgThread):
         self._hashes = dict([(f, file_hash(f)) for f in files])
 
     def body(self):
-        self._monitor.start()
+        try:
+            self._monitor.start()
+        except OSError, exc:
+            if exc.errno not in (errno.EINTR, errno.EAGAIN):
+                raise
+
+    def _maybe_modified(self, f):
+        digest = file_hash(f)
+        if digest != self._hashes[f]:
+            self._hashes[f] = digest
+            return True
+        return False
 
     def on_change(self, files):
-        modified = []
-        for f in files:
-            fhash = file_hash(f)
-            if fhash != self._hashes[f]:
-                modified.append(f)
-                self._hashes[f] = fhash
+        modified = [f for f in files if self._maybe_modified(f)]
         if modified:
-            self.logger.debug("Detected modified modules: %s" % (
+            self.logger.info("Detected modified modules: %s" % (
                     map(self._module_name, modified), ))
             self._reload(map(self._module_name, modified))
 
