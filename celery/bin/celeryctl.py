@@ -368,12 +368,22 @@ class shell(Command):
                     help="Force bpython."),
                 Option("--python", "-P", action="store_true",
                     dest="force_python", default=False,
-                    help="Force default Python shell.")
+                    help="Force default Python shell."),
+                Option("--without-tasks", "-T", action="store_true",
+                    dest="without_tasks", default=False,
+                    help="Don't add tasks to locals."),
     )
 
     def run(self, force_ipython=False, force_bpython=False,
-            force_python=False, **kwargs):
-        self.locals = {"celery": current_app()}
+            force_python=False, without_tasks=False, **kwargs):
+        from .. import registry
+        self.app.loader.import_default_modules()
+        self.locals = {"celery": self.app}
+
+        if not without_tasks:
+            self.locals.update(dict((task.__name__, task)
+                                for task in registry.tasks.itervalues()))
+
         if force_python:
             return self.invoke_fallback_shell()
         elif force_bpython:
