@@ -33,22 +33,31 @@ Naming
 
 - Follows :pep:`8`.
 
-- Class names must be CamelCase.
-- but not if they are verbs, verbs shall be lower_case:
+- Class names must be `CamelCase`.
+- but not if they are verbs, verbs shall be `lower_case`:
 
     .. code-block:: python
 
-        class TestFrobulator(Case):         # BAD
-            ...
+        # - test case for a class
+        class TestMyClass(Case):                # BAD
+            pass
 
-        class test_Frobulator(Case):        # GOOD
-            ...
+        class test_MyClass(Case):               # GOOD
+            pass
 
-        class CreateContext(object):        # BAD
-            ...
+        # - test case for a function
+        class TestMyFunction(Case):             # BAD
+            pass
 
-        class create_context(object):       # GOOD
-            ...
+        class test_my_function(Case):           # GOOD
+            pass
+
+        # - "action" class (verb)
+        class UpdateTwitterStatus(object):    # BAD
+            pass
+
+        class update_twitter_status(object):    # GOOD
+            pass
 
     .. note::
 
@@ -58,7 +67,7 @@ Naming
         :class:`~celery.task.sets.subtask`, :class:`~celery.task.chords.chord`,
         ``inspect``, :class:`~kombu.utils.functional.promise` and more..
 
-- Factory functions and methods must be CamelCase (excluding verbs):
+- Factory functions and methods must be `CamelCase` (excluding verbs):
 
     .. code-block:: python
 
@@ -68,6 +77,7 @@ Naming
                 ...
 
             def Consumer(self):             # GOOD
+                ...
 
 Default values
 ~~~~~~~~~~~~~~
@@ -137,10 +147,10 @@ the exception class from the instance directly.
 Composites
 ~~~~~~~~~~
 
-Similarly to exceptions, composite classes used should be override-able by
-inheritance and/or instantiation.  Common sense should be used when
+Similarly to exceptions, composite classes should be override-able by
+inheritance and/or instantiation.  Common sense can be used when
 selecting what classes to include, but often it's better to add one
-too many as predicting what users need to override is hard (this has
+too many: predicting what users need to override is hard (this has
 saved us from many a monkey patch).
 
 **Example**:

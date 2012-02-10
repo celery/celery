@@ -554,47 +554,47 @@ This backend requires the following configuration directives to be set.
 CASSANDRA_SERVERS
 ~~~~~~~~~~~~~~~~~
 
-List of `host:port` Cassandra servers. e.g. `["localhost:9160]"`.
+List of ``host:port`` Cassandra servers. e.g. ``["localhost:9160]"``.
 
 .. setting:: CASSANDRA_KEYSPACE
 
 CASSANDRA_KEYSPACE
 ~~~~~~~~~~~~~~~~~~
 
-The keyspace in which to store the results. e.g. `"tasks_keyspace"`.
+The keyspace in which to store the results. e.g. ``"tasks_keyspace"``.
 
 .. setting:: CASSANDRA_COLUMN_FAMILY
 
 CASSANDRA_COLUMN_FAMILY
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The column family in which to store the results. eg `"tasks"`
+The column family in which to store the results. eg ``"tasks"``
 
 .. setting:: CASSANDRA_READ_CONSISTENCY
 
 CASSANDRA_READ_CONSISTENCY
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The read consistency used. Values can be `"ONE"`, `"QUORUM"` or `"ALL"`.
+The read consistency used. Values can be ``"ONE"``, ``"QUORUM"`` or ``"ALL"``.
 
 .. setting:: CASSANDRA_WRITE_CONSISTENCY
 
 CASSANDRA_WRITE_CONSISTENCY
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The write consistency used. Values can be `"ONE"`, `"QUORUM"` or `"ALL"`.
+The write consistency used. Values can be ``"ONE"``, ``"QUORUM"`` or ``"ALL"``.
 
 .. setting:: CASSANDRA_DETAILED_MODE
 
 CASSANDRA_DETAILED_MODE
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Enable or disable detailed mode. Default is `"False"`.
+Enable or disable detailed mode. Default is :const:`False`.
 This mode allows to use the power of Cassandra wide columns to
 store all states for a task as a wide column, instead of only the last one.
 
 To use this mode, you need to configure your ColumnFamily to
-use the `TimeUUID` type as a comparator::
+use the ``TimeUUID`` type as a comparator::
 
     create column family task_results with comparator = TimeUUIDType;
 
@@ -609,7 +609,6 @@ Example configuration
     CASSANDRA_READ_CONSISTENCY = "ONE"
     CASSANDRA_WRITE_CONSISTENCY = "ONE"
     CASSANDRA_DETAILED_MODE = True
-
 
 .. _conf-messaging:
 
