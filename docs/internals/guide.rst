@@ -7,6 +7,155 @@
 .. contents::
     :local:
 
+Philosophy
+==========
+
+The API>RCP Precedence Rule
+---------------------------
+
+- The API is more important than Readability
+- Readability is more important than Convention
+- Convention is more important than Performance
+    - ...unless the code is a proven hotspot.
+
+More important than anything else is the end-user API.
+Conventions must step aside, and any suffering is always alleviated
+if the end result is a better API.
+
+Conventions and Idioms Used
+===========================
+
+Classes
+-------
+
+Naming
+~~~~~~
+
+- Follows :pep:`8`.
+
+- Class names must be CamelCase.
+- but not if they are verbs, verbs shall be lower_case:
+
+    .. code-block:: python
+
+        class TestFrobulator(Case):         # BAD
+            ...
+
+        class test_Frobulator(Case):        # GOOD
+            ...
+
+        class CreateContext(object):        # BAD
+            ...
+
+        class create_context(object):       # GOOD
+            ...
+
+    .. note::
+
+        Sometimes it makes sense to have a class mask as a function,
+        and there is precedence for this in the stdlib (e.g.
+        ``contextmanager``).  Celery examples include the task decorator,
+        ``subtask``, ``chord``, ``inspect``, and ``promise``.
+
+- Factory functions and methods must be CamelCase (excluding verbs):
+
+    .. code-block:: python
+
+        class Celery(object):
+
+            def consumer_factory(self):     # BAD
+                ...
+
+            def Consumer(self):             # GOOD
+
+Default values
+~~~~~~~~~~~~~~
+
+Class attributes serve as default values for the instance,
+as this means that they can be set by either instantiation or inheritance.
+
+**Example:**
+
+.. code-block:: python
+
+    class Producer(object):
+        active = True
+        serializer = "json"
+
+        def __init__(self, serializer=None):
+            self.serializer = serializer or None
+
+            # must check for None when value can be false-y
+            self.active = active if active is not None else self.active
+
+A subclass can change the default value:
+
+.. code-block:: python
+
+    TaskProducer(Producer):
+        serializer = "pickle"
+
+and the value can be set at instantiation:
+
+.. code-block:: python
+
+    >>> producer = TaskProducer(serializer="msgpack")
+
+Exceptions
+~~~~~~~~~~
+
+Custom exceptions raised by an objects methods and properties
+should be available as an attribute and documented in the
+method/property that throw.
+
+This way a user doesn't have to find out where to import the
+exception from, but rather use ``help(obj)`` and access
+the exception class from the instance directly.
+
+**Example**:
+
+.. code-block:: python
+
+    class Empty(Exception):
+        pass
+
+    class Queue(object):
+        Empty = Empty
+
+        def get(self):
+            """Get the next item from the queue.
+
+            :raises Queue.Empty: if there are no more items left.
+
+            """
+            try:
+                return self.queue.popleft()
+            except IndexError:
+                raise self.Empty()
+
+Composites
+~~~~~~~~~~
+
+Similarly to exceptions, composite classes used should be override-able by
+inheritance and/or instantiation.  Common sense should be used when
+selecting what classes to include, but often it's better to add one
+too many as predicting what users need to override is hard (this has
+saved us from many a monkey patch).
+
+**Example**:
+
+.. code-block:: python
+
+    class Worker(object):
+        Consumer = Consumer
+
+        def __init__(self, connection, consumer_cls=None):
+            self.Consumer = consumer_cls or self.Consumer
+
+        def do_work(self):
+            with self.Consumer(self.connection) as consumer:
+                self.connection.drain_events()
+
 Applications vs. "single mode"
 ==============================
 
@@ -20,7 +169,7 @@ for using Celery with frameworks that doesn't have this limitation.
 
 Therefore the app concept was introduced.  When using apps you use 'celery'
 objects instead of importing things from celery submodules, this sadly
-also means that Celery essentially has two APIs.
+also means that Celery essentially has two API's.
 
 Here's an example using Celery in single-mode:
 
@@ -144,4 +293,3 @@ Module Overview
 - celery.contrib
 
     Additional public code that doesn't fit into any other namespace.
-
