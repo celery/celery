@@ -21,17 +21,13 @@ from __future__ import with_statement
 import threading
 
 from collections import deque
-from time import time, sleep as _sleep
+from time import time, sleep
 from Queue import Queue, Empty
 
 from kombu.utils.limits import TokenBucket
 
 from ..utils import timeutils
 from ..utils.compat import zip_longest, chain_from_iterable
-
-def sleep(n):
-    print("bucketsSLEEP: %r" % (n, ))
-    _sleep(n)
 
 
 class RateLimitExceeded(Exception):

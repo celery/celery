@@ -132,7 +132,6 @@ class KQueueMonitor(BaseMonitor):
 
     def stop(self):
         self._kq.close()
-        fds = filter(None, self.filemap.values())
         for fd in filter(None, self.filemap.values()):
             try:
                 os.close(fd)

@@ -84,7 +84,7 @@ as this means that they can be set by either instantiation or inheritance.
         serializer = "json"
 
         def __init__(self, serializer=None):
-            self.serializer = serializer or None
+            self.serializer = serializer or self.serializer
 
             # must check for None when value can be false-y
             self.active = active if active is not None else self.active
@@ -284,7 +284,7 @@ Module Overview
 
 - celery.tests
 
-    The celery unittest suite.
+    The unittest suite.
 
 - celery.utils
 
