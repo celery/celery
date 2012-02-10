@@ -1,0 +1,447 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Contributors Guide to the Code &mdash; Celery 2.5.0rc2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.5.0rc2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Celery 2.5.0rc2 documentation" href="../index.html" />
+    <link rel="up" title="Internals" href="index.html" />
+    <link rel="next" title="Celery Deprecation Timeline" href="deprecation.html" />
+    <link rel="prev" title="Internals" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="deprecation.html" title="Celery Deprecation Timeline"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Internals"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Internals</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/guide.html">2.4</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="contributors-guide-to-the-code">
+<span id="internals-guide"></span><h1>Contributors Guide to the Code<a class="headerlink" href="#contributors-guide-to-the-code" title="Permalink to this headline">¶</a></h1>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#philosophy" id="id1">Philosophy</a><ul>
+<li><a class="reference internal" href="#the-api-rcp-precedence-rule" id="id2">The API&gt;RCP Precedence Rule</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#conventions-and-idioms-used" id="id3">Conventions and Idioms Used</a><ul>
+<li><a class="reference internal" href="#classes" id="id4">Classes</a><ul>
+<li><a class="reference internal" href="#naming" id="id5">Naming</a></li>
+<li><a class="reference internal" href="#default-values" id="id6">Default values</a></li>
+<li><a class="reference internal" href="#exceptions" id="id7">Exceptions</a></li>
+<li><a class="reference internal" href="#composites" id="id8">Composites</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#applications-vs-single-mode" id="id9">Applications vs. &#8220;single mode&#8221;</a></li>
+<li><a class="reference internal" href="#module-overview" id="id10">Module Overview</a></li>
+</ul>
+</div>
+<div class="section" id="philosophy">
+<h2><a class="toc-backref" href="#id1">Philosophy</a><a class="headerlink" href="#philosophy" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="the-api-rcp-precedence-rule">
+<h3><a class="toc-backref" href="#id2">The API&gt;RCP Precedence Rule</a><a class="headerlink" href="#the-api-rcp-precedence-rule" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p class="first">The API is more important than Readability</p>
+</li>
+<li><p class="first">Readability is more important than Convention</p>
+</li>
+<li><dl class="first docutils">
+<dt>Convention is more important than Performance</dt>
+<dd><ul class="first last simple">
+<li>...unless the code is a proven hotspot.</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p>More important than anything else is the end-user API.
+Conventions must step aside, and any suffering is always alleviated
+if the end result is a better API.</p>
+</div>
+</div>
+<div class="section" id="conventions-and-idioms-used">
+<h2><a class="toc-backref" href="#id3">Conventions and Idioms Used</a><a class="headerlink" href="#conventions-and-idioms-used" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="classes">
+<h3><a class="toc-backref" href="#id4">Classes</a><a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="naming">
+<h4><a class="toc-backref" href="#id5">Naming</a><a class="headerlink" href="#naming" title="Permalink to this headline">¶</a></h4>
+<ul>
+<li><p class="first">Follows <span class="target" id="index-0"></span><a class="pep reference external" href="http://www.python.org/dev/peps/pep-0008"><strong>PEP 8</strong></a>.</p>
+</li>
+<li><p class="first">Class names must be CamelCase.</p>
+</li>
+<li><p class="first">but not if they are verbs, verbs shall be lower_case:</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">TestFrobulator</span><span class="p">(</span><span class="n">Case</span><span class="p">):</span>         <span class="c"># BAD</span>
+    <span class="o">...</span>
+
+<span class="k">class</span> <span class="nc">test_Frobulator</span><span class="p">(</span><span class="n">Case</span><span class="p">):</span>        <span class="c"># GOOD</span>
+    <span class="o">...</span>
+
+<span class="k">class</span> <span class="nc">CreateContext</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>        <span class="c"># BAD</span>
+    <span class="o">...</span>
+
+<span class="k">class</span> <span class="nc">create_context</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>       <span class="c"># GOOD</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Sometimes it makes sense to have a class mask as a function,
+and there is precedence for this in the stdlib (e.g.
+<tt class="docutils literal"><span class="pre">contextmanager</span></tt>).  Celery examples include the task decorator,
+<tt class="docutils literal"><span class="pre">subtask</span></tt>, <tt class="docutils literal"><span class="pre">chord</span></tt>, <tt class="docutils literal"><span class="pre">inspect</span></tt>, and <tt class="docutils literal"><span class="pre">promise</span></tt>.</p>
+</div>
+</div></blockquote>
+</li>
+<li><p class="first">Factory functions and methods must be CamelCase (excluding verbs):</p>
+<blockquote>
+<div><div class="highlight-python"><pre>class Celery(object):
+
+    def consumer_factory(self):     # BAD
+        ...
+
+    def Consumer(self):             # GOOD</pre>
+</div>
+</div></blockquote>
+</li>
+</ul>
+</div>
+<div class="section" id="default-values">
+<h4><a class="toc-backref" href="#id6">Default values</a><a class="headerlink" href="#default-values" title="Permalink to this headline">¶</a></h4>
+<p>Class attributes serve as default values for the instance,
+as this means that they can be set by either instantiation or inheritance.</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Producer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">active</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">serializer</span> <span class="o">=</span> <span class="s">&quot;json&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serializer</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">serializer</span> <span class="o">=</span> <span class="n">serializer</span> <span class="ow">or</span> <span class="bp">None</span>
+
+        <span class="c"># must check for None when value can be false-y</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="n">active</span> <span class="k">if</span> <span class="n">active</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span>
+</pre></div>
+</div>
+<p>A subclass can change the default value:</p>
+<div class="highlight-python"><pre>TaskProducer(Producer):
+    serializer = "pickle"</pre>
+</div>
+<p>and the value can be set at instantiation:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">producer</span> <span class="o">=</span> <span class="n">TaskProducer</span><span class="p">(</span><span class="n">serializer</span><span class="o">=</span><span class="s">&quot;msgpack&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="exceptions">
+<h4><a class="toc-backref" href="#id7">Exceptions</a><a class="headerlink" href="#exceptions" title="Permalink to this headline">¶</a></h4>
+<p>Custom exceptions raised by an objects methods and properties
+should be available as an attribute and documented in the
+method/property that throw.</p>
+<p>This way a user doesn&#8217;t have to find out where to import the
+exception from, but rather use <tt class="docutils literal"><span class="pre">help(obj)</span></tt> and access
+the exception class from the instance directly.</p>
+<p><strong>Example</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Empty</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">Queue</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">Empty</span> <span class="o">=</span> <span class="n">Empty</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the next item from the queue.</span>
+
+<span class="sd">        :raises Queue.Empty: if there are no more items left.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">popleft</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">Empty</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="composites">
+<h4><a class="toc-backref" href="#id8">Composites</a><a class="headerlink" href="#composites" title="Permalink to this headline">¶</a></h4>
+<p>Similarly to exceptions, composite classes used should be override-able by
+inheritance and/or instantiation.  Common sense should be used when
+selecting what classes to include, but often it&#8217;s better to add one
+too many as predicting what users need to override is hard (this has
+saved us from many a monkey patch).</p>
+<p><strong>Example</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Worker</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">Consumer</span> <span class="o">=</span> <span class="n">Consumer</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">consumer_cls</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Consumer</span> <span class="o">=</span> <span class="n">consumer_cls</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">Consumer</span>
+
+    <span class="k">def</span> <span class="nf">do_work</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">Consumer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">)</span> <span class="k">as</span> <span class="n">consumer</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">drain_events</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="applications-vs-single-mode">
+<h2><a class="toc-backref" href="#id9">Applications vs. &#8220;single mode&#8221;</a><a class="headerlink" href="#applications-vs-single-mode" title="Permalink to this headline">¶</a></h2>
+<p>In the beginning Celery was developed for Django, simply because
+this enabled us get the project started quickly, while also having
+a large potential user base.</p>
+<p>In Django there is a global settings object, so multiple Django projects
+can&#8217;t co-exist in the same process space, this later posed a problem
+for using Celery with frameworks that doesn&#8217;t have this limitation.</p>
+<p>Therefore the app concept was introduced.  When using apps you use &#8216;celery&#8217;
+objects instead of importing things from celery submodules, this sadly
+also means that Celery essentially has two API&#8217;s.</p>
+<p>Here&#8217;s an example using Celery in single-mode:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">task</span>
+<span class="kn">from</span> <span class="nn">celery.task.control</span> <span class="kn">import</span> <span class="n">inspect</span>
+
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">CeleryStats</span>
+
+<span class="nd">@task</span>
+<span class="k">def</span> <span class="nf">write_stats_to_db</span><span class="p">():</span>
+    <span class="n">stats</span> <span class="o">=</span> <span class="n">inspect</span><span class="p">()</span><span class="o">.</span><span class="n">stats</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">node_name</span><span class="p">,</span> <span class="n">reply</span> <span class="ow">in</span> <span class="n">stats</span><span class="p">:</span>
+        <span class="n">CeleryStats</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">update_stat</span><span class="p">(</span><span class="n">node_name</span><span class="p">,</span> <span class="n">stats</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>and here&#8217;s the same using Celery app objects:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">.celery</span> <span class="kn">import</span> <span class="n">celery</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">CeleryStats</span>
+
+<span class="nd">@celery.task</span>
+<span class="k">def</span> <span class="nf">write_stats_to_db</span><span class="p">():</span>
+    <span class="n">stats</span> <span class="o">=</span> <span class="n">celery</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">inspect</span><span class="p">()</span><span class="o">.</span><span class="n">stats</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">node_name</span><span class="p">,</span> <span class="n">reply</span> <span class="ow">in</span> <span class="n">stats</span><span class="p">:</span>
+        <span class="n">CeleryStats</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">update_stat</span><span class="p">(</span><span class="n">node_name</span><span class="p">,</span> <span class="n">stats</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In the example above the actual application instance is imported
+from a module in the project, this module could look something like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery</span> <span class="kn">import</span> <span class="n">Celery</span>
+
+<span class="n">celery</span> <span class="o">=</span> <span class="n">Celery</span><span class="p">()</span>
+<span class="n">celery</span><span class="o">.</span><span class="n">config_from_object</span><span class="p">(</span><span class="n">BROKER_URL</span><span class="o">=</span><span class="s">&quot;amqp://&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="module-overview">
+<h2><a class="toc-backref" href="#id10">Module Overview</a><a class="headerlink" href="#module-overview" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">celery.app</p>
+<blockquote>
+<div><p>This is the core of Celery: the entry-point for all functionality.</p>
+</div></blockquote>
+</li>
+<li><p class="first">celery.loaders</p>
+<blockquote>
+<div><p>Every app must have a loader.  The loader decides how configuration
+is read, what happens when the worker starts, when a task starts and ends,
+and so on.</p>
+<p>The loaders included are:</p>
+<blockquote>
+<div><ul>
+<li><p class="first">app</p>
+<blockquote>
+<div><p>Custom celery app instances uses this loader by default.</p>
+</div></blockquote>
+</li>
+<li><p class="first">default</p>
+<blockquote>
+<div><p>&#8220;single-mode&#8221; uses this loader by default.</p>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
+<p>Extension loaders also exist, like <tt class="docutils literal"><span class="pre">django-celery</span></tt>, <tt class="docutils literal"><span class="pre">celery-pylons</span></tt>
+and so on.</p>
+</div></blockquote>
+</li>
+<li><p class="first">celery.worker</p>
+<blockquote>
+<div><p>This is the worker implementation.</p>
+</div></blockquote>
+</li>
+<li><p class="first">celery.backends</p>
+<blockquote>
+<div><p>Task result backends live here.</p>
+</div></blockquote>
+</li>
+<li><p class="first">celery.apps</p>
+<blockquote>
+<div><p>Major user applications: <tt class="docutils literal"><span class="pre">celeryd</span></tt>, and <tt class="docutils literal"><span class="pre">celerybeat</span></tt></p>
+</div></blockquote>
+</li>
+<li><p class="first">celery.bin</p>
+<blockquote>
+<div><p>Command line applications.
+setup.py creates setuptools entrypoints for these.</p>
+</div></blockquote>
+</li>
+<li><p class="first">celery.concurrency</p>
+<blockquote>
+<div><p>Execution pool implementations (processes, eventlet, gevent, threads).</p>
+</div></blockquote>
+</li>
+<li><p class="first">celery.db</p>
+<blockquote>
+<div><p>Database models for the SQLAlchemy database result backend.
+(should be moved into <a class="reference internal" href="reference/celery.backends.database.html#module-celery.backends.database" title="celery.backends.database"><tt class="xref py py-mod docutils literal"><span class="pre">celery.backends.database</span></tt></a>)</p>
+</div></blockquote>
+</li>
+<li><p class="first">celery.events</p>
+<blockquote>
+<div><p>Sending and consuming monitoring events, also includes curses monitor,
+event dumper and utilities to work with in-memory cluster state.</p>
+</div></blockquote>
+</li>
+<li><p class="first">celery.execute.trace</p>
+<blockquote>
+<div><p>How tasks are executed and traced by the worker, and in eager mode.</p>
+</div></blockquote>
+</li>
+<li><p class="first">celery.security</p>
+<blockquote>
+<div><p>Security related functionality, currently a serializer using
+cryptographic digests.</p>
+</div></blockquote>
+</li>
+<li><p class="first">celery.task</p>
+<blockquote>
+<div><p>single-mode interface to creating tasks, and controlling workers.</p>
+</div></blockquote>
+</li>
+<li><p class="first">celery.tests</p>
+<blockquote>
+<div><p>The celery unittest suite.</p>
+</div></blockquote>
+</li>
+<li><p class="first">celery.utils</p>
+<blockquote>
+<div><p>Utility functions used by the celery code base.
+Much of it is there to be compatible across Python versions.</p>
+</div></blockquote>
+</li>
+<li><p class="first">celery.contrib</p>
+<blockquote>
+<div><p>Additional public code that doesn&#8217;t fit into any other namespace.</p>
+</div></blockquote>
+</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Internals</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="deprecation.html"
+                        title="next chapter">Celery Deprecation Timeline</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/internals/guide.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="deprecation.html" title="Celery Deprecation Timeline"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Internals"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Internals</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2012, Ask Solem &amp; Contributors.
+    </div>
+  </body>
+</html>
