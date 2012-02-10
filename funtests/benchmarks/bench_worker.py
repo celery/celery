@@ -15,8 +15,12 @@ from celery import Celery
 
 DEFAULT_ITS = 20000
 
+BROKER_TRANSPORT = "librabbitmq"
+if hasattr(sys, "pypy_version_info"):
+    BROKER_TRANSPORT = "amqplib"
+
 celery = Celery(__name__)
-celery.conf.update(BROKER_TRANSPORT="librabbitmq",
+celery.conf.update(BROKER_TRANSPORT=BROKER_TRANSPORT,
                    BROKER_POOL_LIMIT=10,
                    CELERYD_POOL="solo",
                    CELERY_PREFETCH_MULTIPLIER=0,
