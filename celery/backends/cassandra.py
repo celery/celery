@@ -57,24 +57,23 @@ class CassandraBackend(BaseDictBackend):
                 "You need to install the pycassa library to use the "
                 "Cassandra backend. See https://github.com/pycassa/pycassa")
 
-        self.servers = servers or \
-                        self.app.conf.get("CASSANDRA_SERVERS", self.servers)
-        self.keyspace = keyspace or \
-                            self.app.conf.get("CASSANDRA_KEYSPACE",
-                                              self.keyspace)
-        self.column_family = column_family or \
-                                self.app.conf.get("CASSANDRA_COLUMN_FAMILY",
-                                                  self.column_family)
-        self.cassandra_options = dict(cassandra_options or {},
-                                   **self.app.conf.get("CASSANDRA_OPTIONS",
-                                                       {}))
-        self.detailed_mode = detailed_mode or \
-                                self.app.conf.get("CASSANDRA_DETAILED_MODE",
-                                                  self.detailed_mode)
-        read_cons = self.app.conf.get("CASSANDRA_READ_CONSISTENCY",
-                                      "LOCAL_QUORUM")
-        write_cons = self.app.conf.get("CASSANDRA_WRITE_CONSISTENCY",
-                                       "LOCAL_QUORUM")
+        conf = self.app.conf
+        self.servers = (servers or
+                        conf.get("CASSANDRA_SERVERS") or
+                        self.servers)
+        self.keyspace = (keyspace or
+                         conf.get("CASSANDRA_KEYSPACE") or
+                         self.keyspace)
+        self.column_family = (column_family or
+                              conf.get("CASSANDRA_COLUMN_FAMILY") or
+                              self.column_family)
+        self.cassandra_options = dict(conf.get("CASSANDRA_OPTIONS") or {},
+                                      **cassandra_options or {})
+        self.detailed_mode = (detailed_mode or
+                              conf.get("CASSANDRA_DETAILED_MODE") or
+                              self.detailed_mode)
+        read_cons = conf.get("CASSANDRA_READ_CONSISTENCY") or "LOCAL_QUORUM"
+        write_cons = conf.get("CASSANDRA_WRITE_CONSISTENCY") or "LOCAL_QUORUM"
         try:
             self.read_consistency = getattr(pycassa.ConsistencyLevel,
                                             read_cons)

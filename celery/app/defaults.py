@@ -82,6 +82,14 @@ NAMESPACES = {
         "TRANSPORT": Option(None, type="string"),
         "TRANSPORT_OPTIONS": Option({}, type="dict"),
     },
+    "CASSANDRA": {
+        "COLUMN_FAMILY": Option(None, type="string"),
+        "DETAILED_MODE": Option(False, type="bool"),
+        "KEYSPACE": Option(None, type="string"),
+        "READ_CONSISTENCY": Option(None, type="string"),
+        "SERVERS": Option(None, type="list"),
+        "WRITE_CONSISTENCY": Option(None, type="string"),
+    },
     "CELERY": {
         "ACKS_LATE": Option(False, type="bool"),
         "ALWAYS_EAGER": Option(False, type="bool"),
