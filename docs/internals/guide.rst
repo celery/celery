@@ -54,8 +54,9 @@ Naming
 
         Sometimes it makes sense to have a class mask as a function,
         and there is precedence for this in the stdlib (e.g.
-        ``contextmanager``).  Celery examples include the task decorator,
-        ``subtask``, ``chord``, ``inspect``, and ``promise``.
+        :class:`~contextlib.contextmanager`).  Celery examples include
+        :class:`~celery.task.sets.subtask`, :class:`~celery.task.chords.chord`,
+        ``inspect``, :class:`~kombu.utils.functional.promise` and more..
 
 - Factory functions and methods must be CamelCase (excluding verbs):
 
