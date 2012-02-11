@@ -9,11 +9,6 @@
 Installation
 ============
 
-For the Django database transport support you have to install the
-`django-kombu` library::
-
-    $ pip install -U django-kombu
-
 .. _broker-django-configuration:
 
 Configuration
@@ -26,9 +21,9 @@ configuration values.
 
     BROKER_URL = "django://"
 
-#. Add :mod:`djkombu` to `INSTALLED_APPS`::
+#. Add :mod:`django.transport.kombu` to `INSTALLED_APPS`::
 
-    INSTALLED_APPS = ("djkombu", )
+    INSTALLED_APPS = ("django.transport.kombu", )
 
 #. Verify your database settings::
 
