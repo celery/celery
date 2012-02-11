@@ -9,11 +9,6 @@
 Installation
 ============
 
-For the SQLAlchemy transport you have to install the
-`kombu-sqlalchemy` library::
-
-    $ pip install -U kombu-sqlalchemy
-
 .. _broker-sqlalchemy-configuration:
 
 Configuration
