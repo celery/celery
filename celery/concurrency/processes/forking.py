@@ -56,7 +56,7 @@ if sys.platform != "win32":
         returncode = None
 
         def __init__(self, process_obj):
-            self.force_execv = process_obj.force_execv
+            self.force_execv = getattr(process_obj, "force_execv", False)
 
             if self.force_execv:
                 sys.stdout.flush()
