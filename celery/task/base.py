@@ -19,14 +19,6 @@ from ..utils import deprecated, timeutils
 Task = current_app.Task
 
 
-@deprecated("Importing subtask from celery.task.base",
-            alternative="Use celery.task.subtask instead.",
-            removal="2.4")
-def subtask(*args, **kwargs):
-    from celery.task.sets import subtask
-    return subtask(*args, **kwargs)
-
-
 class PeriodicTask(Task):
     """A periodic task is a task that behaves like a :manpage:`cron` job.
 
