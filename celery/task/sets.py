@@ -209,3 +209,4 @@ class TaskSet(UserList):
             "TaskSet.task_name is deprecated and will be removed in 1.4",
             CDeprecationWarning)
         return self._task_name
+group = TaskSet

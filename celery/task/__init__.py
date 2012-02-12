@@ -16,10 +16,10 @@ import warnings
 from ..app import app_or_default
 from ..exceptions import CDeprecationWarning
 
-from .base import Task, PeriodicTask  # noqa
-from .sets import TaskSet, subtask    # noqa
-from .chords import chord             # noqa
-from .control import discard_all      # noqa
+from .base import Task, PeriodicTask        # noqa
+from .sets import group, TaskSet, subtask   # noqa
+from .chords import chord                   # noqa
+from .control import discard_all            # noqa
 
 
 def task(*args, **kwargs):
