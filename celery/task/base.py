@@ -19,14 +19,6 @@ from ..utils import deprecated, timeutils
 Task = current_app.Task
 
 
-@deprecated("Importing TaskSet from celery.task.base",
-            alternative="Use celery.task.TaskSet instead.",
-            removal="2.4")
-def TaskSet(*args, **kwargs):
-    from celery.task.sets import TaskSet
-    return TaskSet(*args, **kwargs)
-
-
 @deprecated("Importing subtask from celery.task.base",
             alternative="Use celery.task.subtask instead.",
             removal="2.4")
