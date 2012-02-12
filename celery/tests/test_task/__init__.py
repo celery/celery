@@ -230,10 +230,6 @@ class TestCeleryTasks(Case):
         self.assertEqual(result.backend, RetryTask.backend)
         self.assertEqual(result.task_id, task_id)
 
-    @with_eager_tasks
-    def test_ping(self):
-        self.assertEqual(task.ping(), 'pong')
-
     def assertNextTaskDataEqual(self, consumer, presult, task_name,
             test_eta=False, test_expires=False, **kwargs):
         next_task = consumer.fetch()

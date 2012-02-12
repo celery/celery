@@ -44,11 +44,11 @@ class TaskBucket(object):
     while the :meth:`get` operation iterates over the buckets and retrieves
     the first available item.
 
-    Say we have three types of tasks in the registry: `celery.ping`,
+    Say we have three types of tasks in the registry: `twitter.update`,
     `feed.refresh` and `video.compress`, the TaskBucket will consist
     of the following items::
 
-        {"celery.ping": TokenBucketQueue(fill_rate=300),
+        {"twitter.update": TokenBucketQueue(fill_rate=300),
          "feed.refresh": Queue(),
          "video.compress": TokenBucketQueue(fill_rate=2)}
 

@@ -7,9 +7,14 @@ from kombu.pidbox import Mailbox
 
 from celery.app import app_or_default
 from celery.task import control
-from celery.task import PingTask
+from celery.task import task
 from celery.utils import uuid
 from celery.tests.utils import Case
+
+
+@task
+def mytask():
+    pass
 
 
 class MockMailbox(Mailbox):
@@ -144,7 +149,7 @@ class test_Broadcast(Case):
 
     @with_mock_broadcast
     def test_rate_limit(self):
-        self.control.rate_limit(PingTask.name, "100/m")
+        self.control.rate_limit(mytask.name, "100/m")
         self.assertIn("rate_limit", MockMailbox.sent)
 
     @with_mock_broadcast

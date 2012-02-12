@@ -7,10 +7,16 @@ from celery.utils import uuid
 from celery.utils.serialization import pickle
 from celery.result import AsyncResult, EagerResult, TaskSetResult, ResultSet
 from celery.exceptions import TimeoutError
+from celery.task import task
 from celery.task.base import Task
 
 from celery.tests.utils import AppCase
 from celery.tests.utils import skip_if_quick
+
+
+@task
+def mytask():
+    pass
 
 
 def mock_task(name, state, result):
@@ -48,10 +54,10 @@ class TestAsyncResult(AppCase):
             save_result(task)
 
     def test_reduce(self):
-        a1 = AsyncResult("uuid", task_name="celery.ping")
+        a1 = AsyncResult("uuid", task_name=mytask.name)
         restored = pickle.loads(pickle.dumps(a1))
         self.assertEqual(restored.task_id, "uuid")
-        self.assertEqual(restored.task_name, "celery.ping")
+        self.assertEqual(restored.task_name, mytask.name)
 
         a2 = AsyncResult("uuid")
         self.assertEqual(pickle.loads(pickle.dumps(a2)).task_id, "uuid")
