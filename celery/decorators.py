@@ -21,14 +21,15 @@ from .exceptions import CDeprecationWarning
 
 
 warnings.warn(CDeprecationWarning("""
-The `celery.decorators` module and the magic keyword arguments
-are pending deprecation and will be deprecated in 2.4, then removed
-in 3.0.
+The `celery.decorators` module along with the magic keyword arguments,
+are deprecated, and will be removed in version 3.0.
 
-`task.request` should be used instead of magic keyword arguments,
-and `celery.task.task` used instead of `celery.decorators.task`.
+Please use the `celery.task` module instead of `celery.decorators`,
+and the `task.request` should be used instead of the magic keyword arguments:
 
-See the 2.2 Changelog for more information.
+    from celery.task import task
+
+See http://bit.ly/celery22major for more information.
 
 """))
 
