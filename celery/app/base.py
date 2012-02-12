@@ -385,3 +385,8 @@ class BaseApp(object):
     def log(self):
         """Logging utilities.  See :class:`~celery.log.Logging`."""
         return instantiate(self.log_cls, app=self)
+
+    @cached_property
+    def tasks(self):
+        from ..registry import tasks
+        return tasks
