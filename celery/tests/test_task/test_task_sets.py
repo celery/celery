@@ -3,9 +3,7 @@ from __future__ import with_statement
 
 import anyjson
 
-from celery import registry
 from celery.app import app_or_default
-from celery.exceptions import CDeprecationWarning
 from celery.task import Task
 from celery.task.sets import subtask, TaskSet
 
@@ -101,21 +99,6 @@ class test_subtask(Case):
 
 
 class test_TaskSet(Case):
-
-    def test_interface__compat(self):
-        with self.assertWarnsRegex(CDeprecationWarning,
-                r'Using this invocation of TaskSet is deprecated'):
-            ts = TaskSet(MockTask, [[(2, 2)], [(4, 4)], [(8, 8)]])
-            self.assertListEqual(ts.tasks,
-                                 [MockTask.subtask((i, i))
-                                    for i in (2, 4, 8)])
-        with self.assertWarnsRegex(CDeprecationWarning,
-                r'TaskSet.task is deprecated'):
-            self.assertEqual(ts.task, registry.tasks[MockTask.name])
-
-        with self.assertWarnsRegex(CDeprecationWarning,
-                r'TaskSet.task_name is deprecated'):
-            self.assertEqual(ts.task_name, MockTask.name)
 
     def test_task_arg_can_be_iterable__compat(self):
         ts = TaskSet([MockTask.subtask((i, i))

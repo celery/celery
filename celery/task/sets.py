@@ -12,36 +12,11 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-import warnings
-
 from .. import registry
 from ..app import app_or_default
 from ..datastructures import AttributeDict
-from ..exceptions import CDeprecationWarning
 from ..utils import cached_property, reprcall, uuid
 from ..utils.compat import UserList
-
-TASKSET_DEPRECATION_TEXT = """\
-Using this invocation of TaskSet is deprecated and will be removed
-in Celery v2.4!
-
-TaskSets now supports multiple types of tasks, the API has to reflect
-this so the syntax has been changed to:
-
-    from celery.task import TaskSet
-
-    ts = TaskSet(tasks=[
-            %(cls)s.subtask(args1, kwargs1, options1),
-            %(cls)s.subtask(args2, kwargs2, options2),
-            ...
-            %(cls)s.subtask(argsN, kwargsN, optionsN),
-    ])
-
-    result = ts.apply_async()
-
-Thank you for your patience!
-
-"""
 
 
 class subtask(AttributeDict):
@@ -136,28 +111,12 @@ class TaskSet(UserList):
         >>> list_of_return_values = taskset_result.join()  # *expensive*
 
     """
-    _task = None                # compat
-    _task_name = None           # compat
-
     #: Total number of subtasks in this set.
     total = None
 
-    def __init__(self, task=None, tasks=None, app=None, Publisher=None):
+    def __init__(self, tasks=None, app=None, Publisher=None):
         self.app = app_or_default(app)
-        if task is not None:
-            if hasattr(task, "__iter__"):
-                tasks = [maybe_subtask(t) for t in task]
-            else:
-                # Previously TaskSet only supported applying one kind of task.
-                # the signature then was TaskSet(task, arglist),
-                # so convert the arguments to subtasks'.
-                tasks = [subtask(task, *arglist) for arglist in tasks]
-                task = self._task = registry.tasks[task.name]
-                self._task_name = task.name
-                warnings.warn(TASKSET_DEPRECATION_TEXT % {
-                                "cls": task.__class__.__name__},
-                              CDeprecationWarning)
-        self.data = list(tasks or [])
+        self.data = [maybe_subtask(t) for t in tasks or []]
         self.total = len(self.tasks)
         self.Publisher = Publisher or self.app.amqp.TaskPublisher
 
@@ -192,21 +151,10 @@ class TaskSet(UserList):
     def _sync_results(self, taskset_id):
         return [task.apply(taskset_id=taskset_id) for task in self.tasks]
 
-    @property
-    def tasks(self):
+    def _get_tasks(self):
         return self.data
 
-    @property
-    def task(self):
-        warnings.warn(
-            "TaskSet.task is deprecated and will be removed in 1.4",
-            CDeprecationWarning)
-        return self._task
-
-    @property
-    def task_name(self):
-        warnings.warn(
-            "TaskSet.task_name is deprecated and will be removed in 1.4",
-            CDeprecationWarning)
-        return self._task_name
+    def _set_tasks(self, tasks):
+        self.data = tasks
+    tasks = property(_get_tasks, _set_tasks)
 group = TaskSet
