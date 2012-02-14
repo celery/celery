@@ -79,7 +79,12 @@ class Request(object):
 
     #: Format string used to log task failure.
     error_msg = """\
-        Task %(name)s[%(id)s] raised exception: %(exc)s\n%(traceback)s
+        Task %(name)s[%(id)s] raised exception: %(exc)s
+    """
+
+    #: Format string used to log internal error.
+    internal_error_msg = """\
+        Task %(name)s[%(id)s] INTERNAL ERROR: %(exc)s
     """
 
     #: Format string used to log task retry.
@@ -343,21 +348,34 @@ class Request(object):
         """Handler called if the task raised an exception."""
         state.task_ready(self)
 
-        if self.task.acks_late:
-            self.acknowledge()
+        if not exc_info.internal:
 
-        if isinstance(exc_info.exception, exceptions.RetryTaskError):
-            return self.on_retry(exc_info)
+            if isinstance(exc_info.exception, exceptions.RetryTaskError):
+                return self.on_retry(exc_info)
 
-        # This is a special case as the process would not have had
-        # time to write the result.
-        if isinstance(exc_info.exception, exceptions.WorkerLostError) and \
-                self.store_errors:
-            self.task.backend.mark_as_failure(self.id, exc_info.exception)
+            # This is a special case as the process would not have had
+            # time to write the result.
+            if isinstance(exc_info.exception, exceptions.WorkerLostError) and \
+                    self.store_errors:
+                self.task.backend.mark_as_failure(self.id, exc_info.exception)
+            # (acks_late) acknowledge after result stored.
+            if self.task.acks_late:
+                self.acknowledge()
 
+        self._log_error(exc_info)
+
+    def _log_error(self, exc_info):
+        format = self.error_msg
+        description = "raised exception"
+        severity = logging.ERROR
         self.send_event("task-failed", uuid=self.id,
                          exception=safe_repr(exc_info.exception),
                          traceback=safe_str(exc_info.traceback))
+
+        if exc_info.internal:
+            format = self.internal_error_msg
+            description = "INTERNAL ERROR"
+            severity = logging.CRITICAL
 
         context = {"hostname": self.hostname,
                    "id": self.id,
@@ -365,13 +383,14 @@ class Request(object):
                    "exc": safe_repr(exc_info.exception),
                    "traceback": safe_str(exc_info.traceback),
                    "args": safe_repr(self.args),
-                   "kwargs": safe_repr(self.kwargs)}
+                   "kwargs": safe_repr(self.kwargs),
+                   "description": description}
 
-        self.logger.error(self.error_msg.strip(), context,
-                          exc_info=exc_info.exc_info,
-                          extra={"data": {"id": self.id,
-                                          "name": self.name,
-                                          "hostname": self.hostname}})
+        self.logger.log(severity, format.strip(), context,
+                        exc_info=exc_info.exc_info,
+                        extra={"data": {"id": self.id,
+                                        "name": self.name,
+                                        "hostname": self.hostname}})
 
         task_obj = tasks.get(self.name, object)
         task_obj.send_error_email(context, exc_info.exception)

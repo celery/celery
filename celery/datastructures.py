@@ -412,10 +412,14 @@ class ExceptionInfo(object):
     #: String representation of the traceback.
     traceback = None
 
-    def __init__(self, exc_info):
+    #: Set to true if this is an internal error.
+    internal = False
+
+    def __init__(self, exc_info, internal=False):
         self.type, self.exception, tb = exc_info
         self.tb = Traceback(tb)
         self.traceback = ''.join(traceback.format_exception(*exc_info))
+        self.internal = internal
 
     def __str__(self):
         return self.traceback

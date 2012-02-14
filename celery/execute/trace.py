@@ -149,9 +149,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 try:
                     R = retval = task(*args, **kwargs)
                     state, einfo = SUCCESS, None
-                    task_on_success(retval, uuid, args, kwargs)
-                    if publish_result:
-                        store_result(uuid, retval, SUCCESS)
                 except RetryTaskError, exc:
                     I = Info(RETRY, exc, sys.exc_info())
                     state, retval, einfo = I.state, I.retval, I.exc_info
@@ -172,6 +169,10 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     I = Info(FAILURE, None, sys.exc_info())
                     state, retval, einfo = I.state, I.retval, I.exc_info
                     R = I.handle_error_state(task, eager=eager)
+                else:
+                    task_on_success(retval, uuid, args, kwargs)
+                    if publish_result:
+                        store_result(uuid, retval, SUCCESS)
 
                 # -* POST *-
                 if task_request.chord:
@@ -219,7 +220,7 @@ def report_internal_error(task, exc):
     _type, _value, _tb = sys.exc_info()
     try:
         _value = task.backend.prepare_exception(exc)
-        exc_info = ExceptionInfo((_type, _value, _tb))
+        exc_info = ExceptionInfo((_type, _value, _tb), internal=True)
         warn(RuntimeWarning(
             "Exception raised outside body: %r:\n%s" % (
                 exc, exc_info.traceback)))
