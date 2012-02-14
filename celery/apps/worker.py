@@ -245,6 +245,7 @@ class Worker(configurated):
             else:
                 install_worker_restart_handler(worker)
         install_worker_term_handler(worker)
+        install_worker_term_hard_handler(worker)
         install_worker_int_handler(worker)
         install_cry_handler(worker.logger)
         install_rdb_handler()
@@ -346,3 +347,15 @@ def install_HUP_not_supported_handler(worker):
             "Restarting with HUP is unstable on this platform!")
 
     platforms.signals["SIGHUP"] = warn_on_HUP_handler
+
+
+def install_worker_term_hard_handler(worker):
+
+    def _stop(signum, frame):
+        process_name = get_process_name()
+        if not process_name or process_name == "MainProcess":
+            worker.logger.warning("celeryd: Cold shutdown (%s)" % (process_name, ))
+            worker.terminate(in_sighandler=True)
+        raise SystemExit()
+
+    platforms.signals["SIGQUIT"] = _stop

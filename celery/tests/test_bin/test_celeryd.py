@@ -567,3 +567,12 @@ class test_signal_handlers(AppCase):
             self.assertTrue(argv)
         finally:
             os.execv = execv
+
+
+    @disable_stdouts
+    def test_worker_term_hard_handler(self):
+        worker = self._Worker()
+        handlers = self.psig(cd.install_worker_term_hard_handler, worker)
+        with self.assertRaises(SystemExit):
+            handlers["SIGQUIT"]("SIGQUIT", object())
+        self.assertTrue(worker.terminated)
