@@ -312,7 +312,7 @@ def install_worker_term_hard_handler(worker):
         if not process_name or process_name == "MainProcess":
             print("celeryd: Cold shutdown (%s)" % (process_name, ))
             worker.terminate(in_sighandler=True)
-        raise SystemExit()
+        raise SystemTerminate()
 
     platforms.signals["SIGQUIT"] = _stop
 

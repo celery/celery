@@ -20,7 +20,7 @@ from celery import signals
 from celery import current_app
 from celery.apps import worker as cd
 from celery.bin.celeryd import WorkerCommand, main as celeryd_main
-from celery.exceptions import ImproperlyConfigured
+from celery.exceptions import ImproperlyConfigured, SystemTerminate
 
 from celery.tests.utils import (AppCase, WhateverIO, mask_modules,
                                 reset_modules, skip_unless_module)
@@ -572,6 +572,6 @@ class test_signal_handlers(AppCase):
     def test_worker_term_hard_handler(self):
         worker = self._Worker()
         handlers = self.psig(cd.install_worker_term_hard_handler, worker)
-        with self.assertRaises(SystemExit):
+        with self.assertRaises(SystemTerminate):
             handlers["SIGQUIT"]("SIGQUIT", object())
         self.assertTrue(worker.terminated)
