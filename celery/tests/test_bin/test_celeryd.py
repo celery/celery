@@ -568,7 +568,6 @@ class test_signal_handlers(AppCase):
         finally:
             os.execv = execv
 
-
     @disable_stdouts
     def test_worker_term_hard_handler(self):
         worker = self._Worker()
