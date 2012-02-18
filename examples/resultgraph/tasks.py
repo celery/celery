@@ -97,5 +97,3 @@ class chord2(object):
     def __call__(self, body, **options):
         body.options.setdefault("task_id", uuid())
         unlock_graph.apply_async()
-
-

@@ -21,11 +21,16 @@ from ..utils import cached_property, instantiate
 from . import annotations
 from . import base
 
-# Apps with the :attr:`~celery.app.base.BaseApp.set_as_current` attribute
-# sets this, so it will always contain the last instantiated app,
-# and is the default app returned by :func:`app_or_default`.
-_tls = threading.local()
-_tls.current_app = None
+
+class _TLS(threading.local):
+    #: Apps with the :attr:`~celery.app.base.BaseApp.set_as_current` attribute
+    #: sets this, so it will always contain the last instantiated app,
+    #: and is the default app returned by :func:`app_or_default`.
+    current_app = None
+
+    #: The currently executing task.
+    current_task = None
+_tls = _TLS()
 
 
 class AppPickler(object):
@@ -228,11 +233,16 @@ default_loader = os.environ.get("CELERY_LOADER") or "default"
 
 #: Global fallback app instance.
 default_app = App("default", loader=default_loader,
-                  set_as_current=False, accept_magic_kwargs=True)
+                             set_as_current=False,
+                             accept_magic_kwargs=True)
 
 
 def current_app():
     return getattr(_tls, "current_app", None) or default_app
+
+
+def current_task():
+    return getattr(_tls, "current_task", None)
 
 
 def _app_or_default(app=None):

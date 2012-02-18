@@ -11,12 +11,15 @@
 """
 from __future__ import absolute_import
 
-from ..app import app_or_default
+from ..app import app_or_default, current_task as _current_task
+from ..local import Proxy
 
 from .base import Task, PeriodicTask        # noqa
 from .sets import group, TaskSet, subtask   # noqa
 from .chords import chord                   # noqa
 from .control import discard_all            # noqa
+
+current = Proxy(_current_task)
 
 
 def task(*args, **kwargs):

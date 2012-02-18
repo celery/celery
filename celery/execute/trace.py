@@ -25,6 +25,7 @@ import traceback
 
 from warnings import warn
 
+from .. import app as app_module
 from .. import current_app
 from .. import states, signals
 from ..datastructures import ExceptionInfo
@@ -121,6 +122,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     task_on_success = task.on_success
     task_after_return = task.after_return
     task_request = task.request
+    _tls = app_module._tls
 
     store_result = backend.store_result
     backend_cleanup = backend.process_cleanup
@@ -134,6 +136,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     def trace_task(uuid, args, kwargs, request=None):
         R = I = None
         try:
+            _tls.current_task = task
             update_request(request or {}, args=args,
                            called_directly=False, kwargs=kwargs)
             try:
@@ -181,6 +184,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 send_postrun(sender=task, task_id=uuid, task=task,
                             args=args, kwargs=kwargs, retval=retval)
             finally:
+                _tls.current_task = None
                 clear_request()
                 if not eager:
                     try:
