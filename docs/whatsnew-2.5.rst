@@ -99,6 +99,37 @@ Optimizations
 
 .. _`pylibrabbitmq`: http://pypi.python.org/pylibrabbitmq/
 
+.. _v250-deprecations:
+
+Deprecations
+============
+
+Removals
+--------
+
+* The old :class:`TaskSet` signature of ``(task_name, list_of_tasks)``
+  can no longer be used (originally scheduled for removal in 2.4).
+  The deprecated ``.task_name`` and ``.task`` attributes has also been
+  removed.
+
+* The functions ``celery.execute.delay_task``, ``celery.execute.apply``,
+  and ``celery.execute.apply_async`` has been removed (originally)
+  scheduled for removal in 2.3).
+
+* The built-in ``ping`` task has been removed (originally scheduled
+  for removal in 2.3).  Please use the ping broadcast command
+  instead.
+
+* It is no longer possible to import ``subtask`` and ``TaskSet``
+  from :mod:`celery.task.base`, please import them from :mod:`celery.task`
+  instead (originally scheduled for removal in 2.4).
+
+Deprecations
+------------
+
+* The :mod:`celery.decorators` module has changed status
+  from pending deprecation to deprecated, and is scheduled for removal
+  in version 3.0.  The ``celery.task`` module must be used instead.
 
 .. _v250-news:
 
@@ -195,6 +226,35 @@ that filter for tasks to annotate:
 
     CELERY_ANNOTATIONS = (MyAnnotate(), {...})
 
+``current`` provides the currently executing task
+-------------------------------------------------
+
+The new :data:`celery.task.current` proxy will always give the currently
+executing task.
+
+**Example**:
+
+.. code-block:: python
+
+    from celery.task import current, task
+
+    @task
+    def update_twitter_status(auth, message):
+        twitter = Twitter(auth)
+        try:
+            twitter.update_status(message)
+        except twitter.FailWhale, exc:
+            # retry in 10 seconds.
+            current.retry(countdown=10, exc=exc)
+
+Previously you would have to type ``update_twitter_status.retry(...)``
+here, which can be annoying for long task names.
+
+.. note::
+    This will not work if the task function is called directly, i.e:
+    ``update_twitter_status(a, b)``. For that to work ``apply`` must
+    be used: ``update_twitter_status.apply((a, b))``.
+
 In Other News
 -------------
 
@@ -210,6 +270,13 @@ In Other News
 - Adds Chord support for the AMQP backend
 
     The AMQP backend can now use the fallback chord solution.
+
+- Sending :sig:`QUIT` to celeryd will now cause it cold terminate.
+
+    That is, it will not finish executing the tasks it is currently
+    working on.
+
+    Contributed by Alec Clowes.
 
 - New "detailed" mode for the Cassandra backend.
 
