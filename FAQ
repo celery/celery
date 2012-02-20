@@ -457,6 +457,21 @@ How can I reuse the same connection when applying tasks?
 **Answer**: See the :setting:`BROKER_POOL_LIMIT` setting.
 The connection pool is enabled by default since version 2.5.
 
+.. _faq-deletes-unknown-tasks:
+
+Why do workers delete tasks from the queue if they are unable to process them?
+------------------------------------------------------------------------------
+**Answer**:
+
+The worker discards unknown tasks, messages with encoding errors and messages
+that doesn't contain the proper fields (as per the task message protocol).
+
+If it did not ack (delete) them, they would be redelivered again and again
+causing a loop.
+
+There has been talk about moving these messages to a dead-letter queue,
+but that has not yet been implemented.
+
 .. _faq-execute-task-by-name:
 
 Can I execute a task by name?
@@ -704,6 +719,38 @@ terminated mid-execution, and they will not be re-run unless you have the
 How do I run celeryd in the background on [platform]?
 -----------------------------------------------------
 **Answer**: Please see :ref:`daemonizing`.
+
+.. _faq-django:
+
+Django
+======
+
+.. _faq-django-database-tables:
+
+What purpose does the database tables created by django-celery have?
+--------------------------------------------------------------------
+
+Several database tables are created by default, these relate to
+
+* Monitoring
+
+    When you use the django-admin monitor, the cluster state is written
+    to the ``TaskState`` and ``WorkerState`` models.
+
+* Periodic tasks
+
+    When the database-backed schedule is used the periodic task
+    schedule is taken from the ``PeriodicTask`` model, there are
+    also several other helper tables (``IntervalSchedule``,
+    ``CrontabSchedule``, ``PeriodicTasks``).
+
+* Task results
+
+    The database result backend is enabled by default when using django-celery
+    (this is for historical reasons, and thus for backward compatibility).
+
+    The results are stored in the ``TaskMeta`` and ``TaskSetMeta`` models.
+    *these tables are not created if another result backend is configured*.
 
 .. _faq-windows:
 
