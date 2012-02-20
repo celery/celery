@@ -15,10 +15,11 @@
 
 See :ref:`whatsnew-2.5`.
 
-We decided to do things differently this time, considering the changelog
-is very long we're going to have separate documents for major version changes,
-called "what's new" documents.  Bugfix releases will still be located in the
-changelog.
+Since the changelog has gained considerable size, we decided to
+do things differently this time: by having separate "what's new"
+documents for major version changes.
+
+Bugfix releases will still be found in the changelog.
 
 .. _version-2.4.5:
 

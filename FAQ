@@ -692,7 +692,7 @@ Or to schedule a periodic task at a specific time, use the
     from celery.task.schedules import crontab
     from celery.task import periodic_task
 
-    @periodic_task(run_every=crontab(hours=7, minute=30, day_of_week="mon"))
+    @periodic_task(run_every=crontab(hour=7, minute=30, day_of_week="mon"))
     def every_monday_morning():
         print("This is run every Monday morning at 7:30")
 
