@@ -405,7 +405,7 @@ class Traceback(object):
     Frame = _Frame
 
     tb_frame = tb_lineno = tb_next = None
-    max_frames = sys.getrecursionlimit() / 5
+    max_frames = sys.getrecursionlimit() / 8
 
     def __init__(self, tb, max_frames=None, depth=0):
         limit = self.max_frames = max_frames or self.max_frames
