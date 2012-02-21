@@ -380,16 +380,42 @@ class _Frame(object):
         self.f_lineno = frame.f_lineno
 
 
+class _Object(object):
+
+    def __init__(self, **kw):
+        [setattr(self, k, v) for k, v in kw.iteritems()]
+
+
+class _Truncated(object):
+
+    def __init__(self):
+        self.tb_lineno = -1
+        self.tb_frame = _Object(
+                f_globals={"__file__": "",
+                           "__name__": "",
+                           "__loader__": None},
+                f_fileno=None,
+                f_code=_Object(co_filename="...",
+                               co_name="[rest of traceback truncated]"),
+        )
+        self.tb_next = None
+
+
 class Traceback(object):
     Frame = _Frame
 
-    def __init__(self, tb):
+    tb_frame = tb_lineno = tb_next = None
+    max_frames = sys.getrecursionlimit() / 5
+
+    def __init__(self, tb, max_frames=None, depth=0):
+        limit = self.max_frames = max_frames or self.max_frames
         self.tb_frame = self.Frame(tb.tb_frame)
         self.tb_lineno = tb.tb_lineno
-        if tb.tb_next is None:
-            self.tb_next = None
-        else:
-            self.tb_next = Traceback(tb.tb_next)
+        if tb.tb_next is not None:
+            if depth <= limit:
+                self.tb_next = Traceback(tb.tb_next, limit, depth + 1)
+            else:
+                self.tb_next = _Truncated()
 
 
 class ExceptionInfo(object):
