@@ -605,12 +605,14 @@ class test_crontab_parser(Case):
 
     def test_parse_composite(self):
         self.assertEqual(crontab_parser(8).parse('*/2'), set([0, 2, 4, 6]))
-        self.assertEqual(crontab_parser().parse('2-9/5'), set([5]))
-        self.assertEqual(crontab_parser().parse('2-10/5'), set([5, 10]))
-        self.assertEqual(crontab_parser().parse('2-11/5,3'), set([3, 5, 10]))
+        self.assertEqual(crontab_parser().parse('2-9/5'), set([2, 7]))
+        self.assertEqual(crontab_parser().parse('2-10/5'), set([2, 7]))
+        self.assertEqual(crontab_parser().parse('2-11/5,3'), set([2, 3, 7]))
         self.assertEqual(crontab_parser().parse('2-4/3,*/5,0-21/4'),
-                set([0, 3, 4, 5, 8, 10, 12, 15, 16,
-                    20, 25, 30, 35, 40, 45, 50, 55]))
+                set([0, 2, 4, 5, 8, 10, 12, 15, 16,
+                     20, 25, 30, 35, 40, 45, 50, 55]))
+        self.assertEqual(crontab_parser().parse('1-9/2'),
+                set([1, 3, 5, 7, 9]))
 
     def test_parse_errors_on_empty_string(self):
         with self.assertRaises(ParseException):

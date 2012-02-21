@@ -153,15 +153,12 @@ class crontab_parser(object):
     def _range_steps(self, toks):
         if len(toks) != 3 or not toks[2]:
             raise self.ParseException("empty filter")
-        return self._filter_steps(self._expand_range(toks[:2]), int(toks[2]))
+        return self._expand_range(toks[:2])[::int(toks[2])]
 
     def _star_steps(self, toks):
         if not toks or not toks[0]:
             raise self.ParseException("empty filter")
-        return self._filter_steps(self._expand_star(), int(toks[0]))
-
-    def _filter_steps(self, numbers, steps):
-        return [n for n in numbers if n % steps == 0]
+        return self._expand_star()[::int(toks[0])]
 
     def _expand_star(self, *args):
         return range(self.max_)
