@@ -48,7 +48,7 @@ that could result in a race condition leading to an annoying warning.
 
         CELERY_RESULT_EXCHANGE = "celeryresults2"
 
-    But you have to make sure that both clients and workers
+    But you have to make sure that all clients and workers
     use this new setting, so they are updated to use the same
     exchange name.
 
