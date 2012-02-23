@@ -189,6 +189,11 @@ def release(options):
 
 
 @task
+def verify_authors(options):
+    sh("git shortlog -se | cut -f2 | contrib/release/attribution.py")
+
+
+@task
 def coreloc(options):
     sh("xargs sloccount < contrib/release/core-modules.txt")
 
