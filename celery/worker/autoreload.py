@@ -17,7 +17,6 @@ import time
 
 from collections import defaultdict
 
-from .. import current_app
 from ..abstract import StartStopComponent
 from ..utils.threads import bgThread, Event
 
@@ -39,6 +38,7 @@ class WorkerComponent(StartStopComponent):
 
     def create(self, w):
         w.autoreloader = self.instantiate(w.autoreloader_cls,
+                                          controller=w,
                                           modules=w.autoreload,
                                           logger=w.logger)
         return w.autoreloader
@@ -185,17 +185,21 @@ class Autoreloader(bgThread):
     """Tracks changes in modules and fires reload commands"""
     Monitor = Monitor
 
-    def __init__(self, modules, monitor_cls=None, logger=None, **kwargs):
+    def __init__(self, controller, modules=None, monitor_cls=None,
+            logger=None, **options):
         super(Autoreloader, self).__init__()
-        self.daemon = True
+        self.controller = controller
+        app = self.controller.app
+        self.modules = app.loader.task_modules if modules is None else modules
         self.logger = logger
-        files = [sys.modules[m].__file__ for m in modules]
+        self.options = options
         self.Monitor = monitor_cls or self.Monitor
-        self._monitor = self.Monitor(files, self.on_change,
-                shutdown_event=self._is_shutdown, **kwargs)
-        self._hashes = dict([(f, file_hash(f)) for f in files])
 
     def body(self):
+        files = [sys.modules[m].__file__ for m in self.modules]
+        self._monitor = self.Monitor(files, self.on_change,
+                shutdown_event=self._is_shutdown, **self.options)
+        self._hashes = dict([(f, file_hash(f)) for f in files])
         try:
             self._monitor.start()
         except OSError, exc:
@@ -217,8 +221,7 @@ class Autoreloader(bgThread):
             self._reload(map(self._module_name, modified))
 
     def _reload(self, modules):
-        current_app.control.broadcast("pool_restart",
-                arguments={"imports": modules, "reload_modules": True})
+        self.controller.reload(modules, reload=True)
 
     def stop(self):
         self._monitor.stop()

@@ -63,6 +63,7 @@ class BaseLoader(object):
     def __init__(self, app=None, **kwargs):
         from ..app import app_or_default
         self.app = app_or_default(app)
+        self.task_modules = set()
 
     def now(self):
         return datetime.utcnow()
@@ -85,6 +86,7 @@ class BaseLoader(object):
         pass
 
     def import_task_module(self, module):
+        self.task_modules.add(module)
         return self.import_from_cwd(module)
 
     def import_module(self, module, package=None):

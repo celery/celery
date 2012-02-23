@@ -31,6 +31,7 @@ from ..app.abstract import configurated, from_config
 from ..exceptions import SystemTerminate
 from ..log import SilenceRepeated
 from ..utils import noop, qualname
+from ..utils.compat import reload as _reload
 
 from . import state
 from .buckets import TaskBucket, FastQueue
@@ -294,6 +295,20 @@ class WorkController(configurated):
 
         self._state = self.TERMINATE
         self._shutdown_complete.set()
+
+    def reload(self, modules=None, reload=False, reloader=None):
+        reloader = _reload if reloader is None else reloader
+        modules = self.app.loader.task_modules if modules is None else modules
+        imp = self.app.loader.import_from_cwd
+
+        for module in set(modules or ()):
+            if module not in sys.modules:
+                self.logger.debug("importing module %s" % (module, ))
+                imp(module)
+            elif reload:
+                self.logger.debug("reloading module %s" % (module, ))
+                reloader(sys.modules[module])
+        self.pool.restart()
 
     def on_timer_error(self, einfo):
         self.logger.error("Timer error: %r", einfo[1], exc_info=einfo)

@@ -367,29 +367,33 @@ modules.  This command does not interrupt executing tasks.
 Example
 ~~~~~~~
 
-Runnig the following command will result in the `foo` and `bar` modules
+Running the following command will result in the `foo` and `bar` modules
 being imported by the worker processes:
 
 .. code-block:: python
 
     >>> from celery.task.control import broadcast
-    >>> broadcast("pool_restart", arguments={"imports":["foo", "bar"]})
+    >>> broadcast("pool_restart", arguments={"modules": ["foo", "bar"]})
 
-If you want to reload all modules you can use:
+Use the ``reload`` argument to reload modules it has already imported:
 
 .. code-block:: python
 
-    >>> from celery.task.control import broadcast
-    >>> from celery import current_app
-    >>> modules = current_app.conf.CELERY_IMPORTS
-    >>> broadcast("pool_restart",
-                  arguments={"imports":modules, "reload_modules":True})
+    >>> broadcast("pool_restart", arguments={"modules": ["foo"],
+                                             "reload": True})
 
-`imports` argument is a list of modules to modify. `reload_modules`
-specifies whether to reload modules if they are previously imported.
-By default `reload_modules` is `False`. The `pool_restart` command uses the
+If you don't specify any modules then all known tasks modules will
+be imported/reloaded:
+
+.. code-block:: python
+
+    >>> broadcast("pool_restart", arguments={"reload": True})
+
+The ``modules`` argument is a list of modules to modify. ``reload``
+specifies whether to reload modules if they have previously been imported.
+By default ``reload`` is disabled. The `pool_restart` command uses the
 Python :func:`reload` function to reload modules, or you can provide
-your own custom reloader.
+your own custom reloader by passing the ``reloader`` argument.
 
 .. note::
 

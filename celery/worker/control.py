@@ -24,11 +24,6 @@ from ..utils.encoding import safe_repr
 from . import state
 from .state import revoked
 
-try:
-    reload
-except NameError:
-    from imp import reload
-
 TASK_INFO_FIELDS = ("exchange", "routing_key", "rate_limit")
 
 
@@ -244,19 +239,9 @@ def pool_shrink(panel, n=1, **kwargs):
 
 
 @Panel.register
-def pool_restart(panel, imports=None, reload_imports=False,
-                 reload=reload, **kwargs):
-    imports = set(imports or [])
-    for m in imports:
-        if m not in sys.modules:
-            panel.app.loader.import_from_cwd(m)
-            panel.logger.debug("imported %s module" % m)
-        elif reload_imports:
-            reload(sys.modules[m])
-            panel.logger.debug("reloaded %s module" % m)
-
-    panel.consumer.pool.restart()
-    return {"ok": "started restarting worker processes"}
+def pool_restart(panel, modules=None, reload=False, reloader=None, **kwargs):
+    panel.consumer.controller.reload(modules, reload, reloader=reloader)
+    return {"ok": "reload started"}
 
 
 @Panel.register

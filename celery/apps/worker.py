@@ -17,7 +17,6 @@ from ..app import app_or_default
 from ..app.abstract import configurated, from_config
 from ..exceptions import ImproperlyConfigured, SystemTerminate
 from ..utils import isatty, LOG_LEVELS, cry, qualname
-from ..utils.functional import maybe_list
 from ..worker import WorkController
 
 try:
@@ -96,6 +95,7 @@ class Worker(configurated):
         self.include = [] if include is None else include
         self.pidfile = pidfile
         self.autoscale = None
+        self.autoreload = autoreload
         if autoscale:
             max_c, _, min_c = autoscale.partition(",")
             self.autoscale = [int(max_c), min_c and int(min_c) or 0]
@@ -107,13 +107,6 @@ class Worker(configurated):
             self.use_queues = self.use_queues.split(",")
         if isinstance(self.include, basestring):
             self.include = self.include.split(",")
-
-        self.autoreload = autoreload
-        if autoreload:
-            imports = list(self.include)
-            imports.extend(maybe_list(
-                self.app.conf.get("CELERY_IMPORTS") or ()))
-            self.autoreload = set(imports)
 
         if not isinstance(self.loglevel, int):
             try:
@@ -163,7 +156,7 @@ class Worker(configurated):
         self.loader = self.app.loader
         self.settings = self.app.conf
         for module in self.include:
-            self.loader.import_from_cwd(module)
+            self.loader.import_task_module(module)
 
     def redirect_stdouts_to_logger(self):
         self.app.log.setup(self.loglevel, self.logfile,

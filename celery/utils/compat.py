@@ -16,6 +16,11 @@ from __future__ import absolute_import
 import sys
 
 try:
+    reload = reload                     # noqa
+except NameError:
+    from imp import reload              # noqa
+
+try:
     from UserList import UserList       # noqa
 except ImportError:
     from collections import UserList    # noqa
