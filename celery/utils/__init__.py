@@ -34,7 +34,7 @@ from kombu.utils.functional import promise, maybe_promise       # noqa
 uuid = gen_unique_id
 
 from ..exceptions import CPendingDeprecationWarning, CDeprecationWarning
-from .compat import StringIO
+from .compat import StringIO, reload
 
 LOG_LEVELS = dict(logging._levelNames)
 LOG_LEVELS["FATAL"] = logging.FATAL
@@ -390,6 +390,13 @@ def import_from_cwd(module, imp=None, package=None):
         imp = importlib.import_module
     with cwd_in_path():
         return imp(module, package=package)
+
+
+def reload_from_cwd(module, reloader=None):
+    if reloader is None:
+        reloader = reload
+    with cwd_in_path():
+        return reloader(module)
 
 
 def cry():  # pragma: no cover
