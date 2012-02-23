@@ -39,9 +39,9 @@ class bgThread(Thread):
     def body(self):
         raise NotImplementedError("subclass responsibility")
 
-    def on_crash(self, msg, *fmt, **kwargs):
+    def on_crash(self, exc_info, msg, *fmt, **kwargs):
         sys.stderr.write((msg + "\n") % fmt)
-        traceback.print_stack(file=sys.stderr)
+        traceback.print_exception(*exc_info, file=sys.stderr)
 
     def run(self):
         shutdown = self._is_shutdown
@@ -49,7 +49,7 @@ class bgThread(Thread):
             try:
                 self.body()
             except Exception, exc:
-                self.on_crash("%r crashed: %r", self.name, exc, exc_info=True)
+                self.on_crash(sys.exc_info(), "%r crashed: %r", self.name, exc)
                 # exiting by normal means does not work here, so force exit.
                 os._exit(1)
         try:

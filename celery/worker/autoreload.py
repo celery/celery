@@ -39,7 +39,6 @@ class WorkerComponent(StartStopComponent):
     def create(self, w):
         w.autoreloader = self.instantiate(w.autoreloader_cls,
                                           controller=w,
-                                          modules=w.autoreload,
                                           logger=w.logger)
         return w.autoreloader
 
@@ -194,6 +193,8 @@ class Autoreloader(bgThread):
         self.logger = logger
         self.options = options
         self.Monitor = monitor_cls or self.Monitor
+        self._monitor = None
+        self._hashes = None
 
     def body(self):
         files = [sys.modules[m].__file__ for m in self.modules]
@@ -224,7 +225,8 @@ class Autoreloader(bgThread):
         self.controller.reload(modules, reload=True)
 
     def stop(self):
-        self._monitor.stop()
+        if self._monitor:
+            self._monitor.stop()
 
     @staticmethod
     def _module_name(path):
