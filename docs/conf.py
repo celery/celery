@@ -103,7 +103,7 @@ html_sidebars = {
 
 ### Issuetracker
 
-if not os.environ.get("SKIP_ISSUES"):
+if False:
     issuetracker = "github"
     issuetracker_project = "ask/celery"
     issuetracker_issue_pattern = r'[Ii]ssue #(\d+)'
