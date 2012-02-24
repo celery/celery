@@ -68,7 +68,7 @@ but especially users also using time limits or a max tasks per child
 setting.
 
 - See `Python Issue 6721`_ to read more about this issue, and why
-  resorting to execv is the only safe solution.
+  resorting to :func:`~os.execv`` is the only safe solution.
 
 Enabling this option will result in a slight performance penalty
 when new child worker processes are started, and it will also increase
@@ -76,7 +76,7 @@ memory usage (but many platforms are optimized, so the impact may be
 minimal).  Considering that it ensures reliability when replacing
 lost worker processes, it should be worth it.
 
-- It is already the default behavior on Windows.
+- It's already the default behavior on Windows.
 - It will be the default behavior for all platforms in a future version.
 
 .. _`Python Issue 6721`: http://bugs.python.org/issue6721#msg140215
@@ -88,10 +88,10 @@ Optimizations
 
 - The code path used when the worker executes a task has been heavily
   optimized, meaning the worker is able to process a great deal
-  more tasks/s compared to previous versions.  As an example the solo
-  pool can now process up to 15000 tasks/s on a 4 core MacBook Pro
+  more tasks/second compared to previous versions.  As an example the solo
+  pool can now process up to 15000 tasks/second on a 4 core MacBook Pro
   when using the `pylibrabbitmq`_ transport, where it previously
-  could only do 5000 tasks/s.
+  could only do 5000 tasks/second.
 
 - The task error tracebacks are now much shorter.
 
@@ -181,6 +181,56 @@ configuration to work (see :ref:`conf-security`).
 .. seealso::
 
     :ref:`guide-security`
+
+Contributed by Mher Movsisyan.
+
+Experimental support for automatic module reloading
+---------------------------------------------------
+
+Starting :program:`celeryd` with the :option:`--autoreload` option will
+enable the worker to watch for file system changes to all imported task
+modules imported (and also any non-task modules added to the
+:setting:`CELERY_IMPORTS` setting or the :option:`-I|--include` option).
+
+This is an experimental feature intended for use in development only,
+using auto-reload in production is discouraged as the behavior of reloading
+a module in Python is undefined, and may cause hard to diagnose bugs and
+crashes.  Celery uses the same approach as the auto-reloader found in e.g.
+the Django ``runserver`` command.
+
+When auto-reload is enabled the worker starts an additional thread
+that watches for changes in the file system.  New modules are imported,
+and already imported modules are reloaded whenever a change is detected,
+and if the processes pool is used the child processes will finish the work
+they are doing and exit, so that they can be replaced by fresh processes
+effectively reloading the code.
+
+File system notification backends are pluggable, and Celery comes with three
+implementations:
+
+* inotify (Linux)
+
+    Used if the :mod:`pyinotify` library is installed.
+    If you are running on Linux this is the recommended implementation,
+    to install the :mod:`pyinotify` library you have to run the following
+    command::
+
+        $ pip install pyinotify
+
+* kqueue (OS X/BSD)
+
+* stat
+
+    The fallback implementation simply polls the files using ``stat`` and is very
+    expensive.
+
+You can force an implementation by setting the :envvar:`CELERYD_FSNOTIFY`
+environment variable::
+
+    $ env CELERYD_FSNOTIFY=stat celeryd -l info --autoreload
+
+Contributed by Mher Movsisyan.
+
 
 New :setting:`CELERY_ANNOTATIONS` setting
 -----------------------------------------
@@ -288,6 +338,27 @@ In Other News
     See the :setting:`CASSANDRA_DETAILED_MODE` setting.
 
     Contributed by Steeve Morin.
+
+- The crontab parser now matches Vixie Cron behavior when parsing ranges
+  with steps (e.g. 1-59/2).
+
+    Contributed by Daniel Hepper.
+
+- celerybeat can now be configured on the command line like celeryd.
+
+  Additional configuration must be added at the end of the argument list
+  followed by ``--``, for example::
+
+    $ celerybeat -l info -- celerybeat.max_loop_interval=10.0
+
+- Now limits the number of frames in a traceback so that celeryd does not
+  crash on maximum recursion limit exceeded exceptions (Issue #615).
+
+    The limit is set to the current recursion limit divided by 8 (which
+    is 125 by default).
+
+    To get or set the current recursion limit use
+    :func:`sys.getrecursionlimit` and :func:`sys.setrecursionlimit`.
 
 - More information is now preserved in the pickleable traceback.
 

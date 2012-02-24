@@ -171,13 +171,20 @@ class InotifyMonitor(_ProcessEvent):
             return self._on_change(modified)
 
 
-# kqueue monitor not working properly at this time.
-#if hasattr(select, "kqueue"):
-#    Monitor = KQueueMonitor
-if sys.platform.startswith("linux") and pyinotify:
-    Monitor = InotifyMonitor
-else:
-    Monitor = StatMonitor
+def default_implementation():
+    # kqueue monitor not working properly at this time.
+    if hasattr(select, "kqueue"):
+        return "kqueue"
+    if sys.platform.startswith("linux") and pyinotify:
+        return "inotify"
+    else:
+        return "stat"
+
+implementations = {"kqueue": KQueueMonitor,
+                   "inotify": InotifyMonitor,
+                   "stat": StatMonitor}
+Monitor = implementations[
+            os.environ.get("CELERYD_FSNOTIFY") or default_implementation()]
 
 
 class Autoreloader(bgThread):
