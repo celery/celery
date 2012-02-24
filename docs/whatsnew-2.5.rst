@@ -4,9 +4,6 @@
  What's new in Celery 2.5
 ==========================
 
-.. contents::
-    :local:
-
 After the hard work of countless contributors, four months in the making
 we are proud to present the 2.5 version of Celery.
 
@@ -21,6 +18,9 @@ read the `django-celery changelog`_ and upgrade to `django-celery 2.5`_.
 
 .. _`django-celery changelog`: http://bit.ly/djcelery-25-changelog
 .. _`django-celery 2.5`: http://pypi.python.org/pypi/django-celery/
+
+.. contents::
+    :local:
 
 .. _v250-important:
 

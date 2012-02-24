@@ -103,8 +103,7 @@ html_sidebars = {
 
 ### Issuetracker
 
-if False: #not os.environ.get("SKIP_ISSUES"):
-    # Issue tracker is not working, just hangs
+if not os.environ.get("SKIP_ISSUES"):
     issuetracker = "github"
     issuetracker_project = "ask/celery"
     issuetracker_issue_pattern = r'[Ii]ssue #(\d+)'
