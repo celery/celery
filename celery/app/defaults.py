@@ -239,20 +239,17 @@ def find_deprecated_settings(source):
 def find(name, namespace="celery"):
     # - Try specified namespace first.
     namespace = namespace.upper()
-    for key, value in NAMESPACES[namespace].iteritems():
-        if key.lower() == name.lower():
-            return namespace, key, value
-
-    # - Try all the other namespaces.
-    for ns, keys in NAMESPACES.iteritems():
-        if isinstance(keys, dict):
-            if ns != namespace:
-                for key, value in keys.iteritems():
-                    if key.lower() == name.lower():
-                        return ns, key, value
-        else:
-            if ns.lower() == name.lower():
-                return None, key, value
-
+    try:
+        return namespace, name.upper(), NAMESPACES[namespace][name.upper()]
+    except KeyError:
+        # - Try all the other namespaces.
+        for ns, keys in NAMESPACES.iteritems():
+            if ns.upper() == name.upper():
+                return None, ns, keys
+            elif isinstance(keys, dict):
+                try:
+                    return ns, name.upper(), keys[name.upper()]
+                except KeyError:
+                    pass
     # - See if name is a qualname last.
     return None, name.upper(), DEFAULTS[name.upper()]

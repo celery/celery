@@ -31,6 +31,13 @@ class test_defaults(Case):
         with sys_platform("java 1.6.51"):
             self.assertEqual(self.defaults.DEFAULT_POOL, "threads")
 
+    def test_find(self):
+        find = self.defaults.find
+
+        self.assertEqual(find("server_email")[2].default, "celery@localhost")
+        self.assertEqual(find("default_queue")[2].default, "celery")
+        self.assertEqual(find("celery_default_exchange")[2], "celery")
+
     @property
     def defaults(self):
         return import_module("celery.app.defaults")
