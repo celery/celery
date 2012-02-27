@@ -35,8 +35,9 @@ class WorkerComponent(StartStopComponent):
 
     def __init__(self, w, **kwargs):
         w.mediator = None
-        if w.disable_rate_limits and not w.pool_cls.requires_mediator:
-            self.enabled = False
+
+    def include_if(self, w):
+        return not w.disable_rate_limits or w.pool_cls.requires_mediator
 
     def create(self, w):
         m = w.mediator = self.instantiate(w.mediator_cls, w.ready_queue,

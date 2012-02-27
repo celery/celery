@@ -269,7 +269,7 @@ class WorkController(configurated):
             self._shutdown(warm=False)
 
     def _shutdown(self, warm=True):
-        what = (warm and "stopping" or "terminating").capitalize()
+        what = "Stopping" if warm else "Terminating"
 
         if self._state in (self.CLOSE, self.TERMINATE):
             return

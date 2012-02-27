@@ -102,6 +102,7 @@ class Timer(timer2.Timer):
 class TaskPool(base.BasePool):
     Timer = Timer
 
+    rlimit_safe = False
     signal_safe = False
     is_green = True
 
