@@ -23,7 +23,7 @@ configuration values.
 
 #. Add :mod:`django.transport.kombu` to `INSTALLED_APPS`::
 
-    INSTALLED_APPS = ("django.transport.kombu", )
+    INSTALLED_APPS = ("kombu.transport.django", )
 
 #. Verify your database settings::
 
