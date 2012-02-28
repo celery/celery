@@ -11,7 +11,7 @@ Inspired by http://snippets.dzone.com/posts/show/7248
 .. code-block:: python
 
     from celery.contrib import rdb
-    from celery.decorators import task
+    from celery.task import task
 
     @task
     def add(x, y):
