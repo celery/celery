@@ -32,7 +32,18 @@ class Proxy(object):
 
     def __init__(self, local, name=None):
         object.__setattr__(self, '_Proxy__local', local)
-        object.__setattr__(self, '__name__', name)
+        object.__setattr__(self, '__custom_name__', name)
+
+    @property
+    def __name__(self):
+        try:
+            return object.__getattr__(self, "__custom_name__")
+        except AttributeError:
+            return self._get_current_object().__name__
+
+    @property
+    def __doc__(self):
+        return self._get_current_object().__doc__
 
     def _get_current_object(self):
         """Return the current object.  This is useful if you want the real
