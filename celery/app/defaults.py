@@ -91,8 +91,6 @@ NAMESPACES = {
     'CELERY': {
         'ACKS_LATE': Option(False, type='bool'),
         'ALWAYS_EAGER': Option(False, type='bool'),
-        'AMQP_TASK_RESULT_CONNECTION_MAX': Option(1, type='int',
-                remove_by='2.5', alt='BROKER_POOL_LIMIT'),
         'ANNOTATIONS': Option(type='any'),
         'BROADCAST_QUEUE': Option('celeryctl'),
         'BROADCAST_EXCHANGE': Option('celeryctl'),

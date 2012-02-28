@@ -8,7 +8,6 @@ from celery.app.defaults import NAMESPACES, flatten
 ignore = frozenset([
     "BROKER_INSIST",
     "CELERYD_POOL_PUTLOCKS",
-    "CELERY_AMQP_TASK_RESULT_CONNECTION_MAX",
     "BROKER_HOST",
     "BROKER_USER",
     "BROKER_PASSWORD",
