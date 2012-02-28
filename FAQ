@@ -503,8 +503,7 @@ For more information see :ref:`task-request-info`.
 Can I specify a custom task_id?
 -------------------------------
 
-**Answer**: Yes.  Use the `task_id` argument to
-:meth:`~celery.execute.apply_async`::
+**Answer**: Yes.  Use the `task_id` argument to :meth:`Task.apply_async`::
 
     >>> task.apply_async(args, kwargs, task_id="...")
 

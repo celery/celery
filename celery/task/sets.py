@@ -29,8 +29,7 @@ class subtask(AttributeDict):
     :param task: Either a task class/instance, or the name of a task.
     :keyword args: Positional arguments to apply.
     :keyword kwargs: Keyword arguments to apply.
-    :keyword options: Additional options to
-      :func:`celery.execute.apply_async`.
+    :keyword options: Additional options to :meth:`Task.apply_async`.
 
     Note that if the first argument is a :class:`dict`, the other
     arguments will be ignored and the values in the dict will be used

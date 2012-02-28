@@ -129,7 +129,7 @@ To route a task to the `feed_tasks` queue, you can add an entry in the
 
 
 You can also override this using the `routing_key` argument to
-:func:`~celery.execute.apply_async`, or :func:`~celery.execute.send_task`:
+:meth:`Task.apply_async`, or :func:`~celery.execute.send_task`:
 
     >>> from feeds.tasks import import_feed
     >>> import_feed.apply_async(args=["http://cnn.com/rss"],
@@ -491,7 +491,7 @@ Specifying task destination
 The destination for a task is decided by the following (in order):
 
 1. The :ref:`routers` defined in :setting:`CELERY_ROUTES`.
-2. The routing arguments to :func:`~celery.execute.apply_async`.
+2. The routing arguments to :func:`Task.apply_async`.
 3. Routing related attributes defined on the :class:`~celery.task.base.Task`
    itself.
 
