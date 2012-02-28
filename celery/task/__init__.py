@@ -70,12 +70,14 @@ def periodic_task(*args, **options):
 
             .. code-block:: python
 
+                from celery.task import current
+
                 @task(exchange="feeds")
                 def refresh_feed(url):
                     try:
                         return Feed.objects.get(url=url).refresh()
                     except socket.error, exc:
-                        refresh_feed.retry(exc=exc)
+                        current.retry(exc=exc)
 
             Calling the resulting task:
 
