@@ -6,7 +6,6 @@ from sys import exit, stderr
 from celery.app.defaults import NAMESPACES, flatten
 
 ignore = frozenset([
-    "BROKER_INSIST",
     "CELERYD_POOL_PUTLOCKS",
     "BROKER_HOST",
     "BROKER_USER",

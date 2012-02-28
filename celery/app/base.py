@@ -192,10 +192,9 @@ class Celery(object):
                         countdown=countdown, eta=eta,
                         expires=expires, **options))
 
-    def connection(self, hostname=None, userid=None,
-            password=None, virtual_host=None, port=None, ssl=None,
-            insist=None, connect_timeout=None, transport=None,
-            transport_options=None, **kwargs):
+    def connection(self, hostname=None, userid=None, password=None,
+            virtual_host=None, port=None, ssl=None, connect_timeout=None,
+            transport=None, transport_options=None, **kwargs):
         conf = self.conf
         return self.amqp.Connection(
                     hostname or conf.BROKER_HOST,
@@ -204,7 +203,6 @@ class Celery(object):
                     virtual_host or conf.BROKER_VHOST,
                     port or conf.BROKER_PORT,
                     transport=transport or conf.BROKER_TRANSPORT,
-                    insist=self.either('BROKER_INSIST', insist),
                     ssl=self.either('BROKER_USE_SSL', ssl),
                     connect_timeout=self.either(
                                 'BROKER_CONNECTION_TIMEOUT', connect_timeout),
