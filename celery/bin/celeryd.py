@@ -96,8 +96,8 @@ class WorkerCommand(Command):
         # Pools like eventlet/gevent needs to patch libs as early
         # as possible.
         from celery import concurrency
-        kwargs["pool"] = concurrency.get_implementation(
-                    kwargs.get("pool") or self.app.conf.CELERYD_POOL)
+        kwargs["pool_cls"] = concurrency.get_implementation(
+                    kwargs.get("pool_cls") or self.app.conf.CELERYD_POOL)
         return self.app.Worker(**kwargs).run()
 
     def get_options(self):
