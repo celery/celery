@@ -2,13 +2,13 @@
 from __future__ import absolute_import
 
 import os
-import sys
-
-from time import time
-
 if not os.environ.get("GEVENT_NOPATCH"):
     from gevent import monkey
     monkey.patch_all()
+
+import sys
+
+from time import time
 
 from ..utils import timer2
 

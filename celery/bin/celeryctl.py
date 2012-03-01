@@ -7,6 +7,7 @@ if __name__ == "__main__" and __package__ is None:
 
 import sys
 
+from importlib import import_module
 from optparse import OptionParser, make_option as Option
 from pprint import pformat
 from textwrap import wrap
@@ -372,11 +373,22 @@ class shell(Command):
                 Option("--without-tasks", "-T", action="store_true",
                     dest="without_tasks", default=False,
                     help="Don't add tasks to locals."),
+                Option("--eventlet", action="store_true",
+                    dest="eventlet", default=False,
+                    help="Use eventlet."),
+                Option("--gevent", action="store_true",
+                    dest="gevent", default=False,
+                    help="Use gevent."),
     )
 
     def run(self, force_ipython=False, force_bpython=False,
-            force_python=False, without_tasks=False, **kwargs):
+            force_python=False, without_tasks=False, eventlet=False,
+            gevent=False, **kwargs):
         from .. import registry
+        if eventlet:
+            import_module("celery.concurrency.eventlet")
+        if gevent:
+            import_module("celery.concurrency.gevent")
         self.app.loader.import_default_modules()
         self.locals = {"celery": self.app}
 
