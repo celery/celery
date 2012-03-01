@@ -5,8 +5,38 @@
 .. contents::
     :local:
 
-.. _version-2.5.0:
+.. _version-2.5.1:
 
+2.5.1
+=====
+:release-date: 2012-03-01 01:00 P.M GMT
+:by: Ask Solem
+
+.. _v251-fixes:
+
+Fixes
+-----
+
+* Eventlet/Gevent: A small typo caused celeryd to hang when eventlet/gevent
+  was used, this was because the environment was not monkey patched
+  early enough.
+
+* Eventlet/Gevent: Another small typo caused the mediator to be started
+  with eventlet/gevent, which would make celeryd sometimes hang at shutdown.
+
+* Mulitprocessing: Fixed an error occurring if the pool was stopped
+  before it was properly started.
+
+* Proxy objects now redirects ``__doc__`` and ``__name__`` so ``help(obj)``
+  works.
+
+* Internal timer (timer2) now logs exceptions instead of swallowing them
+  (Issue #626).
+
+* celeryctl shell: can now be started with :option:`--eventlet` or
+  :option:`--gevent` options to apply their monkey patches.
+
+.. _version-2.5.0:
 
 2.5.0
 =====
