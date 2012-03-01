@@ -358,10 +358,9 @@ class SilenceRepeated(object):
         self.max_iterations = max_iterations
         self._iterations = 0
 
-    def __call__(self, *msgs):
+    def __call__(self, *args, **kwargs):
         if not self._iterations or self._iterations >= self.max_iterations:
-            for msg in msgs:
-                self.action(msg)
+            self.action(*args, **kwargs)
             self._iterations = 0
         else:
             self._iterations += 1

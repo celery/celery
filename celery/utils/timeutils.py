@@ -17,6 +17,8 @@ from datetime import datetime, timedelta
 from dateutil import tz
 from dateutil.parser import parse as parse_iso8601
 
+from . import pluralize
+
 try:
     import pytz
 except ImportError:
@@ -189,8 +191,8 @@ def humanize_seconds(secs, prefix=""):
     for unit, divider, formatter in TIME_UNITS:
         if secs >= divider:
             w = secs / divider
-            punit = w > 1 and (unit + "s") or unit
-            return "%s%s %s" % (prefix, formatter(w), punit)
+            return "%s%s %s" % (prefix, formatter(w),
+                                pluralize(w, unit))
     return "now"
 
 

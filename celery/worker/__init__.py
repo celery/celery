@@ -232,7 +232,7 @@ class WorkController(configurated):
         except SystemTerminate:
             self.terminate()
         except Exception, exc:
-            self.logger.error("Unrecoverable error: %r" % (exc, ),
+            self.logger.error("Unrecoverable error: %r", exc,
                               exc_info=sys.exc_info())
             self.stop()
         except (KeyboardInterrupt, SystemExit):
@@ -301,10 +301,10 @@ class WorkController(configurated):
 
         for module in set(modules or ()):
             if module not in sys.modules:
-                self.logger.debug("importing module %s" % (module, ))
+                self.logger.debug("importing module %s", module)
                 imp(module)
             elif reload:
-                self.logger.debug("reloading module %s" % (module, ))
+                self.logger.debug("reloading module %s", module)
                 reload_from_cwd(sys.modules[module], reloader)
         self.pool.restart()
 
@@ -312,7 +312,7 @@ class WorkController(configurated):
         self.logger.error("Timer error: %r", einfo[1], exc_info=einfo)
 
     def on_timer_tick(self, delay):
-        self.timer_debug("Scheduler wake-up! Next eta %s secs." % delay)
+        self.timer_debug("Scheduler wake-up! Next eta %s secs.", delay)
 
     @property
     def state(self):

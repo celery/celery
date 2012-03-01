@@ -104,6 +104,7 @@ from time import sleep
 from .. import __version__
 from ..platforms import shellsplit
 from ..utils import term
+from ..utils import pluralize
 from ..utils.encoding import from_utf8
 
 SIGNAMES = set(sig for sig in dir(signal)
@@ -188,8 +189,8 @@ class MultiTool(object):
 
         return self.retcode
 
-    def say(self, msg):
-        self.fh.write("%s\n" % (msg, ))
+    def say(self, m, newline=True):
+        self.fh.write("%s\n" % m if m else m)
 
     def names(self, argv, cmd):
         p = NamespacedOptionParser(argv)
@@ -273,7 +274,7 @@ class MultiTool(object):
             left = len(P)
             if left:
                 self.note(self.colored.blue("> Waiting for %s %s..." % (
-                    left, left > 1 and "nodes" or "node")), newline=False)
+                    left, pluralize(left, "node"))), newline=False)
 
         if retry:
             note_waiting()
@@ -360,11 +361,11 @@ class MultiTool(object):
             self.say(expander(template))
 
     def help(self, argv, cmd=None):
-        say(__doc__)
+        self.say(__doc__)
 
     def usage(self):
         self.splash()
-        say(USAGE % {"prog_name": self.prog_name})
+        self.say(USAGE % {"prog_name": self.prog_name})
 
     def splash(self):
         if not self.nosplash:
@@ -386,7 +387,7 @@ class MultiTool(object):
 
     def error(self, msg=None):
         if msg:
-            say(msg)
+            self.say(msg)
         self.usage()
         self.retcode = 1
         return 1
@@ -397,7 +398,7 @@ class MultiTool(object):
 
     def note(self, msg, newline=True):
         if not self.quiet:
-            say(str(msg), newline=newline)
+            self.say(str(msg), newline=newline)
 
 
 def multi_args(p, cmd="celeryd", append="", prefix="", suffix=""):
@@ -529,10 +530,6 @@ def abbreviations(map):
         return ret
 
     return expand
-
-
-def say(m, newline=True):
-    sys.stderr.write(newline and "%s\n" % (m, ) or m)
 
 
 def findsig(args, default=signal.SIGTERM):

@@ -224,9 +224,9 @@ class Autoreloader(bgThread):
     def on_change(self, files):
         modified = [f for f in files if self._maybe_modified(f)]
         if modified:
-            self.logger.info("Detected modified modules: %s" % (
-                    map(self._module_name, modified), ))
-            self._reload(map(self._module_name, modified))
+            names = [self._module_name(module) for module in modified]
+            self.logger.info("Detected modified modules: %r", names)
+            self._reload(names)
 
     def _reload(self, modules):
         self.controller.reload(modules, reload=True)

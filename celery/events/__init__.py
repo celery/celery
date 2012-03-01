@@ -158,14 +158,15 @@ class EventReceiver(object):
     handlers = {}
 
     def __init__(self, connection, handlers=None, routing_key="#",
-            node_id=None, app=None):
+            node_id=None, app=None, queue_prefix="celeryev"):
         self.app = app_or_default(app)
         self.connection = connection
         if handlers is not None:
             self.handlers = handlers
         self.routing_key = routing_key
         self.node_id = node_id or uuid()
-        self.queue = Queue("%s.%s" % ("celeryev", self.node_id),
+        self.queue_prefix = queue_prefix
+        self.queue = Queue('.'.join([self.queue_prefix, self.node_id]),
                            exchange=event_exchange,
                            routing_key=self.routing_key,
                            auto_delete=True,

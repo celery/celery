@@ -16,7 +16,7 @@ from .. import __version__, platforms, signals
 from ..app import app_or_default
 from ..app.abstract import configurated, from_config
 from ..exceptions import ImproperlyConfigured, SystemTerminate
-from ..utils import isatty, LOG_LEVELS, cry, qualname
+from ..utils import cry, isatty, LOG_LEVELS, pluralize, qualname
 from ..worker import WorkController
 
 try:
@@ -165,8 +165,8 @@ class Worker(configurated):
 
     def purge_messages(self):
         count = self.app.control.discard_all()
-        what = (not count or count > 1) and "messages" or "message"
-        print("discard: Erased %d %s from the queue.\n" % (count, what))
+        print("discard: Erased %d %s from the queue.\n" % (
+                count, pluralize(count, "message")))
 
     def worker_init(self):
         # Run the worker init handler.

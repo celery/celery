@@ -166,7 +166,7 @@ class Batches(Task):
         if self._buffer.qsize():
             requests = list(consume_queue(self._buffer))
             if requests:
-                self.debug("Buffer complete: %s" % (len(requests), ))
+                self.debug("Buffer complete: %s", len(requests))
                 self.flush(requests)
         if not requests:
             self.debug("Cancelling timer: Nothing in buffer.")

@@ -17,7 +17,7 @@ from anyjson import deserialize
 from .. import __version__
 from ..app import app_or_default, current_app
 from ..platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
-from ..utils import term
+from ..utils import pluralize, term
 from ..utils.timeutils import maybe_iso8601
 
 from ..bin.base import Command as CeleryCommand
@@ -206,12 +206,6 @@ class apply(Command):
 apply = command(apply)
 
 
-def pluralize(n, text, suffix='s'):
-    if n > 1:
-        return text + suffix
-    return text
-
-
 class purge(Command):
 
     def run(self, *args, **kwargs):
@@ -334,7 +328,7 @@ class status(Command):
         nodecount = len(replies)
         if not kwargs.get("quiet", False):
             self.out("\n%s %s online." % (nodecount,
-                                          nodecount > 1 and "nodes" or "node"))
+                                          pluralize(nodecount, "node")))
 status = command(status)
 
 

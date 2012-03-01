@@ -827,8 +827,10 @@ class test_WorkController(AppCase):
         worker.timer_debug = worker.logger.debug
 
         worker.on_timer_tick(30.0)
-        logged = worker.logger.debug.call_args[0][0]
-        self.assertIn("30.0", logged)
+        xargs = worker.logger.debug.call_args[0]
+        fmt, arg = xargs[0], xargs[1]
+        self.assertEqual(30.0, arg)
+        self.assertIn("Next eta %s secs", fmt)
 
     def test_process_task(self):
         worker = self.worker

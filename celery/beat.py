@@ -23,6 +23,8 @@ try:
 except ImportError:
     multiprocessing = None  # noqa
 
+from kombu.utils import reprcall
+
 from . import __version__
 from . import platforms
 from . import registry
@@ -116,8 +118,9 @@ class ScheduleEntry(object):
         return vars(self).iteritems()
 
     def __repr__(self):
-        return ("<Entry: %(name)s %(task)s(*%(args)s, **%(kwargs)s) "
-                "{%(schedule)s}>" % vars(self))
+        return ("<Entry: %s %s {%s}" % (self.name,
+                    reprcall(self.task, self.args, self.kwargs),
+                    self.schedule))
 
 
 class Scheduler(object):
@@ -401,8 +404,8 @@ class Service(object):
         try:
             while not self._is_shutdown.isSet():
                 interval = self.scheduler.tick()
-                self.debug("Celerybeat: Waking up %s." % (
-                        humanize_seconds(interval, prefix="in ")))
+                self.debug("Celerybeat: Waking up %s.",
+                           humanize_seconds(interval, prefix="in "))
                 time.sleep(interval)
         except (KeyboardInterrupt, SystemExit):
             self._is_shutdown.set()
