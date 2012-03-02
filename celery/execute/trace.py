@@ -195,7 +195,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     except Exception, exc:
                         logger = current_app.log.get_default_logger()
                         logger.error("Process cleanup failed: %r", exc,
-                                     exc_info=sys.exc_info())
+                                     exc_info=True)
         except Exception, exc:
             if eager:
                 raise

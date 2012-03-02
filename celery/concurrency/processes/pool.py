@@ -76,7 +76,7 @@ def safe_apply_callback(fun, *args):
             fun(*args)
         except BaseException, exc:
             error("Pool callback raised exception: %r", exc,
-                  exc_info=sys.exc_info())
+                  exc_info=True)
 
 
 class LaxBoundedSemaphore(threading._Semaphore):
@@ -239,7 +239,7 @@ class PoolThread(threading.Thread):
             return self.body()
         except Exception, exc:
             error("Thread %r crashed: %r" % (self.__class__.__name__, exc, ),
-                  exc_info=sys.exc_info())
+                  exc_info=True)
             os._exit(1)
 
     def terminate(self):

@@ -11,8 +11,6 @@
 """
 from __future__ import absolute_import
 
-import sys
-
 from datetime import datetime
 
 from ..platforms import signals as _signals
@@ -102,7 +100,7 @@ def rate_limit(panel, task_name, rate_limit, **kwargs):
         tasks[task_name].rate_limit = rate_limit
     except KeyError:
         panel.logger.error("Rate limit attempt for unknown task %s",
-                           task_name, exc_info=sys.exc_info())
+                           task_name, exc_info=True)
         return {"error": "unknown task"}
 
     if not hasattr(panel.consumer.ready_queue, "refresh"):
