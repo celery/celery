@@ -78,9 +78,7 @@ from __future__ import with_statement
 
 import logging
 import socket
-import sys
 import threading
-import traceback
 import warnings
 
 from ..abstract import StartStopComponent
@@ -340,7 +338,7 @@ class Consumer(object):
             except self.connection_errors + self.channel_errors:
                 self.logger.error("Consumer: Connection to broker lost."
                                 + " Trying to re-establish the connection...",
-                                exc_info=sys.exc_info())
+                                exc_info=True)
 
     def consume_messages(self):
         """Consume messages forever (or until an exception is raised)."""
@@ -388,7 +386,7 @@ class Consumer(object):
                 self.logger.error(
                     "Couldn't convert eta %s to timestamp: %r. Task: %r",
                     task.eta, exc, task.info(safe=True),
-                    exc_info=sys.exc_info())
+                    exc_info=True)
                 task.acknowledge()
             else:
                 self.qos.increment()
@@ -406,8 +404,8 @@ class Consumer(object):
             self.logger.error("No such control command: %s", exc)
         except Exception, exc:
             self.logger.error(
-                "Error occurred while handling control command: %r\n%r",
-                    exc, traceback.format_exc(), exc_info=sys.exc_info())
+                "Error occurred while handling control command: %r",
+                    exc, exc_info=True)
             self.reset_pidbox_node()
 
     def apply_eta_task(self, task):
@@ -444,11 +442,11 @@ class Consumer(object):
             self.strategies[name](message, body, message.ack_log_error)
         except KeyError, exc:
             self.logger.error(UNKNOWN_TASK_ERROR, exc, safe_repr(body),
-                              exc_info=sys.exc_info())
+                              exc_info=True)
             message.ack_log_error(self.logger, self.connection_errors)
         except InvalidTaskError, exc:
             self.logger.error(INVALID_TASK_ERROR, str(exc), safe_repr(body),
-                              exc_info=sys.exc_info())
+                              exc_info=True)
             message.ack_log_error(self.logger, self.connection_errors)
 
     def maybe_conn_error(self, fun):
