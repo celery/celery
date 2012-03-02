@@ -456,6 +456,7 @@ help = command(help)
 
 class celeryctl(CeleryCommand):
     commands = commands
+    enable_config_from_cmdline = True
 
     def execute(self, command, argv=None):
         try:
