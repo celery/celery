@@ -41,7 +41,10 @@ class bgThread(Thread):
 
     def on_crash(self, exc_info, msg, *fmt, **kwargs):
         sys.stderr.write((msg + "\n") % fmt)
-        traceback.print_exception(*exc_info, file=sys.stderr)
+        traceback.print_exception(exc_info[0],
+                                  exc_info[1],
+                                  exc_info[2],
+                                  None, sys.__stderr__)
 
     def run(self):
         shutdown = self._is_shutdown
