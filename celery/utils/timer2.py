@@ -194,7 +194,10 @@ class Timer(Thread):
                 if not self.schedule.handle_error(exc_info):
                     warnings.warn(TimedFunctionFailed(repr(exc))),
                     sys.stderr.write("Error in timer: %r\n" % (exc, ))
-                    traceback.print_exception(*exc_info, file=sys.stderr)
+                    traceback.print_exception(exc_info[0],
+                                              exc_info[1],
+                                              exc_info[2],
+                                              None, sys.__stderr__)
             finally:
                 del(exc_info)
 
