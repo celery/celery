@@ -1,5 +1,6 @@
 paver
 flake8
+flakeplus
 tox
 Sphinx-PyPI-upload
 bundle>=1.1.0
