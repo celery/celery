@@ -136,7 +136,7 @@ if is_jython:
 
 # -*- Tests Requires -*-
 
-tests_require = ["nose", "nose-cover3", "sqlalchemy", "mock"]
+tests_require = ["nose", "nose-cover3", "sqlalchemy", "mock", "cl"]
 if sys.version_info < (2, 7):
     tests_require.append("unittest2")
 elif sys.version_info <= (2, 5):
