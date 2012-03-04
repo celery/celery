@@ -13,14 +13,17 @@ from optparse import OptionParser, BadOptionError
 from .. import __version__
 from ..platforms import detached
 
-from .base import daemon_options
+from .base import daemon_options, Option
 
-OPTION_LIST = daemon_options(default_pidfile="celeryd.pid")
+OPTION_LIST = daemon_options(default_pidfile="celeryd.pid") + (
+                Option("--fake",
+                       default=False, action="store_true", dest="fake",
+                       help="Don't fork (for debugging purposes)"), )
 
 
 def detach(path, argv, logfile=None, pidfile=None, uid=None,
-           gid=None, umask=0, working_directory=None):
-    with detached(logfile, pidfile, uid, gid, umask, working_directory):
+           gid=None, umask=0, working_directory=None, fake=False, ):
+    with detached(logfile, pidfile, uid, gid, umask, working_directory, fake):
         try:
             os.execv(path, [path] + argv)
         except Exception:

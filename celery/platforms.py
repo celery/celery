@@ -214,14 +214,16 @@ class DaemonContext(object):
     workdir = DAEMON_WORKDIR
     umask = DAEMON_UMASK
 
-    def __init__(self, pidfile=None, workdir=None,
-            umask=None, **kwargs):
+    def __init__(self, pidfile=None, workdir=None, umask=None,
+            fake=False, **kwargs):
         self.workdir = workdir or self.workdir
         self.umask = self.umask if umask is None else umask
+        self.fake = fake
 
     def open(self):
         if not self._is_open:
-            self._detach()
+            if not self.fake:
+                self._detach()
 
             os.chdir(self.workdir)
             os.umask(self.umask)
@@ -256,7 +258,7 @@ class DaemonContext(object):
 
 
 def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
-             workdir=None, **opts):
+             workdir=None, fake=False, **opts):
     """Detach the current process in the background (daemonize).
 
     :keyword logfile: Optional log file.  The ability to write to this file
@@ -270,6 +272,7 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
       privileges to.
     :keyword umask: Optional umask that will be effective in the child process.
     :keyword workdir: Optional new working directory.
+    :keyword fake: Don't actually detach, intented for debugging purposes.
     :keyword \*\*opts: Ignored.
 
     **Example**:
@@ -307,7 +310,7 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
     # Doesn't actually create the pidfile, but makes sure it's not stale.
     pidfile and create_pidlock(pidfile)
 
-    return DaemonContext(umask=umask, workdir=workdir)
+    return DaemonContext(umask=umask, workdir=workdir, fake=fake)
 
 
 def parse_uid(uid):
