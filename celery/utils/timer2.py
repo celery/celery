@@ -232,7 +232,7 @@ class Timer(Thread):
                 pass
         except Exception, exc:
             self.logger.error("Thread Timer crashed: %r", exc,
-                              exc_info=sys.exc_info())
+                              exc_info=True)
             os._exit(1)
 
     def stop(self):

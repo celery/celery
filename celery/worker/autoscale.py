@@ -17,9 +17,7 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-import sys
 import threading
-import traceback
 
 from time import sleep, time
 
@@ -113,9 +111,7 @@ class Autoscaler(bgThread):
             self.logger.debug(
                 "Autoscaler won't scale down: all processes busy.")
         except Exception, exc:
-            self.logger.error("Autoscaler: scale_down: %r\n%r",
-                                exc, traceback.format_stack(),
-                                exc_info=sys.exc_info())
+            self.logger.error("Autoscaler: scale_down: %r", exc, exc_info=True)
 
     def scale_down(self, n):
         if not self._last_action or not n:

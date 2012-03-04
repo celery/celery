@@ -31,7 +31,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
             from ..log import setup_logger
             logger = setup_logger(logfile=logfile, loglevel=logging.ERROR)
             logger.critical("Can't exec %r", " ".join([path] + argv),
-                            exc_info=sys.exc_info())
+                            exc_info=True)
 
 
 class PartialOptionParser(OptionParser):

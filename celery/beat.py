@@ -179,7 +179,7 @@ class Scheduler(object):
             except Exception, exc:
                 self.logger.error("Message Error: %s\n%s", exc,
                                   traceback.format_stack(),
-                                  exc_info=sys.exc_info())
+                                  exc_info=True)
             else:
                 self.logger.debug("%s sent. id->%s", entry.task,
                                                      result.task_id)
