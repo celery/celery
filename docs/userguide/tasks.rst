@@ -791,7 +791,7 @@ base class for new task types.
     class DebugTask(Task):
         abstract = True
 
-        def after_return(self, \*args, \*\*kwargs):
+        def after_return(self, *args, **kwargs):
             print("Task returned: %r" % (self.request, ))
 
 
