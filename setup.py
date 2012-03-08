@@ -118,9 +118,9 @@ install_requires.extend([
     "kombu>=2.1.2,<3.0",
 ])
 if is_py3k:
-    install_requires.append("python-dateutil>=2.0.0")
+    install_requires.append("python-dateutil>=2.0")
 else:
-    install_requires.append("python-dateutil>=1.5.0,<2.0.0")
+    install_requires.append("python-dateutil>=1.5,<2.0")
 
 py_version = sys.version_info
 is_jython = sys.platform.startswith("java")
