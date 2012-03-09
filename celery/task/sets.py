@@ -69,6 +69,12 @@ class subtask(AttributeDict):
         options = dict(self.options, **options)
         return self.type.apply(args, kwargs, **options)
 
+    def clone(self, args=(), kwargs={}, **options):
+        return self.__class__(self.task,
+                              args=tuple(args) + tuple(self.args),
+                              kwargs=dict(self.kwargs, **kwargs),
+                              **dict(self.options, **options))
+
     def apply_async(self, args=(), kwargs={}, **options):
         """Apply this task asynchronously."""
         # For callbacks: extra args are prepended to the stored args.
