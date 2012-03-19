@@ -148,23 +148,29 @@ class InotifyMonitor(_ProcessEvent):
         assert pyinotify
         self._modules = modules
         self._on_change = on_change
+        self._wm = None
+        self._notifier = None
 
     def start(self):
         try:
             self._wm = pyinotify.WatchManager()
-            self._notifier = pyinotify.Notifier(self._wm)
+            self._notifier = pyinotify.Notifier(self._wm, self)
             for m in self._modules:
-                self._wm.add_watch(m, pyinotify.IN_MODIFY)
+                self._wm.add_watch(m, pyinotify.IN_MODIFY|pyinotify.IN_ATTRIB)
             self._notifier.loop()
         finally:
-            self.close()
+            if self._wm:
+                self._wm.close()
+                # Notifier.close is called at the end of Notifier.loop
+                self._wm = self._notifier = None
 
-    def close(self):
-        self._notifier.stop()
-        self._wm.close()
+    def stop(self):
+        pass
 
-    def process_IN_MODIFY(self, event):
-        self.on_change(event.pathname)
+    def process_(self, event):
+        self.on_change([event.path])
+
+    process_IN_ATTRIB = process_IN_MODIFY = process_
 
     def on_change(self, modified):
         if self._on_change:
