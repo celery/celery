@@ -1,4 +1,4 @@
-python-dateutil>=2.0.0
+python-dateutil>=2.0
 anyjson>=0.3.1
 pytz
 kombu>=2.1.0
