@@ -435,7 +435,7 @@ class Consumer(object):
                 "Received and deleted unknown message. Wrong destination?!? \
                 the full contents of the message body was: %s" % (
                  self._message_report(body, message), )))
-            message.ack_log_error(self.logger, self.connection_errors)
+            message.reject_log_error(self.logger, self.connection_errors)
             return
 
         try:
@@ -443,11 +443,11 @@ class Consumer(object):
         except KeyError, exc:
             self.logger.error(UNKNOWN_TASK_ERROR, exc, safe_repr(body),
                               exc_info=True)
-            message.ack_log_error(self.logger, self.connection_errors)
+            message.reject_log_error(self.logger, self.connection_errors)
         except InvalidTaskError, exc:
             self.logger.error(INVALID_TASK_ERROR, str(exc), safe_repr(body),
                               exc_info=True)
-            message.ack_log_error(self.logger, self.connection_errors)
+            message.reject_log_error(self.logger, self.connection_errors)
 
     def maybe_conn_error(self, fun):
         """Applies function but ignores any connection or channel
