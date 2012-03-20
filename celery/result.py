@@ -56,15 +56,14 @@ class AsyncResult(object):
         """Forget about (and possibly remove the result of) this task."""
         self.backend.forget(self.task_id)
 
-    def revoke(self, connection=None, connect_timeout=None):
+    def revoke(self, connection=None):
         """Send revoke signal to all workers.
 
         Any worker receiving the task, or having reserved the
         task, *must* ignore it.
 
         """
-        self.app.control.revoke(self.task_id, connection=connection,
-                                connect_timeout=connect_timeout)
+        self.app.control.revoke(self.task_id, connection=connection)
 
     def get(self, timeout=None, propagate=True, interval=0.5):
         """Wait until task is ready, and return its result.
@@ -291,9 +290,9 @@ class ResultSet(object):
         for result in self.results:
             result.forget()
 
-    def revoke(self, connection=None, connect_timeout=None):
+    def revoke(self, connection=None):
         """Revoke all tasks in the set."""
-        with self.app.default_connection(connection, connect_timeout) as conn:
+        with self.app.default_connection(connection) as conn:
             for result in self.results:
                 result.revoke(connection=conn)
 
