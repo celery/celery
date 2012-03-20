@@ -130,7 +130,7 @@ class Queues(abstract.Component):
                 # just send task directly to pool, skip the mediator.
                 w.ready_queue.put = w.process_task
         else:
-            w.ready_queue = TaskBucket(task_registry=self.app.tasks)
+            w.ready_queue = TaskBucket(task_registry=w.app.tasks)
 
 
 class Timers(abstract.Component):

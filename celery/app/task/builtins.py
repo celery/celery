@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 _builtins = []
 
+
 def builtin_task(constructor):
     _builtins.append(constructor)
     return constructor
@@ -27,9 +28,9 @@ def add_unlock_chord_task(app):
         from ...result import AsyncResult, TaskSetResult
         from ...task.sets import subtask
 
+        j = result.join_native if result.supports_native_join else result.join
         result = TaskSetResult(setid, map(AsyncResult, result))
         if result.ready():
-            j = result.join_native if result.supports_native_join else result.join
             subtask(callback).delay(j(propagate=propagate))
         else:
             unlock_chord.retry(countdown=interval, max_retries=max_retries)
@@ -40,5 +41,3 @@ def add_unlock_chord_task(app):
 def load_builtins(app):
     for constructor in _builtins:
         constructor(app)
-
-
