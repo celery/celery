@@ -4,12 +4,14 @@
  Routing Tasks
 ===============
 
-.. warning::
+.. note::
 
-    This document refers to functionality only available in brokers
-    using AMQP.  Other brokers may implement some functionality, see their
-    respective documentation for more information, or contact the
-    :ref:`mailing-list`.
+    Alternate routing concepts like topic and fanout may not be
+    available for all transports, please consult the `transport comparison table`_.
+
+.. _`transport comparison table`:
+    http://kombu.readthedocs.org/en/latest/introduction.html#transport-comparison
+
 
 .. contents::
     :local:
