@@ -11,11 +11,11 @@ def default(task, app, consumer):
     handle = consumer.on_task
     connection_errors = consumer.connection_errors
 
-    def task_message_handler(M, B, A):
-        handle(Req(B, on_ack=A, app=app, hostname=hostname,
+    def task_message_handler(message, body, ack):
+        handle(Req(body, on_ack=ack, app=app, hostname=hostname,
                          eventer=eventer, logger=logger,
                          connection_errors=connection_errors,
-                         delivery_info=M.delivery_info,
+                         delivery_info=message.delivery_info,
                          task=task))
 
     return task_message_handler
