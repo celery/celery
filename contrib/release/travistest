@@ -1,0 +1,4 @@
+#!/bin/bash
+#--
+export TOXENV="py$(echo $TRAVIS_PYTHON_VERSION | sed 's/\.//g')"
+tox
