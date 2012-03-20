@@ -27,7 +27,7 @@ from ..utils import (cached_property, get_cls_by_name,
 from ..utils.functional import maybe_list
 from ..utils.encoding import safe_str
 
-BUILTIN_MODULES = frozenset(["celery.task"])
+BUILTIN_MODULES = frozenset()
 
 ERROR_ENVVAR_NOT_SET = (
 """The environment variable %r is not set,
