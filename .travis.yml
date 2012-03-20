@@ -4,5 +4,4 @@ python:
     - 2.7
 install:
     - pip install --use-mirrors tox
-    - pip install -U kombu
 script: TOXENV=py$(echo $TRAVIS_PYTHON_VERSION | tr -d .) tox
