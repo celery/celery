@@ -60,6 +60,9 @@ class chord(object):
 
     def __call__(self, body, **options):
         tid = body.options.setdefault("task_id", uuid())
-        self.Chord.apply_async((list(self.tasks), body), self.options,
+        taskset_result = self.Chord.apply_async((list(self.tasks), body), self.options,
                                 **options)
-        return body.type.app.AsyncResult(tid)
+
+        if self.Chord.app.conf.CELERY_ALWAYS_EAGER:
+            return subtask(body).apply(args=(taskset_result.result.join(),))
+        return body.type.AsyncResult(tid)
