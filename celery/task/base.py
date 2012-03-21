@@ -17,6 +17,7 @@ from ..schedules import maybe_schedule
 
 class Task(BaseTask):
     abstract = True
+    compat = True       # see note in TaskType.
 
 
 class PeriodicTask(BaseTask):
@@ -26,6 +27,7 @@ class PeriodicTask(BaseTask):
     ignore_result = True
     relative = False
     options = None
+    compat = True
 
     def __init__(self):
         if not hasattr(self, "run_every"):

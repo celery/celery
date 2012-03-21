@@ -52,6 +52,17 @@ class TaskRegistry(dict):
         except KeyError:
             raise self.NotRegistered(key)
 
+    # -- these methods are irrelevant now and will be removed in 3.0
+    def regular(self):
+        return self.filter_types("regular")
+
+    def periodic(self):
+        return self.filter_types("periodic")
+
+    def filter_types(self, type):
+        return dict((name, task) for name, task in self.iteritems()
+                                    if task.type == type)
+
 
 def _unpickle_task(name):
     return current_app.tasks[name]

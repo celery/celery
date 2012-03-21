@@ -14,6 +14,7 @@ from __future__ import absolute_import
 
 ############## py3k #########################################################
 import sys
+is_py3k = sys.version_info[0] == 3
 
 try:
     reload = reload                     # noqa
@@ -30,7 +31,7 @@ try:
 except ImportError:
     from collections import UserDict    # noqa
 
-if sys.version_info >= (3, 0):
+if is_py3k:
     from io import StringIO, BytesIO
     from .encoding import bytes_to_str
 
@@ -44,6 +45,16 @@ else:
     except ImportError:
         from StringIO import StringIO   # noqa
     BytesIO = WhateverIO = StringIO     # noqa
+
+
+# im_func is no longer available in Py3.
+# instead the unbound method itself can be used.
+if is_py3k:
+    def fun_of_method(method):
+        return method
+else:
+    def fun_of_method(method):  # noqa
+        return method.im_func
 
 
 ############## collections.OrderedDict ######################################
