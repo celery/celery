@@ -78,7 +78,6 @@ class TaskType(type):
 
     def __new__(cls, name, bases, attrs):
         new = super(TaskType, cls).__new__
-        app = attrs.get("app") or current_app
         task_module = attrs.get("__module__") or "__main__"
 
         if "__call__" in attrs:
@@ -88,6 +87,13 @@ class TaskType(type):
         # - Abstract class: abstract attribute should not be inherited.
         if attrs.pop("abstract", None) or not attrs.get("autoregister", True):
             return new(cls, name, bases, attrs)
+
+        # The 'app' attribute is now a property, with the real app located
+        # in the '_app' attribute.  Previously this was a regular attribute,
+        # so we should support classes defining it.
+        app = attrs["_app"] = (attrs.pop("_app", None) or
+                               attrs.pop("app", None) or
+                               current_app)
 
         # - Automatically generate missing/empty name.
         autoname = False
@@ -125,9 +131,10 @@ class TaskType(type):
         task_name = attrs["name"]
         if task_name not in tasks:
             task_cls = new(cls, name, bases, attrs)
-            if autoname and task_module == "__main__" and task_cls.app.main:
-                task_name = task_cls.name = '.'.join([task_cls.app.main, name])
+            if autoname and task_module == "__main__" and app.main:
+                task_name = task_cls.name = '.'.join([app.main, name])
             tasks.register(task_cls)
+            task_cls.bind(app)
         task = tasks[task_name].__class__
 
         # decorate with annotations from config.
@@ -135,7 +142,9 @@ class TaskType(type):
         return task
 
     def __repr__(cls):
-        return "<class Task of %s>" % (cls.app, )
+        if cls._app:
+            return "<class %s of %s>" % (cls.__name__, cls._app, )
+        return "<unbound %s>" % (cls.__name__, )
 
 
 class BaseTask(object):
@@ -152,8 +161,11 @@ class BaseTask(object):
     ErrorMail = ErrorMail
     MaxRetriesExceededError = MaxRetriesExceededError
 
+    #: Execution strategy used, or the qualified name of one.
+    Strategy = "celery.worker.strategy:default"
+
     #: The application instance associated with this task class.
-    app = None
+    _app = None
 
     #: Name of the task.
     name = None
@@ -274,8 +286,56 @@ class BaseTask(object):
     #: Default task expiry time.
     expires = None
 
-    #: Execution strategy used, or the qualified name of one.
-    Strategy = "celery.worker.strategy:default"
+    from_config = (
+        ("exchange_type", "CELERY_DEFAULT_EXCHANGE_TYPE"),
+        ("delivery_mode", "CELERY_DEFAULT_DELIVERY_MODE"),
+        ("send_error_emails", "CELERY_SEND_TASK_ERROR_EMAILS"),
+        ("error_whitelist", "CELERY_TASK_ERROR_WHITELIST"),
+        ("serializer", "CELERY_TASK_SERIALIZER"),
+        ("rate_limit", "CELERY_DEFAULT_RATE_LIMIT"),
+        ("track_started", "CELERY_TRACK_STARTED"),
+        ("acks_late", "CELERY_ACKS_LATE"),
+        ("ignore_result", "CELERY_IGNORE_RESULT"),
+        ("store_errors_even_if_ignored",
+            "CELERY_STORE_ERRORS_EVEN_IF_IGNORED"),
+    )
+
+    @classmethod
+    def bind(cls, app):
+        cls._app = app
+        conf = app.conf
+
+        for attr_name, config_name in cls.from_config:
+            if getattr(cls, attr_name, None) is None:
+                setattr(cls, attr_name, conf[config_name])
+        cls.accept_magic_kwargs = app.accept_magic_kwargs
+        if cls.accept_magic_kwargs is None:
+            cls.accept_magic_kwargs = app.accept_magic_kwargs
+        if cls.backend is None:
+            cls.backend = app.backend
+
+        # e.g. PeriodicTask uses this to add itself to the PeriodicTask
+        # schedule.
+        cls.on_bound(app)
+
+        return app
+
+    @classmethod
+    def on_bound(self, app):
+        """This method can be defined to do additional actions when the
+        task class is bound to an app."""
+        pass
+
+    @classmethod
+    def _get_app(cls):
+        if cls._app is None:
+            cls.bind(current_app)
+        return cls._app
+
+    @classmethod
+    def _set_app(cls, app):
+        cls.bind(app)
+    app = property(_get_app, _set_app)
 
     def __reduce__(self):
         return (_unpickle_task, (self.name, ), None)
@@ -291,7 +351,7 @@ class BaseTask(object):
     def get_logger(self, loglevel=None, logfile=None, propagate=False,
             **kwargs):
         """Get task-aware logger object."""
-        return self.app.log.setup_task_logger(
+        return self._get_app().log.setup_task_logger(
             loglevel=self.request.loglevel if loglevel is None else loglevel,
             logfile=self.request.logfile if logfile is None else logfile,
             propagate=propagate, task_name=self.name, task_id=self.request.id)
@@ -299,7 +359,8 @@ class BaseTask(object):
     @classmethod
     def establish_connection(self, connect_timeout=None):
         """Establish a connection to the message broker."""
-        return self.app.broker_connection(connect_timeout=connect_timeout)
+        return self._get_app().broker_connection(
+                connect_timeout=connect_timeout)
 
     @classmethod
     def get_publisher(self, connection=None, exchange=None,
@@ -328,7 +389,7 @@ class BaseTask(object):
         if exchange_type is None:
             exchange_type = self.exchange_type
         connection = connection or self.establish_connection(connect_timeout)
-        return self.app.amqp.TaskPublisher(connection=connection,
+        return self._get_app().amqp.TaskPublisher(connection=connection,
                                            exchange=exchange,
                                            exchange_type=exchange_type,
                                            routing_key=self.routing_key,
@@ -353,7 +414,7 @@ class BaseTask(object):
 
         """
         connection = connection or self.establish_connection(connect_timeout)
-        return self.app.amqp.TaskConsumer(connection=connection,
+        return self._get_app().amqp.TaskConsumer(connection=connection,
                                           exchange=self.exchange,
                                           routing_key=self.routing_key)
 
@@ -457,19 +518,20 @@ class BaseTask(object):
             be replaced by a local :func:`apply` call instead.
 
         """
-        router = self.app.amqp.Router(queues)
-        conf = self.app.conf
+        app = self._get_app()
+        router = app.amqp.Router(queues)
+        conf = app.conf
 
         if conf.CELERY_ALWAYS_EAGER:
             return self.apply(args, kwargs, task_id=task_id, **options)
         options = dict(extract_exec_options(self), **options)
         options = router.route(options, self.name, args, kwargs)
 
-        publish = publisher or self.app.amqp.publisher_pool.acquire(block=True)
+        publish = publisher or app.amqp.publisher_pool.acquire(block=True)
         evd = None
         if conf.CELERY_SEND_TASK_SENT_EVENT:
-            evd = self.app.events.Dispatcher(channel=publish.channel,
-                                             buffer_while_offline=False)
+            evd = app.events.Dispatcher(channel=publish.channel,
+                                        buffer_while_offline=False)
 
         try:
             task_id = publish.delay_task(self.name, args, kwargs,
@@ -583,15 +645,16 @@ class BaseTask(object):
         :rtype :class:`celery.result.EagerResult`:
 
         """
+        app = self._get_app()
         args = args or []
         kwargs = kwargs or {}
         task_id = options.get("task_id") or uuid()
         retries = options.get("retries", 0)
-        throw = self.app.either("CELERY_EAGER_PROPAGATES_EXCEPTIONS",
-                                options.pop("throw", None))
+        throw = app.either("CELERY_EAGER_PROPAGATES_EXCEPTIONS",
+                           options.pop("throw", None))
 
         # Make sure we get the task instance, not class.
-        task = self.app._tasks[self.name]
+        task = app._tasks[self.name]
 
         request = {"id": task_id,
                    "retries": retries,
@@ -629,8 +692,8 @@ class BaseTask(object):
         :param task_id: Task id to get result for.
 
         """
-        return self.app.AsyncResult(task_id, backend=self.backend,
-                                             task_name=self.name)
+        return self._get_app().AsyncResult(task_id, backend=self.backend,
+                                                    task_name=self.name)
 
     def update_state(self, task_id=None, state=None, meta=None):
         """Update task state.
