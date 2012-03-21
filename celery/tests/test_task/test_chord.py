@@ -115,11 +115,13 @@ class test_chord(AppCase):
 class test_Chord_task(AppCase):
 
     def test_run(self):
+        prev, current_app.backend = current_app.backend, Mock()
+        try:
+            Chord = current_app.tasks["celery.chord"]
 
-        class Chord(chords.Chord):
-            backend = Mock()
-
-        body = dict()
-        Chord()(TaskSet(add.subtask((i, i)) for i in xrange(5)), body)
-        Chord()([add.subtask((i, i)) for i in xrange(5)], body)
-        self.assertEqual(Chord.backend.on_chord_apply.call_count, 2)
+            body = dict()
+            Chord(TaskSet(add.subtask((i, i)) for i in xrange(5)), body)
+            Chord([add.subtask((i, i)) for i in xrange(5)], body)
+            self.assertEqual(current_app.backend.on_chord_apply.call_count, 2)
+        finally:
+            current_app.backend = prev

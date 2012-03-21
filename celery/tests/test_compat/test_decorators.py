@@ -25,9 +25,9 @@ class test_decorators(Case):
         self.assertIsInstance(task, type)
 
     def test_task(self):
-        self.assertCompatDecorator(self.decorators.task, base.Task)
+        self.assertCompatDecorator(self.decorators.task, base.BaseTask)
 
     def test_periodic_task(self):
         self.assertCompatDecorator(self.decorators.periodic_task,
-                                   base.PeriodicTask,
+                                   base.BaseTask,
                                    run_every=1)
