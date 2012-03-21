@@ -4,7 +4,6 @@ from __future__ import with_statement
 import os
 import sys
 
-from celery import task
 from celery import loaders
 from celery.app import app_or_default
 from celery.exceptions import (
