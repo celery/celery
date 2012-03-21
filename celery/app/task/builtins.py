@@ -30,8 +30,8 @@ def add_unlock_chord_task(app):
         from ...result import AsyncResult, TaskSetResult
         from ...task.sets import subtask
 
-        j = result.join_native if result.supports_native_join else result.join
         result = TaskSetResult(setid, map(AsyncResult, result))
+        j = result.join_native if result.supports_native_join else result.join
         if result.ready():
             subtask(callback).delay(j(propagate=propagate))
         else:
