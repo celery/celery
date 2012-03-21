@@ -15,10 +15,10 @@ from .. import current_app
 from ..app import app_or_default, current_task as _current_task
 from ..local import Proxy
 
-from .base import Task, PeriodicTask        # noqa
-from .sets import group, TaskSet, subtask   # noqa
-from .chords import chord                   # noqa
-from .control import discard_all            # noqa
+from .base import BaseTask, Task, PeriodicTask  # noqa
+from .sets import group, TaskSet, subtask       # noqa
+from .chords import chord                       # noqa
+from .control import discard_all                # noqa
 
 current = Proxy(_current_task)
 
