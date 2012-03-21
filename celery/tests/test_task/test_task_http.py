@@ -14,7 +14,7 @@ except ImportError:  # py3k
 from anyjson import serialize
 
 from celery.task import http
-from celery.tests.utils import Case
+from celery.tests.utils import Case, eager_tasks
 from celery.utils.compat import StringIO
 from celery.utils.encoding import from_utf8
 
@@ -155,19 +155,13 @@ class TestHttpDispatch(Case):
 class TestURL(Case):
 
     def test_URL_get_async(self):
-        http.HttpDispatchTask.app.conf.CELERY_ALWAYS_EAGER = True
-        try:
+        with eager_tasks():
             with mock_urlopen(success_response(100)):
                 d = http.URL("http://example.com/mul").get_async(x=10, y=10)
                 self.assertEqual(d.get(), 100)
-        finally:
-            http.HttpDispatchTask.app.conf.CELERY_ALWAYS_EAGER = False
 
     def test_URL_post_async(self):
-        http.HttpDispatchTask.app.conf.CELERY_ALWAYS_EAGER = True
-        try:
+        with eager_tasks():
             with mock_urlopen(success_response(100)):
                 d = http.URL("http://example.com/mul").post_async(x=10, y=10)
                 self.assertEqual(d.get(), 100)
-        finally:
-            http.HttpDispatchTask.app.conf.CELERY_ALWAYS_EAGER = False

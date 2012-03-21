@@ -165,7 +165,7 @@ class test_Scheduler(Case):
             def apply_async(cls, *args, **kwargs):
                 through_task[0] = True
 
-        assert MockTask.name in MockTask.app.tasks
+        assert MockTask.name in MockTask._get_app().tasks
 
         scheduler = mScheduler()
         scheduler.apply_async(scheduler.Entry(task=MockTask.name))

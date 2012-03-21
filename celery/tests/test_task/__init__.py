@@ -333,7 +333,7 @@ class TestCeleryTasks(Case):
 
     def test_task_class_repr(self):
         task = self.createTaskCls("T1", "c.unittest.t.repr")
-        self.assertIn("class Task of", repr(task.app.Task))
+        self.assertIn("class Task of", repr(task._get_app().Task))
 
     def test_after_return(self):
         task = self.createTaskCls("T1", "c.unittest.t.after_return")()
@@ -343,9 +343,10 @@ class TestCeleryTasks(Case):
 
     def test_send_task_sent_event(self):
         T1 = self.createTaskCls("T1", "c.unittest.t.t1")
-        conn = T1.app.broker_connection()
+        app = T1._get_app()
+        conn = app.broker_connection()
         chan = conn.channel()
-        T1.app.conf.CELERY_SEND_TASK_SENT_EVENT = True
+        app.conf.CELERY_SEND_TASK_SENT_EVENT = True
         dispatcher = [None]
 
         class Pub(object):
@@ -357,7 +358,7 @@ class TestCeleryTasks(Case):
         try:
             T1.apply_async(publisher=Pub())
         finally:
-            T1.app.conf.CELERY_SEND_TASK_SENT_EVENT = False
+            app.conf.CELERY_SEND_TASK_SENT_EVENT = False
             chan.close()
             conn.close()
 
@@ -470,12 +471,13 @@ class TestTaskApply(Case):
             RaisingTask.apply(throw=True)
 
     def test_apply_with_CELERY_EAGER_PROPAGATES_EXCEPTIONS(self):
-        RaisingTask.app.conf.CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
+        app = RaisingTask._get_app()
+        app.conf.CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
         try:
             with self.assertRaises(KeyError):
                 RaisingTask.apply()
         finally:
-            RaisingTask.app.conf.CELERY_EAGER_PROPAGATES_EXCEPTIONS = False
+            app.conf.CELERY_EAGER_PROPAGATES_EXCEPTIONS = False
 
     def test_apply(self):
         IncrementCounterTask.count = 0
