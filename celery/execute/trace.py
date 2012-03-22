@@ -28,6 +28,7 @@ from warnings import warn
 from .. import app as app_module
 from .. import current_app
 from .. import states, signals
+from ..app.task import BaseTask
 from ..datastructures import ExceptionInfo
 from ..exceptions import RetryTaskError
 from ..registry import tasks
@@ -42,6 +43,27 @@ SUCCESS = states.SUCCESS
 RETRY = states.RETRY
 FAILURE = states.FAILURE
 EXCEPTION_STATES = states.EXCEPTION_STATES
+
+
+def mro_lookup(cls, attr, stop=()):
+    """Returns the first node by MRO order that defines an attribute.
+
+    :keyword stop: A list of types that if reached will stop the search.
+
+    :returns None: if the attribute was not found.
+
+    """
+    for node in cls.mro():
+        if node in stop:
+            return
+        if attr in node.__dict__:
+            return node
+
+
+def defines_custom_call(task):
+    """Returns true if the task or one of its bases
+    defines __call__ (excluding the one in BaseTask)."""
+    return mro_lookup(task.__class__, "__call__", stop=(BaseTask, object))
 
 
 class TraceInfo(object):
@@ -107,7 +129,11 @@ class TraceInfo(object):
 
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         Info=TraceInfo, eager=False, propagate=False):
-    task = task or tasks[name]
+    # If the task doesn't define a custom __call__ method
+    # we optimize it away by simply calling the run method directly,
+    # saving the extra method call and a line less in the stack trace.
+    fun = task if defines_custom_call(task) else task.run
+
     loader = loader or current_app.loader
     backend = task.backend
     ignore_result = task.ignore_result
@@ -150,7 +176,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
 
                 # -*- TRACE -*-
                 try:
-                    R = retval = task(*args, **kwargs)
+                    R = retval = fun(*args, **kwargs)
                     state, einfo = SUCCESS, None
                 except RetryTaskError, exc:
                     I = Info(RETRY, exc, sys.exc_info())
