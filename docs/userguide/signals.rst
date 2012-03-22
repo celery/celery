@@ -167,6 +167,47 @@ Provides arguments:
 Worker Signals
 --------------
 
+.. signal:: celeryd_init
+
+celeryd_init
+~~~~~~~~~~~~
+
+This is the first signal sent when :program:`celeryd` starts up.
+The ``sender`` is the host name of the worker, so this signal can be used
+to setup worker specific configuration:
+
+.. code-block:: python
+
+    from celery.signals import celeryd_init
+
+    @celeryd_init.connect(sender="worker12.example.com")
+    def configure_worker12(conf=None, **kwargs):
+        conf.CELERY_DEFAULT_RATE_LIMIT = "10/m"
+
+or to set up configuration for multiple workers you can omit specifying a
+sender when you connect:
+
+.. code-block:: python
+
+    from celery.signals import celeryd_init
+
+    @celeryd_init.connect
+    def configure_workers(sender=None, conf=None, **kwargs):
+        if sender in ("worker1.example.com", "worker2.example.com"):
+            conf.CELERY_DEFAULT_RATE_LIMIT = "10/m"
+        if sender == "worker3.example.com":
+            conf.CELERYD_PREFETCH_MULTIPLIER = 0
+
+Provides arguments:
+
+* instance
+    This is the :class:`celery.apps.worker.Worker` instance to be initialized.
+    Note that only the :attr:`app` and :attr:`hostname` attributes have been
+    set so far, and the rest of ``__init__`` has not been executed.
+
+* conf
+    The configuration of the current app.
+
 .. signal:: worker_init
 
 worker_init
