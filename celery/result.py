@@ -126,19 +126,15 @@ class AsyncResult(object):
 
         """
         stack = deque([self])
-
         native_join = self.supports_native_join
-        popleft = stack.popleft
-        extend = stack.extend
-        append = stack.append
 
         while stack:
-            res = popleft()
+            res = stack.popleft()
             if isinstance(res, ResultSet):
                 j = res.join_native if native_join else res.join
-                extend(j(timeout=timeout, propagate=propagate))
+                stack.extend(j(timeout=timeout, propagate=propagate))
             elif isinstance(res, AsyncResult):
-                append(res.get(timeout=timeout, propagate=propagate))
+                stack.append(res.get(timeout=timeout, propagate=propagate))
             else:
                 yield res
 
