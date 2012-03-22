@@ -19,7 +19,6 @@ from ... import current_app
 from ... import states
 from ...datastructures import ExceptionInfo
 from ...exceptions import MaxRetriesExceededError, RetryTaskError
-from ...execute.trace import eager_trace_task
 from ...result import EagerResult
 from ...utils import (fun_takes_kwargs, instantiate,
                       mattrgetter, uuid, maybe_reraise)
@@ -90,10 +89,6 @@ class TaskType(type):
         new = super(TaskType, cls).__new__
         task_module = attrs.get("__module__") or "__main__"
 
-        if "__call__" in attrs:
-            # see note about __call__ below.
-            attrs["__defines_call__"] = True
-
         # In old Celery the @task decorator didn't exist, so one would create
         # classes instead and use them directly (e.g. MyTask.apply_async()).
         # the use of classmethods was a hack so that it was not necessary
@@ -128,22 +123,6 @@ class TaskType(type):
                 module_name = task_module
             attrs["name"] = '.'.join([module_name, name])
             autoname = True
-
-        # - Automatically generate __call__.
-        # If this or none of its bases define __call__, we simply
-        # alias it to the ``run`` method, as
-        # this means we can skip a stacktrace frame :)
-        if not (attrs.get("__call__")
-                or any(getattr(b, "__defines_call__", False) for b in bases)):
-            try:
-                attrs["__call__"] = attrs["run"]
-            except KeyError:
-
-                # the class does not yet define run,
-                # so we can't optimize this case.
-                def __call__(self, *args, **kwargs):
-                    return self.run(*args, **kwargs)
-                attrs["__call__"] = __call__
 
         # - Create and register class.
         # Because of the way import happens (recursively)
@@ -367,6 +346,9 @@ class BaseTask(object):
     # - simply grabs it from the local registry.
     def __reduce__(self):
         return (_unpickle_task, (self.name, ), None)
+
+    def __call__(self, *args, **kwargs):
+        return self.run(*args, **kwargs)
 
     def run(self, *args, **kwargs):
         """The body of the task executed by workers."""
@@ -665,6 +647,9 @@ class BaseTask(object):
         :rtype :class:`celery.result.EagerResult`:
 
         """
+        # trace imports BaseTask, so need to import inline.
+        from ...execute.trace import eager_trace_task
+
         app = self._get_app()
         args = args or []
         kwargs = kwargs or {}
