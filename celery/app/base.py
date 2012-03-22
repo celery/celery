@@ -16,6 +16,7 @@ import os
 import warnings
 import platform as _platform
 
+from collections import deque
 from contextlib import contextmanager
 from copy import deepcopy
 from functools import wraps
@@ -25,6 +26,7 @@ from kombu.clocks import LamportClock
 from .. import datastructures
 from .. import platforms
 from ..exceptions import AlwaysEagerIgnored
+from ..local import maybe_evaluate
 from ..utils import cached_property, instantiate, lpmerge
 
 from .defaults import DEFAULTS, find_deprecated_settings, find
@@ -110,11 +112,21 @@ class BaseApp(object):
         self.registry_cls = self.registry_cls if tasks is None else tasks
         self._tasks = instantiate(self.registry_cls)
 
+        self._pending = deque()
+        self.finalized = False
+
         self.on_init()
 
     def on_init(self):
         """Called at the end of the constructor."""
         pass
+
+    def finalize(self):
+        if not self.finalized:
+            pending = self._pending
+            while pending:
+                maybe_evaluate(pending.pop())
+            self.finalized = True
 
     def config_from_object(self, obj, silent=False):
         """Read configuration from object, where object is either
@@ -394,4 +406,5 @@ class BaseApp(object):
     def tasks(self):
         from .task.builtins import load_builtins
         load_builtins(self)
+        self.finalize()
         return self._tasks
