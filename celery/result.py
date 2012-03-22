@@ -14,6 +14,7 @@ from __future__ import with_statement
 
 import time
 
+from collections import deque
 from copy import copy
 from itertools import imap
 
