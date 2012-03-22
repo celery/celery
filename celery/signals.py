@@ -24,6 +24,8 @@ task_failure = Signal(providing_args=["task_id", "exception",
                                       "args", "kwargs", "traceback",
                                       "einfo"])
 
+celeryd_init = Signal(providing_args=["instance"])
+
 worker_init = Signal(providing_args=[])
 worker_process_init = Signal(providing_args=[])
 worker_ready = Signal(providing_args=[])

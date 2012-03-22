@@ -197,7 +197,7 @@ class Timer(Thread):
                     traceback.print_exception(exc_info[0],
                                               exc_info[1],
                                               exc_info[2],
-                                              None, sys.__stderr__)
+                                              None, sys.stderr)
             finally:
                 del(exc_info)
 

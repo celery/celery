@@ -28,11 +28,10 @@ Example connecting to the :signal:`task_sent` signal:
 
     from celery.signals import task_sent
 
+    @task_sent.connect
     def task_sent_handler(sender=None, task_id=None, task=None, args=None,
                           kwargs=None, \*\*kwds):
         print("Got signal task_sent for task id %s" % (task_id, ))
-
-    task_sent.connect(task_sent_handler)
 
 
 Some signals also have a sender which you can filter by. For example the
@@ -43,7 +42,10 @@ has been sent by providing the `sender` argument to
 
 .. code-block:: python
 
-    task_sent.connect(task_sent_handler, sender="tasks.add")
+    @task_sent.connect(task_sent_handler, sender="tasks.add")
+    def task_sent_handler(sender=None, task_id=None, task=None, args=None,
+                          kwargs=None, \*\*kwds):
+        print("Got signal task_sent for task id %s" % (task_id, ))
 
 .. _signal-ref:
 
@@ -164,6 +166,47 @@ Provides arguments:
 
 Worker Signals
 --------------
+
+.. signal:: celeryd_init
+
+celeryd_init
+~~~~~~~~~~~~
+
+This is the first signal sent when :program:`celeryd` starts up.
+The ``sender`` is the host name of the worker, so this signal can be used
+to setup worker specific configuration:
+
+.. code-block:: python
+
+    from celery.signals import celeryd_init
+
+    @celeryd_init.connect(sender="worker12.example.com")
+    def configure_worker12(conf=None, **kwargs):
+        conf.CELERY_DEFAULT_RATE_LIMIT = "10/m"
+
+or to set up configuration for multiple workers you can omit specifying a
+sender when you connect:
+
+.. code-block:: python
+
+    from celery.signals import celeryd_init
+
+    @celeryd_init.connect
+    def configure_workers(sender=None, conf=None, **kwargs):
+        if sender in ("worker1.example.com", "worker2.example.com"):
+            conf.CELERY_DEFAULT_RATE_LIMIT = "10/m"
+        if sender == "worker3.example.com":
+            conf.CELERYD_PREFETCH_MULTIPLIER = 0
+
+Provides arguments:
+
+* instance
+    This is the :class:`celery.apps.worker.Worker` instance to be initialized.
+    Note that only the :attr:`app` and :attr:`hostname` attributes have been
+    set so far, and the rest of ``__init__`` has not been executed.
+
+* conf
+    The configuration of the current app.
 
 .. signal:: worker_init
 

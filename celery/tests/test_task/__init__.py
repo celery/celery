@@ -191,7 +191,7 @@ class TestCeleryTasks(Case):
         def xxx():
             pass
 
-        self.assertIs(pickle.loads(pickle.dumps(xxx)), xxx)
+        self.assertIs(pickle.loads(pickle.dumps(xxx)), xxx.app.tasks[xxx.name])
 
     def createTask(self, name):
         return task.task(__module__=self.__module__, name=name)(return_True)

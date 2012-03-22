@@ -121,6 +121,8 @@ class test_Worker(AppCase):
     def test_tasklist(self):
         celery = Celery(set_as_current=False)
         worker = celery.Worker()
+        self.assertTrue(worker.app.tasks)
+        self.assertTrue(worker.app.finalized)
         self.assertTrue(worker.tasklist(include_builtins=True))
         worker.tasklist(include_builtins=False)
 
@@ -300,10 +302,10 @@ class test_Worker(AppCase):
     def test_redirect_stdouts_already_handled(self):
         logging_setup = [False]
 
+        @signals.setup_logging.connect
         def on_logging_setup(**kwargs):
             logging_setup[0] = True
 
-        signals.setup_logging.connect(on_logging_setup)
         try:
             worker = self.Worker()
             worker.app.log.__class__._setup = False
@@ -367,10 +369,9 @@ class test_Worker(AppCase):
     def test_on_consumer_ready(self):
         worker_ready_sent = [False]
 
+        @signals.worker_ready.connect
         def on_worker_ready(**kwargs):
             worker_ready_sent[0] = True
-
-        signals.worker_ready.connect(on_worker_ready)
 
         self.Worker().on_consumer_ready(object())
         self.assertTrue(worker_ready_sent[0])

@@ -28,10 +28,12 @@ class Proxy(object):
     """Proxy to another object."""
 
     # Code stolen from werkzeug.local.Proxy.
-    __slots__ = ('__local', '__dict__', '__name__')
+    __slots__ = ('__local', '__args', '__kwargs', '__dict__', '__name__')
 
-    def __init__(self, local, name=None):
+    def __init__(self, local, args=None, kwargs=None, name=None):
         object.__setattr__(self, '_Proxy__local', local)
+        object.__setattr__(self, '_Proxy__args', args or ())
+        object.__setattr__(self, '_Proxy__kwargs', kwargs or {})
         object.__setattr__(self, '__custom_name__', name)
 
     @property
@@ -45,13 +47,17 @@ class Proxy(object):
     def __doc__(self):
         return self._get_current_object().__doc__
 
+    @property
+    def __class__(self):
+        return self._get_current_object().__class__
+
     def _get_current_object(self):
         """Return the current object.  This is useful if you want the real
         object behind the proxy at a time for performance reasons or because
         you want to pass the object into a different context.
         """
         if not hasattr(self.__local, '__release_local__'):
-            return self.__local()
+            return self.__local(*self.__args, **self.__kwargs)
         try:
             return getattr(self.__local, self.__name__)
         except AttributeError:
@@ -151,3 +157,34 @@ class Proxy(object):
     __coerce__ = lambda x, o: x.__coerce__(x, o)
     __enter__ = lambda x: x.__enter__()
     __exit__ = lambda x, *a, **kw: x.__exit__(*a, **kw)
+    __reduce__ = lambda x: x._get_current_object().__reduce__()
+
+
+class PromiseProxy(Proxy):
+    """This is a proxy to an object that has not yet been evaulated.
+
+    :class:`Proxy` will evaluate the object each time, while the
+    promise will only evaluate it once.
+
+    """
+
+    def _get_current_object(self):
+        try:
+            return object.__getattribute__(self, "__thing")
+        except AttributeError:
+            return self.__evaluate__()
+
+    def __maybe_evaluate__(self):
+        return self._get_current_object()
+
+    def __evaluate__(self):
+        thing = Proxy._get_current_object(self)
+        object.__setattr__(self, "__thing", thing)
+        return thing
+
+
+def maybe_evaluate(obj):
+    try:
+        return obj.__maybe_evaluate__()
+    except AttributeError:
+        return obj

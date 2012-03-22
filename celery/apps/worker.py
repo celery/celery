@@ -81,10 +81,16 @@ class Worker(configurated):
             queues=None, include=None, app=None, pidfile=None,
             autoscale=None, autoreload=False, **kwargs):
         self.app = app = app_or_default(app)
+        self.hostname = hostname or socket.gethostname()
+
+        # this signal can be used to set up configuration for
+        # workers by name.
+        signals.celeryd_init.send(sender=self.hostname, instance=self,
+                                  conf=self.app.conf)
+
         self.setup_defaults(kwargs, namespace="celeryd")
         if not self.concurrency:
             self.concurrency = cpu_count()
-        self.hostname = hostname or socket.gethostname()
         self.discard = discard
         self.embed_clockservice = embed_clockservice
         if self.app.IS_WINDOWS and self.embed_clockservice:
@@ -218,6 +224,7 @@ class Worker(configurated):
                                     autoreload=self.autoreload,
                                     **self.confopts_as_dict())
         self.install_platform_tweaks(worker)
+        signals.worker_init.send(sender=worker)
         worker.start()
 
     def install_platform_tweaks(self, worker):
@@ -241,7 +248,6 @@ class Worker(configurated):
         install_worker_int_handler(worker)
         install_cry_handler(worker.logger)
         install_rdb_handler()
-        signals.worker_init.send(sender=worker)
 
     def osx_proxy_detection_workaround(self):
         """See http://github.com/ask/celery/issues#issue/161"""
