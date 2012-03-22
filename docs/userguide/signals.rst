@@ -28,11 +28,10 @@ Example connecting to the :signal:`task_sent` signal:
 
     from celery.signals import task_sent
 
+    @task_sent.connect
     def task_sent_handler(sender=None, task_id=None, task=None, args=None,
                           kwargs=None, \*\*kwds):
         print("Got signal task_sent for task id %s" % (task_id, ))
-
-    task_sent.connect(task_sent_handler)
 
 
 Some signals also have a sender which you can filter by. For example the
@@ -43,7 +42,10 @@ has been sent by providing the `sender` argument to
 
 .. code-block:: python
 
-    task_sent.connect(task_sent_handler, sender="tasks.add")
+    @task_sent.connect(task_sent_handler, sender="tasks.add")
+    def task_sent_handler(sender=None, task_id=None, task=None, args=None,
+                          kwargs=None, \*\*kwds):
+        print("Got signal task_sent for task id %s" % (task_id, ))
 
 .. _signal-ref:
 

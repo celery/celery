@@ -2232,9 +2232,9 @@ News
         from logging.config import fileConfig
         from celery import signals
 
+        @signals.setup_logging.connect
         def setup_logging(**kwargs):
             fileConfig("logging.conf")
-        signals.setup_logging.connect(setup_logging)
 
     If there are no receivers for this signal, the logging subsystem
     will be configured using the :option:`--loglevel`/:option:`--logfile`
