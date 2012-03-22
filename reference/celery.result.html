@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.result &mdash; Celery 2.5.0rc2 documentation</title>
+    <title>celery.result &mdash; Celery 2.6.0a1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0rc2',
+        VERSION:     '2.6.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0rc2 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.6.0a1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.actors" href="celery.actors.html" />
     <link rel="prev" title="celery.task.chords" href="celery.task.chords.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.task.chords.html" title="celery.task.chords"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -117,6 +117,34 @@
 <dt id="celery.result.AsyncResult.backend">
 <tt class="descclassname">AsyncResult.</tt><tt class="descname">backend</tt><em class="property"> = None</em><a class="headerlink" href="#celery.result.AsyncResult.backend" title="Permalink to this definition">¶</a></dt>
 <dd><p>The task result backend to use.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.result.AsyncResult.collect">
+<tt class="descclassname">AsyncResult.</tt><tt class="descname">collect</tt><big>(</big><em>timeout=None</em>, <em>propagate=True</em><big>)</big><a class="headerlink" href="#celery.result.AsyncResult.collect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterator, like <a class="reference internal" href="#celery.result.AsyncResult.get" title="celery.result.AsyncResult.get"><tt class="xref py py-meth docutils literal"><span class="pre">get()</span></tt></a> will wait for the task to complete,
+but will also follow <a class="reference internal" href="#celery.result.AsyncResult" title="celery.result.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">AsyncResult</span></tt></a> and <a class="reference internal" href="#celery.result.ResultSet" title="celery.result.ResultSet"><tt class="xref py py-class docutils literal"><span class="pre">ResultSet</span></tt></a>
+returned by the task, yielding for each result in the tree.</p>
+<p>An example would be having the following tasks:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span>
+<span class="k">def</span> <span class="nf">A</span><span class="p">(</span><span class="n">how_many</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">TaskSet</span><span class="p">(</span><span class="n">B</span><span class="o">.</span><span class="n">subtask</span><span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">how_many</span><span class="p">))</span>
+
+<span class="nd">@task</span>
+<span class="k">def</span> <span class="nf">B</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">pow2</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+<span class="nd">@task</span>
+<span class="k">def</span> <span class="nf">pow2</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">i</span> <span class="o">**</span> <span class="mi">2</span>
+</pre></div>
+</div>
+<p>Calling <a class="reference internal" href="#celery.result.AsyncResult.collect" title="celery.result.AsyncResult.collect"><tt class="xref py py-meth docutils literal"><span class="pre">collect()</span></tt></a> would return:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">collect</span><span class="p">())</span>
+<span class="go">[0, 1, 4, 9, 16, 25, 36, 49, 64, 81]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -193,7 +221,7 @@ instance.</p>
 
 <dl class="method">
 <dt id="celery.result.AsyncResult.revoke">
-<tt class="descclassname">AsyncResult.</tt><tt class="descname">revoke</tt><big>(</big><em>connection=None</em>, <em>connect_timeout=None</em><big>)</big><a class="headerlink" href="#celery.result.AsyncResult.revoke" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">AsyncResult.</tt><tt class="descname">revoke</tt><big>(</big><em>connection=None</em><big>)</big><a class="headerlink" href="#celery.result.AsyncResult.revoke" title="Permalink to this definition">¶</a></dt>
 <dd><p>Send revoke signal to all workers.</p>
 <p>Any worker receiving the task, or having reserved the
 task, <em>must</em> ignore it.</p>
@@ -258,6 +286,11 @@ then contains the tasks return value.</div></blockquote>
 <tt class="descclassname">AsyncResult.</tt><tt class="descname">successful</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.AsyncResult.successful" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns <tt class="xref py py-const docutils literal"><span class="pre">True</span></tt> if the task executed successfully.</p>
 </dd></dl>
+
+<dl class="attribute">
+<dt id="celery.result.AsyncResult.supports_native_join">
+<tt class="descclassname">AsyncResult.</tt><tt class="descname">supports_native_join</tt><a class="headerlink" href="#celery.result.AsyncResult.supports_native_join" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="celery.result.AsyncResult.task_id">
@@ -556,7 +589,7 @@ executed.</td>
 
 <dl class="method">
 <dt id="celery.result.ResultSet.revoke">
-<tt class="descname">revoke</tt><big>(</big><em>connection=None</em>, <em>connect_timeout=None</em><big>)</big><a class="headerlink" href="#celery.result.ResultSet.revoke" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">revoke</tt><big>(</big><em>connection=None</em><big>)</big><a class="headerlink" href="#celery.result.ResultSet.revoke" title="Permalink to this definition">¶</a></dt>
 <dd><p>Revoke all tasks in the set.</p>
 </dd></dl>
 
@@ -732,7 +765,7 @@ a single entity.</p>
         <li class="right" >
           <a href="celery.task.chords.html" title="celery.task.chords"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

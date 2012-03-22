@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Signals &mdash; Celery 2.5.0rc2 documentation</title>
+    <title>Signals &mdash; Celery 2.6.0a1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0rc2',
+        VERSION:     '2.6.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0rc2 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.6.0a1 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Configuration and defaults" href="../configuration.html" />
     <link rel="prev" title="Concurrency with Eventlet" href="concurrency/eventlet.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="concurrency/eventlet.html" title="Concurrency with Eventlet"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -81,28 +81,29 @@
 </ul>
 </li>
 <li><a class="reference internal" href="#worker-signals" id="id10">Worker Signals</a><ul>
-<li><a class="reference internal" href="#worker-init" id="id11">worker_init</a></li>
-<li><a class="reference internal" href="#worker-ready" id="id12">worker_ready</a></li>
-<li><a class="reference internal" href="#worker-process-init" id="id13">worker_process_init</a></li>
-<li><a class="reference internal" href="#worker-shutdown" id="id14">worker_shutdown</a></li>
+<li><a class="reference internal" href="#celeryd-init" id="id11">celeryd_init</a></li>
+<li><a class="reference internal" href="#worker-init" id="id12">worker_init</a></li>
+<li><a class="reference internal" href="#worker-ready" id="id13">worker_ready</a></li>
+<li><a class="reference internal" href="#worker-process-init" id="id14">worker_process_init</a></li>
+<li><a class="reference internal" href="#worker-shutdown" id="id15">worker_shutdown</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#celerybeat-signals" id="id15">Celerybeat Signals</a><ul>
-<li><a class="reference internal" href="#beat-init" id="id16">beat_init</a></li>
-<li><a class="reference internal" href="#beat-embedded-init" id="id17">beat_embedded_init</a></li>
+<li><a class="reference internal" href="#celerybeat-signals" id="id16">Celerybeat Signals</a><ul>
+<li><a class="reference internal" href="#beat-init" id="id17">beat_init</a></li>
+<li><a class="reference internal" href="#beat-embedded-init" id="id18">beat_embedded_init</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#eventlet-signals" id="id18">Eventlet Signals</a><ul>
-<li><a class="reference internal" href="#eventlet-pool-started" id="id19">eventlet_pool_started</a></li>
-<li><a class="reference internal" href="#eventlet-pool-preshutdown" id="id20">eventlet_pool_preshutdown</a></li>
-<li><a class="reference internal" href="#eventlet-pool-postshutdown" id="id21">eventlet_pool_postshutdown</a></li>
-<li><a class="reference internal" href="#eventlet-pool-apply" id="id22">eventlet_pool_apply</a></li>
+<li><a class="reference internal" href="#eventlet-signals" id="id19">Eventlet Signals</a><ul>
+<li><a class="reference internal" href="#eventlet-pool-started" id="id20">eventlet_pool_started</a></li>
+<li><a class="reference internal" href="#eventlet-pool-preshutdown" id="id21">eventlet_pool_preshutdown</a></li>
+<li><a class="reference internal" href="#eventlet-pool-postshutdown" id="id22">eventlet_pool_postshutdown</a></li>
+<li><a class="reference internal" href="#eventlet-pool-apply" id="id23">eventlet_pool_apply</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#logging-signals" id="id23">Logging Signals</a><ul>
-<li><a class="reference internal" href="#setup-logging" id="id24">setup_logging</a></li>
-<li><a class="reference internal" href="#after-setup-logger" id="id25">after_setup_logger</a></li>
-<li><a class="reference internal" href="#after-setup-task-logger" id="id26">after_setup_task_logger</a></li>
+<li><a class="reference internal" href="#logging-signals" id="id24">Logging Signals</a><ul>
+<li><a class="reference internal" href="#setup-logging" id="id25">setup_logging</a></li>
+<li><a class="reference internal" href="#after-setup-logger" id="id26">after_setup_logger</a></li>
+<li><a class="reference internal" href="#after-setup-task-logger" id="id27">after_setup_task_logger</a></li>
 </ul>
 </li>
 </ul>
@@ -120,19 +121,20 @@ to perform actions as they trigger.</p>
 <p>Example connecting to the <a class="reference internal" href="#std:signal-task_sent"><tt class="xref std std-signal docutils literal"><span class="pre">task_sent</span></tt></a> signal:</p>
 <div class="highlight-python"><pre>from celery.signals import task_sent
 
+@task_sent.connect
 def task_sent_handler(sender=None, task_id=None, task=None, args=None,
                       kwargs=None, \*\*kwds):
-    print("Got signal task_sent for task id %s" % (task_id, ))
-
-task_sent.connect(task_sent_handler)</pre>
+    print("Got signal task_sent for task id %s" % (task_id, ))</pre>
 </div>
 <p>Some signals also have a sender which you can filter by. For example the
 <a class="reference internal" href="#std:signal-task_sent"><tt class="xref std std-signal docutils literal"><span class="pre">task_sent</span></tt></a> signal uses the task name as a sender, so you can
 connect your handler to be called only when tasks with name <cite>&#8220;tasks.add&#8221;</cite>
 has been sent by providing the <cite>sender</cite> argument to
 <a class="reference internal" href="../internals/reference/celery.utils.dispatch.signal.html#celery.utils.dispatch.signal.Signal.connect" title="celery.utils.dispatch.signal.Signal.connect"><tt class="xref py py-class docutils literal"><span class="pre">connect</span></tt></a>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">task_sent</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">task_sent_handler</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="s">&quot;tasks.add&quot;</span><span class="p">)</span>
-</pre></div>
+<div class="highlight-python"><pre>@task_sent.connect(task_sent_handler, sender="tasks.add")
+def task_sent_handler(sender=None, task_id=None, task=None, args=None,
+                      kwargs=None, \*\*kwds):
+    print("Got signal task_sent for task id %s" % (task_id, ))</pre>
 </div>
 </div>
 <div class="section" id="signal-ref">
@@ -302,57 +304,99 @@ the task, not in the worker.</p>
 </div>
 <div class="section" id="worker-signals">
 <h3><a class="toc-backref" href="#id10">Worker Signals</a><a class="headerlink" href="#worker-signals" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="celeryd-init">
+<span id="std:signal-celeryd_init"></span><h4><a class="toc-backref" href="#id11">celeryd_init</a><a class="headerlink" href="#celeryd-init" title="Permalink to this headline">¶</a></h4>
+<p>This is the first signal sent when <strong class="program">celeryd</strong> starts up.
+The <tt class="docutils literal"><span class="pre">sender</span></tt> is the host name of the worker, so this signal can be used
+to setup worker specific configuration:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.signals</span> <span class="kn">import</span> <span class="n">celeryd_init</span>
+
+<span class="nd">@celeryd_init.connect</span><span class="p">(</span><span class="n">sender</span><span class="o">=</span><span class="s">&quot;worker12.example.com&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">configure_worker12</span><span class="p">(</span><span class="n">conf</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">conf</span><span class="o">.</span><span class="n">CELERY_DEFAULT_RATE_LIMIT</span> <span class="o">=</span> <span class="s">&quot;10/m&quot;</span>
+</pre></div>
+</div>
+<p>or to set up configuration for multiple workers you can omit specifying a
+sender when you connect:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.signals</span> <span class="kn">import</span> <span class="n">celeryd_init</span>
+
+<span class="nd">@celeryd_init.connect</span>
+<span class="k">def</span> <span class="nf">configure_workers</span><span class="p">(</span><span class="n">sender</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">conf</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">sender</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&quot;worker1.example.com&quot;</span><span class="p">,</span> <span class="s">&quot;worker2.example.com&quot;</span><span class="p">):</span>
+        <span class="n">conf</span><span class="o">.</span><span class="n">CELERY_DEFAULT_RATE_LIMIT</span> <span class="o">=</span> <span class="s">&quot;10/m&quot;</span>
+    <span class="k">if</span> <span class="n">sender</span> <span class="o">==</span> <span class="s">&quot;worker3.example.com&quot;</span><span class="p">:</span>
+        <span class="n">conf</span><span class="o">.</span><span class="n">CELERYD_PREFETCH_MULTIPLIER</span> <span class="o">=</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<p>Provides arguments:</p>
+<ul>
+<li><dl class="first docutils">
+<dt>instance</dt>
+<dd><p class="first last">This is the <a class="reference internal" href="../reference/celery.apps.worker.html#celery.apps.worker.Worker" title="celery.apps.worker.Worker"><tt class="xref py py-class docutils literal"><span class="pre">celery.apps.worker.Worker</span></tt></a> instance to be initialized.
+Note that only the <tt class="xref py py-attr docutils literal"><span class="pre">app</span></tt> and <tt class="xref py py-attr docutils literal"><span class="pre">hostname</span></tt> attributes have been
+set so far, and the rest of <tt class="docutils literal"><span class="pre">__init__</span></tt> has not been executed.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>conf</dt>
+<dd><p class="first last">The configuration of the current app.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
 <div class="section" id="worker-init">
-<span id="std:signal-worker_init"></span><h4><a class="toc-backref" href="#id11">worker_init</a><a class="headerlink" href="#worker-init" title="Permalink to this headline">¶</a></h4>
+<span id="std:signal-worker_init"></span><h4><a class="toc-backref" href="#id12">worker_init</a><a class="headerlink" href="#worker-init" title="Permalink to this headline">¶</a></h4>
 <p>Dispatched before the worker is started.</p>
 </div>
 <div class="section" id="worker-ready">
-<span id="std:signal-worker_ready"></span><h4><a class="toc-backref" href="#id12">worker_ready</a><a class="headerlink" href="#worker-ready" title="Permalink to this headline">¶</a></h4>
+<span id="std:signal-worker_ready"></span><h4><a class="toc-backref" href="#id13">worker_ready</a><a class="headerlink" href="#worker-ready" title="Permalink to this headline">¶</a></h4>
 <p>Dispatched when the worker is ready to accept work.</p>
 </div>
 <div class="section" id="worker-process-init">
-<span id="std:signal-worker_process_init"></span><h4><a class="toc-backref" href="#id13">worker_process_init</a><a class="headerlink" href="#worker-process-init" title="Permalink to this headline">¶</a></h4>
+<span id="std:signal-worker_process_init"></span><h4><a class="toc-backref" href="#id14">worker_process_init</a><a class="headerlink" href="#worker-process-init" title="Permalink to this headline">¶</a></h4>
 <p>Dispatched by each new pool worker process when it starts.</p>
 </div>
 <div class="section" id="worker-shutdown">
-<span id="std:signal-worker_shutdown"></span><h4><a class="toc-backref" href="#id14">worker_shutdown</a><a class="headerlink" href="#worker-shutdown" title="Permalink to this headline">¶</a></h4>
+<span id="std:signal-worker_shutdown"></span><h4><a class="toc-backref" href="#id15">worker_shutdown</a><a class="headerlink" href="#worker-shutdown" title="Permalink to this headline">¶</a></h4>
 <p>Dispatched when the worker is about to shut down.</p>
 </div>
 </div>
 <div class="section" id="celerybeat-signals">
-<h3><a class="toc-backref" href="#id15">Celerybeat Signals</a><a class="headerlink" href="#celerybeat-signals" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id16">Celerybeat Signals</a><a class="headerlink" href="#celerybeat-signals" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="beat-init">
-<span id="std:signal-beat_init"></span><h4><a class="toc-backref" href="#id16">beat_init</a><a class="headerlink" href="#beat-init" title="Permalink to this headline">¶</a></h4>
+<span id="std:signal-beat_init"></span><h4><a class="toc-backref" href="#id17">beat_init</a><a class="headerlink" href="#beat-init" title="Permalink to this headline">¶</a></h4>
 <p>Dispatched when celerybeat starts (either standalone or embedded).
 Sender is the <a class="reference internal" href="../internals/reference/celery.beat.html#celery.beat.Service" title="celery.beat.Service"><tt class="xref py py-class docutils literal"><span class="pre">celery.beat.Service</span></tt></a> instance.</p>
 </div>
 <div class="section" id="beat-embedded-init">
-<span id="std:signal-beat_embedded_init"></span><h4><a class="toc-backref" href="#id17">beat_embedded_init</a><a class="headerlink" href="#beat-embedded-init" title="Permalink to this headline">¶</a></h4>
+<span id="std:signal-beat_embedded_init"></span><h4><a class="toc-backref" href="#id18">beat_embedded_init</a><a class="headerlink" href="#beat-embedded-init" title="Permalink to this headline">¶</a></h4>
 <p>Dispatched in addition to the <a class="reference internal" href="#std:signal-beat_init"><tt class="xref std std-signal docutils literal"><span class="pre">beat_init</span></tt></a> signal when celerybeat is
 started as an embedded process.  Sender is the
 <a class="reference internal" href="../internals/reference/celery.beat.html#celery.beat.Service" title="celery.beat.Service"><tt class="xref py py-class docutils literal"><span class="pre">celery.beat.Service</span></tt></a> instance.</p>
 </div>
 </div>
 <div class="section" id="eventlet-signals">
-<h3><a class="toc-backref" href="#id18">Eventlet Signals</a><a class="headerlink" href="#eventlet-signals" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id19">Eventlet Signals</a><a class="headerlink" href="#eventlet-signals" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="eventlet-pool-started">
-<span id="std:signal-eventlet_pool_started"></span><h4><a class="toc-backref" href="#id19">eventlet_pool_started</a><a class="headerlink" href="#eventlet-pool-started" title="Permalink to this headline">¶</a></h4>
+<span id="std:signal-eventlet_pool_started"></span><h4><a class="toc-backref" href="#id20">eventlet_pool_started</a><a class="headerlink" href="#eventlet-pool-started" title="Permalink to this headline">¶</a></h4>
 <p>Sent when the eventlet pool has been started.</p>
 <p>Sender is the <a class="reference internal" href="../internals/reference/celery.concurrency.eventlet.html#celery.concurrency.eventlet.TaskPool" title="celery.concurrency.eventlet.TaskPool"><tt class="xref py py-class docutils literal"><span class="pre">celery.concurrency.eventlet.TaskPool</span></tt></a> instance.</p>
 </div>
 <div class="section" id="eventlet-pool-preshutdown">
-<span id="std:signal-eventlet_pool_preshutdown"></span><h4><a class="toc-backref" href="#id20">eventlet_pool_preshutdown</a><a class="headerlink" href="#eventlet-pool-preshutdown" title="Permalink to this headline">¶</a></h4>
+<span id="std:signal-eventlet_pool_preshutdown"></span><h4><a class="toc-backref" href="#id21">eventlet_pool_preshutdown</a><a class="headerlink" href="#eventlet-pool-preshutdown" title="Permalink to this headline">¶</a></h4>
 <p>Sent when the worker shutdown, just before the eventlet pool
 is requested to wait for remaining workers.</p>
 <p>Sender is the <a class="reference internal" href="../internals/reference/celery.concurrency.eventlet.html#celery.concurrency.eventlet.TaskPool" title="celery.concurrency.eventlet.TaskPool"><tt class="xref py py-class docutils literal"><span class="pre">celery.concurrency.eventlet.TaskPool</span></tt></a> instance.</p>
 </div>
 <div class="section" id="eventlet-pool-postshutdown">
-<span id="std:signal-eventlet_pool_postshutdown"></span><h4><a class="toc-backref" href="#id21">eventlet_pool_postshutdown</a><a class="headerlink" href="#eventlet-pool-postshutdown" title="Permalink to this headline">¶</a></h4>
+<span id="std:signal-eventlet_pool_postshutdown"></span><h4><a class="toc-backref" href="#id22">eventlet_pool_postshutdown</a><a class="headerlink" href="#eventlet-pool-postshutdown" title="Permalink to this headline">¶</a></h4>
 <p>Sent when the pool has been joined and the worker is ready to shutdown.</p>
 <p>Sender is the <a class="reference internal" href="../internals/reference/celery.concurrency.eventlet.html#celery.concurrency.eventlet.TaskPool" title="celery.concurrency.eventlet.TaskPool"><tt class="xref py py-class docutils literal"><span class="pre">celery.concurrency.eventlet.TaskPool</span></tt></a> instance.</p>
 </div>
 <div class="section" id="eventlet-pool-apply">
-<span id="std:signal-eventlet_pool_apply"></span><h4><a class="toc-backref" href="#id22">eventlet_pool_apply</a><a class="headerlink" href="#eventlet-pool-apply" title="Permalink to this headline">¶</a></h4>
+<span id="std:signal-eventlet_pool_apply"></span><h4><a class="toc-backref" href="#id23">eventlet_pool_apply</a><a class="headerlink" href="#eventlet-pool-apply" title="Permalink to this headline">¶</a></h4>
 <p>Sent whenever a task is applied to the pool.</p>
 <p>Sender is the <a class="reference internal" href="../internals/reference/celery.concurrency.eventlet.html#celery.concurrency.eventlet.TaskPool" title="celery.concurrency.eventlet.TaskPool"><tt class="xref py py-class docutils literal"><span class="pre">celery.concurrency.eventlet.TaskPool</span></tt></a> instance.</p>
 <p>Provides arguments:</p>
@@ -376,9 +420,9 @@ is requested to wait for remaining workers.</p>
 </div>
 </div>
 <div class="section" id="logging-signals">
-<h3><a class="toc-backref" href="#id23">Logging Signals</a><a class="headerlink" href="#logging-signals" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id24">Logging Signals</a><a class="headerlink" href="#logging-signals" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="setup-logging">
-<span id="std:signal-setup_logging"></span><h4><a class="toc-backref" href="#id24">setup_logging</a><a class="headerlink" href="#setup-logging" title="Permalink to this headline">¶</a></h4>
+<span id="std:signal-setup_logging"></span><h4><a class="toc-backref" href="#id25">setup_logging</a><a class="headerlink" href="#setup-logging" title="Permalink to this headline">¶</a></h4>
 <p>Celery won&#8217;t configure the loggers if this signal is connected,
 so you can use this to completely override the logging configuration
 with your own.</p>
@@ -414,7 +458,7 @@ Celery then you can use the <a class="reference internal" href="#std:signal-afte
 </ul>
 </div>
 <div class="section" id="after-setup-logger">
-<span id="std:signal-after_setup_logger"></span><h4><a class="toc-backref" href="#id25">after_setup_logger</a><a class="headerlink" href="#after-setup-logger" title="Permalink to this headline">¶</a></h4>
+<span id="std:signal-after_setup_logger"></span><h4><a class="toc-backref" href="#id26">after_setup_logger</a><a class="headerlink" href="#after-setup-logger" title="Permalink to this headline">¶</a></h4>
 <p>Sent after the setup of every global logger (not task loggers).
 Used to augment logging configuration.</p>
 <p>Provides arguments:</p>
@@ -452,7 +496,7 @@ Used to augment logging configuration.</p>
 </ul>
 </div>
 <div class="section" id="after-setup-task-logger">
-<span id="std:signal-after_setup_task_logger"></span><h4><a class="toc-backref" href="#id26">after_setup_task_logger</a><a class="headerlink" href="#after-setup-task-logger" title="Permalink to this headline">¶</a></h4>
+<span id="std:signal-after_setup_task_logger"></span><h4><a class="toc-backref" href="#id27">after_setup_task_logger</a><a class="headerlink" href="#after-setup-task-logger" title="Permalink to this headline">¶</a></h4>
 <p>Sent after the setup of every single task logger.
 Used to augment logging configuration.</p>
 <p>Provides arguments:</p>
@@ -544,7 +588,7 @@ Used to augment logging configuration.</p>
         <li class="right" >
           <a href="concurrency/eventlet.html" title="Concurrency with Eventlet"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>

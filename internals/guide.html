@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Contributors Guide to the Code &mdash; Celery 2.5.0rc2 documentation</title>
+    <title>Contributors Guide to the Code &mdash; Celery 2.6.0a1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0rc2',
+        VERSION:     '2.6.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0rc2 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.6.0a1 documentation" href="../index.html" />
     <link rel="up" title="Internals" href="index.html" />
     <link rel="next" title="Celery Deprecation Timeline" href="deprecation.html" />
     <link rel="prev" title="Internals" href="index.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="index.html" title="Internals"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internals</a> &raquo;</li> 
       </ul>
     </div>  
@@ -121,40 +121,52 @@ if the end result is a better API.</p>
 <ul>
 <li><p class="first">Follows <span class="target" id="index-0"></span><a class="pep reference external" href="http://www.python.org/dev/peps/pep-0008"><strong>PEP 8</strong></a>.</p>
 </li>
-<li><p class="first">Class names must be CamelCase.</p>
+<li><p class="first">Class names must be <cite>CamelCase</cite>.</p>
 </li>
-<li><p class="first">but not if they are verbs, verbs shall be lower_case:</p>
+<li><p class="first">but not if they are verbs, verbs shall be <cite>lower_case</cite>:</p>
 <blockquote>
-<div><div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">TestFrobulator</span><span class="p">(</span><span class="n">Case</span><span class="p">):</span>         <span class="c"># BAD</span>
-    <span class="o">...</span>
+<div><div class="highlight-python"><div class="highlight"><pre><span class="c"># - test case for a class</span>
+<span class="k">class</span> <span class="nc">TestMyClass</span><span class="p">(</span><span class="n">Case</span><span class="p">):</span>                <span class="c"># BAD</span>
+    <span class="k">pass</span>
 
-<span class="k">class</span> <span class="nc">test_Frobulator</span><span class="p">(</span><span class="n">Case</span><span class="p">):</span>        <span class="c"># GOOD</span>
-    <span class="o">...</span>
+<span class="k">class</span> <span class="nc">test_MyClass</span><span class="p">(</span><span class="n">Case</span><span class="p">):</span>               <span class="c"># GOOD</span>
+    <span class="k">pass</span>
 
-<span class="k">class</span> <span class="nc">CreateContext</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>        <span class="c"># BAD</span>
-    <span class="o">...</span>
+<span class="c"># - test case for a function</span>
+<span class="k">class</span> <span class="nc">TestMyFunction</span><span class="p">(</span><span class="n">Case</span><span class="p">):</span>             <span class="c"># BAD</span>
+    <span class="k">pass</span>
 
-<span class="k">class</span> <span class="nc">create_context</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>       <span class="c"># GOOD</span>
-    <span class="o">...</span>
+<span class="k">class</span> <span class="nc">test_my_function</span><span class="p">(</span><span class="n">Case</span><span class="p">):</span>           <span class="c"># GOOD</span>
+    <span class="k">pass</span>
+
+<span class="c"># - &quot;action&quot; class (verb)</span>
+<span class="k">class</span> <span class="nc">UpdateTwitterStatus</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>    <span class="c"># BAD</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">update_twitter_status</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>    <span class="c"># GOOD</span>
+    <span class="k">pass</span>
 </pre></div>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Sometimes it makes sense to have a class mask as a function,
 and there is precedence for this in the stdlib (e.g.
-<tt class="docutils literal"><span class="pre">contextmanager</span></tt>).  Celery examples include the task decorator,
-<tt class="docutils literal"><span class="pre">subtask</span></tt>, <tt class="docutils literal"><span class="pre">chord</span></tt>, <tt class="docutils literal"><span class="pre">inspect</span></tt>, and <tt class="docutils literal"><span class="pre">promise</span></tt>.</p>
+<tt class="xref py py-class docutils literal"><span class="pre">contextmanager</span></tt>).  Celery examples include
+<a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.subtask" title="celery.task.sets.subtask"><tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt></a>, <a class="reference internal" href="../reference/celery.task.chords.html#celery.task.chords.chord" title="celery.task.chords.chord"><tt class="xref py py-class docutils literal"><span class="pre">chord</span></tt></a>,
+<tt class="docutils literal"><span class="pre">inspect</span></tt>, <a class="reference external" href="http://kombu.readthedocs.org/en/latest/reference/kombu.utils.functional.html#kombu.utils.functional.promise" title="(in Kombu v2.1)"><tt class="xref py py-class docutils literal"><span class="pre">promise</span></tt></a> and more..</p>
 </div>
 </div></blockquote>
 </li>
-<li><p class="first">Factory functions and methods must be CamelCase (excluding verbs):</p>
+<li><p class="first">Factory functions and methods must be <cite>CamelCase</cite> (excluding verbs):</p>
 <blockquote>
-<div><div class="highlight-python"><pre>class Celery(object):
+<div><div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Celery</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
-    def consumer_factory(self):     # BAD
-        ...
+    <span class="k">def</span> <span class="nf">consumer_factory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>     <span class="c"># BAD</span>
+        <span class="o">...</span>
 
-    def Consumer(self):             # GOOD</pre>
+    <span class="k">def</span> <span class="nf">Consumer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>             <span class="c"># GOOD</span>
+        <span class="o">...</span>
+</pre></div>
 </div>
 </div></blockquote>
 </li>
@@ -170,7 +182,7 @@ as this means that they can be set by either instantiation or inheritance.</p>
     <span class="n">serializer</span> <span class="o">=</span> <span class="s">&quot;json&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serializer</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">serializer</span> <span class="o">=</span> <span class="n">serializer</span> <span class="ow">or</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">serializer</span> <span class="o">=</span> <span class="n">serializer</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">serializer</span>
 
         <span class="c"># must check for None when value can be false-y</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="n">active</span> <span class="k">if</span> <span class="n">active</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span>
@@ -215,10 +227,10 @@ the exception class from the instance directly.</p>
 </div>
 <div class="section" id="composites">
 <h4><a class="toc-backref" href="#id8">Composites</a><a class="headerlink" href="#composites" title="Permalink to this headline">¶</a></h4>
-<p>Similarly to exceptions, composite classes used should be override-able by
-inheritance and/or instantiation.  Common sense should be used when
+<p>Similarly to exceptions, composite classes should be override-able by
+inheritance and/or instantiation.  Common sense can be used when
 selecting what classes to include, but often it&#8217;s better to add one
-too many as predicting what users need to override is hard (this has
+too many: predicting what users need to override is hard (this has
 saved us from many a monkey patch).</p>
 <p><strong>Example</strong>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Worker</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -367,7 +379,7 @@ cryptographic digests.</p>
 </li>
 <li><p class="first">celery.tests</p>
 <blockquote>
-<div><p>The celery unittest suite.</p>
+<div><p>The unittest suite.</p>
 </div></blockquote>
 </li>
 <li><p class="first">celery.utils</p>
@@ -436,7 +448,7 @@ Much of it is there to be compatible across Python versions.</p>
         <li class="right" >
           <a href="index.html" title="Internals"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >Internals</a> &raquo;</li> 
       </ul>
     </div>

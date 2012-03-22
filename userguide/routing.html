@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Routing Tasks &mdash; Celery 2.5.0rc2 documentation</title>
+    <title>Routing Tasks &mdash; Celery 2.6.0a1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0rc2',
+        VERSION:     '2.6.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0rc2 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.6.0a1 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Monitoring and Management Guide" href="monitoring.html" />
     <link rel="prev" title="HTTP Callback Tasks (Webhooks)" href="remote-tasks.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="remote-tasks.html" title="HTTP Callback Tasks (Webhooks)"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -69,12 +69,10 @@
 </div>
     <div class="section" id="routing-tasks">
 <span id="guide-routing"></span><h1>Routing Tasks<a class="headerlink" href="#routing-tasks" title="Permalink to this headline">¶</a></h1>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">This document refers to functionality only available in brokers
-using AMQP.  Other brokers may implement some functionality, see their
-respective documentation for more information, or contact the
-<a class="reference internal" href="../getting-started/resources.html#mailing-list"><em>Mailing list</em></a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Alternate routing concepts like topic and fanout may not be
+available for all transports, please consult the <a class="reference external" href="http://kombu.readthedocs.org/en/latest/introduction.html#transport-comparison">transport comparison table</a>.</p>
 </div>
 <div class="contents local topic" id="contents">
 <ul class="simple">
@@ -193,7 +191,7 @@ will be taken from the <a class="reference internal" href="../configuration.html
 </pre></div>
 </div>
 <p>You can also override this using the <cite>routing_key</cite> argument to
-<tt class="xref py py-func docutils literal"><span class="pre">apply_async()</span></tt>, or <tt class="xref py py-func docutils literal"><span class="pre">send_task()</span></tt>:</p>
+<tt class="xref py py-meth docutils literal"><span class="pre">Task.apply_async()</span></tt>, or <tt class="xref py py-func docutils literal"><span class="pre">send_task()</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">feeds.tasks</span> <span class="kn">import</span> <span class="n">import_feed</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">import_feed</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;http://cnn.com/rss&quot;</span><span class="p">],</span>
 <span class="gp">... </span>                        <span class="n">queue</span><span class="o">=</span><span class="s">&quot;feed_tasks&quot;</span><span class="p">,</span>
@@ -503,7 +501,7 @@ in <a class="reference internal" href="../configuration.html#std:setting-CELERY_
 <p>The destination for a task is decided by the following (in order):</p>
 <ol class="arabic simple">
 <li>The <a class="reference internal" href="#routers"><em>Routers</em></a> defined in <a class="reference internal" href="../configuration.html#std:setting-CELERY_ROUTES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ROUTES</span></tt></a>.</li>
-<li>The routing arguments to <tt class="xref py py-func docutils literal"><span class="pre">apply_async()</span></tt>.</li>
+<li>The routing arguments to <tt class="xref py py-func docutils literal"><span class="pre">Task.apply_async()</span></tt>.</li>
 <li>Routing related attributes defined on the <tt class="xref py py-class docutils literal"><span class="pre">Task</span></tt>
 itself.</li>
 </ol>
@@ -613,7 +611,7 @@ returning a true value, and use that as the final route for the task.</p>
         <li class="right" >
           <a href="remote-tasks.html" title="HTTP Callback Tasks (Webhooks)"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Using the Django Database &mdash; Celery 2.5.0rc2 documentation</title>
+    <title>Using the Django Database &mdash; Celery 2.6.0a1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.5.0rc2',
+        VERSION:     '2.6.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0rc2 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.6.0a1 documentation" href="../../index.html" />
     <link rel="up" title="Brokers" href="index.html" />
     <link rel="next" title="Using MongoDB" href="mongodb.html" />
     <link rel="prev" title="Using SQLAlchemy" href="sqlalchemy.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="sqlalchemy.html" title="Using SQLAlchemy"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Getting Started</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Brokers</a> &raquo;</li> 
       </ul>
@@ -72,10 +72,6 @@
 <span id="broker-django"></span><h1>Using the Django Database<a class="headerlink" href="#using-the-django-database" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="installation">
 <span id="broker-django-installation"></span><h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
-<p>For the Django database transport support you have to install the
-<cite>django-kombu</cite> library:</p>
-<div class="highlight-python"><pre>$ pip install -U django-kombu</pre>
-</div>
 </div>
 <div class="section" id="configuration">
 <span id="broker-django-configuration"></span><h2>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
@@ -87,8 +83,8 @@ configuration values.</p>
 </pre></div>
 </div>
 </li>
-<li><p class="first">Add <tt class="xref py py-mod docutils literal"><span class="pre">djkombu</span></tt> to <cite>INSTALLED_APPS</cite>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">INSTALLED_APPS</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;djkombu&quot;</span><span class="p">,</span> <span class="p">)</span>
+<li><p class="first">Add <tt class="xref py py-mod docutils literal"><span class="pre">django.transport.kombu</span></tt> to <cite>INSTALLED_APPS</cite>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">INSTALLED_APPS</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;kombu.transport.django&quot;</span><span class="p">,</span> <span class="p">)</span>
 </pre></div>
 </div>
 </li>
@@ -177,7 +173,7 @@ multiple times).</li>
         <li class="right" >
           <a href="sqlalchemy.html" title="Using SQLAlchemy"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Getting Started</a> &raquo;</li>
           <li><a href="index.html" >Brokers</a> &raquo;</li> 
       </ul>

@@ -456,7 +456,7 @@ and :program:`celeryev` to monitor the cluster.
 Snapshots
 ---------
 
-.. versionadded: 2.1
+.. versionadded:: 2.1
 
 Even a single worker can produce a huge amount of events, so storing
 the history of all events on disk may be very expensive.

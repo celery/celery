@@ -4,12 +4,14 @@
  Routing Tasks
 ===============
 
-.. warning::
+.. note::
 
-    This document refers to functionality only available in brokers
-    using AMQP.  Other brokers may implement some functionality, see their
-    respective documentation for more information, or contact the
-    :ref:`mailing-list`.
+    Alternate routing concepts like topic and fanout may not be
+    available for all transports, please consult the `transport comparison table`_.
+
+.. _`transport comparison table`:
+    http://kombu.readthedocs.org/en/latest/introduction.html#transport-comparison
+
 
 .. contents::
     :local:
@@ -129,7 +131,7 @@ To route a task to the `feed_tasks` queue, you can add an entry in the
 
 
 You can also override this using the `routing_key` argument to
-:func:`~celery.execute.apply_async`, or :func:`~celery.execute.send_task`:
+:meth:`Task.apply_async`, or :func:`~celery.execute.send_task`:
 
     >>> from feeds.tasks import import_feed
     >>> import_feed.apply_async(args=["http://cnn.com/rss"],
@@ -491,7 +493,7 @@ Specifying task destination
 The destination for a task is decided by the following (in order):
 
 1. The :ref:`routers` defined in :setting:`CELERY_ROUTES`.
-2. The routing arguments to :func:`~celery.execute.apply_async`.
+2. The routing arguments to :func:`Task.apply_async`.
 3. Routing related attributes defined on the :class:`~celery.task.base.Task`
    itself.
 

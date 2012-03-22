@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.platforms &mdash; Celery 2.5.0rc2 documentation</title>
+    <title>celery.platforms &mdash; Celery 2.6.0a1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.5.0rc2',
+        VERSION:     '2.6.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0rc2 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.6.0a1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="prev" title="celery.utils.dispatch.saferef" href="celery.utils.dispatch.saferef.html" /> 
   </head>
@@ -41,7 +41,7 @@
         <li class="right" >
           <a href="celery.utils.dispatch.saferef.html" title="celery.utils.dispatch.saferef"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -91,7 +91,7 @@ users, groups, and so on.</p>
 </table>
 <dl class="class">
 <dt id="celery.platforms.DaemonContext">
-<em class="property">class </em><tt class="descclassname">celery.platforms.</tt><tt class="descname">DaemonContext</tt><big>(</big><em>pidfile=None</em>, <em>workdir=None</em>, <em>umask=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.platforms.DaemonContext" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.platforms.</tt><tt class="descname">DaemonContext</tt><big>(</big><em>pidfile=None</em>, <em>workdir=None</em>, <em>umask=None</em>, <em>fake=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.platforms.DaemonContext" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="celery.platforms.DaemonContext.close">
 <tt class="descname">close</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#celery.platforms.DaemonContext.close" title="Permalink to this definition">¶</a></dt>
@@ -283,7 +283,7 @@ exits.</p>
 
 <dl class="function">
 <dt id="celery.platforms.detached">
-<tt class="descclassname">celery.platforms.</tt><tt class="descname">detached</tt><big>(</big><em>logfile=None</em>, <em>pidfile=None</em>, <em>uid=None</em>, <em>gid=None</em>, <em>umask=0</em>, <em>workdir=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.platforms.detached" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">detached</tt><big>(</big><em>logfile=None</em>, <em>pidfile=None</em>, <em>uid=None</em>, <em>gid=None</em>, <em>umask=0</em>, <em>workdir=None</em>, <em>fake=False</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.platforms.detached" title="Permalink to this definition">¶</a></dt>
 <dd><p>Detach the current process in the background (daemonize).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -301,6 +301,7 @@ effective privileges to.</li>
 privileges to.</li>
 <li><strong>umask</strong> &#8211; Optional umask that will be effective in the child process.</li>
 <li><strong>workdir</strong> &#8211; Optional new working directory.</li>
+<li><strong>fake</strong> &#8211; Don&#8217;t actually detach, intented for debugging purposes.</li>
 <li><strong>**opts</strong> &#8211; Ignored.</li>
 </ul>
 </td>
@@ -476,7 +477,7 @@ the uid is taken from the password file.</p>
         <li class="right" >
           <a href="celery.utils.dispatch.saferef.html" title="celery.utils.dispatch.saferef"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

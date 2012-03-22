@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.apps.worker &mdash; Celery 2.5.0rc2 documentation</title>
+    <title>celery.apps.worker &mdash; Celery 2.6.0a1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0rc2',
+        VERSION:     '2.6.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0rc2 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.6.0a1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.apps.beat" href="celery.apps.beat.html" />
     <link rel="prev" title="celery.events.state" href="celery.events.state.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.events.state.html" title="celery.events.state"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -74,7 +74,7 @@
 <em class="property">class </em><tt class="descclassname">celery.apps.worker.</tt><tt class="descname">Worker</tt><big>(</big><em>hostname=None</em>, <em>discard=False</em>, <em>embed_clockservice=False</em>, <em>queues=None</em>, <em>include=None</em>, <em>app=None</em>, <em>pidfile=None</em>, <em>autoscale=None</em>, <em>autoreload=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.apps.worker.Worker" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="class">
 <dt id="celery.apps.worker.Worker.WorkController">
-<em class="property">class </em><tt class="descname">WorkController</tt><big>(</big><em>loglevel=None</em>, <em>hostname=None</em>, <em>logger=None</em>, <em>ready_callback=&lt;function noop at 0x1019fb848&gt;</em>, <em>queues=None</em>, <em>app=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.apps.worker.Worker.WorkController" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descname">WorkController</tt><big>(</big><em>loglevel=None</em>, <em>hostname=None</em>, <em>logger=None</em>, <em>ready_callback=&lt;function noop at 0x1017d0aa0&gt;</em>, <em>queues=None</em>, <em>app=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.apps.worker.Worker.WorkController" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unmanaged worker instance.</p>
 <dl class="attribute">
 <dt id="celery.apps.worker.Worker.WorkController.CLOSE">
@@ -181,6 +181,11 @@
 <tt class="descname">process_task</tt><big>(</big><em>request</em><big>)</big><a class="headerlink" href="#celery.apps.worker.Worker.WorkController.process_task" title="Permalink to this definition">¶</a></dt>
 <dd><p>Process task by sending it to the pool of workers.</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="celery.apps.worker.Worker.WorkController.reload">
+<tt class="descname">reload</tt><big>(</big><em>modules=None</em>, <em>reload=False</em>, <em>reloader=None</em><big>)</big><a class="headerlink" href="#celery.apps.worker.Worker.WorkController.reload" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="celery.apps.worker.Worker.WorkController.schedule_filename">
@@ -381,6 +386,11 @@
 <tt class="descclassname">celery.apps.worker.</tt><tt class="descname">install_worker_term_handler</tt><big>(</big><em>worker</em><big>)</big><a class="headerlink" href="#celery.apps.worker.install_worker_term_handler" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="function">
+<dt id="celery.apps.worker.install_worker_term_hard_handler">
+<tt class="descclassname">celery.apps.worker.</tt><tt class="descname">install_worker_term_hard_handler</tt><big>(</big><em>worker</em><big>)</big><a class="headerlink" href="#celery.apps.worker.install_worker_term_hard_handler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </div>
 
 
@@ -434,7 +444,7 @@
         <li class="right" >
           <a href="celery.events.state.html" title="celery.events.state"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

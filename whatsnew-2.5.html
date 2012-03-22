@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>What’s new in Celery 2.5 &mdash; Celery 2.5.0rc2 documentation</title>
+    <title>What’s new in Celery 2.5 &mdash; Celery 2.6.0a1 documentation</title>
     
     <link rel="stylesheet" href="_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '2.5.0rc2',
+        VERSION:     '2.6.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0rc2 documentation" href="index.html" />
+    <link rel="top" title="Celery 2.6.0a1 documentation" href="index.html" />
     <link rel="next" title="Change history" href="changelog.html" />
     <link rel="prev" title="Frequently Asked Questions" href="faq.html" /> 
   </head>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="faq.html" title="Frequently Asked Questions"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery 2.6.0a1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -67,37 +67,49 @@
 </div>
     <div class="section" id="what-s-new-in-celery-2-5">
 <span id="whatsnew-2-5"></span><h1>What&#8217;s new in Celery 2.5<a class="headerlink" href="#what-s-new-in-celery-2-5" title="Permalink to this headline">¶</a></h1>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">release-date:</th><td class="field-body">2011-02-24 04:00 P.M GMT</td>
-</tr>
-</tbody>
-</table>
+<p>Celery aims to be a flexible and reliable, best-of-breed solution
+to process vast amounts of messages in a distributed fashion, while
+providing operations with the tools to maintain such a system.</p>
+<p>Celery has a large and diverse community of users and contributors,
+you should come join us <a class="reference internal" href="getting-started/resources.html#irc-channel"><em>on IRC</em></a>
+or <a class="reference internal" href="getting-started/resources.html#mailing-list"><em>our mailing-list</em></a>.</p>
+<p>To read more about Celery you should visit our <a class="reference external" href="http://celeryproject.org/">website</a>.</p>
+<p>While this version is backward compatible with previous versions
+it is important that you read the following section.</p>
+<p>If you use Celery in combination with Django you must also
+read the <a class="reference external" href="http://bit.ly/djcelery-25-changelog">django-celery changelog</a> and upgrade to <a class="reference external" href="http://pypi.python.org/pypi/django-celery/">django-celery 2.5</a>.</p>
+<p>This version is officially supported on CPython 2.5, 2.6, 2.7, 3.2 and 3.3,
+as well as PyPy and Jython.</p>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference internal" href="#important-notes" id="id1">Important Notes</a><ul>
-<li><a class="reference internal" href="#broker-connection-pool-now-enabled-by-default" id="id2">Broker connection pool now enabled by default</a></li>
-<li><a class="reference internal" href="#amqp-result-backend-exchange-is-no-longer-auto-delete" id="id3">AMQP Result Backend: Exchange is no longer <em>auto delete</em></a></li>
-<li><a class="reference internal" href="#solution-for-hanging-workers-but-must-be-manually-enabled" id="id4">Solution for hanging workers (but must be manually enabled)</a></li>
+<li><a class="reference internal" href="#important-notes" id="id2">Important Notes</a><ul>
+<li><a class="reference internal" href="#broker-connection-pool-now-enabled-by-default" id="id3">Broker connection pool now enabled by default</a></li>
+<li><a class="reference internal" href="#amqp-result-backend-exchange-is-no-longer-auto-delete" id="id4">AMQP Result Backend: Exchange is no longer <em>auto delete</em></a></li>
+<li><a class="reference internal" href="#solution-for-hanging-workers-but-must-be-manually-enabled" id="id5">Solution for hanging workers (but must be manually enabled)</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#optimizations" id="id5">Optimizations</a></li>
-<li><a class="reference internal" href="#news" id="id6">News</a><ul>
-<li><a class="reference internal" href="#timezone-support" id="id7">Timezone support</a></li>
-<li><a class="reference internal" href="#new-security-serializer-using-cryptographic-signing" id="id8">New security serializer using cryptographic signing</a></li>
-<li><a class="reference internal" href="#new-celery-annotations-setting" id="id9">New <a class="reference internal" href="configuration.html#std:setting-CELERY_ANNOTATIONS"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ANNOTATIONS</span></tt></a> setting</a></li>
-<li><a class="reference internal" href="#in-other-news" id="id10">In Other News</a></li>
+<li><a class="reference internal" href="#optimizations" id="id6">Optimizations</a></li>
+<li><a class="reference internal" href="#deprecations" id="id7">Deprecations</a><ul>
+<li><a class="reference internal" href="#removals" id="id8">Removals</a></li>
+<li><a class="reference internal" href="#id1" id="id9">Deprecations</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#fixes" id="id11">Fixes</a></li>
+<li><a class="reference internal" href="#news" id="id10">News</a><ul>
+<li><a class="reference internal" href="#timezone-support" id="id11">Timezone support</a></li>
+<li><a class="reference internal" href="#new-security-serializer-using-cryptographic-signing" id="id12">New security serializer using cryptographic signing</a></li>
+<li><a class="reference internal" href="#experimental-support-for-automatic-module-reloading" id="id13">Experimental support for automatic module reloading</a></li>
+<li><a class="reference internal" href="#new-celery-annotations-setting" id="id14">New <a class="reference internal" href="configuration.html#std:setting-CELERY_ANNOTATIONS"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ANNOTATIONS</span></tt></a> setting</a></li>
+<li><a class="reference internal" href="#current-provides-the-currently-executing-task" id="id15"><tt class="docutils literal"><span class="pre">current</span></tt> provides the currently executing task</a></li>
+<li><a class="reference internal" href="#in-other-news" id="id16">In Other News</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#fixes" id="id17">Fixes</a></li>
 </ul>
 </div>
 <div class="section" id="important-notes">
-<span id="v250-important"></span><h2><a class="toc-backref" href="#id1">Important Notes</a><a class="headerlink" href="#important-notes" title="Permalink to this headline">¶</a></h2>
+<span id="v250-important"></span><h2><a class="toc-backref" href="#id2">Important Notes</a><a class="headerlink" href="#important-notes" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="broker-connection-pool-now-enabled-by-default">
-<h3><a class="toc-backref" href="#id2">Broker connection pool now enabled by default</a><a class="headerlink" href="#broker-connection-pool-now-enabled-by-default" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id3">Broker connection pool now enabled by default</a><a class="headerlink" href="#broker-connection-pool-now-enabled-by-default" title="Permalink to this headline">¶</a></h3>
 <p>The default limit is 10 connections, if you have many threads/green-threads
 using connections at the same time you may want to tweak this limit
 to avoid contention.</p>
@@ -108,7 +120,7 @@ this default or the default retry policy see
 <a class="reference internal" href="configuration.html#std:setting-CELERY_TASK_PUBLISH_RETRY_POLICY"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TASK_PUBLISH_RETRY_POLICY</span></tt></a>.</p>
 </div>
 <div class="section" id="amqp-result-backend-exchange-is-no-longer-auto-delete">
-<h3><a class="toc-backref" href="#id3">AMQP Result Backend: Exchange is no longer <em>auto delete</em></a><a class="headerlink" href="#amqp-result-backend-exchange-is-no-longer-auto-delete" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id4">AMQP Result Backend: Exchange is no longer <em>auto delete</em></a><a class="headerlink" href="#amqp-result-backend-exchange-is-no-longer-auto-delete" title="Permalink to this headline">¶</a></h3>
 <p>The exchange used for results used to have the <em>auto_delete</em> flag set,
 that could result in a race condition leading to an annoying warning.</p>
 <div class="admonition-for-rabbitmq-users admonition">
@@ -124,13 +136,13 @@ configure a new name for the exchange:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_RESULT_EXCHANGE</span> <span class="o">=</span> <span class="s">&quot;celeryresults2&quot;</span>
 </pre></div>
 </div>
-<p class="last">But you have to make sure that both clients and workers
+<p class="last">But you have to make sure that all clients and workers
 use this new setting, so they are updated to use the same
 exchange name.</p>
 </div>
 </div>
 <div class="section" id="solution-for-hanging-workers-but-must-be-manually-enabled">
-<h3><a class="toc-backref" href="#id4">Solution for hanging workers (but must be manually enabled)</a><a class="headerlink" href="#solution-for-hanging-workers-but-must-be-manually-enabled" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id5">Solution for hanging workers (but must be manually enabled)</a><a class="headerlink" href="#solution-for-hanging-workers-but-must-be-manually-enabled" title="Permalink to this headline">¶</a></h3>
 <p>The <a class="reference internal" href="configuration.html#std:setting-CELERYD_FORCE_EXECV"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYD_FORCE_EXECV</span></tt></a> setting has been added to solve
 a problem with deadlocks that originate when threads and fork is mixed
 together:</p>
@@ -142,7 +154,7 @@ but especially users also using time limits or a max tasks per child
 setting.</p>
 <ul class="simple">
 <li>See <a class="reference external" href="http://bugs.python.org/issue6721#msg140215">Python Issue 6721</a> to read more about this issue, and why
-resorting to execv is the only safe solution.</li>
+resorting to <tt class="xref py py-func docutils literal"><span class="pre">execv`()</span></tt> is the only safe solution.</li>
 </ul>
 <p>Enabling this option will result in a slight performance penalty
 when new child worker processes are started, and it will also increase
@@ -150,28 +162,57 @@ memory usage (but many platforms are optimized, so the impact may be
 minimal).  Considering that it ensures reliability when replacing
 lost worker processes, it should be worth it.</p>
 <ul class="simple">
-<li>It is already the default behavior on Windows.</li>
+<li>It&#8217;s already the default behavior on Windows.</li>
 <li>It will be the default behavior for all platforms in a future version.</li>
 </ul>
 </div>
 </div>
 <div class="section" id="optimizations">
-<span id="v250-optimizations"></span><h2><a class="toc-backref" href="#id5">Optimizations</a><a class="headerlink" href="#optimizations" title="Permalink to this headline">¶</a></h2>
+<span id="v250-optimizations"></span><h2><a class="toc-backref" href="#id6">Optimizations</a><a class="headerlink" href="#optimizations" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>The code path used when the worker executes a task has been heavily
 optimized, meaning the worker is able to process a great deal
-more tasks/s compared to previous versions.  As an example the solo
-pool can now process up to 15000 tasks/s on a 4 core MacBook Pro
+more tasks/second compared to previous versions.  As an example the solo
+pool can now process up to 15000 tasks/second on a 4 core MacBook Pro
 when using the <a class="reference external" href="http://pypi.python.org/pylibrabbitmq/">pylibrabbitmq</a> transport, where it previously
-could only do 5000 tasks/s.</li>
+could only do 5000 tasks/second.</li>
 <li>The task error tracebacks are now much shorter.</li>
 <li>Fixed a noticeable delay in task processing when rate limits are enabled.</li>
 </ul>
 </div>
+<div class="section" id="deprecations">
+<span id="v250-deprecations"></span><h2><a class="toc-backref" href="#id7">Deprecations</a><a class="headerlink" href="#deprecations" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="removals">
+<h3><a class="toc-backref" href="#id8">Removals</a><a class="headerlink" href="#removals" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>The old <tt class="xref py py-class docutils literal"><span class="pre">TaskSet</span></tt> signature of <tt class="docutils literal"><span class="pre">(task_name,</span> <span class="pre">list_of_tasks)</span></tt>
+can no longer be used (originally scheduled for removal in 2.4).
+The deprecated <tt class="docutils literal"><span class="pre">.task_name</span></tt> and <tt class="docutils literal"><span class="pre">.task</span></tt> attributes has also been
+removed.</li>
+<li>The functions <tt class="docutils literal"><span class="pre">celery.execute.delay_task</span></tt>, <tt class="docutils literal"><span class="pre">celery.execute.apply</span></tt>,
+and <tt class="docutils literal"><span class="pre">celery.execute.apply_async</span></tt> has been removed (originally)
+scheduled for removal in 2.3).</li>
+<li>The built-in <tt class="docutils literal"><span class="pre">ping</span></tt> task has been removed (originally scheduled
+for removal in 2.3).  Please use the ping broadcast command
+instead.</li>
+<li>It is no longer possible to import <tt class="docutils literal"><span class="pre">subtask</span></tt> and <tt class="docutils literal"><span class="pre">TaskSet</span></tt>
+from <a class="reference internal" href="reference/celery.task.base.html#module-celery.task.base" title="celery.task.base"><tt class="xref py py-mod docutils literal"><span class="pre">celery.task.base</span></tt></a>, please import them from <a class="reference internal" href="reference/celery.task.html#module-celery.task" title="celery.task"><tt class="xref py py-mod docutils literal"><span class="pre">celery.task</span></tt></a>
+instead (originally scheduled for removal in 2.4).</li>
+</ul>
+</div>
+<div class="section" id="id1">
+<h3><a class="toc-backref" href="#id9">Deprecations</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>The <tt class="xref py py-mod docutils literal"><span class="pre">celery.decorators</span></tt> module has changed status
+from pending deprecation to deprecated, and is scheduled for removal
+in version 3.0.  The <tt class="docutils literal"><span class="pre">celery.task</span></tt> module must be used instead.</li>
+</ul>
+</div>
+</div>
 <div class="section" id="news">
-<span id="v250-news"></span><h2><a class="toc-backref" href="#id6">News</a><a class="headerlink" href="#news" title="Permalink to this headline">¶</a></h2>
+<span id="v250-news"></span><h2><a class="toc-backref" href="#id10">News</a><a class="headerlink" href="#news" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="timezone-support">
-<h3><a class="toc-backref" href="#id7">Timezone support</a><a class="headerlink" href="#timezone-support" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id11">Timezone support</a><a class="headerlink" href="#timezone-support" title="Permalink to this headline">¶</a></h3>
 <p>Celery can now be configured to treat all incoming and outgoing dates
 as UTC, and the local timezone can be configured.</p>
 <p>This is not yet enabled by default, since enabling
@@ -197,7 +238,7 @@ introuced in Django 1.4.</p>
 </div>
 </div>
 <div class="section" id="new-security-serializer-using-cryptographic-signing">
-<h3><a class="toc-backref" href="#id8">New security serializer using cryptographic signing</a><a class="headerlink" href="#new-security-serializer-using-cryptographic-signing" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id12">New security serializer using cryptographic signing</a><a class="headerlink" href="#new-security-serializer-using-cryptographic-signing" title="Permalink to this headline">¶</a></h3>
 <p>A new serializer has been added that signs and verifies the signature
 of messages.</p>
 <p>The name of the new serializer is <tt class="docutils literal"><span class="pre">auth</span></tt>, and needs additional
@@ -206,9 +247,55 @@ configuration to work (see <a class="reference internal" href="configuration.htm
 <p class="first admonition-title">See also</p>
 <p class="last"><a class="reference internal" href="userguide/security.html#guide-security"><em>Security</em></a></p>
 </div>
+<p>Contributed by Mher Movsisyan.</p>
+</div>
+<div class="section" id="experimental-support-for-automatic-module-reloading">
+<h3><a class="toc-backref" href="#id13">Experimental support for automatic module reloading</a><a class="headerlink" href="#experimental-support-for-automatic-module-reloading" title="Permalink to this headline">¶</a></h3>
+<p>Starting <strong class="program">celeryd</strong> with the <em class="xref std std-option">--autoreload</em> option will
+enable the worker to watch for file system changes to all imported task
+modules imported (and also any non-task modules added to the
+<a class="reference internal" href="configuration.html#std:setting-CELERY_IMPORTS"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_IMPORTS</span></tt></a> setting or the <em class="xref std std-option">-I|--include</em> option).</p>
+<p>This is an experimental feature intended for use in development only,
+using auto-reload in production is discouraged as the behavior of reloading
+a module in Python is undefined, and may cause hard to diagnose bugs and
+crashes.  Celery uses the same approach as the auto-reloader found in e.g.
+the Django <tt class="docutils literal"><span class="pre">runserver</span></tt> command.</p>
+<p>When auto-reload is enabled the worker starts an additional thread
+that watches for changes in the file system.  New modules are imported,
+and already imported modules are reloaded whenever a change is detected,
+and if the processes pool is used the child processes will finish the work
+they are doing and exit, so that they can be replaced by fresh processes
+effectively reloading the code.</p>
+<p>File system notification backends are pluggable, and Celery comes with three
+implementations:</p>
+<ul>
+<li><p class="first">inotify (Linux)</p>
+<blockquote>
+<div><p>Used if the <tt class="xref py py-mod docutils literal"><span class="pre">pyinotify</span></tt> library is installed.
+If you are running on Linux this is the recommended implementation,
+to install the <tt class="xref py py-mod docutils literal"><span class="pre">pyinotify</span></tt> library you have to run the following
+command:</p>
+<div class="highlight-python"><pre>$ pip install pyinotify</pre>
+</div>
+</div></blockquote>
+</li>
+<li><p class="first">kqueue (OS X/BSD)</p>
+</li>
+<li><p class="first">stat</p>
+<blockquote>
+<div><p>The fallback implementation simply polls the files using <tt class="docutils literal"><span class="pre">stat</span></tt> and is very
+expensive.</p>
+</div></blockquote>
+</li>
+</ul>
+<p>You can force an implementation by setting the <span class="target" id="index-0"></span><tt class="xref std std-envvar docutils literal"><span class="pre">CELERYD_FSNOTIFY</span></tt>
+environment variable:</p>
+<div class="highlight-python"><pre>$ env CELERYD_FSNOTIFY=stat celeryd -l info --autoreload</pre>
+</div>
+<p>Contributed by Mher Movsisyan.</p>
 </div>
 <div class="section" id="new-celery-annotations-setting">
-<h3><a class="toc-backref" href="#id9">New <a class="reference internal" href="configuration.html#std:setting-CELERY_ANNOTATIONS"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ANNOTATIONS</span></tt></a> setting</a><a class="headerlink" href="#new-celery-annotations-setting" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id14">New <a class="reference internal" href="configuration.html#std:setting-CELERY_ANNOTATIONS"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ANNOTATIONS</span></tt></a> setting</a><a class="headerlink" href="#new-celery-annotations-setting" title="Permalink to this headline">¶</a></h3>
 <p>This new setting enables the configuration to modify task classes
 and their attributes.</p>
 <p>The setting can be a dict, or a list of annotation objects that filter
@@ -241,12 +328,38 @@ that filter for tasks to annotate:</p>
 </pre></div>
 </div>
 </div>
+<div class="section" id="current-provides-the-currently-executing-task">
+<h3><a class="toc-backref" href="#id15"><tt class="docutils literal"><span class="pre">current</span></tt> provides the currently executing task</a><a class="headerlink" href="#current-provides-the-currently-executing-task" title="Permalink to this headline">¶</a></h3>
+<p>The new <tt class="xref py py-data docutils literal"><span class="pre">celery.task.current</span></tt> proxy will always give the currently
+executing task.</p>
+<p><strong>Example</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">current</span><span class="p">,</span> <span class="n">task</span>
+
+<span class="nd">@task</span>
+<span class="k">def</span> <span class="nf">update_twitter_status</span><span class="p">(</span><span class="n">auth</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+    <span class="n">twitter</span> <span class="o">=</span> <span class="n">Twitter</span><span class="p">(</span><span class="n">auth</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">twitter</span><span class="o">.</span><span class="n">update_status</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">twitter</span><span class="o">.</span><span class="n">FailWhale</span><span class="p">,</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="c"># retry in 10 seconds.</span>
+        <span class="n">current</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">countdown</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">exc</span><span class="o">=</span><span class="n">exc</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Previously you would have to type <tt class="docutils literal"><span class="pre">update_twitter_status.retry(...)</span></tt>
+here, which can be annoying for long task names.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This will not work if the task function is called directly, i.e:
+<tt class="docutils literal"><span class="pre">update_twitter_status(a,</span> <span class="pre">b)</span></tt>. For that to work <tt class="docutils literal"><span class="pre">apply</span></tt> must
+be used: <tt class="docutils literal"><span class="pre">update_twitter_status.apply((a,</span> <span class="pre">b))</span></tt>.</p>
+</div>
+</div>
 <div class="section" id="in-other-news">
-<h3><a class="toc-backref" href="#id10">In Other News</a><a class="headerlink" href="#in-other-news" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id16">In Other News</a><a class="headerlink" href="#in-other-news" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">Now depends on Kombu 2.1.0.</p>
 </li>
-<li><p class="first">Efficient Chord support for the memcached backend (Issue #533)</p>
+<li><p class="first">Efficient Chord support for the memcached backend (Issue <span class="xref issue">#533</span>)</p>
 <blockquote>
 <div><p>This means memcached joins Redis in the ability to do non-polling
 chords.</p>
@@ -258,6 +371,13 @@ chords.</p>
 <div><p>The AMQP backend can now use the fallback chord solution.</p>
 </div></blockquote>
 </li>
+<li><p class="first">Sending <tt class="xref std std-sig docutils literal"><span class="pre">QUIT</span></tt> to celeryd will now cause it cold terminate.</p>
+<blockquote>
+<div><p>That is, it will not finish executing the tasks it is currently
+working on.</p>
+<p>Contributed by Alec Clowes.</p>
+</div></blockquote>
+</li>
 <li><p class="first">New &#8220;detailed&#8221; mode for the Cassandra backend.</p>
 <blockquote>
 <div><p>Allows to have a &#8220;detailed&#8221; mode for the Cassandra backend.
@@ -266,6 +386,27 @@ New states are then appended to the row as new columns, the last state
 being the last column.</p>
 <p>See the <a class="reference internal" href="configuration.html#std:setting-CASSANDRA_DETAILED_MODE"><tt class="xref std std-setting docutils literal"><span class="pre">CASSANDRA_DETAILED_MODE</span></tt></a> setting.</p>
 <p>Contributed by Steeve Morin.</p>
+</div></blockquote>
+</li>
+<li><p class="first">The crontab parser now matches Vixie Cron behavior when parsing ranges
+with steps (e.g. 1-59/2).</p>
+<blockquote>
+<div><p>Contributed by Daniel Hepper.</p>
+</div></blockquote>
+</li>
+<li><p class="first">celerybeat can now be configured on the command line like celeryd.</p>
+<p>Additional configuration must be added at the end of the argument list
+followed by <tt class="docutils literal"><span class="pre">--</span></tt>, for example:</p>
+<div class="highlight-python"><pre>$ celerybeat -l info -- celerybeat.max_loop_interval=10.0</pre>
+</div>
+</li>
+<li><p class="first">Now limits the number of frames in a traceback so that celeryd does not
+crash on maximum recursion limit exceeded exceptions (Issue <span class="xref issue">#615</span>).</p>
+<blockquote>
+<div><p>The limit is set to the current recursion limit divided by 8 (which
+is 125 by default).</p>
+<p>To get or set the current recursion limit use
+<a class="reference external" href="http://docs.python.org/dev/library/sys.html#sys.getrecursionlimit" title="(in Python v3.3)"><tt class="xref py py-func docutils literal"><span class="pre">sys.getrecursionlimit()</span></tt></a> and <a class="reference external" href="http://docs.python.org/dev/library/sys.html#sys.setrecursionlimit" title="(in Python v3.3)"><tt class="xref py py-func docutils literal"><span class="pre">sys.setrecursionlimit()</span></tt></a>.</p>
 </div></blockquote>
 </li>
 <li><p class="first">More information is now preserved in the pickleable traceback.</p>
@@ -317,7 +458,7 @@ $ python manage.py celeryctl migrate django:// redis://</pre>
 </ul>
 <ul>
 <li><p class="first">Routers can now override the <tt class="docutils literal"><span class="pre">exchange</span></tt> and <tt class="docutils literal"><span class="pre">routing_key</span></tt> used
-to create missing queues (Issue #577).</p>
+to create missing queues (Issue <span class="xref issue">#577</span>).</p>
 <blockquote>
 <div><p>By default this will always use the name of the queue,
 but you can now have a router return exchange and routing_key keys
@@ -373,7 +514,7 @@ configured for that to work.</p>
 <div><p>Contributed by Ivan Metzlar.</p>
 </div></blockquote>
 </li>
-<li><p class="first">gevent: Now supports autoscaling (Issue #599).</p>
+<li><p class="first">gevent: Now supports autoscaling (Issue <span class="xref issue">#599</span>).</p>
 <blockquote>
 <div><p>Contributed by Mark Lavin.</p>
 </div></blockquote>
@@ -387,7 +528,7 @@ shutdown to depend on the semaphore being released.</p>
 </div>
 </div>
 <div class="section" id="fixes">
-<h2><a class="toc-backref" href="#id11">Fixes</a><a class="headerlink" href="#fixes" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id17">Fixes</a><a class="headerlink" href="#fixes" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first">Exceptions that are re-raised with a new exception object now keeps
 the original stack trace.</p>
@@ -435,7 +576,7 @@ deprecated since <tt class="xref py py-mod docutils literal"><span class="pre">p
 by PEP-366.</p>
 </li>
 <li><p class="first"><tt class="docutils literal"><span class="pre">send_task</span></tt> now emits a warning when used in combination with
-<a class="reference internal" href="configuration.html#std:setting-CELERY_ALWAYS_EAGER"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ALWAYS_EAGER</span></tt></a> (Issue #581).</p>
+<a class="reference internal" href="configuration.html#std:setting-CELERY_ALWAYS_EAGER"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ALWAYS_EAGER</span></tt></a> (Issue <span class="xref issue">#581</span>).</p>
 <blockquote>
 <div><p>Contributed by Mher Movsisyan.</p>
 </div></blockquote>
@@ -444,7 +585,7 @@ by PEP-366.</p>
 when <a class="reference internal" href="configuration.html#std:setting-CELERY_ALWAYS_EAGER"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ALWAYS_EAGER</span></tt></a> is enabled.</p>
 </li>
 <li><p class="first">celeryev now tries to re-establish the connection if the connection
-to the broker is lost (Issue #574).</p>
+to the broker is lost (Issue <span class="xref issue">#574</span>).</p>
 </li>
 <li><p class="first">celeryev: Fixed a crash occurring if a task has no associated worker
 information.</p>
@@ -519,7 +660,7 @@ have been received.</p>
         <li class="right" >
           <a href="faq.html" title="Frequently Asked Questions"
              >previous</a> |</li>
-        <li><a href="index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery 2.6.0a1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

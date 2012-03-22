@@ -5,20 +5,58 @@
 .. contents::
     :local:
 
+.. _version-2.6.0:
+
+2.6.0
+=====
+:status: DEVELOPMENT
+:branch: master
+
+.. _version-2.5.1:
+
+2.5.1
+=====
+:release-date: 2012-03-01 01:00 P.M GMT
+:by: Ask Solem
+
+.. _v251-fixes:
+
+Fixes
+-----
+
+* Eventlet/Gevent: A small typo caused celeryd to hang when eventlet/gevent
+  was used, this was because the environment was not monkey patched
+  early enough.
+
+* Eventlet/Gevent: Another small typo caused the mediator to be started
+  with eventlet/gevent, which would make celeryd sometimes hang at shutdown.
+
+* Mulitprocessing: Fixed an error occurring if the pool was stopped
+  before it was properly started.
+
+* Proxy objects now redirects ``__doc__`` and ``__name__`` so ``help(obj)``
+  works.
+
+* Internal timer (timer2) now logs exceptions instead of swallowing them
+  (Issue #626).
+
+* celeryctl shell: can now be started with :option:`--eventlet` or
+  :option:`--gevent` options to apply their monkey patches.
+
 .. _version-2.5.0:
 
 2.5.0
 =====
-:release-date: 2011-02-24 04:00 P.M GMT
-:status: FROZEN
-:branch: master
+:release-date: 2012-02-24 04:00 P.M GMT
+:by: Ask Solem
 
 See :ref:`whatsnew-2.5`.
 
-We decided to do things differently this time, considering the changelog
-is very long we're going to have separate documents for major version changes,
-called "what's new" documents.  Bugfix releases will still be located in the
-changelog.
+Since the changelog has gained considerable size, we decided to
+do things differently this time: by having separate "what's new"
+documents for major version changes.
+
+Bugfix releases will still be found in the changelog.
 
 .. _version-2.4.5:
 
@@ -2201,9 +2239,9 @@ News
         from logging.config import fileConfig
         from celery import signals
 
+        @signals.setup_logging.connect
         def setup_logging(**kwargs):
             fileConfig("logging.conf")
-        signals.setup_logging.connect(setup_logging)
 
     If there are no receivers for this signal, the logging subsystem
     will be configured using the :option:`--loglevel`/:option:`--logfile`

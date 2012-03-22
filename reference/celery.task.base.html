@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.task.base &mdash; Celery 2.5.0rc2 documentation</title>
+    <title>celery.task.base &mdash; Celery 2.6.0a1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0rc2',
+        VERSION:     '2.6.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0rc2 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.6.0a1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.task.sets" href="celery.task.sets.html" />
     <link rel="prev" title="celery.task" href="celery.task.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.task.html" title="celery.task"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -98,9 +98,9 @@
 <p>When called tasks apply the <a class="reference internal" href="#celery.task.base.BaseTask.run" title="celery.task.base.BaseTask.run"><tt class="xref py py-meth docutils literal"><span class="pre">run()</span></tt></a> method.  This method must
 be defined by all tasks (that is unless the <tt class="xref py py-meth docutils literal"><span class="pre">__call__()</span></tt> method
 is overridden).</p>
-<dl class="classmethod">
+<dl class="method">
 <dt id="celery.task.base.BaseTask.AsyncResult">
-<em class="property">classmethod </em><tt class="descname">AsyncResult</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.AsyncResult" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">AsyncResult</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.AsyncResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get AsyncResult instance for this kind of task.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -203,9 +203,32 @@ instance, containing the traceback (if any).</li>
 <p>The return value of this handler is ignored.</p>
 </dd></dl>
 
-<dl class="classmethod">
+<dl class="attribute">
+<dt id="celery.task.base.BaseTask.app">
+<tt class="descclassname">BaseTask.</tt><tt class="descname">app</tt><a class="headerlink" href="#celery.task.base.BaseTask.app" title="Permalink to this definition">¶</a></dt>
+<dd><p>classmethod(function) -&gt; method</p>
+<p>Convert a function to be a class method.</p>
+<p>A class method receives the class as implicit first argument,
+just like an instance method receives the instance.
+To declare a class method, use this idiom:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>class C:</dt>
+<dd>def f(cls, arg1, arg2, ...): ...
+f = classmethod(f)</dd>
+</dl>
+</div></blockquote>
+<p>It can be called either on the class (e.g. C.f()) or on an instance
+(e.g. C().f()).  The instance is ignored except for its class.
+If a class method is called for a derived class, the derived class
+object is passed as the implied first argument.</p>
+<p>Class methods are different than C++ or Java static methods.
+If you want those, see the staticmethod builtin.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="celery.task.base.BaseTask.apply">
-<em class="property">classmethod </em><tt class="descclassname">BaseTask.</tt><tt class="descname">apply</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.apply" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">apply</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.apply" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execute this task locally, by blocking until the task returns.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -225,9 +248,9 @@ setting.</li>
 <p>:rtype <a class="reference internal" href="celery.result.html#celery.result.EagerResult" title="celery.result.EagerResult"><tt class="xref py py-class docutils literal"><span class="pre">celery.result.EagerResult</span></tt></a>:</p>
 </dd></dl>
 
-<dl class="classmethod">
+<dl class="method">
 <dt id="celery.task.base.BaseTask.apply_async">
-<em class="property">classmethod </em><tt class="descclassname">BaseTask.</tt><tt class="descname">apply_async</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>task_id=None</em>, <em>publisher=None</em>, <em>connection=None</em>, <em>router=None</em>, <em>queues=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.apply_async" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">apply_async</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>task_id=None</em>, <em>publisher=None</em>, <em>connection=None</em>, <em>router=None</em>, <em>queues=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply tasks asynchronously by sending a message.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -305,9 +328,9 @@ be replaced by a local <a class="reference internal" href="#celery.task.base.Bas
 </div>
 </dd></dl>
 
-<dl class="classmethod">
+<dl class="method">
 <dt id="celery.task.base.BaseTask.delay">
-<em class="property">classmethod </em><tt class="descclassname">BaseTask.</tt><tt class="descname">delay</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.delay" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">delay</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.delay" title="Permalink to this definition">¶</a></dt>
 <dd><p>Star argument version of <a class="reference internal" href="#celery.task.base.BaseTask.apply_async" title="celery.task.base.BaseTask.apply_async"><tt class="xref py py-meth docutils literal"><span class="pre">apply_async()</span></tt></a>.</p>
 <p>Does not support the extra options enabled by <a class="reference internal" href="#celery.task.base.BaseTask.apply_async" title="celery.task.base.BaseTask.apply_async"><tt class="xref py py-meth docutils literal"><span class="pre">apply_async()</span></tt></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -325,9 +348,9 @@ be replaced by a local <a class="reference internal" href="#celery.task.base.Bas
 <p>:returns <a class="reference internal" href="celery.result.html#celery.result.AsyncResult" title="celery.result.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a>:</p>
 </dd></dl>
 
-<dl class="classmethod">
+<dl class="method">
 <dt id="celery.task.base.BaseTask.establish_connection">
-<em class="property">classmethod </em><tt class="descclassname">BaseTask.</tt><tt class="descname">establish_connection</tt><big>(</big><em>connect_timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.establish_connection" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">establish_connection</tt><big>(</big><em>connect_timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.establish_connection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Establish a connection to the message broker.</p>
 </dd></dl>
 
@@ -352,9 +375,9 @@ be replaced by a local <a class="reference internal" href="#celery.task.base.Bas
 </table>
 </dd></dl>
 
-<dl class="classmethod">
+<dl class="method">
 <dt id="celery.task.base.BaseTask.get_consumer">
-<em class="property">classmethod </em><tt class="descclassname">BaseTask.</tt><tt class="descname">get_consumer</tt><big>(</big><em>connection=None</em>, <em>connect_timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.get_consumer" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">get_consumer</tt><big>(</big><em>connection=None</em>, <em>connect_timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.get_consumer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get message consumer.</p>
 <p>:rtype <a class="reference external" href="http://kombu.readthedocs.org/en/latest/reference/kombu.messaging.html#kombu.messaging.Consumer" title="(in Kombu v2.1)"><tt class="xref py py-class docutils literal"><span class="pre">kombu.messaging.Consumer</span></tt></a>:</p>
 <div class="admonition warning">
@@ -371,15 +394,15 @@ connection after use:</p>
 </div>
 </dd></dl>
 
-<dl class="classmethod">
+<dl class="method">
 <dt id="celery.task.base.BaseTask.get_logger">
-<em class="property">classmethod </em><tt class="descclassname">BaseTask.</tt><tt class="descname">get_logger</tt><big>(</big><em>loglevel=None</em>, <em>logfile=None</em>, <em>propagate=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.get_logger" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">get_logger</tt><big>(</big><em>loglevel=None</em>, <em>logfile=None</em>, <em>propagate=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.get_logger" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get task-aware logger object.</p>
 </dd></dl>
 
-<dl class="classmethod">
+<dl class="method">
 <dt id="celery.task.base.BaseTask.get_publisher">
-<em class="property">classmethod </em><tt class="descclassname">BaseTask.</tt><tt class="descname">get_publisher</tt><big>(</big><em>connection=None</em>, <em>exchange=None</em>, <em>connect_timeout=None</em>, <em>exchange_type=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.get_publisher" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">get_publisher</tt><big>(</big><em>connection=None</em>, <em>exchange=None</em>, <em>connect_timeout=None</em>, <em>exchange_type=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.get_publisher" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a celery task message publisher.</p>
 <p>:rtype <a class="reference internal" href="celery.app.amqp.html#celery.app.amqp.TaskPublisher" title="celery.app.amqp.TaskPublisher"><tt class="xref py py-class docutils literal"><span class="pre">TaskPublisher</span></tt></a>:</p>
 <div class="admonition warning">
@@ -398,6 +421,13 @@ connection after use:</p>
 </pre></div>
 </div>
 </div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="celery.task.base.BaseTask.on_bound">
+<em class="property">classmethod </em><tt class="descclassname">BaseTask.</tt><tt class="descname">on_bound</tt><big>(</big><em>app</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.on_bound" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method can be defined to do additional actions when the
+task class is bound to an app.</p>
 </dd></dl>
 
 <dl class="method">
@@ -471,9 +501,9 @@ instance, containing the traceback.</li>
 <p>The return value of this handler is ignored.</p>
 </dd></dl>
 
-<dl class="classmethod">
+<dl class="method">
 <dt id="celery.task.base.BaseTask.retry">
-<em class="property">classmethod </em><tt class="descclassname">BaseTask.</tt><tt class="descname">retry</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>exc=None</em>, <em>throw=True</em>, <em>eta=None</em>, <em>countdown=None</em>, <em>max_retries=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.retry" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">retry</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>exc=None</em>, <em>throw=True</em>, <em>eta=None</em>, <em>countdown=None</em>, <em>max_retries=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.retry" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retry the task.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -531,9 +561,9 @@ to convey that the rest of the block will not be executed.</p>
 <dd><p>The body of the task executed by workers.</p>
 </dd></dl>
 
-<dl class="classmethod">
+<dl class="method">
 <dt id="celery.task.base.BaseTask.subtask">
-<em class="property">classmethod </em><tt class="descclassname">BaseTask.</tt><tt class="descname">subtask</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.subtask" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">subtask</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.subtask" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns <a class="reference internal" href="celery.task.sets.html#celery.task.sets.subtask" title="celery.task.sets.subtask"><tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt></a> object for
 this task, wrapping arguments and execution options
 for a single task invocation.</p>
@@ -563,93 +593,258 @@ for a single task invocation.</p>
 <dl class="class">
 <dt id="celery.task.base.PeriodicTask">
 <em class="property">class </em><tt class="descclassname">celery.task.base.</tt><tt class="descname">PeriodicTask</tt><a class="headerlink" href="#celery.task.base.PeriodicTask" title="Permalink to this definition">¶</a></dt>
-<dd><p>A periodic task is a task that behaves like a <em class="manpage">cron</em> job.</p>
-<p>Results of periodic tasks are not stored by default.</p>
-<dl class="attribute">
-<dt id="celery.task.base.PeriodicTask.run_every">
-<tt class="descname">run_every</tt><a class="headerlink" href="#celery.task.base.PeriodicTask.run_every" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>REQUIRED</em> Defines how often the task is run (its interval),
-it can be a <a class="reference external" href="http://docs.python.org/dev/library/datetime.html#datetime.timedelta" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">timedelta</span></tt></a> object, a
-<a class="reference internal" href="celery.schedules.html#celery.schedules.crontab" title="celery.schedules.crontab"><tt class="xref py py-class docutils literal"><span class="pre">crontab</span></tt></a> object or an integer
-specifying the time in seconds.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.task.base.PeriodicTask.relative">
-<tt class="descname">relative</tt><a class="headerlink" href="#celery.task.base.PeriodicTask.relative" title="Permalink to this definition">¶</a></dt>
-<dd><p>If set to <tt class="xref py py-const docutils literal"><span class="pre">True</span></tt>, run times are relative to the time when the
-server was started. This was the previous behaviour, periodic tasks
-are now scheduled by the clock.</p>
-</dd></dl>
-
+<dd><p>A periodic task is a task that adds itself to the
+<a class="reference internal" href="../configuration.html#std:setting-CELERYBEAT_SCHEDULE"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYBEAT_SCHEDULE</span></tt></a> setting.</p>
+<dl class="classmethod">
+<dt id="celery.task.base.PeriodicTask.AsyncResult">
+<em class="property">classmethod </em><tt class="descname">AsyncResult</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.task.base.PeriodicTask.AsyncResult" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get AsyncResult instance for this kind of task.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Raises <a class="reference external" href="http://docs.python.org/dev/library/exceptions.html#NotImplementedError" title="(in Python v3.3)">NotImplementedError</a>:</th></tr>
-<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">if the <a class="reference internal" href="#celery.task.base.PeriodicTask.run_every" title="celery.task.base.PeriodicTask.run_every"><tt class="xref py py-attr docutils literal"><span class="pre">run_every</span></tt></a> attribute is
-not defined.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>task_id</strong> &#8211; Task id to get result for.</td>
 </tr>
 </tbody>
 </table>
-<p>Example</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">PeriodicTask</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">EveryThirtySecondsTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="n">run_every</span> <span class="o">=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
-<span class="gp">...</span>
-<span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Execute every 30 seconds&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">PeriodicTask</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.schedules</span> <span class="kn">import</span> <span class="n">crontab</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">EveryMondayMorningTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="n">run_every</span> <span class="o">=</span> <span class="n">crontab</span><span class="p">(</span><span class="n">hour</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">day_of_week</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="gp">...</span>
-<span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Execute every Monday at 7:30AM.&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">EveryMorningTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="n">run_every</span> <span class="o">=</span> <span class="n">crontab</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
-<span class="gp">...</span>
-<span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Execute every day at 7:30AM.&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">EveryQuarterPastTheHourTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="n">run_every</span> <span class="o">=</span> <span class="n">crontab</span><span class="p">(</span><span class="n">minute</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-<span class="gp">...</span>
-<span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Execute every 0:15 past the hour every day.&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<dl class="method">
-<dt id="celery.task.base.PeriodicTask.is_due">
-<tt class="descname">is_due</tt><big>(</big><em>last_run_at</em><big>)</big><a class="headerlink" href="#celery.task.base.PeriodicTask.is_due" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns tuple of two items <cite>(is_due, next_time_to_run)</cite>,
-where next time to run is in seconds.</p>
-<p>See <a class="reference internal" href="celery.schedules.html#celery.schedules.schedule.is_due" title="celery.schedules.schedule.is_due"><tt class="xref py py-meth docutils literal"><span class="pre">celery.schedules.schedule.is_due()</span></tt></a> for more information.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="celery.task.base.PeriodicTask.remaining_estimate">
-<tt class="descname">remaining_estimate</tt><big>(</big><em>last_run_at</em><big>)</big><a class="headerlink" href="#celery.task.base.PeriodicTask.remaining_estimate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns when the periodic task should run next as a timedelta.</p>
+<dl class="classmethod">
+<dt id="celery.task.base.PeriodicTask.apply">
+<em class="property">classmethod </em><tt class="descname">apply</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.PeriodicTask.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute this task locally, by blocking until the task returns.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>args</strong> &#8211; positional arguments passed on to the task.</li>
+<li><strong>kwargs</strong> &#8211; keyword arguments passed on to the task.</li>
+<li><strong>throw</strong> &#8211; Re-raise task exceptions.  Defaults to
+the <a class="reference internal" href="../configuration.html#std:setting-CELERY_EAGER_PROPAGATES_EXCEPTIONS"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_EAGER_PROPAGATES_EXCEPTIONS</span></tt></a>
+setting.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>:rtype <a class="reference internal" href="celery.result.html#celery.result.EagerResult" title="celery.result.EagerResult"><tt class="xref py py-class docutils literal"><span class="pre">celery.result.EagerResult</span></tt></a>:</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="celery.task.base.PeriodicTask.timedelta_seconds">
-<tt class="descname">timedelta_seconds</tt><big>(</big><em>delta</em><big>)</big><a class="headerlink" href="#celery.task.base.PeriodicTask.timedelta_seconds" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert <a class="reference external" href="http://docs.python.org/dev/library/datetime.html#datetime.timedelta" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">timedelta</span></tt></a> to seconds.</p>
-<p>Doesn&#8217;t account for negative timedeltas.</p>
+<dl class="classmethod">
+<dt id="celery.task.base.PeriodicTask.apply_async">
+<em class="property">classmethod </em><tt class="descname">apply_async</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>task_id=None</em>, <em>publisher=None</em>, <em>connection=None</em>, <em>router=None</em>, <em>queues=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.PeriodicTask.apply_async" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply tasks asynchronously by sending a message.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>args</strong> &#8211; The positional arguments to pass on to the
+task (a <tt class="xref py py-class docutils literal"><span class="pre">list</span></tt> or <tt class="xref py py-class docutils literal"><span class="pre">tuple</span></tt>).</li>
+<li><strong>kwargs</strong> &#8211; The keyword arguments to pass on to the
+task (a <a class="reference external" href="http://docs.python.org/dev/library/stdtypes.html#dict" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt></a>)</li>
+<li><strong>countdown</strong> &#8211; Number of seconds into the future that the
+task should execute. Defaults to immediate
+execution (do not confuse with the
+<cite>immediate</cite> flag, as they are unrelated).</li>
+<li><strong>eta</strong> &#8211; A <a class="reference external" href="http://docs.python.org/dev/library/datetime.html#datetime.datetime" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">datetime</span></tt></a> object describing
+the absolute time and date of when the task should
+be executed.  May not be specified if <cite>countdown</cite>
+is also supplied.  (Do not confuse this with the
+<cite>immediate</cite> flag, as they are unrelated).</li>
+<li><strong>expires</strong> &#8211; Either a <tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>, describing the number of
+seconds, or a <a class="reference external" href="http://docs.python.org/dev/library/datetime.html#datetime.datetime" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">datetime</span></tt></a> object
+that describes the absolute time and date of when
+the task should expire.  The task will not be
+executed after the expiration time.</li>
+<li><strong>connection</strong> &#8211; Re-use existing broker connection instead
+of establishing a new one.</li>
+<li><strong>retry</strong> &#8211; If enabled sending of the task message will be retried
+in the event of connection loss or failure.  Default
+is taken from the <a class="reference internal" href="../configuration.html#std:setting-CELERY_TASK_PUBLISH_RETRY"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TASK_PUBLISH_RETRY</span></tt></a>
+setting.  Note you need to handle the
+publisher/connection manually for this to work.</li>
+<li><strong>retry_policy</strong> &#8211; Override the retry policy used.  See the
+<a class="reference internal" href="../configuration.html#std:setting-CELERY_TASK_PUBLISH_RETRY"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TASK_PUBLISH_RETRY</span></tt></a> setting.</li>
+<li><strong>routing_key</strong> &#8211; The routing key used to route the task to a
+worker server.  Defaults to the
+<tt class="xref py py-attr docutils literal"><span class="pre">routing_key</span></tt> attribute.</li>
+<li><strong>exchange</strong> &#8211; The named exchange to send the task to.
+Defaults to the <tt class="xref py py-attr docutils literal"><span class="pre">exchange</span></tt> attribute.</li>
+<li><strong>exchange_type</strong> &#8211; The exchange type to initialize the exchange
+if not already declared.  Defaults to the
+<tt class="xref py py-attr docutils literal"><span class="pre">exchange_type</span></tt> attribute.</li>
+<li><strong>immediate</strong> &#8211; Request immediate delivery.  Will raise an
+exception if the task cannot be routed to a worker
+immediately.  (Do not confuse this parameter with
+the <cite>countdown</cite> and <cite>eta</cite> settings, as they are
+unrelated).  Defaults to the <tt class="xref py py-attr docutils literal"><span class="pre">immediate</span></tt>
+attribute.</li>
+<li><strong>mandatory</strong> &#8211; Mandatory routing. Raises an exception if
+there&#8217;s no running workers able to take on this
+task.  Defaults to the <tt class="xref py py-attr docutils literal"><span class="pre">mandatory</span></tt>
+attribute.</li>
+<li><strong>priority</strong> &#8211; The task priority, a number between 0 and 9.
+Defaults to the <tt class="xref py py-attr docutils literal"><span class="pre">priority</span></tt> attribute.</li>
+<li><strong>serializer</strong> &#8211; A string identifying the default
+serialization method to use.  Can be <cite>pickle</cite>,
+<cite>json</cite>, <cite>yaml</cite>, <cite>msgpack</cite> or any custom
+serialization method that has been registered
+with <tt class="xref py py-mod docutils literal"><span class="pre">kombu.serialization.registry</span></tt>.
+Defaults to the <tt class="xref py py-attr docutils literal"><span class="pre">serializer</span></tt> attribute.</li>
+<li><strong>compression</strong> &#8211; A string identifying the compression method
+to use.  Can be one of <tt class="docutils literal"><span class="pre">zlib</span></tt>, <tt class="docutils literal"><span class="pre">bzip2</span></tt>,
+or any custom compression methods registered with
+<a class="reference external" href="http://kombu.readthedocs.org/en/latest/reference/kombu.compression.html#kombu.compression.register" title="(in Kombu v2.1)"><tt class="xref py py-func docutils literal"><span class="pre">kombu.compression.register()</span></tt></a>. Defaults to
+the <a class="reference internal" href="../configuration.html#std:setting-CELERY_MESSAGE_COMPRESSION"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_MESSAGE_COMPRESSION</span></tt></a>
+setting.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If the <a class="reference internal" href="../configuration.html#std:setting-CELERY_ALWAYS_EAGER"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ALWAYS_EAGER</span></tt></a> setting is set, it will
+be replaced by a local <a class="reference internal" href="#celery.task.base.PeriodicTask.apply" title="celery.task.base.PeriodicTask.apply"><tt class="xref py py-func docutils literal"><span class="pre">apply()</span></tt></a> call instead.</p>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="celery.task.base.PeriodicTask.delay">
+<em class="property">classmethod </em><tt class="descname">delay</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.base.PeriodicTask.delay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Star argument version of <a class="reference internal" href="#celery.task.base.PeriodicTask.apply_async" title="celery.task.base.PeriodicTask.apply_async"><tt class="xref py py-meth docutils literal"><span class="pre">apply_async()</span></tt></a>.</p>
+<p>Does not support the extra options enabled by <a class="reference internal" href="#celery.task.base.PeriodicTask.apply_async" title="celery.task.base.PeriodicTask.apply_async"><tt class="xref py py-meth docutils literal"><span class="pre">apply_async()</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>*args</strong> &#8211; positional arguments passed on to the task.</li>
+<li><strong>**kwargs</strong> &#8211; keyword arguments passed on to the task.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>:returns <a class="reference internal" href="celery.result.html#celery.result.AsyncResult" title="celery.result.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a>:</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="celery.task.base.PeriodicTask.establish_connection">
+<em class="property">classmethod </em><tt class="descname">establish_connection</tt><big>(</big><em>connect_timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.base.PeriodicTask.establish_connection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Establish a connection to the message broker.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="celery.task.base.PeriodicTask.get_consumer">
+<em class="property">classmethod </em><tt class="descname">get_consumer</tt><big>(</big><em>connection=None</em>, <em>connect_timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.base.PeriodicTask.get_consumer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get message consumer.</p>
+<p>:rtype <a class="reference external" href="http://kombu.readthedocs.org/en/latest/reference/kombu.messaging.html#kombu.messaging.Consumer" title="(in Kombu v2.1)"><tt class="xref py py-class docutils literal"><span class="pre">kombu.messaging.Consumer</span></tt></a>:</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p>If you don&#8217;t specify a connection, one will automatically
+be established for you, in that case you need to close this
+connection after use:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">consumer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumer</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># do something with consumer</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">consumer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">consumer</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="celery.task.base.PeriodicTask.get_logger">
+<em class="property">classmethod </em><tt class="descname">get_logger</tt><big>(</big><em>loglevel=None</em>, <em>logfile=None</em>, <em>propagate=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.base.PeriodicTask.get_logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get task-aware logger object.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="celery.task.base.PeriodicTask.get_publisher">
+<em class="property">classmethod </em><tt class="descname">get_publisher</tt><big>(</big><em>connection=None</em>, <em>exchange=None</em>, <em>connect_timeout=None</em>, <em>exchange_type=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.PeriodicTask.get_publisher" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a celery task message publisher.</p>
+<p>:rtype <a class="reference internal" href="celery.app.amqp.html#celery.app.amqp.TaskPublisher" title="celery.app.amqp.TaskPublisher"><tt class="xref py py-class docutils literal"><span class="pre">TaskPublisher</span></tt></a>:</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p>If you don&#8217;t specify a connection, one will automatically
+be established for you, in that case you need to close this
+connection after use:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">publisher</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_publisher</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># ... do something with publisher</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">publisher</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>or used as a context:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_publisher</span><span class="p">()</span> <span class="k">as</span> <span class="n">publisher</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="c"># ... do something with publisher</span>
+</pre></div>
+</div>
+</div>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="celery.task.base.PeriodicTask.retry">
+<em class="property">classmethod </em><tt class="descname">retry</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>exc=None</em>, <em>throw=True</em>, <em>eta=None</em>, <em>countdown=None</em>, <em>max_retries=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.PeriodicTask.retry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retry the task.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>args</strong> &#8211; Positional arguments to retry with.</li>
+<li><strong>kwargs</strong> &#8211; Keyword arguments to retry with.</li>
+<li><strong>exc</strong> &#8211; Optional exception to raise instead of
+<a class="reference internal" href="celery.exceptions.html#celery.exceptions.MaxRetriesExceededError" title="celery.exceptions.MaxRetriesExceededError"><tt class="xref py py-exc docutils literal"><span class="pre">MaxRetriesExceededError</span></tt></a>
+when the max restart limit has been exceeded.</li>
+<li><strong>countdown</strong> &#8211; Time in seconds to delay the retry for.</li>
+<li><strong>eta</strong> &#8211; Explicit time and date to run the retry at
+(must be a <a class="reference external" href="http://docs.python.org/dev/library/datetime.html#datetime.datetime" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">datetime</span></tt></a> instance).</li>
+<li><strong>max_retries</strong> &#8211; If set, overrides the default retry limit.</li>
+<li><strong>**options</strong> &#8211; Any extra options to pass on to
+meth:<cite>apply_async</cite>.</li>
+<li><strong>throw</strong> &#8211; If this is <tt class="xref py py-const docutils literal"><span class="pre">False</span></tt>, do not raise the
+<a class="reference internal" href="celery.exceptions.html#celery.exceptions.RetryTaskError" title="celery.exceptions.RetryTaskError"><tt class="xref py py-exc docutils literal"><span class="pre">RetryTaskError</span></tt></a> exception,
+that tells the worker to mark the task as being
+retried.  Note that this means the task will be
+marked as failed if the task raises an exception,
+or successful if it returns.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises <a class="reference internal" href="celery.exceptions.html#celery.exceptions.RetryTaskError" title="celery.exceptions.RetryTaskError">celery.exceptions.RetryTaskError</a>:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last">To tell the worker that
+the task has been re-sent for retry. This always happens,
+unless the <cite>throw</cite> keyword argument has been explicitly set
+to <tt class="xref py py-const docutils literal"><span class="pre">False</span></tt>, and is considered normal operation.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nd">@task</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">tweet</span><span class="p">(</span><span class="n">auth</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">twitter</span> <span class="o">=</span> <span class="n">Twitter</span><span class="p">(</span><span class="n">oauth</span><span class="o">=</span><span class="n">auth</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="k">try</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="n">twitter</span><span class="o">.</span><span class="n">post_status_update</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="k">except</span> <span class="n">twitter</span><span class="o">.</span><span class="n">FailWhale</span><span class="p">,</span> <span class="n">exc</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="c"># Retry in 5 minutes.</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="n">tweet</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">countdown</span><span class="o">=</span><span class="mi">60</span> <span class="o">*</span> <span class="mi">5</span><span class="p">,</span> <span class="n">exc</span><span class="o">=</span><span class="n">exc</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Although the task will never return above as <cite>retry</cite> raises an
+exception to notify the worker, we use <cite>return</cite> in front of the retry
+to convey that the rest of the block will not be executed.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="celery.task.base.PeriodicTask.subtask">
+<em class="property">classmethod </em><tt class="descname">subtask</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.base.PeriodicTask.subtask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <a class="reference internal" href="celery.task.sets.html#celery.task.sets.subtask" title="celery.task.sets.subtask"><tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt></a> object for
+this task, wrapping arguments and execution options
+for a single task invocation.</p>
 </dd></dl>
 
 </dd></dl>
@@ -718,7 +913,7 @@ set to the name of the module it was defined in, and the class name.</p>
         <li class="right" >
           <a href="celery.task.html" title="celery.task"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

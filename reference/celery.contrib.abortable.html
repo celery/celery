@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.contrib.abortable &mdash; Celery 2.5.0rc2 documentation</title>
+    <title>celery.contrib.abortable &mdash; Celery 2.6.0a1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0rc2',
+        VERSION:     '2.6.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0rc2 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.6.0a1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.contrib.batches" href="celery.contrib.batches.html" />
     <link rel="prev" title="celery.states" href="celery.states.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.states.html" title="celery.states"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -182,6 +182,26 @@ the call evaluates to <tt class="xref py py-const docutils literal"><span class=
 <dd><p>Returns the accompanying AbortableAsyncResult instance.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="celery.contrib.abortable.AbortableTask.accept_magic_kwargs">
+<tt class="descname">accept_magic_kwargs</tt><em class="property"> = False</em><a class="headerlink" href="#celery.contrib.abortable.AbortableTask.accept_magic_kwargs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.contrib.abortable.AbortableTask.backend">
+<tt class="descname">backend</tt><em class="property"> = &lt;celery.backends.cache.CacheBackend object at 0x10832a9d0&gt;</em><a class="headerlink" href="#celery.contrib.abortable.AbortableTask.backend" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.contrib.abortable.AbortableTask.delivery_mode">
+<tt class="descname">delivery_mode</tt><em class="property"> = 2</em><a class="headerlink" href="#celery.contrib.abortable.AbortableTask.delivery_mode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.contrib.abortable.AbortableTask.exchange_type">
+<tt class="descname">exchange_type</tt><em class="property"> = 'direct'</em><a class="headerlink" href="#celery.contrib.abortable.AbortableTask.exchange_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="celery.contrib.abortable.AbortableTask.is_aborted">
 <tt class="descname">is_aborted</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.contrib.abortable.AbortableTask.is_aborted" title="Permalink to this definition">¶</a></dt>
@@ -198,6 +218,11 @@ often (for performance).</p>
 <dl class="attribute">
 <dt id="celery.contrib.abortable.AbortableTask.name">
 <tt class="descname">name</tt><em class="property"> = 'celery.contrib.abortable.AbortableTask'</em><a class="headerlink" href="#celery.contrib.abortable.AbortableTask.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.contrib.abortable.AbortableTask.rate_limit">
+<tt class="descname">rate_limit</tt><em class="property"> = None</em><a class="headerlink" href="#celery.contrib.abortable.AbortableTask.rate_limit" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -257,7 +282,7 @@ often (for performance).</p>
         <li class="right" >
           <a href="celery.states.html" title="celery.states"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

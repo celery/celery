@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.task &mdash; Celery 2.5.0rc2 documentation</title>
+    <title>celery.task &mdash; Celery 2.6.0a1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0rc2',
+        VERSION:     '2.6.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,10 +24,10 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0rc2 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.6.0a1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celery.task.base" href="celery.task.base.html" />
-    <link rel="prev" title="celery.app.defaults" href="celery.app.defaults.html" /> 
+    <link rel="prev" title="celery.app.registry" href="celery.app.registry.html" /> 
   </head>
   <body>
     <div class="related">
@@ -43,9 +43,9 @@
           <a href="celery.task.base.html" title="celery.task.base"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="celery.app.defaults.html" title="celery.app.defaults"
+          <a href="celery.app.registry.html" title="celery.app.registry"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -131,12 +131,14 @@
 </pre></div>
 </div>
 <p>With setting extra options and using retry.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">(</span><span class="n">exchange</span><span class="o">=</span><span class="s">&quot;feeds&quot;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">current</span>
+
+<span class="nd">@task</span><span class="p">(</span><span class="n">exchange</span><span class="o">=</span><span class="s">&quot;feeds&quot;</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">refresh_feed</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
     <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="n">exc</span><span class="p">:</span>
-        <span class="n">refresh_feed</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">exc</span><span class="o">=</span><span class="n">exc</span><span class="p">)</span>
+        <span class="n">current</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">exc</span><span class="o">=</span><span class="n">exc</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Calling the resulting task:</p>
@@ -152,11 +154,7 @@
 <dl class="class">
 <dt id="celery.task.Task">
 <em class="property">class </em><tt class="descclassname">celery.task.</tt><tt class="descname">Task</tt><a class="headerlink" href="#celery.task.Task" title="Permalink to this definition">¶</a></dt>
-<dd><p>Task base class.</p>
-<p>When called tasks apply the <tt class="xref py py-meth docutils literal"><span class="pre">run()</span></tt> method.  This method must
-be defined by all tasks (that is unless the <tt class="xref py py-meth docutils literal"><span class="pre">__call__()</span></tt> method
-is overridden).</p>
-<div class="admonition-see-also admonition seealso">
+<dd><div class="admonition-see-also admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last"><a class="reference internal" href="celery.task.base.html#celery.task.base.BaseTask" title="celery.task.base.BaseTask"><tt class="xref py py-class docutils literal"><span class="pre">celery.task.base.BaseTask</span></tt></a>.</p>
 </div>
@@ -174,8 +172,8 @@ is overridden).</p>
   <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
 </a></p>
   <h4>Previous topic</h4>
-  <p class="topless"><a href="celery.app.defaults.html"
-                        title="previous chapter">celery.app.defaults</a></p>
+  <p class="topless"><a href="celery.app.registry.html"
+                        title="previous chapter">celery.app.registry</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="celery.task.base.html"
                         title="next chapter">celery.task.base</a></p>
@@ -214,9 +212,9 @@ is overridden).</p>
           <a href="celery.task.base.html" title="celery.task.base"
              >next</a> |</li>
         <li class="right" >
-          <a href="celery.app.defaults.html" title="celery.app.defaults"
+          <a href="celery.app.registry.html" title="celery.app.registry"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

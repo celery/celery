@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.worker.buckets &mdash; Celery 2.5.0rc2 documentation</title>
+    <title>celery.worker.buckets &mdash; Celery 2.6.0a1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.5.0rc2',
+        VERSION:     '2.6.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0rc2 documentation" href="../../index.html" />
+    <link rel="top" title="Celery 2.6.0a1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="celery.worker.heartbeat" href="celery.worker.heartbeat.html" />
     <link rel="prev" title="celery.worker.mediator" href="celery.worker.mediator.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="celery.worker.mediator.html" title="celery.worker.mediator"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -140,10 +140,10 @@ it will have a plain <tt class="xref py py-class docutils literal"><span class="
 <p>The <a class="reference internal" href="#celery.worker.buckets.TaskBucket.put" title="celery.worker.buckets.TaskBucket.put"><tt class="xref py py-meth docutils literal"><span class="pre">put()</span></tt></a> operation forwards the task to its appropriate bucket,
 while the <a class="reference internal" href="#celery.worker.buckets.TaskBucket.get" title="celery.worker.buckets.TaskBucket.get"><tt class="xref py py-meth docutils literal"><span class="pre">get()</span></tt></a> operation iterates over the buckets and retrieves
 the first available item.</p>
-<p>Say we have three types of tasks in the registry: <cite>celery.ping</cite>,
+<p>Say we have three types of tasks in the registry: <cite>twitter.update</cite>,
 <cite>feed.refresh</cite> and <cite>video.compress</cite>, the TaskBucket will consist
 of the following items:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;celery.ping&quot;</span><span class="p">:</span> <span class="n">TokenBucketQueue</span><span class="p">(</span><span class="n">fill_rate</span><span class="o">=</span><span class="mi">300</span><span class="p">),</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;twitter.update&quot;</span><span class="p">:</span> <span class="n">TokenBucketQueue</span><span class="p">(</span><span class="n">fill_rate</span><span class="o">=</span><span class="mi">300</span><span class="p">),</span>
  <span class="s">&quot;feed.refresh&quot;</span><span class="p">:</span> <span class="n">Queue</span><span class="p">(),</span>
  <span class="s">&quot;video.compress&quot;</span><span class="p">:</span> <span class="n">TokenBucketQueue</span><span class="p">(</span><span class="n">fill_rate</span><span class="o">=</span><span class="mi">2</span><span class="p">)}</span>
 </pre></div>
@@ -380,11 +380,6 @@ the next item.</p>
 that evaluates lazily.</p>
 </dd></dl>
 
-<dl class="function">
-<dt id="celery.worker.buckets.sleep">
-<tt class="descclassname">celery.worker.buckets.</tt><tt class="descname">sleep</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.sleep" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </div>
 </div>
 
@@ -439,7 +434,7 @@ that evaluates lazily.</p>
         <li class="right" >
           <a href="celery.worker.mediator.html" title="celery.worker.mediator"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

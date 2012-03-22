@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Introduction &mdash; Celery 2.5.0rc2 documentation</title>
+    <title>Introduction &mdash; Celery 2.6.0a1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.5.0rc2',
+        VERSION:     '2.6.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0rc2 documentation" href="../index.html" />
+    <link rel="top" title="Celery 2.6.0a1 documentation" href="../index.html" />
     <link rel="up" title="Getting Started" href="index.html" />
     <link rel="next" title="Brokers" href="brokers/index.html" />
     <link rel="prev" title="Getting Started" href="index.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="index.html" title="Getting Started"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Getting Started</a> &raquo;</li> 
       </ul>
     </div>  
@@ -73,7 +73,7 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Version:</th><td class="field-body">2.5.0rc2</td>
+<tr class="field-odd field"><th class="field-name">Version:</th><td class="field-body">2.6.0a1</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Web:</th><td class="field-body"><a class="reference external" href="http://celeryproject.org/">http://celeryproject.org/</a></td>
 </tr>
@@ -87,7 +87,24 @@ python, webhooks, queue, distributed</td>
 </tbody>
 </table>
 <p>&#8211;</p>
-<p id="celery-synopsis">Celery is an open source asynchronous task queue/job queue based on
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#synopsis" id="id1">Synopsis</a></li>
+<li><a class="reference internal" href="#overview" id="id2">Overview</a></li>
+<li><a class="reference internal" href="#example" id="id3">Example</a></li>
+<li><a class="reference internal" href="#features" id="id4">Features</a></li>
+<li><a class="reference internal" href="#documentation" id="id5">Documentation</a></li>
+<li><a class="reference internal" href="#installation" id="id6">Installation</a><ul>
+<li><a class="reference internal" href="#bundles" id="id7">Bundles</a></li>
+<li><a class="reference internal" href="#downloading-and-installing-from-source" id="id8">Downloading and installing from source</a></li>
+<li><a class="reference internal" href="#using-the-development-version" id="id9">Using the development version</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="synopsis">
+<span id="celery-synopsis"></span><h2><a class="toc-backref" href="#id1">Synopsis</a><a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<p>Celery is an open source asynchronous task queue/job queue based on
 distributed message passing.  It is focused on real-time operation,
 but supports scheduling as well.</p>
 <p>The execution units, called tasks, are executed concurrently on one or
@@ -96,28 +113,41 @@ execute asynchronously (in the background) or synchronously
 (wait until ready).</p>
 <p>Celery is used in production systems to process millions of tasks a day.</p>
 <p>Celery is written in Python, but the protocol can be implemented in any
-language.  It can also <a class="reference external" href="http://ask.github.com/celery/userguide/remote-tasks.html">operate with other languages using webhooks</a>.</p>
-<p>The recommended message broker is <a class="reference external" href="http://www.rabbitmq.com/">RabbitMQ</a>, but <a class="reference external" href="http://kombu.readthedocs.org/en/latest/introduction.html#transport-comparison">limited support</a> for
-<a class="reference external" href="http://code.google.com/p/redis/">Redis</a>, <a class="reference external" href="http://kr.github.com/beanstalkd/">Beanstalk</a>, <a class="reference external" href="http://mongodb.org/">MongoDB</a>, <a class="reference external" href="http://couchdb.apache.org/">CouchDB</a> and
+language.  It can also <a class="reference external" href="http://ask.github.com/celery/userguide/remote-tasks.html">operate with other languages using webhooks</a>.
+There&#8217;s also <cite>RCelery</cite> for the Ruby programming language, and a <cite>PHP client</cite>.</p>
+<p>The recommended message broker is <a class="reference external" href="http://www.rabbitmq.com/">RabbitMQ</a>, but support for
+<a class="reference external" href="http://code.google.com/p/redis/">Redis</a>, <a class="reference external" href="http://mongodb.org/">MongoDB</a>, <a class="reference external" href="http://kr.github.com/beanstalkd/">Beanstalk</a>, <a class="reference external" href="http://aws.amazon.com/sqs/">Amazon SQS</a>, <a class="reference external" href="http://couchdb.apache.org/">CouchDB</a> and
 databases (using <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a> or the <a class="reference external" href="http://djangoproject.com/">Django ORM</a>) is also available.</p>
-<p>Celery is easy to integrate with <a class="reference external" href="http://djangoproject.com/">Django</a>, <a class="reference external" href="http://pylonshq.com/">Pylons</a> and <a class="reference external" href="http://flask.pocoo.org/">Flask</a>, using
-the <a class="reference external" href="http://pypi.python.org/pypi/django-celery">django-celery</a>, <a class="reference external" href="http://pypi.python.org/pypi/celery-pylons">celery-pylons</a> and <a class="reference external" href="http://github.com/ask/flask-celery/">Flask-Celery</a> add-on packages.</p>
-<div class="contents local topic" id="contents">
-<ul class="simple">
-<li><a class="reference internal" href="#overview" id="id1">Overview</a></li>
-<li><a class="reference internal" href="#example" id="id2">Example</a></li>
-<li><a class="reference internal" href="#features" id="id3">Features</a></li>
-<li><a class="reference internal" href="#documentation" id="id4">Documentation</a></li>
-<li><a class="reference internal" href="#installation" id="id5">Installation</a><ul>
-<li><a class="reference internal" href="#bundles" id="id6">Bundles</a></li>
-<li><a class="reference internal" href="#downloading-and-installing-from-source" id="id7">Downloading and installing from source</a></li>
-<li><a class="reference internal" href="#using-the-development-version" id="id8">Using the development version</a></li>
-</ul>
-</li>
-</ul>
+<p>Celery is easy to integrate with web frameworks, some of which even have
+integration packages:</p>
+<blockquote>
+<div><table border="1" class="docutils">
+<colgroup>
+<col width="41%" />
+<col width="59%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference external" href="http://djangoproject.com/">Django</a></td>
+<td><a class="reference external" href="http://pypi.python.org/pypi/django-celery">django-celery</a></td>
+</tr>
+<tr class="row-even"><td><a class="reference external" href="http://docs.pylonsproject.org/en/latest/docs/pyramid.html">Pyramid</a></td>
+<td><a class="reference external" href="http://pypi.python.org/pypi/pyramid_celery/">pyramid_celery</a></td>
+</tr>
+<tr class="row-odd"><td><a class="reference external" href="http://pylonshq.com/">Pylons</a></td>
+<td><a class="reference external" href="http://pypi.python.org/pypi/celery-pylons">celery-pylons</a></td>
+</tr>
+<tr class="row-even"><td><a class="reference external" href="http://flask.pocoo.org/">Flask</a></td>
+<td><a class="reference external" href="http://github.com/ask/flask-celery/">flask-celery</a></td>
+</tr>
+<tr class="row-odd"><td><a class="reference external" href="http://web2py.com/">web2py</a></td>
+<td><a class="reference external" href="http://code.google.com/p/web2py-celery/">web2py-celery</a></td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
 </div>
 <div class="section" id="overview">
-<span id="celery-overview"></span><h2><a class="toc-backref" href="#id1">Overview</a><a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<span id="celery-overview"></span><h2><a class="toc-backref" href="#id2">Overview</a><a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
 <p>This is a high level overview of the architecture.</p>
 <img alt="http://cloud.github.com/downloads/ask/celery/Celery-Overview-v4.jpg" src="http://cloud.github.com/downloads/ask/celery/Celery-Overview-v4.jpg" />
 <p>The broker delivers tasks to the worker nodes.
@@ -127,7 +157,7 @@ more machines depending on the workload.</p>
 &#8220;tombstone&#8221;).</p>
 </div>
 <div class="section" id="example">
-<span id="celery-example"></span><h2><a class="toc-backref" href="#id2">Example</a><a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<span id="celery-example"></span><h2><a class="toc-backref" href="#id3">Example</a><a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
 <p>You probably want to see some code by now, so here&#8217;s an example task
 adding two numbers:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">task</span>
@@ -146,7 +176,7 @@ adding two numbers:</p>
 <p>Simple!</p>
 </div>
 <div class="section" id="features">
-<span id="celery-features"></span><h2><a class="toc-backref" href="#id3">Features</a><a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
+<span id="celery-features"></span><h2><a class="toc-backref" href="#id4">Features</a><a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><table border="1" class="docutils">
 <colgroup>
@@ -260,12 +290,12 @@ administrators when tasks fails.</td>
 </div></blockquote>
 </div>
 <div class="section" id="documentation">
-<span id="celery-documentation"></span><h2><a class="toc-backref" href="#id4">Documentation</a><a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
+<span id="celery-documentation"></span><h2><a class="toc-backref" href="#id5">Documentation</a><a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
 <p>The <a class="reference external" href="http://ask.github.com/celery/">latest documentation</a> with user guides, tutorials and API reference
 is hosted at Github.</p>
 </div>
 <div class="section" id="installation">
-<span id="celery-installation"></span><h2><a class="toc-backref" href="#id5">Installation</a><a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<span id="celery-installation"></span><h2><a class="toc-backref" href="#id6">Installation</a><a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 <p>You can install Celery either via the Python Package Index (PyPI)
 or from source.</p>
 <p>To install using <cite>pip</cite>,:</p>
@@ -275,7 +305,7 @@ or from source.</p>
 <div class="highlight-python"><pre>$ easy_install -U Celery</pre>
 </div>
 <div class="section" id="bundles">
-<h3><a class="toc-backref" href="#id6">Bundles</a><a class="headerlink" href="#bundles" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id7">Bundles</a><a class="headerlink" href="#bundles" title="Permalink to this headline">¶</a></h3>
 <p>Celery also defines a group of bundles that can be used
 to install Celery and the dependencies for a given feature.</p>
 <p>The following bundles are available:</p>
@@ -301,7 +331,7 @@ to install Celery and the dependencies for a given feature.</p>
 </table>
 </div>
 <div class="section" id="downloading-and-installing-from-source">
-<span id="celery-installing-from-source"></span><h3><a class="toc-backref" href="#id7">Downloading and installing from source</a><a class="headerlink" href="#downloading-and-installing-from-source" title="Permalink to this headline">¶</a></h3>
+<span id="celery-installing-from-source"></span><h3><a class="toc-backref" href="#id8">Downloading and installing from source</a><a class="headerlink" href="#downloading-and-installing-from-source" title="Permalink to this headline">¶</a></h3>
 <p>Download the latest version of Celery from
 <a class="reference external" href="http://pypi.python.org/pypi/celery/">http://pypi.python.org/pypi/celery/</a></p>
 <p>You can install it by doing the following,:</p>
@@ -312,7 +342,7 @@ $ python setup.py build
 </div>
 </div>
 <div class="section" id="using-the-development-version">
-<span id="celery-installing-from-git"></span><h3><a class="toc-backref" href="#id8">Using the development version</a><a class="headerlink" href="#using-the-development-version" title="Permalink to this headline">¶</a></h3>
+<span id="celery-installing-from-git"></span><h3><a class="toc-backref" href="#id9">Using the development version</a><a class="headerlink" href="#using-the-development-version" title="Permalink to this headline">¶</a></h3>
 <p>You can clone the repository by doing the following:</p>
 <div class="highlight-python"><pre>$ git clone git://github.com/ask/celery.git</pre>
 </div>
@@ -371,7 +401,7 @@ $ python setup.py build
         <li class="right" >
           <a href="index.html" title="Getting Started"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >Getting Started</a> &raquo;</li> 
       </ul>
     </div>

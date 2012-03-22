@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Configuration and defaults &mdash; Celery 2.5.0rc2 documentation</title>
+    <title>Configuration and defaults &mdash; Celery 2.6.0a1 documentation</title>
     
     <link rel="stylesheet" href="_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '2.5.0rc2',
+        VERSION:     '2.6.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Celery 2.5.0rc2 documentation" href="index.html" />
+    <link rel="top" title="Celery 2.6.0a1 documentation" href="index.html" />
     <link rel="next" title="Cookbook" href="cookbook/index.html" />
     <link rel="prev" title="Signals" href="userguide/signals.html" /> 
   </head>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="userguide/signals.html" title="Signals"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery 2.6.0a1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -535,31 +535,31 @@ Defaults to &#8220;celery_taskmeta&#8221;.</p>
 <p>This backend requires the following configuration directives to be set.</p>
 <div class="section" id="cassandra-servers">
 <span id="std:setting-CASSANDRA_SERVERS"></span><h4>CASSANDRA_SERVERS<a class="headerlink" href="#cassandra-servers" title="Permalink to this headline">¶</a></h4>
-<p>List of <cite>host:port</cite> Cassandra servers. e.g. <cite>[&#8220;localhost:9160]&#8221;</cite>.</p>
+<p>List of <tt class="docutils literal"><span class="pre">host:port</span></tt> Cassandra servers. e.g. <tt class="docutils literal"><span class="pre">[&quot;localhost:9160]&quot;</span></tt>.</p>
 </div>
 <div class="section" id="cassandra-keyspace">
 <span id="std:setting-CASSANDRA_KEYSPACE"></span><h4>CASSANDRA_KEYSPACE<a class="headerlink" href="#cassandra-keyspace" title="Permalink to this headline">¶</a></h4>
-<p>The keyspace in which to store the results. e.g. <cite>&#8220;tasks_keyspace&#8221;</cite>.</p>
+<p>The keyspace in which to store the results. e.g. <tt class="docutils literal"><span class="pre">&quot;tasks_keyspace&quot;</span></tt>.</p>
 </div>
 <div class="section" id="cassandra-column-family">
 <span id="std:setting-CASSANDRA_COLUMN_FAMILY"></span><h4>CASSANDRA_COLUMN_FAMILY<a class="headerlink" href="#cassandra-column-family" title="Permalink to this headline">¶</a></h4>
-<p>The column family in which to store the results. eg <cite>&#8220;tasks&#8221;</cite></p>
+<p>The column family in which to store the results. eg <tt class="docutils literal"><span class="pre">&quot;tasks&quot;</span></tt></p>
 </div>
 <div class="section" id="cassandra-read-consistency">
 <span id="std:setting-CASSANDRA_READ_CONSISTENCY"></span><h4>CASSANDRA_READ_CONSISTENCY<a class="headerlink" href="#cassandra-read-consistency" title="Permalink to this headline">¶</a></h4>
-<p>The read consistency used. Values can be <cite>&#8220;ONE&#8221;</cite>, <cite>&#8220;QUORUM&#8221;</cite> or <cite>&#8220;ALL&#8221;</cite>.</p>
+<p>The read consistency used. Values can be <tt class="docutils literal"><span class="pre">&quot;ONE&quot;</span></tt>, <tt class="docutils literal"><span class="pre">&quot;QUORUM&quot;</span></tt> or <tt class="docutils literal"><span class="pre">&quot;ALL&quot;</span></tt>.</p>
 </div>
 <div class="section" id="cassandra-write-consistency">
 <span id="std:setting-CASSANDRA_WRITE_CONSISTENCY"></span><h4>CASSANDRA_WRITE_CONSISTENCY<a class="headerlink" href="#cassandra-write-consistency" title="Permalink to this headline">¶</a></h4>
-<p>The write consistency used. Values can be <cite>&#8220;ONE&#8221;</cite>, <cite>&#8220;QUORUM&#8221;</cite> or <cite>&#8220;ALL&#8221;</cite>.</p>
+<p>The write consistency used. Values can be <tt class="docutils literal"><span class="pre">&quot;ONE&quot;</span></tt>, <tt class="docutils literal"><span class="pre">&quot;QUORUM&quot;</span></tt> or <tt class="docutils literal"><span class="pre">&quot;ALL&quot;</span></tt>.</p>
 </div>
 <div class="section" id="cassandra-detailed-mode">
 <span id="std:setting-CASSANDRA_DETAILED_MODE"></span><h4>CASSANDRA_DETAILED_MODE<a class="headerlink" href="#cassandra-detailed-mode" title="Permalink to this headline">¶</a></h4>
-<p>Enable or disable detailed mode. Default is <cite>&#8220;False&#8221;</cite>.
+<p>Enable or disable detailed mode. Default is <tt class="xref py py-const docutils literal"><span class="pre">False</span></tt>.
 This mode allows to use the power of Cassandra wide columns to
 store all states for a task as a wide column, instead of only the last one.</p>
 <p>To use this mode, you need to configure your ColumnFamily to
-use the <cite>TimeUUID</cite> type as a comparator:</p>
+use the <tt class="docutils literal"><span class="pre">TimeUUID</span></tt> type as a comparator:</p>
 <div class="highlight-python"><pre>create column family task_results with comparator = TimeUUIDType;</pre>
 </div>
 </div>
@@ -1372,7 +1372,7 @@ Please use the <em class="xref std std-option">--loglevel</em> argument instead.
         <li class="right" >
           <a href="userguide/signals.html" title="Signals"
              >previous</a> |</li>
-        <li><a href="index.html">Celery 2.5.0rc2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery 2.6.0a1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
