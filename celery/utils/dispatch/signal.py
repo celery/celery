@@ -41,7 +41,7 @@ class Signal(object):
             providing_args = []
         self.providing_args = set(providing_args)
 
-    def connect(self, receiver, sender=None, weak=True, dispatch_uid=None):
+    def connect(self, *args, **kwargs):
         """Connect receiver to sender for signal.
 
         :param receiver: A function or an instance method which is to
@@ -71,20 +71,33 @@ class Signal(object):
             string, though it may be anything hashable.
 
         """
-        if dispatch_uid:
-            lookup_key = (dispatch_uid, _make_id(sender))
-        else:
-            lookup_key = (_make_id(receiver), _make_id(sender))
+        def _handle_options(sender=None, weak=True, dispatch_uid=None):
 
-        if weak:
-            receiver = saferef.safe_ref(receiver,
-                                        on_delete=self._remove_receiver)
+            def _connect_signal(fun):
+                receiver = fun
 
-        for r_key, _ in self.receivers:
-            if r_key == lookup_key:
-                break
-        else:
-            self.receivers.append((lookup_key, receiver))
+                if dispatch_uid:
+                    lookup_key = (dispatch_uid, _make_id(sender))
+                else:
+                    lookup_key = (_make_id(receiver), _make_id(sender))
+
+                if weak:
+                    receiver = saferef.safe_ref(receiver,
+                                                on_delete=self._remove_receiver)
+
+                for r_key, _ in self.receivers:
+                    if r_key == lookup_key:
+                        break
+                else:
+                    self.receivers.append((lookup_key, receiver))
+
+                return fun
+
+            return _connect_signal
+
+        if args and callable(args[0]):
+            return _handle_options(*args[1:], **kwargs)(args[0])
+        return _handle_options(*args, **kwargs)
 
     def disconnect(self, receiver=None, sender=None, weak=True,
             dispatch_uid=None):
