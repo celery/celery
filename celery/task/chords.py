@@ -12,7 +12,10 @@
 from __future__ import absolute_import
 
 from .. import current_app
+from ..local import Proxy
 from ..utils import uuid
+
+Chord = Proxy(lambda: current_app.tasks["celery.chord"])
 
 
 class chord(object):
