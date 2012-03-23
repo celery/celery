@@ -125,11 +125,16 @@ class PIDFile(object):
                 return
             raise
 
-        line = fh.readline().strip()
-        fh.close()
+        try:
+            line = fh.readline()
+            if line.strip() == line:  # must contain '\n'
+                raise ValueError(
+                    "Partially written or invalid pidfile %r" % (self.path))
+        finally:
+            fh.close()
 
         try:
-            return int(line)
+            return int(line.strip())
         except ValueError:
             raise ValueError("PID file %r contents invalid." % self.path)
 
@@ -165,6 +170,9 @@ class PIDFile(object):
         return False
 
     def write_pid(self):
+        pid = os.getpid()
+        content = "%d\n" % (pid, )
+
         open_flags = (os.O_CREAT | os.O_EXCL | os.O_WRONLY)
         open_mode = (((os.R_OK | os.W_OK) << 6) |
                         ((os.R_OK) << 3) |
@@ -172,10 +180,20 @@ class PIDFile(object):
         pidfile_fd = os.open(self.path, open_flags, open_mode)
         pidfile = os.fdopen(pidfile_fd, "w")
         try:
-            pid = os.getpid()
-            pidfile.write("%d\n" % (pid, ))
+            pidfile.write(content)
+            # flush and sync so that the re-read below works.
+            pidfile.flush()
+            try:
+                os.fsync(pidfile_fd)
+            except AttributeError:
+                pass
         finally:
             pidfile.close()
+
+        with open(self.path) as fh:
+            if fh.read() != content:
+                raise LockFailed(
+                    "Inconsistency: Pidfile content doesn't match at re-read")
 
 
 def create_pidlock(pidfile):

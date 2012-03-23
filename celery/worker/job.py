@@ -21,8 +21,8 @@ from datetime import datetime
 
 from .. import current_app
 from .. import exceptions
-from ..datastructures import ExceptionInfo
 from ..app import app_or_default
+from ..datastructures import ExceptionInfo
 from ..execute.trace import build_tracer, trace_task, report_internal_error
 from ..platforms import set_mp_process_title as setps
 from ..utils import noop, kwdict, fun_takes_kwargs, truncate_text
