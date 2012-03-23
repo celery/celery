@@ -288,6 +288,9 @@ class BaseTask(object):
     #: Default task expiry time.
     expires = None
 
+    #: The type of task *(no longer used)*.
+    type = "regular"
+
     from_config = (
         ("exchange_type", "CELERY_DEFAULT_EXCHANGE_TYPE"),
         ("delivery_mode", "CELERY_DEFAULT_DELIVERY_MODE"),
