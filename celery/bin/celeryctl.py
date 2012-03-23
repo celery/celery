@@ -392,8 +392,13 @@ class shell(Command):
             import_module("celery.concurrency.eventlet")
         if gevent:
             import_module("celery.concurrency.gevent")
+        from .. import task
         self.app.loader.import_default_modules()
-        self.locals = {"celery": self.app}
+        self.locals = {"celery": self.app,
+                       "BaseTask": task.BaseTask,
+                       "TaskSet": task.TaskSet,
+                       "chord": task.chord,
+                       "group": task.group}
 
         if not without_tasks:
             self.locals.update(dict((task.__name__, task)
