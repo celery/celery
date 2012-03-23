@@ -299,6 +299,7 @@ class MultiTool(object):
 
         nodes = []
         for nodename, argv, expander in multi_args(p, cmd):
+            pid = None
             pidfile = expander(pidfile_template)
             try:
                 pid = platforms.PIDFile(pidfile).read_pid()
