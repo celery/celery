@@ -12,11 +12,14 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
+from itertools import chain
+
 from .. import current_app
 from ..app import app_or_default, current_task
 from ..datastructures import AttributeDict
 from ..utils import cached_property, reprcall, uuid
-from ..utils.compat import UserList
+from ..utils.functional import maybe_list
+from ..utils.compat import UserList, chain_from_iterable
 
 
 class subtask(AttributeDict):
@@ -82,6 +85,25 @@ class subtask(AttributeDict):
         kwargs = dict(self.kwargs, **kwargs)
         options = dict(self.options, **options)
         return self.type.apply_async(args, kwargs, **options)
+
+    def link(self, callback):
+        """Add a callback task to be applied if this task
+        executes successfully."""
+        self.options.setdefault("link", []).append(callback)
+        return callback
+
+    def link_error(self, errback):
+        """Add a callback task to be applied if an error occurs
+        while executing this task."""
+        self.options.setdefault("link_error", []).append(errback)
+        return errback
+
+    def flatten_links(self):
+        """Gives a recursive list of dependencies (unchain if you will,
+        but with links intact)."""
+        return list(chain_from_iterable(chain([[self]],
+                (link.flatten_links()
+                    for link in maybe_list(self.options.get("link")) or []))))
 
     def __reduce__(self):
         # for serialization, the task type is lazily loaded,

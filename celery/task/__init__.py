@@ -91,3 +91,9 @@ def periodic_task(*args, **options):
     return task(**dict({"base": PeriodicTask}, **options))
 
 backend_cleanup = Proxy(lambda: current_app.tasks["celery.backend_cleanup"])
+
+
+def chain(*tasks):
+    tasks = [task.clone() for task in tasks]
+    reduce(lambda a, b: a.link(b), tasks)
+    return tasks[0]

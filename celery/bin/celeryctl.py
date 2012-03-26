@@ -387,7 +387,8 @@ class shell(Command):
                        "BaseTask": task.BaseTask,
                        "TaskSet": task.TaskSet,
                        "chord": task.chord,
-                       "group": task.group}
+                       "group": task.group,
+                       "chain": task.chain}
 
         if not without_tasks:
             self.locals.update(dict((task.__name__, task)

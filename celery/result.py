@@ -140,6 +140,12 @@ class AsyncResult(object):
         for _, R in self.iterdeps():
             yield R, R.get(**kwargs)
 
+    def get_leaf(self):
+        value = None
+        for _, R in self.iterdeps():
+            value = R.get()
+        return value
+
     def iterdeps(self, intermediate=False):
         stack = deque([(None, self)])
 
