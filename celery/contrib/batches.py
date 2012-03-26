@@ -117,7 +117,7 @@ class SimpleRequest(object):
 
     @classmethod
     def from_request(cls, request):
-        return cls(request.task_id, request.task_name, request.args,
+        return cls(request.id, request.name, request.args,
                    request.kwargs, request.delivery_info, request.hostname)
 
 

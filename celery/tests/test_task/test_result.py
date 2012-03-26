@@ -56,11 +56,11 @@ class TestAsyncResult(AppCase):
     def test_reduce(self):
         a1 = AsyncResult("uuid", task_name=mytask.name)
         restored = pickle.loads(pickle.dumps(a1))
-        self.assertEqual(restored.task_id, "uuid")
+        self.assertEqual(restored.id, "uuid")
         self.assertEqual(restored.task_name, mytask.name)
 
         a2 = AsyncResult("uuid")
-        self.assertEqual(pickle.loads(pickle.dumps(a2)).task_id, "uuid")
+        self.assertEqual(pickle.loads(pickle.dumps(a2)).id, "uuid")
 
     def test_successful(self):
         ok_res = AsyncResult(self.task1["id"])
@@ -271,7 +271,7 @@ class TestTaskSetResult(AppCase):
         subtasks = [AsyncResult(uuid(), backend=backend)
                         for i in range(10)]
         ts = TaskSetResult(uuid(), subtasks)
-        backend.ids = [subtask.task_id for subtask in subtasks]
+        backend.ids = [subtask.id for subtask in subtasks]
         res = ts.join_native()
         self.assertEqual(res, range(10))
 
@@ -280,7 +280,7 @@ class TestTaskSetResult(AppCase):
         subtasks = [AsyncResult(uuid(), backend=backend)
                         for i in range(10)]
         ts = TaskSetResult(uuid(), subtasks)
-        backend.ids = [subtask.task_id for subtask in subtasks]
+        backend.ids = [subtask.id for subtask in subtasks]
         self.assertEqual(len(list(ts.iter_native())), 10)
 
     def test_iterate_yields(self):

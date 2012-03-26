@@ -108,7 +108,7 @@ class test_chord(AppCase):
         x = chord(add.subtask((i, i)) for i in xrange(10))
         body = add.subtask((2, ))
         result = x(body)
-        self.assertEqual(result.task_id, body.options["task_id"])
+        self.assertEqual(result.id, body.options["task_id"])
         self.assertTrue(chord.Chord.apply_async.call_count)
 
 

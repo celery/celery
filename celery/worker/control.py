@@ -41,7 +41,7 @@ def revoke(panel, task_id, terminate=False, signal=None, **kwargs):
     if terminate:
         signum = _signals.signum(signal or "TERM")
         for request in state.active_requests:
-            if request.task_id == task_id:
+            if request.id == task_id:
                 action = "terminated (%s)" % (signum, )
                 request.terminate(panel.consumer.pool, signal=signum)
                 break

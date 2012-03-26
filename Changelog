@@ -1118,7 +1118,7 @@ Fixes
 * SQLAlchemy result backend: `date_done` was no longer part of the results as it had
   been accidentally removed.  It is now available again (Issue #325).
 
-* SQLAlchemy result backend: Added unique constraint on `Task.task_id` and
+* SQLAlchemy result backend: Added unique constraint on `Task.id` and
   `TaskSet.taskset_id`.  Tables needs to be recreated for this to take effect.
 
 * Fixed exception raised when iterating on the result of ``TaskSet.apply()``.
@@ -4842,7 +4842,7 @@ News
 * **IMPORTANT** The `subtask_ids` attribute on the `TaskSetResult`
   instance has been removed. To get this information instead use:
 
-        >>> subtask_ids = [subtask.task_id for subtask in ts_res.subtasks]
+        >>> subtask_ids = [subtask.id for subtask in ts_res.subtasks]
 
 * `Taskset.run()` now respects extra message options from the task class.
 

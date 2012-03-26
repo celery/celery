@@ -30,7 +30,7 @@ class test_basic(WorkerCase):
     def test_dump_active(self, sleep=1):
         r1 = tasks.sleeptask.delay(sleep)
         r2 = tasks.sleeptask.delay(sleep)
-        self.ensure_accepted(r1.task_id)
+        self.ensure_accepted(r1.id)
         active = self.inspect().active(safe=True)
         self.assertTrue(active)
         active = active[self.worker.hostname]
@@ -43,7 +43,7 @@ class test_basic(WorkerCase):
         r2 = tasks.sleeptask.delay(sleep)
         r3 = tasks.sleeptask.delay(sleep)
         r4 = tasks.sleeptask.delay(sleep)
-        self.ensure_accepted(r1.task_id)
+        self.ensure_accepted(r1.id)
         reserved = self.inspect().reserved(safe=True)
         self.assertTrue(reserved)
         reserved = reserved[self.worker.hostname]
@@ -53,7 +53,7 @@ class test_basic(WorkerCase):
     def test_dump_schedule(self, countdown=1):
         r1 = tasks.add.apply_async((2, 2), countdown=countdown)
         r2 = tasks.add.apply_async((2, 2), countdown=countdown)
-        self.ensure_scheduled(r1.task_id, interval=0.1)
+        self.ensure_scheduled(r1.id, interval=0.1)
         schedule = self.inspect().scheduled(safe=True)
         self.assertTrue(schedule)
         schedule = schedule[self.worker.hostname]

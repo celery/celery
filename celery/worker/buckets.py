@@ -72,9 +72,9 @@ class TaskBucket(object):
     def put(self, request):
         """Put a :class:`~celery.worker.job.Request` into
         the appropiate bucket."""
-        if request.task_name not in self.buckets:
-            self.add_bucket_for_type(request.task_name)
-        self.buckets[request.task_name].put_nowait(request)
+        if request.name not in self.buckets:
+            self.add_bucket_for_type(request.name)
+        self.buckets[request.name].put_nowait(request)
         with self.mutex:
             self.not_empty.notify()
     put_nowait = put

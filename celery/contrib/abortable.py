@@ -111,7 +111,7 @@ class AbortableAsyncResult(AsyncResult):
 
     def is_aborted(self):
         """Returns :const:`True` if the task is (being) aborted."""
-        return self.backend.get_status(self.task_id) == ABORTED
+        return self.state == ABORTED
 
     def abort(self):
         """Set the state of the task to :const:`ABORTED`.
@@ -126,7 +126,7 @@ class AbortableAsyncResult(AsyncResult):
         """
         # TODO: store_result requires all four arguments to be set,
         # but only status should be updated here
-        return self.backend.store_result(self.task_id, result=None,
+        return self.backend.store_result(self.id, result=None,
                                          status=ABORTED, traceback=None)
 
 

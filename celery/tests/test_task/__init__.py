@@ -200,13 +200,13 @@ class TestCeleryTasks(Case):
         task_id = uuid()
         result = retry_task.AsyncResult(task_id)
         self.assertEqual(result.backend, retry_task.backend)
-        self.assertEqual(result.task_id, task_id)
+        self.assertEqual(result.id, task_id)
 
     def assertNextTaskDataEqual(self, consumer, presult, task_name,
             test_eta=False, test_expires=False, **kwargs):
         next_task = consumer.fetch()
         task_data = next_task.decode()
-        self.assertEqual(task_data["id"], presult.task_id)
+        self.assertEqual(task_data["id"], presult.id)
         self.assertEqual(task_data["task"], task_name)
         task_kwargs = task_data.get("kwargs", {})
         if test_eta:
@@ -285,7 +285,7 @@ class TestCeleryTasks(Case):
         self.assertIsNone(consumer.fetch())
 
         self.assertFalse(presult.successful())
-        T1.backend.mark_as_done(presult.task_id, result=None)
+        T1.backend.mark_as_done(presult.id, result=None)
         self.assertTrue(presult.successful())
 
         publisher = T1.get_publisher()
@@ -418,7 +418,7 @@ class TestTaskSet(Case):
             m = consumer.fetch().payload
             self.assertDictContainsSubset({"taskset": taskset_id,
                                            "task": increment_counter.name,
-                                           "id": subtask.task_id}, m)
+                                           "id": subtask.id}, m)
             increment_counter(
                     increment_by=m.get("kwargs", {}).get("increment_by"))
         self.assertEqual(increment_counter.count, sum(xrange(1, 10)))

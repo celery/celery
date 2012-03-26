@@ -14,8 +14,8 @@ from celery.tests.utils import Case
 
 class MockTask(object):
     hostname = "harness.com"
-    task_id = 1234
-    task_name = "mocktask"
+    id = 1234
+    name = "mocktask"
 
     def __init__(self, value, **kwargs):
         self.value = value
@@ -23,7 +23,7 @@ class MockTask(object):
     on_ack = Mock()
 
     def revoked(self):
-        if self.task_id in revoked_tasks:
+        if self.id in revoked_tasks:
             self.on_ack()
             return True
         return False
@@ -117,8 +117,8 @@ class test_Mediator(Case):
 
         m = Mediator(ready_queue, mycallback)
         t = MockTask("Jerry Seinfeld")
-        t.task_id = uuid()
-        revoked_tasks.add(t.task_id)
+        t.id = uuid()
+        revoked_tasks.add(t.id)
         ready_queue.put(t)
 
         m.body()

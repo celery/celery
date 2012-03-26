@@ -20,16 +20,16 @@ skip_if_disabled = partial(skip_if_environ("SKIP_RLIMITS"))
 
 class MockJob(object):
 
-    def __init__(self, task_id, task_name, args, kwargs):
-        self.task_id = task_id
-        self.task_name = task_name
+    def __init__(self, id, name, args, kwargs):
+        self.id = id
+        self.name = name
         self.args = args
         self.kwargs = kwargs
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return bool(self.task_id == other.task_id \
-                    and self.task_name == other.task_name \
+            return bool(self.id == other.id \
+                    and self.name == other.name \
                     and self.args == other.args \
                     and self.kwargs == other.kwargs)
         else:
@@ -37,7 +37,7 @@ class MockJob(object):
 
     def __repr__(self):
         return "<MockJob: task:%s id:%s args:%s kwargs:%s" % (
-                self.task_name, self.task_id, self.args, self.kwargs)
+                self.name, self.id, self.args, self.kwargs)
 
 
 class test_TokenBucketQueue(Case):
@@ -241,7 +241,7 @@ class test_TaskBucket(Case):
 
         got_ajobs = 0
         for job in (b.get() for i in xrange(20)):
-            if job.task_name == TaskA.name:
+            if job.name == TaskA.name:
                 got_ajobs += 1
 
         self.assertGreater(got_ajobs, 2)

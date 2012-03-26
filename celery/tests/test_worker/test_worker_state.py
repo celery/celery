@@ -85,8 +85,8 @@ class test_Persistent(StateResetCase):
 
 class SimpleReq(object):
 
-    def __init__(self, task_name):
-        self.task_name = task_name
+    def __init__(self, name):
+        self.name = name
 
 
 class test_state(StateResetCase):

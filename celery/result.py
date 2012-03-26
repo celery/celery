@@ -33,7 +33,7 @@ def _unpickle_result(task_id, task_name):
 class AsyncResult(object):
     """Query task state.
 
-    :param task_id: see :attr:`task_id`.
+    :param id: see :attr:`id`.
     :keyword backend: see :attr:`backend`.
 
     """
@@ -41,21 +41,24 @@ class AsyncResult(object):
     #: Error raised for timeouts.
     TimeoutError = TimeoutError
 
-    #: The task uuid.
-    task_id = None
+    #: The task's UUID.
+    id = None
 
     #: The task result backend to use.
     backend = None
 
-    def __init__(self, task_id, backend=None, task_name=None, app=None):
+    def __init__(self, id, backend=None, task_name=None, app=None):
         self.app = app_or_default(app)
-        self.task_id = task_id
+        self.id = id
         self.backend = backend or self.app.backend
         self.task_name = task_name
 
+    def serializable(self):
+        return self.id, []
+
     def forget(self):
         """Forget about (and possibly remove the result of) this task."""
-        self.backend.forget(self.task_id)
+        self.backend.forget(self.id)
 
     def revoke(self, connection=None):
         """Send revoke signal to all workers.
@@ -64,7 +67,7 @@ class AsyncResult(object):
         task, *must* ignore it.
 
         """
-        self.app.control.revoke(self.task_id, connection=connection)
+        self.app.control.revoke(self.id, connection=connection)
 
     def get(self, timeout=None, propagate=True, interval=0.5):
         """Wait until task is ready, and return its result.
@@ -90,9 +93,9 @@ class AsyncResult(object):
         be re-raised.
 
         """
-        return self.backend.wait_for(self.task_id, timeout=timeout,
-                                                   propagate=propagate,
-                                                   interval=interval)
+        return self.backend.wait_for(self.id, timeout=timeout,
+                                              propagate=propagate,
+                                              interval=interval)
     wait = get  # deprecated alias to :meth:`get`.
 
     def collect(self, timeout=None, propagate=True):
@@ -156,29 +159,29 @@ class AsyncResult(object):
         return self.state == states.FAILURE
 
     def __str__(self):
-        """`str(self) -> self.task_id`"""
-        return self.task_id
+        """`str(self) -> self.id`"""
+        return self.id
 
     def __hash__(self):
-        """`hash(self) -> hash(self.task_id)`"""
-        return hash(self.task_id)
+        """`hash(self) -> hash(self.id)`"""
+        return hash(self.id)
 
     def __repr__(self):
-        return "<AsyncResult: %s>" % self.task_id
+        return "<AsyncResult: %s>" % self.id
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return self.task_id == other.task_id
-        return other == self.task_id
+            return self.id == other.id
+        return other == self.id
 
     def __copy__(self):
-        return self.__class__(self.task_id, backend=self.backend)
+        return self.__class__(self.id, backend=self.backend)
 
     def __reduce__(self):
         if self.task_name:
-            return (_unpickle_result, (self.task_id, self.task_name))
+            return (_unpickle_result, (self.id, self.task_name))
         else:
-            return (self.__class__, (self.task_id, self.backend,
+            return (self.__class__, (self.id, self.backend,
                                      None, self.app))
 
     @property
@@ -190,13 +193,13 @@ class AsyncResult(object):
         """When the task has been executed, this contains the return value.
         If the task raised an exception, this will be the exception
         instance."""
-        return self.backend.get_result(self.task_id)
+        return self.backend.get_result(self.id)
     info = result
 
     @property
     def traceback(self):
         """Get the traceback of a failed task."""
-        return self.backend.get_traceback(self.task_id)
+        return self.backend.get_traceback(self.id)
 
     @property
     def state(self):
@@ -228,8 +231,15 @@ class AsyncResult(object):
                 then contains the tasks return value.
 
         """
-        return self.backend.get_status(self.task_id)
+        return self.backend.get_status(self.id)
     status = state
+
+    def _get_task_id(self):
+        return self.id
+
+    def _set_task_id(self, id):
+        self.id = id
+    task_id = property(_get_task_id, _set_task_id)
 BaseAsyncResult = AsyncResult  # for backwards compatibility.
 
 
@@ -359,7 +369,7 @@ class ResultSet(object):
 
         """
         elapsed = 0.0
-        results = OrderedDict((result.task_id, copy(result))
+        results = OrderedDict((result.id, copy(result))
                                 for result in self.results)
 
         while results:
@@ -439,7 +449,7 @@ class ResultSet(object):
 
         """
         backend = self.results[0].backend
-        ids = [result.task_id for result in self.results]
+        ids = [result.id for result in self.results]
         return backend.get_many(ids, timeout=timeout, interval=interval)
 
     def join_native(self, timeout=None, propagate=True, interval=0.5):
@@ -528,23 +538,33 @@ class TaskSetResult(ResultSet):
     def __reduce__(self):
         return (self.__class__, (self.taskset_id, self.results))
 
+    def serializable(self):
+        return self.id, [r.serializable() for r in self.results]
+
     @classmethod
     def restore(self, taskset_id, backend=None):
         """Restore previously saved taskset result."""
         return (backend or current_app.backend).restore_taskset(taskset_id)
 
+    def _get_taskset_id(self):
+        return self.id
+
+    def _set_taskset_id(self, id):
+        self.taskset_id = id
+    taskset_id = property(_get_taskset_id, _set_taskset_id)
+
 
 class EagerResult(AsyncResult):
     """Result that we know has already been executed."""
 
-    def __init__(self, task_id, ret_value, state, traceback=None):
-        self.task_id = task_id
+    def __init__(self, id, ret_value, state, traceback=None):
+        self.id = id
         self._result = ret_value
         self._state = state
         self._traceback = traceback
 
     def __reduce__(self):
-        return (self.__class__, (self.task_id, self._result,
+        return (self.__class__, (self.id, self._result,
                                  self._state, self._traceback))
 
     def __copy__(self):
@@ -570,7 +590,7 @@ class EagerResult(AsyncResult):
         self._state = states.REVOKED
 
     def __repr__(self):
-        return "<EagerResult: %s>" % self.task_id
+        return "<EagerResult: %s>" % self.id
 
     @property
     def result(self):

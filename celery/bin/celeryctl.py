@@ -202,7 +202,7 @@ class apply(Command):
                                  routing_key=kw.get("routing_key"),
                                  eta=maybe_iso8601(kw.get("eta")),
                                  expires=expires)
-        self.out(res.task_id)
+        self.out(res.id)
 apply = command(apply)
 
 

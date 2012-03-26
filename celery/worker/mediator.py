@@ -70,16 +70,15 @@ class Mediator(bgThread):
             return
 
         if self._does_debug:
-            self.logger.debug(
-                "Mediator: Running callback for task: %s[%s]" % (
-                    task.task_name, task.task_id))
+            self.logger.debug("Mediator: Running callback for task: %s[%s]",
+                              task.name, task.id)
 
         try:
             self.callback(task)
         except Exception, exc:
             self.logger.error("Mediator callback raised exception %r",
                               exc, exc_info=True,
-                              extra={"data": {"id": task.task_id,
-                                              "name": task.task_name,
+                              extra={"data": {"id": task.id,
+                                              "name": task.name,
                                               "hostname": task.hostname}})
     move = body   # XXX compat

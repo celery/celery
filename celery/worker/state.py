@@ -55,7 +55,7 @@ task_reserved = reserved_requests.add
 def task_accepted(request):
     """Updates global state when a task has been accepted."""
     active_requests.add(request)
-    total_count[request.task_name] += 1
+    total_count[request.name] += 1
 
 
 def task_ready(request):

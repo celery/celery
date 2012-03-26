@@ -207,9 +207,18 @@ class BaseBackend(object):
         pass
 
     def on_chord_apply(self, setid, body, result=None, **kwargs):
-        kwargs["result"] = [r.task_id for r in result]
+        kwargs["result"] = [r.id for r in result]
         self.app.tasks["celery.chord_unlock"].apply_async((setid, body, ),
                                                           kwargs, countdown=1)
+
+    def _serializable_child(self):
+        if isinstance(node, ResultSet):
+            return (node, )
+
+    def current_task_children(self):
+        current = current_task()
+        if current:
+            return
 
     def __reduce__(self, args=(), kwargs={}):
         return (unpickle_backend, (self.__class__, args, kwargs))

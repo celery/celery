@@ -334,7 +334,7 @@ class test_ControlPanel(Case):
 
     def test_revoke_terminate(self):
         request = Mock()
-        request.task_id = tid = uuid()
+        request.id = tid = uuid()
         state.active_requests.add(request)
         try:
             r = control.revoke(Mock(), tid, terminate=True)
