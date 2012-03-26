@@ -401,7 +401,7 @@ class TimeoutHandler(PoolThread):
                 elif i not in dirty and _timed_out(ack_time, soft_timeout):
                     _on_soft_timeout(job, i, soft_timeout)
 
-            time.sleep(0.5)                     # Don't waste CPU cycles.
+            time.sleep(1.0)                     # Don't waste CPU cycles.
 
         debug('timeout handler exiting')
 
