@@ -22,12 +22,21 @@ from . import current_app
 from . import states
 from .app import app_or_default
 from .app.registry import _unpickle_task
-from .exceptions import TimeoutError
+from .datastructures import DependencyGraph
+from .exceptions import IncompleteStream, TimeoutError
+from .utils import cached_property
 from .utils.compat import OrderedDict
 
 
 def _unpickle_result(task_id, task_name):
     return _unpickle_task(task_name).AsyncResult(task_id)
+
+
+def from_serializable(r):
+    id, nodes = r
+    if nodes:
+        return TaskSetResult(id, map(AsyncResult(nodes)))
+    return AsyncResult(id)
 
 
 class AsyncResult(object):
@@ -54,7 +63,7 @@ class AsyncResult(object):
         self.task_name = task_name
 
     def serializable(self):
-        return self.id, []
+        return self.id, None
 
     def forget(self):
         """Forget about (and possibly remove the result of) this task."""
@@ -98,7 +107,7 @@ class AsyncResult(object):
                                               interval=interval)
     wait = get  # deprecated alias to :meth:`get`.
 
-    def collect(self, timeout=None, propagate=True):
+    def collect(self, intermediate=False, **kwargs):
         """Iterator, like :meth:`get` will wait for the task to complete,
         but will also follow :class:`AsyncResult` and :class:`ResultSet`
         returned by the task, yielding for each result in the tree.
@@ -128,18 +137,20 @@ class AsyncResult(object):
             [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 
         """
-        stack = deque([self])
-        native_join = self.supports_native_join
+        for _, R in self.iterdeps():
+            yield R, R.get(**kwargs)
+
+    def iterdeps(self, intermediate=False):
+        stack = deque([(None, self)])
 
         while stack:
-            res = stack.popleft()
-            if isinstance(res, ResultSet):
-                j = res.join_native if native_join else res.join
-                stack.extend(j(timeout=timeout, propagate=propagate))
-            elif isinstance(res, AsyncResult):
-                stack.append(res.get(timeout=timeout, propagate=propagate))
+            parent, node = stack.popleft()
+            yield parent, node
+            if node.ready():
+                stack.extend((node, child) for child in node.children or [])
             else:
-                yield res
+                if not intermediate:
+                    raise IncompleteStream()
 
     def ready(self):
         """Returns :const:`True` if the task has been executed.
@@ -184,9 +195,27 @@ class AsyncResult(object):
             return (self.__class__, (self.id, self.backend,
                                      None, self.app))
 
+    def build_graph(self, intermediate=False):
+        graph = DependencyGraph()
+        for parent, node in self.iterdeps(intermediate=intermediate):
+            if parent:
+                graph.add_arc(parent)
+                graph.add_edge(parent, node)
+        return graph
+
+    @cached_property
+    def graph(self):
+        return self.build_graph()
+
     @property
     def supports_native_join(self):
         return self.backend.supports_native_join
+
+    @property
+    def children(self):
+        children = self.backend.get_children(self.id)
+        if children:
+            return map(from_serializable, children)
 
     @property
     def result(self):
@@ -389,6 +418,17 @@ class ResultSet(object):
             if timeout and elapsed >= timeout:
                 raise TimeoutError("The operation timed out")
 
+    def get(self, timeout=None, propagate=True, interval=0.5):
+        """See :meth:`join`
+
+        This is here for API compatibility with :class:`AsyncResult`,
+        in addition it uses :meth:`join_native` if available for the
+        current result backend.
+
+        """
+        return (self.join_native if self.supports_native_join else self.join)(
+                    timeout=timeout, propagate=propagate, interval=interval)
+
     def join(self, timeout=None, propagate=True, interval=0.5):
         """Gathers the results of all tasks as a list in order.
 
@@ -496,19 +536,19 @@ class TaskSetResult(ResultSet):
     It enables inspection of the tasks state and return values as
     a single entity.
 
-    :param taskset_id: The id of the taskset.
+    :param id: The id of the taskset.
     :param results: List of result instances.
 
     """
 
     #: The UUID of the taskset.
-    taskset_id = None
+    id = None
 
     #: List/iterator of results in the taskset
     results = None
 
-    def __init__(self, taskset_id, results=None, **kwargs):
-        self.taskset_id = taskset_id
+    def __init__(self, id, results=None, **kwargs):
+        self.id = id
 
         # XXX previously the "results" arg was named "subtasks".
         if "subtasks" in kwargs:
@@ -524,19 +564,18 @@ class TaskSetResult(ResultSet):
             >>> result = TaskSetResult.restore(taskset_id)
 
         """
-        return (backend or self.app.backend).save_taskset(self.taskset_id,
-                                                          self)
+        return (backend or self.app.backend).save_taskset(self.id, self)
 
     def delete(self, backend=None):
         """Remove this result if it was previously saved."""
-        (backend or self.app.backend).delete_taskset(self.taskset_id)
+        (backend or self.app.backend).delete_taskset(self.id)
 
     def itersubtasks(self):
         """Depreacted.   Use ``iter(self.results)`` instead."""
         return iter(self.results)
 
     def __reduce__(self):
-        return (self.__class__, (self.taskset_id, self.results))
+        return (self.__class__, (self.id, self.results))
 
     def serializable(self):
         return self.id, [r.serializable() for r in self.results]

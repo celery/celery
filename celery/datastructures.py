@@ -52,7 +52,7 @@ class DependencyGraph(object):
 
     def add_arc(self, obj):
         """Add an object to the graph."""
-        self.adjacent[obj] = []
+        self.adjacent.setdefault(obj, [])
 
     def add_edge(self, A, B):
         """Add an edge from object ``A`` to object ``B``
@@ -84,7 +84,10 @@ class DependencyGraph(object):
 
     def valency_of(self, obj):
         """Returns the velency (degree) of a vertex in the graph."""
-        l = [len(self[obj])]
+        try:
+            l = [len(self[obj])]
+        except KeyError:
+            return 0
         for node in self[obj]:
             l.append(self.valency_of(node))
         return sum(l)
@@ -183,6 +186,9 @@ class DependencyGraph(object):
     def __len__(self):
         return len(self.adjacent)
 
+    def __contains__(self, obj):
+        return obj in self.adjacent
+
     def _iterate_items(self):
         return self.adjacent.iteritems()
     items = iteritems = _iterate_items
@@ -192,10 +198,11 @@ class DependencyGraph(object):
 
     def repr_node(self, obj, level=1):
         output = ["%s(%s)" % (obj, self.valency_of(obj))]
-        for other in self[obj]:
-            d = "%s(%s)" % (other, self.valency_of(other))
-            output.append('     ' * level + d)
-            output.extend(self.repr_node(other, level + 1).split('\n')[1:])
+        if obj in self:
+            for other in self[obj]:
+                d = "%s(%s)" % (other, self.valency_of(other))
+                output.append('     ' * level + d)
+                output.extend(self.repr_node(other, level + 1).split('\n')[1:])
         return '\n'.join(output)
 
 

@@ -65,6 +65,7 @@ class Request(object):
     """A request for task execution."""
     __slots__ = ("app", "name", "id", "args", "kwargs",
                  "on_ack", "delivery_info", "hostname",
+                 "callbacks", "errbacks",
                  "logger", "eventer", "connection_errors",
                  "task", "eta", "expires",
                  "_does_debug", "_does_info", "request_dict",

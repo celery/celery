@@ -183,7 +183,8 @@ class TaskPublisher(messaging.Publisher):
             countdown=None, eta=None, task_id=None, taskset_id=None,
             expires=None, exchange=None, exchange_type=None,
             event_dispatcher=None, retry=None, retry_policy=None,
-            queue=None, now=None, retries=0, chord=None, **kwargs):
+            queue=None, now=None, retries=0, chord=None, callbacks=None,
+            errbacks=None, **kwargs):
         """Send task message."""
 
         connection = self.connection
@@ -224,7 +225,9 @@ class TaskPublisher(messaging.Publisher):
                 "retries": retries or 0,
                 "eta": eta,
                 "expires": expires,
-                "utc": self.utc}
+                "utc": self.utc,
+                "callbacks": callbacks,
+                "errbacks": errbacks}
         if taskset_id:
             body["taskset"] = taskset_id
         if chord:

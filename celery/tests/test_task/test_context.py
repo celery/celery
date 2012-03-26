@@ -42,7 +42,8 @@ class TestTaskContext(Case):
     def test_default_context(self):
         # A bit of a tautological test, since it uses the same
         # initializer as the default_context constructor.
-        self.assertDictEqual(get_context_as_dict(Context()), default_context)
+        defaults = dict(default_context, children=[])
+        self.assertDictEqual(get_context_as_dict(Context()), defaults)
 
     def test_default_context_threaded(self):
         ctx = Context()
@@ -124,8 +125,9 @@ class TestTaskContext(Case):
         ctx = Context()
         ctx.update(changes)
         ctx.clear()
-        self.assertDictEqual(get_context_as_dict(ctx), default_context)
-        self.assertDictEqual(get_context_as_dict(Context()), default_context)
+        defaults = dict(default_context, children=[])
+        self.assertDictEqual(get_context_as_dict(ctx), defaults)
+        self.assertDictEqual(get_context_as_dict(Context()), defaults)
 
     def test_cleared_context_threaded(self):
         changes_a = dict(id="a", args=["some", 1], wibble="wobble")

@@ -27,7 +27,9 @@ KEYWORD_MARK = object()
 
 
 def maybe_list(l):
-    if isinstance(l, Sequence):
+    if l is None:
+        return l
+    elif isinstance(l, Sequence):
         return l
     return [l]
 

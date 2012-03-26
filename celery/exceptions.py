@@ -98,3 +98,7 @@ class CPendingDeprecationWarning(PendingDeprecationWarning):
 
 class CDeprecationWarning(DeprecationWarning):
     pass
+
+
+class IncompleteStream(Exception):
+    """Found the end of a stream of data, but the data is not yet complete."""

@@ -22,9 +22,11 @@ from ...exceptions import MaxRetriesExceededError, RetryTaskError
 from ...result import EagerResult
 from ...utils import (fun_takes_kwargs, instantiate,
                       mattrgetter, uuid, maybe_reraise)
+from ...utils.functional import maybe_list
 from ...utils.mail import ErrorMail
 from ...utils.compat import fun_of_method
 
+from ..state import current_task
 from ..registry import _unpickle_task
 
 #: extracts options related to publishing a message from a dict.
@@ -57,6 +59,9 @@ class Context(threading.local):
     taskset = None
     chord = None
     called_directly = True
+    callbacks = None
+    errbacks = None
+    _children = None   # see property
 
     def update(self, d, **kwargs):
         self.__dict__.update(d, **kwargs)
@@ -72,6 +77,13 @@ class Context(threading.local):
 
     def __repr__(self):
         return "<Context: %r>" % (vars(self, ))
+
+    @property
+    def children(self):
+        # children must be an empy list for every thread
+        if self._children is None:
+            self._children = []
+        return self._children
 
 
 class TaskType(type):
@@ -442,7 +454,7 @@ class BaseTask(object):
 
     def apply_async(self, args=None, kwargs=None,
             task_id=None, publisher=None, connection=None,
-            router=None, queues=None, **options):
+            router=None, queues=None, link=None, link_error=None, **options):
         """Apply tasks asynchronously by sending a message.
 
         :keyword args: The positional arguments to pass on to the
@@ -519,6 +531,10 @@ class BaseTask(object):
                               :func:`kombu.compression.register`. Defaults to
                               the :setting:`CELERY_MESSAGE_COMPRESSION`
                               setting.
+        :keyword link: A single, or a list of subtasks to apply if the
+                       task exits successfully.
+        :keyword link_error: A single, or a list of subtasks to apply
+                      if an error occurs while executing the task.
 
         .. note::
             If the :setting:`CELERY_ALWAYS_EAGER` setting is set, it will
@@ -544,12 +560,18 @@ class BaseTask(object):
             task_id = publish.delay_task(self.name, args, kwargs,
                                          task_id=task_id,
                                          event_dispatcher=evd,
+                                         callbacks=maybe_list(link),
+                                         errbacks=maybe_list(link_error),
                                          **options)
         finally:
             if not publisher:
                 publish.release()
 
-        return self.AsyncResult(task_id)
+        result = self.AsyncResult(task_id)
+        parent = current_task()
+        if parent:
+            parent.request.children.append(result)
+        return result
 
     def retry(self, args=None, kwargs=None, exc=None, throw=True,
             eta=None, countdown=None, max_retries=None, **options):

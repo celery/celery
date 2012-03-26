@@ -13,7 +13,7 @@ from __future__ import absolute_import
 from __future__ import with_statement
 
 from .. import current_app
-from ..app import app_or_default
+from ..app import app_or_default, current_task
 from ..datastructures import AttributeDict
 from ..utils import cached_property, reprcall, uuid
 from ..utils.compat import UserList
@@ -142,7 +142,11 @@ class TaskSet(UserList):
                 if not publisher:  # created by us.
                     pub.close()
 
-            return app.TaskSetResult(setid, results)
+            result = app.TaskSetResult(setid, results)
+            parent = current_task()
+            if parent:
+                parent.request.children.append(result)
+            return result
 
     def _async_results(self, taskset_id, publisher):
         return [task.apply_async(taskset_id=taskset_id, publisher=publisher)

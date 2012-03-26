@@ -159,6 +159,9 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     clear_request = task_request.clear
     on_chord_part_return = backend.on_chord_part_return
 
+    from celery.task import sets
+    subtask = sets.subtask
+
     def trace_task(uuid, args, kwargs, request=None):
         R = I = None
         try:
@@ -188,6 +191,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     I = Info(FAILURE, exc, sys.exc_info())
                     state, retval, einfo = I.state, I.retval, I.exc_info
                     R = I.handle_error_state(task, eager=eager)
+                    [subtask(errback).apply_async((uuid, ))
+                        for errback in task_request.errbacks or []]
                 except BaseException, exc:
                     raise
                 except:  # pragma: no cover
@@ -198,8 +203,14 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     I = Info(FAILURE, None, sys.exc_info())
                     state, retval, einfo = I.state, I.retval, I.exc_info
                     R = I.handle_error_state(task, eager=eager)
+                    [subtask(errback).apply_async((uuid, ))
+                        for errback in task_request.errbacks or []]
                 else:
                     task_on_success(retval, uuid, args, kwargs)
+                    # callback tasks must be applied before the result is
+                    # stored, so that result.children is populated.
+                    [subtask(callback).apply_async((retval, ))
+                        for callback in task_request.callbacks or []]
                     if publish_result:
                         store_result(uuid, retval, SUCCESS)
 

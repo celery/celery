@@ -13,24 +13,14 @@
 from __future__ import absolute_import
 
 import os
-import threading
 
 from ..local import PromiseProxy
 from ..utils import cached_property, instantiate
 
 from . import annotations
 from . import base
-
-
-class _TLS(threading.local):
-    #: Apps with the :attr:`~celery.app.base.BaseApp.set_as_current` attribute
-    #: sets this, so it will always contain the last instantiated app,
-    #: and is the default app returned by :func:`app_or_default`.
-    current_app = None
-
-    #: The currently executing task.
-    current_task = None
-_tls = _TLS()
+from .state import _tls
+from .state import current_task  # noqa
 
 
 class AppPickler(object):
@@ -247,10 +237,6 @@ default_app = App("default", loader=default_loader,
 
 def current_app():
     return getattr(_tls, "current_app", None) or default_app
-
-
-def current_task():
-    return getattr(_tls, "current_task", None)
 
 
 def _app_or_default(app=None):
