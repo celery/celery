@@ -49,6 +49,9 @@ class Inspect(object):
                                       callback=self.callback,
                                       timeout=self.timeout, reply=True))
 
+    def report(self):
+        return self._request("report")
+
     def active(self, safe=False):
         return self._request("dump_active", safe=safe)
 

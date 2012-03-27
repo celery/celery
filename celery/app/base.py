@@ -20,6 +20,7 @@ from collections import deque
 from contextlib import contextmanager
 from copy import deepcopy
 from functools import wraps
+from pprint import pformat
 
 from kombu.clocks import LamportClock
 
@@ -27,7 +28,7 @@ from .. import datastructures
 from .. import platforms
 from ..exceptions import AlwaysEagerIgnored
 from ..local import maybe_evaluate
-from ..utils import cached_property, instantiate, lpmerge
+from ..utils import cached_property, instantiate, lpmerge, qualname
 
 from .defaults import DEFAULTS, find_deprecated_settings, find
 
@@ -35,10 +36,16 @@ import kombu
 if kombu.VERSION < (2, 0):
     raise ImportError("Celery requires Kombu version 1.1.0 or higher.")
 
+SETTINGS_INFO = """%s %s"""
+
 BUGREPORT_INFO = """
 platform -> system:%(system)s arch:%(arch)s imp:%(py_i)s
 software -> celery:%(celery_v)s kombu:%(kombu_v)s py:%(py_v)s
+loader   -> %(loader)s
 settings -> transport:%(transport)s results:%(results)s
+
+%(human_settings)s
+
 """
 
 
@@ -350,7 +357,32 @@ class BaseApp(object):
                                  "kombu_v": kombu.__version__,
                                  "py_v": _platform.python_version(),
                                  "transport": self.conf.BROKER_TRANSPORT,
-                                 "results": self.conf.CELERY_RESULT_BACKEND}
+                                 "results": self.conf.CELERY_RESULT_BACKEND,
+                                 "human_settings": self.human_settings(),
+                                 "loader": qualname(self.loader.__class__)}
+
+    def _pformat(self, value, width=80, nl_width=80, **kw):
+
+        if isinstance(value, dict):
+            return "{\n %s" % (
+                                pformat(value, width=nl_width, indent=4, **kw)[1:])
+        elif isinstance(value, tuple):
+            return "\n%s%s" % (' ' * 4,
+                                pformat(value, width=nl_width, **kw))
+        else:
+            return pformat(value, width=width, **kw)
+
+    def human_settings(self):
+        return "\n".join(SETTINGS_INFO % (key + ':',
+                                          self._pformat(value, width=50))
+                    for key, value in self.filter_user_settings().iteritems())
+
+    def filter_user_settings(self):
+        user_settings = {}
+        # the last stash is the default settings, so just skip that
+        for stash in self.conf._order[:-1]:
+            user_settings.update(stash)
+        return user_settings
 
     @property
     def pool(self):

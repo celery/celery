@@ -51,6 +51,11 @@ def revoke(panel, task_id, terminate=False, signal=None, **kwargs):
 
 
 @Panel.register
+def report(panel):
+    return {"ok": panel.app.bugreport()}
+
+
+@Panel.register
 def enable_events(panel):
     dispatcher = panel.consumer.event_dispatcher
     if not dispatcher.enabled:

@@ -291,7 +291,8 @@ class inspect(Command):
                "disable_events": 1.0,
                "ping": 0.2,
                "add_consumer": 1.0,
-               "cancel_consumer": 1.0}
+               "cancel_consumer": 1.0,
+               "report": 1.0}
     option_list = Command.option_list + (
                 Option("--timeout", "-t", type="float", dest="timeout",
                     default=None,
@@ -495,6 +496,14 @@ class help(Command):
 
         return EX_USAGE
 help = command(help)
+
+
+class report(Command):
+
+    def run(self, *args, **kwargs):
+        print(self.app.bugreport())
+        return EX_OK
+report = command(report)
 
 
 class celeryctl(CeleryCommand):
