@@ -17,7 +17,7 @@ from anyjson import deserialize
 from .. import __version__
 from ..app import app_or_default, current_app
 from ..platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
-from ..utils import pluralize, term
+from ..utils import get_cls_by_name, pluralize, term
 from ..utils.timeutils import maybe_iso8601
 
 from ..bin.base import Command as CeleryCommand
@@ -91,7 +91,10 @@ class Command(object):
         return OptionParser(prog=prog_name,
                             usage=self.usage(command),
                             version=self.version,
-                            option_list=self.option_list)
+                            option_list=self.get_options())
+
+    def get_options(self):
+        return self.option_list
 
     def run_from_argv(self, prog_name, argv):
         self.prog_name = prog_name
@@ -136,8 +139,35 @@ class Command(object):
         return OK, pformat(n)
 
 
+class Delegate(Command):
+
+    def __init__(self, *args, **kwargs):
+        super(Delegate, self).__init__(*args, **kwargs)
+
+        self.target = get_cls_by_name(self.Command)(app=self.app)
+        self.args = self.target.args
+
+    def get_options(self):
+        return self.option_list + self.target.get_options()
+
+    def run(self, *args, **kwargs):
+        self.target.check_args(args)
+        return self.target.run(*args, **kwargs)
+
+
+def create_delegate(name, Command):
+    return command(type(name, (Delegate, ), {"Command": Command,
+                                             "__module__": __name__}))
+
+
+worker = create_delegate("worker", "celery.bin.celeryd:WorkerCommand")
+events = create_delegate("events", "celery.bin.celeryev:EvCommand")
+beat = create_delegate("beat", "celery.bin.celerybeat:BeatCommand")
+amqp = create_delegate("amqp", "celery.bin.camqadm:AMQPAdminCommand")
+
+
 class list_(Command):
-    args = "<bindings>"
+    args = "[bindings]"
 
     def list_bindings(self, channel):
         try:
@@ -484,7 +514,7 @@ class celeryctl(CeleryCommand):
 
     def remove_options_at_beginning(self, argv, index=0):
         if argv:
-            while index <= len(argv):
+            while index < len(argv):
                 value = argv[index]
                 if value.startswith("--"):
                     pass

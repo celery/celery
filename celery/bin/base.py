@@ -9,11 +9,17 @@ from optparse import OptionParser, make_option as Option
 
 from .. import __version__, Celery
 from ..exceptions import CDeprecationWarning, CPendingDeprecationWarning
-
+from ..platforms import EX_FAILURE, EX_USAGE
 
 # always enable DeprecationWarnings, so our users can see them.
 for warning in (CDeprecationWarning, CPendingDeprecationWarning):
     warnings.simplefilter("once", warning, 0)
+
+ARGV_DISABLED = """
+Unrecognized command line arguments: %s
+
+Try --help?
+"""
 
 
 class Command(object):
@@ -116,13 +122,16 @@ class Command(object):
                         for k, v in vars(options).iteritems()
                             if not k.startswith('_'))
         argv = map(self.expanduser, argv)
-        if not self.supports_args and args:
-            sys.stderr.write(
-                "\nUnrecognized command line arguments: %s\n" % (
-                    ", ".join(args), ))
-            sys.stderr.write("\nTry --help?\n")
-            sys.exit(1)
+        self.check_args(args)
         return self.run(*args, **options)
+
+    def check_args(self, args):
+        if not self.supports_args and args:
+            self.die(ARGV_DISABLED % (', '.join(args, )), EX_USAGE)
+
+    def die(self, msg, status=EX_FAILURE):
+        sys.stderr.write(msg + "\n")
+        sys.exit(status)
 
     def parse_options(self, prog_name, arguments):
         """Parse the available options."""
