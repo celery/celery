@@ -140,17 +140,26 @@ class list_(Command):
     args = "<bindings>"
 
     def list_bindings(self, channel):
+        try:
+            bindings = channel.list_bindings()
+        except NotImplementedError:
+            raise Error("Your transport cannot list bindings.")
+
         fmt = lambda q, e, r: self.out("%s %s %s" % (q.ljust(28),
                                                      e.ljust(28), r))
         fmt("Queue", "Exchange", "Routing Key")
         fmt("-" * 16, "-" * 16, "-" * 16)
-        for binding in channel.list_bindings():
+        for binding in bindings:
             fmt(*binding)
 
-    def run(self, what, *_, **kw):
+    def run(self, what=None, *_, **kw):
         topics = {"bindings": self.list_bindings}
+        available = ', '.join(topics.keys())
+        if not what:
+            raise Error("You must specify what to list (%s)" % available)
         if what not in topics:
-            raise ValueError("%r not in %r" % (what, topics.keys()))
+            raise Error("unknown topic %r (choose one of: %s)" % (
+                            what, available))
         with self.app.broker_connection() as conn:
             self.app.amqp.get_task_consumer(conn).declare()
             with conn.channel() as channel:
