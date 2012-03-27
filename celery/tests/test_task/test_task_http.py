@@ -12,11 +12,11 @@ except ImportError:  # py3k
     from urllib.request import addinfourl  # noqa
 
 from anyjson import serialize
+from kombu.utils.encoding import from_utf8
 
 from celery.task import http
 from celery.tests.utils import Case, eager_tasks
 from celery.utils.compat import StringIO
-from celery.utils.encoding import from_utf8
 
 
 @contextmanager

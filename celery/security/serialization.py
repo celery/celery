@@ -4,9 +4,9 @@ import base64
 import sys
 
 from kombu.serialization import registry, encode, decode
+from kombu.utils.encoding import bytes_to_str, str_to_bytes
 
 from ..exceptions import SecurityError
-from ..utils.encoding import bytes_to_str, str_to_bytes
 
 from .certificate import Certificate, FSCertStore
 from .key import PrivateKey

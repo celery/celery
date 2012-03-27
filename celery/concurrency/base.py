@@ -5,9 +5,10 @@ import logging
 import os
 import time
 
+from kombu.utils.encoding import safe_repr
+
 from .. import log
 from ..utils import timer2
-from ..utils.encoding import safe_repr
 
 
 def apply_target(target, args=(), kwargs={}, callback=None,

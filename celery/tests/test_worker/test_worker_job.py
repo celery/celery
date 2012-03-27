@@ -11,6 +11,7 @@ import time
 from datetime import datetime, timedelta
 
 from kombu.transport.base import Message
+from kombu.utils.encoding import from_utf8, default_encode
 from mock import Mock
 from nose import SkipTest
 
@@ -27,7 +28,6 @@ from celery.result import AsyncResult
 from celery.task import task as task_dec
 from celery.task.base import Task
 from celery.utils import uuid
-from celery.utils.encoding import from_utf8, default_encode
 from celery.worker.job import Request, TaskRequest, execute_and_trace
 from celery.worker.state import revoked
 

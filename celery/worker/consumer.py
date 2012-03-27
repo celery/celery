@@ -81,13 +81,15 @@ import socket
 import threading
 import warnings
 
+from kombu.utils.encoding import safe_repr
+
 from ..abstract import StartStopComponent
 from ..app import app_or_default
 from ..datastructures import AttributeDict
 from ..exceptions import InvalidTaskError
 from ..utils import noop
 from ..utils import timer2
-from ..utils.encoding import safe_repr
+
 from . import state
 from .control import Panel
 from .heartbeat import Heart

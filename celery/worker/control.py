@@ -13,10 +13,11 @@ from __future__ import absolute_import
 
 from datetime import datetime
 
+from kombu.utils.encoding import safe_repr
+
 from ..platforms import signals as _signals
 from ..utils import timeutils
 from ..utils.compat import UserDict
-from ..utils.encoding import safe_repr
 
 from . import state
 from .state import revoked

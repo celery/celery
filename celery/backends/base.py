@@ -8,16 +8,18 @@ import sys
 from datetime import timedelta
 
 from kombu import serialization
+from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
 
 from .. import states
 from ..app import current_task
 from ..datastructures import LRUCache
 from ..exceptions import TimeoutError, TaskRevokedError
 from ..utils import timeutils
-from ..utils.encoding import bytes_to_str, ensure_bytes, from_utf8
-from ..utils.serialization import (get_pickled_exception,
-                                   get_pickleable_exception,
-                                   create_exception_cls)
+from ..utils.serialization import (
+        get_pickled_exception,
+        get_pickleable_exception,
+        create_exception_cls,
+)
 
 EXCEPTION_ABLE_CODECS = frozenset(["pickle", "yaml"])
 is_py3k = sys.version_info >= (3, 0)

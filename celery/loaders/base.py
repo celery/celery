@@ -20,12 +20,13 @@ import warnings
 from anyjson import deserialize
 from datetime import datetime
 
+from kombu.utils.encoding import safe_str
+
 from ..datastructures import DictAttribute
 from ..exceptions import ImproperlyConfigured
 from ..utils import (cached_property, get_cls_by_name,
                      import_from_cwd as _import_from_cwd)
 from ..utils.functional import maybe_list
-from ..utils.encoding import safe_str
 
 BUILTIN_MODULES = frozenset()
 

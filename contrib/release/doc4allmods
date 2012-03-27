@@ -24,7 +24,8 @@ SKIP_FILES="celery.backends.pyredis.rst
             celery.conf.rst
             celery.decorators.rst
             celery.db.a805d4bd.rst
-            celery.db.dfd042c7.rst"
+            celery.db.dfd042c7.rst
+            celery.utils.encoding.rst"
 
 modules=$(find "$PACKAGE" -name "*.py")
 

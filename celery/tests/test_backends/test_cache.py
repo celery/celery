@@ -6,6 +6,7 @@ import types
 
 from contextlib import contextmanager
 
+from kombu.utils.encoding import str_to_bytes
 from mock import Mock, patch
 
 from celery import current_app
@@ -15,7 +16,6 @@ from celery.exceptions import ImproperlyConfigured
 from celery.result import AsyncResult
 from celery.task import subtask
 from celery.utils import uuid
-from celery.utils.encoding import str_to_bytes
 
 from celery.tests.utils import Case, mask_modules, reset_modules
 
