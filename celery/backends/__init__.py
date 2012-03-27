@@ -5,7 +5,7 @@ import sys
 
 from .. import current_app
 from ..local import Proxy
-from ..utils import get_cls_by_name
+from ..utils.imports import symbol_by_name
 from ..utils.functional import memoize
 
 UNKNOWN_BACKEND = """\
@@ -31,7 +31,7 @@ def get_backend_cls(backend=None, loader=None):
     loader = loader or current_app.loader
     aliases = dict(BACKEND_ALIASES, **loader.override_backends)
     try:
-        return get_cls_by_name(backend, aliases)
+        return symbol_by_name(backend, aliases)
     except ValueError, exc:
         raise ValueError, ValueError(UNKNOWN_BACKEND % (
                     backend, exc)), sys.exc_info()[2]

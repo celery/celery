@@ -175,16 +175,17 @@ class Command(object):
         if config_module:
             os.environ["CELERY_CONFIG_MODULE"] = config_module
         if app:
-            self.app = self.get_cls_by_name(app)
+            self.app = self.symbol_by_name(app)
         else:
             self.app = self.get_app(loader=loader)
         if self.enable_config_from_cmdline:
             argv = self.process_cmdline_config(argv)
         return argv
 
-    def get_cls_by_name(self, name):
-        from ..utils import get_cls_by_name, import_from_cwd
-        return get_cls_by_name(name, imp=import_from_cwd)
+    def symbol_by_name(self, name):
+        from ..utils.imports import symbol_by_name, import_from_cwd
+        return symbol_by_name(name, imp=import_from_cwd)
+    get_cls_by_name = symbol_by_name  # XXX compat
 
     def process_cmdline_config(self, argv):
         try:

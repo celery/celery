@@ -1,8 +1,12 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
+from kombu.utils.functional import promise
+
 from celery import utils
-from celery.utils import promise, mpromise
+from celery.utils import text
+from celery.utils import functional
+from celery.utils.functional import mpromise
 from celery.utils.threads import bgThread
 from celery.tests.utils import Case
 
@@ -41,11 +45,6 @@ class test_chunks(Case):
 
 class test_utils(Case):
 
-    def test_qualname(self):
-        Class = type("Fox", (object, ), {"__module__": "quick.brown"})
-        self.assertEqual(utils.qualname(Class), "quick.brown.Fox")
-        self.assertEqual(utils.qualname(Class()), "quick.brown.Fox")
-
     def test_is_iterable(self):
         for a in "f", ["f"], ("f", ), {"f": "f"}:
             self.assertTrue(utils.is_iterable(a))
@@ -53,16 +52,17 @@ class test_utils(Case):
             self.assertFalse(utils.is_iterable(b))
 
     def test_padlist(self):
-        self.assertListEqual(utils.padlist(["George", "Costanza", "NYC"], 3),
+        self.assertListEqual(functional.padlist(
+                ["George", "Costanza", "NYC"], 3),
                 ["George", "Costanza", "NYC"])
-        self.assertListEqual(utils.padlist(["George", "Costanza"], 3),
+        self.assertListEqual(functional.padlist(["George", "Costanza"], 3),
                 ["George", "Costanza", None])
-        self.assertListEqual(utils.padlist(["George", "Costanza", "NYC"], 4,
-                                           default="Earth"),
+        self.assertListEqual(functional.padlist(
+                ["George", "Costanza", "NYC"], 4, default="Earth"),
                 ["George", "Costanza", "NYC", "Earth"])
 
     def test_firstmethod_AttributeError(self):
-        self.assertIsNone(utils.firstmethod("foo")([object()]))
+        self.assertIsNone(functional.firstmethod("foo")([object()]))
 
     def test_firstmethod_promises(self):
 
@@ -74,9 +74,9 @@ class test_utils(Case):
             def m(self):
                 return self.value
 
-        self.assertEqual("four", utils.firstmethod("m")([
+        self.assertEqual("four", functional.firstmethod("m")([
             A(), A(), A(), A("four"), A("five")]))
-        self.assertEqual("four", utils.firstmethod("m")([
+        self.assertEqual("four", functional.firstmethod("m")([
             A(), A(), A(), promise(lambda: A("four")), A("five")]))
 
     def test_first(self):
@@ -88,32 +88,28 @@ class test_utils(Case):
                 return True
             return False
 
-        self.assertEqual(5, utils.first(predicate, xrange(10)))
+        self.assertEqual(5, functional.first(predicate, xrange(10)))
         self.assertEqual(iterations[0], 6)
 
         iterations[0] = 0
-        self.assertIsNone(utils.first(predicate, xrange(10, 20)))
+        self.assertIsNone(functional.first(predicate, xrange(10, 20)))
         self.assertEqual(iterations[0], 10)
 
-    def test_get_cls_by_name__instance_returns_instance(self):
-        instance = object()
-        self.assertIs(utils.get_cls_by_name(instance), instance)
-
     def test_truncate_text(self):
-        self.assertEqual(utils.truncate_text("ABCDEFGHI", 3), "ABC...")
-        self.assertEqual(utils.truncate_text("ABCDEFGHI", 10), "ABCDEFGHI")
+        self.assertEqual(text.truncate("ABCDEFGHI", 3), "ABC...")
+        self.assertEqual(text.truncate("ABCDEFGHI", 10), "ABCDEFGHI")
 
     def test_abbr(self):
-        self.assertEqual(utils.abbr(None, 3), "???")
-        self.assertEqual(utils.abbr("ABCDEFGHI", 6), "ABC...")
-        self.assertEqual(utils.abbr("ABCDEFGHI", 20), "ABCDEFGHI")
-        self.assertEqual(utils.abbr("ABCDEFGHI", 6, None), "ABCDEF")
+        self.assertEqual(text.abbr(None, 3), "???")
+        self.assertEqual(text.abbr("ABCDEFGHI", 6), "ABC...")
+        self.assertEqual(text.abbr("ABCDEFGHI", 20), "ABCDEFGHI")
+        self.assertEqual(text.abbr("ABCDEFGHI", 6, None), "ABCDEF")
 
     def test_abbrtask(self):
-        self.assertEqual(utils.abbrtask(None, 3), "???")
-        self.assertEqual(utils.abbrtask("feeds.tasks.refresh", 10),
+        self.assertEqual(text.abbrtask(None, 3), "???")
+        self.assertEqual(text.abbrtask("feeds.tasks.refresh", 10),
                                         "[.]refresh")
-        self.assertEqual(utils.abbrtask("feeds.tasks.refresh", 30),
+        self.assertEqual(text.abbrtask("feeds.tasks.refresh", 30),
                                         "feeds.tasks.refresh")
 
     def test_cached_property(self):

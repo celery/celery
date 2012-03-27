@@ -17,8 +17,8 @@ from celery.utils.serialization import pickle
 from celery.tests import config
 from celery.tests.utils import (Case, mask_modules, platform_pyimp,
                                 sys_platform, pypy_version)
+from celery.utils import uuid
 from celery.utils.mail import ErrorMail
-from kombu.utils import gen_unique_id
 
 THIS_IS_A_KEY = "this is a value"
 
@@ -248,7 +248,7 @@ class test_App(Case):
 
     def test_error_mail_sender(self):
         x = ErrorMail.subject % {"name": "task_name",
-                                 "id": gen_unique_id(),
+                                 "id": uuid(),
                                  "exc": "FOOBARBAZ",
                                  "hostname": "lana"}
         self.assertTrue(x)

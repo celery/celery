@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-from ..utils import get_cls_by_name
+from ..utils.imports import symbol_by_name
 
 ALIASES = {
     "processes": "celery.concurrency.processes:TaskPool",
@@ -13,4 +13,4 @@ ALIASES = {
 
 
 def get_implementation(cls):
-    return get_cls_by_name(cls, ALIASES)
+    return symbol_by_name(cls, ALIASES)

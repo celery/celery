@@ -106,7 +106,7 @@ from kombu.utils.encoding import from_utf8
 from .. import __version__
 from ..platforms import shellsplit
 from ..utils import term
-from ..utils import pluralize
+from ..utils.text import pluralize
 
 SIGNAMES = set(sig for sig in dir(signal)
                         if sig.startswith("SIG") and "_" not in sig)

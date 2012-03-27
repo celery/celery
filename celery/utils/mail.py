@@ -19,7 +19,7 @@ try:
 except ImportError:
     from email.MIMEText import MIMEText  # noqa
 
-from . import get_symbol_by_name
+from .imports import symbol_by_name
 
 supports_timeout = sys.version_info >= (2, 6)
 
@@ -168,7 +168,7 @@ celeryd at %%(hostname)s.
     def should_send(self, context, exc):
         """Returns true or false depending on if a task error mail
         should be sent for this type of error."""
-        allow_classes = tuple(map(get_symbol_by_name,  self.error_whitelist))
+        allow_classes = tuple(map(symbol_by_name,  self.error_whitelist))
         return not self.error_whitelist or isinstance(exc, allow_classes)
 
     def format_subject(self, context):

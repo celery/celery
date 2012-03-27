@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
-from ..utils import firstmethod, instantiate, mpromise
+from ..utils.functional import firstmethod, mpromise
+from ..utils.imports import instantiate
 
 _first_match = firstmethod("annotate")
 _first_match_any = firstmethod("annotate_any")

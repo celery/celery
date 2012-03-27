@@ -20,9 +20,9 @@ from ... import states
 from ...datastructures import ExceptionInfo
 from ...exceptions import MaxRetriesExceededError, RetryTaskError
 from ...result import EagerResult
-from ...utils import (fun_takes_kwargs, instantiate,
-                      mattrgetter, uuid, maybe_reraise)
-from ...utils.functional import maybe_list
+from ...utils import fun_takes_kwargs, uuid, maybe_reraise
+from ...utils.functional import mattrgetter, maybe_list
+from ...utils.imports import instantiate
 from ...utils.mail import ErrorMail
 from ...utils.compat import fun_of_method
 

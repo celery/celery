@@ -11,7 +11,7 @@
 """
 from __future__ import absolute_import
 
-from kombu.utils.encoding import (
+from kombu.utils.encoding import (  # noqa
         default_encode,
         default_encoding,
         bytes_t,

@@ -13,7 +13,8 @@
 from __future__ import absolute_import
 
 from .. import current_app
-from ..utils import deprecated, get_cls_by_name
+from ..utils import deprecated
+from ..utils.imports import symbol_by_name
 
 LOADER_ALIASES = {"app": "celery.loaders.app:AppLoader",
                   "default": "celery.loaders.default:Loader",
@@ -22,7 +23,7 @@ LOADER_ALIASES = {"app": "celery.loaders.app:AppLoader",
 
 def get_loader_cls(loader):
     """Get loader class by name/alias"""
-    return get_cls_by_name(loader, LOADER_ALIASES)
+    return symbol_by_name(loader, LOADER_ALIASES)
 
 
 @deprecated(deprecation="2.5", removal="3.0",

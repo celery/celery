@@ -17,7 +17,9 @@ from anyjson import deserialize
 from .. import __version__
 from ..app import app_or_default, current_app
 from ..platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
-from ..utils import get_cls_by_name, pluralize, term
+from ..utils import term
+from ..utils.imports import symbol_by_name
+from ..utils.text import pluralize
 from ..utils.timeutils import maybe_iso8601
 
 from ..bin.base import Command as CeleryCommand
@@ -144,7 +146,7 @@ class Delegate(Command):
     def __init__(self, *args, **kwargs):
         super(Delegate, self).__init__(*args, **kwargs)
 
-        self.target = get_cls_by_name(self.Command)(app=self.app)
+        self.target = symbol_by_name(self.Command)(app=self.app)
         self.args = self.target.args
 
     def get_options(self):

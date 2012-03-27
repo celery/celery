@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 from dateutil import tz
 from dateutil.parser import parse as parse_iso8601
 
-from . import pluralize
+from .text import pluralize
 
 try:
     import pytz

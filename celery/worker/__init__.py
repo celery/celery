@@ -28,7 +28,8 @@ from .. import concurrency as _concurrency
 from ..app import app_or_default
 from ..app.abstract import configurated, from_config
 from ..exceptions import SystemTerminate
-from ..utils import noop, qualname, reload_from_cwd
+from ..utils.functional import noop
+from ..utils.imports import qualname, reload_from_cwd
 
 from . import state
 from .buckets import TaskBucket, FastQueue

@@ -36,7 +36,7 @@ except ImportError:
     safe_apply_callback = None  # noqa
 
 from celery.datastructures import ExceptionInfo
-from celery.utils import noop
+from celery.utils.functional import noop
 from celery.tests.utils import Case
 
 

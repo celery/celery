@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from celery.app.annotations import MapAnnotation, prepare
 from celery.task import task
-from celery.utils import qualname
+from celery.utils.imports import qualname
 
 from celery.tests.utils import Case
 

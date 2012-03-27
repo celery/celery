@@ -19,6 +19,7 @@ import sys
 
 from datetime import datetime
 
+from kombu.utils import kwdict
 from kombu.utils.encoding import safe_repr, safe_str
 
 from .. import current_app
@@ -27,7 +28,9 @@ from ..app import app_or_default
 from ..datastructures import ExceptionInfo
 from ..execute.trace import build_tracer, trace_task, report_internal_error
 from ..platforms import set_mp_process_title as setps
-from ..utils import noop, kwdict, fun_takes_kwargs, truncate_text
+from ..utils import fun_takes_kwargs
+from ..utils.functional import noop
+from ..utils.text import truncate
 from ..utils.timeutils import maybe_iso8601, timezone
 
 from . import state
@@ -406,7 +409,7 @@ class Request(object):
     def repr_result(self, result, maxlen=46):
         # 46 is the length needed to fit
         #     "the quick brown fox jumps over the lazy dog" :)
-        return truncate_text(safe_repr(result), maxlen)
+        return truncate(safe_repr(result), maxlen)
 
     def info(self, safe=False):
         return {"id": self.id,

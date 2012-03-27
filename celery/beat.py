@@ -24,6 +24,7 @@ except ImportError:
     multiprocessing = None  # noqa
 
 from kombu.utils import reprcall
+from kombu.utils.functional import maybe_promise
 
 from . import __version__
 from . import platforms
@@ -31,7 +32,8 @@ from . import signals
 from . import current_app
 from .app import app_or_default
 from .schedules import maybe_schedule, crontab
-from .utils import cached_property, instantiate, maybe_promise
+from .utils import cached_property
+from .utils.imports import instantiate
 from .utils.timeutils import humanize_seconds
 
 

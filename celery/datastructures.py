@@ -18,12 +18,10 @@ import traceback
 
 from collections import defaultdict
 from itertools import chain
-from threading import RLock
 
 from kombu.utils.limits import TokenBucket  # noqa
 
-from .utils import uniq
-from .utils.compat import UserDict, OrderedDict
+from .utils.functional import LRUCache, uniq  # noqa
 
 
 class CycleError(Exception):
@@ -539,68 +537,3 @@ class LimitedSet(object):
     def first(self):
         """Get the oldest member."""
         return self.chronologically[0]
-
-
-class LRUCache(UserDict):
-    """LRU Cache implementation using a doubly linked list to track access.
-
-    :keyword limit: The maximum number of keys to keep in the cache.
-        When a new key is inserted and the limit has been exceeded,
-        the *Least Recently Used* key will be discarded from the
-        cache.
-
-    """
-
-    def __init__(self, limit=None):
-        self.limit = limit
-        self.mutex = RLock()
-        self.data = OrderedDict()
-
-    def __getitem__(self, key):
-        with self.mutex:
-            value = self[key] = self.data.pop(key)
-        return value
-
-    def keys(self):
-        # userdict.keys in py3k calls __getitem__
-        return self.data.keys()
-
-    def values(self):
-        return list(self._iterate_values())
-
-    def items(self):
-        return list(self._iterate_items())
-
-    def __setitem__(self, key, value):
-        # remove least recently used key.
-        with self.mutex:
-            if self.limit and len(self.data) >= self.limit:
-                self.data.pop(iter(self.data).next())
-            self.data[key] = value
-
-    def __iter__(self):
-        return self.data.iterkeys()
-
-    def _iterate_items(self):
-        for k in self:
-            try:
-                yield (k, self.data[k])
-            except KeyError:
-                pass
-    iteritems = _iterate_items
-
-    def _iterate_values(self):
-        for k in self:
-            try:
-                yield self.data[k]
-            except KeyError:  # pragma: no cover
-                pass
-    itervalues = _iterate_values
-
-    def incr(self, key, delta=1):
-        with self.mutex:
-            # this acts as memcached does- store as a string, but return a
-            # integer as long as it exists and we can cast it
-            newval = int(self.data.pop(key)) + delta
-            self[key] = str(newval)
-        return newval

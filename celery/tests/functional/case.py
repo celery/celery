@@ -13,7 +13,7 @@ from time import time
 
 from celery.exceptions import TimeoutError
 from celery.task.control import ping, flatten_reply, inspect
-from celery.utils import qualname
+from celery.utils.imports import qualname
 
 from celery.tests.utils import Case
 

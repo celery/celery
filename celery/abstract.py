@@ -15,7 +15,7 @@ from collections import defaultdict
 from importlib import import_module
 
 from .datastructures import DependencyGraph
-from .utils import instantiate
+from .utils.imports import instantiate
 
 
 class Namespace(object):

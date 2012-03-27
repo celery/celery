@@ -19,7 +19,8 @@ from kombu.pools import ProducerPool
 
 from .. import routes as _routes
 from .. import signals
-from ..utils import cached_property, textindent, uuid
+from ..utils import cached_property, uuid
+from ..utils import text
 
 #: List of known options to a Kombu producers send method.
 #: Used to extract the message related options out of any `dict`.
@@ -96,8 +97,8 @@ class Queues(dict):
                     name=(name + ":").ljust(12), **config)
                         for name, config in sorted(active.iteritems())]
         if indent_first:
-            return textindent("\n".join(info), indent)
-        return info[0] + "\n" + textindent("\n".join(info[1:]), indent)
+            return text.indent("\n".join(info), indent)
+        return info[0] + "\n" + text.indent("\n".join(info[1:]), indent)
 
     def select_subset(self, wanted, create_missing=True):
         """Select subset of the currently defined queues.

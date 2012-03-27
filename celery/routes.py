@@ -13,7 +13,9 @@
 from __future__ import absolute_import
 
 from .exceptions import QueueNotFound
-from .utils import firstmethod, instantiate, lpmerge, mpromise
+from .utils import lpmerge
+from .utils.functional import firstmethod, mpromise
+from .utils.imports import instantiate
 
 _first_route = firstmethod("route_for_task")
 

@@ -25,7 +25,7 @@ from math import ceil
 from .. import __version__
 from .. import states
 from ..app import app_or_default
-from ..utils import abbr, abbrtask
+from ..utils.text import abbr, abbrtask
 
 BORDER_SPACING = 4
 LEFT_BORDER_OFFSET = 3

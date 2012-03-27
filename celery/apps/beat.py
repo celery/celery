@@ -9,7 +9,7 @@ from .. import __version__, platforms
 from .. import beat
 from ..app import app_or_default
 from ..app.abstract import configurated, from_config
-from ..utils import qualname
+from ..utils.imports import qualname
 from ..utils.log import LOG_LEVELS
 from ..utils.timeutils import humanize_seconds
 

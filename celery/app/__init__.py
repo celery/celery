@@ -15,7 +15,8 @@ from __future__ import absolute_import
 import os
 
 from ..local import PromiseProxy
-from ..utils import cached_property, instantiate
+from ..utils import cached_property
+from ..utils.imports import instantiate
 
 from . import annotations
 from . import base

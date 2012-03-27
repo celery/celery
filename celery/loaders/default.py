@@ -17,7 +17,7 @@ import warnings
 
 from ..datastructures import AttributeDict
 from ..exceptions import NotConfigured
-from ..utils import find_module, NotAPackage
+from ..utils.imports import NotAPackage, find_module
 
 from .base import BaseLoader
 

@@ -87,8 +87,8 @@ from ..abstract import StartStopComponent
 from ..app import app_or_default
 from ..datastructures import AttributeDict
 from ..exceptions import InvalidTaskError
-from ..utils import noop
 from ..utils import timer2
+from ..utils.functional import noop
 
 from . import state
 from .control import Panel

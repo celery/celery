@@ -28,7 +28,8 @@ from .. import datastructures
 from .. import platforms
 from ..exceptions import AlwaysEagerIgnored
 from ..local import maybe_evaluate
-from ..utils import cached_property, instantiate, lpmerge, qualname
+from ..utils import cached_property, lpmerge
+from ..utils.imports import instantiate, qualname
 
 from .defaults import DEFAULTS, find_deprecated_settings, find
 
@@ -364,8 +365,7 @@ class BaseApp(object):
     def _pformat(self, value, width=80, nl_width=80, **kw):
 
         if isinstance(value, dict):
-            return "{\n %s" % (
-                                pformat(value, width=nl_width, indent=4, **kw)[1:])
+            return "{\n %s" % (pformat(value, 4, nl_width)[1:])
         elif isinstance(value, tuple):
             return "\n%s%s" % (' ' * 4,
                                 pformat(value, width=nl_width, **kw))
