@@ -28,7 +28,7 @@ class Heart(object):
     def __init__(self, timer, eventer, interval=None):
         self.timer = timer
         self.eventer = eventer
-        self.interval = interval or 30
+        self.interval = float(interval or 5.0)
         self.tref = None
 
         # Make event dispatcher start/stop us when it's
@@ -37,7 +37,7 @@ class Heart(object):
         self.eventer.on_disabled.add(self.stop)
 
     def _send(self, event):
-        return self.eventer.send(event, **SOFTWARE_INFO)
+        return self.eventer.send(event, freq=self.interval, **SOFTWARE_INFO)
 
     def start(self):
         if self.eventer.enabled:

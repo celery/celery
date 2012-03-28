@@ -6,7 +6,7 @@ from itertools import count
 
 from celery import states
 from celery.events import Event
-from celery.events.state import State, Worker, Task, HEARTBEAT_EXPIRE
+from celery.events.state import State, Worker, Task, HEARTBEAT_EXPIRE_WINDOW
 from celery.utils import uuid
 from celery.tests.utils import Case
 
@@ -54,7 +54,7 @@ class ev_worker_heartbeats(replay):
     def setup(self):
         self.events = [
             Event("worker-heartbeat", hostname="utest1",
-                timestamp=time() - HEARTBEAT_EXPIRE * 2),
+                timestamp=time() - HEARTBEAT_EXPIRE_WINDOW * 2),
             Event("worker-heartbeat", hostname="utest1"),
         ]
 

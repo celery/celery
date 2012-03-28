@@ -22,20 +22,20 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-import time
 import heapq
 
 from threading import Lock
+from time import time
 
 from kombu.utils import kwdict
 
 from .. import states
 from ..datastructures import AttributeDict, LRUCache
 
-#: Hartbeat expiry time in seconds.  The worker will be considered offline
-#: if no heartbeat is received within this time.
-#: Default is 2:30 minutes.
-HEARTBEAT_EXPIRE = 150
+# The window (in percentage) is added to the workers heartbeat
+# frequency.  If the time between updates exceeds this window,
+# then the worker is considered to be offline.
+HEARTBEAT_EXPIRE_WINDOW = 200
 
 
 class Element(AttributeDict):
@@ -45,6 +45,8 @@ class Element(AttributeDict):
 class Worker(Element):
     """Worker State."""
     heartbeat_max = 4
+    expire_window = HEARTBEAT_EXPIRE_WINDOW
+    freq = 60  # default frequency for workers < 2.6
 
     def __init__(self, **fields):
         super(Worker, self).__init__(**fields)
@@ -73,9 +75,12 @@ class Worker(Element):
                                      self.alive and "ONLINE" or "OFFLINE")
 
     @property
+    def heartbeat_expires(self):
+        return self.heartbeats[-1] + self.freq * (self.expire_window / 1e2)
+
+    @property
     def alive(self):
-        return (self.heartbeats and
-                time.time() < self.heartbeats[-1] + HEARTBEAT_EXPIRE)
+        return (self.heartbeats and time() < self.heartbeat_expires)
 
 
 class Task(Element):
