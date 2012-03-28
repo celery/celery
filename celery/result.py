@@ -56,11 +56,16 @@ class AsyncResult(object):
     #: The task result backend to use.
     backend = None
 
-    def __init__(self, id, backend=None, task_name=None, app=None):
+    #: Parent result (if part of a chain)
+    parent = None
+
+    def __init__(self, id, backend=None, task_name=None,
+            app=None, parent=None):
         self.app = app_or_default(app)
         self.id = id
         self.backend = backend or self.app.backend
         self.task_name = task_name
+        self.parent = parent
 
     def serializable(self):
         return self.id, None
@@ -208,6 +213,10 @@ class AsyncResult(object):
                 graph.add_arc(parent)
                 graph.add_edge(parent, node)
         return graph
+
+    def set_parent(self, parent):
+        self.parent = parent
+        return parent
 
     @cached_property
     def graph(self):
