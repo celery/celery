@@ -106,10 +106,5 @@ class chain(object):
         tasks[0].apply_async()
         results = [task.type.AsyncResult(task.options["task_id"])
                         for task in tasks]
-
-        def update_parent(result, parent):
-            result.parent = parent
-            return parent
-
-        reduce(update_parent, reversed(results))
+        reduce(lambda a, b: a.set_parent(b), reversed(results))
         return results[-1]
