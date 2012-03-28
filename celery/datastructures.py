@@ -21,7 +21,7 @@ from itertools import chain
 
 from kombu.utils.limits import TokenBucket  # noqa
 
-from .utils.functional import LRUCache, uniq  # noqa
+from .utils.functional import LRUCache, first, uniq  # noqa
 
 
 class CycleError(Exception):
@@ -304,6 +304,9 @@ class ConfigurationView(AttributeDictMixin):
 
     def __setitem__(self, key, value):
         self.changes[key] = value
+
+    def first(self, *keys):
+        return first(None, (self.get(key) for key in keys))
 
     def get(self, key, default=None):
         try:

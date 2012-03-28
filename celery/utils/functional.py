@@ -12,7 +12,9 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-from functools import wraps
+import operator
+
+from functools import partial, wraps
 from itertools import islice
 from threading import Lock, RLock
 
@@ -27,6 +29,7 @@ from kombu.utils.functional import promise, maybe_promise
 from .compat import UserDict, OrderedDict
 
 KEYWORD_MARK = object()
+is_not_None = partial(operator.is_not, None)
 
 
 class LRUCache(UserDict):
@@ -169,7 +172,7 @@ def noop(*args, **kwargs):
 def first(predicate, iterable):
     """Returns the first element in `iterable` that `predicate` returns a
     :const:`True` value for."""
-    # XXX This function is not used anymore
+    predicate = predicate or is_not_None
     for item in iterable:
         if predicate(item):
             return item

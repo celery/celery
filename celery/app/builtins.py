@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-from ...utils import uuid
+from ..utils import uuid
 
 #: global list of functions defining a built-in task.
 #: these are called for every app instance to setup built-in task.
-_builtins = []
+_builtin_tasks = []
 
 
 def builtin_task(constructor):
@@ -15,14 +15,13 @@ def builtin_task(constructor):
     The function will then be called for every new app instance created
     (lazily, so more exactly when the task registry for that app is needed).
     """
-    _builtins.append(constructor)
+    _builtin_tasks.append(constructor)
     return constructor
 
 
-def load_builtins(app):
+def load_builtin_tasks(app):
     """Loads the built-in tasks for an app instance."""
-    for constructor in _builtins:
-        constructor(app)
+    [constructor(app) for constructor in _builtin_tasks]
 
 
 @builtin_task
@@ -39,11 +38,7 @@ def add_backend_cleanup_task(app):
     may even clean up in realtime so that a periodic cleanup is not necessary.
 
     """
-    @app.task(name="celery.backend_cleanup")
-    def backend_cleanup():
-        app.backend.cleanup()
-
-    return backend_cleanup
+    return app.task(name="celery.backend_cleanup")(app.backend.cleanup)
 
 
 @builtin_task
@@ -54,13 +49,12 @@ def add_unlock_chord_task(app):
     It creates a task chain polling the header for completion.
 
     """
+    from ..result import AsyncResult, TaskSetResult
+    from ..task.sets import subtask
 
     @app.task(name="celery.chord_unlock", max_retries=None)
     def unlock_chord(setid, callback, interval=1, propagate=False,
             max_retries=None, result=None):
-        from ...result import AsyncResult, TaskSetResult
-        from ...task.sets import subtask
-
         result = TaskSetResult(setid, map(AsyncResult, result))
         j = result.join_native if result.supports_native_join else result.join
         if result.ready():
@@ -76,11 +70,11 @@ def add_chord_task(app):
     """Every chord is executed in a dedicated task, so that the chord
     can be used as a subtask, and this generates the task
     responsible for that."""
+    from ..task.sets import TaskSet
 
     @app.task(name="celery.chord", accept_magic_kwargs=False)
     def chord(set, body, interval=1, max_retries=None,
             propagate=False, **kwargs):
-        from ...task.sets import TaskSet
 
         if not isinstance(set, TaskSet):
             set = TaskSet(set)

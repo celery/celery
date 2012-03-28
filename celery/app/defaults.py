@@ -233,6 +233,7 @@ def find_deprecated_settings(source):
                             deprecation=opt.deprecate_by,
                             removal=opt.remove_by,
                             alternative=opt.alt)
+    return source
 
 
 @memoize(maxsize=None)

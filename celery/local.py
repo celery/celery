@@ -14,14 +14,14 @@
 from __future__ import absolute_import
 
 
-def try_import(module):
+def try_import(module, default=None):
     """Try to import and return module, or return
     None if the module does not exist."""
     from importlib import import_module
     try:
         return import_module(module)
     except ImportError:
-        pass
+        return default
 
 
 class Proxy(object):

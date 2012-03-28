@@ -25,7 +25,11 @@ from pprint import pprint
 from ..exceptions import CPendingDeprecationWarning, CDeprecationWarning
 from .compat import StringIO
 
-from .imports import qualname
+from .imports import symbol_by_name, qualname
+from .functional import noop
+
+register_after_fork = symbol_by_name(
+    "multiprocessing.util.register_after_fork", default=noop)
 
 PENDING_DEPRECATION_FMT = """
     %(description)s is scheduled for deprecation in \
@@ -165,10 +169,8 @@ def maybe_reraise():
 # - XXX Compat
 from .log import LOG_LEVELS     # noqa
 from .imports import (          # noqa
-        qualname as get_full_cls_name,
-        symbol_by_name as gete_cls_by_name,
-        instantiate,
-        import_from_cwd
+        qualname as get_full_cls_name, symbol_by_name as get_cls_by_name,
+        instantiate, import_from_cwd
 )
 from .functional import chunks, noop            # noqa
 from kombu.utils import cached_property, uuid   # noqa

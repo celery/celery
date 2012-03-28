@@ -30,7 +30,7 @@ else:
 
 
 def symbol_by_name(name, aliases={}, imp=None, package=None,
-        sep='.', **kwargs):
+        sep='.', default=None, **kwargs):
     """Get symbol by qualified name.
 
     The name should be the full dot-separated path to the class::
@@ -76,11 +76,16 @@ def symbol_by_name(name, aliases={}, imp=None, package=None,
     if not module_name and package:
         module_name = package
     try:
-        module = imp(module_name, package=package, **kwargs)
-    except ValueError, exc:
-        raise ValueError, ValueError(
-                "Couldn't import %r: %s" % (name, exc)), sys.exc_info()[2]
-    return getattr(module, cls_name)
+        try:
+            module = imp(module_name, package=package, **kwargs)
+        except ValueError, exc:
+            raise ValueError, ValueError(
+                    "Couldn't import %r: %s" % (name, exc)), sys.exc_info()[2]
+        return getattr(module, cls_name)
+    except (ImportError, AttributeError):
+        if default is None:
+            raise
+    return default
 
 
 def instantiate(name, *args, **kwargs):

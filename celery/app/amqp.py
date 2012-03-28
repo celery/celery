@@ -19,7 +19,7 @@ from kombu.pools import ProducerPool
 
 from .. import routes as _routes
 from .. import signals
-from ..utils import cached_property, uuid
+from ..utils import cached_property, lpmerge, uuid
 from ..utils import text
 
 #: List of known options to a Kombu producers send method.
@@ -113,17 +113,18 @@ class Queues(dict):
                                  in `wanted` will raise :exc:`KeyError`.
 
         """
-        acc = {}
-        for queue in wanted:
-            try:
-                options = self[queue]
-            except KeyError:
-                if not create_missing:
-                    raise
-                options = self.options(queue, queue)
-            acc[queue] = options
-        self._consume_from = acc
-        self.update(acc)
+        if wanted:
+            acc = {}
+            for queue in wanted:
+                try:
+                    options = self[queue]
+                except KeyError:
+                    if not create_missing:
+                        raise
+                    options = self.options(queue, queue)
+                acc[queue] = options
+            self._consume_from = acc
+            self.update(acc)
 
     @property
     def consume_from(self):
@@ -309,8 +310,7 @@ class AMQP(object):
         default_queue_name, default_queue = self.get_default_queue()
         defaults = dict({"queue": default_queue_name}, **default_queue)
         defaults["routing_key"] = defaults.pop("binding_key", None)
-        return self.Consumer(*args,
-                             **self.app.merge(defaults, kwargs))
+        return self.Consumer(*args, **lpmerge(defaults, kwargs))
 
     def TaskPublisher(self, *args, **kwargs):
         """Returns publisher used to send tasks.
@@ -329,7 +329,7 @@ class AMQP(object):
                     "retry_policy": conf.CELERY_TASK_PUBLISH_RETRY_POLICY,
                     "enable_utc": conf.CELERY_ENABLE_UTC,
                     "app": self.app}
-        return TaskPublisher(*args, **self.app.merge(defaults, kwargs))
+        return TaskPublisher(*args, **lpmerge(defaults, kwargs))
 
     def get_task_consumer(self, connection, queues=None, **kwargs):
         """Return consumer configured to consume from all known task
