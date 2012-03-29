@@ -60,6 +60,9 @@
     celery.utils.serialization
     celery.utils.threads
     celery.utils.timer2
+    celery.utils.imports
+    celery.utils.log
+    celery.utils.text
     celery.utils.dispatch
     celery.utils.dispatch.signal
     celery.utils.dispatch.saferef

@@ -15,6 +15,7 @@
     celery.app.control
     celery.app.registry
     celery.app.builtins
+    celery.app.log
     celery.task
     celery.task.base
     celery.task.sets
