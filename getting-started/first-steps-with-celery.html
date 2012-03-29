@@ -128,7 +128,7 @@ keep everything in the same module.</p>
     <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
 
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="n">celery</span><span class="o">.</span><span class="n">celery_main</span><span class="p">()</span>
+    <span class="n">celery</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>The first argument to <tt class="xref py py-class docutils literal"><span class="pre">Celery</span></tt> is the name of the current module,

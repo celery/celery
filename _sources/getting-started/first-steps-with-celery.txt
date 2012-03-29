@@ -69,7 +69,7 @@ Let's create the file :file:`tasks.py`:
         return x + y
 
     if __name__ == "__main__":
-        celery.celery_main()
+        celery.start()
 
 The first argument to :class:`Celery` is the name of the current module,
 this is needed to that names can be automatically generated, the second
