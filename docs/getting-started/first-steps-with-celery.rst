@@ -54,7 +54,7 @@ the entry-point for everything you want to do in Celery, like creating task and
 managing workers, it must be possible for other modules to import it.
 
 Some people create a dedicated module for it, but in this tutorial we will
-keep it in the same module used to start our worker::
+keep it in the same module used to start our worker.
 
 Let's create the file :file:`worker.py`:
 
@@ -71,10 +71,8 @@ The broker argument specifies the message broker we want to use, what
 we are using in this example is the default, but we keep it there for
 reference so you can see what the URLs look like.
 
-The backend argument specifies what we use to store and retrieve task
-states and results, it is disabled by default.
-   For list of backends available and related options see
-   :ref:`conf-result-backend`.
+By default the state and return value (results) of the tasks are ignored,
+if you want to enable this please see :ref:`celerytut-keeping-results`.
 
 That's all you need to get started!
 
