@@ -73,10 +73,10 @@
 <ul class="simple">
 <li><a class="reference internal" href="#choosing-a-broker" id="id1">Choosing a Broker</a></li>
 <li><a class="reference internal" href="#application" id="id2">Application</a></li>
-<li><a class="reference internal" href="#creating-a-simple-task" id="id3">Creating a simple task</a></li>
-<li><a class="reference internal" href="#running-the-celery-worker-server" id="id4">Running the celery worker server</a></li>
-<li><a class="reference internal" href="#executing-the-task" id="id5">Executing the task</a><ul>
-<li><a class="reference internal" href="#keeping-results" id="id6">Keeping Results</a></li>
+<li><a class="reference internal" href="#running-the-celery-worker-server" id="id3">Running the celery worker server</a></li>
+<li><a class="reference internal" href="#executing-the-task" id="id4">Executing the task</a><ul>
+<li><a class="reference internal" href="#keeping-results" id="id5">Keeping Results</a></li>
+<li><a class="reference internal" href="#configuration" id="id6">Configuration</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#where-to-go-from-here" id="id7">Where to go from here</a></li>
@@ -84,9 +84,8 @@
 </div>
 <div class="section" id="choosing-a-broker">
 <span id="celerytut-broker"></span><h2><a class="toc-backref" href="#id1">Choosing a Broker</a><a class="headerlink" href="#choosing-a-broker" title="Permalink to this headline">¶</a></h2>
-<p>Celery requires a solution to send and receive messages, this is called
-the <em>message transport</em>.  Usually this comes in the form of a separate
-service called a <em>message broker</em>.</p>
+<p>Celery requires a solution to send and receive messages, usually this
+comes in the form of a separate service called a <em>message broker</em>.</p>
 <p>There are several choices available, including:</p>
 <ul class="simple">
 <li><a class="reference internal" href="brokers/rabbitmq.html#broker-rabbitmq"><em>Using RabbitMQ</em></a></li>
@@ -113,84 +112,51 @@ in the Kombu documentation.</p>
 </div>
 <div class="section" id="application">
 <span id="celerytut-conf"></span><h2><a class="toc-backref" href="#id2">Application</a><a class="headerlink" href="#application" title="Permalink to this headline">¶</a></h2>
-<p>The first thing you need is a Celery instance.  Since the instance is used as
-the entry-point for everything you want to do in Celery, like creating task and
+<p>The first thing you need is a Celery instance, this is called the celery
+application or just app.  Since this instance is used as
+the entry-point for everything you want to do in Celery, like creating tasks and
 managing workers, it must be possible for other modules to import it.</p>
 <p>Some people create a dedicated module for it, but in this tutorial we will
-keep it in the same module used to start our worker.</p>
-<p>Let&#8217;s create the file <tt class="file docutils literal"><span class="pre">worker.py</span></tt>:</p>
+keep everything in the same module.</p>
+<p>Let&#8217;s create the file <tt class="file docutils literal"><span class="pre">tasks.py</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery</span> <span class="kn">import</span> <span class="n">Celery</span>
 
-<span class="n">celery</span> <span class="o">=</span> <span class="n">Celery</span><span class="p">(</span><span class="n">broker</span><span class="o">=</span><span class="s">&quot;amqp://guest:guest@localhost:5672&quot;</span><span class="p">)</span>
-
-<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="n">celery</span><span class="o">.</span><span class="n">worker_main</span><span class="p">()</span>
-</pre></div>
-</div>
-<p>The broker argument specifies the message broker we want to use, what
-we are using in this example is the default, but we keep it there for
-reference so you can see what the URLs look like.</p>
-<p>By default the state and return value (results) of the tasks are ignored,
-if you want to enable this please see <a class="reference internal" href="#celerytut-keeping-results"><em>Keeping Results</em></a>.</p>
-<p>That&#8217;s all you need to get started!</p>
-<p>If you want to dig deeper there are lots of configuration possibilities that
-can be applied.  For example you can set the default value for the workers
-<cite>&#8211;concurrency`</cite> argument, which is used to decide the number of pool worker
-processes, the name for this setting is <a class="reference internal" href="../configuration.html#std:setting-CELERYD_CONCURRENCY"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYD_CONCURRENCY</span></tt></a>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">celery</span><span class="o">.</span><span class="n">conf</span><span class="o">.</span><span class="n">CELERY_CONCURRENCY</span> <span class="o">=</span> <span class="mi">10</span>
-</pre></div>
-</div>
-<p>If you are configuring many settings then one practice is to have a separate module
-containing the configuration.  You can tell your Celery instance to use
-this module, historically called <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt>, with the
-<tt class="xref py py-meth docutils literal"><span class="pre">config_from_obj()</span></tt> method:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">celery</span><span class="o">.</span><span class="n">config_from_object</span><span class="p">(</span><span class="s">&quot;celeryconfig&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>For a complete reference of configuration options, see <a class="reference internal" href="../configuration.html#configuration"><em>Configuration and defaults</em></a>.</p>
-</div>
-<div class="section" id="creating-a-simple-task">
-<span id="celerytut-simple-tasks"></span><h2><a class="toc-backref" href="#id3">Creating a simple task</a><a class="headerlink" href="#creating-a-simple-task" title="Permalink to this headline">¶</a></h2>
-<p>In this tutorial we are creating a simple task that adds two
-numbers.  Tasks are defined in normal Python modules.</p>
-<p>By convention we will call our module <tt class="file docutils literal"><span class="pre">tasks.py</span></tt>, and it looks
-like this:</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">file:</th><td class="field-body"><cite>tasks.py</cite></td>
-</tr>
-</tbody>
-</table>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">worker</span> <span class="kn">import</span> <span class="n">celery</span>
+<span class="n">celery</span> <span class="o">=</span> <span class="n">Celery</span><span class="p">(</span><span class="s">&quot;tasks&quot;</span><span class="p">,</span> <span class="n">broker</span><span class="o">=</span><span class="s">&quot;amqp://guest:guest@localhost:5672&quot;</span><span class="p">)</span>
 
 <span class="nd">@celery.task</span>
 <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">celery</span><span class="o">.</span><span class="n">celery_main</span><span class="p">()</span>
 </pre></div>
 </div>
-<div class="admonition-see-also admonition seealso">
-<p class="first admonition-title">See also</p>
-<p class="last">The full documentation on how to create tasks and task classes is in the
-<a class="reference internal" href="../userguide/tasks.html"><em>Tasks</em></a> part of the user guide.</p>
-</div>
+<p>The first argument to <tt class="xref py py-class docutils literal"><span class="pre">Celery</span></tt> is the name of the current module,
+this is needed to that names can be automatically generated, the second
+argument is the broker keyword argument which specifies the URL of the
+message broker we want to use.</p>
+<p>We defined a single task, called <tt class="docutils literal"><span class="pre">add</span></tt>, which returns the sum of two numbers.</p>
 </div>
 <div class="section" id="running-the-celery-worker-server">
-<span id="celerytut-running-celeryd"></span><h2><a class="toc-backref" href="#id4">Running the celery worker server</a><a class="headerlink" href="#running-the-celery-worker-server" title="Permalink to this headline">¶</a></h2>
-<p>We can now run our <tt class="docutils literal"><span class="pre">worker.py</span></tt> program:</p>
-<div class="highlight-python"><pre>$ python worker.py --loglevel=INFO</pre>
+<span id="celerytut-running-celeryd"></span><h2><a class="toc-backref" href="#id3">Running the celery worker server</a><a class="headerlink" href="#running-the-celery-worker-server" title="Permalink to this headline">¶</a></h2>
+<p>We can now run the worker by executing our program with the <tt class="docutils literal"><span class="pre">worker</span></tt>
+argument:</p>
+<div class="highlight-python"><pre>$ python tasks.py worker --loglevel=INFO</pre>
 </div>
 <p>In production you will probably want to run the worker in the
 background as a daemon.  To do this you need to use the tools provided
 by your platform, or something like <a class="reference external" href="http://supervisord.org">supervisord</a> (see <a class="reference internal" href="../cookbook/daemonizing.html#daemonizing"><em>Running celeryd as a daemon</em></a>
 for more information).</p>
 <p>For a complete listing of the command line options available, do:</p>
-<div class="highlight-python"><pre>$  python worker.py --help</pre>
+<div class="highlight-python"><pre>$  python tasks.py worker --help</pre>
+</div>
+<p>There also several other commands available, and similarly you can get a list
+of these:</p>
+<div class="highlight-python"><pre>$ python tasks.py --help</pre>
 </div>
 </div>
 <div class="section" id="executing-the-task">
-<span id="celerytut-executing-task"></span><h2><a class="toc-backref" href="#id5">Executing the task</a><a class="headerlink" href="#executing-the-task" title="Permalink to this headline">¶</a></h2>
+<span id="celerytut-executing-task"></span><h2><a class="toc-backref" href="#id4">Executing the task</a><a class="headerlink" href="#executing-the-task" title="Permalink to this headline">¶</a></h2>
 <p>Whenever we want to execute our task, we use the
 <tt class="xref py py-meth docutils literal"><span class="pre">delay()</span></tt> method of the task class.</p>
 <p>This is a handy shortcut to the <tt class="xref py py-meth docutils literal"><span class="pre">apply_async()</span></tt>
@@ -198,20 +164,17 @@ method which gives greater control of the task execution (see
 <a class="reference internal" href="../userguide/executing.html#guide-executing"><em>Executing Tasks</em></a>).</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">tasks</span> <span class="kn">import</span> <span class="n">add</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-<span class="go">&lt;AsyncResult: 889143a6-39a2-4e52-837b-d80d33efb22d&gt;</span>
 </pre></div>
 </div>
-<p>At this point, the task has been sent to the message broker. The message
-broker will hold on to the task until a worker server has consumed and
-executed it.</p>
-<p>Right now we have to check the worker log files to know what happened
-with the task.  Applying a task returns an
-<a class="reference internal" href="../reference/celery.result.html#celery.result.AsyncResult" title="celery.result.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">AsyncResult</span></tt></a>, if you have configured a result store
-the <a class="reference internal" href="../reference/celery.result.html#celery.result.AsyncResult" title="celery.result.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">AsyncResult</span></tt></a> enables you to check the state of
-the task, wait for the task to finish, get its return value
-or exception/traceback if the task failed, and more.</p>
+<p>The task should now be executed by the worker you started earlier,
+and you can verify that by looking at the workers console output.</p>
+<p>Applying a task returns an <a class="reference internal" href="../reference/celery.result.html#celery.result.AsyncResult" title="celery.result.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">AsyncResult</span></tt></a> instance,
+which can be bused to check the state of the task, wait for the task to finish
+or get its return value (or if the task failed, the exception and traceback).</p>
+<p>But results aren&#8217;t enabled by default, to enable it you have configure
+Celery to use a result backend, which is detailed in the next section.</p>
 <div class="section" id="keeping-results">
-<span id="celerytut-keeping-results"></span><h3><a class="toc-backref" href="#id6">Keeping Results</a><a class="headerlink" href="#keeping-results" title="Permalink to this headline">¶</a></h3>
+<span id="celerytut-keeping-results"></span><h3><a class="toc-backref" href="#id5">Keeping Results</a><a class="headerlink" href="#keeping-results" title="Permalink to this headline">¶</a></h3>
 <p>If you want to keep track of the tasks state, Celery needs to store or send
 the states somewhere.  There are several
 built-in backends to choose from: SQLAlchemy/Django ORM, Memcached, Redis,
@@ -252,6 +215,25 @@ This time we&#8217;ll hold on to the <a class="reference internal" href="../refe
 <p>If the task raises an exception, the return value of <cite>result.successful()</cite>
 will be <tt class="xref py py-const docutils literal"><span class="pre">False</span></tt>, and <cite>result.result</cite> will contain the exception instance
 raised by the task.</p>
+</div>
+<div class="section" id="configuration">
+<span id="celerytut-configuration"></span><h3><a class="toc-backref" href="#id6">Configuration</a><a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h3>
+<p>Celery is very flexible and comes with many configuration options that
+can be set on your app directly, or by using dedicated configuration files.</p>
+<p>For example you can set the default value for the workers
+<cite>&#8211;concurrency`</cite> argument, which is used to decide the number of pool worker
+processes, the name for this setting is <a class="reference internal" href="../configuration.html#std:setting-CELERYD_CONCURRENCY"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYD_CONCURRENCY</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">celery</span><span class="o">.</span><span class="n">conf</span><span class="o">.</span><span class="n">CELERY_CONCURRENCY</span> <span class="o">=</span> <span class="mi">10</span>
+</pre></div>
+</div>
+<p>If you are configuring many settings then one practice is to have a separate module
+containing the configuration.  You can tell your Celery instance to use
+this module, historically called <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt>, with the
+<tt class="xref py py-meth docutils literal"><span class="pre">config_from_obj()</span></tt> method:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">celery</span><span class="o">.</span><span class="n">config_from_object</span><span class="p">(</span><span class="s">&quot;celeryconfig&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For a complete reference of configuration options, see <a class="reference internal" href="../configuration.html#configuration"><em>Configuration and defaults</em></a>.</p>
 </div>
 </div>
 <div class="section" id="where-to-go-from-here">
