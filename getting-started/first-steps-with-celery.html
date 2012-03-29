@@ -117,7 +117,7 @@ in the Kombu documentation.</p>
 the entry-point for everything you want to do in Celery, like creating task and
 managing workers, it must be possible for other modules to import it.</p>
 <p>Some people create a dedicated module for it, but in this tutorial we will
-keep it in the same module used to start our worker:</p>
+keep it in the same module used to start our worker.</p>
 <p>Let&#8217;s create the file <tt class="file docutils literal"><span class="pre">worker.py</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery</span> <span class="kn">import</span> <span class="n">Celery</span>
 
@@ -130,11 +130,8 @@ keep it in the same module used to start our worker:</p>
 <p>The broker argument specifies the message broker we want to use, what
 we are using in this example is the default, but we keep it there for
 reference so you can see what the URLs look like.</p>
-<p>The backend argument specifies what we use to store and retrieve task
-states and results, it is disabled by default.</p>
-<blockquote>
-<div>For list of backends available and related options see
-<a class="reference internal" href="../configuration.html#conf-result-backend"><em>Task result backend settings</em></a>.</div></blockquote>
+<p>By default the state and return value (results) of the tasks are ignored,
+if you want to enable this please see <a class="reference internal" href="#celerytut-keeping-results"><em>Keeping Results</em></a>.</p>
 <p>That&#8217;s all you need to get started!</p>
 <p>If you want to dig deeper there are lots of configuration possibilities that
 can be applied.  For example you can set the default value for the workers
