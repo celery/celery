@@ -98,8 +98,18 @@
 </dd></dl>
 
 <dl class="method">
+<dt id="celery.bin.base.Command.check_args">
+<tt class="descname">check_args</tt><big>(</big><em>args</em><big>)</big><a class="headerlink" href="#celery.bin.base.Command.check_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.bin.base.Command.create_parser">
 <tt class="descname">create_parser</tt><big>(</big><em>prog_name</em><big>)</big><a class="headerlink" href="#celery.bin.base.Command.create_parser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.base.Command.die">
+<tt class="descname">die</tt><big>(</big><em>msg</em>, <em>status=1</em><big>)</big><a class="headerlink" href="#celery.bin.base.Command.die" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -185,7 +195,7 @@ and <tt class="docutils literal"><span class="pre">argv</span></tt> contains pos
 
 <dl class="attribute">
 <dt id="celery.bin.base.Command.preload_options">
-<tt class="descname">preload_options</tt><em class="property"> = (&lt;Option at 0x104b2aa28: --app&gt;, &lt;Option at 0x104c32758: -b/--broker&gt;, &lt;Option at 0x1053751b8: --loader&gt;, &lt;Option at 0x1034477a0: --config&gt;)</em><a class="headerlink" href="#celery.bin.base.Command.preload_options" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">preload_options</tt><em class="property"> = (&lt;Option at 0x10abb2488: --app&gt;, &lt;Option at 0x10abb27e8: -b/--broker&gt;, &lt;Option at 0x10abb2bd8: --loader&gt;, &lt;Option at 0x10abb25f0: --config&gt;)</em><a class="headerlink" href="#celery.bin.base.Command.preload_options" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of options to parse before parsing other options.</p>
 </dd></dl>
 
@@ -219,6 +229,11 @@ until after this is called.</p>
 <dd><p>If false the parser will raise an exception if positional
 args are provided.</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.base.Command.symbol_by_name">
+<tt class="descname">symbol_by_name</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#celery.bin.base.Command.symbol_by_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.bin.base.Command.usage">

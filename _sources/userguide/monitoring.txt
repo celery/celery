@@ -580,19 +580,22 @@ Task Events
 Worker Events
 ~~~~~~~~~~~~~
 
-* ``worker-online(hostname, timestamp, sw_ident, sw_ver, sw_sys)``
+* ``worker-online(hostname, timestamp, freq, sw_ident, sw_ver, sw_sys)``
 
     The worker has connected to the broker and is online.
 
+    * `hostname`: Hostname of the worker.
+    * `timestamp`: Event timestamp.
+    * `freq`: Heartbeat frequency in seconds (float).
     * `sw_ident`: Name of worker software (e.g. celeryd).
     * `sw_ver`: Software version (e.g. 2.2.0).
     * `sw_sys`: Operating System (e.g. Linux, Windows, Darwin).
 
-* ``worker-heartbeat(hostname, timestamp, sw_ident, sw_ver, sw_sys)``
+* ``worker-heartbeat(hostname, timestamp, freq, sw_ident, sw_ver, sw_sys)``
 
     Sent every minute, if the worker has not sent a heartbeat in 2 minutes,
     it is considered to be offline.
 
-* ``worker-offline(hostname, timestamp, sw_ident, sw_ver, sw_sys)``
+* ``worker-offline(hostname, timestamp, freq, sw_ident, sw_ver, sw_sys)``
 
     The worker has disconnected from the broker.

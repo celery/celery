@@ -136,6 +136,14 @@ to track how many, or when all of the tasks have been completed.</p>
 
 </dd></dl>
 
+<dl class="function">
+<dt id="celery.task.sets.chain_from_iterable">
+<tt class="descclassname">celery.task.sets.</tt><tt class="descname">chain_from_iterable</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.sets.chain_from_iterable" title="Permalink to this definition">¶</a></dt>
+<dd><p>chain.from_iterable(iterable) &#8211;&gt; chain object</p>
+<p>Alternate chain() contructor taking a single iterable argument
+that evaluates lazily.</p>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="celery.task.sets.group">
 <tt class="descclassname">celery.task.sets.</tt><tt class="descname">group</tt><a class="headerlink" href="#celery.task.sets.group" title="Permalink to this definition">¶</a></dt>
@@ -197,6 +205,27 @@ instead.</p>
 <dt id="celery.task.sets.subtask.delay">
 <tt class="descname">delay</tt><big>(</big><em>*argmerge</em>, <em>**kwmerge</em><big>)</big><a class="headerlink" href="#celery.task.sets.subtask.delay" title="Permalink to this definition">¶</a></dt>
 <dd><p>Shortcut to <cite>apply_async(argmerge, kwargs)</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.task.sets.subtask.flatten_links">
+<tt class="descname">flatten_links</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.sets.subtask.flatten_links" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gives a recursive list of dependencies (unchain if you will,
+but with links intact).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.task.sets.subtask.link">
+<tt class="descname">link</tt><big>(</big><em>callback</em><big>)</big><a class="headerlink" href="#celery.task.sets.subtask.link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a callback task to be applied if this task
+executes successfully.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.task.sets.subtask.link_error">
+<tt class="descname">link_error</tt><big>(</big><em>errback</em><big>)</big><a class="headerlink" href="#celery.task.sets.subtask.link_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a callback task to be applied if an error occurs
+while executing this task.</p>
 </dd></dl>
 
 <dl class="attribute">

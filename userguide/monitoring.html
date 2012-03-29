@@ -617,23 +617,26 @@ to be sent by more than one worker).</p>
 <div class="section" id="worker-events">
 <span id="event-reference-worker"></span><h4><a class="toc-backref" href="#id24">Worker Events</a><a class="headerlink" href="#worker-events" title="Permalink to this headline">¶</a></h4>
 <ul>
-<li><p class="first"><tt class="docutils literal"><span class="pre">worker-online(hostname,</span> <span class="pre">timestamp,</span> <span class="pre">sw_ident,</span> <span class="pre">sw_ver,</span> <span class="pre">sw_sys)</span></tt></p>
+<li><p class="first"><tt class="docutils literal"><span class="pre">worker-online(hostname,</span> <span class="pre">timestamp,</span> <span class="pre">freq,</span> <span class="pre">sw_ident,</span> <span class="pre">sw_ver,</span> <span class="pre">sw_sys)</span></tt></p>
 <blockquote>
 <div><p>The worker has connected to the broker and is online.</p>
 <ul class="simple">
+<li><cite>hostname</cite>: Hostname of the worker.</li>
+<li><cite>timestamp</cite>: Event timestamp.</li>
+<li><cite>freq</cite>: Heartbeat frequency in seconds (float).</li>
 <li><cite>sw_ident</cite>: Name of worker software (e.g. celeryd).</li>
 <li><cite>sw_ver</cite>: Software version (e.g. 2.2.0).</li>
 <li><cite>sw_sys</cite>: Operating System (e.g. Linux, Windows, Darwin).</li>
 </ul>
 </div></blockquote>
 </li>
-<li><p class="first"><tt class="docutils literal"><span class="pre">worker-heartbeat(hostname,</span> <span class="pre">timestamp,</span> <span class="pre">sw_ident,</span> <span class="pre">sw_ver,</span> <span class="pre">sw_sys)</span></tt></p>
+<li><p class="first"><tt class="docutils literal"><span class="pre">worker-heartbeat(hostname,</span> <span class="pre">timestamp,</span> <span class="pre">freq,</span> <span class="pre">sw_ident,</span> <span class="pre">sw_ver,</span> <span class="pre">sw_sys)</span></tt></p>
 <blockquote>
 <div><p>Sent every minute, if the worker has not sent a heartbeat in 2 minutes,
 it is considered to be offline.</p>
 </div></blockquote>
 </li>
-<li><p class="first"><tt class="docutils literal"><span class="pre">worker-offline(hostname,</span> <span class="pre">timestamp,</span> <span class="pre">sw_ident,</span> <span class="pre">sw_ver,</span> <span class="pre">sw_sys)</span></tt></p>
+<li><p class="first"><tt class="docutils literal"><span class="pre">worker-offline(hostname,</span> <span class="pre">timestamp,</span> <span class="pre">freq,</span> <span class="pre">sw_ident,</span> <span class="pre">sw_ver,</span> <span class="pre">sw_sys)</span></tt></p>
 <blockquote>
 <div><p>The worker has disconnected from the broker.</p>
 </div></blockquote>

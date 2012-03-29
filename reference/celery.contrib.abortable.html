@@ -145,7 +145,7 @@ database backends.</p>
 </div>
 <dl class="class">
 <dt id="celery.contrib.abortable.AbortableAsyncResult">
-<em class="property">class </em><tt class="descclassname">celery.contrib.abortable.</tt><tt class="descname">AbortableAsyncResult</tt><big>(</big><em>task_id</em>, <em>backend=None</em>, <em>task_name=None</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.contrib.abortable.AbortableAsyncResult" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.contrib.abortable.</tt><tt class="descname">AbortableAsyncResult</tt><big>(</big><em>id</em>, <em>backend=None</em>, <em>task_name=None</em>, <em>app=None</em>, <em>parent=None</em><big>)</big><a class="headerlink" href="#celery.contrib.abortable.AbortableAsyncResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represents a abortable result.</p>
 <p>Specifically, this gives the <cite>AsyncResult</cite> a <a class="reference internal" href="#celery.contrib.abortable.AbortableAsyncResult.abort" title="celery.contrib.abortable.AbortableAsyncResult.abort"><tt class="xref py py-meth docutils literal"><span class="pre">abort()</span></tt></a> method,
 which sets the state of the underlying Task to <cite>&#8220;ABORTED&#8221;</cite>.</p>
@@ -189,7 +189,7 @@ the call evaluates to <tt class="xref py py-const docutils literal"><span class=
 
 <dl class="attribute">
 <dt id="celery.contrib.abortable.AbortableTask.backend">
-<tt class="descname">backend</tt><em class="property"> = &lt;celery.backends.cache.CacheBackend object at 0x10300e4d0&gt;</em><a class="headerlink" href="#celery.contrib.abortable.AbortableTask.backend" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">backend</tt><em class="property"> = &lt;celery.backends.cache.CacheBackend object at 0x106f4fd10&gt;</em><a class="headerlink" href="#celery.contrib.abortable.AbortableTask.backend" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">

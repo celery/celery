@@ -259,8 +259,8 @@ Why won't my periodic task run?
 
 .. _faq-purge-the-queue:
 
-How do I discard all waiting tasks?
-------------------------------------
+How do I purge all waiting tasks?
+---------------------------------
 
 **Answer:** You can use celeryctl to purge all configured task queues::
 
@@ -268,8 +268,8 @@ How do I discard all waiting tasks?
 
 or programatically::
 
-        >>> from celery.task.control import discard_all
-        >>> discard_all()
+        >>> from celery import current_app as celery
+        >>> celery.control.purge()
         1753
 
 If you only want to purge messages from a specific queue
@@ -284,8 +284,8 @@ You can also start :mod:`~celery.bin.celeryd` with the
 
 .. _faq-messages-left-after-purge:
 
-I've discarded messages, but there are still messages left in the queue?
-------------------------------------------------------------------------
+I've purged messages, but there are still messages left in the queue?
+---------------------------------------------------------------------
 
 **Answer:** Tasks are acknowledged (removed from the queue) as soon
 as they are actually executed. After the worker has received a task, it will
@@ -295,8 +295,8 @@ held on to by the worker until it closes the connection to the broker (AMQP
 server). When that connection is closed (e.g. because the worker was stopped)
 the tasks will be re-sent by the broker to the next available worker (or the
 same worker when it has been restarted), so to properly purge the queue of
-waiting tasks you have to stop all the workers, and then discard the tasks
-using :func:`~celery.task.control.discard_all`.
+waiting tasks you have to stop all the workers, and then purge the tasks
+using :func:`celery.control.purge`.
 
 .. _faq-results:
 
@@ -463,14 +463,14 @@ Why do workers delete tasks from the queue if they are unable to process them?
 ------------------------------------------------------------------------------
 **Answer**:
 
-The worker discards unknown tasks, messages with encoding errors and messages
+The worker rejects unknown tasks, messages with encoding errors and messages
 that doesn't contain the proper fields (as per the task message protocol).
 
-If it did not ack (delete) them, they would be redelivered again and again
+If it did not reject them they could be redelivered again and again,
 causing a loop.
 
-There has been talk about moving these messages to a dead-letter queue,
-but that has not yet been implemented.
+Recent versions of RabbitMQ has the ability to configure a dead-letter
+queue for exchange, so that rejected messages is moved there.
 
 .. _faq-execute-task-by-name:
 
@@ -564,8 +564,8 @@ Can I cancel the execution of a task?
 
 or if you only have the task id::
 
-    >>> from celery.task.control import revoke
-    >>> revoke(task_id)
+    >>> from celery import current_app as celery
+    >>> celery.control.revoke(task_id)
 
 .. _faq-node-not-receiving-broadcast-commands:
 

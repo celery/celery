@@ -250,7 +250,7 @@ setting.</li>
 
 <dl class="method">
 <dt id="celery.task.base.BaseTask.apply_async">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">apply_async</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>task_id=None</em>, <em>publisher=None</em>, <em>connection=None</em>, <em>router=None</em>, <em>queues=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.apply_async" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">apply_async</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>task_id=None</em>, <em>publisher=None</em>, <em>connection=None</em>, <em>router=None</em>, <em>queues=None</em>, <em>link=None</em>, <em>link_error=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.BaseTask.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply tasks asynchronously by sending a message.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -316,6 +316,10 @@ or any custom compression methods registered with
 <a class="reference external" href="http://kombu.readthedocs.org/en/latest/reference/kombu.compression.html#kombu.compression.register" title="(in Kombu v2.1)"><tt class="xref py py-func docutils literal"><span class="pre">kombu.compression.register()</span></tt></a>. Defaults to
 the <a class="reference internal" href="../configuration.html#std:setting-CELERY_MESSAGE_COMPRESSION"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_MESSAGE_COMPRESSION</span></tt></a>
 setting.</li>
+<li><strong>link</strong> &#8211; A single, or a list of subtasks to apply if the
+task exits successfully.</li>
+<li><strong>link_error</strong> &#8211; A single, or a list of subtasks to apply
+if an error occurs while executing the task.</li>
 </ul>
 </td>
 </tr>
@@ -633,7 +637,7 @@ setting.</li>
 
 <dl class="classmethod">
 <dt id="celery.task.base.PeriodicTask.apply_async">
-<em class="property">classmethod </em><tt class="descname">apply_async</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>task_id=None</em>, <em>publisher=None</em>, <em>connection=None</em>, <em>router=None</em>, <em>queues=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.PeriodicTask.apply_async" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descname">apply_async</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>task_id=None</em>, <em>publisher=None</em>, <em>connection=None</em>, <em>router=None</em>, <em>queues=None</em>, <em>link=None</em>, <em>link_error=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.PeriodicTask.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply tasks asynchronously by sending a message.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -699,6 +703,10 @@ or any custom compression methods registered with
 <a class="reference external" href="http://kombu.readthedocs.org/en/latest/reference/kombu.compression.html#kombu.compression.register" title="(in Kombu v2.1)"><tt class="xref py py-func docutils literal"><span class="pre">kombu.compression.register()</span></tt></a>. Defaults to
 the <a class="reference internal" href="../configuration.html#std:setting-CELERY_MESSAGE_COMPRESSION"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_MESSAGE_COMPRESSION</span></tt></a>
 setting.</li>
+<li><strong>link</strong> &#8211; A single, or a list of subtasks to apply if the
+task exits successfully.</li>
+<li><strong>link_error</strong> &#8211; A single, or a list of subtasks to apply
+if an error occurs while executing the task.</li>
 </ul>
 </td>
 </tr>

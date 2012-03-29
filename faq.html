@@ -90,8 +90,8 @@
 <li><a class="reference internal" href="#why-aren-t-my-tasks-processed" id="id15">Why aren&#8217;t my tasks processed?</a></li>
 <li><a class="reference internal" href="#why-won-t-my-task-run" id="id16">Why won&#8217;t my Task run?</a></li>
 <li><a class="reference internal" href="#why-won-t-my-periodic-task-run" id="id17">Why won&#8217;t my periodic task run?</a></li>
-<li><a class="reference internal" href="#how-do-i-discard-all-waiting-tasks" id="id18">How do I discard all waiting tasks?</a></li>
-<li><a class="reference internal" href="#i-ve-discarded-messages-but-there-are-still-messages-left-in-the-queue" id="id19">I&#8217;ve discarded messages, but there are still messages left in the queue?</a></li>
+<li><a class="reference internal" href="#how-do-i-purge-all-waiting-tasks" id="id18">How do I purge all waiting tasks?</a></li>
+<li><a class="reference internal" href="#i-ve-purged-messages-but-there-are-still-messages-left-in-the-queue" id="id19">I&#8217;ve purged messages, but there are still messages left in the queue?</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#results" id="id20">Results</a><ul>
@@ -310,14 +310,14 @@ other error is happening.</p>
 <span id="faq-periodic-task-does-not-run"></span><h3><a class="toc-backref" href="#id17">Why won&#8217;t my periodic task run?</a><a class="headerlink" href="#why-won-t-my-periodic-task-run" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> See <a class="reference internal" href="#why-won-t-my-task-run">Why won&#8217;t my Task run?</a>.</p>
 </div>
-<div class="section" id="how-do-i-discard-all-waiting-tasks">
-<span id="faq-purge-the-queue"></span><h3><a class="toc-backref" href="#id18">How do I discard all waiting tasks?</a><a class="headerlink" href="#how-do-i-discard-all-waiting-tasks" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="how-do-i-purge-all-waiting-tasks">
+<span id="faq-purge-the-queue"></span><h3><a class="toc-backref" href="#id18">How do I purge all waiting tasks?</a><a class="headerlink" href="#how-do-i-purge-all-waiting-tasks" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> You can use celeryctl to purge all configured task queues:</p>
 <div class="highlight-python"><pre>$ celeryctl purge</pre>
 </div>
 <p>or programatically:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.control</span> <span class="kn">import</span> <span class="n">discard_all</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">discard_all</span><span class="p">()</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery</span> <span class="kn">import</span> <span class="n">current_app</span> <span class="k">as</span> <span class="n">celery</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">celery</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">purge</span><span class="p">()</span>
 <span class="go">1753</span>
 </pre></div>
 </div>
@@ -329,8 +329,8 @@ you have to use the AMQP API or the <strong class="program">camqadm</strong> uti
 <p>You can also start <a class="reference internal" href="reference/celery.bin.celeryd.html#module-celery.bin.celeryd" title="celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a> with the
 <em class="xref std std-option">--purge</em> argument, to purge messages when the worker starts.</p>
 </div>
-<div class="section" id="i-ve-discarded-messages-but-there-are-still-messages-left-in-the-queue">
-<span id="faq-messages-left-after-purge"></span><h3><a class="toc-backref" href="#id19">I&#8217;ve discarded messages, but there are still messages left in the queue?</a><a class="headerlink" href="#i-ve-discarded-messages-but-there-are-still-messages-left-in-the-queue" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="i-ve-purged-messages-but-there-are-still-messages-left-in-the-queue">
+<span id="faq-messages-left-after-purge"></span><h3><a class="toc-backref" href="#id19">I&#8217;ve purged messages, but there are still messages left in the queue?</a><a class="headerlink" href="#i-ve-purged-messages-but-there-are-still-messages-left-in-the-queue" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> Tasks are acknowledged (removed from the queue) as soon
 as they are actually executed. After the worker has received a task, it will
 take some time until it is actually executed, especially if there are a lot
@@ -339,8 +339,8 @@ held on to by the worker until it closes the connection to the broker (AMQP
 server). When that connection is closed (e.g. because the worker was stopped)
 the tasks will be re-sent by the broker to the next available worker (or the
 same worker when it has been restarted), so to properly purge the queue of
-waiting tasks you have to stop all the workers, and then discard the tasks
-using <tt class="xref py py-func docutils literal"><span class="pre">discard_all()</span></tt>.</p>
+waiting tasks you have to stop all the workers, and then purge the tasks
+using <tt class="xref py py-func docutils literal"><span class="pre">celery.control.purge()</span></tt>.</p>
 </div>
 </div>
 <div class="section" id="results">
@@ -468,12 +468,12 @@ The connection pool is enabled by default since version 2.5.</p>
 <div class="section" id="why-do-workers-delete-tasks-from-the-queue-if-they-are-unable-to-process-them">
 <span id="faq-deletes-unknown-tasks"></span><h3><a class="toc-backref" href="#id32">Why do workers delete tasks from the queue if they are unable to process them?</a><a class="headerlink" href="#why-do-workers-delete-tasks-from-the-queue-if-they-are-unable-to-process-them" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>:</p>
-<p>The worker discards unknown tasks, messages with encoding errors and messages
+<p>The worker rejects unknown tasks, messages with encoding errors and messages
 that doesn&#8217;t contain the proper fields (as per the task message protocol).</p>
-<p>If it did not ack (delete) them, they would be redelivered again and again
+<p>If it did not reject them they could be redelivered again and again,
 causing a loop.</p>
-<p>There has been talk about moving these messages to a dead-letter queue,
-but that has not yet been implemented.</p>
+<p>Recent versions of RabbitMQ has the ability to configure a dead-letter
+queue for exchange, so that rejected messages is moved there.</p>
 </div>
 <div class="section" id="can-i-execute-a-task-by-name">
 <span id="faq-execute-task-by-name"></span><h3><a class="toc-backref" href="#id33">Can I execute a task by name?</a><a class="headerlink" href="#can-i-execute-a-task-by-name" title="Permalink to this headline">¶</a></h3>
@@ -546,8 +546,8 @@ Also, a common pattern is to use callback tasks:</p>
 </pre></div>
 </div>
 <p>or if you only have the task id:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.control</span> <span class="kn">import</span> <span class="n">revoke</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">revoke</span><span class="p">(</span><span class="n">task_id</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery</span> <span class="kn">import</span> <span class="n">current_app</span> <span class="k">as</span> <span class="n">celery</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">celery</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">revoke</span><span class="p">(</span><span class="n">task_id</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>

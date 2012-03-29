@@ -1568,7 +1568,7 @@ more than one result message in the queue.</li>
 <tt class="docutils literal"><span class="pre">request.taskset</span></tt> (Issue <span class="xref issue">#329</span>).</li>
 <li>SQLAlchemy result backend: <cite>date_done</cite> was no longer part of the results as it had
 been accidentally removed.  It is now available again (Issue <span class="xref issue">#325</span>).</li>
-<li>SQLAlchemy result backend: Added unique constraint on <cite>Task.task_id</cite> and
+<li>SQLAlchemy result backend: Added unique constraint on <cite>Task.id</cite> and
 <cite>TaskSet.taskset_id</cite>.  Tables needs to be recreated for this to take effect.</li>
 <li>Fixed exception raised when iterating on the result of <tt class="docutils literal"><span class="pre">TaskSet.apply()</span></tt>.</li>
 <li>Tasks Userguide: Added section on choosing a result backend.</li>
@@ -5831,7 +5831,7 @@ celery to always run tasks locally by setting the
 </li>
 <li><p class="first"><strong>IMPORTANT</strong> The <cite>subtask_ids</cite> attribute on the <cite>TaskSetResult</cite>
 instance has been removed. To get this information instead use:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">subtask_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">subtask</span><span class="o">.</span><span class="n">task_id</span> <span class="k">for</span> <span class="n">subtask</span> <span class="ow">in</span> <span class="n">ts_res</span><span class="o">.</span><span class="n">subtasks</span><span class="p">]</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">subtask_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">subtask</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">subtask</span> <span class="ow">in</span> <span class="n">ts_res</span><span class="o">.</span><span class="n">subtasks</span><span class="p">]</span>
 </pre></div>
 </div>
 </li>

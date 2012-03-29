@@ -105,14 +105,6 @@ to e.g. store that in a database.</p>
 <dd><p>Base class for worker state elements.</p>
 </dd></dl>
 
-<dl class="data">
-<dt id="celery.events.state.HEARTBEAT_EXPIRE">
-<tt class="descclassname">celery.events.state.</tt><tt class="descname">HEARTBEAT_EXPIRE</tt><em class="property"> = 150</em><a class="headerlink" href="#celery.events.state.HEARTBEAT_EXPIRE" title="Permalink to this definition">¶</a></dt>
-<dd><p>Hartbeat expiry time in seconds.  The worker will be considered offline
-if no heartbeat is received within this time.
-Default is 2:30 minutes.</p>
-</dd></dl>
-
 <dl class="class">
 <dt id="celery.events.state.State">
 <em class="property">class </em><tt class="descclassname">celery.events.state.</tt><tt class="descname">State</tt><big>(</big><em>callback=None</em>, <em>max_workers_in_memory=5000</em>, <em>max_tasks_in_memory=10000</em><big>)</big><a class="headerlink" href="#celery.events.state.State" title="Permalink to this definition">¶</a></dt>
@@ -319,6 +311,21 @@ these fields received before or after is simply ignored.</p>
 <dl class="attribute">
 <dt id="celery.events.state.Worker.alive">
 <tt class="descname">alive</tt><a class="headerlink" href="#celery.events.state.Worker.alive" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.events.state.Worker.expire_window">
+<tt class="descname">expire_window</tt><em class="property"> = 200</em><a class="headerlink" href="#celery.events.state.Worker.expire_window" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.events.state.Worker.freq">
+<tt class="descname">freq</tt><em class="property"> = 60</em><a class="headerlink" href="#celery.events.state.Worker.freq" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.events.state.Worker.heartbeat_expires">
+<tt class="descname">heartbeat_expires</tt><a class="headerlink" href="#celery.events.state.Worker.heartbeat_expires" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">

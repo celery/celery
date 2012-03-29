@@ -26,7 +26,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="top" title="Celery 2.6.0a1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
-    <link rel="next" title="celery.app.task.builtins" href="celery.app.task.builtins.html" />
+    <link rel="next" title="celery.app.amqp" href="celery.app.amqp.html" />
     <link rel="prev" title="celery.app" href="celery.app.html" /> 
   </head>
   <body>
@@ -40,7 +40,7 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.app.task.builtins.html" title="celery.app.task.builtins"
+          <a href="celery.app.amqp.html" title="celery.app.amqp"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="celery.app.html" title="celery.app"
@@ -292,7 +292,7 @@ setting.</li>
 
 <dl class="method">
 <dt id="celery.app.task.BaseTask.apply_async">
-<tt class="descclassname">BaseTask.</tt><tt class="descname">apply_async</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>task_id=None</em>, <em>publisher=None</em>, <em>connection=None</em>, <em>router=None</em>, <em>queues=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.app.task.BaseTask.apply_async" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseTask.</tt><tt class="descname">apply_async</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>task_id=None</em>, <em>publisher=None</em>, <em>connection=None</em>, <em>router=None</em>, <em>queues=None</em>, <em>link=None</em>, <em>link_error=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.app.task.BaseTask.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply tasks asynchronously by sending a message.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -358,6 +358,10 @@ or any custom compression methods registered with
 <a class="reference external" href="http://kombu.readthedocs.org/en/latest/reference/kombu.compression.html#kombu.compression.register" title="(in Kombu v2.1)"><tt class="xref py py-func docutils literal"><span class="pre">kombu.compression.register()</span></tt></a>. Defaults to
 the <a class="reference internal" href="../configuration.html#std:setting-CELERY_MESSAGE_COMPRESSION"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_MESSAGE_COMPRESSION</span></tt></a>
 setting.</li>
+<li><strong>link</strong> &#8211; A single, or a list of subtasks to apply if the
+task exits successfully.</li>
+<li><strong>link_error</strong> &#8211; A single, or a list of subtasks to apply
+if an error occurs while executing the task.</li>
 </ul>
 </td>
 </tr>
@@ -780,6 +784,12 @@ running.</p>
 <a class="reference internal" href="../configuration.html#std:setting-CELERY_TRACK_STARTED"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TRACK_STARTED</span></tt></a> setting.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="celery.app.task.BaseTask.type">
+<tt class="descclassname">BaseTask.</tt><tt class="descname">type</tt><em class="property"> = 'regular'</em><a class="headerlink" href="#celery.app.task.BaseTask.type" title="Permalink to this definition">¶</a></dt>
+<dd><p>The type of task <em>(no longer used)</em>.</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="celery.app.task.BaseTask.update_state">
 <tt class="descclassname">BaseTask.</tt><tt class="descname">update_state</tt><big>(</big><em>task_id=None</em>, <em>state=None</em>, <em>meta=None</em><big>)</big><a class="headerlink" href="#celery.app.task.BaseTask.update_state" title="Permalink to this definition">¶</a></dt>
@@ -816,8 +826,8 @@ running.</p>
   <p class="topless"><a href="celery.app.html"
                         title="previous chapter">celery.app</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="celery.app.task.builtins.html"
-                        title="next chapter">celery.app.task.builtins</a></p>
+  <p class="topless"><a href="celery.app.amqp.html"
+                        title="next chapter">celery.app.amqp</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/reference/celery.app.task.txt"
@@ -850,7 +860,7 @@ running.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.app.task.builtins.html" title="celery.app.task.builtins"
+          <a href="celery.app.amqp.html" title="celery.app.amqp"
              >next</a> |</li>
         <li class="right" >
           <a href="celery.app.html" title="celery.app"

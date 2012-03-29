@@ -104,6 +104,11 @@
 </dd></dl>
 
 <dl class="method">
+<dt id="celery.backends.base.BaseBackend.current_task_children">
+<tt class="descclassname">BaseBackend.</tt><tt class="descname">current_task_children</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.current_task_children" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.backends.base.BaseBackend.decode">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">decode</tt><big>(</big><em>payload</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.decode" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -132,6 +137,11 @@
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.forget">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">forget</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.forget" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.base.BaseBackend.get_children">
+<tt class="descclassname">BaseBackend.</tt><tt class="descname">get_children</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.get_children" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -284,6 +294,12 @@ takes longer than <cite>timeout</cite> seconds.</p>
 <dt id="celery.backends.base.BaseDictBackend.forget">
 <tt class="descname">forget</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseDictBackend.forget" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.base.BaseDictBackend.get_children">
+<tt class="descname">get_children</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseDictBackend.get_children" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the list of subtasks sent by a task.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseDictBackend.get_result">

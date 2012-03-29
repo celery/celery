@@ -92,6 +92,92 @@
 </tr>
 </tbody>
 </table>
+<dl class="class">
+<dt id="celery.utils.functional.LRUCache">
+<em class="property">class </em><tt class="descclassname">celery.utils.functional.</tt><tt class="descname">LRUCache</tt><big>(</big><em>limit=None</em><big>)</big><a class="headerlink" href="#celery.utils.functional.LRUCache" title="Permalink to this definition">¶</a></dt>
+<dd><p>LRU Cache implementation using a doubly linked list to track access.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>limit</strong> &#8211; The maximum number of keys to keep in the cache.
+When a new key is inserted and the limit has been exceeded,
+the <em>Least Recently Used</em> key will be discarded from the
+cache.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="celery.utils.functional.LRUCache.incr">
+<tt class="descname">incr</tt><big>(</big><em>key</em>, <em>delta=1</em><big>)</big><a class="headerlink" href="#celery.utils.functional.LRUCache.incr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.utils.functional.LRUCache.items">
+<tt class="descname">items</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.functional.LRUCache.items" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.utils.functional.LRUCache.iteritems">
+<tt class="descname">iteritems</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.functional.LRUCache.iteritems" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.utils.functional.LRUCache.itervalues">
+<tt class="descname">itervalues</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.functional.LRUCache.itervalues" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.utils.functional.LRUCache.keys">
+<tt class="descname">keys</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.functional.LRUCache.keys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.utils.functional.LRUCache.values">
+<tt class="descname">values</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.functional.LRUCache.values" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.functional.chunks">
+<tt class="descclassname">celery.utils.functional.</tt><tt class="descname">chunks</tt><big>(</big><em>it</em>, <em>n</em><big>)</big><a class="headerlink" href="#celery.utils.functional.chunks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Split an iterator into chunks with <cite>n</cite> elements each.</p>
+<p>Examples</p>
+<blockquote>
+<div><p># n == 2
+&gt;&gt;&gt; x = chunks(iter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), 2)
+&gt;&gt;&gt; list(x)
+[[0, 1], [2, 3], [4, 5], [6, 7], [8, 9], [10]]</p>
+<p># n == 3
+&gt;&gt;&gt; x = chunks(iter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), 3)
+&gt;&gt;&gt; list(x)
+[[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10]]</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.functional.first">
+<tt class="descclassname">celery.utils.functional.</tt><tt class="descname">first</tt><big>(</big><em>predicate</em>, <em>iterable</em><big>)</big><a class="headerlink" href="#celery.utils.functional.first" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the first element in <cite>iterable</cite> that <cite>predicate</cite> returns a
+<tt class="xref py py-const docutils literal"><span class="pre">True</span></tt> value for.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.functional.firstmethod">
+<tt class="descclassname">celery.utils.functional.</tt><tt class="descname">firstmethod</tt><big>(</big><em>method</em><big>)</big><a class="headerlink" href="#celery.utils.functional.firstmethod" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a functions that with a list of instances,
+finds the first instance that returns a value for the given method.</p>
+<p>The list can also contain promises (<tt class="xref py py-class docutils literal"><span class="pre">promise</span></tt>.)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.functional.mattrgetter">
+<tt class="descclassname">celery.utils.functional.</tt><tt class="descname">mattrgetter</tt><big>(</big><em>*attrs</em><big>)</big><a class="headerlink" href="#celery.utils.functional.mattrgetter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Like <a class="reference external" href="http://docs.python.org/dev/library/operator.html#operator.itemgetter" title="(in Python v3.3)"><tt class="xref py py-func docutils literal"><span class="pre">operator.itemgetter()</span></tt></a> but returns <tt class="xref py py-const docutils literal"><span class="pre">None</span></tt> on missing
+attributes instead of raising <a class="reference external" href="http://docs.python.org/dev/library/exceptions.html#AttributeError" title="(in Python v3.3)"><tt class="xref py py-exc docutils literal"><span class="pre">AttributeError</span></tt></a>.</p>
+</dd></dl>
+
 <dl class="function">
 <dt id="celery.utils.functional.maybe_list">
 <tt class="descclassname">celery.utils.functional.</tt><tt class="descname">maybe_list</tt><big>(</big><em>l</em><big>)</big><a class="headerlink" href="#celery.utils.functional.maybe_list" title="Permalink to this definition">¶</a></dt>
@@ -99,7 +185,59 @@
 
 <dl class="function">
 <dt id="celery.utils.functional.memoize">
-<tt class="descclassname">celery.utils.functional.</tt><tt class="descname">memoize</tt><big>(</big><em>maxsize=None</em>, <em>Cache=&lt;class celery.datastructures.LRUCache at 0x101a53598&gt;</em><big>)</big><a class="headerlink" href="#celery.utils.functional.memoize" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.utils.functional.</tt><tt class="descname">memoize</tt><big>(</big><em>maxsize=None</em>, <em>Cache=&lt;class celery.utils.functional.LRUCache at 0x1017d0a78&gt;</em><big>)</big><a class="headerlink" href="#celery.utils.functional.memoize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="celery.utils.functional.mpromise">
+<em class="property">class </em><tt class="descclassname">celery.utils.functional.</tt><tt class="descname">mpromise</tt><big>(</big><em>fun</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.functional.mpromise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Memoized promise.</p>
+<p>The function is only evaluated once, every subsequent access
+will return the same value.</p>
+<dl class="attribute">
+<dt id="celery.utils.functional.mpromise.evaluated">
+<tt class="descname">evaluated</tt><a class="headerlink" href="#celery.utils.functional.mpromise.evaluated" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set to to <tt class="xref py py-const docutils literal"><span class="pre">True</span></tt> after the promise has been evaluated.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.utils.functional.mpromise.evaluate">
+<tt class="descname">evaluate</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.functional.mpromise.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<tt class="descname">evaluated</tt><em class="property"> = False</em></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.functional.noop">
+<tt class="descclassname">celery.utils.functional.</tt><tt class="descname">noop</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.functional.noop" title="Permalink to this definition">¶</a></dt>
+<dd><p>No operation.</p>
+<p>Takes any arguments/keyword arguments and does nothing.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.functional.padlist">
+<tt class="descclassname">celery.utils.functional.</tt><tt class="descname">padlist</tt><big>(</big><em>container</em>, <em>size</em>, <em>default=None</em><big>)</big><a class="headerlink" href="#celery.utils.functional.padlist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pad list with default elements.</p>
+<p>Examples:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">,</span> <span class="n">city</span> <span class="o">=</span> <span class="n">padlist</span><span class="p">([</span><span class="s">&quot;George&quot;</span><span class="p">,</span> <span class="s">&quot;Costanza&quot;</span><span class="p">,</span> <span class="s">&quot;NYC&quot;</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">(&quot;George&quot;, &quot;Costanza&quot;, &quot;NYC&quot;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">,</span> <span class="n">city</span> <span class="o">=</span> <span class="n">padlist</span><span class="p">([</span><span class="s">&quot;George&quot;</span><span class="p">,</span> <span class="s">&quot;Costanza&quot;</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">(&quot;George&quot;, &quot;Costanza&quot;, None)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">,</span> <span class="n">city</span><span class="p">,</span> <span class="n">planet</span> <span class="o">=</span> <span class="n">padlist</span><span class="p">([</span><span class="s">&quot;George&quot;</span><span class="p">,</span> <span class="s">&quot;Costanza&quot;</span><span class="p">,</span>
+<span class="go">                                         &quot;NYC&quot;], 4, default=&quot;Earth&quot;)</span>
+<span class="go">(&quot;George&quot;, &quot;Costanza&quot;, &quot;NYC&quot;, &quot;Earth&quot;)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.functional.uniq">
+<tt class="descclassname">celery.utils.functional.</tt><tt class="descname">uniq</tt><big>(</big><em>it</em><big>)</big><a class="headerlink" href="#celery.utils.functional.uniq" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </div>

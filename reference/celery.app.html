@@ -94,7 +94,7 @@
 <h2><a class="toc-backref" href="#id1">Application</a><a class="headerlink" href="#application" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="celery.app.App">
-<em class="property">class </em><tt class="descclassname">celery.app.</tt><tt class="descname">App</tt><big>(</big><em>main=None</em>, <em>loader=None</em>, <em>backend=None</em>, <em>amqp=None</em>, <em>events=None</em>, <em>log=None</em>, <em>control=None</em>, <em>set_as_current=True</em>, <em>accept_magic_kwargs=False</em>, <em>tasks=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.app.App" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.app.</tt><tt class="descname">App</tt><big>(</big><em>main=None</em>, <em>loader=None</em>, <em>backend=None</em>, <em>amqp=None</em>, <em>events=None</em>, <em>log=None</em>, <em>control=None</em>, <em>set_as_current=True</em>, <em>accept_magic_kwargs=False</em>, <em>tasks=None</em>, <em>broker=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.app.App" title="Permalink to this definition">¶</a></dt>
 <dd><p>Celery Application.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -160,7 +160,7 @@ generating task names.</p>
 <dl class="attribute">
 <dt id="celery.app.App.log">
 <tt class="descname">log</tt><a class="headerlink" href="#celery.app.App.log" title="Permalink to this definition">¶</a></dt>
-<dd><p>Logging utilities.  See <a class="reference internal" href="../internals/reference/celery.log.html#celery.log.Logging" title="celery.log.Logging"><tt class="xref py py-class docutils literal"><span class="pre">Logging</span></tt></a>.</p>
+<dd><p>Logging utilities.  See <tt class="xref py py-class docutils literal"><span class="pre">Logging</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -193,7 +193,6 @@ of a module to import.</p>
 <dt id="celery.app.App.config_from_cmdline">
 <tt class="descname">config_from_cmdline</tt><big>(</big><em>argv</em>, <em>namespace='celery'</em><big>)</big><a class="headerlink" href="#celery.app.App.config_from_cmdline" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read configuration from argv.</p>
-<p>The config</p>
 </dd></dl>
 
 <dl class="method">
@@ -356,13 +355,6 @@ the function returns.</p>
 <tt class="descname">either</tt><big>(</big><em>default_key</em>, <em>*values</em><big>)</big><a class="headerlink" href="#celery.app.App.either" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fallback to the value of a configuration key if none of the
 <cite>*values</cite> are true.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.app.App.merge">
-<tt class="descname">merge</tt><big>(</big><em>l</em>, <em>r</em><big>)</big><a class="headerlink" href="#celery.app.App.merge" title="Permalink to this definition">¶</a></dt>
-<dd><p>Like <cite>dict(a, **b)</cite> except it will keep values from <cite>a</cite>
-if the value in <cite>b</cite> is <tt class="xref py py-const docutils literal"><span class="pre">None</span></tt>.</p>
 </dd></dl>
 
 </dd></dl>

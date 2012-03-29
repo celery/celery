@@ -156,9 +156,32 @@ errors are recorded, handlers are applied and so on.</p>
 <dd></dd></dl>
 
 <dl class="function">
+<dt id="celery.execute.trace.defines_custom_call">
+<tt class="descclassname">celery.execute.trace.</tt><tt class="descname">defines_custom_call</tt><big>(</big><em>task</em><big>)</big><a class="headerlink" href="#celery.execute.trace.defines_custom_call" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns true if the task or one of its bases
+defines __call__ (excluding the one in BaseTask).</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="celery.execute.trace.eager_trace_task">
 <tt class="descclassname">celery.execute.trace.</tt><tt class="descname">eager_trace_task</tt><big>(</big><em>task</em>, <em>uuid</em>, <em>args</em>, <em>kwargs</em>, <em>request=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.execute.trace.eager_trace_task" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.execute.trace.mro_lookup">
+<tt class="descclassname">celery.execute.trace.</tt><tt class="descname">mro_lookup</tt><big>(</big><em>cls</em>, <em>attr</em>, <em>stop=()</em><big>)</big><a class="headerlink" href="#celery.execute.trace.mro_lookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the first node by MRO order that defines an attribute.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>stop</strong> &#8211; A list of types that if reached will stop the search.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns None:</th><td class="field-body">if the attribute was not found.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="function">
 <dt id="celery.execute.trace.report_internal_error">
