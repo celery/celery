@@ -123,11 +123,10 @@ The task should now be executed by the worker you started earlier,
 and you can verify that by looking at the workers console output.
 
 Applying a task returns an :class:`~celery.result.AsyncResult` instance,
-which can be bused to check the state of the task, wait for the task to finish
+which can be used to check the state of the task, wait for the task to finish
 or get its return value (or if the task failed, the exception and traceback).
-
-But results aren't enabled by default, to enable it you have configure
-Celery to use a result backend, which is detailed in the next section.
+But this isn't enabled by default, and you have to configure Celery to
+use a result backend, which is detailed in the next section.
 
 .. _celerytut-keeping-results:
 
@@ -186,7 +185,7 @@ Celery is very flexible and comes with many configuration options that
 can be set on your app directly, or by using dedicated configuration files.
 
 For example you can set the default value for the workers
-`--concurrency`` argument, which is used to decide the number of pool worker
+``--concurrency`` argument, which is used to decide the number of pool worker
 processes, the name for this setting is :setting:`CELERYD_CONCURRENCY`:
 
 .. code-block:: python
