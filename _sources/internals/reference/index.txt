@@ -40,6 +40,7 @@
     celery.execute.trace
     celery.app.abstract
     celery.app.annotations
+    celery.app.state
     celery.security.certificate
     celery.security.key
     celery.security.serialization

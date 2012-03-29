@@ -169,10 +169,10 @@ method which gives greater control of the task execution (see
 <p>The task should now be executed by the worker you started earlier,
 and you can verify that by looking at the workers console output.</p>
 <p>Applying a task returns an <a class="reference internal" href="../reference/celery.result.html#celery.result.AsyncResult" title="celery.result.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">AsyncResult</span></tt></a> instance,
-which can be bused to check the state of the task, wait for the task to finish
-or get its return value (or if the task failed, the exception and traceback).</p>
-<p>But results aren&#8217;t enabled by default, to enable it you have configure
-Celery to use a result backend, which is detailed in the next section.</p>
+which can be used to check the state of the task, wait for the task to finish
+or get its return value (or if the task failed, the exception and traceback).
+But this isn&#8217;t enabled by default, and you have to configure Celery to
+use a result backend, which is detailed in the next section.</p>
 <div class="section" id="keeping-results">
 <span id="celerytut-keeping-results"></span><h3><a class="toc-backref" href="#id5">Keeping Results</a><a class="headerlink" href="#keeping-results" title="Permalink to this headline">¶</a></h3>
 <p>If you want to keep track of the tasks state, Celery needs to store or send
@@ -221,7 +221,7 @@ raised by the task.</p>
 <p>Celery is very flexible and comes with many configuration options that
 can be set on your app directly, or by using dedicated configuration files.</p>
 <p>For example you can set the default value for the workers
-<cite>&#8211;concurrency`</cite> argument, which is used to decide the number of pool worker
+<tt class="docutils literal"><span class="pre">--concurrency</span></tt> argument, which is used to decide the number of pool worker
 processes, the name for this setting is <a class="reference internal" href="../configuration.html#std:setting-CELERYD_CONCURRENCY"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYD_CONCURRENCY</span></tt></a>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">celery</span><span class="o">.</span><span class="n">conf</span><span class="o">.</span><span class="n">CELERY_CONCURRENCY</span> <span class="o">=</span> <span class="mi">10</span>
 </pre></div>
