@@ -110,6 +110,12 @@ class App(base.BaseApp):
         return instantiate("celery.task.sets:TaskSet",
                            app=self, *args, **kwargs)
 
+    def celery_main(self, argv=None):
+        """Run :program:`celery` using `argv`.  Uses :data:`sys.argv`
+        if `argv` is not specified."""
+        return instantiate("celery.bin.celery:CeleryCommand", app=self) \
+                    .execute_from_commandline(argv)
+
     def worker_main(self, argv=None):
         """Run :program:`celeryd` using `argv`.  Uses :data:`sys.argv`
         if `argv` is not specified."""

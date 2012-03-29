@@ -12,9 +12,8 @@
 Choosing a Broker
 =================
 
-Celery requires a solution to send and receive messages, this is called
-the *message transport*.  Usually this comes in the form of a separate
-service called a *message broker*.
+Celery requires a solution to send and receive messages, usually this
+comes in the form of a separate service called a *message broker*.
 
 There are several choices available, including:
 
@@ -49,88 +48,45 @@ in the Kombu documentation.
 Application
 ===========
 
-The first thing you need is a Celery instance.  Since the instance is used as
-the entry-point for everything you want to do in Celery, like creating task and
+The first thing you need is a Celery instance, this is called the celery
+application or just app.  Since this instance is used as
+the entry-point for everything you want to do in Celery, like creating tasks and
 managing workers, it must be possible for other modules to import it.
 
 Some people create a dedicated module for it, but in this tutorial we will
-keep it in the same module used to start our worker.
+keep everything in the same module.
 
-Let's create the file :file:`worker.py`:
+Let's create the file :file:`tasks.py`:
 
 .. code-block:: python
 
     from celery import Celery
 
-    celery = Celery(broker="amqp://guest:guest@localhost:5672")
-
-    if __name__ == "__main__":
-        celery.worker_main()
-
-The broker argument specifies the message broker we want to use, what
-we are using in this example is the default, but we keep it there for
-reference so you can see what the URLs look like.
-
-By default the state and return value (results) of the tasks are ignored,
-if you want to enable this please see :ref:`celerytut-keeping-results`.
-
-That's all you need to get started!
-
-If you want to dig deeper there are lots of configuration possibilities that
-can be applied.  For example you can set the default value for the workers
-`--concurrency`` argument, which is used to decide the number of pool worker
-processes, the name for this setting is :setting:`CELERYD_CONCURRENCY`:
-
-.. code-block:: python
-
-    celery.conf.CELERY_CONCURRENCY = 10
-
-If you are configuring many settings then one practice is to have a separate module
-containing the configuration.  You can tell your Celery instance to use
-this module, historically called ``celeryconfig.py``, with the
-:meth:`config_from_obj` method:
-
-.. code-block:: python
-
-    celery.config_from_object("celeryconfig")
-
-For a complete reference of configuration options, see :ref:`configuration`.
-
-.. _celerytut-simple-tasks:
-
-Creating a simple task
-======================
-
-In this tutorial we are creating a simple task that adds two
-numbers.  Tasks are defined in normal Python modules.
-
-By convention we will call our module :file:`tasks.py`, and it looks
-like this:
-
-:file: `tasks.py`
-
-.. code-block:: python
-
-    from worker import celery
+    celery = Celery("tasks", broker="amqp://guest:guest@localhost:5672")
 
     @celery.task
     def add(x, y):
         return x + y
 
-.. seealso::
+    if __name__ == "__main__":
+        celery.celery_main()
 
-    The full documentation on how to create tasks and task classes is in the
-    :doc:`../userguide/tasks` part of the user guide.
+The first argument to :class:`Celery` is the name of the current module,
+this is needed to that names can be automatically generated, the second
+argument is the broker keyword argument which specifies the URL of the
+message broker we want to use.
 
+We defined a single task, called ``add``, which returns the sum of two numbers.
 
 .. _celerytut-running-celeryd:
 
 Running the celery worker server
 ================================
 
-We can now run our ``worker.py`` program::
+We can now run the worker by executing our program with the ``worker``
+argument::
 
-    $ python worker.py --loglevel=INFO
+    $ python tasks.py worker --loglevel=INFO
 
 In production you will probably want to run the worker in the
 background as a daemon.  To do this you need to use the tools provided
@@ -139,7 +95,12 @@ for more information).
 
 For a complete listing of the command line options available, do::
 
-    $  python worker.py --help
+    $  python tasks.py worker --help
+
+There also several other commands available, and similarly you can get a list
+of these::
+
+    $ python tasks.py --help
 
 .. _`supervisord`: http://supervisord.org
 
@@ -157,18 +118,16 @@ method which gives greater control of the task execution (see
 
     >>> from tasks import add
     >>> add.delay(4, 4)
-    <AsyncResult: 889143a6-39a2-4e52-837b-d80d33efb22d>
 
-At this point, the task has been sent to the message broker. The message
-broker will hold on to the task until a worker server has consumed and
-executed it.
+The task should now be executed by the worker you started earlier,
+and you can verify that by looking at the workers console output.
 
-Right now we have to check the worker log files to know what happened
-with the task.  Applying a task returns an
-:class:`~celery.result.AsyncResult`, if you have configured a result store
-the :class:`~celery.result.AsyncResult` enables you to check the state of
-the task, wait for the task to finish, get its return value
-or exception/traceback if the task failed, and more.
+Applying a task returns an :class:`~celery.result.AsyncResult` instance,
+which can be bused to check the state of the task, wait for the task to finish
+or get its return value (or if the task failed, the exception and traceback).
+
+But results aren't enabled by default, to enable it you have configure
+Celery to use a result backend, which is detailed in the next section.
 
 .. _celerytut-keeping-results:
 
@@ -217,6 +176,33 @@ Here's some examples of what you can do when you have results::
 If the task raises an exception, the return value of `result.successful()`
 will be :const:`False`, and `result.result` will contain the exception instance
 raised by the task.
+
+.. _celerytut-configuration:
+
+Configuration
+-------------
+
+Celery is very flexible and comes with many configuration options that
+can be set on your app directly, or by using dedicated configuration files.
+
+For example you can set the default value for the workers
+`--concurrency`` argument, which is used to decide the number of pool worker
+processes, the name for this setting is :setting:`CELERYD_CONCURRENCY`:
+
+.. code-block:: python
+
+    celery.conf.CELERY_CONCURRENCY = 10
+
+If you are configuring many settings then one practice is to have a separate module
+containing the configuration.  You can tell your Celery instance to use
+this module, historically called ``celeryconfig.py``, with the
+:meth:`config_from_obj` method:
+
+.. code-block:: python
+
+    celery.config_from_object("celeryconfig")
+
+For a complete reference of configuration options, see :ref:`configuration`.
 
 Where to go from here
 =====================

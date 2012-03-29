@@ -152,7 +152,7 @@ else:
 # -*- Entry Points -*- #
 
 console_scripts = entrypoints["console_scripts"] = [
-        'celery = celery.bin.celeryctl:main',
+        'celery = celery.bin.celery:main',
         'celeryd = celery.bin.celeryd:main',
         'celerybeat = celery.bin.celerybeat:main',
         'camqadm = celery.bin.camqadm:main',
