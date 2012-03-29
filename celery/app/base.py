@@ -27,7 +27,7 @@ from kombu.clocks import LamportClock
 
 from .. import datastructures
 from .. import platforms
-from ..backends import get_backend_cls
+from ..backends import get_backend_by_url
 from ..exceptions import AlwaysEagerIgnored
 from ..loaders import get_loader_cls
 from ..local import maybe_evaluate
@@ -116,7 +116,7 @@ class BaseApp(object):
     def __init__(self, main=None, loader=None, backend=None,
             amqp=None, events=None, log=None, control=None,
             set_as_current=True, accept_magic_kwargs=False,
-            tasks=None, **kwargs):
+            tasks=None, broker=None, **kwargs):
         self.clock = LamportClock()
         self.main = main
         self.amqp_cls = amqp or self.amqp_cls
@@ -132,6 +132,12 @@ class BaseApp(object):
         self.finalized = False
         self._pending = deque()
         self._tasks = instantiate(self.registry_cls)
+
+        # these options are moved to the config to
+        # simplify pickling of the app object.
+        self._preconf = {}
+        if broker:
+            self._preconf["BROKER_URL"] = broker
 
         self.on_init()
 
@@ -303,6 +309,7 @@ class BaseApp(object):
 
     def prepare_config(self, c):
         """Prepare configuration before it is merged with the defaults."""
+        c.update(self._preconf)
         return find_deprecated_settings(c)
 
     def now(self):
@@ -332,9 +339,10 @@ class BaseApp(object):
         return first(None, values) or self.conf.get(default_key)
 
     def _get_backend(self):
-        return get_backend_cls(
-                    self.backend_cls or self.conf.CELERY_RESULT_BACKEND,
-                    loader=self.loader)(app=self)
+        backend, url = get_backend_by_url(
+                self.backend_cls or self.conf.CELERY_RESULT_BACKEND,
+                self.loader)
+        return backend(app=self, url=url)
 
     def _get_config(self):
         return Settings({}, [self.prepare_config(self.loader.conf),

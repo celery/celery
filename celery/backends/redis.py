@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
+from kombu.utils.url import _parse_url
+
 from ..exceptions import ImproperlyConfigured
 from ..utils import cached_property
 
@@ -38,7 +40,7 @@ class RedisBackend(KeyValueStoreBackend):
     supports_native_join = True
 
     def __init__(self, host=None, port=None, db=None, password=None,
-            expires=None, max_connections=None, **kwargs):
+            expires=None, max_connections=None, url=None, **kwargs):
         super(RedisBackend, self).__init__(**kwargs)
         conf = self.app.conf
         if self.redis is None:
@@ -53,11 +55,16 @@ class RedisBackend(KeyValueStoreBackend):
                     return conf[prefix % key]
                 except KeyError:
                     pass
-
-        self.host = host or _get("HOST") or self.host
-        self.port = int(port or _get("PORT") or self.port)
-        self.db = db or _get("DB") or self.db
-        self.password = password or _get("PASSWORD") or self.password
+        if host and '://' in host:
+            url, host = host, None
+        self.url = url
+        uhost = uport = upass = udb = None
+        if url:
+            _, uhost, uport, _, upass, udb, _ = _parse_url(url)
+        self.host = uhost or host or _get("HOST") or self.host
+        self.port = int(uport or port or _get("PORT") or self.port)
+        self.db = udb or db or _get("DB") or self.db
+        self.password = upass or password or _get("PASSWORD") or self.password
         self.expires = self.prepare_expires(expires, type=int)
         self.max_connections = (max_connections
                                 or _get("MAX_CONNECTIONS")

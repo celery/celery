@@ -3,6 +3,8 @@ from __future__ import absolute_import
 
 import sys
 
+from kombu.utils.url import _parse_url
+
 from .. import current_app
 from ..local import Proxy
 from ..utils.imports import symbol_by_name
@@ -35,6 +37,15 @@ def get_backend_cls(backend=None, loader=None):
     except ValueError, exc:
         raise ValueError, ValueError(UNKNOWN_BACKEND % (
                     backend, exc)), sys.exc_info()[2]
+
+
+def get_backend_by_url(backend=None, loader=None):
+    url = None
+    if backend and '://' in backend:
+        url = backend
+        backend, _, _, _, _, _, _ = _parse_url(url)
+    return get_backend_cls(backend, loader), url
+
 
 
 # deprecate this.
