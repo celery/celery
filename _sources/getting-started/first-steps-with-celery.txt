@@ -72,7 +72,7 @@ Let's create the file :file:`tasks.py`:
         celery.start()
 
 The first argument to :class:`Celery` is the name of the current module,
-this is needed to that names can be automatically generated, the second
+this is needed so that names can be automatically generated, the second
 argument is the broker keyword argument which specifies the URL of the
 message broker we want to use.
 
