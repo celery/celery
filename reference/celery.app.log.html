@@ -1,0 +1,212 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>celery.app.log &mdash; Celery 2.6.0a1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.6.0a1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Celery 2.6.0a1 documentation" href="../index.html" />
+    <link rel="up" title="API Reference" href="index.html" />
+    <link rel="next" title="celery.task" href="celery.task.html" />
+    <link rel="prev" title="celery.app.task.builtins" href="celery.app.builtins.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.task.html" title="celery.task"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.app.builtins.html" title="celery.app.task.builtins"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/reference/celery.app.log.html">2.5</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="celery-app-log">
+<h1>celery.app.log<a class="headerlink" href="#celery-app-log" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-celery.app.log"></span><dl class="class">
+<dt id="celery.app.log.Logging">
+<em class="property">class </em><tt class="descclassname">celery.app.log.</tt><tt class="descname">Logging</tt><big>(</big><em>app</em><big>)</big><a class="headerlink" href="#celery.app.log.Logging" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.app.log.Logging.colored">
+<tt class="descname">colored</tt><big>(</big><em>logfile=None</em><big>)</big><a class="headerlink" href="#celery.app.log.Logging.colored" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.app.log.Logging.get_default_logger">
+<tt class="descname">get_default_logger</tt><big>(</big><em>loglevel=None</em>, <em>name='celery'</em><big>)</big><a class="headerlink" href="#celery.app.log.Logging.get_default_logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get default logger instance.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>loglevel</strong> &#8211; Initial log level.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.app.log.Logging.get_task_logger">
+<tt class="descname">get_task_logger</tt><big>(</big><em>loglevel=None</em>, <em>name=None</em><big>)</big><a class="headerlink" href="#celery.app.log.Logging.get_task_logger" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.app.log.Logging.redirect_stdouts_to_logger">
+<tt class="descname">redirect_stdouts_to_logger</tt><big>(</big><em>logger</em>, <em>loglevel=None</em>, <em>stdout=True</em>, <em>stderr=True</em><big>)</big><a class="headerlink" href="#celery.app.log.Logging.redirect_stdouts_to_logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Redirect <tt class="xref py py-class docutils literal"><span class="pre">sys.stdout</span></tt> and <tt class="xref py py-class docutils literal"><span class="pre">sys.stderr</span></tt> to a
+logging instance.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>logger</strong> &#8211; The <a class="reference external" href="http://docs.python.org/dev/library/logging.html#logging.Logger" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">logging.Logger</span></tt></a> instance to redirect to.</li>
+<li><strong>loglevel</strong> &#8211; The loglevel redirected messages will be logged as.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.app.log.Logging.setup">
+<tt class="descname">setup</tt><big>(</big><em>loglevel=None</em>, <em>logfile=None</em>, <em>redirect_stdouts=False</em>, <em>redirect_level='WARNING'</em><big>)</big><a class="headerlink" href="#celery.app.log.Logging.setup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.app.log.Logging.setup_logger">
+<tt class="descname">setup_logger</tt><big>(</big><em>loglevel=None</em>, <em>logfile=None</em>, <em>format=None</em>, <em>colorize=None</em>, <em>name='celery'</em>, <em>root=True</em>, <em>app=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.app.log.Logging.setup_logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup the <a class="reference external" href="http://docs.python.org/dev/library/multiprocessing.html#multiprocessing" title="(in Python v3.3)"><tt class="xref py py-mod docutils literal"><span class="pre">multiprocessing</span></tt></a> logger.</p>
+<p>If <cite>logfile</cite> is not specified, then <cite>sys.stderr</cite> is used.</p>
+<p>Returns logger object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.app.log.Logging.setup_logging_subsystem">
+<tt class="descname">setup_logging_subsystem</tt><big>(</big><em>loglevel=None</em>, <em>logfile=None</em>, <em>format=None</em>, <em>colorize=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.app.log.Logging.setup_logging_subsystem" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.app.log.Logging.setup_task_logger">
+<tt class="descname">setup_task_logger</tt><big>(</big><em>loglevel=None</em>, <em>logfile=None</em>, <em>format=None</em>, <em>colorize=None</em>, <em>task_name=None</em>, <em>task_id=None</em>, <em>propagate=False</em>, <em>app=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.app.log.Logging.setup_task_logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup the task logger.</p>
+<p>If <cite>logfile</cite> is not specified, then <cite>sys.stderr</cite> is used.</p>
+<p>Returns logger object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.app.log.Logging.supports_color">
+<tt class="descname">supports_color</tt><big>(</big><em>logfile=None</em><big>)</big><a class="headerlink" href="#celery.app.log.Logging.supports_color" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="celery.app.builtins.html"
+                        title="previous chapter">celery.app.task.builtins</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="celery.task.html"
+                        title="next chapter">celery.task</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/reference/celery.app.log.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.task.html" title="celery.task"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.app.builtins.html" title="celery.app.task.builtins"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2012, Ask Solem &amp; Contributors.
+    </div>
+  </body>
+</html>

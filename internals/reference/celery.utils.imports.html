@@ -1,0 +1,212 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>celery.utils.imports &mdash; Celery 2.6.0a1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.6.0a1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Celery 2.6.0a1 documentation" href="../../index.html" />
+    <link rel="up" title="Internal Module Reference" href="index.html" />
+    <link rel="next" title="celery.utils.log" href="celery.utils.log.html" />
+    <link rel="prev" title="celery.utils.timer2" href="celery.utils.timer2.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.utils.log.html" title="celery.utils.log"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.utils.timer2.html" title="celery.utils.timer2"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.utils.imports.html">2.5</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="celery-utils-imports">
+<h1>celery.utils.imports<a class="headerlink" href="#celery-utils-imports" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-celery.utils.imports"></span><dl class="exception">
+<dt id="celery.utils.imports.NotAPackage">
+<em class="property">exception </em><tt class="descclassname">celery.utils.imports.</tt><tt class="descname">NotAPackage</tt><a class="headerlink" href="#celery.utils.imports.NotAPackage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.imports.cwd_in_path">
+<tt class="descclassname">celery.utils.imports.</tt><tt class="descname">cwd_in_path</tt><big>(</big><em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#celery.utils.imports.cwd_in_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.imports.find_module">
+<tt class="descclassname">celery.utils.imports.</tt><tt class="descname">find_module</tt><big>(</big><em>module</em>, <em>path=None</em>, <em>imp=None</em><big>)</big><a class="headerlink" href="#celery.utils.imports.find_module" title="Permalink to this definition">¶</a></dt>
+<dd><p>Version of <a class="reference external" href="http://docs.python.org/dev/library/imp.html#imp.find_module" title="(in Python v3.3)"><tt class="xref py py-func docutils literal"><span class="pre">imp.find_module()</span></tt></a> supporting dots.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.imports.import_from_cwd">
+<tt class="descclassname">celery.utils.imports.</tt><tt class="descname">import_from_cwd</tt><big>(</big><em>module</em>, <em>imp=None</em>, <em>package=None</em><big>)</big><a class="headerlink" href="#celery.utils.imports.import_from_cwd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Import module, but make sure it finds modules
+located in the current directory.</p>
+<p>Modules located in the current directory has
+precedence over modules located in <cite>sys.path</cite>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.imports.instantiate">
+<tt class="descclassname">celery.utils.imports.</tt><tt class="descname">instantiate</tt><big>(</big><em>name</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.imports.instantiate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instantiate class by name.</p>
+<p>See <a class="reference internal" href="#celery.utils.imports.symbol_by_name" title="celery.utils.imports.symbol_by_name"><tt class="xref py py-func docutils literal"><span class="pre">symbol_by_name()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.imports.qualname">
+<tt class="descclassname">celery.utils.imports.</tt><tt class="descname">qualname</tt><big>(</big><em>obj</em><big>)</big><a class="headerlink" href="#celery.utils.imports.qualname" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.imports.reload_from_cwd">
+<tt class="descclassname">celery.utils.imports.</tt><tt class="descname">reload_from_cwd</tt><big>(</big><em>module</em>, <em>reloader=None</em><big>)</big><a class="headerlink" href="#celery.utils.imports.reload_from_cwd" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.imports.symbol_by_name">
+<tt class="descclassname">celery.utils.imports.</tt><tt class="descname">symbol_by_name</tt><big>(</big><em>name</em>, <em>aliases={}</em>, <em>imp=None</em>, <em>package=None</em>, <em>sep='.'</em>, <em>default=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.imports.symbol_by_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get symbol by qualified name.</p>
+<p>The name should be the full dot-separated path to the class:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">modulename</span><span class="o">.</span><span class="n">ClassName</span>
+</pre></div>
+</div>
+<p>Example:</p>
+<div class="highlight-python"><pre>celery.concurrency.processes.TaskPool
+                            ^- class name</pre>
+</div>
+<p>or using &#8216;:&#8217; to separate module and symbol:</p>
+<div class="highlight-python"><pre>celery.concurrency.processes:TaskPool</pre>
+</div>
+<p>If <cite>aliases</cite> is provided, a dict containing short name/long name
+mappings, the name is looked up in the aliases first.</p>
+<p>Examples:</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">symbol_by_name</span><span class="p">(</span><span class="s">&quot;celery.concurrency.processes.TaskPool&quot;</span><span class="p">)</span>
+<span class="go">&lt;class &#39;celery.concurrency.processes.TaskPool&#39;&gt;</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">symbol_by_name</span><span class="p">(</span><span class="s">&quot;default&quot;</span><span class="p">,</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="s">&quot;default&quot;</span><span class="p">:</span> <span class="s">&quot;celery.concurrency.processes.TaskPool&quot;</span><span class="p">})</span>
+<span class="go">&lt;class &#39;celery.concurrency.processes.TaskPool&#39;&gt;</span>
+</pre></div>
+</div>
+<p># Does not try to look up non-string names.
+&gt;&gt;&gt; from celery.concurrency.processes import TaskPool
+&gt;&gt;&gt; symbol_by_name(TaskPool) is TaskPool
+True</p>
+</div></blockquote>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="celery.utils.timer2.html"
+                        title="previous chapter">celery.utils.timer2</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="celery.utils.log.html"
+                        title="next chapter">celery.utils.log</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/internals/reference/celery.utils.imports.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.utils.log.html" title="celery.utils.log"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.utils.timer2.html" title="celery.utils.timer2"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2012, Ask Solem &amp; Contributors.
+    </div>
+  </body>
+</html>
