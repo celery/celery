@@ -25,11 +25,10 @@ ehter the `celery-with-redis`_, or the `django-celery-with-redis` bundles::
 Configuration
 =============
 
-Configuration is easy, set the transport, and configure the location of
+Configuration is easy, just configure the location of
 your Redis database::
 
     BROKER_URL = "redis://localhost:6379/0"
-
 
 Where the URL is in the format of::
 

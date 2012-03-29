@@ -9,24 +9,23 @@
 
 .. _celerytut-broker:
 
-Choosing your Broker
-====================
+Choosing a Broker
+=================
 
-Before you can use Celery you need to choose, install and run a broker.
-The broker is the service responsible for receiving and delivering task
-messages.
+Celery requires a solution to send and receive messages, this is called
+the *message transport*.  Usually this comes in the form of a separate
+service called a *message broker*.
 
 There are several choices available, including:
 
 * :ref:`broker-rabbitmq`
 
-`RabbitMQ`_ is feature-complete, safe and durable. If not losing tasks
-is important to you, then this is your best option.
+`RabbitMQ`_ is feature-complete, stable, durable and easy to install.
 
 * :ref:`broker-redis`
 
-`Redis`_ is also feature-complete, but power failures or abrupt termination
-may result in data loss.
+`Redis`_ is also feature-complete, but is more susceptible to data loss in
+the event of abrupt termination or power failures.
 
 * :ref:`broker-sqlalchemy`
 * :ref:`broker-django`
@@ -45,6 +44,60 @@ in the Kombu documentation.
 .. _`Redis`: http://redis.io/
 .. _`Transport Comparison`: http://kombu.rtfd.org/transport-comparison
 
+.. _celerytut-conf:
+
+Application
+===========
+
+The first thing you need is a Celery instance.  Since the instance is used as
+the entry-point for everything you want to do in Celery, like creating task and
+managing workers, it must be possible for other modules to import it.
+
+Some people create a dedicated module for it, but in this tutorial we will
+keep it in the same module used to start our worker::
+
+Let's create the file :file:`worker.py`:
+
+.. code-block:: python
+
+    from celery import Celery
+
+    celery = Celery(broker="amqp://guest:guest@localhost:5672")
+
+    if __name__ == "__main__":
+        celery.worker_main()
+
+The broker argument specifies the message broker we want to use, what
+we are using in this example is the default, but we keep it there for
+reference so you can see what the URLs look like.
+
+The backend argument specifies what we use to store and retrieve task
+states and results, it is disabled by default.
+   For list of backends available and related options see
+   :ref:`conf-result-backend`.
+
+That's all you need to get started!
+
+If you want to dig deeper there are lots of configuration possibilities that
+can be applied.  For example you can set the default value for the workers
+`--concurrency`` argument, which is used to decide the number of pool worker
+processes, the name for this setting is :setting:`CELERYD_CONCURRENCY`:
+
+.. code-block:: python
+
+    celery.conf.CELERY_CONCURRENCY = 10
+
+If you are configuring many settings then one practice is to have a separate module
+containing the configuration.  You can tell your Celery instance to use
+this module, historically called ``celeryconfig.py``, with the
+:meth:`config_from_obj` method:
+
+.. code-block:: python
+
+    celery.config_from_object("celeryconfig")
+
+For a complete reference of configuration options, see :ref:`configuration`.
+
 .. _celerytut-simple-tasks:
 
 Creating a simple task
@@ -60,76 +113,16 @@ like this:
 
 .. code-block:: python
 
-    from celery.task import task
+    from worker import celery
 
-    @task
+    @celery.task
     def add(x, y):
         return x + y
-
-
-Behind the scenes the `@task` decorator actually creates a class that
-inherits from :class:`~celery.task.base.Task`.  The best practice is to
-only create custom task classes when you want to change generic behavior,
-and use the decorator to define tasks.
 
 .. seealso::
 
     The full documentation on how to create tasks and task classes is in the
     :doc:`../userguide/tasks` part of the user guide.
-
-.. _celerytut-conf:
-
-Configuration
-=============
-
-Celery is configured by using a configuration module.  By default
-this module is called :file:`celeryconfig.py`.
-
-The configuration module must either be in the current directory
-or on the Python path, so that it can be imported.
-
-You can also set a custom name for the configuration module by using
-the :envvar:`CELERY_CONFIG_MODULE` environment variable.
-
-Let's create our :file:`celeryconfig.py`.
-
-1. Configure how we communicate with the broker (RabbitMQ in this example)::
-
-        BROKER_URL = "amqp://guest:guest@localhost:5672//"
-
-2. Define the backend used to store task metadata and return values::
-
-        CELERY_RESULT_BACKEND = "amqp"
-
-   The AMQP backend is non-persistent by default, and you can only
-   fetch the result of a task once (as it's sent as a message).
-
-   For list of backends available and related options see
-   :ref:`conf-result-backend`.
-
-3. Finally we list the modules the worker should import.  This includes
-   the modules containing your tasks.
-
-   We only have a single task module, :file:`tasks.py`, which we added earlier::
-
-        CELERY_IMPORTS = ("tasks", )
-
-That's it.
-
-There are more options available, like how many processes you want to
-use to process work in parallel (the :setting:`CELERY_CONCURRENCY` setting),
-and we could use a persistent result store backend, but for now, this should
-do.  For all of the options available, see :ref:`configuration`.
-
-.. note::
-
-    You can also specify modules to import using the :option:`-I` option to
-    :mod:`~celery.bin.celeryd`::
-
-        $ celeryd -l info -I tasks,handlers
-
-    This can be a single, or a comma separated list of task modules to import
-    when :program:`celeryd` starts.
 
 
 .. _celerytut-running-celeryd:
@@ -137,10 +130,9 @@ do.  For all of the options available, see :ref:`configuration`.
 Running the celery worker server
 ================================
 
-To test we will run the worker server in the foreground, so we can
-see what's going on in the terminal::
+We can now run our ``worker.py`` program::
 
-    $ celeryd --loglevel=INFO
+    $ python worker.py --loglevel=INFO
 
 In production you will probably want to run the worker in the
 background as a daemon.  To do this you need to use the tools provided
@@ -149,7 +141,7 @@ for more information).
 
 For a complete listing of the command line options available, do::
 
-    $  celeryd --help
+    $  python worker.py --help
 
 .. _`supervisord`: http://supervisord.org
 
@@ -180,6 +172,8 @@ the :class:`~celery.result.AsyncResult` enables you to check the state of
 the task, wait for the task to finish, get its return value
 or exception/traceback if the task failed, and more.
 
+.. _celerytut-keeping-results:
+
 Keeping Results
 ---------------
 
@@ -189,16 +183,14 @@ built-in backends to choose from: SQLAlchemy/Django ORM, Memcached, Redis,
 AMQP, MongoDB, Tokyo Tyrant and Redis -- or you can define your own.
 
 For this example we will use the `amqp` result backend, which sends states
-as messages.  The backend is configured via the ``CELERY_RESULT_BACKEND``
-option, in addition individual result backends may have additional settings
+as messages.  The backend is configured via the :setting:`CELERY_RESULT_BACKEND`
+setting or using the ``backend`` argument to :class:`Celery`, in addition individual
+result backends may have additional settings
 you can configure::
 
-    CELERY_RESULT_BACKEND = "amqp"
+    from celery.backends.amqp import AMQPBackend
 
-    #: We want the results to expire in 5 minutes, note that this requires
-    #: RabbitMQ version 2.1.1 or higher, so please comment out if you have
-    #: an earlier version.
-    CELERY_TASK_RESULT_EXPIRES = 300
+    celery = Celery(backend=AMQPBackend(expires=300))
 
 To read more about result backends please see :ref:`task-result-backends`.
 
