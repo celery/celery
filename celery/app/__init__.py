@@ -18,8 +18,8 @@ from ..local import PromiseProxy
 from ..utils import cached_property
 from ..utils.imports import instantiate
 
-from . import annotations
-from . import base
+from .annotations import _first_match, _first_match_any
+from .base import BaseApp
 from .state import _tls
 from .state import current_task  # noqa
 
@@ -54,7 +54,7 @@ def _unpickle_app(cls, pickler, *args):
     return pickler()(cls, *args)
 
 
-class App(base.BaseApp):
+class App(BaseApp):
     """Celery Application.
 
     :param main: Name of the main module if running as `__main__`.
@@ -195,10 +195,10 @@ class App(base.BaseApp):
 
     def annotate_task(self, task):
         if self.annotations:
-            match = annotations._first_match(self.annotations, task)
+            match = _first_match(self.annotations, task)
             for attr, value in (match or {}).iteritems():
                 setattr(task, attr, value)
-            match_any = annotations._first_match_any(self.annotations)
+            match_any = _first_match_any(self.annotations)
             for attr, value in (match_any or {}).iteritems():
                 setattr(task, attr, value)
 
