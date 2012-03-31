@@ -8,7 +8,6 @@
 .. toctree::
     :maxdepth: 1
 
-    celery.abstract
     celery.worker
     celery.worker.consumer
     celery.worker.job
@@ -19,6 +18,7 @@
     celery.worker.strategy
     celery.worker.autoreload
     celery.worker.autoscale
+    celery.worker.abstract
     celery.concurrency
     celery.concurrency.solo
     celery.concurrency.processes
@@ -41,11 +41,11 @@
     celery.app.abstract
     celery.app.annotations
     celery.app.state
+    celery.app.routes
     celery.security.certificate
     celery.security.key
     celery.security.serialization
     celery.datastructures
-    celery.routes
     celery.log
     celery.events.snapshot
     celery.events.cursesmon

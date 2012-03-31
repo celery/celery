@@ -21,9 +21,10 @@ import threading
 
 from time import sleep, time
 
-from . import state
-from ..abstract import StartStopComponent
 from ..utils.threads import bgThread
+
+from . import state
+from .abstract import StartStopComponent
 
 
 class WorkerComponent(StartStopComponent):

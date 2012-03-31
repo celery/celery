@@ -17,8 +17,9 @@ import time
 
 from collections import defaultdict
 
-from ..abstract import StartStopComponent
 from ..utils.threads import bgThread, Event
+
+from .abstract import StartStopComponent
 
 try:
     import pyinotify

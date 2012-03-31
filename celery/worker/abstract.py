@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    celery.abstract
-    ~~~~~~~~~~~~~~~
+    celery.worker.abstract
+    ~~~~~~~~~~~~~~~~~~~~~~
 
     Implements components and boot-steps.
 
@@ -14,8 +14,8 @@ from __future__ import absolute_import
 from collections import defaultdict
 from importlib import import_module
 
-from .datastructures import DependencyGraph
-from .utils.imports import instantiate
+from ..datastructures import DependencyGraph
+from ..utils.imports import instantiate
 
 
 class Namespace(object):

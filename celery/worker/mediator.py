@@ -22,9 +22,10 @@ import logging
 
 from Queue import Empty
 
-from ..abstract import StartStopComponent
 from ..app import app_or_default
 from ..utils.threads import bgThread
+
+from .abstract import StartStopComponent
 
 
 class WorkerComponent(StartStopComponent):

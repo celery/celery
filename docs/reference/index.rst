@@ -21,7 +21,6 @@
     celery.task.sets
     celery.task.chords
     celery.result
-    celery.actors
     celery.task.control
     celery.task.http
     celery.schedules
@@ -33,7 +32,6 @@
     celery.loaders.app
     celery.loaders.default
     celery.loaders.base
-    celery.registry
     celery.states
     celery.contrib.abortable
     celery.contrib.batches
