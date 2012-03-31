@@ -285,6 +285,11 @@ def disable_trace():
     app_or_default = _app_or_default
 
 
+
+def bugreport():
+    return current_app().bugreport()
+
+
 app_or_default = _app_or_default
 if os.environ.get("CELERY_TRACE_APP"):  # pragma: no cover
     enable_trace()

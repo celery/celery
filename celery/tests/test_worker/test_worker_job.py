@@ -23,7 +23,6 @@ from celery.datastructures import ExceptionInfo
 from celery.exceptions import (RetryTaskError,
                                WorkerLostError, InvalidTaskError)
 from celery.execute.trace import eager_trace_task, TraceInfo
-from celery.log import setup_logger
 from celery.result import AsyncResult
 from celery.task import task as task_dec
 from celery.task.base import Task
@@ -685,8 +684,7 @@ class test_TaskRequest(Case):
 
             logfh = WhateverIO()
             tw.logger.handlers = []
-            tw.logger = setup_logger(logfile=logfh, loglevel=logging.INFO,
-                                     root=False)
+            tw.logger = app.log.setup_logger("INFO", logfh, root=False)
 
             app.conf.CELERY_SEND_TASK_ERROR_EMAILS = True
 

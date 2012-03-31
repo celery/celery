@@ -5,27 +5,27 @@ import sys
 import logging
 from tempfile import mktemp
 
+from celery import current_app
 from celery import log
-from celery.log import (setup_logger, setup_task_logger,
-                        get_default_logger, get_task_logger,
-                        redirect_stdouts_to_logger, setup_logging_subsystem)
 from celery.utils.log import LoggingProxy
 from celery.utils import uuid
 from celery.utils.compat import _CompatLoggerAdapter
 from celery.tests.utils import (Case, override_stdouts, wrap_logger,
                                 get_handlers, set_handlers)
 
+log = current_app.log
+
 
 class test_default_logger(Case):
 
     def setUp(self):
-        self.setup_logger = setup_logger
-        self.get_logger = get_default_logger
+        self.setup_logger = log.setup_logger
+        self.get_logger = log.get_default_logger
         log._setup = False
 
     def test_setup_logging_subsystem_colorize(self):
-        setup_logging_subsystem(colorize=None)
-        setup_logging_subsystem(colorize=True)
+        log.setup_logging_subsystem(colorize=None)
+        log.setup_logging_subsystem(colorize=True)
 
     def test_setup_logging_subsystem_no_mputil(self):
         from celery.utils import log as logtools
@@ -85,7 +85,7 @@ class test_default_logger(Case):
                                    root=False)
         try:
             with wrap_logger(logger) as sio:
-                redirect_stdouts_to_logger(logger, loglevel=logging.ERROR)
+                log.redirect_stdouts_to_logger(logger, loglevel=logging.ERROR)
                 logger.error("foo")
                 self.assertIn("foo", sio.getvalue())
         finally:
@@ -116,17 +116,17 @@ class test_default_logger(Case):
 class test_task_logger(test_default_logger):
 
     def setUp(self):
-        logger = get_task_logger()
+        logger = log.get_task_logger()
         logger.handlers = []
         logging.root.manager.loggerDict.pop(logger.name, None)
         self.uid = uuid()
 
     def setup_logger(self, *args, **kwargs):
-        return setup_task_logger(*args, **dict(kwargs, task_name=self.uid,
-                                                       task_id=self.uid))
+        return log.setup_task_logger(*args, **dict(kwargs, task_name=self.uid,
+                                                   task_id=self.uid))
 
     def get_logger(self, *args, **kwargs):
-        return get_task_logger(*args, **dict(kwargs, name=self.uid))
+        return log.get_task_logger(*args, **dict(kwargs, name=self.uid))
 
 
 class MockLogger(logging.Logger):

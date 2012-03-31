@@ -309,7 +309,9 @@ class BaseApp(object):
 
     def prepare_config(self, c):
         """Prepare configuration before it is merged with the defaults."""
-        c.update(self._preconf)
+        if self._preconf:
+            for key, value in self._preconf.iteritems():
+                setattr(c, key, value)
         return find_deprecated_settings(c)
 
     def now(self):

@@ -27,9 +27,8 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
         try:
             os.execv(path, [path] + argv)
         except Exception:
-            import logging
-            from ..log import setup_logger
-            logger = setup_logger(logfile=logfile, loglevel=logging.ERROR)
+            from .. import current_app
+            logger = current_app.log.setup_logger("ERROR", logfile)
             logger.critical("Can't exec %r", " ".join([path] + argv),
                             exc_info=True)
 

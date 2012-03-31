@@ -21,19 +21,69 @@ if sys.version_info < (2, 5):
         "Python 2.4 is not supported by this version. "
         "Please use Celery versions 2.1.x or earlier.")
 
+# Lazy loading
+from types import ModuleType
 from .local import Proxy
 
+
+compat_modules = ("messaging", "log", "registry", "decorators")
+
+
+class module(ModuleType):
+    __all__ = ("Celery", "current_app", "bugreport")
+    __compat_installed__ = False
+
+    def __getattr__(self, name):
+        if name in compat_modules:
+            if not self.__compat_installed__:
+                self.__compat_installed__ = True
+                from .__compat__ import install_compat_modules
+                install_compat_modules(self)
+        return ModuleType.__getattribute__(self, name)
+
+    def __dir__(self):
+        result = list(new_module.__all__)
+        result.extend(("__file__", "__path__", "__doc__", "__all__",
+                       "__docformat__", "__name__", "__path__", "VERSION",
+                       "__package__", "__version__", "__author__",
+                       "__contact__", "__homepage__", "__docformat__"))
+        return result
+
+# 2.5 does not define __package__
+try:
+    package = __package__
+except NameError:
+    package = "kombu"
+
+# keep a reference to this module so that it's not garbage collected
+old_module = sys.modules[__name__]
+
+new_module = sys.modules[__name__] = module(__name__)
+new_module.__dict__.update({
+    "__file__": __file__,
+    "__path__": __path__,
+    "__doc__": __doc__,
+    "__version__": __version__,
+    "__author__": __author__,
+    "__contact__": __contact__,
+    "__homepage__": __homepage__,
+    "__docformat__": __docformat__,
+    "__package__": package,
+    "VERSION": VERSION})
 
 def Celery(*args, **kwargs):
     from .app import App
     return App(*args, **kwargs)
-
 
 def _get_current_app():
     from .app import current_app
     return current_app()
 current_app = Proxy(_get_current_app)
 
-
 def bugreport():
     return current_app.bugreport()
+
+new_module.Celery = Celery
+new_module.current_app = current_app
+new_module.bugreport = bugreport
+
