@@ -3,7 +3,7 @@ from __future__ import with_statement
 
 from mock import Mock
 
-from celery import abstract
+from celery.worker import abstract
 
 from celery.tests.utils import AppCase, Case
 

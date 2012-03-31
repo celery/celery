@@ -11,20 +11,13 @@ SKIP_FILES="celery.backends.pyredis.rst
             celery.contrib.rst
             celery.contrib.bundles.rst
             celery.worker.control.rst
-            celery.worker.control.builtins.rst
-            celery.worker.control.registry.rst
             celery.task.schedules.rst
             celery.local.rst
-            celery.models.rst
             celery.app.base.rst
             celery.apps.rst
-            celery.db.rst
-            celery.messaging.rst
             celery.execute.rst
-            celery.conf.rst
-            celery.decorators.rst
-            celery.db.a805d4bd.rst
-            celery.db.dfd042c7.rst
+            celery.backends.database.a805d4bd.rst
+            celery.backends.database.dfd042c7.rst
             celery.utils.encoding.rst"
 
 modules=$(find "$PACKAGE" -name "*.py")

@@ -21,7 +21,7 @@ except ImportError:
     DatabaseBackend = Task = TaskSet = None
 else:
     from celery.backends.database import DatabaseBackend
-    from celery.db.models import Task, TaskSet
+    from celery.backends.database.models import Task, TaskSet
 
 
 class SomeClass(object):
@@ -48,18 +48,18 @@ class test_DatabaseBackend(Case):
 
     def test_pickle_hack_for_sqla_05(self):
         import sqlalchemy as sa
-        from celery.db import session
+        from celery.backends.database import session
         prev_base = session.ResultModelBase
         prev_ver, sa.__version__ = sa.__version__, "0.5.0"
-        prev_models = sys.modules.pop("celery.db.models", None)
+        prev_models = sys.modules.pop("celery.backends.database.models", None)
         try:
             from sqlalchemy.ext.declarative import declarative_base
             session.ResultModelBase = declarative_base()
-            from celery.db.dfd042c7 import PickleType as Type1
-            from celery.db.models import PickleType as Type2
+            from celery.backends.database.dfd042c7 import PickleType as Type1
+            from celery.backends.database.models import PickleType as Type2
             self.assertIs(Type1, Type2)
         finally:
-            sys.modules["celery.db.models"] = prev_models
+            sys.modules["celery.backends.database.models"] = prev_models
             sa.__version__ = prev_ver
             session.ResultModelBase = prev_base
 

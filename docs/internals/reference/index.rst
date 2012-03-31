@@ -50,8 +50,8 @@
     celery.events.snapshot
     celery.events.cursesmon
     celery.events.dumper
-    celery.db.models
-    celery.db.session
+    celery.backends.database.models
+    celery.backends.database.session
     celery.utils
     celery.utils.functional
     celery.utils.term

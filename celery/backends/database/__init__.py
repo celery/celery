@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-from .. import states
-from ..db.models import Task, TaskSet
-from ..db.session import ResultSession
-from ..exceptions import ImproperlyConfigured
-from ..utils.timeutils import maybe_timedelta
+from celery import states
+from celery.exceptions import ImproperlyConfigured
+from celery.utils.timeutils import maybe_timedelta
 
-from .base import BaseDictBackend
+from celery.backends.base import BaseDictBackend
+
+from .models import Task, TaskSet
+from .session import ResultSession
 
 
 def _sqlalchemy_installed():
