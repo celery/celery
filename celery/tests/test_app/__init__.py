@@ -9,7 +9,6 @@ from mock import Mock
 from celery import Celery
 from celery import app as _app
 from celery.app import defaults
-from celery.app.base import BaseApp
 from celery.loaders.base import BaseLoader
 from celery.platforms import pyimplementation
 from celery.utils.serialization import pickle
@@ -254,12 +253,6 @@ class test_App(Case):
         self.assertTrue(x)
 
 
-class test_BaseApp(Case):
-
-    def test_on_init(self):
-        BaseApp()
-
-
 class test_defaults(Case):
 
     def test_str_to_bool(self):
@@ -281,22 +274,6 @@ class test_debugging_utils(Case):
             self.assertEqual(_app.app_or_default, _app._app_or_default)
         finally:
             _app.disable_trace()
-
-
-class test_compilation(Case):
-    _clean = ("celery.app.base", )
-
-    def setUp(self):
-        self._prev = dict((k, sys.modules.pop(k, None)) for k in self._clean)
-
-    def tearDown(self):
-        sys.modules.update(self._prev)
-
-    def test_kombu_version_check(self):
-        import kombu
-        kombu.VERSION = (0, 9, 9)
-        with self.assertRaises(ImportError):
-            __import__("celery.app.base")
 
 
 class test_pyimplementation(Case):
