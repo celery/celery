@@ -13,12 +13,15 @@ from __future__ import absolute_import
 
 import os
 
+from ..local import Proxy
+
 from . import state
-from .base import App, AppPickler             # noqa
+from .base import App, AppPickler  # noqa
 
 set_default_app = state.set_default_app
 current_app = state.current_app
 current_task = state.current_task
+default_app = Proxy(lambda: state.default_app)
 
 #: Returns the app provided or the default app if none.
 #:
