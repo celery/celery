@@ -37,8 +37,8 @@ allowing only white-listed machines to access it.
 
 Keep in mind that both firewall misconfiguration, and temproraily disabling
 the firewall, is common in the real world. Solid security policy includes
-monitoring of firewall equipment to detect if they have been disabled, be it 
-accidentally or on purpose. 
+monitoring of firewall equipment to detect if they have been disabled, be it
+accidentally or on purpose.
 
 In other words, one should not blindly trust the firewall either.
 
@@ -49,7 +49,7 @@ http://www.rabbitmq.com/access-control.html.
 Client
 ------
 
-In Celery, "client" refers to anything that sends messages to the 
+In Celery, "client" refers to anything that sends messages to the
 broker, e.g. web-servers that apply tasks.
 
 Having the broker properly secured doesn't matter if arbitrary messages
@@ -61,7 +61,7 @@ Worker
 ------
 
 The default permissions of tasks running inside a worker are the same ones as
-the privileges of the worker itself. This applies to resources such as 
+the privileges of the worker itself. This applies to resources such as
 memory, file-systems and devices.
 
 An exception to this rule is when using the multiprocessing based task pool,

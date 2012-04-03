@@ -123,10 +123,10 @@ time limit kills it:
 
 .. code-block:: python
 
-    from celery.task import task
+    from myapp import celery
     from celery.exceptions import SoftTimeLimitExceeded
 
-    @task()
+    @celery.task()
     def mytask():
         try:
             do_work()
@@ -153,9 +153,8 @@ Example changing the time limit for the ``tasks.crawl_the_web`` task
 to have a soft time limit of one minute, and a hard time limit of
 two minutes::
 
-    >>> from celery.task import control
-    >>> control.time_limit("tasks.crawl_the_web",
-                           soft=60, hard=120, reply=True)
+    >>> celery.control.time_limit("tasks.crawl_the_web",
+                                  soft=60, hard=120, reply=True)
     [{'worker1.example.com': {'ok': 'time limits set successfully'}}]
 
 Only tasks that starts executing after the time limit change will be affected.
@@ -269,14 +268,15 @@ Some remote control commands also have higher-level interfaces using
 Sending the :control:`rate_limit` command and keyword arguments::
 
     >>> from celery.task.control import broadcast
-    >>> broadcast("rate_limit", arguments={"task_name": "myapp.mytask",
-    ...                                    "rate_limit": "200/m"})
+    >>> celery.control.broadcast("rate_limit",
+    ...                          arguments={"task_name": "myapp.mytask",
+    ...                                     "rate_limit": "200/m"})
 
 This will send the command asynchronously, without waiting for a reply.
 To request a reply you have to use the `reply` argument::
 
-    >>> broadcast("rate_limit", {"task_name": "myapp.mytask",
-    ...                          "rate_limit": "200/m"}, reply=True)
+    >>> celery.control.broadcast("rate_limit", {
+    ...     "task_name": "myapp.mytask", "rate_limit": "200/m"}, reply=True)
     [{'worker1.example.com': 'New rate limit set successfully'},
      {'worker2.example.com': 'New rate limit set successfully'},
      {'worker3.example.com': 'New rate limit set successfully'}]
@@ -284,10 +284,10 @@ To request a reply you have to use the `reply` argument::
 Using the `destination` argument you can specify a list of workers
 to receive the command::
 
-    >>> broadcast
-    >>> broadcast("rate_limit", {"task_name": "myapp.mytask",
-    ...                          "rate_limit": "200/m"}, reply=True,
-    ...           destination=["worker1.example.com"])
+    >>> celery.control.broadcast("rate_limit", {
+    ...     "task_name": "myapp.mytask",
+    ...     "rate_limit": "200/m"}, reply=True,
+    ...                             destination=["worker1.example.com"])
     [{'worker1.example.com': 'New rate limit set successfully'}]
 
 
@@ -305,13 +305,12 @@ Rate limits
 Example changing the rate limit for the `myapp.mytask` task to accept
 200 tasks a minute on all servers::
 
-    >>> from celery.task.control import rate_limit
-    >>> rate_limit("myapp.mytask", "200/m")
+    >>> celery.control.rate_limit("myapp.mytask", "200/m")
 
 Example changing the rate limit on a single host by specifying the
 destination host name::
 
-    >>> rate_limit("myapp.mytask", "200/m",
+    >>> celery.control.rate_limit("myapp.mytask", "200/m",
     ...            destination=["worker1.example.com"])
 
 .. warning::
@@ -344,14 +343,13 @@ Terminating a task also revokes it.
 
 ::
 
-    >>> from celery.task.control import revoke
-    >>> revoke("d9078da5-9915-40a0-bfa1-392c7bde42ed")
+    >>> celery.control.revoke("d9078da5-9915-40a0-bfa1-392c7bde42ed")
 
-    >>> revoke("d9078da5-9915-40a0-bfa1-392c7bde42ed",
-    ...        terminate=True)
+    >>> celery.control.revoke("d9078da5-9915-40a0-bfa1-392c7bde42ed",
+    ...                       terminate=True)
 
-    >>> revoke("d9078da5-9915-40a0-bfa1-392c7bde42ed",
-    ...        terminate=True, signal="SIGKILL")
+    >>> celery.control.revoke("d9078da5-9915-40a0-bfa1-392c7bde42ed",
+    ...                       terminate=True, signal="SIGKILL")
 
 .. control:: shutdown
 
@@ -360,8 +358,8 @@ Remote shutdown
 
 This command will gracefully shut down the worker remotely::
 
-    >>> broadcast("shutdown") # shutdown all workers
-    >>> broadcast("shutdown, destination="worker1.example.com")
+    >>> celery.control.broadcast("shutdown") # shutdown all workers
+    >>> celery.control.broadcast("shutdown, destination="worker1.example.com")
 
 .. control:: ping
 
@@ -373,8 +371,7 @@ The workers reply with the string 'pong', and that's just about it.
 It will use the default one second timeout for replies unless you specify
 a custom timeout::
 
-    >>> from celery.task.control import ping
-    >>> ping(timeout=0.5)
+    >>> celery.control.ping(timeout=0.5)
     [{'worker1.example.com': 'pong'},
      {'worker2.example.com': 'pong'},
      {'worker3.example.com': 'pong'}]
@@ -400,8 +397,8 @@ a worker using :program:`celeryev`/:program:`celerymon`.
 
 .. code-block:: python
 
-    >>> broadcast("enable_events")
-    >>> broadcast("disable_events")
+    >>> celery.control.broadcast("enable_events")
+    >>> celery.control.broadcast("disable_events")
 
 Adding/Reloading modules
 ------------------------
@@ -422,21 +419,23 @@ being imported by the worker processes:
 .. code-block:: python
 
     >>> from celery.task.control import broadcast
-    >>> broadcast("pool_restart", arguments={"modules": ["foo", "bar"]})
+    >>> celery.control.broadcast("pool_restart",
+    ...                          arguments={"modules": ["foo", "bar"]})
 
 Use the ``reload`` argument to reload modules it has already imported:
 
 .. code-block:: python
 
-    >>> broadcast("pool_restart", arguments={"modules": ["foo"],
-                                             "reload": True})
+    >>> celery.control.broadcast("pool_restart",
+    ...                          arguments={"modules": ["foo"],
+    ...                                     "reload": True})
 
 If you don't specify any modules then all known tasks modules will
 be imported/reloaded:
 
 .. code-block:: python
 
-    >>> broadcast("pool_restart", arguments={"reload": True})
+    >>> celery.control.broadcast("pool_restart", arguments={"reload": True})
 
 The ``modules`` argument is a list of modules to modify. ``reload``
 specifies whether to reload modules if they have previously been imported.
@@ -495,17 +494,15 @@ uses remote control commands under the hood.
 
 .. code-block:: python
 
-    >>> from celery.task.control import inspect
-
     # Inspect all nodes.
-    >>> i = inspect()
+    >>> i = celery.control.inspect()
 
     # Specify multiple nodes to inspect.
-    >>> i = inspect(["worker1.example.com", "worker2.example.com"])
+    >>> i = celery.control.inspect(["worker1.example.com",
+                                    "worker2.example.com"])
 
     # Specify a single node to inspect.
-    >>> i = inspect("worker1.example.com")
-
+    >>> i = celery.control.inspect("worker1.example.com")
 
 .. _worker-inspect-registered-tasks:
 

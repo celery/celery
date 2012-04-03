@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery.app.task.builtins &mdash; Celery 2.6.0a1 documentation</title>
+    <title>celery.app.builtins &mdash; Celery 2.6.0a1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -67,11 +67,11 @@
         
 
 </div>
-    <div class="section" id="celery-app-task-builtins">
-<h1>celery.app.task.builtins<a class="headerlink" href="#celery-app-task-builtins" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.app.task.builtins"></span><dl class="function">
-<dt id="celery.app.task.builtins.add_backend_cleanup_task">
-<tt class="descclassname">celery.app.task.builtins.</tt><tt class="descname">add_backend_cleanup_task</tt><big>(</big><em>app</em><big>)</big><a class="headerlink" href="#celery.app.task.builtins.add_backend_cleanup_task" title="Permalink to this definition">¶</a></dt>
+    <div class="section" id="celery-app-builtins">
+<h1>celery.app.builtins<a class="headerlink" href="#celery-app-builtins" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-celery.app.builtins"></span><dl class="function">
+<dt id="celery.app.builtins.add_backend_cleanup_task">
+<tt class="descclassname">celery.app.builtins.</tt><tt class="descname">add_backend_cleanup_task</tt><big>(</big><em>app</em><big>)</big><a class="headerlink" href="#celery.app.builtins.add_backend_cleanup_task" title="Permalink to this definition">¶</a></dt>
 <dd><p>The backend cleanup task can be used to clean up the default result
 backend.</p>
 <p>This task is also added do the periodic task schedule so that it is
@@ -83,24 +83,24 @@ may even clean up in realtime so that a periodic cleanup is not necessary.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="celery.app.task.builtins.add_chord_task">
-<tt class="descclassname">celery.app.task.builtins.</tt><tt class="descname">add_chord_task</tt><big>(</big><em>app</em><big>)</big><a class="headerlink" href="#celery.app.task.builtins.add_chord_task" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.app.builtins.add_chord_task">
+<tt class="descclassname">celery.app.builtins.</tt><tt class="descname">add_chord_task</tt><big>(</big><em>app</em><big>)</big><a class="headerlink" href="#celery.app.builtins.add_chord_task" title="Permalink to this definition">¶</a></dt>
 <dd><p>Every chord is executed in a dedicated task, so that the chord
 can be used as a subtask, and this generates the task
 responsible for that.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="celery.app.task.builtins.add_unlock_chord_task">
-<tt class="descclassname">celery.app.task.builtins.</tt><tt class="descname">add_unlock_chord_task</tt><big>(</big><em>app</em><big>)</big><a class="headerlink" href="#celery.app.task.builtins.add_unlock_chord_task" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.app.builtins.add_unlock_chord_task">
+<tt class="descclassname">celery.app.builtins.</tt><tt class="descname">add_unlock_chord_task</tt><big>(</big><em>app</em><big>)</big><a class="headerlink" href="#celery.app.builtins.add_unlock_chord_task" title="Permalink to this definition">¶</a></dt>
 <dd><p>The unlock chord task is used by result backends that doesn&#8217;t
 have native chord support.</p>
 <p>It creates a task chain polling the header for completion.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="celery.app.task.builtins.builtin_task">
-<tt class="descclassname">celery.app.task.builtins.</tt><tt class="descname">builtin_task</tt><big>(</big><em>constructor</em><big>)</big><a class="headerlink" href="#celery.app.task.builtins.builtin_task" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.app.builtins.builtin_task">
+<tt class="descclassname">celery.app.builtins.</tt><tt class="descname">builtin_task</tt><big>(</big><em>constructor</em><big>)</big><a class="headerlink" href="#celery.app.builtins.builtin_task" title="Permalink to this definition">¶</a></dt>
 <dd><p>Decorator that specifies that the decorated function is a function
 that generates a built-in task.</p>
 <p>The function will then be called for every new app instance created
@@ -108,8 +108,8 @@ that generates a built-in task.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="celery.app.task.builtins.load_builtins">
-<tt class="descclassname">celery.app.task.builtins.</tt><tt class="descname">load_builtins</tt><big>(</big><em>app</em><big>)</big><a class="headerlink" href="#celery.app.task.builtins.load_builtins" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.app.builtins.load_builtin_tasks">
+<tt class="descclassname">celery.app.builtins.</tt><tt class="descname">load_builtin_tasks</tt><big>(</big><em>app</em><big>)</big><a class="headerlink" href="#celery.app.builtins.load_builtin_tasks" title="Permalink to this definition">¶</a></dt>
 <dd><p>Loads the built-in tasks for an app instance.</p>
 </dd></dl>
 

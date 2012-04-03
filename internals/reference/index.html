@@ -26,7 +26,7 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <link rel="top" title="Celery 2.6.0a1 documentation" href="../../index.html" />
     <link rel="up" title="Internals" href="../index.html" />
-    <link rel="next" title="celery.abstract" href="celery.abstract.html" />
+    <link rel="next" title="celery.worker" href="celery.worker.html" />
     <link rel="prev" title="“The Big Instance” Refactor" href="../app-overview.html" /> 
   </head>
   <body>
@@ -40,7 +40,7 @@
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.abstract.html" title="celery.abstract"
+          <a href="celery.worker.html" title="celery.worker"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="../app-overview.html" title="“The Big Instance” Refactor"
@@ -75,13 +75,12 @@
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Release:</th><td class="field-body">2.6</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Date:</th><td class="field-body">March 29, 2012</td>
+<tr class="field-even field"><th class="field-name">Date:</th><td class="field-body">April 03, 2012</td>
 </tr>
 </tbody>
 </table>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="celery.abstract.html">celery.abstract</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.worker.html">celery.worker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.worker.consumer.html">celery.worker.consumer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.worker.job.html">celery.worker.job</a></li>
@@ -92,6 +91,7 @@
 <li class="toctree-l1"><a class="reference internal" href="celery.worker.strategy.html">celery.worker.strategy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.worker.autoreload.html">celery.worker.autoreload</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.worker.autoscale.html">celery.worker.autoscale</a></li>
+<li class="toctree-l1"><a class="reference internal" href="celery.worker.abstract.html">celery.worker.abstract</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.concurrency.html">celery.concurrency</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.concurrency.solo.html">celery.concurrency.solo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.concurrency.processes.html">celery.concurrency.processes</a></li>
@@ -114,17 +114,16 @@
 <li class="toctree-l1"><a class="reference internal" href="celery.app.abstract.html">celery.app.abstract</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.app.annotations.html">celery.app.annotations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.app.state.html">celery.app.state</a></li>
+<li class="toctree-l1"><a class="reference internal" href="celery.app.routes.html">celery.app.routes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.security.certificate.html">celery.security.certificate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.security.key.html">celery.security.key</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.security.serialization.html">celery.security.serialization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.datastructures.html">celery.datastructures</a></li>
-<li class="toctree-l1"><a class="reference internal" href="celery.routes.html">celery.routes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="celery.log.html">celery.log</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.events.snapshot.html">celery.events.snapshot</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.events.cursesmon.html">celery.events.cursesmon</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.events.dumper.html">celery.events.dumper</a></li>
-<li class="toctree-l1"><a class="reference internal" href="celery.db.models.html">celery.db.models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="celery.db.session.html">celery.db.session</a></li>
+<li class="toctree-l1"><a class="reference internal" href="celery.backends.database.models.html">celery.backends.database.models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="celery.backends.database.session.html">celery.backends.database.session</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.utils.html">celery.utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.utils.functional.html">celery.utils.functional</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.utils.term.html">celery.utils.term</a></li>
@@ -157,8 +156,8 @@
   <p class="topless"><a href="../app-overview.html"
                         title="previous chapter">&#8220;The Big Instance&#8221; Refactor</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="celery.abstract.html"
-                        title="next chapter">celery.abstract</a></p>
+  <p class="topless"><a href="celery.worker.html"
+                        title="next chapter">celery.worker</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../../_sources/internals/reference/index.txt"
@@ -191,7 +190,7 @@
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.abstract.html" title="celery.abstract"
+          <a href="celery.worker.html" title="celery.worker"
              >next</a> |</li>
         <li class="right" >
           <a href="../app-overview.html" title="“The Big Instance” Refactor"

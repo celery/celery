@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Sets of tasks, Subtasks and Callbacks &mdash; Celery 2.6.0a1 documentation</title>
+    <title>Groups, Chords, Chains and Callbacks &mdash; Celery 2.6.0a1 documentation</title>
     
     <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -67,15 +67,15 @@
         
 
 </div>
-    <div class="section" id="sets-of-tasks-subtasks-and-callbacks">
-<span id="guide-sets"></span><h1>Sets of tasks, Subtasks and Callbacks<a class="headerlink" href="#sets-of-tasks-subtasks-and-callbacks" title="Permalink to this headline">¶</a></h1>
+    <div class="section" id="groups-chords-chains-and-callbacks">
+<span id="guide-sets"></span><h1>Groups, Chords, Chains and Callbacks<a class="headerlink" href="#groups-chords-chains-and-callbacks" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
 <li><a class="reference internal" href="#subtasks" id="id2">Subtasks</a><ul>
 <li><a class="reference internal" href="#callbacks" id="id3">Callbacks</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#task-sets" id="id4">Task Sets</a><ul>
+<li><a class="reference internal" href="#groups" id="id4">Groups</a><ul>
 <li><a class="reference internal" href="#results" id="id5">Results</a></li>
 </ul>
 </li>
@@ -110,23 +110,13 @@ support complex Python objects.</p>
 <p>This makes it excellent as a means to pass callbacks around to tasks.</p>
 <div class="section" id="callbacks">
 <span id="sets-callbacks"></span><h3><a class="toc-backref" href="#id3">Callbacks</a><a class="headerlink" href="#callbacks" title="Permalink to this headline">¶</a></h3>
-<p>Let&#8217;s improve our <cite>add</cite> task so it can accept a callback that
-takes the result as an argument:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">task</span>
-<span class="kn">from</span> <span class="nn">celery.task.sets</span> <span class="kn">import</span> <span class="n">subtask</span>
-
-<span class="nd">@task</span>
-<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
-    <span class="k">if</span> <span class="n">callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="n">subtask</span><span class="p">(</span><span class="n">callback</span><span class="p">)</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">result</span>
-</pre></div>
-</div>
-<p><a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.subtask" title="celery.task.sets.subtask"><tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt></a> also knows how it should be applied,
-asynchronously by <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.subtask.delay" title="celery.task.sets.subtask.delay"><tt class="xref py py-meth docutils literal"><span class="pre">delay()</span></tt></a>, and
-eagerly by <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.subtask.apply" title="celery.task.sets.subtask.apply"><tt class="xref py py-meth docutils literal"><span class="pre">apply()</span></tt></a>.</p>
-<p>The best thing is that any arguments you add to <cite>subtask.delay</cite>,
+<p>Callbacks can be added to any task using the <tt class="docutils literal"><span class="pre">link</span></tt> argument
+to <tt class="docutils literal"><span class="pre">apply_async</span></tt>:</p>
+<blockquote>
+<div>add.apply_async((2, 2), link=other_task.subtask())</div></blockquote>
+<p>The callback will only be applied if the task exited successfully,
+and it will be applied with the return value of the parent task as argument.</p>
+<p>The best thing is that any arguments you add to <cite>subtask</cite>,
 will be prepended to the arguments specified by the subtask itself!</p>
 <p>If you have the subtask:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="o">.</span><span class="n">subtask</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="p">))</span>
@@ -137,24 +127,25 @@ will be prepended to the arguments specified by the subtask itself!</p>
 </pre></div>
 </div>
 <p>...</p>
-<p>Now let&#8217;s execute our new <cite>add</cite> task with a callback:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">add</span><span class="o">.</span><span class="n">subtask</span><span class="p">((</span><span class="mi">8</span><span class="p">,</span> <span class="p">)))</span>
+<p>Now let&#8217;s execute our <tt class="docutils literal"><span class="pre">add</span></tt> task with a callback using partial
+arguments:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="o">.</span><span class="n">apply_async</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">link</span><span class="o">=</span><span class="n">add</span><span class="o">.</span><span class="n">subtask</span><span class="p">((</span><span class="mi">8</span><span class="p">,</span> <span class="p">)))</span>
 </pre></div>
 </div>
 <p>As expected this will first launch one task calculating <img class="math" src="../_images/math/2da3a5ecd44fdb54a9a30c87a48a5b1638c139b0.png" alt="2 + 2"/>, then
 another task calculating <img class="math" src="../_images/math/c67562ae31bb2d1017a9b0240c012edc474851c3.png" alt="4 + 8"/>.</p>
 </div>
 </div>
-<div class="section" id="task-sets">
-<span id="sets-taskset"></span><h2><a class="toc-backref" href="#id4">Task Sets</a><a class="headerlink" href="#task-sets" title="Permalink to this headline">¶</a></h2>
-<p>The <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.TaskSet" title="celery.task.sets.TaskSet"><tt class="xref py py-class docutils literal"><span class="pre">TaskSet</span></tt></a> enables easy invocation of several
+<div class="section" id="groups">
+<span id="sets-taskset"></span><h2><a class="toc-backref" href="#id4">Groups</a><a class="headerlink" href="#groups" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.group" title="celery.task.sets.group"><tt class="xref py py-class docutils literal"><span class="pre">group</span></tt></a> enables easy invocation of several
 tasks at once, and is then able to join the results in the same order as the
 tasks were invoked.</p>
-<p>A task set takes a list of <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.subtask" title="celery.task.sets.subtask"><tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt></a>&#8216;s:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.sets</span> <span class="kn">import</span> <span class="n">TaskSet</span>
+<p><tt class="docutils literal"><span class="pre">group</span></tt> takes a list of <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.subtask" title="celery.task.sets.subtask"><tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt></a>&#8216;s:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">group</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">tasks</span> <span class="kn">import</span> <span class="n">add</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">job</span> <span class="o">=</span> <span class="n">TaskSet</span><span class="p">(</span><span class="n">tasks</span><span class="o">=</span><span class="p">[</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">job</span> <span class="o">=</span> <span class="n">group</span><span class="p">([</span>
 <span class="gp">... </span>            <span class="n">add</span><span class="o">.</span><span class="n">subtask</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)),</span>
 <span class="gp">... </span>            <span class="n">add</span><span class="o">.</span><span class="n">subtask</span><span class="p">((</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">)),</span>
 <span class="gp">... </span>            <span class="n">add</span><span class="o">.</span><span class="n">subtask</span><span class="p">((</span><span class="mi">16</span><span class="p">,</span> <span class="mi">16</span><span class="p">)),</span>
@@ -171,9 +162,13 @@ tasks were invoked.</p>
 <span class="go">[4, 8, 16, 32, 64]</span>
 </pre></div>
 </div>
+<p>The first argument can alternatively be an iterator, like:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">group</span><span class="p">(</span><span class="n">add</span><span class="o">.</span><span class="n">subtask</span><span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span>
+</pre></div>
+</div>
 <div class="section" id="results">
 <span id="sets-results"></span><h3><a class="toc-backref" href="#id5">Results</a><a class="headerlink" href="#results" title="Permalink to this headline">¶</a></h3>
-<p>When a  <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.TaskSet" title="celery.task.sets.TaskSet"><tt class="xref py py-class docutils literal"><span class="pre">TaskSet</span></tt></a> is applied it returns a
+<p>When a  <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.group" title="celery.task.sets.group"><tt class="xref py py-class docutils literal"><span class="pre">group</span></tt></a> is applied it returns a
 <a class="reference internal" href="../reference/celery.result.html#celery.result.TaskSetResult" title="celery.result.TaskSetResult"><tt class="xref py py-class docutils literal"><span class="pre">TaskSetResult</span></tt></a> object.</p>
 <p><a class="reference internal" href="../reference/celery.result.html#celery.result.TaskSetResult" title="celery.result.TaskSetResult"><tt class="xref py py-class docutils literal"><span class="pre">TaskSetResult</span></tt></a> takes a list of
 <a class="reference internal" href="../reference/celery.result.html#celery.result.AsyncResult" title="celery.result.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">AsyncResult</span></tt></a> instances and operates on them as if it was a

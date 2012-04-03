@@ -25,8 +25,6 @@ Given a function create_user`, that takes two arguments: `username` and
 
     from django.contrib.auth import User
 
-    from celery.task import task
-
     @task
     def create_user(username, password):
         User.objects.create(username=username, password=password)
@@ -82,8 +80,6 @@ Example Usage
 -------------
 
 ::
-
-    from celery.task import task
 
     @task
     def add(x, y):
@@ -1299,7 +1295,6 @@ blog/tasks.py
 .. code-block:: python
 
     from akismet import Akismet
-    from celery.task import task
 
     from django.core.exceptions import ImproperlyConfigured
     from django.contrib.sites.models import Site

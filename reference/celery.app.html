@@ -200,26 +200,15 @@ of a module to import.</p>
 <tt class="descname">task</tt><big>(</big><em>*args</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.app.App.task" title="Permalink to this definition">¶</a></dt>
 <dd><p>Decorator to create a task class out of any callable.</p>
 <p><strong>Examples:</strong></p>
-<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">()</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span>
 <span class="k">def</span> <span class="nf">refresh_feed</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+    <span class="k">return</span> <span class="o">...</span>
 </pre></div>
 </div>
-<p>with setting extra options and using retry.</p>
-<div class="highlight-python"><pre>from celery.task import current
-
-@task(exchange="feeds")
-def refresh_feed(url):
-    try:
-    return Feed.objects.get(url=url).refresh()
-except socket.error, exc:
-    current.retry(exc=exc)</pre>
-</div>
-<p>Calling the resulting task:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">refresh_feed</span><span class="p">(</span><span class="s">&quot;http://example.com/rss&quot;</span><span class="p">)</span> <span class="c"># Regular</span>
-<span class="go">&lt;Feed: http://example.com/rss&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">refresh_feed</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="s">&quot;http://example.com/rss&quot;</span><span class="p">)</span> <span class="c"># Async</span>
-<span class="go">&lt;AsyncResult: 8998d0f4-da0b-4669-ba03-d5ab5ac6ad5d&gt;</span>
+<p>with setting extra options:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">(</span><span class="n">exchange</span><span class="o">=</span><span class="s">&quot;feeds&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">refresh_feed</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+    <span class="k">return</span> <span class="o">...</span>
 </pre></div>
 </div>
 <div class="admonition-app-binding admonition">

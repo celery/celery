@@ -1,11 +1,11 @@
 ====================================================
- celery.app.task.builtins
+ celery.app.builtins
 ====================================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.app.task.builtins
+.. currentmodule:: celery.app.builtins
 
-.. automodule:: celery.app.task.builtins
+.. automodule:: celery.app.builtins
     :members:
     :undoc-members:

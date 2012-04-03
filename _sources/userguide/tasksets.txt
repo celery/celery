@@ -1,7 +1,7 @@
 .. _guide-sets:
 
 =======================================
- Sets of tasks, Subtasks and Callbacks
+ Groups, Chords, Chains and Callbacks
 =======================================
 
 .. contents::
@@ -40,24 +40,16 @@ This makes it excellent as a means to pass callbacks around to tasks.
 Callbacks
 ---------
 
-Let's improve our `add` task so it can accept a callback that
-takes the result as an argument::
+Callbacks can be added to any task using the ``link`` argument
+to ``apply_async``:
 
-    from celery.task import task
-    from celery.task.sets import subtask
+    add.apply_async((2, 2), link=other_task.subtask())
 
-    @task
-    def add(x, y, callback=None):
-        result = x + y
-        if callback is not None:
-            subtask(callback).delay(result)
-        return result
+The callback will only be applied if the task exited successfully,
+and it will be applied with the return value of the parent task as argument.
 
-:class:`~celery.task.sets.subtask` also knows how it should be applied,
-asynchronously by :meth:`~celery.task.sets.subtask.delay`, and
-eagerly by :meth:`~celery.task.sets.subtask.apply`.
 
-The best thing is that any arguments you add to `subtask.delay`,
+The best thing is that any arguments you add to `subtask`,
 will be prepended to the arguments specified by the subtask itself!
 
 If you have the subtask::
@@ -70,28 +62,29 @@ If you have the subtask::
 
 ...
 
-Now let's execute our new `add` task with a callback::
+Now let's execute our ``add`` task with a callback using partial
+arguments::
 
-    >>> add.delay(2, 2, callback=add.subtask((8, )))
+    >>> add.apply_async((2, 2), link=add.subtask((8, )))
 
 As expected this will first launch one task calculating :math:`2 + 2`, then
 another task calculating :math:`4 + 8`.
 
 .. _sets-taskset:
 
-Task Sets
-=========
+Groups
+======
 
-The :class:`~celery.task.sets.TaskSet` enables easy invocation of several
+The :class:`~celery.task.sets.group` enables easy invocation of several
 tasks at once, and is then able to join the results in the same order as the
 tasks were invoked.
 
-A task set takes a list of :class:`~celery.task.sets.subtask`'s::
+``group`` takes a list of :class:`~celery.task.sets.subtask`'s::
 
-    >>> from celery.task.sets import TaskSet
+    >>> from celery.task import group
     >>> from tasks import add
 
-    >>> job = TaskSet(tasks=[
+    >>> job = group([
     ...             add.subtask((4, 4)),
     ...             add.subtask((8, 8)),
     ...             add.subtask((16, 16)),
@@ -107,12 +100,16 @@ A task set takes a list of :class:`~celery.task.sets.subtask`'s::
     >>> result.join()
     [4, 8, 16, 32, 64]
 
+The first argument can alternatively be an iterator, like::
+
+    >>> group(add.subtask((i, i)) for i in range(100))
+
 .. _sets-results:
 
 Results
 -------
 
-When a  :class:`~celery.task.sets.TaskSet` is applied it returns a
+When a  :class:`~celery.task.sets.group` is applied it returns a
 :class:`~celery.result.TaskSetResult` object.
 
 :class:`~celery.result.TaskSetResult` takes a list of

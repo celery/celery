@@ -91,9 +91,23 @@
 </tr>
 </tbody>
 </table>
-<dl class="class">
+<dl class="attribute">
 <dt id="celery.task.sets.TaskSet">
-<em class="property">class </em><tt class="descclassname">celery.task.sets.</tt><tt class="descname">TaskSet</tt><big>(</big><em>tasks=None</em>, <em>app=None</em>, <em>Publisher=None</em><big>)</big><a class="headerlink" href="#celery.task.sets.TaskSet" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.task.sets.</tt><tt class="descname">TaskSet</tt><a class="headerlink" href="#celery.task.sets.TaskSet" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#celery.task.sets.group" title="celery.task.sets.group"><tt class="xref py py-class docutils literal"><span class="pre">group</span></tt></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.task.sets.chain_from_iterable">
+<tt class="descclassname">celery.task.sets.</tt><tt class="descname">chain_from_iterable</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.sets.chain_from_iterable" title="Permalink to this definition">¶</a></dt>
+<dd><p>chain.from_iterable(iterable) &#8211;&gt; chain object</p>
+<p>Alternate chain() contructor taking a single iterable argument
+that evaluates lazily.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.task.sets.group">
+<em class="property">class </em><tt class="descclassname">celery.task.sets.</tt><tt class="descname">group</tt><big>(</big><em>tasks=None</em>, <em>app=None</em>, <em>Publisher=None</em><big>)</big><a class="headerlink" href="#celery.task.sets.group" title="Permalink to this definition">¶</a></dt>
 <dd><p>A task containing several subtasks, making it possible
 to track how many, or when all of the tasks have been completed.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -106,48 +120,44 @@ to track how many, or when all of the tasks have been completed.</p>
 </table>
 <p>Example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">urls</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;http://cnn.com/rss&quot;</span><span class="p">,</span> <span class="s">&quot;http://bbc.co.uk/rss&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">taskset</span> <span class="o">=</span> <span class="n">TaskSet</span><span class="p">(</span><span class="n">refresh_feed</span><span class="o">.</span><span class="n">subtask</span><span class="p">((</span><span class="n">url</span><span class="p">,</span> <span class="p">))</span> <span class="k">for</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">urls</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">taskset_result</span> <span class="o">=</span> <span class="n">taskset</span><span class="o">.</span><span class="n">apply_async</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">list_of_return_values</span> <span class="o">=</span> <span class="n">taskset_result</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>  <span class="c"># *expensive*</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">group</span><span class="p">(</span><span class="n">refresh_feed</span><span class="o">.</span><span class="n">subtask</span><span class="p">((</span><span class="n">url</span><span class="p">,</span> <span class="p">))</span> <span class="k">for</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">urls</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">group_result</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">apply_async</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">list_of_return_values</span> <span class="o">=</span> <span class="n">group_result</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>  <span class="c"># *expensive*</span>
 </pre></div>
 </div>
+<dl class="attribute">
+<dt id="celery.task.sets.group.Publisher">
+<tt class="descname">Publisher</tt><a class="headerlink" href="#celery.task.sets.group.Publisher" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.task.sets.group.app">
+<tt class="descname">app</tt><a class="headerlink" href="#celery.task.sets.group.app" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
-<dt id="celery.task.sets.TaskSet.apply">
-<tt class="descname">apply</tt><big>(</big><em>taskset_id=None</em><big>)</big><a class="headerlink" href="#celery.task.sets.TaskSet.apply" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.task.sets.group.apply">
+<tt class="descname">apply</tt><big>(</big><em>taskset_id=None</em><big>)</big><a class="headerlink" href="#celery.task.sets.group.apply" title="Permalink to this definition">¶</a></dt>
 <dd><p>Applies the taskset locally by blocking until all tasks return.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.task.sets.TaskSet.apply_async">
-<tt class="descname">apply_async</tt><big>(</big><em>connection=None</em>, <em>connect_timeout=None</em>, <em>publisher=None</em>, <em>taskset_id=None</em><big>)</big><a class="headerlink" href="#celery.task.sets.TaskSet.apply_async" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.task.sets.group.apply_async">
+<tt class="descname">apply_async</tt><big>(</big><em>connection=None</em>, <em>connect_timeout=None</em>, <em>publisher=None</em>, <em>taskset_id=None</em><big>)</big><a class="headerlink" href="#celery.task.sets.group.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply taskset.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="celery.task.sets.TaskSet.tasks">
-<tt class="descname">tasks</tt><a class="headerlink" href="#celery.task.sets.TaskSet.tasks" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.task.sets.group.tasks">
+<tt class="descname">tasks</tt><a class="headerlink" href="#celery.task.sets.group.tasks" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="celery.task.sets.TaskSet.total">
-<tt class="descname">total</tt><em class="property"> = None</em><a class="headerlink" href="#celery.task.sets.TaskSet.total" title="Permalink to this definition">¶</a></dt>
-<dd><p>Total number of subtasks in this set.</p>
+<dt id="celery.task.sets.group.total">
+<tt class="descname">total</tt><a class="headerlink" href="#celery.task.sets.group.total" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of subtasks in this group.</p>
 </dd></dl>
 
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.task.sets.chain_from_iterable">
-<tt class="descclassname">celery.task.sets.</tt><tt class="descname">chain_from_iterable</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.sets.chain_from_iterable" title="Permalink to this definition">¶</a></dt>
-<dd><p>chain.from_iterable(iterable) &#8211;&gt; chain object</p>
-<p>Alternate chain() contructor taking a single iterable argument
-that evaluates lazily.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.task.sets.group">
-<tt class="descclassname">celery.task.sets.</tt><tt class="descname">group</tt><a class="headerlink" href="#celery.task.sets.group" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <a class="reference internal" href="#celery.task.sets.TaskSet" title="celery.task.sets.TaskSet"><tt class="xref py py-class docutils literal"><span class="pre">TaskSet</span></tt></a></p>
 </dd></dl>
 
 <dl class="function">
@@ -157,7 +167,7 @@ that evaluates lazily.</p>
 
 <dl class="class">
 <dt id="celery.task.sets.subtask">
-<em class="property">class </em><tt class="descclassname">celery.task.sets.</tt><tt class="descname">subtask</tt><big>(</big><em>task=None</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>options=None</em>, <em>**ex</em><big>)</big><a class="headerlink" href="#celery.task.sets.subtask" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.task.sets.</tt><tt class="descname">subtask</tt><big>(</big><em>task=None</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>options=None</em>, <em>type=None</em>, <em>**ex</em><big>)</big><a class="headerlink" href="#celery.task.sets.subtask" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class that wraps the arguments and execution options
 for a single task invocation.</p>
 <p>Used as the parts in a <a class="reference internal" href="#celery.task.sets.TaskSet" title="celery.task.sets.TaskSet"><tt class="xref py py-class docutils literal"><span class="pre">TaskSet</span></tt></a> or to safely
