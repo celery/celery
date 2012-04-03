@@ -6,12 +6,15 @@ from types import ModuleType
 
 from .local import Proxy
 
+MODULE_DEPRECATED = """
+The module %s is deprecated and will be removed in a future version.
+"""
+
 
 def _compat_task_decorator(*args, **kwargs):
     from celery import current_app
     kwargs.setdefault("accept_magic_kwargs", True)
     return current_app.task(*args, **kwargs)
-
 
 
 def _compat_periodic_task_decorator(*args, **kwargs):
@@ -54,7 +57,12 @@ def rgetattr(obj, path):
 
 
 def get_compat(app, pkg, name, bases=(ModuleType, )):
+    from warnings import warn
+    from .exceptions import CDeprecationWarning
+
     fqdn = '.'.join([pkg.__name__, name])
+    warn(CDeprecationWarning(MODULE_DEPRECATED % fqdn))
+
     def build_attr(attr):
         if isinstance(attr, basestring):
             return Proxy(rgetattr, (app, attr.split('.')))
