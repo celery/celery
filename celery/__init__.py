@@ -31,14 +31,11 @@ compat_modules = ("messaging", "log", "registry", "decorators")
 
 class module(ModuleType):
     __all__ = ("Celery", "current_app", "bugreport")
-    __compat_installed__ = False
 
     def __getattr__(self, name):
         if name in compat_modules:
-            if not self.__compat_installed__:
-                self.__compat_installed__ = True
-                from .__compat__ import install_compat_modules
-                install_compat_modules(self)
+            from .__compat__ import get_compat
+            setattr(self, name, get_compat(self.current_app, self, name))
         return ModuleType.__getattribute__(self, name)
 
     def __dir__(self):
