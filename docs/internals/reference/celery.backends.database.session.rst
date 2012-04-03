@@ -1,11 +1,11 @@
 ========================================
- celery.db.session
+ celery.backends.database.session
 ========================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.db.session
+.. currentmodule:: celery.backends.database.session
 
-.. automodule:: celery.db.session
+.. automodule:: celery.backends.database.session
     :members:
     :undoc-members:

@@ -1,11 +1,11 @@
 ======================================
- celery.db.models
+ celery.backends.database.models
 ======================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.db.models
+.. currentmodule:: celery.backends.database.models
 
-.. automodule:: celery.db.models
+.. automodule:: celery.backends.database.models
     :members:
     :undoc-members:

@@ -1,11 +1,11 @@
 ==========================================
- celery.abstract
+ celery.worker.abstract
 ==========================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.abstract
+.. currentmodule:: celery.worker.abstract
 
-.. automodule:: celery.abstract
+.. automodule:: celery.worker.abstract
     :members:
     :undoc-members:

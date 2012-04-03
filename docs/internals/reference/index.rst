@@ -46,7 +46,6 @@
     celery.security.key
     celery.security.serialization
     celery.datastructures
-    celery.log
     celery.events.snapshot
     celery.events.cursesmon
     celery.events.dumper

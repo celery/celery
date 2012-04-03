@@ -11,14 +11,14 @@ You need four simple steps to use celery with your Django project.
 
         $ pip install django-celery
 
-    2. Add ``djcelery`` to ``INSTALLED_APPS``.
-
-    3. Add the following lines to ``settings.py``::
+    2. Add the following lines to ``settings.py``::
 
         import djcelery
         djcelery.setup_loader()
 
-    4. Create the celery database tables::
+    3. Add ``djcelery`` to ``INSTALLED_APPS``.
+
+    4. Create the celery database tables.
 
         If you are using south_ for schema migrations, you'll want to::
 
@@ -41,6 +41,8 @@ what broker to use::
     BROKER_URL = "amqp://guest:guest@localhost:5672/"
 
 That's it.
+
+.. _`RabbitMQ`: http://www.rabbitmq.com/
 
 Special note for mod_wsgi users
 -------------------------------

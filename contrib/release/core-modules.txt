@@ -22,7 +22,7 @@ celery/loaders/app.py
 celery/loaders/base.py
 celery/registry.py
 celery/result.py
-celery/routes.py
+celery/app.routes.py
 celery/schedules.py
 celery/signals.py
 celery/states.py

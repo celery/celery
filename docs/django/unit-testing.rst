@@ -25,7 +25,7 @@ own if you have other things that need to be done.
 http://docs.djangoproject.com/en/dev/topics/testing/#defining-a-test-runner
 
 For this example, we'll use the ``djcelery.contrib.test_runner`` to test the
-``add`` task from the :ref:`guide-task` examples in the Celery
+``add`` task from the :ref:`guide-tasks` examples in the Celery
 documentation.
 
 To enable the test runner, set the following settings:
