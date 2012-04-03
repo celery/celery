@@ -1,0 +1,339 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>celery.worker.abstract &mdash; Celery 2.6.0a1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.6.0a1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Celery 2.6.0a1 documentation" href="../../index.html" />
+    <link rel="up" title="Internal Module Reference" href="index.html" />
+    <link rel="next" title="celery.concurrency" href="celery.concurrency.html" />
+    <link rel="prev" title="celery.worker.autoscale" href="celery.worker.autoscale.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.concurrency.html" title="celery.concurrency"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.worker.autoscale.html" title="celery.worker.autoscale"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.worker.abstract.html">2.5</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="celery-worker-abstract">
+<h1>celery.worker.abstract<a class="headerlink" href="#celery-worker-abstract" title="Permalink to this headline">¶</a></h1>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#id1" id="id2">celery.worker.abstract</a></li>
+</ul>
+</div>
+<span class="target" id="module-celery.worker.abstract"></span><div class="section" id="id1">
+<h2><a class="toc-backref" href="#id2">celery.worker.abstract</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>Implements components and boot-steps.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
+<li>2009 - 2012 by Ask Solem.</li>
+</ol>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body"><p class="first last">BSD, see LICENSE for more details.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="celery.worker.abstract.Component">
+<em class="property">class </em><tt class="descclassname">celery.worker.abstract.</tt><tt class="descname">Component</tt><big>(</big><em>parent</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.worker.abstract.Component" title="Permalink to this definition">¶</a></dt>
+<dd><p>A component.</p>
+<p>The <tt class="xref py py-meth docutils literal"><span class="pre">__init__()</span></tt> method is called when the component
+is bound to a parent object, and can as such be used
+to initialize attributes in the parent object at
+parent instantiation-time.</p>
+<dl class="attribute">
+<dt id="celery.worker.abstract.Component.abstract">
+<tt class="descname">abstract</tt><em class="property"> = None</em><a class="headerlink" href="#celery.worker.abstract.Component.abstract" title="Permalink to this definition">¶</a></dt>
+<dd><p>if set the component will not be registered,
+but can be used as a component base class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.abstract.Component.create">
+<tt class="descname">create</tt><big>(</big><em>parent</em><big>)</big><a class="headerlink" href="#celery.worker.abstract.Component.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the component.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.abstract.Component.enabled">
+<tt class="descname">enabled</tt><em class="property"> = True</em><a class="headerlink" href="#celery.worker.abstract.Component.enabled" title="Permalink to this definition">¶</a></dt>
+<dd><p>This provides the default for <a class="reference internal" href="#celery.worker.abstract.Component.include_if" title="celery.worker.abstract.Component.include_if"><tt class="xref py py-meth docutils literal"><span class="pre">include_if()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.abstract.Component.include">
+<tt class="descname">include</tt><big>(</big><em>parent</em><big>)</big><a class="headerlink" href="#celery.worker.abstract.Component.include" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.abstract.Component.include_if">
+<tt class="descname">include_if</tt><big>(</big><em>parent</em><big>)</big><a class="headerlink" href="#celery.worker.abstract.Component.include_if" title="Permalink to this definition">¶</a></dt>
+<dd><p>An optional predicate that decided whether this
+component should be created.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.abstract.Component.instantiate">
+<tt class="descname">instantiate</tt><big>(</big><em>qualname</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.worker.abstract.Component.instantiate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.abstract.Component.last">
+<tt class="descname">last</tt><em class="property"> = False</em><a class="headerlink" href="#celery.worker.abstract.Component.last" title="Permalink to this definition">¶</a></dt>
+<dd><p>This flag is reserved for the workers Consumer,
+since it is required to always be started last.
+There can only be one object marked with lsat
+in every namespace.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.abstract.Component.name">
+<tt class="descname">name</tt><em class="property"> = None</em><a class="headerlink" href="#celery.worker.abstract.Component.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the component, or the namespace
+and the name of the component separated by dot.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.abstract.Component.namespace">
+<tt class="descname">namespace</tt><em class="property"> = None</em><a class="headerlink" href="#celery.worker.abstract.Component.namespace" title="Permalink to this definition">¶</a></dt>
+<dd><p>can be used to specify the namespace,
+if the name does not include it.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.abstract.Component.obj">
+<tt class="descname">obj</tt><em class="property"> = None</em><a class="headerlink" href="#celery.worker.abstract.Component.obj" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optional obj created by the <a class="reference internal" href="#celery.worker.abstract.Component.create" title="celery.worker.abstract.Component.create"><tt class="xref py py-meth docutils literal"><span class="pre">create()</span></tt></a> method.
+This is used by StartStopComponents to keep the
+original service object.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.abstract.Component.requires">
+<tt class="descname">requires</tt><em class="property"> = ()</em><a class="headerlink" href="#celery.worker.abstract.Component.requires" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of component names this component depends on.
+Note that the dependencies must be in the same namespace.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.worker.abstract.ComponentType">
+<em class="property">class </em><tt class="descclassname">celery.worker.abstract.</tt><tt class="descname">ComponentType</tt><a class="headerlink" href="#celery.worker.abstract.ComponentType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Metaclass for components.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.worker.abstract.Namespace">
+<em class="property">class </em><tt class="descclassname">celery.worker.abstract.</tt><tt class="descname">Namespace</tt><big>(</big><em>name=None</em>, <em>app=None</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#celery.worker.abstract.Namespace" title="Permalink to this definition">¶</a></dt>
+<dd><p>A namespace containing components.</p>
+<p>Every component must belong to a namespace.</p>
+<p>When component classes are created they are added to the
+mapping of unclaimed components.  The components will be
+claimed when the namespace they belong to is created.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> &#8211; Set the name of this namespace.</li>
+<li><strong>app</strong> &#8211; Set the Celery app for this namespace.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="celery.worker.abstract.Namespace.apply">
+<tt class="descname">apply</tt><big>(</big><em>parent</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.worker.abstract.Namespace.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply the components in this namespace to an object.</p>
+<p>This will apply the <tt class="docutils literal"><span class="pre">__init__</span></tt> and <tt class="docutils literal"><span class="pre">include</span></tt> methods
+of each components with the object as argument.</p>
+<p>For <tt class="docutils literal"><span class="pre">StartStopComponents</span></tt> the services created
+will also be added the the objects <tt class="docutils literal"><span class="pre">components</span></tt> attribute.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.abstract.Namespace.bind_component">
+<tt class="descname">bind_component</tt><big>(</big><em>name</em>, <em>parent</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.worker.abstract.Namespace.bind_component" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bind component to parent object and this namespace.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.abstract.Namespace.import_module">
+<tt class="descname">import_module</tt><big>(</big><em>module</em><big>)</big><a class="headerlink" href="#celery.worker.abstract.Namespace.import_module" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.abstract.Namespace.load_modules">
+<tt class="descname">load_modules</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.abstract.Namespace.load_modules" title="Permalink to this definition">¶</a></dt>
+<dd><p>Will load the component modules this namespace depends on.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.abstract.Namespace.modules">
+<tt class="descname">modules</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.abstract.Namespace.modules" title="Permalink to this definition">¶</a></dt>
+<dd><p>Subclasses can override this to return a
+list of modules to import before components are claimed.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.abstract.Namespace.name">
+<tt class="descname">name</tt><em class="property"> = None</em><a class="headerlink" href="#celery.worker.abstract.Namespace.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.worker.abstract.StartStopComponent">
+<em class="property">class </em><tt class="descclassname">celery.worker.abstract.</tt><tt class="descname">StartStopComponent</tt><big>(</big><em>parent</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.worker.abstract.StartStopComponent" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.worker.abstract.StartStopComponent.include">
+<tt class="descname">include</tt><big>(</big><em>parent</em><big>)</big><a class="headerlink" href="#celery.worker.abstract.StartStopComponent.include" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.abstract.StartStopComponent.start">
+<tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.abstract.StartStopComponent.start" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.abstract.StartStopComponent.stop">
+<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.abstract.StartStopComponent.stop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.abstract.StartStopComponent.terminable">
+<tt class="descname">terminable</tt><em class="property"> = False</em><a class="headerlink" href="#celery.worker.abstract.StartStopComponent.terminable" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.abstract.StartStopComponent.terminate">
+<tt class="descname">terminate</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.abstract.StartStopComponent.terminate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="celery.worker.autoscale.html"
+                        title="previous chapter">celery.worker.autoscale</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="celery.concurrency.html"
+                        title="next chapter">celery.concurrency</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/internals/reference/celery.worker.abstract.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.concurrency.html" title="celery.concurrency"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.worker.autoscale.html" title="celery.worker.autoscale"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2012, Ask Solem &amp; Contributors.
+    </div>
+  </body>
+</html>

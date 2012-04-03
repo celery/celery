@@ -1,0 +1,176 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Unit Testing &mdash; Celery 2.6.0a1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.6.0a1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Celery 2.6.0a1 documentation" href="../index.html" />
+    <link rel="up" title="Django" href="index.html" />
+    <link rel="next" title="Contributing" href="../contributing.html" />
+    <link rel="prev" title="First steps with Django" href="first-steps-with-django.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../contributing.html" title="Contributing"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="first-steps-with-django.html" title="First steps with Django"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Django</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/django/unit-testing.html">2.5</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="unit-testing">
+<h1>Unit Testing<a class="headerlink" href="#unit-testing" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="testing-with-django">
+<h2>Testing with Django<a class="headerlink" href="#testing-with-django" title="Permalink to this headline">¶</a></h2>
+<p>The first problem you&#8217;ll run in to when trying to write a test that runs a
+task is that Django&#8217;s test runner doesn&#8217;t use the same database as your celery
+daemon is using. If you&#8217;re using the database backend, this means that your
+tombstones won&#8217;t show up in your test database and you won&#8217;t be able to
+get the return value or check the status of your tasks.</p>
+<p>There are two ways to get around this. You can either take advantage of
+<tt class="docutils literal"><span class="pre">CELERY_ALWAYS_EAGER</span> <span class="pre">=</span> <span class="pre">True</span></tt> to skip the daemon, or you can avoid testing
+anything that needs to check the status or result of a task.</p>
+</div>
+<div class="section" id="using-a-custom-test-runner-to-test-with-celery">
+<h2>Using a custom test runner to test with celery<a class="headerlink" href="#using-a-custom-test-runner-to-test-with-celery" title="Permalink to this headline">¶</a></h2>
+<p>If you&#8217;re going the <tt class="docutils literal"><span class="pre">CELERY_ALWAYS_EAGER</span></tt> route, which is probably better than
+just never testing some parts of your app, a custom Django test runner does the
+trick. Celery provides a simple test runner, but it&#8217;s easy enough to roll your
+own if you have other things that need to be done.
+<a class="reference external" href="http://docs.djangoproject.com/en/dev/topics/testing/#defining-a-test-runner">http://docs.djangoproject.com/en/dev/topics/testing/#defining-a-test-runner</a></p>
+<p>For this example, we&#8217;ll use the <tt class="docutils literal"><span class="pre">djcelery.contrib.test_runner</span></tt> to test the
+<tt class="docutils literal"><span class="pre">add</span></tt> task from the <a class="reference internal" href="../userguide/tasks.html#guide-tasks"><em>Tasks</em></a> examples in the Celery
+documentation.</p>
+<p>To enable the test runner, set the following settings:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">TEST_RUNNER</span> <span class="o">=</span> <span class="s">&#39;djcelery.contrib.test_runner.CeleryTestSuiteRunner&#39;</span>
+</pre></div>
+</div>
+<p>Then we can put the tests in a <tt class="docutils literal"><span class="pre">tests.py</span></tt> somewhere:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.test</span> <span class="kn">import</span> <span class="n">TestCase</span>
+<span class="kn">from</span> <span class="nn">myapp.tasks</span> <span class="kn">import</span> <span class="n">add</span>
+
+<span class="k">class</span> <span class="nc">AddTestCase</span><span class="p">(</span><span class="n">TestCase</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">testNoError</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Test that the ``add`` task runs with no errors,</span>
+<span class="sd">        and returns the correct result.&quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">add</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEquals</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span> <span class="mi">16</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">successful</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>This test assumes that you put your example <tt class="docutils literal"><span class="pre">add</span></tt> task in <tt class="docutils literal"><span class="pre">maypp.tasks</span></tt>
+so adjust the import for wherever you put the class.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="first-steps-with-django.html"
+                        title="previous chapter">First steps with Django</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../contributing.html"
+                        title="next chapter">Contributing</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/django/unit-testing.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../contributing.html" title="Contributing"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="first-steps-with-django.html" title="First steps with Django"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Django</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2012, Ask Solem &amp; Contributors.
+    </div>
+  </body>
+</html>

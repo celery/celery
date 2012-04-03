@@ -1,0 +1,196 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>celery.app.routes &mdash; Celery 2.6.0a1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/issuetracker.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.6.0a1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Celery 2.6.0a1 documentation" href="../../index.html" />
+    <link rel="up" title="Internal Module Reference" href="index.html" />
+    <link rel="next" title="celery.security.certificate" href="celery.security.certificate.html" />
+    <link rel="prev" title="celery.app.state" href="celery.app.state.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.security.certificate.html" title="celery.security.certificate"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.app.state.html" title="celery.app.state"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p class="developmentversion">
+        This document is for Celery's development version, which can be
+        significantly different from previous releases. Get old docs here:
+
+        <a href="http://docs.celeryproject.org/en/latest/internals/reference/celery.app.routes.html">2.5</a>.
+        </p>
+        
+
+</div>
+    <div class="section" id="celery-app-routes">
+<h1>celery.app.routes<a class="headerlink" href="#celery-app-routes" title="Permalink to this headline">¶</a></h1>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#celery-routes" id="id1">celery.routes</a></li>
+</ul>
+</div>
+<span class="target" id="module-celery.app.routes"></span><div class="section" id="celery-routes">
+<h2><a class="toc-backref" href="#id1">celery.routes</a><a class="headerlink" href="#celery-routes" title="Permalink to this headline">¶</a></h2>
+<p>Contains utilities for working with task routes
+(<a class="reference internal" href="../../configuration.html#std:setting-CELERY_ROUTES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ROUTES</span></tt></a>).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
+<li>2009 - 2012 by Ask Solem.</li>
+</ol>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body"><p class="first last">BSD, see LICENSE for more details.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="celery.app.routes.MapRoute">
+<em class="property">class </em><tt class="descclassname">celery.app.routes.</tt><tt class="descname">MapRoute</tt><big>(</big><em>map</em><big>)</big><a class="headerlink" href="#celery.app.routes.MapRoute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a router out of a <a class="reference external" href="http://docs.python.org/dev/library/stdtypes.html#dict" title="(in Python v3.3)"><tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt></a>.</p>
+<dl class="method">
+<dt id="celery.app.routes.MapRoute.route_for_task">
+<tt class="descname">route_for_task</tt><big>(</big><em>task</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.app.routes.MapRoute.route_for_task" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.app.routes.Router">
+<em class="property">class </em><tt class="descclassname">celery.app.routes.</tt><tt class="descname">Router</tt><big>(</big><em>routes=None</em>, <em>queues=None</em>, <em>create_missing=False</em>, <em>app=None</em><big>)</big><a class="headerlink" href="#celery.app.routes.Router" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.app.routes.Router.expand_destination">
+<tt class="descname">expand_destination</tt><big>(</big><em>route</em><big>)</big><a class="headerlink" href="#celery.app.routes.Router.expand_destination" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.app.routes.Router.lookup_route">
+<tt class="descname">lookup_route</tt><big>(</big><em>task</em>, <em>args=None</em>, <em>kwargs=None</em><big>)</big><a class="headerlink" href="#celery.app.routes.Router.lookup_route" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.app.routes.Router.route">
+<tt class="descname">route</tt><big>(</big><em>options</em>, <em>task</em>, <em>args=()</em>, <em>kwargs={}</em><big>)</big><a class="headerlink" href="#celery.app.routes.Router.route" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.app.routes.prepare">
+<tt class="descclassname">celery.app.routes.</tt><tt class="descname">prepare</tt><big>(</big><em>routes</em><big>)</big><a class="headerlink" href="#celery.app.routes.prepare" title="Permalink to this definition">¶</a></dt>
+<dd><p>Expands the <a class="reference internal" href="../../configuration.html#std:setting-CELERY_ROUTES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ROUTES</span></tt></a> setting.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="celery.app.state.html"
+                        title="previous chapter">celery.app.state</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="celery.security.certificate.html"
+                        title="next chapter">celery.security.certificate</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/internals/reference/celery.app.routes.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.security.certificate.html" title="celery.security.certificate"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.app.state.html" title="celery.app.state"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Celery 2.6.0a1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2012, Ask Solem &amp; Contributors.
+    </div>
+  </body>
+</html>
