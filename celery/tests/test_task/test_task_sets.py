@@ -83,6 +83,7 @@ class test_subtask(Case):
                 {"routing_key": "CPU-bound"})
         s.args = list(s.args)                   # tuples are not preserved
                                                 # but this doesn't matter.
+        print(dict(s))
         self.assertEqual(s,
                          subtask(anyjson.deserialize(
                              anyjson.serialize(s))))

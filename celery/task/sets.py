@@ -45,6 +45,7 @@ class subtask(AttributeDict):
         {"task": "tasks.add", args=(2, 2), kwargs={}, options={}}
 
     """
+    _type = None
 
     def __init__(self, task=None, args=None, kwargs=None, options=None,
                 type=None, **ex):
@@ -56,9 +57,12 @@ class subtask(AttributeDict):
         # Also supports using task class/instance instead of string name.
         try:
             task_name = task.name
-            self._type = task
         except AttributeError:
             task_name = task
+        else:
+            # need to use super here, since AttributeDict
+            # will add it to dict(self)
+            object.__setattr__(self, "_type", task)
 
         init(task=task_name, args=tuple(args or ()),
                              kwargs=dict(kwargs or {}, **ex),
@@ -189,7 +193,7 @@ class group(UserList):
         return len(self)
 
     def _get_app(self):
-        return self._app or self.data[0].type.app
+        return self._app or self.data[0].type._get_app()
 
     def _set_app(self, app):
         self._app = app
