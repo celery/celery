@@ -53,16 +53,17 @@ def _app_or_default_trace(app=None):  # pragma: no cover
     from traceback import print_stack
     from multiprocessing import current_process
     if app is None:
-        if getattr(_tls, "current_app", None):
+        if getattr(state._tls, "current_app", None):
             print("-- RETURNING TO CURRENT APP --")  # noqa+
             print_stack()
-            return _tls.current_app
+            return state._tls.current_app
         if current_process()._name == "MainProcess":
             raise Exception("DEFAULT APP")
         print("-- RETURNING TO DEFAULT APP --")      # noqa+
         print_stack()
         return state.default_app
     return app
+
 
 def enable_trace():
     global app_or_default

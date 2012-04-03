@@ -278,24 +278,3 @@ else:
                         stat = os.stat(self.baseFilename)
                     self.dev, self.ino = stat[ST_DEV], stat[ST_INO]
                 logging.FileHandler.emit(self, record)
-
-
-
-def add_compat_modules():
-
-    from celery import current_app
-    from celery.local import Proxy
-
-    from types import ModuleType
-
-    class messaging(ModuleType):
-        TaskPublisher = Proxy(lambda: current_app.amqp.TaskPublisher)
-        ConsumerSet = Proxy(lambda: current_app.amqp.ConsumerSet)
-        TaskConsumer = Proxy(lambda: current_app.amqp.TaskConsumer)
-        establish_connection = Proxy(lambda: current_app.broker_connection)
-        with_connection = Proxy(lambda: current_app.with_default_connection)
-        get_consumer_set = Proxy(lambda: current_app.amqp.get_task_consumer)
-
-    sys.modules["celery.messaging"] = messaging("celery.messaging")
-
-

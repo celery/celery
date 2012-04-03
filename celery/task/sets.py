@@ -17,7 +17,7 @@ from itertools import chain
 from kombu.utils import reprcall
 
 from .. import current_app
-from ..app import app_or_default, current_task
+from ..app import current_task
 from ..datastructures import AttributeDict
 from ..utils import cached_property, uuid
 from ..utils.functional import maybe_list

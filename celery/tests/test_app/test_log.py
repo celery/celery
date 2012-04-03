@@ -6,7 +6,6 @@ import logging
 from tempfile import mktemp
 
 from celery import current_app
-from celery import log
 from celery.utils.log import LoggingProxy
 from celery.utils import uuid
 from celery.utils.compat import _CompatLoggerAdapter

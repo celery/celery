@@ -68,14 +68,17 @@ new_module.__dict__.update({
     "__package__": package,
     "VERSION": VERSION})
 
+
 def Celery(*args, **kwargs):
     from .app import App
     return App(*args, **kwargs)
+
 
 def _get_current_app():
     from .app import current_app
     return current_app()
 current_app = Proxy(_get_current_app)
+
 
 def bugreport():
     return current_app.bugreport()
@@ -83,4 +86,3 @@ def bugreport():
 new_module.Celery = Celery
 new_module.current_app = current_app
 new_module.bugreport = bugreport
-

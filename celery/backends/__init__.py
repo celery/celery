@@ -25,6 +25,9 @@ BACKEND_ALIASES = {
     "disabled": "celery.backends.base:DisabledBackend",
 }
 
+#: deprecated alias to ``current_app.backend``.
+default_backend = Proxy(lambda: current_app.backend)
+
 
 @memoize(100)
 def get_backend_cls(backend=None, loader=None):
@@ -45,8 +48,3 @@ def get_backend_by_url(backend=None, loader=None):
         url = backend
         backend, _, _, _, _, _, _ = _parse_url(url)
     return get_backend_cls(backend, loader), url
-
-
-
-# deprecate this.
-default_backend = Proxy(lambda: current_app.backend)

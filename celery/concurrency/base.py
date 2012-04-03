@@ -5,10 +5,12 @@ import logging
 import os
 import time
 
+from kombu.log import anon_logger
 from kombu.utils.encoding import safe_repr
 
-from .. import log
 from ..utils import timer2
+
+_default_logger = anon_logger("celery.concurrency")
 
 
 def apply_target(target, args=(), kwargs={}, callback=None,
@@ -47,7 +49,7 @@ class BasePool(object):
     def __init__(self, limit=None, putlocks=True, logger=None, **options):
         self.limit = limit
         self.putlocks = putlocks
-        self.logger = logger or log.get_default_logger()
+        self.logger = logger or _default_logger
         self.options = options
         self._does_debug = self.logger.isEnabledFor(logging.DEBUG)
 
