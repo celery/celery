@@ -146,9 +146,10 @@ class group(UserList):
         >>> list_of_return_values = group_result.join()  # *expensive*
 
     """
+    _app = None
 
     def __init__(self, tasks=None, app=None, Publisher=None):
-        self._app = app
+        self._app = app or self._app
         self.data = [maybe_subtask(t) for t in tasks or []]
         self._Publisher = Publisher
 

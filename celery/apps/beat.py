@@ -27,6 +27,7 @@ Configuration ->
 class Beat(configurated):
     Service = beat.Service
 
+    app = None
     loglevel = from_config("log_level")
     logfile = from_config("log_file")
     schedule = from_config("schedule_filename")
@@ -37,7 +38,7 @@ class Beat(configurated):
     def __init__(self, max_interval=None, app=None,
             socket_timeout=30, pidfile=None, **kwargs):
         """Starts the celerybeat task scheduler."""
-        self.app = app = app_or_default(app)
+        self.app = app = app_or_default(app or self.app)
         self.setup_defaults(kwargs, namespace="celerybeat")
 
         self.max_interval = max_interval

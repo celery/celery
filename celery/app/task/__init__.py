@@ -100,7 +100,7 @@ class TaskType(type):
         # in the '_app' attribute.  Previously this was a regular attribute,
         # so we should support classes defining it.
         _app1, _app2 = attrs.pop("_app", None), attrs.pop("app", None)
-        app = attrs["_app"] =  _app1 or _app2 or current_app
+        app = attrs["_app"] = _app1 or _app2 or current_app
 
         # - Automatically generate missing/empty name.
         autoname = False

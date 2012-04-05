@@ -75,6 +75,7 @@ def get_process_name():
 class Worker(configurated):
     WorkController = WorkController
 
+    app = None
     inherit_confopts = (WorkController, )
     loglevel = from_config("log_level")
     redirect_stdouts = from_config()
@@ -83,7 +84,7 @@ class Worker(configurated):
     def __init__(self, hostname=None, discard=False, embed_clockservice=False,
             queues=None, include=None, app=None, pidfile=None,
             autoscale=None, autoreload=False, **kwargs):
-        self.app = app = app_or_default(app)
+        self.app = app = app_or_default(app or self.app)
         self.hostname = hostname or socket.gethostname()
 
         # this signal can be used to set up configuration for

@@ -169,6 +169,7 @@ class WorkController(configurated):
     CLOSE = CLOSE
     TERMINATE = TERMINATE
 
+    app = None
     concurrency = from_config()
     loglevel = logging.ERROR
     logfile = from_config("log_file")
@@ -197,7 +198,7 @@ class WorkController(configurated):
     def __init__(self, loglevel=None, hostname=None, logger=None,
             ready_callback=noop,
             queues=None, app=None, **kwargs):
-        self.app = app_or_default(app)
+        self.app = app_or_default(app or self.app)
         self._shutdown_complete = threading.Event()
         self.setup_defaults(kwargs, namespace="celeryd")
         self.app.select_queues(queues)  # select queues subset.

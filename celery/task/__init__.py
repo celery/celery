@@ -12,7 +12,7 @@
 from __future__ import absolute_import
 
 from .. import current_app
-from ..app import app_or_default, current_task as _current_task
+from ..app import current_task as _current_task
 from ..local import Proxy
 from ..utils import uuid
 

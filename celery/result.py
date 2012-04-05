@@ -46,6 +46,7 @@ class AsyncResult(object):
     :keyword backend: see :attr:`backend`.
 
     """
+    app = None
 
     #: Error raised for timeouts.
     TimeoutError = TimeoutError
@@ -61,7 +62,7 @@ class AsyncResult(object):
 
     def __init__(self, id, backend=None, task_name=None,
             app=None, parent=None):
-        self.app = app_or_default(app)
+        self.app = app_or_default(app or self.app)
         self.id = id
         self.backend = backend or self.app.backend
         self.task_name = task_name
@@ -293,12 +294,13 @@ class ResultSet(object):
     :param results: List of result instances.
 
     """
+    app = None
 
     #: List of results in in the set.
     results = None
 
     def __init__(self, results, app=None, **kwargs):
-        self.app = app_or_default(app)
+        self.app = app_or_default(app or self.app)
         self.results = results
 
     def add(self, result):
