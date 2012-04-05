@@ -71,3 +71,27 @@ def get_compat(app, pkg, name, bases=(ModuleType, )):
                     for name, attr in modules[pkg.__name__][name].iteritems())
     sys.modules[fqdn] = module = type(name, bases, attrs)(fqdn)
     return module
+
+
+class class_property(object):
+
+    def __init__(self, fget=None, fset=None):
+        assert fget and isinstance(fget, classmethod)
+        assert fset and isinstance(fset, classmethod)
+        self.__get = fget
+        self.__set = fset
+
+        info = fget.__get__(object)  # just need the info attrs.
+        self.__doc__ = info.__doc__
+        self.__name__ = info.__name__
+        self.__module__ = info.__module__
+
+    def __get__(self, obj, type=None):
+        if obj and type is None:
+            type = obj.__class__
+        return self.__get.__get__(obj, type)()
+
+    def __set__(self, obj, value):
+        if obj is None:
+            return self
+        return self.__set.__get__(obj)(value)

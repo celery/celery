@@ -17,6 +17,7 @@ import threading
 
 from ... import current_app
 from ... import states
+from ...__compat__ import class_property
 from ...datastructures import ExceptionInfo
 from ...exceptions import MaxRetriesExceededError, RetryTaskError
 from ...result import EagerResult
@@ -303,6 +304,8 @@ class BaseTask(object):
     #: The type of task *(no longer used)*.
     type = "regular"
 
+    __bound__ = False
+
     from_config = (
         ("exchange_type", "CELERY_DEFAULT_EXCHANGE_TYPE"),
         ("delivery_mode", "CELERY_DEFAULT_DELIVERY_MODE"),
@@ -319,6 +322,12 @@ class BaseTask(object):
 
     # - Tasks are lazily bound, so that configuration is not set
     # - until the task is actually used
+
+    @classmethod
+    def _maybe_bind(cls, app):
+        if not cls.__bound__:
+            cls.__bound__ = True
+            return cls.bind(app)
 
     @classmethod
     def bind(cls, app):
@@ -348,14 +357,17 @@ class BaseTask(object):
 
     @classmethod
     def _get_app(cls):
-        if cls._app is None:
-            cls.bind(current_app)
+        if cls._app is None or not cls.__bound__:
+            # if app is set on the class, then the app descriptors
+            # __set__  method is not called, and the cls must
+            # be bound later.
+            cls._maybe_bind(current_app)
         return cls._app
 
     @classmethod
     def _set_app(cls, app):
         cls.bind(app)
-    app = property(_get_app, _set_app)
+    app = class_property(_get_app, _set_app)
 
     # - tasks are pickled into the name of the task only, and the reciever
     # - simply grabs it from the local registry.
