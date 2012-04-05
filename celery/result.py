@@ -204,8 +204,8 @@ class AsyncResult(object):
         if self.task_name:
             return (_unpickle_result, (self.id, self.task_name))
         else:
-            return (self.__class__, (self.id, self.backend,
-                                     None, self.app))
+            return (AsyncResult, (self.id, self.backend,
+                                  None, self.app))
 
     def build_graph(self, intermediate=False):
         graph = DependencyGraph()
@@ -592,7 +592,7 @@ class TaskSetResult(ResultSet):
         return iter(self.results)
 
     def __reduce__(self):
-        return (self.__class__, (self.id, self.results))
+        return (TaskSetResult, (self.id, self.results))
 
     def serializable(self):
         return self.id, [r.serializable() for r in self.results]
@@ -620,8 +620,8 @@ class EagerResult(AsyncResult):
         self._traceback = traceback
 
     def __reduce__(self):
-        return (self.__class__, (self.id, self._result,
-                                 self._state, self._traceback))
+        return (EagerResult, (self.id, self._result,
+                              self._state, self._traceback))
 
     def __copy__(self):
         cls, args = self.__reduce__()

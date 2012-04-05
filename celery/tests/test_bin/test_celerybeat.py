@@ -41,7 +41,7 @@ class MockBeat(beatapp.Beat):
     running = False
 
     def run(self):
-        self.__class__.running = True
+        MockBeat.running = True
 
 
 class MockBeat2(beatapp.Beat):
