@@ -17,7 +17,6 @@ import threading
 
 from ... import current_app
 from ... import states
-from ...__compat__ import class_property
 from ...datastructures import ExceptionInfo
 from ...exceptions import MaxRetriesExceededError, RetryTaskError
 from ...result import EagerResult
@@ -25,7 +24,6 @@ from ...utils import fun_takes_kwargs, uuid, maybe_reraise
 from ...utils.functional import mattrgetter, maybe_list
 from ...utils.imports import instantiate
 from ...utils.mail import ErrorMail
-from ...utils.compat import fun_of_method
 
 from ..state import current_task
 from ..registry import _unpickle_task
@@ -36,14 +34,6 @@ extract_exec_options = mattrgetter("queue", "routing_key",
                                    "mandatory", "priority",
                                    "serializer", "delivery_mode",
                                    "compression", "expires")
-
-
-#: list of methods that should be classmethods in
-#: backward compatibility mode.
-_COMPAT_CLASSMETHODS = ("get_logger", "establish_connection",
-                        "get_publisher", "get_consumer",
-                        "delay", "apply_async", "retry",
-                        "apply", "AsyncResult", "subtask")
 
 
 class Context(threading.local):
@@ -102,19 +92,6 @@ class TaskType(type):
         new = super(TaskType, cls).__new__
         task_module = attrs.get("__module__") or "__main__"
 
-        # In old Celery the @task decorator didn't exist, so one would create
-        # classes instead and use them directly (e.g. MyTask.apply_async()).
-        # the use of classmethods was a hack so that it was not necessary
-        # to instantiate the class before using it, but it has only
-        # given us pain (like all magic).
-        #
-        # This must be removed for 3.0.
-        if attrs.pop("compat", False):
-            for fun_name in _COMPAT_CLASSMETHODS:
-                if fun_name not in attrs:
-                    fun = fun_of_method(getattr(bases[0], fun_name))
-                    attrs[fun_name] = classmethod(fun)
-
         # - Abstract class: abstract attribute should not be inherited.
         if attrs.pop("abstract", None) or not attrs.get("autoregister", True):
             return new(cls, name, bases, attrs)
@@ -122,9 +99,8 @@ class TaskType(type):
         # The 'app' attribute is now a property, with the real app located
         # in the '_app' attribute.  Previously this was a regular attribute,
         # so we should support classes defining it.
-        app = attrs["_app"] = (attrs.pop("_app", None) or
-                               attrs.pop("app", None) or
-                               current_app)
+        _app1, _app2 = attrs.pop("_app", None), attrs.pop("app", None)
+        app = attrs["_app"] =  _app1 or _app2 or current_app
 
         # - Automatically generate missing/empty name.
         autoname = False
@@ -143,18 +119,15 @@ class TaskType(type):
         # with the framework.  There should only be one class for each task
         # name, so we always return the registered version.
         tasks = app._tasks
+        if autoname and task_module == "__main__" and app.main:
+            attrs["name"] = '.'.join([app.main, name])
+
         task_name = attrs["name"]
         if task_name not in tasks:
-            task_cls = new(cls, name, bases, attrs)
-            if autoname and task_module == "__main__" and app.main:
-                task_name = task_cls.name = '.'.join([app.main, name])
-            tasks.register(task_cls)
-            task_cls.bind(app)
-        task = tasks[task_name].__class__
-
-        # decorate with annotations from config.
-        app.annotate_task(task)
-        return task
+            tasks.register(new(cls, name, bases, attrs))
+        instance = tasks[task_name]
+        instance.bind(app)
+        return instance.__class__
 
     def __repr__(cls):
         if cls._app:
@@ -320,54 +293,45 @@ class BaseTask(object):
             "CELERY_STORE_ERRORS_EVEN_IF_IGNORED"),
     )
 
+    __bound__ = False
+
     # - Tasks are lazily bound, so that configuration is not set
     # - until the task is actually used
 
-    @classmethod
-    def _maybe_bind(cls, app):
-        if not cls.__bound__:
-            cls.__bound__ = True
-            return cls.bind(app)
-
-    @classmethod
-    def bind(cls, app):
-        cls._app = app
+    def bind(self, app):
+        self.__bound__ = True
+        self._app = app
         conf = app.conf
 
-        for attr_name, config_name in cls.from_config:
-            if getattr(cls, attr_name, None) is None:
-                setattr(cls, attr_name, conf[config_name])
-        cls.accept_magic_kwargs = app.accept_magic_kwargs
-        if cls.accept_magic_kwargs is None:
-            cls.accept_magic_kwargs = app.accept_magic_kwargs
-        if cls.backend is None:
-            cls.backend = app.backend
+        for attr_name, config_name in self.from_config:
+            if getattr(self, attr_name, None) is None:
+                setattr(self, attr_name, conf[config_name])
+        self.accept_magic_kwargs = app.accept_magic_kwargs
+        if self.accept_magic_kwargs is None:
+            self.accept_magic_kwargs = app.accept_magic_kwargs
+        if self.backend is None:
+            self.backend = app.backend
 
-        # e.g. PeriodicTask uses this to add itself to the PeriodicTask
-        # schedule.
-        cls.on_bound(app)
+        # decorate with annotations from config.
+        app.annotate_task(self)
+
+        # PeriodicTask uses this to add itself to the PeriodicTask schedule.
+        self.on_bound(app)
 
         return app
 
-    @classmethod
     def on_bound(self, app):
         """This method can be defined to do additional actions when the
         task class is bound to an app."""
         pass
 
-    @classmethod
-    def _get_app(cls):
-        if cls._app is None or not cls.__bound__:
-            # if app is set on the class, then the app descriptors
-            # __set__  method is not called, and the cls must
-            # be bound later.
-            cls._maybe_bind(current_app)
-        return cls._app
-
-    @classmethod
-    def _set_app(cls, app):
-        cls.bind(app)
-    app = class_property(_get_app, _set_app)
+    def _get_app(self):
+        if not self.__bound__ or self._app is None:
+            # The app property's __set__  method is not called
+            # if Task.app is set (on the class), so must bind on use.
+            self.bind(current_app)
+        return self._app
+    app = property(_get_app, bind)
 
     # - tasks are pickled into the name of the task only, and the reciever
     # - simply grabs it from the local registry.

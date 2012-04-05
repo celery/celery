@@ -53,8 +53,8 @@ def task(*args, **kwargs):
             >>> refresh_feed.delay("http://example.com/rss") # Async
             <AsyncResult: 8998d0f4-da0b-4669-ba03-d5ab5ac6ad5d>
     """
-    kwargs.setdefault("accept_magic_kwargs", False)
-    return app_or_default().task(*args, **kwargs)
+    return current_app.task(*args, **dict({"accept_magic_kwargs": False,
+                                           "base": Task}, **kwargs))
 
 
 def periodic_task(*args, **options):

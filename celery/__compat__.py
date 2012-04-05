@@ -5,6 +5,7 @@ import sys
 from types import ModuleType
 
 from .local import Proxy
+from .utils.compat import fun_of_method
 
 MODULE_DEPRECATED = """
 The module %s is deprecated and will be removed in a future version.
@@ -95,3 +96,7 @@ class class_property(object):
         if obj is None:
             return self
         return self.__set.__get__(obj)(value)
+
+
+def reclassmethod(method):
+    return classmethod(fun_of_method(method))

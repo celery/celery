@@ -110,11 +110,10 @@ class App(object):
         from .task import BaseTask
 
         class Task(BaseTask):
-            app = self
+            _app = self
             abstract = True
 
         Task.__doc__ = BaseTask.__doc__
-        Task.bind(self)
 
         return Task
 
@@ -203,7 +202,9 @@ class App(object):
                 "run": staticmethod(fun),
                 "__doc__": fun.__doc__,
                 "__module__": fun.__module__}, **options))()
-        return self._tasks[T.name]  # return global instance.
+        task = self._tasks[T.name]  # return global instance.
+        task.bind(self)
+        return task
 
     def annotate_task(self, task):
         if self.annotations:
