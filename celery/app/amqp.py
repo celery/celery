@@ -26,7 +26,7 @@ from . import routes as _routes
 #: List of known options to a Kombu producers send method.
 #: Used to extract the message related options out of any `dict`.
 MSG_OPTIONS = ("mandatory", "priority", "immediate", "routing_key",
-               "serializer", "delivery_mode", "compression")
+               "serializer", "delivery_mode", "compression", "ttr")
 
 #: Human readable queue declaration.
 QUEUE_FORMAT = """
