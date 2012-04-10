@@ -530,7 +530,7 @@ class LimitedSet(object):
         return len(self._data.keys())
 
     def __repr__(self):
-        return "LimitedSet([%s])" % (repr(self._data.keys()))
+        return "LimitedSet(%r)" % (self._data.keys(), )
 
     @property
     def chronologically(self):
