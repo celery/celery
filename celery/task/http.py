@@ -11,6 +11,7 @@
 """
 from __future__ import absolute_import
 
+import anyjson
 import sys
 import urllib2
 
@@ -20,8 +21,6 @@ try:
     from urlparse import parse_qsl
 except ImportError:  # pragma: no cover
     from cgi import parse_qsl  # noqa
-
-from anyjson import deserialize
 
 from .. import __version__ as celery_version
 from .base import Task as BaseTask
@@ -63,12 +62,12 @@ else:
                         for key, value in tup)
 
 
-def extract_response(raw_response):
+def extract_response(raw_response, loads=anyjson.loads):
     """Extract the response text from a raw JSON response."""
     if not raw_response:
         raise InvalidResponseError("Empty response")
     try:
-        payload = deserialize(raw_response)
+        payload = loads(raw_response)
     except ValueError, exc:
         raise InvalidResponseError, InvalidResponseError(
                 str(exc)), sys.exc_info()[2]

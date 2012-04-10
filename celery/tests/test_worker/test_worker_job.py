@@ -547,7 +547,7 @@ class test_TaskRequest(Case):
         us = u"æØåveéðƒeæ"
         body = {"task": mytask.name, "id": uuid(),
                 "args": [2], "kwargs": {us: "bar"}}
-        m = Message(None, body=anyjson.serialize(body), backend="foo",
+        m = Message(None, body=anyjson.dumps(body), backend="foo",
                           content_type="application/json",
                           content_encoding="utf-8")
         tw = TaskRequest.from_message(m, m.decode())
@@ -563,7 +563,7 @@ class test_TaskRequest(Case):
 
     def test_from_message_empty_args(self):
         body = {"task": mytask.name, "id": uuid()}
-        m = Message(None, body=anyjson.serialize(body), backend="foo",
+        m = Message(None, body=anyjson.dumps(body), backend="foo",
                           content_type="application/json",
                           content_encoding="utf-8")
         tw = TaskRequest.from_message(m, m.decode())
@@ -573,7 +573,7 @@ class test_TaskRequest(Case):
 
     def test_from_message_missing_required_fields(self):
         body = {}
-        m = Message(None, body=anyjson.serialize(body), backend="foo",
+        m = Message(None, body=anyjson.dumps(body), backend="foo",
                           content_type="application/json",
                           content_encoding="utf-8")
         with self.assertRaises(KeyError):
@@ -582,7 +582,7 @@ class test_TaskRequest(Case):
     def test_from_message_nonexistant_task(self):
         body = {"task": "cu.mytask.doesnotexist", "id": uuid(),
                 "args": [2], "kwargs": {u"æØåveéðƒeæ": "bar"}}
-        m = Message(None, body=anyjson.serialize(body), backend="foo",
+        m = Message(None, body=anyjson.dumps(body), backend="foo",
                           content_type="application/json",
                           content_encoding="utf-8")
         with self.assertRaises(KeyError):

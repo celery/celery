@@ -5,14 +5,13 @@ from __future__ import with_statement
 if __name__ == "__main__" and __package__ is None:
     __package__ = "celery.bin.celery"
 
+import anyjson
 import sys
 
 from importlib import import_module
 from optparse import OptionParser, make_option as Option
 from pprint import pformat
 from textwrap import wrap
-
-from anyjson import deserialize
 
 from .. import __version__
 from ..app import app_or_default, current_app
@@ -217,12 +216,12 @@ class apply(Command):
         # Positional args.
         args = kw.get("args") or ()
         if isinstance(args, basestring):
-            args = deserialize(args)
+            args = anyjson.loads(args)
 
         # Keyword args.
         kwargs = kw.get("kwargs") or {}
         if isinstance(kwargs, basestring):
-            kwargs = deserialize(kwargs)
+            kwargs = anyjson.loads(kwargs)
 
         # Expires can be int/float.
         expires = kw.get("expires") or None

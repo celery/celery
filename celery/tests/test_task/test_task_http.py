@@ -11,7 +11,7 @@ try:
 except ImportError:  # py3k
     from urllib.request import addinfourl  # noqa
 
-from anyjson import serialize
+from anyjson import dumps
 from kombu.utils.encoding import from_utf8
 
 from celery.task import http
@@ -42,15 +42,15 @@ def _response(res):
 
 
 def success_response(value):
-    return _response(serialize({"status": "success", "retval": value}))
+    return _response(dumps({"status": "success", "retval": value}))
 
 
 def fail_response(reason):
-    return _response(serialize({"status": "failure", "reason": reason}))
+    return _response(dumps({"status": "failure", "reason": reason}))
 
 
 def unknown_response():
-    return _response(serialize({"status": "u.u.u.u", "retval": True}))
+    return _response(dumps({"status": "u.u.u.u", "retval": True}))
 
 
 class TestEncodings(Case):
