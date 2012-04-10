@@ -14,6 +14,7 @@ Contents:
     :maxdepth: 1
 
     configuration
+    django
     cookbook/index
     contributing
     community
