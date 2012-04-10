@@ -14,9 +14,9 @@ from __future__ import absolute_import
 from .. import current_app
 from ..local import Proxy
 from ..utils import uuid
+from ..task.sets import subtask
 
 Chord = Proxy(lambda: current_app.tasks["celery.chord"])
-
 
 class chord(object):
     Chord = None
@@ -28,6 +28,9 @@ class chord(object):
 
     def __call__(self, body, **options):
         tid = body.options.setdefault("task_id", uuid())
-        self.Chord.apply_async((list(self.tasks), body), self.options,
+        taskset_result = self.Chord.apply_async((list(self.tasks), body), self.options,
                                 **options)
+        if self.Chord.app.conf.CELERY_ALWAYS_EAGER:
+            return subtask(body).apply(args=(taskset_result.result.join(),))
+            
         return body.type.AsyncResult(tid)
