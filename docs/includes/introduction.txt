@@ -103,7 +103,7 @@ adding two numbers:
 
 .. code-block:: python
 
-    from celery.task import task
+    from celery import task
 
     @task
     def add(x, y):

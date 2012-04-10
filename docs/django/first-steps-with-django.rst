@@ -72,9 +72,9 @@ a new file called ``celerytest/tasks.py``:
 
 .. code-block:: python
 
-    from celery.task import task
+    from celery import task
 
-    @task()
+    @task
     def add(x, y):
         return x + y
 

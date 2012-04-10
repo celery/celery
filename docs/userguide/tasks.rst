@@ -25,7 +25,7 @@ Given a function create_user`, that takes two arguments: `username` and
 
     from django.contrib.auth import User
 
-    @task
+    @celery.task
     def create_user(username, password):
         User.objects.create(username=username, password=password)
 
@@ -34,7 +34,7 @@ Task options are added as arguments to `task`:
 
 .. code-block:: python
 
-    @task(serializer="json")
+    @celery.task(serializer="json")
     def create_user(username, password):
         User.objects.create(username=username, password=password)
 
@@ -81,7 +81,7 @@ Example Usage
 
 ::
 
-    @task
+    @celery.task
     def add(x, y):
         print("Executing task id %r, args: %r kwargs: %r" % (
             add.request.id, add.request.args, add.request.kwargs))
@@ -96,7 +96,7 @@ the worker log:
 
 .. code-block:: python
 
-    @task
+    @celery.task
     def add(x, y):
         logger = add.get_logger()
         logger.info("Adding %s + %s" % (x, y))
@@ -119,7 +119,7 @@ It will do the right thing, and respect the
 
 .. code-block:: python
 
-    @task
+    @celery.task
     def send_twitter_status(oauth, tweet):
         try:
             twitter = Twitter(oauth)
@@ -160,7 +160,7 @@ You can also provide the `countdown` argument to
 
 .. code-block:: python
 
-    @task(default_retry_delay=30 * 60)  # retry in 30 minutes.
+    @celery.task(default_retry_delay=30 * 60)  # retry in 30 minutes.
     def add(x, y):
         try:
             ...
@@ -370,7 +370,7 @@ For example:
 
 .. code-block:: python
 
-    >>> @task(name="sum-of-two-numbers")
+    >>> @celery.task(name="sum-of-two-numbers")
     >>> def add(x, y):
     ...     return x + y
 
@@ -383,7 +383,7 @@ another module:
 
 .. code-block:: python
 
-    >>> @task(name="tasks.add")
+    >>> @celery.task(name="tasks.add")
     >>> def add(x, y):
     ...     return x + y
 
@@ -396,7 +396,7 @@ task if the module name is "tasks.py":
 
 .. code-block:: python
 
-    >>> @task()
+    >>> @celery.task()
     >>> def add(x, y):
     ...     return x + y
 
@@ -450,14 +450,14 @@ decorator is applied last:
 
 .. code-block:: python
 
-    @task
+    @celery.task
     @decorator2
     @decorator1
     def add(x, y):
         return x + y
 
 
-Which means the `@task` decorator must be the top statement.
+Which means the `@celery.task` decorator must be the top statement.
 
 .. _task-states:
 
@@ -638,7 +638,7 @@ which defines its own custom :state:`ABORTED` state.
 Use :meth:`Task.update_state <celery.task.base.BaseTask.update_state>` to
 update a task's state::
 
-    @task
+    @celery.task
     def upload_files(filenames):
         for i, file in enumerate(filenames):
             upload_files.update_state(state="PROGRESS",
@@ -720,7 +720,7 @@ The following code,
 
 .. code-block:: python
 
-    @task
+    @celery.task
     def add(x, y):
         return x + y
 
@@ -729,7 +729,7 @@ will do roughly this behind the scenes:
 
 .. code-block:: python
 
-    @task
+    @celery.task
     class AddTask(Task):
 
         def run(self, x, y):
@@ -791,7 +791,7 @@ base class for new task types.
             print("Task returned: %r" % (self.request, ))
 
 
-    @task(base=DebugTask)
+    @celery.task(base=DebugTask)
     def add(x, y):
         return x + y
 
@@ -941,7 +941,7 @@ wastes time and resources.
 
 .. code-block:: python
 
-    @task(ignore_result=True)
+    @celery.task(ignore_result=True)
     def mytask(...)
         something()
 
@@ -978,21 +978,21 @@ Make your design asynchronous instead, for example by using *callbacks*.
 
 .. code-block:: python
 
-    @task
+    @celery.task
     def update_page_info(url):
         page = fetch_page.delay(url).get()
         info = parse_page.delay(url, page).get()
         store_page_info.delay(url, info)
 
-    @task
+    @celery.task
     def fetch_page(url):
         return myhttplib.get(url)
 
-    @task
+    @celery.task
     def parse_page(url, page):
         return myparser.parse_document(page)
 
-    @task
+    @celery.task
     def store_page_info(url, info):
         return PageInfo.objects.create(url, info)
 
@@ -1001,13 +1001,13 @@ Make your design asynchronous instead, for example by using *callbacks*.
 
 .. code-block:: python
 
-    @task(ignore_result=True)
+    @celery.task(ignore_result=True)
     def update_page_info(url):
         # fetch_page -> parse_page -> store_page
         fetch_page.delay(url, callback=subtask(parse_page,
                                     callback=subtask(store_page_info)))
 
-    @task(ignore_result=True)
+    @celery.task(ignore_result=True)
     def fetch_page(url, callback=None):
         page = myhttplib.get(url)
         if callback:
@@ -1016,13 +1016,13 @@ Make your design asynchronous instead, for example by using *callbacks*.
             # into a subtask object.
             subtask(callback).delay(url, page)
 
-    @task(ignore_result=True)
+    @celery.task(ignore_result=True)
     def parse_page(url, page, callback=None):
         info = myparser.parse_document(page)
         if callback:
             subtask(callback).delay(url, info)
 
-    @task(ignore_result=True)
+    @celery.task(ignore_result=True)
     def store_page_info(url, info):
         PageInfo.objects.create(url, info)
 
@@ -1122,7 +1122,7 @@ that automatically expands some abbreviations in it:
         title = models.CharField()
         body = models.TextField()
 
-    @task
+    @celery.task
     def expand_abbreviations(article):
         article.body.replace("MyCorp", "My Corporation")
         article.save()
@@ -1143,7 +1143,7 @@ re-fetch the article in the task body:
 
 .. code-block:: python
 
-    @task
+    @celery.task
     def expand_abbreviations(article_id):
         article = Article.objects.get(id=article_id)
         article.body.replace("MyCorp", "My Corporation")
@@ -1302,7 +1302,7 @@ blog/tasks.py
     from blog.models import Comment
 
 
-    @task
+    @celery.task
     def spam_filter(comment_id, remote_addr=None):
         logger = spam_filter.get_logger()
         logger.info("Running spam filter for comment %s" % comment_id)

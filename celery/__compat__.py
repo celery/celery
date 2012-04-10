@@ -1,15 +1,24 @@
 from __future__ import absolute_import
 
+import operator
 import sys
 
 from types import ModuleType
 
 from .local import Proxy
-from .utils.compat import fun_of_method
 
 MODULE_DEPRECATED = """
 The module %s is deprecated and will be removed in a future version.
 """
+
+# im_func is no longer available in Py3.
+# instead the unbound method itself can be used.
+if sys.version_info[0] == 3:
+    def fun_of_method(method):
+        return method
+else:
+    def fun_of_method(method):  # noqa
+        return method.im_func
 
 
 def _compat_task_decorator(*args, **kwargs):
@@ -100,3 +109,47 @@ class class_property(object):
 
 def reclassmethod(method):
     return classmethod(fun_of_method(method))
+
+
+class MagicModule(ModuleType):
+    _compat_modules = ()
+    _all_by_module = {}
+    _direct = {}
+
+    def __getattr__(self, name):
+        origins = self._object_origins
+        if name in origins:
+            module = __import__(origins[name], None, None, [name])
+            for extra_name in self._all_by_module[module.__name__]:
+                setattr(self, extra_name, getattr(module, extra_name))
+            return getattr(module, name)
+        elif name in self._direct:
+            module = __import__(self._direct[name], None, None, [name])
+            setattr(self, name, module)
+            return module
+        elif name in self._compat_modules:
+            setattr(self, name, get_compat(self.current_app, self, name))
+        return ModuleType.__getattribute__(self, name)
+
+    def __dir__(self):
+        return list(set(self.__all__
+                     + ("__file__", "__path__", "__doc__", "__all__")))
+
+
+
+def create_magic_module(name, compat_modules=(), by_module={}, direct={},
+        base=MagicModule, **attrs):
+    old_module = sys.modules[name]
+    origins = {}
+    for module, items in by_module.iteritems():
+        for item in items:
+            origins[item] = module
+
+    cattrs = dict(_compat_modules=compat_modules,
+                  _all_by_module=by_module, _direct=direct,
+                  _object_origins=origins,
+                  __all__=tuple(set(reduce(operator.add, map(tuple, [
+                                compat_modules, origins, direct, attrs])))))
+    new_module = sys.modules[name] = type(name, (base, ), cattrs)(name)
+    new_module.__dict__.update(attrs)
+    return old_module, new_module

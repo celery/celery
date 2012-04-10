@@ -24,49 +24,7 @@ if sys.version_info < (2, 5):
 # Lazy loading
 from types import ModuleType
 from .local import Proxy
-
-
-compat_modules = ("messaging", "log", "registry", "decorators")
-
-
-class module(ModuleType):
-    __all__ = ("Celery", "current_app", "bugreport")
-
-    def __getattr__(self, name):
-        if name in compat_modules:
-            from .__compat__ import get_compat
-            setattr(self, name, get_compat(self.current_app, self, name))
-        return ModuleType.__getattribute__(self, name)
-
-    def __dir__(self):
-        result = list(new_module.__all__)
-        result.extend(("__file__", "__path__", "__doc__", "__all__",
-                       "__docformat__", "__name__", "__path__", "VERSION",
-                       "__package__", "__version__", "__author__",
-                       "__contact__", "__homepage__", "__docformat__"))
-        return result
-
-# 2.5 does not define __package__
-try:
-    package = __package__
-except NameError:
-    package = "kombu"
-
-# keep a reference to this module so that it's not garbage collected
-old_module = sys.modules[__name__]
-
-new_module = sys.modules[__name__] = module(__name__)
-new_module.__dict__.update({
-    "__file__": __file__,
-    "__path__": __path__,
-    "__doc__": __doc__,
-    "__version__": __version__,
-    "__author__": __author__,
-    "__contact__": __contact__,
-    "__homepage__": __homepage__,
-    "__docformat__": __docformat__,
-    "__package__": package,
-    "VERSION": VERSION})
+from .__compat__ import create_magic_module
 
 
 def Celery(*args, **kwargs):
@@ -83,6 +41,25 @@ current_app = Proxy(_get_current_app)
 def bugreport():
     return current_app.bugreport()
 
-new_module.Celery = Celery
-new_module.current_app = current_app
-new_module.bugreport = bugreport
+
+old_module, new_module = create_magic_module(__name__,
+    compat_modules=("messaging", "log", "registry", "decorators"),
+    by_module={
+        "celery.task.sets": ["chain", "group", "subtask"],
+        "celery.task.chords": ["chord"],
+    },
+    direct={"task": "celery.task"},
+    __package__="celery",
+    __file__=__file__,
+    __path__=__path__,
+    __doc__=__doc__,
+    __version__=__version__,
+    __author__=__author__,
+    __contact__=__contact__,
+    __homepage__=__homepage__,
+    __docformat__=__docformat__,
+    VERSION=VERSION,
+    Celery=Celery,
+    current_app=current_app,
+    bugreport=bugreport,
+)

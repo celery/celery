@@ -15,11 +15,17 @@ Subtasks
 .. versionadded:: 2.0
 
 The :class:`~celery.task.sets.subtask` type is used to wrap the arguments and
-execution options for a single task invocation::
+execution options for a single task invocation:
+
+.. code-block:: python
+
+    from celery import subtask
 
     subtask(task_name_or_cls, args, kwargs, options)
 
-For convenience every task also has a shortcut to create subtasks::
+For convenience every task also has a shortcut to create subtasks:
+
+.. code-block:: python
 
     task.subtask(args, kwargs, options)
 
@@ -81,7 +87,7 @@ tasks were invoked.
 
 ``group`` takes a list of :class:`~celery.task.sets.subtask`'s::
 
-    >>> from celery.task import group
+    >>> from celery import group
     >>> from tasks import add
 
     >>> job = group([
@@ -175,13 +181,11 @@ already a standard function):
 
 .. code-block:: python
 
-    from celery.task import task
-
-    @task
+    @celery.task
     def add(x, y):
         return x + y
 
-    @task
+    @celery.task
     def tsum(numbers):
         return sum(numbers)
 
@@ -189,7 +193,7 @@ already a standard function):
 Now we can use a chord to calculate each addition step in parallel, and then
 get the sum of the resulting numbers::
 
-    >>> from celery.task import chord
+    >>> from celery import chord
     >>> from tasks import add, tsum
 
     >>> chord(add.subtask((i, i))

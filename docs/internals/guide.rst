@@ -186,7 +186,7 @@ Here's an example using Celery in single-mode:
 
 .. code-block:: python
 
-    from celery.task import task
+    from celery import task
     from celery.task.control import inspect
 
     from .models import CeleryStats

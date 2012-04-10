@@ -13,6 +13,7 @@
 """
 from __future__ import absolute_import
 
+from .. import current_app
 from ..__compat__ import class_property, reclassmethod
 from ..app.task import Context, TaskType, BaseTask  # noqa
 from ..schedules import maybe_schedule
@@ -64,3 +65,71 @@ class PeriodicTask(Task):
                 "options": cls.options or {},
                 "relative": cls.relative,
         }
+
+
+def task(*args, **kwargs):
+    """Decorator to create a task class out of any callable.
+
+    **Examples**
+
+    .. code-block:: python
+
+        @task
+        def refresh_feed(url):
+            return Feed.objects.get(url=url).refresh()
+
+    With setting extra options and using retry.
+
+    .. code-block:: python
+
+        @task(max_retries=10)
+        def refresh_feed(url):
+            try:
+                return Feed.objects.get(url=url).refresh()
+            except socket.error, exc:
+                refresh_feed.retry(exc=exc)
+
+    Calling the resulting task:
+
+            >>> refresh_feed("http://example.com/rss") # Regular
+            <Feed: http://example.com/rss>
+            >>> refresh_feed.delay("http://example.com/rss") # Async
+            <AsyncResult: 8998d0f4-da0b-4669-ba03-d5ab5ac6ad5d>
+    """
+    return current_app.task(*args, **dict({"accept_magic_kwargs": False,
+                                           "base": Task}, **kwargs))
+
+
+def periodic_task(*args, **options):
+    """Decorator to create a task class out of any callable.
+
+        .. admonition:: Examples
+
+            .. code-block:: python
+
+                @task
+                def refresh_feed(url):
+                    return Feed.objects.get(url=url).refresh()
+
+            With setting extra options and using retry.
+
+            .. code-block:: python
+
+                from celery.task import current
+
+                @task(exchange="feeds")
+                def refresh_feed(url):
+                    try:
+                        return Feed.objects.get(url=url).refresh()
+                    except socket.error, exc:
+                        current.retry(exc=exc)
+
+            Calling the resulting task:
+
+                >>> refresh_feed("http://example.com/rss") # Regular
+                <Feed: http://example.com/rss>
+                >>> refresh_feed.delay("http://example.com/rss") # Async
+                <AsyncResult: 8998d0f4-da0b-4669-ba03-d5ab5ac6ad5d>
+
+    """
+    return task(**dict({"base": PeriodicTask}, **options))

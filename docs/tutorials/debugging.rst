@@ -15,8 +15,8 @@ Example usage:
 
 .. code-block:: python
 
+    from celery import task
     from celery.contrib import rdb
-    from celery.task import task
 
     @task
     def add(x, y):
