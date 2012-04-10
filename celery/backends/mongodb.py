@@ -64,6 +64,7 @@ class MongoBackend(BaseDictBackend):
 
         self._connection = None
         self._database = None
+        self._collection = None
 
     def _get_connection(self):
         """Connect to the MongoDB server."""
@@ -91,8 +92,15 @@ class MongoBackend(BaseDictBackend):
 
     def _get_collection(self):
         """ get the metadata task collection """
-        db = self._get_database()
-        taskmeta_collection = db[self.mongodb_taskmeta_collection]
+        if self._collection is None:
+            db = self._get_database()
+            self._collection = db[self.mongodb_taskmeta_collection]
+            
+            # Ensure an index on date_done is there, if not process the index
+            # in the background. Once completed cleanup will be much faster
+            self._collection.ensure_index('date_done', background='true')
+            
+        return self._collection
 
     def process_cleanup(self):
         if self._connection is not None:
