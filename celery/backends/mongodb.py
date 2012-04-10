@@ -74,7 +74,7 @@ class MongoBackend(BaseDictBackend):
         return self._connection
 
     def _get_database(self):
-        """"Get database from MongoDB connection and perform authentication
+        """Get database from MongoDB connection and perform authentication
         if necessary."""
         if self._database is None:
             conn = self._get_connection()
@@ -88,6 +88,11 @@ class MongoBackend(BaseDictBackend):
             self._database = db
 
         return self._database
+
+    def _get_collection(self):
+        """ get the metadata task collection """
+        db = self._get_database()
+        taskmeta_collection = db[self.mongodb_taskmeta_collection]
 
     def process_cleanup(self):
         if self._connection is not None:
@@ -105,8 +110,7 @@ class MongoBackend(BaseDictBackend):
                 "date_done": datetime.now(),
                 "traceback": Binary(self.encode(traceback))}
 
-        db = self._get_database()
-        taskmeta_collection = db[self.mongodb_taskmeta_collection]
+        taskmeta_collection = self._get_collection()
         taskmeta_collection.save(meta, safe=True)
 
         return result
@@ -114,8 +118,7 @@ class MongoBackend(BaseDictBackend):
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
 
-        db = self._get_database()
-        taskmeta_collection = db[self.mongodb_taskmeta_collection]
+        taskmeta_collection = self._get_collection()
         obj = taskmeta_collection.find_one({"_id": task_id})
         if not obj:
             return {"status": states.PENDING, "result": None}
@@ -132,8 +135,7 @@ class MongoBackend(BaseDictBackend):
 
     def cleanup(self):
         """Delete expired metadata."""
-        db = self._get_database()
-        taskmeta_collection = db[self.mongodb_taskmeta_collection]
+        taskmeta_collection = self._get_collection()
         taskmeta_collection.remove({
                 "date_done": {
                     "$lt": datetime.now() - self.expires,
