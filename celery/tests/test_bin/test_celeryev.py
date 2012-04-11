@@ -27,7 +27,7 @@ class test_EvCommand(Case):
         self.ev = celeryev.EvCommand(app=self.app)
 
     @patch("celery.events.dumper", "evdump", lambda **kw: "me dumper, you?")
-    @patch("celery.platforms", "set_process_title", proctitle)
+    @patch("celery.bin.celeryev", "set_process_title", proctitle)
     def test_run_dump(self):
         self.assertEqual(self.ev.run(dump=True), "me dumper, you?")
         self.assertIn("celeryev:dump", proctitle.last[0])
@@ -39,14 +39,14 @@ class test_EvCommand(Case):
             raise SkipTest("curses monitor requires curses")
 
         @patch("celery.events.cursesmon", "evtop", lambda **kw: "me top, you?")
-        @patch("celery.platforms", "set_process_title", proctitle)
+        @patch("celery.bin.celeryev", "set_process_title", proctitle)
         def _inner():
             self.assertEqual(self.ev.run(), "me top, you?")
             self.assertIn("celeryev:top", proctitle.last[0])
         return _inner()
 
     @patch("celery.events.snapshot", "evcam", lambda *a, **k: (a, k))
-    @patch("celery.platforms", "set_process_title", proctitle)
+    @patch("celery.bin.celeryev", "set_process_title", proctitle)
     def test_run_cam(self):
         a, kw = self.ev.run(camera="foo.bar.baz", logfile="logfile")
         self.assertEqual(a[0], "foo.bar.baz")

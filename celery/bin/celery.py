@@ -249,9 +249,8 @@ apply = command(apply)
 class purge(Command):
 
     def run(self, *args, **kwargs):
-        app = current_app()
-        queues = len(app.amqp.queues.keys())
-        messages_removed = app.control.discard_all()
+        queues = len(current_app.amqp.queues.keys())
+        messages_removed = current_app.control.discard_all()
         if messages_removed:
             self.out("Purged %s %s from %s known task %s." % (
                 messages_removed, pluralize(messages_removed, "message"),

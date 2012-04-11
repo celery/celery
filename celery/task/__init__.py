@@ -11,11 +11,8 @@
 """
 from __future__ import absolute_import
 
-import sys
-
-from celery import current_app
+from celery.app.state import current_app, current_task as current
 from celery.__compat__ import MagicModule, recreate_module
-from celery.app import current_task as _current_task
 from celery.local import Proxy
 
 
@@ -37,7 +34,7 @@ old_module, new_module = recreate_module(__name__,
     __file__=__file__,
     __path__=__path__,
     __doc__=__doc__,
-    current=Proxy(_current_task),
+    current=current,
     discard_all=Proxy(lambda: current_app.control.discard_all),
     backend_cleanup=Proxy(
         lambda: current_app.tasks["celery.backend_cleanup"]

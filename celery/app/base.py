@@ -37,7 +37,7 @@ from .state import _tls
 from .utils import AppPickler, Settings, bugreport, _unpickle_app
 
 
-class App(object):
+class Celery(object):
     """Celery Application.
 
     :param main: Name of the main module if running as `__main__`.
@@ -522,3 +522,4 @@ class App(object):
         """
         self.finalize()
         return self._tasks
+App = Celery

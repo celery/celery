@@ -22,29 +22,13 @@ if sys.version_info < (2, 5):
         "Please use Celery versions 2.1.x or earlier.")
 
 # Lazy loading
-from types import ModuleType
-from .local import Proxy
-from .__compat__ import create_magic_module
+from .__compat__ import recreate_module
 
 
-def Celery(*args, **kwargs):
-    from .app import App
-    return App(*args, **kwargs)
-
-
-def _get_current_app():
-    from .app import current_app
-    return current_app()
-current_app = Proxy(_get_current_app)
-
-
-def bugreport():
-    return current_app.bugreport()
-
-
-old_module, new_module = create_magic_module(__name__,
-    compat_modules=("messaging", "log", "registry", "decorators"),
+old_module, new_module = recreate_module(__name__,
     by_module={
+        "celery.app": ["Celery", "bugreport"],
+        "celery.app.state": ["current_app", "current_task"],
         "celery.task.sets": ["chain", "group", "subtask"],
         "celery.task.chords": ["chord"],
     },
@@ -59,7 +43,4 @@ old_module, new_module = create_magic_module(__name__,
     __homepage__=__homepage__,
     __docformat__=__docformat__,
     VERSION=VERSION,
-    Celery=Celery,
-    current_app=current_app,
-    bugreport=bugreport,
 )

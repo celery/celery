@@ -12,7 +12,7 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-from itertools import chain
+from itertools import chain as _chain
 
 from kombu.utils import reprcall
 
@@ -109,7 +109,7 @@ class subtask(AttributeDict):
     def flatten_links(self):
         """Gives a recursive list of dependencies (unchain if you will,
         but with links intact)."""
-        return list(chain_from_iterable(chain([[self]],
+        return list(chain_from_iterable(_chain([[self]],
                 (link.flatten_links()
                     for link in maybe_list(self.options.get("link")) or []))))
 

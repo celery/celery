@@ -12,7 +12,7 @@
 """
 from __future__ import absolute_import
 
-from celery import current_app
+from celery.app.state import current_app
 from celery.utils import deprecated
 from celery.utils.imports import symbol_by_name
 

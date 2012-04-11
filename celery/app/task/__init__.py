@@ -25,7 +25,7 @@ from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
 from celery.utils.mail import ErrorMail
 
-from celery.app.state import current_task
+from celery.app.state import get_current_task
 from celery.app.registry import _unpickle_task
 
 #: extracts options related to publishing a message from a dict.
@@ -544,7 +544,7 @@ class BaseTask(object):
                 publish.release()
 
         result = self.AsyncResult(task_id)
-        parent = current_task()
+        parent = get_current_task()
         if parent:
             parent.request.children.append(result)
         return result

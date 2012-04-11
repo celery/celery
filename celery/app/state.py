@@ -2,6 +2,8 @@ from __future__ import absolute_import
 
 import threading
 
+from celery.local import Proxy
+
 default_app = None
 
 
@@ -21,9 +23,13 @@ def set_default_app(app):
     default_app = app
 
 
-def current_app():
+def get_current_app():
     return getattr(_tls, "current_app", None) or default_app
 
 
-def current_task():
+def get_current_task():
     return getattr(_tls, "current_task", None)
+
+
+current_app = Proxy(get_current_app)
+current_task = Proxy(get_current_task)
