@@ -14,7 +14,7 @@ from __future__ import absolute_import
 import sys
 
 from celery import current_app
-from celery.__compat__ import MagicModule, create_magic_module
+from celery.__compat__ import MagicModule, recreate_module
 from celery.app import current_task as _current_task
 from celery.local import Proxy
 
@@ -25,7 +25,7 @@ class module(MagicModule):
         return self.task(*args, **kwargs)
 
 
-old_module, new_module = create_magic_module(__name__,
+old_module, new_module = recreate_module(__name__,
     by_module={
         "celery.task.base": ["BaseTask", "Task", "PeriodicTask",
                              "task", "periodic_task"],

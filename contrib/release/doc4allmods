@@ -15,7 +15,6 @@ SKIP_FILES="celery.backends.pyredis.rst
             celery.local.rst
             celery.app.base.rst
             celery.apps.rst
-            celery.execute.rst
             celery.backends.database.a805d4bd.rst
             celery.backends.database.dfd042c7.rst
             celery.utils.encoding.rst"

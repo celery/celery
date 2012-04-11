@@ -26,7 +26,7 @@ from celery import current_app
 from celery import exceptions
 from celery.app import app_or_default
 from celery.datastructures import ExceptionInfo
-from celery.execute.trace import build_tracer, trace_task, report_internal_error
+from celery.task.trace import build_tracer, trace_task, report_internal_error
 from celery.platforms import set_mp_process_title as setps
 from celery.utils import fun_takes_kwargs
 from celery.utils.functional import noop
@@ -219,10 +219,9 @@ class Request(object):
         return result
 
     def execute(self, loglevel=None, logfile=None):
-        """Execute the task in a :func:`~celery.execute.trace.trace_task`.
+        """Execute the task in a :func:`~celery.task.trace.trace_task`.
 
         :keyword loglevel: The loglevel used by the task.
-
         :keyword logfile: The logfile used by the task.
 
         """

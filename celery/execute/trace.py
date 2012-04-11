@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    celery.execute.trace
+    celery.task.trace
     ~~~~~~~~~~~~~~~~~~~~
 
     This module defines how the task execution is traced:

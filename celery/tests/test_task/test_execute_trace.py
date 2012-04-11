@@ -6,7 +6,7 @@ from mock import patch
 from celery import current_app
 from celery import states
 from celery.exceptions import RetryTaskError
-from celery.execute.trace import TraceInfo, eager_trace_task, trace_task
+from celery.task.trace import TraceInfo, eager_trace_task, trace_task
 from celery.tests.utils import Case, Mock
 
 
@@ -57,8 +57,8 @@ class test_trace(Case):
         with self.assertRaises(KeyError):
             trace(raises, (KeyError("foo"), ), {}, propagate=True)
 
-    @patch("celery.execute.trace.build_tracer")
-    @patch("celery.execute.trace.report_internal_error")
+    @patch("celery.task.trace.build_tracer")
+    @patch("celery.task.trace.report_internal_error")
     def test_outside_body_error(self, report_internal_error, build_tracer):
         tracer = Mock()
         tracer.side_effect = KeyError("foo")

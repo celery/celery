@@ -21,7 +21,7 @@ from celery.concurrency.base import BasePool
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import (RetryTaskError,
                                WorkerLostError, InvalidTaskError)
-from celery.execute.trace import eager_trace_task, TraceInfo
+from celery.task.trace import eager_trace_task, TraceInfo
 from celery.result import AsyncResult
 from celery.task import task as task_dec
 from celery.task.base import Task
