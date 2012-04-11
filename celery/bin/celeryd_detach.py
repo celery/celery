@@ -10,8 +10,8 @@ import sys
 
 from optparse import OptionParser, BadOptionError
 
-from .. import __version__
-from ..platforms import detached
+from celery import __version__
+from celery.platforms import detached
 
 from .base import daemon_options, Option
 
@@ -27,7 +27,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
         try:
             os.execv(path, [path] + argv)
         except Exception:
-            from .. import current_app
+            from celery import current_app
             logger = current_app.log.setup_logger("ERROR", logfile)
             logger.critical("Can't exec %r", " ".join([path] + argv),
                             exc_info=True)

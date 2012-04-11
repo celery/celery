@@ -3,8 +3,8 @@ from __future__ import absolute_import
 
 from kombu.utils.url import _parse_url
 
-from ..exceptions import ImproperlyConfigured
-from ..utils import cached_property
+from celery.exceptions import ImproperlyConfigured
+from celery.utils import cached_property
 
 from .base import KeyValueStoreBackend
 
@@ -91,8 +91,8 @@ class RedisBackend(KeyValueStoreBackend):
         self.app.TaskSetResult(setid, result).save()
 
     def on_chord_part_return(self, task, propagate=False):
-        from ..task.sets import subtask
-        from ..result import TaskSetResult
+        from celery.task.sets import subtask
+        from celery.result import TaskSetResult
         setid = task.request.taskset
         if not setid:
             return

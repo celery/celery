@@ -10,7 +10,7 @@ import sys
 
 from time import time
 
-from ..utils import timer2
+from celery.utils import timer2
 
 from .base import apply_target, BasePool
 

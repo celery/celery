@@ -16,7 +16,7 @@ import sys
 from collections import deque
 from datetime import timedelta
 
-from ..utils.functional import memoize
+from celery.utils.functional import memoize
 
 is_jython = sys.platform.startswith("java")
 is_pypy = hasattr(sys, "pypy_version_info")

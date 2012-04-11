@@ -10,12 +10,12 @@ from datetime import timedelta
 from kombu import serialization
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
 
-from .. import states
-from ..app import current_task
-from ..datastructures import LRUCache
-from ..exceptions import TimeoutError, TaskRevokedError
-from ..utils import timeutils
-from ..utils.serialization import (
+from celery import states
+from celery.app import current_task
+from celery.datastructures import LRUCache
+from celery.exceptions import TimeoutError, TaskRevokedError
+from celery.utils import timeutils
+from celery.utils.serialization import (
         get_pickled_exception,
         get_pickleable_exception,
         create_exception_cls,
@@ -47,7 +47,7 @@ class BaseBackend(object):
     supports_native_join = False
 
     def __init__(self, *args, **kwargs):
-        from ..app import app_or_default
+        from celery.app import app_or_default
         self.app = app_or_default(kwargs.get("app"))
         self.serializer = kwargs.get("serializer",
                                      self.app.conf.CELERY_RESULT_SERIALIZER)

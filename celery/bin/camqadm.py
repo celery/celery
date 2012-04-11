@@ -18,8 +18,8 @@ from itertools import count
 
 from amqplib import client_0_8 as amqp
 
-from ..app import app_or_default
-from ..utils.functional import padlist
+from celery.app import app_or_default
+from celery.utils.functional import padlist
 
 from .base import Command
 

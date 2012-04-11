@@ -13,15 +13,15 @@ from optparse import OptionParser, make_option as Option
 from pprint import pformat
 from textwrap import wrap
 
-from .. import __version__
-from ..app import app_or_default, current_app
-from ..platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
-from ..utils import term
-from ..utils.imports import symbol_by_name
-from ..utils.text import pluralize
-from ..utils.timeutils import maybe_iso8601
+from celery import __version__
+from celery.app import app_or_default, current_app
+from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
+from celery.utils import term
+from celery.utils.imports import symbol_by_name
+from celery.utils.text import pluralize
+from celery.utils.timeutils import maybe_iso8601
 
-from ..bin.base import Command as BaseCommand
+from .base import Command as BaseCommand
 
 HELP = """
 Type '%(prog_name)s <command> --help' for help using
@@ -385,7 +385,7 @@ class migrate(Command):
         if len(args) != 2:
             return self.show_help("migrate")
         from kombu import BrokerConnection
-        from ..contrib.migrate import migrate_tasks
+        from celery.contrib.migrate import migrate_tasks
 
         migrate_tasks(BrokerConnection(args[0]),
                       BrokerConnection(args[1]),
@@ -422,7 +422,7 @@ class shell(Command):
             import_module("celery.concurrency.eventlet")
         if gevent:
             import_module("celery.concurrency.gevent")
-        from .. import task
+        from celery import task
         self.app.loader.import_default_modules()
         self.locals = {"celery": self.app,
                        "BaseTask": task.BaseTask,

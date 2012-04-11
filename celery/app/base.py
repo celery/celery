@@ -21,14 +21,14 @@ from functools import wraps
 
 from kombu.clocks import LamportClock
 
-from .. import platforms
-from ..backends import get_backend_by_url
-from ..exceptions import AlwaysEagerIgnored
-from ..loaders import get_loader_cls
-from ..local import PromiseProxy, maybe_evaluate
-from ..utils import cached_property, register_after_fork
-from ..utils.functional import first
-from ..utils.imports import instantiate, symbol_by_name
+from celery import platforms
+from celery.backends import get_backend_by_url
+from celery.exceptions import AlwaysEagerIgnored
+from celery.loaders import get_loader_cls
+from celery.local import PromiseProxy, maybe_evaluate
+from celery.utils import cached_property, register_after_fork
+from celery.utils.functional import first
+from celery.utils.imports import instantiate, symbol_by_name
 
 from . import annotations
 from .builtins import load_builtin_tasks

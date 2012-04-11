@@ -25,8 +25,8 @@ from kombu.common import eventloop
 from kombu.entity import Exchange, Queue
 from kombu.messaging import Consumer, Producer
 
-from ..app import app_or_default
-from ..utils import uuid
+from celery.app import app_or_default
+from celery.utils import uuid
 
 event_exchange = Exchange("celeryev", type="topic")
 

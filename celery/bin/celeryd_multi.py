@@ -103,10 +103,10 @@ from time import sleep
 
 from kombu.utils.encoding import from_utf8
 
-from .. import __version__
-from ..platforms import shellsplit
-from ..utils import term
-from ..utils.text import pluralize
+from celery import __version__
+from celery.platforms import PIDFile, shellsplit
+from celery.utils import term
+from celery.utils.text import pluralize
 
 SIGNAMES = set(sig for sig in dir(signal)
                         if sig.startswith("SIG") and "_" not in sig)
@@ -295,7 +295,6 @@ class MultiTool(object):
             self.note("")
 
     def getpids(self, p, cmd, callback=None):
-        from .. import platforms
         pidfile_template = p.options.setdefault("--pidfile", "celeryd@%n.pid")
 
         nodes = []
@@ -303,7 +302,7 @@ class MultiTool(object):
             pid = None
             pidfile = expander(pidfile_template)
             try:
-                pid = platforms.PIDFile(pidfile).read_pid()
+                pid = PIDFile(pidfile).read_pid()
             except ValueError:
                 pass
             if pid:

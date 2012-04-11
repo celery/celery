@@ -3,8 +3,8 @@ from __future__ import with_statement
 
 from kombu.serialization import registry
 
-from .. import current_app
-from ..exceptions import ImproperlyConfigured
+from celery import current_app
+from celery.exceptions import ImproperlyConfigured
 
 from .serialization import register_auth
 

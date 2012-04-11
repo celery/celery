@@ -13,8 +13,8 @@ from __future__ import absolute_import
 
 import inspect
 
-from .. import current_app
-from ..exceptions import NotRegistered
+from celery import current_app
+from celery.exceptions import NotRegistered
 
 
 class TaskRegistry(dict):

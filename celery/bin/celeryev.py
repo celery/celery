@@ -10,8 +10,7 @@ import sys
 
 from functools import partial
 
-from .. import platforms
-from ..platforms import detached
+from celery.platforms import detached, set_process_title, strargv
 
 from .base import Command, Option, daemon_options
 
@@ -44,19 +43,19 @@ class EvCommand(Command):
             os.chdir(workdir)
 
     def run_evdump(self):
-        from ..events.dumper import evdump
+        from celery.events.dumper import evdump
         self.set_process_status("dump")
         return evdump(app=self.app)
 
     def run_evtop(self):
-        from ..events.cursesmon import evtop
+        from celery.events.cursesmon import evtop
         self.set_process_status("top")
         return evtop(app=self.app)
 
     def run_evcam(self, camera, logfile=None, pidfile=None, uid=None,
             gid=None, umask=None, working_directory=None,
             detach=False, **kwargs):
-        from ..events.snapshot import evcam
+        from celery.events.snapshot import evcam
         workdir = working_directory
         self.set_process_status("cam")
         kwargs["app"] = self.app
@@ -71,8 +70,8 @@ class EvCommand(Command):
 
     def set_process_status(self, prog, info=""):
         prog = "%s:%s" % (self.prog_name, prog)
-        info = "%s %s" % (info, platforms.strargv(sys.argv))
-        return platforms.set_process_title(prog, info=info)
+        info = "%s %s" % (info, strargv(sys.argv))
+        return set_process_title(prog, info=info)
 
     def get_options(self):
         return (

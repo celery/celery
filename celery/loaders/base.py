@@ -22,11 +22,11 @@ from datetime import datetime
 
 from kombu.utils.encoding import safe_str
 
-from ..datastructures import DictAttribute
-from ..exceptions import ImproperlyConfigured
-from ..utils import cached_property
-from ..utils.imports import import_from_cwd, symbol_by_name
-from ..utils.functional import maybe_list
+from celery.datastructures import DictAttribute
+from celery.exceptions import ImproperlyConfigured
+from celery.utils import cached_property
+from celery.utils.imports import import_from_cwd, symbol_by_name
+from celery.utils.functional import maybe_list
 
 BUILTIN_MODULES = frozenset()
 
@@ -62,7 +62,7 @@ class BaseLoader(object):
     _conf = None
 
     def __init__(self, app=None, **kwargs):
-        from ..app import app_or_default
+        from celery.app import app_or_default
         self.app = app_or_default(app)
         self.task_modules = set()
 
@@ -141,7 +141,7 @@ class BaseLoader(object):
                 override_types={"tuple": "json",
                                 "list": "json",
                                 "dict": "json"}):
-        from ..app.defaults import Option, NAMESPACES
+        from celery.app.defaults import Option, NAMESPACES
         namespace = namespace.upper()
         typemap = dict(Option.typemap, **extra_types)
 

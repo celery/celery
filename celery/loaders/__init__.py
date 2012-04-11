@@ -12,9 +12,9 @@
 """
 from __future__ import absolute_import
 
-from .. import current_app
-from ..utils import deprecated
-from ..utils.imports import symbol_by_name
+from celery import current_app
+from celery.utils import deprecated
+from celery.utils.imports import symbol_by_name
 
 LOADER_ALIASES = {"app": "celery.loaders.app:AppLoader",
                   "default": "celery.loaders.default:Loader",

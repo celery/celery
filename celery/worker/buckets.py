@@ -26,8 +26,8 @@ from Queue import Queue, Empty
 
 from kombu.utils.limits import TokenBucket
 
-from ..utils import timeutils
-from ..utils.compat import zip_longest, chain_from_iterable
+from celery.utils import timeutils
+from celery.utils.compat import zip_longest, chain_from_iterable
 
 
 class RateLimitExceeded(Exception):

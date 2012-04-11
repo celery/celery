@@ -13,10 +13,10 @@ from __future__ import absolute_import
 
 import sys
 
-from .. import current_app
-from ..__compat__ import MagicModule, create_magic_module
-from ..app import current_task as _current_task
-from ..local import Proxy
+from celery import current_app
+from celery.__compat__ import MagicModule, create_magic_module
+from celery.app import current_task as _current_task
+from celery.local import Proxy
 
 
 class module(MagicModule):

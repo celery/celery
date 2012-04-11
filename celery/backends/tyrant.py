@@ -7,7 +7,7 @@ try:
 except ImportError:
     pytyrant = None  # noqa
 
-from ..exceptions import ImproperlyConfigured
+from celery.exceptions import ImproperlyConfigured
 
 from .base import KeyValueStoreBackend
 

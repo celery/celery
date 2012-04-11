@@ -15,18 +15,18 @@ from __future__ import absolute_import
 import sys
 import threading
 
-from ... import current_app
-from ... import states
-from ...datastructures import ExceptionInfo
-from ...exceptions import MaxRetriesExceededError, RetryTaskError
-from ...result import EagerResult
-from ...utils import fun_takes_kwargs, uuid, maybe_reraise
-from ...utils.functional import mattrgetter, maybe_list
-from ...utils.imports import instantiate
-from ...utils.mail import ErrorMail
+from celery import current_app
+from celery import states
+from celery.datastructures import ExceptionInfo
+from celery.exceptions import MaxRetriesExceededError, RetryTaskError
+from celery.result import EagerResult
+from celery.utils import fun_takes_kwargs, uuid, maybe_reraise
+from celery.utils.functional import mattrgetter, maybe_list
+from celery.utils.imports import instantiate
+from celery.utils.mail import ErrorMail
 
-from ..state import current_task
-from ..registry import _unpickle_task
+from celery.app.state import current_task
+from celery.app.registry import _unpickle_task
 
 #: extracts options related to publishing a message from a dict.
 extract_exec_options = mattrgetter("queue", "routing_key",
@@ -649,7 +649,7 @@ class BaseTask(object):
 
         """
         # trace imports BaseTask, so need to import inline.
-        from ...execute.trace import eager_trace_task
+        from celery.execute.trace import eager_trace_task
 
         app = self._get_app()
         args = args or []
@@ -808,7 +808,7 @@ class BaseTask(object):
         """Returns :class:`~celery.task.sets.subtask` object for
         this task, wrapping arguments and execution options
         for a single task invocation."""
-        from ...task.sets import subtask
+        from celery.task.sets import subtask
         return subtask(self, *args, **kwargs)
 
     @property

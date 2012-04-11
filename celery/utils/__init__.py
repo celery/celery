@@ -22,7 +22,7 @@ from functools import partial, wraps
 from inspect import getargspec
 from pprint import pprint
 
-from ..exceptions import CPendingDeprecationWarning, CDeprecationWarning
+from celery.exceptions import CPendingDeprecationWarning, CDeprecationWarning
 from .compat import StringIO
 
 from .imports import symbol_by_name, qualname

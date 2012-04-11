@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-from ..datastructures import LRUCache
-from ..exceptions import ImproperlyConfigured
-from ..utils import cached_property
+from celery.datastructures import LRUCache
+from celery.exceptions import ImproperlyConfigured
+from celery.utils import cached_property
 
 from .base import KeyValueStoreBackend
 
@@ -104,8 +104,8 @@ class CacheBackend(KeyValueStoreBackend):
         self.client.set(key, '0', time=86400)
 
     def on_chord_part_return(self, task, propagate=False):
-        from ..task.sets import subtask
-        from ..result import TaskSetResult
+        from celery.task.sets import subtask
+        from celery.result import TaskSetResult
         setid = task.request.taskset
         if not setid:
             return

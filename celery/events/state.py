@@ -29,8 +29,8 @@ from time import time
 
 from kombu.utils import kwdict
 
-from .. import states
-from ..datastructures import AttributeDict, LRUCache
+from celery import states
+from celery.datastructures import AttributeDict, LRUCache
 
 # The window (in percentage) is added to the workers heartbeat
 # frequency.  If the time between updates exceeds this window,

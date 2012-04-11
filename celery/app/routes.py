@@ -12,10 +12,10 @@
 """
 from __future__ import absolute_import
 
-from ..exceptions import QueueNotFound
-from ..utils import lpmerge
-from ..utils.functional import firstmethod, mpromise
-from ..utils.imports import instantiate
+from celery.exceptions import QueueNotFound
+from celery.utils import lpmerge
+from celery.utils.functional import firstmethod, mpromise
+from celery.utils.imports import instantiate
 
 _first_route = firstmethod("route_for_task")
 

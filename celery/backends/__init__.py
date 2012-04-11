@@ -5,10 +5,10 @@ import sys
 
 from kombu.utils.url import _parse_url
 
-from .. import current_app
-from ..local import Proxy
-from ..utils.imports import symbol_by_name
-from ..utils.functional import memoize
+from celery import current_app
+from celery.local import Proxy
+from celery.utils.imports import symbol_by_name
+from celery.utils.functional import memoize
 
 UNKNOWN_BACKEND = """\
 Unknown result backend: %r.  Did you spell that correctly? (%r)\

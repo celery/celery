@@ -13,10 +13,10 @@
 """
 from __future__ import absolute_import
 
-from .. import current_app
-from ..__compat__ import class_property, reclassmethod
-from ..app.task import Context, TaskType, BaseTask  # noqa
-from ..schedules import maybe_schedule
+from celery import current_app
+from celery.__compat__ import class_property, reclassmethod
+from celery.app.task import Context, TaskType, BaseTask  # noqa
+from celery.schedules import maybe_schedule
 
 #: list of methods that are classmethods in the old API.
 _COMPAT_CLASSMETHODS = (

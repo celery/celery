@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
-from ..utils.functional import firstmethod, mpromise
-from ..utils.imports import instantiate
+from celery.utils.functional import firstmethod, mpromise
+from celery.utils.imports import instantiate
 
 _first_match = firstmethod("annotate")
 _first_match_any = firstmethod("annotate_any")

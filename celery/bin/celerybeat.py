@@ -32,7 +32,7 @@ import os
 
 from functools import partial
 
-from ..platforms import detached
+from celery.platforms import detached
 
 from .base import Command, Option, daemon_options
 

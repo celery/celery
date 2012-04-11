@@ -22,8 +22,8 @@ import logging
 
 from Queue import Empty
 
-from ..app import app_or_default
-from ..utils.threads import bgThread
+from celery.app import app_or_default
+from celery.utils.threads import bgThread
 
 from .abstract import StartStopComponent
 

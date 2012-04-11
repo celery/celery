@@ -25,13 +25,13 @@ import traceback
 
 from warnings import warn
 
-from .. import current_app
-from .. import states, signals
-from ..app.state import _tls
-from ..app.task import BaseTask
-from ..datastructures import ExceptionInfo
-from ..exceptions import RetryTaskError
-from ..utils.serialization import get_pickleable_exception
+from celery import current_app
+from celery import states, signals
+from celery.app.state import _tls
+from celery.app.task import BaseTask
+from celery.datastructures import ExceptionInfo
+from celery.exceptions import RetryTaskError
+from celery.utils.serialization import get_pickleable_exception
 
 send_prerun = signals.task_prerun.send
 prerun_receivers = signals.task_prerun.receivers

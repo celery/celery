@@ -13,7 +13,7 @@ from __future__ import absolute_import
 
 import os
 
-from ..local import Proxy
+from celery.local import Proxy
 
 from . import state
 from .base import App, AppPickler  # noqa

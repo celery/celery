@@ -23,12 +23,12 @@ import traceback
 
 from kombu.utils.finalize import Finalize
 
-from .. import concurrency as _concurrency
-from ..app import app_or_default
-from ..app.abstract import configurated, from_config
-from ..exceptions import SystemTerminate
-from ..utils.functional import noop
-from ..utils.imports import qualname, reload_from_cwd
+from celery import concurrency as _concurrency
+from celery.app import app_or_default
+from celery.app.abstract import configurated, from_config
+from celery.exceptions import SystemTerminate
+from celery.utils.functional import noop
+from celery.utils.imports import qualname, reload_from_cwd
 
 from . import abstract
 from . import state
@@ -108,7 +108,7 @@ class Beat(abstract.StartStopComponent):
         w.beat = None
 
     def create(self, w):
-        from ..beat import EmbeddedService
+        from celery.beat import EmbeddedService
         b = w.beat = EmbeddedService(app=w.app,
                                      logger=w.logger,
                                      schedule_filename=w.schedule_filename,

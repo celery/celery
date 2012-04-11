@@ -22,7 +22,7 @@ try:
 except ImportError:  # pragma: no cover
     from cgi import parse_qsl  # noqa
 
-from .. import __version__ as celery_version
+from celery import __version__ as celery_version
 from .base import Task as BaseTask
 
 GET_METHODS = frozenset(["GET", "HEAD"])

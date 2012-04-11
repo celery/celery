@@ -7,9 +7,10 @@ import warnings
 
 from optparse import OptionParser, make_option as Option
 
-from .. import __version__, Celery
-from ..exceptions import CDeprecationWarning, CPendingDeprecationWarning
-from ..platforms import EX_FAILURE, EX_USAGE
+from celery import Celery, __version__
+from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
+from celery.platforms import EX_FAILURE, EX_USAGE
+from celery.utils.imports import symbol_by_name, import_from_cwd
 
 # always enable DeprecationWarnings, so our users can see them.
 for warning in (CDeprecationWarning, CPendingDeprecationWarning):
@@ -183,7 +184,6 @@ class Command(object):
         return argv
 
     def symbol_by_name(self, name):
-        from ..utils.imports import symbol_by_name, import_from_cwd
         return symbol_by_name(name, imp=import_from_cwd)
     get_cls_by_name = symbol_by_name  # XXX compat
 

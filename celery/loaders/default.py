@@ -15,9 +15,9 @@ import os
 import sys
 import warnings
 
-from ..datastructures import AttributeDict
-from ..exceptions import NotConfigured
-from ..utils.imports import NotAPackage, find_module
+from celery.datastructures import AttributeDict
+from celery.exceptions import NotConfigured
+from celery.utils.imports import NotAPackage, find_module
 
 from .base import BaseLoader
 

@@ -19,13 +19,13 @@ import atexit
 
 from kombu.utils.limits import TokenBucket
 
-from .. import platforms
-from ..app import app_or_default
-from ..utils import timer2
-from ..utils.dispatch import Signal
-from ..utils.imports import instantiate
-from ..utils.log import LOG_LEVELS
-from ..utils.timeutils import rate
+from celery import platforms
+from celery.app import app_or_default
+from celery.utils import timer2
+from celery.utils.dispatch import Signal
+from celery.utils.imports import instantiate
+from celery.utils.log import LOG_LEVELS
+from celery.utils.timeutils import rate
 
 
 class Polaroid(object):

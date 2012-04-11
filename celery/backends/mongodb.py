@@ -9,9 +9,9 @@ try:
 except ImportError:
     pymongo = None  # noqa
 
-from .. import states
-from ..exceptions import ImproperlyConfigured
-from ..utils.timeutils import maybe_timedelta
+from celery import states
+from celery.exceptions import ImproperlyConfigured
+from celery.utils.timeutils import maybe_timedelta
 
 from .base import BaseDictBackend
 

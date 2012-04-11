@@ -17,7 +17,7 @@ import time
 
 from collections import defaultdict
 
-from ..utils.threads import bgThread, Event
+from celery.utils.threads import bgThread, Event
 
 from .abstract import StartStopComponent
 

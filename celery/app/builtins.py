@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-from ..utils import uuid
+from celery.utils import uuid
 
 #: global list of functions defining a built-in task.
 #: these are called for every app instance to setup built-in task.
@@ -49,8 +49,8 @@ def add_unlock_chord_task(app):
     It creates a task chain polling the header for completion.
 
     """
-    from ..result import AsyncResult, TaskSetResult
-    from ..task.sets import subtask
+    from celery.result import AsyncResult, TaskSetResult
+    from celery.task.sets import subtask
 
     @app.task(name="celery.chord_unlock", max_retries=None)
     def unlock_chord(setid, callback, interval=1, propagate=False,
@@ -70,7 +70,7 @@ def add_chord_task(app):
     """Every chord is executed in a dedicated task, so that the chord
     can be used as a subtask, and this generates the task
     responsible for that."""
-    from ..task.sets import TaskSet
+    from celery.task.sets import TaskSet
 
     @app.task(name="celery.chord", accept_magic_kwargs=False)
     def chord(set, body, interval=1, max_retries=None,

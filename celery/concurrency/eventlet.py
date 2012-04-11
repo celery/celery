@@ -12,8 +12,8 @@ import sys
 
 from time import time
 
-from .. import signals
-from ..utils import timer2
+from celery import signals
+from celery.utils import timer2
 
 from . import base
 

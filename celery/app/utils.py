@@ -5,10 +5,10 @@ import kombu
 import os
 import platform as _platform
 
-from .. import datastructures
-from .. import platforms
-from ..utils.text import pretty
-from ..utils.imports import qualname
+from celery import datastructures
+from celery import platforms
+from celery.utils.text import pretty
+from celery.utils.imports import qualname
 
 from .defaults import find
 

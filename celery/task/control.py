@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
-from .. import current_app
-from ..local import Proxy
+from celery import current_app
+from celery.local import Proxy
 
 
 broadcast = Proxy(lambda: current_app.control.broadcast)

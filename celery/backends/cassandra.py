@@ -12,9 +12,9 @@ except ImportError:
 import socket
 import time
 
-from .. import states
-from ..exceptions import ImproperlyConfigured
-from ..utils.timeutils import maybe_timedelta, timedelta_seconds
+from celery import states
+from celery.exceptions import ImproperlyConfigured
+from celery.utils.timeutils import maybe_timedelta, timedelta_seconds
 
 from .base import BaseDictBackend
 

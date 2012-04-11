@@ -16,8 +16,8 @@ import sys
 
 from datetime import datetime
 
-from ..app import app_or_default
-from ..datastructures import LRUCache
+from celery.app import app_or_default
+from celery.datastructures import LRUCache
 
 
 TASK_NAMES = LRUCache(limit=0xFFF)

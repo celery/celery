@@ -22,10 +22,10 @@ from itertools import count
 from textwrap import wrap
 from math import ceil
 
-from .. import __version__
-from .. import states
-from ..app import app_or_default
-from ..utils.text import abbr, abbrtask
+from celery import __version__
+from celery import states
+from celery.app import app_or_default
+from celery.utils.text import abbr, abbrtask
 
 BORDER_SPACING = 4
 LEFT_BORDER_OFFSET = 3

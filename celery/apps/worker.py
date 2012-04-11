@@ -12,15 +12,15 @@ import socket
 import sys
 import warnings
 
-from .. import __version__, platforms, signals
-from ..app import app_or_default
-from ..app.abstract import configurated, from_config
-from ..exceptions import ImproperlyConfigured, SystemTerminate
-from ..utils import cry, isatty
-from ..utils.imports import qualname
-from ..utils.log import LOG_LEVELS, mlevel
-from ..utils.text import pluralize
-from ..worker import WorkController
+from celery import __version__, platforms, signals
+from celery.app import app_or_default
+from celery.app.abstract import configurated, from_config
+from celery.exceptions import ImproperlyConfigured, SystemTerminate
+from celery.utils import cry, isatty
+from celery.utils.imports import qualname
+from celery.utils.log import LOG_LEVELS, mlevel
+from celery.utils.text import pluralize
+from celery.worker import WorkController
 
 try:
     from greenlet import GreenletExit
@@ -346,7 +346,7 @@ def install_rdb_handler(envvar="CELERY_RDBSIG"):  # pragma: no cover
 
     def rdb_handler(signum, frame):
         """Signal handler setting a rdb breakpoint at the current frame."""
-        from ..contrib import rdb
+        from celery.contrib import rdb
         rdb.set_trace(frame)
 
     if os.environ.get(envvar):

@@ -22,16 +22,16 @@ from datetime import datetime
 from kombu.utils import kwdict
 from kombu.utils.encoding import safe_repr, safe_str
 
-from .. import current_app
-from .. import exceptions
-from ..app import app_or_default
-from ..datastructures import ExceptionInfo
-from ..execute.trace import build_tracer, trace_task, report_internal_error
-from ..platforms import set_mp_process_title as setps
-from ..utils import fun_takes_kwargs
-from ..utils.functional import noop
-from ..utils.text import truncate
-from ..utils.timeutils import maybe_iso8601, timezone
+from celery import current_app
+from celery import exceptions
+from celery.app import app_or_default
+from celery.datastructures import ExceptionInfo
+from celery.execute.trace import build_tracer, trace_task, report_internal_error
+from celery.platforms import set_mp_process_title as setps
+from celery.utils import fun_takes_kwargs
+from celery.utils.functional import noop
+from celery.utils.text import truncate
+from celery.utils.timeutils import maybe_iso8601, timezone
 
 from . import state
 

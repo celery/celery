@@ -83,7 +83,7 @@ try:
 except ImportError:  # pragma: no cover
     freeze_support = lambda: True  # noqa
 
-from celery.bin.base import Command, Option
+from .base import Command, Option
 
 
 class WorkerCommand(Command):

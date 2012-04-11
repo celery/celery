@@ -15,9 +15,9 @@ from datetime import datetime
 
 from kombu.utils.encoding import safe_repr
 
-from ..platforms import signals as _signals
-from ..utils import timeutils
-from ..utils.compat import UserDict
+from celery.platforms import signals as _signals
+from celery.utils import timeutils
+from celery.utils.compat import UserDict
 
 from . import state
 from .state import revoked

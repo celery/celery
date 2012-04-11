@@ -5,13 +5,12 @@ import atexit
 import socket
 import sys
 
-from .. import __version__, platforms
-from .. import beat
-from ..app import app_or_default
-from ..app.abstract import configurated, from_config
-from ..utils.imports import qualname
-from ..utils.log import LOG_LEVELS
-from ..utils.timeutils import humanize_seconds
+from celery import __version__, platforms, beat
+from celery.app import app_or_default
+from celery.app.abstract import configurated, from_config
+from celery.utils.imports import qualname
+from celery.utils.log import LOG_LEVELS
+from celery.utils.timeutils import humanize_seconds
 
 STARTUP_INFO_FMT = """
 Configuration ->

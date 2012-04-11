@@ -16,12 +16,12 @@ from itertools import chain
 
 from kombu.utils import reprcall
 
-from .. import current_app
-from ..app import current_task
-from ..datastructures import AttributeDict
-from ..utils import cached_property, uuid
-from ..utils.functional import maybe_list
-from ..utils.compat import UserList, chain_from_iterable
+from celery import current_app
+from celery.app import current_task
+from celery.datastructures import AttributeDict
+from celery.utils import cached_property, uuid
+from celery.utils.functional import maybe_list
+from celery.utils.compat import UserList, chain_from_iterable
 
 
 class subtask(AttributeDict):

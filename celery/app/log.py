@@ -4,15 +4,17 @@ import logging
 import os
 import sys
 
-from .. import signals
-from ..utils import isatty
-from ..utils.compat import LoggerAdapter, WatchedFileHandler
-from ..utils.log import (ColorFormatter, ensure_process_aware_logger,
-                         LoggingProxy, get_multiprocessing_logger,
-                         reset_multiprocessing_logger, mlevel)
-from ..utils.term import colored
+from celery import signals
+from celery.utils import isatty
+from celery.utils.compat import LoggerAdapter, WatchedFileHandler
+from celery.utils.log import (
+    ColorFormatter, ensure_process_aware_logger,
+    LoggingProxy, get_multiprocessing_logger,
+    reset_multiprocessing_logger, mlevel
+)
+from celery.utils.term import colored
 
-is_py3k = sys.version_info >= (3, 0)
+is_py3k = sys.version_info[0] == 3
 
 
 class Logging(object):

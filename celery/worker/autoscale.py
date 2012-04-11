@@ -21,7 +21,7 @@ import threading
 
 from time import sleep, time
 
-from ..utils.threads import bgThread
+from celery.utils.threads import bgThread
 
 from . import state
 from .abstract import StartStopComponent

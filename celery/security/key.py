@@ -7,7 +7,7 @@ try:
 except ImportError:
     crypto = None  # noqa
 
-from ..exceptions import SecurityError
+from celery.exceptions import SecurityError
 
 
 class PrivateKey(object):

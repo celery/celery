@@ -8,7 +8,7 @@ import time
 from kombu.log import anon_logger
 from kombu.utils.encoding import safe_repr
 
-from ..utils import timer2
+from celery.utils import timer2
 
 _default_logger = anon_logger("celery.concurrency")
 

@@ -6,10 +6,11 @@ import platform
 import signal as _signal
 
 
-from ... import platforms
-from ... import signals
-from ...app import app_or_default
-from ..base import BasePool
+from celery import platforms
+from celery import signals
+from celery.app import app_or_default
+from celery.concurrency.base import BasePool
+
 from .pool import Pool, RUN
 
 if platform.system() == "Windows":  # pragma: no cover

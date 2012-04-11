@@ -14,8 +14,8 @@ from __future__ import absolute_import
 from collections import defaultdict
 from importlib import import_module
 
-from ..datastructures import DependencyGraph
-from ..utils.imports import instantiate
+from celery.datastructures import DependencyGraph
+from celery.utils.imports import instantiate
 
 
 class Namespace(object):

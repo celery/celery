@@ -11,8 +11,8 @@ from itertools import count
 from kombu.entity import Exchange, Queue
 from kombu.messaging import Consumer, Producer
 
-from .. import states
-from ..exceptions import TimeoutError
+from celery import states
+from celery.exceptions import TimeoutError
 
 from .base import BaseDictBackend
 

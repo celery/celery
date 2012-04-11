@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-from ..utils.imports import symbol_by_name
+from celery.utils.imports import symbol_by_name
 
 ALIASES = {
     "processes": "celery.concurrency.processes:TaskPool",
