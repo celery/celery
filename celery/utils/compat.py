@@ -47,16 +47,6 @@ else:
     BytesIO = WhateverIO = StringIO     # noqa
 
 
-# im_func is no longer available in Py3.
-# instead the unbound method itself can be used.
-if is_py3k:
-    def fun_of_method(method):
-        return method
-else:
-    def fun_of_method(method):  # noqa
-        return method.im_func
-
-
 ############## collections.OrderedDict ######################################
 try:
     from collections import OrderedDict
