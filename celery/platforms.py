@@ -101,6 +101,8 @@ class PIDFile(object):
 
     def acquire(self):
         """Acquire lock."""
+        if self.read_pid() == os.getpid():
+            return self
         try:
             self.write_pid()
         except OSError, exc:
@@ -159,6 +161,8 @@ class PIDFile(object):
             return True
         if not pid:
             self.remove()
+            return True
+        if pid == os.getpid():
             return True
 
         try:
