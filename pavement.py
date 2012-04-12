@@ -97,8 +97,7 @@ def flake8(options):
 ])
 def flakeplus(options):
     noerror = getattr(options, "noerror", False)
-    sh("python contrib/release/flakeplus.py celery",
-       ignore_error=noerror)
+    sh("flakeplus celery", ignore_error=noerror)
 
 
 @task
