@@ -71,7 +71,7 @@ Let's create the file :file:`tasks.py`:
     if __name__ == "__main__":
         celery.start()
 
-The first argument to :class:`Celery` is the name of the current module,
+The first argument to :class:`~celery.app.Celery` is the name of the current module,
 this is needed so that names can be automatically generated, the second
 argument is the broker keyword argument which specifies the URL of the
 message broker we want to use.
@@ -110,9 +110,9 @@ Executing the task
 ==================
 
 Whenever we want to execute our task, we use the
-:meth:`~celery.task.base.Task.delay` method of the task class.
+:meth:`~@Task.delay` method of the task.
 
-This is a handy shortcut to the :meth:`~celery.task.base.Task.apply_async`
+This is a handy shortcut to the :meth:`~@Task.apply_async`
 method which gives greater control of the task execution (see
 :ref:`guide-executing`).
 
@@ -122,7 +122,7 @@ method which gives greater control of the task execution (see
 The task should now be executed by the worker you started earlier,
 and you can verify that by looking at the workers console output.
 
-Applying a task returns an :class:`~celery.result.AsyncResult` instance,
+Applying a task returns an :class:`~@AsyncResult` instance,
 which can be used to check the state of the task, wait for the task to finish
 or get its return value (or if the task failed, the exception and traceback).
 But this isn't enabled by default, and you have to configure Celery to
@@ -151,7 +151,7 @@ you can configure::
 To read more about result backends please see :ref:`task-result-backends`.
 
 Now with the result backend configured, let's execute the task again.
-This time we'll hold on to the :class:`~celery.result.AsyncResult`::
+This time we'll hold on to the :class:`~@AsyncResult`::
 
     >>> result = add.delay(4, 4)
 
@@ -172,7 +172,7 @@ Here's some examples of what you can do when you have results::
     >>> result.successful() # returns True if the task didn't end in failure.
     True
 
-If the task raises an exception, the return value of `result.successful()`
+If the task raises an exception, the return value of :meth:`~@AsyncResult.successful`
 will be :const:`False`, and `result.result` will contain the exception instance
 raised by the task.
 

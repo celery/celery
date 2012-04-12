@@ -3,8 +3,7 @@ from docutils import nodes
 from sphinx.environment import NoUri
 from sphinx.util.nodes import make_refnode
 
-ABBR = {
-    "": "celery.app.base.Celery",
+APPATTRS = {
     "amqp": "celery.app.amqp.AMQP",
     "backend": "celery.backends.base.BaseBackend",
     "control": "celery.app.control.Control",
@@ -22,43 +21,79 @@ ABBR = {
     "Task": "celery.app.task.BaseTask",
 }
 
+ABBRS = {
+    "Celery": "celery.app.Celery",
+}
+
 ABBR_EMPTY = {
     "exc": "celery.exceptions",
 }
-DEFAULT_EMPTY = "celery.app.base.Celery"
+DEFAULT_EMPTY = "celery.app.Celery"
 
 
-def shorten(S, base):
-    if S.startswith('@-'):
-        return S[2:]
-    elif S.startswith('@'):
-        print("S: %r BASE: %r" % (S, base))
-        return '.'.join([base, S[1:]])
+def typeify(S, type):
+    if type in ("meth", "func"):
+        return S + '()'
     return S
 
 
+def shorten(S, newtarget, src_dict):
+    if S.startswith('@-'):
+        return S[2:]
+    elif S.startswith('@'):
+        if src_dict is APPATTRS:
+            return '.'.join([pkg_of(newtarget), S[1:]])
+        return S[1:]
+    return S
+
+
+def get_abbr(pre, rest, type):
+    if pre:
+        for d in APPATTRS, ABBRS:
+            try:
+                return d[pre], rest, d
+            except KeyError:
+                pass
+        raise KeyError(pre)
+    else:
+        for d in APPATTRS, ABBRS:
+            try:
+                return d[rest], '', d
+            except KeyError:
+                pass
+    return ABBR_EMPTY.get(type, DEFAULT_EMPTY), rest, ABBR_EMPTY
+
+
+
 def resolve(S, type):
-    X = S
+    is_appattr = False
     if S.startswith('@'):
         S = S.lstrip('@-')
         try:
             pre, rest = S.split('.', 1)
         except ValueError:
             pre, rest = '', S
-        return '.'.join([ABBR[pre] if pre
-                                   else ABBR_EMPTY.get(type, DEFAULT_EMPTY),
-                         rest])
+
+        target, rest, src = get_abbr(pre, rest, type)
+        return '.'.join([target, rest]) if rest else target, src
+    return S, None
 
 
 def pkg_of(module_fqdn):
     return module_fqdn.split('.', 1)[0]
 
 
-def modify_textnode(T, newtarget, node):
+def basename(module_fqdn):
+    return module_fqdn.lstrip('@').rsplit('.', -1)[-1]
+
+
+def modify_textnode(T, newtarget, node, src_dict, type):
     src = node.children[0].rawsource
     return nodes.Text(
-        T.lstrip('@') if '~' in src else shorten(T, pkg_of(newtarget)),
-        src
+        typeify(basename(T), type) if '~' in src
+                                   else typeify(shorten(T, newtarget,
+                                                        src_dict), type),
+        src,
     )
 
 
@@ -67,10 +102,12 @@ def maybe_resolve_abbreviations(app, env, node, contnode):
     target = node["reftarget"]
     type = node["reftype"]
     if target.startswith('@'):
-        newtarget = node["reftarget"] = resolve(target, type)
+        newtarget, src_dict = resolve(target, type)
+        node["reftarget"] = newtarget
         # shorten text if '~' is not enabled.
         if len(contnode) and isinstance(contnode[0], nodes.Text):
-                contnode[0] = modify_textnode(target, newtarget, node)
+                contnode[0] = modify_textnode(target, newtarget, node,
+                                              src_dict, type)
         if domainname:
             try:
                 domain = env.domains[node.get("refdomain")]

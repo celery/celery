@@ -172,6 +172,6 @@ from .imports import (          # noqa
         qualname as get_full_cls_name, symbol_by_name as get_cls_by_name,
         instantiate, import_from_cwd
 )
-from .functional import chunks, noop            # noqa
-from kombu.utils import cached_property, uuid   # noqa
+from .functional import chunks, noop                    # noqa
+from kombu.utils import cached_property, kwdict, uuid   # noqa
 gen_unique_id = uuid

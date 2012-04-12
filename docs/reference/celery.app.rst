@@ -8,7 +8,7 @@
     Application
     -----------
 
-    .. autoclass:: App
+    .. autoclass:: Celery
 
         .. attribute:: main
 
@@ -30,14 +30,13 @@
 
         .. automethod:: task
         .. automethod:: create_task_cls
-        .. automethod:: TaskSet
         .. automethod:: send_task
-        .. automethod:: AsyncResult
-        .. automethod:: TaskSetResult
+        .. autoattribute:: AsyncResult
+        .. autoattribute:: TaskSetResult
 
         .. automethod:: worker_main
-        .. automethod:: Worker
-        .. automethod:: Beat
+        .. autoattribute:: Worker
+        .. autoattribute:: Beat
 
         .. automethod:: broker_connection
         .. automethod:: with_default_connection
