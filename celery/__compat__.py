@@ -28,6 +28,8 @@ def getappattr(path):
     e.g. getappattr("amqp.get_task_consumer")``."""
     from celery import current_app
     return reduce(lambda a, b: getattr(a, b), [current_app] + path)
+
+
 def _compat_task_decorator(*args, **kwargs):
     from celery import current_app
     kwargs.setdefault("accept_magic_kwargs", True)
@@ -122,17 +124,6 @@ class MagicModule(ModuleType):
         return list(set(self.__all__) + DEFAULT_ATTRS)
 
 
-def get_compat_module(pkg, name):
-
-    def prepare(attr):
-        if isinstance(attr, basestring):
-            return Proxy(getappattr, (attr.split('.'), ))
-        return attr
-
-    return create_module(name, COMPAT_MODULES[pkg.__name__][name],
-                         pkg=pkg, prepare_attr=prepare)
-
-
 def create_module(name, attrs, cls_attrs=None, pkg=None,
         bases=(MagicModule, ), prepare_attr=None):
     fqdn = '.'.join([pkg.__name__, name]) if pkg else name
@@ -144,12 +135,6 @@ def create_module(name, attrs, cls_attrs=None, pkg=None,
     module.__dict__.update(attrs)
     return module
 
-
-def get_origins(defs):
-    origins = {}
-    for module, items in defs.iteritems():
-        origins.update(dict((item, module) for item in items))
-    return origins
 
 def recreate_module(name, compat_modules=(), by_module={}, direct={}, **attrs):
     old_module = sys.modules[name]
@@ -165,3 +150,21 @@ def recreate_module(name, compat_modules=(), by_module={}, direct={}, **attrs):
     new_module.__dict__.update(dict((mod, get_compat_module(new_module, mod))
                                      for mod in compat_modules))
     return old_module, new_module
+
+
+def get_compat_module(pkg, name):
+
+    def prepare(attr):
+        if isinstance(attr, basestring):
+            return Proxy(getappattr, (attr.split('.'), ))
+        return attr
+
+    return create_module(name, COMPAT_MODULES[pkg.__name__][name],
+                         pkg=pkg, prepare_attr=prepare)
+
+
+def get_origins(defs):
+    origins = {}
+    for module, items in defs.iteritems():
+        origins.update(dict((item, module) for item in items))
+    return origins

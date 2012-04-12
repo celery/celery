@@ -24,9 +24,9 @@ class module(MagicModule):
 
 old_module, new_module = recreate_module(__name__,
     by_module={
-        "celery.task.base": ["BaseTask", "Task", "PeriodicTask",
-                             "task", "periodic_task"],
-        "celery.task.sets": ["chain", "group", "TaskSet", "subtask"],
+        "celery.task.base":   ["BaseTask", "Task", "PeriodicTask",
+                               "task", "periodic_task"],
+        "celery.task.sets":   ["chain", "group", "TaskSet", "subtask"],
         "celery.task.chords": ["chord"],
     },
     base=module,

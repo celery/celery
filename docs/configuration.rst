@@ -1089,7 +1089,7 @@ CELERYD_TASK_SOFT_TIME_LIMIT
 
 Task soft time limit in seconds.
 
-The :exc:`~celery.exceptions.SoftTimeLimitExceeded` exception will be
+The :exc:`~@SoftTimeLimitExceeded` exception will be
 raised when this is exceeded.  The task can catch this to
 e.g. clean up before the hard time limit comes.
 
