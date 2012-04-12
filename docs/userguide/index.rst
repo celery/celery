@@ -15,7 +15,7 @@
     executing
     workers
     periodic-tasks
-    tasksets
+    groups
     remote-tasks
     routing
     monitoring

@@ -413,7 +413,7 @@ The default queue is named `celery`. To get all available queues, invoke::
 
   If a list has no elements in Redis, it doesn't exist. Hence it won't show up
   in the `keys` command output. `llen` for that list returns 0 in that case.
-  
+
   On the other hand, if you're also using Redis for other purposes, the output
   of the `keys` command will include unrelated values stored in the database.
   The recommended way around this is to use a dedicated `DATABASE_NUMBER` for
