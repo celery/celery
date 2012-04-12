@@ -14,22 +14,15 @@ __docformat__ = "restructuredtext"
 
 # -eof meta-
 
-import sys
-
-if sys.version_info < (2, 5):
-    raise Exception(
-        "Python 2.4 is not supported by this version. "
-        "Please use Celery versions 2.1.x or earlier.")
-
 # Lazy loading
 from .__compat__ import recreate_module
 
 
 old_module, new_module = recreate_module(__name__,
     by_module={
-        "celery.app": ["Celery", "bugreport"],
-        "celery.app.state": ["current_app", "current_task"],
-        "celery.task.sets": ["chain", "group", "subtask"],
+        "celery.app":         ["Celery", "bugreport"],
+        "celery.app.state":   ["current_app", "current_task"],
+        "celery.task.sets":   ["chain", "group", "subtask"],
         "celery.task.chords": ["chord"],
     },
     direct={"task": "celery.task"},

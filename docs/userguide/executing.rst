@@ -13,17 +13,17 @@
 Basics
 ======
 
-Executing a task is done with :meth:`~celery.task.Base.Task.apply_async`,
-and the shortcut: :meth:`~celery.task.Base.Task.delay`.
+Executing a task is done with :meth:`~@Task.apply_async`,
+or its shortcut: :meth:`~@Task.delay`.
 
-`delay` is simple and convenient, as it looks like calling a regular
+:meth:`~@Task.delay` is simple and convenient, as it looks like calling a regular
 function:
 
 .. code-block:: python
 
     Task.delay(arg1, arg2, kwarg1="x", kwarg2="y")
 
-The same using `apply_async` is written like this:
+The same using :meth:`~@Task.apply_async` is written like this:
 
 .. code-block:: python
 
@@ -32,7 +32,7 @@ The same using `apply_async` is written like this:
 
 While `delay` is convenient, it doesn't give you as much control as using
 `apply_async`.  With `apply_async` you can override the execution options
-available as attributes on the `Task` class (see :ref:`task-options`).
+available as attributes on the :class:`~@Task` class (see :ref:`task-options`).
 In addition you can set countdown/eta, task expiry, provide a custom broker
 connection and more.
 
@@ -48,7 +48,7 @@ called `add`, returning the sum of two positional arguments:
 .. note::
 
     You can also execute a task by name using
-    :func:`~celery.execute.send_task`, if you don't have access to the
+    :func:`~@send_task`, if you don't have access to the
     task class::
 
         >>> from celery.execute import send_task
@@ -111,7 +111,7 @@ either as seconds after task publish, or a specific date and time using
 
 
 When a worker receives an expired task it will mark
-the task as :state:`REVOKED` (:exc:`~celery.exceptions.TaskRevokedError`).
+the task as :state:`REVOKED` (:exc:`~@TaskRevokedError`).
 
 .. _executing-serializers:
 

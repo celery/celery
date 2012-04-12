@@ -1,11 +1,11 @@
 ==========================================
- celery.execute.trace
+ celery.task.trace
 ==========================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.execute.trace
+.. currentmodule:: celery.task.trace
 
-.. automodule:: celery.execute.trace
+.. automodule:: celery.task.trace
     :members:
     :undoc-members:

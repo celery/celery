@@ -48,7 +48,7 @@ signal).
 If the worker won't shutdown after considerate time, for example because
 of tasks stuck in an infinite-loop, you can use the :sig:`KILL` signal to
 force terminate the worker, but be aware that currently executing tasks will
-be lost (unless the tasks have the :attr:`~celery.task.base.Task.acks_late`
+be lost (unless the tasks have the :attr:`~@Task.acks_late`
 option set).
 
 Also as processes can't override the :sig:`KILL` signal, the worker will
@@ -126,7 +126,7 @@ time limit kills it:
     from myapp import celery
     from celery.exceptions import SoftTimeLimitExceeded
 
-    @celery.task()
+    @celery.task
     def mytask():
         try:
             do_work()
@@ -257,13 +257,13 @@ to the number of destination hosts.
 
 .. _worker-broadcast-fun:
 
-The :func:`~celery.task.control.broadcast` function.
+The :meth:`~@control.broadcast` function.
 ----------------------------------------------------
 
 This is the client function used to send commands to the workers.
 Some remote control commands also have higher-level interfaces using
-:func:`~celery.task.control.broadcast` in the background, like
-:func:`~celery.task.control.rate_limit` and :func:`~celery.task.control.ping`.
+:meth:`~@control.broadcast` in the background, like
+:meth:`~@control.rate_limit` and :meth:`~@control.ping`.
 
 Sending the :control:`rate_limit` command and keyword arguments::
 
@@ -293,7 +293,7 @@ to receive the command::
 
 Of course, using the higher-level interface to set rate limits is much
 more convenient, but there are commands that can only be requested
-using :func:`~celery.task.control.broadcast`.
+using :meth:`~@control.broadcast`.
 
 .. _worker-rate-limits:
 
@@ -376,7 +376,7 @@ a custom timeout::
      {'worker2.example.com': 'pong'},
      {'worker3.example.com': 'pong'}]
 
-:func:`~celery.task.control.ping` also supports the `destination` argument,
+:meth:`~@control.ping` also supports the `destination` argument,
 so you can specify which workers to ping::
 
     >>> ping(['worker2.example.com', 'worker3.example.com'])
@@ -489,7 +489,7 @@ then import them using the :setting:`CELERY_IMPORTS` setting::
 Inspecting workers
 ==================
 
-:class:`celery.task.control.inspect` lets you inspect running workers.  It
+:class:`@control.inspect` lets you inspect running workers.  It
 uses remote control commands under the hood.
 
 .. code-block:: python
@@ -510,7 +510,7 @@ Dump of registered tasks
 ------------------------
 
 You can get a list of tasks registered in the worker using the
-:meth:`~celery.task.control.inspect.registered`::
+:meth:`~@control.inspect.registered`::
 
     >>> i.registered()
     [{'worker1.example.com': ['celery.delete_expired_task_meta',
@@ -527,7 +527,7 @@ Dump of currently executing tasks
 ---------------------------------
 
 You can get a list of active tasks using
-:meth:`~celery.task.control.inspect.active`::
+:meth:`~@control.inspect.active`::
 
     >>> i.active()
     [{'worker1.example.com':
@@ -542,7 +542,7 @@ Dump of scheduled (ETA) tasks
 -----------------------------
 
 You can get a list of tasks waiting to be scheduled by using
-:meth:`~celery.task.control.inspect.scheduled`::
+:meth:`~@control.inspect.scheduled`::
 
     >>> i.scheduled()
     [{'worker1.example.com':
@@ -570,7 +570,7 @@ Reserved tasks are tasks that has been received, but is still waiting to be
 executed.
 
 You can get a list of these using
-:meth:`~celery.task.control.inspect.reserved`::
+:meth:`~@control.inspect.reserved`::
 
     >>> i.reserved()
     [{'worker1.example.com':

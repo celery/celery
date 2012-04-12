@@ -37,7 +37,7 @@
     celery.backends.redis
     celery.backends.cassandra
     celery.backends.tyrant
-    celery.execute.trace
+    celery.task.trace
     celery.app.abstract
     celery.app.annotations
     celery.app.state
