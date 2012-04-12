@@ -395,7 +395,6 @@ class shell(Command):
         from .. import task
         self.app.loader.import_default_modules()
         self.locals = {"celery": self.app,
-                       "BaseTask": task.BaseTask,
                        "TaskSet": task.TaskSet,
                        "chord": task.chord,
                        "group": task.group}
