@@ -13,6 +13,7 @@ from __future__ import absolute_import
 
 from celery import current_app
 from celery.local import Proxy
+from celery.task.sets import subtask
 from celery.utils import uuid
 
 Chord = Proxy(lambda: current_app.tasks["celery.chord"])
