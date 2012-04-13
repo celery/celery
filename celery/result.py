@@ -33,13 +33,21 @@ def _unpickle_result(task_id, task_name):
 
 
 def from_serializable(r):
-    id, nodes = r
-    if nodes:
-        return TaskSetResult(id, map(AsyncResult(nodes)))
-    return AsyncResult(id)
+    # earlier backends may just pickle, so check if
+    # result is already prepared.
+    if not isinstance(r, ResultBase):
+        id, nodes = r
+        if nodes:
+            return TaskSetResult(id, [AsyncResult(id) for id, _ in nodes])
+        return AsyncResult(id)
+    return r
 
 
-class AsyncResult(object):
+class ResultBase(object):
+    """Base class for all results"""
+
+
+class AsyncResult(ResultBase):
     """Query task state.
 
     :param id: see :attr:`id`.
@@ -190,12 +198,12 @@ class AsyncResult(object):
         return hash(self.id)
 
     def __repr__(self):
-        return "<AsyncResult: %s>" % self.id
+        return "<%s: %s>" % (self.__class__.__name__, self.id)
 
     def __eq__(self, other):
-        if isinstance(other, self.__class__):
+        if isinstance(other, AsyncResult):
             return self.id == other.id
-        return other == self.id
+        return NotImplemented
 
     def __copy__(self):
         return self.__class__(self.id, backend=self.backend)
@@ -288,7 +296,7 @@ class AsyncResult(object):
 BaseAsyncResult = AsyncResult  # for backwards compatibility.
 
 
-class ResultSet(object):
+class ResultSet(ResultBase):
     """Working with more than one result.
 
     :param results: List of result instances.
@@ -531,6 +539,15 @@ class ResultSet(object):
     def __len__(self):
         return len(self.results)
 
+    def __eq__(self, other):
+        if isinstance(other, ResultSet):
+            return other.results == self.results
+        return NotImplemented
+
+    def __repr__(self):
+        return "<%s: %r>" % (self.__class__.__name__,
+                             [r.id for r in self.results])
+
     @property
     def total(self):
         """Deprecated: Use ``len(r)``."""
@@ -593,6 +610,15 @@ class TaskSetResult(ResultSet):
 
     def __reduce__(self):
         return (TaskSetResult, (self.id, self.results))
+
+    def __eq__(self, other):
+        if isinstance(other, TaskSetResult):
+            return other.id == self.id and other.results == self.results
+        return NotImplemented
+
+    def __repr__(self):
+        return "<%s: %s %r>" % (self.__class__.__name__, self.id,
+                                [r.id for r in self.results])
 
     def serializable(self):
         return self.id, [r.serializable() for r in self.results]

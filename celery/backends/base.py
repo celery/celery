@@ -14,6 +14,7 @@ from celery import states
 from celery.app import current_task
 from celery.datastructures import LRUCache
 from celery.exceptions import TimeoutError, TaskRevokedError
+from celery.result import from_serializable
 from celery.utils import timeutils
 from celery.utils.serialization import (
         get_pickled_exception,
@@ -403,7 +404,7 @@ class KeyValueStoreBackend(BaseDictBackend):
 
     def _save_taskset(self, taskset_id, result):
         self.set(self.get_key_for_taskset(taskset_id),
-                 self.encode({"result": result}))
+                 self.encode({"result": result.serializable()}))
         return result
 
     def _delete_taskset(self, taskset_id):
@@ -419,8 +420,15 @@ class KeyValueStoreBackend(BaseDictBackend):
     def _restore_taskset(self, taskset_id):
         """Get task metadata for a task by id."""
         meta = self.get(self.get_key_for_taskset(taskset_id))
+        # previously this was always pickled, but later this
+        # was extended to support other serializers, so the
+        # structure is kind of weird.
         if meta:
-            return self.decode(meta)
+            meta = self.decode(meta)
+            result = meta["result"]
+            if isinstance(result, (list, tuple)):
+                return {"result": from_serializable(result)}
+            return meta
 
 
 class DisabledBackend(BaseBackend):

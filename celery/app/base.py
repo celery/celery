@@ -22,7 +22,6 @@ from functools import wraps
 from kombu.clocks import LamportClock
 
 from celery import platforms
-from celery.backends import get_backend_by_url
 from celery.exceptions import AlwaysEagerIgnored
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
@@ -457,6 +456,7 @@ class Celery(object):
         return bugreport(self)
 
     def _get_backend(self):
+        from celery.backends import get_backend_by_url
         backend, url = get_backend_by_url(
                 self.backend_cls or self.conf.CELERY_RESULT_BACKEND,
                 self.loader)

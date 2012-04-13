@@ -8,7 +8,7 @@ from mock import Mock
 from nose import SkipTest
 
 from celery import current_app
-from celery.result import AsyncResult
+from celery.result import AsyncResult, TaskSetResult
 from celery.utils import serialization
 from celery.utils.serialization import subclass_exception
 from celery.utils.serialization import \
@@ -268,8 +268,11 @@ class test_KeyValueStoreBackend(Case):
 
     def test_save_restore_delete_taskset(self):
         tid = uuid()
-        self.b.save_taskset(tid, "Hello world")
-        self.assertEqual(self.b.restore_taskset(tid), "Hello world")
+        tsr = TaskSetResult(tid, [AsyncResult(uuid()) for _ in range(10)])
+        self.b.save_taskset(tid, tsr)
+        stored = self.b.restore_taskset(tid)
+        print(stored)
+        self.assertEqual(self.b.restore_taskset(tid), tsr)
         self.b.delete_taskset(tid)
         self.assertIsNone(self.b.restore_taskset(tid))
 

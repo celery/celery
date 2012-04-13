@@ -28,7 +28,7 @@ class subtask(AttributeDict):
     """Class that wraps the arguments and execution options
     for a single task invocation.
 
-    Used as the parts in a :class:`TaskSet` or to safely
+    Used as the parts in a :class:`group` or to safely
     pass tasks around as callbacks.
 
     :param task: Either a task class/instance, or the name of a task.
@@ -127,7 +127,6 @@ class subtask(AttributeDict):
 
 
 def maybe_subtask(t):
-    print("SUBTASK: %r" % (subtask, ))
     if not isinstance(t, subtask):
         return subtask(t)
     return t
@@ -172,7 +171,7 @@ class group(UserList):
 
     def apply_async(self, connection=None, connect_timeout=None,
             publisher=None, taskset_id=None):
-        """Apply taskset."""
+        """Apply group."""
         app = self.app
 
         if app.conf.CELERY_ALWAYS_EAGER:
@@ -198,7 +197,7 @@ class group(UserList):
                 for task in self.tasks]
 
     def apply(self, taskset_id=None):
-        """Applies the taskset locally by blocking until all tasks return."""
+        """Applies the group locally by blocking until all tasks return."""
         setid = taskset_id or uuid()
         return self.app.TaskSetResult(setid, self._sync_results(setid))
 
