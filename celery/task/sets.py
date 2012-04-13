@@ -49,10 +49,10 @@ class subtask(AttributeDict):
 
     def __init__(self, task=None, args=None, kwargs=None, options=None,
                 type=None, **ex):
-        init = super(subtask, self).__init__
+        init = AttributeDict.__init__
 
         if isinstance(task, dict):
-            return init(task)  # works like dict(d)
+            return init(self, task)  # works like dict(d)
 
         # Also supports using task class/instance instead of string name.
         try:
@@ -64,9 +64,9 @@ class subtask(AttributeDict):
             # will add it to dict(self)
             object.__setattr__(self, "_type", task)
 
-        init(task=task_name, args=tuple(args or ()),
-                             kwargs=dict(kwargs or {}, **ex),
-                             options=options or {})
+        init(self, task=task_name, args=tuple(args or ()),
+                                   kwargs=dict(kwargs or {}, **ex),
+                                   options=options or {})
 
     def delay(self, *argmerge, **kwmerge):
         """Shortcut to `apply_async(argmerge, kwargs)`."""

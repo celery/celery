@@ -570,7 +570,7 @@ class TaskSetResult(ResultSet):
         # XXX previously the "results" arg was named "subtasks".
         if "subtasks" in kwargs:
             results = kwargs["subtasks"]
-        super(TaskSetResult, self).__init__(results, **kwargs)
+        ResultSet.__init__(self, results, **kwargs)
 
     def save(self, backend=None):
         """Save taskset result for later retrieval using :meth:`restore`.

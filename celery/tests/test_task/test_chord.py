@@ -9,6 +9,7 @@ from celery import result
 from celery.result import AsyncResult, TaskSetResult
 from celery.task import chords
 from celery.task import task, TaskSet
+from celery.task import sets
 from celery.tests.utils import AppCase, Mock
 
 passthru = lambda x: x
@@ -26,7 +27,7 @@ def callback(r):
 
 class TSR(TaskSetResult):
     is_ready = True
-    value = [2, 4, 8, 6]
+    value = None
 
     def ready(self):
         return self.is_ready
@@ -51,31 +52,26 @@ class test_unlock_chord_task(AppCase):
 
     @patch("celery.result.TaskSetResult")
     def test_unlock_ready(self, TaskSetResult):
-        from nose import SkipTest
-        raise SkipTest("Not passing")
 
-        class NeverReady(TSR):
-            is_ready = False
+        class AlwaysReady(TSR):
+            is_ready = True
+            value = [2, 4, 8, 6]
 
         @task
         def callback(*args, **kwargs):
             pass
 
-        pts, result.TaskSetResult = result.TaskSetResult, NeverReady
+        pts, result.TaskSetResult = result.TaskSetResult, AlwaysReady
         callback.apply_async = Mock()
         try:
             with patch_unlock_retry() as (unlock, retry):
-                res = Mock(attrs=dict(ready=lambda: True,
-                                        join=lambda **kw: [2, 4, 8, 6]))
-                TaskSetResult.restore = lambda setid: res
-                subtask, chords.subtask = chords.subtask, passthru
+                subtask, sets.subtask = sets.subtask, passthru
                 try:
                     unlock("setid", callback,
                            result=map(AsyncResult, [1, 2, 3]))
                 finally:
                     chords.subtask = subtask
                 callback.apply_async.assert_called_with(([2, 4, 8, 6], ), {})
-                result.delete.assert_called_with()
                 # did not retry
                 self.assertFalse(retry.call_count)
         finally:
@@ -83,16 +79,21 @@ class test_unlock_chord_task(AppCase):
 
     @patch("celery.result.TaskSetResult")
     def test_when_not_ready(self, TaskSetResult):
-        from nose import SkipTest
-        raise SkipTest("Not passing")
         with patch_unlock_retry() as (unlock, retry):
-            callback = Mock()
-            result = Mock(attrs=dict(ready=lambda: False))
-            TaskSetResult.restore = lambda setid: result
-            unlock("setid", callback, interval=10, max_retries=30,)
-            self.assertFalse(callback.delay.call_count)
-            # did retry
-            unlock.retry.assert_called_with(countdown=10, max_retries=30)
+
+            class NeverReady(TSR):
+                is_ready = False
+
+            pts, result.TaskSetResult = result.TaskSetResult, NeverReady
+            try:
+                callback = Mock()
+                unlock("setid", callback, interval=10, max_retries=30,
+                            result=map(AsyncResult, [1, 2, 3]))
+                self.assertFalse(callback.delay.call_count)
+                # did retry
+                unlock.retry.assert_called_with(countdown=10, max_retries=30)
+            finally:
+                result.TaskSetResult = pts
 
     def test_is_in_registry(self):
         self.assertIn("celery.chord_unlock", current_app.tasks)
@@ -116,6 +117,8 @@ class test_Chord_task(AppCase):
 
     def test_run(self):
         prev, current_app.backend = current_app.backend, Mock()
+        current_app.backend.cleanup = Mock()
+        current_app.backend.cleanup.__name__ = "cleanup"
         try:
             Chord = current_app.tasks["celery.chord"]
 

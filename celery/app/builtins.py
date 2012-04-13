@@ -49,13 +49,13 @@ def add_unlock_chord_task(app):
     It creates a task chain polling the header for completion.
 
     """
-    from celery.result import AsyncResult, TaskSetResult
     from celery.task.sets import subtask
+    from celery import result as _res
 
     @app.task(name="celery.chord_unlock", max_retries=None)
     def unlock_chord(setid, callback, interval=1, propagate=False,
             max_retries=None, result=None):
-        result = TaskSetResult(setid, map(AsyncResult, result))
+        result = _res.TaskSetResult(setid, map(_res.AsyncResult, result))
         j = result.join_native if result.supports_native_join else result.join
         if result.ready():
             subtask(callback).delay(j(propagate=propagate))
