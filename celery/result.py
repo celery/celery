@@ -21,15 +21,10 @@ from itertools import imap
 from . import current_app
 from . import states
 from .app import app_or_default
-from .app.registry import _unpickle_task
 from .datastructures import DependencyGraph
 from .exceptions import IncompleteStream, TimeoutError
 from .utils import cached_property
 from .utils.compat import OrderedDict
-
-
-def _unpickle_result(task_id, task_name):
-    return _unpickle_task(task_name).AsyncResult(task_id)
 
 
 def from_serializable(r):
@@ -211,11 +206,10 @@ class AsyncResult(ResultBase):
         return self.__class__(self.id, backend=self.backend)
 
     def __reduce__(self):
-        if self.task_name:
-            return (_unpickle_result, (self.id, self.task_name))
-        else:
-            return (AsyncResult, (self.id, self.backend,
-                                  None, self.app))
+        return self.__class__, self.__reduce_args__()
+
+    def __reduce_args__(self):
+        return self.id, self.task_name, self.backend
 
     def build_graph(self, intermediate=False):
         graph = DependencyGraph()
@@ -611,7 +605,10 @@ class TaskSetResult(ResultSet):
         return iter(self.results)
 
     def __reduce__(self):
-        return (TaskSetResult, (self.id, self.results))
+        return self.__class__, self.__reduce_args__()
+
+    def __reduce_args__(self):
+        return self.id, self.results
 
     def __eq__(self, other):
         if isinstance(other, TaskSetResult):
@@ -648,8 +645,10 @@ class EagerResult(AsyncResult):
         self._traceback = traceback
 
     def __reduce__(self):
-        return (EagerResult, (self.id, self._result,
-                              self._state, self._traceback))
+        return self.__class__, self.__reduce_args__()
+
+    def __reduce_args__(self):
+        return (self.id, self._result, self._state, self._traceback)
 
     def __copy__(self):
         cls, args = self.__reduce__()

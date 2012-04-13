@@ -35,8 +35,12 @@ from .annotations import (
 )
 from .builtins import load_builtin_tasks
 from .defaults import DEFAULTS, find_deprecated_settings
-from .state import _tls
+from .state import _tls, get_current_app
 from .utils import AppPickler, Settings, bugreport, _unpickle_app
+
+
+def _unpickle_appattr(reverse, args):
+    return getattr(get_current_app(), reverse)(*args)
 
 
 class Celery(object):
@@ -112,7 +116,8 @@ class Celery(object):
         return self.subclass_with_self("celery.app.task:BaseTask", name="Task",
                                        attribute="_app", abstract=True)
 
-    def subclass_with_self(self, Class, name=None, attribute="app", **kw):
+    def subclass_with_self(self, Class, name=None, attribute="app",
+            reverse=None, **kw):
         """Subclass an app-compatible class by setting its app attribute
         to be this app instance.
 
@@ -127,8 +132,15 @@ class Celery(object):
 
         """
         Class = symbol_by_name(Class)
-        return type(name or Class.__name__, (Class, ), dict({attribute: self,
-            "__module__": Class.__module__, "__doc__": Class.__doc__}, **kw))
+        reverse = reverse if reverse else Class.__name__
+
+        def __reduce__(self):
+            return _unpickle_appattr, (reverse, self.__reduce_args__())
+
+        attrs = dict({attribute: self}, __module__=Class.__module__,
+                     __doc__=Class.__doc__, __reduce__=__reduce__, **kw)
+
+        return type(name or Class.__name__, (Class, ), attrs)
 
     @cached_property
     def Worker(self):
