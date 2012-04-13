@@ -202,7 +202,9 @@ class AsyncResult(ResultBase):
 
     def __eq__(self, other):
         if isinstance(other, AsyncResult):
-            return self.id == other.id
+            return other.id == self.id
+        elif isinstance(other, basestring):
+            return other == self.id
         return NotImplemented
 
     def __copy__(self):
