@@ -25,6 +25,8 @@ import traceback
 
 from warnings import warn
 
+from kombu.utils import kwdict
+
 from .. import app as app_module
 from .. import current_app
 from .. import states, signals
@@ -160,6 +162,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
 
     def trace_task(uuid, args, kwargs, request=None):
         R = I = None
+        kwargs = kwdict(kwargs)
         try:
             _tls.current_task = task
             update_request(request or {}, args=args,
