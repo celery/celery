@@ -4,7 +4,7 @@
 
 .. image:: http://cloud.github.com/downloads/ask/celery/celery_128.png
 
-:Version: 2.6.0a1
+:Version: 2.6.0a2
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/ask/celery/
@@ -108,7 +108,7 @@ You probably want to see some code by now, so here's an example task
 adding two numbers:
 ::
 
-    from celery.task import task
+    from celery import task
 
     @task
     def add(x, y):
