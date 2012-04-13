@@ -18,7 +18,10 @@ import threading
 from .. import registry
 from ..utils import cached_property, instantiate
 
-from .annotations import _first_match, _first_match_any
+from .annotations import (
+    _first_match, _first_match_any,
+    prepare as prepare_annotations
+)
 from .base import BaseApp
 
 
@@ -206,7 +209,7 @@ class App(BaseApp):
 
     @cached_property
     def annotations(self):
-        return annotations.prepare(self.conf.CELERY_ANNOTATIONS)
+        return prepare_annotations(self.conf.CELERY_ANNOTATIONS)
 
     def __repr__(self):
         return "<Celery: %s:0x%x>" % (self.main or "__main__", id(self), )

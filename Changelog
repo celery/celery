@@ -9,18 +9,23 @@
 
 2.5.2
 =====
-:release-date: 2012-04-13 05:00 P.M GMT
+:release-date: 2012-04-13 04:30 P.M GMT
 
 .. _v252-news:
 
-* Django documentation has been moved to the main Celery docs.
+News
+----
+
+- Now depends on Kombu 2.1.5.
+
+- Django documentation has been moved to the main Celery docs.
 
     See :ref:`django`.
 
-* New :signal:`celeryd_init` signal can be used to configure workers
+- New :signal:`celeryd_init` signal can be used to configure workers
   by hostname.
 
-* Signal.connect can now be used as a decorator.
+- Signal.connect can now be used as a decorator.
 
     Example:
 
@@ -32,18 +37,18 @@
         def on_task_sent(**kwargs):
             print("sent task: %r" % (kwargs, ))
 
-* Invalid task messages are now rejected instead of acked.
+- Invalid task messages are now rejected instead of acked.
 
     This means that they will be moved to the dead-letter queue
     introduced in the latest RabbitMQ version (but must be enabled
     manually, consult the RabbitMQ documentation).
 
-* Internal logging calls has been cleaned up to work
+- Internal logging calls has been cleaned up to work
   better with tools like Sentry.
 
     Contributed by David Cramer.
 
-* New method ``subtask.clone()`` can be used to clone an existing
+- New method ``subtask.clone()`` can be used to clone an existing
   subtask with augmented arguments/options.
 
     Example:
@@ -58,9 +63,14 @@
         >>> new.options
         {"countdown": 5}
 
+- Chord callbacks are now triggered in eager mode.
+
 .. _v252-fixes:
 
-* Programs now verifies that the pidfile is actually written correctly
+Fixes
+-----
+
+- Programs now verifies that the pidfile is actually written correctly
   (Issue #641).
 
     Hopefully this will crash the worker immediately if the system
@@ -75,40 +85,43 @@
     would cause celeryd to think that an existing instance was already
     running (init has pid 1 after all).
 
-* Fixed 2.5 compatibility issue with use of print_exception.
+- Fixed 2.5 compatibility issue with use of print_exception.
 
     Fix contributed by Martin Melin.
 
-* All programs now fix up ``__package__`` when called as main.
+- Fixed 2.5 compatibility issue with imports.
+
+    Fix contributed by Iurii Kriachko.
+
+- All programs now fix up ``__package__`` when called as main.
 
     This fixes compatibility with Python 2.5.
 
     Fix contributed by Martin Melin.
 
-* celeryctl can now be configured on the command line.
+- celeryctl can now be configured on the command line.
 
     Like with celeryd it is now possible to configure celery settings
     on the command line for celeryctl::
 
         $ celeryctl -- broker.pool_limit=30
 
-* Version dependency for python-dateutil fixed to be strict.
+- Version dependency for python-dateutil fixed to be strict.
 
     Fix contributed by Thomas Meson.
 
-* ``Task.__call__`` is now optimized away in the task tracer
+- ``Task.__call__`` is now optimized away in the task tracer
   rather than when the task class is created.
 
     This fixes a bug where a custom __call__  may mysteriously disappear.
 
-* Autoreload's inotify support has been improved.
+- Autoreload's inotify support has been improved.
 
     Contributed by Mher Movsisyan.
 
-* The Django broker documentation has been improved.
+- The Django broker documentation has been improved.
 
-* Removed confusing warning at top of routing userguide.
-
+- Removed confusing warning at top of routing user guide.
 
 .. _version-2.5.1:
 
