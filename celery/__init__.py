@@ -5,7 +5,11 @@
 
 from __future__ import absolute_import
 
+<<<<<<< HEAD
 VERSION = (2, 6, 0, "a1")
+=======
+VERSION = (2, 5, 2)
+>>>>>>> 2.5
 __version__ = ".".join(map(str, VERSION[0:3])) + "".join(VERSION[3:])
 __author__ = "Ask Solem"
 __contact__ = "ask@celeryproject.org"

@@ -25,6 +25,8 @@ import traceback
 
 from warnings import warn
 
+from kombu.utils import kwdict
+
 from celery import current_app
 from celery import states, signals
 from celery.app.state import _tls
@@ -133,7 +135,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     # saving the extra method call and a line less in the stack trace.
     fun = task if defines_custom_call(task) else task.run
 
-    task = task or current_app.tasks[name]
     loader = loader or current_app.loader
     backend = task.backend
     ignore_result = task.ignore_result
@@ -163,6 +164,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
 
     def trace_task(uuid, args, kwargs, request=None):
         R = I = None
+        kwargs = kwdict(kwargs)
         try:
             _tls.current_task = task
             update_request(request or {}, args=args,

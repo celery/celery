@@ -30,7 +30,10 @@ from celery.utils import cached_property, register_after_fork
 from celery.utils.functional import first
 from celery.utils.imports import instantiate, symbol_by_name
 
-from . import annotations
+from .annotations import (
+    _first_match, _first_match_any,
+    prepare as prepare_annotations,
+)
 from .builtins import load_builtin_tasks
 from .defaults import DEFAULTS, find_deprecated_settings
 from .state import _tls
@@ -221,10 +224,10 @@ class Celery(object):
 
     def annotate_task(self, task):
         if self.annotations:
-            match = annotations._first_match(self.annotations, task)
+            match = _first_match(self.annotations, task)
             for attr, value in (match or {}).iteritems():
                 setattr(task, attr, value)
-            match_any = annotations._first_match_any(self.annotations)
+            match_any = _first_match_any(self.annotations)
             for attr, value in (match_any or {}).iteritems():
                 setattr(task, attr, value)
 
@@ -235,7 +238,7 @@ class Celery(object):
 
     @cached_property
     def annotations(self):
-        return annotations.prepare(self.conf.CELERY_ANNOTATIONS)
+        return prepare_annotations(self.conf.CELERY_ANNOTATIONS)
 
     def __repr__(self):
         return "<Celery: %s:0x%x>" % (self.main or "__main__", id(self), )

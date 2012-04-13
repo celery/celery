@@ -79,5 +79,4 @@ if os.environ.get("CELERY_TRACE_APP"):  # pragma: no cover
 else:
     disable_trace()
 
-
 App = Celery  # XXX Compat

@@ -157,8 +157,9 @@ class InotifyMonitor(_ProcessEvent):
             self._wm = pyinotify.WatchManager()
             self._notifier = pyinotify.Notifier(self._wm, self)
             add_watch = self._wm.add_watch
+            flags = pyinotify.IN_MODIFY | pyinotify.IN_ATTRIB
             for m in self._modules:
-                add_watch(m, pyinotify.IN_MODIFY | pyinotify.IN_ATTRIB)
+                add_watch(m, flags)
             self._notifier.loop()
         finally:
             if self._wm:
