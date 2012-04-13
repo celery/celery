@@ -32,8 +32,6 @@ classes = """
     Intended Audience :: Developers
     Intended Audience :: Information Technology
     Intended Audience :: Science/Research
-    Intended Audience :: Financial and Insurance Industry
-    Intended Audience :: Healthcare Industry
     Environment :: No Input/Output (Daemon)
     Environment :: Console
     Programming Language :: Python
@@ -115,7 +113,7 @@ except ImportError:
     install_requires.append("importlib")
 install_requires.extend([
     "anyjson>=0.3.1",
-    "kombu>=2.1.3,<3.0",
+    "kombu>=2.1.5,<3.0",
 ])
 if is_py3k:
     install_requires.append("python-dateutil>=2.0")
