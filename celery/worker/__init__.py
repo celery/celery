@@ -24,7 +24,7 @@ import traceback
 from kombu.utils.finalize import Finalize
 
 from celery import concurrency as _concurrency
-from celery.app import app_or_default
+from celery.app import app_or_default, set_default_app
 from celery.app.abstract import configurated, from_config
 from celery.exceptions import SystemTerminate
 from celery.utils.functional import noop
@@ -199,6 +199,15 @@ class WorkController(configurated):
             ready_callback=noop,
             queues=None, app=None, **kwargs):
         self.app = app_or_default(app or self.app)
+
+        # all new threads start without a current app, so if an app is not
+        # passed on to the thread it will fall back to the "default app",
+        # which then could be the wrong app.  So for the worker
+        # we set this to always return our app.  This is a hack,
+        # and means that only a single app can be used for workers
+        # running in the same process.
+        set_default_app(self.app)
+
         self._shutdown_complete = threading.Event()
         self.setup_defaults(kwargs, namespace="celeryd")
         self.app.select_queues(queues)  # select queues subset.

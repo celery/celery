@@ -89,6 +89,6 @@ def add_chord_task(app):
                                    max_retries=max_retries,
                                    propagate=propagate,
                                    result=r)
-        return set.apply_async(taskset_id=setid)
+        set.apply_async(taskset_id=setid)
 
     return chord
