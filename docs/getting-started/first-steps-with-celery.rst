@@ -181,12 +181,21 @@ raised by the task.
 Configuration
 -------------
 
-Celery is very flexible and comes with many configuration options that
-can be set on your app directly, or by using dedicated configuration files.
+Celery, like a consumer appliance doesn't need much to be operated.
+It has an input and an output, where you must connect the input to a broker and maybe
+the output to a result backend if so wanted.  But if you look closely at the back
+there is a lid revealing lots of sliders, dials and buttons: this is the configuration.
 
-For example you can set the default value for the workers
+The default configuration should be good enough for most uses, but there
+are many things to tweak so that Celery works just the way you want it to.
+Reading about the options available is a good idea to get familiar with what
+can be configured, see the :ref:`configuration` reference.
+
+The configuration can be set on the app directly (but not all at runtime)
+or by using a dedicated configuration module.
+As an example you can set the default value for the workers
 ``--concurrency`` argument, which is used to decide the number of pool worker
-processes, the name for this setting is :setting:`CELERYD_CONCURRENCY`:
+processes, by changing the :setting:`CELERYD_CONCURRENCY` setting:
 
 .. code-block:: python
 
@@ -200,6 +209,18 @@ this module, historically called ``celeryconfig.py``, with the
 .. code-block:: python
 
     celery.config_from_object("celeryconfig")
+
+A module named ``celeryconfig.py`` must then be available to load from the
+current directory or on the Python path, it could look like this:
+
+:file:`celeryconfig.py`::
+
+    CELERY_CONCURRENCY = 10
+
+To verify that your configuration file works properly, and does't
+contain any syntax errors, you can try to import it::
+
+    $ python -m celeryconfig
 
 For a complete reference of configuration options, see :ref:`configuration`.
 
