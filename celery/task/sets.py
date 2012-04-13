@@ -127,6 +127,7 @@ class subtask(AttributeDict):
 
 
 def maybe_subtask(t):
+    print("SUBTASK: %r" % (subtask, ))
     if not isinstance(t, subtask):
         return subtask(t)
     return t

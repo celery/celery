@@ -70,7 +70,7 @@ class test_unlock_chord_task(AppCase):
                     unlock("setid", callback,
                            result=map(AsyncResult, [1, 2, 3]))
                 finally:
-                    chords.subtask = subtask
+                    sets.subtask = subtask
                 callback.apply_async.assert_called_with(([2, 4, 8, 6], ), {})
                 # did not retry
                 self.assertFalse(retry.call_count)
