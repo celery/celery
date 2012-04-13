@@ -46,22 +46,25 @@ class Worker(Element):
     """Worker State."""
     heartbeat_max = 4
     expire_window = HEARTBEAT_EXPIRE_WINDOW
-    freq = 60  # default frequency for workers < 2.6
 
     def __init__(self, **fields):
+        fields.setdefault("freq", 60)
         super(Worker, self).__init__(**fields)
         self.heartbeats = []
 
     def on_online(self, timestamp=None, **kwargs):
         """Callback for the `worker-online` event."""
+        self.update(**kwargs)
         self._heartpush(timestamp)
 
     def on_offline(self, **kwargs):
         """Callback for the `worker-offline` event."""
+        self.update(**kwargs)
         self.heartbeats = []
 
     def on_heartbeat(self, timestamp=None, **kwargs):
         """Callback for the `worker-heartbeat` event."""
+        self.update(**kwargs)
         self._heartpush(timestamp)
 
     def _heartpush(self, timestamp):
