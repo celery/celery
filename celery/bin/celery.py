@@ -421,18 +421,19 @@ class shell(Command):
             import_module("celery.concurrency.eventlet")
         if gevent:
             import_module("celery.concurrency.gevent")
-        from celery import task
+        import celery
+        import celery.task.base
         self.app.loader.import_default_modules()
         self.locals = {"celery": self.app,
-                       "BaseTask": task.BaseTask,
-                       "TaskSet": task.TaskSet,
-                       "chord": task.chord,
-                       "group": task.group,
-                       "chain": task.chain}
+                       "BaseTask": celery.task.base.BaseTask,
+                       "chord": celery.chord,
+                       "group": celery.group,
+                       "chain": celery.chain}
 
         if not without_tasks:
             self.locals.update(dict((task.__name__, task)
-                                for task in self.app.tasks.itervalues()))
+                                for task in self.app.tasks.itervalues()
+                                    if not task.name.startswith("celery.")))
 
         if force_python:
             return self.invoke_fallback_shell()
