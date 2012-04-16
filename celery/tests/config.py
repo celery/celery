@@ -17,6 +17,8 @@ CELERY_DEFAULT_EXCHANGE = "testcelery"
 CELERY_DEFAULT_ROUTING_KEY = "testcelery"
 CELERY_QUEUES = {"testcelery": {"binding_key": "testcelery"}}
 
+CELERY_ENABLE_UTC = True
+
 CELERYD_LOG_COLOR = False
 
 # Tyrant results tests (only executed if installed and running)
