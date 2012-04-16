@@ -66,8 +66,10 @@ class BaseLoader(object):
         self.app = app_or_default(app)
         self.task_modules = set()
 
-    def now(self):
-        return datetime.utcnow()
+    def now(self, utc=True):
+        if utc:
+            return datetime.utcnow()
+        return datetime.now()
 
     def on_task_init(self, task_id, task):
         """This method is called before a task is executed."""
