@@ -119,7 +119,7 @@ class ScheduleEntry(object):
 
     def __repr__(self):
         return ("<Entry: %s %s {%s}" % (self.name,
-                    reprcall(self.task, self.args, self.kwargs),
+                    reprcall(self.task, self.args or (), self.kwargs or {}),
                     self.schedule))
 
 
