@@ -275,7 +275,7 @@ class BaseApp(object):
         return c
 
     def now(self):
-        return self.loader.now()
+        return self.loader.now(utc=self.conf.CELERY_ENABLE_UTC)
 
     def mail_admins(self, subject, body, fail_silently=False):
         """Send an email to the admins in the :setting:`ADMINS` setting."""
