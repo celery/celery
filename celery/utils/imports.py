@@ -150,3 +150,8 @@ def reload_from_cwd(module, reloader=None):
         reloader = reload
     with cwd_in_path():
         return reloader(module)
+
+
+def module_file(module):
+    name = module.__file__
+    return name[:-1] if name.endswith(".pyc") else name
