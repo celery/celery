@@ -457,6 +457,22 @@ How can I reuse the same connection when applying tasks?
 **Answer**: See the :setting:`BROKER_POOL_LIMIT` setting.
 The connection pool is enabled by default since version 2.5.
 
+.. _faq-sudo-subprocess:
+
+Sudo in a :mod:`subprocess` returns :const:`None`
+-------------------------------------------------
+
+There is a sudo configuration option that makes it illegal for process
+without a tty to run sudo::
+
+    Defaults requiretty
+
+If you have this configuration in your :file:`/etc/sudoers` file then
+tasks will not be able to call sudo when celeryd is running as a daemon.
+If you want to enable that, then you need to remove the line from sudoers.
+
+See: http://timelordz.com/wiki/Apache_Sudo_Commands
+
 .. _faq-deletes-unknown-tasks:
 
 Why do workers delete tasks from the queue if they are unable to process them?
