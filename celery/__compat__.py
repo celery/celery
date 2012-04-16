@@ -11,7 +11,7 @@ MODULE_DEPRECATED = """
 The module %s is deprecated and will be removed in a future version.
 """
 
-DEFAULT_ATTRS = frozenset(("__file__", "__path__", "__doc__", "__all__"))
+DEFAULT_ATTRS = set(["__file__", "__path__", "__doc__", "__all__"])
 
 # im_func is no longer available in Py3.
 # instead the unbound method itself can be used.
@@ -121,7 +121,7 @@ class MagicModule(ModuleType):
         return ModuleType.__getattribute__(self, name)
 
     def __dir__(self):
-        return list(set(self.__all__) + DEFAULT_ATTRS)
+        return list(set(self.__all__) | DEFAULT_ATTRS)
 
 
 def create_module(name, attrs, cls_attrs=None, pkg=None,
