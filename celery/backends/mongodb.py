@@ -165,6 +165,7 @@ class MongoBackend(BaseDictBackend):
 
     def cleanup(self):
         """Delete expired metadata."""
+        print("APP: %r" % (self.app.now(), ))
         self.collection.remove({
                 "date_done": {
                     "$lt": self.app.now() - self.expires,
@@ -176,10 +177,7 @@ class MongoBackend(BaseDictBackend):
             dict(expires=self.expires))
         return super(MongoBackend, self).__reduce__(args, kwargs)
 
-    @cached_property
-    def database(self):
-        """Get database from MongoDB connection and perform authentication
-        if necessary."""
+    def _get_database(self):
         conn = self._get_connection()
         db = conn[self.mongodb_database]
         if self.mongodb_user and self.mongodb_password:
@@ -188,6 +186,12 @@ class MongoBackend(BaseDictBackend):
                 raise ImproperlyConfigured(
                     "Invalid MongoDB username or password.")
         return db
+
+    @cached_property
+    def database(self):
+        """Get database from MongoDB connection and perform authentication
+        if necessary."""
+        return self._get_database()
 
     @cached_property
     def collection(self):

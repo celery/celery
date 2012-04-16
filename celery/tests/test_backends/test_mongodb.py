@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import datetime
 import uuid
 
 from mock import MagicMock, Mock, patch, sentinel
@@ -31,7 +32,6 @@ class TestBackendMongoDb(Case):
     def setUp(self):
         if pymongo is None:
             raise SkipTest("pymongo is not installed.")
-        import datetime
         from pymongo import binary
 
         R = self._reset = {}
@@ -43,7 +43,6 @@ class TestBackendMongoDb(Case):
         self.backend = MongoBackend()
 
     def tearDown(self):
-        import datetime
         from pymongo import binary
         MongoBackend.encode = self._reset["encode"]
         MongoBackend.decode = self._reset["decode"]
@@ -103,10 +102,10 @@ class TestBackendMongoDb(Case):
         mock_connection.__getitem__.return_value = mock_database
         mock_get_connection.return_value = mock_connection
 
-        database = self.backend._get_database()
+        database = self.backend.database
 
         self.assertTrue(database is mock_database)
-        self.assertTrue(self.backend._database is mock_database)
+        self.assertTrue(self.backend.__dict__["database"] is mock_database)
         mock_database.authenticate.assert_called_once_with(
             MONGODB_USER, MONGODB_PASSWORD)
 
@@ -121,11 +120,11 @@ class TestBackendMongoDb(Case):
         mock_connection.__getitem__.return_value = mock_database
         mock_get_connection.return_value = mock_connection
 
-        database = self.backend._get_database()
+        database = self.backend.database
 
         self.assertTrue(database is mock_database)
         self.assertFalse(mock_database.authenticate.called)
-        self.assertTrue(self.backend._database is mock_database)
+        self.assertTrue(self.backend.__dict__["database"] is mock_database)
 
     def test_process_cleanup(self):
         self.backend._connection = None
@@ -156,6 +155,7 @@ class TestBackendMongoDb(Case):
 
     @patch("celery.backends.mongodb.MongoBackend._get_database")
     def test_get_task_meta_for(self, mock_get_database):
+        datetime.datetime = self._reset["datetime"]
         self.backend.mongodb_taskmeta_collection = MONGODB_COLLECTION
 
         mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
@@ -264,6 +264,7 @@ class TestBackendMongoDb(Case):
 
     @patch("celery.backends.mongodb.MongoBackend._get_database")
     def test_cleanup(self, mock_get_database):
+        datetime.datetime = self._reset["datetime"]
         self.backend.mongodb_taskmeta_collection = MONGODB_COLLECTION
 
         mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
@@ -272,6 +273,7 @@ class TestBackendMongoDb(Case):
         mock_get_database.return_value = mock_database
         mock_database.__getitem__.return_value = mock_collection
 
+        self.backend.app.now = datetime.datetime.utcnow
         self.backend.cleanup()
 
         mock_get_database.assert_called_once_with()
