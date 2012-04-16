@@ -165,7 +165,6 @@ class MongoBackend(BaseDictBackend):
 
     def cleanup(self):
         """Delete expired metadata."""
-        print("APP: %r" % (self.app.now(), ))
         self.collection.remove({
                 "date_done": {
                     "$lt": self.app.now() - self.expires,

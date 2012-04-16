@@ -106,6 +106,7 @@ class BaseLoader(object):
     def init_worker(self):
         if not self.worker_initialized:
             self.worker_initialized = True
+            self.import_default_modules()
             self.on_worker_init()
 
     def init_worker_process(self):
@@ -201,6 +202,9 @@ class BaseLoader(object):
                 "Mail could not be sent: %r %r\n%r" % (
                     exc, {"To": to, "Subject": subject},
                     traceback.format_stack())))
+
+    def read_configuration(self):
+        return {}
 
     @property
     def conf(self):

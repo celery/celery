@@ -438,7 +438,6 @@ class Celery(object):
                 self.backend_cls, self.amqp_cls, self.events_cls,
                 self.log_cls, self.control_cls, self.accept_magic_kwargs)
 
-
     @cached_property
     def Worker(self):
         """Create new :class:`~celery.apps.worker.Worker` instance."""
@@ -465,7 +464,6 @@ class Celery(object):
     @cached_property
     def annotations(self):
         return prepare_annotations(self.conf.CELERY_ANNOTATIONS)
-
 
     @cached_property
     def AsyncResult(self):

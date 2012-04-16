@@ -73,13 +73,3 @@ class Loader(BaseLoader):
 
     def wanted_module_item(self, item):
         return item[0].isupper() and not item.startswith("_")
-
-    def on_worker_init(self):
-        """Imports modules at worker init so tasks can be registered
-        and used by the worked.
-
-        The list of modules to import is taken from the
-        :setting:`CELERY_IMPORTS` setting.
-
-        """
-        self.import_default_modules()
