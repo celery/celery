@@ -170,9 +170,9 @@ amqp = create_delegate("amqp", "celery.bin.camqadm:AMQPAdminCommand")
 class list_(Command):
     args = "[bindings]"
 
-    def list_bindings(self, channel):
+    def list_bindings(self, management):
         try:
-            bindings = channel.list_bindings()
+            bindings = management.get_bindings()
         except NotImplementedError:
             raise Error("Your transport cannot list bindings.")
 
@@ -180,8 +180,8 @@ class list_(Command):
                                                      e.ljust(28), r))
         fmt("Queue", "Exchange", "Routing Key")
         fmt("-" * 16, "-" * 16, "-" * 16)
-        for binding in bindings:
-            fmt(*binding)
+        for b in bindings:
+            fmt(b["destination"], b["source"], b["routing_key"])
 
     def run(self, what=None, *_, **kw):
         topics = {"bindings": self.list_bindings}
@@ -193,8 +193,7 @@ class list_(Command):
                             what, available))
         with self.app.broker_connection() as conn:
             self.app.amqp.get_task_consumer(conn).declare()
-            with conn.channel() as channel:
-                return topics[what](channel)
+            topics[what](conn.manager)
 list_ = command(list_, "list")
 
 
