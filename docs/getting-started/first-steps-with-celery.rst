@@ -1,4 +1,5 @@
 .. _tut-celery:
+.. _first-steps:
 
 ========================
  First steps with Celery

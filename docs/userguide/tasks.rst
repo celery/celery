@@ -33,6 +33,20 @@ Task options can be specified as arguments to the decorator:
     def create_user(username, password):
         User.objects.create(username=username, password=password)
 
+.. admonition:: How do I import the task decorator?
+
+The task decorator is available on your Celery instance,
+if you don't know what that is then please read :ref:`first-steps`.
+
+If you're using Django or are still using the "old" module based celery API,
+then you can import the task decorator like this::
+
+    from celery import task
+
+    @task
+    def add(x, y):
+        return x + y
+
 .. _task-request-info:
 
 Context
