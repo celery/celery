@@ -457,3 +457,8 @@ def maybe_reraise():
     finally:
         # see http://docs.python.org/library/sys.html#sys.exc_info
         del(tb)
+
+
+def module_file(module):
+    name = module.__file__
+    return name[:-1] if name.endswith(".pyc") else name

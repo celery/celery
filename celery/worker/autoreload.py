@@ -18,6 +18,7 @@ import time
 from collections import defaultdict
 
 from ..abstract import StartStopComponent
+from ..utils import module_file
 from ..utils.threads import bgThread, Event
 
 try:
@@ -211,7 +212,7 @@ class Autoreloader(bgThread):
         self._hashes = None
 
     def body(self):
-        files = [sys.modules[m].__file__ for m in self.modules]
+        files = [module_file(sys.modules[m]) for m in self.modules]
         self._monitor = self.Monitor(files, self.on_change,
                 shutdown_event=self._is_shutdown, **self.options)
         self._hashes = dict([(f, file_hash(f)) for f in files])
