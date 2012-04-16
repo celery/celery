@@ -179,21 +179,23 @@ def first(predicate, iterable):
 
 
 def firstmethod(method):
-    """Returns a functions that with a list of instances,
+    """Returns a function that with a list of instances,
     finds the first instance that returns a value for the given method.
 
     The list can also contain promises (:class:`promise`.)
 
     """
 
-    def _matcher(seq, *args, **kwargs):
-        for cls in seq:
+    def _matcher(it, *args, **kwargs):
+        for obj in it:
             try:
-                answer = getattr(maybe_promise(cls), method)(*args, **kwargs)
-                if answer is not None:
-                    return answer
+                answer = getattr(maybe_promise(obj), method)(*args, **kwargs)
             except AttributeError:
                 pass
+            else:
+                if answer is not None:
+                    return answer
+
     return _matcher
 
 

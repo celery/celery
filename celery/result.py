@@ -184,6 +184,14 @@ class AsyncResult(ResultBase):
         """Returns :const:`True` if the task failed."""
         return self.state == states.FAILURE
 
+    def build_graph(self, intermediate=False):
+        graph = DependencyGraph()
+        for parent, node in self.iterdeps(intermediate=intermediate):
+            if parent:
+                graph.add_arc(parent)
+                graph.add_edge(parent, node)
+        return graph
+
     def __str__(self):
         """`str(self) -> self.id`"""
         return self.id
@@ -203,21 +211,14 @@ class AsyncResult(ResultBase):
         return NotImplemented
 
     def __copy__(self):
-        return self.__class__(self.id, backend=self.backend)
+        r = self.__reduce__()
+        return r[0](*r[1])
 
     def __reduce__(self):
         return self.__class__, self.__reduce_args__()
 
     def __reduce_args__(self):
-        return self.id, self.task_name, self.backend
-
-    def build_graph(self, intermediate=False):
-        graph = DependencyGraph()
-        for parent, node in self.iterdeps(intermediate=intermediate):
-            if parent:
-                graph.add_arc(parent)
-                graph.add_edge(parent, node)
-        return graph
+        return self.id, self.backend, self.task_name, self.parent
 
     def set_parent(self, parent):
         self.parent = parent

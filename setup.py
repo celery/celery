@@ -165,7 +165,7 @@ entrypoints["bundle.bundles"] = ["celery = celery.contrib.bundles:bundles"]
 # -*- %%% -*-
 
 setup(
-    name="celery",
+    name=NAME,
     version=meta["VERSION"],
     description=meta["doc"],
     author=meta["author"],

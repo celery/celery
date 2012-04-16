@@ -18,11 +18,11 @@ from celery.__compat__ import class_property, reclassmethod
 from celery.app.task import Context, TaskType, BaseTask  # noqa
 from celery.schedules import maybe_schedule
 
-#: list of methods that are classmethods in the old API.
+#: list of methods that must be classmethods in the old API.
 _COMPAT_CLASSMETHODS = (
     "get_logger", "establish_connection", "get_publisher", "get_consumer",
     "delay", "apply_async", "retry", "apply", "AsyncResult", "subtask",
-    "bind", "on_bound", "_get_app")
+    "bind", "on_bound", "_get_app", "annotate")
 
 
 class Task(BaseTask):

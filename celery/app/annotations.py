@@ -7,6 +7,10 @@ _first_match = firstmethod("annotate")
 _first_match_any = firstmethod("annotate_any")
 
 
+def resolve_all(anno, task):
+    return filter(None, (_first_match(anno, task), _first_match_any(anno)))
+
+
 class MapAnnotation(dict):
 
     def annotate_any(self):

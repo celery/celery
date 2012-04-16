@@ -29,24 +29,24 @@ from celery.utils import cached_property, register_after_fork
 from celery.utils.functional import first
 from celery.utils.imports import instantiate, symbol_by_name
 
-from .annotations import (
-    _first_match, _first_match_any,
-    prepare as prepare_annotations,
-)
+from .annotations import prepare as prepare_annotations
 from .builtins import load_builtin_tasks
 from .defaults import DEFAULTS, find_deprecated_settings
 from .state import _tls, get_current_app
 from .utils import AppPickler, Settings, bugreport, _unpickle_app
 
 
-def _unpickle_appattr(reverse, args):
-    return getattr(get_current_app(), reverse)(*args)
+def _unpickle_appattr(reverse_name, args):
+    """Given an attribute name and a list of args, gets
+    the attribute from the current app and calls it."""
+    return getattr(get_current_app(), reverse_name)(*args)
 
 
 class Celery(object):
     """Celery Application.
 
     :param main: Name of the main module if running as `__main__`.
+    :keyword broker: URL of the default broker used.
     :keyword loader: The loader class, or the name of the loader class to use.
                      Default is :class:`celery.loaders.app.AppLoader`.
     :keyword backend: The result store backend class, or the name of the
@@ -57,6 +57,7 @@ class Celery(object):
     :keyword log: Log object or class name.
     :keyword control: Control object or class name.
     :keyword set_as_current:  Make this the global current app.
+    :keyword tasks: A task registry or the name of a registry class.
 
     """
     Pickler = AppPickler
@@ -108,6 +109,7 @@ class Celery(object):
         _tls.current_app = self
 
     def on_init(self):
+        """Optional callback called at init."""
         pass
 
     def create_task_cls(self):
@@ -115,50 +117,6 @@ class Celery(object):
         taken from this app."""
         return self.subclass_with_self("celery.app.task:BaseTask", name="Task",
                                        attribute="_app", abstract=True)
-
-    def subclass_with_self(self, Class, name=None, attribute="app",
-            reverse=None, **kw):
-        """Subclass an app-compatible class by setting its app attribute
-        to be this app instance.
-
-        App-compatible means that the class has a class attribute that
-        provides the default app it should use, e.g.
-        ``class Foo: app = None``.
-
-        :param Class: The app-compatible class to subclass.
-        :keyword name: Custom name for the target class.
-        :keyword attribute: Name of the attribute holding the app,
-                            default is "app".
-
-        """
-        Class = symbol_by_name(Class)
-        reverse = reverse if reverse else Class.__name__
-
-        def __reduce__(self):
-            return _unpickle_appattr, (reverse, self.__reduce_args__())
-
-        attrs = dict({attribute: self}, __module__=Class.__module__,
-                     __doc__=Class.__doc__, __reduce__=__reduce__, **kw)
-
-        return type(name or Class.__name__, (Class, ), attrs)
-
-    @cached_property
-    def Worker(self):
-        """Create new :class:`~celery.apps.worker.Worker` instance."""
-        return self.subclass_with_self("celery.apps.worker:Worker")
-
-    @cached_property
-    def WorkController(self, **kwargs):
-        return self.subclass_with_self("celery.worker:WorkController")
-
-    @cached_property
-    def Beat(self, **kwargs):
-        """Create new :class:`~celery.apps.beat.Beat` instance."""
-        return self.subclass_with_self("celery.apps.beat:Beat")
-
-    @cached_property
-    def TaskSet(self):
-        return self.subclass_with_self("celery.task.sets:group")
 
     def start(self, argv=None):
         """Run :program:`celery` using `argv`.  Uses :data:`sys.argv`
@@ -233,46 +191,9 @@ class Celery(object):
         task.bind(self)
         return task
 
-    def annotate_task(self, task):
-        if self.annotations:
-            match = _first_match(self.annotations, task)
-            for attr, value in (match or {}).iteritems():
-                setattr(task, attr, value)
-            match_any = _first_match_any(self.annotations)
-            for attr, value in (match_any or {}).iteritems():
-                setattr(task, attr, value)
-
-    @cached_property
-    def Task(self):
-        """Default Task base class for this application."""
-        return self.create_task_cls()
-
-    @cached_property
-    def annotations(self):
-        return prepare_annotations(self.conf.CELERY_ANNOTATIONS)
-
-    def __repr__(self):
-        return "<Celery: %s:0x%x>" % (self.main or "__main__", id(self), )
-
-    def __reduce__(self):
-        # Reduce only pickles the configuration changes,
-        # so the default configuration doesn't have to be passed
-        # between processes.
-        return (_unpickle_app, (self.__class__, self.Pickler)
-                              + self.__reduce_args__())
-
-    def __reduce_args__(self):
-        return (self.main,
-                self.conf.changes,
-                self.loader_cls,
-                self.backend_cls,
-                self.amqp_cls,
-                self.events_cls,
-                self.log_cls,
-                self.control_cls,
-                self.accept_magic_kwargs)
-
     def finalize(self):
+        """Finalizes the app by loading built-in tasks,
+        and evaluating pending task decorators."""
         if not self.finalized:
             load_builtin_tasks(self)
 
@@ -350,14 +271,6 @@ class Celery(object):
             finally:
                 publisher or publish.close()
             return result_cls(new_id)
-
-    @cached_property
-    def AsyncResult(self):
-        return self.subclass_with_self("celery.result:AsyncResult")
-
-    @cached_property
-    def TaskSetResult(self):
-        return self.subclass_with_self("celery.result:TaskSetResult")
 
     def broker_connection(self, hostname=None, userid=None,
             password=None, virtual_host=None, port=None, ssl=None,
@@ -483,6 +396,85 @@ class Celery(object):
             self._pool.force_close_all()
             self._pool = None
 
+    def subclass_with_self(self, Class, name=None, attribute="app",
+            reverse=None, **kw):
+        """Subclass an app-compatible class by setting its app attribute
+        to be this app instance.
+
+        App-compatible means that the class has a class attribute that
+        provides the default app it should use, e.g.
+        ``class Foo: app = None``.
+
+        :param Class: The app-compatible class to subclass.
+        :keyword name: Custom name for the target class.
+        :keyword attribute: Name of the attribute holding the app,
+                            default is "app".
+
+        """
+        Class = symbol_by_name(Class)
+        reverse = reverse if reverse else Class.__name__
+
+        def __reduce__(self):
+            return _unpickle_appattr, (reverse, self.__reduce_args__())
+
+        attrs = dict({attribute: self}, __module__=Class.__module__,
+                     __doc__=Class.__doc__, __reduce__=__reduce__, **kw)
+
+        return type(name or Class.__name__, (Class, ), attrs)
+
+    def __repr__(self):
+        return "<%s %s:0x%x>" % (self.__class__.__name__,
+                                 self.main or "__main__", id(self), )
+
+    def __reduce__(self):
+        # Reduce only pickles the configuration changes,
+        # so the default configuration doesn't have to be passed
+        # between processes.
+        return (_unpickle_app, (self.__class__, self.Pickler)
+                              + self.__reduce_args__())
+
+    def __reduce_args__(self):
+        return (self.main, self.conf.changes, self.loader_cls,
+                self.backend_cls, self.amqp_cls, self.events_cls,
+                self.log_cls, self.control_cls, self.accept_magic_kwargs)
+
+
+    @cached_property
+    def Worker(self):
+        """Create new :class:`~celery.apps.worker.Worker` instance."""
+        return self.subclass_with_self("celery.apps.worker:Worker")
+
+    @cached_property
+    def WorkController(self, **kwargs):
+        return self.subclass_with_self("celery.worker:WorkController")
+
+    @cached_property
+    def Beat(self, **kwargs):
+        """Create new :class:`~celery.apps.beat.Beat` instance."""
+        return self.subclass_with_self("celery.apps.beat:Beat")
+
+    @cached_property
+    def TaskSet(self):
+        return self.subclass_with_self("celery.task.sets:group")
+
+    @cached_property
+    def Task(self):
+        """Default Task base class for this application."""
+        return self.create_task_cls()
+
+    @cached_property
+    def annotations(self):
+        return prepare_annotations(self.conf.CELERY_ANNOTATIONS)
+
+
+    @cached_property
+    def AsyncResult(self):
+        return self.subclass_with_self("celery.result:AsyncResult")
+
+    @cached_property
+    def TaskSetResult(self):
+        return self.subclass_with_self("celery.result:TaskSetResult")
+
     @property
     def pool(self):
         if self._pool is None:
@@ -537,4 +529,4 @@ class Celery(object):
         """
         self.finalize()
         return self._tasks
-App = Celery
+App = Celery  # compat
