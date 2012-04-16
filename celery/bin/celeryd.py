@@ -73,7 +73,7 @@
 """
 from __future__ import absolute_import
 
-if __name__ == "__main__" and __package__ is None:
+if __name__ == "__main__" and globals().get("__package__") is None:
     __package__ = "celery.bin.celeryd"
 
 import sys
