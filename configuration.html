@@ -947,6 +947,23 @@ rechecking the schedule.  Default is 1 second.</p>
 <p>Setting this value to 1 second means the schedulers precision will
 be 1 second. If you need near millisecond precision you can set this to 0.1.</p>
 </div>
+
+<div class="section" id="celeryd-worker-lost-wait">
+    <span id="std:setting-CELERYD_WORKER_LOST_WAIT"></span><h4>CELERYD_WORKER_LOST_WAIT<a class="headerlink" href="#celeryd-worker-lost-wait" title="Permalink to this headline">¶</a></h4>
+    <p class="versionadded"><span class="versionmodified">New in version 2.4.7.</span></p>
+    <p>
+        Sometimes, a worker may publish a result before being terminated. This value specifies how long to wait to receive this result before raising a
+        <a class="reference internal"
+                href="reference/celery.exceptions.html#celery.exceptions.WorkerLostError"
+                title="celery.exceptions.WorkerLostError"><tt class="xref py py-exc docutils literal"><span class="pre">WorkerLostError</span></tt></a>
+        exception. Default is 10.0 seconds.
+    </p>
+    <p>
+        Setting this value to 10 seconds means the schedulers precision will
+        be 10 seconds. If you need near millisecond precision you can set this to 10.1.
+    </p>
+</div>
+
 </div>
 <div class="section" id="error-e-mails">
 <span id="conf-error-mails"></span><h3><a class="toc-backref" href="#id24">Error E-Mails</a><a class="headerlink" href="#error-e-mails" title="Permalink to this headline">¶</a></h3>
