@@ -96,6 +96,7 @@ class Beat(configurated):
         # Run the worker init handler.
         # (Usually imports task modules and such.)
         self.app.loader.init_worker()
+        self.app.finalize()
 
     def startup_info(self, beat):
         scheduler = beat.get_scheduler(lazy=True)
