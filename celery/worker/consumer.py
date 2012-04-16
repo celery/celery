@@ -79,6 +79,7 @@ from __future__ import with_statement
 import logging
 import socket
 import threading
+from Queue import (Queue, Empty as QueueEmpty)
 import warnings
 
 from kombu.utils.encoding import safe_repr
@@ -226,6 +227,9 @@ class Consumer(object):
 
     """
 
+    #: The queue of pending message acknowledgements
+    pending_acks = None
+
     #: The queue that holds tasks ready for immediate processing.
     ready_queue = None
 
@@ -290,6 +294,7 @@ class Consumer(object):
         self.task_consumer = None
         self.controller = controller
         self.broadcast_consumer = None
+        self.pending_acks = None
         self.ready_queue = ready_queue
         self.eta_schedule = eta_schedule
         self.send_events = send_events
@@ -350,6 +355,12 @@ class Consumer(object):
         while self._state != CLOSE and self.connection:
             if self.qos.prev != self.qos.value:
                 self.qos.update()
+            try:
+                while self._state != CLOSE and self.connection:
+                    message = pending_acks.get_nowait()
+                    message.ack_log_error(self.logger, self.connection_errors)
+            except QueueEmpty:
+                pass
             try:
                 self.connection.drain_events(timeout=1)
             except socket.timeout:
@@ -439,8 +450,13 @@ class Consumer(object):
             message.reject_log_error(self.logger, self.connection_errors)
             return
 
+        pending_acks = self.pending_acks
+
+        def queue_ack():
+            pending_acks.put(message):
+
         try:
-            self.strategies[name](message, body, message.ack_log_error)
+            self.strategies[name](message, body, queue_ack)
         except KeyError, exc:
             self.logger.error(UNKNOWN_TASK_ERROR, exc, safe_repr(body),
                               exc_info=True)
@@ -587,6 +603,7 @@ class Consumer(object):
         # to the current channel.
         self.ready_queue.clear()
         self.eta_schedule.clear()
+        self.pending_acks = Queue()
 
         # Re-establish the broker connection and setup the task consumer.
         self.connection = self._open_connection()
