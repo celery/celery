@@ -16,14 +16,17 @@ import os
 from celery.local import Proxy
 
 from . import state
+from .state import (  # noqa
+        set_default_app,
+        get_current_app as current_app,
+        get_current_task as current_task,
+)
 from .base import Celery, AppPickler  # noqa
 
-set_default_app = state.set_default_app
-current_app = state.get_current_app
-current_task = state.get_current_task
+#: Proxy always returning the app set as default.
 default_app = Proxy(lambda: state.default_app)
 
-#: Returns the app provided or the default app if none.
+#: Function returning the app provided or the default app if none.
 #:
 #: The environment variable :envvar:`CELERY_TRACE_APP` is used to
 #: trace app leaks.  When enabled an exception is raised if there

@@ -1,154 +1,14 @@
 # -*- coding: utf-8 -*-
-"""
-    celery.task.sets
-    ~~~~~~~~~~~~~~~~
-
-    Creating and applying groups of tasks.
-
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
-
-"""
 from __future__ import absolute_import
 from __future__ import with_statement
 
-from itertools import chain as _chain
-
-from kombu.utils import reprcall
-
-from celery import current_app
-from celery.app import current_task
-from celery.datastructures import AttributeDict
-from celery.utils import cached_property, uuid
-from celery.utils.functional import maybe_list
-from celery.utils.compat import UserList, chain_from_iterable
+from celery.app.state import get_current_task
+from celery.canvas import subtask, maybe_subtask  # noqa
+from celery.utils import uuid
+from celery.utils.compat import UserList
 
 
-class subtask(AttributeDict):
-    """Class that wraps the arguments and execution options
-    for a single task invocation.
-
-    Used as the parts in a :class:`group` or to safely
-    pass tasks around as callbacks.
-
-    :param task: Either a task class/instance, or the name of a task.
-    :keyword args: Positional arguments to apply.
-    :keyword kwargs: Keyword arguments to apply.
-    :keyword options: Additional options to :meth:`Task.apply_async`.
-
-    Note that if the first argument is a :class:`dict`, the other
-    arguments will be ignored and the values in the dict will be used
-    instead.
-
-        >>> s = subtask("tasks.add", args=(2, 2))
-        >>> subtask(s)
-        {"task": "tasks.add", args=(2, 2), kwargs={}, options={}}
-
-    """
-    _type = None
-
-    def __init__(self, task=None, args=None, kwargs=None, options=None,
-                type=None, **ex):
-        init = AttributeDict.__init__
-
-        if isinstance(task, dict):
-            return init(self, task)  # works like dict(d)
-
-        # Also supports using task class/instance instead of string name.
-        try:
-            task_name = task.name
-        except AttributeError:
-            task_name = task
-        else:
-            # need to use super here, since AttributeDict
-            # will add it to dict(self)
-            object.__setattr__(self, "_type", task)
-
-        init(self, task=task_name, args=tuple(args or ()),
-                                   kwargs=dict(kwargs or {}, **ex),
-                                   options=options or {})
-
-    def delay(self, *argmerge, **kwmerge):
-        """Shortcut to `apply_async(argmerge, kwargs)`."""
-        return self.apply_async(args=argmerge, kwargs=kwmerge)
-
-    def apply(self, args=(), kwargs={}, **options):
-        """Apply this task locally."""
-        # For callbacks: extra args are prepended to the stored args.
-        args = tuple(args) + tuple(self.args)
-        kwargs = dict(self.kwargs, **kwargs)
-        options = dict(self.options, **options)
-        return self.type.apply(args, kwargs, **options)
-
-    def clone(self, args=(), kwargs={}, **options):
-        return self.__class__(self.task,
-                              args=tuple(args) + tuple(self.args),
-                              kwargs=dict(self.kwargs, **kwargs),
-                              options=dict(self.options, **options))
-
-    def apply_async(self, args=(), kwargs={}, **options):
-        """Apply this task asynchronously."""
-        # For callbacks: extra args are prepended to the stored args.
-        args = tuple(args) + tuple(self.args)
-        kwargs = dict(self.kwargs, **kwargs)
-        options = dict(self.options, **options)
-        return self.type.apply_async(args, kwargs, **options)
-
-    def link(self, callback):
-        """Add a callback task to be applied if this task
-        executes successfully."""
-        self.options.setdefault("link", []).append(callback)
-        return callback
-
-    def link_error(self, errback):
-        """Add a callback task to be applied if an error occurs
-        while executing this task."""
-        self.options.setdefault("link_error", []).append(errback)
-        return errback
-
-    def flatten_links(self):
-        """Gives a recursive list of dependencies (unchain if you will,
-        but with links intact)."""
-        return list(chain_from_iterable(_chain([[self]],
-                (link.flatten_links()
-                    for link in maybe_list(self.options.get("link")) or []))))
-
-    def __reduce__(self):
-        # for serialization, the task type is lazily loaded,
-        # and not stored in the dict itself.
-        return (self.__class__, (dict(self), ), None)
-
-    def __repr__(self):
-        return reprcall(self["task"], self["args"], self["kwargs"])
-
-    @cached_property
-    def type(self):
-        return self._type or current_app.tasks[self.task]
-
-
-def maybe_subtask(t):
-    if not isinstance(t, subtask):
-        return subtask(t)
-    return t
-
-
-class chain(object):
-
-    def __init__(self, *tasks):
-        self.tasks = tasks
-
-    def apply_async(self, **kwargs):
-        tasks = [task.clone(task_id=uuid(), **kwargs)
-                    for task in self.tasks]
-        reduce(lambda a, b: a.link(b), tasks)
-        tasks[0].apply_async()
-        results = [task.type.AsyncResult(task.options["task_id"])
-                        for task in tasks]
-        reduce(lambda a, b: a.set_parent(b), reversed(results))
-        return results[-1]
-
-
-class group(UserList):
+class TaskSet(UserList):
     """A task containing several subtasks, making it possible
     to track how many, or when all of the tasks have been completed.
 
@@ -157,9 +17,9 @@ class group(UserList):
     Example::
 
         >>> urls = ("http://cnn.com/rss", "http://bbc.co.uk/rss")
-        >>> g = group(refresh_feed.subtask((url, )) for url in urls)
-        >>> group_result = g.apply_async()
-        >>> list_of_return_values = group_result.join()  # *expensive*
+        >>> s = TaskSet(refresh_feed.s(url) for url in urls)
+        >>> taskset_result = s.apply_async()
+        >>> list_of_return_values = taskset_result.join()  # *expensive*
 
     """
     _app = None
@@ -171,7 +31,7 @@ class group(UserList):
 
     def apply_async(self, connection=None, connect_timeout=None,
             publisher=None, taskset_id=None):
-        """Apply group."""
+        """Apply TaskSet."""
         app = self.app
 
         if app.conf.CELERY_ALWAYS_EAGER:
@@ -187,7 +47,7 @@ class group(UserList):
                     pub.close()
 
             result = app.TaskSetResult(setid, results)
-            parent = current_task()
+            parent = get_current_task()
             if parent:
                 parent.request.children.append(result)
             return result
@@ -197,7 +57,7 @@ class group(UserList):
                 for task in self.tasks]
 
     def apply(self, taskset_id=None):
-        """Applies the group locally by blocking until all tasks return."""
+        """Applies the TaskSet locally by blocking until all tasks return."""
         setid = taskset_id or uuid()
         return self.app.TaskSetResult(setid, self._sync_results(setid))
 
@@ -206,7 +66,7 @@ class group(UserList):
 
     @property
     def total(self):
-        """Number of subtasks in this group."""
+        """Number of subtasks in this TaskSet."""
         return len(self)
 
     def _get_app(self):
@@ -229,4 +89,3 @@ class group(UserList):
     def _set_Publisher(self, Publisher):
         self._Publisher = Publisher
     Publisher = property(_get_Publisher, _set_Publisher)
-TaskSet = group

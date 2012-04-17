@@ -427,7 +427,8 @@ class shell(Command):
                        "BaseTask": celery.task.base.BaseTask,
                        "chord": celery.chord,
                        "group": celery.group,
-                       "chain": celery.chain}
+                       "chain": celery.chain,
+                       "subtask": celery.subtask}
 
         if not without_tasks:
             self.locals.update(dict((task.__name__, task)

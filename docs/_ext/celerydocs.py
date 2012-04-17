@@ -22,13 +22,13 @@ APPATTRS = {
 }
 
 ABBRS = {
-    "Celery": "celery.app.Celery",
+    "Celery": "celery.Celery",
 }
 
 ABBR_EMPTY = {
     "exc": "celery.exceptions",
 }
-DEFAULT_EMPTY = "celery.app.Celery"
+DEFAULT_EMPTY = "celery.Celery"
 
 
 def typeify(S, type):

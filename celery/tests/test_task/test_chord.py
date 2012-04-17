@@ -4,12 +4,11 @@ from __future__ import with_statement
 from mock import patch
 from contextlib import contextmanager
 
+from celery import canvas
 from celery import current_app
 from celery import result
 from celery.result import AsyncResult, TaskSetResult
-from celery.task import chords
 from celery.task import task, TaskSet
-from celery.task import sets
 from celery.tests.utils import AppCase, Mock
 
 passthru = lambda x: x
@@ -63,14 +62,15 @@ class test_unlock_chord_task(AppCase):
 
         pts, result.TaskSetResult = result.TaskSetResult, AlwaysReady
         callback.apply_async = Mock()
+        callback_s = callback.s()
         try:
             with patch_unlock_retry() as (unlock, retry):
-                subtask, sets.subtask = sets.subtask, passthru
+                subtask, canvas.maybe_subtask = canvas.maybe_subtask, passthru
                 try:
-                    unlock("setid", callback,
+                    unlock("setid", callback_s,
                            result=map(AsyncResult, [1, 2, 3]))
                 finally:
-                    sets.subtask = subtask
+                    canvas.maybe_subtask = subtask
                 callback.apply_async.assert_called_with(([2, 4, 8, 6], ), {})
                 # did not retry
                 self.assertFalse(retry.call_count)
@@ -101,16 +101,42 @@ class test_unlock_chord_task(AppCase):
 
 class test_chord(AppCase):
 
+    def test_eager(self):
+        from celery import chord
+
+        @task
+        def addX(x, y):
+            return x + y
+
+        @task
+        def sumX(n):
+            return sum(n)
+
+        self.app.conf.CELERY_ALWAYS_EAGER = True
+        try:
+            x = chord(addX.s(i, i) for i in xrange(10))
+            body = sumX.s()
+            result = x(body)
+            self.assertEqual(result.get(), sum(i + i for i in xrange(10)))
+        finally:
+            self.app.conf.CELERY_ALWAYS_EAGER = False
+
     def test_apply(self):
+        self.app.conf.CELERY_ALWAYS_EAGER = False
+        from celery import chord
 
-        class chord(chords.chord):
-            Chord = Mock()
-
-        x = chord(add.subtask((i, i)) for i in xrange(10))
-        body = add.subtask((2, ))
-        result = x(body)
-        self.assertEqual(result.id, body.options["task_id"])
-        self.assertTrue(chord.Chord.apply_async.call_count)
+        m = Mock()
+        m.app.conf.CELERY_ALWAYS_EAGER = False
+        m.AsyncResult = AsyncResult
+        prev, chord.Chord = chord.Chord, m
+        try:
+            x = chord(add.s(i, i) for i in xrange(10))
+            body = add.s(2)
+            result = x(body)
+            self.assertEqual(result.id, body.options["task_id"])
+            self.assertTrue(chord.Chord.called)
+        finally:
+            chord.Chord = prev
 
 
 class test_Chord_task(AppCase):

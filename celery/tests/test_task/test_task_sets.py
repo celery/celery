@@ -6,6 +6,7 @@ import anyjson
 from celery.app import app_or_default
 from celery.task import Task
 from celery.task.sets import subtask, TaskSet
+from celery.canvas import Signature
 
 from celery.tests.utils import Case
 
@@ -92,7 +93,7 @@ class test_subtask(Case):
 
     def test_reduce(self):
         s = MockTask.subtask((2, ), {"cache": True})
-        cls, args, _ = s.__reduce__()
+        cls, args = s.__reduce__()
         self.assertDictEqual(dict(cls(*args)), dict(s))
 
 
@@ -125,7 +126,7 @@ class test_TaskSet(Case):
 
         applied = [0]
 
-        class mocksubtask(subtask):
+        class mocksubtask(Signature):
 
             def apply_async(self, *args, **kwargs):
                 applied[0] += 1
@@ -146,7 +147,7 @@ class test_TaskSet(Case):
 
         applied = [0]
 
-        class mocksubtask(subtask):
+        class mocksubtask(Signature):
 
             def apply(self, *args, **kwargs):
                 applied[0] += 1

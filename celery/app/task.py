@@ -702,11 +702,16 @@ class BaseTask(object):
                                                     task_name=self.name)
 
     def subtask(self, *args, **kwargs):
-        """Returns :class:`~celery.task.sets.subtask` object for
+        """Returns :class:`~celery.subtask` object for
         this task, wrapping arguments and execution options
         for a single task invocation."""
-        from celery.task.sets import subtask
+        from celery.canvas import subtask
+        print("SUBTASK: %r" % (subtask, ))
         return subtask(self, *args, **kwargs)
+
+    def s(self, *args, **kwargs):
+        """``.s(*a, **k) -> .subtask(a, k)``"""
+        return self.subtask(args, kwargs)
 
     def update_state(self, task_id=None, state=None, meta=None):
         """Update task state.

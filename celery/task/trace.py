@@ -159,8 +159,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     clear_request = task_request.clear
     on_chord_part_return = backend.on_chord_part_return
 
-    from celery.task import sets
-    subtask = sets.subtask
+    from celery import canvas
+    subtask = canvas.subtask
 
     def trace_task(uuid, args, kwargs, request=None):
         R = I = None

@@ -127,7 +127,7 @@ class AsyncResult(ResultBase):
 
             @task
             def A(how_many):
-                return TaskSet(B.subtask((i, )) for i in xrange(how_many))
+                return TaskSet(B.s(i) for i in xrange(how_many))
 
             @task
             def B(i):
@@ -493,9 +493,9 @@ class ResultSet(ResultBase):
                 remaining = timeout - (time.time() - time_start)
                 if remaining <= 0.0:
                     raise TimeoutError("join operation timed out")
-            results.append(result.wait(timeout=remaining,
-                                       propagate=propagate,
-                                       interval=interval))
+            results.append(result.get(timeout=remaining,
+                                      propagate=propagate,
+                                      interval=interval))
         return results
 
     def iter_native(self, timeout=None, interval=None):

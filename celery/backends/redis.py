@@ -91,7 +91,7 @@ class RedisBackend(KeyValueStoreBackend):
         self.app.TaskSetResult(setid, result).save()
 
     def on_chord_part_return(self, task, propagate=False):
-        from celery.task.sets import subtask
+        from celery import subtask
         from celery.result import TaskSetResult
         setid = task.request.taskset
         if not setid:

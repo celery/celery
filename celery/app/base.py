@@ -112,12 +112,6 @@ class Celery(object):
         """Optional callback called at init."""
         pass
 
-    def create_task_cls(self):
-        """Creates a base task class using default configuration
-        taken from this app."""
-        return self.subclass_with_self("celery.app.task:BaseTask", name="Task",
-                                       attribute="_app", abstract=True)
-
     def start(self, argv=None):
         """Run :program:`celery` using `argv`.  Uses :data:`sys.argv`
         if `argv` is not specified."""
@@ -378,6 +372,8 @@ class Celery(object):
         return first(None, values) or self.conf.get(default_key)
 
     def bugreport(self):
+        """Returns a string with information useful for the Celery core
+        developers when reporting a bug."""
         return bugreport(self)
 
     def _get_backend(self):
@@ -395,6 +391,12 @@ class Celery(object):
         if self._pool:
             self._pool.force_close_all()
             self._pool = None
+
+    def create_task_cls(self):
+        """Creates a base task class using default configuration
+        taken from this app."""
+        return self.subclass_with_self("celery.app.task:BaseTask", name="Task",
+                                       attribute="_app", abstract=True)
 
     def subclass_with_self(self, Class, name=None, attribute="app",
             reverse=None, **kw):
@@ -454,7 +456,7 @@ class Celery(object):
 
     @cached_property
     def TaskSet(self):
-        return self.subclass_with_self("celery.task.sets:group")
+        return self.subclass_with_self("celery.task.sets:TaskSet")
 
     @cached_property
     def Task(self):
@@ -515,7 +517,7 @@ class Celery(object):
 
     @cached_property
     def log(self):
-        """Logging utilities.  See :class:`~celery.log.Logging`."""
+        """Logging utilities.  See :class:`~celery.app.log.Logging`."""
         return instantiate(self.log_cls, app=self)
 
     @cached_property

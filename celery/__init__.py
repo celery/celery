@@ -20,10 +20,9 @@ from .__compat__ import recreate_module
 
 old_module, new_module = recreate_module(__name__,
     by_module={
-        "celery.app":         ["Celery", "bugreport"],
-        "celery.app.state":   ["current_app", "current_task"],
-        "celery.task.sets":   ["chain", "group", "subtask"],
-        "celery.task.chords": ["chord"],
+        "celery.app":       ["Celery", "bugreport"],
+        "celery.app.state": ["current_app", "current_task"],
+        "celery.canvas":    ["chain", "chord", "group", "subtask"],
     },
     direct={"task": "celery.task"},
     __package__="celery",

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
+from __future__ import with_statement
 
 from celery.utils import uuid
 
@@ -49,7 +50,7 @@ def add_unlock_chord_task(app):
     It creates a task chain polling the header for completion.
 
     """
-    from celery.task.sets import subtask
+    from celery.canvas import subtask
     from celery import result as _res
 
     @app.task(name="celery.chord_unlock", max_retries=None)
@@ -66,29 +67,122 @@ def add_unlock_chord_task(app):
 
 
 @builtin_task
+def add_group_task(app):
+    from celery.canvas import subtask
+    from celery.app.state import get_current_task
+    from celery.result import from_serializable
+
+    class Group(app.Task):
+        name = "celery.group"
+        accept_magic_kwargs = False
+
+        def run(self, tasks, result):
+            app = self.app
+            result = from_serializable(result)
+            with app.pool.acquire(block=True) as conn:
+                with app.amqp.TaskPublisher(conn) as publisher:
+                    res_ = [subtask(task).apply_async(
+                                        taskset_id=self.request.taskset,
+                                        publisher=publisher)
+                                for task in tasks]
+            parent = get_current_task()
+            if parent:
+                parent.request.children.append(result)
+            if self.request.is_eager or app.conf.CELERY_ALWAYS_EAGER:
+                return app.TaskSetResult(result.id, res_)
+            return result
+
+        def prepare(self, options, tasks, **kwargs):
+            r = []
+            options["taskset_id"] = group_id = \
+                    options.setdefault("task_id", uuid())
+            for task in tasks:
+                tid = task.options.setdefault("task_id", uuid())
+                task.options["taskset_id"] = group_id
+                r.append(self.AsyncResult(tid))
+            return tasks, self.app.TaskSetResult(group_id, r)
+
+        def apply_async(self, args=(), kwargs={}, **options):
+            if self.app.conf.CELERY_ALWAYS_EAGER:
+                return self.apply(args, kwargs, **options)
+            tasks, result = self.prepare(options, **kwargs)
+            super(Group, self).apply_async((tasks, result), **options)
+            return result
+
+        def apply(self, args=(), kwargs={}, **options):
+            tasks, result = self.prepare(options, **kwargs)
+            return super(Group, self).apply((tasks, result), {"eager": True},
+                                            **options)
+
+    return Group
+
+
+@builtin_task
+def add_chain_task(app):
+    from celery.canvas import maybe_subtask
+
+    class Chain(app.Task):
+        name = "celery.chain"
+        accept_magic_kwargs = False
+
+        def apply_async(self, args=(), kwargs={}, **options):
+            if self.app.conf.CELERY_ALWAYS_EAGER:
+                return self.apply(args, kwargs, **options)
+            tasks = kwargs["tasks"]
+            tasks = [maybe_subtask(task).clone(task_id=uuid(), **kwargs)
+                        for task in kwargs["tasks"]]
+            reduce(lambda a, b: a.link(b), tasks)
+            tasks[0].apply_async()
+            results = [task.type.AsyncResult(task.options["task_id"])
+                            for task in tasks]
+            reduce(lambda a, b: a.set_parent(b), reversed(results))
+            return results[-1]
+
+    return Chain
+
+
+@builtin_task
 def add_chord_task(app):
     """Every chord is executed in a dedicated task, so that the chord
     can be used as a subtask, and this generates the task
     responsible for that."""
-    from celery.task.sets import TaskSet
+    from celery import group
+    from celery.canvas import maybe_subtask
 
-    @app.task(name="celery.chord", accept_magic_kwargs=False)
-    def chord(set, body, interval=1, max_retries=None,
-            propagate=False, **kwargs):
+    class Chord(app.Task):
+        name = "celery.chord"
+        accept_magic_kwargs = False
+        ignore_result = True
 
-        if not isinstance(set, TaskSet):
-            set = TaskSet(set)
-        r = []
-        setid = uuid()
-        for task in set.tasks:
-            tid = uuid()
-            task.options.update(task_id=tid, chord=body)
-            r.append(app.AsyncResult(tid))
-        app.backend.on_chord_apply(setid, body,
-                                   interval=interval,
-                                   max_retries=max_retries,
-                                   propagate=propagate,
-                                   result=r)
-        set.apply_async(taskset_id=setid)
+        def run(self, header, body, interval=1, max_retries=None,
+                propagate=False, eager=False, **kwargs):
+            if not isinstance(header, group):
+                header = group(header)
+            r = []
+            setid = uuid()
+            for task in header.tasks:
+                tid = task.options.setdefault("task_id", uuid())
+                task.options["chord"] = body
+                r.append(app.AsyncResult(tid))
+            app.backend.on_chord_apply(setid, body,
+                                       interval=interval,
+                                       max_retries=max_retries,
+                                       propagate=propagate,
+                                       result=r)
+            return header(taskset_id=setid)
 
-    return chord
+        def apply_async(self, args=(), kwargs={}, task_id=None, **options):
+            if self.app.conf.CELERY_ALWAYS_EAGER:
+                return self.apply(args, kwargs, **options)
+            body = maybe_subtask(kwargs["body"])
+
+            callback_id = body.options.setdefault("task_id", task_id or uuid())
+            super(Chord, self).apply_async(args, kwargs, **options)
+            return self.AsyncResult(callback_id)
+
+        def apply(self, args=(), kwargs={}, **options):
+            body = kwargs["body"]
+            res = super(Chord, self).apply(args, kwargs, **options)
+            return maybe_subtask(body).apply(args=(res.get().join(), ))
+
+    return Chord

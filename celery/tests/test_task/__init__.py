@@ -304,7 +304,7 @@ class TestCeleryTasks(Case):
 
     def test_after_return(self):
         task = self.createTask("c.unittest.t.after_return")
-        task.request.chord = return_True_task.subtask()
+        task.request.chord = return_True_task.s()
         task.after_return("SUCCESS", 1.0, "foobar", (), {}, None)
         task.request.clear()
 
@@ -387,7 +387,7 @@ class TestTaskSet(Case):
 
     @with_eager_tasks
     def test_function_taskset(self):
-        subtasks = [return_True_task.subtask([i]) for i in range(1, 6)]
+        subtasks = [return_True_task.s(i) for i in range(1, 6)]
         ts = task.TaskSet(subtasks)
         res = ts.apply_async()
         self.assertListEqual(res.join(), [True, True, True, True, True])
@@ -395,15 +395,15 @@ class TestTaskSet(Case):
     def test_counter_taskset(self):
         increment_counter.count = 0
         ts = task.TaskSet(tasks=[
-            increment_counter.subtask((), {}),
-            increment_counter.subtask((), {"increment_by": 2}),
-            increment_counter.subtask((), {"increment_by": 3}),
-            increment_counter.subtask((), {"increment_by": 4}),
-            increment_counter.subtask((), {"increment_by": 5}),
-            increment_counter.subtask((), {"increment_by": 6}),
-            increment_counter.subtask((), {"increment_by": 7}),
-            increment_counter.subtask((), {"increment_by": 8}),
-            increment_counter.subtask((), {"increment_by": 9}),
+            increment_counter.s(),
+            increment_counter.s(increment_by=2),
+            increment_counter.s(increment_by=3),
+            increment_counter.s(increment_by=4),
+            increment_counter.s(increment_by=5),
+            increment_counter.s(increment_by=6),
+            increment_counter.s(increment_by=7),
+            increment_counter.s(increment_by=8),
+            increment_counter.s(increment_by=9),
         ])
         self.assertEqual(ts.total, 9)
 

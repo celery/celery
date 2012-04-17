@@ -8,6 +8,7 @@
 .. toctree::
     :maxdepth: 1
 
+    celery
     celery.app
     celery.app.task
     celery.app.amqp

@@ -2,8 +2,7 @@ from __future__ import absolute_import
 
 import time
 
-from celery.task import task
-from celery.task.sets import subtask
+from celery import task, subtask
 
 
 @task

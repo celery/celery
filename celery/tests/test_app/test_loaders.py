@@ -241,5 +241,5 @@ class test_AppLoader(Case):
     def test_on_worker_init(self):
         self.loader.conf["CELERY_IMPORTS"] = ("subprocess", )
         sys.modules.pop("subprocess", None)
-        self.loader.on_worker_init()
+        self.loader.init_worker()
         self.assertIn("subprocess", sys.modules)
