@@ -29,6 +29,7 @@ from ..app.abstract import configurated, from_config
 from ..exceptions import SystemTerminate
 from ..utils.functional import noop
 from ..utils.imports import qualname, reload_from_cwd
+from .. import platforms
 
 from . import abstract
 from . import state
@@ -197,7 +198,7 @@ class WorkController(configurated):
 
     def __init__(self, loglevel=None, hostname=None, logger=None,
             ready_callback=noop,
-            queues=None, app=None, **kwargs):
+            queues=None, app=None, pidfile=None, **kwargs):
         self.app = app_or_default(app or self.app)
         self._shutdown_complete = threading.Event()
         self.setup_defaults(kwargs, namespace="celeryd")
@@ -210,6 +211,8 @@ class WorkController(configurated):
         self.ready_callback = ready_callback
         self._finalize = Finalize(self, self.stop, exitpriority=1)
         self._finalize_db = None
+        self.pidfile = pidfile
+        self.pidlock = None
 
         # Initialize boot steps
         self.pool_cls = _concurrency.get_implementation(self.pool_cls)
@@ -220,7 +223,8 @@ class WorkController(configurated):
     def start(self):
         """Starts the workers main loop."""
         self._state = self.RUN
-
+        if self.pidfile:
+            self.pidlock = platforms.create_pidlock(self.pidfile).acquire()
         try:
             for i, component in enumerate(self.components):
                 self.logger.debug("Starting %s...", qualname(component))
@@ -280,6 +284,8 @@ class WorkController(configurated):
 
         self._state = self.CLOSE
 
+        if self.pidlock:
+            self.pidlock.release()
         for component in reversed(self.components):
             self.logger.debug("%s %s...", what, qualname(component))
             stop = component.stop

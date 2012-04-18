@@ -263,35 +263,6 @@ class test_Worker(AppCase):
             os.getuid = prev
 
     @disable_stdouts
-    def test_use_pidfile(self):
-        from celery import platforms
-
-        class create_pidlock(object):
-            instance = [None]
-
-            def __init__(self, file):
-                self.file = file
-                self.instance[0] = self
-
-            def acquire(self):
-                self.acquired = True
-
-                class Object(object):
-                    def release(self):
-                        pass
-
-                return Object()
-
-        prev, platforms.create_pidlock = platforms.create_pidlock, \
-                                         create_pidlock
-        try:
-            worker = self.Worker(pidfile="pidfilelockfilepid")
-            worker.run_worker()
-            self.assertTrue(create_pidlock.instance[0].acquired)
-        finally:
-            platforms.create_pidlock = prev
-
-    @disable_stdouts
     def test_redirect_stdouts(self):
         worker = self.Worker()
         worker.redirect_stdouts = False

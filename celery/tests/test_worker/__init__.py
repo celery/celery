@@ -737,6 +737,35 @@ class test_WorkController(AppCase):
         worker.logger = Mock()
         return worker
 
+    def test_use_pidfile(self):
+        from celery import platforms
+
+        class create_pidlock(object):
+            instance = [None]
+
+            def __init__(self, file):
+                self.file = file
+                self.instance[0] = self
+
+            def acquire(self):
+                self.acquired = True
+                return self
+
+            def release(self):
+                self.acquired = False
+
+        prev, platforms.create_pidlock = platforms.create_pidlock, \
+                                         create_pidlock
+        try:
+            worker = self.create_worker(pidfile="pidfilelockfilepid")
+            worker.components = []
+            worker.start()
+            self.assertTrue(create_pidlock.instance[0].acquired)
+            worker.stop()
+            self.assertFalse(create_pidlock.instance[0].acquired)
+        finally:
+            platforms.create_pidlock = prev
+
     @patch("celery.platforms.signals")
     @patch("celery.platforms.set_mp_process_title")
     def test_process_initializer(self, set_mp_process_title, _signals):
