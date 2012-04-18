@@ -18,11 +18,13 @@ from kombu.utils.encoding import safe_repr
 from celery.platforms import signals as _signals
 from celery.utils import timeutils
 from celery.utils.compat import UserDict
+from celery.utils.log import get_logger
 
 from . import state
 from .state import revoked
 
 TASK_INFO_FIELDS = ("exchange", "routing_key", "rate_limit")
+logger = get_logger(__name__)
 
 
 class Panel(UserDict):
@@ -47,7 +49,7 @@ def revoke(panel, task_id, terminate=False, signal=None, **kwargs):
                 request.terminate(panel.consumer.pool, signal=signum)
                 break
 
-    panel.logger.info("Task %s %s.", task_id, action)
+    logger.info("Task %s %s.", task_id, action)
     return {"ok": "task %s %s" % (task_id, action)}
 
 
@@ -62,7 +64,7 @@ def enable_events(panel):
     if not dispatcher.enabled:
         dispatcher.enable()
         dispatcher.send("worker-online")
-        panel.logger.info("Events enabled by remote.")
+        logger.info("Events enabled by remote.")
         return {"ok": "events enabled"}
     return {"ok": "events already enabled"}
 
@@ -73,14 +75,14 @@ def disable_events(panel):
     if dispatcher.enabled:
         dispatcher.send("worker-offline")
         dispatcher.disable()
-        panel.logger.info("Events disabled by remote.")
+        logger.info("Events disabled by remote.")
         return {"ok": "events disabled"}
     return {"ok": "events already disabled"}
 
 
 @Panel.register
 def heartbeat(panel):
-    panel.logger.debug("Heartbeat requested by remote.")
+    logger.debug("Heartbeat requested by remote.")
     dispatcher = panel.consumer.event_dispatcher
     dispatcher.send("worker-heartbeat", freq=5, **state.SOFTWARE_INFO)
 
@@ -104,23 +106,22 @@ def rate_limit(panel, task_name, rate_limit, **kwargs):
     try:
         panel.app.tasks[task_name].rate_limit = rate_limit
     except KeyError:
-        panel.logger.error("Rate limit attempt for unknown task %s",
-                           task_name, exc_info=True)
+        logger.error("Rate limit attempt for unknown task %s",
+                     task_name, exc_info=True)
         return {"error": "unknown task"}
 
     if not hasattr(panel.consumer.ready_queue, "refresh"):
-        panel.logger.error("Rate limit attempt, but rate limits disabled.")
+        logger.error("Rate limit attempt, but rate limits disabled.")
         return {"error": "rate limits disabled"}
 
     panel.consumer.ready_queue.refresh()
 
     if not rate_limit:
-        panel.logger.info("Disabled rate limits for tasks of type %s",
-                          task_name)
+        logger.info("Rate limits disabled for tasks of type %s", task_name)
         return {"ok": "rate limit disabled successfully"}
 
-    panel.logger.info("New rate limit for tasks of type %s: %s.",
-                      task_name, rate_limit)
+    logger.info("New rate limit for tasks of type %s: %s.",
+                task_name, rate_limit)
     return {"ok": "new rate limit set successfully"}
 
 
@@ -129,15 +130,15 @@ def time_limit(panel, task_name=None, hard=None, soft=None, **kwargs):
     try:
         task = panel.app.tasks[task_name]
     except KeyError:
-        panel.logger.error("Change time limit attempt for unknown task %s",
-                           task_name, exc_info=True)
+        logger.error("Change time limit attempt for unknown task %s",
+                     task_name, exc_info=True)
         return {"error": "unknown task"}
 
     task.soft_time_limit = soft
     task.time_limit = hard
 
-    panel.logger.info("New time limits for tasks of type %s: soft=%s hard=%s",
-                      task_name, soft, hard)
+    logger.info("New time limits for tasks of type %s: soft=%s hard=%s",
+                task_name, soft, hard)
     return {"ok": "time limits set successfully"}
 
 
@@ -145,7 +146,7 @@ def time_limit(panel, task_name=None, hard=None, soft=None, **kwargs):
 def dump_schedule(panel, safe=False, **kwargs):
     schedule = panel.consumer.eta_schedule.schedule
     if not schedule.queue:
-        panel.logger.info("--Empty schedule--")
+        logger.info("--Empty schedule--")
         return []
 
     formatitem = lambda (i, item): "%s. %s pri%s %r" % (i,
@@ -153,7 +154,7 @@ def dump_schedule(panel, safe=False, **kwargs):
             item["priority"],
             item["item"])
     info = map(formatitem, enumerate(schedule.info()))
-    panel.logger.debug("* Dump of current schedule:\n%s", "\n".join(info))
+    logger.debug("* Dump of current schedule:\n%s", "\n".join(info))
     scheduled_tasks = []
     for item in schedule.info():
         scheduled_tasks.append({"eta": item["eta"],
@@ -168,10 +169,10 @@ def dump_reserved(panel, safe=False, **kwargs):
     ready_queue = panel.consumer.ready_queue
     reserved = ready_queue.items
     if not reserved:
-        panel.logger.info("--Empty queue--")
+        logger.info("--Empty queue--")
         return []
-    panel.logger.debug("* Dump of currently reserved tasks:\n%s",
-                       "\n".join(map(safe_repr, reserved)))
+    logger.debug("* Dump of currently reserved tasks:\n%s",
+                 "\n".join(map(safe_repr, reserved)))
     return [request.info(safe=safe)
             for request in reserved]
 
@@ -213,8 +214,7 @@ def dump_tasks(panel, **kwargs):
 
     info = map(_extract_info, (tasks[task]
                                     for task in sorted(tasks.keys())))
-    panel.logger.debug("* Dump of currently registered tasks:\n%s",
-                       "\n".join(info))
+    logger.debug("* Dump of currently registered tasks:\n%s", "\n".join(info))
 
     return info
 
@@ -258,9 +258,9 @@ def autoscale(panel, max=None, min=None):
 
 
 @Panel.register
-def shutdown(panel, **kwargs):
-    panel.logger.warning("Got shutdown from remote.")
-    raise SystemExit("Got shutdown from remote")
+def shutdown(panel, msg="Got shutdown from remote", **kwargs):
+    logger.warning(msg)
+    raise SystemExit(msg)
 
 
 @Panel.register
@@ -275,10 +275,10 @@ def add_consumer(panel, queue=None, exchange=None, exchange_type="direct",
                            **options)
         cset.add_consumer_from_dict(**declaration)
         cset.consume()
-        panel.logger.info("Started consuming from %r", declaration)
-        return {"ok": "started consuming from %s" % (queue, )}
+        logger.info("Started consuming from %r", declaration)
+        return {"ok": "started consuming from %r" % (queue, )}
     else:
-        return {"ok": "already consuming from %s" % (queue, )}
+        return {"ok": "already consuming from %r" % (queue, )}
 
 
 @Panel.register

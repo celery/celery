@@ -6,11 +6,13 @@ import logging
 from tempfile import mktemp
 
 from celery import current_app
+from celery.app.log import Logging
 from celery.utils.log import LoggingProxy
 from celery.utils import uuid
-from celery.utils.compat import _CompatLoggerAdapter
-from celery.tests.utils import (Case, override_stdouts, wrap_logger,
-                                get_handlers, set_handlers)
+from celery.utils.log import get_logger
+from celery.tests.utils import (
+    Case, override_stdouts, wrap_logger, get_handlers,
+)
 
 log = current_app.log
 
@@ -19,8 +21,8 @@ class test_default_logger(Case):
 
     def setUp(self):
         self.setup_logger = log.setup_logger
-        self.get_logger = log.get_default_logger
-        log._setup = False
+        self.get_logger = lambda n=None: get_logger(n) if n else logging.root
+        Logging._setup = False
 
     def test_setup_logging_subsystem_colorize(self):
         log.setup_logging_subsystem(colorize=None)
@@ -51,29 +53,28 @@ class test_default_logger(Case):
     def test_setup_logger(self):
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
                                    root=False, colorize=True)
-        set_handlers(logger, [])
+        logger.handlers = []
+        Logging._setup = False
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
                                    root=False, colorize=None)
+        print(logger.handlers)
         self.assertIs(get_handlers(logger)[0].stream, sys.__stderr__,
                 "setup_logger logs to stderr without logfile argument.")
-        self.assertDidLogFalse(logger, "Logging something",
-                "Logger doesn't info when loglevel is ERROR",
-                loglevel=logging.INFO)
 
     def test_setup_logger_no_handlers_stream(self):
         l = self.get_logger()
-        set_handlers(l, [])
+        l.handlers = []
 
         with override_stdouts() as outs:
             stdout, stderr = outs
-            l = self.setup_logger(logfile=stderr, loglevel=logging.INFO,
-                                  root=False)
+            l = self.setup_logger(logfile=sys.stderr, loglevel=logging.INFO,
+                                root=False)
             l.info("The quick brown fox...")
             self.assertIn("The quick brown fox...", stderr.getvalue())
 
     def test_setup_logger_no_handlers_file(self):
         l = self.get_logger()
-        set_handlers(l, [])
+        l.handlers = []
         tempfile = mktemp(suffix="unittest", prefix="celery")
         l = self.setup_logger(logfile=tempfile, loglevel=0, root=False)
         self.assertIsInstance(get_handlers(l)[0],
@@ -115,17 +116,28 @@ class test_default_logger(Case):
 class test_task_logger(test_default_logger):
 
     def setUp(self):
-        logger = log.get_task_logger()
+        logger = self.logger = get_logger("celery.task")
         logger.handlers = []
         logging.root.manager.loggerDict.pop(logger.name, None)
         self.uid = uuid()
 
+        @current_app.task
+        def test_task():
+            pass
+        test_task.logger.handlers = []
+        self.task = test_task
+        from celery.app.state import _tls
+        _tls.current_task = test_task
+
+    def tearDown(self):
+        from celery.app.state import _tls
+        _tls.current_task = None
+
     def setup_logger(self, *args, **kwargs):
-        return log.setup_task_logger(*args, **dict(kwargs, task_name=self.uid,
-                                                   task_id=self.uid))
+        return log.setup_task_loggers(*args, **kwargs)
 
     def get_logger(self, *args, **kwargs):
-        return log.get_task_logger(*args, **dict(kwargs, name=self.uid))
+        return self.task.logger
 
 
 class MockLogger(logging.Logger):
@@ -140,48 +152,3 @@ class MockLogger(logging.Logger):
 
     def isEnabledFor(self, level):
         return True
-
-
-class test_CompatLoggerAdapter(Case):
-    levels = ("debug",
-              "info",
-              "warn", "warning",
-              "error",
-              "fatal", "critical")
-
-    def setUp(self):
-        self.logger, self.adapter = self.createAdapter()
-
-    def createAdapter(self, name=None, extra={"foo": "bar"}):
-        logger = MockLogger(name=name or uuid())
-        return logger, _CompatLoggerAdapter(logger, extra)
-
-    def test_levels(self):
-        for level in self.levels:
-            msg = "foo bar %s" % (level, )
-            logger, adapter = self.createAdapter()
-            getattr(adapter, level)(msg)
-            self.assertEqual(logger._records[0].msg, msg)
-
-    def test_exception(self):
-        try:
-            raise KeyError("foo")
-        except KeyError:
-            self.adapter.exception("foo bar exception")
-        self.assertEqual(self.logger._records[0].msg, "foo bar exception")
-
-    def test_setLevel(self):
-        self.adapter.setLevel(logging.INFO)
-        self.assertEqual(self.logger.level, logging.INFO)
-
-    def test_process(self):
-        msg, kwargs = self.adapter.process("foo bar baz", {"exc_info": 1})
-        self.assertDictEqual(kwargs, {"exc_info": 1,
-                                      "extra": {"foo": "bar"}})
-
-    def test_add_remove_handlers(self):
-        handler = logging.StreamHandler()
-        self.adapter.addHandler(handler)
-        self.assertIs(self.logger.handlers[0], handler)
-        self.adapter.removeHandler(handler)
-        self.assertListEqual(self.logger.handlers, [])

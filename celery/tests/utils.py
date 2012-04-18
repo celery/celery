@@ -25,11 +25,11 @@ from contextlib import contextmanager
 
 import mock
 from nose import SkipTest
+from kombu.log import NullHandler
 
 from ..app import app_or_default
-from ..utils.compat import WhateverIO, LoggerAdapter
+from ..utils.compat import WhateverIO
 from ..utils.functional import noop
-from ..utils.log import NullHandler
 
 from .compat import catch_warnings
 
@@ -208,20 +208,8 @@ class AppCase(Case):
         pass
 
 
-def filter_NullHandler(handlers):
-    return [h for h in handlers if not isinstance(h, NullHandler)]
-
-
 def get_handlers(logger):
-    if isinstance(logger, LoggerAdapter):
-        return filter_NullHandler(logger.logger.handlers)
-    return filter_NullHandler(logger.handlers)
-
-
-def set_handlers(logger, new_handlers):
-    if isinstance(logger, LoggerAdapter):
-        logger.logger.handlers = new_handlers
-    logger.handlers = new_handlers
+    return [h for h in logger.handlers if not isinstance(h, NullHandler)]
 
 
 @contextmanager
@@ -229,11 +217,11 @@ def wrap_logger(logger, loglevel=logging.ERROR):
     old_handlers = get_handlers(logger)
     sio = WhateverIO()
     siohandler = logging.StreamHandler(sio)
-    set_handlers(logger, [siohandler])
+    logger.handlers = [siohandler]
 
     yield sio
 
-    set_handlers(logger, old_handlers)
+    logger.handlers = old_handlers
 
 
 @contextmanager

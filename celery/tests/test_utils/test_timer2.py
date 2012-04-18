@@ -108,17 +108,16 @@ class test_Timer(Case):
 
         self.assertEqual(t.enter_after.call_count, 2)
 
-    @redirect_stdouts
-    def test_apply_entry_error_handled(self, stdout, stderr):
+    @patch("celery.utils.timer2.logger")
+    def test_apply_entry_error_handled(self, logger):
         t = timer2.Timer()
         t.schedule.on_error = None
 
         fun = Mock()
         fun.side_effect = ValueError()
 
-        with self.assertWarns(timer2.TimedFunctionFailed):
-            t.apply_entry(fun)
-            fun.assert_called_with()
+        t.apply_entry(fun)
+        self.assertTrue(logger.error.called)
 
     @redirect_stdouts
     def test_apply_entry_error_not_handled(self, stdout, stderr):

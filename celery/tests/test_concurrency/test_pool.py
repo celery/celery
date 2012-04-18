@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 import sys
 import time
-import logging
 import itertools
 
 from nose import SkipTest
@@ -39,7 +38,6 @@ class TestTaskPool(Case):
     def test_attrs(self):
         p = self.TaskPool(2)
         self.assertEqual(p.limit, 2)
-        self.assertIsInstance(p.logger, logging.Logger)
         self.assertIsNone(p._pool)
 
     def x_apply(self):

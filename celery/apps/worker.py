@@ -18,7 +18,7 @@ from celery.app.abstract import configurated, from_config
 from celery.exceptions import ImproperlyConfigured, SystemTerminate
 from celery.utils import cry, isatty
 from celery.utils.imports import qualname
-from celery.utils.log import LOG_LEVELS, mlevel
+from celery.utils.log import LOG_LEVELS, get_logger, mlevel
 from celery.utils.text import pluralize
 from celery.worker import WorkController
 
@@ -27,6 +27,8 @@ try:
     IGNORE_ERRORS = (GreenletExit, )
 except ImportError:
     IGNORE_ERRORS = ()
+
+logger = get_logger(__name__)
 
 
 BANNER = """
@@ -249,7 +251,7 @@ class Worker(configurated):
         install_worker_term_handler(worker)
         install_worker_term_hard_handler(worker)
         install_worker_int_handler(worker)
-        install_cry_handler(worker.logger)
+        install_cry_handler()
         install_rdb_handler()
 
     def osx_proxy_detection_workaround(self):
@@ -329,7 +331,7 @@ def install_worker_restart_handler(worker):
     platforms.signals["SIGHUP"] = restart_worker_sig_handler
 
 
-def install_cry_handler(logger):
+def install_cry_handler():
     # Jython/PyPy does not have sys._current_frames
     is_jython = sys.platform.startswith("java")
     is_pypy = hasattr(sys, "pypy_version_info")
@@ -356,7 +358,7 @@ def install_rdb_handler(envvar="CELERY_RDBSIG"):  # pragma: no cover
 def install_HUP_not_supported_handler(worker):
 
     def warn_on_HUP_handler(signum, frame):
-        worker.logger.error("SIGHUP not supported: "
+        logger.error("SIGHUP not supported: "
             "Restarting with HUP is unstable on this platform!")
 
     platforms.signals["SIGHUP"] = warn_on_HUP_handler

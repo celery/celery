@@ -12,8 +12,11 @@ from optparse import OptionParser, BadOptionError
 
 from celery import __version__
 from celery.platforms import detached
+from celery.utils.log import get_logger
 
 from .base import daemon_options, Option
+
+logger = get_logger(__name__)
 
 OPTION_LIST = daemon_options(default_pidfile="celeryd.pid") + (
                 Option("--fake",
@@ -28,7 +31,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
             os.execv(path, [path] + argv)
         except Exception:
             from celery import current_app
-            logger = current_app.log.setup_logger("ERROR", logfile)
+            current_app.log.setup_logging_subsystem("ERROR", logfile)
             logger.critical("Can't exec %r", " ".join([path] + argv),
                             exc_info=True)
 

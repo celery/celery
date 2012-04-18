@@ -24,8 +24,10 @@ from celery.app import app_or_default
 from celery.utils import timer2
 from celery.utils.dispatch import Signal
 from celery.utils.imports import instantiate
-from celery.utils.log import LOG_LEVELS
+from celery.utils.log import get_logger
 from celery.utils.timeutils import rate
+
+logger = get_logger("celery.evcam")
 
 
 class Polaroid(object):
@@ -38,14 +40,13 @@ class Polaroid(object):
     _ctref = None
 
     def __init__(self, state, freq=1.0, maxrate=None,
-            cleanup_freq=3600.0, logger=None, timer=None, app=None):
+            cleanup_freq=3600.0, timer=None, app=None):
         self.app = app_or_default(app)
         self.state = state
         self.freq = freq
         self.cleanup_freq = cleanup_freq
         self.timer = timer or self.timer
-        self.logger = logger or \
-                self.app.log.get_default_logger(name="celery.cam")
+        self.logger = logger
         self.maxrate = maxrate and TokenBucket(rate(maxrate))
 
     def install(self):
@@ -61,13 +62,13 @@ class Polaroid(object):
         pass
 
     def cleanup(self):
-        self.logger.debug("Cleanup: Running...")
+        logger.debug("Cleanup: Running...")
         self.cleanup_signal.send(None)
         self.on_cleanup()
 
     def shutter(self):
         if self.maxrate is None or self.maxrate.can_consume():
-            self.logger.debug("Shutter: %s", self.state)
+            logger.debug("Shutter: %s", self.state)
             self.shutter_signal.send(self.state)
             self.on_shutter(self.state)
 
@@ -97,19 +98,14 @@ def evcam(camera, freq=1.0, maxrate=None, loglevel=0,
         pidlock = platforms.create_pidlock(pidfile).acquire()
         atexit.register(pidlock.release)
 
-    if not isinstance(loglevel, int):
-        loglevel = LOG_LEVELS[loglevel.upper()]
-    logger = app.log.setup_logger(loglevel=loglevel,
-                                  logfile=logfile,
-                                  name="celery.evcam")
+    app.log.setup_logging_subsystem(loglevel, logfile)
 
     logger.info(
         "-> evcam: Taking snapshots with %s (every %s secs.)\n" % (
             camera, freq))
     state = app.events.State()
-    cam = instantiate(camera, state, app=app,
-                      freq=freq, maxrate=maxrate, logger=logger,
-                      timer=timer)
+    cam = instantiate(camera, state, app=app, freq=freq,
+                      maxrate=maxrate, timer=timer)
     cam.install()
     conn = app.broker_connection()
     recv = app.events.Receiver(conn, handlers={"*": state.event})

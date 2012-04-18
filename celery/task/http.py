@@ -131,7 +131,7 @@ class HttpDispatch(object):
     user_agent = "celery/%s" % celery_version
     timeout = 5
 
-    def __init__(self, url, method, task_kwargs, logger):
+    def __init__(self, url, method, task_kwargs, logger=None):
         self.url = url
         self.method = method
         self.task_kwargs = task_kwargs
@@ -186,12 +186,12 @@ class HttpDispatchTask(BaseTask):
 
     url = None
     method = None
+    accept_magic_kwargs = False
 
     def run(self, url=None, method="GET", **kwargs):
         url = url or self.url
         method = method or self.method
-        logger = self.get_logger(**kwargs)
-        return HttpDispatch(url, method, kwargs, logger).dispatch()
+        return HttpDispatch(url, method, kwargs, self.logger).dispatch()
 
 
 class URL(MutableURL):

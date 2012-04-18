@@ -18,6 +18,7 @@ import time
 from collections import defaultdict
 
 from celery.utils.imports import module_file
+from celery.utils.log import get_logger
 from celery.utils.threads import bgThread, Event
 
 from .abstract import StartStopComponent
@@ -28,6 +29,8 @@ try:
 except ImportError:
     pyinotify = None        # noqa
     _ProcessEvent = object  # noqa
+
+logger = get_logger(__name__)
 
 
 class WorkerComponent(StartStopComponent):
@@ -40,8 +43,7 @@ class WorkerComponent(StartStopComponent):
 
     def create(self, w):
         w.autoreloader = self.instantiate(w.autoreloader_cls,
-                                          controller=w,
-                                          logger=w.logger)
+                                          controller=w)
         return w.autoreloader
 
 
@@ -201,13 +203,11 @@ class Autoreloader(bgThread):
     """Tracks changes in modules and fires reload commands"""
     Monitor = Monitor
 
-    def __init__(self, controller, modules=None, monitor_cls=None,
-            logger=None, **options):
+    def __init__(self, controller, modules=None, monitor_cls=None, **options):
         super(Autoreloader, self).__init__()
         self.controller = controller
         app = self.controller.app
         self.modules = app.loader.task_modules if modules is None else modules
-        self.logger = logger
         self.options = options
         self.Monitor = monitor_cls or self.Monitor
         self._monitor = None
@@ -235,7 +235,7 @@ class Autoreloader(bgThread):
         modified = [f for f in files if self._maybe_modified(f)]
         if modified:
             names = [self._module_name(module) for module in modified]
-            self.logger.info("Detected modified modules: %r", names)
+            logger.info("Detected modified modules: %r", names)
             self._reload(names)
 
     def _reload(self, modules):

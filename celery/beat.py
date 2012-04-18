@@ -35,6 +35,10 @@ from .schedules import maybe_schedule, crontab
 from .utils import cached_property
 from .utils.imports import instantiate
 from .utils.timeutils import humanize_seconds
+from .utils.log import get_logger
+
+logger = get_logger(__name__)
+debug, info, error = logger.debug, logger.info, logger.error
 
 
 class SchedulingError(Exception):
@@ -127,7 +131,6 @@ class Scheduler(object):
     """Scheduler for periodic tasks.
 
     :keyword schedule: see :attr:`schedule`.
-    :keyword logger: see :attr:`logger`.
     :keyword max_interval: see :attr:`max_interval`.
 
     """
@@ -137,9 +140,6 @@ class Scheduler(object):
     #: The schedule dict/shelve.
     schedule = None
 
-    #: Current logger.
-    logger = None
-
     #: Maximum time to sleep between re-checking the schedule.
     max_interval = 1
 
@@ -148,11 +148,10 @@ class Scheduler(object):
 
     _last_sync = None
 
-    def __init__(self, schedule=None, logger=None, max_interval=None,
+    def __init__(self, schedule=None, max_interval=None,
             app=None, Publisher=None, lazy=False, **kwargs):
         app = self.app = app_or_default(app)
         self.data = maybe_promise({} if schedule is None else schedule)
-        self.logger = logger or app.log.get_default_logger(name="celery.beat")
         self.max_interval = max_interval or \
                                 app.conf.CELERYBEAT_MAX_LOOP_INTERVAL
         self.Publisher = Publisher or app.amqp.TaskPublisher
@@ -173,15 +172,14 @@ class Scheduler(object):
         is_due, next_time_to_run = entry.is_due()
 
         if is_due:
-            self.logger.info("Scheduler: Sending due task %s", entry.task)
+            info("Scheduler: Sending due task %s", entry.task)
             try:
                 result = self.apply_async(entry, publisher=publisher)
             except Exception, exc:
-                self.logger.error("Message Error: %s\n%s", exc,
-                                  traceback.format_stack(),
-                                  exc_info=True)
+                error("Message Error: %s\n%s",
+                      exc, traceback.format_stack(), exc_info=True)
             else:
-                self.logger.debug("%s sent. id->%s", entry.task, result.id)
+                debug("%s sent. id->%s", entry.task, result.id)
         return next_time_to_run
 
     def tick(self):
@@ -242,7 +240,7 @@ class Scheduler(object):
 
     def _do_sync(self):
         try:
-            self.logger.debug("Celerybeat: Synchronizing schedule...")
+            debug("Celerybeat: Synchronizing schedule...")
             self.sync()
         finally:
             self._last_sync = time.time()
@@ -293,8 +291,8 @@ class Scheduler(object):
         # callback called for each retry while the connection
         # can't be established.
         def _error_handler(exc, interval):
-            self.logger.error("Celerybeat: Connection error: %s. "
-                              "Trying again in %s seconds...", exc, interval)
+            error("Celerybeat: Connection error: %s. "
+                  "Trying again in %s seconds...", exc, interval)
 
         return self.connection.ensure_connection(_error_handler,
                     self.app.conf.BROKER_CONNECTION_MAX_RETRIES)
@@ -339,8 +337,8 @@ class PersistentScheduler(Scheduler):
                                                 writeback=True)
             entries = self._store.setdefault("entries", {})
         except Exception, exc:
-            self.logger.error("Removing corrupted schedule file %r: %r",
-                              self.schedule_filename, exc, exc_info=True)
+            error("Removing corrupted schedule file %r: %r",
+                  self.schedule_filename, exc, exc_info=True)
             self._remove_db()
             self._store = self.persistence.open(self.schedule_filename,
                                                 writeback=True)
@@ -352,8 +350,7 @@ class PersistentScheduler(Scheduler):
         self.install_default_entries(self.schedule)
         self._store["__version__"] = __version__
         self.sync()
-        self.logger.debug("Current schedule:\n" +
-                          "\n".join(repr(entry)
+        debug("Current schedule:\n" + "\n".join(repr(entry)
                                     for entry in entries.itervalues()))
 
     def get_schedule(self):
@@ -375,13 +372,12 @@ class PersistentScheduler(Scheduler):
 class Service(object):
     scheduler_cls = PersistentScheduler
 
-    def __init__(self, logger=None, max_interval=None, schedule_filename=None,
+    def __init__(self, max_interval=None, schedule_filename=None,
             scheduler_cls=None, app=None):
         app = self.app = app_or_default(app)
         self.max_interval = max_interval or \
                                 app.conf.CELERYBEAT_MAX_LOOP_INTERVAL
         self.scheduler_cls = scheduler_cls or self.scheduler_cls
-        self.logger = logger or app.log.get_default_logger(name="celery.beat")
         self.schedule_filename = schedule_filename or \
                                     app.conf.CELERYBEAT_SCHEDULE_FILENAME
 
@@ -389,9 +385,9 @@ class Service(object):
         self._is_stopped = threading.Event()
 
     def start(self, embedded_process=False):
-        self.logger.info("Celerybeat: Starting...")
-        self.logger.debug("Celerybeat: Ticking with max interval->%s",
-                          humanize_seconds(self.scheduler.max_interval))
+        info("Celerybeat: Starting...")
+        debug("Celerybeat: Ticking with max interval->%s",
+              humanize_seconds(self.scheduler.max_interval))
 
         signals.beat_init.send(sender=self)
         if embedded_process:
@@ -401,8 +397,8 @@ class Service(object):
         try:
             while not self._is_shutdown.isSet():
                 interval = self.scheduler.tick()
-                self.logger.debug("Celerybeat: Waking up %s.",
-                                   humanize_seconds(interval, prefix="in "))
+                debug("Celerybeat: Waking up %s.",
+                      humanize_seconds(interval, prefix="in "))
                 time.sleep(interval)
         except (KeyboardInterrupt, SystemExit):
             self._is_shutdown.set()
@@ -414,7 +410,7 @@ class Service(object):
         self._is_stopped.set()
 
     def stop(self, wait=False):
-        self.logger.info("Celerybeat: Shutting down...")
+        info("Celerybeat: Shutting down...")
         self._is_shutdown.set()
         wait and self._is_stopped.wait()  # block until shutdown done.
 
@@ -423,7 +419,6 @@ class Service(object):
         scheduler = instantiate(self.scheduler_cls,
                                 app=self.app,
                                 schedule_filename=filename,
-                                logger=self.logger,
                                 max_interval=self.max_interval,
                                 lazy=lazy)
         return scheduler

@@ -5,12 +5,12 @@ import logging
 import os
 import time
 
-from kombu.log import anon_logger
 from kombu.utils.encoding import safe_repr
 
 from celery.utils import timer2
+from celery.utils.log import get_logger
 
-_default_logger = anon_logger("celery.concurrency")
+logger = get_logger("celery.concurrency")
 
 
 def apply_target(target, args=(), kwargs={}, callback=None,
@@ -46,12 +46,11 @@ class BasePool(object):
     _state = None
     _pool = None
 
-    def __init__(self, limit=None, putlocks=True, logger=None, **options):
+    def __init__(self, limit=None, putlocks=True, **options):
         self.limit = limit
         self.putlocks = putlocks
-        self.logger = logger or _default_logger
         self.options = options
-        self._does_debug = self.logger.isEnabledFor(logging.DEBUG)
+        self._does_debug = logger.isEnabledFor(logging.DEBUG)
 
     def on_start(self):
         pass
@@ -94,8 +93,8 @@ class BasePool(object):
 
         """
         if self._does_debug:
-            self.logger.debug("TaskPool: Apply %s (args:%s kwargs:%s)",
-                            target, safe_repr(args), safe_repr(kwargs))
+            logger.debug("TaskPool: Apply %s (args:%s kwargs:%s)",
+                         target, safe_repr(args), safe_repr(kwargs))
 
         return self.on_apply(target, args, kwargs,
                              waitforslot=self.putlocks,

@@ -1,8 +1,7 @@
 from __future__ import absolute_import
 
-import logging
-
 from datetime import datetime, timedelta
+from mock import patch
 from nose import SkipTest
 
 from celery import beat
@@ -97,22 +96,11 @@ class test_ScheduleEntry(Case):
         self.assertDictEqual(entry.options, {"routing_key": "urgent"})
 
 
-class MockLogger(logging.Logger):
-
-    def __init__(self, *args, **kwargs):
-        self.logged = []
-        logging.Logger.__init__(self, *args, **kwargs)
-
-    def _log(self, level, msg, args, **kwargs):
-        self.logged.append((level, msg, args, kwargs))
-
-
 class mScheduler(beat.Scheduler):
 
     def __init__(self, *args, **kwargs):
         self.sent = []
         beat.Scheduler.__init__(self, *args, **kwargs)
-        self.logger = MockLogger("celery.beat", logging.ERROR)
 
     def send_task(self, name=None, args=None, kwargs=None, **options):
         self.sent.append({"name": name,
@@ -183,16 +171,13 @@ class test_Scheduler(Case):
                       kwargs={"foo": "bar"})
         self.assertEqual(scheduler.tick(), 1)
 
-    def test_due_tick_SchedulingError(self):
+    @patch("celery.beat.error")
+    def test_due_tick_SchedulingError(self, error):
         scheduler = mSchedulerSchedulingError()
         scheduler.add(name="test_due_tick_SchedulingError",
                       schedule=always_due)
         self.assertEqual(scheduler.tick(), 1)
-        self.assertTrue(scheduler.logger.logged[0])
-        level, msg, args, kwargs = scheduler.logger.logged[0]
-        self.assertEqual(level, logging.ERROR)
-        self.assertIn("Couldn't apply scheduled task",
-                      repr(args[0].args[0]))
+        self.assertTrue(error.called)
 
     def test_due_tick_RuntimeError(self):
         scheduler = mSchedulerRuntimeError()

@@ -30,10 +30,15 @@ from celery.task.trace import build_tracer, trace_task, report_internal_error
 from celery.platforms import set_mp_process_title as setps
 from celery.utils import fun_takes_kwargs
 from celery.utils.functional import noop
+from celery.utils.log import get_logger
 from celery.utils.text import truncate
 from celery.utils.timeutils import maybe_iso8601, timezone
 
 from . import state
+
+logger = get_logger(__name__)
+debug, info, warn, error = (logger.debug, logger.info,
+                            logger.warn, logger.error)
 
 # Localize
 tz_to_local = timezone.to_local
@@ -70,7 +75,7 @@ class Request(object):
     __slots__ = ("app", "name", "id", "args", "kwargs",
                  "on_ack", "delivery_info", "hostname",
                  "callbacks", "errbacks",
-                 "logger", "eventer", "connection_errors",
+                 "eventer", "connection_errors",
                  "task", "eta", "expires",
                  "_does_debug", "_does_info", "request_dict",
                  "acknowledged", "success_msg", "error_msg",
@@ -96,7 +101,7 @@ class Request(object):
     retry_msg = """Task %(name)s[%(id)s] retry: %(exc)s"""
 
     def __init__(self, body, on_ack=noop,
-            hostname=None, logger=None, eventer=None, app=None,
+            hostname=None, eventer=None, app=None,
             connection_errors=None, request_dict=None,
             delivery_info=None, task=None, **opts):
         self.app = app or app_or_default(app)
@@ -116,7 +121,6 @@ class Request(object):
         utc = body.get("utc", False)
         self.on_ack = on_ack
         self.hostname = hostname or socket.gethostname()
-        self.logger = logger or self.app.log.get_default_logger()
         self.eventer = eventer
         self.connection_errors = connection_errors or ()
         self.task = task or self.app.tasks[name]
@@ -145,8 +149,8 @@ class Request(object):
         }
 
         ## shortcuts
-        self._does_debug = self.logger.isEnabledFor(logging.DEBUG)
-        self._does_info = self.logger.isEnabledFor(logging.INFO)
+        self._does_debug = logger.isEnabledFor(logging.DEBUG)
+        self._does_info = logger.isEnabledFor(logging.INFO)
 
         self.request_dict = body
 
@@ -266,8 +270,7 @@ class Request(object):
         if self.expires:
             self.maybe_expire()
         if self.id in state.revoked:
-            self.logger.warn("Skipping revoked task: %s[%s]",
-                             self.name, self.id)
+            warn("Skipping revoked task: %s[%s]", self.name, self.id)
             self.send_event("task-revoked", uuid=self.id)
             self.acknowledge()
             self._already_revoked = True
@@ -287,8 +290,7 @@ class Request(object):
             self.acknowledge()
         self.send_event("task-started", uuid=self.id, pid=pid)
         if self._does_debug:
-            self.logger.debug("Task accepted: %s[%s] pid:%r",
-                              self.name, self.id, pid)
+            debug("Task accepted: %s[%s] pid:%r", self.name, self.id, pid)
         if self._terminate_on_ack is not None:
             _, pool, signal = self._terminate_on_ack
             self.terminate(pool, signal)
@@ -297,12 +299,12 @@ class Request(object):
         """Handler called if the task times out."""
         state.task_ready(self)
         if soft:
-            self.logger.warning("Soft time limit (%ss) exceeded for %s[%s]",
-                                timeout, self.name, self.id)
+            warn("Soft time limit (%ss) exceeded for %s[%s]",
+                 timeout, self.name, self.id)
             exc = exceptions.SoftTimeLimitExceeded(timeout)
         else:
-            self.logger.error("Hard time limit (%ss) exceeded for %s[%s]",
-                              timeout, self.name, self.id)
+            error("Hard time limit (%ss) exceeded for %s[%s]",
+                  timeout, self.name, self.id)
             exc = exceptions.TimeLimitExceeded(timeout)
 
         if self.store_errors:
@@ -329,11 +331,10 @@ class Request(object):
         if self._does_info:
             now = now or time.time()
             runtime = self.time_start and (time.time() - self.time_start) or 0
-            self.logger.info(self.success_msg.strip(),
-                        {"id": self.id,
-                        "name": self.name,
-                        "return_value": self.repr_result(ret_value),
-                        "runtime": runtime})
+            info(self.success_msg.strip(), {
+                    "id": self.id, "name": self.name,
+                    "return_value": self.repr_result(ret_value),
+                    "runtime": runtime})
 
     def on_retry(self, exc_info):
         """Handler called if the task should be retried."""
@@ -342,11 +343,9 @@ class Request(object):
                          traceback=safe_str(exc_info.traceback))
 
         if self._does_info:
-            self.logger.info(self.retry_msg.strip(),
-                            {"id": self.id,
-                             "name": self.name,
-                             "exc": safe_repr(exc_info.exception.exc)},
-                            exc_info=exc_info)
+            info(self.retry_msg.strip(), {
+                "id": self.id, "name": self.name,
+                "exc": safe_repr(exc_info.exception.exc)}, exc_info=exc_info)
 
     def on_failure(self, exc_info):
         """Handler called if the task raised an exception."""
@@ -390,11 +389,11 @@ class Request(object):
                    "kwargs": safe_repr(self.kwargs),
                    "description": description}
 
-        self.logger.log(severity, format.strip(), context,
-                        exc_info=exc_info.exc_info,
-                        extra={"data": {"id": self.id,
-                                        "name": self.name,
-                                        "hostname": self.hostname}})
+        logger.log(severity, format.strip(), context,
+                   exc_info=exc_info.exc_info,
+                   extra={"data": {"id": self.id,
+                                   "name": self.name,
+                                   "hostname": self.hostname}})
 
         task_obj = self.app.tasks.get(self.name, object)
         task_obj.send_error_email(context, exc_info.exception)
@@ -402,7 +401,7 @@ class Request(object):
     def acknowledge(self):
         """Acknowledge task."""
         if not self.acknowledged:
-            self.on_ack(self.logger, self.connection_errors)
+            self.on_ack(logger, self.connection_errors)
             self.acknowledged = True
 
     def repr_result(self, result, maxlen=46):

@@ -7,6 +7,7 @@ import sys
 from collections import defaultdict
 
 from kombu.tests.utils import redirect_stdouts
+from mock import patch
 
 from celery import beat
 from celery import platforms
@@ -119,21 +120,11 @@ class test_Beat(AppCase):
             sys.stdout.logger
 
     @redirect_stdouts
-    def test_logs_errors(self, stdout, stderr):
-        class MockLogger(object):
-            _critical = []
-
-            def debug(self, *args, **kwargs):
-                pass
-
-            def critical(self, msg, *args, **kwargs):
-                self._critical.append(msg)
-
-        logger = MockLogger()
+    @patch("celery.apps.beat.logger")
+    def test_logs_errors(self, logger, stdout, stderr):
         b = MockBeat3(socket_timeout=None)
-        b.start_scheduler(logger)
-
-        self.assertTrue(logger._critical)
+        b.start_scheduler()
+        self.assertTrue(logger.critical.called)
 
     @redirect_stdouts
     def test_use_pidfile(self, stdout, stderr):

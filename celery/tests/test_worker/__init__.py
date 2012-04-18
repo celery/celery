@@ -102,7 +102,7 @@ class test_QoS(Case):
     class _QoS(QoS):
         def __init__(self, value):
             self.value = value
-            QoS.__init__(self, None, value, None)
+            QoS.__init__(self, None, value)
 
         def set(self, value):
             return value
@@ -153,8 +153,7 @@ class test_QoS(Case):
         self.assertEqual(qos.value, 1000)
 
     def test_exceeds_short(self):
-        qos = QoS(Mock(), PREFETCH_COUNT_MAX - 1,
-                current_app.log.get_default_logger())
+        qos = QoS(Mock(), PREFETCH_COUNT_MAX - 1)
         qos.update()
         self.assertEqual(qos.value, PREFETCH_COUNT_MAX - 1)
         qos.increment()
@@ -168,7 +167,7 @@ class test_QoS(Case):
 
     def test_consumer_increment_decrement(self):
         consumer = Mock()
-        qos = QoS(consumer, 10, current_app.log.get_default_logger())
+        qos = QoS(consumer, 10)
         qos.update()
         self.assertEqual(qos.value, 10)
         self.assertIn({"prefetch_count": 10}, consumer.qos.call_args)
@@ -188,7 +187,7 @@ class test_QoS(Case):
 
     def test_consumer_decrement_eventually(self):
         consumer = Mock()
-        qos = QoS(consumer, 10, current_app.log.get_default_logger())
+        qos = QoS(consumer, 10)
         qos.decrement_eventually()
         self.assertEqual(qos.value, 9)
         qos.value = 0
@@ -197,7 +196,7 @@ class test_QoS(Case):
 
     def test_set(self):
         consumer = Mock()
-        qos = QoS(consumer, 10, current_app.log.get_default_logger())
+        qos = QoS(consumer, 10)
         qos.set(12)
         self.assertEqual(qos.prev, 12)
         qos.set(qos.prev)
@@ -208,16 +207,14 @@ class test_Consumer(Case):
     def setUp(self):
         self.ready_queue = FastQueue()
         self.eta_schedule = Timer()
-        self.logger = current_app.log.get_default_logger()
-        self.logger.setLevel(0)
 
     def tearDown(self):
         self.eta_schedule.stop()
 
     def test_info(self):
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                            send_events=False)
-        l.qos = QoS(l.task_consumer, 10, l.logger)
+        l.qos = QoS(l.task_consumer, 10)
         info = l.info
         self.assertEqual(info["prefetch_count"], 10)
         self.assertFalse(info["broker"])
@@ -227,13 +224,13 @@ class test_Consumer(Case):
         self.assertTrue(info["broker"])
 
     def test_start_when_closed(self):
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                             send_events=False)
         l._state = CLOSE
         l.start()
 
     def test_connection(self):
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                            send_events=False)
 
         l.reset_connection()
@@ -259,12 +256,12 @@ class test_Consumer(Case):
         self.assertIsNone(l.task_consumer)
 
     def test_close_connection(self):
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                            send_events=False)
         l._state = RUN
         l.close_connection()
 
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                            send_events=False)
         eventer = l.event_dispatcher = Mock()
         eventer.enabled = True
@@ -274,21 +271,22 @@ class test_Consumer(Case):
         self.assertTrue(eventer.close.call_count)
         self.assertTrue(heart.closed)
 
-    def test_receive_message_unknown(self):
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+    @patch("celery.worker.consumer.warn")
+    def test_receive_message_unknown(self, warn):
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                            send_events=False)
         backend = Mock()
         m = create_message(backend, unknown={"baz": "!!!"})
         l.event_dispatcher = Mock()
         l.pidbox_node = MockNode()
 
-        with self.assertWarnsRegex(RuntimeWarning, r'unknown message'):
-            l.receive_message(m.decode(), m)
+        l.receive_message(m.decode(), m)
+        self.assertTrue(warn.call_count)
 
     @patch("celery.utils.timer2.to_timestamp")
     def test_receive_message_eta_OverflowError(self, to_timestamp):
         to_timestamp.side_effect = OverflowError()
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                              send_events=False)
         m = create_message(Mock(), task=foo_task.name,
                                    args=("2, 2"),
@@ -302,9 +300,9 @@ class test_Consumer(Case):
         self.assertTrue(m.acknowledged)
         self.assertTrue(to_timestamp.call_count)
 
-    def test_receive_message_InvalidTaskError(self):
-        logger = Mock()
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, logger,
+    @patch("celery.worker.consumer.error")
+    def test_receive_message_InvalidTaskError(self, error):
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                            send_events=False)
         m = create_message(Mock(), task=foo_task.name,
                            args=(1, 2), kwargs="foobarbaz", id=1)
@@ -313,12 +311,11 @@ class test_Consumer(Case):
         l.pidbox_node = MockNode()
 
         l.receive_message(m.decode(), m)
-        self.assertIn("Received invalid task message",
-                      logger.error.call_args[0][0])
+        self.assertIn("Received invalid task message", error.call_args[0][0])
 
-    def test_on_decode_error(self):
-        logger = Mock()
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, logger,
+    @patch("celery.worker.consumer.crit")
+    def test_on_decode_error(self, crit):
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                            send_events=False)
 
         class MockMessage(Mock):
@@ -329,11 +326,10 @@ class test_Consumer(Case):
         message = MockMessage()
         l.on_decode_error(message, KeyError("foo"))
         self.assertTrue(message.ack.call_count)
-        self.assertIn("Can't decode message body",
-                      logger.critical.call_args[0][0])
+        self.assertIn("Can't decode message body", crit.call_args[0][0])
 
     def test_receieve_message(self):
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                            send_events=False)
         m = create_message(Mock(), task=foo_task.name,
                            args=[2, 4, 8], kwargs={})
@@ -359,7 +355,7 @@ class test_Consumer(Case):
                     raise KeyError("foo")
                 raise SyntaxError("bar")
 
-        l = MockConsumer(self.ready_queue, self.eta_schedule, self.logger,
+        l = MockConsumer(self.ready_queue, self.eta_schedule,
                              send_events=False, pool=BasePool())
         l.connection_errors = (KeyError, )
         with self.assertRaises(SyntaxError):
@@ -380,7 +376,7 @@ class test_Consumer(Case):
                     raise KeyError("foo")
                 raise SyntaxError("bar")
 
-        l = MockConsumer(self.ready_queue, self.eta_schedule, self.logger,
+        l = MockConsumer(self.ready_queue, self.eta_schedule,
                              send_events=False, pool=BasePool())
 
         l.channel_errors = (KeyError, )
@@ -397,12 +393,12 @@ class test_Consumer(Case):
                 self.obj.connection = None
                 raise socket.timeout(10)
 
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                             send_events=False)
         l.connection = Connection()
         l.task_consumer = Mock()
         l.connection.obj = l
-        l.qos = QoS(l.task_consumer, 10, l.logger)
+        l.qos = QoS(l.task_consumer, 10)
         l.consume_messages()
 
     def test_consume_messages_when_socket_error(self):
@@ -414,13 +410,13 @@ class test_Consumer(Case):
                 self.obj.connection = None
                 raise socket.error("foo")
 
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                             send_events=False)
         l._state = RUN
         c = l.connection = Connection()
         l.connection.obj = l
         l.task_consumer = Mock()
-        l.qos = QoS(l.task_consumer, 10, l.logger)
+        l.qos = QoS(l.task_consumer, 10)
         with self.assertRaises(socket.error):
             l.consume_messages()
 
@@ -436,12 +432,12 @@ class test_Consumer(Case):
             def drain_events(self, **kwargs):
                 self.obj.connection = None
 
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                              send_events=False)
         l.connection = Connection()
         l.connection.obj = l
         l.task_consumer = Mock()
-        l.qos = QoS(l.task_consumer, 10, l.logger)
+        l.qos = QoS(l.task_consumer, 10)
 
         l.consume_messages()
         l.consume_messages()
@@ -452,7 +448,7 @@ class test_Consumer(Case):
         l.task_consumer.qos.assert_called_with(prefetch_count=9)
 
     def test_maybe_conn_error(self):
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                              send_events=False)
         l.connection_errors = (KeyError, )
         l.channel_errors = (SyntaxError, )
@@ -464,9 +460,9 @@ class test_Consumer(Case):
 
     def test_apply_eta_task(self):
         from celery.worker import state
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                              send_events=False)
-        l.qos = QoS(None, 10, l.logger)
+        l.qos = QoS(None, 10)
 
         task = object()
         qos = l.qos.value
@@ -476,14 +472,14 @@ class test_Consumer(Case):
         self.assertIs(self.ready_queue.get_nowait(), task)
 
     def test_receieve_message_eta_isoformat(self):
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                              send_events=False)
         m = create_message(Mock(), task=foo_task.name,
                            eta=datetime.now().isoformat(),
                            args=[2, 4, 8], kwargs={})
 
         l.task_consumer = Mock()
-        l.qos = QoS(l.task_consumer, l.initial_prefetch_count, l.logger)
+        l.qos = QoS(l.task_consumer, l.initial_prefetch_count)
         l.event_dispatcher = Mock()
         l.enabled = False
         l.update_strategies()
@@ -500,7 +496,7 @@ class test_Consumer(Case):
         l.eta_schedule.stop()
 
     def test_on_control(self):
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                              send_events=False)
         l.pidbox_node = Mock()
         l.reset_pidbox_node = Mock()
@@ -521,7 +517,7 @@ class test_Consumer(Case):
 
     def test_revoke(self):
         ready_queue = FastQueue()
-        l = MyKombuConsumer(ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(ready_queue, self.eta_schedule,
                            send_events=False)
         backend = Mock()
         id = uuid()
@@ -534,7 +530,7 @@ class test_Consumer(Case):
         self.assertTrue(ready_queue.empty())
 
     def test_receieve_message_not_registered(self):
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                           send_events=False)
         backend = Mock()
         m = create_message(backend, task="x.X.31x", args=[2, 4, 8], kwargs={})
@@ -545,28 +541,29 @@ class test_Consumer(Case):
             self.ready_queue.get_nowait()
         self.assertTrue(self.eta_schedule.empty())
 
-    def test_receieve_message_ack_raises(self):
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+    @patch("celery.worker.consumer.warn")
+    @patch("celery.worker.consumer.logger")
+    def test_receieve_message_ack_raises(self, logger, warn):
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                           send_events=False)
         backend = Mock()
         m = create_message(backend, args=[2, 4, 8], kwargs={})
 
         l.event_dispatcher = Mock()
         l.connection_errors = (socket.error, )
-        l.logger = Mock()
         m.reject = Mock()
         m.reject.side_effect = socket.error("foo")
-        with self.assertWarnsRegex(RuntimeWarning, r'unknown message'):
-            self.assertFalse(l.receive_message(m.decode(), m))
+        self.assertFalse(l.receive_message(m.decode(), m))
+        self.assertTrue(warn.call_count)
         with self.assertRaises(Empty):
             self.ready_queue.get_nowait()
         self.assertTrue(self.eta_schedule.empty())
         m.reject.assert_called_with()
-        self.assertTrue(l.logger.critical.call_count)
+        self.assertTrue(logger.critical.call_count)
 
     def test_receieve_message_eta(self):
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
-                          send_events=False)
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
+                            send_events=False)
         l.event_dispatcher = Mock()
         l.event_dispatcher._outbound_buffer = deque()
         backend = Mock()
@@ -597,7 +594,7 @@ class test_Consumer(Case):
             self.ready_queue.get_nowait()
 
     def test_reset_pidbox_node(self):
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                           send_events=False)
         l.pidbox_node = Mock()
         chan = l.pidbox_node.channel = Mock()
@@ -608,7 +605,7 @@ class test_Consumer(Case):
         chan.close.assert_called_with()
 
     def test_reset_pidbox_node_green(self):
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                           send_events=False)
         l.pool = Mock()
         l.pool.is_green = True
@@ -616,7 +613,7 @@ class test_Consumer(Case):
         l.pool.spawn_n.assert_called_with(l._green_pidbox_node)
 
     def test__green_pidbox_node(self):
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                           send_events=False)
         l.pidbox_node = Mock()
 
@@ -684,7 +681,7 @@ class test_Consumer(Case):
                     raise KeyError("foo")
 
         init_callback = Mock()
-        l = _Consumer(self.ready_queue, self.eta_schedule, self.logger,
+        l = _Consumer(self.ready_queue, self.eta_schedule,
                       send_events=False, init_callback=init_callback)
         l.task_consumer = Mock()
         l.broadcast_consumer = Mock()
@@ -707,7 +704,7 @@ class test_Consumer(Case):
         self.assertEqual(l.qos.prev, l.qos.value)
 
         init_callback.reset_mock()
-        l = _Consumer(self.ready_queue, self.eta_schedule, self.logger,
+        l = _Consumer(self.ready_queue, self.eta_schedule,
                       send_events=False, init_callback=init_callback)
         l.qos = _QoS()
         l.task_consumer = Mock()
@@ -720,8 +717,8 @@ class test_Consumer(Case):
         self.assertTrue(l.consume_messages.call_count)
 
     def test_reset_connection_with_no_node(self):
-
-        l = MainConsumer(self.ready_queue, self.eta_schedule, self.logger)
+        l = MainConsumer(self.ready_queue, self.eta_schedule,
+                         send_events=False)
         self.assertEqual(None, l.pool)
         l.reset_connection()
 
@@ -730,11 +727,17 @@ class test_WorkController(AppCase):
 
     def setup(self):
         self.worker = self.create_worker()
+        from celery import worker
+        self._logger = worker.logger
+        self.logger = worker.logger = Mock()
+
+    def teardown(self):
+        from celery import worker
+        worker.logger = self._logger
 
     def create_worker(self, **kw):
         worker = WorkController(concurrency=1, loglevel=0, **kw)
         worker._shutdown_complete.set()
-        worker.logger = Mock()
         return worker
 
     @patch("celery.platforms.signals")
@@ -810,7 +813,6 @@ class test_WorkController(AppCase):
 
     def test_on_timer_error(self):
         worker = WorkController(concurrency=1, loglevel=0)
-        worker.logger = Mock()
 
         try:
             raise KeyError("foo")
@@ -818,15 +820,14 @@ class test_WorkController(AppCase):
             exc_info = sys.exc_info()
 
         worker.on_timer_error(exc_info)
-        msg, args = worker.logger.error.call_args[0]
+        msg, args = self.logger.error.call_args[0]
         self.assertIn("KeyError", msg % args)
 
     def test_on_timer_tick(self):
         worker = WorkController(concurrency=1, loglevel=10)
-        worker.logger = Mock()
 
         worker.on_timer_tick(30.0)
-        xargs = worker.logger.debug.call_args[0]
+        xargs = self.logger.debug.call_args[0]
         fmt, arg = xargs[0], xargs[1]
         self.assertEqual(30.0, arg)
         self.assertIn("Next eta %s secs", fmt)

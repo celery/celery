@@ -46,7 +46,7 @@ from itertools import count
 from Queue import Empty, Queue
 
 from celery.task import Task
-from celery.utils import cached_property, timer2
+from celery.utils import timer2
 from celery.worker import state
 
 
@@ -192,7 +192,3 @@ class Batches(Task):
 
     def debug(self, msg):
         self.logger.debug("%s: %s", self.name, msg)
-
-    @cached_property
-    def logger(self):
-        return self.app.log.get_default_logger()

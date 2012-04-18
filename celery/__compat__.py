@@ -54,8 +54,6 @@ COMPAT_MODULES = {
         "log": {
             "get_default_logger": "log.get_default_logger",
             "setup_logger": "log.setup_logger",
-            "setup_task_logger": "log.setup_task_logger",
-            "get_task_logger": "log.get_task_logger",
             "setup_loggig_subsystem": "log.setup_logging_subsystem",
             "redirect_stdouts_to_logger": "log.redirect_stdouts_to_logger",
         },

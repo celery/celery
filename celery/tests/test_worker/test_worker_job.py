@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 
 from kombu.transport.base import Message
 from kombu.utils.encoding import from_utf8, default_encode
-from mock import Mock
+from mock import Mock, patch
 from nose import SkipTest
 
 from celery import current_app
@@ -29,7 +29,7 @@ from celery.utils import uuid
 from celery.worker.job import Request, TaskRequest, execute_and_trace
 from celery.worker.state import revoked
 
-from celery.tests.utils import Case, WhateverIO, wrap_logger
+from celery.tests.utils import Case
 
 
 scratch = {"ACK": False}
@@ -109,21 +109,19 @@ class test_RetryTaskError(Case):
 
 class test_trace_task(Case):
 
-    def test_process_cleanup_fails(self):
+    @patch("celery.task.trace._logger")
+    def test_process_cleanup_fails(self, _logger):
         backend = mytask.backend
         mytask.backend = Mock()
         mytask.backend.process_cleanup = Mock(side_effect=KeyError())
         try:
-
-            logger = mytask.app.log.get_default_logger()
-            with wrap_logger(logger) as sio:
-                tid = uuid()
-                ret = jail(tid, mytask.name, [2], {})
-                self.assertEqual(ret, 4)
-                mytask.backend.store_result.assert_called_with(tid, 4,
-                                                               states.SUCCESS)
-                logs = sio.getvalue().strip()
-                self.assertIn("Process cleanup failed", logs)
+            tid = uuid()
+            ret = jail(tid, mytask.name, [2], {})
+            self.assertEqual(ret, 4)
+            mytask.backend.store_result.assert_called_with(tid, 4,
+                                                           states.SUCCESS)
+            self.assertIn("Process cleanup failed",
+                          _logger.error.call_args[0][0])
         finally:
             mytask.backend = backend
 
@@ -441,38 +439,25 @@ class test_TaskRequest(Case):
         with self.assertRaises(InvalidTaskError):
             TaskRequest.from_message(None, body)
 
-    def test_on_timeout(self):
-
-        class MockLogger(object):
-
-            def __init__(self):
-                self.warnings = []
-                self.errors = []
-
-            def warning(self, msg, *args, **kwargs):
-                self.warnings.append(msg % args)
-
-            def error(self, msg, *args, **kwargs):
-                self.errors.append(msg % args)
+    @patch("celery.worker.job.error")
+    @patch("celery.worker.job.warn")
+    def test_on_timeout(self, warn, error):
 
         tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
-        tw.logger = MockLogger()
         tw.on_timeout(soft=True, timeout=1337)
-        self.assertIn("Soft time limit (1337s) exceeded",
-                      tw.logger.warnings[0])
+        self.assertIn("Soft time limit", warn.call_args[0][0])
         tw.on_timeout(soft=False, timeout=1337)
-        self.assertIn("Hard time limit (1337s) exceeded", tw.logger.errors[0])
+        self.assertIn("Hard time limit", error.call_args[0][0])
         self.assertEqual(mytask.backend.get_status(tw.id),
                          states.FAILURE)
 
         mytask.ignore_result = True
         try:
             tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
-            tw.logger = MockLogger()
-        finally:
             tw.on_timeout(soft=True, timeout=1336)
             self.assertEqual(mytask.backend.get_status(tw.id),
                              states.PENDING)
+        finally:
             mytask.ignore_result = False
 
     def test_execute_and_trace(self):
@@ -559,7 +544,6 @@ class test_TaskRequest(Case):
         if sys.version_info < (2, 6):
             self.assertEqual(tw.kwargs.keys()[0], us)
             self.assertIsInstance(tw.kwargs.keys()[0], str)
-        self.assertTrue(tw.logger)
 
     def test_from_message_empty_args(self):
         body = {"task": mytask.name, "id": uuid()}
@@ -672,7 +656,8 @@ class test_TaskRequest(Case):
                     "delivery_info": {"exchange": None, "routing_key": None},
                     "task_name": tw.name})
 
-    def _test_on_failure(self, exception):
+    @patch("celery.worker.job.logger")
+    def _test_on_failure(self, exception, logger):
         app = app_or_default()
         tid = uuid()
         tw = TaskRequest(mytask.name, tid, [4], {"f": "x"})
@@ -680,20 +665,15 @@ class test_TaskRequest(Case):
             raise exception
         except Exception:
             exc_info = ExceptionInfo(sys.exc_info())
-
-            logfh = WhateverIO()
-            tw.logger.handlers = []
-            tw.logger = app.log.setup_logger("INFO", logfh, root=False)
-
             app.conf.CELERY_SEND_TASK_ERROR_EMAILS = True
-
-            tw.on_failure(exc_info)
-            logvalue = logfh.getvalue()
-            self.assertIn(mytask.name, logvalue)
-            self.assertIn(tid, logvalue)
-            self.assertIn("ERROR", logvalue)
-
-            app.conf.CELERY_SEND_TASK_ERROR_EMAILS = False
+            try:
+                tw.on_failure(exc_info)
+                self.assertTrue(logger.log.called)
+                context = logger.log.call_args[0][2]
+                self.assertEqual(mytask.name, context["name"])
+                self.assertIn(tid, context["id"])
+            finally:
+                app.conf.CELERY_SEND_TASK_ERROR_EMAILS = False
 
     def test_on_failure(self):
         self._test_on_failure(Exception("Inside unit tests"))

@@ -79,7 +79,6 @@ from __future__ import with_statement
 import logging
 import socket
 import threading
-import warnings
 
 from kombu.utils.encoding import safe_repr
 
@@ -88,6 +87,7 @@ from celery.datastructures import AttributeDict
 from celery.exceptions import InvalidTaskError
 from celery.utils import timer2
 from celery.utils.functional import noop
+from celery.utils.log import get_logger
 
 from . import state
 from .abstract import StartStopComponent
@@ -100,6 +100,11 @@ CLOSE = 0x2
 #: Prefetch count can't exceed short.
 PREFETCH_COUNT_MAX = 0xFFFF
 
+UNKNOWN_FORMAT = """\
+Received and deleted unknown message. Wrong destination?!?
+
+The full contents of the message body was: %s
+"""
 #: Error message for when an unregistered task is received.
 UNKNOWN_TASK_ERROR = """\
 Received unregistered task of type %s.
@@ -130,6 +135,20 @@ body: %s {content_type:%s content_encoding:%s delivery_info:%s}\
 """
 
 
+RETRY_CONNECTION = """\
+Consumer: Connection to broker lost. \
+Trying to re-establish the connection...\
+"""
+
+logger = get_logger(__name__)
+info, warn, error, crit = (logger.info, logger.warn,
+                           logger.error, logger.critical)
+
+
+def debug(msg, *args, **kwargs):
+    logger.debug("Consumer: %s" % (msg, ), *args, **kwargs)
+
+
 class Component(StartStopComponent):
     name = "worker.consumer"
     last = True
@@ -138,7 +157,7 @@ class Component(StartStopComponent):
         prefetch_count = w.concurrency * w.prefetch_multiplier
         c = w.consumer = self.instantiate(
                 w.consumer_cls, w.ready_queue, w.scheduler,
-                logger=w.logger, hostname=w.hostname,
+                hostname=w.hostname,
                 send_events=w.send_events,
                 init_callback=w.ready_callback,
                 initial_prefetch_count=prefetch_count,
@@ -156,14 +175,12 @@ class QoS(object):
 
     :param consumer: A :class:`kombu.messaging.Consumer` instance.
     :param initial_value: Initial prefetch count value.
-    :param logger: Logger used to log debug messages.
 
     """
     prev = None
 
-    def __init__(self, consumer, initial_value, logger):
+    def __init__(self, consumer, initial_value):
         self.consumer = consumer
-        self.logger = logger
         self._mutex = threading.RLock()
         self.value = initial_value
 
@@ -203,10 +220,10 @@ class QoS(object):
         if pcount != self.prev:
             new_value = pcount
             if pcount > PREFETCH_COUNT_MAX:
-                self.logger.warning("QoS: Disabled: prefetch_count exceeds %r",
-                                    PREFETCH_COUNT_MAX)
+                warn("QoS: Disabled: prefetch_count exceeds %r",
+                     PREFETCH_COUNT_MAX)
                 new_value = 0
-            self.logger.debug("basic.qos: prefetch_count->%s", new_value)
+            debug("basic.qos: prefetch_count->%s", new_value)
             self.consumer.qos(prefetch_count=new_value)
             self.prev = pcount
         return pcount
@@ -254,9 +271,6 @@ class Consumer(object):
     #: went offline/disappeared.
     heart = None
 
-    #: The logger instance to use.  Defaults to the default Celery logger.
-    logger = None
-
     #: The broker connection.
     connection = None
 
@@ -281,10 +295,10 @@ class Consumer(object):
     # Consumer state, can be RUN or CLOSE.
     _state = None
 
-    def __init__(self, ready_queue, eta_schedule, logger,
+    def __init__(self, ready_queue, eta_schedule,
             init_callback=noop, send_events=False, hostname=None,
             initial_prefetch_count=2, pool=None, app=None,
-            priority_timer=None, controller=None):
+            priority_timer=None, controller=None, **kwargs):
         self.app = app_or_default(app)
         self.connection = None
         self.task_consumer = None
@@ -294,7 +308,6 @@ class Consumer(object):
         self.eta_schedule = eta_schedule
         self.send_events = send_events
         self.init_callback = init_callback
-        self.logger = logger
         self.hostname = hostname or socket.gethostname()
         self.initial_prefetch_count = initial_prefetch_count
         self.event_dispatcher = None
@@ -302,7 +315,6 @@ class Consumer(object):
         self.pool = pool
         self.priority_timer = priority_timer or timer2.default_timer
         pidbox_state = AttributeDict(app=self.app,
-                                     logger=logger,
                                      hostname=self.hostname,
                                      listener=self,     # pre 2.2
                                      consumer=self)
@@ -313,7 +325,7 @@ class Consumer(object):
         self.connection_errors = conninfo.connection_errors
         self.channel_errors = conninfo.channel_errors
 
-        self._does_info = self.logger.isEnabledFor(logging.INFO)
+        self._does_info = logger.isEnabledFor(logging.INFO)
         self.strategies = {}
 
     def update_strategies(self):
@@ -337,15 +349,13 @@ class Consumer(object):
                 self.reset_connection()
                 self.consume_messages()
             except self.connection_errors + self.channel_errors:
-                self.logger.error("Consumer: Connection to broker lost."
-                                + " Trying to re-establish the connection...",
-                                exc_info=True)
+                error(RETRY_CONNECTION, exc_info=True)
 
     def consume_messages(self):
         """Consume messages forever (or until an exception is raised)."""
-        self._debug("Starting message consumer...")
+        debug("Starting message consumer...")
         self.task_consumer.consume()
-        self._debug("Ready to accept tasks!")
+        debug("Ready to accept tasks!")
 
         while self._state != CLOSE and self.connection:
             if self.qos.prev != self.qos.value:
@@ -370,7 +380,7 @@ class Consumer(object):
             return
 
         if self._does_info:
-            self.logger.info("Got task from broker: %s", task.shortinfo())
+            info("Got task from broker: %s", task.shortinfo())
 
         if self.event_dispatcher.enabled:
             self.event_dispatcher.send("task-received", uuid=task.id,
@@ -384,10 +394,8 @@ class Consumer(object):
             try:
                 eta = timer2.to_timestamp(task.eta)
             except OverflowError, exc:
-                self.logger.error(
-                    "Couldn't convert eta %s to timestamp: %r. Task: %r",
-                    task.eta, exc, task.info(safe=True),
-                    exc_info=True)
+                error("Couldn't convert eta %s to timestamp: %r. Task: %r",
+                      task.eta, exc, task.info(safe=True), exc_info=True)
                 task.acknowledge()
             else:
                 self.qos.increment()
@@ -402,11 +410,9 @@ class Consumer(object):
         try:
             self.pidbox_node.handle_message(body, message)
         except KeyError, exc:
-            self.logger.error("No such control command: %s", exc)
+            error("No such control command: %s", exc)
         except Exception, exc:
-            self.logger.error(
-                "Error occurred while handling control command: %r",
-                    exc, exc_info=True)
+            error("Control command error: %r", exc, exc_info=True)
             self.reset_pidbox_node()
 
     def apply_eta_task(self, task):
@@ -432,23 +438,18 @@ class Consumer(object):
         try:
             name = body["task"]
         except (KeyError, TypeError):
-            warnings.warn(RuntimeWarning(
-                "Received and deleted unknown message. Wrong destination?!? \
-                the full contents of the message body was: %s" % (
-                 self._message_report(body, message), )))
-            message.reject_log_error(self.logger, self.connection_errors)
+            warn(UNKNOWN_FORMAT, self._message_report(body, message))
+            message.reject_log_error(logger, self.connection_errors)
             return
 
         try:
             self.strategies[name](message, body, message.ack_log_error)
         except KeyError, exc:
-            self.logger.error(UNKNOWN_TASK_ERROR, exc, safe_repr(body),
-                              exc_info=True)
-            message.reject_log_error(self.logger, self.connection_errors)
+            error(UNKNOWN_TASK_ERROR, exc, safe_repr(body), exc_info=True)
+            message.reject_log_error(logger, self.connection_errors)
         except InvalidTaskError, exc:
-            self.logger.error(INVALID_TASK_ERROR, str(exc), safe_repr(body),
-                              exc_info=True)
-            message.reject_log_error(self.logger, self.connection_errors)
+            error(INVALID_TASK_ERROR, str(exc), safe_repr(body), exc_info=True)
+            message.reject_log_error(logger, self.connection_errors)
 
     def maybe_conn_error(self, fun):
         """Applies function but ignores any connection or channel
@@ -468,14 +469,14 @@ class Consumer(object):
         connection, self.connection = self.connection, None
 
         if self.task_consumer:
-            self._debug("Closing consumer channel...")
+            debug("Closing consumer channel...")
             self.task_consumer = \
                     self.maybe_conn_error(self.task_consumer.close)
 
         self.stop_pidbox_node()
 
         if connection:
-            self._debug("Closing broker connection...")
+            debug("Closing broker connection...")
             self.maybe_conn_error(connection.close)
 
     def stop_consumers(self, close_connection=True):
@@ -491,19 +492,19 @@ class Consumer(object):
 
         if self.heart:
             # Stop the heartbeat thread if it's running.
-            self.logger.debug("Heart: Going into cardiac arrest...")
+            debug("Heart: Going into cardiac arrest...")
             self.heart = self.heart.stop()
 
-        self._debug("Cancelling task consumer...")
+        debug("Cancelling task consumer...")
         if self.task_consumer:
             self.maybe_conn_error(self.task_consumer.cancel)
 
         if self.event_dispatcher:
-            self._debug("Shutting down event dispatcher...")
+            debug("Shutting down event dispatcher...")
             self.event_dispatcher = \
                     self.maybe_conn_error(self.event_dispatcher.close)
 
-        self._debug("Cancelling broadcast consumer...")
+        debug("Cancelling broadcast consumer...")
         if self.broadcast_consumer:
             self.maybe_conn_error(self.broadcast_consumer.cancel)
 
@@ -521,10 +522,9 @@ class Consumer(object):
         :param exc: The original exception instance.
 
         """
-        self.logger.critical(
-            "Can't decode message body: %r (type:%r encoding:%r raw:%r')",
-                    exc, message.content_type, message.content_encoding,
-                    safe_repr(message.body))
+        crit("Can't decode message body: %r (type:%r encoding:%r raw:%r')",
+             exc, message.content_type, message.content_encoding,
+             safe_repr(message.body))
         message.ack()
 
     def reset_pidbox_node(self):
@@ -547,11 +547,11 @@ class Consumer(object):
     def stop_pidbox_node(self):
         if self._pidbox_node_stopped:
             self._pidbox_node_shutdown.set()
-            self._debug("Waiting for broadcast thread to shutdown...")
+            debug("Waiting for broadcast thread to shutdown...")
             self._pidbox_node_stopped.wait()
             self._pidbox_node_stopped = self._pidbox_node_shutdown = None
         elif self.broadcast_consumer:
-            self._debug("Closing broadcast channel...")
+            debug("Closing broadcast channel...")
             self.broadcast_consumer = \
                 self.maybe_conn_error(self.broadcast_consumer.channel.close)
 
@@ -579,7 +579,7 @@ class Consumer(object):
     def reset_connection(self):
         """Re-establish the broker connection and set up consumers,
         heartbeat and the event dispatcher."""
-        self._debug("Re-establishing connection to the broker...")
+        debug("Re-establishing connection to the broker...")
         self.stop_consumers()
 
         # Clear internal queues to get rid of old messages.
@@ -590,12 +590,11 @@ class Consumer(object):
 
         # Re-establish the broker connection and setup the task consumer.
         self.connection = self._open_connection()
-        self._debug("Connection established.")
+        debug("Connection established.")
         self.task_consumer = self.app.amqp.get_task_consumer(self.connection,
                                     on_decode_error=self.on_decode_error)
         # QoS: Reset prefetch window.
-        self.qos = QoS(self.task_consumer,
-                       self.initial_prefetch_count, self.logger)
+        self.qos = QoS(self.task_consumer, self.initial_prefetch_count)
         self.qos.update()
 
         # receive_message handles incoming messages.
@@ -643,8 +642,8 @@ class Consumer(object):
         # Callback called for each retry while the connection
         # can't be established.
         def _error_handler(exc, interval):
-            self.logger.error("Consumer: Connection Error: %s. "
-                              "Trying again in %d seconds...", exc, interval)
+            error("Consumer: Connection Error: %s. "
+                  "Trying again in %d seconds...", exc, interval)
 
         # remember that the connection is lazy, it won't establish
         # until it's needed.
@@ -667,7 +666,7 @@ class Consumer(object):
         # Notifies other threads that this instance can't be used
         # anymore.
         self._state = CLOSE
-        self._debug("Stopping consumers...")
+        debug("Stopping consumers...")
         self.stop_consumers(close_connection=False)
 
     @property
@@ -684,6 +683,3 @@ class Consumer(object):
             conninfo = self.connection.info()
             conninfo.pop("password", None)  # don't send password.
         return {"broker": conninfo, "prefetch_count": self.qos.value}
-
-    def _debug(self, msg, **kwargs):
-        self.logger.debug("Consumer: %s", msg, **kwargs)

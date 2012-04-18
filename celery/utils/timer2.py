@@ -14,17 +14,15 @@ from __future__ import with_statement
 
 import atexit
 import heapq
-import logging
 import os
 import sys
-import traceback
-import warnings
 
 from itertools import count
 from threading import Condition, Event, Lock, Thread
 from time import time, sleep, mktime
 
 from datetime import datetime, timedelta
+from kombu.log import get_logger
 
 VERSION = (1, 0, 0)
 __version__ = ".".join(map(str, VERSION))
@@ -35,9 +33,7 @@ __docformat__ = "restructuredtext"
 
 DEFAULT_MAX_INTERVAL = 2
 
-
-class TimedFunctionFailed(UserWarning):
-    pass
+logger = get_logger("timer2")
 
 
 class Entry(object):
@@ -180,7 +176,6 @@ class Timer(Thread):
         self._is_shutdown = Event()
         self._is_stopped = Event()
         self.mutex = Lock()
-        self.logger = logging.getLogger("timer2.Timer")
         self.not_empty = Condition(self.mutex)
         self.setDaemon(True)
         self.setName("Timer-%s" % (self._timer_count(), ))
@@ -192,12 +187,7 @@ class Timer(Thread):
             exc_info = sys.exc_info()
             try:
                 if not self.schedule.handle_error(exc_info):
-                    warnings.warn(TimedFunctionFailed(repr(exc))),
-                    sys.stderr.write("Error in timer: %r\n" % (exc, ))
-                    traceback.print_exception(exc_info[0],
-                                              exc_info[1],
-                                              exc_info[2],
-                                              None, sys.stderr)
+                    logger.error("Error in timer: %r\n", exc, exc_info=True)
             finally:
                 del(exc_info)
 
@@ -231,8 +221,7 @@ class Timer(Thread):
                 # so gc collected built-in modules.
                 pass
         except Exception, exc:
-            self.logger.error("Thread Timer crashed: %r", exc,
-                              exc_info=True)
+            logger.error("Thread Timer crashed: %r", exc, exc_info=True)
             os._exit(1)
 
     def stop(self):

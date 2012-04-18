@@ -160,7 +160,6 @@ class test_Namespace(AppCase):
         ns = self.NS(app=self.app)
         self.assertIs(ns.app, self.app)
         self.assertEqual(ns.name, "test_Namespace")
-        self.assertTrue(ns.logger)
         self.assertFalse(ns.services)
 
     def test_interface_modules(self):

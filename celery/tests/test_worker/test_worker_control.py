@@ -63,7 +63,6 @@ class test_ControlPanel(Case):
         self.panel = self.create_panel(consumer=Consumer())
 
     def create_state(self, **kwargs):
-        kwargs.setdefault("logger", self.app.log.get_default_logger())
         kwargs.setdefault("app", self.app)
         return AttributeDict(kwargs)
 

@@ -21,10 +21,14 @@ import threading
 
 from time import sleep, time
 
+from celery.utils.log import get_logger
 from celery.utils.threads import bgThread
 
 from . import state
 from .abstract import StartStopComponent
+
+logger = get_logger(__name__)
+debug, info, error = logger.debug, logger.info, logger.error
 
 
 class WorkerComponent(StartStopComponent):
@@ -38,22 +42,19 @@ class WorkerComponent(StartStopComponent):
     def create(self, w):
         scaler = w.autoscaler = self.instantiate(w.autoscaler_cls, w.pool,
                                     max_concurrency=w.max_concurrency,
-                                    min_concurrency=w.min_concurrency,
-                                    logger=w.logger)
+                                    min_concurrency=w.min_concurrency)
         return scaler
 
 
 class Autoscaler(bgThread):
 
-    def __init__(self, pool, max_concurrency, min_concurrency=0,
-            keepalive=30, logger=None):
+    def __init__(self, pool, max_concurrency, min_concurrency=0, keepalive=30):
         super(Autoscaler, self).__init__()
         self.pool = pool
         self.mutex = threading.Lock()
         self.max_concurrency = max_concurrency
         self.min_concurrency = min_concurrency
         self.keepalive = keepalive
-        self.logger = logger
         self._last_action = None
 
         assert self.keepalive, "can't scale down too fast."
@@ -101,18 +102,17 @@ class Autoscaler(bgThread):
         return self._grow(n)
 
     def _grow(self, n):
-        self.logger.info("Scaling up %s processes.", n)
+        info("Scaling up %s processes.", n)
         self.pool.grow(n)
 
     def _shrink(self, n):
-        self.logger.info("Scaling down %s processes.", n)
+        info("Scaling down %s processes.", n)
         try:
             self.pool.shrink(n)
         except ValueError:
-            self.logger.debug(
-                "Autoscaler won't scale down: all processes busy.")
+            debug("Autoscaler won't scale down: all processes busy.")
         except Exception, exc:
-            self.logger.error("Autoscaler: scale_down: %r", exc, exc_info=True)
+            error("Autoscaler: scale_down: %r", exc, exc_info=True)
 
     def scale_down(self, n):
         if not self._last_action or not n:

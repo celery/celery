@@ -47,7 +47,7 @@ def disable_stdouts(fun):
 class _WorkController(object):
 
     def __init__(self, *args, **kwargs):
-        self.logger = current_app.log.get_default_logger()
+        pass
 
     def start(self):
         pass
@@ -331,7 +331,7 @@ class test_Worker(AppCase):
             controller.hup_not_supported_installed = True
 
         class Controller(object):
-            logger = logging.getLogger("celery.tests")
+            pass
 
         prev = cd.install_HUP_not_supported_handler
         cd.install_HUP_not_supported_handler = install_HUP_nosupport
@@ -353,7 +353,7 @@ class test_Worker(AppCase):
             restart_worker_handler_installed[0] = True
 
         class Controller(object):
-            logger = logging.getLogger("celery.tests")
+            pass
 
         prev = cd.install_worker_restart_handler
         cd.install_worker_restart_handler = install_worker_restart_handler
@@ -427,7 +427,6 @@ class test_signal_handlers(AppCase):
     class _Worker(object):
         stopped = False
         terminated = False
-        logger = current_app.log.get_default_logger()
 
         def stop(self, in_sighandler=False):
             self.stopped = True
@@ -516,22 +515,16 @@ class test_signal_handlers(AppCase):
             handlers["SIGTERM"]("SIGTERM", object())
         self.assertTrue(worker.stopped)
 
-    def test_worker_cry_handler(self):
+    @patch("celery.apps.worker.logger")
+    def test_worker_cry_handler(self, logger):
         if sys.platform.startswith("java"):
             raise SkipTest("Cry handler does not work on Jython")
         if hasattr(sys, "pypy_version_info"):
             raise SkipTest("Cry handler does not work on PyPy")
         if sys.version_info > (2, 5):
-
-            class Logger(object):
-                _errors = []
-
-                def error(self, msg, *args, **kwargs):
-                    self._errors.append(msg)
-            logger = Logger()
-            handlers = self.psig(cd.install_cry_handler, logger)
+            handlers = self.psig(cd.install_cry_handler)
             self.assertIsNone(handlers["SIGUSR1"]("SIGUSR1", object()))
-            self.assertTrue(Logger._errors)
+            self.assertTrue(logger.error.called)
         else:
             raise SkipTest("Needs Python 2.5 or later")
 

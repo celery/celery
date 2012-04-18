@@ -12,8 +12,11 @@
 
 from __future__ import absolute_import
 
+import logging
 import sys
 import threading
+
+from kombu.utils import cached_property
 
 from celery import current_app
 from celery import states
@@ -23,6 +26,7 @@ from celery.result import EagerResult
 from celery.utils import fun_takes_kwargs, uuid, maybe_reraise
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
+from celery.utils.log import get_logger
 from celery.utils.mail import ErrorMail
 
 from .annotations import resolve_all as resolve_all_annotations
@@ -349,13 +353,12 @@ class BaseTask(object):
     def start_strategy(self, app, consumer):
         return instantiate(self.Strategy, self, app, consumer)
 
-    def get_logger(self, loglevel=None, logfile=None, propagate=False,
-            **kwargs):
+    def get_logger(self, **kwargs):
         """Get task-aware logger object."""
-        return self._get_app().log.setup_task_logger(
-            loglevel=self.request.loglevel if loglevel is None else loglevel,
-            logfile=self.request.logfile if logfile is None else logfile,
-            propagate=propagate, task_name=self.name, task_id=self.request.id)
+        logger = get_logger(self.name)
+        if logger.parent is logging.root:
+            logger.parent = get_logger("celery.task")
+        return logger
 
     def establish_connection(self, connect_timeout=None):
         """Establish a connection to the message broker."""
@@ -706,7 +709,6 @@ class BaseTask(object):
         this task, wrapping arguments and execution options
         for a single task invocation."""
         from celery.canvas import subtask
-        print("SUBTASK: %r" % (subtask, ))
         return subtask(self, *args, **kwargs)
 
     def s(self, *args, **kwargs):
@@ -820,6 +822,10 @@ class BaseTask(object):
     def __repr__(self):
         """`repr(task)`"""
         return "<@task: %s>" % (self.name, )
+
+    @cached_property
+    def logger(self):
+        return self.get_logger()
 
     @property
     def __name__(self):

@@ -34,6 +34,9 @@ from celery.app.task import BaseTask
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import RetryTaskError
 from celery.utils.serialization import get_pickleable_exception
+from celery.utils.log import get_logger
+
+_logger = get_logger(__name__)
 
 send_prerun = signals.task_prerun.send
 prerun_receivers = signals.task_prerun.receivers
@@ -231,9 +234,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     except (KeyboardInterrupt, SystemExit, MemoryError):
                         raise
                     except Exception, exc:
-                        logger = current_app.log.get_default_logger()
-                        logger.error("Process cleanup failed: %r", exc,
-                                     exc_info=True)
+                        _logger.error("Process cleanup failed: %r", exc,
+                                      exc_info=True)
         except Exception, exc:
             if eager:
                 raise

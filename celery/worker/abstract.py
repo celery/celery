@@ -16,6 +16,9 @@ from importlib import import_module
 
 from celery.datastructures import DependencyGraph
 from celery.utils.imports import instantiate
+from celery.utils.log import get_logger
+
+logger = get_logger(__name__)
 
 
 class Namespace(object):
@@ -35,10 +38,9 @@ class Namespace(object):
     _unclaimed = defaultdict(dict)
     _started_count = 0
 
-    def __init__(self, name=None, app=None, logger=None):
+    def __init__(self, name=None, app=None):
         self.app = app
         self.name = name or self.name
-        self.logger = logger or self.app.log.get_default_logger()
         self.services = []
 
     def modules(self):
@@ -105,8 +107,8 @@ class Namespace(object):
         return self._unclaimed[self.name]
 
     def _debug(self, msg, *args):
-        return self.logger.debug("[%s] " + msg,
-                                *(self.name.capitalize(), ) + args)
+        return logger.debug("[%s] " + msg,
+                            *(self.name.capitalize(), ) + args)
 
 
 class ComponentType(type):

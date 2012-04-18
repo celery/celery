@@ -12,25 +12,36 @@ try:
 except ImportError:
     current_process = mputil = None  # noqa
 
-from kombu.log import get_logger, LOG_LEVELS, NullHandler
+from kombu.log import get_logger as _get_logger, LOG_LEVELS
 
 from .encoding import safe_str, str_t
 from .term import colored
 
 _process_aware = False
-
 is_py3k = sys.version_info[0] == 3
+
+
+# Sets up our logging hierarchy.
+#
+# Every logger in the celery package inherits from the "celery"
+# logger, and every task logger inherits from the "celery.task"
+# logger.
+logger = _get_logger("celery")
+mp_logger = _get_logger("multiprocessing")
+
+
+def get_logger(name):
+    l = _get_logger(name)
+    if l.parent is logging.root and l is not logger:
+        l.parent = logger
+    return l
+task_logger = get_logger("celery.task")
 
 
 def mlevel(level):
     if level and not isinstance(level, int):
         return LOG_LEVELS[level.upper()]
     return level
-
-
-# ensure loggers exists, to avoid 'no handler for' warnings.
-logger = get_logger("celery")
-mp_logger = get_logger("multiprocessing")
 
 
 class ColorFormatter(logging.Formatter):
