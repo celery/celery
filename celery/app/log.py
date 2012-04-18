@@ -8,6 +8,7 @@ from celery import signals
 from celery.utils import isatty
 from celery.utils.compat import LoggerAdapter, WatchedFileHandler
 from celery.utils.log import (
+    get_logger, NullHandler,
     ColorFormatter, ensure_process_aware_logger,
     LoggingProxy, get_multiprocessing_logger,
     reset_multiprocessing_logger, mlevel
@@ -44,7 +45,7 @@ class Logging(object):
         return colored(enabled=self.supports_color(logfile))
 
     def get_task_logger(self, loglevel=None, name=None):
-        logger = logging.getLogger(name or "celery.task.default")
+        logger = get_logger(name or "celery.task.default")
         if loglevel is not None:
             logger.setLevel(mlevel(loglevel))
         return logger
@@ -115,7 +116,7 @@ class Logging(object):
         :keyword loglevel: Initial log level.
 
         """
-        logger = logging.getLogger(name)
+        logger = get_logger(name)
         if loglevel is not None:
             logger.setLevel(mlevel(loglevel))
         return logger
@@ -167,8 +168,12 @@ class Logging(object):
         return LoggerAdapter(logger, {"task_id": task_id,
                                       "task_name": task_name})
 
+    def _has_handler(self, logger):
+        return (logger.handlers and
+                    not isinstance(logger.handlers[0], NullHandler))
+
     def _is_configured(self, logger):
-        return logger.handlers and not getattr(
+        return self._has_handler(logger) and not getattr(
                 logger, "_rudimentary_setup", False)
 
     def redirect_stdouts_to_logger(self, logger, loglevel=None,

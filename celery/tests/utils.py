@@ -29,6 +29,7 @@ from nose import SkipTest
 from ..app import app_or_default
 from ..utils.compat import WhateverIO, LoggerAdapter
 from ..utils.functional import noop
+from ..utils.log import NullHandler
 
 from .compat import catch_warnings
 
@@ -207,10 +208,14 @@ class AppCase(Case):
         pass
 
 
+def filter_NullHandler(handlers):
+    return [h for h in handlers if not isinstance(h, NullHandler)]
+
+
 def get_handlers(logger):
     if isinstance(logger, LoggerAdapter):
-        return logger.logger.handlers
-    return logger.handlers
+        return filter_NullHandler(logger.logger.handlers)
+    return filter_NullHandler(logger.handlers)
 
 
 def set_handlers(logger, new_handlers):

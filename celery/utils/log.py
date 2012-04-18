@@ -12,22 +12,25 @@ try:
 except ImportError:
     current_process = mputil = None  # noqa
 
+from kombu.log import get_logger, LOG_LEVELS, NullHandler
+
 from .encoding import safe_str, str_t
 from .term import colored
 
 _process_aware = False
 
-LOG_LEVELS = dict(logging._levelNames)
-LOG_LEVELS["FATAL"] = logging.FATAL
-LOG_LEVELS[logging.FATAL] = "FATAL"
-
-is_py3k = sys.version_info >= (3, 0)
+is_py3k = sys.version_info[0] == 3
 
 
 def mlevel(level):
     if level and not isinstance(level, int):
         return LOG_LEVELS[level.upper()]
     return level
+
+
+# ensure loggers exists, to avoid 'no handler for' warnings.
+logger = get_logger("celery")
+mp_logger = get_logger("multiprocessing")
 
 
 class ColorFormatter(logging.Formatter):
