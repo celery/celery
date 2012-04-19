@@ -64,6 +64,12 @@ class schedule(object):
         :setting:`CELERYBEAT_MAX_LOOP_INTERVAL` if responsiveness is of
         importance to you.
 
+        .. admonition:: Scheduler max interval variance
+
+        The default max loop interval may vary for different schedulers.
+        For the default scheduler the value is 5 minutes, but for e.g.
+        the django-celery database scheduler the value is 5 seconds.
+
         """
         rem_delta = self.remaining_estimate(last_run_at)
         rem = timedelta_seconds(rem_delta)

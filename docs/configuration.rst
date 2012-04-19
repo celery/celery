@@ -1563,7 +1563,18 @@ CELERYBEAT_MAX_LOOP_INTERVAL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The maximum number of seconds :mod:`~celery.bin.celerybeat` can sleep
-between checking the schedule.  Default is 300 seconds (5 minutes).
+between checking the schedule.
+
+
+The default for this value is scheduler specific.
+For the default celerybeat scheduler the value is 300 (5 minutes),
+but for e.g. the django-celery database scheduler it is 5 seconds
+because the schedule may be changed externally, and so it must take
+changes to the schedule into account.
+
+Also when running celerybeat embedded (:option:`-B`) on Jython as a thread
+the max interval is overridden and set to 1 so that it's possible
+to shut down in a timely manner.
 
 
 .. _conf-celerymon:

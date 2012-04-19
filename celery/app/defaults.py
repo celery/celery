@@ -187,7 +187,7 @@ NAMESPACES = {
         "SCHEDULE": Option({}, type="dict"),
         "SCHEDULER": Option("celery.beat.PersistentScheduler"),
         "SCHEDULE_FILENAME": Option("celerybeat-schedule"),
-        "MAX_LOOP_INTERVAL": Option(5 * 60, type="float"),
+        "MAX_LOOP_INTERVAL": Option(0, type="float"),
         "LOG_LEVEL": Option("INFO", deprecate_by="2.4", remove_by="3.0"),
         "LOG_FILE": Option(deprecate_by="2.4", remove_by="3.0"),
     },

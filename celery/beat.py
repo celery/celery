@@ -40,6 +40,8 @@ from .utils.log import get_logger
 logger = get_logger(__name__)
 debug, info, error = logger.debug, logger.info, logger.error
 
+DEFAULT_MAX_INTERVAL = 300  # 5 minutes
+
 
 class SchedulingError(Exception):
     """An error occured while scheduling a task."""
@@ -154,8 +156,9 @@ class Scheduler(object):
             app=None, Publisher=None, lazy=False, **kwargs):
         app = self.app = app_or_default(app)
         self.data = maybe_promise({} if schedule is None else schedule)
-        self.max_interval = max_interval or \
-                                app.conf.CELERYBEAT_MAX_LOOP_INTERVAL
+        self.max_interval = (max_interval
+                                or app.conf.CELERYBEAT_MAX_LOOP_INTERVAL
+                                or DEFAULT_MAX_INTERVAL)
         self.Publisher = Publisher or app.amqp.TaskPublisher
         if not lazy:
             self.setup_schedule()
@@ -377,8 +380,9 @@ class Service(object):
     def __init__(self, max_interval=None, schedule_filename=None,
             scheduler_cls=None, app=None):
         app = self.app = app_or_default(app)
-        self.max_interval = max_interval or \
-                                app.conf.CELERYBEAT_MAX_LOOP_INTERVAL
+        self.max_interval = (max_interval
+                             or app.conf.CELERYBEAT_MAX_LOOP_INTERVAL
+                             or DEFAULT_MAX_INTERVAL)
         self.scheduler_cls = scheduler_cls or self.scheduler_cls
         self.schedule_filename = schedule_filename or \
                                     app.conf.CELERYBEAT_SCHEDULE_FILENAME
