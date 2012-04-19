@@ -143,7 +143,7 @@ class Scheduler(object):
     schedule = None
 
     #: Maximum time to sleep between re-checking the schedule.
-    max_interval = 1
+    max_interval = DEFAULT_MAX_INTERVAL
 
     #: How often to sync the schedule (3 minutes by default)
     sync_every = 3 * 60
@@ -158,7 +158,7 @@ class Scheduler(object):
         self.data = maybe_promise({} if schedule is None else schedule)
         self.max_interval = (max_interval
                                 or app.conf.CELERYBEAT_MAX_LOOP_INTERVAL
-                                or DEFAULT_MAX_INTERVAL)
+                                or self.max_interval)
         self.Publisher = Publisher or app.amqp.TaskPublisher
         if not lazy:
             self.setup_schedule()
@@ -381,8 +381,7 @@ class Service(object):
             scheduler_cls=None, app=None):
         app = self.app = app_or_default(app)
         self.max_interval = (max_interval
-                             or app.conf.CELERYBEAT_MAX_LOOP_INTERVAL
-                             or DEFAULT_MAX_INTERVAL)
+                             or app.conf.CELERYBEAT_MAX_LOOP_INTERVAL)
         self.scheduler_cls = scheduler_cls or self.scheduler_cls
         self.schedule_filename = schedule_filename or \
                                     app.conf.CELERYBEAT_SCHEDULE_FILENAME
