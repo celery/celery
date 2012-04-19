@@ -148,6 +148,8 @@ class Scheduler(object):
 
     _last_sync = None
 
+    logger = logger  # compat
+
     def __init__(self, schedule=None, max_interval=None,
             app=None, Publisher=None, lazy=False, **kwargs):
         app = self.app = app_or_default(app)
