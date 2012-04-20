@@ -76,9 +76,12 @@ from __future__ import absolute_import
 import sys
 
 try:
-    from celery.concurrency.processes.forking import freeze_support
+    import multiprocessing  # noqa
 except ImportError:  # pragma: no cover
-    freeze_support = lambda: True  # noqa
+    freeze_support = lambda: True
+else:
+    # patch with freeze_support from billiard
+    from billiard import freeze_support  # noqa
 
 from celery.bin.base import Command, Option
 
