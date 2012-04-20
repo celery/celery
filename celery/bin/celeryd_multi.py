@@ -88,9 +88,6 @@ Examples
 """
 from __future__ import absolute_import
 
-if __name__ == "__main__" and globals().get("__package__") is None:
-    __package__ = "celery.bin.celeryd_multi"
-
 import errno
 import os
 import signal
@@ -101,11 +98,11 @@ from collections import defaultdict
 from subprocess import Popen
 from time import sleep
 
-from .. import __version__
-from ..platforms import shellsplit
-from ..utils import term
-from ..utils import pluralize
-from ..utils.encoding import from_utf8
+from celery import __version__
+from celery.platforms import shellsplit
+from celery.utils import term
+from celery.utils import pluralize
+from celery.utils.encoding import from_utf8
 
 SIGNAMES = set(sig for sig in dir(signal)
                         if sig.startswith("SIG") and "_" not in sig)
@@ -294,7 +291,7 @@ class MultiTool(object):
             self.note("")
 
     def getpids(self, p, cmd, callback=None):
-        from .. import platforms
+        from celery import platforms
         pidfile_template = p.options.setdefault("--pidfile", "celeryd@%n.pid")
 
         nodes = []

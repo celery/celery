@@ -2,9 +2,6 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-if __name__ == "__main__" and globals().get("__package__") is None:
-    __package__ = "celery.bin.celeryctl"
-
 import sys
 
 from importlib import import_module
@@ -14,13 +11,13 @@ from textwrap import wrap
 
 from anyjson import deserialize
 
-from .. import __version__
-from ..app import app_or_default, current_app
-from ..platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
-from ..utils import pluralize, term
-from ..utils.timeutils import maybe_iso8601
+from celery import __version__
+from celery.app import app_or_default, current_app
+from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
+from celery.utils import pluralize, term
+from celery.utils.timeutils import maybe_iso8601
 
-from ..bin.base import Command as CeleryCommand
+from celery.bin.base import Command as CeleryCommand
 
 HELP = """
 Type '%(prog_name)s <command> --help' for help using
@@ -238,7 +235,7 @@ class result(Command):
     )
 
     def run(self, task_id, *args, **kwargs):
-        from .. import registry
+        from celery import registry
         result_cls = self.app.AsyncResult
         task = kwargs.get("task")
 
@@ -354,7 +351,7 @@ class migrate(Command):
         if len(args) != 2:
             return self.show_help("migrate")
         from kombu import BrokerConnection
-        from ..contrib.migrate import migrate_tasks
+        from celery.contrib.migrate import migrate_tasks
 
         migrate_tasks(BrokerConnection(args[0]),
                       BrokerConnection(args[1]),
@@ -387,12 +384,12 @@ class shell(Command):
     def run(self, force_ipython=False, force_bpython=False,
             force_python=False, without_tasks=False, eventlet=False,
             gevent=False, **kwargs):
-        from .. import registry
+        from celery import registry
         if eventlet:
             import_module("celery.concurrency.eventlet")
         if gevent:
             import_module("celery.concurrency.gevent")
-        from .. import task
+        from celery import task
         self.app.loader.import_default_modules()
         self.locals = {"celery": self.app,
                        "TaskSet": task.TaskSet,
