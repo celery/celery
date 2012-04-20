@@ -112,6 +112,7 @@ try:
 except ImportError:
     install_requires.append("importlib")
 install_requires.extend([
+    "billiard>=2.7.3.0",
     "anyjson>=0.3.1",
     "kombu>=2.1.5,<3.0",
 ])

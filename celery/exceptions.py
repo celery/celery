@@ -11,6 +11,10 @@
 """
 from __future__ import absolute_import
 
+from billiard.exceptions import (
+    SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLostError,
+)
+
 UNREGISTERED_FMT = """\
 Task of kind %s is not registered, please make sure it's imported.\
 """
@@ -30,19 +34,6 @@ class SystemTerminate(SystemExit):
 
 class QueueNotFound(KeyError):
     """Task routed to a queue not in CELERY_QUEUES."""
-
-
-class TimeLimitExceeded(Exception):
-    """The time limit has been exceeded and the job has been terminated."""
-
-
-class SoftTimeLimitExceeded(Exception):
-    """The soft time limit has been exceeded. This exception is raised
-    to give the task a chance to clean up."""
-
-
-class WorkerLostError(Exception):
-    """The worker processing a job has exited prematurely."""
 
 
 class ImproperlyConfigured(Exception):

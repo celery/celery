@@ -73,9 +73,6 @@
 """
 from __future__ import absolute_import
 
-if __name__ == "__main__" and __package__ is None:
-    __package__ = "celery.bin.celeryd"
-
 import sys
 
 try:
@@ -83,7 +80,7 @@ try:
 except ImportError:  # pragma: no cover
     freeze_support = lambda: True  # noqa
 
-from .base import Command, Option
+from celery.bin.base import Command, Option
 
 
 class WorkerCommand(Command):
