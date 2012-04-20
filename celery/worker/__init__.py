@@ -91,7 +91,6 @@ class Pool(abstract.StartStopComponent):
         except ImportError:
             pass
         else:
-            print("DISABLE FORK: %r" % (w.force_execv, ))
             forking_enable(not w.force_execv)
         pool = w.pool = self.instantiate(w.pool_cls, w.min_concurrency,
                                 initargs=(w.app, w.hostname),
