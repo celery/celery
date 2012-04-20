@@ -27,7 +27,6 @@ nosetests -vd celery.tests                                      \
               celery.db.dfd042c7                                \
               celery.contrib*                                   \
               celery.concurrency.threads                        \
-              celery.concurrency.processes.pool                 \
               celery.concurrency.gevent                         \
               celery.backends.mongodb                           \
               celery.backends.tyrant                            \
