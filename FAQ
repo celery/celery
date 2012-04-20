@@ -780,7 +780,7 @@ celeryd keeps spawning processes at startup
 **Answer**: This is a known issue on Windows.
 You have to start celeryd with the command::
 
-    $ python -m celeryd.bin.celeryd
+    $ python -m celery.bin.celeryd
 
 Any additional arguments can be appended to this command.
 
