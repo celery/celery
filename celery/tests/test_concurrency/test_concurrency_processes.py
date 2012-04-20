@@ -12,7 +12,7 @@ from nose import SkipTest
 
 try:
     from celery.concurrency import processes as mp
-    from celery.concurrency.processes.pool import safe_apply_callback
+    from billiard.pool import safe_apply_callback
 except ImportError:
 
     class _mp(object):
