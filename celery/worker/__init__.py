@@ -96,8 +96,7 @@ class Pool(abstract.StartStopComponent):
                                 maxtasksperchild=w.max_tasks_per_child,
                                 timeout=w.task_time_limit,
                                 soft_timeout=w.task_soft_time_limit,
-                                putlocks=w.pool_putlocks,
-                                lost_worker_timeout=w.worker_lost_wait)
+                                putlocks=w.pool_putlocks)
         return pool
 
 
