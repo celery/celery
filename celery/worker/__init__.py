@@ -84,6 +84,12 @@ class Pool(abstract.StartStopComponent):
             w.max_concurrency, w.min_concurrency = w.autoscale
 
     def create(self, w):
+        try:
+            from billiard import forking_enable
+        except ImportError:
+            pass
+        else:
+            forking_enable(not w.force_execv)
         pool = w.pool = self.instantiate(w.pool_cls, w.min_concurrency,
                                 logger=w.logger,
                                 initargs=(w.app, w.hostname),
@@ -91,7 +97,7 @@ class Pool(abstract.StartStopComponent):
                                 timeout=w.task_time_limit,
                                 soft_timeout=w.task_soft_time_limit,
                                 putlocks=w.pool_putlocks,
-                                force_execv=w.force_execv)
+                                lost_worker_timeout=w.worker_lost_wait)
         return pool
 
 
