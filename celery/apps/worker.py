@@ -3,10 +3,6 @@ from __future__ import absolute_import
 
 import atexit
 import logging
-try:
-    import multiprocessing
-except ImportError:
-    multiprocessing = None  # noqa
 import os
 import socket
 import sys
@@ -17,6 +13,7 @@ from ..app import app_or_default
 from ..app.abstract import configurated, from_config
 from ..exceptions import ImproperlyConfigured, SystemTerminate
 from ..utils import cry, isatty, LOG_LEVELS, pluralize, qualname
+from ..utils.mp import cpu_count, get_process_name
 from ..worker import WorkController
 
 try:
@@ -53,20 +50,6 @@ defined in the CELERY_QUEUES setting.
 If you want to automatically declare unknown queues you can
 enable the CELERY_CREATE_MISSING_QUEUES setting.
 """
-
-
-def cpu_count():
-    if multiprocessing is not None:
-        try:
-            return multiprocessing.cpu_count()
-        except NotImplementedError:
-            pass
-    return 2
-
-
-def get_process_name():
-    if multiprocessing is not None:
-        return multiprocessing.current_process().name
 
 
 class Worker(configurated):

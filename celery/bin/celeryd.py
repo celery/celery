@@ -75,15 +75,8 @@ from __future__ import absolute_import
 
 import sys
 
-try:
-    import multiprocessing  # noqa
-except ImportError:  # pragma: no cover
-    freeze_support = lambda: True
-else:
-    # patch with billiard version
-    from billiard import freeze_support  # noqa
-
 from celery.bin.base import Command, Option
+from celery.utils.mp import freeze_support
 
 
 class WorkerCommand(Command):

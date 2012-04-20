@@ -31,6 +31,7 @@ from ..app.abstract import configurated, from_config
 from ..exceptions import SystemTerminate
 from ..log import SilenceRepeated
 from ..utils import noop, qualname, reload_from_cwd
+from ..utils.mp import forking_enable
 
 from . import state
 from .buckets import TaskBucket, FastQueue
@@ -84,12 +85,7 @@ class Pool(abstract.StartStopComponent):
             w.max_concurrency, w.min_concurrency = w.autoscale
 
     def create(self, w):
-        try:
-            from billiard import forking_enable
-        except ImportError:
-            pass
-        else:
-            forking_enable(not w.force_execv)
+        forking_enable(not w.force_execv)
         pool = w.pool = self.instantiate(w.pool_cls, w.min_concurrency,
                                 logger=w.logger,
                                 initargs=(w.app, w.hostname),
