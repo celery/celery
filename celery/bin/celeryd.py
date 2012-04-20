@@ -75,14 +75,7 @@ from __future__ import absolute_import
 
 import sys
 
-try:
-    import multiprocessing  # noqa
-except ImportError:  # pragma: no cover
-    freeze_support = lambda: True
-else:
-    # patch with freeze_support from billiard
-    from billiard import freeze_support  # noqa
-
+from celery.utils.mp import freeze_support
 from celery.bin.base import Command, Option
 
 

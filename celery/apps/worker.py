@@ -3,10 +3,6 @@ from __future__ import absolute_import
 
 import atexit
 import logging
-try:
-    import multiprocessing
-except ImportError:
-    multiprocessing = None  # noqa
 import os
 import socket
 import sys
@@ -19,6 +15,7 @@ from celery.exceptions import ImproperlyConfigured, SystemTerminate
 from celery.utils import cry, isatty
 from celery.utils.imports import qualname
 from celery.utils.log import LOG_LEVELS, get_logger, mlevel
+from celery.utils.mp import cpu_count, get_process_name
 from celery.utils.text import pluralize
 from celery.worker import WorkController
 
@@ -58,20 +55,6 @@ defined in the CELERY_QUEUES setting.
 If you want to automatically declare unknown queues you can
 enable the CELERY_CREATE_MISSING_QUEUES setting.
 """
-
-
-def cpu_count():
-    if multiprocessing is not None:
-        try:
-            return multiprocessing.cpu_count()
-        except NotImplementedError:
-            pass
-    return 2
-
-
-def get_process_name():
-    if multiprocessing is not None:
-        return multiprocessing.current_process().name
 
 
 class Worker(configurated):

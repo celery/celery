@@ -67,8 +67,9 @@ class Rdb(Pdb):
         self.active = True
 
         try:
-            from multiprocessing import current_process
-            _, port_skew = current_process().name.split('-')
+            from celery.utils.mp import current_process
+            if current_process:
+                _, port_skew = current_process().name.split('-')
         except (ImportError, ValueError):
             pass
         port_skew = int(port_skew)

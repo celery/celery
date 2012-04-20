@@ -27,9 +27,7 @@ from .compat import StringIO
 
 from .imports import symbol_by_name, qualname
 from .functional import noop
-
-register_after_fork = symbol_by_name(
-    "multiprocessing.util.register_after_fork", default=noop)
+from .mp import register_after_fork
 
 PENDING_DEPRECATION_FMT = """
     %(description)s is scheduled for deprecation in \

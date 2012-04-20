@@ -6,15 +6,10 @@ import sys
 import threading
 import traceback
 
-try:
-    from multiprocessing import current_process
-    from multiprocessing import util as mputil
-except ImportError:
-    current_process = mputil = None  # noqa
-
 from kombu.log import get_logger as _get_logger, LOG_LEVELS
 
 from .encoding import safe_str, str_t
+from .mp import current_process, util as mputil
 from .term import colored
 
 _process_aware = False
@@ -170,12 +165,6 @@ class LoggingProxy(object):
 
 def _patch_logger_class():
     """Make sure process name is recorded when loggers are used."""
-
-    try:
-        from multiprocessing.process import current_process
-    except ImportError:
-        current_process = None  # noqa
-
     logging._acquireLock()
     try:
         OldLoggerClass = logging.getLoggerClass()

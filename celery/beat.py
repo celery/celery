@@ -18,10 +18,6 @@ import shelve
 import sys
 import threading
 import traceback
-try:
-    import multiprocessing
-except ImportError:
-    multiprocessing = None  # noqa
 
 from kombu.utils import reprcall
 from kombu.utils.functional import maybe_promise
@@ -36,6 +32,7 @@ from .utils import cached_property
 from .utils.imports import instantiate
 from .utils.timeutils import humanize_seconds
 from .utils.log import get_logger
+from .utils.mp import Process
 
 logger = get_logger(__name__)
 debug, info, error = logger.debug, logger.info, logger.error
@@ -449,9 +446,9 @@ class _Threaded(threading.Thread):
         self.service.stop(wait=True)
 
 
-if multiprocessing is not None:
+if Process is not None:
 
-    class _Process(multiprocessing.Process):
+    class _Process(Process):
         """Embedded task scheduler using multiprocessing."""
 
         def __init__(self, *args, **kwargs):

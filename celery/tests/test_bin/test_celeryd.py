@@ -6,10 +6,6 @@ import os
 import sys
 
 from functools import wraps
-try:
-    from multiprocessing import current_process
-except ImportError:
-    current_process = None  # noqa
 
 from mock import patch
 from nose import SkipTest
@@ -24,6 +20,7 @@ from celery.exceptions import ImproperlyConfigured, SystemTerminate
 
 from celery.tests.utils import (AppCase, WhateverIO, mask_modules,
                                 reset_modules, skip_unless_module)
+from celery.utils.mp import current_process
 
 
 from celery.utils.log import ensure_process_aware_logger
@@ -55,49 +52,6 @@ class _WorkController(object):
 
 class Worker(cd.Worker):
     WorkController = _WorkController
-
-
-class test_compilation(AppCase):
-
-    def test_no_multiprocessing(self):
-        with mask_modules("multiprocessing"):
-            with reset_modules("celery.apps.worker"):
-                from celery.apps.worker import multiprocessing
-                self.assertIsNone(multiprocessing)
-
-    def test_cpu_count_no_mp(self):
-        with mask_modules("multiprocessing"):
-            with reset_modules("celery.apps.worker"):
-                from celery.apps.worker import cpu_count
-                self.assertEqual(cpu_count(), 2)
-
-    @skip_unless_module("multiprocessing")
-    def test_no_cpu_count(self):
-
-        @patch("multiprocessing.cpu_count")
-        def _do_test(pcount):
-            pcount.side_effect = NotImplementedError("cpu_count")
-            from celery.apps.worker import cpu_count
-            self.assertEqual(cpu_count(), 2)
-            pcount.assert_called_with()
-
-        _do_test()
-
-    def test_process_name_wo_mp(self):
-        with mask_modules("multiprocessing"):
-            with reset_modules("celery.apps.worker"):
-                from celery.apps.worker import get_process_name
-                self.assertIsNone(get_process_name())
-
-    @skip_unless_module("multiprocessing")
-    def test_process_name_w_mp(self):
-
-        @patch("multiprocessing.current_process")
-        def _do_test(current_process):
-            from celery.apps.worker import get_process_name
-            self.assertTrue(get_process_name())
-
-        _do_test()
 
 
 class test_Worker(AppCase):

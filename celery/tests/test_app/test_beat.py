@@ -305,9 +305,8 @@ class test_Service(Case):
 class test_EmbeddedService(Case):
 
     def test_start_stop_process(self):
-        try:
-            from multiprocessing import Process
-        except ImportError:
+        from celery.utils.mp import Process
+        if not Process:
             raise SkipTest("multiprocessing not available")
 
         s = beat.EmbeddedService()

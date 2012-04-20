@@ -28,6 +28,7 @@ from celery.app import app_or_default, set_default_app
 from celery.app.abstract import configurated, from_config
 from celery.exceptions import SystemTerminate
 from celery.utils.functional import noop
+from celery.utils.mp import forking_enable
 from celery.utils.imports import qualname, reload_from_cwd
 from celery.utils.log import get_logger
 
@@ -86,12 +87,7 @@ class Pool(abstract.StartStopComponent):
             w.max_concurrency, w.min_concurrency = w.autoscale
 
     def create(self, w):
-        try:
-            from billiard import forking_enable
-        except ImportError:
-            pass
-        else:
-            forking_enable(not w.force_execv)
+        forking_enable(not w.force_execv)
         pool = w.pool = self.instantiate(w.pool_cls, w.min_concurrency,
                                 initargs=(w.app, w.hostname),
                                 maxtasksperchild=w.max_tasks_per_child,

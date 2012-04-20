@@ -112,7 +112,7 @@ try:
 except ImportError:
     install_requires.append("importlib")
 install_requires.extend([
-    "billiard>=2.7.3.0",
+    "billiard>=2.7.3.2",
     "anyjson>=0.3.1",
     "kombu>=2.1.5,<3.0",
 ])
@@ -126,8 +126,6 @@ is_jython = sys.platform.startswith("java")
 is_pypy = hasattr(sys, "pypy_version_info")
 if sys.version_info < (2, 7):
     install_requires.append("ordereddict") # Replacement for the ordered dict
-if sys.version_info < (2, 6) and not (is_jython or is_pypy):
-    install_requires.append("multiprocessing")
 
 if is_jython:
     install_requires.append("threadpool")
