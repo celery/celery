@@ -2,9 +2,6 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-if __name__ == "__main__" and globals().get("__package__") is None:
-    __package__ = "celery.bin.celeryd_detach"
-
 import os
 import sys
 
@@ -14,7 +11,7 @@ from celery import __version__
 from celery.platforms import detached
 from celery.utils.log import get_logger
 
-from .base import daemon_options, Option
+from celery.bin.base import daemon_options, Option
 
 logger = get_logger(__name__)
 

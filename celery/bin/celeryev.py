@@ -2,17 +2,13 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-if __name__ == "__main__" and globals().get("__package__") is None:
-    __package__ = "celery.bin.celeryev"
-
 import os
 import sys
 
 from functools import partial
 
 from celery.platforms import detached, set_process_title, strargv
-
-from .base import Command, Option, daemon_options
+from celery.bin.base import Command, Option, daemon_options
 
 
 class EvCommand(Command):

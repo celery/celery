@@ -2,9 +2,6 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-if __name__ == "__main__" and globals().get("__package__") is None:
-    __package__ = "celery.bin.celery"
-
 import anyjson
 import sys
 
@@ -21,7 +18,7 @@ from celery.utils.imports import symbol_by_name
 from celery.utils.text import pluralize
 from celery.utils.timeutils import maybe_iso8601
 
-from .base import Command as BaseCommand
+from celery.bin.base import Command as BaseCommand
 
 HELP = """
 Type '%(prog_name)s <command> --help' for help using
