@@ -18,7 +18,7 @@ _process_aware = False
 
 def _patch_logger_class():
     """Make sure process name is recorded when loggers are used."""
-    from .mp import current_process
+    from billiard import current_process
     logging._acquireLock()
     try:
         OldLoggerClass = logging.getLoggerClass()

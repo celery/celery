@@ -54,13 +54,13 @@ def _app_or_default(app=None):
 
 def _app_or_default_trace(app=None):  # pragma: no cover
     from traceback import print_stack
-    from celery.utils.mp import get_process_name
+    from billiard import current_process
     if app is None:
         if getattr(state._tls, "current_app", None):
             print("-- RETURNING TO CURRENT APP --")  # noqa+
             print_stack()
             return state._tls.current_app
-        if get_process_name() == "MainProcess":
+        if current_process()._name == "MainProcess":
             raise Exception("DEFAULT APP")
         print("-- RETURNING TO DEFAULT APP --")      # noqa+
         print_stack()

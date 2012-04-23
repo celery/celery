@@ -19,6 +19,7 @@ import sys
 import threading
 import traceback
 
+from billiard import Process
 from kombu.utils import reprcall
 from kombu.utils.functional import maybe_promise
 
@@ -32,7 +33,6 @@ from .utils import cached_property
 from .utils.imports import instantiate
 from .utils.timeutils import humanize_seconds
 from .utils.log import get_logger
-from .utils.mp import Process
 
 logger = get_logger(__name__)
 debug, info, error = logger.debug, logger.info, logger.error
@@ -446,8 +446,13 @@ class _Threaded(threading.Thread):
         self.service.stop(wait=True)
 
 
-if Process is not None:
+supports_fork = True
+try:
+    import _multiprocessing
+except ImportError:
+    supports_fork = False
 
+if supports_fork:
     class _Process(Process):
         """Embedded task scheduler using multiprocessing."""
 

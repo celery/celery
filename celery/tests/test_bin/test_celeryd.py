@@ -10,6 +10,8 @@ from functools import wraps
 from mock import patch
 from nose import SkipTest
 
+from billiard import current_process
+
 from celery import Celery
 from celery import platforms
 from celery import signals
@@ -20,7 +22,6 @@ from celery.exceptions import ImproperlyConfigured, SystemTerminate
 
 from celery.tests.utils import (AppCase, WhateverIO, mask_modules,
                                 reset_modules, skip_unless_module)
-from celery.utils.mp import current_process
 
 
 from celery.utils.log import ensure_process_aware_logger
@@ -427,7 +428,9 @@ class test_signal_handlers(AppCase):
 
     @disable_stdouts
     def test_worker_int_handler_only_stop_MainProcess(self):
-        if current_process is None:
+        try:
+            import _multiprocessing
+        except ImportError:
             raise SkipTest("only relevant for multiprocessing")
         process = current_process()
         name, process.name = process.name, "OtherProcess"
@@ -448,7 +451,9 @@ class test_signal_handlers(AppCase):
 
     @disable_stdouts
     def test_worker_int_again_handler_only_stop_MainProcess(self):
-        if current_process is None:
+        try:
+            import _multiprocessing
+        except ImportError:
             raise SkipTest("only relevant for multiprocessing")
         process = current_process()
         name, process.name = process.name, "OtherProcess"
@@ -484,7 +489,9 @@ class test_signal_handlers(AppCase):
 
     @disable_stdouts
     def test_worker_term_handler_only_stop_MainProcess(self):
-        if current_process is None:
+        try:
+            import _multiprocessing
+        except ImportError:
             raise SkipTest("only relevant for multiprocessing")
         process = current_process()
         name, process.name = process.name, "OtherProcess"

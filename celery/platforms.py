@@ -22,8 +22,8 @@ import sys
 
 from .local import try_import
 
+from billiard import current_process
 from kombu.utils.limits import TokenBucket
-from celery.utils.mp import current_process
 
 _setproctitle = try_import("setproctitle")
 resource = try_import("resource")
@@ -600,11 +600,8 @@ else:
         if not rate_limit or _setps_bucket.can_consume(1):
             if hostname:
                 progname = "%s@%s" % (progname, hostname.split(".")[0])
-            if current_process is not None:
-                return set_process_title(
-                    "%s:%s" % (progname, current_process().name), info=info)
-            else:
-                return set_process_title(progname, info=info)
+            return set_process_title(
+                "%s:%s" % (progname, current_process().name), info=info)
 
 
 def shellsplit(s, posix=True):

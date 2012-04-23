@@ -22,12 +22,13 @@ from functools import partial, wraps
 from inspect import getargspec
 from pprint import pprint
 
+from billiard.util import register_after_fork
+
 from celery.exceptions import CPendingDeprecationWarning, CDeprecationWarning
 from .compat import StringIO
 
 from .imports import symbol_by_name, qualname
 from .functional import noop
-from .mp import register_after_fork
 
 PENDING_DEPRECATION_FMT = """
     %(description)s is scheduled for deprecation in \

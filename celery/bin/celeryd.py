@@ -75,7 +75,8 @@ from __future__ import absolute_import
 
 import sys
 
-from celery.utils.mp import freeze_support
+from billiard import freeze_support
+
 from celery.bin.base import Command, Option
 
 

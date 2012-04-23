@@ -8,6 +8,8 @@ import socket
 import sys
 import warnings
 
+from billiard import cpu_count, current_process
+
 from celery import __version__, platforms, signals
 from celery.app import app_or_default
 from celery.app.abstract import configurated, from_config
@@ -15,7 +17,6 @@ from celery.exceptions import ImproperlyConfigured, SystemTerminate
 from celery.utils import cry, isatty
 from celery.utils.imports import qualname
 from celery.utils.log import LOG_LEVELS, get_logger, mlevel
-from celery.utils.mp import cpu_count, get_process_name
 from celery.utils.text import pluralize
 from celery.worker import WorkController
 
@@ -79,7 +80,10 @@ class Worker(configurated):
 
         self.setup_defaults(kwargs, namespace="celeryd")
         if not self.concurrency:
-            self.concurrency = cpu_count()
+            try:
+                self.concurrency = cpu_count()
+            except NotImplementedError:
+                self.concurrency = 2
         self.discard = discard
         self.embed_clockservice = embed_clockservice
         if self.app.IS_WINDOWS and self.embed_clockservice:
@@ -255,7 +259,7 @@ class Worker(configurated):
 def install_worker_int_handler(worker):
 
     def _stop(signum, frame):
-        process_name = get_process_name()
+        process_name = current_process()._name
         if not process_name or process_name == "MainProcess":
             print("celeryd: Hitting Ctrl+C again will terminate "
                   "all running tasks!")
@@ -270,7 +274,7 @@ def install_worker_int_handler(worker):
 def install_worker_int_again_handler(worker):
 
     def _stop(signum, frame):
-        process_name = get_process_name()
+        process_name = current_process()._name
         if not process_name or process_name == "MainProcess":
             print("celeryd: Cold shutdown (%s)" % (process_name, ))
             worker.terminate(in_sighandler=True)
@@ -282,7 +286,7 @@ def install_worker_int_again_handler(worker):
 def install_worker_term_handler(worker):
 
     def _stop(signum, frame):
-        process_name = get_process_name()
+        process_name = current_process()._name
         if not process_name or process_name == "MainProcess":
             print("celeryd: Warm shutdown (%s)" % (process_name, ))
             worker.stop(in_sighandler=True)
@@ -294,7 +298,7 @@ def install_worker_term_handler(worker):
 def install_worker_term_hard_handler(worker):
 
     def _stop(signum, frame):
-        process_name = get_process_name()
+        process_name = current_process()._name
         if not process_name or process_name == "MainProcess":
             print("celeryd: Cold shutdown (%s)" % (process_name, ))
             worker.terminate(in_sighandler=True)

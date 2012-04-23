@@ -305,9 +305,12 @@ class test_Service(Case):
 class test_EmbeddedService(Case):
 
     def test_start_stop_process(self):
-        from celery.utils.mp import Process
-        if not Process:
+        try:
+            import _multiprocessing
+        except ImportError:
             raise SkipTest("multiprocessing not available")
+
+        from billiard.process import Process
 
         s = beat.EmbeddedService()
         self.assertIsInstance(s, Process)

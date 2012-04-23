@@ -46,6 +46,8 @@ import sys
 
 from pdb import Pdb
 
+from billiard import current_process
+
 default_port = 6899
 
 CELERY_RDB_HOST = os.environ.get("CELERY_RDB_HOST") or "127.0.0.1"
@@ -67,12 +69,10 @@ class Rdb(Pdb):
         self.active = True
 
         try:
-            from celery.utils.mp import current_process
-            if current_process:
-                _, port_skew = current_process().name.split('-')
-        except (ImportError, ValueError):
+            _, port_skew = current_process().name.split('-')
+            port_skew = int(port_skew)
+        except ValueError:
             pass
-        port_skew = int(port_skew)
 
         self._prev_handles = sys.stdin, sys.stdout
         this_port = None

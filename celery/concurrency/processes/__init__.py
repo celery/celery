@@ -10,7 +10,7 @@ from celery import platforms
 from celery import signals
 from celery.app import app_or_default
 from celery.concurrency.base import BasePool
-from celery.utils.mp import Pool, RUN
+from billiard.pool import Pool, RUN
 
 if platform.system() == "Windows":  # pragma: no cover
     # On Windows os.kill calls TerminateProcess which cannot be
