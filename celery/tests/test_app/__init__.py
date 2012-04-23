@@ -227,22 +227,24 @@ class test_App(Case):
             chan.close()
         assert conn.transport_cls == "memory"
 
+        entities = conn.declared_entities
+
         pub = self.app.amqp.TaskPublisher(conn, exchange="foo_exchange")
-        self.assertNotIn("foo_exchange", amqp._exchanges_declared)
+        self.assertNotIn(pub._get_exchange("foo_exchange"), entities)
 
         dispatcher = Dispatcher()
         self.assertTrue(pub.delay_task("footask", (), {},
                                        exchange="moo_exchange",
                                        routing_key="moo_exchange",
                                        event_dispatcher=dispatcher))
-        self.assertIn("moo_exchange", amqp._exchanges_declared)
+        self.assertIn(pub._get_exchange("moo_exchange"), entities)
         self.assertTrue(dispatcher.sent)
         self.assertEqual(dispatcher.sent[0][0], "task-sent")
         self.assertTrue(pub.delay_task("footask", (), {},
                                        event_dispatcher=dispatcher,
                                        exchange="bar_exchange",
                                        routing_key="bar_exchange"))
-        self.assertIn("bar_exchange", amqp._exchanges_declared)
+        self.assertIn(pub._get_exchange("bar_exchange"), entities)
 
     def test_error_mail_sender(self):
         x = ErrorMail.subject % {"name": "task_name",
