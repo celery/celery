@@ -7,4 +7,3 @@ redis
 pymongo
 SQLAlchemy
 PyOpenSSL
-cl

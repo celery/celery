@@ -105,35 +105,28 @@ class quicktest(test):
         test.run(self, *args, **kwargs)
 
 # -*- Installation Dependencies -*-
-
-install_requires = []
-try:
-    import importlib  # noqa
-except ImportError:
-    install_requires.append("importlib")
-install_requires.extend([
-    "billiard>=2.7.3.2",
-    "anyjson>=0.3.1",
-    "kombu>=2.1.5,<3.0",
-])
-if is_py3k:
-    install_requires.append("python-dateutil>=2.0")
-else:
-    install_requires.append("python-dateutil>=1.5,<2.0")
-
 py_version = sys.version_info
 is_jython = sys.platform.startswith("java")
 is_pypy = hasattr(sys, "pypy_version_info")
-if sys.version_info < (2, 7):
-    install_requires.append("ordereddict") # Replacement for the ordered dict
+
+
+def reqs(f):
+    return filter(None, [l.strip() for l in file(
+        os.path.join(os.getcwd(), "requirements", f)).readlines()])
+
+install_requires = reqs("default-py3k.txt" if is_py3k else "default.txt")
 
 if is_jython:
-    install_requires.append("threadpool")
-    install_requires.append("simplejson")
+    install_requires.extend(reqs("jython.txt"))
+
+if py_version[0:2] == (2, 6):
+    install_requires.extend(reqs("py26.txt"))
+elif py_version[0:2] == (2, 5):
+    install_requires.extend(reqs("py25.txt"))
 
 # -*- Tests Requires -*-
 
-tests_require = ["nose", "nose-cover3", "sqlalchemy", "mock", "cl"]
+tests_require = ["nose", "nose-cover3", "sqlalchemy", "mock"]
 if sys.version_info < (2, 7):
     tests_require.append("unittest2")
 elif sys.version_info <= (2, 5):

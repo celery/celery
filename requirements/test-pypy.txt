@@ -2,4 +2,3 @@ nose
 nose-cover3
 coverage>=3.0
 mock>=0.7.0
-cl
