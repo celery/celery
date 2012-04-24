@@ -19,7 +19,6 @@ BACKEND_ALIASES = {
     "cache": "celery.backends.cache:CacheBackend",
     "redis": "celery.backends.redis:RedisBackend",
     "mongodb": "celery.backends.mongodb:MongoBackend",
-    "tyrant": "celery.backends.tyrant:TyrantBackend",
     "database": "celery.backends.database:DatabaseBackend",
     "cassandra": "celery.backends.cassandra:CassandraBackend",
     "disabled": "celery.backends.base:DisabledBackend",
