@@ -48,10 +48,14 @@ class test_Schedule(Case):
 
         timer2.mktime = _overflow
         try:
+            print("+S1")
             s.enter(timer2.Entry(lambda: None, (), {}),
                     eta=datetime.now())
+            print("-S1")
+            print("+S2")
             s.enter(timer2.Entry(lambda: None, (), {}),
                     eta=None)
+            print("-S2")
             s.on_error = None
             with self.assertRaises(OverflowError):
                 s.enter(timer2.Entry(lambda: None, (), {}),

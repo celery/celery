@@ -99,19 +99,17 @@ class Schedule(object):
         :keyword priority: Unused.
 
         """
-        if eta is None:  # schedule now
+        if eta is None:
             eta = datetime.now()
-
         try:
             eta = to_timestamp(eta)
         except OverflowError:
             if not self.handle_error(sys.exc_info()):
                 raise
+            return
+        return self._enter(eta, priority, entry)
 
-        if eta is None:
-            # schedule now.
-            eta = time()
-
+    def _enter(self, eta, priority, entry):
         heapq.heappush(self._queue, (eta, priority, entry))
         return entry
 

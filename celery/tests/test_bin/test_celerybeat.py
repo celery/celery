@@ -15,7 +15,7 @@ from celery.app import app_or_default
 from celery.bin import celerybeat as celerybeat_bin
 from celery.apps import beat as beatapp
 
-from celery.tests.utils import AppCase
+from celery.tests.utils import AppCase, create_pidlock
 
 
 class MockedShelveModule(object):
@@ -129,22 +129,6 @@ class test_Beat(AppCase):
     @redirect_stdouts
     def test_use_pidfile(self, stdout, stderr):
         from celery import platforms
-
-        class create_pidlock(object):
-            instance = [None]
-
-            def __init__(self, file):
-                self.file = file
-                self.instance[0] = self
-
-            def acquire(self):
-                self.acquired = True
-
-                class Object(object):
-                    def release(self):
-                        pass
-
-                return Object()
 
         prev, platforms.create_pidlock = platforms.create_pidlock, \
                                          create_pidlock

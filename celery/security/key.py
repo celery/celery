@@ -1,29 +1,16 @@
 from __future__ import absolute_import
+from __future__ import with_statement
 
-import sys
-
-try:
-    from OpenSSL import crypto
-except ImportError:
-    crypto = None  # noqa
-
-from celery.exceptions import SecurityError
+from .utils import crypto, reraise_errors
 
 
 class PrivateKey(object):
 
     def __init__(self, key):
-        assert crypto is not None
-        try:
+        with reraise_errors("Invalid private key: %r"):
             self._key = crypto.load_privatekey(crypto.FILETYPE_PEM, key)
-        except crypto.Error, exc:
-            raise SecurityError, SecurityError(
-                    "Invalid private key: %r" % (exc, )), sys.exc_info()[2]
 
     def sign(self, data, digest):
         """sign string containing data."""
-        try:
+        with reraise_errors("Unable to sign data: %r"):
             return crypto.sign(self._key, data, digest)
-        except crypto.Error, exc:
-            raise SecurityError, SecurityError(
-                    "Unable to sign data: %r" % (exc, )), sys.exc_info()[2]

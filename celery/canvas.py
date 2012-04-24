@@ -137,21 +137,21 @@ class Signature(dict):
         args, kwargs, options = self._merge(args, kwargs, options)
         return self.type.apply_async(args, kwargs, **options)
 
+    def append_to_list_option(self, key, value):
+        items = self.options.setdefault(key, [])
+        if value not in items:
+            items.append(value)
+        return value
+
     def link(self, callback):
         """Add a callback task to be applied if this task
         executes successfully."""
-        linked = self.options.setdefault("link", [])
-        if callback not in linked:
-            linked.append(callback)
-        return callback
+        return self.append_to_list_option("link", callback)
 
     def link_error(self, errback):
         """Add a callback task to be applied if an error occurs
         while executing this task."""
-        linked = self.options.setdefault("link_error", [])
-        if errback not in linked:
-            linked.append(errback)
-        return errback
+        return self.append_to_list_option("link_error", errback)
 
     def flatten_links(self):
         """Gives a recursive list of dependencies (unchain if you will,

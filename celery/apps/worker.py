@@ -8,6 +8,8 @@ import socket
 import sys
 import warnings
 
+from functools import partial
+
 from billiard import cpu_count, current_process
 
 from celery import __version__, platforms, signals
@@ -256,66 +258,43 @@ class Worker(configurated):
         sys.exit(exitcode)
 
 
-def install_worker_int_handler(worker):
+def _shutdown_handler(worker, sig="TERM", how="stop", exc=SystemExit,
+        callback=None):
+    types = {"terminate": "Cold", "stop": "Warm"}
 
-    def _stop(signum, frame):
+    def _handle_request(signum, frame):
         process_name = current_process()._name
         if not process_name or process_name == "MainProcess":
-            print("celeryd: Hitting Ctrl+C again will terminate "
-                  "all running tasks!")
-            install_worker_int_again_handler(worker)
-            print("celeryd: Warm shutdown (%s)" % (process_name, ))
-            worker.stop(in_sighandler=True)
-        raise SystemExit()
+            if callback:
+                callback(worker)
+            print("celeryd: %s shutdown (%s)" % (types[how], process_name, ))
+            getattr(worker, how)(in_sighandler=True)
+        raise exc()
+    _handle_request.__name__ = "worker_" + how
+    platforms.signals[sig] = _handle_request
+install_worker_term_handler = partial(
+    _shutdown_handler, sig="SIGTERM", how="stop", exc=SystemExit,
+)
+install_worker_term_hard_handler = partial(
+    _shutdown_handler, sig="SIGQUIT", how="terminate", exc=SystemTerminate,
+)
 
-    platforms.signals["SIGINT"] = _stop
-
-
-def install_worker_int_again_handler(worker):
-
-    def _stop(signum, frame):
-        process_name = current_process()._name
-        if not process_name or process_name == "MainProcess":
-            print("celeryd: Cold shutdown (%s)" % (process_name, ))
-            worker.terminate(in_sighandler=True)
-        raise SystemTerminate()
-
-    platforms.signals["SIGINT"] = _stop
-
-
-def install_worker_term_handler(worker):
-
-    def _stop(signum, frame):
-        process_name = current_process()._name
-        if not process_name or process_name == "MainProcess":
-            print("celeryd: Warm shutdown (%s)" % (process_name, ))
-            worker.stop(in_sighandler=True)
-        raise SystemExit()
-
-    platforms.signals["SIGTERM"] = _stop
+def on_SIGINT(worker):
+    print("celeryd: Hitting Ctrl+C again will terminate all running tasks!")
+    install_worker_term_hard_handler(worker, sig="SIGINT")
+install_worker_int_handler = partial(
+    _shutdown_handler, sig="SIGINT", callback=on_SIGINT
+)
 
 
-def install_worker_term_hard_handler(worker):
-
-    def _stop(signum, frame):
-        process_name = current_process()._name
-        if not process_name or process_name == "MainProcess":
-            print("celeryd: Cold shutdown (%s)" % (process_name, ))
-            worker.terminate(in_sighandler=True)
-        raise SystemTerminate()
-
-    platforms.signals["SIGQUIT"] = _stop
-
-
-def install_worker_restart_handler(worker):
+def install_worker_restart_handler(worker, sig="SIGHUP"):
 
     def restart_worker_sig_handler(signum, frame):
         """Signal handler restarting the current python program."""
         print("Restarting celeryd (%s)" % (" ".join(sys.argv), ))
         worker.stop(in_sighandler=True)
         os.execv(sys.executable, [sys.executable] + sys.argv)
-
-    platforms.signals["SIGHUP"] = restart_worker_sig_handler
+    platforms.signals[sig] = restart_worker_sig_handler
 
 
 def install_cry_handler():
@@ -327,25 +306,22 @@ def install_cry_handler():
         def cry_handler(signum, frame):
             """Signal handler logging the stacktrace of all active threads."""
             logger.error("\n" + cry())
-
         platforms.signals["SIGUSR1"] = cry_handler
 
 
-def install_rdb_handler(envvar="CELERY_RDBSIG"):  # pragma: no cover
+def install_rdb_handler(envvar="CELERY_RDBSIG", sig="SIGUSR2"):
 
     def rdb_handler(signum, frame):
         """Signal handler setting a rdb breakpoint at the current frame."""
         from celery.contrib import rdb
         rdb.set_trace(frame)
-
     if os.environ.get(envvar):
-        platforms.signals["SIGUSR2"] = rdb_handler
+        platforms.signals[sig] = rdb_handler
 
 
-def install_HUP_not_supported_handler(worker):
+def install_HUP_not_supported_handler(worker, sig="SIGHUP"):
 
     def warn_on_HUP_handler(signum, frame):
-        logger.error("SIGHUP not supported: "
-            "Restarting with HUP is unstable on this platform!")
-
-    platforms.signals["SIGHUP"] = warn_on_HUP_handler
+        logger.error("%(sig)s not supported: Restarting with %(sig)s is "
+            "unstable on this platform!" % {"sig": sig})
+    platforms.signals[sig] = warn_on_HUP_handler

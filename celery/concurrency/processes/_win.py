@@ -39,22 +39,19 @@ def CreateToolhelp32Snapshot(dwFlags=2, th32ProcessID=0):
     return hSnapshot
 
 
-def Process32First(hSnapshot):
-    pe = PROCESSENTRY32()
-    pe.dwSize = sizeof(PROCESSENTRY32)
-    success = windll.kernel32.Process32First(hSnapshot, byref(pe))
-    if not success:
-        if windll.kernel32.GetLastError() == ERROR_NO_MORE_FILES:
-            return
-        raise WinError()
-    return pe
+def Process32First(hSnapshot, pe=None):
+    return _Process32n(windll.kernel32.Process32First, hSnapshot, pe)
 
 
 def Process32Next(hSnapshot, pe=None):
+    return _Process32n(windll.kernel32.Process32Next, hSnapshot, pe)
+
+
+def _Process32n(fun, hSnapshot, pe=None):
     if pe is None:
         pe = PROCESSENTRY32()
     pe.dwSize = sizeof(PROCESSENTRY32)
-    success = windll.kernel32.Process32Next(hSnapshot, byref(pe))
+    success = fun(hSnapshot, byref(pe))
     if not success:
         if windll.kernel32.GetLastError() == ERROR_NO_MORE_FILES:
             return

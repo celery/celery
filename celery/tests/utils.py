@@ -11,6 +11,7 @@ except AttributeError:
 import importlib
 import logging
 import os
+import platform
 import re
 import sys
 import time
@@ -20,7 +21,7 @@ try:
 except ImportError:  # py3k
     import builtins  # noqa
 
-from functools import wraps
+from functools import partial, wraps
 from contextlib import contextmanager
 
 import mock
@@ -407,25 +408,31 @@ def patch(module, name, mocked):
 
 
 @contextmanager
-def platform_pyimp(replace=None):
-    import platform
-    has_prev = hasattr(platform, "python_implementation")
-    prev = getattr(platform, "python_implementation", None)
-    if replace:
-        platform.python_implementation = replace
+def replace_module_value(module, name, value=None):
+    has_prev = hasattr(module, name)
+    prev = getattr(module, name, None)
+    if value:
+        setattr(module, name, value)
     else:
         try:
-            delattr(platform, "python_implementation")
+            delattr(module, name)
         except AttributeError:
             pass
     yield
     if prev is not None:
-        platform.python_implementation = prev
+        setattr(sys, name, prev)
     if not has_prev:
         try:
-            delattr(platform, "python_implementation")
+            delattr(module, name)
         except AttributeError:
             pass
+pypy_version = partial(
+    replace_module_value, sys, "pypy_version_info",
+)
+platform_pyimp = partial(
+    replace_module_value, platform, "python_implementation",
+)
+
 
 
 @contextmanager
@@ -433,27 +440,6 @@ def sys_platform(value):
     prev, sys.platform = sys.platform, value
     yield
     sys.platform = prev
-
-
-@contextmanager
-def pypy_version(value=None):
-    has_prev = hasattr(sys, "pypy_version_info")
-    prev = getattr(sys, "pypy_version_info", None)
-    if value:
-        sys.pypy_version_info = value
-    else:
-        try:
-            delattr(sys, "pypy_version_info")
-        except AttributeError:
-            pass
-    yield
-    if prev is not None:
-        sys.pypy_version_info = prev
-    if not has_prev:
-        try:
-            delattr(sys, "pypy_version_info")
-        except AttributeError:
-            pass
 
 
 @contextmanager
@@ -476,3 +462,20 @@ def patch_modules(*modules):
             sys.modules.pop(name, None)
         else:
             sys.modules[name] = mod
+
+
+class create_pidlock(object):
+    instance = [None]
+
+    def __init__(self, file):
+        self.file = file
+        self.instance[0] = self
+
+    def acquire(self):
+        self.acquired = True
+
+        class Object(object):
+            def release(self):
+                pass
+
+        return Object()

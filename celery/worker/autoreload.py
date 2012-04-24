@@ -17,6 +17,7 @@ import time
 
 from collections import defaultdict
 
+from celery.platforms import ignore_EBADF
 from celery.utils.imports import module_file
 from celery.utils.log import get_logger
 from celery.utils.threads import bgThread, Event
@@ -136,11 +137,8 @@ class KQueueMonitor(BaseMonitor):
     def stop(self):
         self._kq.close()
         for fd in filter(None, self.filemap.values()):
-            try:
+            with ignore_EBADF:
                 os.close(fd)
-            except OSError, exc:
-                if exc != errno.EBADF:
-                    raise
             self.filemap[fd] = None
         self.filemap.clear()
 

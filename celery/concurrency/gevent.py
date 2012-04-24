@@ -30,18 +30,8 @@ class Schedule(timer2.Schedule):
         super(Schedule, self).__init__(*args, **kwargs)
         self._queue = set()
 
-    def enter(self, entry, eta=None, priority=0):
-        try:
-            eta = timer2.to_timestamp(eta)
-        except OverflowError:
-            if not self.handle_error(sys.exc_info()):
-                raise
-
-        now = time()
-        if eta is None:
-            eta = now
-        secs = max(eta - now, 0)
-
+    def _enter(self, eta, priority, entry):
+        secs = max(eta - time(), 0)
         g = self._Greenlet.spawn_later(secs, entry)
         self._queue.add(g)
         g.link(self._entry_exit)
@@ -49,7 +39,6 @@ class Schedule(timer2.Schedule):
         g.eta = eta
         g.priority = priority
         g.cancelled = False
-
         return g
 
     def _entry_exit(self, g):

@@ -214,10 +214,11 @@ class BaseBackend(object):
     def on_chord_part_return(self, task, propagate=False):
         pass
 
-    def on_chord_apply(self, setid, body, result=None, **kwargs):
+    def fallback_chord_unlock(self, setid, body, result=None, **kwargs):
         kwargs["result"] = [r.id for r in result]
         self.app.tasks["celery.chord_unlock"].apply_async((setid, body, ),
                                                           kwargs, countdown=1)
+    on_chord_apply = fallback_chord_unlock
 
     def current_task_children(self):
         current = current_task()
@@ -321,6 +322,7 @@ class KeyValueStoreBackend(BaseDictBackend):
     task_keyprefix = ensure_bytes("celery-task-meta-")
     taskset_keyprefix = ensure_bytes("celery-taskset-meta-")
     chord_keyprefix = ensure_bytes("chord-unlock-")
+    implements_incr = False
 
     def get(self, key):
         raise NotImplementedError("Must implement the get method.")
@@ -333,6 +335,12 @@ class KeyValueStoreBackend(BaseDictBackend):
 
     def delete(self, key):
         raise NotImplementedError("Must implement the delete method")
+
+    def incr(self, key):
+        raise NotImplementedError("Does not implement incr")
+
+    def expire(self, key, value):
+        pass
 
     def get_key_for_task(self, task_id):
         """Get the cache key for a task by id."""
@@ -429,6 +437,29 @@ class KeyValueStoreBackend(BaseDictBackend):
             if isinstance(result, (list, tuple)):
                 return {"result": from_serializable(result)}
             return meta
+
+    def on_chord_apply(self, setid, body, result=None, **kwargs):
+        if self.implements_incr:
+            self.app.TaskSetResult(setid, result).save()
+        else:
+            self.fallback_chord_unlock(setid, body, result, **kwargs)
+
+    def on_chord_part_return(self, task, propagate=False):
+        if not self.implements_incr:
+            return
+        from celery import subtask
+        from celery.result import TaskSetResult
+        setid = task.request.taskset
+        if not setid:
+            return
+        key = self.get_key_for_chord(setid)
+        deps = TaskSetResult.restore(setid, backend=task.backend)
+        if self.incr(key) >= deps.total:
+            subtask(task.request.chord).delay(deps.join(propagate=propagate))
+            deps.delete()
+            self.client.delete(key)
+        else:
+            self.expire(key, 86400)
 
 
 class DisabledBackend(BaseBackend):

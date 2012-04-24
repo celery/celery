@@ -20,6 +20,8 @@ import shlex
 import signal as _signal
 import sys
 
+from contextlib import contextmanager
+
 from .local import try_import
 
 from billiard import current_process
@@ -244,11 +246,8 @@ class DaemonContext(object):
             os.umask(self.umask)
 
             for fd in reversed(range(get_fdmax(default=2048))):
-                try:
+                with ignore_EBADF():
                     os.close(fd)
-                except OSError, exc:
-                    if exc.errno != errno.EBADF:
-                        raise
 
             os.open(DAEMON_REDIRECT_TO, os.O_RDWR)
             os.dup2(0, 1)
@@ -610,3 +609,12 @@ def shellsplit(s, posix=True):
     lexer.whitespace_split = True
     lexer.commenters = ''
     return list(lexer)
+
+
+@contextmanager
+def ignore_EBADF():
+    try:
+        yield
+    except OSError, exc:
+        if exc.errno != errno.EBADF:
+            raise

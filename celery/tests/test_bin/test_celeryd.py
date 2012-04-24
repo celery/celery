@@ -20,8 +20,11 @@ from celery.apps import worker as cd
 from celery.bin.celeryd import WorkerCommand, main as celeryd_main
 from celery.exceptions import ImproperlyConfigured, SystemTerminate
 
-from celery.tests.utils import (AppCase, WhateverIO, mask_modules,
-                                reset_modules, skip_unless_module)
+from celery.tests.utils import (
+    AppCase, WhateverIO, mask_modules,
+    reset_modules, skip_unless_module,
+    create_pidlock,
+)
 
 
 from celery.utils.log import ensure_process_aware_logger
@@ -220,22 +223,6 @@ class test_Worker(AppCase):
     @disable_stdouts
     def test_use_pidfile(self):
         from celery import platforms
-
-        class create_pidlock(object):
-            instance = [None]
-
-            def __init__(self, file):
-                self.file = file
-                self.instance[0] = self
-
-            def acquire(self):
-                self.acquired = True
-
-                class Object(object):
-                    def release(self):
-                        pass
-
-                return Object()
 
         prev, platforms.create_pidlock = platforms.create_pidlock, \
                                          create_pidlock
@@ -450,7 +437,7 @@ class test_signal_handlers(AppCase):
         handlers["SIGHUP"]("SIGHUP", object())
 
     @disable_stdouts
-    def test_worker_int_again_handler_only_stop_MainProcess(self):
+    def test_worker_term_hard_handler_only_stop_MainProcess(self):
         try:
             import _multiprocessing
         except ImportError:
@@ -459,9 +446,9 @@ class test_signal_handlers(AppCase):
         name, process.name = process.name, "OtherProcess"
         try:
             worker = self._Worker()
-            handlers = self.psig(cd.install_worker_int_again_handler, worker)
+            handlers = self.psig(cd.install_worker_term_hard_handler, worker)
             with self.assertRaises(SystemExit):
-                handlers["SIGINT"]("SIGINT", object())
+                handlers["SIGQUIT"]("SIGQUIT", object())
             self.assertFalse(worker.terminated)
         finally:
             process.name = name

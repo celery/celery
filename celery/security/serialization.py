@@ -1,15 +1,13 @@
 from __future__ import absolute_import
 
 import base64
-import sys
 
 from kombu.serialization import registry, encode, decode
 from kombu.utils.encoding import bytes_to_str, str_to_bytes
 
-from celery.exceptions import SecurityError
-
 from .certificate import Certificate, FSCertStore
 from .key import PrivateKey
+from .utils import reraise_errors
 
 
 def b64encode(s):
@@ -34,7 +32,7 @@ class SecureSerializer(object):
         """serialize data structure into string"""
         assert self._key is not None
         assert self._cert is not None
-        try:
+        with reraise_errors("Unable to serialize: %r", (Exception, )):
             content_type, content_encoding, body = encode(
                     data, serializer=self._serializer)
             # What we sign is the serialized body, not the body itself.
@@ -44,24 +42,16 @@ class SecureSerializer(object):
             return self._pack(body, content_type, content_encoding,
                               signature=self._key.sign(body, self._digest),
                               signer=self._cert.get_id())
-        except Exception, exc:
-            raise SecurityError, SecurityError(
-                    "Unable to serialize: %r" % (exc, )), sys.exc_info()[2]
 
     def deserialize(self, data):
         """deserialize data structure from string"""
         assert self._cert_store is not None
-        try:
+        with reraise_errors("Unable to deserialize: %r", (Exception, )):
             payload = self._unpack(data)
             signature, signer, body = (payload["signature"],
                                        payload["signer"],
                                        payload["body"])
-            self._cert_store[signer].verify(body,
-                                            signature, self._digest)
-        except Exception, exc:
-            raise SecurityError, SecurityError(
-                    "Unable to deserialize: %r" % (exc, )), sys.exc_info()[2]
-
+            self._cert_store[signer].verify(body, signature, self._digest)
         return decode(body, payload["content_type"],
                             payload["content_encoding"], force=True)
 

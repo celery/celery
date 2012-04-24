@@ -3,14 +3,10 @@ from __future__ import with_statement
 
 import glob
 import os
-import sys
-
-try:
-    from OpenSSL import crypto
-except ImportError:
-    crypto = None  # noqa
 
 from celery.exceptions import SecurityError
+
+from .utils import crypto, reraise_errors
 
 
 class Certificate(object):
@@ -18,11 +14,8 @@ class Certificate(object):
 
     def __init__(self, cert):
         assert crypto is not None
-        try:
+        with reraise_errors("Invalid certificate: %r"):
             self._cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert)
-        except crypto.Error, exc:
-            raise SecurityError, SecurityError(
-                    "Invalid certificate: %r" % (exc, )), sys.exc_info()[2]
 
     def has_expired(self):
         """Check if the certificate has expired."""
@@ -43,11 +36,8 @@ class Certificate(object):
 
     def verify(self, data, signature, digest):
         """Verifies the signature for string containing data."""
-        try:
+        with reraise_errors("Bad signature: %r"):
             crypto.verify(self._cert, signature, data, digest)
-        except crypto.Error, exc:
-            raise SecurityError, SecurityError(
-                    "Bad signature: %r" % (exc, )), sys.exc_info()[2]
 
 
 class CertStore(object):

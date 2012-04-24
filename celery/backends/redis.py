@@ -38,6 +38,7 @@ class RedisBackend(KeyValueStoreBackend):
     max_connections = None
 
     supports_native_join = True
+    implements_incr = True
 
     def __init__(self, host=None, port=None, db=None, password=None,
             expires=None, max_connections=None, url=None, **kwargs):
@@ -87,23 +88,14 @@ class RedisBackend(KeyValueStoreBackend):
     def delete(self, key):
         self.client.delete(key)
 
+    def incr(self, key):
+        return self.client.incr(key)
+
+    def expire(self, key, value):
+        return self.client.expire(key, value)
+
     def on_chord_apply(self, setid, body, result=None, **kwargs):
         self.app.TaskSetResult(setid, result).save()
-
-    def on_chord_part_return(self, task, propagate=False):
-        from celery import subtask
-        from celery.result import TaskSetResult
-        setid = task.request.taskset
-        if not setid:
-            return
-        key = self.get_key_for_chord(setid)
-        deps = TaskSetResult.restore(setid, backend=task.backend)
-        if self.client.incr(key) >= deps.total:
-            subtask(task.request.chord).delay(deps.join(propagate=propagate))
-            deps.delete()
-            self.client.delete(key)
-        else:
-            self.client.expire(key, 86400)
 
     @cached_property
     def client(self):
