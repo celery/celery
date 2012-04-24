@@ -8,8 +8,6 @@ if not os.environ.get("EVENTLET_NOPATCH"):
     eventlet.monkey_patch()
     eventlet.debug.hub_prevent_multiple_readers(False)
 
-import sys
-
 from time import time
 
 from celery import signals

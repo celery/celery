@@ -3,11 +3,13 @@ from __future__ import with_statement
 
 import os
 
-from mock import Mock
+from mock import Mock, patch
+from pickle import loads, dumps
 
 from celery import Celery
 from celery import app as _app
 from celery.app import defaults
+from celery.app import state
 from celery.loaders.base import BaseLoader
 from celery.platforms import pyimplementation
 from celery.utils.serialization import pickle
@@ -36,6 +38,15 @@ def _get_test_config():
 test_config = _get_test_config()
 
 
+class test_module(Case):
+
+    def test_default_app(self):
+        self.assertEqual(_app.default_app, state.default_app)
+
+    def test_bugreport(self):
+        self.assertTrue(_app.bugreport())
+
+
 class test_App(Case):
 
     def setUp(self):
@@ -51,6 +62,10 @@ class test_App(Case):
         fun.__module__ = "__main__"
         task = app.task(fun)
         self.assertEqual(task.name, app.main + ".fun")
+
+    def test_with_broker(self):
+        app = Celery(set_as_current=False, broker="foo://baribaz")
+        self.assertEqual(app.conf.BROKER_HOST, "foo://baribaz")
 
     def test_repr(self):
         self.assertTrue(repr(self.app))
@@ -148,6 +163,22 @@ class test_App(Case):
         self.app.config_from_object(Object(CARROT_BACKEND="set_by_us"))
         self.assertEqual(self.app.conf.BROKER_TRANSPORT, "set_by_us")
 
+    def test_WorkController(self):
+        x = self.app.Worker()
+        self.assertIs(x.app, self.app)
+
+    def test_AsyncResult(self):
+        x = self.app.AsyncResult("1")
+        self.assertIs(x.app, self.app)
+        r = loads(dumps(x))
+        # not set as current, so ends up as default app after reduce
+        self.assertIs(r.app, state.default_app)
+
+    @patch("celery.bin.celery.CeleryCommand.execute_from_commandline")
+    def test_start(self, execute):
+        self.app.start()
+        self.assertTrue(execute.called)
+
     def test_mail_admins(self):
 
         class Loader(BaseLoader):
@@ -208,7 +239,6 @@ class test_App(Case):
         self.assertTrue(self.app.bugreport())
 
     def test_send_task_sent_event(self):
-        from celery.app import amqp
 
         class Dispatcher(object):
             sent = []

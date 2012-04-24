@@ -17,7 +17,6 @@ __docformat__ = "restructuredtext"
 # Lazy loading
 from .__compat__ import recreate_module
 
-
 old_module, new_module = recreate_module(__name__,
     by_module={
         "celery.app":       ["Celery", "bugreport"],

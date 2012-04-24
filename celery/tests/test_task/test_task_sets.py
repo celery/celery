@@ -3,7 +3,9 @@ from __future__ import with_statement
 
 import anyjson
 
-from celery.app import app_or_default
+from mock import Mock
+
+from celery import current_app
 from celery.task import Task
 from celery.task.sets import subtask, TaskSet
 from celery.canvas import Signature
@@ -105,7 +107,7 @@ class test_TaskSet(Case):
         self.assertEqual(len(ts), 3)
 
     def test_respects_ALWAYS_EAGER(self):
-        app = app_or_default()
+        app = current_app
 
         class MockTaskSet(TaskSet):
             applied = 0
@@ -143,6 +145,25 @@ class test_TaskSet(Case):
 
         ts.apply_async(publisher=Publisher())
 
+        # setting current_task
+
+        @current_app.task
+        def xyz():
+            pass
+        from celery.app.state import _tls
+        _tls.current_task = xyz
+        try:
+            ts.apply_async(publisher=Publisher())
+        finally:
+            _tls.current_task = None
+            xyz.request.clear()
+
+        # must close publisher
+        ts._Publisher = Mock()
+        ts._Publisher.return_value = Mock()
+        ts.apply_async()
+        self.assertTrue(ts._Publisher.return_value.close.called)
+
     def test_apply(self):
 
         applied = [0]
@@ -156,3 +177,18 @@ class test_TaskSet(Case):
                         for i in (2, 4, 8)])
         ts.apply()
         self.assertEqual(applied[0], 3)
+
+    def test_set_app(self):
+        ts = TaskSet([])
+        ts.app = 42
+        self.assertEqual(ts._app, 42)
+
+    def test_set_tasks(self):
+        ts = TaskSet([])
+        ts.tasks = [1, 2, 3]
+        self.assertEqual(ts.data, [1, 2, 3])
+
+    def test_set_Publisher(self):
+        ts = TaskSet([])
+        ts.Publisher = 42
+        self.assertEqual(ts._Publisher, 42)

@@ -162,10 +162,12 @@ class Signature(dict):
 
     def __or__(self, other):
         if isinstance(other, chain):
-            return chain(self.tasks + other.tasks)
+            return chain(*self.tasks + other.tasks)
         elif isinstance(other, Signature):
+            if isinstance(self, chain):
+                return chain(*self.tasks + (other, ))
             return chain(self, other)
-        return NotImplementedError
+        return NotImplemented
 
     def __invert__(self):
         return self.apply_async().get()
@@ -241,7 +243,8 @@ class chord(Signature):
     @classmethod
     def from_dict(self, d):
         kwargs = d["kwargs"]
-        return chord(kwargs["header"], kwargs["body"], **kwdict(d["options"]))
+        return chord(kwargs["header"], kwargs.get("body"),
+                     **kwdict(d["options"]))
 
     def __call__(self, body=None, **options):
         _chord = self.Chord
@@ -254,10 +257,10 @@ class chord(Signature):
 
     def clone(self, *args, **kwargs):
         s = Signature.clone(self, *args, **kwargs)
-        # need make copy of body
+        # need to make copy of body
         try:
-            kwargs["body"] = kwargs["body"].clone()
-        except KeyError:
+            s.kwargs["body"] = s.kwargs["body"].clone()
+        except (AttributeError, KeyError):
             pass
         return s
 
@@ -280,7 +283,7 @@ class chord(Signature):
 
     @property
     def body(self):
-        return self.kwargs["body"]
+        return self.kwargs.get("body")
 Signature.register_type(chord)
 
 

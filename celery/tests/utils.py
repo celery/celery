@@ -434,7 +434,6 @@ platform_pyimp = partial(
 )
 
 
-
 @contextmanager
 def sys_platform(value):
     prev, sys.platform = sys.platform, value

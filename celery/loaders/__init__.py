@@ -19,6 +19,7 @@ LOADER_ALIASES = {"app": "celery.loaders.app:AppLoader",
                   "default": "celery.loaders.default:Loader",
                   "django": "djcelery.loaders:DjangoLoader"}
 
+
 def get_loader_cls(loader):
     """Get loader class by name/alias"""
     return symbol_by_name(loader, LOADER_ALIASES)

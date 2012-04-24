@@ -306,7 +306,7 @@ class test_EmbeddedService(Case):
 
     def test_start_stop_process(self):
         try:
-            import _multiprocessing
+            import _multiprocessing  # noqa
         except ImportError:
             raise SkipTest("multiprocessing not available")
 

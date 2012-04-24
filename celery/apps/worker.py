@@ -279,6 +279,7 @@ install_worker_term_hard_handler = partial(
     _shutdown_handler, sig="SIGQUIT", how="terminate", exc=SystemTerminate,
 )
 
+
 def on_SIGINT(worker):
     print("celeryd: Hitting Ctrl+C again will terminate all running tasks!")
     install_worker_term_hard_handler(worker, sig="SIGINT")

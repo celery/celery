@@ -5,16 +5,70 @@ import sys
 import logging
 from tempfile import mktemp
 
+from mock import patch, Mock
+
 from celery import current_app
 from celery.app.log import Logging
 from celery.utils.log import LoggingProxy
 from celery.utils import uuid
-from celery.utils.log import get_logger
+from celery.utils.log import get_logger, ColorFormatter, logger as base_logger
 from celery.tests.utils import (
     Case, override_stdouts, wrap_logger, get_handlers,
 )
 
 log = current_app.log
+
+
+class test_ColorFormatter(Case):
+
+    @patch("celery.utils.log.safe_str")
+    @patch("logging.Formatter.formatException")
+    def test_formatException_not_string(self, fe, safe_str):
+        x = ColorFormatter("HELLO")
+        value = KeyError()
+        fe.return_value = value
+        self.assertIs(x.formatException(value), value)
+        self.assertTrue(fe.called)
+        self.assertFalse(safe_str.called)
+
+    @patch("logging.Formatter.formatException")
+    @patch("celery.utils.log.safe_str")
+    def test_formatException_string(self, safe_str, fe, value="HELLO"):
+        x = ColorFormatter(value)
+        fe.return_value = value
+        self.assertTrue(x.formatException(value))
+        self.assertTrue(safe_str.called)
+
+    @patch("celery.utils.log.safe_str")
+    def test_format_raises(self, safe_str):
+        x = ColorFormatter("HELLO")
+
+        def on_safe_str(s):
+            try:
+                raise ValueError("foo")
+            finally:
+                safe_str.side_effect = None
+        safe_str.side_effect = on_safe_str
+
+        record = Mock()
+        record.levelname = "ERROR"
+        record.msg = "HELLO"
+        record.exc_text = "error text"
+        safe_str.return_value = record
+
+        x.format(record)
+        self.assertIn("<Unrepresentable", record.msg)
+        self.assertEqual(safe_str.call_count, 2)
+
+    @patch("celery.utils.log.safe_str")
+    def test_format_raises_no_color(self, safe_str):
+        x = ColorFormatter("HELLO", False)
+        record = Mock()
+        record.levelname = "ERROR"
+        record.msg = "HELLO"
+        record.exc_text = "error text"
+        x.format(record)
+        self.assertEqual(safe_str.call_count, 1)
 
 
 class test_default_logger(Case):
@@ -23,6 +77,14 @@ class test_default_logger(Case):
         self.setup_logger = log.setup_logger
         self.get_logger = lambda n=None: get_logger(n) if n else logging.root
         Logging._setup = False
+
+    def test_get_logger_sets_parent(self):
+        logger = get_logger("celery.test_get_logger")
+        self.assertEqual(logger.parent.name, base_logger.name)
+
+    def test_get_logger_root(self):
+        logger = get_logger(base_logger.name)
+        self.assertIs(logger.parent, logging.root)
 
     def test_setup_logging_subsystem_colorize(self):
         log.setup_logging_subsystem(colorize=None)
@@ -57,7 +119,6 @@ class test_default_logger(Case):
         Logging._setup = False
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
                                    root=False, colorize=None)
-        print(logger.handlers)
         self.assertIs(get_handlers(logger)[0].stream, sys.__stderr__,
                 "setup_logger logs to stderr without logfile argument.")
 
@@ -111,6 +172,16 @@ class test_default_logger(Case):
             p.close()
             self.assertFalse(p.isatty())
             self.assertIsNone(p.fileno())
+
+    def test_logging_proxy_recurse_protection(self):
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                root=False)
+        p = LoggingProxy(logger, loglevel=logging.ERROR)
+        p._thread.recurse_protection = True
+        try:
+            self.assertIsNone(p.write("FOOFO"))
+        finally:
+            p._thread.recurse_protection = False
 
 
 class test_task_logger(test_default_logger):

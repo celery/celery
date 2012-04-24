@@ -22,12 +22,9 @@ from functools import partial, wraps
 from inspect import getargspec
 from pprint import pprint
 
-from billiard.util import register_after_fork
-
 from celery.exceptions import CPendingDeprecationWarning, CDeprecationWarning
 from .compat import StringIO
 
-from .imports import symbol_by_name, qualname
 from .functional import noop
 
 PENDING_DEPRECATION_FMT = """
@@ -61,6 +58,7 @@ def deprecated(description=None, deprecation=None, removal=None,
 
         @wraps(fun)
         def __inner(*args, **kwargs):
+            from .imports import qualname
             warn_deprecated(description=description or qualname(fun),
                             deprecation=deprecation,
                             removal=removal,

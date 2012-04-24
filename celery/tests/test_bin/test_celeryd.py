@@ -19,15 +19,10 @@ from celery import current_app
 from celery.apps import worker as cd
 from celery.bin.celeryd import WorkerCommand, main as celeryd_main
 from celery.exceptions import ImproperlyConfigured, SystemTerminate
-
-from celery.tests.utils import (
-    AppCase, WhateverIO, mask_modules,
-    reset_modules, skip_unless_module,
-    create_pidlock,
-)
-
-
 from celery.utils.log import ensure_process_aware_logger
+
+from celery.tests.utils import AppCase, WhateverIO, create_pidlock
+
 ensure_process_aware_logger()
 
 
@@ -416,7 +411,7 @@ class test_signal_handlers(AppCase):
     @disable_stdouts
     def test_worker_int_handler_only_stop_MainProcess(self):
         try:
-            import _multiprocessing
+            import _multiprocessing  # noqa
         except ImportError:
             raise SkipTest("only relevant for multiprocessing")
         process = current_process()
@@ -439,7 +434,7 @@ class test_signal_handlers(AppCase):
     @disable_stdouts
     def test_worker_term_hard_handler_only_stop_MainProcess(self):
         try:
-            import _multiprocessing
+            import _multiprocessing  # noqa
         except ImportError:
             raise SkipTest("only relevant for multiprocessing")
         process = current_process()
@@ -477,7 +472,7 @@ class test_signal_handlers(AppCase):
     @disable_stdouts
     def test_worker_term_handler_only_stop_MainProcess(self):
         try:
-            import _multiprocessing
+            import _multiprocessing  # noqa
         except ImportError:
             raise SkipTest("only relevant for multiprocessing")
         process = current_process()

@@ -15,7 +15,7 @@ DEFAULT_ATTRS = set(["__file__", "__path__", "__doc__", "__all__"])
 
 # im_func is no longer available in Py3.
 # instead the unbound method itself can be used.
-if sys.version_info[0] == 3:
+if sys.version_info[0] == 3:  # pragma: no cover
     def fun_of_method(method):
         return method
 else:
@@ -69,6 +69,17 @@ COMPAT_MODULES = {
             "tasks": "tasks",
         },
     },
+    "celery.task": {
+        "control": {
+            "broadcast": "control.broadcast",
+            "rate_limit": "control.rate_limit",
+            "time_limit": "control.time_limit",
+            "ping": "control.ping",
+            "revoke": "control.revoke",
+            "discard_all": "control.discard_all",
+            "inspect": "control.inspect",
+        }
+    }
 }
 
 
@@ -158,8 +169,9 @@ def get_compat_module(pkg, name):
             return Proxy(getappattr, (attr.split('.'), ))
         return attr
 
-    return create_module(name, COMPAT_MODULES[pkg.__name__][name],
-                         pkg=pkg, prepare_attr=prepare)
+    attrs = dict(COMPAT_MODULES[pkg.__name__][name])
+    attrs["__all__"] = attrs.keys()
+    return create_module(name, attrs, pkg=pkg, prepare_attr=prepare)
 
 
 def get_origins(defs):

@@ -19,13 +19,14 @@ from contextlib import contextmanager
 from copy import deepcopy
 from functools import wraps
 
+from billiard.util import register_after_fork
 from kombu.clocks import LamportClock
+from kombu.utils import cached_property
 
 from celery import platforms
 from celery.exceptions import AlwaysEagerIgnored
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
-from celery.utils import cached_property, register_after_fork
 from celery.utils.functional import first
 from celery.utils.imports import instantiate, symbol_by_name
 
@@ -159,7 +160,7 @@ class Celery(object):
             eta=None, task_id=None, publisher=None, connection=None,
             connect_timeout=None, result_cls=None, expires=None,
             queues=None, **options):
-        if self.conf.CELERY_ALWAYS_EAGER:
+        if self.conf.CELERY_ALWAYS_EAGER:  # pragma: no cover
             warnings.warn(AlwaysEagerIgnored(
                 "CELERY_ALWAYS_EAGER has no effect on send_task"))
 
@@ -234,9 +235,6 @@ class Celery(object):
 
     def prepare_config(self, c):
         """Prepare configuration before it is merged with the defaults."""
-        if self._preconf:
-            for key, value in self._preconf.iteritems():
-                setattr(c, key, value)
         return find_deprecated_settings(c)
 
     def now(self):
@@ -275,8 +273,12 @@ class Celery(object):
         return backend(app=self, url=url)
 
     def _get_config(self):
-        return Settings({}, [self.prepare_config(self.loader.conf),
+        s = Settings({}, [self.prepare_config(self.loader.conf),
                              deepcopy(DEFAULTS)])
+        if self._preconf:
+            for key, value in self._preconf.iteritems():
+                setattr(s, key, value)
+        return s
 
     def _after_fork(self, obj_):
         if self._pool:

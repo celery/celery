@@ -448,7 +448,8 @@ class _Threaded(threading.Thread):
 
 supports_fork = True
 try:
-    import _multiprocessing
+    from billiard._ext import _billiard
+    supports_fork = True if _billiard else False
 except ImportError:
     supports_fork = False
 

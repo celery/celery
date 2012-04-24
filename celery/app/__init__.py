@@ -43,7 +43,7 @@ set_default_app(Celery("default", loader=default_loader,
 
 
 def bugreport():
-    return current_app.bugreport()
+    return current_app().bugreport()
 
 
 def _app_or_default(app=None):

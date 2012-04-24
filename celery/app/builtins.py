@@ -39,7 +39,11 @@ def add_backend_cleanup_task(app):
     may even clean up in realtime so that a periodic cleanup is not necessary.
 
     """
-    return app.task(name="celery.backend_cleanup")(app.backend.cleanup)
+
+    @app.task(name="celery.backend_cleanup")
+    def backend_cleanup():
+        app.backend.cleanup()
+    return backend_cleanup
 
 
 @builtin_task
@@ -79,17 +83,19 @@ def add_group_task(app):
         def run(self, tasks, result):
             app = self.app
             result = from_serializable(result)
+            if self.request.is_eager or app.conf.CELERY_ALWAYS_EAGER:
+                return app.TaskSetResult(result.id,
+                        [subtask(task).apply(taskset_id=self.request.taskset)
+                            for task in tasks])
             with app.pool.acquire(block=True) as conn:
                 with app.amqp.TaskPublisher(conn) as publisher:
-                    res_ = [subtask(task).apply_async(
-                                        taskset_id=self.request.taskset,
-                                        publisher=publisher)
-                                for task in tasks]
+                    [subtask(task).apply_async(
+                                    taskset_id=self.request.taskset,
+                                    publisher=publisher)
+                            for task in tasks]
             parent = get_current_task()
             if parent:
                 parent.request.children.append(result)
-            if self.request.is_eager or app.conf.CELERY_ALWAYS_EAGER:
-                return app.TaskSetResult(result.id, res_)
             return result
 
         def prepare(self, options, tasks, **kwargs):
@@ -111,8 +117,7 @@ def add_group_task(app):
 
         def apply(self, args=(), kwargs={}, **options):
             tasks, result = self.prepare(options, **kwargs)
-            return super(Group, self).apply((tasks, result), {"eager": True},
-                                            **options)
+            return super(Group, self).apply((tasks, result), **options)
 
     return Group
 
@@ -177,8 +182,10 @@ def add_chord_task(app):
             body = maybe_subtask(kwargs["body"])
 
             callback_id = body.options.setdefault("task_id", task_id or uuid())
-            super(Chord, self).apply_async(args, kwargs, **options)
-            return self.AsyncResult(callback_id)
+            parent = super(Chord, self).apply_async(args, kwargs, **options)
+            body_result = self.AsyncResult(callback_id)
+            body_result.parent = parent
+            return body_result
 
         def apply(self, args=(), kwargs={}, **options):
             body = kwargs["body"]

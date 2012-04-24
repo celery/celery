@@ -15,7 +15,7 @@ class NotAPackage(Exception):
     pass
 
 
-if sys.version_info >= (3, 3):
+if sys.version_info >= (3, 3):  # pragma: no cover
 
     def qualname(obj):
         return obj.__qualname__
@@ -109,7 +109,7 @@ def cwd_in_path():
         finally:
             try:
                 sys.path.remove(cwd)
-            except ValueError:
+            except ValueError:  # pragma: no cover
                 pass
 
 

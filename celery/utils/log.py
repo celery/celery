@@ -21,14 +21,14 @@ is_py3k = sys.version_info[0] == 3
 # Every logger in the celery package inherits from the "celery"
 # logger, and every task logger inherits from the "celery.task"
 # logger.
-logger = _get_logger("celery")
+base_logger = logger = _get_logger("celery")
 mp_logger = _get_logger("multiprocessing")
 
 
 def get_logger(name):
     l = _get_logger(name)
-    if l.parent is logging.root and l is not logger:
-        l.parent = logger
+    if logging.root not in (l, l.parent) and l is not base_logger:
+        l.parent = base_logger
     return l
 task_logger = get_logger("celery.task")
 
@@ -163,34 +163,27 @@ class LoggingProxy(object):
         return None
 
 
-def _patch_logger_class():
+def ensure_process_aware_logger():
     """Make sure process name is recorded when loggers are used."""
-    logging._acquireLock()
-    try:
-        OldLoggerClass = logging.getLoggerClass()
-        if not getattr(OldLoggerClass, '_process_aware', False):
+    global _process_aware
+    if not _process_aware:
+        logging._acquireLock()
+        try:
+            _process_aware = True
+            Logger = logging.getLoggerClass()
+            if getattr(Logger, '_process_aware', False):  # pragma: no cover
+                return
 
-            class ProcessAwareLogger(OldLoggerClass):
+            class ProcessAwareLogger(Logger):
                 _process_aware = True
 
                 def makeRecord(self, *args, **kwds):
-                    record = OldLoggerClass.makeRecord(self, *args, **kwds)
-                    if current_process:
-                        record.processName = current_process()._name
-                    else:
-                        record.processName = ""
+                    record = Logger.makeRecord(self, *args, **kwds)
+                    record.processName = current_process()._name
                     return record
             logging.setLoggerClass(ProcessAwareLogger)
-    finally:
-        logging._releaseLock()
-
-
-def ensure_process_aware_logger():
-    global _process_aware
-
-    if not _process_aware:
-        _patch_logger_class()
-        _process_aware = True
+        finally:
+            logging._releaseLock()
 
 
 def get_multiprocessing_logger():

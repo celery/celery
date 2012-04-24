@@ -8,8 +8,8 @@ from celery.exceptions import SecurityError
 
 try:
     from OpenSSL import crypto
-except ImportError:
-    crypto = None  # noqa
+except ImportError:  # pragma: no cover
+    crypto = None    # noqa
 
 
 @contextmanager

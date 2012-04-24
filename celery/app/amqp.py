@@ -16,7 +16,7 @@ from datetime import timedelta
 from kombu import BrokerConnection, Exchange
 from kombu import compat as messaging
 from kombu import pools
-from kombu.common import maybe_declare
+from kombu.common import declaration_cached, maybe_declare
 
 from celery import signals
 from celery.utils import cached_property, lpmerge, uuid
@@ -34,6 +34,7 @@ QUEUE_FORMAT = """
 . %(name)s exchange:%(exchange)s (%(exchange_type)s) \
 binding:%(binding_key)s
 """
+
 
 def extract_msg_options(options, keep=MSG_OPTIONS):
     """Extracts known options to `basic_publish` from a dict,
@@ -157,7 +158,8 @@ class TaskPublisher(messaging.Publisher):
         super(TaskPublisher, self).__init__(*args, **kwargs)
 
     def declare(self):
-        if self.exchange.name and not declaration_cached(self.exchange):
+        if self.exchange.name and \
+                not declaration_cached(self.exchange, self.channel):
             super(TaskPublisher, self).declare()
 
     def _get_queue(self, name):

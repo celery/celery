@@ -34,12 +34,13 @@ class Proxy(object):
         object.__setattr__(self, '_Proxy__local', local)
         object.__setattr__(self, '_Proxy__args', args or ())
         object.__setattr__(self, '_Proxy__kwargs', kwargs or {})
-        object.__setattr__(self, '__custom_name__', name)
+        if name is not None:
+            object.__setattr__(self, '__custom_name__', name)
 
     @property
     def __name__(self):
         try:
-            return object.__getattr__(self, "__custom_name__")
+            return self.__custom_name__
         except AttributeError:
             return self._get_current_object().__name__
 
@@ -67,32 +68,32 @@ class Proxy(object):
     def __dict__(self):
         try:
             return self._get_current_object().__dict__
-        except RuntimeError:
+        except RuntimeError:  # pragma: no cover
             raise AttributeError('__dict__')
 
     def __repr__(self):
         try:
             obj = self._get_current_object()
-        except RuntimeError:
+        except RuntimeError:  # pragma: no cover
             return '<%s unbound>' % self.__class__.__name__
         return repr(obj)
 
     def __nonzero__(self):
         try:
             return bool(self._get_current_object())
-        except RuntimeError:
+        except RuntimeError:  # pragma: no cover
             return False
 
     def __unicode__(self):
         try:
             return unicode(self._get_current_object())
-        except RuntimeError:
+        except RuntimeError:  # pragma: no cover
             return repr(self)
 
     def __dir__(self):
         try:
             return dir(self._get_current_object())
-        except RuntimeError:
+        except RuntimeError:  # pragma: no cover
             return []
 
     def __getattr__(self, name):
@@ -155,8 +156,8 @@ class Proxy(object):
     __hex__ = lambda x: hex(x._get_current_object())
     __index__ = lambda x: x._get_current_object().__index__()
     __coerce__ = lambda x, o: x.__coerce__(x, o)
-    __enter__ = lambda x: x.__enter__()
-    __exit__ = lambda x, *a, **kw: x.__exit__(*a, **kw)
+    __enter__ = lambda x: x._get_current_object().__enter__()
+    __exit__ = lambda x, *a, **kw: x._get_current_object().__exit__(*a, **kw)
     __reduce__ = lambda x: x._get_current_object().__reduce__()
 
 

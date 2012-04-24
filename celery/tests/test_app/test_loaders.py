@@ -4,6 +4,8 @@ from __future__ import with_statement
 import os
 import sys
 
+from mock import patch
+
 from celery import loaders
 from celery.app import app_or_default
 from celery.exceptions import (
@@ -13,6 +15,7 @@ from celery.exceptions import (
 from celery.loaders import base
 from celery.loaders import default
 from celery.loaders.app import AppLoader
+from celery.utils.imports import NotAPackage
 
 from celery.tests.utils import AppCase, Case
 from celery.tests.compat import catch_warnings
@@ -157,6 +160,31 @@ class TestDefaultLoader(Case):
         self.assertFalse(l.wanted_module_item("_FOO"))
         self.assertFalse(l.wanted_module_item("__FOO"))
         self.assertFalse(l.wanted_module_item("foo"))
+
+    @patch("celery.loaders.default.find_module")
+    def test_read_configuration_not_a_package(self, find_module):
+        find_module.side_effect = NotAPackage()
+        l = default.Loader()
+        with self.assertRaises(NotAPackage):
+            l.read_configuration()
+
+    @patch("celery.loaders.default.find_module")
+    def test_read_configuration_py_in_name(self, find_module):
+        prev = os.environ["CELERY_CONFIG_MODULE"]
+        os.environ["CELERY_CONFIG_MODULE"] = "celeryconfig.py"
+        try:
+            find_module.side_effect = NotAPackage()
+            l = default.Loader()
+            with self.assertRaises(NotAPackage):
+                l.read_configuration()
+        finally:
+            os.environ["CELERY_CONFIG_MODULE"] = prev
+
+    @patch("celery.loaders.default.find_module")
+    def test_read_configuration_importerror(self, find_module):
+        find_module.side_effect = ImportError()
+        l = default.Loader()
+        l.read_configuration()
 
     def test_read_configuration(self):
         from types import ModuleType

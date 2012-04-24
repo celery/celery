@@ -6,8 +6,6 @@ if not os.environ.get("GEVENT_NOPATCH"):
     from gevent import monkey
     monkey.patch_all()
 
-import sys
-
 from time import time
 
 from celery.utils import timer2
