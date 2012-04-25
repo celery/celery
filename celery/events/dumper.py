@@ -34,7 +34,17 @@ def humanize_type(type):
         return type.lower().replace("-", " ")
 
 
+def say(msg, out=sys.stdout):
+    out.write(msg + "\n")
+
+
 class Dumper(object):
+
+    def __init__(self, out=sys.stdout):
+        self.out = out
+
+    def say(self, msg):
+        say(msg, out=self.out)
 
     def on_event(self, event):
         timestamp = datetime.utcfromtimestamp(event.pop("timestamp"))
@@ -54,21 +64,21 @@ class Dumper(object):
         fields = ", ".join("%s=%s" % (key, event[key])
                         for key in sorted(event.keys()))
         sep = fields and ":" or ""
-        print("%s [%s] %s%s %s" % (hostname, timestamp,
-                                    humanize_type(type), sep, fields))
+        self.say("%s [%s] %s%s %s" % (hostname, timestamp,
+                                      humanize_type(type), sep, fields))
 
     def format_task_event(self, hostname, timestamp, type, task, event):
         fields = ", ".join("%s=%s" % (key, event[key])
                         for key in sorted(event.keys()))
         sep = fields and ":" or ""
-        print("%s [%s] %s%s %s %s" % (hostname, timestamp,
-                                    humanize_type(type), sep, task, fields))
+        self.say("%s [%s] %s%s %s %s" % (hostname, timestamp,
+                    humanize_type(type), sep, task, fields))
 
 
-def evdump(app=None):
-    sys.stderr.write("-> evdump: starting capture...\n")
+def evdump(app=None, out=sys.stdout):
     app = app_or_default(app)
-    dumper = Dumper()
+    dumper = Dumper(out=out)
+    dumper.say("-> evdump: starting capture...")
     conn = app.broker_connection()
     recv = app.events.Receiver(conn, handlers={"*": dumper.on_event})
     try:
@@ -76,5 +86,5 @@ def evdump(app=None):
     except (KeyboardInterrupt, SystemExit):
         conn and conn.close()
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     evdump()

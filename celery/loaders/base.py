@@ -15,8 +15,6 @@ import anyjson
 import importlib
 import os
 import re
-import traceback
-import warnings
 
 from datetime import datetime
 
@@ -188,22 +186,14 @@ class BaseLoader(object):
             sender=None, to=None, host=None, port=None,
             user=None, password=None, timeout=None,
             use_ssl=False, use_tls=False):
-        try:
-            message = self.mail.Message(sender=sender, to=to,
-                                        subject=safe_str(subject),
-                                        body=safe_str(body))
-            mailer = self.mail.Mailer(host=host, port=port,
-                                      user=user, password=password,
-                                      timeout=timeout, use_ssl=use_ssl,
-                                      use_tls=use_tls)
-            mailer.send(message)
-        except Exception, exc:
-            if not fail_silently:
-                raise
-            warnings.warn(self.mail.SendmailWarning(
-                "Mail could not be sent: %r %r\n%r" % (
-                    exc, {"To": to, "Subject": subject},
-                    traceback.format_stack())))
+        message = self.mail.Message(sender=sender, to=to,
+                                    subject=safe_str(subject),
+                                    body=safe_str(body))
+        mailer = self.mail.Mailer(host=host, port=port,
+                                  user=user, password=password,
+                                  timeout=timeout, use_ssl=use_ssl,
+                                  use_tls=use_tls)
+        mailer.send(message, fail_silently=fail_silently)
 
     def read_configuration(self):
         return {}

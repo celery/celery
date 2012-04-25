@@ -39,9 +39,7 @@ class colored(object):
 
     def __init__(self, *s, **kwargs):
         self.s = s
-        self.enabled = kwargs.get("enabled", True)
-        if IS_WINDOWS:
-            self.enabled = False
+        self.enabled = not IS_WINDOWS and kwargs.get("enabled", True)
         self.op = kwargs.get("op", "")
         self.names = {"black": self.black,
                       "red": self.red,
@@ -53,22 +51,18 @@ class colored(object):
                       "white": self.white}
 
     def _add(self, a, b):
-        if isinstance(a, unicode):
-            a = safe_str(a)
-        if isinstance(b, unicode):
-            b = safe_str(b)
-        return str(a) + str(b)
+        return unicode(a) + unicode(b)
 
     def _fold_no_color(self, a, b):
         try:
             A = a.no_color()
         except AttributeError:
-            A = safe_str(a)
+            A = unicode(a)
         try:
             B = b.no_color()
         except AttributeError:
-            B = safe_str(b)
-        return A + B
+            B = unicode(b)
+        return safe_str(A) + safe_str(B)
 
     def no_color(self):
         if self.s:
@@ -85,7 +79,7 @@ class colored(object):
         suffix = ""
         if self.enabled:
             suffix = RESET_SEQ
-        return self.embed() + suffix
+        return safe_str(self.embed() + suffix)
 
     def __str__(self):
         return safe_str(self.__unicode__())
@@ -145,7 +139,7 @@ class colored(object):
         return self.node(s, fg(40 + YELLOW))
 
     def iblue(self, *s):
-        return self.node(s, fg(40, BLUE))
+        return self.node(s, fg(40 + BLUE))
 
     def imagenta(self, *s):
         return self.node(s, fg(40 + MAGENTA))
@@ -160,4 +154,4 @@ class colored(object):
         return self.node(s or [""], RESET_SEQ)
 
     def __add__(self, other):
-        return str(self) + str(other)
+        return unicode(self) + unicode(other)

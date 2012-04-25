@@ -40,10 +40,7 @@ if is_py3k:
         def write(self, data):
             StringIO.write(self, bytes_to_str(data))
 else:
-    try:
-        from cStringIO import StringIO  # noqa
-    except ImportError:
-        from StringIO import StringIO   # noqa
+    from StringIO import StringIO       # noqa
     BytesIO = WhateverIO = StringIO     # noqa
 
 

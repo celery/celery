@@ -11,17 +11,8 @@ nosetests -vd celery.tests                                      \
             --cover3-exclude="                                  \
               celery                                            \
               celery.tests.*                                    \
-              celery.bin.celeryd_multi                          \
-              celery.bin.celeryd_detach                         \
-              celery.bin.celeryctl                              \
-              celery.bin.camqadm                                \
-              celery.local                                      \
-              celery.platforms                                  \
               celery.utils.compat                               \
-              celery.utils.mail                                 \
-              celery.utils.functional                           \
               celery.utils.dispatch*                            \
-              celery.utils.term                                 \
               celery.db.a805d4bd                                \
               celery.db.dfd042c7                                \
               celery.contrib*                                   \
@@ -29,7 +20,6 @@ nosetests -vd celery.tests                                      \
               celery.concurrency.gevent                         \
               celery.backends.mongodb                           \
               celery.backends.cassandra                         \
-              celery.events.dumper                              \
               celery.events.cursesmon"                          \
             --with-xunit                                        \
               --xunit-file="$base/nosetests.xml"

@@ -45,6 +45,10 @@ DAEMON_UMASK = 0
 DAEMON_WORKDIR = "/"
 DAEMON_REDIRECT_TO = getattr(os, "devnull", "/dev/null")
 
+
+PIDFILE_FLAGS = os.O_CREAT | os.O_EXCL | os.O_WRONLY
+PIDFILE_MODE = ((os.R_OK | os.W_OK) << 6) | ((os.R_OK) << 3) | ((os.R_OK))
+
 _setps_bucket = TokenBucket(0.5)  # 30/m, every 2 seconds
 
 
@@ -172,11 +176,7 @@ class PIDFile(object):
         pid = os.getpid()
         content = "%d\n" % (pid, )
 
-        open_flags = (os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        open_mode = (((os.R_OK | os.W_OK) << 6) |
-                        ((os.R_OK) << 3) |
-                        ((os.R_OK)))
-        pidfile_fd = os.open(self.path, open_flags, open_mode)
+        pidfile_fd = os.open(self.path, PIDFILE_FLAGS, PIDFILE_MODE)
         pidfile = os.fdopen(pidfile_fd, "w")
         try:
             pidfile.write(content)
@@ -184,15 +184,18 @@ class PIDFile(object):
             pidfile.flush()
             try:
                 os.fsync(pidfile_fd)
-            except AttributeError:
+            except AttributeError:  # pragma: no cover
                 pass
         finally:
             pidfile.close()
 
-        with open(self.path) as fh:
-            if fh.read() != content:
+        rfh = open(self.path)
+        try:
+            if rfh.read() != content:
                 raise LockFailed(
                     "Inconsistency: Pidfile content doesn't match at re-read")
+        finally:
+            rfh.close()
 
 
 def create_pidlock(pidfile):
@@ -337,12 +340,10 @@ def parse_uid(uid):
     try:
         return int(uid)
     except ValueError:
-        if pwd:
-            try:
-                return pwd.getpwnam(uid).pw_uid
-            except KeyError:
-                raise KeyError("User does not exist: %r" % (uid, ))
-        raise
+        try:
+            return pwd.getpwnam(uid).pw_uid
+        except (AttributeError, KeyError):
+            raise KeyError("User does not exist: %r" % (uid, ))
 
 
 def parse_gid(gid):
@@ -355,12 +356,10 @@ def parse_gid(gid):
     try:
         return int(gid)
     except ValueError:
-        if grp:
-            try:
-                return grp.getgrnam(gid).gr_gid
-            except KeyError:
-                raise KeyError("Group does not exist: %r" % (gid, ))
-        raise
+        try:
+            return grp.getgrnam(gid).gr_gid
+        except (AttributeError, KeyError):
+            raise KeyError("Group does not exist: %r" % (gid, ))
 
 
 def _setgroups_hack(groups):
@@ -386,7 +385,7 @@ def setgroups(groups):
     max_groups = None
     try:
         max_groups = os.sysconf("SC_NGROUPS_MAX")
-    except:
+    except Exception:
         pass
     try:
         return _setgroups_hack(groups[:max_groups])
@@ -399,13 +398,14 @@ def setgroups(groups):
 
 
 def initgroups(uid, gid):
-    if grp and pwd:
-        username = pwd.getpwuid(uid)[0]
-        if hasattr(os, "initgroups"):  # Python 2.7+
-            return os.initgroups(username, gid)
-        groups = [gr.gr_gid for gr in grp.getgrall()
-                                if username in gr.gr_mem]
-        setgroups(groups)
+    if not pwd:  # pragma: no cover
+        return
+    username = pwd.getpwuid(uid)[0]
+    if hasattr(os, "initgroups"):  # Python 2.7+
+        return os.initgroups(username, gid)
+    groups = [gr.gr_gid for gr in grp.getgrall()
+                            if username in gr.gr_mem]
+    setgroups(groups)
 
 
 def setegid(gid):
@@ -583,7 +583,7 @@ def set_process_title(progname, info=None):
     return proctitle
 
 
-if os.environ.get("NOSETPS"):
+if os.environ.get("NOSETPS"):  # pragma: no cover
 
     def set_mp_process_title(*a, **k):
         pass

@@ -9,6 +9,7 @@ from mock import patch
 from celery import loaders
 from celery.app import app_or_default
 from celery.exceptions import (
+        NotConfigured,
         ImproperlyConfigured,
         CPendingDeprecationWarning,
 )
@@ -16,6 +17,7 @@ from celery.loaders import base
 from celery.loaders import default
 from celery.loaders.app import AppLoader
 from celery.utils.imports import NotAPackage
+from celery.utils.mail import SendmailWarning
 
 from celery.tests.utils import AppCase, Case
 from celery.tests.compat import catch_warnings
@@ -36,32 +38,10 @@ class Object(object):
             setattr(self, k, v)
 
 
-class MockMail(object):
-
-    class SendmailWarning(UserWarning):
-        pass
-
-    class Message(Object):
-        pass
-
-    class Mailer(Object):
-        sent = []
-        raise_on_send = False
-
-        def send(self, message):
-            if self.__class__.raise_on_send:
-                raise KeyError("foo")
-            self.sent.append(message)
-
-
 class DummyLoader(base.BaseLoader):
 
     def read_configuration(self):
         return {"foo": "bar", "CELERY_IMPORTS": ("os", "sys")}
-
-    @property
-    def mail(self):
-        return MockMail()
 
 
 class TestLoaders(AppCase):
@@ -123,23 +103,27 @@ class TestLoaderBase(Case):
         self.loader.import_from_cwd("foo", imp=imp)
         self.assertTrue(imp.called)
 
-    def test_mail_admins_errors(self):
-        MockMail.Mailer.raise_on_send = True
+    @patch("celery.utils.mail.Mailer._send")
+    def test_mail_admins_errors(self, send):
+        send.side_effect = KeyError()
         opts = dict(self.message_options, **self.server_options)
 
-        with self.assertWarnsRegex(MockMail.SendmailWarning, r'KeyError'):
+        with self.assertWarnsRegex(SendmailWarning, r'KeyError'):
             self.loader.mail_admins(fail_silently=True, **opts)
 
         with self.assertRaises(KeyError):
             self.loader.mail_admins(fail_silently=False, **opts)
 
-    def test_mail_admins(self):
-        MockMail.Mailer.raise_on_send = False
+    @patch("celery.utils.mail.Mailer._send")
+    def test_mail_admins(self, send):
         opts = dict(self.message_options, **self.server_options)
-
         self.loader.mail_admins(**opts)
-        message = MockMail.Mailer.sent.pop()
-        self.assertDictContainsSubset(vars(message), self.message_options)
+        self.assertTrue(send.call_args)
+        message = send.call_args[0][0]
+        self.assertEqual(message.to, [self.message_options["to"]])
+        self.assertEqual(message.subject, self.message_options["subject"])
+        self.assertEqual(message.sender, self.message_options["sender"])
+        self.assertEqual(message.body, self.message_options["body"])
 
     def test_mail_attribute(self):
         from celery.utils import mail
@@ -184,7 +168,8 @@ class TestDefaultLoader(Case):
     def test_read_configuration_importerror(self, find_module):
         find_module.side_effect = ImportError()
         l = default.Loader()
-        l.read_configuration()
+        with self.assertWarnsRegex(NotConfigured, r'make sure it exists'):
+            l.read_configuration()
 
     def test_read_configuration(self):
         from types import ModuleType

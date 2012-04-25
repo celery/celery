@@ -21,7 +21,7 @@ from celery.concurrency.base import BasePool
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import (RetryTaskError,
                                WorkerLostError, InvalidTaskError)
-from celery.task.trace import eager_trace_task, TraceInfo
+from celery.task.trace import eager_trace_task, TraceInfo, mro_lookup
 from celery.result import AsyncResult
 from celery.task import task as task_dec
 from celery.task.base import Task
@@ -34,6 +34,35 @@ from celery.tests.utils import Case
 
 scratch = {"ACK": False}
 some_kwargs_scratchpad = {}
+
+
+class test_mro_lookup(Case):
+
+    def test_order(self):
+
+        class A(object):
+            pass
+
+        class B(A):
+            pass
+
+        class C(B):
+            pass
+
+        class D(C):
+
+            @classmethod
+            def mro(cls):
+                return ()
+
+        A.x = 10
+        self.assertEqual(mro_lookup(C, "x"), A)
+        self.assertIsNone(mro_lookup(C, "x", stop=(A, )))
+        B.x = 10
+        self.assertEqual(mro_lookup(C, "x"), B)
+        C.x = 10
+        self.assertEqual(mro_lookup(C, "x"), C)
+        self.assertIsNone(mro_lookup(D, "x"))
 
 
 def jail(task_id, name, args, kwargs):

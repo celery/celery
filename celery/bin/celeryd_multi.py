@@ -98,6 +98,7 @@ from collections import defaultdict
 from subprocess import Popen
 from time import sleep
 
+from kombu.utils import cached_property
 from kombu.utils.encoding import from_utf8
 
 from celery import __version__
@@ -138,9 +139,15 @@ def main():
 class MultiTool(object):
     retcode = 0  # Final exit code.
 
-    def __init__(self, env=None, fh=None):
+    def __init__(self, env=None, fh=None, quiet=False, verbose=False,
+            no_color=False, nosplash=False):
         self.fh = fh or sys.stderr
         self.env = env
+        self.nosplash = nosplash
+        self.quiet = quiet
+        self.verbose = verbose
+        self.no_color = no_color
+        self.prog_name = "celeryd-multi"
         self.commands = {"start": self.start,
                          "show": self.show,
                          "stop": self.stop,
@@ -156,10 +163,6 @@ class MultiTool(object):
         argv = list(argv)   # don't modify callers argv.
 
         # Reserve the --nosplash|--quiet|-q/--verbose options.
-        self.nosplash = False
-        self.quiet = False
-        self.verbose = False
-        self.no_color = False
         if "--nosplash" in argv:
             self.nosplash = argv.pop(argv.index("--nosplash"))
         if "--quiet" in argv:
@@ -171,13 +174,8 @@ class MultiTool(object):
         if "--no-color" in argv:
             self.no_color = argv.pop(argv.index("--no-color"))
 
-        self.colored = term.colored(enabled=not self.no_color)
-        self.OK = str(self.colored.green("OK"))
-        self.FAILED = str(self.colored.red("FAILED"))
-        self.DOWN = str(self.colored.magenta("DOWN"))
-
         self.prog_name = os.path.basename(argv.pop(0))
-        if len(argv) == 0 or argv[0][0] == "-":
+        if not argv or argv[0][0] == "-":
             return self.error()
 
         try:
@@ -318,10 +316,10 @@ class MultiTool(object):
             self.note("Killing node %s (%s)" % (nodename, pid))
             self.signal_node(nodename, pid, signal.SIGKILL)
 
-    def stop(self, argv, cmd):
+    def stop(self, argv, cmd, retry=None, callback=None):
         self.splash()
         p = NamespacedOptionParser(argv)
-        return self._stop_nodes(p, cmd)
+        return self._stop_nodes(p, cmd, retry=retry, callback=callback)
 
     def _stop_nodes(self, p, cmd, retry=None, callback=None):
         restargs = p.args[len(p.values):]
@@ -397,6 +395,22 @@ class MultiTool(object):
     def note(self, msg, newline=True):
         if not self.quiet:
             self.say(str(msg), newline=newline)
+
+    @cached_property
+    def colored(self):
+        return term.colored(enabled=not self.no_color)
+
+    @cached_property
+    def OK(self):
+        return str(self.colored.green("OK"))
+
+    @cached_property
+    def FAILED(self):
+        return str(self.colored.red("FAILED"))
+
+    @cached_property
+    def DOWN(self):
+        return str(self.colored.magenta("DOWN"))
 
 
 def multi_args(p, cmd="celeryd", append="", prefix="", suffix=""):
@@ -501,7 +515,7 @@ def quote(v):
 def format_opt(opt, value):
     if not value:
         return opt
-    if opt[0:2] == "--":
+    if opt.startswith("--"):
         return "%s=%s" % (opt, value)
     return "%s %s" % (opt, value)
 
@@ -532,7 +546,7 @@ def abbreviations(map):
 
 def findsig(args, default=signal.SIGTERM):
     for arg in reversed(args):
-        if len(arg) == 2 and arg[0] == "-" and arg[1].isdigit():
+        if len(arg) == 2 and arg[0] == "-":
             try:
                 return int(arg[1])
             except ValueError:

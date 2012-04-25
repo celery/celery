@@ -17,7 +17,7 @@ __docformat__ = "restructuredtext"
 # Lazy loading
 from .__compat__ import recreate_module
 
-old_module, new_module = recreate_module(__name__,
+old_module, new_module = recreate_module(__name__,  # pragma: no cover
     by_module={
         "celery.app":       ["Celery", "bugreport"],
         "celery.app.state": ["current_app", "current_task"],

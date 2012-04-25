@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
+from celery import current_app
 from celery import backends
 from celery.backends.amqp import AMQPBackend
 from celery.backends.cache import CacheBackend
@@ -28,3 +29,12 @@ class TestBackends(Case):
     def test_unknown_backend(self):
         with self.assertRaises(ValueError):
             backends.get_backend_cls("fasodaopjeqijwqe")
+
+    def test_default_backend(self):
+        self.assertEqual(backends.default_backend, current_app.backend)
+
+    def test_backend_by_url(self, url="redis://localhost/1"):
+        from celery.backends.redis import RedisBackend
+        backend, url_ = backends.get_backend_by_url(url)
+        self.assertIs(backend, RedisBackend)
+        self.assertEqual(url_, url)

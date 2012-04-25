@@ -11,7 +11,7 @@ from pprint import pformat
 from textwrap import wrap
 
 from celery import __version__
-from celery.app import app_or_default, current_app
+from celery.app import app_or_default
 from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
 from celery.utils import term
 from celery.utils.imports import symbol_by_name
@@ -51,6 +51,7 @@ class Command(object):
     help = ""
     args = ""
     version = __version__
+    prog_name = "celery"
 
     option_list = BaseCommand.preload_options + (
         Option("--quiet", "-q", action="store_true", dest="quiet",
@@ -59,9 +60,12 @@ class Command(object):
             help="Don't colorize output."),
     )
 
-    def __init__(self, app=None, no_color=False):
+    def __init__(self, app=None, no_color=False, stdout=sys.stdout,
+            stderr=sys.stderr):
         self.app = app_or_default(app)
         self.colored = term.colored(enabled=not no_color)
+        self.stdout = stdout
+        self.stderr = stderr
 
     def __call__(self, *args, **kwargs):
         try:
@@ -77,13 +81,13 @@ class Command(object):
         return EX_USAGE
 
     def error(self, s):
-        self.out(s, fh=sys.stderr)
+        self.out(s, fh=self.stderr)
 
-    def out(self, s, fh=sys.stdout):
+    def out(self, s, fh=None):
         s = str(s)
         if not s.endswith("\n"):
             s += "\n"
-        fh.write(s)
+        (fh or self.stdout).write(s)
 
     def create_parser(self, prog_name, command):
         return OptionParser(prog=prog_name,
@@ -118,12 +122,13 @@ class Command(object):
 
     def prettify_dict_ok_error(self, n):
         c = self.colored
-        if "ok" in n:
+        try:
             return (c.green("OK"),
                     indent(self.prettify(n["ok"])[1]))
-        elif "error" in n:
-            return (c.red("ERROR"),
-                    indent(self.prettify(n["error"])[1]))
+        except KeyError:
+            pass
+        return (c.red("ERROR"),
+                indent(self.prettify(n["error"])[1]))
 
     def prettify(self, n):
         OK = str(self.colored.green("OK"))
@@ -228,7 +233,7 @@ class apply(Command):
             try:
                 expires = maybe_iso8601(expires)
             except (TypeError, ValueError):
-                pass
+                raise
 
         res = self.app.send_task(name, args=args, kwargs=kwargs,
                                  countdown=kw.get("countdown"),
@@ -245,8 +250,8 @@ apply = command(apply)
 class purge(Command):
 
     def run(self, *args, **kwargs):
-        queues = len(current_app.amqp.queues.keys())
-        messages_removed = current_app.control.discard_all()
+        queues = len(self.app.amqp.queues.keys())
+        messages_removed = self.app.control.discard_all()
         if messages_removed:
             self.out("Purged %s %s from %s known task %s." % (
                 messages_removed, pluralize(messages_removed, "message"),
@@ -355,7 +360,8 @@ class status(Command):
 
     def run(self, *args, **kwargs):
         replies = inspect(app=self.app,
-                          no_color=kwargs.get("no_color", False)) \
+                          no_color=kwargs.get("no_color", False),
+                          stdout=self.stdout, stderr=self.stderr) \
                     .run("ping", **dict(kwargs, quiet=True, show_body=False))
         if not replies:
             raise Error("No nodes replied within time constraint",
@@ -388,7 +394,7 @@ class migrate(Command):
 migrate = command(migrate)
 
 
-class shell(Command):
+class shell(Command):  # pragma: no cover
     option_list = Command.option_list + (
                 Option("--ipython", "-I", action="store_true",
                     dest="force_ipython", default=False,
@@ -499,7 +505,7 @@ help = command(help)
 class report(Command):
 
     def run(self, *args, **kwargs):
-        print(self.app.bugreport())
+        self.out(self.app.bugreport())
         return EX_OK
 report = command(report)
 

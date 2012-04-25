@@ -13,11 +13,10 @@ from __future__ import absolute_import
 
 import sys
 import smtplib
+import traceback
+import warnings
 
-try:
-    from email.mime.text import MIMEText
-except ImportError:
-    from email.MIMEText import MIMEText  # noqa
+from email.mime.text import MIMEText
 
 from .imports import symbol_by_name
 
@@ -53,6 +52,7 @@ class Message(object):
 
 
 class Mailer(object):
+    supports_timeout = supports_timeout
 
     def __init__(self, host="localhost", port=0, user=None, password=None,
             timeout=2, use_ssl=False, use_tls=False):
@@ -64,23 +64,30 @@ class Mailer(object):
         self.use_ssl = use_ssl
         self.use_tls = use_tls
 
-    def send(self, message):
-        if supports_timeout:
-            self._send(message, timeout=self.timeout)
-        else:
-            import socket
-            old_timeout = socket.getdefaulttimeout()
-            socket.setdefaulttimeout(self.timeout)
-            try:
-                self._send(message)
-            finally:
-                socket.setdefaulttimeout(old_timeout)
+    def send(self, message, fail_silently=False):
+        try:
+            if self.supports_timeout:
+                self._send(message, timeout=self.timeout)
+            else:
+                import socket
+                old_timeout = socket.getdefaulttimeout()
+                socket.setdefaulttimeout(self.timeout)
+                try:
+                    self._send(message)
+                finally:
+                    socket.setdefaulttimeout(old_timeout)
+        except Exception, exc:
+            if not fail_silently:
+                raise
+            warnings.warn(SendmailWarning(
+                "Mail could not be sent: %r %r\n%r" % (
+                    exc, {"To": ", ".join(message.to),
+                          "Subject": message.subject},
+                    traceback.format_stack())))
 
     def _send(self, message, **kwargs):
-        if (self.use_ssl):
-            client = smtplib.SMTP_SSL(self.host, self.port, **kwargs)
-        else:
-            client = smtplib.SMTP(self.host, self.port, **kwargs)
+        Client = smtplib.SMTP_SSL if self.use_ssl else smtplib.SMTP
+        client = Client(self.host, self.port, **kwargs)
 
         if self.use_tls:
             client.ehlo()

@@ -40,7 +40,8 @@ DEFAULT_TASK_LOG_FMT = """[%(asctime)s: %(levelname)s/%(processName)s] \
 
 
 def str_to_bool(term, table={"false": False, "no": False, "0": False,
-                             "true":  True, "yes": True,  "1": True}):
+                             "true":  True, "yes": True,  "1": True,
+                             "on":    True, "off": False}):
     try:
         return table[term.lower()]
     except KeyError:
