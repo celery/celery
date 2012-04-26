@@ -94,9 +94,6 @@ class RedisBackend(KeyValueStoreBackend):
     def expire(self, key, value):
         return self.client.expire(key, value)
 
-    def on_chord_apply(self, setid, body, result=None, **kwargs):
-        self.app.TaskSetResult(setid, result).save()
-
     @cached_property
     def client(self):
         pool = self.redis.ConnectionPool(host=self.host, port=self.port,

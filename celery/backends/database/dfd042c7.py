@@ -12,7 +12,7 @@ from sqlalchemy.types import PickleType as _PickleType
 from sqlalchemy import util
 
 
-class PickleType(_PickleType):
+class PickleType(_PickleType):  # pragma: no cover
 
     def process_bind_param(self, value, dialect):
         dumps = self.pickler.dumps

@@ -2,12 +2,12 @@
 """celery.backends.cassandra"""
 from __future__ import absolute_import
 
-try:
+try:  # pragma: no cover
     import pycassa
     from thrift import Thrift
     C = pycassa.cassandra.ttypes
-except ImportError:
-    pycassa = None
+except ImportError:  # pragma: no cover
+    pycassa = None   # noqa
 
 import socket
 import time

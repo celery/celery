@@ -25,7 +25,7 @@ from __future__ import absolute_import
 from sqlalchemy.types import PickleType as _PickleType
 
 
-class PickleType(_PickleType):
+class PickleType(_PickleType):  # pragma: no cover
 
     def bind_processor(self, dialect):
         impl_processor = self.impl.bind_processor(dialect)
