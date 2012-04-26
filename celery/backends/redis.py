@@ -11,7 +11,7 @@ from .base import KeyValueStoreBackend
 try:
     import redis
     from redis.exceptions import ConnectionError
-except ImportError:
+except ImportError:         # pragma: no cover
     redis = None            # noqa
     ConnectionError = None  # noqa
 
