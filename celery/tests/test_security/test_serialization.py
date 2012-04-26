@@ -11,7 +11,7 @@ from . import CERT1, CERT2, KEY1, KEY2
 from .case import SecurityCase
 
 
-class TestSecureSerializer(SecurityCase):
+class test_SecureSerializer(SecurityCase):
 
     def _get_s(self, key, cert, certs):
         store = CertStore()

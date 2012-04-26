@@ -7,7 +7,7 @@ from . import CERT1, KEY1, KEY2
 from .case import SecurityCase
 
 
-class TestKey(SecurityCase):
+class test_PrivateKey(SecurityCase):
 
     def test_valid_private_key(self):
         PrivateKey(KEY1)

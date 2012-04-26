@@ -85,7 +85,7 @@ WWZybzzDZFncq1/N1C3Y/hrCBNDFO4TsnTLAhWtZ4c0vDAiacw==
 -----END CERTIFICATE-----"""
 
 
-class TestSecurity(SecurityCase):
+class test_security(SecurityCase):
 
     def tearDown(self):
         registry._disabled_content_types.clear()
