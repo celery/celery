@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import with_statement
 
 import os
 import sys
@@ -120,4 +121,3 @@ class test_Timer(Case):
         x.schedule.GreenletExit = KeyError
         tref.cancel.side_effect = KeyError()
         x.cancel(tref)
-
