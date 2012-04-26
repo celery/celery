@@ -11,7 +11,7 @@ class MockWindow(object):
         return self.y, self.x
 
 
-class TestCursesDisplay(Case):
+class test_CursesDisplay(Case):
 
     def setUp(self):
         try:

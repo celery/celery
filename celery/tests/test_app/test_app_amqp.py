@@ -7,7 +7,7 @@ from celery.app.amqp import MSG_OPTIONS, extract_msg_options
 from celery.tests.utils import AppCase
 
 
-class TestMsgOptions(AppCase):
+class test_extract_message_options(AppCase):
 
     def test_MSG_OPTIONS(self):
         self.assertTrue(MSG_OPTIONS)

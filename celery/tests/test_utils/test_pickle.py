@@ -15,7 +15,7 @@ class ArgOverrideException(Exception):
         Exception.__init__(self, message, status_code)
 
 
-class TestPickle(Case):
+class test_Pickle(Case):
 
     def test_pickle_regular_exception(self):
         exc = None

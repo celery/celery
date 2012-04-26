@@ -27,7 +27,7 @@ MONGODB_DATABASE = "testing"
 MONGODB_COLLECTION = "collection1"
 
 
-class TestBackendMongoDb(Case):
+class test_MongoBackend(Case):
 
     def setUp(self):
         if pymongo is None:

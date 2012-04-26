@@ -10,7 +10,7 @@ class MyAbortableTask(AbortableTask):
         return True
 
 
-class TestAbortableTask(Case):
+class test_AbortableTask(Case):
 
     def test_async_result_is_abortable(self):
         t = MyAbortableTask()

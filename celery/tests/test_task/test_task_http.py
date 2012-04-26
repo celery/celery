@@ -53,7 +53,7 @@ def unknown_response():
     return _response(dumps({"status": "u.u.u.u", "retval": True}))
 
 
-class TestEncodings(Case):
+class test_encodings(Case):
 
     def test_utf8dict(self):
         uk = "foobar"
@@ -65,7 +65,7 @@ class TestEncodings(Case):
             self.assertIsInstance(value, str)
 
 
-class TestMutableURL(Case):
+class test_MutableURL(Case):
 
     def test_url_query(self):
         url = http.MutableURL("http://example.com?x=10&y=20&z=Foo")
@@ -97,7 +97,7 @@ class TestMutableURL(Case):
         self.assertEqual(url.query, {"zzz": "xxx"})
 
 
-class TestHttpDispatch(Case):
+class test_HttpDispatch(Case):
 
     def test_dispatch_success(self):
         logger = logging.getLogger("celery.unittest")
@@ -152,7 +152,7 @@ class TestHttpDispatch(Case):
             self.assertEqual(d.dispatch(), 100)
 
 
-class TestURL(Case):
+class test_URL(Case):
 
     def test_URL_get_async(self):
         with eager_tasks():

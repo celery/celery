@@ -106,7 +106,7 @@ def retry_task_customexc(arg1, arg2, kwarg=1, **kwargs):
             return current.retry(countdown=0, exc=exc)
 
 
-class TestTaskRetries(Case):
+class test_task_retries(Case):
 
     def test_retry(self):
         retry_task.__class__.max_retries = 3
@@ -182,7 +182,7 @@ class TestTaskRetries(Case):
         self.assertEqual(retry_task.iterations, 2)
 
 
-class TestCeleryTasks(Case):
+class test_tasks(Case):
 
     def test_unpickle_task(self):
         import pickle
@@ -383,7 +383,7 @@ class TestCeleryTasks(Case):
         self.assertTrue(logger)
 
 
-class TestTaskSet(Case):
+class test_TaskSet(Case):
 
     @with_eager_tasks
     def test_function_taskset(self):
@@ -430,7 +430,7 @@ class TestTaskSet(Case):
         self.assertTrue(res.taskset_id.startswith(prefix))
 
 
-class TestTaskApply(Case):
+class test_apply_task(Case):
 
     def test_apply_throw(self):
         with self.assertRaises(KeyError):
@@ -474,7 +474,7 @@ def my_periodic():
     pass
 
 
-class TestPeriodicTask(Case):
+class test_periodic_tasks(Case):
 
     def test_must_have_run_every(self):
         with self.assertRaises(NotImplementedError):

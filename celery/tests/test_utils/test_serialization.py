@@ -6,7 +6,7 @@ import sys
 from celery.tests.utils import Case, mask_modules
 
 
-class TestAAPickle(Case):
+class test_AAPickle(Case):
 
     def test_no_cpickle(self):
         prev = sys.modules.pop("celery.utils.serialization", None)

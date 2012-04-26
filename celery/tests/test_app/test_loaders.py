@@ -44,7 +44,7 @@ class DummyLoader(base.BaseLoader):
         return {"foo": "bar", "CELERY_IMPORTS": ("os", "sys")}
 
 
-class TestLoaders(AppCase):
+class test_loaders(AppCase):
 
     def test_get_loader_cls(self):
 
@@ -62,7 +62,7 @@ class TestLoaders(AppCase):
             self.assertIs(loaders.load_settings(), self.app.conf)
 
 
-class TestLoaderBase(Case):
+class test_LoaderBase(Case):
     message_options = {"subject": "Subject",
                        "body": "Body",
                        "sender": "x@x.com",
@@ -135,7 +135,7 @@ class TestLoaderBase(Case):
             self.loader.cmdline_config_parser(["broker.port=foobar"])
 
 
-class TestDefaultLoader(Case):
+class test_DefaultLoader(Case):
 
     def test_wanted_module_item(self):
         l = default.Loader()

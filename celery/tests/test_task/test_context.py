@@ -37,7 +37,7 @@ class ContextManipulator(threading.Thread):
         self.result = get_context_as_dict(self.ctx)
 
 
-class TestTaskContext(Case):
+class test_Context(Case):
 
     def test_default_context(self):
         # A bit of a tautological test, since it uses the same

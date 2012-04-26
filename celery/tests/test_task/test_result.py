@@ -42,7 +42,7 @@ def make_mock_taskset(size=10):
     return [AsyncResult(task["id"]) for task in tasks]
 
 
-class TestAsyncResult(AppCase):
+class test_AsyncResult(AppCase):
 
     def setup(self):
         self.task1 = mock_task("task1", states.SUCCESS, "the")
@@ -221,7 +221,7 @@ class SimpleBackend(object):
             return ((id, {"result": i}) for i, id in enumerate(self.ids))
 
 
-class TestTaskSetResult(AppCase):
+class test_TaskSetResult(AppCase):
 
     def setup(self):
         self.size = 10
@@ -341,7 +341,7 @@ class TestTaskSetResult(AppCase):
         self.assertEqual(self.ts.completed_count(), len(self.ts))
 
 
-class TestPendingAsyncResult(AppCase):
+class test_pending_AsyncResult(AppCase):
 
     def setup(self):
         self.task = AsyncResult(uuid())
@@ -350,7 +350,7 @@ class TestPendingAsyncResult(AppCase):
         self.assertIsNone(self.task.result)
 
 
-class TestFailedTaskSetResult(TestTaskSetResult):
+class test_failed_AsyncResult(TestTaskSetResult):
 
     def setup(self):
         self.size = 11
@@ -394,7 +394,7 @@ class TestFailedTaskSetResult(TestTaskSetResult):
         self.assertTrue(self.ts.failed())
 
 
-class TestTaskSetPending(AppCase):
+class test_pending_TaskSet(AppCase):
 
     def setup(self):
         self.ts = TaskSetResult(uuid(), [
@@ -426,7 +426,7 @@ class RaisingTask(Task):
         raise KeyError("xy")
 
 
-class TestEagerResult(AppCase):
+class test_EagerResult(AppCase):
 
     def test_wait_raises(self):
         res = RaisingTask.apply(args=[3, 3])

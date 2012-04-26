@@ -6,14 +6,14 @@ from celery.task import Task, PeriodicTask
 from celery.tests.utils import Case
 
 
-class TestTask(Task):
+class MockTask(Task):
     name = "celery.unittest.test_task"
 
     def run(self, **kwargs):
         return True
 
 
-class TestPeriodicTask(PeriodicTask):
+class MockPeriodicTask(PeriodicTask):
     name = "celery.unittest.test_periodic_task"
     run_every = 10
 
@@ -21,7 +21,7 @@ class TestPeriodicTask(PeriodicTask):
         return True
 
 
-class TestTaskRegistry(Case):
+class test_TaskRegistry(Case):
 
     def assertRegisterUnregisterCls(self, r, task):
         with self.assertRaises(r.NotRegistered):
@@ -40,27 +40,27 @@ class TestTaskRegistry(Case):
         self.assertIsInstance(r, dict,
                 "TaskRegistry is mapping")
 
-        self.assertRegisterUnregisterCls(r, TestTask)
-        self.assertRegisterUnregisterCls(r, TestPeriodicTask)
+        self.assertRegisterUnregisterCls(r, MockTask)
+        self.assertRegisterUnregisterCls(r, MockPeriodicTask)
 
-        r.register(TestPeriodicTask)
-        r.unregister(TestPeriodicTask.name)
-        self.assertNotIn(TestPeriodicTask, r)
-        r.register(TestPeriodicTask)
+        r.register(MockPeriodicTask)
+        r.unregister(MockPeriodicTask.name)
+        self.assertNotIn(MockPeriodicTask, r)
+        r.register(MockPeriodicTask)
 
         tasks = dict(r)
-        self.assertIsInstance(tasks.get(TestTask.name), TestTask)
-        self.assertIsInstance(tasks.get(TestPeriodicTask.name),
-                                   TestPeriodicTask)
+        self.assertIsInstance(tasks.get(MockTask.name), MockTask)
+        self.assertIsInstance(tasks.get(MockPeriodicTask.name),
+                                   MockPeriodicTask)
 
-        self.assertIsInstance(r[TestTask.name], TestTask)
-        self.assertIsInstance(r[TestPeriodicTask.name],
-                                   TestPeriodicTask)
+        self.assertIsInstance(r[MockTask.name], MockTask)
+        self.assertIsInstance(r[MockPeriodicTask.name],
+                                   MockPeriodicTask)
 
-        r.unregister(TestTask)
-        self.assertNotIn(TestTask.name, r)
-        r.unregister(TestPeriodicTask)
-        self.assertNotIn(TestPeriodicTask.name, r)
+        r.unregister(MockTask)
+        self.assertNotIn(MockTask.name, r)
+        r.unregister(MockPeriodicTask)
+        self.assertNotIn(MockPeriodicTask.name, r)
 
-        self.assertTrue(TestTask().run())
-        self.assertTrue(TestPeriodicTask().run())
+        self.assertTrue(MockTask().run())
+        self.assertTrue(MockPeriodicTask().run())

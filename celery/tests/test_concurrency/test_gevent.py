@@ -14,6 +14,13 @@ from celery.concurrency.gevent import (
 )
 
 from celery.tests.utils import Case, mock_module
+gevent_modules = (
+    "gevent",
+    "gevent.monkey",
+    "gevent.greenlet",
+    "gevent.pool",
+    "greenlet",
+)
 
 
 class GeventCase(Case):
@@ -31,38 +38,32 @@ class GeventCase(Case):
 class test_gevent_patch(GeventCase):
 
     def test_is_patched(self):
-        monkey_patched = []
-        from gevent import monkey
-        prev_monkey_patch = monkey.patch_all
-        monkey.patch_all = lambda: monkey_patched.append(True)
-        prev_gevent = sys.modules.pop("celery.concurrency.gevent", None)
-        os.environ.pop("GEVENT_NOPATCH")
-        try:
-            import celery.concurrency.gevent  # noqa
-            self.assertTrue(monkey_patched)
-        finally:
-            sys.modules["celery.concurrency.gevent"] = prev_gevent
-            os.environ["GEVENT_NOPATCH"] = "yes"
-            monkey.patch_all = prev_monkey_patch
-
-
-gevent_modules = (
-    "gevent",
-    "gevent.monkey",
-    "gevent.greenlet",
-    "gevent.pool",
-    "greenlet",
-)
+        with mock_module(*gevent_modules):
+            monkey_patched = []
+            from gevent import monkey
+            prev_monkey_patch = monkey.patch_all
+            monkey.patch_all = lambda: monkey_patched.append(True)
+            prev_gevent = sys.modules.pop("celery.concurrency.gevent", None)
+            os.environ.pop("GEVENT_NOPATCH")
+            try:
+                import celery.concurrency.gevent  # noqa
+                self.assertTrue(monkey_patched)
+            finally:
+                sys.modules["celery.concurrency.gevent"] = prev_gevent
+                os.environ["GEVENT_NOPATCH"] = "yes"
+                monkey.patch_all = prev_monkey_patch
 
 
 class test_Schedule(Case):
 
     def test_sched(self):
         with mock_module(*gevent_modules):
-            @patch("gevent.greenlet.Greenlet")
+            @patch("gevent.greenlet")
             @patch("gevent.greenlet.GreenletExit")
-            def do_test(Greenlet, GreenletExit):
+            def do_test(GreenletExit, greenlet):
+                greenlet.Greenlet = object
                 x = Schedule()
+                greenlet.Greenlet = Mock()
                 x._Greenlet.spawn_later = Mock()
                 x._GreenletExit = KeyError
                 entry = Mock()

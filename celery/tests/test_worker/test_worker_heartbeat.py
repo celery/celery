@@ -45,7 +45,7 @@ class MockTimer(object):
         entry.cancel()
 
 
-class TestHeart(Case):
+class test_Heart(Case):
 
     def test_stop(self):
         timer = MockTimer()

@@ -29,7 +29,7 @@ class MockProducer(object):
         return False
 
 
-class TestEvent(Case):
+class test_Event(Case):
 
     def test_constructor(self):
         event = events.Event("world war II")
@@ -37,7 +37,7 @@ class TestEvent(Case):
         self.assertTrue(event["timestamp"])
 
 
-class TestEventDispatcher(Case):
+class test_EventDispatcher(Case):
 
     def setUp(self):
         self.app = app_or_default()
@@ -99,7 +99,7 @@ class TestEventDispatcher(Case):
             connection.close()
 
 
-class TestEventReceiver(Case):
+class test_EventReceiver(Case):
 
     def setUp(self):
         self.app = app_or_default()

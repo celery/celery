@@ -4,7 +4,7 @@ from celery.tests.utils import Case
 import celery
 
 
-class TestInitFile(Case):
+class test_celery_package(Case):
 
     def test_version(self):
         self.assertTrue(celery.VERSION)

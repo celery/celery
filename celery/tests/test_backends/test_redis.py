@@ -56,7 +56,7 @@ def get_redis_or_SkipTest():
         return emit_no_redis_msg("not configured")
 
 
-class TestRedisBackend(Case):
+class test_RedisBackend(Case):
 
     def test_mark_as_done(self):
         tb = get_redis_or_SkipTest()
@@ -94,7 +94,7 @@ class TestRedisBackend(Case):
         self.assertIsInstance(tb.get_result(tid3), KeyError)
 
 
-class TestRedisBackendNoRedis(Case):
+class test_RedisBackend_without_redis(Case):
 
     def test_redis_None_if_redis_not_installed(self):
         prev = sys.modules.pop("celery.backends.redis")

@@ -8,7 +8,7 @@ from celery.backends.cache import CacheBackend
 from celery.tests.utils import Case
 
 
-class TestBackends(Case):
+class test_backends(Case):
 
     def test_get_backend_aliases(self):
         expects = [("amqp", AMQPBackend),

@@ -25,7 +25,7 @@ def raise_something(i):
         return ExceptionInfo(sys.exc_info())
 
 
-class TestTaskPool(Case):
+class test_TaskPool(Case):
 
     def setUp(self):
         try:
