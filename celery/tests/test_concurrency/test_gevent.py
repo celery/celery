@@ -5,7 +5,7 @@ import os
 import sys
 
 from nose import SkipTest
-from mock import patch, Mock
+from mock import Mock
 
 from celery.concurrency.gevent import (
     Schedule,

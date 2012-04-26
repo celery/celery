@@ -335,6 +335,7 @@ class AMQP(object):
         queues."""
         return self.ConsumerSet(connection,
                                 from_dict=queues or self.queues.consume_from,
+                                channel=connection.default_channel,
                                 **kwargs)
 
     def get_default_queue(self):

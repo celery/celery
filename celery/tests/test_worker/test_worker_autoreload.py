@@ -20,7 +20,7 @@ from celery.worker.autoreload import (
     Autoreloader,
 )
 
-from celery.tests.utils import AppCase, Case, WhateverIO, mock_open
+from celery.tests.utils import AppCase, Case, mock_open
 
 
 class test_WorkerComponent(AppCase):

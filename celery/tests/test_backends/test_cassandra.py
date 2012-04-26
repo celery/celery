@@ -3,7 +3,7 @@ from __future__ import with_statement
 
 import socket
 
-from mock import Mock, patch
+from mock import Mock
 from pickle import loads, dumps
 
 from celery import Celery
@@ -96,6 +96,7 @@ class test_CassandraBackend(AppCase):
 
             calls = [0]
             end = [10]
+
             def work_eventually(*arg):
                 try:
                     if calls[0] > end[0]:

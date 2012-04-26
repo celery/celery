@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from celery.contrib.abortable import AbortableTask, AbortableAsyncResult
+from celery.result import AsyncResult
 from celery.tests.utils import Case
 
 
@@ -23,6 +24,12 @@ class test_AbortableTask(Case):
         result = t.apply_async()
         tid = result.id
         self.assertFalse(t.is_aborted(task_id=tid))
+
+    def test_is_aborted_not_abort_result(self):
+        t = MyAbortableTask()
+        t.AsyncResult = AsyncResult
+        t.request.id = "foo"
+        self.assertFalse(t.is_aborted())
 
     def test_abort_yields_aborted(self):
         t = MyAbortableTask()

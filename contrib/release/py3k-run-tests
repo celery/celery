@@ -9,17 +9,8 @@ nosetests -vd celery.tests                                      \
             --cover3-html-dir="$base/cover"                     \
             --cover3-package=celery                             \
             --cover3-exclude="                                  \
-              celery                                            \
               celery.tests.*                                    \
               celery.utils.compat                               \
-              celery.utils.dispatch*                            \
-              celery.db.a805d4bd                                \
-              celery.db.dfd042c7                                \
-              celery.contrib*                                   \
-              celery.concurrency.threads                        \
-              celery.concurrency.gevent                         \
-              celery.backends.mongodb                           \
-              celery.backends.cassandra                         \
-              celery.events.cursesmon"                          \
+              celery.utils.dispatch*"                           \
             --with-xunit                                        \
               --xunit-file="$base/nosetests.xml"

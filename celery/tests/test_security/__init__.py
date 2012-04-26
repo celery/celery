@@ -125,6 +125,7 @@ class test_security(SecurityCase):
     @patch("celery.security.disable_untrusted_serializers")
     def test_setup_registry_complete(self, dis, reg, key="KEY", cert="CERT"):
         calls = [0]
+
         def effect(*args):
             try:
                 m = Mock()
@@ -138,7 +139,6 @@ class test_security(SecurityCase):
             setup_security(["json"], key, cert, store)
             dis.assert_called_with(["json"])
             reg.assert_called_with("A", "B", store)
-
 
     def test_security_conf(self):
         current_app.conf.CELERY_TASK_SERIALIZER = 'auth'
