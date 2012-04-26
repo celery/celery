@@ -480,9 +480,8 @@ class create_pidlock(object):
 
 
 @contextmanager
-def mock_module(name):
-
-    prev = sys.modules.get(name)
+def mock_module(*names):
+    prev = {}
 
     class MockModule(ModuleType):
 
@@ -490,7 +489,12 @@ def mock_module(name):
             setattr(self, attr, Mock())
             return ModuleType.__getattribute__(self, attr)
 
-    mod = sys.modules[name] = MockModule(name)
-    yield mod
-    if prev:
-        sys.modules[name] = prev
+    mods = []
+    for name in names:
+        prev[name] = sys.modules.get(name)
+        mod = sys.modules[name] = MockModule(name)
+        mods.append(mod)
+    yield mods
+    for name in names:
+        if prev[name]:
+            sys.modules[name] = prev[name]
