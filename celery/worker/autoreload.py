@@ -27,7 +27,7 @@ from .abstract import StartStopComponent
 try:
     import pyinotify
     _ProcessEvent = pyinotify.ProcessEvent
-except ImportError:
+except ImportError:         # pragma: no cover
     pyinotify = None        # noqa
     _ProcessEvent = object  # noqa
 
@@ -137,7 +137,7 @@ class KQueueMonitor(BaseMonitor):
     def stop(self):
         self._kq.close()
         for fd in filter(None, self.filemap.values()):
-            with ignore_EBADF:
+            with ignore_EBADF():
                 os.close(fd)
             self.filemap[fd] = None
         self.filemap.clear()

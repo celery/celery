@@ -21,8 +21,9 @@ try:
 except ImportError:  # py3k
     import builtins  # noqa
 
-from functools import partial, wraps
 from contextlib import contextmanager
+from functools import partial, wraps
+from types import ModuleType
 
 import mock
 from nose import SkipTest
@@ -450,8 +451,6 @@ def reset_modules(*modules):
 
 @contextmanager
 def patch_modules(*modules):
-    from types import ModuleType
-
     prev = {}
     for mod in modules:
         prev[mod], sys.modules[mod] = sys.modules[mod], ModuleType(mod)
@@ -478,3 +477,20 @@ class create_pidlock(object):
                 pass
 
         return Object()
+
+
+@contextmanager
+def mock_module(name):
+
+    prev = sys.modules.get(name)
+
+    class MockModule(ModuleType):
+
+        def __getattr__(self, attr):
+            setattr(self, attr, Mock())
+            return ModuleType.__getattribute__(self, attr)
+
+    mod = sys.modules[name] = MockModule(name)
+    yield mod
+    if prev:
+        sys.modules[name] = prev

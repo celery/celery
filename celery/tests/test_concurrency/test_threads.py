@@ -1,15 +1,11 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-import sys
-
-from contextlib import contextmanager
 from mock import Mock
-from types import ModuleType
 
 from celery.concurrency.threads import NullDict, TaskPool, apply_target
 
-from celery.tests.utils import Case, mask_modules
+from celery.tests.utils import Case, mask_modules, mock_module
 
 
 class test_NullDict(Case):
@@ -21,18 +17,6 @@ class test_NullDict(Case):
             x["foo"]
 
 
-@contextmanager
-def threadpool_module():
-
-    prev = sys.modules.get("threadpool")
-    tp = sys.modules["threadpool"] = ModuleType("threadpool")
-    tp.WorkRequest = Mock()
-    tp.ThreadPool = Mock()
-    yield tp
-    if prev:
-        sys.modules["threadpool"] = prev
-
-
 class test_TaskPool(Case):
 
     def test_without_threadpool(self):
@@ -42,27 +26,27 @@ class test_TaskPool(Case):
                 TaskPool()
 
     def test_with_threadpool(self):
-        with threadpool_module():
+        with mock_module("threadpool"):
             x = TaskPool()
             self.assertTrue(x.ThreadPool)
             self.assertTrue(x.WorkRequest)
 
     def test_on_start(self):
-        with threadpool_module():
+        with mock_module("threadpool"):
             x = TaskPool()
             x.on_start()
             self.assertTrue(x._pool)
             self.assertIsInstance(x._pool.workRequests, NullDict)
 
     def test_on_stop(self):
-        with threadpool_module():
+        with mock_module("threadpool"):
             x = TaskPool()
             x.on_start()
             x.on_stop()
             x._pool.dismissWorkers.assert_called_with(x.limit, do_join=True)
 
     def test_on_apply(self):
-        with threadpool_module():
+        with mock_module("threadpool"):
             x = TaskPool()
             x.on_start()
             callback = Mock()
