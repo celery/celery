@@ -6,8 +6,8 @@ from datetime import datetime
 
 try:
     import pymongo
-except ImportError:
-    pymongo = None  # noqa
+except ImportError:  # pragma: no cover
+    pymongo = None   # noqa
 
 from kombu.utils import cached_property
 
@@ -18,7 +18,7 @@ from celery.utils.timeutils import maybe_timedelta
 from .base import BaseDictBackend
 
 
-class Bunch:
+class Bunch(object):
 
     def __init__(self, **kw):
         self.__dict__.update(kw)

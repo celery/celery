@@ -35,8 +35,11 @@ TIMESTAMP_WIDTH = 8
 MIN_WORKER_WIDTH = 15
 MIN_TASK_WIDTH = 16
 
+# this module is considered experimental
+# we don't care about coverage.
 
-class CursesMonitor(object):
+
+class CursesMonitor(object):  # pragma: no cover
     keymap = {}
     win = None
     screen_width = None
@@ -459,7 +462,7 @@ class CursesMonitor(object):
                         if w.alive]
 
 
-class DisplayThread(threading.Thread):
+class DisplayThread(threading.Thread):  # pragma: no cover
 
     def __init__(self, display):
         self.display = display
@@ -472,7 +475,7 @@ class DisplayThread(threading.Thread):
             self.display.nap()
 
 
-def capture_events(app, state, display):
+def capture_events(app, state, display):  # pragma: no cover
 
     def on_connection_error(exc, interval):
         sys.stderr.write("Connection Error: %r. Retry in %ss." % (
@@ -493,7 +496,7 @@ def capture_events(app, state, display):
                 sys.stderr.write("Connection lost: %r" % (exc, ))
 
 
-def evtop(app=None):
+def evtop(app=None):  # pragma: no cover
     app = app_or_default(app)
     state = app.events.State()
     display = CursesMonitor(state, app=app)
@@ -513,5 +516,5 @@ def evtop(app=None):
         display.resetscreen()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     evtop()

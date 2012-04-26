@@ -1,14 +1,19 @@
 from __future__ import absolute_import
+from __future__ import with_statement
 
 import datetime
 import uuid
 
 from mock import MagicMock, Mock, patch, sentinel
 from nose import SkipTest
+from pickle import loads, dumps
 
+from celery import Celery
 from celery import states
-from celery.backends.mongodb import MongoBackend
-from celery.tests.utils import Case
+from celery.backends import mongodb as module
+from celery.backends.mongodb import MongoBackend, Bunch
+from celery.exceptions import ImproperlyConfigured
+from celery.tests.utils import AppCase
 
 
 try:
@@ -27,7 +32,7 @@ MONGODB_DATABASE = "testing"
 MONGODB_COLLECTION = "collection1"
 
 
-class test_MongoBackend(Case):
+class test_MongoBackend(AppCase):
 
     def setUp(self):
         if pymongo is None:
@@ -49,22 +54,54 @@ class test_MongoBackend(Case):
         binary.Binary = self._reset["Binary"]
         datetime.datetime = self._reset["datetime"]
 
+    def test_Bunch(self):
+        x = Bunch(foo="foo", bar=2)
+        self.assertEqual(x.foo, "foo")
+        self.assertEqual(x.bar, 2)
+
+    def test_init_no_mongodb(self):
+        prev, module.pymongo = module.pymongo, None
+        try:
+            with self.assertRaises(ImproperlyConfigured):
+                MongoBackend()
+        finally:
+            module.pymongo = prev
+
+    def test_init_no_settings(self):
+        celery = Celery(set_as_current=False)
+        celery.conf.CELERY_MONGODB_BACKEND_SETTINGS = []
+        with self.assertRaises(ImproperlyConfigured):
+            MongoBackend(app=celery)
+
+    def test_init_settings_is_None(self):
+        celery = Celery(set_as_current=False)
+        celery.conf.CELERY_MONGODB_BACKEND_SETTINGS = None
+        MongoBackend(app=celery)
+
+    def test_restore_taskset_no_entry(self):
+        x = MongoBackend()
+        x.collection = Mock()
+        fo = x.collection.find_one = Mock()
+        fo.return_value = None
+        self.assertIsNone(x._restore_taskset("1f3fab"))
+
+    def test_reduce(self):
+        x = MongoBackend()
+        self.assertTrue(loads(dumps(x)))
+
     def test_get_connection_connection_exists(self):
 
-        @patch("pymongo.connection.Connection")
-        def do_test(mock_Connection):
+        with patch("pymongo.connection.Connection") as mock_Connection:
             self.backend._connection = sentinel._connection
 
             connection = self.backend._get_connection()
 
             self.assertEquals(sentinel._connection, connection)
             self.assertFalse(mock_Connection.called)
-        do_test()
 
     def test_get_connection_no_connection_host(self):
 
-        @patch("pymongo.connection.Connection")
-        def do_test(mock_Connection):
+        with patch("pymongo.connection.Connection") as mock_Connection:
             self.backend._connection = None
             self.backend.mongodb_host = MONGODB_HOST
             self.backend.mongodb_port = MONGODB_PORT
@@ -74,12 +111,10 @@ class test_MongoBackend(Case):
             mock_Connection.assert_called_once_with(
                 MONGODB_HOST, MONGODB_PORT)
             self.assertEquals(sentinel.connection, connection)
-        do_test()
 
     def test_get_connection_no_connection_mongodb_uri(self):
 
-        @patch("pymongo.connection.Connection")
-        def do_test(mock_Connection):
+        with patch("pymongo.connection.Connection") as mock_Connection:
             mongodb_uri = "mongodb://%s:%d" % (MONGODB_HOST, MONGODB_PORT)
             self.backend._connection = None
             self.backend.mongodb_host = mongodb_uri
@@ -89,7 +124,6 @@ class test_MongoBackend(Case):
             connection = self.backend._get_connection()
             mock_Connection.assert_called_once_with(mongodb_uri)
             self.assertEquals(sentinel.connection, connection)
-        do_test()
 
     @patch("celery.backends.mongodb.MongoBackend._get_connection")
     def test_get_database_no_existing(self, mock_get_connection):
@@ -280,3 +314,16 @@ class test_MongoBackend(Case):
         mock_database.__getitem__.assert_called_once_with(
             MONGODB_COLLECTION)
         mock_collection.assert_called_once()
+
+    def test_get_database_authfailure(self):
+        x = MongoBackend()
+        x._get_connection = Mock()
+        conn = x._get_connection.return_value = {}
+        db = conn[x.mongodb_database] = Mock()
+        db.authenticate.return_value = False
+        x.mongodb_user = "jerry"
+        x.mongodb_password = "cere4l"
+        with self.assertRaises(ImproperlyConfigured):
+            x._get_database()
+        db.authenticate.assert_called_with("jerry", "cere4l")
+

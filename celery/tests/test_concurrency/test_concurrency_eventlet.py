@@ -14,7 +14,7 @@ from celery.concurrency.eventlet import (
     TaskPool,
 )
 
-from celery.tests.utils import Case, mock_module
+from celery.tests.utils import Case, mock_module, patch_many
 
 
 class EventletCase(Case):
@@ -59,9 +59,9 @@ class test_Schedule(Case):
 
     def test_sched(self):
         with mock_module(*eventlet_modules):
-            @patch("eventlet.greenthread.spawn_after")
-            @patch("greenlet.GreenletExit")
-            def do_test(GreenletExit, spawn_after):
+            with patch_many("eventlet.greenthread.spawn_after",
+                            "greenlet.GreenletExit") as (spawn_after,
+                                                         GreenletExit):
                 x = Schedule()
                 x.GreenletExit = KeyError
                 entry = Mock()
@@ -80,16 +80,14 @@ class test_Schedule(Case):
                 g.cancel.side_effect = KeyError()
                 x.clear()
 
-            do_test()
-
 
 class test_TasKPool(Case):
 
     def test_pool(self):
         with mock_module(*eventlet_modules):
-            @patch("eventlet.greenpool.GreenPool")
-            @patch("eventlet.greenthread")
-            def do_test(greenthread, GreenPool):
+            with patch_many("eventlet.greenpool.GreenPool",
+                            "eventlet.greenthread") as (GreenPool,
+                                                        greenthread):
                 x = TaskPool()
                 x.on_start()
                 x.on_stop()
@@ -97,8 +95,6 @@ class test_TasKPool(Case):
                 x._pool = None
                 x.on_stop()
                 self.assertTrue(x.getpid())
-
-            do_test()
 
     @patch("celery.concurrency.eventlet.base")
     def test_apply_target(self, base):

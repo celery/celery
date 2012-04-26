@@ -13,7 +13,7 @@ from celery.concurrency.gevent import (
     TaskPool,
 )
 
-from celery.tests.utils import Case, mock_module
+from celery.tests.utils import Case, mock_module, patch_many
 gevent_modules = (
     "gevent",
     "gevent.monkey",
@@ -58,9 +58,9 @@ class test_Schedule(Case):
 
     def test_sched(self):
         with mock_module(*gevent_modules):
-            @patch("gevent.greenlet")
-            @patch("gevent.greenlet.GreenletExit")
-            def do_test(GreenletExit, greenlet):
+            with patch_many("gevent.greenlet",
+                    "gevent.greenlet.GreenletExit") as (greenlet,
+                                                        GreenletExit):
                 greenlet.Greenlet = object
                 x = Schedule()
                 greenlet.Greenlet = Mock()
@@ -80,16 +80,13 @@ class test_Schedule(Case):
                 g.kill.side_effect = KeyError()
                 x.clear()
 
-            do_test()
-
 
 class test_TasKPool(Case):
 
     def test_pool(self):
         with mock_module(*gevent_modules):
-            @patch("gevent.spawn_raw")
-            @patch("gevent.pool.Pool")
-            def do_test(Pool, spawn_raw):
+            with patch_many("gevent.spawn_raw", "gevent.pool.Pool") as (
+                    spawn_raw, Pool):
                 x = TaskPool()
                 x.on_start()
                 x.on_stop()
@@ -109,7 +106,6 @@ class test_TasKPool(Case):
 
                 x._pool = [4, 5, 6]
                 self.assertEqual(x.num_processes, 3)
-            do_test()
 
 
 class test_Timer(Case):

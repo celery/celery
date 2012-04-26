@@ -28,6 +28,7 @@ from types import ModuleType
 import mock
 from nose import SkipTest
 from kombu.log import NullHandler
+from kombu.utils import nested
 
 from ..app import app_or_default
 from ..utils.compat import WhateverIO
@@ -524,3 +525,6 @@ def mock_open(typ=WhateverIO, side_effect=None):
             val = context.__enter__.return_value = typ()
             yield val
 
+
+def patch_many(*targets):
+    return nested(*[mock.patch(target) for target in targets])
