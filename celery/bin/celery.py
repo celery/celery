@@ -513,6 +513,7 @@ report = command(report)
 class CeleryCommand(BaseCommand):
     commands = commands
     enable_config_from_cmdline = True
+    prog_name = "celery"
 
     def execute(self, command, argv=None):
         try:

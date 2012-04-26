@@ -18,7 +18,6 @@ from celery.bin.celery import (
     inspect,
     status,
     migrate,
-    shell,
     help,
     report,
     CeleryCommand,
@@ -238,3 +237,107 @@ class test_help(AppCase):
         self.assertTrue(out.getvalue())
         self.assertTrue(h.usage("help"))
         h.parser.print_help.assert_called_with()
+
+
+class test_CeleryCommand(AppCase):
+
+    def test_execute_from_commandline(self):
+        x = CeleryCommand(app=self.app)
+        x.handle_argv = Mock()
+        x.handle_argv.return_value = 1
+        with self.assertRaises(SystemExit):
+            x.execute_from_commandline()
+
+        x.handle_argv.return_value = True
+        with self.assertRaises(SystemExit):
+            x.execute_from_commandline()
+
+        x.handle_argv.side_effect = KeyboardInterrupt()
+        with self.assertRaises(SystemExit):
+            x.execute_from_commandline()
+
+    def test_determine_exit_status(self):
+        self.assertEqual(determine_exit_status("true"), EX_OK)
+        self.assertEqual(determine_exit_status(""), EX_FAILURE)
+
+    def test_remove_options_at_beginning(self):
+        x = CeleryCommand(app=self.app)
+        self.assertEqual(x.remove_options_at_beginning(None), [])
+        self.assertEqual(x.remove_options_at_beginning(["-c 3", "--foo"]), [])
+        self.assertEqual(x.remove_options_at_beginning(["--foo", "-c 3"]), [])
+        self.assertEqual(x.remove_options_at_beginning(
+            ["foo", "--foo=1"]), ["foo", "--foo=1"])
+
+    def test_handle_argv(self):
+        x = CeleryCommand(app=self.app)
+        x.execute = Mock()
+        x.handle_argv("celery", [])
+        x.execute.assert_called_with("help", ["help"])
+
+        x.handle_argv("celery", ["start", "foo"])
+        x.execute.assert_called_with("start", ["start", "foo"])
+
+    def test_execute(self):
+        x = CeleryCommand(app=self.app)
+        Help = x.commands["help"] = Mock()
+        help = Help.return_value = Mock()
+        x.execute("fooox", ["a"])
+        help.run_from_argv.assert_called_with(x.prog_name, ["help"])
+        help.reset()
+        x.execute("help", ["help"])
+        help.run_from_argv.assert_called_with(x.prog_name, ["help"])
+
+        Dummy = x.commands["dummy"] = Mock()
+        dummy = Dummy.return_value = Mock()
+        dummy.run_from_argv.side_effect = Error("foo", status="EX_FAILURE")
+        help.reset()
+        x.execute("dummy", ["dummy"])
+        dummy.run_from_argv.assert_called_with(x.prog_name, ["dummy"])
+        help.run_from_argv.assert_called_with(x.prog_name, ["dummy"])
+
+
+class test_inspect(AppCase):
+
+    def test_usage(self):
+        self.assertTrue(inspect(app=self.app).usage("foo"))
+
+    @patch("celery.app.control.Control.inspect")
+    def test_run(self, real):
+        out = WhateverIO()
+        i = inspect(app=self.app, stdout=out)
+        with self.assertRaises(Error):
+            i.run()
+        with self.assertRaises(Error):
+            i.run("help")
+        with self.assertRaises(Error):
+            i.run("xyzzybaz")
+
+        i.run("ping")
+        self.assertTrue(real.called)
+        i.run("ping", destination="foo,bar")
+        self.assertEqual(real.call_args[1]["destination"], ["foo", "bar"])
+        self.assertEqual(real.call_args[1]["timeout"], 0.2)
+        callback = real.call_args[1]["callback"]
+
+        callback({"foo": {"ok": "pong"}})
+        self.assertIn("OK", out.getvalue())
+
+        instance = real.return_value = Mock()
+        instance.ping.return_value = None
+        with self.assertRaises(Error):
+            i.run("ping")
+
+        out.seek(0)
+        out.truncate()
+        i.quiet = True
+        i.say('<-', "hello")
+        self.assertFalse(out.getvalue())
+
+
+class test_main(AppCase):
+
+    @patch("celery.bin.celery.CeleryCommand")
+    def test_main(self, Command):
+        command = Command.return_value = Mock()
+        main()
+        command.execute_from_commandline.assert_called_with()
