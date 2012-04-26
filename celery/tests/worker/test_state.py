@@ -52,6 +52,10 @@ class test_Persistent(StateResetCase):
     def on_setup(self):
         self.p = MyPersistent(filename="celery-state")
 
+    def test_close_twice(self):
+        self.p._is_open = False
+        self.p.close()
+
     def test_constructor(self):
         self.assertDictEqual(self.p.db, {})
         self.assertEqual(self.p.db.filename, self.p.filename)

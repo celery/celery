@@ -125,6 +125,16 @@ class test_Autoscaler(Case):
         self.assertEqual(x.processes, 2)
         x.update(3, None)
         self.assertEqual(x.processes, 3)
+        x.force_scale_down(1000)
+        self.assertEqual(x.min_concurrency, 0)
+        self.assertEqual(x.processes, 0)
+        x.force_scale_up(1000)
+        x.min_concurrency = 1
+        x.force_scale_down(1)
+
+        x.update(max=300, min=10)
+        x.update(max=300, min=2)
+        x.update(max=None, min=None)
 
     def test_info(self):
         x = autoscale.Autoscaler(self.pool, 10, 3)

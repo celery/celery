@@ -147,8 +147,15 @@ class test_ControlPanel(Case):
             self.assertDictContainsSubset({"total": 100,
                                            "consumer": {"xyz": "XYZ"}},
                                           self.panel.handle("stats"))
+            self.panel.state.consumer = Mock()
+            self.panel.handle("stats")
+            self.assertTrue(
+                self.panel.state.consumer.controller.autoscaler.info.called)
         finally:
             state.total_count = prev_count
+
+    def test_report(self):
+        self.panel.handle("report")
 
     def test_active(self):
         from celery.worker.job import TaskRequest
@@ -182,6 +189,14 @@ class test_ControlPanel(Case):
         panel.handle("pool_shrink")
         self.assertEqual(consumer.pool.size, 1)
 
+        panel.state.consumer = Mock()
+        panel.state.consumer.controller = Mock()
+        sc = panel.state.consumer.controller.autoscaler = Mock()
+        panel.handle("pool_grow")
+        self.assertTrue(sc.force_scale_up.called)
+        panel.handle("pool_shrink")
+        self.assertTrue(sc.force_scale_down.called)
+
     def test_add__cancel_consumer(self):
 
         class MockConsumer(object):
@@ -208,6 +223,7 @@ class test_ControlPanel(Case):
         panel.handle("add_consumer", {"queue": "MyQueue"})
         self.assertIn("MyQueue", consumer.task_consumer.queues)
         self.assertTrue(consumer.task_consumer.consuming)
+        panel.handle("add_consumer", {"queue": "MyQueue"})
         panel.handle("cancel_consumer", {"queue": "MyQueue"})
         self.assertIn("MyQueue", consumer.task_consumer.cancelled)
 
@@ -345,6 +361,21 @@ class test_ControlPanel(Case):
             self.assertIn("revoked", r["ok"])
         finally:
             state.active_requests.discard(request)
+
+    def test_autoscale(self):
+        self.panel.state.consumer = Mock()
+        self.panel.state.consumer.controller = Mock()
+        sc = self.panel.state.consumer.controller.autoscaler = Mock()
+        sc.update.return_value = 10, 2
+        m = {"method": "autoscale",
+             "destination": hostname,
+             "arguments": {"max": "10", "min": "2"}}
+        r = self.panel.dispatch_from_message(m)
+        self.assertIn("ok", r)
+
+        self.panel.state.consumer.controller.autoscaler = None
+        r = self.panel.dispatch_from_message(m)
+        self.assertIn("error", r)
 
     def test_ping(self):
         m = {"method": "ping",

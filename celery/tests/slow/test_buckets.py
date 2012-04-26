@@ -6,6 +6,9 @@ import time
 
 from functools import partial
 from itertools import chain, izip
+from Queue import Empty
+
+from mock import Mock, patch
 
 from celery.app.registry import TaskRegistry
 from celery.task.base import Task
@@ -13,7 +16,7 @@ from celery.utils import timeutils
 from celery.utils import uuid
 from celery.worker import buckets
 
-from celery.tests.utils import Case, skip_if_environ
+from celery.tests.utils import Case, skip_if_environ, mock_context
 
 skip_if_disabled = partial(skip_if_environ("SKIP_RLIMITS"))
 
@@ -139,6 +142,41 @@ class test_TaskBucket(Case):
         x = buckets.TaskBucket(task_registry=self.registry)
         with self.assertRaises(buckets.Empty):
             x.get_nowait()
+
+    @patch("celery.worker.buckets.sleep")
+    def test_get_block(self, sleep):
+        x = buckets.TaskBucket(task_registry=self.registry)
+        x.not_empty = Mock()
+        get = x._get = Mock()
+        calls = [0]
+        remaining = [0]
+
+        def effect():
+            try:
+                if not calls[0]:
+                    raise Empty()
+                rem = remaining[0]
+                remaining[0] = 0
+                return rem, Mock()
+            finally:
+                calls[0] += 1
+        get.side_effect = effect
+
+        with mock_context(Mock()) as context:
+            x.not_empty = context
+            x.wait = Mock()
+            x.get(block=True)
+
+            calls[0] = 0
+            remaining[0] = 1
+            x.get(block=True)
+
+    def test_get_raises_rate(self):
+        x = buckets.TaskBucket(task_registry=self.registry)
+        x.buckets = {1: Mock()}
+        x.buckets[1].get_nowait.side_effect = buckets.RateLimitExceeded()
+        x.buckets[1].expected_time.return_value = 0
+        x._get()
 
     @skip_if_disabled
     def test_refresh(self):

@@ -94,8 +94,8 @@ class Autoscaler(bgThread):
         with self.mutex:
             new = self.processes - n
             if new < self.min_concurrency:
-                self.min_concurrency = new
-            self._shrink(n)
+                self.min_concurrency = max(new, 0)
+            self._shrink(min(n, self.processes))
 
     def scale_up(self, n):
         self._last_action = time()

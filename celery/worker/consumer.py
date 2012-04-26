@@ -358,14 +358,14 @@ class Consumer(object):
         debug("Ready to accept tasks!")
 
         while self._state != CLOSE and self.connection:
-            if self.qos.prev != self.qos.value:
+            if self.qos.prev != self.qos.value:     # pragma: no cover
                 self.qos.update()
             try:
                 self.connection.drain_events(timeout=1)
             except socket.timeout:
                 pass
             except socket.error:
-                if self._state != CLOSE:
+                if self._state != CLOSE:            # pragma: no cover
                     raise
 
     def on_task(self, task):

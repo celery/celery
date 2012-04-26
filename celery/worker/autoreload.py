@@ -24,7 +24,7 @@ from celery.utils.threads import bgThread, Event
 
 from .abstract import StartStopComponent
 
-try:
+try:                        # pragma: no cover
     import pyinotify
     _ProcessEvent = pyinotify.ProcessEvent
 except ImportError:         # pragma: no cover
@@ -137,7 +137,7 @@ class KQueueMonitor(BaseMonitor):
     def stop(self):
         self._kq.close()
         for fd in filter(None, self.filemap.values()):
-            with ignore_EBADF():
+            with ignore_EBADF():  # pragma: no cover
                 os.close(fd)
             self.filemap[fd] = None
         self.filemap.clear()

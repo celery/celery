@@ -56,6 +56,11 @@ class test_Mediator(Case):
 
         self.assertEqual(got["value"], "George Costanza")
 
+        ready_queue.put(MockTask("Jerry Seinfeld"))
+        m._does_debug = False
+        m.body()
+        self.assertEqual(got["value"], "Jerry Seinfeld")
+
     @patch("os._exit")
     def test_mediator_crash(self, _exit):
         ms = [None]

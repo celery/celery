@@ -26,6 +26,7 @@ from celery.result import AsyncResult
 from celery.task import task as task_dec
 from celery.task.base import Task
 from celery.utils import uuid
+from celery.worker import job as module
 from celery.worker.job import Request, TaskRequest, execute_and_trace
 from celery.worker.state import revoked
 
@@ -74,7 +75,7 @@ def on_ack(*args, **kwargs):
     scratch["ACK"] = True
 
 
-@task_dec(accept_magic_kwargs=True)
+@task_dec(accept_magic_kwargs=False)
 def mytask(i, **kwargs):
     return i ** i
 
@@ -97,8 +98,8 @@ def mytask_some_kwargs(i, logfile):
     return i ** i
 
 
-@task_dec(accept_magic_kwargs=True)
-def mytask_raising(i, **kwargs):
+@task_dec(accept_magic_kwargs=False)
+def mytask_raising(i):
     raise KeyError(i)
 
 
@@ -233,6 +234,16 @@ class test_TaskRequest(Case):
         tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         self.assertTrue(repr(tw))
 
+    @patch("celery.worker.job.kwdict")
+    def test_kwdict(self, kwdict):
+
+        prev, module.NEEDS_KWDICT = module.NEEDS_KWDICT, True
+        try:
+            TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
+            self.assertTrue(kwdict.called)
+        finally:
+            module.NEEDS_KWDICT = prev
+
     def test_sets_store_errors(self):
         mytask.ignore_result = True
         try:
@@ -260,6 +271,19 @@ class test_TaskRequest(Case):
             einfo = ExceptionInfo(sys.exc_info())
             tw.on_failure(einfo)
             self.assertIn("task-retried", tw.eventer.sent)
+            tw._does_info = False
+            tw.on_failure(einfo)
+            einfo.internal = True
+            tw.on_failure(einfo)
+
+    def test_compat_properties(self):
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
+        self.assertEqual(tw.task_id, tw.id)
+        self.assertEqual(tw.task_name, tw.name)
+        tw.task_id = "ID"
+        self.assertEqual(tw.id, "ID")
+        tw.task_name = "NAME"
+        self.assertEqual(tw.name, "NAME")
 
     def test_terminate__task_started(self):
         pool = Mock()
@@ -375,10 +399,12 @@ class test_TaskRequest(Case):
 
     def test_execute_acks_late(self):
         mytask_raising.acks_late = True
-        tw = TaskRequest(mytask_raising.name, uuid(), [1], {"f": "x"})
+        tw = TaskRequest(mytask_raising.name, uuid(), [1])
         try:
             tw.execute()
             self.assertTrue(tw.acknowledged)
+            tw.task.accept_magic_kwargs = False
+            tw.execute()
         finally:
             mytask_raising.acks_late = False
 
@@ -391,6 +417,8 @@ class test_TaskRequest(Case):
         tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         tw.on_accepted(pid=os.getpid(), time_accepted=time.time())
         self.assertTrue(tw.acknowledged)
+        tw._does_debug = False
+        tw.on_accepted(pid=os.getpid(), time_accepted=time.time())
 
     def test_on_accepted_acks_late(self):
         tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
@@ -413,7 +441,38 @@ class test_TaskRequest(Case):
         tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         tw.time_start = 1
         tw.on_success(42)
+        tw._does_info = False
+        tw.on_success(42)
         self.assertFalse(tw.acknowledged)
+
+    def test_on_success_BaseException(self):
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
+        tw.time_start = 1
+        with self.assertRaises(SystemExit):
+            try:
+                raise SystemExit()
+            except SystemExit:
+                tw.on_success(ExceptionInfo(sys.exc_info()))
+            else:
+                assert False
+
+    def test_on_success_eventer(self):
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
+        tw.time_start = 1
+        tw.eventer = Mock()
+        tw.send_event = Mock()
+        tw.on_success(42)
+        self.assertTrue(tw.send_event.called)
+
+    def test_on_success_when_failure(self):
+        tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
+        tw.time_start = 1
+        tw.on_failure = Mock()
+        try:
+            raise KeyError("foo")
+        except Exception:
+            tw.on_success(ExceptionInfo(sys.exc_info()))
+            self.assertTrue(tw.on_failure.called)
 
     def test_on_success_acks_late(self):
         tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
@@ -638,7 +697,7 @@ class test_TaskRequest(Case):
 
     def test_execute_fail(self):
         tid = uuid()
-        tw = TaskRequest(mytask_raising.name, tid, [4], {"f": "x"})
+        tw = TaskRequest(mytask_raising.name, tid, [4])
         self.assertIsInstance(tw.execute(), ExceptionInfo)
         meta = mytask_raising.backend.get_task_meta(tid)
         self.assertEqual(meta["status"], states.FAILURE)
@@ -670,6 +729,9 @@ class test_TaskRequest(Case):
         self.assertEqual(p.args[2], [4])
         self.assertIn("f", p.args[3])
         self.assertIn([4], p.args)
+
+        tw.task.accept_magic_kwargs = False
+        tw.execute_using_pool(p)
 
     def test_default_kwargs(self):
         tid = uuid()
