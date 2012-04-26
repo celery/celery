@@ -71,7 +71,7 @@ def setup_security(allowed_serializers=None, key=None, cert=None, store=None,
     cert = cert or conf.CELERY_SECURITY_CERTIFICATE
     store = store or conf.CELERY_SECURITY_CERT_STORE
 
-    if any(not v for v in (key, cert, store)):
+    if not (key and cert and store):
         raise ImproperlyConfigured(SETTING_MISSING)
 
     with open(key) as kf:

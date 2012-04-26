@@ -8,6 +8,8 @@ from mock import Mock, patch
 from . import CERT1, CERT2, KEY1
 from .case import SecurityCase
 
+from celery.tests.utils import mock_open
+
 
 class test_Certificate(SecurityCase):
 
@@ -51,37 +53,27 @@ class test_FSCertStore(SecurityCase):
     @patch("os.path.isdir")
     @patch("glob.glob")
     @patch("celery.security.certificate.Certificate")
-    @patch("__builtin__.open")
-    def test_init(self, open_, Certificate, glob, isdir):
+    def test_init(self, Certificate, glob, isdir):
         cert = Certificate.return_value = Mock()
         cert.has_expired.return_value = False
         isdir.return_value = True
         glob.return_value = ["foo.cert"]
-        op = open_.return_value = Mock()
-        op.__enter__ = Mock()
-        def on_exit(*x):
-            if x[0]:
-                print(x)
-                raise x[0], x[1], x[2]
-        op.__exit__ = Mock()
-        op.__exit__.side_effect = on_exit
-        cert.get_id.return_value = 1
-        x = FSCertStore("/var/certs")
-        self.assertIn(1, x._certs)
-        glob.assert_called_with("/var/certs/*")
-        op.__enter__.assert_called_with()
-        op.__exit__.assert_called_with(None, None, None)
-
-        # they both end up with the same id
-        glob.return_value = ["foo.cert", "bar.cert"]
-        with self.assertRaises(SecurityError):
+        with mock_open():
+            cert.get_id.return_value = 1
             x = FSCertStore("/var/certs")
-        glob.return_value = ["foo.cert"]
+            self.assertIn(1, x._certs)
+            glob.assert_called_with("/var/certs/*")
 
-        cert.has_expired.return_value = True
-        with self.assertRaises(SecurityError):
-            x = FSCertStore("/var/certs")
+            # they both end up with the same id
+            glob.return_value = ["foo.cert", "bar.cert"]
+            with self.assertRaises(SecurityError):
+                x = FSCertStore("/var/certs")
+            glob.return_value = ["foo.cert"]
 
-        isdir.return_value = False
-        with self.assertRaises(SecurityError):
-            x = FSCertStore("/var/certs")
+            cert.has_expired.return_value = True
+            with self.assertRaises(SecurityError):
+                x = FSCertStore("/var/certs")
+
+            isdir.return_value = False
+            with self.assertRaises(SecurityError):
+                x = FSCertStore("/var/certs")

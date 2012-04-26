@@ -498,3 +498,29 @@ def mock_module(*names):
     for name in names:
         if prev[name]:
             sys.modules[name] = prev[name]
+
+
+@contextmanager
+def mock_context(mock, typ=Mock):
+    context = mock.return_value = Mock()
+    context.__enter__ = typ()
+    context.__exit__ = typ()
+
+    def on_exit(*x):
+        if x[0]:
+            raise x[0], x[1], x[2]
+    context.__exit__.side_effect = on_exit
+    context.__enter__.return_value = context
+    yield context
+    context.reset()
+
+
+@contextmanager
+def mock_open(typ=WhateverIO, side_effect=None):
+    with mock.patch("__builtin__.open") as open_:
+        with mock_context(open_) as context:
+            if side_effect is not None:
+                context.__enter__.side_effect = side_effect
+            val = context.__enter__.return_value = typ()
+            yield val
+

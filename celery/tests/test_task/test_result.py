@@ -350,7 +350,7 @@ class test_pending_AsyncResult(AppCase):
         self.assertIsNone(self.task.result)
 
 
-class test_failed_AsyncResult(TestTaskSetResult):
+class test_failed_AsyncResult(test_TaskSetResult):
 
     def setup(self):
         self.size = 11

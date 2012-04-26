@@ -20,7 +20,7 @@ from celery.worker.autoreload import (
     Autoreloader,
 )
 
-from celery.tests.utils import AppCase, Case, WhateverIO
+from celery.tests.utils import AppCase, Case, WhateverIO, mock_open
 
 
 class test_WorkerComponent(AppCase):
@@ -37,19 +37,15 @@ class test_WorkerComponent(AppCase):
 
 class test_file_hash(Case):
 
-    @patch("__builtin__.open")
-    def test_hash(self, open_):
-        context = open_.return_value = Mock()
-        context.__enter__ = Mock()
-        context.__exit__ = Mock()
-        a = context.__enter__.return_value = WhateverIO()
-        a.write("the quick brown fox\n")
-        a.seek(0)
-        A = file_hash("foo")
-        b = context.__enter__.return_value = WhateverIO()
-        b.write("the quick brown bar\n")
-        b.seek(0)
-        B = file_hash("bar")
+    def test_hash(self):
+        with mock_open() as a:
+            a.write("the quick brown fox\n")
+            a.seek(0)
+            A = file_hash("foo")
+        with mock_open() as b:
+            b.write("the quick brown bar\n")
+            b.seek(0)
+            B = file_hash("bar")
         self.assertNotEqual(A, B)
 
 
