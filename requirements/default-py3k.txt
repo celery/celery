@@ -1,3 +1,3 @@
 python-dateutil>=2.0
 pytz
-kombu>=2.1.3
+kombu>=2.1.7
