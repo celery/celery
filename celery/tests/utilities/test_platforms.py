@@ -256,14 +256,11 @@ if not current_app.IS_WINDOWS:
     class test_initgroups(Case):
 
         @patch("pwd.getpwuid")
-        def test_with_initgroups(self, getpwuid):
-            prev, os.initgroups = os.initgroups, Mock()
-            try:
-                getpwuid.return_value = ["user"]
-                initgroups(5001, 50001)
-                os.initgroups.assert_called_with("user", 50001)
-            finally:
-                os.initgroups = prev
+        @patch("os.initgroups", create=True)
+        def test_with_initgroups(self, initgroups_, getpwuid):
+            getpwuid.return_value = ["user"]
+            initgroups(5001, 50001)
+            initgroups_.assert_called_with("user", 50001)
 
         @patch("celery.platforms.setgroups")
         @patch("grp.getgrall")
