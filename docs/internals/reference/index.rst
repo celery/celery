@@ -14,6 +14,7 @@
     celery.worker.mediator
     celery.worker.buckets
     celery.worker.heartbeat
+    celery.worker.control
     celery.worker.state
     celery.worker.strategy
     celery.worker.autoreload
@@ -43,6 +44,7 @@
     celery.security.certificate
     celery.security.key
     celery.security.serialization
+    celery.security.utils
     celery.datastructures
     celery.events.snapshot
     celery.events.cursesmon

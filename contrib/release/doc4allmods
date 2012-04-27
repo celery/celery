@@ -6,16 +6,17 @@ SKIP_FILES="celery.__compat__.rst
             celery.backends.pyredis.rst
             celery.bin.rst
             celery.bin.celeryd_detach.rst
+            celery.bin.celeryctl.rst
             celery.concurrency.processes._win.rst
             celery.contrib.rst
             celery.contrib.bundles.rst
-            celery.worker.control.rst
             celery.task.schedules.rst
             celery.local.rst
             celery.app.base.rst
             celery.apps.rst
             celery.backends.database.a805d4bd.rst
             celery.backends.database.dfd042c7.rst
+            celery.canvas.rst
             celery.utils.encoding.rst"
 
 modules=$(find "$PACKAGE" -name "*.py")

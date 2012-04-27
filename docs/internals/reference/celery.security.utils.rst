@@ -1,11 +1,11 @@
 ==========================================
- celeryctl - celery.bin.celeryctl
+ celery.security.utils
 ==========================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.bin.celeryctl
+.. currentmodule:: celery.security.utils
 
-.. automodule:: celery.bin.celeryctl
+.. automodule:: celery.security.utils
     :members:
     :undoc-members:

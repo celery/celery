@@ -208,10 +208,6 @@ NAMESPACES = {
     },
     "SERVER_EMAIL": Option("celery@localhost"),
     "ADMINS": Option((), type="tuple"),
-    "TT": {
-        "HOST": Option(None, type="string"),
-        "PORT": Option(None, type="int"),
-    },
 }
 
 
