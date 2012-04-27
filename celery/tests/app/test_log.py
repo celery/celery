@@ -8,15 +8,37 @@ from tempfile import mktemp
 from mock import patch, Mock
 
 from celery import current_app
-from celery.app.log import Logging
+from celery import signals
+from celery.app.log import Logging, TaskFormatter
 from celery.utils.log import LoggingProxy
 from celery.utils import uuid
-from celery.utils.log import get_logger, ColorFormatter, logger as base_logger
+from celery.utils.log import (
+    get_logger,
+    ColorFormatter,
+    logger as base_logger,
+)
 from celery.tests.utils import (
-    Case, override_stdouts, wrap_logger, get_handlers,
+    AppCase, Case, override_stdouts, wrap_logger, get_handlers,
 )
 
 log = current_app.log
+
+
+class test_TaskFormatter(Case):
+
+    def test_no_task(self):
+        class Record(object):
+            msg = "hello world"
+            levelname = "info"
+            exc_text = exc_info = None
+
+            def getMessage(self):
+                return self.msg
+        record = Record()
+        x = TaskFormatter()
+        x.format(record)
+        self.assertEqual(record.task_name, "???")
+        self.assertEqual(record.task_id, "???")
 
 
 class test_ColorFormatter(Case):
@@ -71,11 +93,12 @@ class test_ColorFormatter(Case):
         self.assertEqual(safe_str.call_count, 1)
 
 
-class test_default_logger(Case):
+class test_default_logger(AppCase):
 
-    def setUp(self):
+    def setup(self):
         self.setup_logger = log.setup_logger
         self.get_logger = lambda n=None: get_logger(n) if n else logging.root
+        signals.setup_logging.receivers[:] = []
         Logging._setup = False
 
     def test_get_logger_sets_parent(self):
@@ -85,6 +108,14 @@ class test_default_logger(Case):
     def test_get_logger_root(self):
         logger = get_logger(base_logger.name)
         self.assertIs(logger.parent, logging.root)
+
+    def test_setup_logging_subsystem_misc(self):
+        log.setup_logging_subsystem(loglevel=None)
+        self.app.conf.CELERYD_HIJACK_ROOT_LOGGER = True
+        try:
+            log.setup_logging_subsystem()
+        finally:
+            self.app.conf.CELERYD_HIJACK_ROOT_LOGGER = False
 
     def test_setup_logging_subsystem_colorize(self):
         log.setup_logging_subsystem(colorize=None)
@@ -149,6 +180,8 @@ class test_default_logger(Case):
                 log.redirect_stdouts_to_logger(logger, loglevel=logging.ERROR)
                 logger.error("foo")
                 self.assertIn("foo", sio.getvalue())
+                log.redirect_stdouts_to_logger(logger, stdout=False,
+                        stderr=False)
         finally:
             sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
 
@@ -186,7 +219,7 @@ class test_default_logger(Case):
 
 class test_task_logger(test_default_logger):
 
-    def setUp(self):
+    def setup(self):
         logger = self.logger = get_logger("celery.task")
         logger.handlers = []
         logging.root.manager.loggerDict.pop(logger.name, None)

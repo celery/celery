@@ -20,9 +20,9 @@ from threading import Lock, RLock
 
 try:
     from collections import Sequence
-except ImportError:
+except ImportError:             # pragma: no cover
     # <= Py2.5
-    Sequence = (list, tuple)  # noqa
+    Sequence = (list, tuple)    # noqa
 
 from kombu.utils.functional import promise, maybe_promise
 
@@ -76,7 +76,7 @@ class LRUCache(UserDict):
         for k in self:
             try:
                 yield (k, self.data[k])
-            except KeyError:
+            except KeyError:  # pragma: no cover
                 pass
     iteritems = _iterate_items
 
@@ -100,7 +100,7 @@ class LRUCache(UserDict):
 def maybe_list(l):
     if l is None:
         return l
-    elif isinstance(l, Sequence):
+    elif not isinstance(l, basestring) and isinstance(l, Sequence):
         return l
     return [l]
 

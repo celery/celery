@@ -25,7 +25,7 @@ from celery.worker import WorkController
 try:
     from greenlet import GreenletExit
     IGNORE_ERRORS = (GreenletExit, )
-except ImportError:
+except ImportError:  # pragma: no cover
     IGNORE_ERRORS = ()
 
 logger = get_logger(__name__)
@@ -302,15 +302,17 @@ def install_cry_handler():
     # Jython/PyPy does not have sys._current_frames
     is_jython = sys.platform.startswith("java")
     is_pypy = hasattr(sys, "pypy_version_info")
-    if not (is_jython or is_pypy):
+    if is_jython or is_pypy:  # pragma: no cover
+        return
 
-        def cry_handler(signum, frame):
-            """Signal handler logging the stacktrace of all active threads."""
-            logger.error("\n" + cry())
-        platforms.signals["SIGUSR1"] = cry_handler
+    def cry_handler(signum, frame):
+        """Signal handler logging the stacktrace of all active threads."""
+        logger.error("\n" + cry())
+    platforms.signals["SIGUSR1"] = cry_handler
 
 
-def install_rdb_handler(envvar="CELERY_RDBSIG", sig="SIGUSR2"):
+def install_rdb_handler(envvar="CELERY_RDBSIG",
+                        sig="SIGUSR2"):  # pragma: no cover
 
     def rdb_handler(signum, frame):
         """Signal handler setting a rdb breakpoint at the current frame."""

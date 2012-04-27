@@ -529,3 +529,22 @@ def mock_open(typ=WhateverIO, side_effect=None):
 
 def patch_many(*targets):
     return nested(*[mock.patch(target) for target in targets])
+
+
+@contextmanager
+def patch_settings(app=None, **config):
+    if app is None:
+        from celery import current_app
+        app = current_app
+    prev = {}
+    for key, value in config.iteritems():
+        try:
+            prev[key] = getattr(app.conf, key)
+        except AttributeError:
+            pass
+        setattr(app.conf, key, value)
+
+    yield app.conf
+
+    for key, value in prev.iteritems():
+        setattr(app.conf, key, value)

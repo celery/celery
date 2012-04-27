@@ -42,6 +42,10 @@ class test_AMQPBackend(Case):
         self.assertTrue(tb2._cache.get(tid))
         self.assertTrue(tb2.get_result(tid), 42)
 
+    def test_revive(self):
+        tb = self.create_backend()
+        tb.revive(None)
+
     def test_is_pickled(self):
         tb1 = self.create_backend()
         tb2 = self.create_backend()

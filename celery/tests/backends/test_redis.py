@@ -1,11 +1,16 @@
 from __future__ import absolute_import
+from __future__ import with_statement
 
 from datetime import timedelta
 
 from mock import Mock, patch
+from nose import SkipTest
+from pickle import loads, dumps
 
 from celery import current_app
 from celery import states
+from celery.datastructures import AttributeDict
+from celery.exceptions import ImproperlyConfigured
 from celery.result import AsyncResult
 from celery.task import subtask
 from celery.utils import cached_property, uuid
@@ -80,6 +85,34 @@ class test_RedisBackend(Case):
                 return Mock()
 
         self.MockBackend = MockBackend
+
+    def test_reduce(self):
+        try:
+            from celery.backends.redis import RedisBackend
+            x = RedisBackend()
+            self.assertTrue(loads(dumps(x)))
+        except ImportError:
+            raise SkipTest("redis not installed")
+
+    def test_no_redis(self):
+        self.MockBackend.redis = None
+        with self.assertRaises(ImproperlyConfigured):
+            self.MockBackend()
+
+    def test_url(self):
+        x = self.MockBackend("redis://foobar//1")
+        self.assertEqual(x.host, "foobar")
+        self.assertEqual(x.db, "1")
+
+    def test_conf_raises_KeyError(self):
+        conf = AttributeDict({"CELERY_RESULT_SERIALIZER": "json",
+                              "CELERY_MAX_CACHED_RESULTS": 1,
+                              "CELERY_TASK_RESULT_EXPIRES": None})
+        prev, current_app.conf = current_app.conf, conf
+        try:
+            self.MockBackend()
+        finally:
+            current_app.conf = prev
 
     def test_expires_defaults_to_config(self):
         conf = current_app.conf

@@ -72,18 +72,16 @@ class test_StatMonitor(Case):
             st_mtime = time()
         stat.return_value = st()
         x = StatMonitor(["a", "b"])
-        calls = [0]
 
         def on_is_set():
-            calls[0] += 1
-            if calls[0] > 2:
+            if x.shutdown_event.is_set.call_count > 3:
                 return True
             return False
         x.shutdown_event = Mock()
         x.shutdown_event.is_set.side_effect = on_is_set
 
         x.start()
-        calls[0] = 0
+        x.shutdown_event = Mock()
         stat.side_effect = OSError()
         x.start()
 

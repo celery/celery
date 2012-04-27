@@ -3,9 +3,10 @@ from __future__ import with_statement
 
 import socket
 
+from mock import Mock
+
 from celery import events
-from celery.app import app_or_default
-from celery.tests.utils import Case
+from celery.tests.utils import AppCase
 
 
 class MockProducer(object):
@@ -29,7 +30,7 @@ class MockProducer(object):
         return False
 
 
-class test_Event(Case):
+class test_Event(AppCase):
 
     def test_constructor(self):
         event = events.Event("world war II")
@@ -37,10 +38,7 @@ class test_Event(Case):
         self.assertTrue(event["timestamp"])
 
 
-class test_EventDispatcher(Case):
-
-    def setUp(self):
-        self.app = app_or_default()
+class test_EventDispatcher(AppCase):
 
     def test_send(self):
         producer = MockProducer()
@@ -66,6 +64,30 @@ class test_EventDispatcher(Case):
         eventer.flush()
         for ev in evs:
             self.assertTrue(producer.has_event(ev))
+
+        buf = eventer._outbound_buffer = Mock()
+        buf.popleft.side_effect = IndexError()
+        eventer.flush()
+
+    def test_enter_exit(self):
+        with self.app.broker_connection() as conn:
+            d = self.app.events.Dispatcher(conn)
+            d.close = Mock()
+            with d as _d:
+                self.assertTrue(_d)
+            d.close.assert_called_with()
+
+    def test_enable_disable_callbacks(self):
+        on_enable = Mock()
+        on_disable = Mock()
+        with self.app.broker_connection() as conn:
+            with self.app.events.Dispatcher(conn, enabled=False) as d:
+                d.on_enabled.add(on_enable)
+                d.on_disabled.add(on_disable)
+                d.enable()
+                on_enable.assert_called_with()
+                d.disable()
+                on_disable.assert_called_with()
 
     def test_enabled_disable(self):
         connection = self.app.broker_connection()
@@ -99,10 +121,7 @@ class test_EventDispatcher(Case):
             connection.close()
 
 
-class test_EventReceiver(Case):
-
-    def setUp(self):
-        self.app = app_or_default()
+class test_EventReceiver(AppCase):
 
     def test_process(self):
 
@@ -181,11 +200,13 @@ class test_EventReceiver(Case):
             connection.close()
 
 
-class test_misc(Case):
-
-    def setUp(self):
-        self.app = app_or_default()
+class test_misc(AppCase):
 
     def test_State(self):
         state = self.app.events.State()
         self.assertDictEqual(dict(state.workers), {})
+
+    def test_default_dispatcher(self):
+        with self.app.events.default_dispatcher() as d:
+            self.assertTrue(d)
+            self.assertTrue(d.connection)

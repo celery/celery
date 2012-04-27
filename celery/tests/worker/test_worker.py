@@ -172,12 +172,13 @@ class test_QoS(Case):
         qos = QoS(consumer, 10)
         qos.update()
         self.assertEqual(qos.value, 10)
-        self.assertIn({"prefetch_count": 10}, consumer.qos.call_args)
+        consumer.qos.assert_called_with(prefetch_count=10)
         qos.decrement()
         self.assertEqual(qos.value, 9)
-        self.assertIn({"prefetch_count": 9}, consumer.qos.call_args)
+        consumer.qos.assert_called_with(prefetch_count=9)
         qos.decrement_eventually()
         self.assertEqual(qos.value, 8)
+        consumer.qos.assert_called_with(prefetch_count=9)
         self.assertIn({"prefetch_count": 9}, consumer.qos.call_args)
 
         # Does not decrement 0 value
@@ -675,17 +676,13 @@ class test_Consumer(Case):
     def test_open_connection_errback(self, sleep, connect):
         l = MyKombuConsumer(self.ready_queue, self.eta_schedule,
                       send_events=False)
-        calls = [0]
         from kombu.transport.memory import Transport
         Transport.connection_errors = (StdChannelError, )
 
         def effect():
-            try:
-                if calls[0] > 1:
-                    return
-                raise StdChannelError()
-            finally:
-                calls[0] += 1
+            if connect.call_count > 1:
+                return
+            raise StdChannelError()
         connect.side_effect = effect
         l._open_connection()
         connect.assert_called_with()
@@ -811,10 +808,8 @@ class test_WorkController(AppCase):
         app = Celery(loader=loader, set_as_current=False)
         app.conf = AttributeDict(DEFAULTS)
         process_initializer(app, "awesome.worker.com")
-        self.assertIn((tuple(WORKER_SIGIGNORE), {}),
-                      _signals.ignore.call_args_list)
-        self.assertIn((tuple(WORKER_SIGRESET), {}),
-                      _signals.reset.call_args_list)
+        _signals.ignore.assert_any_call(*WORKER_SIGIGNORE)
+        _signals.reset.assert_any_call(*WORKER_SIGRESET)
         self.assertTrue(app.loader.init_worker.call_count)
         self.assertTrue(on_worker_process_init.called)
         self.assertIs(_tls.current_app, app)

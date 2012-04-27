@@ -4,6 +4,7 @@ from __future__ import with_statement
 import sys
 
 from importlib import import_module
+from mock import Mock, patch
 
 from celery.tests.utils import Case, pypy_version, sys_platform
 
@@ -17,6 +18,10 @@ class test_defaults(Case):
         if self._prev:
             sys.modules["celery.app.defaults"] = self._prev
 
+    def test_any(self):
+        val = object()
+        self.assertIs(self.defaults.Option.typemap["any"](val), val)
+
     def test_default_pool_pypy_14(self):
         with sys_platform("darwin"):
             with pypy_version((1, 4, 0)):
@@ -26,6 +31,13 @@ class test_defaults(Case):
         with sys_platform("darwin"):
             with pypy_version((1, 5, 0)):
                 self.assertEqual(self.defaults.DEFAULT_POOL, "processes")
+
+    def test_deprecated(self):
+        source = Mock()
+        source.BROKER_INSIST = True
+        with patch("celery.utils.warn_deprecated") as warn:
+            self.defaults.find_deprecated_settings(source)
+            self.assertTrue(warn.called)
 
     def test_default_pool_jython(self):
         with sys_platform("java 1.6.51"):

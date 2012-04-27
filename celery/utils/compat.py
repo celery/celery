@@ -17,21 +17,21 @@ import sys
 is_py3k = sys.version_info[0] == 3
 
 try:
-    reload = reload                     # noqa
-except NameError:
-    from imp import reload              # noqa
+    reload = reload                         # noqa
+except NameError:                           # pragma: no cover
+    from imp import reload                  # noqa
 
 try:
-    from UserList import UserList       # noqa
-except ImportError:
-    from collections import UserList    # noqa
+    from UserList import UserList           # noqa
+except ImportError:                         # pragma: no cover
+    from collections import UserList        # noqa
 
 try:
-    from UserDict import UserDict       # noqa
-except ImportError:
-    from collections import UserDict    # noqa
+    from UserDict import UserDict           # noqa
+except ImportError:                         # pragma: no cover
+    from collections import UserDict        # noqa
 
-if is_py3k:
+if is_py3k:                                 # pragma: no cover
     from io import StringIO, BytesIO
     from .encoding import bytes_to_str
 
@@ -40,21 +40,21 @@ if is_py3k:
         def write(self, data):
             StringIO.write(self, bytes_to_str(data))
 else:
-    from StringIO import StringIO       # noqa
-    BytesIO = WhateverIO = StringIO     # noqa
+    from StringIO import StringIO           # noqa
+    BytesIO = WhateverIO = StringIO         # noqa
 
 
 ############## collections.OrderedDict ######################################
 try:
     from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict  # noqa
+except ImportError:                         # pragma: no cover
+    from ordereddict import OrderedDict     # noqa
 
 ############## itertools.zip_longest #######################################
 
 try:
     from itertools import izip_longest as zip_longest
-except ImportError:
+except ImportError:                         # pragma: no cover
     import itertools
 
     def zip_longest(*args, **kwds):  # noqa
@@ -77,14 +77,14 @@ except ImportError:
 from itertools import chain
 
 
-def _compat_chain_from_iterable(iterables):
+def _compat_chain_from_iterable(iterables):  # pragma: no cover
     for it in iterables:
         for element in it:
             yield element
 
 try:
     chain_from_iterable = getattr(chain, "from_iterable")
-except AttributeError:
+except AttributeError:   # pragma: no cover
     chain_from_iterable = _compat_chain_from_iterable
 
 
@@ -94,13 +94,13 @@ import os
 from stat import ST_DEV, ST_INO
 import platform as _platform
 
-if _platform.system() == "Windows":
+if _platform.system() == "Windows":  # pragma: no cover
     #since windows doesn't go with WatchedFileHandler use FileHandler instead
     WatchedFileHandler = logging.FileHandler
 else:
     try:
         from logging.handlers import WatchedFileHandler
-    except ImportError:
+    except ImportError:  # pragma: no cover
         class WatchedFileHandler(logging.FileHandler):  # noqa
             """
             A handler for logging to a file, which watches the file

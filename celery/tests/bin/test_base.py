@@ -3,7 +3,9 @@ from __future__ import with_statement
 
 import os
 
-from celery.bin.base import Command
+from mock import patch
+
+from celery.bin.base import Command, Option
 from celery.tests.utils import AppCase, override_stdouts
 
 
@@ -41,6 +43,13 @@ class test_Command(AppCase):
         with self.assertRaises(NotImplementedError):
             Command().run()
 
+    @patch("sys.stdout")
+    def test_parse_options_version_only(self, stdout):
+        cmd = Command()
+        with self.assertRaises(SystemExit):
+            cmd.parse_options("prog", ["--version"])
+        stdout.write.assert_called_with(cmd.version + "\n")
+
     def test_execute_from_commandline(self):
         cmd = MockCommand()
         args1, kwargs1 = cmd.execute_from_commandline()     # sys.argv
@@ -71,6 +80,21 @@ class test_Command(AppCase):
         finally:
             if prev:
                 os.environ["CELERY_CONFIG_MODULE"] = prev
+            else:
+                os.environ.pop("CELERY_CONFIG_MODULE", None)
+
+    def test_with_custom_broker(self):
+        prev = os.environ.pop("CELERY_BROKER_URL", None)
+        try:
+            cmd = MockCommand()
+            cmd.setup_app_from_commandline(["--broker=xyzza://"])
+            self.assertEqual(os.environ.get("CELERY_BROKER_URL"),
+                    "xyzza://")
+        finally:
+            if prev:
+                os.environ["CELERY_BROKER_URL"] = prev
+            else:
+                os.environ.pop("CELERY_BROKER_URL", None)
 
     def test_with_custom_app(self):
         cmd = MockCommand()
@@ -89,3 +113,9 @@ class test_Command(AppCase):
         self.assertEqual(cmd.app.conf.BROKER_HOST, "broker.example.com")
         self.assertEqual(cmd.app.conf.CELERYD_PREFETCH_MULTIPLIER, 100)
         self.assertListEqual(rest, ["--loglevel=INFO"])
+
+    def test_parse_preload_options_shortopt(self):
+        cmd = Command()
+        cmd.preload_options = (Option("-s", action="store", dest="silent"), )
+        acc = cmd.parse_preload_options(["-s", "yes"])
+        self.assertEqual(acc.get("silent"), "yes")

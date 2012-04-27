@@ -6,6 +6,7 @@ import sys
 from datetime import datetime
 
 from nose import SkipTest
+from pickle import loads, dumps
 
 from celery import states
 from celery.app import app_or_default
@@ -151,13 +152,18 @@ class test_DatabaseBackend(Case):
         tb = DatabaseBackend(backend="memory://")
         tid = uuid()
         tb.mark_as_done(tid, {"foo": "bar"})
-        x = AsyncResult(tid)
+        tb.mark_as_done(tid, {"foo": "bar"})
+        x = AsyncResult(tid, backend=tb)
         x.forget()
         self.assertIsNone(x.result)
 
     def test_process_cleanup(self):
         tb = DatabaseBackend()
         tb.process_cleanup()
+
+    def test_reduce(self):
+        tb = DatabaseBackend()
+        self.assertTrue(loads(dumps(tb)))
 
     def test_save__restore__delete_taskset(self):
         tb = DatabaseBackend()

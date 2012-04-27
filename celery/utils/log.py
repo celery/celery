@@ -45,8 +45,8 @@ class ColorFormatter(logging.Formatter):
     colors = {"DEBUG": COLORS["blue"], "WARNING": COLORS["yellow"],
               "ERROR": COLORS["red"], "CRITICAL": COLORS["magenta"]}
 
-    def __init__(self, msg, use_color=True):
-        logging.Formatter.__init__(self, msg)
+    def __init__(self, fmt=None, use_color=True):
+        logging.Formatter.__init__(self, fmt)
         self.use_color = use_color
 
     def formatException(self, ei):

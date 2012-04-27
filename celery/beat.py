@@ -16,10 +16,9 @@ import os
 import time
 import shelve
 import sys
-import threading
 import traceback
 
-from billiard import Process
+from billiard import Process, ensure_multiprocessing
 from kombu.utils import reprcall
 from kombu.utils.functional import maybe_promise
 
@@ -31,6 +30,7 @@ from .app import app_or_default
 from .schedules import maybe_schedule, crontab
 from .utils import cached_property
 from .utils.imports import instantiate
+from .utils.threads import Event, Thread
 from .utils.timeutils import humanize_seconds
 from .utils.log import get_logger
 
@@ -229,12 +229,12 @@ class Scheduler(object):
             raise SchedulingError, SchedulingError(
                 "Couldn't apply scheduled task %s: %s" % (
                     entry.name, exc)), sys.exc_info()[2]
-
-        if self.should_sync():
-            self._do_sync()
+        finally:
+            if self.should_sync():
+                self._do_sync()
         return result
 
-    def send_task(self, *args, **kwargs):               # pragma: no cover
+    def send_task(self, *args, **kwargs):
         return self.app.send_task(*args, **kwargs)
 
     def setup_schedule(self):
@@ -283,12 +283,6 @@ class Scheduler(object):
             else:
                 schedule[key] = entry
 
-    def get_schedule(self):
-        return self.data
-
-    def set_schedule(self, schedule):
-        self.data = schedule
-
     def _ensure_connected(self):
         # callback called for each retry while the connection
         # can't be established.
@@ -299,6 +293,13 @@ class Scheduler(object):
         return self.connection.ensure_connection(_error_handler,
                     self.app.conf.BROKER_CONNECTION_MAX_RETRIES)
 
+    def get_schedule(self):
+        return self.data
+
+    def set_schedule(self, schedule):
+        self.data = schedule
+    schedule = property(get_schedule, set_schedule)
+
     @cached_property
     def connection(self):
         return self.app.broker_connection()
@@ -308,16 +309,13 @@ class Scheduler(object):
         return self.Publisher(connection=self._ensure_connected())
 
     @property
-    def schedule(self):
-        return self.get_schedule()
-
-    @property
     def info(self):
         return ""
 
 
 class PersistentScheduler(Scheduler):
     persistence = shelve
+    known_suffixes = ("", ".db", ".dat", ".bak", ".dir")
 
     _store = None
 
@@ -326,7 +324,7 @@ class PersistentScheduler(Scheduler):
         Scheduler.__init__(self, *args, **kwargs)
 
     def _remove_db(self):
-        for suffix in "", ".db", ".dat", ".bak", ".dir":
+        for suffix in self.known_suffixes:
             try:
                 os.remove(self.schedule_filename + suffix)
             except OSError, exc:
@@ -358,6 +356,10 @@ class PersistentScheduler(Scheduler):
     def get_schedule(self):
         return self._store["entries"]
 
+    def set_schedule(self, schedule):
+        self._store["entries"] = schedule
+    schedule = property(get_schedule, set_schedule)
+
     def sync(self):
         if self._store is not None:
             self._store.sync()
@@ -383,8 +385,8 @@ class Service(object):
         self.schedule_filename = schedule_filename or \
                                     app.conf.CELERYBEAT_SCHEDULE_FILENAME
 
-        self._is_shutdown = threading.Event()
-        self._is_stopped = threading.Event()
+        self._is_shutdown = Event()
+        self._is_stopped = Event()
 
     def start(self, embedded_process=False):
         info("Celerybeat: Starting...")
@@ -397,7 +399,7 @@ class Service(object):
             platforms.set_process_title("celerybeat")
 
         try:
-            while not self._is_shutdown.isSet():
+            while not self._is_shutdown.is_set():
                 interval = self.scheduler.tick()
                 debug("Celerybeat: Waking up %s.",
                       humanize_seconds(interval, prefix="in "))
@@ -430,14 +432,14 @@ class Service(object):
         return self.get_scheduler()
 
 
-class _Threaded(threading.Thread):
+class _Threaded(Thread):
     """Embedded task scheduler using threading."""
 
     def __init__(self, *args, **kwargs):
         super(_Threaded, self).__init__()
         self.service = Service(*args, **kwargs)
-        self.setDaemon(True)
-        self.setName("Beat")
+        self.daemon = True
+        self.name = "Beat"
 
     def run(self):
         self.service.start()
@@ -446,16 +448,12 @@ class _Threaded(threading.Thread):
         self.service.stop(wait=True)
 
 
-supports_fork = True
 try:
-    from billiard._ext import _billiard
-    supports_fork = True if _billiard else False
-except ImportError:
-    supports_fork = False
-
-if supports_fork:
-    class _Process(Process):
-        """Embedded task scheduler using multiprocessing."""
+    ensure_multiprocessing()
+except NotImplementedError:     # pragma: no cover
+    _Process = None
+else:
+    class _Process(Process):    # noqa
 
         def __init__(self, *args, **kwargs):
             super(_Process, self).__init__()
@@ -469,8 +467,6 @@ if supports_fork:
         def stop(self):
             self.service.stop()
             self.terminate()
-else:
-    _Process = None
 
 
 def EmbeddedService(*args, **kwargs):
@@ -485,5 +481,4 @@ def EmbeddedService(*args, **kwargs):
         # in reasonable time.
         kwargs.setdefault("max_interval", 1)
         return _Threaded(*args, **kwargs)
-
     return _Process(*args, **kwargs)

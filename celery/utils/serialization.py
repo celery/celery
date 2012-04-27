@@ -74,7 +74,7 @@ def find_nearest_pickleable_exception(exc):
     getmro_ = getattr(cls, "mro", None)
 
     # old-style classes doesn't have mro()
-    if not getmro_:
+    if not getmro_:  # pragma: no cover
         # all Py2.4 exceptions has a baseclass.
         if not getattr(cls, "__bases__", ()):
             return

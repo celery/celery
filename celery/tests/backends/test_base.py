@@ -58,6 +58,10 @@ class test_BaseBackend_interface(Case):
         with self.assertRaises(NotImplementedError):
             b.forget("SOMExx-N0Nex1stant-IDxx-")
 
+    def test_get_children(self):
+        with self.assertRaises(NotImplementedError):
+            b.get_children("SOMExx-N0Nex1stant-IDxx-")
+
     def test_store_result(self):
         with self.assertRaises(NotImplementedError):
             b.store_result("SOMExx-N0nex1stant-IDxx-", 42, states.SUCCESS)
@@ -97,6 +101,9 @@ class test_BaseBackend_interface(Case):
     def test_forget(self):
         with self.assertRaises(NotImplementedError):
             b.forget("SOMExx-N0nex1stant-IDxx-")
+
+    def test_on_chord_part_return(self):
+        b.on_chord_part_return(None)
 
     def test_on_chord_apply(self, unlock="celery.chord_unlock"):
         p, current_app.tasks[unlock] = current_app.tasks.get(unlock), Mock()
@@ -138,6 +145,7 @@ class test_prepare_exception(Case):
     def test_impossible(self):
         x = b.prepare_exception(Impossible())
         self.assertIsInstance(x, UnpickleableExceptionWrapper)
+        self.assertTrue(str(x))
         y = b.exception_to_python(x)
         self.assertEqual(y.__class__.__name__, "Impossible")
         if sys.version_info < (2, 5):
@@ -202,6 +210,14 @@ class test_BaseDictBackend(Case):
         self.b.delete_taskset("can-delete")
         self.assertNotIn("can-delete", self.b._data)
 
+    def test_prepare_exception_json(self):
+        x = DictBackend(serializer="json")
+        e = x.prepare_exception(KeyError("foo"))
+        self.assertIn("exc_type", e)
+        e = x.exception_to_python(e)
+        self.assertEqual(e.__class__.__name__, "KeyError")
+        self.assertEqual(str(e), "'foo'")
+
     def test_save_taskset(self):
         b = BaseDictBackend()
         b._save_taskset = Mock()
@@ -236,6 +252,10 @@ class test_KeyValueStoreBackend(Case):
 
     def setUp(self):
         self.b = KVBackend()
+
+    def test_on_chord_part_return(self):
+        assert not self.b.implements_incr
+        self.b.on_chord_part_return(None)
 
     def test_get_store_delete_result(self):
         tid = uuid()
@@ -289,6 +309,10 @@ class test_KeyValueStoreBackend_interface(Case):
     def test_set(self):
         with self.assertRaises(NotImplementedError):
             KeyValueStoreBackend().set("a", 1)
+
+    def test_incr(self):
+        with self.assertRaises(NotImplementedError):
+            KeyValueStoreBackend().incr("a")
 
     def test_cleanup(self):
         self.assertFalse(KeyValueStoreBackend().cleanup())

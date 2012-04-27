@@ -76,9 +76,9 @@ class MockPool(object):
     def __init__(self, *args, **kwargs):
         self.started = True
         self._state = mp.RUN
-        self.processes = kwargs.get("processes")
-        self._pool = [Object(pid=i) for i in range(self.processes)]
-        self._current_proc = cycle(xrange(self.processes)).next
+        self._processes = kwargs.get("processes")
+        self._pool = [Object(pid=i) for i in range(self._processes)]
+        self._current_proc = cycle(xrange(self._processes)).next
 
     def close(self):
         self.closed = True
@@ -91,10 +91,10 @@ class MockPool(object):
         self.terminated = True
 
     def grow(self, n=1):
-        self.processes += n
+        self._processes += n
 
     def shrink(self, n=1):
-        self.processes -= n
+        self._processes -= n
 
     def apply_async(self, *args, **kwargs):
         pass
@@ -179,11 +179,11 @@ class test_TaskPool(Case):
     def test_grow_shrink(self):
         pool = TaskPool(10)
         pool.start()
-        self.assertEqual(pool._pool.processes, 10)
+        self.assertEqual(pool._pool._processes, 10)
         pool.grow()
-        self.assertEqual(pool._pool.processes, 11)
+        self.assertEqual(pool._pool._processes, 11)
         pool.shrink(2)
-        self.assertEqual(pool._pool.processes, 9)
+        self.assertEqual(pool._pool._processes, 9)
 
     def test_info(self):
         pool = TaskPool(10)
@@ -196,6 +196,17 @@ class test_TaskPool(Case):
         self.assertEqual(info["max-concurrency"], pool.limit)
         self.assertIsNone(info["max-tasks-per-child"])
         self.assertEqual(info["timeouts"], (5, 10))
+
+    def test_num_processes(self):
+        pool = TaskPool(7)
+        pool.start()
+        self.assertEqual(pool.num_processes, 7)
+
+    def test_restart_pool(self):
+        pool = TaskPool()
+        pool._pool = Mock()
+        pool.restart()
+        pool._pool.restart.assert_called_with()
 
     def test_restart(self):
         raise SkipTest("functional test")

@@ -47,6 +47,14 @@ class test_BasePool(Case):
                               {"target": (3, (8, 16)),
                                "callback": (4, (42, ))})
 
+    def test_does_not_debug(self):
+        x = BasePool(10)
+        x._does_debug = False
+        x.apply_async(object)
+
+    def test_num_processes(self):
+        self.assertEqual(BasePool(7).num_processes, 7)
+
     def test_interface_on_start(self):
         BasePool(10).on_start()
 
@@ -69,3 +77,11 @@ class test_BasePool(Case):
         p = BasePool(10)
         with self.assertRaises(NotImplementedError):
             p.restart()
+
+    def test_interface_on_terminate(self):
+        p = BasePool(10)
+        p.on_terminate()
+
+    def test_interface_terminate_job(self):
+        with self.assertRaises(NotImplementedError):
+            BasePool(10).terminate_job(101)

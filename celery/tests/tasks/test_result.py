@@ -1,11 +1,21 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
+from pickle import loads, dumps
+from mock import Mock
+
 from celery import states
 from celery.app import app_or_default
+from celery.exceptions import IncompleteStream
 from celery.utils import uuid
 from celery.utils.serialization import pickle
-from celery.result import AsyncResult, EagerResult, TaskSetResult, ResultSet
+from celery.result import (
+    AsyncResult,
+    EagerResult,
+    TaskSetResult,
+    ResultSet,
+    from_serializable,
+)
 from celery.exceptions import TimeoutError
 from celery.task import task
 from celery.task.base import Task
@@ -52,6 +62,71 @@ class test_AsyncResult(AppCase):
 
         for task in (self.task1, self.task2, self.task3, self.task4):
             save_result(task)
+
+    def test_compat_properties(self):
+        x = AsyncResult("1")
+        self.assertEqual(x.task_id, x.id)
+        x.task_id = "2"
+        self.assertEqual(x.id, "2")
+
+    def test_children(self):
+        x = AsyncResult("1")
+        children = [EagerResult(str(i), i, states.SUCCESS) for i in range(3)]
+        x.backend = Mock()
+        x.backend.get_children.return_value = children
+        x.backend.READY_STATES = states.READY_STATES
+        self.assertTrue(x.children)
+        self.assertEqual(len(x.children), 3)
+
+    def test_build_graph_get_leaf_collect(self):
+        x = AsyncResult("1")
+        x.backend._cache["1"] = {"status": states.SUCCESS, "result": None}
+        c = [EagerResult(str(i), i, states.SUCCESS) for i in range(3)]
+        x.iterdeps = Mock()
+        x.iterdeps.return_value = (
+            (None, x),
+            (x, c[0]),
+            (c[0], c[1]),
+            (c[1], c[2])
+        )
+        x.backend.READY_STATES = states.READY_STATES
+        self.assertTrue(x.graph)
+
+        self.assertIs(x.get_leaf(), 2)
+
+        it = x.collect()
+        self.assertListEqual(list(it), [
+            (x, None),
+            (c[0], 0),
+            (c[1], 1),
+            (c[2], 2),
+        ])
+
+    def test_iterdeps(self):
+        x = AsyncResult("1")
+        x.backend._cache["1"] = {"status": states.SUCCESS, "result": None}
+        c = [EagerResult(str(i), i, states.SUCCESS) for i in range(3)]
+        for child in c:
+            child.backend = Mock()
+            child.backend.get_children.return_value = []
+        x.backend.get_children = Mock()
+        x.backend.get_children.return_value = c
+        it = x.iterdeps()
+        self.assertListEqual(list(it), [
+            (None, x),
+            (x, c[0]),
+            (x, c[1]),
+            (x, c[2]),
+        ])
+        x.backend._cache.pop("1")
+        x.ready = Mock()
+        x.ready.return_value = False
+        with self.assertRaises(IncompleteStream):
+            list(x.iterdeps())
+        list(x.iterdeps(intermediate=True))
+
+    def test_eq_not_implemented(self):
+        self.assertFalse(AsyncResult("1") == object())
 
     def test_reduce(self):
         a1 = AsyncResult("uuid", task_name=mytask.name)
@@ -129,6 +204,7 @@ class test_AsyncResult(AppCase):
         self.assertEqual(ok2_res.get(), "quick")
         with self.assertRaises(KeyError):
             nok_res.get()
+        self.assertTrue(nok_res.get(propagate=False))
         self.assertIsInstance(nok2_res.result, KeyError)
         self.assertEqual(ok_res.info, "the")
 
@@ -158,6 +234,32 @@ class test_AsyncResult(AppCase):
 
 
 class test_ResultSet(AppCase):
+
+    def test_resultset_repr(self):
+        self.assertTrue(repr(ResultSet(map(AsyncResult, [1, 2, 3]))))
+
+    def test_eq_other(self):
+        self.assertFalse(ResultSet([1, 3, 3]) == 1)
+        self.assertTrue(ResultSet([1]) == ResultSet([1]))
+
+    def test_get(self):
+        x = ResultSet(map(AsyncResult, [1, 2, 3]))
+        b = x.results[0].backend = Mock()
+        b.supports_native_join = False
+        x.join_native = Mock()
+        x.join = Mock()
+        x.get()
+        self.assertTrue(x.join.called)
+        b.supports_native_join = True
+        x.get()
+        self.assertTrue(x.join_native.called)
+
+    def test_add(self):
+        x = ResultSet([1])
+        x.add(2)
+        self.assertEqual(len(x), 2)
+        x.add(2)
+        self.assertEqual(len(x), 2)
 
     def test_add_discard(self):
         x = ResultSet([])
@@ -230,6 +332,21 @@ class test_TaskSetResult(AppCase):
     def test_total(self):
         self.assertEqual(len(self.ts), self.size)
         self.assertEqual(self.ts.total, self.size)
+
+    def test_compat_properties(self):
+        self.assertEqual(self.ts.taskset_id, self.ts.id)
+        self.ts.taskset_id = "foo"
+        self.assertEqual(self.ts.taskset_id, "foo")
+
+    def test_eq_other(self):
+        self.assertFalse(self.ts == 1)
+
+    def test_reduce(self):
+        self.assertTrue(loads(dumps(self.ts)))
+
+    def test_compat_subtasks_kwarg(self):
+        x = TaskSetResult(uuid(), subtasks=[1, 2, 3])
+        self.assertEqual(x.results, [1, 2, 3])
 
     def test_iterate_raises(self):
         ar = MockAsyncResultFailure(uuid())
@@ -432,6 +549,7 @@ class test_EagerResult(AppCase):
         res = RaisingTask.apply(args=[3, 3])
         with self.assertRaises(KeyError):
             res.wait()
+        self.assertTrue(res.wait(propagate=False))
 
     def test_wait(self):
         res = EagerResult("x", "x", states.RETRY)
@@ -439,6 +557,23 @@ class test_EagerResult(AppCase):
         self.assertEqual(res.state, states.RETRY)
         self.assertEqual(res.status, states.RETRY)
 
+    def test_forget(self):
+        res = EagerResult("x", "x", states.RETRY)
+        res.forget()
+
     def test_revoke(self):
         res = RaisingTask.apply(args=[3, 3])
         self.assertFalse(res.revoke())
+
+
+class test_serializable(AppCase):
+
+    def test_AsyncResult(self):
+        x = AsyncResult(uuid())
+        self.assertEqual(x, from_serializable(x.serializable()))
+        self.assertEqual(x, from_serializable(x))
+
+    def test_TaskSetResult(self):
+        x = TaskSetResult(uuid(), [AsyncResult(uuid()) for _ in range(10)])
+        self.assertEqual(x, from_serializable(x.serializable()))
+        self.assertEqual(x, from_serializable(x))

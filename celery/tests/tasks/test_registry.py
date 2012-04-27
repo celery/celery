@@ -23,6 +23,9 @@ class MockPeriodicTask(PeriodicTask):
 
 class test_TaskRegistry(Case):
 
+    def test_NotRegistered_str(self):
+        self.assertTrue(repr(TaskRegistry.NotRegistered("tasks.add")))
+
     def assertRegisterUnregisterCls(self, r, task):
         with self.assertRaises(r.NotRegistered):
             r.unregister(task)
@@ -64,3 +67,8 @@ class test_TaskRegistry(Case):
 
         self.assertTrue(MockTask().run())
         self.assertTrue(MockPeriodicTask().run())
+
+    def test_compat(self):
+        r = TaskRegistry()
+        r.regular()
+        r.periodic()

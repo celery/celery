@@ -139,7 +139,7 @@ class Command(object):
         # Don't want to load configuration to just print the version,
         # so we handle --version manually here.
         if "--version" in arguments:
-            print(self.version)
+            sys.stdout.write("%s\n" % self.version)
             sys.exit(0)
         parser = self.create_parser(prog_name)
         return parser.parse_args(arguments)

@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
+from mock import patch
+
 from celery.app import app_or_default
 from celery.events import Events
 from celery.events.snapshot import Polaroid, evcam
@@ -114,11 +116,24 @@ class test_evcam(Case):
 
     def setUp(self):
         self.app = app_or_default()
-        self.app.events = self.MockEvents()
+        self.prev, self.app.events = self.app.events, self.MockEvents()
+
+    def tearDown(self):
+        self.app.events = self.prev
 
     def test_evcam(self):
         evcam(Polaroid, timer=timer)
         evcam(Polaroid, timer=timer, loglevel="CRITICAL")
         self.MockReceiver.raise_keyboard_interrupt = True
-        with self.assertRaises(SystemExit):
-            evcam(Polaroid, timer=timer)
+        try:
+            with self.assertRaises(SystemExit):
+                evcam(Polaroid, timer=timer)
+        finally:
+            self.MockReceiver.raise_keyboard_interrupt = False
+
+    @patch("atexit.register")
+    @patch("celery.platforms.create_pidlock")
+    def test_evcam_pidfile(self, create_pidlock, atexit):
+        evcam(Polaroid, timer=timer, pidfile="/var/pid")
+        self.assertTrue(atexit.called)
+        create_pidlock.assert_called_with("/var/pid")

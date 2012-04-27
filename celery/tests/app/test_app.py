@@ -164,7 +164,11 @@ class test_App(Case):
         self.assertEqual(self.app.conf.BROKER_TRANSPORT, "set_by_us")
 
     def test_WorkController(self):
-        x = self.app.Worker()
+        x = self.app.WorkController
+        self.assertIs(x.app, self.app)
+
+    def test_Worker(self):
+        x = self.app.Worker
         self.assertIs(x.app, self.app)
 
     def test_AsyncResult(self):

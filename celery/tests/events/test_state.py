@@ -172,6 +172,11 @@ class test_State(Case):
         self.assertFalse(r.state.alive_workers())
         self.assertFalse(r.state.workers["utest1"].alive)
 
+    def test_itertasks(self):
+        s = State()
+        s.tasks = {"a": "a", "b": "b", "c": "c", "d": "d"}
+        self.assertEqual(len(list(s.itertasks(limit=2))), 2)
+
     def test_worker_heartbeat_expire(self):
         r = ev_worker_heartbeats(State())
         r.next()

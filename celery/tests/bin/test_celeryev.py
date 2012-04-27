@@ -1,6 +1,8 @@
 from __future__ import absolute_import
+from __future__ import with_statement
 
 from nose import SkipTest
+from mock import patch as mpatch
 
 from celery.app import app_or_default
 from celery.bin import celeryev
@@ -32,6 +34,14 @@ class test_EvCommand(Case):
         self.assertEqual(self.ev.run(dump=True), "me dumper, you?")
         self.assertIn("celeryev:dump", proctitle.last[0])
 
+    @mpatch("os.chdir")
+    def test_prepare_preload_options(self, chdir):
+        self.ev.prepare_preload_options({"working_directory": "/opt/Project"})
+        chdir.assert_called_with("/opt/Project")
+        chdir.called = False
+        self.ev.prepare_preload_options({})
+        self.assertFalse(chdir.called)
+
     def test_run_top(self):
         try:
             import curses  # noqa
@@ -55,6 +65,17 @@ class test_EvCommand(Case):
         self.assertEqual(kw["loglevel"], "INFO")
         self.assertEqual(kw["logfile"], "logfile")
         self.assertIn("celeryev:cam", proctitle.last[0])
+
+    @mpatch("celery.events.snapshot.evcam")
+    @mpatch("celery.bin.celeryev.detached")
+    def test_run_cam_detached(self, detached, evcam):
+        self.ev.prog_name = "celeryev"
+        self.ev.run_evcam("myapp.Camera", detach=True)
+        self.assertTrue(detached.called)
+        self.assertTrue(evcam.called)
+
+    def test_get_options(self):
+        self.assertTrue(self.ev.get_options())
 
     @patch("celery.bin.celeryev", "EvCommand", MockCommand)
     def test_main(self):

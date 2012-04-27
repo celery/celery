@@ -7,7 +7,7 @@ import sys
 
 from functools import wraps
 
-from mock import patch
+from mock import Mock, patch
 from nose import SkipTest
 
 from billiard import current_process
@@ -63,6 +63,16 @@ class test_Worker(AppCase):
         worker.init_queues()
         self.assertEqual(worker.use_queues, ["foo", "bar", "baz"])
         self.assertTrue("foo" in celery.amqp.queues)
+
+    @disable_stdouts
+    def test_cpu_count(self):
+        celery = Celery(set_as_current=False)
+        with patch("celery.apps.worker.cpu_count") as cpu_count:
+            cpu_count.side_effect = NotImplementedError()
+            worker = celery.Worker(concurrency=None)
+            self.assertEqual(worker.concurrency, 2)
+        worker = celery.Worker(concurrency=5)
+        self.assertEqual(worker.concurrency, 5)
 
     @disable_stdouts
     def test_windows_B_option(self):
@@ -138,6 +148,14 @@ class test_Worker(AppCase):
         worker = self.Worker()
         worker.init_loader()
         worker.run()
+
+        prev, cd.IGNORE_ERRORS = cd.IGNORE_ERRORS, (KeyError, )
+        try:
+            worker.run_worker = Mock()
+            worker.run_worker.side_effect = KeyError()
+            worker.run()
+        finally:
+            cd.IGNORE_ERRORS = prev
 
     @disable_stdouts
     def test_purge_messages(self):

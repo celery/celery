@@ -1,8 +1,13 @@
 from __future__ import absolute_import
+from __future__ import with_statement
 
 from datetime import datetime, timedelta
 
+from mock import Mock
+
+from celery.exceptions import ImproperlyConfigured
 from celery.utils import timeutils
+from celery.utils.timeutils import timezone
 from celery.tests.utils import Case
 
 
@@ -54,10 +59,33 @@ class test_timeutils(Case):
         now = datetime.now()
         self.assertIs(timeutils.maybe_iso8601(now), now)
 
-    def test_maybe_timdelta(self):
+    def test_maybe_timedelta(self):
         D = timeutils.maybe_timedelta
 
         for i in (30, 30.6):
             self.assertEqual(D(i), timedelta(seconds=i))
 
         self.assertEqual(D(timedelta(days=2)), timedelta(days=2))
+
+    def test_remaining_relative(self):
+        timeutils.remaining(datetime.utcnow(), timedelta(hours=1),
+                relative=True)
+
+
+class test_timezone(Case):
+
+    def test_get_timezone_with_pytz(self):
+        prev, timeutils.pytz = timeutils.pytz, Mock()
+        try:
+            self.assertTrue(timezone.get_timezone("UTC"))
+        finally:
+            timeutils.pytz = prev
+
+    def test_get_timezone_without_pytz(self):
+        prev, timeutils.pytz = timeutils.pytz, None
+        try:
+            self.assertTrue(timezone.get_timezone("UTC"))
+            with self.assertRaises(ImproperlyConfigured):
+                timezone.get_timezone("Europe/Oslo")
+        finally:
+            timeutils.pytz = prev

@@ -182,6 +182,12 @@ class test_div(AppCase):
         self.assertTrue(MockDaemonContext.opened)
         self.assertTrue(MockDaemonContext.closed)
 
+    @patch("os.chdir")
+    def test_prepare_preload_options(self, chdir):
+        cmd = celerybeat_bin.BeatCommand()
+        cmd.prepare_preload_options({"working_directory": "/opt/Project"})
+        chdir.assert_called_with("/opt/Project")
+
     def test_parse_options(self):
         cmd = celerybeat_bin.BeatCommand()
         cmd.app = app_or_default()

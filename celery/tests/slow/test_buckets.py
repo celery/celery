@@ -148,18 +148,14 @@ class test_TaskBucket(Case):
         x = buckets.TaskBucket(task_registry=self.registry)
         x.not_empty = Mock()
         get = x._get = Mock()
-        calls = [0]
         remaining = [0]
 
         def effect():
-            try:
-                if not calls[0]:
-                    raise Empty()
-                rem = remaining[0]
-                remaining[0] = 0
-                return rem, Mock()
-            finally:
-                calls[0] += 1
+            if get.call_count == 1:
+                raise Empty()
+            rem = remaining[0]
+            remaining[0] = 0
+            return rem, Mock()
         get.side_effect = effect
 
         with mock_context(Mock()) as context:
@@ -167,7 +163,7 @@ class test_TaskBucket(Case):
             x.wait = Mock()
             x.get(block=True)
 
-            calls[0] = 0
+            get.reset()
             remaining[0] = 1
             x.get(block=True)
 

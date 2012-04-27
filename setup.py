@@ -126,7 +126,7 @@ elif py_version[0:2] == (2, 5):
 
 # -*- Tests Requires -*-
 
-tests_require = ["nose", "nose-cover3", "sqlalchemy", "mock"]
+tests_require = ["nose", "nose-cover3", "sqlalchemy", "mock==dev"]
 if sys.version_info < (2, 7):
     tests_require.append("unittest2")
 elif sys.version_info <= (2, 5):

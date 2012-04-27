@@ -120,7 +120,7 @@ class BaseBackend(object):
         if self.serializer in EXCEPTION_ABLE_CODECS:
             return get_pickled_exception(exc)
         return create_exception_cls(from_utf8(exc["exc_type"]),
-                                    sys.modules[__name__])
+                                    sys.modules[__name__])(exc["exc_message"])
 
     def prepare_value(self, result):
         """Prepare value for storage."""

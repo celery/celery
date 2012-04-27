@@ -3,9 +3,11 @@ from __future__ import with_statement
 
 from datetime import datetime, timedelta
 from functools import wraps
+from mock import patch
+from pickle import loads, dumps
 
 from celery import task
-from celery.task import current
+from celery.task import current, Task
 from celery.app import app_or_default
 from celery.task import task as task_dec
 from celery.exceptions import RetryTaskError
@@ -57,6 +59,7 @@ def retry_task(arg1, arg2, kwarg=1, max_retries=None, care=True):
     current.iterations += 1
     rmax = current.max_retries if max_retries is None else max_retries
 
+    assert repr(current.request)
     retries = current.request.retries
     if care and retries >= rmax:
         return arg1
@@ -301,6 +304,22 @@ class test_tasks(Case):
     def test_task_class_repr(self):
         task = self.createTask("c.unittest.t.repr")
         self.assertIn("class Task of", repr(task.app.Task))
+        prev, task.app.Task._app = task.app.Task._app, None
+        try:
+            self.assertIn("unbound", repr(task.app.Task, ))
+        finally:
+            task.app.Task._app = prev
+
+    def test_bind_no_magic_kwargs(self):
+        task = self.createTask("c.unittest.t.magic_kwargs")
+        task.__class__.accept_magic_kwargs = None
+        task.bind(task.app)
+
+    def test_annotate(self):
+        with patch("celery.app.task.resolve_all_annotations") as anno:
+            anno.return_value = [{"FOO": "BAR"}]
+            Task.annotate()
+            self.assertEqual(Task.FOO, "BAR")
 
     def test_after_return(self):
         task = self.createTask("c.unittest.t.after_return")
@@ -436,6 +455,13 @@ class test_apply_task(Case):
         with self.assertRaises(KeyError):
             raising.apply(throw=True)
 
+    def test_apply_no_magic_kwargs(self):
+        increment_counter.accept_magic_kwargs = False
+        try:
+            increment_counter.apply()
+        finally:
+            increment_counter.accept_magic_kwargs = True
+
     def test_apply_with_CELERY_EAGER_PROPAGATES_EXCEPTIONS(self):
         raising.app.conf.CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
         try:
@@ -550,6 +576,13 @@ def patch_crontab_nowfun(cls, retval):
 
 
 class test_crontab_parser(Case):
+
+    def test_crontab_reduce(self):
+        self.assertTrue(loads(dumps(crontab("*"))))
+
+    def test_range_steps_not_enough(self):
+        with self.assertRaises(crontab_parser.ParseException):
+            crontab_parser(24)._range_steps([1])
 
     def test_parse_star(self):
         self.assertEqual(crontab_parser(24).parse('*'), set(range(24)))

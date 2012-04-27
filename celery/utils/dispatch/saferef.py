@@ -11,7 +11,7 @@ import weakref
 import traceback
 
 
-def safe_ref(target, on_delete=None):
+def safe_ref(target, on_delete=None):  # pragma: no cover
     """Return a *safe* weak reference to a callable target
 
     :param target: the object to be weakly referenced, if it's a
@@ -37,7 +37,7 @@ def safe_ref(target, on_delete=None):
         return weakref.ref(target)
 
 
-class BoundMethodWeakref(object):
+class BoundMethodWeakref(object):  # pragma: no cover
     """'Safe' and reusable weak references to instance methods.
 
     BoundMethodWeakref objects provide a mechanism for
@@ -199,7 +199,7 @@ class BoundMethodWeakref(object):
                 return function.__get__(target)
 
 
-class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):
+class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):  # pragma: no cover
     """A specialized :class:`BoundMethodWeakref`, for platforms where
     instance methods are not descriptors.
 
@@ -269,7 +269,7 @@ class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):
                 return getattr(target, function.__name__)
 
 
-def get_bound_method_weakref(target, on_delete):
+def get_bound_method_weakref(target, on_delete):  # pragma: no cover
     """Instantiates the appropiate :class:`BoundMethodWeakRef`, depending
     on the details of the underlying class method implementation."""
     if hasattr(target, '__get__'):

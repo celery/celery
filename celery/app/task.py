@@ -817,7 +817,8 @@ class BaseTask(object):
 
     def annotate(self):
         for d in resolve_all_annotations(self.app.annotations, self):
-            self.__dict__.update(d)
+            for key, value in d.iteritems():
+                setattr(self, key, value)
 
     def __repr__(self):
         """`repr(task)`"""

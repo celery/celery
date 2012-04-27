@@ -8,9 +8,6 @@ nosetests -vd celery.tests                                      \
             --cover3-html                                       \
             --cover3-html-dir="$base/cover"                     \
             --cover3-package=celery                             \
-            --cover3-exclude="                                  \
-              celery.tests.*                                    \
-              celery.utils.compat                               \
-              celery.utils.dispatch*"                           \
-            --with-xunit                                        \
-              --xunit-file="$base/nosetests.xml"
+            --cover3-exclude="celery.tests.*"                   \
+          --with-xunit                                          \
+            --xunit-file="$base/nosetests.xml"

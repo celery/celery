@@ -299,7 +299,7 @@ class State(object):
     def itertasks(self, limit=None):
         for index, row in enumerate(self.tasks.iteritems()):
             yield row
-            if limit and index >= limit:
+            if limit and index + 1 >= limit:
                 break
 
     def tasks_by_timestamp(self, limit=None):

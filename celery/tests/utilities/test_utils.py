@@ -3,10 +3,12 @@ from __future__ import with_statement
 
 from kombu.utils.functional import promise
 
+from mock import patch
+
 from celery import utils
 from celery.utils import text
 from celery.utils import functional
-from celery.utils.functional import mpromise
+from celery.utils.functional import mpromise, maybe_list
 from celery.utils.threads import bgThread
 from celery.tests.utils import Case
 
@@ -112,6 +114,9 @@ class test_utils(Case):
         self.assertEqual(text.abbrtask("feeds.tasks.refresh", 30),
                                         "feeds.tasks.refresh")
 
+    def test_pretty(self):
+        self.assertTrue(text.pretty(("a", "b", "c")))
+
     def test_cached_property(self):
 
         def fun(obj):
@@ -121,6 +126,16 @@ class test_utils(Case):
         self.assertIs(x.__get__(None), x)
         self.assertIs(x.__set__(None, None), x)
         self.assertIs(x.__delete__(None), x)
+
+    def test_maybe_list(self):
+        self.assertEqual(maybe_list(1), [1])
+        self.assertEqual(maybe_list([1]), [1])
+        self.assertIsNone(maybe_list(None))
+
+    @patch("warnings.warn")
+    def test_warn_deprecated(self, warn):
+        utils.warn_deprecated("Foo")
+        self.assertTrue(warn.called)
 
 
 class test_mpromise(Case):

@@ -117,6 +117,16 @@ class test_inspect(Case):
         self.i.cancel_consumer("foo")
         self.assertIn("cancel_consumer", MockMailbox.sent)
 
+    @with_mock_broadcast
+    def test_active_queues(self):
+        self.i.active_queues()
+        self.assertIn("active_queues", MockMailbox.sent)
+
+    @with_mock_broadcast
+    def test_report(self):
+        self.i.report()
+        self.assertIn("report", MockMailbox.sent)
+
 
 class test_Broadcast(Case):
 
@@ -152,6 +162,11 @@ class test_Broadcast(Case):
     def test_rate_limit(self):
         self.control.rate_limit(mytask.name, "100/m")
         self.assertIn("rate_limit", MockMailbox.sent)
+
+    @with_mock_broadcast
+    def test_time_limit(self):
+        self.control.time_limit(mytask.name, soft=10, hard=20)
+        self.assertIn("time_limit", MockMailbox.sent)
 
     @with_mock_broadcast
     def test_revoke(self):

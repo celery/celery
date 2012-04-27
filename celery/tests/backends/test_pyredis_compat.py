@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from nose import SkipTest
+from pickle import loads, dumps
 
 from celery.exceptions import ImproperlyConfigured
 from celery.tests.utils import Case
@@ -19,3 +20,4 @@ class test_RedisBackend(Case):
         self.assertEqual(x.redis_port, 312)
         self.assertEqual(x.redis_db, 1)
         self.assertEqual(x.redis_password, "foo")
+        self.assertTrue(loads(dumps(x)))

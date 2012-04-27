@@ -1,15 +1,19 @@
 from __future__ import absolute_import
+from __future__ import with_statement
+
+import errno
 
 from datetime import datetime, timedelta
-from mock import patch
+from mock import Mock, call, patch
 from nose import SkipTest
 
 from celery import beat
+from celery import task
 from celery.result import AsyncResult
 from celery.schedules import schedule
 from celery.task.base import Task
 from celery.utils import uuid
-from celery.tests.utils import Case
+from celery.tests.utils import Case, patch_settings
 
 
 class Object(object):
@@ -159,9 +163,68 @@ class test_Scheduler(Case):
         scheduler.apply_async(scheduler.Entry(task=MockTask.name))
         self.assertTrue(through_task[0])
 
+    def test_apply_async_should_not_sync(self):
+
+        @task
+        def not_sync():
+            pass
+        not_sync.apply_async = Mock()
+
+        s = mScheduler()
+        s._do_sync = Mock()
+        s.should_sync = Mock()
+        s.should_sync.return_value = True
+        s.apply_async(s.Entry(task=not_sync.name))
+        s._do_sync.assert_called_with()
+
+        s._do_sync = Mock()
+        s.should_sync.return_value = False
+        s.apply_async(s.Entry(task=not_sync.name))
+        self.assertFalse(s._do_sync.called)
+
+    @patch("celery.app.base.Celery.send_task")
+    def test_send_task(self, send_task):
+        b = beat.Scheduler()
+        b.send_task("tasks.add", countdown=10)
+        send_task.assert_called_with("tasks.add", countdown=10)
+
     def test_info(self):
         scheduler = mScheduler()
         self.assertIsInstance(scheduler.info, basestring)
+
+    def test_maybe_entry(self):
+        s = mScheduler()
+        entry = s.Entry(name="add every", task="tasks.add")
+        self.assertIs(s._maybe_entry(entry.name, entry), entry)
+        self.assertTrue(s._maybe_entry("add every", {
+            "task": "tasks.add",
+        }))
+
+    def test_set_schedule(self):
+        s = mScheduler()
+        s.schedule = {"foo": "bar"}
+        self.assertEqual(s.data, {"foo": "bar"})
+
+    @patch("kombu.connection.Connection.ensure_connection")
+    def test_ensure_connection_error_handler(self, ensure):
+        s = mScheduler()
+        self.assertTrue(s._ensure_connected())
+        self.assertTrue(ensure.called)
+        callback = ensure.call_args[0][0]
+
+        callback(KeyError(), 5)
+
+    def test_install_default_entries(self):
+        with patch_settings(CELERY_TASK_RESULT_EXPIRES=None,
+                            CELERYBEAT_SCHEDULE={}):
+            s = mScheduler()
+            s.install_default_entries({})
+            self.assertNotIn("celery.backend_cleanup", s.data)
+        with patch_settings(CELERY_TASK_RESULT_EXPIRES=30,
+                            CELERYBEAT_SCHEDULE={}):
+            s = mScheduler()
+            s.install_default_entries({})
+            self.assertIn("celery.backend_cleanup", s.data)
 
     def test_due_tick(self):
         scheduler = mScheduler()
@@ -233,25 +296,73 @@ class test_Scheduler(Case):
         self.assertEqual(a.schedule["bar"].schedule._next_run_at, 40)
 
 
+def create_persistent_scheduler(shelv=None):
+    if shelv is None:
+        shelv = MockShelve()
+
+    class MockPersistentScheduler(beat.PersistentScheduler):
+        sh = shelv
+        persistence = Object()
+        persistence.open = lambda *a, **kw: shelv
+        tick_raises_exit = False
+        shutdown_service = None
+
+        def tick(self):
+            if self.tick_raises_exit:
+                raise SystemExit()
+            if self.shutdown_service:
+                self.shutdown_service._is_shutdown.set()
+            return 0.0
+
+    return MockPersistentScheduler, shelv
+
+
+class test_PersistentScheduler(Case):
+
+    @patch("os.remove")
+    def test_remove_db(self, remove):
+        s = create_persistent_scheduler()[0](schedule_filename="schedule")
+        s._remove_db()
+        remove.assert_has_calls(
+            [call("schedule" + suffix) for suffix in s.known_suffixes]
+        )
+        err = OSError()
+        err.errno = errno.ENOENT
+        remove.side_effect = err
+        s._remove_db()
+        err.errno = errno.EPERM
+        with self.assertRaises(OSError):
+            s._remove_db()
+
+    def test_setup_schedule(self):
+        s = create_persistent_scheduler()[0](schedule_filename="schedule")
+        opens = s.persistence.open = Mock()
+        s._remove_db = Mock()
+
+        def effect(*args, **kwargs):
+            if opens.call_count > 1:
+                return s.sh
+            raise OSError()
+        opens.side_effect = effect
+        s.setup_schedule()
+        s._remove_db.assert_called_with()
+
+        s._store = {"__version__": 1}
+        s.setup_schedule()
+
+    def test_get_schedule(self):
+        s = create_persistent_scheduler()[0](schedule_filename="schedule")
+        s._store = {"entries": {}}
+        s.schedule = {"foo": "bar"}
+        self.assertDictEqual(s.schedule, {"foo": "bar"})
+        self.assertDictEqual(s._store["entries"], s.schedule)
+
+
 class test_Service(Case):
 
     def get_service(self):
-        sh = MockShelve()
-
-        class PersistentScheduler(beat.PersistentScheduler):
-            persistence = Object()
-            persistence.open = lambda *a, **kw: sh
-            tick_raises_exit = False
-            shutdown_service = None
-
-            def tick(self):
-                if self.tick_raises_exit:
-                    raise SystemExit()
-                if self.shutdown_service:
-                    self.shutdown_service._is_shutdown.set()
-                return 0.0
-
-        return beat.Service(scheduler_cls=PersistentScheduler), sh
+        Scheduler, mock_shelve = create_persistent_scheduler()
+        return beat.Service(scheduler_cls=Scheduler), mock_shelve
 
     def test_start(self):
         s, sh = self.get_service()

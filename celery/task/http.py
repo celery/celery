@@ -47,7 +47,7 @@ def maybe_utf8(value):
     return value
 
 
-if sys.version_info >= (3, 0):
+if sys.version_info[0] == 3:  # pragma: no cover
 
     def utf8dict(tup):
         if not isinstance(tup, dict):

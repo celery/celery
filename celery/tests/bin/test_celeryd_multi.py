@@ -312,7 +312,7 @@ class test_MultiTool(Case):
         self.prepare_pidfile_for_getpids(PIDFile)
         self.assertIsNone(self.t.shutdown_nodes([]))
         self.t.signal_node = Mock()
-        self.t.node_alive = Mock()
+        node_alive = self.t.node_alive = Mock()
         self.t.node_alive.return_value = False
 
         callback = Mock()
@@ -324,11 +324,9 @@ class test_MultiTool(Case):
         self.t.signal_node.return_value = False
         self.assertTrue(callback.called)
         self.t.stop(["foo", "bar", "baz"], "celeryd", callback=None)
-        calls = [0]
 
         def on_node_alive(pid):
-            calls[0] += 1
-            if calls[0] > 3:
+            if node_alive.call_count > 4:
                 return True
             return False
         self.t.signal_node.return_value = True

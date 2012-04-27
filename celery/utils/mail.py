@@ -18,6 +18,7 @@ import warnings
 
 from email.mime.text import MIMEText
 
+from .functional import maybe_list
 from .imports import symbol_by_name
 
 supports_timeout = sys.version_info >= (2, 6)
@@ -31,14 +32,11 @@ class Message(object):
 
     def __init__(self, to=None, sender=None, subject=None, body=None,
             charset="us-ascii"):
-        self.to = to
+        self.to = maybe_list(to)
         self.sender = sender
         self.subject = subject
         self.body = body
         self.charset = charset
-
-        if not isinstance(self.to, (list, tuple)):
-            self.to = [self.to]
 
     def __repr__(self):
         return "<Email: To:%r Subject:%r>" % (self.to, self.subject)

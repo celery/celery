@@ -29,6 +29,21 @@ class test_TaskPublisher(AppCase):
             pass
         publisher.release.assert_called_with()
 
+    def test_declare(self):
+        publisher = self.app.amqp.TaskPublisher(self.app.broker_connection())
+        publisher.exchange.name = "foo"
+        publisher.declare()
+        publisher.exchange.name = None
+        publisher.declare()
+
+    def test_exit_AttributeError(self):
+        publisher = self.app.amqp.TaskPublisher(self.app.broker_connection())
+        publisher.close = Mock()
+        publisher.release = Mock()
+        publisher.release.side_effect = AttributeError()
+        publisher.__exit__()
+        publisher.close.assert_called_with()
+
     def test_ensure_declare_queue(self, q="x1242112"):
         publisher = self.app.amqp.TaskPublisher(Mock())
         self.app.amqp.queues.add(q, q, q)
@@ -103,3 +118,19 @@ class test_PublisherPool(AppCase):
             r2.release()
         finally:
             self.app.conf.BROKER_POOL_LIMIT = L
+
+
+class test_Queues(AppCase):
+
+    def test_queues_format(self):
+        prev, self.app.amqp.queues._consume_from = \
+                self.app.amqp.queues._consume_from, {}
+        try:
+            self.assertEqual(self.app.amqp.queues.format(), "")
+        finally:
+            self.app.amqp.queues._consume_from = prev
+
+    def test_with_defaults(self):
+        self.assertEqual(
+            self.app.amqp.queues.with_defaults(None, "celery", "direct"),
+            {})

@@ -1,8 +1,10 @@
 from __future__ import absolute_import
+from __future__ import with_statement
 
 import logging
 import os
 import sys
+import warnings
 
 from importlib import import_module
 
@@ -77,4 +79,7 @@ def import_all_modules(name=__name__, file=__file__,
 
 
 if os.environ.get("COVER_ALL_MODULES") or "--with-coverage3" in sys.argv:
-    import_all_modules()
+    from celery.tests.utils import catch_warnings
+    with catch_warnings(record=True):
+        import_all_modules()
+    warnings.resetwarnings()

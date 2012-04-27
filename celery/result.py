@@ -632,7 +632,7 @@ class TaskSetResult(ResultSet):
         return self.id
 
     def _set_taskset_id(self, id):
-        self.taskset_id = id
+        self.id = id
     taskset_id = property(_get_taskset_id, _set_taskset_id)
 
 

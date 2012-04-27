@@ -4,7 +4,7 @@ from __future__ import with_statement
 import os
 import sys
 
-from mock import patch
+from mock import Mock, patch
 
 from celery import loaders
 from celery.app import app_or_default
@@ -82,6 +82,17 @@ class test_LoaderBase(Case):
 
     def test_import_task_module(self):
         self.assertEqual(sys, self.loader.import_task_module("sys"))
+
+    def test_init_worker_process(self):
+        self.loader.on_worker_process_init()
+        m = self.loader.on_worker_process_init = Mock()
+        self.loader.init_worker_process()
+        m.assert_called_with()
+
+    def test_config_from_object_module(self):
+        self.loader.import_from_cwd = Mock()
+        self.loader.config_from_object("module_name")
+        self.loader.import_from_cwd.assert_called_with("module_name")
 
     def test_conf_property(self):
         self.assertEqual(self.loader.conf["foo"], "bar")
@@ -181,7 +192,7 @@ class test_DefaultLoader(Case):
         celeryconfig.CELERY_IMPORTS = ("os", "sys")
         configname = os.environ.get("CELERY_CONFIG_MODULE") or "celeryconfig"
 
-        prevconfig = sys.modules[configname]
+        prevconfig = sys.modules.get(configname)
         sys.modules[configname] = celeryconfig
         try:
             l = default.Loader()
@@ -191,7 +202,8 @@ class test_DefaultLoader(Case):
             self.assertTupleEqual(settings.CELERY_IMPORTS, ("os", "sys"))
             l.on_worker_init()
         finally:
-            sys.modules[configname] = prevconfig
+            if prevconfig:
+                sys.modules[configname] = prevconfig
 
     def test_import_from_cwd(self):
         l = default.Loader()

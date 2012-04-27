@@ -3,23 +3,18 @@
 from __future__ import absolute_import
 
 import weakref
-try:
-    set
-except NameError:
-    from sets import Set as set                 # Python 2.3 fallback
-
 from . import saferef
 
 WEAKREF_TYPES = (weakref.ReferenceType, saferef.BoundMethodWeakref)
 
 
-def _make_id(target):
+def _make_id(target):  # pragma: no cover
     if hasattr(target, 'im_func'):
         return (id(target.im_self), id(target.im_func))
     return id(target)
 
 
-class Signal(object):
+class Signal(object):  # pragma: no cover
     """Base class for all signals
 
 

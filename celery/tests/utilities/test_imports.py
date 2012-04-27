@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import with_statement
 
 from mock import Mock, patch
 
@@ -7,12 +8,21 @@ from celery.utils.imports import (
     symbol_by_name,
     reload_from_cwd,
     module_file,
+    find_module,
+    NotAPackage,
 )
 
 from celery.tests.utils import Case
 
 
 class test_import_utils(Case):
+
+    def test_find_module(self):
+        self.assertTrue(find_module("celery"))
+        imp = Mock()
+        imp.return_value = None
+        with self.assertRaises(NotAPackage):
+            find_module("foo.bar.baz", imp=imp)
 
     def test_qualname(self):
         Class = type("Fox", (object, ), {"__module__": "quick.brown"})
@@ -32,6 +42,7 @@ class test_import_utils(Case):
         from celery.worker import WorkController
         self.assertIs(symbol_by_name(".worker:WorkController",
                     package="celery"), WorkController)
+        self.assertTrue(symbol_by_name(":group", package="celery"))
 
     @patch("celery.utils.imports.reload")
     def test_reload_from_cwd(self, reload):
