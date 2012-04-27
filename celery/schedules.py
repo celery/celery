@@ -66,9 +66,9 @@ class schedule(object):
 
         .. admonition:: Scheduler max interval variance
 
-        The default max loop interval may vary for different schedulers.
-        For the default scheduler the value is 5 minutes, but for e.g.
-        the django-celery database scheduler the value is 5 seconds.
+            The default max loop interval may vary for different schedulers.
+            For the default scheduler the value is 5 minutes, but for e.g.
+            the django-celery database scheduler the value is 5 seconds.
 
         """
         rem_delta = self.remaining_estimate(last_run_at)

@@ -26,7 +26,7 @@ as well as PyPy and Jython.
 
 .. _`website`: http://celeryproject.org/
 .. _`django-celery changelog`: http://bit.ly/djcelery-26-changelog
-.. _`django-celery 2.5`: http://pypi.python.org/pypi/django-celery/
+.. _`django-celery 2.6`: http://pypi.python.org/pypi/django-celery/
 
 .. contents::
     :local:

@@ -56,7 +56,6 @@
     celery.utils.term
     celery.utils.timeutils
     celery.utils.compat
-    celery.utils.patch
     celery.utils.serialization
     celery.utils.threads
     celery.utils.timer2
