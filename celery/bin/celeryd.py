@@ -3,10 +3,20 @@
 
 .. program:: celeryd
 
+.. seealso::
+
+    See :ref:`preload-options`.
+
 .. cmdoption:: -c, --concurrency
 
     Number of child processes processing the queue. The default
     is the number of CPUs available on your system.
+
+.. cmdoption:: -c, --pool
+
+    Pool implementation:
+
+    processes (default), eventlet, gevent, solo or threads.
 
 .. cmdoption:: -f, --logfile
 
@@ -19,7 +29,7 @@
 
 .. cmdoption:: -n, --hostname
 
-    Set custom hostname.
+    Set custom hostname, e.g. 'foo.example.com'.
 
 .. cmdoption:: -B, --beat
 
@@ -40,18 +50,24 @@
 .. cmdoption:: -s, --schedule
 
     Path to the schedule database if running with the `-B` option.
-    Defaults to `celerybeat-schedule`. The extension ".db" will be
+    Defaults to `celerybeat-schedule`. The extension ".db" may be
     appended to the filename.
 
 .. cmdoption:: --scheduler
 
     Scheduler class to use. Default is celery.beat.PersistentScheduler
 
+.. cmdoption:: -S, --statedb
+
+    Path to the state database. The extension '.db' may
+    be appended to the filename. Default: %(default)s
+
 .. cmdoption:: -E, --events
 
-    Send events that can be captured by monitors like `celerymon`.
+    Send events that can be captured by monitors like :program:`celeryev`,
+    `celerymon`, and others.
 
-.. cmdoption:: --purge, --discard
+.. cmdoption:: --purge
 
     Discard all waiting tasks before the daemon is started.
     **WARNING**: This is unrecoverable, and the tasks will be
@@ -70,6 +86,30 @@
     Maximum number of tasks a pool worker can execute before it's
     terminated and replaced by a new worker.
 
+.. cmdoption:: --pidfile
+
+    Optional file used to store the workers pid.
+
+    The worker will not start if this file already exists
+    and the pid is still alive.
+
+.. cmdoption:: --autoscale
+
+    Enable autoscaling by providing
+    max_concurrency, min_concurrency. Example::
+
+        --autoscale=10,3
+
+    (always keep 3 processes, but grow to 10 if necessary)
+
+.. cmdoption:: --autoreload
+
+    Enable autoreloading.
+
+.. cmdoption:: --no-execv
+
+    Don't do execv after multiprocessing child fork.
+
 """
 from __future__ import absolute_import
 
@@ -81,6 +121,7 @@ from celery.bin.base import Command, Option
 
 
 class WorkerCommand(Command):
+    doc = __doc__  # parse help from this.
     namespace = "celeryd"
     enable_config_from_cmdline = True
     supports_args = False
@@ -98,91 +139,35 @@ class WorkerCommand(Command):
         conf = self.app.conf
         return (
             Option('-c', '--concurrency',
-                default=conf.CELERYD_CONCURRENCY,
-                action="store", dest="concurrency", type="int",
-                help="Number of worker threads/processes"),
-            Option('-P', '--pool',
-                default=conf.CELERYD_POOL,
-                action="store", dest="pool_cls", type="str",
-                help="Pool implementation: "
-                     "processes (default), eventlet, gevent, "
-                     "solo or threads."),
+                default=conf.CELERYD_CONCURRENCY, type="int"),
+            Option('-P', '--pool', default=conf.CELERYD_POOL, dest="pool_cls"),
             Option('--purge', '--discard', default=False,
-                action="store_true", dest="discard",
-                help="Discard all waiting tasks before the server is"
-                     "started. WARNING: There is no undo operation "
-                     "and the tasks will be deleted."),
-            Option('-f', '--logfile', default=conf.CELERYD_LOG_FILE,
-                action="store", dest="logfile",
-                help="Path to log file."),
-            Option('-l', '--loglevel', default=conf.CELERYD_LOG_LEVEL,
-                action="store", dest="loglevel",
-                help="Choose between DEBUG/INFO/WARNING/ERROR/CRITICAL"),
-            Option('-n', '--hostname', default=None,
-                action="store", dest="hostname",
-                help="Set custom host name. E.g. 'foo.example.com'."),
-            Option('-B', '--beat', default=False,
-                action="store_true", dest="embed_clockservice",
-                help="Also run the celerybeat periodic task scheduler. "
-                     "NOTE: Only one instance of celerybeat must be"
-                     "running at any one time."),
-            Option('-s', '--schedule',
-                default=conf.CELERYBEAT_SCHEDULE_FILENAME,
-                action="store", dest="schedule_filename",
-                help="Path to the schedule database if running with the -B "
-                     "option. The extension '.db' will be appended to the "
-                    "filename. Default: %s" % (
-                        conf.CELERYBEAT_SCHEDULE_FILENAME, )),
-            Option('--scheduler',
-                default=None,
-                action="store", dest="scheduler_cls",
-                help="Scheduler class. Default is "
-                     "celery.beat:PersistentScheduler"),
-            Option('-S', '--statedb', default=conf.CELERYD_STATE_DB,
-                action="store", dest="state_db",
-                help="Path to the state database. The extension '.db' will "
-                     "be appended to the filename. Default: %s" % (
-                        conf.CELERYD_STATE_DB, )),
+                action="store_true", dest="discard"),
+            Option('-f', '--logfile', default=conf.CELERYD_LOG_FILE),
+            Option('-l', '--loglevel', default=conf.CELERYD_LOG_LEVEL),
+            Option('-n', '--hostname'),
+            Option('-B', '--beat',
+                action="store_true", dest="embed_clockservice"),
+            Option('-s', '--schedule', dest="schedule_filename",
+                default=conf.CELERYBEAT_SCHEDULE_FILENAME),
+            Option('--scheduler', dest="scheduler_cls"),
+            Option('-S', '--statedb',
+                default=conf.CELERYD_STATE_DB, dest="state_db"),
             Option('-E', '--events', default=conf.CELERY_SEND_EVENTS,
-                action="store_true", dest="send_events",
-                help="Send events so the worker can be monitored by "
-                     "celeryev, celerymon and other monitors.."),
-            Option('--time-limit',
-                default=conf.CELERYD_TASK_TIME_LIMIT,
-                action="store", type="int", dest="task_time_limit",
-                help="Enables a hard time limit (in seconds) for tasks."),
-            Option('--soft-time-limit',
-                default=conf.CELERYD_TASK_SOFT_TIME_LIMIT,
-                action="store", type="int", dest="task_soft_time_limit",
-                help="Enables a soft time limit (in seconds) for tasks."),
-            Option('--maxtasksperchild',
-                default=conf.CELERYD_MAX_TASKS_PER_CHILD,
-                action="store", type="int", dest="max_tasks_per_child",
-                help="Maximum number of tasks a pool worker can execute"
-                     "before it's terminated and replaced by a new worker."),
-            Option('--queues', '-Q', default=[],
-                action="store", dest="queues",
-                help="Comma separated list of queues to consume from. "
-                     "By default all configured queues are used. "
-                     "Example: -Q video,image"),
-            Option('--include', '-I', default=[],
-                action="store", dest="include",
-                help="Comma separated list of additional modules to import. "
-                 "Example: -I foo.tasks,bar.tasks"),
-            Option('--pidfile', dest="pidfile", default=None,
-                help="Optional file used to store the workers pid. "
-                     "The worker will not start if this file already exists "
-                     "and the pid is still alive."),
-            Option('--autoscale', dest="autoscale", default=None,
-                help="Enable autoscaling by providing "
-                     "max_concurrency,min_concurrency. Example: "
-                     "--autoscale=10,3 (always keep 3 processes, "
-                     "but grow to 10 if necessary)."),
-            Option('--autoreload', dest="autoreload",
-                    action="store_true", default=False,
-                help="Enable autoreloading."),
+                action="store_true", dest="send_events"),
+            Option('--time-limit', type="int", dest="task_time_limit",
+                default=conf.CELERYD_TASK_TIME_LIMIT),
+            Option('--soft-time-limit', dest="task_soft_time_limit",
+                default=conf.CELERYD_TASK_SOFT_TIME_LIMIT, type="int"),
+            Option('--maxtasksperchild', dest="max_tasks_per_child",
+                default=conf.CELERYD_MAX_TASKS_PER_CHILD, type="int"),
+            Option('--queues', '-Q', default=[]),
+            Option('--include', '-I', default=[]),
+            Option('--pidfile'),
+            Option('--autoscale'),
+            Option('--autoreload', action="store_true"),
+            Option("--no-execv", action="store_true", default=False),
         )
-
 
 def main():
     # Fix for setuptools generated scripts, so that it will

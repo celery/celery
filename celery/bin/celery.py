@@ -54,10 +54,8 @@ class Command(object):
     prog_name = "celery"
 
     option_list = BaseCommand.preload_options + (
-        Option("--quiet", "-q", action="store_true", dest="quiet",
-                default=False),
-        Option("--no-color", "-C", dest="no_color", action="store_true",
-            help="Don't colorize output."),
+        Option("--quiet", "-q", action="store_true"),
+        Option("--no-color", "-C", action="store_true"),
     )
 
     def __init__(self, app=None, no_color=False, stdout=sys.stdout,
@@ -202,15 +200,15 @@ list_ = command(list_, "list")
 class apply(Command):
     args = "<task_name>"
     option_list = Command.option_list + (
-            Option("--args", "-a", dest="args"),
-            Option("--kwargs", "-k", dest="kwargs"),
-            Option("--eta", dest="eta"),
-            Option("--countdown", dest="countdown", type="int"),
-            Option("--expires", dest="expires"),
-            Option("--serializer", dest="serializer", default="json"),
-            Option("--queue", dest="queue"),
-            Option("--exchange", dest="exchange"),
-            Option("--routing-key", dest="routing_key"),
+            Option("--args", "-a"),
+            Option("--kwargs", "-k"),
+            Option("--eta"),
+            Option("--countdown", type="int"),
+            Option("--expires"),
+            Option("--serializer", default="json"),
+            Option("--queue"),
+            Option("--exchange"),
+            Option("--routing-key"),
     )
 
     def run(self, name, *_, **kw):
@@ -265,7 +263,7 @@ purge = command(purge)
 class result(Command):
     args = "<task_id>"
     option_list = Command.option_list + (
-            Option("--task", "-t", dest="task"),
+            Option("--task", "-t"),
     )
 
     def run(self, task_id, *args, **kwargs):
@@ -295,10 +293,9 @@ class inspect(Command):
                "cancel_consumer": 1.0,
                "report": 1.0}
     option_list = Command.option_list + (
-                Option("--timeout", "-t", type="float", dest="timeout",
-                    default=None,
+                Option("--timeout", "-t", type="float",
                     help="Timeout in seconds (float) waiting for reply"),
-                Option("--destination", "-d", dest="destination",
+                Option("--destination", "-d",
                     help="Comma separated list of destination node names."))
     show_body = True
 
@@ -396,24 +393,20 @@ migrate = command(migrate)
 
 class shell(Command):  # pragma: no cover
     option_list = Command.option_list + (
-                Option("--ipython", "-I", action="store_true",
-                    dest="force_ipython", default=False,
+                Option("--ipython", "-I",
+                    action="store_true", dest="force_ipython",
                     help="Force IPython."),
-                Option("--bpython", "-B", action="store_true",
-                    dest="force_bpython", default=False,
+                Option("--bpython", "-B",
+                    action="store_true", dest="force_bpython",
                     help="Force bpython."),
-                Option("--python", "-P", action="store_true",
-                    dest="force_python", default=False,
+                Option("--python", "-P",
+                    action="store_true", dest="force_python",
                     help="Force default Python shell."),
                 Option("--without-tasks", "-T", action="store_true",
-                    dest="without_tasks", default=False,
                     help="Don't add tasks to locals."),
                 Option("--eventlet", action="store_true",
-                    dest="eventlet", default=False,
                     help="Use eventlet."),
-                Option("--gevent", action="store_true",
-                    dest="gevent", default=False,
-                    help="Use gevent."),
+                Option("--gevent", action="store_true", help="Use gevent."),
     )
 
     def run(self, force_ipython=False, force_bpython=False,

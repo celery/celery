@@ -1,4 +1,38 @@
 # -*- coding: utf-8 -*-
+"""
+
+.. program:: celeryev
+
+.. seealso::
+
+    See :ref:`preload-options` and :ref:`daemon-options`.
+
+.. cmdoption:: -d, --dump
+
+    Dump events to stdout.
+
+.. cmdoption:: -c, --camera
+
+    Take snapshots of events using this camera.
+
+.. cmdoption:: --detach
+
+    Camera: Detach and run in the background as a daemon.
+
+.. cmdoption:: -F, --freq, --frequency
+
+    Camera: Shutter frequency.  Default is every 1.0 seconds.
+
+.. cmdoption:: -r, --maxrate
+
+    Camera: Optional shutter rate limit (e.g. 10/m).
+
+.. cmdoption:: -l, --loglevel
+
+    Logging level, choose between `DEBUG`, `INFO`, `WARNING`,
+    `ERROR`, `CRITICAL`, or `FATAL`.  Default is INFO.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 
@@ -12,6 +46,7 @@ from celery.bin.base import Command, Option, daemon_options
 
 
 class EvCommand(Command):
+    doc = __doc__
     supports_args = False
     preload_options = (Command.preload_options
                      + daemon_options(default_pidfile="celeryev.pid"))
@@ -71,25 +106,13 @@ class EvCommand(Command):
 
     def get_options(self):
         return (
-            Option('-d', '--dump',
-                   action="store_true", dest="dump",
-                   help="Dump events to stdout."),
-            Option('-c', '--camera',
-                   action="store", dest="camera",
-                   help="Camera class to take event snapshots with."),
-            Option('--detach',
-                default=False, action="store_true", dest="detach",
-                help="Recording: Detach and run in the background."),
-            Option('-F', '--frequency', '--freq',
-                   action="store", dest="frequency",
-                   type="float", default=1.0,
-                   help="Recording: Snapshot frequency."),
-            Option('-r', '--maxrate',
-                   action="store", dest="maxrate", default=None,
-                   help="Recording: Shutter rate limit (e.g. 10/m)"),
-            Option('-l', '--loglevel',
-                   action="store", dest="loglevel", default="INFO",
-                   help="Loglevel. Default is WARNING."))
+            Option('-d', '--dump', action="store_true"),
+            Option('-c', '--camera'),
+            Option('--detach', action="store_true"),
+            Option('-F', '--frequency', '--freq', type="float", default=1.0),
+            Option('-r', '--maxrate'),
+            Option('-l', '--loglevel', default="INFO"),
+        )
 
 
 def main():
