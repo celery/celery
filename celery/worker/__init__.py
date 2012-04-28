@@ -78,16 +78,17 @@ class Pool(abstract.StartStopComponent):
     name = "worker.pool"
     requires = ("queues", )
 
-    def __init__(self, w, autoscale=None, **kwargs):
+    def __init__(self, w, autoscale=None, no_execv=False, **kwargs):
         w.autoscale = autoscale
         w.pool = None
         w.max_concurrency = None
         w.min_concurrency = w.concurrency
+        w.no_execv = no_execv
         if w.autoscale:
             w.max_concurrency, w.min_concurrency = w.autoscale
 
     def create(self, w):
-        forking_enable(not w.force_execv)
+        forking_enable(w.no_execv or not w.force_execv)
         pool = w.pool = self.instantiate(w.pool_cls, w.min_concurrency,
                                 initargs=(w.app, w.hostname),
                                 maxtasksperchild=w.max_tasks_per_child,

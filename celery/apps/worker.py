@@ -71,7 +71,7 @@ class Worker(configurated):
 
     def __init__(self, hostname=None, discard=False, embed_clockservice=False,
             queues=None, include=None, app=None, pidfile=None,
-            autoscale=None, autoreload=False, **kwargs):
+            autoscale=None, autoreload=False, no_execv=False, **kwargs):
         self.app = app = app_or_default(app or self.app)
         self.hostname = hostname or socket.gethostname()
 
@@ -97,6 +97,7 @@ class Worker(configurated):
         self.pidfile = pidfile
         self.autoscale = None
         self.autoreload = autoreload
+        self.no_execv = no_execv
         if autoscale:
             max_c, _, min_c = autoscale.partition(",")
             self.autoscale = [int(max_c), min_c and int(min_c) or 0]
@@ -216,6 +217,7 @@ class Worker(configurated):
                                     embed_clockservice=self.embed_clockservice,
                                     autoscale=self.autoscale,
                                     autoreload=self.autoreload,
+                                    no_execv=self.no_execv,
                                     **self.confopts_as_dict())
         self.install_platform_tweaks(worker)
         signals.worker_init.send(sender=worker)
