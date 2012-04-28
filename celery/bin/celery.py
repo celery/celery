@@ -47,20 +47,20 @@ def command(fun, name=None):
     return fun
 
 
-class Command(object):
+class Command(BaseCommand):
     help = ""
     args = ""
     version = __version__
     prog_name = "celery"
 
-    option_list = BaseCommand.preload_options + (
+    option_list = (
         Option("--quiet", "-q", action="store_true"),
         Option("--no-color", "-C", action="store_true"),
     )
 
     def __init__(self, app=None, no_color=False, stdout=sys.stdout,
             stderr=sys.stderr):
-        self.app = app_or_default(app)
+        super(Command, self).__init__(app=app)
         self.colored = term.colored(enabled=not no_color)
         self.stdout = stdout
         self.stderr = stderr
@@ -87,26 +87,15 @@ class Command(object):
             s += "\n"
         (fh or self.stdout).write(s)
 
-    def create_parser(self, prog_name, command):
-        return OptionParser(prog=prog_name,
-                            usage=self.usage(command),
-                            version=self.version,
-                            option_list=self.get_options())
-
-    def get_options(self):
-        return self.option_list
-
     def run_from_argv(self, prog_name, argv):
         self.prog_name = prog_name
         self.command = argv[0]
         self.arglist = argv[1:]
         self.parser = self.create_parser(self.prog_name, self.command)
-        options, args = self.parser.parse_args(self.arglist)
-        self.colored = term.colored(enabled=not options.no_color)
-        return self(*args, **options.__dict__)
-
-    def run(self, *args, **kwargs):
-        raise NotImplementedError()
+        options, args = self.prepare_args(
+                *self.parser.parse_args(self.arglist))
+        self.colored = term.colored(enabled=not options["no_color"])
+        return self(*args, **options)
 
     def usage(self, command):
         return "%%prog %s [options] %s" % (command, self.args)
@@ -150,6 +139,10 @@ class Delegate(Command):
 
     def get_options(self):
         return self.option_list + self.target.get_options()
+
+    def create_parser(self, prog_name, command):
+        parser = super(Delegate, self).create_parser(prog_name, command)
+        return self.target.prepare_parser(parser)
 
     def run(self, *args, **kwargs):
         self.target.check_args(args)
@@ -535,6 +528,7 @@ class CeleryCommand(BaseCommand):
     def handle_argv(self, prog_name, argv):
         self.prog_name = prog_name
         argv = self.remove_options_at_beginning(argv)
+        _, argv = self.prepare_args(None, argv)
         try:
             command = argv[0]
         except IndexError:

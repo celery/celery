@@ -148,7 +148,7 @@ class Command(object):
         prog_name = os.path.basename(argv[0])
         return self.handle_argv(prog_name, argv[1:])
 
-    def usage(self):
+    def usage(self, command):
         """Returns the command-line usage string for this app."""
         return "%%prog [options] %s" % (self.args, )
 
@@ -172,14 +172,17 @@ class Command(object):
         and ``argv`` contains positional arguments.
 
         """
-
-        options, args = self.parse_options(prog_name, argv)
-        options = dict((k, self.expanduser(v))
-                        for k, v in vars(options).iteritems()
-                            if not k.startswith('_'))
-        argv = map(self.expanduser, argv)
-        self.check_args(args)
+        options, args = self.prepare_args(*self.parse_options(prog_name, argv))
         return self.run(*args, **options)
+
+    def prepare_args(self, options, args):
+        if options:
+            options = dict((k, self.expanduser(v))
+                            for k, v in vars(options).iteritems()
+                                if not k.startswith('_'))
+        args = map(self.expanduser, args)
+        self.check_args(args)
+        return options, args
 
     def check_args(self, args):
         if not self.supports_args and args:
@@ -199,9 +202,9 @@ class Command(object):
         parser = self.create_parser(prog_name)
         return parser.parse_args(arguments)
 
-    def create_parser(self, prog_name):
+    def create_parser(self, prog_name, command=None):
         return self.prepare_parser(self.Parser(prog=prog_name,
-                           usage=self.usage(),
+                           usage=self.usage(command),
                            version=self.version,
                            option_list=(self.preload_options +
                                         self.get_options())))
