@@ -9,6 +9,21 @@ if sys.version_info < (2, 5):
     raise Exception("Celery requires Python 2.5 or higher.")
 
 try:
+    import imp
+    import celery.app
+    _, task_path, _ = imp.find_module("task", celery.app.__path__)
+    if "__init__.py" in task_path:
+        print("- force upgrading previous installation")
+        print("  - removing %r package..." % task_path)
+        try:
+            os.unlink(os.path.abspath(task_path))
+        except Exception, exc:
+            sys.stderr.write("Couldn't remove %r: %r\n" % (task_path, exc))
+except ImportError:
+    print("OH NOES")
+
+
+try:
     from setuptools import setup, find_packages
     from setuptools.command.test import test
 except ImportError:
@@ -21,18 +36,6 @@ except ImportError:
 NAME = "celery"
 entrypoints = {}
 extra = {}
-
-try:
-    from celery.app import task
-    if "__init__.py" in task.__file__:
-        print("- force upgrading previous installation")
-        print("  - removing celery.app.task package...")
-        try:
-            os.unlink(os.path.abspath(task.__file__))
-        except Exception, exc:
-            sys.stderr.write("Couldn't remove %r: %r\n" % (task.__file__, exc))
-except ImportError:
-    pass
 
 # -*- Classifiers -*-
 
