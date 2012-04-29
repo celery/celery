@@ -6,19 +6,17 @@ import anyjson
 import sys
 
 from importlib import import_module
-from optparse import OptionParser, make_option as Option
 from pprint import pformat
 from textwrap import wrap
 
 from celery import __version__
-from celery.app import app_or_default
 from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
 from celery.utils import term
 from celery.utils.imports import symbol_by_name
 from celery.utils.text import pluralize
 from celery.utils.timeutils import maybe_iso8601
 
-from celery.bin.base import Command as BaseCommand
+from celery.bin.base import Command as BaseCommand, Option
 
 HELP = """
 Type '%(prog_name)s <command> --help' for help using

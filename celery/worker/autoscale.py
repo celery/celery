@@ -40,9 +40,8 @@ class WorkerComponent(StartStopComponent):
         w.autoscaler = None
 
     def create(self, w):
-        scaler = w.autoscaler = self.instantiate(w.autoscaler_cls, w.pool,
-                                    max_concurrency=w.max_concurrency,
-                                    min_concurrency=w.min_concurrency)
+        scaler = w.autoscaler = self.instantiate(
+            w.autoscaler_cls, w.pool, w.max_concurrency, w.min_concurrency)
         return scaler
 
 
@@ -61,14 +60,12 @@ class Autoscaler(bgThread):
 
     def body(self):
         with self.mutex:
-            current = min(self.qty, self.max_concurrency)
-            if current > self.processes:
-                self.scale_up(current - self.processes)
-            elif current < self.processes:
-                self.scale_down(
-                    (self.processes - current) - self.min_concurrency)
+            cur = min(self.qty, self.max_concurrency)
+            if cur > procs:
+                self.scale_up(cur - procs)
+            elif cur < procs:
+                self.scale_down((self.processes - cur) - self.min_concurrency)
         sleep(1.0)
-    scale = body  # XXX compat
 
     def update(self, max=None, min=None):
         with self.mutex:
@@ -101,6 +98,12 @@ class Autoscaler(bgThread):
         self._last_action = time()
         return self._grow(n)
 
+    def scale_down(self, n):
+        if n and self._last_action and (
+                time() - self._last_action > self.keepalive):
+            self._last_action = time()
+            return self._shrink(n)
+
     def _grow(self, n):
         info("Scaling up %s processes.", n)
         self.pool.grow(n)
@@ -113,13 +116,6 @@ class Autoscaler(bgThread):
             debug("Autoscaler won't scale down: all processes busy.")
         except Exception, exc:
             error("Autoscaler: scale_down: %r", exc, exc_info=True)
-
-    def scale_down(self, n):
-        if not self._last_action or not n:
-            return
-        if time() - self._last_action > self.keepalive:
-            self._last_action = time()
-            self._shrink(n)
 
     def info(self):
         return {"max": self.max_concurrency,

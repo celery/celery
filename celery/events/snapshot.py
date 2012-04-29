@@ -15,8 +15,6 @@
 """
 from __future__ import absolute_import
 
-import atexit
-
 from kombu.utils.limits import TokenBucket
 
 from celery import platforms

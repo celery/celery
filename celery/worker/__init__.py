@@ -18,7 +18,6 @@ import atexit
 import logging
 import socket
 import sys
-import threading
 import traceback
 
 from billiard import forking_enable
@@ -31,6 +30,7 @@ from celery.exceptions import SystemTerminate
 from celery.utils.functional import noop
 from celery.utils.imports import qualname, reload_from_cwd
 from celery.utils.log import get_logger
+from celery.utils.threads import Event
 
 from . import abstract
 from . import state
@@ -150,8 +150,14 @@ class Timers(abstract.Component):
             w.eta_scheduler_cls = w.pool.Timer
         w.scheduler = self.instantiate(w.eta_scheduler_cls,
                                 precision=w.eta_scheduler_precision,
-                                on_error=w.on_timer_error,
-                                on_tick=w.on_timer_tick)
+                                on_error=self.on_timer_error,
+                                on_tick=self.on_timer_tick)
+
+    def on_timer_error(self, einfo):
+        logger.error("Timer error: %r", einfo[1], exc_info=einfo)
+
+    def on_timer_tick(self, delay):
+        logger.debug("Scheduler wake-up! Next eta %s secs.", delay)
 
 
 class StateDB(abstract.Component):
@@ -212,7 +218,7 @@ class WorkController(configurated):
         # running in the same process.
         set_default_app(self.app)
 
-        self._shutdown_complete = threading.Event()
+        self._shutdown_complete = Event()
         self.setup_defaults(kwargs, namespace="celeryd")
         self.app.select_queues(queues)  # select queues subset.
 
@@ -221,7 +227,6 @@ class WorkController(configurated):
         self.hostname = hostname or socket.gethostname()
         self.ready_callback = ready_callback
         self._finalize = Finalize(self, self.stop, exitpriority=1)
-        self._finalize_db = None
 
         # Initialize boot steps
         self.pool_cls = _concurrency.get_implementation(self.pool_cls)
@@ -251,15 +256,13 @@ class WorkController(configurated):
         # makes sure all greenthreads have exited.
         self._shutdown_complete.wait()
 
-    def process_task(self, request):
+    def process_task(self, req):
         """Process task by sending it to the pool of workers."""
         try:
-            request.task.execute(request, self.pool,
-                                 self.loglevel, self.logfile)
+            req.task.execute(req, self.pool, self.loglevel, self.logfile)
         except Exception, exc:
-            logger.critical("Internal error %s: %s\n%s",
-                            exc.__class__, exc, traceback.format_exc(),
-                            exc_info=True)
+            logger.critical("Internal error: %r\n%s",
+                            exc, traceback.format_exc(), exc_info=True)
         except SystemTerminate:
             self.terminate()
             raise
@@ -288,7 +291,6 @@ class WorkController(configurated):
             self._state = self.TERMINATE
             self._shutdown_complete.set()
             return
-
         self._state = self.CLOSE
 
         for component in reversed(self.components):
@@ -316,12 +318,6 @@ class WorkController(configurated):
                 logger.debug("reloading module %s", module)
                 reload_from_cwd(sys.modules[module], reloader)
         self.pool.restart()
-
-    def on_timer_error(self, einfo):
-        logger.error("Timer error: %r", einfo[1], exc_info=einfo)
-
-    def on_timer_tick(self, delay):
-        logger.debug("Scheduler wake-up! Next eta %s secs.", delay)
 
     @property
     def state(self):

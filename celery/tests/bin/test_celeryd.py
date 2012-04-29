@@ -205,7 +205,7 @@ class test_Worker(AppCase):
         worker2 = self.Worker(include="some.module,another.package")
         self.assertListEqual(worker2.include,
                 ["some.module", "another.package"])
-        worker3 = self.Worker(include=["os", "sys"])
+        self.Worker(include=["os", "sys"])
 
     @disable_stdouts
     def test_unknown_loglevel(self):

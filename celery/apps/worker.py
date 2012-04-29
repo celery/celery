@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-import atexit
 import logging
 import os
 import socket
@@ -226,7 +225,6 @@ class Worker(configurated):
         return platforms.set_mp_process_title("celeryd",
                 info="%s (%s)" % (info, platforms.strargv(sys.argv)),
                 hostname=self.hostname)
-
 
 
 def _shutdown_handler(worker, sig="TERM", how="stop", exc=SystemExit,

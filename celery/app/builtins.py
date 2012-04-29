@@ -125,7 +125,6 @@ def add_group_task(app):
 @builtin_task
 def add_chain_task(app):
     from celery.canvas import maybe_subtask
-    from celery.result import EagerResult
 
     class Chain(app.Task):
         name = "celery.chain"

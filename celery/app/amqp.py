@@ -157,10 +157,10 @@ class TaskPublisher(messaging.Publisher):
         self.utc = kwargs.pop("enable_utc", False)
         super(TaskPublisher, self).__init__(*args, **kwargs)
 
-    def declare(self):
-        if self.exchange.name and \
-                not declaration_cached(self.exchange, self.channel):
-            super(TaskPublisher, self).declare()
+    #def declare(self):
+    #    if self.exchange.name and \
+    #       #            not declaration_cached(self.exchange, self.channel):
+    #       #super(TaskPublisher, self).declare()
 
     def _get_queue(self, name):
         if name not in self._queue_cache:
@@ -201,7 +201,9 @@ class TaskPublisher(messaging.Publisher):
         # declare entities
         if queue:
             self._declare_queue(queue, retry, _retry_policy)
-        self._declare_exchange(exchange, exchange_type, retry, _retry_policy)
+        else:
+            self._declare_exchange(exchange, exchange_type,
+                                   retry, _retry_policy)
 
         task_id = task_id or uuid()
         task_args = task_args or []

@@ -179,6 +179,7 @@ class WorkerCommand(Command):
             Option("--no-execv", action="store_true", default=False),
         )
 
+
 def main():
     # Fix for setuptools generated scripts, so that it will
     # work with multiprocessing fork emulation.
