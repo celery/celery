@@ -75,6 +75,7 @@ class test_LoaderBase(Case):
 
     def setUp(self):
         self.loader = DummyLoader()
+        self.app = app_or_default()
 
     def test_handlers_pass(self):
         self.loader.on_task_init("foo.task", "feedface-cafebabe")
@@ -101,9 +102,14 @@ class test_LoaderBase(Case):
 
     def test_import_default_modules(self):
         modnames = lambda l: [m.__name__ for m in l]
-        self.assertEqual(sorted(modnames(
-                            self.loader.import_default_modules())),
-                         sorted(modnames([os, sys])))
+        prev, self.app.conf.CELERY_IMPORTS = \
+                self.app.conf.CELERY_IMPORTS, ("os", "sys")
+        try:
+            self.assertEqual(sorted(modnames(
+                                self.loader.import_default_modules())),
+                            sorted(modnames([os, sys])))
+        finally:
+            self.app.conf.CELERY_IMPORTS = prev
 
     def test_import_from_cwd_custom_imp(self):
 
@@ -264,7 +270,11 @@ class test_AppLoader(Case):
         self.assertEqual(self.loader.conf["BAR"], 20)
 
     def test_on_worker_init(self):
-        self.loader.conf["CELERY_IMPORTS"] = ("subprocess", )
-        sys.modules.pop("subprocess", None)
-        self.loader.init_worker()
-        self.assertIn("subprocess", sys.modules)
+        prev, self.app.conf.CELERY_IMPORTS = \
+                self.app.conf.CELERY_IMPORTS, ("subprocess", )
+        try:
+            sys.modules.pop("subprocess", None)
+            self.loader.init_worker()
+            self.assertIn("subprocess", sys.modules)
+        finally:
+            self.app.conf.CELERY_IMPORTS = prev

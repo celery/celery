@@ -131,9 +131,7 @@ class test_evcam(Case):
         finally:
             self.MockReceiver.raise_keyboard_interrupt = False
 
-    @patch("atexit.register")
     @patch("celery.platforms.create_pidlock")
-    def test_evcam_pidfile(self, create_pidlock, atexit):
+    def test_evcam_pidfile(self, create_pidlock):
         evcam(Polaroid, timer=timer, pidfile="/var/pid")
-        self.assertTrue(atexit.called)
         create_pidlock.assert_called_with("/var/pid")

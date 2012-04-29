@@ -211,13 +211,13 @@ class AttributeDictMixin(object):
 
     """
 
-    def __getattr__(self, key):
+    def __getattr__(self, k):
         """`d.key -> d[key]`"""
         try:
-            return self[key]
+            return self[k]
         except KeyError:
-            raise AttributeError("'%s' object has no attribute '%s'" % (
-                    self.__class__.__name__, key))
+            raise AttributeError(
+                "'%s' object has no attribute '%s'" % (type(self).__name__, k))
 
     def __setattr__(self, key, value):
         """`d[key] = value -> d.key = value`"""

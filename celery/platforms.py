@@ -13,6 +13,7 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
+import atexit
 import errno
 import os
 import platform as _platform
@@ -50,6 +51,9 @@ PIDFILE_FLAGS = os.O_CREAT | os.O_EXCL | os.O_WRONLY
 PIDFILE_MODE = ((os.R_OK | os.W_OK) << 6) | ((os.R_OK) << 3) | ((os.R_OK))
 
 _setps_bucket = TokenBucket(0.5)  # 30/m, every 2 seconds
+
+PIDLOCKED = """ERROR: Pidfile (%s) already exists.
+Seems we're already running? (PID: %s)"""
 
 
 def pyimplementation():
@@ -214,18 +218,14 @@ def create_pidlock(pidfile):
 
     .. code-block:: python
 
-        import atexit
-        pidlock = create_pidlock("/var/run/app.pid").acquire()
-        atexit.register(pidlock.release)
+        pidlock = create_pidlock("/var/run/app.pid")
 
     """
-
     pidlock = PIDFile(pidfile)
     if pidlock.is_locked() and not pidlock.remove_if_stale():
-        raise SystemExit(
-                "ERROR: Pidfile (%s) already exists.\n"
-                "Seems we're already running? (PID: %s)" % (
-                    pidfile, pidlock.read_pid()))
+        raise SystemExit(PIDLOCKED % (pidfile, pidlock.read_pid()))
+    pidlock.acquire()
+    atexit.register(pidlock.release)
     return pidlock
 
 

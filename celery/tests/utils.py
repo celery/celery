@@ -464,23 +464,6 @@ def patch_modules(*modules):
             sys.modules[name] = mod
 
 
-class create_pidlock(object):
-    instance = [None]
-
-    def __init__(self, file):
-        self.file = file
-        self.instance[0] = self
-
-    def acquire(self):
-        self.acquired = True
-
-        class Object(object):
-            def release(self):
-                pass
-
-        return Object()
-
-
 @contextmanager
 def mock_module(*names):
     prev = {}

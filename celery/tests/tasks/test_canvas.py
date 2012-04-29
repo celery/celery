@@ -3,8 +3,9 @@ from __future__ import with_statement
 
 from mock import Mock
 
-from celery import task
+from celery import current_app, task
 from celery.canvas import Signature, chain, group, chord, subtask
+from celery.result import EagerResult
 
 from celery.tests.utils import Case
 
@@ -109,6 +110,23 @@ class test_chain(Case):
         x = add.s(2, 2) | add.s(2)
         self.assertIsInstance(subtask(x), chain)
         self.assertIsInstance(subtask(dict(x)), chain)
+
+    def test_always_eager(self):
+        current_app.conf.CELERY_ALWAYS_EAGER = True
+        try:
+            self.assertEqual(~(add.s(4, 4) | add.s(8)), 16)
+        finally:
+            current_app.conf.CELERY_ALWAYS_EAGER = False
+
+    def test_apply(self):
+        x = chain(add.s(4, 4), add.s(8), add.s(10))
+        res = x.apply()
+        self.assertIsInstance(res, EagerResult)
+        self.assertEqual(res.get(), 26)
+
+        self.assertEqual(res.parent.get(), 16)
+        self.assertEqual(res.parent.parent.get(), 8)
+        self.assertIsNone(res.parent.parent.parent)
 
 
 class test_group(Case):

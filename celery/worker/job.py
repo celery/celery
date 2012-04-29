@@ -19,7 +19,7 @@ import sys
 
 from datetime import datetime
 
-from kombu.utils import kwdict
+from kombu.utils import kwdict, reprcall
 from kombu.utils.encoding import safe_repr, safe_str
 
 from celery import current_app
@@ -158,8 +158,7 @@ class Request(object):
     def from_message(cls, message, body, **kwargs):
         # should be deprecated
         return Request(body,
-                   delivery_info=getattr(message, "delivery_info", None),
-                   **kwargs)
+            delivery_info=getattr(message, "delivery_info", None), **kwargs)
 
     def extend_with_default_kwargs(self, loglevel, logfile):
         """Extend the tasks keyword arguments with standard task arguments.
@@ -428,9 +427,8 @@ class Request(object):
     __str__ = shortinfo
 
     def __repr__(self):
-        return '<%s: {name:"%s", id:"%s", args:"%s", kwargs:"%s"}>' % (
-                self.__class__.__name__,
-                self.name, self.id, self.args, self.kwargs)
+        return '<%s %s: %s>' % (type(self).__name__, self.id,
+            reprcall(self.name, self.args, self.kwargs))
 
     @property
     def tzlocal(self):

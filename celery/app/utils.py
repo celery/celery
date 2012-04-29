@@ -5,8 +5,11 @@ import kombu
 import os
 import platform as _platform
 
+from operator import add
+
 from celery import datastructures
 from celery import platforms
+from celery.utils.functional import maybe_list
 from celery.utils.text import pretty
 from celery.utils.imports import qualname
 

@@ -69,7 +69,7 @@
 
 .. cmdoption:: --purge
 
-    Discard all waiting tasks before the daemon is started.
+    Purges all waiting tasks before the daemon is started.
     **WARNING**: This is unrecoverable, and the tasks will be
     deleted from the messaging server.
 
@@ -118,6 +118,7 @@ import sys
 from billiard import freeze_support
 
 from celery.bin.base import Command, Option
+from celery.utils.log import LOG_LEVELS, mlevel
 
 
 class WorkerCommand(Command):
@@ -133,6 +134,17 @@ class WorkerCommand(Command):
         from celery import concurrency
         kwargs["pool_cls"] = concurrency.get_implementation(
                     kwargs.get("pool_cls") or self.app.conf.CELERYD_POOL)
+        if self.app.IS_WINDOWS and kwargs.get("beat"):
+            self.die("-B option does not work on Windows.  "
+                     "Please run celerybeat as a separate service.")
+        loglevel = kwargs.get("loglevel")
+        if loglevel:
+            try:
+                kwargs["loglevel"] = mlevel(loglevel)
+            except KeyError:
+                self.die("Unknown level %r. Please use one of %s." % (
+                    loglevel, "|".join(l for l in LOG_LEVELS.keys()
+                      if isinstance(l, basestring))))
         return self.app.Worker(**kwargs).run()
 
     def get_options(self):
@@ -141,13 +153,11 @@ class WorkerCommand(Command):
             Option('-c', '--concurrency',
                 default=conf.CELERYD_CONCURRENCY, type="int"),
             Option('-P', '--pool', default=conf.CELERYD_POOL, dest="pool_cls"),
-            Option('--purge', '--discard', default=False,
-                action="store_true", dest="discard"),
+            Option('--purge', '--discard', default=False, action="store_true"),
             Option('-f', '--logfile', default=conf.CELERYD_LOG_FILE),
             Option('-l', '--loglevel', default=conf.CELERYD_LOG_LEVEL),
             Option('-n', '--hostname'),
-            Option('-B', '--beat',
-                action="store_true", dest="embed_clockservice"),
+            Option('-B', '--beat', action="store_true"),
             Option('-s', '--schedule', dest="schedule_filename",
                 default=conf.CELERYBEAT_SCHEDULE_FILENAME),
             Option('--scheduler', dest="scheduler_cls"),

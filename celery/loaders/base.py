@@ -99,9 +99,9 @@ class BaseLoader(object):
                 package=package)
 
     def import_default_modules(self):
-        imports = set(maybe_list(self.conf.get("CELERY_IMPORTS") or ()))
-        return [self.import_task_module(module)
-                    for module in imports | self.builtin_modules]
+        return [self.import_task_module(m)
+            for m in set(maybe_list(self.app.conf.CELERY_IMPORTS))
+                        | self.builtin_modules]
 
     def init_worker(self):
         if not self.worker_initialized:

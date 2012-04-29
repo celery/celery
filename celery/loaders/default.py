@@ -59,9 +59,11 @@ class Loader(BaseLoader):
                     CONFIG_INVALID_NAME % {
                         "module": configname}), sys.exc_info()[2]
         except ImportError:
-            warnings.warn(NotConfigured(
-                "No %r module found! Please make sure it exists and "
-                "is available to Python." % (configname, )))
+            # billiard sets this if forked using execv
+            if not os.environ.get("FORKED_BY_MULTIPROCESSING"):
+                warnings.warn(NotConfigured(
+                    "No %r module found! Please make sure it exists and "
+                    "is available to Python." % (configname, )))
             return self.setup_settings({})
         else:
             celeryconfig = self.import_from_cwd(configname)

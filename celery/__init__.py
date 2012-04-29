@@ -22,6 +22,7 @@ old_module, new_module = recreate_module(__name__,  # pragma: no cover
         "celery.app":       ["Celery", "bugreport"],
         "celery.app.state": ["current_app", "current_task"],
         "celery.canvas":    ["chain", "chord", "group", "subtask"],
+        "celery.utils":     ["uuid"],
     },
     direct={"task": "celery.task"},
     __package__="celery",

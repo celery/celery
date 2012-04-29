@@ -15,7 +15,7 @@ from celery.app import app_or_default
 from celery.bin import celerybeat as celerybeat_bin
 from celery.apps import beat as beatapp
 
-from celery.tests.utils import AppCase, create_pidlock
+from celery.tests.utils import AppCase
 
 
 class MockedShelveModule(object):
@@ -127,17 +127,11 @@ class test_Beat(AppCase):
         self.assertTrue(logger.critical.called)
 
     @redirect_stdouts
-    def test_use_pidfile(self, stdout, stderr):
-        from celery import platforms
-
-        prev, platforms.create_pidlock = platforms.create_pidlock, \
-                                         create_pidlock
-        try:
-            b = MockBeat2(pidfile="pidfilelockfilepid", socket_timeout=None)
-            b.start_scheduler()
-            self.assertTrue(create_pidlock.instance[0].acquired)
-        finally:
-            platforms.create_pidlock = prev
+    @patch("celery.platforms.create_pidlock")
+    def test_use_pidfile(self, create_pidlock, stdout, stderr):
+        b = MockBeat2(pidfile="pidfilelockfilepid", socket_timeout=None)
+        b.start_scheduler()
+        self.assertTrue(create_pidlock.called)
 
 
 class MockDaemonContext(object):

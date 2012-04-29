@@ -102,14 +102,14 @@ class Pool(abstract.StartStopComponent):
 class Beat(abstract.StartStopComponent):
     """Component used to embed a celerybeat process.
 
-    This will only be enabled if the ``embed_clockservice``
+    This will only be enabled if the ``beat``
     argument is set.
 
     """
     name = "worker.beat"
 
-    def __init__(self, w, embed_clockservice=False, **kwargs):
-        self.enabled = w.embed_clockservice = embed_clockservice
+    def __init__(self, w, beat=False, **kwargs):
+        self.enabled = w.beat = beat
         w.beat = None
 
     def create(self, w):

@@ -132,7 +132,6 @@ class Signature(dict):
         return self
 
     def apply_async(self, args=(), kwargs={}, **options):
-        """Apply this task asynchronously."""
         # For callbacks: extra args are prepended to the stored args.
         args, kwargs, options = self._merge(args, kwargs, options)
         return self.type.apply_async(args, kwargs, **options)
@@ -144,18 +143,12 @@ class Signature(dict):
         return value
 
     def link(self, callback):
-        """Add a callback task to be applied if this task
-        executes successfully."""
         return self.append_to_list_option("link", callback)
 
     def link_error(self, errback):
-        """Add a callback task to be applied if an error occurs
-        while executing this task."""
         return self.append_to_list_option("link_error", errback)
 
     def flatten_links(self):
-        """Gives a recursive list of dependencies (unchain if you will,
-        but with links intact)."""
         return list(chain_from_iterable(_chain([[self]],
                 (link.flatten_links()
                     for link in maybe_list(self.options.get("link")) or []))))
@@ -200,6 +193,9 @@ class chain(Signature):
         Signature.__init__(self, "celery.chain", (), {"tasks": tasks}, options)
         self.tasks = tasks
         self.subtask_type = "chain"
+
+    def __call__(self, *args, **kwargs):
+        return self.apply_async(*args, **kwargs)
 
     @classmethod
     def from_dict(self, d):

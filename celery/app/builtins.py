@@ -125,6 +125,7 @@ def add_group_task(app):
 @builtin_task
 def add_chain_task(app):
     from celery.canvas import maybe_subtask
+    from celery.result import EagerResult
 
     class Chain(app.Task):
         name = "celery.chain"
@@ -133,7 +134,6 @@ def add_chain_task(app):
         def apply_async(self, args=(), kwargs={}, **options):
             if self.app.conf.CELERY_ALWAYS_EAGER:
                 return self.apply(args, kwargs, **options)
-            tasks = kwargs["tasks"]
             tasks = [maybe_subtask(task).clone(task_id=uuid(), **kwargs)
                         for task in kwargs["tasks"]]
             reduce(lambda a, b: a.link(b), tasks)
@@ -142,6 +142,14 @@ def add_chain_task(app):
                             for task in tasks]
             reduce(lambda a, b: a.set_parent(b), reversed(results))
             return results[-1]
+
+        def apply(self, args=(), kwargs={}, **options):
+            tasks = [maybe_subtask(task).clone() for task in kwargs["tasks"]]
+            res = prev = None
+            for task in tasks:
+                res = task.apply((prev.get(), ) if prev else ())
+                res.parent, prev = prev, res
+            return res
 
     return Chain
 

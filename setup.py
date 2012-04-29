@@ -22,6 +22,14 @@ NAME = "celery"
 entrypoints = {}
 extra = {}
 
+print("CALLING SETUP.PY")
+try:
+    from celery.app import task
+    if "__init__.py" in task.__file__:
+        os.unlink(os.path.abspath(task.__file__))
+except ImportError:
+    pass
+
 # -*- Classifiers -*-
 
 classes = """

@@ -831,8 +831,7 @@ class test_WorkController(AppCase):
         self.assertTrue(worker.components)
 
     def test_with_embedded_celerybeat(self):
-        worker = WorkController(concurrency=1, loglevel=0,
-                                embed_clockservice=True)
+        worker = WorkController(concurrency=1, loglevel=0, beat=True)
         self.assertTrue(worker.beat)
         self.assertIn(worker.beat, worker.components)
 

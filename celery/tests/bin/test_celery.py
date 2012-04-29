@@ -96,7 +96,7 @@ class test_Command(AppCase):
 class test_Delegate(AppCase):
 
     def test_get_options(self):
-        self.assertTrue(worker().get_options())
+        self.assertTrue(worker(app=self.app).get_options())
 
     def test_run(self):
         w = worker()
@@ -153,15 +153,15 @@ class test_apply(AppCase):
 
 class test_purge(AppCase):
 
-    @patch("celery.app.control.Control.discard_all")
-    def test_run(self, discard_all):
+    @patch("celery.app.control.Control.purge")
+    def test_run(self, purge_):
         out = WhateverIO()
         a = purge(app=self.app, stdout=out)
-        discard_all.return_value = 0
+        purge_.return_value = 0
         a.run()
         self.assertIn("No messages purged", out.getvalue())
 
-        discard_all.return_value = 100
+        purge_.return_value = 100
         a.run()
         self.assertIn("100 messages", out.getvalue())
 

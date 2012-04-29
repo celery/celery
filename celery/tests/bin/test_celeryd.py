@@ -21,7 +21,7 @@ from celery.bin.celeryd import WorkerCommand, main as celeryd_main
 from celery.exceptions import ImproperlyConfigured, SystemTerminate
 from celery.utils.log import ensure_process_aware_logger
 
-from celery.tests.utils import AppCase, WhateverIO, create_pidlock
+from celery.tests.utils import AppCase, WhateverIO
 
 ensure_process_aware_logger()
 
@@ -79,7 +79,7 @@ class test_Worker(AppCase):
         celery = Celery(set_as_current=False)
         celery.IS_WINDOWS = True
         with self.assertRaises(SystemExit):
-            celery.Worker(embed_clockservice=True)
+            WorkerCommand(app=celery).run(beat=True)
 
     def test_tasklist(self):
         celery = Celery(set_as_current=False)
@@ -144,9 +144,8 @@ class test_Worker(AppCase):
     @disable_stdouts
     def test_run(self):
         self.Worker().run()
-        self.Worker(discard=True).run()
+        self.Worker(purge=True).run()
         worker = self.Worker()
-        worker.init_loader()
         worker.run()
 
         prev, cd.IGNORE_ERRORS = cd.IGNORE_ERRORS, (KeyError, )
@@ -204,15 +203,14 @@ class test_Worker(AppCase):
         worker1 = self.Worker(include="some.module")
         self.assertListEqual(worker1.include, ["some.module"])
         worker2 = self.Worker(include="some.module,another.package")
-        self.assertListEqual(worker2.include, ["some.module",
-                                               "another.package"])
-        worker3 = self.Worker(include="os,sys")
-        worker3.init_loader()
+        self.assertListEqual(worker2.include,
+                ["some.module", "another.package"])
+        worker3 = self.Worker(include=["os", "sys"])
 
     @disable_stdouts
     def test_unknown_loglevel(self):
         with self.assertRaises(SystemExit):
-            self.Worker(loglevel="ALIEN")
+            WorkerCommand(app=self.app).run(loglevel="ALIEN")
         worker1 = self.Worker(loglevel=0xFFFF)
         self.assertEqual(worker1.loglevel, 0xFFFF)
 
@@ -234,17 +232,11 @@ class test_Worker(AppCase):
             os.getuid = prev
 
     @disable_stdouts
-    def test_use_pidfile(self):
-        from celery import platforms
-
-        prev, platforms.create_pidlock = platforms.create_pidlock, \
-                                         create_pidlock
-        try:
-            worker = self.Worker(pidfile="pidfilelockfilepid")
-            worker.run_worker()
-            self.assertTrue(create_pidlock.instance[0].acquired)
-        finally:
-            platforms.create_pidlock = prev
+    @patch("celery.platforms.create_pidlock")
+    def test_use_pidfile(self, create_pidlock):
+        worker = self.Worker(pidfile="pidfilelockfilepid")
+        worker.run_worker()
+        self.assertTrue(create_pidlock.called)
 
     @disable_stdouts
     def test_redirect_stdouts(self):
