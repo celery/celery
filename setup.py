@@ -22,11 +22,15 @@ NAME = "celery"
 entrypoints = {}
 extra = {}
 
-print("CALLING SETUP.PY")
 try:
     from celery.app import task
     if "__init__.py" in task.__file__:
-        os.unlink(os.path.abspath(task.__file__))
+        print("- force upgrading previous installation")
+        print("  - removing celery.app.task package...")
+        try:
+            os.unlink(os.path.abspath(task.__file__))
+        except Exception, exc:
+            sys.stderr.write("Couldn't remove %r: %r\n" % (task.__file__, exc))
 except ImportError:
     pass
 
