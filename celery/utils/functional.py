@@ -18,12 +18,6 @@ from functools import partial, wraps
 from itertools import islice
 from threading import Lock, RLock
 
-try:
-    from collections import Sequence
-except ImportError:             # pragma: no cover
-    # <= Py2.5
-    Sequence = (list, tuple)    # noqa
-
 from kombu.utils.functional import promise, maybe_promise
 
 from .compat import UserDict, OrderedDict
@@ -97,12 +91,12 @@ class LRUCache(UserDict):
         return newval
 
 
+def is_list(l):
+    return hasattr(l, "__iter__") and not isinstance(l, dict)
+
+
 def maybe_list(l):
-    if l is None:
-        return l
-    elif not isinstance(l, basestring) and isinstance(l, Sequence):
-        return l
-    return [l]
+    return l if l is None or is_list(l) else [l]
 
 
 def memoize(maxsize=None, Cache=LRUCache):

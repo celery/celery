@@ -235,7 +235,7 @@ class BaseTask(object):
 
     #: The name of a serializer that are registered with
     #: :mod:`kombu.serialization.registry`.  Default is `"pickle"`.
-    serializer = "pickle"
+    serializer = None
 
     #: Hard time limit.
     #: Defaults to the :setting:`CELERY_TASK_TIME_LIMIT` setting.
@@ -274,7 +274,7 @@ class BaseTask(object):
     #:
     #: The application default can be overridden with the
     #: :setting:`CELERY_ACKS_LATE` setting.
-    acks_late = False
+    acks_late = None
 
     #: Default task expiry time.
     expires = None
@@ -434,7 +434,7 @@ class BaseTask(object):
 
     def apply_async(self, args=None, kwargs=None,
             task_id=None, publisher=None, connection=None,
-            router=None, queues=None, link=None, link_error=None, **options):
+            router=None, link=None, link_error=None, **options):
         """Apply tasks asynchronously by sending a message.
 
         :keyword args: The positional arguments to pass on to the
@@ -522,7 +522,7 @@ class BaseTask(object):
 
         """
         app = self._get_app()
-        router = app.amqp.Router(queues)
+        router = router or self.app.amqp.router
         conf = app.conf
 
         if conf.CELERY_ALWAYS_EAGER:

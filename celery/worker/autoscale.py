@@ -60,11 +60,12 @@ class Autoscaler(bgThread):
 
     def body(self):
         with self.mutex:
+            procs = self.processes
             cur = min(self.qty, self.max_concurrency)
             if cur > procs:
                 self.scale_up(cur - procs)
             elif cur < procs:
-                self.scale_down((self.processes - cur) - self.min_concurrency)
+                self.scale_down((procs - cur) - self.min_concurrency)
         sleep(1.0)
 
     def update(self, max=None, min=None):

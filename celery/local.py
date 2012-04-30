@@ -179,9 +179,14 @@ class PromiseProxy(Proxy):
         return self._get_current_object()
 
     def __evaluate__(self):
-        thing = Proxy._get_current_object(self)
-        object.__setattr__(self, "__thing", thing)
-        return thing
+        try:
+            thing = Proxy._get_current_object(self)
+            object.__setattr__(self, "__thing", thing)
+            return thing
+        finally:
+            object.__delattr__(self, "_Proxy__local")
+            object.__delattr__(self, "_Proxy__args")
+            object.__delattr__(self, "_Proxy__kwargs")
 
 
 def maybe_evaluate(obj):

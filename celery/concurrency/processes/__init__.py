@@ -47,6 +47,7 @@ def process_initializer(app, hostname):
                   str(os.environ.get("CELERY_LOG_REDIRECT_LEVEL")))
     app.loader.init_worker()
     app.loader.init_worker_process()
+    app.finalize()
     signals.worker_process_init.send(sender=None)
 
 

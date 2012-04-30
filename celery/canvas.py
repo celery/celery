@@ -17,7 +17,7 @@ from kombu.utils import kwdict, reprcall
 from celery import current_app
 from celery.local import Proxy
 from celery.utils import cached_property, uuid
-from celery.utils.functional import maybe_list
+from celery.utils.functional import maybe_list, is_list
 from celery.utils.compat import chain_from_iterable
 
 Chord = Proxy(lambda: current_app.tasks["celery.chord"])
@@ -104,9 +104,9 @@ class Signature(dict):
         return self.type.apply(args, kwargs, **options)
 
     def _merge(self, args=(), kwargs={}, options={}):
-        return (tuple(args) + tuple(self.args),
-                dict(self.kwargs, **kwargs),
-                dict(self.options, **options))
+        return (tuple(args) + tuple(self.args) if args else self.args,
+                dict(self.kwargs, **kwargs) if kwargs else self.kwargs,
+                dict(self.options, **options) if options else self.options)
 
     def clone(self, args=(), kwargs={}, **options):
         args, kwargs, options = self._merge(args, kwargs, options)
@@ -179,7 +179,7 @@ class Signature(dict):
 
     @cached_property
     def type(self):
-        return self._type or current_app.tasks[self.task]
+        return self._type or current_app.tasks[self["task"]]
     task = _getitem_property("task")
     args = _getitem_property("args")
     kwargs = _getitem_property("kwargs")
@@ -190,6 +190,7 @@ class Signature(dict):
 class chain(Signature):
 
     def __init__(self, *tasks, **options):
+        tasks = tasks[0] if len(tasks) == 1 and is_list(tasks[0]) else tasks
         Signature.__init__(self, "celery.chain", (), {"tasks": tasks}, options)
         self.tasks = tasks
         self.subtask_type = "chain"
@@ -208,19 +209,19 @@ Signature.register_type(chain)
 
 class group(Signature):
 
-    def __init__(self, tasks, **options):
-        self.tasks = tasks = [maybe_subtask(t) for t in tasks]
+    def __init__(self, *tasks, **options):
+        tasks = tasks[0] if len(tasks) == 1 and is_list(tasks[0]) else tasks
         Signature.__init__(self, "celery.group", (), {"tasks": tasks}, options)
-        self.subtask_type = "group"
+        self.tasks, self.subtask_type = tasks, "group"
 
     @classmethod
     def from_dict(self, d):
         return group(d["kwargs"]["tasks"], **kwdict(d["options"]))
 
     def __call__(self, **options):
-        tasks, result = self.type.prepare(options,
+        tasks, result, gid = self.type.prepare(options,
                                 map(Signature.clone, self.tasks))
-        return self.type(tasks, result)
+        return self.type(tasks, result, gid)
 
     def __repr__(self):
         return repr(self.tasks)

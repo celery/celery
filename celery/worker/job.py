@@ -22,9 +22,9 @@ from datetime import datetime
 from kombu.utils import kwdict, reprcall
 from kombu.utils.encoding import safe_repr, safe_str
 
-from celery import current_app
 from celery import exceptions
 from celery.app import app_or_default
+from celery.app.state import _tls
 from celery.datastructures import ExceptionInfo
 from celery.task.trace import build_tracer, trace_task, report_internal_error
 from celery.platforms import set_mp_process_title as setps
@@ -39,6 +39,8 @@ from . import state
 logger = get_logger(__name__)
 debug, info, warn, error = (logger.debug, logger.info,
                             logger.warn, logger.error)
+_does_debug = logger.isEnabledFor(logging.DEBUG)
+_does_info = logger.isEnabledFor(logging.INFO)
 
 # Localize
 tz_to_local = timezone.to_local
@@ -56,7 +58,7 @@ def execute_and_trace(name, uuid, args, kwargs, request=None, **opts):
         >>> trace_task(name, *args, **kwargs)[0]
 
     """
-    task = current_app.tasks[name]
+    task = _tls.current_app._tasks[name]
     try:
         hostname = opts.get("hostname")
         setps("celeryd", name, hostname, rate_limit=True)
@@ -77,9 +79,8 @@ class Request(object):
                  "callbacks", "errbacks",
                  "eventer", "connection_errors",
                  "task", "eta", "expires",
-                 "_does_debug", "_does_info", "request_dict",
-                 "acknowledged", "success_msg", "error_msg",
-                 "retry_msg", "time_start", "worker_pid",
+                 "request_dict", "acknowledged", "success_msg",
+                 "error_msg", "retry_msg", "time_start", "worker_pid",
                  "_already_revoked", "_terminate_on_ack", "_tzlocal")
 
     #: Format string used to log task success.
@@ -147,10 +148,6 @@ class Request(object):
             "exchange": delivery_info.get("exchange"),
             "routing_key": delivery_info.get("routing_key"),
         }
-
-        ## shortcuts
-        self._does_debug = logger.isEnabledFor(logging.DEBUG)
-        self._does_info = logger.isEnabledFor(logging.INFO)
 
         self.request_dict = body
 
@@ -288,7 +285,7 @@ class Request(object):
         if not self.task.acks_late:
             self.acknowledge()
         self.send_event("task-started", uuid=self.id, pid=pid)
-        if self._does_debug:
+        if _does_debug:
             debug("Task accepted: %s[%s] pid:%r", self.name, self.id, pid)
         if self._terminate_on_ack is not None:
             _, pool, signal = self._terminate_on_ack
@@ -327,7 +324,7 @@ class Request(object):
             self.send_event("task-succeeded", uuid=self.id,
                             result=safe_repr(ret_value), runtime=runtime)
 
-        if self._does_info:
+        if _does_info:
             now = now or time.time()
             runtime = self.time_start and (time.time() - self.time_start) or 0
             info(self.success_msg.strip(), {
@@ -341,7 +338,7 @@ class Request(object):
                          exception=safe_repr(exc_info.exception.exc),
                          traceback=safe_str(exc_info.traceback))
 
-        if self._does_info:
+        if _does_info:
             info(self.retry_msg.strip(), {
                 "id": self.id, "name": self.name,
                 "exc": safe_repr(exc_info.exception.exc)}, exc_info=exc_info)

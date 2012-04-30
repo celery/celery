@@ -454,7 +454,8 @@ class KeyValueStoreBackend(BaseDictBackend):
             return
         key = self.get_key_for_chord(setid)
         deps = TaskSetResult.restore(setid, backend=task.backend)
-        if self.incr(key) >= deps.total:
+        val = self.incr(key)
+        if val >= deps.total:
             subtask(task.request.chord).delay(deps.join(propagate=propagate))
             deps.delete()
             self.client.delete(key)

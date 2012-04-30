@@ -16,7 +16,7 @@ from datetime import timedelta
 from kombu import BrokerConnection, Exchange
 from kombu import compat as messaging
 from kombu import pools
-from kombu.common import declaration_cached, maybe_declare
+from kombu.common import maybe_declare
 
 from celery import signals
 from celery.utils import cached_property, lpmerge, uuid
@@ -24,22 +24,11 @@ from celery.utils import text
 
 from . import routes as _routes
 
-#: List of known options to a Kombu producers send method.
-#: Used to extract the message related options out of any `dict`.
-MSG_OPTIONS = ("mandatory", "priority", "immediate", "routing_key",
-               "serializer", "delivery_mode", "compression")
-
 #: Human readable queue declaration.
 QUEUE_FORMAT = """
 . %(name)s exchange:%(exchange)s (%(exchange_type)s) \
 binding:%(binding_key)s
 """
-
-
-def extract_msg_options(options, keep=MSG_OPTIONS):
-    """Extracts known options to `basic_publish` from a dict,
-    and returns a new dict."""
-    return dict((name, options.get(name)) for name in keep)
 
 
 class Queues(dict):
@@ -157,11 +146,6 @@ class TaskPublisher(messaging.Publisher):
         self.utc = kwargs.pop("enable_utc", False)
         super(TaskPublisher, self).__init__(*args, **kwargs)
 
-    #def declare(self):
-    #    if self.exchange.name and \
-    #       #            not declaration_cached(self.exchange, self.channel):
-    #       #super(TaskPublisher, self).declare()
-
     def _get_queue(self, name):
         if name not in self._queue_cache:
             options = self.app.amqp.queues[name]
@@ -190,7 +174,9 @@ class TaskPublisher(messaging.Publisher):
             expires=None, exchange=None, exchange_type=None,
             event_dispatcher=None, retry=None, retry_policy=None,
             queue=None, now=None, retries=0, chord=None, callbacks=None,
-            errbacks=None, **kwargs):
+            errbacks=None, mandatory=None, priority=None, immediate=None,
+            routing_key=None, serializer=None, delivery_mode=None,
+            compression=None, **kwargs):
         """Send task message."""
 
         connection = self.connection
@@ -240,7 +226,11 @@ class TaskPublisher(messaging.Publisher):
         send = self.send
         if do_retry:
             send = connection.ensure(self, self.send, **_retry_policy)
-        send(body, exchange=exchange, **extract_msg_options(kwargs))
+        send(body, exchange=exchange, mandatory=mandatory,
+             immediate=immediate, routing_key=routing_key,
+             serializer=serializer or self.serializer,
+             delivery_mode=delivery_mode or self.delivery_mode,
+             compression=compression or self.compression)
         signals.task_sent.send(sender=task_name, **body)
         if event_dispatcher:
             event_dispatcher.send("task-sent", uuid=task_id,
@@ -356,6 +346,10 @@ class AMQP(object):
         if self._rtable is None:
             self.flush_routes()
         return self._rtable
+
+    @cached_property
+    def router(self):
+        return self.Router()
 
     @cached_property
     def publisher_pool(self):

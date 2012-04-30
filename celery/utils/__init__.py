@@ -69,9 +69,12 @@ def deprecated(description=None, deprecation=None, removal=None,
 
 
 def lpmerge(L, R):
-    """Left precedent dictionary merge.  Keeps values from `l`, if the value
-    in `r` is :const:`None`."""
-    return dict(L, **dict((k, v) for k, v in R.iteritems() if v is not None))
+    """In place left precedent dictionary merge.
+
+    Keeps values from `L`, if the value in `R` is :const:`None`."""
+    set = L.__setitem__
+    [set(k, v) for k, v in R.iteritems() if v is not None]
+    return L
 
 
 def is_iterable(obj):

@@ -11,7 +11,7 @@ if JSONIMP:
 
 print("anyjson implementation: %r" % (anyjson.implementation.name, ))
 
-from celery import Celery
+from celery import Celery, group
 
 DEFAULT_ITS = 20000
 
@@ -66,7 +66,7 @@ def it(_, n):
 
 def bench_apply(n=DEFAULT_ITS):
     time_start = time.time()
-    celery.TaskSet(it.subtask((i, n)) for i in xrange(n)).apply_async()
+    group(it.s(i, n) for i in xrange(n))()
     print("-- apply %s tasks: %ss" % (n, time.time() - time_start, ))
 
 
@@ -81,6 +81,7 @@ def bench_work(n=DEFAULT_ITS, loglevel="CRITICAL"):
         print("STARTING WORKER")
         worker.start()
     except SystemExit:
+        raise
         assert sum(worker.state.total_count.values()) == n + 1
 
 
@@ -103,8 +104,8 @@ def main(argv=sys.argv):
         return {"apply": bench_apply,
                 "work": bench_work,
                 "both": bench_both}[argv[1]](n=n)
-    except KeyboardInterrupt:
-        pass
+    except:
+        raise
 
 
 if __name__ == "__main__":

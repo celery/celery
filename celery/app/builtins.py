@@ -80,17 +80,17 @@ def add_group_task(app):
         name = "celery.group"
         accept_magic_kwargs = False
 
-        def run(self, tasks, result):
+        def run(self, tasks, result, setid):
             app = self.app
             result = from_serializable(result)
             if self.request.is_eager or app.conf.CELERY_ALWAYS_EAGER:
                 return app.TaskSetResult(result.id,
-                        [subtask(task).apply(taskset_id=self.request.taskset)
+                        [subtask(task).apply(taskset_id=setid)
                             for task in tasks])
             with app.pool.acquire(block=True) as conn:
                 with app.amqp.TaskPublisher(conn) as publisher:
                     [subtask(task).apply_async(
-                                    taskset_id=self.request.taskset,
+                                    taskset_id=setid,
                                     publisher=publisher)
                             for task in tasks]
             parent = get_current_task()
@@ -103,16 +103,20 @@ def add_group_task(app):
             options["taskset_id"] = group_id = \
                     options.setdefault("task_id", uuid())
             for task in tasks:
-                tid = task.options.setdefault("task_id", uuid())
-                task.options["taskset_id"] = group_id
+                opts = task.options
+                opts["taskset_id"] = group_id
+                try:
+                    tid = opts["task_id"]
+                except KeyError:
+                    tid = opts["task_id"] = uuid()
                 r.append(self.AsyncResult(tid))
-            return tasks, self.app.TaskSetResult(group_id, r)
+            return tasks, self.app.TaskSetResult(group_id, r), group_id
 
         def apply_async(self, args=(), kwargs={}, **options):
             if self.app.conf.CELERY_ALWAYS_EAGER:
                 return self.apply(args, kwargs, **options)
-            tasks, result = self.prepare(options, **kwargs)
-            super(Group, self).apply_async((tasks, result), **options)
+            tasks, result, gid = self.prepare(options, **kwargs)
+            super(Group, self).apply_async((tasks, result, gid), **options)
             return result
 
         def apply(self, args=(), kwargs={}, **options):
@@ -173,15 +177,20 @@ def add_chord_task(app):
             r = []
             setid = uuid()
             for task in header.tasks:
-                tid = task.options.setdefault("task_id", uuid())
-                task.options["chord"] = body
+                opts = task.options
+                try:
+                    tid = opts["task_id"]
+                except KeyError:
+                    tid = opts["task_id"] = uuid()
+                opts["chord"] = body
+                opts["taskset_id"] = setid
                 r.append(app.AsyncResult(tid))
             app.backend.on_chord_apply(setid, body,
                                        interval=interval,
                                        max_retries=max_retries,
                                        propagate=propagate,
                                        result=r)
-            return header(taskset_id=setid)
+            return header(task_id=setid)
 
         def apply_async(self, args=(), kwargs={}, task_id=None, **options):
             if self.app.conf.CELERY_ALWAYS_EAGER:
