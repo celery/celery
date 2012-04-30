@@ -3,20 +3,7 @@ from __future__ import with_statement
 
 from mock import Mock
 
-from celery.app.amqp import MSG_OPTIONS, extract_msg_options
 from celery.tests.utils import AppCase
-
-
-class test_extract_message_options(AppCase):
-
-    def test_MSG_OPTIONS(self):
-        self.assertTrue(MSG_OPTIONS)
-
-    def test_extract_msg_options(self):
-        testing = {"mandatory": True, "routing_key": "foo.xuzzy"}
-        result = extract_msg_options(testing)
-        self.assertEqual(result["mandatory"], True)
-        self.assertEqual(result["routing_key"], "foo.xuzzy")
 
 
 class test_TaskPublisher(AppCase):

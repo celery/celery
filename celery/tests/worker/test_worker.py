@@ -22,7 +22,7 @@ from celery.exceptions import SystemTerminate
 from celery.task import task as task_dec
 from celery.task import periodic_task as periodic_task_dec
 from celery.utils import uuid
-from celery.worker import WorkController, Queues
+from celery.worker import WorkController, Queues, Timers
 from celery.worker.buckets import FastQueue
 from celery.worker.job import Request
 from celery.worker.consumer import Consumer as MainConsumer
@@ -805,7 +805,9 @@ class test_WorkController(AppCase):
         signals.worker_process_init.connect(on_worker_process_init)
 
         loader = Mock()
+        loader.override_backends = {}
         app = Celery(loader=loader, set_as_current=False)
+        app.loader = loader
         app.conf = AttributeDict(DEFAULTS)
         process_initializer(app, "awesome.worker.com")
         _signals.ignore.assert_any_call(*WORKER_SIGIGNORE)
@@ -865,14 +867,14 @@ class test_WorkController(AppCase):
         except KeyError:
             exc_info = sys.exc_info()
 
-        worker.on_timer_error(exc_info)
+        Timers(worker).on_timer_error(exc_info)
         msg, args = self.logger.error.call_args[0]
         self.assertIn("KeyError", msg % args)
 
     def test_on_timer_tick(self):
         worker = WorkController(concurrency=1, loglevel=10)
 
-        worker.on_timer_tick(30.0)
+        Timers(worker).on_timer_tick(30.0)
         xargs = self.logger.debug.call_args[0]
         fmt, arg = xargs[0], xargs[1]
         self.assertEqual(30.0, arg)

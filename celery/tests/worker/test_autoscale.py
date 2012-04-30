@@ -67,20 +67,20 @@ class test_Autoscaler(Case):
         self.assertFalse(x.joined)
 
     @sleepdeprived(autoscale)
-    def test_scale(self):
+    def test_body(self):
         x = autoscale.Autoscaler(self.pool, 10, 3)
-        x.scale()
+        x.body()
         self.assertEqual(x.pool.num_processes, 3)
         for i in range(20):
             state.reserved_requests.add(i)
-        x.scale()
-        x.scale()
+        x.body()
+        x.body()
         self.assertEqual(x.pool.num_processes, 10)
         state.reserved_requests.clear()
-        x.scale()
+        x.body()
         self.assertEqual(x.pool.num_processes, 10)
         x._last_action = time() - 10000
-        x.scale()
+        x.body()
         self.assertEqual(x.pool.num_processes, 3)
 
     def test_run(self):

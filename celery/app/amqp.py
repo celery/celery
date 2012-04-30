@@ -229,7 +229,7 @@ class TaskPublisher(messaging.Publisher):
         send(body, exchange=exchange, mandatory=mandatory,
              immediate=immediate, routing_key=routing_key,
              serializer=serializer or self.serializer,
-             delivery_mode=delivery_mode or self.delivery_mode,
+             delivery_mode=delivery_mode,
              compression=compression or self.compression)
         signals.task_sent.send(sender=task_name, **body)
         if event_dispatcher:

@@ -120,8 +120,8 @@ def add_group_task(app):
             return result
 
         def apply(self, args=(), kwargs={}, **options):
-            tasks, result = self.prepare(options, **kwargs)
-            return super(Group, self).apply((tasks, result), **options)
+            tasks, result, gid = self.prepare(options, **kwargs)
+            return super(Group, self).apply((tasks, result, gid), **options)
 
     return Group
 
