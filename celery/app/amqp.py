@@ -239,7 +239,8 @@ class TaskPublisher(messaging.Publisher):
                                                kwargs=repr(task_kwargs),
                                                retries=retries,
                                                eta=eta,
-                                               expires=expires)
+                                               expires=expires,
+                                               queue=queue)
         return task_id
 
     def __exit__(self, *exc_info):
