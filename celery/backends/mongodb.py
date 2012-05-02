@@ -94,7 +94,10 @@ class MongoBackend(BaseDictBackend):
 
     def _store_result(self, task_id, result, status, traceback=None):
         """Store return value and status of an executed task."""
-        from pymongo.binary import Binary
+        try:
+            from pymongo.binary import Binary
+        except ImportError: # pymongo >= 1.9
+            from bson.binary import Binary
 
         meta = {"_id": task_id,
                 "status": status,
@@ -124,7 +127,10 @@ class MongoBackend(BaseDictBackend):
 
     def _save_taskset(self, taskset_id, result):
         """Save the taskset result."""
-        from pymongo.binary import Binary
+        try:
+            from pymongo.binary import Binary
+        except ImportError: # pymongo >= 1.9
+            from bson.binary import Binary
 
         meta = {"_id": taskset_id,
                 "result": Binary(self.encode(result)),
