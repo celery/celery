@@ -70,6 +70,14 @@ restart the worker using the :sig:`HUP` signal::
 The worker will then replace itself with a new instance using the same
 arguments as it was started with.
 
+.. note::
+
+    This will only work if ``celeryd`` is running in the background as
+    a daemon (it does not have a controlling terminal).
+
+    Restarting by HUP is disabled on OS X because of a limitation on
+    that platform.
+
 .. _worker-concurrency:
 
 Concurrency
