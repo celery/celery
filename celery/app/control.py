@@ -27,11 +27,13 @@ def flatten_reply(reply):
 
 class Inspect(object):
 
-    def __init__(self, control, destination=None, timeout=1, callback=None,):
+    def __init__(self, control, destination=None, timeout=1, callback=None,
+            connection=None):
         self.destination = destination
         self.timeout = timeout
         self.callback = callback
         self.control = control
+        self.connection = connection
 
     def _prepare(self, reply):
         if not reply:
@@ -47,6 +49,7 @@ class Inspect(object):
                                       arguments=kwargs,
                                       destination=self.destination,
                                       callback=self.callback,
+                                      connection=self.connection,
                                       timeout=self.timeout, reply=True))
 
     def report(self):
