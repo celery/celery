@@ -544,3 +544,30 @@ same behavior:
 
 The routers will then be traversed in order, it will stop at the first router
 returning a true value, and use that as the final route for the task.
+
+Broadcast
+---------
+
+Celery can also support broadcast routing.
+Here is an example exchange ``bcast`` that uses this:
+
+.. code-block:: python
+
+    from kombu.common import Broadcast
+
+    CELERY_QUEUES = (Broadcast("broadcast_tasks"), )
+
+    CELERY_ROUTES = {"tasks.reload_cache": "broadcast_tasks"}
+
+
+Now the ``tasks.reload_tasks`` task will be sent to every
+worker consuming from this queue.
+
+.. admonition:: Broadcast & Results
+
+    Note that Celery result does not define what happens if two
+    tasks have the same task_id.  If the same task is distributed to more
+    than one worker, then the state history may not be preserved.
+
+    It is a good idea to set the ``task.ignore_result`` attribute in
+    this case.
