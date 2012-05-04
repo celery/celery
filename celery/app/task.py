@@ -16,6 +16,7 @@ import logging
 import sys
 import threading
 
+from kombu import Exchange
 from kombu.utils import cached_property
 
 from celery import current_app
@@ -369,7 +370,7 @@ class BaseTask(object):
             connect_timeout=None, exchange_type=None, **options):
         """Get a celery task message publisher.
 
-        :rtype :class:`~celery.app.amqp.TaskPublisher`:
+        :rtype :class:`~celery.app.amqp.TaskProducer`:
 
         .. warning::
 
@@ -381,23 +382,16 @@ class BaseTask(object):
                 >>> # ... do something with publisher
                 >>> publisher.connection.close()
 
-            or used as a context::
-
-                >>> with self.get_publisher() as publisher:
-                ...     # ... do something with publisher
-
         """
         exchange = self.exchange if exchange is None else exchange
         if exchange_type is None:
             exchange_type = self.exchange_type
         connection = connection or self.establish_connection(connect_timeout)
-        return self._get_app().amqp.TaskPublisher(connection=connection,
-                                           exchange=exchange,
-                                           exchange_type=exchange_type,
-                                           routing_key=self.routing_key,
-                                           **options)
+        return self._get_app().amqp.TaskProducer(connection,
+                exchange=exchange and Exchange(exchange, exchange_type),
+                routing_key=self.routing_key, **options)
 
-    def get_consumer(self, connection=None, connect_timeout=None):
+    def get_consumer(self, connection=None, queues=None, **kwargs):
         """Get message consumer.
 
         :rtype :class:`kombu.messaging.Consumer`:
@@ -414,10 +408,10 @@ class BaseTask(object):
                 >>> consumer.connection.close()
 
         """
-        connection = connection or self.establish_connection(connect_timeout)
-        return self._get_app().amqp.TaskConsumer(connection=connection,
-                                          exchange=self.exchange,
-                                          routing_key=self.routing_key)
+        app = self._get_app()
+        connection = connection or self.establish_connection()
+        return app.amqp.TaskConsumer(connection,
+            queues or app.amqp.queue_or_default(self.queue), **kwargs)
 
     def delay(self, *args, **kwargs):
         """Star argument version of :meth:`apply_async`.

@@ -109,7 +109,6 @@ class test_EventDispatcher(AppCase):
             dispatcher2.disable()
             self.assertFalse(dispatcher.enabled)
             self.assertIsNone(dispatcher.publisher)
-            self.assertTrue(created_channel.closed)
             self.assertFalse(dispatcher2.channel.closed,
                              "does not close manually provided channel")
 
@@ -119,6 +118,7 @@ class test_EventDispatcher(AppCase):
         finally:
             channel.close()
             connection.close()
+        self.assertTrue(created_channel.closed)
 
 
 class test_EventReceiver(AppCase):

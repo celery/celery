@@ -6,6 +6,8 @@ import os
 from mock import Mock, patch
 from pickle import loads, dumps
 
+from kombu import Exchange
+
 from celery import Celery
 from celery import app as _app
 from celery.app import defaults
@@ -263,22 +265,20 @@ class test_App(Case):
 
         entities = conn.declared_entities
 
-        pub = self.app.amqp.TaskPublisher(conn, exchange="foo_exchange")
-        self.assertNotIn(pub._get_exchange("foo_exchange"), entities)
+        pub = self.app.amqp.TaskPublisher(conn,
+                exchange=Exchange("foo_exchange"))
 
         dispatcher = Dispatcher()
         self.assertTrue(pub.delay_task("footask", (), {},
                                        exchange="moo_exchange",
                                        routing_key="moo_exchange",
                                        event_dispatcher=dispatcher))
-        self.assertIn(pub._get_exchange("moo_exchange"), entities)
         self.assertTrue(dispatcher.sent)
         self.assertEqual(dispatcher.sent[0][0], "task-sent")
         self.assertTrue(pub.delay_task("footask", (), {},
                                        event_dispatcher=dispatcher,
                                        exchange="bar_exchange",
                                        routing_key="bar_exchange"))
-        self.assertIn(pub._get_exchange("bar_exchange"), entities)
 
     def test_error_mail_sender(self):
         x = ErrorMail.subject % {"name": "task_name",

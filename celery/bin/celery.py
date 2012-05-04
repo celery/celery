@@ -183,7 +183,7 @@ class list_(Command):
             raise Error("unknown topic %r (choose one of: %s)" % (
                             what, available))
         with self.app.broker_connection() as conn:
-            self.app.amqp.get_task_consumer(conn).declare()
+            self.app.amqp.TaskConsumer(conn).declare()
             topics[what](conn.manager)
 list_ = command(list_, "list")
 

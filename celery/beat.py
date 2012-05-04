@@ -156,7 +156,7 @@ class Scheduler(object):
         self.max_interval = (max_interval
                                 or app.conf.CELERYBEAT_MAX_LOOP_INTERVAL
                                 or self.max_interval)
-        self.Publisher = Publisher or app.amqp.TaskPublisher
+        self.Publisher = Publisher or app.amqp.TaskProducer
         if not lazy:
             self.setup_schedule()
 
@@ -306,7 +306,7 @@ class Scheduler(object):
 
     @cached_property
     def publisher(self):
-        return self.Publisher(connection=self._ensure_connected())
+        return self.Publisher(self._ensure_connected())
 
     @property
     def info(self):

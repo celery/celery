@@ -87,12 +87,9 @@ def add_group_task(app):
                 return app.TaskSetResult(result.id,
                         [subtask(task).apply(taskset_id=setid)
                             for task in tasks])
-            with app.pool.acquire(block=True) as conn:
-                with app.amqp.TaskPublisher(conn) as publisher:
-                    [subtask(task).apply_async(
-                                    taskset_id=setid,
-                                    publisher=publisher)
-                            for task in tasks]
+            with app.default_producer() as pub:
+                [subtask(task).apply_async(taskset_id=setid, publisher=pub)
+                        for task in tasks]
             parent = get_current_task()
             if parent:
                 parent.request.children.append(result)

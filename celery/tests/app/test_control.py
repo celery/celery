@@ -49,9 +49,13 @@ def with_mock_broadcast(fun):
 class test_inspect(Case):
 
     def setUp(self):
-        app = app_or_default()
+        app = self.app = app_or_default()
         self.c = Control(app=app)
+        self.prev, app.control = app.control, self.c
         self.i = self.c.inspect()
+
+    def tearDown(self):
+        self.app.control = self.prev
 
     def test_prepare_reply(self):
         self.assertDictEqual(self.i._prepare([{"w1": {"ok": 1}},
@@ -138,8 +142,8 @@ class test_Broadcast(Case):
     def tearDown(self):
         del(self.app.control)
 
-    def test_discard_all(self):
-        self.control.discard_all()
+    def test_purge(self):
+        self.control.purge()
 
     @with_mock_broadcast
     def test_broadcast(self):

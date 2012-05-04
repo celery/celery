@@ -24,6 +24,7 @@ from contextlib import contextmanager
 from kombu.common import eventloop
 from kombu.entity import Exchange, Queue
 from kombu.messaging import Consumer, Producer
+from kombu.utils import cached_property
 
 from celery.app import app_or_default
 from celery.utils import uuid
@@ -91,7 +92,7 @@ class EventDispatcher(object):
         self.close()
 
     def enable(self):
-        self.publisher = Producer(self.channel or self.connection.channel(),
+        self.publisher = Producer(self.channel or self.connection,
                                   exchange=event_exchange,
                                   serializer=self.serializer)
         self.enabled = True
@@ -139,8 +140,6 @@ class EventDispatcher(object):
         """Close the event dispatcher."""
         self.mutex.locked() and self.mutex.release()
         if self.publisher is not None:
-            if not self.channel:  # close auto channel.
-                self.publisher.channel.close()
             self.publisher = None
 
 
@@ -225,25 +224,20 @@ class Events(object):
     def __init__(self, app=None):
         self.app = app
 
-    def Receiver(self, connection, handlers=None, routing_key="#",
-            node_id=None):
-        return EventReceiver(connection,
-                             handlers=handlers,
-                             routing_key=routing_key,
-                             node_id=node_id,
-                             app=self.app)
+    @cached_property
+    def Receiver(self):
+        return self.app.subclass_with_self(EventReceiver,
+                                           reverse="events.Receiver")
 
-    def Dispatcher(self, connection=None, hostname=None, enabled=True,
-            channel=None, buffer_while_offline=True):
-        return EventDispatcher(connection,
-                               hostname=hostname,
-                               enabled=enabled,
-                               channel=channel,
-                               app=self.app)
+    @cached_property
+    def Dispatcher(self):
+        return self.app.subclass_with_self(EventDispatcher,
+                                           reverse="events.Dispatcher")
 
+    @cached_property
     def State(self):
-        from .state import State as _State
-        return _State()
+        return self.app.subclass_with_self("celery.events.state:State",
+                                           reverse="events.State")
 
     @contextmanager
     def default_dispatcher(self, hostname=None, enabled=True,

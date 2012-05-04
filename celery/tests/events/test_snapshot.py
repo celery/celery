@@ -117,6 +117,7 @@ class test_evcam(Case):
     def setUp(self):
         self.app = app_or_default()
         self.prev, self.app.events = self.app.events, self.MockEvents()
+        self.app.events.app = self.app
 
     def tearDown(self):
         self.app.events = self.prev

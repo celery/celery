@@ -27,7 +27,7 @@ def getappattr(path):
     """Gets attribute from the current_app recursively,
     e.g. getappattr("amqp.get_task_consumer")``."""
     from celery import current_app
-    return reduce(lambda a, b: getattr(a, b), [current_app] + path)
+    return current_app._rgetattr(path)
 
 
 def _compat_task_decorator(*args, **kwargs):
@@ -59,11 +59,10 @@ COMPAT_MODULES = {
         },
         "messaging": {
             "TaskPublisher": "amqp.TaskPublisher",
-            "ConsumerSet": "amqp.ConsumerSet",
             "TaskConsumer": "amqp.TaskConsumer",
             "establish_connection": "broker_connection",
             "with_connection": "with_default_connection",
-            "get_consumer_set": "amqp.get_task_consumer",
+            "get_consumer_set": "amqp.TaskConsumer",
         },
         "registry": {
             "tasks": "tasks",
@@ -76,7 +75,7 @@ COMPAT_MODULES = {
             "time_limit": "control.time_limit",
             "ping": "control.ping",
             "revoke": "control.revoke",
-            "discard_all": "control.discard_all",
+            "discard_all": "control.purge",
             "inspect": "control.inspect",
         }
     }
@@ -166,7 +165,7 @@ def get_compat_module(pkg, name):
 
     def prepare(attr):
         if isinstance(attr, basestring):
-            return Proxy(getappattr, (attr.split('.'), ))
+            return Proxy(getappattr, (attr, ))
         return attr
 
     attrs = dict(COMPAT_MODULES[pkg.__name__][name])

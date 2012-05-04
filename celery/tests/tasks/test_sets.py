@@ -158,12 +158,6 @@ class test_TaskSet(Case):
             _tls.current_task = None
             xyz.request.clear()
 
-        # must close publisher
-        ts._Publisher = Mock()
-        ts._Publisher.return_value = Mock()
-        ts.apply_async()
-        self.assertTrue(ts._Publisher.return_value.close.called)
-
     def test_apply(self):
 
         applied = [0]

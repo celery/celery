@@ -207,7 +207,7 @@ class test_tasks(Case):
 
     def assertNextTaskDataEqual(self, consumer, presult, task_name,
             test_eta=False, test_expires=False, **kwargs):
-        next_task = consumer.fetch()
+        next_task = consumer.queues[0].get()
         task_data = next_task.decode()
         self.assertEqual(task_data["id"], presult.id)
         self.assertEqual(task_data["task"], task_name)
@@ -251,8 +251,8 @@ class test_tasks(Case):
         consumer = T1.get_consumer()
         with self.assertRaises(NotImplementedError):
             consumer.receive("foo", "foo")
-        consumer.discard_all()
-        self.assertIsNone(consumer.fetch())
+        consumer.purge()
+        self.assertIsNone(consumer.queues[0].get())
 
         # Without arguments.
         presult = T1.delay()
@@ -282,10 +282,10 @@ class test_tasks(Case):
                 name="George Costanza", test_eta=True, test_expires=True)
 
         # Discarding all tasks.
-        consumer.discard_all()
+        consumer.purge()
         T1.apply_async()
-        self.assertEqual(consumer.discard_all(), 1)
-        self.assertIsNone(consumer.fetch())
+        self.assertEqual(consumer.purge(), 1)
+        self.assertIsNone(consumer.queues[0].get())
 
         self.assertFalse(presult.successful())
         T1.backend.mark_as_done(presult.id, result=None)
@@ -356,6 +356,7 @@ class test_tasks(Case):
                                             exchange="foo")
         self.assertEqual(p.exchange.name, "foo")
         p = increment_counter.get_publisher(connection, auto_declare=False,
+                                            exchange="foo",
                                             exchange_type="fanout")
         self.assertEqual(p.exchange.type, "fanout")
 
@@ -434,7 +435,7 @@ class test_TaskSet(Case):
         taskset_id = taskset_res.taskset_id
         consumer = increment_counter.get_consumer()
         for subtask in subtasks:
-            m = consumer.fetch().payload
+            m = consumer.queues[0].get().payload
             self.assertDictContainsSubset({"taskset": taskset_id,
                                            "task": increment_counter.name,
                                            "id": subtask.id}, m)

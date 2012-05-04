@@ -23,25 +23,6 @@ class test_TaskPublisher(AppCase):
         publisher.exchange.name = None
         publisher.declare()
 
-    def test_exit_AttributeError(self):
-        publisher = self.app.amqp.TaskPublisher(self.app.broker_connection())
-        publisher.close = Mock()
-        publisher.release = Mock()
-        publisher.release.side_effect = AttributeError()
-        publisher.__exit__()
-        publisher.close.assert_called_with()
-
-    def test_ensure_declare_queue(self, q="x1242112"):
-        publisher = self.app.amqp.TaskPublisher(Mock())
-        self.app.amqp.queues.add(q, q, q)
-        publisher._declare_queue(q, retry=True)
-        self.assertTrue(publisher.connection.ensure.call_count)
-
-    def test_ensure_declare_exchange(self, e="x9248311"):
-        publisher = self.app.amqp.TaskPublisher(Mock())
-        publisher._declare_exchange(e, "direct", retry=True)
-        self.assertTrue(publisher.connection.ensure.call_count)
-
     def test_retry_policy(self):
         pub = self.app.amqp.TaskPublisher(Mock())
         pub.channel.connection.client.declared_entities = set()
@@ -94,7 +75,6 @@ class test_PublisherPool(AppCase):
 
             p1 = r1 = pool.acquire()
             p2 = r2 = pool.acquire()
-            delattr(r1.connection, "_producer_chan")
             r1.release()
             r2.release()
             r1 = pool.acquire()
@@ -119,5 +99,5 @@ class test_Queues(AppCase):
 
     def test_with_defaults(self):
         self.assertEqual(
-            self.app.amqp.queues.with_defaults(None, "celery", "direct"),
-            {})
+            self.app.amqp.queues.with_defaults(None,
+                self.app.amqp.default_exchange), {})

@@ -35,7 +35,7 @@ old_module, new_module = recreate_module(__name__,  # pragma: no cover
     __path__=__path__,
     __doc__=__doc__,
     current=current,
-    discard_all=Proxy(lambda: current_app.control.discard_all),
+    discard_all=Proxy(lambda: current_app.control.purge),
     backend_cleanup=Proxy(
         lambda: current_app.tasks["celery.backend_cleanup"]
     ),

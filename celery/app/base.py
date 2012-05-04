@@ -40,7 +40,7 @@ from .utils import AppPickler, Settings, bugreport, _unpickle_app
 def _unpickle_appattr(reverse_name, args):
     """Given an attribute name and a list of args, gets
     the attribute from the current app and calls it."""
-    return getattr(get_current_app(), reverse_name)(*args)
+    return get_current_app()._rgetattr(reverse_name)(*args)
 
 
 class Celery(object):
@@ -158,33 +158,21 @@ class Celery(object):
 
     def send_task(self, name, args=None, kwargs=None, countdown=None,
             eta=None, task_id=None, publisher=None, connection=None,
-            connect_timeout=None, result_cls=None, expires=None,
-            queues=None, **options):
+            result_cls=None, expires=None, queues=None, **options):
         if self.conf.CELERY_ALWAYS_EAGER:  # pragma: no cover
             warnings.warn(AlwaysEagerIgnored(
                 "CELERY_ALWAYS_EAGER has no effect on send_task"))
 
-        router = self.amqp.Router(queues)
         result_cls = result_cls or self.AsyncResult
-
+        router = self.amqp.Router(queues)
         options.setdefault("compression",
                            self.conf.CELERY_MESSAGE_COMPRESSION)
         options = router.route(options, name, args, kwargs)
-        exchange = options.get("exchange")
-        exchange_type = options.get("exchange_type")
-
-        with self.default_connection(connection, connect_timeout) as conn:
-            publish = publisher or self.amqp.TaskPublisher(conn,
-                                            exchange=exchange,
-                                            exchange_type=exchange_type)
-            try:
-                new_id = publish.delay_task(name, args, kwargs,
-                                            task_id=task_id,
-                                            countdown=countdown, eta=eta,
-                                            expires=expires, **options)
-            finally:
-                publisher or publish.close()
-            return result_cls(new_id)
+        with self.default_producer(publisher) as producer:
+            return result_cls(producer.delay_task(name, args, kwargs,
+                                                  task_id=task_id,
+                                                  countdown=countdown, eta=eta,
+                                                  expires=expires, **options))
 
     def broker_connection(self, hostname=None, userid=None,
             password=None, virtual_host=None, port=None, ssl=None,
@@ -206,16 +194,25 @@ class Celery(object):
                                            **transport_options or {}))
 
     @contextmanager
-    def default_connection(self, connection=None, connect_timeout=None):
+    def default_connection(self, connection=None, *args, **kwargs):
         if connection:
             yield connection
         else:
             with self.pool.acquire(block=True) as connection:
                 yield connection
 
+    @contextmanager
+    def default_producer(self, producer=None):
+        if producer:
+            yield producer
+        else:
+            with self.amqp.publisher_pool.acquire(block=True) as producer:
+                yield producer
+
+
     def with_default_connection(self, fun):
-        """With any function accepting `connection` and `connect_timeout`
-        keyword arguments, establishes a default connection if one is
+        """With any function accepting a `connection`
+        keyword argument, establishes a default connection if one is
         not already passed to it.
 
         Any automatically established connection will be closed after
@@ -316,6 +313,9 @@ class Celery(object):
                      __doc__=Class.__doc__, __reduce__=__reduce__, **kw)
 
         return type(name or Class.__name__, (Class, ), attrs)
+
+    def _rgetattr(self, path):
+        return reduce(getattr, [self] + path.split('.'))
 
     def __repr__(self):
         return "<%s %s:0x%x>" % (self.__class__.__name__,

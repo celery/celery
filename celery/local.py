@@ -45,6 +45,10 @@ class Proxy(object):
             return self._get_current_object().__name__
 
     @property
+    def __module__(self):
+        return self._get_current_object().__module__
+
+    @property
     def __doc__(self):
         return self._get_current_object().__doc__
 

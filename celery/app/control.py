@@ -14,6 +14,7 @@ from __future__ import absolute_import
 from __future__ import with_statement
 
 from kombu.pidbox import Mailbox
+from kombu.utils import cached_property
 
 from . import app_or_default
 
@@ -26,13 +27,14 @@ def flatten_reply(reply):
 
 
 class Inspect(object):
+    app = None
 
-    def __init__(self, control, destination=None, timeout=1, callback=None,
-            connection=None):
+    def __init__(self, destination=None, timeout=1, callback=None,
+            connection=None, app=None):
+        self.app = app or self.app
         self.destination = destination
         self.timeout = timeout
         self.callback = callback
-        self.control = control
         self.connection = connection
 
     def _prepare(self, reply):
@@ -45,7 +47,7 @@ class Inspect(object):
         return by_node
 
     def _request(self, command, **kwargs):
-        return self._prepare(self.control.broadcast(command,
+        return self._prepare(self.app.control.broadcast(command,
                                       arguments=kwargs,
                                       destination=self.destination,
                                       callback=self.callback,
@@ -103,9 +105,9 @@ class Control(object):
         self.app = app_or_default(app)
         self.mailbox = self.Mailbox("celeryd", type="fanout")
 
-    def inspect(self, destination=None, timeout=1, callback=None):
-        return Inspect(self, destination=destination, timeout=timeout,
-                             callback=callback)
+    @cached_property
+    def inspect(self):
+        return self.app.subclass_with_self(Inspect, reverse="control.inspect")
 
     def purge(self, connection=None):
         """Discard all waiting tasks.
@@ -117,8 +119,7 @@ class Control(object):
 
         """
         with self.app.default_connection(connection) as conn:
-            return self.app.amqp.get_task_consumer(connection=conn)\
-                                .discard_all()
+            return self.app.amqp.TaskConsumer(conn).purge()
     discard_all = purge
 
     def revoke(self, task_id, destination=None, terminate=False,

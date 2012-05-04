@@ -63,9 +63,12 @@ configuration:
 
 .. code-block:: python
 
-    CELERY_QUEUES = {"default": {"exchange": "default",
-                                 "binding_key": "default"}}
+    from kombu import Exchange, Queue
+
     CELERY_DEFAULT_QUEUE = "default"
+    CELERY_QUEUES = (
+        Queue("default", Exchange("default"), routing_key="default"),
+    )
 
 .. _routing-autoqueue-details:
 
@@ -99,21 +102,20 @@ configuration:
 
 .. code-block:: python
 
+    from kombu import Queue
+
     CELERY_DEFAULT_QUEUE = "default"
-    CELERY_QUEUES = {
-        "default": {
-            "binding_key": "task.#",
-        },
-        "feed_tasks": {
-            "binding_key": "feed.#",
-        },
-    }
+    CELERY_QUEUES = (
+        Queue("default",    routing_key="task.#"),
+        Queue("feed_tasks", routing_key="feed.#"),
+    )
     CELERY_DEFAULT_EXCHANGE = "tasks"
     CELERY_DEFAULT_EXCHANGE_TYPE = "topic"
     CELERY_DEFAULT_ROUTING_KEY = "task.default"
 
-:setting:`CELERY_QUEUES` is a map of queue names and their
-exchange/type/binding_key, if you don't set exchange or exchange type, they
+:setting:`CELERY_QUEUES` is a list of :class:`~kombu.entitity.Queue`
+instances.
+If you don't set the exchange or exchange type values for a key, these
 will be taken from the :setting:`CELERY_DEFAULT_EXCHANGE` and
 :setting:`CELERY_DEFAULT_EXCHANGE_TYPE` settings.
 
@@ -159,19 +161,14 @@ just specify a custom exchange and exchange type:
 
 .. code-block:: python
 
-    CELERY_QUEUES = {
-            "feed_tasks": {
-                "binding_key": "feed.#",
-            },
-            "regular_tasks": {
-                "binding_key": "task.#",
-            },
-            "image_tasks": {
-                "binding_key": "image.compress",
-                "exchange": "mediatasks",
-                "exchange_type": "direct",
-            },
-        }
+    from kombu import Exchange, Queue
+
+    CELERY_QUEUES = (
+        Queue("feed_tasks",    routing_key="feed.#"),
+        Queue("regular_tasks", routing_key="task.#"),
+        Queue("image_tasks",   exchange=Exchange("mediatasks", type="direct"),
+                               routing_key="image.compress"),
+    )
 
 If you're confused about these terms, you should read up on AMQP.
 
@@ -253,28 +250,16 @@ One for video, one for images and one default queue for everything else:
 
 .. code-block:: python
 
-    CELERY_QUEUES = {
-        "default": {
-            "exchange": "default",
-            "binding_key": "default"},
-        "videos": {
-            "exchange": "media",
-            "binding_key": "media.video",
-        },
-        "images": {
-            "exchange": "media",
-            "binding_key": "media.image",
-        }
-    }
+    from kombu import Exchange, Queue
+
+    CELERY_QUEUES = (
+        Queue("default", Exchange("default"), routing_key="default"),
+        Queue("videos",  Exchange("media"),   routing_key="media.video"),
+        Queue("images",  Exchange("media"),   routing_key="media.image"),
+    )
     CELERY_DEFAULT_QUEUE = "default"
     CELERY_DEFAULT_EXCHANGE_TYPE = "direct"
     CELERY_DEFAULT_ROUTING_KEY = "default"
-
-.. note::
-
-    In Celery the `routing_key` is the key used to send the message,
-    while `binding_key` is the key the queue is bound with.  In the AMQP API
-    they are both referred to as the routing key.
 
 .. _amqp-exchange-types:
 
@@ -461,16 +446,16 @@ One for video, one for images and one default queue for everything else:
     CELERY_QUEUES = {
         "default": {
             "exchange": "default",
-            "binding_key": "default"},
+            "routing_key": "default"},
         "videos": {
             "exchange": "media",
             "exchange_type": "topic",
-            "binding_key": "media.video",
+            "routing_key": "media.video",
         },
         "images": {
             "exchange": "media",
             "exchange_type": "topic",
-            "binding_key": "media.image",
+            "routing_key": "media.image",
         }
     }
     CELERY_DEFAULT_QUEUE = "default"

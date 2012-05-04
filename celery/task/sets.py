@@ -39,12 +39,8 @@ class TaskSet(UserList):
 
         with app.default_connection(connection, connect_timeout) as conn:
             setid = taskset_id or uuid()
-            pub = publisher or self.Publisher(connection=conn)
-            try:
-                results = self._async_results(setid, pub)
-            finally:
-                if not publisher:  # created by us.
-                    pub.close()
+            pub = publisher or self.Publisher(conn)
+            results = self._async_results(setid, pub)
 
             result = app.TaskSetResult(setid, results)
             parent = get_current_task()
@@ -84,7 +80,7 @@ class TaskSet(UserList):
     tasks = property(_get_tasks, _set_tasks)
 
     def _get_Publisher(self):
-        return self._Publisher or self.app.amqp.TaskPublisher
+        return self._Publisher or self.app.amqp.TaskProducer
 
     def _set_Publisher(self, Publisher):
         self._Publisher = Publisher

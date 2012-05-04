@@ -11,6 +11,7 @@ from mock import Mock, patch
 from nose import SkipTest
 
 from billiard import current_process
+from kombu import Exchange, Queue
 
 from celery import Celery
 from celery import platforms
@@ -166,9 +167,9 @@ class test_Worker(AppCase):
         c = app.conf
         p, app.amqp.queues = app.amqp.queues, app.amqp.Queues({
                 "celery": {"exchange": "celery",
-                           "binding_key": "celery"},
+                           "routing_key": "celery"},
                 "video": {"exchange": "video",
-                           "binding_key": "video"}})
+                           "routing_key": "video"}})
         try:
             worker = self.Worker(queues=["video"])
             worker.init_queues()
@@ -184,11 +185,8 @@ class test_Worker(AppCase):
             worker = self.Worker(queues=["image"])
             worker.init_queues()
             self.assertIn("image", app.amqp.queues.consume_from)
-            self.assertDictContainsSubset({"exchange": "image",
-                                           "routing_key": "image",
-                                           "binding_key": "image",
-                                           "exchange_type": "direct"},
-                                            app.amqp.queues["image"])
+            self.assertEqual(Queue("image", Exchange("image"),
+                             routing_key="image"), app.amqp.queues["image"])
         finally:
             app.amqp.queues = p
 

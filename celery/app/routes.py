@@ -64,7 +64,7 @@ class Router(object):
 
         if queue:  # expand config from configured queue.
             try:
-                dest = dict(self.queues[queue])
+                dest = self.queues[queue].as_dict()
             except KeyError:
                 if not self.create_missing:
                     raise QueueNotFound(
@@ -72,11 +72,9 @@ class Router(object):
                 for key in "exchange", "routing_key":
                     if route.get(key) is None:
                         route[key] = queue
-                dest = dict(self.app.amqp.queues.add(queue, **route))
+                dest = self.app.amqp.queues.add(queue, **route).as_dict()
             # needs to be declared by publisher
             dest["queue"] = queue
-            # routing_key and binding_key are synonyms.
-            dest.setdefault("routing_key", dest.get("binding_key"))
             return lpmerge(dest, route)
         return route
 
