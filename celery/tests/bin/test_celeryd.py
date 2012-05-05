@@ -179,8 +179,10 @@ class test_Worker(AppCase):
             self.assertNotIn("celery", app.amqp.queues.consume_from)
 
             c.CELERY_CREATE_MISSING_QUEUES = False
+            del(app.amqp.queues)
             with self.assertRaises(ImproperlyConfigured):
                 self.Worker(queues=["image"]).init_queues()
+            del(app.amqp.queues)
             c.CELERY_CREATE_MISSING_QUEUES = True
             worker = self.Worker(queues=["image"])
             worker.init_queues()

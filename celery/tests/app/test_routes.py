@@ -82,7 +82,8 @@ class test_MapRoute(RouteCase):
         self.assertIsNone(route.route_for_task("celery.awesome"))
 
     def test_expand_route_not_found(self):
-        expand = E(current_app.amqp.queues)
+        expand = E(current_app.amqp.Queues(
+                    current_app.conf.CELERY_QUEUES, False))
         route = routes.MapRoute({"a": {"queue": "x"}})
         with self.assertRaises(QueueNotFound):
             expand(route.route_for_task("a"))
@@ -115,10 +116,10 @@ class test_lookup_route(RouteCase):
                               "immediate": False},
                              mytask.name,
                              args=[1, 2], kwargs={})
-        self.assertDictContainsSubset({"exchange": "testq",
-                                       "routing_key": "testq",
+        self.assertDictContainsSubset({"routing_key": "testq",
                                        "immediate": False},
                                        route)
+        self.assertEqual(route["exchange"].name, "testq")
         self.assertIn("queue", route)
 
     @with_queues(foo=a_queue, bar=b_queue)

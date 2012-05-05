@@ -3,6 +3,7 @@ from __future__ import with_statement
 
 from mock import Mock
 
+from celery.app.amqp import Queues
 from celery.tests.utils import AppCase
 
 
@@ -98,6 +99,4 @@ class test_Queues(AppCase):
             self.app.amqp.queues._consume_from = prev
 
     def test_with_defaults(self):
-        self.assertEqual(
-            self.app.amqp.queues.with_defaults(None,
-                self.app.amqp.default_exchange), {})
+        self.assertEqual(Queues(None), {})
