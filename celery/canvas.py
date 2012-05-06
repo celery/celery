@@ -216,7 +216,7 @@ class xmap(Signature):
                 {"task": task, "it": it, "n": n}, **options)
 
     @classmethod
-    def from_dict(self, d)
+    def from_dict(self, d):
         return chunks(*self._unpack_args(d["kwargs"]), **d["options"])
 Signature.register_type(xmap)
 
