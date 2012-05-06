@@ -3,14 +3,20 @@
 """MongoDB backend for celery."""
 from __future__ import absolute_import
 
-import warnings
-
 from datetime import datetime
 
 try:
     import pymongo
 except ImportError:  # pragma: no cover
     pymongo = None   # noqa
+
+if pymongo:
+    try:
+        from bson.binary import Binary
+    except ImportError:                     # pragma: no cover
+        from pymongo.binary import Binary   # noqa
+else:                                       # pragma: no cover
+    Binary = None                           # noqa
 
 from kombu.utils import cached_property
 
@@ -97,12 +103,6 @@ class MongoBackend(BaseDictBackend):
 
     def _store_result(self, task_id, result, status, traceback=None):
         """Store return value and status of an executed task."""
-        try:
-            from bson.binary import Binary
-        except ImportError:
-            from pymongo.binary import Binary
-            warnings.warn("pymongo.binary has been removed in pymongo>2.2 in favor of bson.binary")
-            
         meta = {"_id": task_id,
                 "status": status,
                 "result": Binary(self.encode(result)),
@@ -131,12 +131,6 @@ class MongoBackend(BaseDictBackend):
 
     def _save_taskset(self, taskset_id, result):
         """Save the taskset result."""
-        try:
-            from bson.binary import Binary
-        except ImportError:
-            from pymongo.binary import Binary
-            warnings.warn("pymongo.binary has been removed pymongo >2.1 in favor of bson.binary")
-            
         meta = {"_id": taskset_id,
                 "result": Binary(self.encode(result)),
                 "date_done": datetime.utcnow()}

@@ -11,16 +11,9 @@ from pickle import loads, dumps
 from celery import Celery
 from celery import states
 from celery.backends import mongodb as module
-from celery.backends.mongodb import MongoBackend, Bunch
+from celery.backends.mongodb import MongoBackend, Bunch, pymongo
 from celery.exceptions import ImproperlyConfigured
 from celery.tests.utils import AppCase
-
-
-try:
-    import pymongo
-except ImportError:
-    pymongo = None  # noqa
-
 
 COLLECTION = "taskmeta_celery"
 TASK_ID = str(uuid.uuid1())
@@ -37,21 +30,19 @@ class test_MongoBackend(AppCase):
     def setUp(self):
         if pymongo is None:
             raise SkipTest("pymongo is not installed.")
-        from pymongo import binary
 
         R = self._reset = {}
         R["encode"], MongoBackend.encode = MongoBackend.encode, Mock()
         R["decode"], MongoBackend.decode = MongoBackend.decode, Mock()
-        R["Binary"], binary.Binary = binary.Binary, Mock()
+        R["Binary"], module.Binary = module.Binary, Mock()
         R["datetime"], datetime.datetime = datetime.datetime, Mock()
 
         self.backend = MongoBackend()
 
     def tearDown(self):
-        from pymongo import binary
         MongoBackend.encode = self._reset["encode"]
         MongoBackend.decode = self._reset["decode"]
-        binary.Binary = self._reset["Binary"]
+        module.Binary = self._reset["Binary"]
         datetime.datetime = self._reset["datetime"]
 
     def test_Bunch(self):
