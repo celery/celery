@@ -52,6 +52,120 @@ for the no-execv patch to work.
 - `django-celery #122 <http://github.com/ask/django-celery/issues/122`
 - `django-celery #124 <http://github.com/ask/django-celery/issues/122`
 
+
+`group`/`chord`/`chain` are now subtasks
+----------------------------------------
+
+- The source code for these, including subtask, has been moved
+  to new module celery.canvas.
+
+- group is no longer an alias to TaskSet, but new alltogether,
+  since it was very difficult to migrate the TaskSet class to become
+  a subtask.
+
+- A new shortcut has been added to tasks::
+
+        >>> task.s(arg1, arg2, kw=1)
+
+    as a shortcut to::
+
+        >>> task.subtask((arg1, arg2), {"kw": 1})
+
+- Tasks can be chained by using the ``|`` operator::
+
+        >>> (add.s(2, 2), pow.s(2)).apply_async()
+
+- Subtasks can be "evaluated" using the ``~`` operator::
+
+        >>> ~add.s(2, 2)
+        4
+
+        >>> ~(add.s(2, 2) | pow.s(2))
+
+    is the same as::
+
+        >>> chain(add.s(2, 2), pow.s(2)).apply_async().get()
+
+- A new subtask_type key has been added to the subtask dicts
+
+    This can be the string "chord", "group", "chain", "chunks",
+    "xmap", or "xstarmap".
+
+- maybe_subtask now uses subtask_type to reconstruct
+  the object, to be used when using non-pickle serializers.
+
+- The logic for these operations have been moved to dedicated
+  tasks celery.chord, celery.chain and celery.group.
+
+- subtask no longer inherits from AttributeDict.
+
+    It's now a pure dict subclass with properties for attribute
+    access to the relevant keys.
+
+- The repr's now outputs how the sequence would like imperatively::
+
+        >>> from celery import chord
+
+        >>> (chord([add.s(i, i) for i in xrange(10)], xsum.s())
+              | pow.s(2))
+        tasks.xsum([tasks.add(0, 0),
+                    tasks.add(1, 1),
+                    tasks.add(2, 2),
+                    tasks.add(3, 3),
+                    tasks.add(4, 4),
+                    tasks.add(5, 5),
+                    tasks.add(6, 6),
+                    tasks.add(7, 7),
+                    tasks.add(8, 8),
+                    tasks.add(9, 9)]) | tasks.pow(2)
+
+* New :setting:`CELERYD_WORKER_LOST_WAIT` to control the timeout in
+  seconds before :exc:`billiard.WorkerLostError` is raised
+  when a worker can not be signalled (Issue #595).
+
+    Contributed by Brendon Crawford.
+
+* App instance factory methods have been converted to be cached
+  descriptors that creates a new subclass on access.
+
+    This means that e.g. ``celery.Worker`` is an actual class
+    and will work as expected when::
+
+        class Worker(celery.Worker):
+            ...
+
+Logging Improvements
+--------------------
+
+Logging support now conforms better with best practices.
+
+- Classes used by the worker no longer uses app.get_default_logger, but uses
+  `celery.utils.log.get_logger` which simply gets the logger not setting the
+  level, and adds a NullHandler.
+
+- Loggers are no longer passed around, instead every module using logging
+  defines a module global logger that is used throughout.
+
+- All loggers inherit from a common logger called "celery".
+
+- Before task.get_logger would setup a new logger for every task,
+  and even set the loglevel.  This is no longer the case.
+
+    - Instead all task loggers now inherit from a common "celery.task" logger
+      that is set up when programs call `setup_logging_subsystem`.
+
+    - Instead of using LoggerAdapter to augment the formatter with
+      the task_id and task_name field, the task base logger now use
+      a special formatter adding these values at runtime from the
+      currently executing task.
+
+- Redirected output from stdout/stderr is now logged to a "celery.redirected"
+  logger.
+
+- In addition a few warnings.warn have been replaced with logger.warn.
+
+- Now avoids the 'no handlers for logger multiprocessing' warning
+
 Unorganized
 -----------
 
@@ -228,7 +342,63 @@ Unorganized
 * ``TasksetResult.taskset_id`` renamed to ``.id``
 
 
+* ``xmap(task, sequence)`` and ``xstarmap(task, sequence)`
 
+    Returns a list of the results applying the task to every item
+    in the sequence.
+
+    Example::
+
+        >>> from celery import xstarmap
+
+        >>> xstarmap(add, zip(range(10), range(10)).apply_async()
+        [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
+
+* ``chunks(task, sequence, chunksize)``
+
+* ``group.skew()``
+
+* 99% Coverage
+
+* :setting:`CELERY_QUEUES` can now be a list/tuple of :class:`~kombu.Queue`
+  instances.
+
+    Internally :attr:`@amqp.queues` is now a mapping of name/Queue instances,
+    instead of converting on the fly.
+
+* Can now specify connection for :class:`@control.inspect`.
+
+    .. code-block:: python
+
+        i = celery.control.inspect(connection=BrokerConnection("redis://"))
+        i.active_queues()
+
+* Module :mod:`celery.app.task` is now a module instead of a package.
+
+    The setup.py install script will try to remove the old package,
+    if that doesn't work for some reason you have to remove
+    it manually, you can do so by executing the command::
+
+        $ rm -r $(dirname $(python -c '
+            import celery;print(celery.__file__)'))/app/task/
+
+* :setting:`CELERY_FORCE_EXECV` is now enabled by default.
+
+    If the old behavior is wanted the setting can be set to False,
+    or the new :option:`--no-execv` to :program:`celeryd`.
+
+* Deprecated module ``celery.conf`` has been removed.
+
+* The :setting:`CELERY_TIMEZONE` now always require the :mod:`pytz`
+  library to be installed (exept if the timezone is set to `UTC`).
+
+* The Tokyo Tyrant backend has been removed and is no longer supported.
+
+* Now uses :func:`~kombu.common.maybe_declare` to cache queue declarations.
+
+* There is no longer a global default for the
+  :setting:`CELERYBEAT_MAX_LOOP_INTERVAL` setting, it is instead
+  set by individual schedulers.
 
 Internals
 ---------
@@ -252,6 +422,12 @@ Internals
 * Renamed package ``celery.db`` -> :mod:`celery.backends.database`.
 
 * Renamed module ``celery.abstract`` -> :mod:`celery.worker.abstract`.
+
+* Command-line docs are now parsed from the module docstrings.
+
+* Test suite directory has been reorganized.
+
+* :program:`setup.py` now reads docs from the :file:`requirements/` directory.
 
 .. _v260-deprecations:
 
