@@ -81,7 +81,6 @@ def add_map_task(app):
         return list(map(task, it))
 
 
-
 @builtin_task
 def add_starmap_task(app):
     from celery.canvas import subtask
@@ -144,7 +143,8 @@ def add_group_task(app):
             if self.app.conf.CELERY_ALWAYS_EAGER:
                 return self.apply(args, kwargs, **options)
             tasks, result, gid = self.prepare(options, **kwargs)
-            super(Group, self).apply_async((list(tasks), result, gid), **options)
+            super(Group, self).apply_async(
+                    (list(tasks), result, gid), **options)
             return result
 
         def apply(self, args=(), kwargs={}, **options):

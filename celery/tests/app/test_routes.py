@@ -3,7 +3,6 @@ from __future__ import with_statement
 
 from functools import wraps
 
-from kombu import Exchange
 from kombu.utils.functional import maybe_promise
 
 from celery import current_app

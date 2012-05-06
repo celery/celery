@@ -80,6 +80,7 @@ COMPAT_MODULES = {
             "inspect": "control.inspect",
         },
         "schedules": "celery.schedules",
+        "chords": "celery.canvas",
     }
 }
 

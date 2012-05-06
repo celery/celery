@@ -3,8 +3,6 @@ from __future__ import with_statement
 
 import anyjson
 
-from mock import Mock
-
 from celery import current_app
 from celery.task import Task
 from celery.task.sets import subtask, TaskSet
@@ -175,7 +173,7 @@ class test_TaskSet(Case):
     def test_set_app(self):
         ts = TaskSet([])
         ts.app = 42
-        self.assertEqual(ts._app, 42)
+        self.assertEqual(ts.app, 42)
 
     def test_set_tasks(self):
         ts = TaskSet([])
@@ -185,4 +183,4 @@ class test_TaskSet(Case):
     def test_set_Publisher(self):
         ts = TaskSet([])
         ts.Publisher = 42
-        self.assertEqual(ts._Publisher, 42)
+        self.assertEqual(ts.Publisher, 42)

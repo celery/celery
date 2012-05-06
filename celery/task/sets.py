@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
+from celery.app import app_or_default
 from celery.app.state import get_current_task
 from celery.canvas import subtask, maybe_subtask  # noqa
 from celery.utils import uuid
@@ -22,10 +23,10 @@ class TaskSet(UserList):
         >>> list_of_return_values = taskset_result.join()  # *expensive*
 
     """
-    _app = None
+    app = None
 
     def __init__(self, tasks=None, app=None, Publisher=None):
-        self.app = app_or_default(app)
+        self.app = app_or_default(app or self.app)
         self.data = [maybe_subtask(t) for t in tasks or []]
         self.total = len(self.tasks)
         self.Publisher = Publisher or self.app.amqp.TaskProducer

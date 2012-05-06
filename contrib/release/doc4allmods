@@ -10,7 +10,6 @@ SKIP_FILES="celery.__compat__.rst
             celery.concurrency.processes._win.rst
             celery.contrib.rst
             celery.contrib.bundles.rst
-            celery.task.schedules.rst
             celery.local.rst
             celery.app.base.rst
             celery.apps.rst

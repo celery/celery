@@ -209,7 +209,6 @@ class Celery(object):
             with self.amqp.publisher_pool.acquire(block=True) as producer:
                 yield producer
 
-
     def with_default_connection(self, fun):
         """With any function accepting a `connection`
         keyword argument, establishes a default connection if one is
