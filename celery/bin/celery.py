@@ -415,6 +415,9 @@ class shell(Command):  # pragma: no cover
                        "chord": celery.chord,
                        "group": celery.group,
                        "chain": celery.chain,
+                       "chunks": celery.chunks,
+                       "xmap": celery.xmap,
+                       "xstarmap": celery.xstarmap,
                        "subtask": celery.subtask}
 
         if not without_tasks:

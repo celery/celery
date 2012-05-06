@@ -208,17 +208,40 @@ class chain(Signature):
 Signature.register_type(chain)
 
 
-class xmap(Signature):
+class _basemap(Signature):
+    _task_name = None
     _unpack_args = itemgetter("task", "it")
 
     def __init__(self, task, it, **options):
-        Signature.__init__(self, "celery.map", (),
-                {"task": task, "it": it, "n": n}, **options)
+        Signature.__init__(self, self._task_name, (),
+                {"task": task, "it": regen(it)}, **options)
+
+    def apply_async(self, *args, **kwargs):
+        # need to evaluate generators
+        task, it = self._unpack_args(self.kwargs)
+        return self.type.apply_async((), {"task": task, "it": list(it)})
 
     @classmethod
     def from_dict(self, d):
         return chunks(*self._unpack_args(d["kwargs"]), **d["options"])
+
+
+class xmap(_basemap):
+    _task_name = "celery.map"
+
+    def __repr__(self):
+        task, it = self._unpack_args(self.kwargs)
+        return "[%s(x) for x in %r]" % (task.name, it)
 Signature.register_type(xmap)
+
+
+class xstarmap(_basemap):
+    _task_name = "celery.starmap"
+
+    def __repr__(self):
+        task, it = self._unpack_args(self.kwargs)
+        return "[%s(*x) for x in %r]" % (task.name, it)
+Signature.register_type(xstarmap)
 
 
 class chunks(Signature):
@@ -237,7 +260,7 @@ class chunks(Signature):
 
     def group(self):
         task, it, n = self._unpack_args(self.kwargs)
-        return group(xmap.s(task, part) for part in _chunks(iter(it), n))
+        return group(xstarmap.s(task, part) for part in _chunks(iter(it), n))
 
     @classmethod
     def apply_chunks(cls, task, it, n):
@@ -278,7 +301,7 @@ class chord(Signature):
 
     def __init__(self, header, body=None, **options):
         Signature.__init__(self, "celery.chord", (),
-                         {"header": list(header),
+                         {"header": regen(header),
                           "body": maybe_subtask(body)}, options)
         self.subtask_type = "chord"
 

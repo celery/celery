@@ -2,6 +2,8 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
+from itertools import starmap
+
 from celery.utils import uuid
 
 #: global list of functions defining a built-in task.
@@ -75,8 +77,19 @@ def add_map_task(app):
 
     @app.task(name="celery.map")
     def xmap(task, it):
-        task = subtask(task)
-        return [task.type(*item) for item in it]
+        task = subtask(task).type
+        return list(map(task, it))
+
+
+
+@builtin_task
+def add_starmap_task(app):
+    from celery.canvas import subtask
+
+    @app.task(name="celery.starmap")
+    def xstarmap(task, it):
+        task = subtask(task).type
+        return list(starmap(task, it))
 
 
 @builtin_task
