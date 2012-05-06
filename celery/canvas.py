@@ -10,14 +10,15 @@
 """
 from __future__ import absolute_import
 
+from operator import itemgetter
 from itertools import chain as _chain
 
-from kombu.utils import kwdict, reprcall
+from kombu.utils import fxrange, kwdict, reprcall
 
 from celery import current_app
-from celery.local import Proxy
+from celery.local import Proxy, regen
 from celery.utils import cached_property, uuid
-from celery.utils.functional import maybe_list, is_list
+from celery.utils.functional import maybe_list, is_list, chunks as _chunks
 from celery.utils.compat import chain_from_iterable
 
 Chord = Proxy(lambda: current_app.tasks["celery.chord"])
@@ -207,10 +208,36 @@ class chain(Signature):
 Signature.register_type(chain)
 
 
+class chunks(Signature):
+    _unpack_args = itemgetter("task", "it", "n")
+
+    def __init__(self, task, it, n, **options):
+        Signature.__init__(self, "celery.chunks", (),
+                {"task": task, "it": it, "n": n}, **options)
+
+    @classmethod
+    def from_dict(self, d):
+        return chunks(*self._unpack_args(d["kwargs"]))
+
+    def __call__(self, **options):
+        return self.group()(**options)
+
+    def group(self):
+        task, it, n = self._unpack_args(self.kwargs)
+        return group(subtask("celery.apply_chunk", (task, part))
+                        for part in _chunks(iter(it), n))
+
+    @classmethod
+    def apply_chunks(cls, task, it, n):
+        return cls(task, it, n)()
+Signature.register_type(chunks)
+
+
 class group(Signature):
 
     def __init__(self, *tasks, **options):
-        tasks = tasks[0] if len(tasks) == 1 and is_list(tasks[0]) else tasks
+        tasks = regen(tasks[0] if len(tasks) == 1 and is_list(tasks[0])
+                               else tasks)
         Signature.__init__(self, "celery.group", (), {"tasks": tasks}, options)
         self.tasks, self.subtask_type = tasks, "group"
 
@@ -222,6 +249,12 @@ class group(Signature):
         tasks, result, gid = self.type.prepare(options,
                                 map(Signature.clone, self.tasks))
         return self.type(tasks, result, gid)
+
+    def skew(self, start=1.0, stop=None, step=1.0):
+        _next_skew = fxrange(start, stop, step, repeatlast=True).next
+        for task in self.tasks:
+            task.set(countdown=_next_skew())
+        return self
 
     def __repr__(self):
         return repr(self.tasks)

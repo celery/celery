@@ -198,3 +198,7 @@ def maybe_evaluate(obj):
         return obj.__maybe_evaluate__()
     except AttributeError:
         return obj
+
+
+def regen(it):
+    return PromiseProxy(list, (it, ))

@@ -66,8 +66,21 @@ def add_unlock_chord_task(app):
             subtask(callback).delay(j(propagate=propagate))
         else:
             unlock_chord.retry(countdown=interval, max_retries=max_retries)
-
     return unlock_chord
+
+
+@builtin_task
+def add_chunk_task(app):
+    from celery.canvas import chunks as _chunks, subtask
+
+    @app.task(name="celery.apply_chunk")
+    def apply_chunk(task, part):
+        task = subtask(task)
+        return [task.type(*item) for item in part]
+
+    @app.task(name="celery.chunks")
+    def chunks(task, it, n):
+        return _chunks.apply_chunks(task, it, n)
 
 
 @builtin_task

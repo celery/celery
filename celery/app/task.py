@@ -709,6 +709,10 @@ class BaseTask(object):
         """``.s(*a, **k) -> .subtask(a, k)``"""
         return self.subtask(args, kwargs)
 
+    def chunks(self, it, n):
+        from celery import chunks
+        return chunks(self.s(), it, n)
+
     def update_state(self, task_id=None, state=None, meta=None):
         """Update task state.
 
