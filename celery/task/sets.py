@@ -25,9 +25,10 @@ class TaskSet(UserList):
     _app = None
 
     def __init__(self, tasks=None, app=None, Publisher=None):
-        self._app = app or self._app
+        self.app = app_or_default(app)
         self.data = [maybe_subtask(t) for t in tasks or []]
-        self._Publisher = Publisher
+        self.total = len(self.tasks)
+        self.Publisher = Publisher or self.app.amqp.TaskProducer
 
     def apply_async(self, connection=None, connect_timeout=None,
             publisher=None, taskset_id=None):
@@ -60,28 +61,9 @@ class TaskSet(UserList):
     def _sync_results(self, taskset_id):
         return [task.apply(taskset_id=taskset_id) for task in self.tasks]
 
-    @property
-    def total(self):
-        """Number of subtasks in this TaskSet."""
-        return len(self)
-
-    def _get_app(self):
-        return self._app or self.data[0].type._get_app()
-
-    def _set_app(self, app):
-        self._app = app
-    app = property(_get_app, _set_app)
-
     def _get_tasks(self):
         return self.data
 
     def _set_tasks(self, tasks):
         self.data = tasks
     tasks = property(_get_tasks, _set_tasks)
-
-    def _get_Publisher(self):
-        return self._Publisher or self.app.amqp.TaskProducer
-
-    def _set_Publisher(self, Publisher):
-        self._Publisher = Publisher
-    Publisher = property(_get_Publisher, _set_Publisher)
