@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import operator
 import sys
 
+from importlib import import_module
 from types import ModuleType
 
 from .local import Proxy
@@ -77,7 +78,8 @@ COMPAT_MODULES = {
             "revoke": "control.revoke",
             "discard_all": "control.purge",
             "inspect": "control.inspect",
-        }
+        },
+        "schedules": "celery.schedules",
     }
 }
 
@@ -168,9 +170,13 @@ def get_compat_module(pkg, name):
             return Proxy(getappattr, (attr, ))
         return attr
 
-    attrs = dict(COMPAT_MODULES[pkg.__name__][name])
+    attrs = COMPAT_MODULES[pkg.__name__][name]
+    if isinstance(attrs, basestring):
+        fqdn = '.'.join([pkg.__name__, name])
+        module = sys.modules[fqdn] = import_module(attrs)
+        return module
     attrs["__all__"] = attrs.keys()
-    return create_module(name, attrs, pkg=pkg, prepare_attr=prepare)
+    return create_module(name, dict(attrs), pkg=pkg, prepare_attr=prepare)
 
 
 def get_origins(defs):
