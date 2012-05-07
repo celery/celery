@@ -95,6 +95,7 @@ tasks were invoked.
     >>> from tasks import add
 
     >>> job = group([
+    ...             add.subtask((2, 2)),
     ...             add.subtask((4, 4)),
     ...             add.subtask((8, 8)),
     ...             add.subtask((16, 16)),
