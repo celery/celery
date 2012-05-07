@@ -186,3 +186,6 @@ class Logging(object):
         """Deprecated: No longer used."""
         self.setup_logging_subsystem(*args, **kwargs)
         return logging.root
+
+    def get_default_logger(self, name="celery", **kwargs):
+        return get_logger(name)
