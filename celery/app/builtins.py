@@ -6,28 +6,28 @@ from itertools import starmap
 
 from celery.utils import uuid
 
-#: global list of functions defining a built-in task.
-#: these are called for every app instance to setup built-in task.
-_builtin_tasks = []
+#: global list of functions defining tasks that should be
+#: added to all apps.
+_shared_tasks = []
 
 
-def builtin_task(constructor):
+def shared_task(constructor):
     """Decorator that specifies that the decorated function is a function
     that generates a built-in task.
 
     The function will then be called for every new app instance created
     (lazily, so more exactly when the task registry for that app is needed).
     """
-    _builtin_tasks.append(constructor)
+    _shared_tasks.append(constructor)
     return constructor
 
 
-def load_builtin_tasks(app):
+def load_shared_tasks(app):
     """Loads the built-in tasks for an app instance."""
-    [constructor(app) for constructor in _builtin_tasks]
+    [constructor(app) for constructor in _shared_tasks]
 
 
-@builtin_task
+@shared_task
 def add_backend_cleanup_task(app):
     """The backend cleanup task can be used to clean up the default result
     backend.
@@ -48,7 +48,7 @@ def add_backend_cleanup_task(app):
     return backend_cleanup
 
 
-@builtin_task
+@shared_task
 def add_unlock_chord_task(app):
     """The unlock chord task is used by result backends that doesn't
     have native chord support.
@@ -71,7 +71,7 @@ def add_unlock_chord_task(app):
     return unlock_chord
 
 
-@builtin_task
+@shared_task
 def add_map_task(app):
     from celery.canvas import subtask
 
@@ -81,7 +81,7 @@ def add_map_task(app):
         return list(map(task, it))
 
 
-@builtin_task
+@shared_task
 def add_starmap_task(app):
     from celery.canvas import subtask
 
@@ -91,7 +91,7 @@ def add_starmap_task(app):
         return list(starmap(task, it))
 
 
-@builtin_task
+@shared_task
 def add_chunk_task(app):
     from celery.canvas import chunks as _chunks
 
@@ -100,7 +100,7 @@ def add_chunk_task(app):
         return _chunks.apply_chunks(task, it, n)
 
 
-@builtin_task
+@shared_task
 def add_group_task(app):
     from celery.canvas import subtask
     from celery.app.state import get_current_task
@@ -154,7 +154,7 @@ def add_group_task(app):
     return Group
 
 
-@builtin_task
+@shared_task
 def add_chain_task(app):
     from celery.canvas import maybe_subtask
 
@@ -185,7 +185,7 @@ def add_chain_task(app):
     return Chain
 
 
-@builtin_task
+@shared_task
 def add_chord_task(app):
     """Every chord is executed in a dedicated task, so that the chord
     can be used as a subtask, and this generates the task

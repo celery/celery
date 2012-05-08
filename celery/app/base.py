@@ -31,8 +31,9 @@ from celery.utils.functional import first
 from celery.utils.imports import instantiate, symbol_by_name
 
 from .annotations import prepare as prepare_annotations
-from .builtins import builtin_task, load_builtin_tasks
+from .builtins import shared_task, load_shared_tasks
 from .defaults import DEFAULTS, find_deprecated_settings
+from .registry import TaskRegistry
 from .state import _tls, get_current_app
 from .utils import AppPickler, Settings, bugreport, _unpickle_app
 
@@ -55,7 +56,7 @@ class Celery(object):
     loader_cls = "celery.loaders.app:AppLoader"
     log_cls = "celery.app.log:Logging"
     control_cls = "celery.app.control:Control"
-    registry_cls = "celery.app.registry:TaskRegistry"
+    registry_cls = TaskRegistry
     _pool = None
 
     def __init__(self, main=None, loader=None, backend=None,
@@ -71,12 +72,14 @@ class Celery(object):
         self.log_cls = log or self.log_cls
         self.control_cls = control or self.control_cls
         self.set_as_current = set_as_current
-        self.registry_cls = self.registry_cls if tasks is None else tasks
+        self.registry_cls = symbol_by_name(self.registry_cls)
         self.accept_magic_kwargs = accept_magic_kwargs
 
         self.finalized = False
         self._pending = deque()
-        self._tasks = instantiate(self.registry_cls)
+        self._tasks = tasks
+        if not isinstance(self._tasks, TaskRegistry):
+            self._tasks = TaskRegistry(self._tasks or {})
 
         # these options are moved to the config to
         # simplify pickling of the app object.
@@ -106,13 +109,13 @@ class Celery(object):
     def task(self, *args, **opts):
         """Creates new task class from any callable."""
 
-        def inner_create_task_cls(builtin=False, **opts):
+        def inner_create_task_cls(shared=True, **opts):
 
             def _create_task_cls(fun):
-                if builtin:
+                if shared:
                     cons = lambda app: app._task_from_fun(fun, **opts)
                     cons.__name__ = fun.__name__
-                    builtin_task(cons)
+                    shared_task(cons)
                 if self.accept_magic_kwargs:  # compat mode
                     return self._task_from_fun(fun, **opts)
 
@@ -142,7 +145,7 @@ class Celery(object):
 
     def finalize(self):
         if not self.finalized:
-            load_builtin_tasks(self)
+            load_shared_tasks(self)
 
             pending = self._pending
             while pending:
