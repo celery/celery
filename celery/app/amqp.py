@@ -205,7 +205,8 @@ class TaskProducer(Producer):
                                                kwargs=repr(task_kwargs),
                                                retries=retries,
                                                eta=eta,
-                                               expires=expires)
+                                               expires=expires,
+                                               queue=queue)
         return task_id
 TaskPublisher = TaskProducer  # compat
 
