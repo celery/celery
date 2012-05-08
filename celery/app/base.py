@@ -31,7 +31,7 @@ from celery.utils.functional import first
 from celery.utils.imports import instantiate, symbol_by_name
 
 from .annotations import prepare as prepare_annotations
-from .builtins import load_builtin_tasks
+from .builtins import builtin_task, load_builtin_tasks
 from .defaults import DEFAULTS, find_deprecated_settings
 from .state import _tls, get_current_app
 from .utils import AppPickler, Settings, bugreport, _unpickle_app
@@ -103,25 +103,29 @@ class Celery(object):
         return instantiate("celery.bin.celeryd:WorkerCommand", app=self) \
                     .execute_from_commandline(argv)
 
-    def task(self, *args, **options):
+    def task(self, *args, **opts):
         """Creates new task class from any callable."""
 
-        def inner_create_task_cls(**options):
+        def inner_create_task_cls(builtin=False, **opts):
 
             def _create_task_cls(fun):
+                if builtin:
+                    cons = lambda app: app._task_from_fun(fun, **opts)
+                    cons.__name__ = fun.__name__
+                    builtin_task(cons)
                 if self.accept_magic_kwargs:  # compat mode
-                    return self._task_from_fun(fun, **options)
+                    return self._task_from_fun(fun, **opts)
 
                 # return a proxy object that is only evaluated when first used
-                promise = PromiseProxy(self._task_from_fun, (fun, ), options)
+                promise = PromiseProxy(self._task_from_fun, (fun, ), opts)
                 self._pending.append(promise)
                 return promise
 
             return _create_task_cls
 
         if len(args) == 1 and callable(args[0]):
-            return inner_create_task_cls(**options)(*args)
-        return inner_create_task_cls(**options)
+            return inner_create_task_cls(**opts)(*args)
+        return inner_create_task_cls(**opts)
 
     def _task_from_fun(self, fun, **options):
         base = options.pop("base", None) or self.Task
