@@ -110,10 +110,6 @@ SIGNAMES = set(sig for sig in dir(signal)
                         if sig.startswith("SIG") and "_" not in sig)
 SIGMAP = dict((getattr(signal, name), name) for name in SIGNAMES)
 
-# for tests to ensure that we don't actually launch anything
-_popen = Popen
-
-
 USAGE = """\
 usage: %(prog_name)s start <node1 node2 nodeN|range> [celeryd options]
        %(prog_name)s stop <n1 n2 nN|range> [-SIG (default: -TERM)]
@@ -374,8 +370,6 @@ class MultiTool(object):
     def waitexec(self, argv, path=sys.executable):
         args = " ".join([path] + list(argv))
         argstr = shellsplit(from_utf8(args))
-        if Popen == _popen:  # pragma: no cover
-            raise Exception("OH MY GOD")
         pipe = Popen(argstr, env=self.env)
         self.info("  %s" % " ".join(argstr))
         retcode = pipe.wait()
