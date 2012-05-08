@@ -524,6 +524,8 @@ class BaseTask(object):
         options = dict(extract_exec_options(self), **options)
         options = router.route(options, self.name, args, kwargs)
 
+        if connection:
+            publisher = app.amqp.TaskProducer(connection)
         publish = publisher or app.amqp.publisher_pool.acquire(block=True)
         evd = None
         if conf.CELERY_SEND_TASK_SENT_EVENT:
