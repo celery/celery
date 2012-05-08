@@ -20,6 +20,9 @@ from celery.exceptions import NotRegistered
 class TaskRegistry(dict):
     NotRegistered = NotRegistered
 
+    def __missing__(self, key):
+        raise self.NotRegistered(key)
+
     def register(self, task):
         """Register a task in the task registry.
 
@@ -40,17 +43,9 @@ class TaskRegistry(dict):
 
         """
         try:
-            # Might be a task class
-            name = name.name
-        except AttributeError:
-            pass
-        self.pop(name)
-
-    def pop(self, key, *args):
-        try:
-            return dict.pop(self, key, *args)
+            self.pop(getattr(name, "name", name))
         except KeyError:
-            raise self.NotRegistered(key)
+            raise self.NotRegistered(name)
 
     # -- these methods are irrelevant now and will be removed in 3.0
     def regular(self):
