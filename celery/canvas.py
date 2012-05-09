@@ -79,7 +79,7 @@ class Signature(dict):
         return Signature(d)
 
     def __init__(self, task=None, args=None, kwargs=None, options=None,
-                type=None, subtask_type=None, **ex):
+                type=None, subtask_type=None, immutable=False, **ex):
         init = dict.__init__
 
         if isinstance(task, dict):
@@ -96,7 +96,8 @@ class Signature(dict):
         init(self, task=task_name, args=tuple(args or ()),
                                    kwargs=kwargs or {},
                                    options=dict(options or {}, **ex),
-                                   subtask_type=subtask_type)
+                                   subtask_type=subtask_type,
+                                   immutable=immutable)
 
     def delay(self, *argmerge, **kwmerge):
         """Shortcut to `apply_async(argmerge, kwargs)`."""
@@ -109,6 +110,8 @@ class Signature(dict):
         return self.type.apply(args, kwargs, **options)
 
     def _merge(self, args=(), kwargs={}, options={}):
+        if self.immutable:
+            return self.args, self.kwargs, dict(self.options, **options)
         return (tuple(args) + tuple(self.args) if args else self.args,
                 dict(self.kwargs, **kwargs) if kwargs else self.kwargs,
                 dict(self.options, **options) if options else self.options)
@@ -117,7 +120,8 @@ class Signature(dict):
         args, kwargs, options = self._merge(args, kwargs, options)
         s = Signature.from_dict({"task": self.task, "args": args,
                                  "kwargs": kwargs, "options": options,
-                                 "subtask_type": self.subtask_type})
+                                 "subtask_type": self.subtask_type,
+                                 "immutable": self.immutable})
         s._type = self._type
         return s
     partial = clone
@@ -132,7 +136,9 @@ class Signature(dict):
             s.options = options
         return s
 
-    def set(self, **options):
+    def set(self, immutable=None, **options):
+        if immutable is not None:
+            self.immutable = immutable
         self.options.update(options)
         return self
 
@@ -190,6 +196,7 @@ class Signature(dict):
     kwargs = _getitem_property("kwargs")
     options = _getitem_property("options")
     subtask_type = _getitem_property("subtask_type")
+    immutable = _getitem_property("immutable")
 
 
 class chain(Signature):
