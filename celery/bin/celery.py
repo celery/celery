@@ -5,6 +5,7 @@ from __future__ import with_statement
 import anyjson
 import sys
 
+from billiard import freeze_support
 from importlib import import_module
 from pprint import pformat
 from textwrap import wrap
@@ -551,6 +552,12 @@ def determine_exit_status(ret):
 
 
 def main():
+    # Fix for setuptools generated scripts, so that it will
+    # work with multiprocessing fork emulation.
+    # (see multiprocessing.forking.get_preparation_data())
+    if __name__ != "__main__":  # pragma: no cover
+        sys.modules["__main__"] = sys.modules[__name__]
+    freeze_support()
     CeleryCommand().execute_from_commandline()
 
 if __name__ == "__main__":          # pragma: no cover
