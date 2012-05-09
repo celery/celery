@@ -12,7 +12,7 @@
     Number of child processes processing the queue. The default
     is the number of CPUs available on your system.
 
-.. cmdoption:: -c, --pool
+.. cmdoption:: -P, --pool
 
     Pool implementation:
 

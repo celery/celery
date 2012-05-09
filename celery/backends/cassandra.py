@@ -131,7 +131,8 @@ class CassandraBackend(BaseDictBackend):
             date_done = self.app.now()
             meta = {"status": status,
                     "date_done": date_done.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                    "traceback": self.encode(traceback)}
+                    "traceback": self.encode(traceback),
+                    "children": self.encode(self.current_task_children())}
             if self.detailed_mode:
                 meta["result"] = result
                 cf.insert(task_id, {date_done: self.encode(meta)},
@@ -161,6 +162,7 @@ class CassandraBackend(BaseDictBackend):
                         "result": self.decode(obj["result"]),
                         "date_done": obj["date_done"],
                         "traceback": self.decode(obj["traceback"]),
+                        "children": self.decode(obj["children"]),
                     }
             except (KeyError, pycassa.NotFoundException):
                 meta = {"status": states.PENDING, "result": None}

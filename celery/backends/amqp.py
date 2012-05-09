@@ -118,7 +118,8 @@ class AMQPBackend(BaseDictBackend):
                             interval_max=interval_max)
                 send(conn, task_id, {"task_id": task_id, "status": status,
                                 "result": self.encode_result(result, status),
-                                "traceback": traceback})
+                                "traceback": traceback,
+                                "children": self.current_task_children()})
         return result
 
     def get_task_meta(self, task_id, cache=True):

@@ -107,7 +107,8 @@ class MongoBackend(BaseDictBackend):
                 "status": status,
                 "result": Binary(self.encode(result)),
                 "date_done": datetime.utcnow(),
-                "traceback": Binary(self.encode(traceback))}
+                "traceback": Binary(self.encode(traceback)),
+                "children": Binary(self.encode(self.current_task_children()))}
         self.collection.save(meta, safe=True)
 
         return result
@@ -125,6 +126,7 @@ class MongoBackend(BaseDictBackend):
             "result": self.decode(obj["result"]),
             "date_done": obj["date_done"],
             "traceback": self.decode(obj["traceback"]),
+            "children": self.decode(obj["children"]),
         }
 
         return meta
