@@ -24,7 +24,8 @@ def shared_task(constructor):
 
 def load_shared_tasks(app):
     """Loads the built-in tasks for an app instance."""
-    [constructor(app) for constructor in _shared_tasks]
+    for constructor in _shared_tasks:
+        constructor(app)
 
 
 @shared_task
@@ -102,11 +103,13 @@ def add_chunk_task(app):
 
 @shared_task
 def add_group_task(app):
+    _app = app
     from celery.canvas import subtask
     from celery.app.state import get_current_task
     from celery.result import from_serializable
 
     class Group(app.Task):
+        app = _app
         name = "celery.group"
         accept_magic_kwargs = False
 
@@ -150,15 +153,16 @@ def add_group_task(app):
         def apply(self, args=(), kwargs={}, **options):
             tasks, result, gid = self.prepare(options, **kwargs)
             return super(Group, self).apply((tasks, result, gid), **options)
-
     return Group
 
 
 @shared_task
 def add_chain_task(app):
     from celery.canvas import maybe_subtask
+    _app = app
 
     class Chain(app.Task):
+        app = _app
         name = "celery.chain"
         accept_magic_kwargs = False
 
@@ -192,8 +196,10 @@ def add_chord_task(app):
     responsible for that."""
     from celery import group
     from celery.canvas import maybe_subtask
+    _app = app
 
     class Chord(app.Task):
+        app = _app
         name = "celery.chord"
         accept_magic_kwargs = False
         ignore_result = True
