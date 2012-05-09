@@ -341,8 +341,7 @@ Unorganized
 
 * ``TasksetResult.taskset_id`` renamed to ``.id``
 
-
-* ``xmap(task, sequence)`` and ``xstarmap(task, sequence)`
+* ``xmap(task, sequence)`` and ``xstarmap(task, sequence)``
 
     Returns a list of the results applying the task to every item
     in the sequence.
