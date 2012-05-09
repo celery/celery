@@ -22,6 +22,7 @@ from datetime import datetime
 from kombu.utils import kwdict, reprcall
 from kombu.utils.encoding import safe_repr, safe_str
 
+from celery import current_app
 from celery import exceptions
 from celery.app import app_or_default
 from celery.app.state import _tls
@@ -58,7 +59,7 @@ def execute_and_trace(name, uuid, args, kwargs, request=None, **opts):
         >>> trace_task(name, *args, **kwargs)[0]
 
     """
-    task = _tls.current_app._tasks[name]
+    task = current_app.tasks[name]
     try:
         hostname = opts.get("hostname")
         setps("celeryd", name, hostname, rate_limit=True)
