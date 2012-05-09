@@ -268,7 +268,7 @@ class test_TaskRequest(Case):
         try:
             raise RetryTaskError("foo", KeyError("moofoobar"))
         except:
-            einfo = ExceptionInfo(sys.exc_info())
+            einfo = ExceptionInfo()
             tw.on_failure(einfo)
             self.assertIn("task-retried", tw.eventer.sent)
             tw._does_info = False
@@ -344,7 +344,7 @@ class test_TaskRequest(Case):
             try:
                 raise KeyError("moofoobar")
             except:
-                return ExceptionInfo(sys.exc_info())
+                return ExceptionInfo()
 
         app.mail_admins = mock_mail_admins
         mytask.send_error_emails = True
@@ -452,7 +452,7 @@ class test_TaskRequest(Case):
             try:
                 raise SystemExit()
             except SystemExit:
-                tw.on_success(ExceptionInfo(sys.exc_info()))
+                tw.on_success(ExceptionInfo())
             else:
                 assert False
 
@@ -471,7 +471,7 @@ class test_TaskRequest(Case):
         try:
             raise KeyError("foo")
         except Exception:
-            tw.on_success(ExceptionInfo(sys.exc_info()))
+            tw.on_success(ExceptionInfo())
             self.assertTrue(tw.on_failure.called)
 
     def test_on_success_acks_late(self):
@@ -490,7 +490,7 @@ class test_TaskRequest(Case):
             try:
                 raise WorkerLostError("do re mi")
             except WorkerLostError:
-                return ExceptionInfo(sys.exc_info())
+                return ExceptionInfo()
 
         tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         exc_info = get_ei()
@@ -516,7 +516,7 @@ class test_TaskRequest(Case):
             try:
                 raise KeyError("foo")
             except KeyError:
-                exc_info = ExceptionInfo(sys.exc_info())
+                exc_info = ExceptionInfo()
                 tw.on_failure(exc_info)
                 self.assertTrue(tw.acknowledged)
         finally:
@@ -568,38 +568,38 @@ class test_TaskRequest(Case):
                                     [], {})
             self.assertIsInstance(res, ExceptionInfo)
 
-    def create_exception(self, exc):
-        try:
-            raise exc
-        except exc.__class__:
-            return sys.exc_info()
-
     def test_worker_task_trace_handle_retry(self):
         from celery.exceptions import RetryTaskError
         tid = uuid()
         mytask.request.update({"id": tid})
+        einfo = tb = None
         try:
-            _, value_, _ = self.create_exception(ValueError("foo"))
-            einfo = self.create_exception(RetryTaskError(str(value_),
-                                          exc=value_))
-            w = TraceInfo(states.RETRY, einfo[1], einfo)
-            w.handle_retry(mytask, store_errors=False)
-            self.assertEqual(mytask.backend.get_status(tid), states.PENDING)
-            w.handle_retry(mytask, store_errors=True)
-            self.assertEqual(mytask.backend.get_status(tid), states.RETRY)
+            raise ValueError("foo")
+        except Exception, exc:
+            try:
+                raise RetryTaskError(str(exc), exc=exc)
+            except RetryTaskError, exc:
+                w = TraceInfo(states.RETRY, exc)
+                w.handle_retry(mytask, store_errors=False)
+                self.assertEqual(mytask.backend.get_status(tid), states.PENDING)
+                w.handle_retry(mytask, store_errors=True)
+                self.assertEqual(mytask.backend.get_status(tid), states.RETRY)
         finally:
             mytask.request.clear()
 
     def test_worker_task_trace_handle_failure(self):
         tid = uuid()
         mytask.request.update({"id": tid})
+        einfo = None
         try:
-            einfo = self.create_exception(ValueError("foo"))
-            w = TraceInfo(states.FAILURE, einfo[1], einfo)
-            w.handle_failure(mytask, store_errors=False)
-            self.assertEqual(mytask.backend.get_status(tid), states.PENDING)
-            w.handle_failure(mytask, store_errors=True)
-            self.assertEqual(mytask.backend.get_status(tid), states.FAILURE)
+            try:
+                raise ValueError("foo")
+            except Exception, exc:
+                w = TraceInfo(states.FAILURE, exc)
+                w.handle_failure(mytask, store_errors=False)
+                self.assertEqual(mytask.backend.get_status(tid), states.PENDING)
+                w.handle_failure(mytask, store_errors=True)
+                self.assertEqual(mytask.backend.get_status(tid), states.FAILURE)
         finally:
             mytask.request.clear()
 
@@ -755,7 +755,7 @@ class test_TaskRequest(Case):
         try:
             raise exception
         except Exception:
-            exc_info = ExceptionInfo(sys.exc_info())
+            exc_info = ExceptionInfo()
             app.conf.CELERY_SEND_TASK_ERROR_EMAILS = True
             try:
                 tw.on_failure(exc_info)

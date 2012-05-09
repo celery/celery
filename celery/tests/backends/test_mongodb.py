@@ -195,7 +195,8 @@ class test_MongoBackend(AppCase):
         mock_get_database.assert_called_once_with()
         mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
         self.assertEquals(
-            ['status', 'date_done', 'traceback', 'result', 'task_id'],
+            ['status', 'task_id', 'date_done', 'traceback', 'result',
+             'children'],
             ret_val.keys())
 
     @patch("celery.backends.mongodb.MongoBackend._get_database")

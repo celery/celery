@@ -864,12 +864,10 @@ class test_WorkController(AppCase):
 
         try:
             raise KeyError("foo")
-        except KeyError:
-            exc_info = sys.exc_info()
-
-        Timers(worker).on_timer_error(exc_info)
-        msg, args = self.logger.error.call_args[0]
-        self.assertIn("KeyError", msg % args)
+        except KeyError, exc:
+            Timers(worker).on_timer_error(exc)
+            msg, args = self.logger.error.call_args[0]
+            self.assertIn("KeyError", msg % args)
 
     def test_on_timer_tick(self):
         worker = WorkController(concurrency=1, loglevel=10)

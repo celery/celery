@@ -96,18 +96,16 @@ class test_ExceptionInfo(Case):
 
         try:
             raise LookupError("The quick brown fox jumps...")
-        except LookupError:
-            exc_info = sys.exc_info()
+        except Exception:
+            einfo = ExceptionInfo()
+            self.assertEqual(str(einfo), einfo.traceback)
+            self.assertIsInstance(einfo.exception, LookupError)
+            self.assertTupleEqual(einfo.exception.args,
+                    ("The quick brown fox jumps...", ))
+            self.assertTrue(einfo.traceback)
 
-        einfo = ExceptionInfo(exc_info)
-        self.assertEqual(str(einfo), einfo.traceback)
-        self.assertIsInstance(einfo.exception, LookupError)
-        self.assertTupleEqual(einfo.exception.args,
-                ("The quick brown fox jumps...", ))
-        self.assertTrue(einfo.traceback)
-
-        r = repr(einfo)
-        self.assertTrue(r)
+            r = repr(einfo)
+            self.assertTrue(r)
 
 
 class test_LimitedSet(Case):

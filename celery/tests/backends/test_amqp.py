@@ -66,7 +66,7 @@ class test_AMQPBackend(Case):
         try:
             raise KeyError("foo")
         except KeyError, exception:
-            einfo = ExceptionInfo(sys.exc_info())
+            einfo = ExceptionInfo()
             tb1.mark_as_failure(tid3, exception, traceback=einfo.traceback)
             self.assertEqual(tb2.get_status(tid3), states.FAILURE)
             self.assertIsInstance(tb2.get_result(tid3), KeyError)
@@ -235,7 +235,8 @@ class test_AMQPBackend(Case):
         expected_results = [(tid, {"status": states.SUCCESS,
                                     "result": i,
                                     "traceback": None,
-                                    "task_id": tid})
+                                    "task_id": tid,
+                                    "children": None})
                                 for i, tid in enumerate(tids)]
         self.assertEqual(sorted(res), sorted(expected_results))
         self.assertDictEqual(b._cache[res[0][0]], res[0][1])

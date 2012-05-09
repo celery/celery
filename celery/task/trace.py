@@ -21,7 +21,6 @@ from __future__ import absolute_import
 import os
 import socket
 import sys
-import traceback
 
 from warnings import warn
 
@@ -71,17 +70,11 @@ def defines_custom_call(task):
 
 
 class TraceInfo(object):
-    __slots__ = ("state", "retval", "exc_info",
-                 "exc_type", "exc_value", "tb", "strtb")
+    __slots__ = ("state", "retval", "tb")
 
-    def __init__(self, state, retval=None, exc_info=None):
+    def __init__(self, state, retval=None):
         self.state = state
         self.retval = retval
-        self.exc_info = exc_info
-        if exc_info:
-            self.exc_type, self.exc_value, self.tb = exc_info
-        else:
-            self.exc_type = self.exc_value = self.tb = None
 
     def handle_error_state(self, task, eager=False):
         store_errors = not eager
@@ -100,35 +93,37 @@ class TraceInfo(object):
         # This is for reporting the retry in logs, email etc, while
         # guaranteeing pickleability.
         req = task.request
-        exc, type_, tb = self.retval, self.exc_type, self.tb
-        message, orig_exc = self.retval.args
-        if store_errors:
-            task.backend.mark_as_retry(req.id, orig_exc, self.strtb)
-        expanded_msg = "%s: %s" % (message, str(orig_exc))
-        einfo = ExceptionInfo((type_, type_(expanded_msg, None), tb))
-        task.on_retry(exc, req.id, req.args, req.kwargs, einfo)
-        return einfo
+        type_, _, tb = sys.exc_info()
+        try:
+            exc = self.retval
+            message, orig_exc = exc.args
+            expanded_msg = "%s: %s" % (message, str(orig_exc))
+            einfo = ExceptionInfo((type_, type_(expanded_msg, None), tb))
+            if store_errors:
+                task.backend.mark_as_retry(req.id, orig_exc, einfo.traceback)
+            task.on_retry(exc, req.id, req.args, req.kwargs, einfo)
+            return einfo
+        finally:
+            del(tb)
 
     def handle_failure(self, task, store_errors=True):
         """Handle exception."""
         req = task.request
-        exc, type_, tb = self.retval, self.exc_type, self.tb
-        if store_errors:
-            task.backend.mark_as_failure(req.id, exc, self.strtb)
-        exc = get_pickleable_exception(exc)
-        einfo = ExceptionInfo((type_, exc, tb))
-        task.on_failure(exc, req.id, req.args, req.kwargs, einfo)
-        signals.task_failure.send(sender=task, task_id=req.id,
-                                  exception=exc, args=req.args,
-                                  kwargs=req.kwargs, traceback=tb,
-                                  einfo=einfo)
-        return einfo
-
-    @property
-    def strtb(self):
-        if self.exc_info:
-            return '\n'.join(traceback.format_exception(*self.exc_info))
-        return ''
+        _, type_, tb = sys.exc_info()
+        try:
+            exc = self.retval
+            einfo = ExceptionInfo((type_, get_pickleable_exception(exc), tb))
+            if store_errors:
+                task.backend.mark_as_failure(req.id, exc, einfo.traceback)
+            task.on_failure(exc, req.id, req.args, req.kwargs, einfo)
+            signals.task_failure.send(sender=task, task_id=req.id,
+                                      exception=exc, args=req.args,
+                                      kwargs=req.kwargs,
+                                      traceback=einfo.traceback,
+                                      einfo=einfo)
+            return einfo
+        finally:
+            del(tb)
 
 
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
@@ -184,16 +179,16 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 # -*- TRACE -*-
                 try:
                     R = retval = fun(*args, **kwargs)
-                    state, einfo = SUCCESS, None
+                    state = SUCCESS
                 except RetryTaskError, exc:
-                    I = Info(RETRY, exc, sys.exc_info())
-                    state, retval, einfo = I.state, I.retval, I.exc_info
+                    I = Info(RETRY, exc)
+                    state, retval = I.state, I.retval
                     R = I.handle_error_state(task, eager=eager)
                 except Exception, exc:
                     if propagate:
                         raise
-                    I = Info(FAILURE, exc, sys.exc_info())
-                    state, retval, einfo = I.state, I.retval, I.exc_info
+                    I = Info(FAILURE, exc)
+                    state, retval = I.state, I.retval
                     R = I.handle_error_state(task, eager=eager)
                     [subtask(errback).apply_async((uuid, ))
                         for errback in task_request.errbacks or []]
@@ -204,8 +199,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     # (but deprecated)
                     if propagate:
                         raise
-                    I = Info(FAILURE, None, sys.exc_info())
-                    state, retval, einfo = I.state, I.retval, I.exc_info
+                    I = Info(FAILURE, None)
+                    state, retval = I.state, I.retval
                     R = I.handle_error_state(task, eager=eager)
                     [subtask(errback).apply_async((uuid, ))
                         for errback in task_request.errbacks or []]
@@ -221,7 +216,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 # -* POST *-
                 if task_request.chord:
                     on_chord_part_return(task)
-                task_after_return(state, retval, uuid, args, kwargs, einfo)
+                task_after_return(state, retval, uuid, args, kwargs, None)
                 send_postrun(sender=task, task_id=uuid, task=task,
                             args=args, kwargs=kwargs, retval=retval)
             finally:

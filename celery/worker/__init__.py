@@ -153,8 +153,8 @@ class Timers(abstract.Component):
                                 on_error=self.on_timer_error,
                                 on_tick=self.on_timer_tick)
 
-    def on_timer_error(self, einfo):
-        logger.error("Timer error: %r", einfo[1], exc_info=einfo)
+    def on_timer_error(self, exc):
+        logger.error("Timer error: %r", exc, exc_info=True)
 
     def on_timer_tick(self, delay):
         logger.debug("Scheduler wake-up! Next eta %s secs.", delay)

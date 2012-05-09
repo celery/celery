@@ -75,7 +75,8 @@ class test_CassandraBackend(AppCase):
                                 "status": states.SUCCESS,
                                 "result": "1",
                                 "date_done": "date",
-                                "traceback": ""}
+                                "traceback": "",
+                                "children": None}
             x.decode = Mock()
             x.detailed_mode = False
             meta = x._get_task_meta_for("task_id")

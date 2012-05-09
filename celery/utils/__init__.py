@@ -157,13 +157,13 @@ def cry():  # pragma: no cover
 def maybe_reraise():
     """Reraise if an exception is currently being handled, or return
     otherwise."""
-    type_, exc, tb = sys.exc_info()
+    exc_info = sys.exc_info()
     try:
-        if tb:
-            raise type_, exc, tb
+        if exc_info[2]:
+            raise exc_info[0], exc_info[1], exc_info[2]
     finally:
         # see http://docs.python.org/library/sys.html#sys.exc_info
-        del(tb)
+        del(exc_info)
 
 
 # - XXX Compat

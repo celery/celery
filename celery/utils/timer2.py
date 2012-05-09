@@ -103,8 +103,8 @@ class Schedule(object):
             eta = datetime.now()
         try:
             eta = to_timestamp(eta)
-        except OverflowError:
-            if not self.handle_error(sys.exc_info()):
+        except OverflowError, exc:
+            if not self.handle_error(exc):
                 raise
             return
         return self._enter(eta, priority, entry)
@@ -182,12 +182,8 @@ class Timer(Thread):
         try:
             entry()
         except Exception, exc:
-            exc_info = sys.exc_info()
-            try:
-                if not self.schedule.handle_error(exc_info):
-                    logger.error("Error in timer: %r\n", exc, exc_info=True)
-            finally:
-                del(exc_info)
+            if not self.schedule.handle_error(exc):
+                logger.error("Error in timer: %r", exc, exc_info=True)
 
     def _next_entry(self):
         with self.not_empty:

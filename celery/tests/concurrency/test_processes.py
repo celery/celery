@@ -46,13 +46,6 @@ class Object(object):   # for writeable attributes.
         [setattr(self, k, v) for k, v in kwargs.items()]
 
 
-def to_excinfo(exc):
-    try:
-        raise exc
-    except:
-        return ExceptionInfo(sys.exc_info())
-
-
 class MockResult(object):
 
     def __init__(self, value, pid):

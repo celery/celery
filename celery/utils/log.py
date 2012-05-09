@@ -65,7 +65,7 @@ class ColorFormatter(logging.Formatter):
             except Exception, exc:
                 record.msg = "<Unrepresentable %r: %r>" % (
                         type(record.msg), exc)
-                record.exc_info = sys.exc_info()
+                record.exc_info = True
 
         if not is_py3k and "processName" not in record.__dict__:
             # Very ugly, but have to make sure processName is supported

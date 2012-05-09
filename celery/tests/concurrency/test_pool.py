@@ -22,7 +22,7 @@ def raise_something(i):
     try:
         raise KeyError("FOO EXCEPTION")
     except KeyError:
-        return ExceptionInfo(sys.exc_info())
+        return ExceptionInfo()
 
 
 class test_TaskPool(Case):
