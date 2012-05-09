@@ -715,6 +715,14 @@ class BaseTask(object):
         from celery import chunks
         return chunks(self.s(), it, n)
 
+    def map(self, it):
+        from celery import xmap
+        return xmap(self.s(), it)
+
+    def starmap(self, it):
+        from celery import xstarmap
+        return xstarmap(self.s(), it)
+
     def update_state(self, task_id=None, state=None, meta=None):
         """Update task state.
 
