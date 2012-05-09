@@ -25,7 +25,6 @@ from kombu.utils.encoding import safe_repr, safe_str
 from celery import current_app
 from celery import exceptions
 from celery.app import app_or_default
-from celery.app.state import _tls
 from celery.datastructures import ExceptionInfo
 from celery.task.trace import build_tracer, trace_task, report_internal_error
 from celery.platforms import set_mp_process_title as setps

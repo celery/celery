@@ -27,7 +27,7 @@ class test_backends(Case):
         self.assertEqual(backends.get_backend_cls.hits, hits + 1)
 
     def test_unknown_backend(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ImportError):
             backends.get_backend_cls("fasodaopjeqijwqe")
 
     def test_default_backend(self):
