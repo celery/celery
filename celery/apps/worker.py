@@ -106,8 +106,8 @@ class Worker(configurated):
         if self.include:
             if isinstance(self.include, basestring):
                 self.include = self.include.split(",")
-            app.conf.CELERY_IMPORTS = tuple(
-                    self.include) + tuple(app.conf.CELERY_IMPORTS)
+            app.conf.CELERY_INCLUDE = (
+                tuple(app.conf.CELERY_INCLUDE) + tuple(self.include))
         self.loglevel = mlevel(self.loglevel)
 
     def run(self):

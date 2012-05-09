@@ -62,7 +62,7 @@ class Celery(object):
     def __init__(self, main=None, loader=None, backend=None,
             amqp=None, events=None, log=None, control=None,
             set_as_current=True, accept_magic_kwargs=False,
-            tasks=None, broker=None, **kwargs):
+            tasks=None, broker=None, include=None, **kwargs):
         self.clock = LamportClock()
         self.main = main
         self.amqp_cls = amqp or self.amqp_cls
@@ -86,6 +86,8 @@ class Celery(object):
         self._preconf = {}
         if broker:
             self._preconf["BROKER_URL"] = broker
+        if include:
+            self._preconf["CELERY_IMPORTS"] = include
 
         if self.set_as_current:
             self.set_current()

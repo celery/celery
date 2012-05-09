@@ -117,6 +117,7 @@ NAMESPACES = {
         "ENABLE_UTC": Option(False, type="bool"),
         "EVENT_SERIALIZER": Option("json"),
         "IMPORTS": Option((), type="tuple"),
+        "INCLUDE": Option((), type="tuple"),
         "IGNORE_RESULT": Option(False, type="bool"),
         "MAX_CACHED_RESULTS": Option(5000, type="int"),
         "MESSAGE_COMPRESSION": Option(None, type="string"),
