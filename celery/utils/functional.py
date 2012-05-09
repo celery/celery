@@ -18,9 +18,10 @@ from functools import partial, wraps
 from itertools import islice
 from threading import Lock, RLock
 
+from kombu.utils import cached_property
 from kombu.utils.functional import promise, maybe_promise
 
-from .compat import UserDict, OrderedDict
+from .compat import UserDict, UserList, OrderedDict
 
 KEYWORD_MARK = object()
 is_not_None = partial(operator.is_not, None)
@@ -244,3 +245,19 @@ def uniq(it):
         if obj not in seen:
             yield obj
             seen.add(obj)
+
+
+class _regen(UserList, list):
+    # must be subclass of list so that json can encode.
+    def __init__(self, it):
+        self.__it = it
+
+    @cached_property
+    def data(self):
+        return list(self.__it)
+
+
+def regen(it):
+    if isinstance(it, (list, tuple)):
+        return it
+    return _regen(it)

@@ -52,9 +52,12 @@ class Proxy(object):
     def __doc__(self):
         return self._get_current_object().__doc__
 
+    def _get_class(self):
+        return self._get_current_object().__class__
+
     @property
     def __class__(self):
-        return self._get_current_object().__class__
+        return self._get_class()
 
     def _get_current_object(self):
         """Return the current object.  This is useful if you want the real
@@ -198,7 +201,3 @@ def maybe_evaluate(obj):
         return obj.__maybe_evaluate__()
     except AttributeError:
         return obj
-
-
-def regen(it):
-    return PromiseProxy(list, (it, ))
