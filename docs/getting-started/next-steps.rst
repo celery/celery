@@ -25,11 +25,9 @@ Project layout::
 .. literalinclude:: ../../examples/next-steps/proj/celery.py
     :language: python
 
-In this module we created our :class:`@Celery` instance.  This is something
-referred to as the celery *app*.  Your project
-imports celery from this module to access Celery's features.
-It's possible to use several app instances at once, but that
-will not be covered in this tutorial.
+In this module we created our :class:`@Celery` instance (sometimes
+referred to as the *app*).  To use Celery within your project
+you simply import this instance.
 
 - The ``broker`` argument specifies the URL of the broker to use.
 
@@ -103,7 +101,7 @@ It takes the same arguments as the :meth:`~@Task.apply_async` method::
     >>> add.subtask((2, 2), countdown=1)
 
 And like there is a :meth:`~@Task.delay` shortcut for `apply_async`
-there is a :meth:`~@Task.s` shortcut for subtask::
+there is an :meth:`~@Task.s` shortcut for subtask::
 
     >>> add.s(*args, **kwargs)
 
