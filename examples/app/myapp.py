@@ -2,7 +2,7 @@
 
 Usage:
 
-   (window1)$ python myapp.py -l info
+   (window1)$ python myapp.py worker -l info
 
    (window2)$ python
    >>> from myapp import add
@@ -27,4 +27,4 @@ def add(x, y):
     return x + y
 
 if __name__ == "__main__":
-    celery.worker_main()
+    celery.start()
