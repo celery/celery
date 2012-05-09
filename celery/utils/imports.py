@@ -73,15 +73,15 @@ def symbol_by_name(name, aliases={}, imp=None, package=None,
     name = aliases.get(name) or name
     sep = ':' if ':' in name else sep
     module_name, _, cls_name = name.rpartition(sep)
-    if not module_name and package:
-        module_name = package
+    if not module_name:
+        cls_name, module_name = None, package if package else cls_name
     try:
         try:
             module = imp(module_name, package=package, **kwargs)
         except ValueError, exc:
             raise ValueError, ValueError(
                     "Couldn't import %r: %s" % (name, exc)), sys.exc_info()[2]
-        return getattr(module, cls_name)
+        return getattr(module, cls_name) if cls_name else module
     except (ImportError, AttributeError):
         if default is None:
             raise

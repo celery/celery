@@ -68,6 +68,7 @@ import warnings
 
 from collections import defaultdict
 from optparse import OptionParser, make_option as Option
+from types import ModuleType
 
 from celery import Celery, __version__
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
@@ -243,12 +244,20 @@ class Command(object):
         if config_module:
             os.environ["CELERY_CONFIG_MODULE"] = config_module
         if app:
-            self.app = self.symbol_by_name(app)
+            self.app = self.find_app(app)
         else:
             self.app = self.get_app(loader=loader)
         if self.enable_config_from_cmdline:
             argv = self.process_cmdline_config(argv)
         return argv
+
+    def find_app(self, app):
+        sym = self.symbol_by_name(app)
+        if isinstance(sym, ModuleType):
+            if getattr(sym, "__path__", None):
+                return self.find_app("%s.celery:" % (app.replace(":", ""), ))
+            return sym.celery
+        return sym
 
     def symbol_by_name(self, name):
         return symbol_by_name(name, imp=import_from_cwd)
