@@ -21,6 +21,7 @@ from kombu.utils import cached_property
 
 from celery import current_app
 from celery import states
+from celery.__compat__ import class_property
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
 from celery.result import EagerResult
@@ -304,8 +305,9 @@ class BaseTask(object):
     # - Tasks are lazily bound, so that configuration is not set
     # - until the task is actually used
 
+    @classmethod
     def bind(self, app):
-        self.__bound__ = True
+        was_bound, self.__bound__ = self.__bound__, True
         self._app = app
         conf = app.conf
 
@@ -319,25 +321,46 @@ class BaseTask(object):
             self.backend = app.backend
 
         # decorate with annotations from config.
-        self.annotate()
+        if not was_bound:
+            self.annotate()
 
         # PeriodicTask uses this to add itself to the PeriodicTask schedule.
         self.on_bound(app)
 
         return app
 
+    @classmethod
     def on_bound(self, app):
         """This method can be defined to do additional actions when the
         task class is bound to an app."""
         pass
 
+    @classmethod
     def _get_app(self):
         if not self.__bound__ or self._app is None:
             # The app property's __set__  method is not called
             # if Task.app is set (on the class), so must bind on use.
             self.bind(current_app)
         return self._app
-    app = property(_get_app, bind)
+    app = class_property(_get_app, bind)
+
+    @classmethod
+    def annotate(self):
+        for d in resolve_all_annotations(self.app.annotations, self):
+            for key, value in d.iteritems():
+                if key.startswith('@'):
+                    self.add_around(key[1:], value)
+                else:
+                    setattr(self, key, value)
+
+    @classmethod
+    def add_around(self, attr, around):
+        orig = getattr(self, attr)
+        if getattr(orig, "__wrapped__", None):
+            orig = orig.__wrapped__
+        meth = around(orig)
+        meth.__wrapped__ = orig
+        setattr(self, attr, meth)
 
     def __call__(self, *args, **kwargs):
         return self.run(*args, **kwargs)
@@ -682,13 +705,12 @@ class BaseTask(object):
                                         if key in supported_keys)
             kwargs.update(extend_with)
 
+        tb = None
         retval, info = eager_trace_task(task, task_id, args, kwargs,
                                         request=request, propagate=throw)
         if isinstance(retval, ExceptionInfo):
-            retval = retval.exception
-        state, tb = states.SUCCESS, ''
-        if info is not None:
-            state, tb = info.state, info.strtb
+            retval, tb = retval.exception, retval.traceback
+        state = states.SUCCESS if info is None else info.state
         return EagerResult(task_id, retval, state, traceback=tb)
 
     def AsyncResult(self, task_id):
@@ -822,11 +844,6 @@ class BaseTask(object):
 
         """
         request.execute_using_pool(pool, loglevel, logfile)
-
-    def annotate(self):
-        for d in resolve_all_annotations(self.app.annotations, self):
-            for key, value in d.iteritems():
-                setattr(self, key, value)
 
     def __repr__(self):
         """`repr(task)`"""

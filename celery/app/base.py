@@ -147,12 +147,15 @@ class Celery(object):
 
     def finalize(self):
         if not self.finalized:
+            self.finalized = True
             load_shared_tasks(self)
 
             pending = self._pending
             while pending:
                 maybe_evaluate(pending.pop())
-            self.finalized = True
+
+            for task in self._tasks.itervalues():
+                task.bind(self)
 
     def config_from_object(self, obj, silent=False):
         del(self.conf)
