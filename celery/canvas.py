@@ -36,7 +36,7 @@ class _getitem_property(object):
     def __get__(self, obj, type=None):
         if obj is None:
             return type
-        return obj[self.key]
+        return obj.get(self.key)
 
     def __set__(self, obj, value):
         obj[self.key] = value

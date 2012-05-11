@@ -78,13 +78,6 @@ class test_TraceInfo(Case):
     class TI(TraceInfo):
         __slots__ = TraceInfo.__slots__ + ("__dict__", )
 
-    def test_without_exc_info(self):
-        x = TraceInfo(states.SUCCESS)
-        self.assertIsNone(x.exc_type)
-        self.assertIsNone(x.exc_value)
-        self.assertIsNone(x.tb)
-        self.assertEqual(x.strtb, '')
-
     def test_handle_error_state(self):
         x = self.TI(states.FAILURE)
         x.handle_failure = Mock()

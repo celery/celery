@@ -142,12 +142,10 @@ AMQP, MongoDB, Tokyo Tyrant and Redis -- or you can define your own.
 For this example we will use the `amqp` result backend, which sends states
 as messages.  The backend is configured via the :setting:`CELERY_RESULT_BACKEND`
 setting or using the ``backend`` argument to :class:`Celery`, in addition individual
-result backends may have additional settings
-you can configure::
+result backends may have additional required or optional settings
+to configure::
 
-    from celery.backends.amqp import AMQPBackend
-
-    celery = Celery(backend=AMQPBackend(expires=300))
+    celery = Celery(backend="amqp")
 
 To read more about result backends please see :ref:`task-result-backends`.
 

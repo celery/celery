@@ -59,7 +59,7 @@ class test_Schedule(Case):
         finally:
             timer2.mktime = mktime
 
-        _, exc, _ = scratch[0]
+        exc = scratch[0]
         self.assertIsInstance(exc, OverflowError)
 
 

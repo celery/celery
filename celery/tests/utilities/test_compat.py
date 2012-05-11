@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 
 import celery
+from celery.app.task import BaseTask
 from celery.task.base import Task
 
 from celery.tests.utils import Case
@@ -10,11 +11,11 @@ from celery.tests.utils import Case
 class test_MagicModule(Case):
 
     def test_class_property_set_without_type(self):
-        self.assertTrue(Task.__dict__["app"].__get__(Task()))
+        self.assertTrue(BaseTask.__dict__["app"].__get__(Task()))
 
     def test_class_property_set_on_class(self):
-        self.assertIs(Task.__dict__["app"].__set__(None, None),
-                      Task.__dict__["app"])
+        self.assertIs(BaseTask.__dict__["app"].__set__(None, None),
+                      BaseTask.__dict__["app"])
 
     def test_class_property_set(self):
 
@@ -22,7 +23,7 @@ class test_MagicModule(Case):
             pass
 
         app = celery.Celery(set_as_current=False)
-        Task.__dict__["app"].__set__(X(), app)
+        BaseTask.__dict__["app"].__set__(X(), app)
         self.assertEqual(X.app, app)
 
     def test_dir(self):
