@@ -183,13 +183,12 @@ class Worker(configurated):
         }
 
     def run_worker(self):
-        if self.pidfile:
-            platforms.create_pidlock(self.pidfile)
         worker = self.WorkController(app=self.app,
                     hostname=self.hostname,
                     ready_callback=self.on_consumer_ready, beat=self.beat,
                     autoscale=self.autoscale, autoreload=self.autoreload,
                     no_execv=self.no_execv,
+                    pidfile=self.pidfile,
                     **self.confopts_as_dict())
         self.install_platform_tweaks(worker)
         signals.worker_init.send(sender=worker)

@@ -789,6 +789,16 @@ class test_WorkController(AppCase):
         worker._shutdown_complete.set()
         return worker
 
+    @patch("celery.platforms.create_pidlock")
+    def test_use_pidfile(self, create_pidlock):
+        create_pidlock.return_value = Mock()
+        worker = self.create_worker(pidfile="pidfilelockfilepid")
+        worker.components = []
+        worker.start()
+        self.assertTrue(create_pidlock.called)
+        worker.stop()
+        self.assertTrue(worker.pidlock.release.called)
+
     @patch("celery.platforms.signals")
     @patch("celery.platforms.set_mp_process_title")
     def test_process_initializer(self, set_mp_process_title, _signals):

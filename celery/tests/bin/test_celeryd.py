@@ -232,13 +232,6 @@ class test_Worker(AppCase):
             os.getuid = prev
 
     @disable_stdouts
-    @patch("celery.platforms.create_pidlock")
-    def test_use_pidfile(self, create_pidlock):
-        worker = self.Worker(pidfile="pidfilelockfilepid")
-        worker.run_worker()
-        self.assertTrue(create_pidlock.called)
-
-    @disable_stdouts
     def test_redirect_stdouts(self):
         worker = self.Worker()
         worker.redirect_stdouts = False

@@ -24,6 +24,7 @@ from billiard import forking_enable
 from kombu.utils.finalize import Finalize
 
 from celery import concurrency as _concurrency
+from celery import platforms
 from celery.app import app_or_default, set_default_app
 from celery.app.abstract import configurated, from_config
 from celery.exceptions import SystemTerminate
@@ -207,7 +208,7 @@ class WorkController(configurated):
     _running = 0
 
     def __init__(self, loglevel=None, hostname=None, ready_callback=noop,
-            queues=None, app=None, **kwargs):
+            queues=None, app=None, pidfile=None, **kwargs):
         self.app = app_or_default(app or self.app)
 
         # all new threads start without a current app, so if an app is not
@@ -227,6 +228,8 @@ class WorkController(configurated):
         self.hostname = hostname or socket.gethostname()
         self.ready_callback = ready_callback
         self._finalize = Finalize(self, self.stop, exitpriority=1)
+        self.pidfile = pidfile
+        self.pidlock = None
 
         # Initialize boot steps
         self.pool_cls = _concurrency.get_implementation(self.pool_cls)
@@ -236,7 +239,8 @@ class WorkController(configurated):
     def start(self):
         """Starts the workers main loop."""
         self._state = self.RUN
-
+        if self.pidfile:
+            self.pidlock = platforms.create_pidlock(self.pidfile)
         try:
             for i, component in enumerate(self.components):
                 logger.debug("Starting %s...", qualname(component))
@@ -303,6 +307,8 @@ class WorkController(configurated):
         self.priority_timer.stop()
         self.consumer.close_connection()
 
+        if self.pidlock:
+            self.pidlock.release()
         self._state = self.TERMINATE
         self._shutdown_complete.set()
 
