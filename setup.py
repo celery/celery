@@ -9,18 +9,27 @@ if sys.version_info < (2, 5):
     raise Exception("Celery requires Python 2.5 or higher.")
 
 try:
-    import imp
-    import celery.app
-    _, task_path, _ = imp.find_module("task", celery.app.__path__)
-    if "__init__.py" in task_path:
-        print("- force upgrading previous installation")
-        print("  - removing %r package..." % task_path)
+    orig_path = sys.path[:]
+    for path in (os.path.curdir, os.getcwd()):
         try:
-            os.unlink(os.path.abspath(task_path))
-        except Exception, exc:
-            sys.stderr.write("Couldn't remove %r: %r\n" % (task_path, exc))
+            sys.path.remove(path)
+        except ValueError:
+            pass
+    try:
+        import imp
+        import celery.app
+        _, task_path, _ = imp.find_module("task", celery.app.__path__)
+        if task_path.endswith("/task"):
+            print("- force upgrading previous installation")
+            print("  - removing %r package..." % task_path)
+            try:
+                os.unlink(os.path.abspath(task_path))
+            except Exception, exc:
+                sys.stderr.write("Couldn't remove %r: %r\n" % (task_path, exc))
+    finally:
+        sys.path[:] = orig_path
 except ImportError:
-    print("OH NOES")
+    pass
 
 
 try:
