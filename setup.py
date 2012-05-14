@@ -16,14 +16,15 @@ try:
         except ValueError:
             pass
     try:
-        import imp
         import celery.app
+        import imp
+        import shutil
         _, task_path, _ = imp.find_module("task", celery.app.__path__)
         if task_path.endswith("/task"):
             print("- force upgrading previous installation")
             print("  - removing %r package..." % task_path)
             try:
-                os.unlink(os.path.abspath(task_path))
+                shutil.rmtree(os.path.abspath(task_path))
             except Exception, exc:
                 sys.stderr.write("Couldn't remove %r: %r\n" % (task_path, exc))
     finally:
