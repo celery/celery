@@ -1,11 +1,15 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-import sys
-
-from celery.datastructures import (ExceptionInfo, LRUCache, LimitedSet,
-                                   AttributeDict, DictAttribute,
-                                   ConfigurationView, DependencyGraph)
+from celery.datastructures import (
+    ExceptionInfo,
+    LRUCache,
+    LimitedSet,
+    AttributeDict,
+    DictAttribute,
+    ConfigurationView,
+    DependencyGraph,
+)
 from celery.tests.utils import Case, WhateverIO
 
 

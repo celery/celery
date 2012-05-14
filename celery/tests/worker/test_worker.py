@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import with_statement
 
 import socket
-import sys
 
 from collections import deque
 from datetime import datetime, timedelta

@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import with_statement
 
 import signal
-import sys
 import time
 
 from itertools import cycle
@@ -10,6 +9,8 @@ from itertools import cycle
 from mock import Mock, patch
 from nose import SkipTest
 
+from celery.utils.functional import noop
+from celery.tests.utils import Case
 try:
     from celery.concurrency import processes as mp
     from billiard.pool import safe_apply_callback
@@ -34,10 +35,6 @@ except ImportError:
                 pass
     mp = _mp()  # noqa
     safe_apply_callback = None  # noqa
-
-from celery.datastructures import ExceptionInfo
-from celery.utils.functional import noop
-from celery.tests.utils import Case
 
 
 class Object(object):   # for writeable attributes.

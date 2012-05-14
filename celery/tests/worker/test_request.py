@@ -572,7 +572,6 @@ class test_TaskRequest(Case):
         from celery.exceptions import RetryTaskError
         tid = uuid()
         mytask.request.update({"id": tid})
-        einfo = tb = None
         try:
             raise ValueError("foo")
         except Exception, exc:
@@ -581,25 +580,28 @@ class test_TaskRequest(Case):
             except RetryTaskError, exc:
                 w = TraceInfo(states.RETRY, exc)
                 w.handle_retry(mytask, store_errors=False)
-                self.assertEqual(mytask.backend.get_status(tid), states.PENDING)
+                self.assertEqual(mytask.backend.get_status(tid),
+                                 states.PENDING)
                 w.handle_retry(mytask, store_errors=True)
-                self.assertEqual(mytask.backend.get_status(tid), states.RETRY)
+                self.assertEqual(mytask.backend.get_status(tid),
+                                 states.RETRY)
         finally:
             mytask.request.clear()
 
     def test_worker_task_trace_handle_failure(self):
         tid = uuid()
         mytask.request.update({"id": tid})
-        einfo = None
         try:
             try:
                 raise ValueError("foo")
             except Exception, exc:
                 w = TraceInfo(states.FAILURE, exc)
                 w.handle_failure(mytask, store_errors=False)
-                self.assertEqual(mytask.backend.get_status(tid), states.PENDING)
+                self.assertEqual(mytask.backend.get_status(tid),
+                                 states.PENDING)
                 w.handle_failure(mytask, store_errors=True)
-                self.assertEqual(mytask.backend.get_status(tid), states.FAILURE)
+                self.assertEqual(mytask.backend.get_status(tid),
+                                 states.FAILURE)
         finally:
             mytask.request.clear()
 
