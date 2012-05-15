@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 import logging
+import os
 import sys
 import threading
 import traceback
@@ -14,6 +15,8 @@ from .term import colored
 
 _process_aware = False
 is_py3k = sys.version_info[0] == 3
+
+MP_LOG = os.environ.get("MP_LOG", False)
 
 
 # Sets up our logging hierarchy.
@@ -196,7 +199,7 @@ def ensure_process_aware_logger():
 
 
 def get_multiprocessing_logger():
-    return None; #mputil.get_logger() if mputil else None
+    return mputil.get_logger() if mputil and MP_LOG else None
 
 
 def reset_multiprocessing_logger():
