@@ -51,6 +51,9 @@ revoked = LimitedSet(maxlen=REVOKES_MAX, expires=REVOKE_EXPIRES)
 #: Updates global state when a task has been reserved.
 task_reserved = reserved_requests.add
 
+should_stop = False
+should_terminate = False
+
 
 def task_accepted(request):
     """Updates global state when a task has been accepted."""

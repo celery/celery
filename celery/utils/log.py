@@ -24,6 +24,13 @@ is_py3k = sys.version_info[0] == 3
 base_logger = logger = _get_logger("celery")
 mp_logger = _get_logger("multiprocessing")
 
+in_sighandler = False
+
+
+def set_in_sighandler(value):
+    global in_sighandler
+    in_sighandler = value
+
 
 def get_logger(name):
     l = _get_logger(name)
@@ -121,10 +128,12 @@ class LoggingProxy(object):
         return map(wrap_handler, self.logger.handlers)
 
     def write(self, data):
+        """Write message to logging object."""
+        if in_sighandler:
+            return sys.__stderr__.write(safe_str(data))
         if getattr(self._thread, "recurse_protection", False):
             # Logger is logging back to this file, so stop recursing.
             return
-        """Write message to logging object."""
         data = data.strip()
         if data and not self.closed:
             self._thread.recurse_protection = True
@@ -187,9 +196,31 @@ def ensure_process_aware_logger():
 
 
 def get_multiprocessing_logger():
-    return mputil.get_logger() if mputil else None
+    return None; #mputil.get_logger() if mputil else None
 
 
 def reset_multiprocessing_logger():
     if mputil and hasattr(mputil, "_logger"):
         mputil._logger = None
+
+
+def _patch_logger_class():
+    """Make sure loggers don't log while in a signal handler."""
+
+    logging._acquireLock()
+    try:
+        OldLoggerClass = logging.getLoggerClass()
+        if not getattr(OldLoggerClass, '_signal_safe', False):
+
+            class SigSafeLogger(OldLoggerClass):
+                _signal_safe = True
+
+                def log(self, *args, **kwargs):
+                    if in_sighandler:
+                        sys.__stderr__.write("IN SIGHANDLER WON'T LOG")
+                        return
+                    return OldLoggerClass.log(self, *args, **kwargs)
+            logging.setLoggerClass(SigSafeLogger)
+    finally:
+        logging._releaseLock()
+_patch_logger_class()
