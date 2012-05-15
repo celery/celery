@@ -73,7 +73,7 @@ class BasePool(object):
                 "%s does not implement restart" % (self.__class__, ))
 
     def stop(self):
-        self._state = self.CLOSE
+        self.close()
         self.on_stop()
         self._state = self.TERMINATE
 
@@ -84,6 +84,13 @@ class BasePool(object):
     def start(self):
         self.on_start()
         self._state = self.RUN
+
+    def close(self):
+        self._state = self.CLOSE
+        self.on_close()
+
+    def on_close(self):
+        pass
 
     def apply_async(self, target, args=[], kwargs={}, **options):
         """Equivalent of the :func:`apply` built-in function.
@@ -114,3 +121,7 @@ class BasePool(object):
     @property
     def num_processes(self):
         return self.limit
+
+    @property
+    def eventmap(self):
+        return {}

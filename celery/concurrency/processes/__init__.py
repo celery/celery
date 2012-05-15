@@ -81,6 +81,10 @@ class TaskPool(BasePool):
             self._pool.terminate()
             self._pool = None
 
+    def on_close(self):
+        if self._pool is not None and self._pool._state == RUN:
+            self._pool.close()
+
     def terminate_job(self, pid, signal=None):
         _kill(pid, signal or _signal.SIGTERM)
 
@@ -103,3 +107,7 @@ class TaskPool(BasePool):
     @property
     def num_processes(self):
         return self._pool._processes
+
+    @property
+    def eventmap(self):
+        return self._pool.eventmap

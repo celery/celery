@@ -50,20 +50,22 @@ class bgThread(Thread):
 
     def run(self):
         shutdown = self._is_shutdown
-        while not shutdown.is_set():
-            try:
-                self.body()
-            except Exception, exc:
-                self.on_crash("%r crashed: %r", self.name, exc)
-                # exiting by normal means does not work here, so force exit.
-                os._exit(1)
         try:
+            while not shutdown.is_set():
+                try:
+                    self.body()
+                except Exception, exc:
+                    self.on_crash("%r crashed: %r", self.name, exc)
+                    # exiting by normal means does not work here, so force exit.
+                    os._exit(1)
+            try:
+                self._is_stopped.set()
+            except TypeError:  # pragma: no cover
+                # we lost the race at interpreter shutdown,
+                # so gc collected built-in modules.
+                pass
+        finally:
             self._is_stopped.set()
-        except TypeError:  # pragma: no cover
-            # we lost the race at interpreter shutdown,
-            # so gc collected built-in modules.
-            pass
-        self._is_stopped.set()
 
     def stop(self):
         """Graceful shutdown."""

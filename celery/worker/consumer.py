@@ -84,7 +84,7 @@ from kombu.utils.encoding import safe_repr
 
 from celery.app import app_or_default
 from celery.datastructures import AttributeDict
-from celery.exceptions import InvalidTaskError
+from celery.exceptions import InvalidTaskError, SystemTerminate
 from celery.utils import timer2
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
@@ -93,6 +93,7 @@ from . import state
 from .abstract import StartStopComponent
 from .control import Panel
 from .heartbeat import Heart
+from .hub import Hub
 
 RUN = 0x1
 CLOSE = 0x2
@@ -164,7 +165,8 @@ class Component(StartStopComponent):
                 pool=w.pool,
                 priority_timer=w.priority_timer,
                 app=w.app,
-                controller=w)
+                controller=w,
+                use_eventloop=w.use_eventloop)
         return c
 
 
@@ -295,10 +297,15 @@ class Consumer(object):
     # Consumer state, can be RUN or CLOSE.
     _state = None
 
+    #: If true then pool results and broker messages will be
+    #: handled in an event loop.
+    use_eventloop = False
+
     def __init__(self, ready_queue, eta_schedule,
             init_callback=noop, send_events=False, hostname=None,
             initial_prefetch_count=2, pool=None, app=None,
-            priority_timer=None, controller=None, **kwargs):
+            priority_timer=None, controller=None, use_eventloop=False,
+            **kwargs):
         self.app = app_or_default(app)
         self.connection = None
         self.task_consumer = None
@@ -314,6 +321,7 @@ class Consumer(object):
         self.heart = None
         self.pool = pool
         self.priority_timer = priority_timer or timer2.default_timer
+        self.use_eventloop = use_eventloop
         pidbox_state = AttributeDict(app=self.app,
                                      hostname=self.hostname,
                                      listener=self,     # pre 2.2
@@ -352,21 +360,51 @@ class Consumer(object):
                 error(RETRY_CONNECTION, exc_info=True)
 
     def consume_messages(self):
-        """Consume messages forever (or until an exception is raised)."""
-        debug("Starting message consumer...")
         self.task_consumer.consume()
         debug("Ready to accept tasks!")
 
+        # evented version
+        if self.use_eventloop:
+            return self._eventloop()
+
         while self._state != CLOSE and self.connection:
+            if state.should_stop:
+                raise SystemExit()
+            elif state.should_terminate:
+                raise SystemTerminate()
             if self.qos.prev != self.qos.value:     # pragma: no cover
                 self.qos.update()
             try:
-                self.connection.drain_events(timeout=1)
+                self.connection.drain_events(timeout=1.0)
             except socket.timeout:
                 pass
             except socket.error:
                 if self._state != CLOSE:            # pragma: no cover
                     raise
+
+    def _eventloop(self):
+        """Consume messages forever (or until an exception is raised)."""
+        with Hub() as hub:
+            hub.update(self.connection.eventmap,
+                       self.pool.eventmap)
+            fdmap = hub.fdmap
+            poll = hub.poller.poll
+
+            while self._state != CLOSE and self.connection:
+                if state.should_stop:
+                    raise SystemExit()
+                elif state.should_terminate:
+                    raise SystemTerminate()
+                if not fdmap:
+                    return
+                if self.qos.prev != self.qos.value:     # pragma: no cover
+                    self.qos.update()
+                for fileno, event in poll(1.0) or ():
+                    try:
+                        fdmap[fileno]()
+                    except socket.error:
+                        if self._state != CLOSE:        # pragma: no cover
+                            raise
 
     def on_task(self, task):
         """Handle received task.
@@ -665,9 +703,12 @@ class Consumer(object):
         """
         # Notifies other threads that this instance can't be used
         # anymore.
-        self._state = CLOSE
+        self.close()
         debug("Stopping consumers...")
         self.stop_consumers(close_connection=False)
+
+    def close(self):
+        self._state = CLOSE
 
     @property
     def info(self):

@@ -21,6 +21,7 @@ import sys
 import traceback
 
 from billiard import forking_enable
+from kombu.syn import detect_environment
 from kombu.utils.finalize import Finalize
 
 from celery import concurrency as _concurrency
@@ -87,16 +88,19 @@ class Pool(abstract.StartStopComponent):
         w.no_execv = no_execv
         if w.autoscale:
             w.max_concurrency, w.min_concurrency = w.autoscale
+        w.use_eventloop = (detect_environment() == "default" and
+                           w.app.broker_connection().eventmap)
 
     def create(self, w):
         forking_enable(w.no_execv or not w.force_execv)
         pool = w.pool = self.instantiate(w.pool_cls, w.min_concurrency,
-                                initargs=(w.app, w.hostname),
-                                maxtasksperchild=w.max_tasks_per_child,
-                                timeout=w.task_time_limit,
-                                soft_timeout=w.task_soft_time_limit,
-                                putlocks=w.pool_putlocks,
-                                lost_worker_timeout=w.worker_lost_wait)
+                            initargs=(w.app, w.hostname),
+                            maxtasksperchild=w.max_tasks_per_child,
+                            timeout=w.task_time_limit,
+                            soft_timeout=w.task_soft_time_limit,
+                            putlocks=w.pool_putlocks,
+                            lost_worker_timeout=w.worker_lost_wait,
+                            start_result_thread=not w.use_eventloop)
         return pool
 
 
@@ -274,13 +278,21 @@ class WorkController(configurated):
             self.stop()
             raise exc
 
+    def signal_consumer_close(self):
+        try:
+            self.consumer.close()
+        except AttributeError:
+            pass
+
     def stop(self, in_sighandler=False):
         """Graceful shutdown of the worker server."""
+        self.signal_consumer_close()
         if not in_sighandler or self.pool.signal_safe:
             self._shutdown(warm=True)
 
     def terminate(self, in_sighandler=False):
         """Not so graceful shutdown of the worker server."""
+        self.signal_consumer_close()
         if not in_sighandler or self.pool.signal_safe:
             self._shutdown(warm=False)
 
@@ -289,6 +301,9 @@ class WorkController(configurated):
 
         if self._state in (self.CLOSE, self.TERMINATE):
             return
+
+        if self.pool:
+            self.pool.close()
 
         if self._state != self.RUN or self._running != len(self.components):
             # Not fully started, can safely exit.
