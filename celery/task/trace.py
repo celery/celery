@@ -41,6 +41,8 @@ send_prerun = signals.task_prerun.send
 prerun_receivers = signals.task_prerun.receivers
 send_postrun = signals.task_postrun.send
 postrun_receivers = signals.task_postrun.receivers
+send_success = signals.task_success.send
+success_receivers = signals.task_success.receivers
 STARTED = states.STARTED
 SUCCESS = states.SUCCESS
 RETRY = states.RETRY
@@ -170,8 +172,9 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
             push_request(task_request)
             try:
                 # -*- PRE -*-
-                send_prerun(sender=task, task_id=uuid, task=task,
-                            args=args, kwargs=kwargs)
+                if prerun_receivers:
+                    send_prerun(sender=task, task_id=uuid, task=task,
+                                args=args, kwargs=kwargs)
                 loader_task_init(uuid, task)
                 if track_started:
                     store_result(uuid, {"pid": pid,
@@ -213,13 +216,17 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     [subtask(callback).apply_async((retval, ))
                         for callback in task_request.callbacks or []]
                     task_on_success(retval, uuid, args, kwargs)
+                    if success_receivers:
+                        send_success(sender=task, result=retval)
 
                 # -* POST *-
                 if task_request.chord:
                     on_chord_part_return(task)
                 task_after_return(state, retval, uuid, args, kwargs, None)
-                send_postrun(sender=task, task_id=uuid, task=task,
-                            args=args, kwargs=kwargs, retval=retval)
+                if postrun_receivers:
+                    send_postrun(sender=task, task_id=uuid, task=task,
+                                 args=args, kwargs=kwargs,
+                                 retval=retval, state=state)
             finally:
                 _task_stack.pop()
                 pop_request()

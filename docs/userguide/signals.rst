@@ -135,6 +135,20 @@ Provides arguments:
 * retval
     The return value of the task.
 
+.. signal:: task_success
+
+task_success
+~~~~~~~~~~~~
+
+Dispatched when a task succeeds.
+
+Sender is the task class executed.
+
+Provides arguments
+
+* result
+    Return value of the task.
+
 .. signal:: task_failure
 
 task_failure
