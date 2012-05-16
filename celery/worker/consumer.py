@@ -80,6 +80,8 @@ import logging
 import socket
 import threading
 
+from Queue import Empty
+
 from kombu.utils.encoding import safe_repr
 
 from celery.app import app_or_default
@@ -384,11 +386,16 @@ class Consumer(object):
 
     def _eventloop(self):
         """Consume messages forever (or until an exception is raised)."""
+        on_poll_start = self.connection.transport.on_poll_start
+
+        qos = self.qos
         with Hub() as hub:
-            hub.update(self.connection.eventmap,
-                       self.pool.eventmap)
+            update = hub.update
             fdmap = hub.fdmap
             poll = hub.poller.poll
+            update(self.connection.eventmap,
+                       self.pool.eventmap)
+            self.connection.transport.on_poll_init(hub.poller)
 
             while self._state != CLOSE and self.connection:
                 if state.should_stop:
@@ -397,11 +404,15 @@ class Consumer(object):
                     raise SystemTerminate()
                 if not fdmap:
                     return
-                if self.qos.prev != self.qos.value:     # pragma: no cover
-                    self.qos.update()
-                for fileno, event in poll(1.0) or ():
+                if qos.prev != qos.value:     # pragma: no cover
+                    qos.update()
+
+                update(on_poll_start())
+                for fileno, event in poll(100.0) or ():
                     try:
-                        fdmap[fileno]()
+                        fdmap[fileno](fileno, event)
+                    except Empty:
+                        pass
                     except socket.error:
                         if self._state != CLOSE:        # pragma: no cover
                             raise

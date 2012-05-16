@@ -21,11 +21,14 @@ class Hub(object):
     def __exit__(self, *exc_info):
         return self.close()
 
-    def add(self, f, callback, flags=None):
+    def add(self, fd, callback, flags=None):
         flags = self.eventflags if flags is None else flags
-        fd = f.fileno()
         self.poller.register(fd, flags)
-        self.fdmap[fd] = callback
+        try:
+            fileno = fd.fileno()
+        except AttributeError:
+            fileno = fd
+        self.fdmap[fileno] = callback
 
     def update(self, *maps):
         [self.add(*x) for row in maps for x in row.iteritems()]
@@ -41,7 +44,7 @@ class Hub(object):
             return sleep(0.1)
         for fileno, event in self.poller.poll(timeout) or ():
             try:
-                self.fdmap[fileno]()
+                self.fdmap[fileno](fileno, event)
             except socket.timeout:
                 pass
             except socket.error, exc:

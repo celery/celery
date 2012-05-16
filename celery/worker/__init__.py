@@ -89,7 +89,7 @@ class Pool(abstract.StartStopComponent):
         if w.autoscale:
             w.max_concurrency, w.min_concurrency = w.autoscale
         w.use_eventloop = (detect_environment() == "default" and
-                           w.app.broker_connection().eventmap)
+                           w.app.broker_connection().is_evented)
 
     def create(self, w):
         forking_enable(w.no_execv or not w.force_execv)
