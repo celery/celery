@@ -49,23 +49,28 @@ class bgThread(Thread):
             del(exc_info)
 
     def run(self):
-        shutdown = self._is_shutdown
+        body = self.body
+        shutdown_set = self._is_shutdown.is_set
         try:
-            while not shutdown.is_set():
+            while not shutdown_set():
                 try:
-                    self.body()
+                    body()
                 except Exception, exc:
-                    self.on_crash("%r crashed: %r", self.name, exc)
-                    # exiting by normal means does not work here, so force exit.
-                    os._exit(1)
-            try:
-                self._is_stopped.set()
-            except TypeError:  # pragma: no cover
-                # we lost the race at interpreter shutdown,
-                # so gc collected built-in modules.
-                pass
+                    try:
+                        self.on_crash("%r crashed: %r", self.name, exc)
+                        self._set_stopped()
+                    finally:
+                        os._exit(1)  # exiting by normal means won't work
         finally:
+            self._set_stopped()
+
+    def _set_stopped(self):
+        try:
             self._is_stopped.set()
+        except TypeError:  # pragma: no cover
+            # we lost the race at interpreter shutdown,
+            # so gc collected built-in modules.
+            pass
 
     def stop(self):
         """Graceful shutdown."""

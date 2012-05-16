@@ -119,6 +119,7 @@ class test_TaskPool(Case):
         pool = TaskPool(10)
         pool.start()
         self.assertTrue(pool._pool.started)
+        self.assertTrue(pool._pool._state == mp.RUN)
 
         _pool = pool._pool
         pool.stop()

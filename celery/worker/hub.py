@@ -1,5 +1,8 @@
 from __future__ import absolute_import
 
+import errno
+import socket
+
 from time import sleep
 
 from kombu.utils.eventio import poll, POLL_READ, POLL_ERR

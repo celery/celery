@@ -73,7 +73,6 @@ class BasePool(object):
                 "%s does not implement restart" % (self.__class__, ))
 
     def stop(self):
-        self.close()
         self.on_stop()
         self._state = self.TERMINATE
 
