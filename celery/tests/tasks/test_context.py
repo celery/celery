@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-"
 from __future__ import absolute_import
 
-import threading
-
 from celery.task.base import Context
 from celery.tests.utils import Case
 
@@ -22,21 +20,6 @@ def get_context_as_dict(ctx, getter=getattr):
 default_context = get_context_as_dict(Context())
 
 
-# Manipulate the a context in a separate thread
-class ContextManipulator(threading.Thread):
-    def __init__(self, ctx, *args):
-        super(ContextManipulator, self).__init__()
-        self.daemon = True
-        self.ctx = ctx
-        self.args = args
-        self.result = None
-
-    def run(self):
-        for func, args in self.args:
-            func(self.ctx, *args)
-        self.result = get_context_as_dict(self.ctx)
-
-
 class test_Context(Case):
 
     def test_default_context(self):
@@ -44,14 +27,6 @@ class test_Context(Case):
         # initializer as the default_context constructor.
         defaults = dict(default_context, children=[])
         self.assertDictEqual(get_context_as_dict(Context()), defaults)
-
-    def test_default_context_threaded(self):
-        ctx = Context()
-        worker = ContextManipulator(ctx)
-        worker.start()
-        worker.join()
-        self.assertDictEqual(worker.result, default_context)
-        self.assertDictEqual(get_context_as_dict(ctx), default_context)
 
     def test_updated_context(self):
         expected = dict(default_context)
@@ -61,26 +36,6 @@ class test_Context(Case):
         ctx.update(changes)
         self.assertDictEqual(get_context_as_dict(ctx), expected)
         self.assertDictEqual(get_context_as_dict(Context()), default_context)
-
-    def test_updated_contex_threadedt(self):
-        expected_a = dict(default_context)
-        changes_a = dict(id="a", args=["some", 1], wibble="wobble")
-        expected_a.update(changes_a)
-        expected_b = dict(default_context)
-        changes_b = dict(id="b", args=["other", 2], weasel="woozle")
-        expected_b.update(changes_b)
-        ctx = Context()
-
-        worker_a = ContextManipulator(ctx, (Context.update, [changes_a]))
-        worker_b = ContextManipulator(ctx, (Context.update, [changes_b]))
-        worker_a.start()
-        worker_b.start()
-        worker_a.join()
-        worker_b.join()
-
-        self.assertDictEqual(worker_a.result, expected_a)
-        self.assertDictEqual(worker_b.result, expected_b)
-        self.assertDictEqual(get_context_as_dict(ctx), default_context)
 
     def test_modified_context(self):
         expected = dict(default_context)
@@ -92,34 +47,6 @@ class test_Context(Case):
         self.assertDictEqual(get_context_as_dict(ctx), expected)
         self.assertDictEqual(get_context_as_dict(Context()), default_context)
 
-    def test_modified_contex_threadedt(self):
-        expected_a = dict(default_context)
-        expected_a["id"] = "a"
-        expected_a["args"] = ["some", 1]
-        expected_a["wibble"] = "wobble"
-        expected_b = dict(default_context)
-        expected_b["id"] = "b"
-        expected_b["args"] = ["other", 2]
-        expected_b["weasel"] = "woozle"
-        ctx = Context()
-
-        worker_a = ContextManipulator(ctx,
-                                      (setattr, ["id", "a"]),
-                                      (setattr, ["args", ["some", 1]]),
-                                      (setattr, ["wibble", "wobble"]))
-        worker_b = ContextManipulator(ctx,
-                                      (setattr, ["id", "b"]),
-                                      (setattr, ["args", ["other", 2]]),
-                                      (setattr, ["weasel", "woozle"]))
-        worker_a.start()
-        worker_b.start()
-        worker_a.join()
-        worker_b.join()
-
-        self.assertDictEqual(worker_a.result, expected_a)
-        self.assertDictEqual(worker_b.result, expected_b)
-        self.assertDictEqual(get_context_as_dict(ctx), default_context)
-
     def test_cleared_context(self):
         changes = dict(id="unique id", args=["some", 1], wibble="wobble")
         ctx = Context()
@@ -128,27 +55,6 @@ class test_Context(Case):
         defaults = dict(default_context, children=[])
         self.assertDictEqual(get_context_as_dict(ctx), defaults)
         self.assertDictEqual(get_context_as_dict(Context()), defaults)
-
-    def test_cleared_context_threaded(self):
-        changes_a = dict(id="a", args=["some", 1], wibble="wobble")
-        expected_b = dict(default_context)
-        changes_b = dict(id="b", args=["other", 2], weasel="woozle")
-        expected_b.update(changes_b)
-        ctx = Context()
-
-        worker_a = ContextManipulator(ctx,
-                                      (Context.update, [changes_a]),
-                                      (Context.clear, []))
-        worker_b = ContextManipulator(ctx,
-                                      (Context.update, [changes_b]))
-        worker_a.start()
-        worker_b.start()
-        worker_a.join()
-        worker_b.join()
-
-        self.assertDictEqual(worker_a.result, default_context)
-        self.assertDictEqual(worker_b.result, expected_b)
-        self.assertDictEqual(get_context_as_dict(ctx), default_context)
 
     def test_context_get(self):
         expected = dict(default_context)

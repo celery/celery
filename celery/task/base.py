@@ -14,14 +14,15 @@
 from __future__ import absolute_import
 
 from celery import current_app
-from celery.__compat__ import reclassmethod
+from celery.__compat__ import class_property, reclassmethod
 from celery.app.task import Context, TaskType, BaseTask  # noqa
 from celery.schedules import maybe_schedule
 
 #: list of methods that must be classmethods in the old API.
 _COMPAT_CLASSMETHODS = (
     "get_logger", "establish_connection", "get_publisher", "get_consumer",
-    "delay", "apply_async", "retry", "apply", "AsyncResult", "subtask")
+    "delay", "apply_async", "retry", "apply", "AsyncResult", "subtask",
+    "push_request", "pop_request")
 
 
 class Task(BaseTask):
@@ -35,6 +36,11 @@ class Task(BaseTask):
     # given us pain (like all magic).
     for name in _COMPAT_CLASSMETHODS:
         locals()[name] = reclassmethod(getattr(BaseTask, name))
+
+    @classmethod
+    def _get_request(self):
+        return self.request_stack.top
+    request = class_property(_get_request)
 
 
 class PeriodicTask(Task):

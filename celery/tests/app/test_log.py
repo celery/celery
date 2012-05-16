@@ -230,12 +230,12 @@ class test_task_logger(test_default_logger):
             pass
         test_task.logger.handlers = []
         self.task = test_task
-        from celery.app.state import _tls
-        _tls.current_task = test_task
+        from celery.app.state import _task_stack
+        _task_stack.push(test_task)
 
     def tearDown(self):
-        from celery.app.state import _tls
-        _tls.current_task = None
+        from celery.app.state import _task_stack
+        _task_stack.pop()
 
     def setup_logger(self, *args, **kwargs):
         return log.setup_task_loggers(*args, **kwargs)

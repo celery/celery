@@ -79,14 +79,14 @@ def consume_queue(queue):
 
 
 def apply_batches_task(task, args, loglevel, logfile):
-    task.request.update({"loglevel": loglevel, "logfile": logfile})
+    task.push_request(loglevel=loglevel, logfile=logfile)
     try:
         result = task(*args)
     except Exception, exc:
         result = None
         task.logger.error("Error: %r", exc, exc_info=True)
     finally:
-        task.request.clear()
+        task.pop_request()
     return result
 
 

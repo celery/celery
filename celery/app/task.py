@@ -14,7 +14,6 @@ from __future__ import absolute_import
 
 import logging
 import sys
-import threading
 
 from kombu import Exchange
 from kombu.utils import cached_property
@@ -24,6 +23,7 @@ from celery import states
 from celery.__compat__ import class_property
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
+from celery.local import LocalStack
 from celery.result import EagerResult
 from celery.utils import fun_takes_kwargs, uuid, maybe_reraise
 from celery.utils.functional import mattrgetter, maybe_list
@@ -43,7 +43,7 @@ extract_exec_options = mattrgetter("queue", "routing_key",
                                    "compression", "expires")
 
 
-class Context(threading.local):
+class Context(object):
     # Default context
     logfile = None
     loglevel = None
@@ -61,8 +61,11 @@ class Context(threading.local):
     errbacks = None
     _children = None   # see property
 
-    def update(self, d, **kwargs):
-        self.__dict__.update(d, **kwargs)
+    def __init__(self, *args, **kwargs):
+        self.update(*args, **kwargs)
+
+    def update(self, *args, **kwargs):
+        self.__dict__.update(*args, **kwargs)
 
     def clear(self):
         self.__dict__.clear()
@@ -171,9 +174,6 @@ class BaseTask(object):
     #: If disabled the worker will not forward magic keyword arguments.
     #: Deprecated and scheduled for removal in v3.0.
     accept_magic_kwargs = False
-
-    #: Request context (set when task is applied).
-    request = Context()
 
     #: Destination queue.  The queue needs to exist
     #: in :setting:`CELERY_QUEUES`.  The `routing_key`, `exchange` and
@@ -323,6 +323,9 @@ class BaseTask(object):
         # decorate with annotations from config.
         if not was_bound:
             self.annotate()
+
+        self.request_stack = LocalStack()
+        self.request_stack.push(Context())
 
         # PeriodicTask uses this to add itself to the PeriodicTask schedule.
         self.on_bound(app)
@@ -845,6 +848,12 @@ class BaseTask(object):
         """
         request.execute_using_pool(pool, loglevel, logfile)
 
+    def push_request(self, *args, **kwargs):
+        self.request_stack.push(Context(*args, **kwargs))
+
+    def pop_request(self):
+        self.request_stack.pop()
+
     def __repr__(self):
         """`repr(task)`"""
         return "<@task: %s>" % (self.name, )
@@ -852,6 +861,10 @@ class BaseTask(object):
     @cached_property
     def logger(self):
         return self.get_logger()
+
+    @property
+    def request(self):
+        return self.request_stack.top
 
     @property
     def __name__(self):

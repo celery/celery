@@ -67,8 +67,9 @@ class test_mro_lookup(Case):
 
 
 def jail(task_id, name, args, kwargs):
+    request = {"id": task_id}
     return eager_trace_task(current_app.tasks[name],
-                            task_id, args, kwargs, eager=False)[0]
+            task_id, args, kwargs, request=request, eager=False)[0]
 
 
 def on_ack(*args, **kwargs):
@@ -196,26 +197,16 @@ class test_trace_task(Case):
             mytask.ignore_result = False
 
     def test_execute_jail_failure(self):
-        u = uuid()
-        mytask_raising.request.update({"id": u})
-        try:
-            ret = jail(u, mytask_raising.name,
-                    [4], {})
-            self.assertIsInstance(ret, ExceptionInfo)
-            self.assertTupleEqual(ret.exception.args, (4, ))
-        finally:
-            mytask_raising.request.clear()
+        ret = jail(uuid(), mytask_raising.name,
+                   [4], {})
+        self.assertIsInstance(ret, ExceptionInfo)
+        self.assertTupleEqual(ret.exception.args, (4, ))
 
     def test_execute_ignore_result(self):
         task_id = uuid()
-        MyTaskIgnoreResult.request.update({"id": task_id})
-        try:
-            ret = jail(task_id, MyTaskIgnoreResult.name,
-                       [4], {})
-            self.assertEqual(ret, 256)
-            self.assertFalse(AsyncResult(task_id).ready())
-        finally:
-            MyTaskIgnoreResult.request.clear()
+        ret = jail(task_id, MyTaskIgnoreResult.name, [4], {})
+        self.assertEqual(ret, 256)
+        self.assertFalse(AsyncResult(task_id).ready())
 
 
 class MockEventDispatcher(object):
@@ -557,10 +548,9 @@ class test_TaskRequest(Case):
         def _error_exec(self, *args, **kwargs):
             raise KeyError("baz")
 
-        @task_dec
+        @task_dec(request=None)
         def raising():
             raise KeyError("baz")
-        raising.request = None
 
         with self.assertWarnsRegex(RuntimeWarning,
                 r'Exception raised outside'):

@@ -148,13 +148,13 @@ class test_TaskSet(Case):
         @current_app.task
         def xyz():
             pass
-        from celery.app.state import _tls
-        _tls.current_task = xyz
+        from celery.app.state import _task_stack
+        _task_stack.push(xyz)
         try:
             ts.apply_async(publisher=Publisher())
         finally:
-            _tls.current_task = None
-            xyz.request.clear()
+            _task_stack.pop()
+            xyz.pop_request()
 
     def test_apply(self):
 

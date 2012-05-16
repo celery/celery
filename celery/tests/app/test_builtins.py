@@ -4,7 +4,7 @@ from mock import Mock
 
 from celery import current_app as app, group, task, chord
 from celery.app import builtins
-from celery.app.state import _tls
+from celery.app.state import _task_stack
 from celery.tests.utils import Case
 
 
@@ -61,13 +61,13 @@ class test_group(Case):
         x.apply_async()
 
     def test_apply_async_with_parent(self):
-        _tls.current_task = add
+        _task_stack.push(add)
         try:
             x = group([add.s(4, 4), add.s(8, 8)])
             x.apply_async()
             self.assertTrue(add.request.children)
         finally:
-            _tls.current_task = None
+            _task_stack.pop()
 
 
 class test_chain(Case):

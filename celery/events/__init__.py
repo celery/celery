@@ -91,6 +91,8 @@ class EventDispatcher(object):
         self.on_disabled = set()
 
         self.enabled = enabled
+        if not connection and channel:
+            self.connection = channel.connection.client
         if self.enabled:
             self.enable()
 
@@ -151,8 +153,7 @@ class EventDispatcher(object):
     def close(self):
         """Close the event dispatcher."""
         self.mutex.locked() and self.mutex.release()
-        if self.publisher is not None:
-            self.publisher = None
+        self.publisher = None
 
 
 class EventReceiver(object):

@@ -89,7 +89,7 @@ class class_property(object):
 
     def __init__(self, fget=None, fset=None):
         assert fget and isinstance(fget, classmethod)
-        assert fset and isinstance(fset, classmethod)
+        assert isinstance(fset, classmethod) if fset else True
         self.__get = fget
         self.__set = fset
 

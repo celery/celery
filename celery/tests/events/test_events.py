@@ -132,10 +132,11 @@ class test_EventReceiver(AppCase):
         def my_handler(event):
             got_event[0] = True
 
-        r = events.EventReceiver(object(),
+        connection = Mock()
+        connection.transport_cls = "memory"
+        r = events.EventReceiver(connection,
                                  handlers={"world-war": my_handler},
-                                 node_id="celery.tests",
-                                 )
+                                 node_id="celery.tests")
         r._receive(message, object())
         self.assertTrue(got_event[0])
 
@@ -148,7 +149,9 @@ class test_EventReceiver(AppCase):
         def my_handler(event):
             got_event[0] = True
 
-        r = events.EventReceiver(object(), node_id="celery.tests")
+        connection = Mock()
+        connection.transport_cls = "memory"
+        r = events.EventReceiver(connection, node_id="celery.tests")
         events.EventReceiver.handlers["*"] = my_handler
         try:
             r._receive(message, object())

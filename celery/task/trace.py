@@ -28,8 +28,8 @@ from kombu.utils import kwdict
 
 from celery import current_app
 from celery import states, signals
-from celery.app.state import _tls
-from celery.app.task import BaseTask
+from celery.app.state import _task_stack
+from celery.app.task import BaseTask, Context
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import RetryTaskError
 from celery.utils.serialization import get_pickleable_exception
@@ -146,15 +146,15 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
 
     task_on_success = task.on_success
     task_after_return = task.after_return
-    task_request = task.request
 
     store_result = backend.store_result
     backend_cleanup = backend.process_cleanup
 
     pid = os.getpid()
 
-    update_request = task_request.update
-    clear_request = task_request.clear
+    request_stack = task.request_stack
+    push_request = request_stack.push
+    pop_request = request_stack.pop
     on_chord_part_return = backend.on_chord_part_return
 
     from celery import canvas
@@ -164,9 +164,10 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         R = I = None
         kwargs = kwdict(kwargs)
         try:
-            _tls.current_task = task
-            update_request(request or {}, args=args,
-                           called_directly=False, kwargs=kwargs)
+            _task_stack.push(task)
+            task_request = Context(request or {}, args=args,
+                                   called_directly=False, kwargs=kwargs)
+            push_request(task_request)
             try:
                 # -*- PRE -*-
                 send_prerun(sender=task, task_id=uuid, task=task,
@@ -220,8 +221,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 send_postrun(sender=task, task_id=uuid, task=task,
                             args=args, kwargs=kwargs, retval=retval)
             finally:
-                _tls.current_task = None
-                clear_request()
+                _task_stack.pop()
+                pop_request()
                 if not eager:
                     try:
                         backend_cleanup()
