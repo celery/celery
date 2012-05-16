@@ -83,6 +83,20 @@ check_dev_null() {
     fi
 }
 
+ensure_dir() {
+    if [ -d "$1" ]; then
+        mkdir -p "$1"
+        chown $CELERYBEAT_USER:$CELERYBEAT_GROUP "$1"
+        chmod 02755 "$1"
+    fi
+}
+
+check_paths() {
+    ensure_dir "$(dirname $CELERYBEAT_PID_FILE)"
+    ensure_dir "$(dirname $CELERYBEAT_LOG_FILE)"
+}
+
+
 wait_pid () {
     pid=$1
     forever=1
@@ -130,9 +144,11 @@ start_beat () {
 case "$1" in
   start)
     check_dev_null
+    check_paths
     start_beat
     ;;
   stop)
+    check_paths
     stop_beat
     ;;
   reload|force-reload)
@@ -140,6 +156,7 @@ case "$1" in
     ;;
   restart)
     echo "Restarting celery periodic task scheduler"
+    check_paths
     stop_beat
     check_dev_null
     start_beat

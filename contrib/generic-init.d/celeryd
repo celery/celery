@@ -80,6 +80,18 @@ check_dev_null() {
     fi
 }
 
+ensure_dir() {
+    if [ -d "$1" ]; then
+        mkdir -p "$1"
+        chown $CELERYD_USER:$CELERYD_GROUP "$1"
+        chmod 02755 "$1"
+    fi
+}
+
+check_paths() {
+    ensure_dir "$(dirname $CELERYD_PID_FILE)"
+    ensure_dir "$(dirname $CELERYD_LOG_FILE)"
+}
 
 export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 
@@ -113,11 +125,13 @@ restart_workers () {
 case "$1" in
     start)
         check_dev_null
+        check_paths
         start_workers
     ;;
 
     stop)
         check_dev_null
+        check_paths
         stop_workers
     ;;
 
@@ -131,11 +145,13 @@ case "$1" in
 
     restart)
         check_dev_null
+        check_paths
         restart_workers
     ;;
 
     try-restart)
         check_dev_null
+        check_paths
         restart_workers
     ;;
 
