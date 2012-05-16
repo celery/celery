@@ -4,6 +4,7 @@ from __future__ import with_statement
 
 from itertools import starmap
 
+from celery.state import get_current_task
 from celery.utils import uuid
 
 #: global list of functions defining tasks that should be
@@ -105,7 +106,6 @@ def add_chunk_task(app):
 def add_group_task(app):
     _app = app
     from celery.canvas import subtask
-    from celery.app.state import get_current_task
     from celery.result import from_serializable
 
     class Group(app.Task):

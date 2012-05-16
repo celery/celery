@@ -2,8 +2,8 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
+from celery.state import get_current_task
 from celery.app import app_or_default
-from celery.app.state import get_current_task
 from celery.canvas import subtask, maybe_subtask  # noqa
 from celery.utils import uuid
 from celery.utils.compat import UserList

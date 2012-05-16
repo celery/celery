@@ -11,7 +11,7 @@
 """
 from __future__ import absolute_import
 
-from celery.app.state import current_app, current_task as current
+from celery.state import current_app, current_task as current
 from celery.__compat__ import MagicModule, recreate_module
 from celery.local import Proxy
 

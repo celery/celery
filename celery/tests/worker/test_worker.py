@@ -803,7 +803,7 @@ class test_WorkController(AppCase):
     def test_process_initializer(self, set_mp_process_title, _signals):
         from celery import Celery
         from celery import signals
-        from celery.app.state import _tls
+        from celery.state import _tls
         from celery.concurrency.processes import process_initializer
         from celery.concurrency.processes import (WORKER_SIGRESET,
                                                   WORKER_SIGIGNORE)

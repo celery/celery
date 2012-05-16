@@ -14,13 +14,13 @@ from __future__ import absolute_import
 import os
 
 from celery.local import Proxy
-
-from . import state
-from .state import (  # noqa
+from celery import state
+from celery.state import (  # noqa
         set_default_app,
         get_current_app as current_app,
         get_current_task as current_task,
 )
+
 from .base import Celery, AppPickler  # noqa
 
 #: Proxy always returning the app set as default.

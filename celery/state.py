@@ -19,11 +19,15 @@ _task_stack = LocalStack()
 
 def set_default_app(app):
     global default_app
-    default_app = app
+    if default_app is None:
+        default_app = app
 
 
 def get_current_app():
-    return getattr(_tls, "current_app", None) or default_app
+    if default_app is None:
+        # creates the default app, but we want to defer that.
+        import celery.app  # noqa
+    return _tls.current_app or default_app
 
 
 def get_current_task():

@@ -21,6 +21,7 @@ from kombu.utils import cached_property
 from celery import current_app
 from celery import states
 from celery.__compat__ import class_property
+from celery.state import get_current_task
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
 from celery.local import LocalStack
@@ -32,7 +33,6 @@ from celery.utils.log import get_logger
 from celery.utils.mail import ErrorMail
 
 from .annotations import resolve_all as resolve_all_annotations
-from .state import get_current_task
 from .registry import _unpickle_task
 
 #: extracts options related to publishing a message from a dict.
