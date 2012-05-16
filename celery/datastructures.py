@@ -264,13 +264,24 @@ class DictAttribute(object):
     def __contains__(self, key):
         return hasattr(self.obj, key)
 
+    def _iterate_keys(self):
+        return vars(self.obj).iterkeys()
+    iterkeys = _iterate_keys
+
+    def __iter__(self):
+        return self.iterkeys()
+
     def _iterate_items(self):
         return vars(self.obj).iteritems()
     iteritems = _iterate_items
 
     if sys.version_info[0] == 3:  # pragma: no cover
         items = _iterate_items
+        keys = _iterate_keys
     else:
+
+        def keys(self):
+            return list(self._iterate_keys())
 
         def items(self):
             return list(self._iterate_items())
