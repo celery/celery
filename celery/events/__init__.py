@@ -20,6 +20,7 @@ import threading
 
 from collections import deque
 from contextlib import contextmanager
+from copy import copy
 
 from kombu.common import eventloop
 from kombu.entity import Exchange, Queue
@@ -30,6 +31,14 @@ from celery.app import app_or_default
 from celery.utils import uuid
 
 event_exchange = Exchange("celeryev", type="topic")
+
+
+def get_exchange(conn):
+    ex = copy(event_exchange)
+    if "redis" in conn.transport_cls:
+        # quick hack for #436
+        ex.type = "fanout"
+    return ex
 
 
 def Event(type, _fields=None, **fields):
@@ -91,9 +100,12 @@ class EventDispatcher(object):
     def __exit__(self, *exc_info):
         self.close()
 
+    def get_exchange(self):
+        return get_exchange(self.connection)
+
     def enable(self):
         self.publisher = Producer(self.channel or self.connection,
-                                  exchange=event_exchange,
+                                  exchange=self.get_exchange(),
                                   serializer=self.serializer)
         self.enabled = True
         for callback in self.on_enabled:
@@ -166,10 +178,13 @@ class EventReceiver(object):
         self.node_id = node_id or uuid()
         self.queue_prefix = queue_prefix
         self.queue = Queue('.'.join([self.queue_prefix, self.node_id]),
-                           exchange=event_exchange,
+                           exchange=self.get_exchange(),
                            routing_key=self.routing_key,
                            auto_delete=True,
                            durable=False)
+
+    def get_exchange(self):
+        return get_exchange(self.connection)
 
     def process(self, type, event):
         """Process the received event by dispatching it to the appropriate
