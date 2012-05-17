@@ -338,6 +338,8 @@ class Consumer(object):
 
         self._does_info = logger.isEnabledFor(logging.INFO)
         self.strategies = {}
+        if self.use_eventloop:
+            self.hub = Hub(self.priority_timer)
 
     def update_strategies(self):
         S = self.strategies
@@ -390,7 +392,7 @@ class Consumer(object):
         on_poll_start = self.connection.transport.on_poll_start
 
         qos = self.qos
-        with Hub(self.priority_timer) as hub:
+        with self.hub as hub:
             update = hub.update
             fdmap = hub.fdmap
             poll = hub.poller.poll

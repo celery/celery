@@ -38,6 +38,7 @@ from celery.utils.timer2 import Schedule
 from . import abstract
 from . import state
 from .buckets import TaskBucket, FastQueue
+from .hub import BoundedSemaphore
 
 RUN = 0x1
 CLOSE = 0x2
@@ -92,16 +93,20 @@ class Pool(abstract.StartStopComponent):
         w.use_eventloop = (detect_environment() == "default" and
                            w.app.broker_connection().is_evented)
 
-    def create(self, w):
+    def create(self, w, semaphore=None):
         forking_enable(w.no_execv or not w.force_execv)
-        pool = w.pool = self.instantiate(w.pool_cls, w.min_concurrency,
-                            initargs=(w.app, w.hostname),
-                            maxtasksperchild=w.max_tasks_per_child,
-                            timeout=w.task_time_limit,
-                            soft_timeout=w.task_soft_time_limit,
-                            putlocks=w.pool_putlocks,
-                            lost_worker_timeout=w.worker_lost_wait,
-                            start_result_thread=not w.use_eventloop)
+        procs = w.min_concurrency
+        if w.use_eventloop:
+            semaphore = w.semaphore = BoundedSemaphore(procs)
+        pool = w.pool = self.instantiate(w.pool_cls, procs,
+                initargs=(w.app, w.hostname),
+                maxtasksperchild=w.max_tasks_per_child,
+                timeout=w.task_time_limit,
+                soft_timeout=w.task_soft_time_limit,
+                putlocks=w.pool_putlocks and not w.use_eventloop,
+                lost_worker_timeout=w.worker_lost_wait,
+                start_result_thread=not w.use_eventloop,
+                semaphore=semaphore)
         return pool
 
 
@@ -136,7 +141,9 @@ class Queues(abstract.Component):
             w.disable_rate_limits = True
         if w.disable_rate_limits:
             w.ready_queue = FastQueue()
-            if not w.pool_cls.requires_mediator:
+            if w.use_eventloop:
+                w.ready_queue.put = w.process_task_sem
+            elif not w.pool_cls.requires_mediator:
                 # just send task directly to pool, skip the mediator.
                 w.ready_queue.put = w.process_task
         else:
@@ -267,6 +274,9 @@ class WorkController(configurated):
         # Will only get here if running green,
         # makes sure all greenthreads have exited.
         self._shutdown_complete.wait()
+
+    def process_task_sem(self, req):
+        return self.semaphore.acquire(self.process_task, req)
 
     def process_task(self, req):
         """Process task by sending it to the pool of workers."""

@@ -1,9 +1,43 @@
 from __future__ import absolute_import
 
+from collections import deque
+
 from kombu.utils import cached_property
 from kombu.utils.eventio import poll, POLL_READ, POLL_ERR
 
 from celery.utils.timer2 import Schedule
+
+
+class BoundedSemaphore(object):
+
+    def __init__(self, value=1):
+        self.initial_value = self.value = value
+        self._waiting = set()
+
+    def grow(self):
+        self.initial_value += 1
+
+    def shrink(self):
+        self.initial_value -= 1
+
+    def acquire(self, callback, *partial_args, **partial_kwargs):
+        if self.value <= 0:
+            self._waiting.add((callback, partial_args))
+            return False
+        else:
+            self.value = max(self.value - 1, 0)
+            callback(*partial_args, **partial_kwargs)
+            return True
+
+    def release(self):
+        self.value = min(self.value + 1, self.initial_value)
+        if self._waiting:
+            waiter, args = self._waiting.pop()
+            waiter(*args)
+
+
+    def clear(self):
+        pass
 
 
 class Hub(object):
@@ -13,6 +47,7 @@ class Hub(object):
         self.fdmap = {}
         self.poller = poll()
         self.schedule = Schedule() if schedule is None else schedule
+        self._on_event = set()
 
     def __enter__(self):
         return self
