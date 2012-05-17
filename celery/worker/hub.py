@@ -1,25 +1,30 @@
 from __future__ import absolute_import
 
-import errno
-import socket
-
-from time import sleep
-
+from kombu.utils import cached_property
 from kombu.utils.eventio import poll, POLL_READ, POLL_ERR
+
+from celery.utils.timer2 import Schedule
 
 
 class Hub(object):
     eventflags = POLL_READ | POLL_ERR
 
-    def __init__(self):
+    def __init__(self, schedule=None):
         self.fdmap = {}
         self.poller = poll()
+        self.schedule = Schedule() if schedule is None else schedule
 
     def __enter__(self):
         return self
 
     def __exit__(self, *exc_info):
         return self.close()
+
+    def fire_timers(self, min_delay=10, max_delay=10):
+        delay, entry = self.scheduler.next()
+        if entry is not None:
+            self.schedule.apply_entry(entry)
+        return min(max(delay, min_delay), max_delay)
 
     def add(self, fd, callback, flags=None):
         flags = self.eventflags if flags is None else flags
@@ -39,17 +44,9 @@ class Hub(object):
         except (KeyError, OSError):
             pass
 
-    def tick(self, timeout=1.0):
-        if not self.fdmap:
-            return sleep(0.1)
-        for fileno, event in self.poller.poll(timeout) or ():
-            try:
-                self.fdmap[fileno](fileno, event)
-            except socket.timeout:
-                pass
-            except socket.error, exc:
-                if exc.errno != errno.EAGAIN:
-                    raise
-
     def close(self):
         [self.remove(fd) for fd in self.fdmap.keys()]
+
+    @cached_property
+    def scheduler(self):
+        return iter(self.schedule)

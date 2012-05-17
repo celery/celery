@@ -33,6 +33,7 @@ from celery.utils.functional import noop
 from celery.utils.imports import qualname, reload_from_cwd
 from celery.utils.log import get_logger
 from celery.utils.threads import Event
+from celery.utils.timer2 import Schedule
 
 from . import abstract
 from . import state
@@ -148,15 +149,18 @@ class Timers(abstract.Component):
     requires = ("pool", )
 
     def create(self, w):
-        w.priority_timer = self.instantiate(w.pool.Timer)
-        if not w.eta_scheduler_cls:
-            # Default Timer is set by the pool, as e.g. eventlet
-            # needs a custom implementation.
-            w.eta_scheduler_cls = w.pool.Timer
-        w.scheduler = self.instantiate(w.eta_scheduler_cls,
-                                precision=w.eta_scheduler_precision,
-                                on_error=self.on_timer_error,
-                                on_tick=self.on_timer_tick)
+        if w.use_eventloop:
+            w.scheduler = w.priority_timer = Schedule(max_interval=10)
+        else:
+            w.priority_timer = self.instantiate(w.pool.Timer)
+            if not w.eta_scheduler_cls:
+                # Default Timer is set by the pool, as e.g. eventlet
+                # needs a custom implementation.
+                w.eta_scheduler_cls = w.pool.Timer
+            w.scheduler = self.instantiate(w.eta_scheduler_cls,
+                                    max_interval=w.eta_scheduler_precision,
+                                    on_error=self.on_timer_error,
+                                    on_tick=self.on_timer_tick)
 
     def on_timer_error(self, exc):
         logger.error("Timer error: %r", exc, exc_info=True)

@@ -80,6 +80,7 @@ import logging
 import socket
 import threading
 
+from time import sleep
 from Queue import Empty
 
 from kombu.utils.encoding import safe_repr
@@ -389,10 +390,12 @@ class Consumer(object):
         on_poll_start = self.connection.transport.on_poll_start
 
         qos = self.qos
-        with Hub() as hub:
+        with Hub(self.priority_timer) as hub:
             update = hub.update
             fdmap = hub.fdmap
             poll = hub.poller.poll
+            fire_timers = hub.fire_timers
+            scheduled = hub.schedule._queue
             update(self.connection.eventmap,
                        self.pool.eventmap)
             self.connection.transport.on_poll_init(hub.poller)
@@ -402,20 +405,25 @@ class Consumer(object):
                     raise SystemExit()
                 elif state.should_terminate:
                     raise SystemTerminate()
-                if not fdmap:
-                    return
+
+                time_to_sleep = fire_timers() if scheduled else 1
+
                 if qos.prev != qos.value:     # pragma: no cover
                     qos.update()
 
                 update(on_poll_start())
-                for fileno, event in poll(100.0) or ():
-                    try:
-                        fdmap[fileno](fileno, event)
-                    except Empty:
-                        pass
-                    except socket.error:
-                        if self._state != CLOSE:        # pragma: no cover
-                            raise
+                if fdmap:
+                    for fileno, event in poll(time_to_sleep) or ():
+                        try:
+                            fdmap[fileno](fileno, event)
+                        except Empty:
+                            pass
+                        except socket.error:
+                            if self._state != CLOSE:        # pragma: no cover
+                                raise
+                else:
+                    sleep(min(time_to_sleep, 1))
+
 
     def on_task(self, task):
         """Handle received task.
@@ -449,7 +457,8 @@ class Consumer(object):
             else:
                 self.qos.increment()
                 self.eta_schedule.apply_at(eta,
-                                           self.apply_eta_task, (task, ))
+                                           self.apply_eta_task, (task, ),
+                                           priority=6)
         else:
             state.task_reserved(task)
             self.ready_queue.put(task)
