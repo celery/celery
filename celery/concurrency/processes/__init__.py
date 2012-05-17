@@ -10,7 +10,7 @@ from celery import platforms
 from celery import signals
 from celery.app import app_or_default
 from celery.concurrency.base import BasePool
-from billiard.pool import Pool, RUN
+from billiard.pool import Pool, RUN, CLOSE
 
 if platform.system() == "Windows":  # pragma: no cover
     # On Windows os.kill calls TerminateProcess which cannot be
@@ -70,7 +70,7 @@ class TaskPool(BasePool):
 
     def on_stop(self):
         """Gracefully stop the pool."""
-        if self._pool is not None and self._pool._state == RUN:
+        if self._pool is not None and self._pool._state in (RUN, CLOSE):
             self._pool.close()
             self._pool.join()
             self._pool = None
