@@ -21,8 +21,10 @@ class Hub(object):
         return self.close()
 
     def fire_timers(self, min_delay=10, max_delay=10):
-        delay, entry = self.scheduler.next()
-        if entry is not None:
+        while 1:
+            delay, entry = self.scheduler.next()
+            if entry is None:
+                break
             self.schedule.apply_entry(entry)
         return min(max(delay, min_delay), max_delay)
 

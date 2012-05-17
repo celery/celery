@@ -198,6 +198,7 @@ class Schedule(object):
 
 
 class Timer(Thread):
+    Entry = Entry
     Schedule = Schedule
 
     running = False
