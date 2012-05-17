@@ -1007,6 +1007,14 @@ A sequence of modules to import when the celery daemon starts.
 This is used to specify the task modules to import, but also
 to import signal handlers and additional remote control commands, etc.
 
+.. setting:: CELERY_INCLUDE
+
+CELERY_INCLUDE
+~~~~~~~~~~~~~~
+
+Exact same semantics as :setting:`CELERY_IMPORTS`, but can be used as a means
+to have different import categories.
+
 .. setting:: CELERYD_FORCE_EXECV
 
 CELERYD_FORCE_EXECV
