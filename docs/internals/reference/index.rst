@@ -14,6 +14,7 @@
     celery.worker.mediator
     celery.worker.buckets
     celery.worker.heartbeat
+    celery.worker.hub
     celery.worker.control
     celery.worker.state
     celery.worker.strategy
@@ -36,6 +37,7 @@
     celery.backends.mongodb
     celery.backends.redis
     celery.backends.cassandra
+    celery.state
     celery.task.trace
     celery.app.abstract
     celery.app.annotations
