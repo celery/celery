@@ -190,12 +190,15 @@ class TaskProducer(Producer):
         if chord:
             body["chord"] = chord
 
+        print("KWARGS: %r" % (kwargs, ))
+
         self.publish(body, exchange=exchange, mandatory=mandatory,
              immediate=immediate, routing_key=routing_key,
              serializer=serializer or self.serializer,
              compression=compression or self.compression,
              retry=retry, retry_policy=_rp, delivery_mode=delivery_mode,
-             declare=[self.app.amqp.queues[queue]] if queue else [])
+             declare=[self.app.amqp.queues[queue]] if queue else [],
+             **kwargs)
 
         signals.task_sent.send(sender=task_name, **body)
         if event_dispatcher:
