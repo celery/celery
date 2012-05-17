@@ -79,7 +79,7 @@ def get_processtree_pids(pid, include_parent=True):
     parents = get_all_processes_pids()
     all_pids = parents.keys()
     pids = set([pid])
-    while True:
+    while 1:
         pids_new = pids.copy()
 
         for _pid in all_pids:

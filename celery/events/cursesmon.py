@@ -223,7 +223,7 @@ class CursesMonitor(object):  # pragma: no cover
         curses.echo()
         try:
             i = 0
-            while True:
+            while 1:
                 ch = self.win.getch(x, y + i)
                 if ch != -1:
                     if ch in (10, curses.KEY_ENTER):            # enter

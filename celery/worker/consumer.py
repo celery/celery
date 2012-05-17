@@ -424,7 +424,6 @@ class Consumer(object):
                 else:
                     sleep(min(time_to_sleep, 1))
 
-
     def on_task(self, task):
         """Handle received task.
 

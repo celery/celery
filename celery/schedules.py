@@ -339,7 +339,7 @@ class crontab(schedule):
             return False
 
         def roll_over():
-            while True:
+            while 1:
                 flag = (datedata.dom == len(days_of_month) or
                             day_out_of_range(datedata.year,
                                              months_of_year[datedata.moy],
