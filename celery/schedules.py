@@ -14,13 +14,14 @@ from __future__ import absolute_import
 
 import re
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
 from . import current_app
 from .utils import is_iterable
 from .utils.timeutils import (timedelta_seconds, weekday, maybe_timedelta,
                               remaining, humanize_seconds)
+from .datastructures import AttributeDict
 
 
 class ParseException(Exception):
@@ -119,6 +120,20 @@ class crontab_parser(object):
         >>> day_of_week = crontab_parser(7).parse("*")
         [0, 1, 2, 3, 4, 5, 6]
 
+    It can also parse day_of_month and month_of_year expressions if initialized
+    with an minimum of 1.  Example usage::
+
+        >>> days_of_month = crontab_parser(31, 1).parse("*/3")
+        [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31]
+        >>> months_of_year = crontab_parser(12, 1).parse("*/2")
+        [1, 3, 5, 7, 9, 11]
+        >>> months_of_year = crontab_parser(12, 1).parse("2-12/2")
+        [2, 4, 6, 8, 10, 12]
+
+    The maximum possible expanded value returned is found by the formula::
+
+        max_ + min_ - 1
+
     """
     ParseException = ParseException
 
@@ -126,8 +141,9 @@ class crontab_parser(object):
     _steps = r'/(\w+)?'
     _star = r'\*'
 
-    def __init__(self, max_=60):
+    def __init__(self, max_=60, min_=0):
         self.max_ = max_
+        self.min_ = min_
         self.pats = (
                 (re.compile(self._range + self._steps), self._range_steps),
                 (re.compile(self._range), self._expand_range),
@@ -167,7 +183,7 @@ class crontab_parser(object):
         return self._expand_star()[::int(toks[0])]
 
     def _expand_star(self, *args):
-        return range(self.max_)
+        return range(self.min_, self.max_ + self.min_)
 
     def _expand_number(self, s):
         if isinstance(s, basestring) and s[0] == '-':
@@ -179,6 +195,10 @@ class crontab_parser(object):
                 i = weekday(s)
             except KeyError:
                 raise ValueError("Invalid weekday literal '%s'." % s)
+
+        if i < self.min_:
+            raise ValueError("Invalid beginning range - %s < %s." %
+                                                   (i, self.min_))
         return i
 
 
@@ -191,8 +211,8 @@ class crontab(schedule):
     implementation of cron's features, so it should provide a fair
     degree of scheduling needs.
 
-    You can specify a minute, an hour, and/or a day of the week in any
-    of the following formats:
+    You can specify a minute, an hour, a day of the week, a day of the
+    month, and/or a month in the year in any of the following formats:
 
     .. attribute:: minute
 
@@ -221,10 +241,36 @@ class crontab(schedule):
           (Beware that `day_of_week="*/2"` does not literally mean
           "every two days", but "every day that is divisible by two"!)
 
+    .. attribute:: day_of_month
+
+        - A (list of) integers from 1-31 that represents the days of the
+          month that execution should occur.
+        - A string representing a crontab pattern.  This may get pretty
+          advanced, such as `day_of_month="2-30/3"` (for every even
+          numbered day) or `day_of_month="1-7,15-21"` (for the first and
+          third weeks of the month).
+
+    .. attribute:: month_of_year
+
+        - A (list of) integers from 1-12 that represents the months of
+          the year during which execution can occur.
+        - A string representing a crontab pattern.  This may get pretty
+          advanced, such as `month_of_year="*/3"` (for the first month
+          of every quarter) or `month_of_year="2-12/2"` (for every even
+          numbered month).
+
+    It is important to realize that any day on which execution should
+    occur must be represented by entries in all three of the day and
+    month attributes.  For example, if `day_of_week` is 0 and `day_of_month`
+    is every seventh day, only months that begin on Sunday and are also
+    in the `month_of_year` attribute will have execution events.  Or,
+    `day_of_week` is 1 and `day_of_month` is "1-7,15-21" means every
+    first and third monday of every month present in `month_of_year`.
+
     """
 
     @staticmethod
-    def _expand_cronspec(cronspec, max_):
+    def _expand_cronspec(cronspec, max_, min_=0):
         """Takes the given cronspec argument in one of the forms::
 
             int         (like 7)
@@ -240,13 +286,18 @@ class crontab(schedule):
 
         For the other base types, merely Python type conversions happen.
 
-        The argument `max_` is needed to determine the expansion of '*'.
+        The argument `max_` is needed to determine the expansion of '*'
+        and ranges.
+        The argument `min_` is needed to determine the expansion of '*'
+        and ranges for 1-based cronspecs, such as day of month or month
+        of year. The default is sufficient for minute, hour, and day of
+        week.
 
         """
         if isinstance(cronspec, int):
             result = set([cronspec])
         elif isinstance(cronspec, basestring):
-            result = crontab_parser(max_).parse(cronspec)
+            result = crontab_parser(max_, min_).parse(cronspec)
         elif isinstance(cronspec, set):
             result = cronspec
         elif is_iterable(cronspec):
@@ -257,40 +308,113 @@ class crontab(schedule):
                     "following types: int, basestring, or an iterable type. "
                     "'%s' was given." % type(cronspec))
 
-        # assure the result does not exceed the max
+        # assure the result does not preceed the min or exceed the max
         for number in result:
-            if number >= max_:
+            if number >= max_ + min_ or number < min_:
                 raise ValueError(
                         "Invalid crontab pattern. Valid "
-                        "range is 0-%d. '%d' was found." % (max_ - 1, number))
+                        "range is %d-%d. '%d' was found." %
+                        (min_, max_ - 1 + min_, number))
 
         return result
 
-    def __init__(self, minute='*', hour='*', day_of_week='*', nowfun=None):
+    def _delta_to_next(self, last_run_at, next_hour, next_minute):
+        """
+        Takes a datetime of last run, next minute and hour, and
+        returns a relativedelta for the next scheduled day and time.
+        Only called when day_of_month and/or month_of_year cronspec
+        is specified to further limit scheduled task execution.
+        """
+        from bisect import bisect, bisect_left
+
+        datedata = AttributeDict(year=last_run_at.year)
+        days_of_month = sorted(self.day_of_month)
+        months_of_year = sorted(self.month_of_year)
+
+        def day_out_of_range(year, month, day):
+            try:
+                datetime(year=year, month=month, day=day)
+            except ValueError:
+                return True
+            return False
+
+        def roll_over():
+            while True:
+                flag = (datedata.dom == len(days_of_month) or
+                            day_out_of_range(datedata.year,
+                                             months_of_year[datedata.moy],
+                                             days_of_month[datedata.dom]))
+                if flag:
+                    datedata.dom = 0
+                    datedata.moy += 1
+                    if datedata.moy == len(months_of_year):
+                        datedata.moy = 0
+                        datedata.year += 1
+                else:
+                    break
+
+        if last_run_at.month in self.month_of_year:
+            datedata.dom = bisect(days_of_month, last_run_at.day)
+            datedata.moy = bisect_left(months_of_year, last_run_at.month)
+        else:
+            datedata.dom = 0
+            datedata.moy = bisect(months_of_year, last_run_at.month)
+        roll_over()
+
+        while not (datetime(year=datedata.year,
+                            month=months_of_year[datedata.moy],
+                            day=days_of_month[datedata.dom]
+                           ).isoweekday() % 7
+                  ) in self.day_of_week:
+            datedata.dom += 1
+            roll_over()
+
+        return relativedelta(year=datedata.year,
+                             month=months_of_year[datedata.moy],
+                             day=days_of_month[datedata.dom],
+                             hour=next_hour,
+                             minute=next_minute,
+                             second=0,
+                             microsecond=0)
+
+    def __init__(self, minute='*', hour='*', day_of_week='*',
+            day_of_month='*', month_of_year='*', nowfun=None):
         self._orig_minute = minute
         self._orig_hour = hour
         self._orig_day_of_week = day_of_week
+        self._orig_day_of_month = day_of_month
+        self._orig_month_of_year = month_of_year
         self.hour = self._expand_cronspec(hour, 24)
         self.minute = self._expand_cronspec(minute, 60)
         self.day_of_week = self._expand_cronspec(day_of_week, 7)
+        self.day_of_month = self._expand_cronspec(day_of_month, 31, 1)
+        self.month_of_year = self._expand_cronspec(month_of_year, 12, 1)
         self.nowfun = nowfun or current_app.now
 
     def __repr__(self):
-        return "<crontab: %s %s %s (m/h/d)>" % (self._orig_minute or "*",
-                                                self._orig_hour or "*",
-                                                self._orig_day_of_week or "*")
+        return ("<crontab: %s %s %s %s %s (m/h/d/dM/MY)>" %
+                                            (self._orig_minute or "*",
+                                             self._orig_hour or "*",
+                                             self._orig_day_of_week or "*",
+                                             self._orig_day_of_month or "*",
+                                             self._orig_month_of_year or "*"))
 
     def __reduce__(self):
         return (self.__class__, (self._orig_minute,
                                  self._orig_hour,
-                                 self._orig_day_of_week), None)
+                                 self._orig_day_of_week,
+                                 self._orig_day_of_month,
+                                 self._orig_month_of_year), None)
 
     def remaining_estimate(self, last_run_at):
         """Returns when the periodic task should run next as a timedelta."""
-        weekday = last_run_at.isoweekday()
-        weekday = 0 if weekday == 7 else weekday  # Sunday is day 0, not day 7.
+        dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
 
-        execute_this_hour = (weekday in self.day_of_week and
+        execute_this_date = (last_run_at.month in self.month_of_year and
+                                last_run_at.day in self.day_of_month and
+                                    dow_num in self.day_of_week)
+
+        execute_this_hour = (execute_this_date and
                                 last_run_at.hour in self.hour and
                                     last_run_at.minute < max(self.minute))
 
@@ -302,8 +426,8 @@ class crontab(schedule):
                                   microsecond=0)
         else:
             next_minute = min(self.minute)
-            execute_today = (weekday in self.day_of_week and
-                                 last_run_at.hour < max(self.hour))
+            execute_today = (execute_this_date and
+                                last_run_at.hour < max(self.hour))
 
             if execute_today:
                 next_hour = min(hour for hour in self.hour
@@ -314,17 +438,23 @@ class crontab(schedule):
                                       microsecond=0)
             else:
                 next_hour = min(self.hour)
-                next_day = min([day for day in self.day_of_week
-                                    if day > weekday] or
-                               self.day_of_week)
-                add_week = next_day == weekday
+                all_dom_moy = (self._orig_day_of_month == "*" and
+                                  self._orig_month_of_year == "*")
+                if all_dom_moy:
+                    next_day = min([day for day in self.day_of_week
+                                        if day > dow_num] or
+                                self.day_of_week)
+                    add_week = next_day == dow_num
 
-                delta = relativedelta(weeks=add_week and 1 or 0,
-                                      weekday=(next_day - 1) % 7,
-                                      hour=next_hour,
-                                      minute=next_minute,
-                                      second=0,
-                                      microsecond=0)
+                    delta = relativedelta(weeks=add_week and 1 or 0,
+                                          weekday=(next_day - 1) % 7,
+                                          hour=next_hour,
+                                          minute=next_minute,
+                                          second=0,
+                                          microsecond=0)
+                else:
+                    delta = self._delta_to_next(last_run_at,
+                                                next_hour, next_minute)
 
         return remaining(last_run_at, delta, now=self.nowfun())
 
@@ -345,7 +475,9 @@ class crontab(schedule):
 
     def __eq__(self, other):
         if isinstance(other, crontab):
-            return (other.day_of_week == self.day_of_week and
+            return (other.month_of_year == self.month_of_year and
+                    other.day_of_month == self.day_of_month and
+                    other.day_of_week == self.day_of_week and
                     other.hour == self.hour and
                     other.minute == self.minute)
         return other is self
