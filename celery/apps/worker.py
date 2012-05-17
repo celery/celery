@@ -31,7 +31,7 @@ logger = get_logger(__name__)
 
 
 def safe_say(msg):
-    sys.__stderr__.write(msg + "\n")
+    sys.__stderr__.write("\n%s\n" % msg)
 
 
 BANNER = """
@@ -290,7 +290,7 @@ def install_cry_handler():
         """Signal handler logging the stacktrace of all active threads."""
         set_in_sighandler(True)
         try:
-            safe_say("\n" + cry())
+            safe_say(cry())
         finally:
             set_in_sighandler(False)
     platforms.signals["SIGUSR1"] = cry_handler
