@@ -144,7 +144,7 @@ def time_limit(panel, task_name=None, hard=None, soft=None, **kwargs):
 
 @Panel.register
 def dump_schedule(panel, safe=False, **kwargs):
-    schedule = panel.consumer.eta_schedule.schedule
+    schedule = panel.consumer.timer.schedule
     if not schedule.queue:
         logger.info("--Empty schedule--")
         return []

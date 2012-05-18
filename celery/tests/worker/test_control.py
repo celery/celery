@@ -43,7 +43,7 @@ class Consumer(object):
                                          uuid(),
                                          args=(2, 2),
                                          kwargs={}))
-        self.eta_schedule = Timer()
+        self.timer = Timer()
         self.app = current_app
         self.event_dispatcher = Mock()
         self.controller = WorkController()
@@ -243,8 +243,8 @@ class test_ControlPanel(Case):
         panel = self.create_panel(consumer=consumer)
         self.assertFalse(panel.handle("dump_schedule"))
         r = TaskRequest(mytask.name, "CAFEBABE", (), {})
-        consumer.eta_schedule.schedule.enter(
-                consumer.eta_schedule.Entry(lambda x: x, (r, )),
+        consumer.timer.schedule.enter(
+                consumer.timer.Entry(lambda x: x, (r, )),
                     datetime.now() + timedelta(seconds=10))
         self.assertTrue(panel.handle("dump_schedule"))
 

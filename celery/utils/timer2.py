@@ -83,7 +83,7 @@ class Schedule(object):
 
     on_error = None
 
-    def __init__(self, max_interval=None, on_error=None):
+    def __init__(self, max_interval=None, on_error=None, **kwargs):
         self.max_interval = float(max_interval or DEFAULT_MAX_INTERVAL)
         self.on_error = on_error or self.on_error
         self._queue = []

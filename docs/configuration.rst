@@ -1107,10 +1107,10 @@ Can also be set via the :option:`--statedb` argument to
 
 Not enabled by default.
 
-.. setting:: CELERYD_ETA_SCHEDULER_PRECISION
+.. setting:: CELERYD_TIMER_PRECISION
 
-CELERYD_ETA_SCHEDULER_PRECISION
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+CELERYD_TIMER_PRECISION
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Set the maximum time in seconds that the ETA scheduler can sleep between
 rechecking the schedule.  Default is 1 second.
@@ -1479,9 +1479,9 @@ CELERYD_MEDIATOR
 Name of the mediator class used by the worker.
 Default is :class:`celery.worker.controllers.Mediator`.
 
-.. setting:: CELERYD_ETA_SCHEDULER
+.. setting:: CELERYD_TIMER
 
-CELERYD_ETA_SCHEDULER
+CELERYD_TIMER
 ~~~~~~~~~~~~~~~~~~~~~
 
 Name of the ETA scheduler class used by the worker.
