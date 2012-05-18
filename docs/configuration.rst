@@ -612,8 +612,16 @@ If enabled (default), any queues specified that is not defined in
 CELERY_DEFAULT_QUEUE
 ~~~~~~~~~~~~~~~~~~~~
 
-The queue used by default, if no custom queue is specified.  This queue must
-be listed in :setting:`CELERY_QUEUES`.  The default is: `celery`.
+The name of the default queue used by `.apply_async` if the message has
+no route or no custom queue has been specified.
+
+
+This queue must be listed in :setting:`CELERY_QUEUES`.
+If :setting:`CELERY_QUEUES` is not specified then it this automatically
+created containing one queue entry, where this name is used as the name of
+that queue.
+
+The default is: `celery`.
 
 .. seealso::
 
@@ -625,14 +633,17 @@ CELERY_DEFAULT_EXCHANGE
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Name of the default exchange to use when no custom exchange is
-specified.  The default is: `celery`.
+specified for a key in the :setting:`CELERY_QUEUES` setting.
+
+The default is: `celery`.
 
 .. setting:: CELERY_DEFAULT_EXCHANGE_TYPE
 
 CELERY_DEFAULT_EXCHANGE_TYPE
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default exchange type used when no custom exchange is specified.
+Default exchange type used when no custom exchange type is specified.
+for a key in the :setting:`CELERY_QUEUES` setting.
 The default is: `direct`.
 
 .. setting:: CELERY_DEFAULT_ROUTING_KEY
@@ -640,7 +651,9 @@ The default is: `direct`.
 CELERY_DEFAULT_ROUTING_KEY
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The default routing key used when sending tasks.
+The default routing key used when no custom routing key
+is specified for a key in the :setting:`CELERY_QUEUES` setting.
+
 The default is: `celery`.
 
 .. setting:: CELERY_DEFAULT_DELIVERY_MODE
@@ -1007,6 +1020,14 @@ A sequence of modules to import when the celery daemon starts.
 This is used to specify the task modules to import, but also
 to import signal handlers and additional remote control commands, etc.
 
+.. setting:: CELERY_INCLUDE
+
+CELERY_INCLUDE
+~~~~~~~~~~~~~~
+
+Exact same semantics as :setting:`CELERY_IMPORTS`, but can be used as a means
+to have different import categories.
+
 .. setting:: CELERYD_FORCE_EXECV
 
 CELERYD_FORCE_EXECV
@@ -1099,10 +1120,10 @@ Can also be set via the :option:`--statedb` argument to
 
 Not enabled by default.
 
-.. setting:: CELERYD_ETA_SCHEDULER_PRECISION
+.. setting:: CELERYD_TIMER_PRECISION
 
-CELERYD_ETA_SCHEDULER_PRECISION
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+CELERYD_TIMER_PRECISION
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Set the maximum time in seconds that the ETA scheduler can sleep between
 rechecking the schedule.  Default is 1 second.
@@ -1471,9 +1492,9 @@ CELERYD_MEDIATOR
 Name of the mediator class used by the worker.
 Default is :class:`celery.worker.controllers.Mediator`.
 
-.. setting:: CELERYD_ETA_SCHEDULER
+.. setting:: CELERYD_TIMER
 
-CELERYD_ETA_SCHEDULER
+CELERYD_TIMER
 ~~~~~~~~~~~~~~~~~~~~~
 
 Name of the ETA scheduler class used by the worker.

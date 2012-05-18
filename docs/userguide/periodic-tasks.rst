@@ -100,7 +100,7 @@ Crontab schedules
 
 If you want more control over when the task is executed, for
 example, a particular time of day or day of the week, you can use
-the `crontab` schedule type:
+the :class:`~celery.schedules.crontab` schedule type:
 
 .. code-block:: python
 
@@ -156,6 +156,23 @@ The syntax of these crontab expressions are very flexible.  Some examples:
 | ``crontab(minute=0, hour="*/3,8-17")``  | Execute every hour divisible by 3, and     |
 |                                         | every hour during office hours (8am-5pm).  |
 +-----------------------------------------+--------------------------------------------+
+| ``crontab(day_of_month="2")``           | Execute on the second day of every month.  |
+|                                         |                                            |
++-----------------------------------------+--------------------------------------------+
+| ``crontab(day_of_month="2-30/3")``      | Execute on every even numbered day.        |
+|                                         |                                            |
++-----------------------------------------+--------------------------------------------+
+| ``crontab(day_of_month="1-7,15-21")``   | Execute on the first and third weeks of    |
+|                                         | the month.                                 |
++-----------------------------------------+--------------------------------------------+
+| ``crontab(day_of_month="11",``          | Execute on 11th of May every year.         |
+|         ``month_of_year="5")``          |                                            |
++-----------------------------------------+--------------------------------------------+
+| ``crontab(month_of_year="*/3")``        | Execute on the first month of every        |
+|                                         | quarter.                                   |
++-----------------------------------------+--------------------------------------------+
+
+See :class:`celery.schedules.crontab` for more documentation.
 
 .. _beat-timezones:
 

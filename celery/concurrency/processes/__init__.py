@@ -104,6 +104,25 @@ class TaskPool(BasePool):
                 "put-guarded-by-semaphore": self.putlocks,
                 "timeouts": (self._pool.soft_timeout, self._pool.timeout)}
 
+    def set_on_process_started(self, callback):
+        self._pool.on_process_created
+
+
+    def _get_on_process_started(self):
+        return self._pool.on_process_started
+
+    def _set_on_process_started(self, fun):
+        self._pool.on_process_started = fun
+    on_process_started = property(_get_on_process_started,
+                                  _set_on_process_started)
+    def _get_on_process_down(self):
+        return self._pool.on_process_down
+
+    def _set_on_process_down(self, fun):
+        self._pool.on_process_down = fun
+    on_process_down = property(_get_on_process_down,
+                               _set_on_process_down)
+
     @property
     def num_processes(self):
         return self._pool._processes
@@ -111,3 +130,7 @@ class TaskPool(BasePool):
     @property
     def eventmap(self):
         return self._pool.eventmap
+
+    @property
+    def timers(self):
+        return self._pool.timers

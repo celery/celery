@@ -21,9 +21,7 @@
     celery.task
     celery.task.base
     celery.task.sets
-    celery.task.chords
     celery.result
-    celery.task.control
     celery.task.http
     celery.schedules
     celery.signals

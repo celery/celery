@@ -90,23 +90,24 @@ class Pool(abstract.StartStopComponent):
         w.no_execv = no_execv
         if w.autoscale:
             w.max_concurrency, w.min_concurrency = w.autoscale
-        w.use_eventloop = (detect_environment() == "default" and
-                           w.app.broker_connection().is_evented)
 
-    def create(self, w, semaphore=None):
+    def create(self, w):
+        threaded = not w.use_eventloop
         forking_enable(w.no_execv or not w.force_execv)
         procs = w.min_concurrency
-        if w.use_eventloop:
+        if not threaded:
             semaphore = w.semaphore = BoundedSemaphore(procs)
-        pool = w.pool = self.instantiate(w.pool_cls, procs,
-                initargs=(w.app, w.hostname),
-                maxtasksperchild=w.max_tasks_per_child,
-                timeout=w.task_time_limit,
-                soft_timeout=w.task_soft_time_limit,
-                putlocks=w.pool_putlocks and not w.use_eventloop,
-                lost_worker_timeout=w.worker_lost_wait,
-                start_result_thread=not w.use_eventloop,
-                semaphore=semaphore)
+        pool = w.pool = self.instantiate(w.pool_cls, w.min_concurrency,
+                            initargs=(w.app, w.hostname),
+                            maxtasksperchild=w.max_tasks_per_child,
+                            timeout=w.task_time_limit,
+                            soft_timeout=w.task_soft_time_limit,
+                            putlocks=w.pool_putlocks,
+                            lost_worker_timeout=w.worker_lost_wait,
+                            with_task_thread=threaded,
+                            with_result_thread=threaded,
+                            with_supervisor_thread=threaded,
+                            semaphore=semaphore)
         return pool
 
 
@@ -156,24 +157,26 @@ class Timers(abstract.Component):
     requires = ("pool", )
 
     def create(self, w):
+        options = {"on_error": self.on_timer_error,
+                   "on_tick": self.on_timer_tick}
+
         if w.use_eventloop:
-            w.scheduler = w.priority_timer = Schedule(max_interval=10)
+            # the timers are fired by the hub, so don't use the Timer thread.
+            w.timer = Schedule(max_interval=10, **options)
         else:
-            w.priority_timer = self.instantiate(w.pool.Timer)
-            if not w.eta_scheduler_cls:
+            if not w.timer_cls:
                 # Default Timer is set by the pool, as e.g. eventlet
                 # needs a custom implementation.
-                w.eta_scheduler_cls = w.pool.Timer
-            w.scheduler = self.instantiate(w.eta_scheduler_cls,
-                                    max_interval=w.eta_scheduler_precision,
-                                    on_error=self.on_timer_error,
-                                    on_tick=self.on_timer_tick)
+                w.timer_cls = w.pool.Timer
+            w.timer = self.instantiate(w.pool.Timer,
+                                       max_interval=w.timer_precision,
+                                       **options)
 
     def on_timer_error(self, exc):
         logger.error("Timer error: %r", exc, exc_info=True)
 
     def on_timer_tick(self, delay):
-        logger.debug("Scheduler wake-up! Next eta %s secs.", delay)
+        logger.debug("Timer wake-up! Next eta %s secs.", delay)
 
 
 class StateDB(abstract.Component):
@@ -203,8 +206,8 @@ class WorkController(configurated):
     pool_cls = from_config("pool")
     consumer_cls = from_config("consumer")
     mediator_cls = from_config("mediator")
-    eta_scheduler_cls = from_config("eta_scheduler")
-    eta_scheduler_precision = from_config()
+    timer_cls = from_config("timer")
+    timer_precision = from_config("timer_precision")
     autoscaler_cls = from_config("autoscaler")
     autoreloader_cls = from_config("autoreloader")
     schedule_filename = from_config()
@@ -245,6 +248,8 @@ class WorkController(configurated):
         self._finalize = Finalize(self, self.stop, exitpriority=1)
         self.pidfile = pidfile
         self.pidlock = None
+        self.use_eventloop = (detect_environment() == "default" and
+                              self.app.broker_connection().is_evented)
 
         # Initialize boot steps
         self.pool_cls = _concurrency.get_implementation(self.pool_cls)
@@ -333,7 +338,7 @@ class WorkController(configurated):
                 stop = getattr(component, "terminate", None) or stop
             stop()
 
-        self.priority_timer.stop()
+        self.timer.stop()
         self.consumer.close_connection()
 
         if self.pidlock:

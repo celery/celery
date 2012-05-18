@@ -43,11 +43,10 @@ class BoundedSemaphore(object):
 class Hub(object):
     eventflags = POLL_READ | POLL_ERR
 
-    def __init__(self, schedule=None):
+    def __init__(self, timer=None):
         self.fdmap = {}
         self.poller = poll()
-        self.schedule = Schedule() if schedule is None else schedule
-        self._on_event = set()
+        self.timer = Schedule() if timer is None else timer
 
     def __enter__(self):
         return self
@@ -55,12 +54,14 @@ class Hub(object):
     def __exit__(self, *exc_info):
         return self.close()
 
-    def fire_timers(self, min_delay=10, max_delay=10):
-        while 1:
-            delay, entry = self.scheduler.next()
-            if entry is None:
-                break
-            self.schedule.apply_entry(entry)
+    def fire_timers(self, min_delay=1, max_delay=10, max_timers=10):
+        delay = None
+        if self.timer._queue:
+            for i in xrange(max_timers):
+                delay, entry = self.scheduler.next()
+                if entry is None:
+                    break
+                self.timer.apply_entry(entry)
         return min(max(delay, min_delay), max_delay)
 
     def add(self, fd, callback, flags=None):
@@ -86,4 +87,4 @@ class Hub(object):
 
     @cached_property
     def scheduler(self):
-        return iter(self.schedule)
+        return iter(self.timer)
