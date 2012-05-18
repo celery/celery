@@ -17,6 +17,7 @@ import heapq
 import os
 import sys
 
+from functools import wraps
 from itertools import count
 from threading import Condition, Event, Lock, Thread
 from time import time, sleep, mktime
@@ -137,15 +138,24 @@ class Schedule(object):
 
     def apply_interval(self, msecs, fun, args=(), kwargs={}, priority=0):
         tref = self.Entry(fun, args, kwargs)
+        secs = msecs * 1000.0
 
+        @wraps(fun)
         def _reschedules(*args, **kwargs):
+            last, now = tref._last_run, time()
+            lsince = (now - tref._last_run) * 1000.0 if last else msecs
             try:
-                return fun(*args, **kwargs)
+                if lsince and lsince >= msecs:
+                    tref._last_run = now
+                    return fun(*args, **kwargs)
             finally:
                 if not tref.cancelled:
-                    self.enter_after(msecs, tref, priority)
+                    last = tref._last_run
+                    next = secs - (now - last) if last else secs
+                    self.enter_after(next / 1000.0, tref, priority)
 
         tref.fun = _reschedules
+        tref._last_run = None
         return self.enter_after(msecs, tref, priority)
 
     def __iter__(self):
