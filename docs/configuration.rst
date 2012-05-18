@@ -612,8 +612,16 @@ If enabled (default), any queues specified that is not defined in
 CELERY_DEFAULT_QUEUE
 ~~~~~~~~~~~~~~~~~~~~
 
-The queue used by default, if no custom queue is specified.  This queue must
-be listed in :setting:`CELERY_QUEUES`.  The default is: `celery`.
+The name of the default queue used by `.apply_async` if the message has
+no route or no custom queue has been specified.
+
+
+This queue must be listed in :setting:`CELERY_QUEUES`.
+If :setting:`CELERY_QUEUES` is not specified then it this automatically
+created containing one queue entry, where this name is used as the name of
+that queue.
+
+The default is: `celery`.
 
 .. seealso::
 
@@ -625,14 +633,17 @@ CELERY_DEFAULT_EXCHANGE
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Name of the default exchange to use when no custom exchange is
-specified.  The default is: `celery`.
+specified for a key in the :setting:`CELERY_QUEUES` setting.
+
+The default is: `celery`.
 
 .. setting:: CELERY_DEFAULT_EXCHANGE_TYPE
 
 CELERY_DEFAULT_EXCHANGE_TYPE
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default exchange type used when no custom exchange is specified.
+Default exchange type used when no custom exchange type is specified.
+for a key in the :setting:`CELERY_QUEUES` setting.
 The default is: `direct`.
 
 .. setting:: CELERY_DEFAULT_ROUTING_KEY
@@ -640,7 +651,9 @@ The default is: `direct`.
 CELERY_DEFAULT_ROUTING_KEY
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The default routing key used when sending tasks.
+The default routing key used when no custom routing key
+is specified for a key in the :setting:`CELERY_QUEUES` setting.
+
 The default is: `celery`.
 
 .. setting:: CELERY_DEFAULT_DELIVERY_MODE
