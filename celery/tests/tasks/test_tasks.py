@@ -64,7 +64,7 @@ def retry_task(arg1, arg2, kwarg=1, max_retries=None, care=True):
     if care and retries >= rmax:
         return arg1
     else:
-        return current.retry(countdown=0, max_retries=rmax)
+        raise current.retry(countdown=0, max_retries=rmax)
 
 
 @task.task(max_retries=3, iterations=0)
@@ -75,7 +75,7 @@ def retry_task_noargs(**kwargs):
     if retries >= 3:
         return 42
     else:
-        return current.retry(countdown=0)
+        raise current.retry(countdown=0)
 
 
 @task.task(max_retries=3, iterations=0, base=MockApplyTask)
@@ -87,7 +87,7 @@ def retry_task_mockapply(arg1, arg2, kwarg=1, **kwargs):
         return arg1
     else:
         kwargs.update(kwarg=kwarg)
-    return current.retry(countdown=0)
+    raise current.retry(countdown=0)
 
 
 class MyCustomException(Exception):
@@ -106,7 +106,7 @@ def retry_task_customexc(arg1, arg2, kwarg=1, **kwargs):
             raise MyCustomException("Elaine Marie Benes")
         except MyCustomException, exc:
             kwargs.update(kwarg=kwarg)
-            return current.retry(countdown=0, exc=exc)
+            raise current.retry(countdown=0, exc=exc)
 
 
 class test_task_retries(Case):
@@ -115,20 +115,17 @@ class test_task_retries(Case):
         retry_task.__class__.max_retries = 3
         retry_task.iterations = 0
         result = retry_task.apply([0xFF, 0xFFFF])
-        self.assertEqual(result.get(), 0xFF)
         self.assertEqual(retry_task.iterations, 4)
 
         retry_task.__class__.max_retries = 3
         retry_task.iterations = 0
         result = retry_task.apply([0xFF, 0xFFFF], {"max_retries": 10})
-        self.assertEqual(result.get(), 0xFF)
         self.assertEqual(retry_task.iterations, 11)
 
     def test_retry_no_args(self):
         retry_task_noargs.__class__.max_retries = 3
         retry_task_noargs.iterations = 0
         result = retry_task_noargs.apply()
-        self.assertEqual(result.get(), 42)
         self.assertEqual(retry_task_noargs.iterations, 4)
 
     def test_retry_kwargs_can_be_empty(self):
@@ -158,7 +155,6 @@ class test_task_retries(Case):
         retry_task_customexc.__class__.max_retries = 3
         retry_task_customexc.iterations = 0
         result = retry_task_customexc.apply([0xFF, 0xFFFF], {"kwarg": 0xF})
-        self.assertEqual(result.get(), 0xFF + 0xF)
         self.assertEqual(retry_task_customexc.iterations, 4)
 
     def test_retry_with_custom_exception(self):

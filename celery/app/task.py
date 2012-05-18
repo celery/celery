@@ -613,7 +613,7 @@ class BaseTask(object):
             ...         twitter.post_status_update(message)
             ...     except twitter.FailWhale, exc:
             ...         # Retry in 5 minutes.
-            ...         return tweet.retry(countdown=60 * 5, exc=exc)
+            ...         raise tweet.retry(countdown=60 * 5, exc=exc)
 
         Although the task will never return above as `retry` raises an
         exception to notify the worker, we use `return` in front of the retry
@@ -654,13 +654,14 @@ class BaseTask(object):
         # If task was executed eagerly using apply(),
         # then the retry must also be executed eagerly.
         if request.is_eager:
-            return self.apply(args=args, kwargs=kwargs, **options).get()
-
-        self.apply_async(args=args, kwargs=kwargs, **options)
+            self.apply(args=args, kwargs=kwargs, **options).get()
+        else:
+            self.apply_async(args=args, kwargs=kwargs, **options)
+        ret = RetryTaskError(eta and "Retry at %s" % eta
+                                  or "Retry in %s secs." % countdown, exc)
         if throw:
-            raise RetryTaskError(
-                eta and "Retry at %s" % (eta, )
-                     or "Retry in %s secs." % (countdown, ), exc)
+            raise ret
+        return ret
 
     def apply(self, args=None, kwargs=None, **options):
         """Execute this task locally, by blocking until the task returns.

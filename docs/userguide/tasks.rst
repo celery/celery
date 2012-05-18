@@ -133,7 +133,7 @@ of temporary failure.
             twitter = Twitter(oauth)
             twitter.update_status(tweet)
         except (Twitter.FailWhaleError, Twitter.LoginError), exc:
-            send_twitter_status.retry(exc=exc)
+            raise send_twitter_status.retry(exc=exc)
 
 Here we used the `exc` argument to pass the current exception to
 :meth:`@-Task.retry`. At each step of the retry this exception
@@ -173,8 +173,8 @@ override this default.
         try:
             ...
         except Exception, exc:
-            add.retry(exc=exc, countdown=60)  # override the default and
-                                              # retry in 1 minute
+            raise add.retry(exc=exc, countdown=60)  # override the default and
+                                                    # retry in 1 minute
 
 .. _task-options:
 
