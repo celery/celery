@@ -736,24 +736,34 @@ class BaseTask(object):
         """``.s(*a, **k) -> .subtask(a, k)``"""
         return self.subtask(args, kwargs)
 
+    def si(self, *args, **kwargs):
+        """``.si(*a, **k) -> .subtask(a, k, immutable=True)``"""
+        return self.subtask(args, kwargs, immutable=True)
+
     def chunks(self, it, n):
+        """Creates a :class:`~celery.canvas.chunks` task for this task."""
         from celery import chunks
         return chunks(self.s(), it, n)
 
     def map(self, it):
+        """Creates a :class:`~celery.canvas.xmap` task from ``it``."""
         from celery import xmap
         return xmap(self.s(), it)
 
     def starmap(self, it):
+        """Creates a :class:`~celery.canvas.xstarmap` task from ``it``."""
         from celery import xstarmap
         return xstarmap(self.s(), it)
 
     def update_state(self, task_id=None, state=None, meta=None):
         """Update task state.
 
-        :param task_id: Id of the task to update.
-        :param state: New state (:class:`str`).
-        :param meta: State metadata (:class:`dict`).
+        :keyword task_id: Id of the task to update, defaults to the
+                          id of the current task
+        :keyword state: New state (:class:`str`).
+        :keyword meta: State metadata (:class:`dict`).
+
+
 
         """
         if task_id is None:
@@ -817,8 +827,7 @@ class BaseTask(object):
 
     def send_error_email(self, context, exc, **kwargs):
         if self.send_error_emails and not self.disable_error_emails:
-            sender = self.ErrorMail(self, **kwargs)
-            sender.send(context, exc)
+            self.ErrorMail(self, **kwargs).send(context, exc)
 
     def on_success(self, retval, task_id, args, kwargs):
         """Success handler.

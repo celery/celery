@@ -161,7 +161,11 @@ Sometimes you want to specify a callback that does not take
 additional arguments, and in that case you can set the subtask
 to be immutable::
 
-    >>> add.s(2, 2).link( reset_buffers.subtask(immutable=True) )
+    >>> add.apply_async((2, 2), link=reset_buffers.subtask(immutable=True))
+
+The ``.si()`` shortcut can also be used to create immutable subtasks::
+
+    >>> add.apply_async((2, 2), link=reset_buffers.si())
 
 Only the execution options can be set when a subtask is immutable,
 and it's not possible to apply the subtask with partial args/kwargs.
