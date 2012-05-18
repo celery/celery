@@ -35,7 +35,7 @@ event_exchange = Exchange("celeryev", type="topic")
 
 def get_exchange(conn):
     ex = copy(event_exchange)
-    if "redis" in conn.transport_cls:
+    if "redis" in type(conn.transport).__module__:
         # quick hack for #436
         ex.type = "fanout"
     return ex
@@ -103,7 +103,10 @@ class EventDispatcher(object):
         self.close()
 
     def get_exchange(self):
-        return get_exchange(self.connection)
+        if self.connection:
+            return get_exchange(self.connection)
+        else:
+            return get_exchange(self.channel.connection.client)
 
     def enable(self):
         self.publisher = Producer(self.channel or self.connection,

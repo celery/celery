@@ -46,6 +46,12 @@ class BasePool(object):
     _state = None
     _pool = None
 
+    #: only used by multiprocessing pool
+    on_process_started = None
+
+    #: only used by multiprocessing pool
+    on_process_down = None
+
     def __init__(self, limit=None, putlocks=True, **options):
         self.limit = limit
         self.putlocks = putlocks
@@ -123,4 +129,8 @@ class BasePool(object):
 
     @property
     def eventmap(self):
+        return {}
+
+    @property
+    def timers(self):
         return {}

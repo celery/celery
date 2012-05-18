@@ -91,6 +91,7 @@ class Pool(abstract.StartStopComponent):
             w.max_concurrency, w.min_concurrency = w.autoscale
 
     def create(self, w):
+        threaded = not w.use_eventloop
         forking_enable(w.no_execv or not w.force_execv)
         pool = w.pool = self.instantiate(w.pool_cls, w.min_concurrency,
                             initargs=(w.app, w.hostname),
@@ -99,7 +100,9 @@ class Pool(abstract.StartStopComponent):
                             soft_timeout=w.task_soft_time_limit,
                             putlocks=w.pool_putlocks,
                             lost_worker_timeout=w.worker_lost_wait,
-                            start_result_thread=not w.use_eventloop)
+                            with_task_thread=threaded,
+                            with_result_thread=threaded,
+                            with_supervisor_thread=threaded)
         return pool
 
 

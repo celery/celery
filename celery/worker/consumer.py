@@ -372,7 +372,20 @@ class Consumer(object):
             transport = self.connection.transport
             on_poll_start = transport.on_poll_start
 
+            self.task_consumer.callbacks.append(fire_timers)
+
             update_fds(self.connection.eventmap, self.pool.eventmap)
+            for handler, interval in self.pool.timers.iteritems():
+                self.timer.apply_interval(interval * 1000.0, handler)
+
+            def on_process_started(w):
+                hub.add(w._popen.sentinel, self.pool._pool.maintain_pool)
+            self.pool.on_process_started = on_process_started
+
+            def on_process_down(w):
+                hub.remove(w._popen.sentinel)
+            self.pool.on_process_down = on_process_down
+
             transport.on_poll_init(hub.poller)
 
             while self._state != CLOSE and self.connection:
