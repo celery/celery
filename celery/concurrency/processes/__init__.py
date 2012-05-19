@@ -56,6 +56,7 @@ class TaskPool(BasePool):
     Pool = Pool
 
     requires_mediator = True
+    uses_semaphore = True
 
     def on_start(self):
         """Run the task pool.

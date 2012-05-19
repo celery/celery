@@ -91,7 +91,7 @@ class Pool(abstract.StartStopComponent):
         if w.autoscale:
             w.max_concurrency, w.min_concurrency = w.autoscale
 
-    def create(self, w):
+    def create(self, w, semaphore=None):
         threaded = not w.use_eventloop
         forking_enable(w.no_execv or not w.force_execv)
         procs = w.min_concurrency
@@ -143,7 +143,7 @@ class Queues(abstract.Component):
         if w.disable_rate_limits:
             w.ready_queue = FastQueue()
             if w.use_eventloop:
-                if w.pool_putlocks:
+                if w.pool_putlocks and w.pool_cls.uses_semaphore:
                     w.ready_queue.put = w.process_task_sem
                 else:
                     w.ready_queue.put = w.process_task

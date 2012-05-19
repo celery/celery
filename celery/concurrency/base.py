@@ -52,6 +52,9 @@ class BasePool(object):
     #: only used by multiprocessing pool
     on_process_down = None
 
+    #: only used by multiprocessing pool
+    uses_semaphore = False
+
     def __init__(self, limit=None, putlocks=True, **options):
         self.limit = limit
         self.putlocks = putlocks
