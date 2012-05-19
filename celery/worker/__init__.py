@@ -102,7 +102,7 @@ class Pool(abstract.StartStopComponent):
                             maxtasksperchild=w.max_tasks_per_child,
                             timeout=w.task_time_limit,
                             soft_timeout=w.task_soft_time_limit,
-                            putlocks=w.pool_putlocks,
+                            putlocks=w.pool_putlocks and threaded,
                             lost_worker_timeout=w.worker_lost_wait,
                             with_task_thread=threaded,
                             with_result_thread=threaded,
@@ -143,7 +143,10 @@ class Queues(abstract.Component):
         if w.disable_rate_limits:
             w.ready_queue = FastQueue()
             if w.use_eventloop:
-                w.ready_queue.put = w.process_task_sem
+                if w.pool_putlocks:
+                    w.ready_queue.put = w.process_task_sem
+                else:
+                    w.ready_queue.put = w.process_task
             elif not w.pool_cls.requires_mediator:
                 # just send task directly to pool, skip the mediator.
                 w.ready_queue.put = w.process_task

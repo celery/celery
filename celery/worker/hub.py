@@ -12,7 +12,7 @@ class BoundedSemaphore(object):
 
     def __init__(self, value=1):
         self.initial_value = self.value = value
-        self._waiting = set()
+        self._waiting = []
 
     def grow(self):
         self.initial_value += 1
@@ -22,7 +22,7 @@ class BoundedSemaphore(object):
 
     def acquire(self, callback, *partial_args, **partial_kwargs):
         if self.value <= 0:
-            self._waiting.add((callback, partial_args))
+            self._waiting.append((callback, partial_args))
             return False
         else:
             self.value = max(self.value - 1, 0)
@@ -34,7 +34,6 @@ class BoundedSemaphore(object):
         if self._waiting:
             waiter, args = self._waiting.pop()
             waiter(*args)
-
 
     def clear(self):
         pass
