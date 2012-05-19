@@ -363,36 +363,48 @@ class Request(object):
 
         self._log_error(exc_info)
 
-    def _log_error(self, exc_info):
+    def _log_error(self, einfo):
+        exception, traceback, exc_info, internal, sargs, skwargs = (
+            safe_repr(einfo.exception),
+            safe_str(einfo.traceback),
+            einfo.exc_info,
+            einfo.internal,
+            safe_repr(self.args),
+            safe_repr(self.kwargs),
+        )
         format = self.error_msg
         description = "raised exception"
         severity = logging.ERROR
         self.send_event("task-failed", uuid=self.id,
-                         exception=safe_repr(exc_info.exception),
-                         traceback=safe_str(exc_info.traceback))
+                         exception=exception,
+                         traceback=traceback)
 
-        if exc_info.internal:
+        if internal:
             format = self.internal_error_msg
             description = "INTERNAL ERROR"
             severity = logging.CRITICAL
 
-        context = {"hostname": self.hostname,
-                   "id": self.id,
-                   "name": self.name,
-                   "exc": safe_repr(exc_info.exception),
-                   "traceback": safe_str(exc_info.traceback),
-                   "args": safe_repr(self.args),
-                   "kwargs": safe_repr(self.kwargs),
-                   "description": description}
+        context = {
+            "hostname": self.hostname,
+            "id": self.id,
+            "name": self.name,
+            "exc": exception,
+            "traceback": traceback,
+            "args": sargs,
+            "kwargs": skwargs,
+            "description": description,
+        }
 
         logger.log(severity, format.strip(), context,
-                   exc_info=exc_info.exc_info,
+                   exc_info=exc_info,
                    extra={"data": {"id": self.id,
                                    "name": self.name,
-                                   "hostname": self.hostname}})
+                                   "args": sargs,
+                                   "kwargs": skwargs,
+                                   "hostname": self.hostname,
+                                   "internal": internal}})
 
-        task_obj = self.app.tasks.get(self.name, object)
-        task_obj.send_error_email(context, exc_info.exception)
+        self.task.send_error_email(context, exc_info.exception)
 
     def acknowledge(self):
         """Acknowledge task."""
