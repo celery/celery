@@ -111,7 +111,7 @@ class Celery(object):
     def task(self, *args, **opts):
         """Creates new task class from any callable."""
 
-        def inner_create_task_cls(shared=True, **opts):
+        def inner_create_task_cls(shared=True, filter=None, **opts):
 
             def _create_task_cls(fun):
                 if shared:
@@ -119,11 +119,16 @@ class Celery(object):
                     cons.__name__ = fun.__name__
                     shared_task(cons)
                 if self.accept_magic_kwargs:  # compat mode
-                    return self._task_from_fun(fun, **opts)
+                    task = self._task_from_fun(fun, **opts)
+                    if filter:
+                        task = filter(task)
+                    return task
 
                 # return a proxy object that is only evaluated when first used
                 promise = PromiseProxy(self._task_from_fun, (fun, ), opts)
                 self._pending.append(promise)
+                if filter:
+                    return filter(promise)
                 return promise
 
             return _create_task_cls

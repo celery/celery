@@ -120,7 +120,7 @@ class TaskType(type):
             except KeyError:  # pragma: no cover
                 # Fix for manage.py shell_plus (Issue #366).
                 module_name = task_module
-            attrs["name"] = '.'.join([module_name, name])
+            attrs["name"] = '.'.join(filter(None, [module_name, name]))
             autoname = True
 
         # - Create and register class.
@@ -161,6 +161,9 @@ class BaseTask(object):
 
     #: Execution strategy used, or the qualified name of one.
     Strategy = "celery.worker.strategy:default"
+
+    #: This is the instance bound to if the task is a method of a class.
+    __self__ = None
 
     #: The application instance associated with this task class.
     _app = None
@@ -544,6 +547,10 @@ class BaseTask(object):
         app = self._get_app()
         router = router or self.app.amqp.router
         conf = app.conf
+
+        # add 'self' if this is a bound method.
+        if self.__self__ is not None:
+            args = (self.__self__, ) + tuple(args)
 
         if conf.CELERY_ALWAYS_EAGER:
             return self.apply(args, kwargs, task_id=task_id, **options)
