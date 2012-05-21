@@ -83,7 +83,7 @@ class Request(object):
                  "on_ack", "delivery_info", "hostname",
                  "callbacks", "errbacks",
                  "eventer", "connection_errors",
-                 "task", "eta", "expires", "bare",
+                 "task", "eta", "expires", "flags",
                  "request_dict", "acknowledged", "success_msg",
                  "error_msg", "retry_msg", "time_start", "worker_pid",
                  "_already_revoked", "_terminate_on_ack", "_tzlocal")
