@@ -366,7 +366,6 @@ class Consumer(object):
 
         with self.hub as hub:
             qos = self.qos
-            concurrency = self.pool.num_processes
             update_qos = qos.update
             update_readers = hub.update_readers
             fdmap = hub.fdmap
@@ -444,7 +443,7 @@ class Consumer(object):
                             except Empty:
                                 break
                             except socket.error:
-                                if self._state != CLOSE:        # pragma: no cover
+                                if self._state != CLOSE:  # pragma: no cover
                                     raise
                         if buffer:
                             flush_buffer()

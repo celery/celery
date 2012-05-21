@@ -128,7 +128,7 @@ class TraceInfo(object):
             del(tb)
 
 
-def execute_bare(task, uuid, args, kwargs, request=None):
+def execute_bare(task, uuid, args, kwargs, request=None, Info=TraceInfo):
     R = I = None
     kwargs = kwdict(kwargs)
     try:
@@ -146,7 +146,7 @@ def execute_bare(task, uuid, args, kwargs, request=None):
             # (but deprecated)
             I = Info(FAILURE, None)
             state, retval = I.state, I.retval
-            R = I.handle_error_state(task, eager=eager)
+            R = I.handle_error_state(task)
     except Exception, exc:
         R = report_internal_error(task, exc)
     return R

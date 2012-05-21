@@ -114,18 +114,18 @@ class test_task_retries(Case):
     def test_retry(self):
         retry_task.__class__.max_retries = 3
         retry_task.iterations = 0
-        result = retry_task.apply([0xFF, 0xFFFF])
+        retry_task.apply([0xFF, 0xFFFF])
         self.assertEqual(retry_task.iterations, 4)
 
         retry_task.__class__.max_retries = 3
         retry_task.iterations = 0
-        result = retry_task.apply([0xFF, 0xFFFF], {"max_retries": 10})
+        retry_task.apply([0xFF, 0xFFFF], {"max_retries": 10})
         self.assertEqual(retry_task.iterations, 11)
 
     def test_retry_no_args(self):
         retry_task_noargs.__class__.max_retries = 3
         retry_task_noargs.iterations = 0
-        result = retry_task_noargs.apply()
+        retry_task_noargs.apply()
         self.assertEqual(retry_task_noargs.iterations, 4)
 
     def test_retry_kwargs_can_be_empty(self):
@@ -154,7 +154,7 @@ class test_task_retries(Case):
     def test_retry_with_kwargs(self):
         retry_task_customexc.__class__.max_retries = 3
         retry_task_customexc.iterations = 0
-        result = retry_task_customexc.apply([0xFF, 0xFFFF], {"kwarg": 0xF})
+        retry_task_customexc.apply([0xFF, 0xFFFF], {"kwarg": 0xF})
         self.assertEqual(retry_task_customexc.iterations, 4)
 
     def test_retry_with_custom_exception(self):

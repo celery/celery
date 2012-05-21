@@ -1,9 +1,7 @@
 from __future__ import absolute_import
 
-from collections import deque
-
 from kombu.utils import cached_property
-from kombu.utils.eventio import poll, POLL_READ, POLL_ERR, POLL_WRITE
+from kombu.utils.eventio import poll, READ, WRITE, ERR
 
 from celery.utils.timer2 import Schedule
 
@@ -40,7 +38,7 @@ class BoundedSemaphore(object):
 
 
 class Hub(object):
-    eventflags = POLL_READ | POLL_ERR
+    READ, WRITE, ERR = READ, WRITE, ERR
 
     def __init__(self, timer=None):
         self.fdmap = {}
@@ -63,8 +61,7 @@ class Hub(object):
                 self.timer.apply_entry(entry)
         return min(max(delay, min_delay), max_delay)
 
-    def add(self, fd, callback, flags=None):
-        flags = self.eventflags if flags is None else flags
+    def add(self, fd, callback, flags):
         self.poller.register(fd, flags)
         try:
             fileno = fd.fileno()
@@ -73,10 +70,10 @@ class Hub(object):
         self.fdmap[fileno] = callback
 
     def add_reader(self, fd, callback):
-        return self.add(fd, callback, POLL_READ|POLL_ERR)
+        return self.add(fd, callback, READ | ERR)
 
     def add_writer(self, fd, callback):
-        return self.add(fd, callback, POLL_WRITE)
+        return self.add(fd, callback, WRITE)
 
     def update_readers(self, *maps):
         [self.add_reader(*x) for row in maps for x in row.iteritems()]

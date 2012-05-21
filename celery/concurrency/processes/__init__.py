@@ -111,7 +111,6 @@ class TaskPool(BasePool):
     def set_on_process_started(self, callback):
         self._pool.on_process_created
 
-
     def _get_on_process_started(self):
         return self._pool.on_process_started
 
@@ -119,6 +118,7 @@ class TaskPool(BasePool):
         self._pool.on_process_started = fun
     on_process_started = property(_get_on_process_started,
                                   _set_on_process_started)
+
     def _get_on_process_down(self):
         return self._pool.on_process_down
 
