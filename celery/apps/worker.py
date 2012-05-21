@@ -19,6 +19,7 @@ from celery.utils import cry, isatty
 from celery.utils.imports import qualname
 from celery.utils.log import LOG_LEVELS, get_logger, mlevel, set_in_sighandler
 from celery.utils.text import pluralize
+from celery.utils.threads import active_count as active_thread_count
 from celery.worker import WorkController
 
 try:
@@ -241,10 +242,11 @@ def _shutdown_handler(worker, sig="TERM", how="Warm", exc=SystemExit,
                 if callback:
                     callback(worker)
                 safe_say("celeryd: %s shutdown (MainProcess)" % how)
-            if how == "Warm":
-                state.should_stop = True
-            elif how == "Cold":
-                state.should_terminate = True
+            if active_thread_count() > 1:
+                setattr(state, {"Warm": "should_stop",
+                                "Cold": "should_terminate"}[how], True)
+            else:
+                raise exc()
         finally:
             set_in_sighandler(False)
     _handle_request.__name__ = "worker_" + how
