@@ -8,6 +8,9 @@ import traceback
 _Thread = threading.Thread
 _Event = threading._Event
 
+active_count = (getattr(threading, "active_count", None) or
+                threading.activeCount)
+
 
 class Event(_Event):
 

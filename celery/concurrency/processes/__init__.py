@@ -56,6 +56,7 @@ class TaskPool(BasePool):
     Pool = Pool
 
     requires_mediator = True
+    uses_semaphore = True
 
     def on_start(self):
         """Run the task pool.
@@ -67,6 +68,9 @@ class TaskPool(BasePool):
                                initializer=process_initializer,
                                **self.options)
         self.on_apply = self._pool.apply_async
+
+    def did_start_ok(self):
+        return self._pool.did_start_ok()
 
     def on_stop(self):
         """Gracefully stop the pool."""
@@ -128,9 +132,13 @@ class TaskPool(BasePool):
         return self._pool._processes
 
     @property
-    def eventmap(self):
-        return self._pool.eventmap
+    def readers(self):
+        return self._pool.readers
+
+    @property
+    def writers(self):
+        return self._pool.writers
 
     @property
     def timers(self):
-        return self._pool.timers
+        return {self._pool.maintain_pool: 30}

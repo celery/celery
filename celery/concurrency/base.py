@@ -52,6 +52,9 @@ class BasePool(object):
     #: only used by multiprocessing pool
     on_process_down = None
 
+    #: only used by multiprocessing pool
+    uses_semaphore = False
+
     def __init__(self, limit=None, putlocks=True, **options):
         self.limit = limit
         self.putlocks = putlocks
@@ -60,6 +63,9 @@ class BasePool(object):
 
     def on_start(self):
         pass
+
+    def did_start_ok(self):
+        return True
 
     def on_stop(self):
         pass
@@ -128,7 +134,11 @@ class BasePool(object):
         return self.limit
 
     @property
-    def eventmap(self):
+    def readers(self):
+        return {}
+
+    @property
+    def writers(self):
         return {}
 
     @property

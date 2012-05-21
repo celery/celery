@@ -8,8 +8,12 @@ import os
 
 # Code based on the winappdbg project http://winappdbg.sourceforge.net/
 # (BSD License)
-from ctypes import byref, sizeof, windll, Structure, WinError, POINTER
-from ctypes.wintypes import DWORD, c_size_t, LONG, c_char, c_void_p
+from ctypes import (
+    byref, sizeof, windll,
+    Structure, WinError, POINTER,
+    c_size_t, c_char, c_void_p,
+)
+from ctypes.wintypes import DWORD, LONG
 
 ERROR_NO_MORE_FILES = 18
 INVALID_HANDLE_VALUE = c_void_p(-1).value

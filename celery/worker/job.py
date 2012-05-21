@@ -26,7 +26,12 @@ from celery import current_app
 from celery import exceptions
 from celery.app import app_or_default
 from celery.datastructures import ExceptionInfo
-from celery.task.trace import build_tracer, trace_task, report_internal_error
+from celery.task.trace import (
+    build_tracer,
+    trace_task,
+    report_internal_error,
+    execute_bare,
+)
 from celery.platforms import set_mp_process_title as setps
 from celery.utils import fun_takes_kwargs
 from celery.utils.functional import noop
@@ -78,7 +83,7 @@ class Request(object):
                  "on_ack", "delivery_info", "hostname",
                  "callbacks", "errbacks",
                  "eventer", "connection_errors",
-                 "task", "eta", "expires",
+                 "task", "eta", "expires", "bare",
                  "request_dict", "acknowledged", "success_msg",
                  "error_msg", "retry_msg", "time_start", "worker_pid",
                  "_already_revoked", "_terminate_on_ack", "_tzlocal")
@@ -120,6 +125,7 @@ class Request(object):
         eta = body.get("eta")
         expires = body.get("expires")
         utc = body.get("utc", False)
+        self.flags = body.get("flags", False)
         self.on_ack = on_ack
         self.hostname = hostname or socket.gethostname()
         self.eventer = eventer
@@ -194,10 +200,19 @@ class Request(object):
         :keyword logfile: The logfile used by the task.
 
         """
+        task = self.task
+        if self.flags & 0x004:
+            return pool.apply_async(execute_bare,
+                    args=(self.task, self.id, self.args, self.kwargs),
+                    accept_callback=self.on_accepted,
+                    timeout_callback=self.on_timeout,
+                    callback=self.on_success,
+                    error_callback=self.on_failure,
+                    soft_timeout=task.soft_time_limit,
+                    timeout=task.time_limit)
         if self.revoked():
             return
 
-        task = self.task
         hostname = self.hostname
         kwargs = self.kwargs
         if self.task.accept_magic_kwargs:

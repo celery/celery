@@ -40,7 +40,7 @@ extract_exec_options = mattrgetter("queue", "routing_key",
                                    "exchange", "immediate",
                                    "mandatory", "priority",
                                    "serializer", "delivery_mode",
-                                   "compression", "expires")
+                                   "compression", "expires", "bare")
 
 
 class Context(object):
@@ -796,24 +796,6 @@ class BaseTask(object):
         """
         pass
 
-    def after_return(self, status, retval, task_id, args, kwargs, einfo):
-        """Handler called after the task returns.
-
-        :param status: Current task state.
-        :param retval: Task return value/exception.
-        :param task_id: Unique id of the task.
-        :param args: Original arguments for the task that failed.
-        :param kwargs: Original keyword arguments for the task
-                       that failed.
-
-        :keyword einfo: :class:`~celery.datastructures.ExceptionInfo`
-                        instance, containing the traceback (if any).
-
-        The return value of this handler is ignored.
-
-        """
-        pass
-
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         """Error handler.
 
@@ -836,21 +818,6 @@ class BaseTask(object):
     def send_error_email(self, context, exc, **kwargs):
         if self.send_error_emails and not self.disable_error_emails:
             self.ErrorMail(self, **kwargs).send(context, exc)
-
-    def on_success(self, retval, task_id, args, kwargs):
-        """Success handler.
-
-        Run by the worker if the task executes successfully.
-
-        :param retval: The return value of the task.
-        :param task_id: Unique id of the executed task.
-        :param args: Original arguments for the executed task.
-        :param kwargs: Original keyword arguments for the executed task.
-
-        The return value of this handler is ignored.
-
-        """
-        pass
 
     def execute(self, request, pool, loglevel, logfile, **kwargs):
         """The method the worker calls to execute the task.

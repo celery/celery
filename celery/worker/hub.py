@@ -1,9 +1,42 @@
 from __future__ import absolute_import
 
+from collections import deque
+
 from kombu.utils import cached_property
-from kombu.utils.eventio import poll, POLL_READ, POLL_ERR
+from kombu.utils.eventio import poll, POLL_READ, POLL_ERR, POLL_WRITE
 
 from celery.utils.timer2 import Schedule
+
+
+class BoundedSemaphore(object):
+
+    def __init__(self, value=1):
+        self.initial_value = self.value = value
+        self._waiting = []
+
+    def grow(self):
+        self.initial_value += 1
+
+    def shrink(self):
+        self.initial_value -= 1
+
+    def acquire(self, callback, *partial_args, **partial_kwargs):
+        if self.value <= 0:
+            self._waiting.append((callback, partial_args))
+            return False
+        else:
+            self.value = max(self.value - 1, 0)
+            callback(*partial_args, **partial_kwargs)
+            return True
+
+    def release(self):
+        self.value = min(self.value + 1, self.initial_value)
+        if self._waiting:
+            waiter, args = self._waiting.pop()
+            waiter(*args)
+
+    def clear(self):
+        pass
 
 
 class Hub(object):
@@ -39,8 +72,17 @@ class Hub(object):
             fileno = fd
         self.fdmap[fileno] = callback
 
-    def update(self, *maps):
-        [self.add(*x) for row in maps for x in row.iteritems()]
+    def add_reader(self, fd, callback):
+        return self.add(fd, callback, POLL_READ|POLL_ERR)
+
+    def add_writer(self, fd, callback):
+        return self.add(fd, callback, POLL_WRITE)
+
+    def update_readers(self, *maps):
+        [self.add_reader(*x) for row in maps for x in row.iteritems()]
+
+    def update_writers(self, *maps):
+        [self.add_writer(*x) for row in maps for x in row.iteritems()]
 
     def remove(self, fd):
         try:
@@ -50,6 +92,7 @@ class Hub(object):
 
     def close(self):
         [self.remove(fd) for fd in self.fdmap.keys()]
+        self.poller.close()
 
     @cached_property
     def scheduler(self):
