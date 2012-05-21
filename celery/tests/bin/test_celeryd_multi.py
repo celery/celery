@@ -122,9 +122,9 @@ class test_multi_args(Case):
         self.assertEqual(len(names3), 10)
         self.assertEqual(names3[0][0:2], ('celery1.example.com',
             ['COMMAND', '-n celery1.example.com', '-c 5', '']))
-        for i, worker in enumerate(names3[1:], 2):
-            self.assertEqual(worker[0:2], ('celery%s.example.com' % i,
-                ['COMMAND', '-n celery%s.example.com' % i, '']))
+        for i, worker in enumerate(names3[1:]):
+            self.assertEqual(worker[0:2], ('celery%s.example.com' % (i + 2),
+                ['COMMAND', '-n celery%s.example.com' % (i + 2), '']))
 
         names4 = list(multi_args(p2, cmd="COMMAND", suffix='""'))
         self.assertEqual(len(names4), 10)
