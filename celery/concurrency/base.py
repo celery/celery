@@ -64,6 +64,9 @@ class BasePool(object):
     def on_start(self):
         pass
 
+    def did_start_ok(self):
+        return True
+
     def on_stop(self):
         pass
 
@@ -131,7 +134,11 @@ class BasePool(object):
         return self.limit
 
     @property
-    def eventmap(self):
+    def readers(self):
+        return {}
+
+    @property
+    def writers(self):
         return {}
 
     @property
