@@ -219,7 +219,7 @@ class Timer(Thread):
     if TIMER_DEBUG:
         def start(self, *args, **kwargs):
             import traceback
-            print("TIMER START")
+            print("- Timer starting")
             traceback.print_stack()
             super(Timer, self).start(*args, **kwargs)
 

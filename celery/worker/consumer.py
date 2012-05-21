@@ -407,11 +407,11 @@ class Consumer(object):
                 self.timer.apply_interval(interval * 1000.0, handler)
 
             def on_process_up(w):
-                hub.add(w._popen.sentinel, self.pool._pool.maintain_pool)
+                hub.add(w.sentinel, self.pool._pool.maintain_pool)
             self.pool.on_process_up = on_process_up
 
             def on_process_down(w):
-                hub.remove(w._popen.sentinel)
+                hub.remove(w.sentinel)
             self.pool.on_process_down = on_process_down
 
             transport.on_poll_init(hub.poller)
