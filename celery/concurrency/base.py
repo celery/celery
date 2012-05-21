@@ -47,7 +47,7 @@ class BasePool(object):
     _pool = None
 
     #: only used by multiprocessing pool
-    on_process_started = None
+    on_process_up = None
 
     #: only used by multiprocessing pool
     on_process_down = None
