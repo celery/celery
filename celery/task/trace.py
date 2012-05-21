@@ -128,6 +128,30 @@ class TraceInfo(object):
             del(tb)
 
 
+def execute_bare(task, uuid, args, kwargs, request=None):
+    R = I = None
+    kwargs = kwdict(kwargs)
+    try:
+        try:
+            R = retval = task(*args, **kwargs)
+            state = SUCCESS
+        except Exception, exc:
+            I = Info(FAILURE, exc)
+            state, retval = I.state, I.retval
+            R = I.handle_error_state(task)
+        except BaseException, exc:
+            raise
+        except:  # pragma: no cover
+            # For Python2.5 where raising strings are still allowed
+            # (but deprecated)
+            I = Info(FAILURE, None)
+            state, retval = I.state, I.retval
+            R = I.handle_error_state(task, eager=eager)
+    except Exception, exc:
+        R = report_internal_error(task, exc)
+    return R
+
+
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         Info=TraceInfo, eager=False, propagate=False):
     # If the task doesn't define a custom __call__ method
@@ -146,8 +170,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     loader_task_init = loader.on_task_init
     loader_cleanup = loader.on_process_cleanup
 
-    task_on_success = task.on_success
-    task_after_return = task.after_return
+    task_on_success = getattr(task, "on_success", None)
+    task_after_return = getattr(task, "after_return", None)
 
     store_result = backend.store_result
     backend_cleanup = backend.process_cleanup
@@ -215,14 +239,16 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     # stored, so that result.children is populated.
                     [subtask(callback).apply_async((retval, ))
                         for callback in task_request.callbacks or []]
-                    task_on_success(retval, uuid, args, kwargs)
+                    if task_on_success:
+                        task_on_success(retval, uuid, args, kwargs)
                     if success_receivers:
                         send_success(sender=task, result=retval)
 
                 # -* POST *-
                 if task_request.chord:
                     on_chord_part_return(task)
-                task_after_return(state, retval, uuid, args, kwargs, None)
+                if task_after_return:
+                    task_after_return(state, retval, uuid, args, kwargs, None)
                 if postrun_receivers:
                     send_postrun(sender=task, task_id=uuid, task=task,
                                  args=args, kwargs=kwargs,

@@ -46,7 +46,7 @@ def tdiff(then):
     return time.time() - then
 
 
-@celery.task(cur=0, time_start=None, queue="bench.worker")
+@celery.task(cur=0, time_start=None, queue="bench.worker", bare=True)
 def it(_, n):
     i = it.cur  # use internal counter, as ordering can be skewed
                 # by previous runs, or the broker.
