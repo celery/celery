@@ -91,12 +91,13 @@ class Pool(abstract.StartStopComponent):
         if w.autoscale:
             w.max_concurrency, w.min_concurrency = w.autoscale
 
-    def create(self, w, semaphore=None):
+    def create(self, w, semaphore=None, max_restarts=None):
         threaded = not w.use_eventloop
-        forking_enable(w.no_execv or not w.force_execv)
+        forking_enable(not threaded or (w.no_execv or not w.force_execv))
         procs = w.min_concurrency
         if not threaded:
             semaphore = w.semaphore = BoundedSemaphore(procs)
+            max_restarts = 100
         pool = w.pool = self.instantiate(w.pool_cls, w.min_concurrency,
                             initargs=(w.app, w.hostname),
                             maxtasksperchild=w.max_tasks_per_child,
@@ -107,6 +108,7 @@ class Pool(abstract.StartStopComponent):
                             with_task_thread=threaded,
                             with_result_thread=threaded,
                             with_supervisor_thread=threaded,
+                            max_restarts=max_restarts,
                             semaphore=semaphore)
         return pool
 
