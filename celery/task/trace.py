@@ -65,10 +65,10 @@ def mro_lookup(cls, attr, stop=()):
             return node
 
 
-def defines_custom_call(task):
+def task_has_custom(task, attr):
     """Returns true if the task or one of its bases
-    defines __call__ (excluding the one in BaseTask)."""
-    return mro_lookup(task.__class__, "__call__", stop=(BaseTask, object))
+    defines ``attr`` (excluding the one in BaseTask)."""
+    return mro_lookup(task.__class__, attr, stop=(BaseTask, object))
 
 
 class TraceInfo(object):
@@ -157,7 +157,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     # If the task doesn't define a custom __call__ method
     # we optimize it away by simply calling the run method directly,
     # saving the extra method call and a line less in the stack trace.
-    fun = task if defines_custom_call(task) else task.run
+    fun = task if task_has_custom(task, "__call__") else task.run
 
     loader = loader or current_app.loader
     backend = task.backend
@@ -170,8 +170,12 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     loader_task_init = loader.on_task_init
     loader_cleanup = loader.on_process_cleanup
 
-    task_on_success = getattr(task, "on_success", None)
-    task_after_return = getattr(task, "after_return", None)
+    task_on_success = None
+    task_after_return = None
+    if task_has_custom(task, "on_success"):
+        task_on_success = task.on_success
+    if task_has_custom(task, "after_return"):
+        task_after_return = task.after_return
 
     store_result = backend.store_result
     backend_cleanup = backend.process_cleanup

@@ -19,7 +19,7 @@ from celery import signals
 from celery import current_app
 from celery.apps import worker as cd
 from celery.bin.celeryd import WorkerCommand, main as celeryd_main
-from celery.exceptions import ImproperlyConfigured
+from celery.exceptions import ImproperlyConfigured, SystemTerminate
 from celery.utils.log import ensure_process_aware_logger
 from celery.worker import state
 
@@ -32,12 +32,17 @@ def disable_stdouts(fun):
 
     @wraps(fun)
     def disable(*args, **kwargs):
-        sys.stdout, sys.stderr = WhateverIO(), WhateverIO()
+        prev_out, prev_err = sys.stdout, sys.stderr
+        prev_rout, prev_rerr = sys.__stdout__, sys.__stderr__
+        sys.stdout = sys.__stdout__ = WhateverIO()
+        sys.stderr = sys.__stderr__ = WhateverIO()
         try:
             return fun(*args, **kwargs)
         finally:
-            sys.stdout = sys.__stdout__
-            sys.stderr = sys.__stderr__
+            sys.stdout = prev_out
+            sys.stderr = prev_err
+            sys.__stdout__ = prev_rout
+            sys.__stderr__ = prev_rerr
 
     return disable
 
@@ -57,6 +62,9 @@ class Worker(cd.Worker):
 
 class test_Worker(AppCase):
     Worker = Worker
+
+    def teardown(self):
+        self.app.conf.CELERY_INCLUDE = ()
 
     @disable_stdouts
     def test_queues_string(self):
@@ -402,19 +410,33 @@ class test_signal_handlers(AppCase):
             def __setitem__(self, sig, handler):
                 next_handlers[sig] = handler
 
-        p, platforms.signals = platforms.signals, Signals()
-        try:
-            handlers["SIGINT"]("SIGINT", object())
-            self.assertTrue(state.should_stop)
-        finally:
-            platforms.signals = p
-            state.should_stop = False
+        with patch("celery.apps.worker.active_thread_count") as c:
+            c.return_value = 3
+            p, platforms.signals = platforms.signals, Signals()
+            try:
+                handlers["SIGINT"]("SIGINT", object())
+                self.assertTrue(state.should_stop)
+            finally:
+                platforms.signals = p
+                state.should_stop = False
 
-        try:
-            next_handlers["SIGINT"]("SIGINT", object())
-            self.assertTrue(state.should_terminate)
-        finally:
-            state.should_terminate = False
+            try:
+                next_handlers["SIGINT"]("SIGINT", object())
+                self.assertTrue(state.should_terminate)
+            finally:
+                state.should_terminate = False
+
+        with patch("celery.apps.worker.active_thread_count") as c:
+            c.return_value = 1
+            p, platforms.signals = platforms.signals, Signals()
+            try:
+                with self.assertRaises(SystemExit):
+                    handlers["SIGINT"]("SIGINT", object())
+            finally:
+                platforms.signals = p
+
+            with self.assertRaises(SystemTerminate):
+                next_handlers["SIGINT"]("SIGINT", object())
 
     @disable_stdouts
     def test_worker_int_handler_only_stop_MainProcess(self):
@@ -424,14 +446,27 @@ class test_signal_handlers(AppCase):
             raise SkipTest("only relevant for multiprocessing")
         process = current_process()
         name, process.name = process.name, "OtherProcess"
-        try:
-            worker = self._Worker()
-            handlers = self.psig(cd.install_worker_int_handler, worker)
-            handlers["SIGINT"]("SIGINT", object())
-            self.assertTrue(state.should_stop)
-        finally:
-            process.name = name
-            state.should_stop = False
+        with patch("celery.apps.worker.active_thread_count") as c:
+            c.return_value = 3
+            try:
+                worker = self._Worker()
+                handlers = self.psig(cd.install_worker_int_handler, worker)
+                handlers["SIGINT"]("SIGINT", object())
+                self.assertTrue(state.should_stop)
+            finally:
+                process.name = name
+                state.should_stop = False
+
+        with patch("celery.apps.worker.active_thread_count") as c:
+            c.return_value = 1
+            try:
+                worker = self._Worker()
+                handlers = self.psig(cd.install_worker_int_handler, worker)
+                with self.assertRaises(SystemExit):
+                    handlers["SIGINT"]("SIGINT", object())
+            finally:
+                process.name = name
+                state.should_stop = False
 
     @disable_stdouts
     def test_install_HUP_not_supported_handler(self):
@@ -448,25 +483,49 @@ class test_signal_handlers(AppCase):
         process = current_process()
         name, process.name = process.name, "OtherProcess"
         try:
-            worker = self._Worker()
-            handlers = self.psig(cd.install_worker_term_hard_handler, worker)
-            try:
-                handlers["SIGQUIT"]("SIGQUIT", object())
-                self.assertTrue(state.should_terminate)
-            finally:
-                state.should_terminate = False
+            with patch("celery.apps.worker.active_thread_count") as c:
+                c.return_value = 3
+                worker = self._Worker()
+                handlers = self.psig(
+                        cd.install_worker_term_hard_handler, worker)
+                try:
+                    handlers["SIGQUIT"]("SIGQUIT", object())
+                    self.assertTrue(state.should_terminate)
+                finally:
+                    state.should_terminate = False
+            with patch("celery.apps.worker.active_thread_count") as c:
+                c.return_value = 1
+                worker = self._Worker()
+                handlers = self.psig(
+                        cd.install_worker_term_hard_handler, worker)
+                with self.assertRaises(SystemTerminate):
+                    handlers["SIGQUIT"]("SIGQUIT", object())
         finally:
             process.name = name
 
     @disable_stdouts
-    def test_worker_term_handler(self):
-        worker = self._Worker()
-        handlers = self.psig(cd.install_worker_term_handler, worker)
-        try:
-            handlers["SIGTERM"]("SIGTERM", object())
-            self.assertTrue(state.should_stop)
-        finally:
-            state.should_stop = False
+    def test_worker_term_handler_when_threads(self):
+        with patch("celery.apps.worker.active_thread_count") as c:
+            c.return_value = 3
+            worker = self._Worker()
+            handlers = self.psig(cd.install_worker_term_handler, worker)
+            try:
+                handlers["SIGTERM"]("SIGTERM", object())
+                self.assertTrue(state.should_stop)
+            finally:
+                state.should_stop = False
+
+    @disable_stdouts
+    def test_worker_term_handler_when_single_thread(self):
+        with patch("celery.apps.worker.active_thread_count") as c:
+            c.return_value = 1
+            worker = self._Worker()
+            handlers = self.psig(cd.install_worker_term_handler, worker)
+            try:
+                with self.assertRaises(SystemExit):
+                    handlers["SIGTERM"]("SIGTERM", object())
+            finally:
+                state.should_stop = False
 
     @patch("sys.__stderr__")
     def test_worker_cry_handler(self, stderr):
@@ -490,10 +549,18 @@ class test_signal_handlers(AppCase):
         process = current_process()
         name, process.name = process.name, "OtherProcess"
         try:
-            worker = self._Worker()
-            handlers = self.psig(cd.install_worker_term_handler, worker)
-            handlers["SIGTERM"]("SIGTERM", object())
-            self.assertTrue(state.should_stop)
+            with patch("celery.apps.worker.active_thread_count") as c:
+                c.return_value = 3
+                worker = self._Worker()
+                handlers = self.psig(cd.install_worker_term_handler, worker)
+                handlers["SIGTERM"]("SIGTERM", object())
+                self.assertTrue(state.should_stop)
+            with patch("celery.apps.worker.active_thread_count") as c:
+                c.return_value = 1
+                worker = self._Worker()
+                handlers = self.psig(cd.install_worker_term_handler, worker)
+                with self.assertRaises(SystemExit):
+                    handlers["SIGTERM"]("SIGTERM", object())
         finally:
             process.name = name
             state.should_stop = False
@@ -521,11 +588,22 @@ class test_signal_handlers(AppCase):
             state.should_stop = False
 
     @disable_stdouts
-    def test_worker_term_hard_handler(self):
-        worker = self._Worker()
-        handlers = self.psig(cd.install_worker_term_hard_handler, worker)
-        try:
-            handlers["SIGQUIT"]("SIGQUIT", object())
-            self.assertTrue(state.should_terminate)
-        finally:
-            state.should_terminate = False
+    def test_worker_term_hard_handler_when_threaded(self):
+        with patch("celery.apps.worker.active_thread_count") as c:
+            c.return_value = 3
+            worker = self._Worker()
+            handlers = self.psig(cd.install_worker_term_hard_handler, worker)
+            try:
+                handlers["SIGQUIT"]("SIGQUIT", object())
+                self.assertTrue(state.should_terminate)
+            finally:
+                state.should_terminate = False
+
+    @disable_stdouts
+    def test_worker_term_hard_handler_when_single_threaded(self):
+        with patch("celery.apps.worker.active_thread_count") as c:
+            c.return_value = 1
+            worker = self._Worker()
+            handlers = self.psig(cd.install_worker_term_hard_handler, worker)
+            with self.assertRaises(SystemTerminate):
+                handlers["SIGQUIT"]("SIGQUIT", object())

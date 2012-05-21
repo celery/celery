@@ -33,6 +33,7 @@ __homepage__ = "http://github.com/ask/timer2/"
 __docformat__ = "restructuredtext"
 
 DEFAULT_MAX_INTERVAL = 2
+TIMER_DEBUG = os.environ.get("TIMER_DEBUG")
 
 logger = get_logger("timer2")
 
@@ -214,6 +215,13 @@ class Timer(Thread):
     running = False
     on_tick = None
     _timer_count = count(1).next
+
+    if TIMER_DEBUG:
+        def start(self, *args, **kwargs):
+            import traceback
+            print("TIMER START")
+            traceback.print_stack()
+            super(Timer, self).start(*args, **kwargs)
 
     def __init__(self, schedule=None, on_error=None, on_tick=None,
             max_interval=None, **kwargs):

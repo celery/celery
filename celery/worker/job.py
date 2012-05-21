@@ -419,7 +419,7 @@ class Request(object):
                                    "hostname": self.hostname,
                                    "internal": internal}})
 
-        self.task.send_error_email(context, exc_info.exception)
+        self.task.send_error_email(context, einfo.exception)
 
     def acknowledge(self):
         """Acknowledge task."""

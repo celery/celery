@@ -68,12 +68,12 @@ class test_Timer(Case):
     @skip_if_quick
     def test_enter_after(self):
         t = timer2.Timer()
-        done = [False]
-
-        def set_done():
-            done[0] = True
-
         try:
+            done = [False]
+
+            def set_done():
+                done[0] = True
+
             t.apply_after(300, set_done)
             while not done[0]:
                 time.sleep(0.1)
@@ -88,25 +88,29 @@ class test_Timer(Case):
 
     def test_apply_interval(self):
         t = timer2.Timer()
-        t.schedule.enter_after = Mock()
+        try:
+            t.schedule.enter_after = Mock()
 
-        myfun = Mock()
-        t.apply_interval(30, myfun)
+            myfun = Mock()
+            myfun.__name__ = "myfun"
+            t.apply_interval(30, myfun)
 
-        self.assertEqual(t.schedule.enter_after.call_count, 1)
-        args1, _ = t.schedule.enter_after.call_args_list[0]
-        msec1, tref1, _ = args1
-        self.assertEqual(msec1, 30)
-        tref1()
+            self.assertEqual(t.schedule.enter_after.call_count, 1)
+            args1, _ = t.schedule.enter_after.call_args_list[0]
+            msec1, tref1, _ = args1
+            self.assertEqual(msec1, 30)
+            tref1()
 
-        self.assertEqual(t.schedule.enter_after.call_count, 2)
-        args2, _ = t.schedule.enter_after.call_args_list[1]
-        msec2, tref2, _ = args2
-        self.assertEqual(msec2, 30)
-        tref2.cancelled = True
-        tref2()
+            self.assertEqual(t.schedule.enter_after.call_count, 2)
+            args2, _ = t.schedule.enter_after.call_args_list[1]
+            msec2, tref2, _ = args2
+            self.assertEqual(msec2, 30)
+            tref2.cancelled = True
+            tref2()
 
-        self.assertEqual(t.schedule.enter_after.call_count, 2)
+            self.assertEqual(t.schedule.enter_after.call_count, 2)
+        finally:
+            t.stop()
 
     @patch("celery.utils.timer2.logger")
     def test_apply_entry_error_handled(self, logger):
