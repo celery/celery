@@ -115,12 +115,13 @@ class Schedule(object):
         """
         if eta is None:
             eta = datetime.now()
-        try:
-            eta = to_timestamp(eta)
-        except OverflowError, exc:
-            if not self.handle_error(exc):
-                raise
-            return
+        if isinstance(eta, datetime):
+            try:
+                eta = to_timestamp(eta)
+            except OverflowError, exc:
+                if not self.handle_error(exc):
+                    raise
+                return
         return self._enter(eta, priority, entry)
 
     def _enter(self, eta, priority, entry):
