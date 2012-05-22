@@ -76,7 +76,7 @@ if os.environ.get("CELERY_BENCH"):  # pragma: no cover
 
     all_count = 0
     bench_first = None
-    bench_mem_first = None
+    bench_mem_sample = []
     bench_start = None
     bench_last = None
     bench_every = int(os.environ.get("CELERY_BENCH_EVERY", 1000))
@@ -97,33 +97,46 @@ if os.environ.get("CELERY_BENCH"):  # pragma: no cover
 
     def mem_rss():
         p = ps()
-        if p is None:
-            return "(psutil not installed)"
-        return "%s MB" % (format_d(p.get_memory_info().rss // 1024), )
+        if p is not None:
+            return "%sMB" % (format_d(p.get_memory_info().rss // 1024), )
+
+    def sample(x, n=10, k=0):
+        j = len(x) // n
+        for _ in xrange(n):
+            yield x[k]
+            k += j
 
     if current_process()._name == 'MainProcess':
         @atexit.register
         def on_shutdown():
             if bench_first is not None and bench_last is not None:
-                print("\n- Time spent in benchmark: %r" % (
+                print("- Time spent in benchmark: %r" % (
                     bench_last - bench_first))
                 print("- Avg: %s" % (sum(bench_sample) / len(bench_sample)))
-                print("- RSS: %s --> %s" % (bench_mem_first, mem_rss()))
+                if filter(None, bench_mem_sample):
+                    print("- rss (sample):")
+                    for mem in sample(bench_mem_sample):
+                        print("-    > %s," % mem)
+                    bench_mem_sample[:] = []
+                    bench_sample[:] = []
+                    import gc
+                    gc.collect()
+                    print("- rss (shutdown): %s." % (mem_rss()))
+                else:
+                    print("- rss: (psutil not installed).")
 
     def task_reserved(request):  # noqa
         global bench_start
         global bench_first
-        global bench_mem_first
         now = None
         if bench_start is None:
             bench_start = now = time()
         if bench_first is None:
             bench_first = now
-        if bench_mem_first is None:
-            bench_mem_first = mem_rss()
 
         return __reserved(request)
 
+    import sys
     def task_ready(request):  # noqa
         global all_count
         global bench_start
@@ -134,8 +147,10 @@ if os.environ.get("CELERY_BENCH"):  # pragma: no cover
             diff = now - bench_start
             print("- Time spent processing %s tasks (since first "
                     "task received): ~%.4fs\n" % (bench_every, diff))
-            bench_start, bench_last = None, now
+            sys.stdout.flush()
+            bench_start = bench_last = now
             bench_sample.append(diff)
+            bench_mem_sample.append(mem_rss())
 
         return __ready(request)
 

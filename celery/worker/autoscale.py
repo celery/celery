@@ -19,6 +19,7 @@ from __future__ import with_statement
 
 import threading
 
+from functools import partial
 from time import sleep, time
 
 from celery.utils.log import get_logger
@@ -26,6 +27,7 @@ from celery.utils.threads import bgThread
 
 from . import state
 from .abstract import StartStopComponent
+from .hub import DummyLock
 
 logger = get_logger(__name__)
 debug, info, error = logger.debug, logger.info, logger.error
@@ -39,18 +41,33 @@ class WorkerComponent(StartStopComponent):
         self.enabled = w.autoscale
         w.autoscaler = None
 
-    def create(self, w):
-        scaler = w.autoscaler = self.instantiate(
-            w.autoscaler_cls, w.pool, w.max_concurrency, w.min_concurrency)
+    def create_threaded(self, w):
+        scaler = w.autoscaler = self.instantiate(w.autoscaler_cls,
+            w.pool, w.max_concurrency, w.min_concurrency)
         return scaler
+
+    def on_poll_init(self, scaler, hub):
+        hub.on_task.append(scaler.maybe_scale)
+        hub.timer.apply_interval(scaler.keepalive * 1000.0, scaler.maybe_scale)
+
+    def create_ev(self, w):
+        scaler = w.autoscaler = self.instantiate(w.autoscaler_cls,
+            w.pool, w.max_concurrency, w.min_concurrency,
+            mutex=DummyLock())
+        w.hub.on_init.append(partial(self.on_poll_init, scaler))
+
+    def create(self, w):
+        return (self.create_ev if w.use_eventloop
+                               else self.create_threaded)(w)
 
 
 class Autoscaler(bgThread):
 
-    def __init__(self, pool, max_concurrency, min_concurrency=0, keepalive=30):
+    def __init__(self, pool, max_concurrency, min_concurrency=0, keepalive=30,
+            mutex=None):
         super(Autoscaler, self).__init__()
         self.pool = pool
-        self.mutex = threading.Lock()
+        self.mutex = mutex or threading.Lock()
         self.max_concurrency = max_concurrency
         self.min_concurrency = min_concurrency
         self.keepalive = keepalive
@@ -60,13 +77,22 @@ class Autoscaler(bgThread):
 
     def body(self):
         with self.mutex:
-            procs = self.processes
-            cur = min(self.qty, self.max_concurrency)
-            if cur > procs:
-                self.scale_up(cur - procs)
-            elif cur < procs:
-                self.scale_down((procs - cur) - self.min_concurrency)
+            self.maybe_scale()
         sleep(1.0)
+
+    def _maybe_scale(self):
+        procs = self.processes
+        cur = min(self.qty, self.max_concurrency)
+        if cur > procs:
+            self.scale_up(cur - procs)
+            return True
+        elif cur < procs:
+            self.scale_down((procs - cur) - self.min_concurrency)
+            return True
+
+    def maybe_scale(self):
+        if self._maybe_scale():
+            self.pool.maintain_pool()
 
     def update(self, max=None, min=None):
         with self.mutex:

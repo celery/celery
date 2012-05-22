@@ -6,6 +6,15 @@ from kombu.utils.eventio import poll, READ, WRITE, ERR
 from celery.utils.timer2 import Schedule
 
 
+class DummyLock(object):
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        pass
+
+
 class BoundedSemaphore(object):
 
     def __init__(self, value=1):
@@ -14,6 +23,7 @@ class BoundedSemaphore(object):
 
     def grow(self):
         self.initial_value += 1
+        self.release()
 
     def shrink(self):
         self.initial_value -= 1
@@ -42,14 +52,26 @@ class Hub(object):
 
     def __init__(self, timer=None):
         self.fdmap = {}
-        self.poller = poll()
         self.timer = Schedule() if timer is None else timer
+        self.on_init = []
+        self.on_task = []
+
+    def start(self):
+        self.poller = poll()
+
+    def stop(self):
+        self.poller.close()
 
     def __enter__(self):
+        self.init()
         return self
 
     def __exit__(self, *exc_info):
         return self.close()
+
+    def init(self):
+        for callback in self.on_init:
+            callback(self)
 
     def fire_timers(self, min_delay=1, max_delay=10, max_timers=10):
         delay = None
@@ -75,11 +97,11 @@ class Hub(object):
     def add_writer(self, fd, callback):
         return self.add(fd, callback, WRITE)
 
-    def update_readers(self, *maps):
-        [self.add_reader(*x) for row in maps for x in row.iteritems()]
+    def update_readers(self, map):
+        [self.add_reader(*x) for x in map.iteritems()]
 
-    def update_writers(self, *maps):
-        [self.add_writer(*x) for row in maps for x in row.iteritems()]
+    def update_writers(self, map):
+        [self.add_writer(*x) for x in map.iteritems()]
 
     def remove(self, fd):
         try:
@@ -89,7 +111,6 @@ class Hub(object):
 
     def close(self):
         [self.remove(fd) for fd in self.fdmap.keys()]
-        self.poller.close()
 
     @cached_property
     def scheduler(self):

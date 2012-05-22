@@ -18,9 +18,13 @@ import atexit
 import logging
 import socket
 import sys
+import time
 import traceback
 
+from functools import partial
+
 from billiard import forking_enable
+from billiard.exceptions import WorkerLostError
 from kombu.syn import detect_environment
 from kombu.utils.finalize import Finalize
 
@@ -38,7 +42,7 @@ from celery.utils.timer2 import Schedule
 from . import abstract
 from . import state
 from .buckets import TaskBucket, FastQueue
-from .hub import BoundedSemaphore
+from .hub import Hub, BoundedSemaphore
 
 RUN = 0x1
 CLOSE = 0x2
@@ -91,6 +95,50 @@ class Pool(abstract.StartStopComponent):
         if w.autoscale:
             w.max_concurrency, w.min_concurrency = w.autoscale
 
+    def on_poll_init(self, pool, hub):
+        apply_after = hub.timer.apply_after
+        apply_at = hub.timer.apply_at
+        on_soft_timeout = pool.on_soft_timeout
+        on_hard_timeout = pool.on_hard_timeout
+        maintain_pool = pool.maintain_pool
+        add_reader = hub.add_reader
+        remove = hub.remove
+        now = time.time
+
+        if not pool.did_start_ok():
+            raise WorkerLostError("Could not start worker processes")
+
+        hub.update_readers(pool.readers)
+        for handler, interval in pool.timers.iteritems():
+            hub.timer.apply_interval(interval * 1000.0, handler)
+
+        def on_timeout_set(R, soft, hard):
+
+            def _on_soft_timeout():
+                if hard:
+                    R._tref = apply_at(now() + (hard - soft),
+                                       on_hard_timeout, (R, ))
+                    on_soft_timeout(R)
+            if soft:
+                R._tref = apply_after(soft * 1000.0, _on_soft_timeout)
+            elif hard:
+                R._tref = apply_after(hard * 1000.0,
+                                      on_hard_timeout, (R, ))
+
+        def on_timeout_cancel(result):
+            try:
+                result._tref.cancel()
+                delattr(result, "_tref")
+            except AttributeError:
+                pass
+
+        pool.init_callbacks(
+            on_process_up=lambda w: add_reader(w.sentinel, maintain_pool),
+            on_process_down=lambda w: remove(w.sentinel),
+            on_timeout_set=on_timeout_set,
+            on_timeout_cancel=on_timeout_cancel,
+        )
+
     def create(self, w, semaphore=None, max_restarts=None):
         threaded = not w.use_eventloop
         forking_enable(not threaded or (w.no_execv or not w.force_execv))
@@ -105,12 +153,11 @@ class Pool(abstract.StartStopComponent):
                             soft_timeout=w.task_soft_time_limit,
                             putlocks=w.pool_putlocks and threaded,
                             lost_worker_timeout=w.worker_lost_wait,
-                            with_task_thread=threaded,
-                            with_result_thread=threaded,
-                            with_supervisor_thread=threaded,
-                            with_timeout_thread=threaded,
+                            threads=threaded,
                             max_restarts=max_restarts,
                             semaphore=semaphore)
+        if w.hub:
+            w.hub.on_init.append(partial(self.on_poll_init, pool))
         return pool
 
 
@@ -139,6 +186,7 @@ class Queues(abstract.Component):
     """This component initializes the internal queues
     used by the worker."""
     name = "worker.queues"
+    requires = ("ev", )
 
     def create(self, w):
         if not w.pool_cls.rlimit_safe:
@@ -157,26 +205,38 @@ class Queues(abstract.Component):
             w.ready_queue = TaskBucket(task_registry=w.app.tasks)
 
 
+class EvLoop(abstract.StartStopComponent):
+    name = "worker.ev"
+
+    def __init__(self, w, **kwargs):
+        w.hub = None
+
+    def include_if(self, w):
+        return w.use_eventloop
+
+    def create(self, w):
+        w.timer = Schedule(max_interval=10)
+        hub = w.hub = Hub(w.timer)
+        return hub
+
+
 class Timers(abstract.Component):
     """This component initializes the internal timers used by the worker."""
     name = "worker.timers"
     requires = ("pool", )
 
-    def create(self, w):
-        options = {"on_error": self.on_timer_error,
-                   "on_tick": self.on_timer_tick}
+    def include_if(self, w):
+        return not w.use_eventloop
 
-        if w.use_eventloop:
-            # the timers are fired by the hub, so don't use the Timer thread.
-            w.timer = Schedule(max_interval=10, **options)
-        else:
-            if not w.timer_cls:
-                # Default Timer is set by the pool, as e.g. eventlet
-                # needs a custom implementation.
-                w.timer_cls = w.pool.Timer
-            w.timer = self.instantiate(w.pool.Timer,
-                                       max_interval=w.timer_precision,
-                                       **options)
+    def create(self, w):
+        if not w.timer_cls:
+            # Default Timer is set by the pool, as e.g. eventlet
+            # needs a custom implementation.
+            w.timer_cls = w.pool.Timer
+        w.timer = self.instantiate(w.pool.Timer,
+                                   max_interval=w.timer_precision,
+                                   on_timer_error=self.on_timer_error,
+                                   on_timer_tick=self.on_timer_tick)
 
     def on_timer_error(self, exc):
         logger.error("Timer error: %r", exc, exc_info=True)
@@ -271,7 +331,8 @@ class WorkController(configurated):
             for i, component in enumerate(self.components):
                 logger.debug("Starting %s...", qualname(component))
                 self._running = i + 1
-                component.start()
+                if component:
+                    component.start()
                 logger.debug("%s OK!", qualname(component))
         except SystemTerminate:
             self.terminate()
@@ -339,10 +400,11 @@ class WorkController(configurated):
 
         for component in reversed(self.components):
             logger.debug("%s %s...", what, qualname(component))
-            stop = component.stop
-            if not warm:
-                stop = getattr(component, "terminate", None) or stop
-            stop()
+            if component:
+                stop = component.stop
+                if not warm:
+                    stop = getattr(component, "terminate", None) or stop
+                stop()
 
         self.timer.stop()
         self.consumer.close_connection()

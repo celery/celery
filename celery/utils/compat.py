@@ -161,7 +161,7 @@ if sys.version_info >= (2, 7):
     def format_d(i):
         return format(i, ',d')
 else:
-    def format_d(i):
+    def format_d(i):  # noqa
         s = '%d' % i
         groups = []
         while s and s[-1].isdigit():

@@ -6,7 +6,6 @@ from celery.state import get_current_task
 from celery.app import app_or_default
 from celery.canvas import subtask, maybe_subtask  # noqa
 from celery.utils import uuid
-from celery.utils.compat import UserList
 
 
 class TaskSet(list):

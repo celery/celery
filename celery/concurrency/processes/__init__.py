@@ -122,6 +122,9 @@ class TaskPool(BasePool):
     def on_hard_timeout(self, job):
         self._pool._timeout_handler.on_hard_timeout(job)
 
+    def maintain_pool(self, *args, **kwargs):
+        self._pool.maintain_pool(*args, **kwargs)
+
     @property
     def num_processes(self):
         return self._pool._processes
@@ -136,4 +139,4 @@ class TaskPool(BasePool):
 
     @property
     def timers(self):
-        return {self._pool.maintain_pool: 30}
+        return {self.maintain_pool: 30.0}

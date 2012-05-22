@@ -76,6 +76,9 @@ class BasePool(object):
     def on_hard_timeout(self, job):
         pass
 
+    def maintain_pool(self, *args, **kwargs):
+        pass
+
     def terminate_job(self, pid):
         raise NotImplementedError(
                 "%s does not implement kill_job" % (self.__class__, ))

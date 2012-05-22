@@ -173,7 +173,7 @@ class Worker(configurated):
         app = self.app
         concurrency = self.concurrency
         if self.autoscale:
-            concurrency = "{min=%s, max=%s}" % self.autoscale
+            concurrency = "{min=%s, max=%s}" % tuple(self.autoscale)
         return BANNER % {
             "hostname": self.hostname,
             "version": __version__,

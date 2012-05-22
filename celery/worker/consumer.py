@@ -80,10 +80,9 @@ import logging
 import socket
 import threading
 
-from time import sleep, time
+from time import sleep
 from Queue import Empty
 
-from billiard.exceptions import WorkerLostError
 from kombu.utils.encoding import safe_repr
 
 from celery.app import app_or_default
@@ -97,7 +96,6 @@ from . import state
 from .abstract import StartStopComponent
 from .control import Panel
 from .heartbeat import Heart
-from .hub import Hub
 
 RUN = 0x1
 CLOSE = 0x2
@@ -160,7 +158,7 @@ class Component(StartStopComponent):
 
     def Consumer(self, w):
         return (w.consumer_cls or
-                Consumer if w.use_eventloop else BlockingConsumer)
+                Consumer if w.hub else BlockingConsumer)
 
     def create(self, w):
         prefetch_count = w.concurrency * w.prefetch_multiplier
@@ -174,7 +172,7 @@ class Component(StartStopComponent):
                 timer=w.timer,
                 app=w.app,
                 controller=w,
-                use_eventloop=w.use_eventloop)
+                hub=w.hub)
         return c
 
 
@@ -305,7 +303,7 @@ class Consumer(object):
     def __init__(self, ready_queue,
             init_callback=noop, send_events=False, hostname=None,
             initial_prefetch_count=2, pool=None, app=None,
-            timer=None, controller=None, use_eventloop=False, **kwargs):
+            timer=None, controller=None, hub=None, **kwargs):
         self.app = app_or_default(app)
         self.connection = None
         self.task_consumer = None
@@ -320,7 +318,6 @@ class Consumer(object):
         self.heart = None
         self.pool = pool
         self.timer = timer or timer2.default_timer
-        self.use_eventloop = use_eventloop
         pidbox_state = AttributeDict(app=self.app,
                                      hostname=self.hostname,
                                      listener=self,     # pre 2.2
@@ -334,8 +331,9 @@ class Consumer(object):
 
         self._does_info = logger.isEnabledFor(logging.INFO)
         self.strategies = {}
-        if self.use_eventloop:
-            self.hub = Hub(self.timer)
+        if hub:
+            hub.on_init.append(self.on_poll_init)
+        self.hub = hub
 
     def update_strategies(self):
         S = self.strategies
@@ -361,6 +359,10 @@ class Consumer(object):
             except self.connection_errors + self.channel_errors:
                 error(RETRY_CONNECTION, exc_info=True)
 
+    def on_poll_init(self, hub):
+        hub.update_readers(self.connection.eventmap)
+        self.connection.transport.on_poll_init(hub.poller)
+
     def consume_messages(self, sleep=sleep, min=min, Empty=Empty):
         """Consume messages forever (or until an exception is raised)."""
 
@@ -371,13 +373,12 @@ class Consumer(object):
             fdmap = hub.fdmap
             poll = hub.poller.poll
             fire_timers = hub.fire_timers
-            apply_interval = hub.timer.apply_interval
-            apply_after = hub.timer.apply_after
-            apply_at = hub.timer.apply_at
             scheduled = hub.timer._queue
-            transport = self.connection.transport
-            on_poll_start = transport.on_poll_start
+            on_poll_start = self.connection.transport.on_poll_start
             strategies = self.strategies
+            connection = self.connection
+            drain_nowait = connection.drain_nowait
+            on_task_callbacks = hub.on_task
             buffer = []
 
             def flush_buffer():
@@ -391,54 +392,25 @@ class Consumer(object):
                 buffer[:] = []
 
             def on_task_received(body, message):
+                if on_task_callbacks:
+                    [callback() for callback in on_task_callbacks]
                 try:
                     name = body["task"]
                 except (KeyError, TypeError):
                     return self.handle_unknown_message(body, message)
-                bufferlen = len(buffer)
-                buffer.append((name, body, message))
-                if bufferlen + 1 >= 4:
-                    flush_buffer()
-                if bufferlen:
-                    fire_timers()
-
-            if not self.pool.did_start_ok():
-                raise WorkerLostError("Could not start worker processes")
-
-            update_readers(self.connection.eventmap, self.pool.readers)
-            for handler, interval in self.pool.timers.iteritems():
-                apply_interval(interval * 1000.0, handler)
-
-            def on_timeout_set(R, soft, hard):
-
-                def on_soft_timeout():
-                    if hard:
-                        R._tref = apply_at(time() + (hard - soft),
-                                        self.pool.on_hard_timeout, (R, ))
-                    self.pool.on_soft_timeout(R)
-                if soft:
-                    R._tref = apply_after(soft * 1000.0, on_soft_timeout)
-                elif hard:
-                    R._tref = apply_after(hard * 1000.0,
-                            self.pool_on_hard_timeout, (R, ))
-
-
-            def on_timeout_cancel(result):
                 try:
-                    result._tref.cancel()
-                    delattr(result, "_tref")
-                except AttributeError:
-                    pass
+                    strategies[name](message, body, message.ack_log_error)
+                except KeyError, exc:
+                    self.handle_unknown_task(body, message, exc)
+                except InvalidTaskError, exc:
+                    self.handle_invalid_task(body, message, exc)
+                #bufferlen = len(buffer)
+                #buffer.append((name, body, message))
+                #if bufferlen + 1 >= 4:
+                #    flush_buffer()
+                #if bufferlen:
+                #    fire_timers()
 
-            self.pool.init_callbacks(
-                on_process_up=lambda w: hub.add_reader(w.sentinel,
-                    self.pool._pool.maintain_pool),
-                on_process_down=lambda w: hub.remove(w.sentinel),
-                on_timeout_set=on_timeout_set,
-                on_timeout_cancel=on_timeout_cancel,
-            )
-
-            transport.on_poll_init(hub.poller)
             self.task_consumer.callbacks = [on_task_received]
             self.task_consumer.consume()
 
@@ -460,7 +432,8 @@ class Consumer(object):
 
                 update_readers(on_poll_start())
                 if fdmap:
-                    #for timeout in (time_to_sleep, 0.001):
+                    connection.more_to_read = True
+                    while connection.more_to_read:
                         for fileno, event in poll(time_to_sleep) or ():
                             try:
                                 fdmap[fileno](fileno, event)
@@ -469,8 +442,9 @@ class Consumer(object):
                             except socket.error:
                                 if self._state != CLOSE:  # pragma: no cover
                                     raise
-                        #if buffer:
-                        #    flush_buffer()
+                        if connection.more_to_read:
+                            drain_nowait()
+                            time_to_sleep = 0
                 else:
                     sleep(min(time_to_sleep, 0.1))
 
