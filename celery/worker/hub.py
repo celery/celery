@@ -51,9 +51,11 @@ class Hub(object):
     READ, WRITE, ERR = READ, WRITE, ERR
 
     def __init__(self, timer=None):
-        self.fdmap = {}
+        self.readers = {}
+        self.writers = {}
         self.timer = Schedule() if timer is None else timer
         self.on_init = []
+        self.on_close = []
         self.on_task = []
 
     def start(self):
@@ -85,11 +87,12 @@ class Hub(object):
 
     def add(self, fd, callback, flags):
         self.poller.register(fd, flags)
-        try:
-            fileno = fd.fileno()
-        except AttributeError:
-            fileno = fd
-        self.fdmap[fileno] = callback
+        if not isinstance(fd, int):
+            fd = fd.fileno()
+        if flags & READ:
+            self.readers[fd] = callback
+        if flags & WRITE:
+            self.writers[fd] = callback
 
     def add_reader(self, fd, callback):
         return self.add(fd, callback, READ | ERR)
@@ -110,7 +113,10 @@ class Hub(object):
             pass
 
     def close(self):
-        [self.remove(fd) for fd in self.fdmap.keys()]
+        [self.remove(fd) for fd in self.readers.keys()]
+        [self.remove(fd) for fd in self.writers.keys()]
+        for callback in self.on_close:
+            callback(self)
 
     @cached_property
     def scheduler(self):

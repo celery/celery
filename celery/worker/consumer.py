@@ -84,6 +84,7 @@ from time import sleep
 from Queue import Empty
 
 from kombu.utils.encoding import safe_repr
+from kombu.utils.eventio import READ, WRITE, ERR
 
 from celery.app import app_or_default
 from celery.datastructures import AttributeDict
@@ -370,7 +371,7 @@ class Consumer(object):
             qos = self.qos
             update_qos = qos.update
             update_readers = hub.update_readers
-            fdmap = hub.fdmap
+            readers, writers = hub.readers, hub.writers
             poll = hub.poller.poll
             fire_timers = hub.fire_timers
             scheduled = hub.timer._queue
@@ -431,12 +432,18 @@ class Consumer(object):
                     update_qos()
 
                 update_readers(on_poll_start())
-                if fdmap:
+                if readers or writers:
                     connection.more_to_read = True
                     while connection.more_to_read:
                         for fileno, event in poll(time_to_sleep) or ():
                             try:
-                                fdmap[fileno](fileno, event)
+                                if event & READ:
+                                    readers[fileno](fileno, event)
+                                if event & WRITE:
+                                    writers[fileno](fileno, event)
+                                if event & ERR:
+                                    readers[fileno](fileno, event)
+                                    writers[fileno](fileno, event)
                             except Empty:
                                 break
                             except socket.error:
