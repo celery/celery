@@ -16,7 +16,6 @@ Contents:
     configuration
     django/index
     cookbook/index
-    django/index
     contributing
     community
     tutorials/index
