@@ -80,7 +80,7 @@ import logging
 import socket
 import threading
 
-from time import sleep
+from time import sleep, time
 from Queue import Empty
 
 from billiard.exceptions import WorkerLostError
@@ -371,6 +371,9 @@ class Consumer(object):
             fdmap = hub.fdmap
             poll = hub.poller.poll
             fire_timers = hub.fire_timers
+            apply_interval = hub.timer.apply_interval
+            apply_after = hub.timer.apply_after
+            apply_at = hub.timer.apply_at
             scheduled = hub.timer._queue
             transport = self.connection.transport
             on_poll_start = transport.on_poll_start
@@ -404,15 +407,36 @@ class Consumer(object):
 
             update_readers(self.connection.eventmap, self.pool.readers)
             for handler, interval in self.pool.timers.iteritems():
-                self.timer.apply_interval(interval * 1000.0, handler)
+                apply_interval(interval * 1000.0, handler)
 
-            def on_process_up(w):
-                hub.add(w.sentinel, self.pool._pool.maintain_pool)
-            self.pool.on_process_up = on_process_up
+            def on_timeout_set(R, soft, hard):
 
-            def on_process_down(w):
-                hub.remove(w.sentinel)
-            self.pool.on_process_down = on_process_down
+                def on_soft_timeout():
+                    if hard:
+                        R._tref = apply_at(time() + (hard - soft),
+                                        self.pool.on_hard_timeout, (R, ))
+                    self.pool.on_soft_timeout(R)
+                if soft:
+                    R._tref = apply_after(soft * 1000.0, on_soft_timeout)
+                elif hard:
+                    R._tref = apply_after(hard * 1000.0,
+                            self.pool_on_hard_timeout, (R, ))
+
+
+            def on_timeout_cancel(result):
+                try:
+                    result._tref.cancel()
+                    delattr(result, "_tref")
+                except AttributeError:
+                    pass
+
+            self.pool.init_callbacks(
+                on_process_up=lambda w: hub.add_reader(w.sentinel,
+                    self.pool._pool.maintain_pool),
+                on_process_down=lambda w: hub.remove(w.sentinel),
+                on_timeout_set=on_timeout_set,
+                on_timeout_cancel=on_timeout_cancel,
+            )
 
             transport.on_poll_init(hub.poller)
             self.task_consumer.callbacks = [on_task_received]
@@ -436,8 +460,8 @@ class Consumer(object):
 
                 update_readers(on_poll_start())
                 if fdmap:
-                    for timeout in (time_to_sleep, 0.001):
-                        for fileno, event in poll(timeout) or ():
+                    #for timeout in (time_to_sleep, 0.001):
+                        for fileno, event in poll(time_to_sleep) or ():
                             try:
                                 fdmap[fileno](fileno, event)
                             except Empty:
@@ -445,8 +469,8 @@ class Consumer(object):
                             except socket.error:
                                 if self._state != CLOSE:  # pragma: no cover
                                     raise
-                        if buffer:
-                            flush_buffer()
+                        #if buffer:
+                        #    flush_buffer()
                 else:
                     sleep(min(time_to_sleep, 0.1))
 

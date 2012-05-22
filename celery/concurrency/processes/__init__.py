@@ -108,24 +108,19 @@ class TaskPool(BasePool):
                 "put-guarded-by-semaphore": self.putlocks,
                 "timeouts": (self._pool.soft_timeout, self._pool.timeout)}
 
-    def set_on_process_up(self, callback):
-        self._pool.on_process_up
+    def init_callbacks(self, **kwargs):
+        for k, v in kwargs.iteritems():
+            setattr(self._pool, k, v)
 
-    def _get_on_process_up(self):
-        return self._pool.on_process_up
+    def handle_timeouts(self):
+        if self._pool._timeout_handler:
+            self._pool._timeout_handler.handle_event()
 
-    def _set_on_process_up(self, fun):
-        self._pool.on_process_up = fun
-    on_process_up = property(_get_on_process_up,
-                             _set_on_process_up)
+    def on_soft_timeout(self, job):
+        self._pool._timeout_handler.on_soft_timeout(job)
 
-    def _get_on_process_down(self):
-        return self._pool.on_process_down
-
-    def _set_on_process_down(self, fun):
-        self._pool.on_process_down = fun
-    on_process_down = property(_get_on_process_down,
-                               _set_on_process_down)
+    def on_hard_timeout(self, job):
+        self._pool._timeout_handler.on_hard_timeout(job)
 
     @property
     def num_processes(self):

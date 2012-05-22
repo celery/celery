@@ -108,6 +108,7 @@ class Pool(abstract.StartStopComponent):
                             with_task_thread=threaded,
                             with_result_thread=threaded,
                             with_supervisor_thread=threaded,
+                            with_timeout_thread=threaded,
                             max_restarts=max_restarts,
                             semaphore=semaphore)
         return pool

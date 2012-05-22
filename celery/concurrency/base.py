@@ -47,12 +47,6 @@ class BasePool(object):
     _pool = None
 
     #: only used by multiprocessing pool
-    on_process_up = None
-
-    #: only used by multiprocessing pool
-    on_process_down = None
-
-    #: only used by multiprocessing pool
     uses_semaphore = False
 
     def __init__(self, limit=None, putlocks=True, **options):
@@ -74,6 +68,12 @@ class BasePool(object):
         pass
 
     def on_terminate(self):
+        pass
+
+    def on_soft_timeout(self, job):
+        pass
+
+    def on_hard_timeout(self, job):
         pass
 
     def terminate_job(self, pid):
@@ -101,6 +101,9 @@ class BasePool(object):
         self.on_close()
 
     def on_close(self):
+        pass
+
+    def init_callbacks(self, **kwargs):
         pass
 
     def apply_async(self, target, args=[], kwargs={}, **options):
