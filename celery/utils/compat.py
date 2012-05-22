@@ -153,3 +153,18 @@ else:
                         stat = os.stat(self.baseFilename)
                     self.dev, self.ino = stat[ST_DEV], stat[ST_INO]
                 logging.FileHandler.emit(self, record)
+
+
+############## format(int, ',d') ##########################
+
+if sys.version_info >= (2, 7):
+    def format_d(i):
+        return format(i, ',d')
+else:
+    def format_d(i):
+        s = '%d' % i
+        groups = []
+        while s and s[-1].isdigit():
+            groups.append(s[-3:])
+            s = s[:-3]
+        return s + ','.join(reversed(groups))

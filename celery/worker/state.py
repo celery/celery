@@ -72,15 +72,34 @@ if os.environ.get("CELERY_BENCH"):  # pragma: no cover
 
     from time import time
     from billiard import current_process
+    from celery.utils.compat import format_d
 
     all_count = 0
     bench_first = None
+    bench_mem_first = None
     bench_start = None
     bench_last = None
     bench_every = int(os.environ.get("CELERY_BENCH_EVERY", 1000))
     bench_sample = []
     __reserved = task_reserved
     __ready = task_ready
+    _process = None
+
+    def ps():
+        global _process
+        if _process is None:
+            try:
+                from psutil import Process
+            except ImportError:
+                return None
+            _process = Process(os.getpid())
+        return _process
+
+    def mem_rss():
+        p = ps()
+        if p is None:
+            return "(psutil not installed)"
+        return "%s MB" % (format_d(p.get_memory_info().rss // 1024), )
 
     if current_process()._name == 'MainProcess':
         @atexit.register
@@ -89,15 +108,19 @@ if os.environ.get("CELERY_BENCH"):  # pragma: no cover
                 print("\n- Time spent in benchmark: %r" % (
                     bench_last - bench_first))
                 print("- Avg: %s" % (sum(bench_sample) / len(bench_sample)))
+                print("- RSS: %s --> %s" % (bench_mem_first, mem_rss()))
 
     def task_reserved(request):  # noqa
         global bench_start
         global bench_first
+        global bench_mem_first
         now = None
         if bench_start is None:
             bench_start = now = time()
         if bench_first is None:
             bench_first = now
+        if bench_mem_first is None:
+            bench_mem_first = mem_rss()
 
         return __reserved(request)
 
