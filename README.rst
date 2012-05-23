@@ -54,7 +54,7 @@ integration packages:
     +--------------------+------------------------+
     | `web2py`_          | `web2py-celery`_       |
     +--------------------+------------------------+
-    | `tornado-celery`_  | `tornado-celery`_      |
+    | `Tornado`_         | `tornado-celery`_      |
     +--------------------+------------------------+
 
 .. _`RCelery`: http://leapfrogdevelopment.github.com/rcelery/
@@ -80,6 +80,7 @@ integration packages:
 .. _`celery-pylons`: http://pypi.python.org/pypi/celery-pylons
 .. _`flask-celery`: http://github.com/ask/flask-celery/
 .. _`web2py-celery`: http://code.google.com/p/web2py-celery/
+.. _`Tornado`: http://www.tornadoweb.org/
 .. _`tornado-celery`: http://github.com/mher/tornado-celery/
 .. _`operate with other languages using webhooks`:
     http://ask.github.com/celery/userguide/remote-tasks.html
