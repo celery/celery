@@ -92,6 +92,7 @@ from celery.exceptions import InvalidTaskError, SystemTerminate
 from celery.utils import timer2
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
+from celery.utils import text
 
 from . import state
 from .abstract import StartStopComponent
@@ -509,7 +510,7 @@ class Consumer(object):
         self.qos.decrement_eventually()
 
     def _message_report(self, body, message):
-        return MESSAGE_REPORT_FMT % (safe_repr(body),
+        return MESSAGE_REPORT_FMT % (text.truncate(safe_repr(body), 1024),
                                      safe_repr(message.content_type),
                                      safe_repr(message.content_encoding),
                                      safe_repr(message.delivery_info))
@@ -618,7 +619,7 @@ class Consumer(object):
         """
         crit("Can't decode message body: %r (type:%r encoding:%r raw:%r')",
              exc, message.content_type, message.content_encoding,
-             safe_repr(message.body))
+             text.truncate(safe_repr(message.body), 1024))
         message.ack()
 
     def reset_pidbox_node(self):
