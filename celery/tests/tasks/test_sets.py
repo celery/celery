@@ -178,7 +178,7 @@ class test_TaskSet(Case):
     def test_set_tasks(self):
         ts = TaskSet([])
         ts.tasks = [1, 2, 3]
-        self.assertEqual(ts.data, [1, 2, 3])
+        self.assertEqual(ts, [1, 2, 3])
 
     def test_set_Publisher(self):
         ts = TaskSet([])

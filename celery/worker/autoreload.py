@@ -140,24 +140,23 @@ class KQueueMonitor(BaseMonitor):
 
     def start(self):
         self.poller = eventio.poll()
-        self.add_events(self.poller._kcontrol)
+        self.add_events(self.poller)
         self.poller.on_file_change = self.handle_event
         while not self.shutdown_event.is_set():
             self.poller.poll(1)
 
     def close(self, poller):
-        for f, fd in filter(None, self.filemap.iteritems()):
-            poller.unregister(fd)
-            with ignore_EBADF():  # pragma: no cover
-                os.close(fd)
-            self.filemap.pop(f, None)
-            self.fdmap.pop(fd, None)
+        for f, fd in self.filemap.iteritems():
+            if fd is not None:
+                poller.unregister(fd)
+                with ignore_EBADF():  # pragma: no cover
+                    os.close(fd)
         self.filemap.clear()
         self.fdmap.clear()
 
     def stop(self):
-        self._kq.close()
         self.close(self.poller)
+        self.poller.close()
 
 
 class InotifyMonitor(_ProcessEvent):

@@ -25,14 +25,25 @@ from celery.tests.utils import AppCase, Case, mock_open
 
 class test_WorkerComponent(AppCase):
 
-    def test_create(self):
+    def test_create_threaded(self):
         w = Mock()
+        w.use_eventloop = False
         x = WorkerComponent(w)
         x.instantiate = Mock()
         r = x.create(w)
-        x.instantiate.assert_called_with(w.autoreloader_cls,
-                                         controller=w)
+        x.instantiate.assert_called_with(w.autoreloader_cls, w)
         self.assertIs(r, w.autoreloader)
+
+    def test_create_ev(self):
+        w = Mock()
+        w.use_eventloop = True
+        x = WorkerComponent(w)
+        x.instantiate = Mock()
+        r = x.create(w)
+        x.instantiate.assert_called_with(w.autoreloader_cls, w)
+        self.assertIsNone(r)
+        w.hub.on_init.append.assert_called_with(w.autoreloader.on_poll_init)
+        w.hub.on_close.append.assert_called_with(w.autoreloader.on_poll_close)
 
 
 class test_file_hash(Case):
@@ -92,32 +103,36 @@ class test_KQueueMontior(Case):
     @patch("os.close")
     def test_stop(self, close, kqueue):
         x = KQueueMonitor(["a", "b"])
-        x._kq = Mock()
+        x.poller = Mock()
         x.filemap["a"] = 10
         x.stop()
-        x._kq.close.assert_called_with()
+        x.poller.close.assert_called_with()
         close.assert_called_with(10)
 
         close.side_effect = OSError()
         close.side_effect.errno = errno.EBADF
         x.stop()
 
-    @patch("select.kqueue", create=True)
-    @patch("select.kevent", create=True)
+    @patch("kombu.utils.eventio.kqueue", create=True)
+    @patch("kombu.utils.eventio.kevent", create=True)
     @patch("os.open")
-    def test_start(self, osopen, kevent, kqueue):
+    @patch("select.kqueue")
+    def test_start(self, _kq, osopen, kevent, kqueue):
+        from kombu.utils import eventio
         prev = {}
         flags = ["KQ_FILTER_VNODE", "KQ_EV_ADD", "KQ_EV_ENABLE",
                  "KQ_EV_CLEAR", "KQ_NOTE_WRITE", "KQ_NOTE_EXTEND"]
         for i, flag in enumerate(flags):
-            prev[flag] = getattr(select, flag, None)
+            prev[flag] = getattr(eventio, flag, None)
             if not prev[flag]:
-                setattr(select, flag, i)
+                setattr(eventio, flag, i)
         try:
             kq = kqueue.return_value = Mock()
 
             class ev(object):
                 ident = 10
+                filter = eventio.KQ_FILTER_VNODE
+                fflags = eventio.KQ_NOTE_WRITE
             kq.control.return_value = [ev()]
             x = KQueueMonitor(["a"])
             osopen.return_value = 10
@@ -134,9 +149,9 @@ class test_KQueueMontior(Case):
         finally:
             for flag in flags:
                 if prev[flag]:
-                    setattr(select, flag, prev[flag])
+                    setattr(eventio, flag, prev[flag])
                 else:
-                    delattr(select, flag)
+                    delattr(eventio, flag)
 
 
 class test_InotifyMonitor(Case):
