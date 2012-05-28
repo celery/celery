@@ -99,9 +99,9 @@ class Signature(dict):
                                    subtask_type=subtask_type,
                                    immutable=immutable)
 
-    def delay(self, *argmerge, **kwmerge):
-        """Shortcut to `apply_async(argmerge, kwargs)`."""
-        return self.apply_async(args=argmerge, kwargs=kwmerge)
+    def __call__(self, *partial_args, **partial_kwargs):
+        return self.apply_async(partial_args, partial_kwargs)
+    delay = __call__
 
     def apply(self, args=(), kwargs={}, **options):
         """Apply this task locally."""
