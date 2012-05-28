@@ -169,7 +169,7 @@ def add_chain_task(app):
         def apply_async(self, args=(), kwargs={}, **options):
             if self.app.conf.CELERY_ALWAYS_EAGER:
                 return self.apply(args, kwargs, **options)
-            tasks = [maybe_subtask(task).clone(task_id=uuid(), **kwargs)
+            tasks = [maybe_subtask(task).clone(task_id=uuid(), **options)
                         for task in kwargs["tasks"]]
             reduce(lambda a, b: a.link(b), tasks)
             tasks[0].apply_async()
