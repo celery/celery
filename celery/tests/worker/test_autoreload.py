@@ -34,7 +34,9 @@ class test_WorkerComponent(AppCase):
         x.instantiate.assert_called_with(w.autoreloader_cls, w)
         self.assertIs(r, w.autoreloader)
 
-    def test_create_ev(self):
+    @patch("select.kevent")
+    @patch("select.kqueue")
+    def test_create_ev(self, kqueue, kevent):
         w = Mock()
         w.use_eventloop = True
         x = WorkerComponent(w)
