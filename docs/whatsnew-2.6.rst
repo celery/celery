@@ -191,7 +191,7 @@ Unorganized
         from celery import chain
 
         # (2 + 2) * 8 / 2
-        res = chain(add.subtask((4, 4)),
+        res = chain(add.subtask((2, 2)),
                     mul.subtask((8, )),
                     div.subtask((2,))).apply_async()
         res.get() == 16
