@@ -469,8 +469,9 @@ class Consumer(object):
         if self._does_info:
             info("Got task from broker: %s", task.shortinfo())
 
-        if self.event_dispatcher.enabled:
-            self.event_dispatcher.send("task-received", uuid=task.id,
+        ev = self.event_dispatcher
+        if ev and ev.enabled:
+            ev.send("task-received", uuid=task.id,
                     name=task.name, args=safe_repr(task.args),
                     kwargs=safe_repr(task.kwargs),
                     retries=task.request_dict.get("retries", 0),

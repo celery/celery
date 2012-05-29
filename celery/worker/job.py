@@ -14,7 +14,6 @@ from __future__ import absolute_import
 
 import logging
 import time
-import socket
 import sys
 
 from datetime import datetime
@@ -25,10 +24,12 @@ from kombu.utils.encoding import safe_repr, safe_str
 from celery import current_app
 from celery import exceptions
 from celery.app import app_or_default
+from celery.app.task import Context
 from celery.datastructures import ExceptionInfo
 from celery.task.trace import (
     build_tracer,
     trace_task,
+    trace_task_ret,
     report_internal_error,
     execute_bare,
 )
@@ -54,6 +55,12 @@ tz_utc = timezone.utc
 
 NEEDS_KWDICT = sys.version_info <= (2, 6)
 
+_current_app_for_proc = None
+
+task_accepted = state.task_accepted
+task_ready = state.task_ready
+revoked_tasks = state.revoked
+
 
 def execute_and_trace(name, uuid, args, kwargs, request=None, **opts):
     """This is a pickleable method used as a target when applying to pools.
@@ -63,7 +70,10 @@ def execute_and_trace(name, uuid, args, kwargs, request=None, **opts):
         >>> trace_task(name, *args, **kwargs)[0]
 
     """
-    task = current_app.tasks[name]
+    global _current_app_for_proc
+    if _current_app_for_proc is None:
+        _current_app_for_proc = current_app._get_current_object()
+    task = _current_app_for_proc.tasks[name]
     try:
         hostname = opts.get("hostname")
         setps("celeryd", name, hostname, rate_limit=True)
@@ -127,7 +137,7 @@ class Request(object):
         utc = body.get("utc", False)
         self.flags = body.get("flags", False)
         self.on_ack = on_ack
-        self.hostname = hostname or socket.gethostname()
+        self.hostname = hostname
         self.eventer = eventer
         self.connection_errors = connection_errors or ()
         self.task = task or self.app.tasks[name]
@@ -155,7 +165,7 @@ class Request(object):
             "routing_key": delivery_info.get("routing_key"),
         }
 
-        self.request_dict = body
+        self.request_dict = Context(body, called_directly=False)
 
     @classmethod
     def from_message(cls, message, body, **kwargs):
@@ -221,8 +231,8 @@ class Request(object):
         request.update({"loglevel": loglevel, "logfile": logfile,
                         "hostname": hostname, "is_eager": False,
                         "delivery_info": self.delivery_info})
-        result = pool.apply_async(execute_and_trace,
-                                  args=(self.name, self.id, self.args, kwargs),
+        result = pool.apply_async(trace_task_ret,
+                                  args=(self.task, self.id, self.args, kwargs),
                                   kwargs={"hostname": hostname,
                                           "request": request},
                                   accept_callback=self.on_accepted,
@@ -264,7 +274,7 @@ class Request(object):
     def maybe_expire(self):
         """If expired, mark the task as revoked."""
         if self.expires and datetime.now(self.tzlocal) > self.expires:
-            state.revoked.add(self.id)
+            revoked_tasks.add(self.id)
             if self.store_errors:
                 self.task.backend.mark_as_revoked(self.id)
 
@@ -280,26 +290,24 @@ class Request(object):
             return True
         if self.expires:
             self.maybe_expire()
-        if self.id in state.revoked:
+        if self.id in revoked_tasks:
             warn("Skipping revoked task: %s[%s]", self.name, self.id)
-            self.send_event("task-revoked", uuid=self.id)
+            if self.eventer and self.eventer.enabled:
+                self.eventer.send("task-revoked", uuid=self.id)
             self.acknowledge()
             self._already_revoked = True
             return True
         return False
 
-    def send_event(self, type, **fields):
-        if self.eventer and self.eventer.enabled:
-            self.eventer.send(type, **fields)
-
     def on_accepted(self, pid, time_accepted):
         """Handler called when task is accepted by worker pool."""
         self.worker_pid = pid
         self.time_start = time_accepted
-        state.task_accepted(self)
+        task_accepted(self)
         if not self.task.acks_late:
             self.acknowledge()
-        self.send_event("task-started", uuid=self.id, pid=pid)
+        if self.eventer and self.eventer.enabled:
+            self.eventer.send("task-started", uuid=self.id, pid=pid)
         if _does_debug:
             debug("Task accepted: %s[%s] pid:%r", self.name, self.id, pid)
         if self._terminate_on_ack is not None:
@@ -308,7 +316,7 @@ class Request(object):
 
     def on_timeout(self, soft, timeout):
         """Handler called if the task times out."""
-        state.task_ready(self)
+        task_ready(self)
         if soft:
             warn("Soft time limit (%ss) exceeded for %s[%s]",
                  timeout, self.name, self.id)
@@ -328,7 +336,7 @@ class Request(object):
                     SystemExit, KeyboardInterrupt)):
                 raise ret_value.exception
             return self.on_failure(ret_value)
-        state.task_ready(self)
+        task_ready(self)
 
         if self.task.acks_late:
             self.acknowledge()
@@ -336,8 +344,8 @@ class Request(object):
         if self.eventer and self.eventer.enabled:
             now = time.time()
             runtime = self.time_start and (time.time() - self.time_start) or 0
-            self.send_event("task-succeeded", uuid=self.id,
-                            result=safe_repr(ret_value), runtime=runtime)
+            self.eventer.send("task-succeeded", uuid=self.id,
+                              result=safe_repr(ret_value), runtime=runtime)
 
         if _does_info:
             now = now or time.time()
@@ -349,9 +357,10 @@ class Request(object):
 
     def on_retry(self, exc_info):
         """Handler called if the task should be retried."""
-        self.send_event("task-retried", uuid=self.id,
-                         exception=safe_repr(exc_info.exception.exc),
-                         traceback=safe_str(exc_info.traceback))
+        if self.eventer and self.eventer.enabled:
+            self.eventer.send("task-retried", uuid=self.id,
+                              exception=safe_repr(exc_info.exception.exc),
+                              traceback=safe_str(exc_info.traceback))
 
         if _does_info:
             info(self.retry_msg.strip(), {
@@ -360,7 +369,7 @@ class Request(object):
 
     def on_failure(self, exc_info):
         """Handler called if the task raised an exception."""
-        state.task_ready(self)
+        task_ready(self)
 
         if not exc_info.internal:
 
@@ -390,9 +399,10 @@ class Request(object):
         format = self.error_msg
         description = "raised exception"
         severity = logging.ERROR
-        self.send_event("task-failed", uuid=self.id,
-                         exception=exception,
-                         traceback=traceback)
+        if self.eventer and self.eventer.enabled:
+            self.eventer.send("task-failed", uuid=self.id,
+                              exception=exception,
+                              traceback=traceback)
 
         if internal:
             format = self.internal_error_msg

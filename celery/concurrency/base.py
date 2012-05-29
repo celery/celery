@@ -12,11 +12,16 @@ from celery.utils.log import get_logger
 
 logger = get_logger("celery.concurrency")
 
+_pid = None
+
 
 def apply_target(target, args=(), kwargs={}, callback=None,
-        accept_callback=None, pid=None, **_):
+        accept_callback=None, pid=None, nowfun=time.time, **_):
+    if pid is None:
+        global _pid
+        pid = _pid = os.getpid() if _pid is None else _pid
     if accept_callback:
-        accept_callback(pid or os.getpid(), time.time())
+        accept_callback(pid, nowfun())
     callback(target(*args, **kwargs))
 
 

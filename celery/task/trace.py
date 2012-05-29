@@ -195,8 +195,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         kwargs = kwdict(kwargs)
         try:
             _task_stack.push(task)
-            task_request = Context(request or {}, args=args,
-                                   called_directly=False, kwargs=kwargs)
+            task_request = request
             push_request(task_request)
             try:
                 # -*- PRE -*-
@@ -278,11 +277,22 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     return trace_task
 
 
-def trace_task(task, uuid, args, kwargs, request=None, **opts):
+def trace_task(task, uuid, args, kwargs, request=None,
+        build_tracer=build_tracer, **opts):
     try:
         if task.__tracer__ is None:
             task.__tracer__ = build_tracer(task.name, task, **opts)
         return task.__tracer__(uuid, args, kwargs, request)
+    except Exception, exc:
+        return report_internal_error(task, exc), None
+
+
+def trace_task_ret(task, uuid, args, kwargs, request=None,
+        build_tracer=build_tracer, **opts):
+    try:
+        if task.__tracer__ is None:
+            task.__tracer__ = build_tracer(task.name, task, **opts)
+        return task.__tracer__(uuid, args, kwargs, request)[0]
     except Exception, exc:
         return report_internal_error(task, exc), None
 

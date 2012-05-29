@@ -44,6 +44,10 @@ extract_exec_options = mattrgetter("queue", "routing_key",
 
 
 class Context(object):
+    __slots__ = ("logfile", "loglevel", "hostname",
+                 "id", "args", "kwargs", "retries", "is_eager",
+                 "delivery_info", "taskset", "chord", "called_directly",
+                 "callbacks", "errbacks", "children", "__dict__")
     # Default context
     logfile = None
     loglevel = None
@@ -59,32 +63,24 @@ class Context(object):
     called_directly = True
     callbacks = None
     errbacks = None
-    _children = None   # see property
+    children = None   # see property
 
     def __init__(self, *args, **kwargs):
-        self.update(*args, **kwargs)
-
-    def update(self, *args, **kwargs):
-        self.__dict__.update(*args, **kwargs)
-
-    def clear(self):
-        self.__dict__.clear()
-
-    def get(self, key, default=None):
-        try:
-            return getattr(self, key)
-        except AttributeError:
-            return default
+        up = self.update = self.__dict__.update
+        self.clear = self.__dict__.clear
+        self.get = self.__dict__.get
+        up(*args, children=[], **kwargs)
 
     def __repr__(self):
-        return "<Context: %r>" % (vars(self, ))
+        return repr(self._vars())
 
-    @property
-    def children(self):
-        # children must be an empy list for every thread
-        if self._children is None:
-            self._children = []
-        return self._children
+    def __reduce__(self):
+        return self.__class__, (self._vars(), )
+
+    def _vars(self):
+        return dict((k, v) for k, v in vars(self).iteritems()
+                                if k not in ("clear", "get", "update"))
+
 
 
 class TaskType(type):
@@ -176,7 +172,7 @@ class BaseTask(object):
 
     #: If disabled the worker will not forward magic keyword arguments.
     #: Deprecated and scheduled for removal in v3.0.
-    accept_magic_kwargs = False
+    accept_magic_kwargs = None
 
     #: Destination queue.  The queue needs to exist
     #: in :setting:`CELERY_QUEUES`.  The `routing_key`, `exchange` and
@@ -317,7 +313,6 @@ class BaseTask(object):
         for attr_name, config_name in self.from_config:
             if getattr(self, attr_name, None) is None:
                 setattr(self, attr_name, conf[config_name])
-        self.accept_magic_kwargs = app.accept_magic_kwargs
         if self.accept_magic_kwargs is None:
             self.accept_magic_kwargs = app.accept_magic_kwargs
         if self.backend is None:
