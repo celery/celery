@@ -8,7 +8,6 @@ import sys
 from billiard import freeze_support
 from importlib import import_module
 from pprint import pformat
-from textwrap import wrap
 
 from celery import __version__
 from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
@@ -361,8 +360,7 @@ inspect = command(inspect)
 
 
 def indent(s, n=4):
-    i = [" " * n + l for l in s.split("\n")]
-    return "\n".join("\n".join(wrap(j)) for j in i)
+    return "\n".join(" " * n + l for l in s.split("\n"))
 
 
 class status(Command):
