@@ -34,8 +34,8 @@ class test_WorkerComponent(AppCase):
         x.instantiate.assert_called_with(w.autoreloader_cls, w)
         self.assertIs(r, w.autoreloader)
 
-    @patch("select.kevent")
-    @patch("select.kqueue")
+    @patch("select.kevent", create=True)
+    @patch("select.kqueue", create=True)
     def test_create_ev(self, kqueue, kevent):
         w = Mock()
         w.use_eventloop = True
@@ -118,9 +118,10 @@ class test_KQueueMontior(Case):
     @patch("kombu.utils.eventio.kqueue", create=True)
     @patch("kombu.utils.eventio.kevent", create=True)
     @patch("os.open")
-    @patch("select.kqueue")
+    @patch("select.kqueue", create=True)
     def test_start(self, _kq, osopen, kevent, kqueue):
         from kombu.utils import eventio
+        prev_poll, eventio.poll = eventio.poll, kqueue
         prev = {}
         flags = ["KQ_FILTER_VNODE", "KQ_EV_ADD", "KQ_EV_ENABLE",
                  "KQ_EV_CLEAR", "KQ_NOTE_WRITE", "KQ_NOTE_EXTEND"]
@@ -154,6 +155,7 @@ class test_KQueueMontior(Case):
                     setattr(eventio, flag, prev[flag])
                 else:
                     delattr(eventio, flag)
+            eventio.poll = prev_poll
 
 
 class test_InotifyMonitor(Case):
