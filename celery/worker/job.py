@@ -168,7 +168,7 @@ class Request(object):
         return Request(body,
             delivery_info=getattr(message, "delivery_info", None), **kwargs)
 
-    def extend_with_default_kwargs(self, loglevel, logfile):
+    def extend_with_default_kwargs(self):
         """Extend the tasks keyword arguments with standard task arguments.
 
         Currently these are `logfile`, `loglevel`, `task_id`,
@@ -181,8 +181,8 @@ class Request(object):
 
         """
         kwargs = dict(self.kwargs)
-        default_kwargs = {"logfile": logfile,
-                          "loglevel": loglevel,
+        default_kwargs = {"logfile": None,   # deprecated
+                          "loglevel": None,  # deprecated
                           "task_id": self.id,
                           "task_name": self.name,
                           "task_retries": self.request_dict.get("retries", 0),
@@ -217,7 +217,7 @@ class Request(object):
         hostname = self.hostname
         kwargs = self.kwargs
         if task.accept_magic_kwargs:
-            kwargs = self.extend_with_default_kwargs(loglevel, logfile)
+            kwargs = self.extend_with_default_kwargs()
         request = self.request_dict
         request.update({"hostname": hostname, "is_eager": False,
                         "delivery_info": self.delivery_info})
@@ -248,7 +248,7 @@ class Request(object):
 
         kwargs = self.kwargs
         if self.task.accept_magic_kwargs:
-            kwargs = self.extend_with_default_kwargs(loglevel, logfile)
+            kwargs = self.extend_with_default_kwargs()
         request = self.request_dict
         request.update({"loglevel": loglevel, "logfile": logfile,
                         "hostname": self.hostname, "is_eager": False,

@@ -94,8 +94,8 @@ class MyTaskIgnoreResult(Task):
 
 
 @task_dec(accept_magic_kwargs=True)
-def mytask_some_kwargs(i, logfile):
-    some_kwargs_scratchpad["logfile"] = logfile
+def mytask_some_kwargs(i, task_id):
+    some_kwargs_scratchpad["task_id"] = task_id
     return i ** i
 
 
@@ -671,9 +671,9 @@ class test_TaskRequest(Case):
     def test_execute_success_some_kwargs(self):
         tid = uuid()
         tw = TaskRequest(mytask_some_kwargs.name, tid, [4], {})
-        self.assertEqual(tw.execute(logfile="foobaz.log"), 256)
+        self.assertEqual(tw.execute(), 256)
         meta = mytask_some_kwargs.backend.get_task_meta(tid)
-        self.assertEqual(some_kwargs_scratchpad.get("logfile"), "foobaz.log")
+        self.assertEqual(some_kwargs_scratchpad.get("task_id"), tid)
         self.assertEqual(meta["result"], 256)
         self.assertEqual(meta["status"], states.SUCCESS)
 
@@ -716,7 +716,7 @@ class test_TaskRequest(Case):
         p = MockPool()
         tw.execute_using_pool(p)
         self.assertTrue(p.target)
-        self.assertEqual(p.args[0], mytask.name)
+        self.assertEqual(p.args[0], mytask)
         self.assertEqual(p.args[1], tid)
         self.assertEqual(p.args[2], [4])
         self.assertIn("f", p.args[3])
@@ -729,10 +729,10 @@ class test_TaskRequest(Case):
         tid = uuid()
         tw = TaskRequest(mytask.name, tid, [4], {"f": "x"})
         self.assertDictEqual(
-                tw.extend_with_default_kwargs(10, "some_logfile"), {
+                tw.extend_with_default_kwargs(), {
                     "f": "x",
-                    "logfile": "some_logfile",
-                    "loglevel": 10,
+                    "logfile": None,
+                    "loglevel": None,
                     "task_id": tw.id,
                     "task_retries": 0,
                     "task_is_eager": False,
