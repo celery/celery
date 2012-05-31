@@ -43,7 +43,7 @@ class test_Mailer(Case):
         self.assertEqual(sets[1][0], (10, ))
         mailer._send.assert_called_with(msg)
 
-    @patch("smtplib.SMTP_SSL")
+    @patch("smtplib.SMTP_SSL", create=True)
     def test_send_ssl_tls(self, SMTP_SSL):
         mailer = Mailer(use_ssl=True, use_tls=True)
         client = SMTP_SSL.return_value = Mock()

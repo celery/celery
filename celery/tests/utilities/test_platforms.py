@@ -576,7 +576,7 @@ if not current_app.IS_WINDOWS:
 
     class test_setgroups(Case):
 
-        @patch("os.setgroups")
+        @patch("os.setgroups", create=True)
         def test_setgroups_hack_ValueError(self, setgroups):
 
             def on_setgroups(groups):
@@ -591,7 +591,7 @@ if not current_app.IS_WINDOWS:
             with self.assertRaises(ValueError):
                 _setgroups_hack(range(400))
 
-        @patch("os.setgroups")
+        @patch("os.setgroups", create=True)
         def test_setgroups_hack_OSError(self, setgroups):
             exc = OSError()
             exc.errno = errno.EINVAL
