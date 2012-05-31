@@ -333,7 +333,7 @@ class chord(Signature):
         _chord = self.Chord
         self.kwargs["body"] = body or self.kwargs["body"]
         if _chord.app.conf.CELERY_ALWAYS_EAGER:
-            return _chord.apply((), self.kwargs)
+            return self.apply((), {}, **options)
         callback_id = body.options.setdefault("task_id", uuid())
         _chord(**self.kwargs)
         return _chord.AsyncResult(callback_id)

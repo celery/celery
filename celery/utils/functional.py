@@ -256,6 +256,9 @@ class _regen(UserList, list):
     def data(self):
         return list(self.__it)
 
+    def __iter__(self):  # needed for Python 2.5
+        return iter(self.data)
+
 
 def regen(it):
     if isinstance(it, (list, tuple)):
