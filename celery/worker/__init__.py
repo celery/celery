@@ -353,7 +353,7 @@ class WorkController(configurated):
     def process_task(self, req):
         """Process task by sending it to the pool of workers."""
         try:
-            req.task.execute(req, self.pool, self.loglevel, self.logfile)
+            req.execute_using_pool(self.pool)
         except Exception, exc:
             logger.critical("Internal error: %r\n%s",
                             exc, traceback.format_exc(), exc_info=True)

@@ -81,3 +81,18 @@ class bgThread(Thread):
         self._is_stopped.wait()
         if self.is_alive():
             self.join(1e100)
+
+
+class LocalStack(threading.local):
+
+    def __init__(self):
+        self.stack = []
+        self.push = self.stack.append
+        self.pop = self.stack.pop
+
+    @property
+    def top(self):
+        try:
+            return self.stack[-1]
+        except (AttributeError, IndexError):
+            return None

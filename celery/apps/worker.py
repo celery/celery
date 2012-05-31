@@ -19,7 +19,6 @@ from celery.utils import cry, isatty
 from celery.utils.imports import qualname
 from celery.utils.log import LOG_LEVELS, get_logger, mlevel, set_in_sighandler
 from celery.utils.text import pluralize
-from celery.utils.threads import active_count as active_thread_count
 from celery.worker import WorkController
 
 try:
@@ -29,6 +28,12 @@ except ImportError:  # pragma: no cover
     IGNORE_ERRORS = ()
 
 logger = get_logger(__name__)
+
+
+def active_thread_count():
+    from threading import enumerate
+    return sum(1 for t in enumerate()
+        if not t.name.startswith("Dummy-"))
 
 
 def safe_say(msg):

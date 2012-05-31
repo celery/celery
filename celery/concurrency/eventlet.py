@@ -106,6 +106,8 @@ class TaskPool(base.BasePool):
     def on_start(self):
         self._pool = self.Pool(self.limit)
         signals.eventlet_pool_started.send(sender=self)
+        self._quick_put = self._pool.spawn_n
+        self._quick_apply_sig = signals.eventlet_pool_apply.send
 
     def on_stop(self):
         signals.eventlet_pool_preshutdown.send(sender=self)
@@ -115,8 +117,8 @@ class TaskPool(base.BasePool):
 
     def on_apply(self, target, args=None, kwargs=None, callback=None,
             accept_callback=None, **_):
-        signals.eventlet_pool_apply.send(sender=self,
+        self._quick_apply_sig(sender=self,
                 target=target, args=args, kwargs=kwargs)
-        self._pool.spawn_n(apply_target, target, args, kwargs,
-                           callback, accept_callback,
-                           self.getpid)
+        self._quick_put(apply_target, target, args, kwargs,
+                        callback, accept_callback,
+                        self.getpid)

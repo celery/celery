@@ -29,6 +29,7 @@ from celery.datastructures import ExceptionInfo
 from celery.task.trace import (
     build_tracer,
     trace_task,
+    trace_task_ret,
     report_internal_error,
     execute_bare,
 )
@@ -51,6 +52,10 @@ _does_info = logger.isEnabledFor(logging.INFO)
 tz_to_local = timezone.to_local
 tz_or_local = timezone.tz_or_local
 tz_utc = timezone.utc
+
+task_accepted = state.task_accepted
+task_ready = state.task_ready
+revoked_tasks = state.revoked
 
 NEEDS_KWDICT = sys.version_info <= (2, 6)
 
@@ -190,20 +195,16 @@ class Request(object):
         kwargs.update(extend_with)
         return kwargs
 
-    def execute_using_pool(self, pool, loglevel=None, logfile=None):
+    def execute_using_pool(self, pool, **kwargs):
         """Like :meth:`execute`, but using a worker pool.
 
-        :param pool: A :class:`multiprocessing.Pool` instance.
-
-        :keyword loglevel: The loglevel used by the task.
-
-        :keyword logfile: The logfile used by the task.
+        :param pool: A :class:`celery.concurrency.base.TaskPool` instance.
 
         """
         task = self.task
         if self.flags & 0x004:
             return pool.apply_async(execute_bare,
-                    args=(self.task, self.id, self.args, self.kwargs),
+                    args=(task, self.id, self.args, self.kwargs),
                     accept_callback=self.on_accepted,
                     timeout_callback=self.on_timeout,
                     callback=self.on_success,
@@ -215,16 +216,14 @@ class Request(object):
 
         hostname = self.hostname
         kwargs = self.kwargs
-        if self.task.accept_magic_kwargs:
+        if task.accept_magic_kwargs:
             kwargs = self.extend_with_default_kwargs(loglevel, logfile)
         request = self.request_dict
-        request.update({"loglevel": loglevel, "logfile": logfile,
-                        "hostname": hostname, "is_eager": False,
+        request.update({"hostname": hostname, "is_eager": False,
                         "delivery_info": self.delivery_info})
-        result = pool.apply_async(execute_and_trace,
-                                  args=(self.name, self.id, self.args, kwargs),
-                                  kwargs={"hostname": hostname,
-                                          "request": request},
+        result = pool.apply_async(trace_task_ret,
+                                  args=(task, self.id,
+                                        self.args, kwargs, request),
                                   accept_callback=self.on_accepted,
                                   timeout_callback=self.on_timeout,
                                   callback=self.on_success,
@@ -264,7 +263,7 @@ class Request(object):
     def maybe_expire(self):
         """If expired, mark the task as revoked."""
         if self.expires and datetime.now(self.tzlocal) > self.expires:
-            state.revoked.add(self.id)
+            revoked_tasks.add(self.id)
             if self.store_errors:
                 self.task.backend.mark_as_revoked(self.id)
 
@@ -280,7 +279,7 @@ class Request(object):
             return True
         if self.expires:
             self.maybe_expire()
-        if self.id in state.revoked:
+        if self.id in revoked_tasks:
             warn("Skipping revoked task: %s[%s]", self.name, self.id)
             self.send_event("task-revoked", uuid=self.id)
             self.acknowledge()
@@ -296,7 +295,7 @@ class Request(object):
         """Handler called when task is accepted by worker pool."""
         self.worker_pid = pid
         self.time_start = time_accepted
-        state.task_accepted(self)
+        task_accepted(self)
         if not self.task.acks_late:
             self.acknowledge()
         self.send_event("task-started", uuid=self.id, pid=pid)
@@ -308,7 +307,7 @@ class Request(object):
 
     def on_timeout(self, soft, timeout):
         """Handler called if the task times out."""
-        state.task_ready(self)
+        task_ready(self)
         if soft:
             warn("Soft time limit (%ss) exceeded for %s[%s]",
                  timeout, self.name, self.id)
@@ -328,7 +327,7 @@ class Request(object):
                     SystemExit, KeyboardInterrupt)):
                 raise ret_value.exception
             return self.on_failure(ret_value)
-        state.task_ready(self)
+        task_ready(self)
 
         if self.task.acks_late:
             self.acknowledge()
@@ -360,7 +359,7 @@ class Request(object):
 
     def on_failure(self, exc_info):
         """Handler called if the task raised an exception."""
-        state.task_ready(self)
+        task_ready(self)
 
         if not exc_info.internal:
 

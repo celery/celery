@@ -89,6 +89,7 @@ from kombu.utils.eventio import READ, WRITE, ERR
 from celery.app import app_or_default
 from celery.datastructures import AttributeDict
 from celery.exceptions import InvalidTaskError, SystemTerminate
+from celery.task.trace import build_tracer
 from celery.utils import timer2
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
@@ -144,6 +145,8 @@ RETRY_CONNECTION = """\
 Consumer: Connection to broker lost. \
 Trying to re-establish the connection...\
 """
+
+task_reserved = state.task_reserved
 
 logger = get_logger(__name__)
 info, warn, error, crit = (logger.info, logger.warn,
@@ -336,11 +339,16 @@ class Consumer(object):
         if hub:
             hub.on_init.append(self.on_poll_init)
         self.hub = hub
+        self._quick_put = self.ready_queue.put
 
     def update_strategies(self):
         S = self.strategies
-        for task in self.app.tasks.itervalues():
-            S[task.name] = task.start_strategy(self.app, self)
+        app = self.app
+        loader = app.loader
+        hostname = self.hostname
+        for name, task in self.app.tasks.iteritems():
+            S[name] = task.start_strategy(app, self)
+            task.__tracer__ = build_tracer(name, task, loader, hostname)
 
     def start(self):
         """Start the consumer.
@@ -456,7 +464,7 @@ class Consumer(object):
                 else:
                     sleep(min(time_to_sleep, 0.1))
 
-    def on_task(self, task):
+    def on_task(self, task, task_reserved=task_reserved):
         """Handle received task.
 
         If the task has an `eta` we enter it into the ETA schedule,
@@ -489,8 +497,8 @@ class Consumer(object):
                 self.timer.apply_at(eta, self.apply_eta_task, (task, ),
                                     priority=6)
         else:
-            state.task_reserved(task)
-            self.ready_queue.put(task)
+            task_reserved(task)
+            self._quick_put(task)
 
     def on_control(self, body, message):
         """Process remote control command message."""
@@ -505,8 +513,8 @@ class Consumer(object):
     def apply_eta_task(self, task):
         """Method called by the timer to apply a task with an
         ETA/countdown."""
-        state.task_reserved(task)
-        self.ready_queue.put(task)
+        task_reserved(task)
+        self._quick_put(task)
         self.qos.decrement_eventually()
 
     def _message_report(self, body, message):

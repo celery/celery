@@ -24,7 +24,6 @@ from celery.__compat__ import class_property
 from celery.state import get_current_task
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
-from celery.local import LocalStack
 from celery.result import EagerResult
 from celery.utils import fun_takes_kwargs, uuid, maybe_reraise
 from celery.utils.functional import mattrgetter, maybe_list
@@ -176,7 +175,7 @@ class BaseTask(object):
 
     #: If disabled the worker will not forward magic keyword arguments.
     #: Deprecated and scheduled for removal in v3.0.
-    accept_magic_kwargs = False
+    accept_magic_kwargs = None
 
     #: Destination queue.  The queue needs to exist
     #: in :setting:`CELERY_QUEUES`.  The `routing_key`, `exchange` and
@@ -327,6 +326,7 @@ class BaseTask(object):
         if not was_bound:
             self.annotate()
 
+        from celery.utils.threads import LocalStack
         self.request_stack = LocalStack()
         self.request_stack.push(Context())
 

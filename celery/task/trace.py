@@ -185,6 +185,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     request_stack = task.request_stack
     push_request = request_stack.push
     pop_request = request_stack.pop
+    push_task = _task_stack.push
+    pop_task = _task_stack.pop
     on_chord_part_return = backend.on_chord_part_return
 
     from celery import canvas
@@ -194,7 +196,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         R = I = None
         kwargs = kwdict(kwargs)
         try:
-            _task_stack.push(task)
+            push_task(task)
             task_request = Context(request or {}, args=args,
                                    called_directly=False, kwargs=kwargs)
             push_request(task_request)
@@ -258,7 +260,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                  args=args, kwargs=kwargs,
                                  retval=retval, state=state)
             finally:
-                _task_stack.pop()
+                pop_task()
                 pop_request()
                 if not eager:
                     try:
@@ -285,6 +287,10 @@ def trace_task(task, uuid, args, kwargs, request=None, **opts):
         return task.__tracer__(uuid, args, kwargs, request)
     except Exception, exc:
         return report_internal_error(task, exc), None
+
+
+def trace_task_ret(task, uuid, args, kwargs, request):
+    task.__tracer__(uuid, args, kwargs, request)
 
 
 def eager_trace_task(task, uuid, args, kwargs, request=None, **opts):

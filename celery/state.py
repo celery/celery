@@ -2,7 +2,8 @@ from __future__ import absolute_import
 
 import threading
 
-from celery.local import Proxy, LocalStack
+from celery.local import Proxy
+from celery.utils.threads import LocalStack
 
 default_app = None
 
