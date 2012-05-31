@@ -25,8 +25,9 @@ try:
             print("  - removing %r package..." % task_path)
             try:
                 shutil.rmtree(os.path.abspath(task_path))
-            except Exception, exc:
-                sys.stderr.write("Couldn't remove %r: %r\n" % (task_path, exc))
+            except Exception:
+                sys.stderr.write("Couldn't remove %r: %r\n" % (
+                    task_path, sys.exc_info[1]))
     finally:
         sys.path[:] = orig_path
 except ImportError:
@@ -136,7 +137,7 @@ is_pypy = hasattr(sys, "pypy_version_info")
 
 
 def reqs(f):
-    return filter(None, [l.strip() for l in file(
+    return filter(None, [l.strip() for l in open(
         os.path.join(os.getcwd(), "requirements", f)).readlines()])
 
 install_requires = reqs("default-py3k.txt" if is_py3k else "default.txt")
