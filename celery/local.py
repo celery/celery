@@ -24,7 +24,10 @@ except ImportError:  # pragma: no cover
     try:
         from thread import get_ident  # noqa
     except ImportError:  # pragma: no cover
-        from dummy_thread import get_ident  # noqa
+        try:
+            from dummy_thread import get_ident  # noqa
+        except ImportError:  # pragma: no cover
+            from _thread import get_ident  # noqa
 
 
 def try_import(module, default=None):

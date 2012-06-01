@@ -21,7 +21,7 @@ from kombu.utils import cached_property
 from celery import current_app
 from celery import states
 from celery.__compat__ import class_property
-from celery.state import get_current_task
+from celery.state import get_current_task, _task_stack
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
 from celery.result import EagerResult
@@ -369,7 +369,11 @@ class BaseTask(object):
         setattr(self, attr, meth)
 
     def __call__(self, *args, **kwargs):
-        return self.run(*args, **kwargs)
+        _task_stack.push(self)
+        try:
+            return self.run(*args, **kwargs)
+        finally:
+            _task_stack.pop()
 
     # - tasks are pickled into the name of the task only, and the reciever
     # - simply grabs it from the local registry.

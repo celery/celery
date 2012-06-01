@@ -144,7 +144,6 @@ install_requires = reqs("default-py3k.txt" if is_py3k else "default.txt")
 
 if is_jython:
     install_requires.extend(reqs("jython.txt"))
-
 if py_version[0:2] == (2, 6):
     install_requires.extend(reqs("py26.txt"))
 elif py_version[0:2] == (2, 5):
