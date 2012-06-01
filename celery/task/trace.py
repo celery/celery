@@ -290,7 +290,7 @@ def trace_task(task, uuid, args, kwargs, request=None, **opts):
 
 
 def trace_task_ret(task, uuid, args, kwargs, request):
-    task.__tracer__(uuid, args, kwargs, request)
+    return task.__tracer__(uuid, args, kwargs, request)[0]
 
 
 def eager_trace_task(task, uuid, args, kwargs, request=None, **opts):

@@ -223,7 +223,7 @@ class Celery(object):
         if producer:
             yield producer
         else:
-            with self.amqp.publisher_pool.acquire(block=True) as producer:
+            with self.amqp.producer_pool.acquire(block=True) as producer:
                 yield producer
 
     def with_default_connection(self, fun):

@@ -319,9 +319,10 @@ class AMQP(object):
         return self.Router()
 
     @cached_property
-    def publisher_pool(self):
+    def producer_pool(self):
         return ProducerPool(self.app.pool, limit=self.app.pool.limit,
                             Producer=self.TaskProducer)
+    publisher_pool = producer_pool  # compat alias
 
     @cached_property
     def default_exchange(self):

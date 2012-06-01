@@ -9,8 +9,8 @@
     :license: BSD, see LICENSE for more details.
 
 """
-
 from __future__ import absolute_import
+from __future__ import with_statement
 
 import logging
 import sys
@@ -460,8 +460,8 @@ class BaseTask(object):
         return self.apply_async(args, kwargs)
 
     def apply_async(self, args=None, kwargs=None,
-            task_id=None, publisher=None, connection=None,
-            router=None, link=None, link_error=None, **options):
+            task_id=None, producer=None, connection=None, router=None,
+            link=None, link_error=None, publisher=None, **options):
         """Apply tasks asynchronously by sending a message.
 
         :keyword args: The positional arguments to pass on to the
@@ -494,7 +494,7 @@ class BaseTask(object):
                         in the event of connection loss or failure.  Default
                         is taken from the :setting:`CELERY_TASK_PUBLISH_RETRY`
                         setting.  Note you need to handle the
-                        publisher/connection manually for this to work.
+                        producer/connection manually for this to work.
 
         :keyword retry_policy:  Override the retry policy used.  See the
                                 :setting:`CELERY_TASK_PUBLISH_RETRY` setting.
@@ -543,11 +543,15 @@ class BaseTask(object):
         :keyword link_error: A single, or a list of subtasks to apply
                       if an error occurs while executing the task.
 
+        :keyword producer: :class:~@amqp.TaskProducer` instance to use.
+        :keyword publisher: Deprecated alias to ``producer``.
+
         .. note::
             If the :setting:`CELERY_ALWAYS_EAGER` setting is set, it will
             be replaced by a local :func:`apply` call instead.
 
         """
+        producer = producer or publisher
         app = self._get_app()
         router = router or self.app.amqp.router
         conf = app.conf
@@ -562,24 +566,19 @@ class BaseTask(object):
         options = router.route(options, self.name, args, kwargs)
 
         if connection:
-            publisher = app.amqp.TaskProducer(connection)
-        publish = publisher or app.amqp.publisher_pool.acquire(block=True)
-        evd = None
-        if conf.CELERY_SEND_TASK_SENT_EVENT:
-            evd = app.events.Dispatcher(channel=publish.channel,
-                                        buffer_while_offline=False)
+            producer = app.amqp.TaskProducer(connection)
+        with app.default_producer(producer) as P:
+            evd = None
+            if conf.CELERY_SEND_TASK_SENT_EVENT:
+                evd = app.events.Dispatcher(channel=P.channel,
+                                            buffer_while_offline=False)
 
-        try:
-            task_id = publish.delay_task(self.name, args, kwargs,
-                                         task_id=task_id,
-                                         event_dispatcher=evd,
-                                         callbacks=maybe_list(link),
-                                         errbacks=maybe_list(link_error),
-                                         **options)
-        finally:
-            if not publisher:
-                publish.release()
-
+            task_id = P.delay_task(self.name, args, kwargs,
+                                   task_id=task_id,
+                                   event_dispatcher=evd,
+                                   callbacks=maybe_list(link),
+                                   errbacks=maybe_list(link_error),
+                                   **options)
         result = self.AsyncResult(task_id)
         parent = get_current_worker_task()
         if parent:

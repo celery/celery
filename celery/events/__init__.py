@@ -261,7 +261,7 @@ class Events(object):
     @contextmanager
     def default_dispatcher(self, hostname=None, enabled=True,
             buffer_while_offline=False):
-        with self.app.amqp.publisher_pool.acquire(block=True) as pub:
+        with self.app.amqp.producer_pool.acquire(block=True) as pub:
             with self.Dispatcher(pub.connection, hostname, enabled,
                                  pub.channel, buffer_while_offline) as d:
                 yield d
