@@ -37,6 +37,7 @@
     celery.contrib.batches
     celery.contrib.migrate
     celery.contrib.rdb
+    celery.contrib.methods
     celery.events
     celery.events.state
     celery.apps.worker

@@ -383,10 +383,10 @@ when the task registry is first used.
 Smart `--app` option
 --------------------
 
-The :option:`--app` option now 'autodetects'
+The :option:`--app` option now 'auto-detects'
 
     - If the provided path is a module it tries to get an
-    attribute named 'celery'.
+      attribute named 'celery'.
 
     - If the provided path is a package it tries
       to import a submodule named 'celery',
