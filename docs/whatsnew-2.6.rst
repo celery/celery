@@ -36,6 +36,24 @@ as well as PyPy and Jython.
 Important Notes
 ===============
 
+Eventloop
+---------
+
+The worker is now running *without threads* when used with AMQP or Redis as a
+broker, resulting in::
+
+    - Much better performance overall.
+    - Fixes several edge case race conditions.
+    - Sub-millisecond timer precision.
+    - Faster shutdown times.
+
+The transports supported are:  ``amqplib``, ``librabbitmq``, and ``redis``
+Hopefully this can be extended to include additional broker transports
+in the future.
+
+For increased reliability the :setting:`CELERY_FORCE_EXECV` setting is enabled
+by default if the eventloop is not used.
+
 Now depends on :mod:`billiard`.
 -------------------------------
 
@@ -52,6 +70,135 @@ for the no-execv patch to work.
 - `django-celery #122 <http://github.com/ask/django-celery/issues/122`
 - `django-celery #124 <http://github.com/ask/django-celery/issues/122`
 
+Last version to support Python 2.5
+----------------------------------
+
+The 2.6 series will be last series to support Python 2.5.
+
+With several other distributions taking the step to discontinue
+Python 2.5 support, we feel that it is time too.
+
+Python 2.6 should be widely available at this point, and we urge
+you to upgrade, but if that is not possible you still have the option
+to continue using the Celery 2.6 series, and important bug fixes
+introduced in Celery 2.7 will be back-ported to Celery 2.6 upon request.
+
+.. _v260-news:
+
+News
+====
+
+Chaining Tasks
+--------------
+
+Tasks can now have callbacks and errbacks, and dependencies are recorded
+
+- The task message format have been updated with two new extension keys
+
+    Both keys can be empty/undefined or a list of subtasks.
+
+    - ``callbacks``
+
+        Applied if the task exits successfully, with the result
+        of the task as an argument.
+
+    - ``errbacks``
+
+        Applied if an error occurred while executing the task,
+        with the uuid of the task as an argument.  Since it may not be possible
+        to serialize the exception instance, it passes the uuid of the task
+        instead.  The uuid can then be used to retrieve the exception and
+        traceback of the task from the result backend.
+
+    - ``link`` and ``link_error`` keyword arguments has been added
+      to ``apply_async``.
+
+        The value passed can be either a subtask or a list of
+        subtasks:
+
+        .. code-block:: python
+
+            add.apply_async((2, 2), link=mul.subtask())
+            add.apply_async((2, 2), link=[mul.subtask(), echo.subtask()])
+
+        Example error callback:
+
+        .. code-block:: python
+
+            @task
+            def error_handler(uuid):
+                result = AsyncResult(uuid)
+                exc = result.get(propagate=False)
+                print("Task %r raised exception: %r\n%r" % (
+                    exc, result.traceback))
+
+            >>> add.apply_async((2, 2), link_error=error_handler)
+
+    - We now track what subtasks a task sends, and some result backends
+      supports retrieving this information.
+
+        - task.request.children
+
+            Contains the result instances of the subtasks
+            the currently executing task has applied.
+
+        - AsyncResult.children
+
+            Returns the tasks dependencies, as a list of
+            ``AsyncResult``/``ResultSet`` instances.
+
+        - AsyncResult.iterdeps
+
+            Recursively iterates over the tasks dependencies,
+            yielding `(parent, node)` tuples.
+
+            Raises IncompleteStream if any of the dependencies
+            has not returned yet.
+
+       - AsyncResult.graph
+
+            A ``DependencyGraph`` of the tasks dependencies.
+            This can also be used to convert to dot format:
+
+            .. code-block:: python
+
+                with open("graph.dot") as fh:
+                    result.graph.to_dot(fh)
+
+            which can than be used to produce an image::
+
+                $ dot -Tpng graph.dot -o graph.png
+
+- A new special subtask called ``chain`` is also included::
+
+    .. code-block:: python
+
+        >>> from celery import chain
+
+        # (2 + 2) * 8 / 2
+        >>> res = chain(add.subtask((4, 4)),
+                        mul.subtask((8, )),
+                        div.subtask((2,))).apply_async()
+        >>> res.get() == 16
+
+        >>> res.parent.get() == 32
+
+        >>> res.parent.parent.get() == 4
+
+- Adds :meth:`AsyncResult.get_leaf`
+
+    Waits and returns the result of the leaf subtask.
+    That is the last node found when traversing the graph,
+    but this means that the graph can be 1-dimensional only (in effect
+    a list).
+
+- Adds ``subtask.link(subtask)`` + ``subtask.link_error(subtask)``
+
+    Shortcut to ``s.options.setdefault("link", []).append(subtask)``
+
+- Adds ``subtask.flatten_links()``
+
+    Returns a flattened list of all dependencies (recursively)
 
 `group`/`chord`/`chain` are now subtasks
 ----------------------------------------
@@ -119,20 +266,24 @@ for the no-execv patch to work.
                     tasks.add(8, 8),
                     tasks.add(9, 9)]) | tasks.pow(2)
 
-* New :setting:`CELERYD_WORKER_LOST_WAIT` to control the timeout in
-  seconds before :exc:`billiard.WorkerLostError` is raised
-  when a worker can not be signalled (Issue #595).
 
-    Contributed by Brendon Crawford.
+Crontab now supports Day of Month, and Month of Year arguments
+--------------------------------------------------------------
 
-* App instance factory methods have been converted to be cached
-  descriptors that creates a new subclass on access.
+See the updated list of examples at :ref:`beat-crontab`.
 
-    This means that e.g. ``celery.Worker`` is an actual class
-    and will work as expected when::
+Immutable subtasks
+------------------
 
-        class Worker(celery.Worker):
-            ...
+``subtask``'s can now be immutable, which means that the arguments
+will not be modified when applying callbacks::
+
+    >>> chain(add.s(2, 2), clear_static_electricity.si())
+
+means it will not receive the argument of the parent task,
+and ``.si()`` is a shortcut to::
+
+    >>> clear_static_electricity.subtask(immutable=True)
 
 Logging Improvements
 --------------------
@@ -166,145 +317,160 @@ Logging support now conforms better with best practices.
 
 - Now avoids the 'no handlers for logger multiprocessing' warning
 
-Unorganized
------------
+Task registry no longer global
+------------------------------
 
-* Task registry is no longer a global.
+Every Celery instance now has its own task registry.
 
-* celery.task.Task is no longer bound to an app by default,
-  so configuration of the task is lazy.
+You can make apps share registries by specifying it::
 
-* The @task decorator is now lazy when used with custom apps
+    >>> app1 = Celery()
+    >>> app2 = Celery(tasks=app1.tasks)
 
-    If ``accept_magic_kwargs`` is enabled (herby called "compat mode"), the task
-    decorator executes inline like before, however for custom apps the @task
-    decorator now returns a special PromiseProxy object that is only evaluated
-    on access.
+Note that tasks are shared between registries by default, so that
+tasks will be added to every subsequently created task registry.
+As an alternative tasks can be private to specific task registries
+by setting the ``shared`` argument to the ``@task`` decorator::
 
-    All promises will be evaluated when `app.finalize` is called, or implicitly
-    when the task registry is first used.
-
-* chain: Chain tasks together using callbacks under the hood.
-
-    .. code-block:: python
-
-        from celery import chain
-
-        # (2 + 2) * 8 / 2
-        res = chain(add.subtask((4, 4)),
-                    mul.subtask((8, )),
-                    div.subtask((2,))).apply_async()
-        res.get() == 16
-
-        res.parent.get() == 32
-
-        res.parent.parent.get() == 4
+    @celery.task(shared=False)
+    def add(x, y):
+        return x + y
 
 
-* The Celery instance can now be created with a broker URL
+Abstract tasks are now lazily bound.
+------------------------------------
+
+The :class:`~celery.task.Task` class is no longer bound to an app
+by default, it will first be bound (and configured) when
+a concrete subclass is created.
+
+This means that you can safely import and make task base classes,
+without also initializing the default app environment::
+
+    from celery.task import Task
+
+    class DebugTask(Task):
+        abstract = True
+
+        def __call__(self, *args, **kwargs):
+            print("CALLING %r" % (self, ))
+            return self.run(*args, **kwargs)
+
+    >>> DebugTask
+    <unbound DebugTask>
+
+    >>> @celery1.task(base=DebugTask)
+    ... def add(x, y):
+    ...     return x + y
+    >>> add.__class__
+    <class add of <Celery default:0x101510d10>>
+
+
+Lazy task decorators
+--------------------
+
+The ``@task`` decorator is now lazy when used with custom apps.
+
+That is, if ``accept_magic_kwargs`` is enabled (herby called "compat mode"), the task
+decorator executes inline like before, however for custom apps the @task
+decorator now returns a special PromiseProxy object that is only evaluated
+on access.
+
+All promises will be evaluated when `app.finalize` is called, or implicitly
+when the task registry is first used.
+
+
+Smart `--app` option
+--------------------
+
+The :option:`--app` option now 'autodetects'
+
+    - If the provided path is a module it tries to get an
+    attribute named 'celery'.
+
+    - If the provided path is a package it tries
+      to import a submodule named 'celery',
+      and get the celery attribute from that module.
+
+E.g. if you have a project named 'proj' where the
+celery app is located in 'from proj.celery import celery',
+then the following will be equivalent::
+
+        $ celeryd --app=proj
+        $ celeryd --app=proj.celery:
+        $ celeryd --app=proj.celery:celery
+
+In Other News
+-------------
+
+- New :setting:`CELERYD_WORKER_LOST_WAIT` to control the timeout in
+  seconds before :exc:`billiard.WorkerLostError` is raised
+  when a worker can not be signalled (Issue #595).
+
+    Contributed by Brendon Crawford.
+
+- Redis event monitor queues are now automatically deleted (Issue #436).
+
+- App instance factory methods have been converted to be cached
+  descriptors that creates a new subclass on access.
+
+    This means that e.g. ``celery.Worker`` is an actual class
+    and will work as expected when::
+
+        class Worker(celery.Worker):
+            ...
+
+- New signal: :signal:`task-success`.
+
+- Multiprocessing logs are now only emitted if the :envvar:`MP_LOG`
+  environment variable is set.
+
+- The Celery instance can now be created with a broker URL
 
     .. code-block:: python
 
         celery = Celery(broker="redis://")
 
-* Result backends can now be set using an URL
+- Result backends can now be set using an URL
 
     Currently only supported by redis.  Example use::
 
         CELERY_RESULT_BACKEND = "redis://localhost/1"
 
-* Heartbeat frequency now every 5s, and frequency sent with event
+- Heartbeat frequency now every 5s, and frequency sent with event
 
     The heartbeat frequency is now available in the worker event messages,
     so that clients can decide when to consider workers offline based on
     this value.
 
-* Module celery.actors has been removed, and will be part of cl instead.
+- Module celery.actors has been removed, and will be part of cl instead.
 
-* Introduces new ``celery`` command, which is an entrypoint for all other
+- Introduces new ``celery`` command, which is an entrypoint for all other
   commands.
 
     The main for this command can be run by calling ``celery.start()``.
 
-* Tasks can now have callbacks and errbacks, and dependencies are recorded
+- Annotations now supports decorators if the key startswith '@'.
 
-    - The task message format have been updated with two new extension keys
+    E.g.:
 
-        Both keys can be empty/undefined or a list of subtasks.
+    .. code-block:: python
 
-        - ``callbacks``
+        def debug_args(fun):
 
-            Applied if the task exits successfully, with the result
-            of the task as an argument.
+            @wraps(fun)
+            def _inner(*args, **kwargs):
+                print("ARGS: %r" % (args, ))
+            return _inner
 
-        - ``errbacks``
+        CELERY_ANNOTATIONS = {
+            "tasks.add": {"@__call__": debug_args},
+        }
 
-            Applied if an error occurred while executing the task,
-            with the uuid of the task as an argument.  Since it may not be possible
-            to serialize the exception instance, it passes the uuid of the task
-            instead.  The uuid can then be used to retrieve the exception and
-            traceback of the task from the result backend.
+    Also tasks are now always bound by class so that
+    annotated methods end up being bound.
 
-   - ``link`` and ``link_error`` keyword arguments has been added
-      to ``apply_async``.
-
-        The value passed can be either a subtask or a list of
-        subtasks:
-
-        .. code-block:: python
-
-            add.apply_async((2, 2), link=mul.subtask())
-            add.apply_async((2, 2), link=[mul.subtask(), echo.subtask()])
-
-        Example error callback:
-
-        .. code-block:: python
-
-            @task
-            def error_handler(uuid):
-                result = AsyncResult(uuid)
-                exc = result.get(propagate=False)
-                print("Task %r raised exception: %r\n%r" % (
-                    exc, result.traceback))
-
-            >>> add.apply_async((2, 2), link_error=error_handler)
-
-    - We now track what subtasks a task sends, and some result backends
-      supports retrieving this information.
-
-        - task.request.children
-
-            Contains the result instances of the subtasks
-            the currently executing task has applied.
-
-        - AsyncResult.children
-
-            Returns the tasks dependencies, as a list of
-            ``AsyncResult``/``ResultSet`` instances.
-
-        - AsyncResult.iterdeps
-
-            Recursively iterates over the tasks dependencies,
-            yielding `(parent, node)` tuples.
-
-            Raises IncompleteStream if any of the dependencies
-            has not returned yet.
-
-       - AsyncResult.graph
-
-            A ``DependencyGraph`` of the tasks dependencies.
-            This can also be used to convert to dot format:
-
-            .. code-block:: python
-
-                with open("graph.dot") as fh:
-                    result.graph.to_dot(fh)
-
-            which can than be used to produce an image::
-
-                $ dot -Tpng graph.dot -o graph.png
-
-* Bugreport now available as a command and broadcast command
+- Bugreport now available as a command and broadcast command
 
     - Get it from a Python repl::
 
@@ -319,29 +485,14 @@ Unorganized
 
         $ celeryctl inspect report
 
-* Module ``celery.log`` moved to :mod:`celery.app.log`.
-* Module ``celery.task.control`` moved to :mod:`celery.app.control`.
+- Module ``celery.log`` moved to :mod:`celery.app.log`.
+- Module ``celery.task.control`` moved to :mod:`celery.app.control`.
 
-* Adds :meth:`AsyncResult.get_leaf`
+- ``AsyncResult.task_id`` renamed to ``AsyncResult.id``
 
-    Waits and returns the result of the leaf subtask.
-    That is the last node found when traversing the graph,
-    but this means that the graph can be 1-dimensional only (in effect
-    a list).
+- ``TasksetResult.taskset_id`` renamed to ``.id``
 
-* Adds ``subtask.link(subtask)`` + ``subtask.link_error(subtask)``
-
-    Shortcut to ``s.options.setdefault("link", []).append(subtask)``
-
-* Adds ``subtask.flatten_links()``
-
-    Returns a flattened list of all dependencies (recursively)
-
-* ``AsyncResult.task_id`` renamed to ``AsyncResult.id``
-
-* ``TasksetResult.taskset_id`` renamed to ``.id``
-
-* ``xmap(task, sequence)`` and ``xstarmap(task, sequence)``
+- ``xmap(task, sequence)`` and ``xstarmap(task, sequence)``
 
     Returns a list of the results applying the task to every item
     in the sequence.
@@ -353,13 +504,25 @@ Unorganized
         >>> xstarmap(add, zip(range(10), range(10)).apply_async()
         [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
 
-* ``chunks(task, sequence, chunksize)``
+- ``chunks(task, sequence, chunksize)``
 
-* ``group.skew()``
+- ``group.skew(start=, stop=, step=)``
 
-* 99% Coverage
+  Skew will skew the countdown for the individual tasks in a group,
+  e.g. with a group::
 
-* :setting:`CELERY_QUEUES` can now be a list/tuple of :class:`~kombu.Queue`
+        >>> g = group(add.s(i, i) for i in xrange(10))
+
+  Skewing the tasks from 0 seconds to 10 seconds::
+
+        >>> g.skew(stop=10)
+
+  Will have the first task execute in 0 seconds, the second in 1 second,
+  the third in 2 seconds and so on.
+
+- 99% test Coverage
+
+- :setting:`CELERY_QUEUES` can now be a list/tuple of :class:`~kombu.Queue`
   instances.
 
     Internally :attr:`@amqp.queues` is now a mapping of name/Queue instances,
@@ -399,6 +562,14 @@ Unorganized
   :setting:`CELERYBEAT_MAX_LOOP_INTERVAL` setting, it is instead
   set by individual schedulers.
 
+* celeryd now truncates very long message bodies in error reports.
+
+* :envvar:`CELERY_BENCH` environment variable, will now also list
+  memory usage statistics at celeryd shutdown.
+
+* celeryd now only ever use a single timer for all timing needs,
+  and instead set different priorities.
+
 Internals
 ---------
 
@@ -428,21 +599,81 @@ Internals
 
 * :program:`setup.py` now reads docs from the :file:`requirements/` directory.
 
+.. _v260-experimental:
+
+Experimental
+============
+
+:mod:`celery.contrib.methods`:  Task decorator for methods
+----------------------------------------------------------
+
+To use:
+
+.. code-block:: python
+
+    from celery.contrib.methods import task
+
+    class X(object):
+
+    @task
+    def add(self, x, y):
+            return x + y
+
+or with any task decorator:
+
+.. code-block:: python
+
+    from celery.contrib.methods import task_method
+
+    class X(object):
+        @celery.task(filter=task_method)
+        def add(self, x, y):
+            return x + y
+
+Caveats:
+
+- Automatic naming won't be able to know what the class name is.
+
+    The name will still be module_name + task_name,
+    so two methods with the same name in the same module will collide
+    so that only one task can run::
+
+        class A(object):
+            @task
+            def add(self, x, y):
+                return x + y
+
+        class B(object):
+            @task
+            def add(self, x, y):
+                return x + y
+
+    would have to be written as::
+
+        class A(object):
+            @task(name="A.add")
+            def add(self, x, y):
+                return x + y
+
+        class B(object):
+            @task(name="B.add")
+            def add(self, x, y):
+                return x + y
+
+
 .. _v260-deprecations:
 
 Deprecations
 ============
 
-.. _v260-news:
 
-News
-====
+- The following settings have been renamed:
 
-In Other News
--------------
-
-- Now depends on Kombu 2.1.4
+    - ``CELERYD_ETA_SCHEDULER`` -> ``CELERYD_TIMER``
+    - ``CELERYD_ETA_SCHEDULER_PRECISION`` -> ``CELERYD_TIMER_PRECISION``
 
 Fixes
 =====
 
+- Retry sqlalchemy backend operations on DatabaseError/OperationalError
+  (Issue #634)
