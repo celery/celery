@@ -4,7 +4,7 @@ from __future__ import with_statement
 
 from itertools import starmap
 
-from celery.state import get_current_task
+from celery.state import get_current_worker_task
 from celery.utils import uuid
 
 #: global list of functions defining tasks that should be
@@ -123,7 +123,7 @@ def add_group_task(app):
             with app.default_producer() as pub:
                 [subtask(task).apply_async(taskset_id=setid, publisher=pub)
                         for task in tasks]
-            parent = get_current_task()
+            parent = get_current_worker_task()
             if parent:
                 parent.request.children.append(result)
             return result
