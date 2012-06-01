@@ -1,3 +1,4 @@
+billiard>=2.7.3.7
 python-dateutil>=2.0
 pytz
 kombu>=2.1.8

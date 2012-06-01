@@ -93,7 +93,7 @@ class LRUCache(UserDict):
 
 
 def is_list(l):
-    return hasattr(l, "__iter__") and not isinstance(l, dict)
+    return hasattr(l, "__iter__") and not isinstance(l, (dict, basestring))
 
 
 def maybe_list(l):

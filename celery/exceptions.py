@@ -36,7 +36,7 @@ class QueueNotFound(KeyError):
     """Task routed to a queue not in CELERY_QUEUES."""
 
 
-class ImproperlyConfigured(Exception):
+class ImproperlyConfigured(ImportError):
     """Celery is somehow improperly configured."""
 
 

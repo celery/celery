@@ -356,6 +356,7 @@ class KeyValueStoreBackend(BaseDictBackend):
 
     def _strip_prefix(self, key):
         """Takes bytes, emits string."""
+        key = ensure_bytes(key)
         for prefix in self.task_keyprefix, self.taskset_keyprefix:
             if key.startswith(prefix):
                 return bytes_to_str(key[len(prefix):])

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-from UserDict import UserDict
+from celery.utils.compat import UserDict
 
 from .base import apply_target, BasePool
 

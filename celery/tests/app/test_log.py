@@ -6,6 +6,7 @@ import logging
 from tempfile import mktemp
 
 from mock import patch, Mock
+from nose import SkipTest
 
 from celery import current_app
 from celery import signals
@@ -31,6 +32,7 @@ class test_TaskFormatter(Case):
             msg = "hello world"
             levelname = "info"
             exc_text = exc_info = None
+            stack_info = None
 
             def getMessage(self):
                 return self.msg
@@ -59,7 +61,8 @@ class test_ColorFormatter(Case):
         x = ColorFormatter(value)
         fe.return_value = value
         self.assertTrue(x.formatException(value))
-        self.assertTrue(safe_str.called)
+        if sys.version_info[0] == 2:
+            self.assertTrue(safe_str.called)
 
     @patch("celery.utils.log.safe_str")
     def test_format_raises(self, safe_str):
@@ -72,10 +75,19 @@ class test_ColorFormatter(Case):
                 safe_str.side_effect = None
         safe_str.side_effect = on_safe_str
 
-        record = Mock()
-        record.levelname = "ERROR"
-        record.msg = "HELLO"
-        record.exc_text = "error text"
+        class Record(object):
+            levelname = "ERROR"
+            msg = "HELLO"
+            exc_text = "error text"
+            stack_info = None
+
+            def __str__(self):
+                return on_safe_str("")
+
+            def getMessage(self):
+                return self.msg
+
+        record = Record()
         safe_str.return_value = record
 
         x.format(record)
@@ -84,6 +96,8 @@ class test_ColorFormatter(Case):
 
     @patch("celery.utils.log.safe_str")
     def test_format_raises_no_color(self, safe_str):
+        if sys.version_info[0] == 3:
+            raise SkipTest("py3k")
         x = ColorFormatter("HELLO", False)
         record = Mock()
         record.levelname = "ERROR"
