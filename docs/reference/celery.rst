@@ -198,14 +198,15 @@ Application
 
         :param url: Either the URL or the hostname of the broker to use.
 
-        :keyword hostname: defaults to the :setting:`BROKER_HOST` setting.
-        :keyword userid: defaults to the :setting:`BROKER_USER` setting.
-        :keyword password: defaults to the :setting:`BROKER_PASSWORD` setting.
-        :keyword virtual_host: defaults to the :setting:`BROKER_VHOST` setting.
-        :keyword port: defaults to the :setting:`BROKER_PORT` setting.
-        :keyword ssl: defaults to the :setting:`BROKER_USE_SSL` setting.
-        :keyword insist: defaults to the :setting:`BROKER_INSIST` setting.
-        :keyword backend_cls: defaults to the :setting:`BROKER_TRANSPORT`
+        :keyword hostname: URL, Hostname/IP-address of the broker.
+            If an URL is used, then the other argument below will
+            be taken from the URL instead.
+        :keyword userid: Username to authenticate as.
+        :keyword password: Password to authenticate with
+        :keyword virtual_host: Virtual host to use (domain).
+        :keyword port: Port to connect to.
+        :keyword ssl: Defaults to the :setting:`BROKER_USE_SSL` setting.
+        :keyword transport: defaults to the :setting:`BROKER_TRANSPORT`
                  setting.
 
         :returns :class:`kombu.connection.BrokerConnection`:

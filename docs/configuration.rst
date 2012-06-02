@@ -23,22 +23,15 @@ It should contain all you need to run a basic Celery set-up.
 
 .. code-block:: python
 
-    # List of modules to import when celery starts.
-    CELERY_IMPORTS = ("myapp.tasks", )
-
-    ## Result store settings.
-    CELERY_RESULT_BACKEND = "database"
-    CELERY_RESULT_DBURI = "sqlite:///mydatabase.db"
-
     ## Broker settings.
     BROKER_URL = "amqp://guest:guest@localhost:5672//"
 
-    ## Worker settings
-    ## If you're doing mostly I/O you can have more processes,
-    ## but if mostly spending CPU, try to keep it close to the
-    ## number of CPUs on your machine. If not set, the number of CPUs/cores
-    ## available will be used.
-    CELERYD_CONCURRENCY = 10
+    # List of modules to import when celery starts.
+    CELERY_IMPORTS = ("myapp.tasks", )
+
+    ## Using the database to store task state and results.
+    CELERY_RESULT_BACKEND = "database"
+    CELERY_RESULT_DBURI = "sqlite:///mydatabase.db"
 
     CELERY_ANNOTATIONS = {"tasks.add": {"rate_limit": "10/s"}}
 
@@ -144,6 +137,11 @@ CELERYD_CONCURRENCY
 
 The number of concurrent worker processes/threads/green threads, executing
 tasks.
+
+If you're doing mostly I/O you can have more processes,
+but if mostly CPU-bound, try to keep it close to the
+number of CPUs on your machine. If not set, the number of CPUs/cores
+on the host will be used.
 
 Defaults to the number of available CPUs.
 
@@ -676,12 +674,6 @@ BROKER_TRANSPORT
 :Aliases: ``BROKER_BACKEND``
 :Deprecated aliases: ``CARROT_BACKEND``
 
-The Kombu transport to use.  Default is ``amqplib``.
-
-You can use a custom transport class name, or select one of the
-built-in transports: ``amqplib``, ``pika``, ``redis``, ``beanstalk``,
-``sqlalchemy``, ``django``, ``mongodb``, ``couchdb``.
-
 .. setting:: BROKER_URL
 
 BROKER_URL
@@ -694,48 +686,13 @@ Default broker URL.  This must be an URL in the form of::
 Only the scheme part (``transport://``) is required, the rest
 is optional, and defaults to the specific transports default values.
 
-If this setting is defined it will override a subset of the
-other ``BROKER`` options. These options are :setting:`BROKER_HOST`,
-:setting:`BROKER_USER`, :setting:`BROKER_PASSWORD`, :setting:`BROKER_PORT`,
-and :setting:`BROKER_VHOST`.
+The transport part is the broker implementation to use, and the
+default is ``amqp``, but there are many other choices including
+``librabbitmq``, ``amqplib``, ``redis``, ``beanstalk``,
+``sqlalchemy``, ``django``, ``mongodb``, ``couchdb`` and ``pika``.
+It can also be a fully qualified path to your own transport implementation.
 
 See the Kombu documentation for more information about broker URLs.
-
-.. setting:: BROKER_HOST
-
-BROKER_HOST
-~~~~~~~~~~~
-
-Hostname of the broker.
-
-.. setting:: BROKER_PORT
-
-BROKER_PORT
-~~~~~~~~~~~
-
-Custom port of the broker.  Default is to use the default port for the
-selected backend.
-
-.. setting:: BROKER_USER
-
-BROKER_USER
-~~~~~~~~~~~
-
-Username to connect as.
-
-.. setting:: BROKER_PASSWORD
-
-BROKER_PASSWORD
-~~~~~~~~~~~~~~~
-
-Password to connect with.
-
-.. setting:: BROKER_VHOST
-
-BROKER_VHOST
-~~~~~~~~~~~~
-
-Virtual host.  Default is `"/"`.
 
 .. setting:: BROKER_USE_SSL
 

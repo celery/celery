@@ -3,8 +3,16 @@ from sys import exit, stderr
 
 from celery.app.defaults import DEFAULTS
 
-ignore = frozenset(["BROKER_INSIST", "CELERYD_POOL_PUTLOCKS",
-                    "CELERY_AMQP_TASK_RESULT_CONNECTION_MAX"])
+ignore = frozenset([
+    "BROKER_INSIST",
+    "CELERYD_POOL_PUTLOCKS",
+    "CELERY_AMQP_TASK_RESULT_CONNECTION_MAX",
+    "BROKER_HOST",
+    "BROKER_USER",
+    "BROKER_PASSWORD",
+    "BROKER_VHOST",
+    "BROKER_PORT",
+])
 
 
 def find_undocumented_settings(directive=".. setting:: "):

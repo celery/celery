@@ -21,7 +21,7 @@ import celery
 # use app loader
 from celery import Celery
 app = Celery(set_as_current=True)
-app.conf.update(BROKER_TRANSPORT="memory",
+app.conf.update(BROKER_URL="memory://",
                 CELERY_RESULT_BACKEND="cache",
                 CELERY_CACHE_BACKEND="memory",
                 CELERYD_HIJACK_ROOT_LOGGER=False,
