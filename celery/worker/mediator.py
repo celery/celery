@@ -85,4 +85,3 @@ class Mediator(bgThread):
                          extra={"data": {"id": task.id,
                                          "name": task.name,
                                          "hostname": task.hostname}})
-    move = body   # XXX compat

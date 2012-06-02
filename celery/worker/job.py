@@ -222,7 +222,7 @@ class Request(object):
         request.update({"hostname": hostname, "is_eager": False,
                         "delivery_info": self.delivery_info})
         result = pool.apply_async(trace_task_ret,
-                                  args=(task, self.id,
+                                  args=(self.name, self.id,
                                         self.args, kwargs, request),
                                   accept_callback=self.on_accepted,
                                   timeout_callback=self.on_timeout,

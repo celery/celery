@@ -28,7 +28,7 @@ from kombu.utils import kwdict
 
 from celery import current_app
 from celery import states, signals
-from celery.state import _task_stack
+from celery.state import _task_stack, default_app
 from celery.app.task import BaseTask, Context
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import RetryTaskError
@@ -48,6 +48,8 @@ SUCCESS = states.SUCCESS
 RETRY = states.RETRY
 FAILURE = states.FAILURE
 EXCEPTION_STATES = states.EXCEPTION_STATES
+
+_tasks = default_app._tasks
 
 
 def mro_lookup(cls, attr, stop=()):
@@ -290,7 +292,7 @@ def trace_task(task, uuid, args, kwargs, request=None, **opts):
 
 
 def trace_task_ret(task, uuid, args, kwargs, request):
-    return task.__tracer__(uuid, args, kwargs, request)[0]
+    return _tasks[task].__tracer__(uuid, args, kwargs, request)[0]
 
 
 def eager_trace_task(task, uuid, args, kwargs, request=None, **opts):

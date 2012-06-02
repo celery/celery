@@ -33,6 +33,7 @@ from celery import platforms
 from celery.app import app_or_default, set_default_app
 from celery.app.abstract import configurated, from_config
 from celery.exceptions import SystemTerminate
+from celery.task import trace
 from celery.utils.functional import noop
 from celery.utils.imports import qualname, reload_from_cwd
 from celery.utils.log import get_logger
@@ -302,6 +303,7 @@ class WorkController(configurated):
         # and means that only a single app can be used for workers
         # running in the same process.
         set_default_app(self.app)
+        trace._tasks = self.app.tasks
 
         self._shutdown_complete = Event()
         self.setup_defaults(kwargs, namespace="celeryd")
