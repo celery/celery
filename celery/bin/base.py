@@ -70,7 +70,7 @@ from collections import defaultdict
 from optparse import OptionParser, make_option as Option
 from types import ModuleType
 
-from celery import Celery, __version__
+import celery
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
 from celery.platforms import EX_FAILURE, EX_USAGE
 from celery.utils.imports import symbol_by_name, import_from_cwd
@@ -100,7 +100,7 @@ class Command(object):
     args = ''
 
     #: Application version.
-    version = __version__
+    version = celery.__version__
 
     #: If false the parser will raise an exception if positional
     #: args are provided.
@@ -309,7 +309,7 @@ class Command(object):
         return options
 
     def _get_default_app(self, *args, **kwargs):
-        return Celery(*args, **kwargs)
+        return celery.Celery(*args, **kwargs)
 
 
 def daemon_options(default_pidfile=None, default_logfile=None):

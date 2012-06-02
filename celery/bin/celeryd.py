@@ -117,6 +117,7 @@ import sys
 
 from billiard import freeze_support
 
+from celery import concurrency
 from celery.bin.base import Command, Option
 from celery.utils.log import LOG_LEVELS, mlevel
 
@@ -127,11 +128,22 @@ class WorkerCommand(Command):
     enable_config_from_cmdline = True
     supports_args = False
 
+    def execute_from_commandline(self, argv=None):
+        if argv is None:
+            argv = list(sys.argv)
+        try:
+            pool = argv[argv.index('-P') + 1]
+        except ValueError:
+            pass
+        else:
+            # set up eventlet/gevent environments ASAP.
+            concurrency.get_implementation(pool)
+        return super(WorkerCommand, self).execute_from_commandline(argv)
+
     def run(self, *args, **kwargs):
         kwargs.pop("app", None)
         # Pools like eventlet/gevent needs to patch libs as early
         # as possible.
-        from celery import concurrency
         kwargs["pool_cls"] = concurrency.get_implementation(
                     kwargs.get("pool_cls") or self.app.conf.CELERYD_POOL)
         if self.app.IS_WINDOWS and kwargs.get("beat"):
