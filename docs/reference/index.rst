@@ -26,6 +26,7 @@
     celery.schedules
     celery.signals
     celery.security
+    celery.utils.debug
     celery.utils.mail
     celery.exceptions
     celery.loaders
