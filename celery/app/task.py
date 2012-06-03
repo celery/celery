@@ -13,6 +13,7 @@ from __future__ import absolute_import
 from __future__ import with_statement
 
 import logging
+import os
 import sys
 
 from kombu import Exchange
@@ -40,6 +41,13 @@ extract_exec_options = mattrgetter("queue", "routing_key",
                                    "mandatory", "priority",
                                    "serializer", "delivery_mode",
                                    "compression", "expires", "bare")
+
+
+#: Billiard sets this when execv is enabled.
+#: We use it to find out the name of the original ``__main__``
+#: module, so that we can properly rewrite the name of the
+#: task to be that of ``App.main``.
+MP_MAIN_FILE = os.environ.get("MP_MAIN_FILE") or None
 
 
 class Context(object):
@@ -128,6 +136,13 @@ class TaskType(type):
         # with the framework.  There should only be one class for each task
         # name, so we always return the registered version.
         tasks = app._tasks
+
+        # - If the task module is used as the __main__ script
+        # - we need to rewrite the module part of the task name
+        # - to match App.main.
+        if MP_MAIN_FILE and sys.modules[task_module].__file__ == MP_MAIN_FILE:
+            # - see comment about :envvar:`MP_MAIN_FILE` above.
+            task_module = "__main__"
         if autoname and task_module == "__main__" and app.main:
             attrs["name"] = '.'.join([app.main, name])
 
