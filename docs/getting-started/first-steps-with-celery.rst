@@ -5,6 +5,29 @@
  First steps with Celery
 ========================
 
+Celery is a task queue with batteries included.
+It is easy to use, so that you can get started without learning
+the full complexities of the problem it solves. It is designed
+around best practices so that your product can scale
+and integrate with other languages, and it comes with the
+tools and support you need to run such a system in production.
+
+In this tutorial you will learn the absolute basics of using Celery.
+You will learn about;
+
+- Choosing and installing a message broker.
+- Installing Celery and creating your first task
+- Starting the worker and executing tasks.
+- Keeping track of tasks as they execute, and inspecting return values.
+
+Celery may seem daunting at first - but don't worry - this tutorial
+will get you started in no time. It is deliberately kept simple, so
+to not confuse you with advances features.
+After you have finished this tutorial
+it's a good idea to browse the rest of the documentation,
+for example the :ref:`next-steps` tutorial, which will
+showcase Celery's capabilities.
+
 .. contents::
     :local:
 
@@ -22,6 +45,20 @@ There are several choices available, including:
 
 `RabbitMQ`_ is feature-complete, stable, durable and easy to install.
 
+If you are using Ubuntu or Debian you can install RabbitMQ by executing this
+command::
+
+    $ sudo apt-get install rabbitmq-server
+
+When the command completes the broker is already running in the background,
+ready to move messages for you.
+
+And don't worry if you're not running Ubuntu or Debian,
+you can go to this website to find similarly simple installation instructions
+for other platforms, including Microsoft Windows:
+
+    http://www.rabbitmq.com/download.html
+
 * :ref:`broker-redis`
 
 `Redis`_ is also feature-complete, but is more susceptible to data loss in
@@ -36,26 +73,34 @@ for very small installations.  Celery can use the SQLAlchemy and Django ORM.
 * and more.
 
 In addition to the above, there are several other transport implementations
-to choose from, including :ref:`broker-couchdb`, :ref:`broker-beanstalk`,
-:ref:`broker-mongodb`, and SQS.  There is a `Transport Comparison`_
-in the Kombu documentation.
+to choose from, including :ref:`broker-mongodb`, :ref:`broker-django`,
+:ref:`broker-sqlalchemy`, and SQS.
 
 .. _`RabbitMQ`: http://www.rabbitmq.com/
 .. _`Redis`: http://redis.io/
 .. _`Transport Comparison`: http://kombu.rtfd.org/transport-comparison
 
-.. _celerytut-conf:
+.. _celerytut-installation
+
+Installing Celery
+=================
+
+Celery is on the Python Package Index (PyPI), so it can be installed
+with standard Python tools like ``pip`` or ``easy_install``::
+
+    $ pip install celery
 
 Application
 ===========
 
 The first thing you need is a Celery instance, this is called the celery
-application or just app.  Since this instance is used as
+application or just app in short.  Since this instance is used as
 the entry-point for everything you want to do in Celery, like creating tasks and
 managing workers, it must be possible for other modules to import it.
 
-Some people create a dedicated module for it, but in this tutorial we will
-keep everything in the same module.
+In this tutorial we will keep everything contained in a single module,
+but for larger projects you probably want to create
+a :ref:`dedicated module <project-layout>`.
 
 Let's create the file :file:`tasks.py`:
 
@@ -104,8 +149,7 @@ For a complete listing of the command line options available, do::
 
     $  python tasks.py worker --help
 
-There also several other commands available, and similarly you can get a list
-of these::
+There also several other commands available, and help is also available::
 
     $ python tasks.py --help
 

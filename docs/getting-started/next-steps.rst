@@ -1,3 +1,5 @@
+.. _next-steps:
+
 ============
  Next Steps
 ============
@@ -9,6 +11,7 @@ how to add Celery support for your application and library.
 .. contents::
     :local:
 
+.. _project-layout:
 
 Our Project
 ===========
