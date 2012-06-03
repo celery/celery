@@ -80,7 +80,7 @@ to choose from, including :ref:`broker-mongodb`, :ref:`broker-django`,
 .. _`Redis`: http://redis.io/
 .. _`Transport Comparison`: http://kombu.rtfd.org/transport-comparison
 
-.. _celerytut-installation
+.. _celerytut-installation:
 
 Installing Celery
 =================
