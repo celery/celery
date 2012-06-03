@@ -196,11 +196,11 @@ class Queues(abstract.Component):
         if w.disable_rate_limits:
             w.ready_queue = FastQueue()
             if w.use_eventloop:
+                w.start_mediator = False
                 if w.pool_putlocks and w.pool_cls.uses_semaphore:
                     w.ready_queue.put = w.process_task_sem
                 else:
                     w.ready_queue.put = w.process_task
-                    w.start_mediator = False
             elif not w.pool_cls.requires_mediator:
                 # just send task directly to pool, skip the mediator.
                 w.ready_queue.put = w.process_task
