@@ -169,10 +169,12 @@ def maybe_reraise():
 def strtobool(term, table={"false": False, "no": False, "0": False,
                              "true":  True, "yes": True,  "1": True,
                              "on":    True, "off": False}):
-    try:
-        return table[term.lower()]
-    except KeyError:
-        raise TypeError("Can't coerce %r to type bool" % (term, ))
+    if isinstance(term, basestring):
+        try:
+            return table[term.lower()]
+        except KeyError:
+            raise TypeError("Can't coerce %r to type bool" % (term, ))
+    return term
 
 # ------------------------------------------------------------------------ #
 # > XXX Compat
