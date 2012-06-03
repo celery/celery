@@ -105,14 +105,19 @@ class test_Command(AppCase):
 
     def test_with_cmdline_config(self):
         cmd = MockCommand()
-        cmd.enable_config_from_cmdline = True
-        cmd.namespace = "celeryd"
-        rest = cmd.setup_app_from_commandline(argv=[
-            "--loglevel=INFO", "--", "broker.host=broker.example.com",
-            ".prefetch_multiplier=100"])
-        self.assertEqual(cmd.app.conf.BROKER_HOST, "broker.example.com")
-        self.assertEqual(cmd.app.conf.CELERYD_PREFETCH_MULTIPLIER, 100)
-        self.assertListEqual(rest, ["--loglevel=INFO"])
+        try:
+            cmd.enable_config_from_cmdline = True
+            cmd.namespace = "celeryd"
+            rest = cmd.setup_app_from_commandline(argv=[
+                "--loglevel=INFO", "--",
+                "broker.url=amqp://broker.example.com",
+                ".prefetch_multiplier=100"])
+            self.assertEqual(cmd.app.conf.BROKER_URL,
+                             "amqp://broker.example.com")
+            self.assertEqual(cmd.app.conf.CELERYD_PREFETCH_MULTIPLIER, 100)
+            self.assertListEqual(rest, ["--loglevel=INFO"])
+        finally:
+            cmd.app.conf.BROKER_URL = "memory://"
 
     def test_parse_preload_options_shortopt(self):
         cmd = Command()

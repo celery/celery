@@ -33,6 +33,7 @@ WORKER_SIGIGNORE = frozenset(["SIGINT"])
 
 def process_initializer(app, hostname):
     """Initializes the process so it can be used to process tasks."""
+    app.set_current()
     set_default_app(app)
     trace._tasks = app._tasks  # make sure this optimization is set.
     platforms.signals.reset(*WORKER_SIGRESET)

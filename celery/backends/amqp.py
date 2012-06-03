@@ -94,9 +94,7 @@ class AMQPBackend(BaseDictBackend):
     def revive(self, channel):
         pass
 
-    def _store_result(self, task_id, result, status, traceback=None,
-            max_retries=20, interval_start=0, interval_step=1,
-            interval_max=1):
+    def _store_result(self, task_id, result, status, traceback=None):
         """Send task return value and status."""
         with self.mutex:
             with self.app.amqp.producer_pool.acquire(block=True) as pub:
@@ -157,6 +155,7 @@ class AMQPBackend(BaseDictBackend):
                 except KeyError:
                     # result probably pending.
                     return {"status": states.PENDING, "result": None}
+    poll = get_task_meta  # XXX compat
 
     def drain_events(self, connection, consumer, timeout=None, now=time.time):
         wait = connection.drain_events
@@ -189,6 +188,7 @@ class AMQPBackend(BaseDictBackend):
     def get_many(self, task_ids, timeout=None, **kwargs):
         with self.app.pool.acquire_channel(block=True) as (conn, channel):
             ids = set(task_ids)
+            cached_ids = set()
             for task_id in ids:
                 try:
                     cached = self._cache[task_id]
@@ -197,7 +197,8 @@ class AMQPBackend(BaseDictBackend):
                 else:
                     if cached["status"] in states.READY_STATES:
                         yield task_id, cached
-                        ids.discard(task_id)
+                        cached_ids.add(task_id)
+            ids ^= cached_ids
 
             bindings = [self._create_binding(task_id) for task_id in task_ids]
             with self.Consumer(channel, bindings, no_ack=True) as consumer:

@@ -298,7 +298,6 @@ class WorkController(configurated):
     def __init__(self, loglevel=None, hostname=None, ready_callback=noop,
             queues=None, app=None, pidfile=None, **kwargs):
         self.app = app_or_default(app or self.app)
-
         # all new threads start without a current app, so if an app is not
         # passed on to the thread it will fall back to the "default app",
         # which then could be the wrong app.  So for the worker
@@ -306,7 +305,7 @@ class WorkController(configurated):
         # and means that only a single app can be used for workers
         # running in the same process.
         set_default_app(self.app)
-        app.finalize()
+        self.app.finalize()
         trace._tasks = self.app._tasks
 
         self._shutdown_complete = Event()

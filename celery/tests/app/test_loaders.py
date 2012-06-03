@@ -183,6 +183,7 @@ class test_DefaultLoader(Case):
 
     @patch("celery.loaders.default.find_module")
     def test_read_configuration_importerror(self, find_module):
+        default.C_WNOCONF = True
         find_module.side_effect = ImportError()
         l = default.Loader()
         with self.assertWarnsRegex(NotConfigured, r'make sure it exists'):

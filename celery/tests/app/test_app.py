@@ -203,15 +203,13 @@ class test_App(Case):
                                        "userid": "guest",
                                        "password": "guest",
                                        "virtual_host": "/"},
-                                      self.app.broker_connection(
-                                          transport="amqplib").info())
+                            self.app.broker_connection("amqplib://").info())
         self.app.conf.BROKER_PORT = 1978
         self.app.conf.BROKER_VHOST = "foo"
         self.assertDictContainsSubset({"port": 1978,
                                        "virtual_host": "foo"},
-                                      self.app.broker_connection(
-                                          transport="amqplib").info())
-        conn = self.app.broker_connection(virtual_host="/value")
+                    self.app.broker_connection("amqplib://:1978/foo").info())
+        conn = self.app.broker_connection("amqplib:////value")
         self.assertDictContainsSubset({"virtual_host": "/value"},
                                       conn.info())
 

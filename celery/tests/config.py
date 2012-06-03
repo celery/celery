@@ -6,6 +6,9 @@ from kombu import Queue
 
 BROKER_URL = "memory://"
 
+#: warn if config module not found
+os.environ["C_WNOCONF"] = "yes"
+
 #: Don't want log output when running suite.
 CELERYD_HIJACK_ROOT_LOGGER = False
 

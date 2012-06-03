@@ -198,7 +198,10 @@ class Worker(configurated):
             appr += " (%s)" % loader
         if self.autoscale:
             concurrency = "{min=%s, max=%s}" % tuple(self.autoscale)
-        concurrency += " (%s)" % self.pool_cls.__module__.split('.')[-1]
+        pool = self.pool_cls
+        if not isinstance(pool, basestring):
+            pool = pool.__module__
+        concurrency += " (%s)" % pool.split('.')[-1]
         events = "ON"
         if not self.send_events:
             events = "OFF (enable -E to monitor this worker)"

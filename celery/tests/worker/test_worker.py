@@ -755,7 +755,7 @@ class test_WorkController(AppCase):
         worker.logger = self._logger
 
     def create_worker(self, **kw):
-        worker = WorkController(concurrency=1, loglevel=0, **kw)
+        worker = self.app.WorkController(concurrency=1, loglevel=0, **kw)
         worker._shutdown_complete.set()
         return worker
 

@@ -64,6 +64,7 @@ class Command(BaseCommand):
         self.colored = term.colored(enabled=not no_color)
         self.stdout = stdout
         self.stderr = stderr
+        self.quiet = False
 
     def __call__(self, *args, **kwargs):
         try:
@@ -297,6 +298,7 @@ class rate_limit(Command):
         for reply in replies:
             self.say_remote_command_reply(reply)
 rate_limit = command(rate_limit)
+
 
 class inspect(Command):
     choices = {"active": 1.0,

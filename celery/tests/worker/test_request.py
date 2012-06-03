@@ -716,7 +716,7 @@ class test_TaskRequest(Case):
         p = MockPool()
         tw.execute_using_pool(p)
         self.assertTrue(p.target)
-        self.assertEqual(p.args[0], mytask)
+        self.assertEqual(p.args[0], mytask.name)
         self.assertEqual(p.args[1], tid)
         self.assertEqual(p.args[2], [4])
         self.assertIn("f", p.args[3])

@@ -63,9 +63,13 @@ class test_group(Case):
     def test_apply_async_with_parent(self):
         _task_stack.push(add)
         try:
-            x = group([add.s(4, 4), add.s(8, 8)])
-            x.apply_async()
-            self.assertTrue(add.request.children)
+            add.push_request(called_directly=False)
+            try:
+                x = group([add.s(4, 4), add.s(8, 8)])
+                x.apply_async()
+                self.assertTrue(add.request.children)
+            finally:
+                add.pop_request()
         finally:
             _task_stack.pop()
 

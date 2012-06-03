@@ -409,7 +409,7 @@ class test_ControlPanel(Case):
 
     def test_pool_restart(self):
         consumer = Consumer()
-        consumer.controller = _WC()
+        consumer.controller = _WC(app=current_app)
         consumer.controller.pool.restart = Mock()
         panel = self.create_panel(consumer=consumer)
         panel.app = self.app
@@ -423,7 +423,7 @@ class test_ControlPanel(Case):
 
     def test_pool_restart_import_modules(self):
         consumer = Consumer()
-        consumer.controller = _WC()
+        consumer.controller = _WC(app=current_app)
         consumer.controller.pool.restart = Mock()
         panel = self.create_panel(consumer=consumer)
         panel.app = self.app
@@ -440,7 +440,7 @@ class test_ControlPanel(Case):
 
     def test_pool_restart_relaod_modules(self):
         consumer = Consumer()
-        consumer.controller = _WC()
+        consumer.controller = _WC(app=current_app)
         consumer.controller.pool.restart = Mock()
         panel = self.create_panel(consumer=consumer)
         panel.app = self.app
