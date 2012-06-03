@@ -607,59 +607,24 @@ Experimental
 :mod:`celery.contrib.methods`:  Task decorator for methods
 ----------------------------------------------------------
 
-To use:
-
-.. code-block:: python
-
-    from celery.contrib.methods import task
-
-    class X(object):
-
-    @task
-    def add(self, x, y):
-            return x + y
-
-or with any task decorator:
-
-.. code-block:: python
+This is an experimental module containing a task
+decorator, and a task decorator filter, that can be used
+to create tasks out of methods::
 
     from celery.contrib.methods import task_method
 
-    class X(object):
-        @celery.task(filter=task_method)
-        def add(self, x, y):
-            return x + y
+    class Counter(object):
 
-Caveats:
+        def __init__(self):
+            self.value = 1
 
-- Automatic naming won't be able to know what the class name is.
+        @celery.task(name="Counter.increment", filter=task_method)
+        def increment(self, n=1):
+            self.value += 1
+            return self.value
 
-    The name will still be module_name + task_name,
-    so two methods with the same name in the same module will collide
-    so that only one task can run::
 
-        class A(object):
-            @task
-            def add(self, x, y):
-                return x + y
-
-        class B(object):
-            @task
-            def add(self, x, y):
-                return x + y
-
-    would have to be written as::
-
-        class A(object):
-            @task(name="A.add")
-            def add(self, x, y):
-                return x + y
-
-        class B(object):
-            @task(name="B.add")
-            def add(self, x, y):
-                return x + y
-
+See :mod:`celery.contrib.methods` for more information.
 
 .. _v260-deprecations:
 
