@@ -15,9 +15,10 @@ from celery import __version__, platforms, signals
 from celery.app import app_or_default
 from celery.app.abstract import configurated, from_config
 from celery.exceptions import ImproperlyConfigured, SystemTerminate
+from celery.loaders.app import AppLoader
 from celery.utils import cry, isatty
 from celery.utils.imports import qualname
-from celery.utils.log import LOG_LEVELS, get_logger, mlevel, set_in_sighandler
+from celery.utils.log import get_logger, mlevel, set_in_sighandler
 from celery.utils.text import pluralize
 from celery.worker import WorkController
 
@@ -39,20 +40,32 @@ def active_thread_count():
 def safe_say(msg):
     sys.__stderr__.write("\n%s\n" % msg)
 
+ARTLINES = [
+    " --------------",
+    "---- **** -----",
+    "--- * ***  * --",
+    "-- * - **** ---",
+    "- ** ----------",
+    "- ** ----------",
+    "- ** ----------",
+    "- ** ----------",
+    "- *** --- * ---",
+    "-- ******* ----",
+    "--- ***** -----",
+    " --------------",
+]
 
-BANNER = """
- -------------- celery@%(hostname)s v%(version)s
----- **** -----
---- * ***  * -- [Configuration]
--- * - **** ---   . broker:      %(conninfo)s
-- ** ----------   . loader:      %(loader)s
-- ** ----------   . logfile:     %(logfile)s@%(loglevel)s
-- ** ----------   . concurrency: %(concurrency)s
-- ** ----------   . events:      %(events)s
-- *** --- * ---   . beat:        %(celerybeat)s
--- ******* ----
---- ***** ----- [Queues]
- --------------   %(queues)s
+BANNER = """\
+celery@%(hostname)s v%(version)s
+
+[Configuration]
+. broker:      %(conninfo)s
+. app:         %(app)s
+. concurrency: %(concurrency)s
+. events:      %(events)s
+
+[Queues]
+%(queues)s
 """
 
 EXTRA_INFO_FMT = """
@@ -123,7 +136,6 @@ class Worker(configurated):
     def run(self):
         self.init_queues()
         self.app.loader.init_worker()
-        self.redirect_stdouts_to_logger()
 
         if getattr(os, "getuid", None) and os.getuid() == 0:
             warnings.warn(RuntimeWarning(
@@ -138,6 +150,7 @@ class Worker(configurated):
               str(self.colored.reset(self.extra_info() or "")))
         self.set_process_status("-active-")
 
+        self.redirect_stdouts_to_logger()
         try:
             self.run_worker()
         except IGNORE_ERRORS:
@@ -176,21 +189,37 @@ class Worker(configurated):
 
     def startup_info(self):
         app = self.app
-        concurrency = self.concurrency
+        concurrency = unicode(self.concurrency)
+        appr = "%s:0x%x" % (app.main or "__main__", id(app))
+        if not isinstance(app.loader, AppLoader):
+            loader = qualname(app.loader)
+            if loader.startswith("celery.loaders"):
+                loader = loader[14:]
+            appr += " (%s)" % loader
         if self.autoscale:
             concurrency = "{min=%s, max=%s}" % tuple(self.autoscale)
-        return BANNER % {
+        concurrency += " (%s)" % self.pool_cls.__module__.split('.')[-1]
+        events = "ON"
+        if not self.send_events:
+            events = "OFF (enable -E to monitor this worker)"
+
+        banner = (BANNER % {
+            "app": appr,
             "hostname": self.hostname,
             "version": __version__,
             "conninfo": self.app.broker_connection().as_uri(),
             "concurrency": concurrency,
-            "loglevel": LOG_LEVELS[self.loglevel],
-            "logfile": self.logfile or "[stderr]",
-            "celerybeat": "ON" if self.beat else "OFF",
-            "events": "ON" if self.send_events else "OFF",
-            "loader": qualname(self.app.loader),
-            "queues": app.amqp.queues.format(indent=18, indent_first=False),
-        }
+            "events": events,
+            "queues": app.amqp.queues.format(indent=0, indent_first=False),
+        }).splitlines()
+
+        # integrate the ASCII art.
+        for i, x in enumerate(banner):
+            try:
+                banner[i] = ' '.join([ARTLINES[i], banner[i]])
+            except IndexError:
+                banner[i] = ' ' * 16 + banner[i]
+        return '\n'.join(banner) + '\n'
 
     def run_worker(self):
         worker = self.WorkController(app=self.app,
