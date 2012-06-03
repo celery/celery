@@ -6,7 +6,7 @@
 ========================
 
 Celery is a task queue with batteries included.
-It is easy to use, so that you can get started without learning
+It is easy to use so that you can get started without learning
 the full complexities of the problem it solves. It is designed
 around best practices so that your product can scale
 and integrate with other languages, and it comes with the
@@ -331,8 +331,8 @@ instead, so that only 10 tasks of this type can execute in a minute
         "tasks.add": {"rate_limit": "10/m"}
     }
 
-But in fact, if you are using one of RabbitMQ, Redis or MongoDB as the
-broker then you can actually direct the workers to set new rate limit
+If you are using RabbitMQ, Redis or MongoDB as the
+broker then you can also direct the workers to set new rate limit
 for the task at runtime::
 
     $ python tasks.py rate_limit tasks.add 10/m
