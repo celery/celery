@@ -190,6 +190,7 @@ class Queues(abstract.Component):
     requires = ("ev", )
 
     def create(self, w):
+        w.start_mediator = True
         if not w.pool_cls.rlimit_safe:
             w.disable_rate_limits = True
         if w.disable_rate_limits:
@@ -199,9 +200,11 @@ class Queues(abstract.Component):
                     w.ready_queue.put = w.process_task_sem
                 else:
                     w.ready_queue.put = w.process_task
+                    w.start_mediator = False
             elif not w.pool_cls.requires_mediator:
                 # just send task directly to pool, skip the mediator.
                 w.ready_queue.put = w.process_task
+                w.start_mediator = False
         else:
             w.ready_queue = TaskBucket(task_registry=w.app.tasks)
 

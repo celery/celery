@@ -63,7 +63,7 @@ Let's create the file :file:`tasks.py`:
 
     from celery import Celery
 
-    celery = Celery("tasks", broker="amqp://guest:guest@localhost:5672")
+    celery = Celery("tasks", broker="amqp://guest@localhost//")
 
     @celery.task
     def add(x, y):
@@ -87,7 +87,7 @@ Running the celery worker server
 We can now run the worker by executing our program with the ``worker``
 argument::
 
-    $ python tasks.py worker --loglevel=INFO
+    $ python tasks.py worker --loglevel=info
 
 In production you will probably want to run the worker in the
 background as a daemon.  To do this you need to use the tools provided
