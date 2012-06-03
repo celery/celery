@@ -290,11 +290,11 @@ class test_defaults(Case):
 
     def test_str_to_bool(self):
         for s in ("false", "no", "0"):
-            self.assertFalse(defaults.str_to_bool(s))
+            self.assertFalse(defaults.strtobool(s))
         for s in ("true", "yes", "1"):
-            self.assertTrue(defaults.str_to_bool(s))
+            self.assertTrue(defaults.strtobool(s))
         with self.assertRaises(TypeError):
-            defaults.str_to_bool("unsure")
+            defaults.strtobool("unsure")
 
 
 class test_debugging_utils(Case):

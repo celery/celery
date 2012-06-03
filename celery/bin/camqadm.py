@@ -18,11 +18,11 @@ from amqplib import client_0_8 as amqp
 from celery.app import app_or_default
 from celery.utils.functional import padlist
 
-from celery.app.defaults import str_to_bool
 from celery.bin.base import Command
+from celery.utils import strtobool
 
 # Map to coerce strings to other types.
-COERCE = {bool: str_to_bool}
+COERCE = {bool: strtobool}
 
 HELP_HEADER = """
 Commands

@@ -5,11 +5,12 @@ import os
 import platform
 import signal as _signal
 
-
 from celery import platforms
 from celery import signals
+from celery.state import set_default_app
 from celery.app import app_or_default
 from celery.concurrency.base import BasePool
+from celery.task import trace
 from billiard.pool import Pool, RUN, CLOSE
 
 if platform.system() == "Windows":  # pragma: no cover
@@ -35,6 +36,8 @@ def process_initializer(app, hostname):
     """Initializes the process so it can be used to process tasks."""
     app = app_or_default(app)
     app.set_current()
+    set_default_app(app)
+    trace._tasks = app._tasks  # make sure this optimization is set.
     platforms.signals.reset(*WORKER_SIGRESET)
     platforms.signals.ignore(*WORKER_SIGIGNORE)
     platforms.set_mp_process_title("celeryd", hostname=hostname)

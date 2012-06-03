@@ -369,7 +369,6 @@ class LocalStack(object):
             return None
 
 
-
 class LocalManager(object):
     """Local objects cannot manage themselves. For that you need a local
     manager.  You can pass a local manager multiple locals or add them later

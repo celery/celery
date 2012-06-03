@@ -67,12 +67,12 @@ def task_ready(request):
     reserved_requests.discard(request)
 
 
-if os.environ.get("CELERY_BENCH"):  # pragma: no cover
+C_BENCH = os.environ.get("C_BENCH") or os.environ.get("CELERY_BENCH")
+if C_BENCH:  # pragma: no cover
     import atexit
 
     from time import time
     from billiard import current_process
-    from celery.utils.compat import format_d
     from celery.utils.debug import memdump, sample_mem
 
     all_count = 0

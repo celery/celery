@@ -166,7 +166,16 @@ def maybe_reraise():
         del(exc_info)
 
 
-# - XXX Compat
+def strtobool(term, table={"false": False, "no": False, "0": False,
+                             "true":  True, "yes": True,  "1": True,
+                             "on":    True, "off": False}):
+    try:
+        return table[term.lower()]
+    except KeyError:
+        raise TypeError("Can't coerce %r to type bool" % (term, ))
+
+# ------------------------------------------------------------------------ #
+# > XXX Compat
 from .log import LOG_LEVELS     # noqa
 from .imports import (          # noqa
         qualname as get_full_cls_name, symbol_by_name as get_cls_by_name,

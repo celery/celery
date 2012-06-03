@@ -16,6 +16,7 @@ import sys
 from collections import deque
 from datetime import timedelta
 
+from celery.utils import strtobool
 from celery.utils.functional import memoize
 
 is_jython = sys.platform.startswith("java")
@@ -39,21 +40,12 @@ DEFAULT_TASK_LOG_FMT = """[%(asctime)s: %(levelname)s/%(processName)s] \
 %(task_name)s[%(task_id)s]: %(message)s"""
 
 
-def str_to_bool(term, table={"false": False, "no": False, "0": False,
-                             "true":  True, "yes": True,  "1": True,
-                             "on":    True, "off": False}):
-    try:
-        return table[term.lower()]
-    except KeyError:
-        raise TypeError("Can't coerce %r to type bool" % (term, ))
-
-
 class Option(object):
     alt = None
     deprecate_by = None
     remove_by = None
     typemap = dict(string=str, int=int, float=float, any=lambda v: v,
-                   bool=str_to_bool, dict=dict, tuple=tuple)
+                   bool=strtobool, dict=dict, tuple=tuple)
 
     def __init__(self, default=None, *args, **kwargs):
         self.default = default

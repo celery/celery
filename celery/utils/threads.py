@@ -100,4 +100,4 @@ if detect_environment() == "default":
                 return None
 else:
     # See #706
-    from celery.local import LocalStack
+    from celery.local import LocalStack  # noqa

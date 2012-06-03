@@ -17,11 +17,15 @@ import warnings
 
 from celery.datastructures import AttributeDict
 from celery.exceptions import NotConfigured
+from celery.utils import strtobool
 from celery.utils.imports import NotAPackage, find_module
 
 from .base import BaseLoader
 
 DEFAULT_CONFIG_MODULE = "celeryconfig"
+
+#: Warns if configuration file is missing if :envvar:`C_WNOCONF` is set.
+C_WNOCONF = strtobool(os.environ.get("C_WNOCONF", False))
 
 CONFIG_INVALID_NAME = """
 Error: Module '%(module)s' doesn't exist, or it's not a valid \
@@ -60,7 +64,7 @@ class Loader(BaseLoader):
                         "module": configname}), sys.exc_info()[2]
         except ImportError:
             # billiard sets this if forked using execv
-            if not os.environ.get("FORKED_BY_MULTIPROCESSING"):
+            if C_WNOCONF and not os.environ.get("FORKED_BY_MULTIPROCESSING"):
                 warnings.warn(NotConfigured(
                     "No %r module found! Please make sure it exists and "
                     "is available to Python." % (configname, )))

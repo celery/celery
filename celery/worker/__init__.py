@@ -303,7 +303,8 @@ class WorkController(configurated):
         # and means that only a single app can be used for workers
         # running in the same process.
         set_default_app(self.app)
-        trace._tasks = self.app.tasks
+        app.finalize()
+        trace._tasks = self.app._tasks
 
         self._shutdown_complete = Event()
         self.setup_defaults(kwargs, namespace="celeryd")
