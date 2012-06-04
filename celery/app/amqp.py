@@ -261,9 +261,11 @@ class AMQP(object):
 
     @cached_property
     def TaskConsumer(self):
-        """Returns consumer for a single task queue."""
+        """Return consumer configured to consume from the queues
+        we are configured for (``app.amqp.queues.consume_from``)."""
         return self.app.subclass_with_self(TaskConsumer,
-                reverse="amqp.TaskConsumer")
+                                           reverse="amqp.TaskConsumer")
+    get_task_consumer = TaskConsumer  # XXX compat
 
     def queue_or_default(self, q):
         if q:
@@ -289,11 +291,6 @@ class AMQP(object):
                 retry_policy=conf.CELERY_TASK_PUBLISH_RETRY_POLICY,
                 utc=conf.CELERY_ENABLE_UTC)
     TaskPublisher = TaskProducer  # compat
-
-    def get_task_consumer(self, channel, *args, **kwargs):
-        """Return consumer configured to consume from all known task
-        queues."""
-        return self.TaskConsumer(channel, *args, **kwargs)
 
     @cached_property
     def default_queue(self):
