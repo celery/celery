@@ -310,6 +310,25 @@ Logging support now conforms better with best practices.
       a special formatter adding these values at runtime from the
       currently executing task.
 
+- In fact, ``task.get_logger`` is no longer recommended, it is better
+  to add module-level logger to your tasks module.
+
+    For example, like this:
+
+    .. code-block:: python
+
+        from celery.utils.log import get_task_logger
+
+        logger = get_task_logger(__name__)
+
+        @celery.task()
+        def add(x, y):
+            logger.debug("Adding %r + %r" % (x, y))
+            return x + y
+
+    The resulting logger will then inherit from the ``"celery.task"`` logger
+    so that the current task name and id is included in logging output.
+
 - Redirected output from stdout/stderr is now logged to a "celery.redirected"
   logger.
 

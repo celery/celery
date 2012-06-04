@@ -43,6 +43,13 @@ def get_logger(name):
 task_logger = get_logger("celery.task")
 
 
+def get_task_logger(name):
+    logger = get_logger(name)
+    if logger.parent is logging.root:
+        logger.parent = task_logger
+    return logger
+
+
 def mlevel(level):
     if level and not isinstance(level, int):
         return LOG_LEVELS[level.upper()]
