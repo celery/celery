@@ -332,7 +332,7 @@ instead, so that only 10 tasks of this type can execute in a minute
     }
 
 If you are using RabbitMQ, Redis or MongoDB as the
-broker then you can also direct the workers to set new rate limit
+broker then you can also direct the workers to set a new rate limit
 for the task at runtime::
 
     $ python tasks.py rate_limit tasks.add 10/m

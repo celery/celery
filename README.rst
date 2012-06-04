@@ -64,6 +64,7 @@ integration packages:
 .. _`SQLAlchemy`: http://www.sqlalchemy.org/
 .. _`Django`: http://djangoproject.com/
 .. _`Django ORM`: http://djangoproject.com/
+.. _`Memcached`: http://memcached.org/
 .. _`Eventlet`: http://eventlet.net/
 .. _`gevent`: http://gevent.org/
 .. _`Beanstalk`: http://kr.github.com/beanstalkd/
@@ -133,8 +134,8 @@ Features
 
     +-----------------+----------------------------------------------------+
     | Messaging       | Supported brokers include `RabbitMQ`_, `Redis`_,   |
-    |                 | `Beanstalk`_, `MongoDB`_, `CouchDB`_, and popular  |
-    |                 | SQL databases.                                     |
+    |                 | `MongoDB`_, `Beanstalk`_, SQL databases,           |
+    |                 | Amazon SQS and more.                               |
     +-----------------+----------------------------------------------------+
     | Fault-tolerant  | Excellent configurable error recovery when using   |
     |                 | `RabbitMQ`, ensures your tasks are never lost.     |
@@ -160,7 +161,7 @@ Features
     |                 | result store backend. You can wait for the result, |
     |                 | retrieve it later, or ignore it.                   |
     +-----------------+----------------------------------------------------+
-    | Result Stores   | Database, `MongoDB`_, `Redis`_, `Tokyo Tyrant`,    |
+    | Result Stores   | Database, `MongoDB`_, `Redis`_, `Memcached`_,      |
     |                 | `Cassandra`, or `AMQP`_ (message notification).    |
     +-----------------+----------------------------------------------------+
     | Webhooks        | Your tasks can also be HTTP callbacks, enabling    |
@@ -303,7 +304,19 @@ Using the development version
 
 You can clone the repository by doing the following::
 
-    $ git clone git://github.com/ask/celery.git
+    $ git clone https://github.com/ask/celery
+    $ cd celery
+    $ python setup.py develop
+
+The development version will usually also depend on the development
+version of `kombu`_, the messaging framework Celery uses
+to send and receive messages, so you should also install that from git::
+
+    $ git clone https://github.com/ask/kombu
+    $ cd kombu
+    $ python setup.py develop
+
+.. _`kombu`:: http://kombu.readthedocs.org/en/latest/
 
 .. _getting-help:
 
