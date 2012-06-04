@@ -10,8 +10,8 @@ from kombu import Exchange
 
 from celery import Celery
 from celery import app as _app
+from celery import state
 from celery.app import defaults
-from celery.app import state
 from celery.loaders.base import BaseLoader
 from celery.platforms import pyimplementation
 from celery.utils.serialization import pickle
@@ -66,11 +66,181 @@ class test_App(Case):
         self.assertEqual(task.name, app.main + ".fun")
 
     def test_with_broker(self):
-        app = Celery(set_as_current=False, broker="foo://baribaz")
-        self.assertEqual(app.conf.BROKER_HOST, "foo://baribaz")
+        prev = os.environ.get("CELERY_BROKER_URL")
+        os.environ.pop("CELERY_BROKER_URL", None)
+        try:
+            app = Celery(set_as_current=False, broker="foo://baribaz")
+            self.assertEqual(app.conf.BROKER_HOST, "foo://baribaz")
+        finally:
+            os.environ["CELERY_BROKER_URL"] = prev
 
     def test_repr(self):
         self.assertTrue(repr(self.app))
+
+    def test_custom_task_registry(self):
+        app1 = Celery(set_as_current=False)
+        app2 = Celery(set_as_current=False, tasks=app1.tasks)
+        self.assertIs(app2.tasks, app1.tasks)
+
+    def test_include_argument(self):
+        app = Celery(set_as_current=False, include=("foo", "bar.foo"))
+        self.assertEqual(app.conf.CELERY_IMPORTS, ("foo", "bar.foo"))
+
+    def test_set_as_current(self):
+        current = state._tls.current_app
+        try:
+            app = Celery(set_as_current=True)
+            self.assertIs(state._tls.current_app, app)
+        finally:
+            state._tls.current_app = current
+
+    def test_current_task(self):
+        app = Celery(set_as_current=False)
+
+        @app.task
+        def foo():
+            pass
+
+        state._task_stack.push(foo)
+        try:
+            self.assertEqual(app.current_task.name, foo.name)
+        finally:
+            state._task_stack.pop()
+
+    def test_task_not_shared(self):
+        with patch("celery.app.base.shared_task") as shared_task:
+            app = Celery(set_as_current=False)
+            @app.task(shared=False)
+            def foo():
+                pass
+            self.assertFalse(shared_task.called)
+
+    def test_task_compat_with_filter(self):
+        app = Celery(set_as_current=False, accept_magic_kwargs=True)
+        check = Mock()
+
+        def filter(task):
+            check(task)
+            return task
+
+        @app.task(filter=filter)
+        def foo():
+            pass
+        check.assert_called_with(foo)
+
+    def test_task_with_filter(self):
+        app = Celery(set_as_current=False, accept_magic_kwargs=False)
+        check = Mock()
+
+        def filter(task):
+            check(task)
+            return task
+
+        @app.task(filter=filter)
+        def foo():
+            pass
+        check.assert_called_with(foo)
+
+    def test_task_sets_main_name_MP_MAIN_FILE(self):
+        from celery.app import task as _task
+        _task.MP_MAIN_FILE = __file__
+        try:
+            app = Celery("xuzzy", set_as_current=False)
+
+            @app.task
+            def foo():
+                pass
+
+            self.assertEqual(foo.name, "xuzzy.foo")
+        finally:
+            _task.MP_MAIN_FILE = None
+
+    def test_base_task_inherits_magic_kwargs_from_app(self):
+        from celery.app.task import Task
+
+        class timkX(Task):
+            abstract = True
+
+        app = Celery(set_as_current=False, accept_magic_kwargs=True)
+        timkX.bind(app)
+        self.assertTrue(timkX.accept_magic_kwargs)
+
+    def test_annotate_decorator(self):
+        from celery.app.task import Task
+
+        class adX(Task):
+            abstract = True
+
+            def run(self, y, z, x):
+                return y, z, x
+
+        check = Mock()
+        def deco(fun):
+            def _inner(*args, **kwargs):
+                check(*args, **kwargs)
+                return fun(*args, **kwargs)
+            return _inner
+
+        app = Celery(set_as_current=False)
+        app.conf.CELERY_ANNOTATIONS = {
+                adX.name: {"@__call__": deco}
+        }
+        adX.bind(app)
+        self.assertIs(adX.app, app)
+
+        i = adX()
+        i(2, 4, x=3)
+        check.assert_called_with(i, 2, 4, x=3)
+
+        i.annotate()
+        i.annotate()
+
+    def test_apply_async_has__self__(self):
+        app = Celery(set_as_current=False)
+
+        @app.task(__self__="hello")
+        def aawsX():
+            pass
+
+        with patch("celery.app.amqp.TaskProducer.delay_task") as dt:
+            aawsX.apply_async((4, 5))
+            args = dt.call_args[0][1]
+            self.assertEqual(args, ("hello", 4, 5))
+
+    def test_apply_async__connection_arg(self):
+        app = Celery(set_as_current=False)
+
+        @app.task()
+        def aacaX():
+            pass
+
+        connection = app.broker_connection("asd://")
+        with self.assertRaises(KeyError):
+            aacaX.apply_async(connection=connection)
+
+    def test_apply_async_adds_children(self):
+        from celery.state import _task_stack
+        app = Celery(set_as_current=False)
+
+        @app.task()
+        def a3cX1(self):
+            pass
+
+        @app.task()
+        def a3cX2(self):
+            pass
+
+        _task_stack.push(a3cX1)
+        try:
+            a3cX1.push_request(called_directly=False)
+            try:
+                res = a3cX2.apply_async(add_to_parent=True)
+                self.assertIn(res, a3cX1.request.children)
+            finally:
+                a3cX1.pop_request()
+        finally:
+            _task_stack.pop()
+
 
     def test_TaskSet(self):
         ts = self.app.TaskSet()

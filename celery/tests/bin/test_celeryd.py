@@ -91,6 +91,23 @@ class test_Worker(AppCase):
         with self.assertRaises(SystemExit):
             WorkerCommand(app=celery).run(beat=True)
 
+    def test_setup_concurrency_very_early(self):
+        x = WorkerCommand()
+        x.run = Mock()
+        with self.assertRaises(ImportError):
+            x.execute_from_commandline(["celeryd", "-P", "xyzybox"])
+
+    @disable_stdouts
+    def test_invalid_loglevel_gives_error(self):
+        x = WorkerCommand(app=Celery(set_as_current=False))
+        with self.assertRaises(SystemExit):
+            x.run(loglevel="GRIM_REAPER")
+
+    def test_no_loglevel(self):
+        app = Celery(set_as_current=False)
+        app.Worker = Mock()
+        WorkerCommand(app=app).run(loglevel=None)
+
     def test_tasklist(self):
         celery = Celery(set_as_current=False)
         worker = celery.Worker()
@@ -149,6 +166,38 @@ class test_Worker(AppCase):
         worker.loglevel = logging.INFO
         self.assertTrue(worker.startup_info())
         worker.autoscale = 13, 10
+        self.assertTrue(worker.startup_info())
+
+        worker = self.Worker(queues="foo,bar,baz,xuzzy,do,re,mi")
+        app = worker.app
+        prev, app.loader = app.loader, Mock()
+        try:
+            app.loader.__module__ = "acme.baked_beans"
+            self.assertTrue(worker.startup_info())
+        finally:
+            app.loader = prev
+
+        prev, app.loader = app.loader, Mock()
+        try:
+            app.loader.__module__ = "celery.loaders.foo"
+            self.assertTrue(worker.startup_info())
+        finally:
+            app.loader = prev
+
+        from celery.loaders.app import AppLoader
+        prev, app.loader = app.loader, AppLoader()
+        try:
+            self.assertTrue(worker.startup_info())
+        finally:
+            app.loader = prev
+
+        worker.send_events = True
+        self.assertTrue(worker.startup_info())
+
+        # test when there are too few output lines
+        # to draft the ascii art onto
+        prev, cd.ARTLINES = (cd.ARTLINES,
+            ["the quick brown fox"])
         self.assertTrue(worker.startup_info())
 
     @disable_stdouts
@@ -327,6 +376,9 @@ class test_Worker(AppCase):
 
 
 class test_funs(AppCase):
+
+    def test_active_thread_count(self):
+        self.assertTrue(cd.active_thread_count())
 
     @disable_stdouts
     def test_set_process_status(self):
@@ -583,6 +635,10 @@ class test_signal_handlers(AppCase):
             handlers["SIGHUP"]("SIGHUP", object())
             self.assertTrue(state.should_stop)
             self.assertTrue(argv)
+            argv[:] = []
+            fork.return_value = 1
+            handlers["SIGHUP"]("SIGHUP", object())
+            self.assertFalse(argv)
         finally:
             os.execv = execv
             state.should_stop = False

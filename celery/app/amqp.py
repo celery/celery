@@ -22,6 +22,7 @@ from celery import signals
 from celery.utils import cached_property, uuid
 from celery.utils.text import indent as textindent
 
+from . import app_or_default
 from . import routes as _routes
 
 #: Human readable queue declaration.
@@ -48,7 +49,7 @@ class Queues(dict):
     #: The rest of the queues are then used for routing only.
     _consume_from = None
 
-    def __init__(self, queues, default_exchange=None, create_missing=True):
+    def __init__(self, queues=None, default_exchange=None, create_missing=True):
         dict.__init__(self)
         self.aliases = WeakValueDictionary()
         self.default_exchange = default_exchange
@@ -65,11 +66,9 @@ class Queues(dict):
             return dict.__getitem__(self, name)
 
     def __setitem__(self, name, queue):
-        if self.default_exchange:
-            if not queue.exchange or not queue.exchange.name:
-                queue.exchange = self.default_exchange
-            if queue.exchange.type == 'direct' and not queue.routing_key:
-                queue.routing_key = name
+        if self.default_exchange and (not queue.exchange or
+                                      not queue.exchange.name):
+            queue.exchange = self.default_exchange
         dict.__setitem__(self, name, queue)
         if queue.alias:
             self.aliases[queue.alias] = queue
@@ -135,19 +134,16 @@ class Queues(dict):
 
 
 class TaskProducer(Producer):
+    app = None
     auto_declare = False
     retry = False
     retry_policy = None
 
     def __init__(self, channel=None, exchange=None, *args, **kwargs):
-        self.app = kwargs.get("app") or self.app
         self.retry = kwargs.pop("retry", self.retry)
         self.retry_policy = kwargs.pop("retry_policy",
                                         self.retry_policy or {})
         exchange = exchange or self.exchange
-        if not isinstance(exchange, Exchange):
-            exchange = Exchange(exchange,
-                    kwargs.get("exchange_type") or self.exchange_type)
         self.queues = self.app.amqp.queues  # shortcut
         super(TaskProducer, self).__init__(channel, exchange, *args, **kwargs)
 
@@ -216,7 +212,21 @@ class TaskProducer(Producer):
                                                expires=expires,
                                                queue=queue)
         return task_id
-TaskPublisher = TaskProducer  # compat
+
+class TaskPublisher(TaskProducer):
+    """Deprecated version of :class:`TaskProducer`."""
+
+    def __init__(self, channel=None, exchange=None, *args, **kwargs):
+        self.app = app_or_default(kwargs.pop("app", self.app))
+        self.retry = kwargs.pop("retry", self.retry)
+        self.retry_policy = kwargs.pop("retry_policy",
+                                        self.retry_policy or {})
+        exchange = exchange or self.exchange
+        if not isinstance(exchange, Exchange):
+            exchange = Exchange(exchange,
+                                kwargs.pop("exchange_type", "direct"))
+        self.queues = self.app.amqp.queues  # shortcut
+        super(TaskPublisher, self).__init__(channel, exchange, *args, **kwargs)
 
 
 class TaskConsumer(Consumer):
@@ -267,11 +277,6 @@ class AMQP(object):
                                            reverse="amqp.TaskConsumer")
     get_task_consumer = TaskConsumer  # XXX compat
 
-    def queue_or_default(self, q):
-        if q:
-            return self.queues[q] if not isinstance(q, Queue) else q
-        return self.default_queue
-
     @cached_property
     def TaskProducer(self):
         """Returns publisher used to send tasks.
@@ -283,7 +288,6 @@ class AMQP(object):
         return self.app.subclass_with_self(TaskProducer,
                 reverse="amqp.TaskProducer",
                 exchange=self.default_exchange,
-                exchange_type=self.default_exchange.type,
                 routing_key=conf.CELERY_DEFAULT_ROUTING_KEY,
                 serializer=conf.CELERY_TASK_SERIALIZER,
                 compression=conf.CELERY_MESSAGE_COMPRESSION,

@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
+from mock import patch
+
 from celery import current_app
 from celery import backends
 from celery.backends.amqp import AMQPBackend
@@ -38,3 +40,10 @@ class test_backends(Case):
         backend, url_ = backends.get_backend_by_url(url)
         self.assertIs(backend, RedisBackend)
         self.assertEqual(url_, url)
+
+    def test_sym_raises_ValuError(self):
+        with patch("celery.backends.symbol_by_name") as sbn:
+            sbn.side_effect = ValueError()
+            with self.assertRaises(ValueError):
+                backends.get_backend_cls("xxx.xxx:foo")
+

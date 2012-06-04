@@ -181,6 +181,25 @@ class test_task_retries(Case):
         self.assertEqual(retry_task.iterations, 2)
 
 
+class test_canvas_utils(Case):
+
+    def test_si(self):
+        self.assertTrue(retry_task.si())
+        self.assertTrue(retry_task.si().immutable)
+
+    def test_chunks(self):
+        self.assertTrue(retry_task.chunks(range(100), 10))
+
+    def test_map(self):
+        self.assertTrue(retry_task.map(range(100)))
+
+    def test_starmap(self):
+        self.assertTrue(retry_task.starmap(range(100)))
+
+    def test_on_success(self):
+        retry_task.on_success(1, 1, (), {})
+
+
 class test_tasks(Case):
 
     def test_unpickle_task(self):

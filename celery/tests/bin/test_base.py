@@ -119,6 +119,24 @@ class test_Command(AppCase):
         finally:
             cmd.app.conf.BROKER_URL = "memory://"
 
+    def test_find_app(self):
+        cmd = MockCommand()
+        with patch("celery.bin.base.symbol_by_name") as sbn:
+            from types import ModuleType
+            x = ModuleType("proj")
+            def on_sbn(*args, **kwargs):
+
+                def after(*args, **kwargs):
+                    x.celery = "quick brown fox"
+                    x.__path__ = None
+                    return x
+                sbn.side_effect = after
+                return x
+            sbn.side_effect = on_sbn
+            x.__path__ = [True]
+            self.assertEqual(cmd.find_app("proj"), "quick brown fox")
+
+
     def test_parse_preload_options_shortopt(self):
         cmd = Command()
         cmd.preload_options = (Option("-s", action="store", dest="silent"), )

@@ -16,6 +16,7 @@ os.environ["CELERY_LOADER"] = "default"
 os.environ["EVENTLET_NOPATCH"] = "yes"
 os.environ["GEVENT_NOPATCH"] = "yes"
 os.environ["KOMBU_DISABLE_LIMIT_PROTECTION"] = "yes"
+os.environ["CELERY_BROKER_URL"] = "memory://"
 
 try:
     WindowsError = WindowsError  # noqa

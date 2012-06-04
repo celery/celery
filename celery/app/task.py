@@ -376,7 +376,8 @@ class Task(object):
 
     def apply_async(self, args=None, kwargs=None,
             task_id=None, producer=None, connection=None, router=None,
-            link=None, link_error=None, publisher=None, **options):
+            link=None, link_error=None, publisher=None, add_to_parent=True,
+            **options):
         """Apply tasks asynchronously by sending a message.
 
         :keyword args: The positional arguments to pass on to the
@@ -459,6 +460,10 @@ class Task(object):
                       if an error occurs while executing the task.
 
         :keyword producer: :class:~@amqp.TaskProducer` instance to use.
+        :keyword add_to_parent: If set to True (default) and the task
+            is applied while executing another task, then the result
+            will be appended to the parent tasks ``request.children``
+            attribute.
         :keyword publisher: Deprecated alias to ``producer``.
 
         .. note::
@@ -495,9 +500,10 @@ class Task(object):
                                    errbacks=maybe_list(link_error),
                                    **options)
         result = self.AsyncResult(task_id)
-        parent = get_current_worker_task()
-        if parent:
-            parent.request.children.append(result)
+        if add_to_parent:
+            parent = get_current_worker_task()
+            if parent:
+                parent.request.children.append(result)
         return result
 
     def retry(self, args=None, kwargs=None, exc=None, throw=True,

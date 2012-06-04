@@ -121,7 +121,8 @@ def add_group_task(app):
                         [subtask(task).apply(taskset_id=setid)
                             for task in tasks])
             with app.default_producer() as pub:
-                [subtask(task).apply_async(taskset_id=setid, publisher=pub)
+                [subtask(task).apply_async(taskset_id=setid, publisher=pub,
+                                           add_to_parent=False)
                         for task in tasks]
             parent = get_current_worker_task()
             if parent:

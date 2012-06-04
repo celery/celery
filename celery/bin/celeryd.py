@@ -153,7 +153,7 @@ class WorkerCommand(Command):
         if loglevel:
             try:
                 kwargs["loglevel"] = mlevel(loglevel)
-            except KeyError:
+            except KeyError:  # pragma: no cover
                 self.die("Unknown level %r. Please use one of %s." % (
                     loglevel, "|".join(l for l in LOG_LEVELS.keys()
                       if isinstance(l, basestring))))
