@@ -29,7 +29,7 @@ from kombu.utils import kwdict
 from celery import current_app
 from celery import states, signals
 from celery.state import _task_stack, default_app
-from celery.app.task import BaseTask, Context
+from celery.app.task import Task as BaseTask, Context
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import RetryTaskError
 from celery.utils.serialization import get_pickleable_exception

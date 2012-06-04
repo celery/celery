@@ -261,7 +261,7 @@ class test_App(Case):
             chan.close()
         assert conn.transport_cls == "memory"
 
-        pub = self.app.amqp.TaskPublisher(conn,
+        pub = self.app.amqp.TaskProducer(conn,
                 exchange=Exchange("foo_exchange"))
 
         dispatcher = Dispatcher()

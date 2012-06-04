@@ -15,17 +15,21 @@ from __future__ import absolute_import
 
 from celery import current_app
 from celery.__compat__ import class_property, reclassmethod
-from celery.app.task import Context, TaskType, BaseTask  # noqa
+from celery.app.task import Context, TaskType, Task as BaseTask  # noqa
 from celery.schedules import maybe_schedule
 
 #: list of methods that must be classmethods in the old API.
 _COMPAT_CLASSMETHODS = (
-    "get_logger", "establish_connection", "get_publisher", "get_consumer",
-    "delay", "apply_async", "retry", "apply", "AsyncResult", "subtask",
-    "push_request", "pop_request")
+    "delay", "apply_async", "retry", "apply",
+    "AsyncResult", "subtask", "push_request", "pop_request")
 
 
 class Task(BaseTask):
+    """Deprecated Task base class.
+
+    Modern applications should use :class:`celery.Task` instead.
+
+    """
     abstract = True
     __bound__ = False
 
@@ -41,6 +45,67 @@ class Task(BaseTask):
     def _get_request(self):
         return self.request_stack.top
     request = class_property(_get_request)
+
+    #: Deprecated alias to :attr:`logger``.
+    get_logger = reclassmethod(BaseTask._get_logger)
+
+    @classmethod
+    def establish_connection(self, connect_timeout=None):
+        """Deprecated method used to get a broker connection.
+
+        Should be replaced with :meth:`@Celery.broker_connection`
+        instead, or by acquiring connections from the connection pool:
+
+        .. code-block:: python
+
+            # using the connection pool
+            with celery.pool.acquire(block=True) as conn:
+                ...
+
+            # establish fresh connection
+            with celery.broker_connection() as conn:
+                ...
+        """
+        return self._get_app().broker_connection(
+                connect_timeout=connect_timeout)
+
+
+    def get_publisher(self, connection=None, exchange=None,
+            connect_timeout=None, exchange_type=None, **options):
+        """Deprecated method to get the task publisher (now called producer).
+
+        Should be replaced with :class:`@amqp.TaskProducer`:
+
+        .. code-block:: python
+
+            with celery.broker_connection() as conn:
+                with celery.amqp.TaskProducer(conn) as prod:
+                    my_task.apply_async(producer=prod)
+
+        """
+        exchange = self.exchange if exchange is None else exchange
+        if exchange_type is None:
+            exchange_type = self.exchange_type
+        connection = connection or self.establish_connection(connect_timeout)
+        return self._get_app().amqp.TaskProducer(connection,
+                exchange=exchange and Exchange(exchange, exchange_type),
+                routing_key=self.routing_key, **options)
+
+
+    @classmethod
+    def get_consumer(self, connection=None, queues=None, **kwargs):
+        """Deprecated method used to get consumer for the queue
+        this task is sent to.
+
+        Should be replaced with :class:`@amqp.TaskConsumer` instead:
+
+        """
+        Q = self._get_app().amqp
+        connection = connection or self.establish_connection()
+        if queues is None:
+            queues = Q.queues[self.queue] if self.queue else Q.default_queue
+        return Q.TaskConsumer(connection, queues, **kwargs)
+
 
 
 class PeriodicTask(Task):

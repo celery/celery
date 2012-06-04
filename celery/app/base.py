@@ -300,7 +300,7 @@ class Celery(object):
     def create_task_cls(self):
         """Creates a base task class using default configuration
         taken from this app."""
-        return self.subclass_with_self("celery.app.task:BaseTask", name="Task",
+        return self.subclass_with_self("celery.app.task:Task", name="Task",
                                        attribute="_app", abstract=True)
 
     def subclass_with_self(self, Class, name=None, attribute="app",

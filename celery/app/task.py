@@ -159,7 +159,7 @@ class TaskType(type):
         return "<unbound %s>" % (cls.__name__, )
 
 
-class BaseTask(object):
+class Task(object):
     """Task base class.
 
     When called tasks apply the :meth:`run` method.  This method must
@@ -402,65 +402,6 @@ class BaseTask(object):
     def start_strategy(self, app, consumer):
         return instantiate(self.Strategy, self, app, consumer)
 
-    def get_logger(self, **kwargs):
-        """Get task-aware logger object."""
-        logger = get_logger(self.name)
-        if logger.parent is logging.root:
-            logger.parent = get_logger("celery.task")
-        return logger
-
-    def establish_connection(self, connect_timeout=None):
-        """Establish a connection to the message broker."""
-        return self._get_app().broker_connection(
-                connect_timeout=connect_timeout)
-
-    def get_publisher(self, connection=None, exchange=None,
-            connect_timeout=None, exchange_type=None, **options):
-        """Get a celery task message publisher.
-
-        :rtype :class:`~celery.app.amqp.TaskProducer`:
-
-        .. warning::
-
-            If you don't specify a connection, one will automatically
-            be established for you, in that case you need to close this
-            connection after use::
-
-                >>> publisher = self.get_publisher()
-                >>> # ... do something with publisher
-                >>> publisher.connection.close()
-
-        """
-        exchange = self.exchange if exchange is None else exchange
-        if exchange_type is None:
-            exchange_type = self.exchange_type
-        connection = connection or self.establish_connection(connect_timeout)
-        return self._get_app().amqp.TaskProducer(connection,
-                exchange=exchange and Exchange(exchange, exchange_type),
-                routing_key=self.routing_key, **options)
-
-    def get_consumer(self, connection=None, queues=None, **kwargs):
-        """Get message consumer.
-
-        :rtype :class:`kombu.messaging.Consumer`:
-
-        .. warning::
-
-            If you don't specify a connection, one will automatically
-            be established for you, in that case you need to close this
-            connection after use::
-
-                >>> consumer = self.get_consumer()
-                >>> # do something with consumer
-                >>> consumer.close()
-                >>> consumer.connection.close()
-
-        """
-        app = self._get_app()
-        connection = connection or self.establish_connection()
-        return app.amqp.TaskConsumer(connection,
-            queues or app.amqp.queue_or_default(self.queue), **kwargs)
-
     def delay(self, *args, **kwargs):
         """Star argument version of :meth:`apply_async`.
 
@@ -700,7 +641,7 @@ class BaseTask(object):
         :rtype :class:`celery.result.EagerResult`:
 
         """
-        # trace imports BaseTask, so need to import inline.
+        # trace imports Task, so need to import inline.
         from celery.task.trace import eager_trace_task
 
         app = self._get_app()
@@ -893,9 +834,13 @@ class BaseTask(object):
         """`repr(task)`"""
         return "<@task: %s>" % (self.name, )
 
-    @cached_property
-    def logger(self):
-        return self.get_logger()
+    def _get_logger(self, **kwargs):
+        """Get task-aware logger object."""
+        logger = get_logger(self.name)
+        if logger.parent is logging.root:
+            logger.parent = get_logger("celery.task")
+        return logger
+    logger = cached_property(_get_logger)
 
     @property
     def request(self):
@@ -904,3 +849,4 @@ class BaseTask(object):
     @property
     def __name__(self):
         return self.__class__.__name__
+BaseTask = Task  # compat alias

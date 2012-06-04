@@ -7,31 +7,31 @@ from celery.app.amqp import Queues
 from celery.tests.utils import AppCase
 
 
-class test_TaskPublisher(AppCase):
+class test_TaskProducer(AppCase):
 
     def test__exit__(self):
 
-        publisher = self.app.amqp.TaskPublisher(self.app.broker_connection())
+        publisher = self.app.amqp.TaskProducer(self.app.broker_connection())
         publisher.release = Mock()
         with publisher:
             pass
         publisher.release.assert_called_with()
 
     def test_declare(self):
-        publisher = self.app.amqp.TaskPublisher(self.app.broker_connection())
+        publisher = self.app.amqp.TaskProducer(self.app.broker_connection())
         publisher.exchange.name = "foo"
         publisher.declare()
         publisher.exchange.name = None
         publisher.declare()
 
     def test_retry_policy(self):
-        pub = self.app.amqp.TaskPublisher(Mock())
+        pub = self.app.amqp.TaskProducer(Mock())
         pub.channel.connection.client.declared_entities = set()
         pub.delay_task("tasks.add", (2, 2), {},
                        retry_policy={"frobulate": 32.4})
 
     def test_publish_no_retry(self):
-        pub = self.app.amqp.TaskPublisher(Mock())
+        pub = self.app.amqp.TaskProducer(Mock())
         pub.channel.connection.client.declared_entities = set()
         pub.delay_task("tasks.add", (2, 2), {}, retry=False, chord=123)
         self.assertFalse(pub.connection.ensure.call_count)
