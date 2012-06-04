@@ -70,7 +70,7 @@ class test_trace(Case):
 
         trace_task(xtask, "uuid", (), {})
         self.assertTrue(report_internal_error.call_count)
-        self.assertIs(xtask.__tracer__, tracer)
+        self.assertIs(xtask.__trace__, tracer)
 
 
 class test_TraceInfo(Case):

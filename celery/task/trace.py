@@ -284,15 +284,15 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
 
 def trace_task(task, uuid, args, kwargs, request=None, **opts):
     try:
-        if task.__tracer__ is None:
-            task.__tracer__ = build_tracer(task.name, task, **opts)
-        return task.__tracer__(uuid, args, kwargs, request)
+        if task.__trace__ is None:
+            task.__trace__ = build_tracer(task.name, task, **opts)
+        return task.__trace__(uuid, args, kwargs, request)
     except Exception, exc:
         return report_internal_error(task, exc), None
 
 
 def trace_task_ret(task, uuid, args, kwargs, request):
-    return _tasks[task].__tracer__(uuid, args, kwargs, request)[0]
+    return _tasks[task].__trace__(uuid, args, kwargs, request)[0]
 
 
 def eager_trace_task(task, uuid, args, kwargs, request=None, **opts):

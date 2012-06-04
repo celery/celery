@@ -16,7 +16,6 @@ import logging
 import os
 import sys
 
-from kombu import Exchange
 from kombu.utils import cached_property
 
 from celery import current_app
@@ -168,7 +167,7 @@ class Task(object):
 
     """
     __metaclass__ = TaskType
-    __tracer__ = None
+    __trace__ = None
 
     ErrorMail = ErrorMail
     MaxRetriesExceededError = MaxRetriesExceededError
@@ -191,36 +190,6 @@ class Task(object):
     #: If disabled the worker will not forward magic keyword arguments.
     #: Deprecated and scheduled for removal in v3.0.
     accept_magic_kwargs = None
-
-    #: Destination queue.  The queue needs to exist
-    #: in :setting:`CELERY_QUEUES`.  The `routing_key`, `exchange` and
-    #: `exchange_type` attributes will be ignored if this is set.
-    queue = None
-
-    #: Overrides the apps default `routing_key` for this task.
-    routing_key = None
-
-    #: Overrides the apps default `exchange` for this task.
-    exchange = None
-
-    #: Overrides the apps default exchange type for this task.
-    exchange_type = None
-
-    #: Override the apps default delivery mode for this task.  Default is
-    #: `"persistent"`, but you can change this to `"transient"`, which means
-    #: messages will be lost if the broker is restarted.  Consult your broker
-    #: manual for any additional delivery modes.
-    delivery_mode = None
-
-    #: Mandatory message routing.
-    mandatory = False
-
-    #: Request immediate delivery.
-    immediate = False
-
-    #: Default message priority.  A number between 0 to 9, where 0 is the
-    #: highest.  Note that RabbitMQ does not support priorities.
-    priority = None
 
     #: Maximum number of retries before giving up.  If set to :const:`None`,
     #: it will **never** stop retrying.
@@ -247,10 +216,6 @@ class Task(object):
     #: If enabled an email will be sent to :setting:`ADMINS` whenever a task
     #: of this type fails.
     send_error_emails = False
-    disable_error_emails = False                            # FIXME
-
-    #: List of exception types to send error emails for.
-    error_whitelist = ()
 
     #: The name of a serializer that are registered with
     #: :mod:`kombu.serialization.registry`.  Default is `"pickle"`.
@@ -298,16 +263,10 @@ class Task(object):
     #: Default task expiry time.
     expires = None
 
-    #: The type of task *(no longer used)*.
-    type = "regular"
-
     __bound__ = False
 
     from_config = (
-        ("exchange_type", "CELERY_DEFAULT_EXCHANGE_TYPE"),
-        ("delivery_mode", "CELERY_DEFAULT_DELIVERY_MODE"),
         ("send_error_emails", "CELERY_SEND_TASK_ERROR_EMAILS"),
-        ("error_whitelist", "CELERY_TASK_ERROR_WHITELIST"),
         ("serializer", "CELERY_TASK_SERIALIZER"),
         ("rate_limit", "CELERY_DEFAULT_RATE_LIMIT"),
         ("track_started", "CELERY_TRACK_STARTED"),
@@ -808,7 +767,8 @@ class Task(object):
         pass
 
     def send_error_email(self, context, exc, **kwargs):
-        if self.send_error_emails and not self.disable_error_emails:
+        if self.send_error_emails and \
+                not getattr(self, "disable_error_emails", None):
             self.ErrorMail(self, **kwargs).send(context, exc)
 
     def execute(self, request, pool, loglevel, logfile, **kwargs):

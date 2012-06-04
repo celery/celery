@@ -348,7 +348,7 @@ class Consumer(object):
         hostname = self.hostname
         for name, task in self.app.tasks.iteritems():
             S[name] = task.start_strategy(app, self)
-            task.__tracer__ = build_tracer(name, task, loader, hostname)
+            task.__trace__ = build_tracer(name, task, loader, hostname)
 
     def start(self):
         """Start the consumer.

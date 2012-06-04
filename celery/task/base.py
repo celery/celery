@@ -13,6 +13,8 @@
 """
 from __future__ import absolute_import
 
+from kombu import Exchange
+
 from celery import current_app
 from celery.__compat__ import class_property, reclassmethod
 from celery.app.task import Context, TaskType, Task as BaseTask  # noqa
@@ -32,6 +34,26 @@ class Task(BaseTask):
     """
     abstract = True
     __bound__ = False
+
+    #- Deprecated compat. attributes -:
+
+    queue = None
+    routing_key = None
+    exchange = None
+    exchange_type = None
+    delivery_mode = None
+    mandatory = False
+    immediate = False
+    priority = None
+    type = "regular"
+    error_whitelist = ()
+    disable_error_emails = False
+
+    from_config = BaseTask.from_config + (
+        ("exchange_type", "CELERY_DEFAULT_EXCHANGE_TYPE"),
+        ("delivery_mode", "CELERY_DEFAULT_DELIVERY_MODE"),
+        ("error_whitelist", "CELERY_TASK_ERROR_WHITELIST"),
+    )
 
     # In old Celery the @task decorator didn't exist, so one would create
     # classes instead and use them directly (e.g. MyTask.apply_async()).
@@ -69,7 +91,6 @@ class Task(BaseTask):
         return self._get_app().broker_connection(
                 connect_timeout=connect_timeout)
 
-
     def get_publisher(self, connection=None, exchange=None,
             connect_timeout=None, exchange_type=None, **options):
         """Deprecated method to get the task publisher (now called producer).
@@ -91,7 +112,6 @@ class Task(BaseTask):
                 exchange=exchange and Exchange(exchange, exchange_type),
                 routing_key=self.routing_key, **options)
 
-
     @classmethod
     def get_consumer(self, connection=None, queues=None, **kwargs):
         """Deprecated method used to get consumer for the queue
@@ -105,7 +125,6 @@ class Task(BaseTask):
         if queues is None:
             queues = Q.queues[self.queue] if self.queue else Q.default_queue
         return Q.TaskConsumer(connection, queues, **kwargs)
-
 
 
 class PeriodicTask(Task):

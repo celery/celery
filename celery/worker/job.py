@@ -73,9 +73,9 @@ def execute_and_trace(name, uuid, args, kwargs, request=None, **opts):
         hostname = opts.get("hostname")
         setps("celeryd", name, hostname, rate_limit=True)
         try:
-            if task.__tracer__ is None:
-                task.__tracer__ = build_tracer(name, task, **opts)
-            return task.__tracer__(uuid, args, kwargs, request)[0]
+            if task.__trace__ is None:
+                task.__trace__ = build_tracer(name, task, **opts)
+            return task.__trace__(uuid, args, kwargs, request)[0]
         finally:
             setps("celeryd", "-idle-", hostname, rate_limit=True)
     except Exception, exc:
