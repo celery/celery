@@ -27,7 +27,7 @@ from celery import platforms
 from celery.exceptions import AlwaysEagerIgnored
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
-from celery.state import _tls, get_current_app
+from celery.state import _task_stack, _tls, get_current_app
 from celery.utils.functional import first
 from celery.utils.imports import instantiate, symbol_by_name
 
@@ -390,6 +390,10 @@ class Celery(object):
             self._pool = self.broker_connection().Pool(
                             limit=self.conf.BROKER_POOL_LIMIT)
         return self._pool
+
+    @property
+    def current_task(self):
+        return _task_stack.top
 
     @cached_property
     def amqp(self):

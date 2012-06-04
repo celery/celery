@@ -36,6 +36,10 @@ Application
 
         Current configuration.
 
+    .. attribute:: current_task
+
+        The instance of the task that is being executed, or :const:`None`.
+
     .. attribute:: amqp
 
         AMQP related functionality: :class:`~@amqp`.
