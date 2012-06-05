@@ -11,10 +11,8 @@ if sys.version_info < (2, 5):
 try:
     orig_path = sys.path[:]
     for path in (os.path.curdir, os.getcwd()):
-        try:
+        if path in sys.path:
             sys.path.remove(path)
-        except ValueError:
-            pass
     try:
         import celery.app
         import imp
