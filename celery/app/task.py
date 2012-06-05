@@ -344,9 +344,11 @@ class Task(object):
 
     def __call__(self, *args, **kwargs):
         _task_stack.push(self)
+        self.push_request()
         try:
             return self.run(*args, **kwargs)
         finally:
+            self.pop_request()
             _task_stack.pop()
 
     # - tasks are pickled into the name of the task only, and the reciever
