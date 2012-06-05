@@ -33,8 +33,9 @@ logger = get_logger(__name__)
 
 def active_thread_count():
     from threading import enumerate
+    # must use .getName on Python 2.5
     return sum(1 for t in enumerate()
-        if not t.name.startswith("Dummy-"))
+        if not t.getName().startswith("Dummy-"))
 
 
 def safe_say(msg):
