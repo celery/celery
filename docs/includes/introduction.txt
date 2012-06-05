@@ -24,7 +24,7 @@ more worker nodes using multiprocessing, `Eventlet`_ or `gevent`_.  Tasks can
 execute asynchronously (in the background) or synchronously
 (wait until ready).
 
-Celery is used in production systems to process millions of tasks a day.
+Celery is used in production systems to process millions of tasks every hour.
 
 Celery is written in Python, but the protocol can be implemented in any
 language.  It can also `operate with other languages using webhooks`_.

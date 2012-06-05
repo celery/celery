@@ -30,7 +30,7 @@ more worker nodes using multiprocessing, `Eventlet`_ or `gevent`_.  Tasks can
 execute asynchronously (in the background) or synchronously
 (wait until ready).
 
-Celery is used in production systems to process millions of tasks a day.
+Celery is used in production systems to process millions of tasks every hour.
 
 Celery is written in Python, but the protocol can be implemented in any
 language.  It can also `operate with other languages using webhooks`_.
@@ -311,7 +311,7 @@ to send and receive messages, so you should also install that from git::
     $ cd kombu
     $ python setup.py develop
 
-.. _`kombu`:: http://kombu.readthedocs.org/en/latest/
+.. _`kombu`: http://kombu.readthedocs.org/en/latest/
 
 .. _getting-help:
 
