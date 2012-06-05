@@ -213,7 +213,7 @@ def add_chord_task(app):
         app = _app
         name = "celery.chord"
         accept_magic_kwargs = False
-        ignore_result = True
+        ignore_result = False
 
         def run(self, header, body, interval=1, max_retries=None,
                 propagate=False, eager=False, **kwargs):
