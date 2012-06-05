@@ -306,4 +306,4 @@ to send and receive messages, so you should also install that from git::
     $ cd kombu
     $ python setup.py develop
 
-.. _`kombu`:: http://kombu.readthedocs.org/en/latest/
+.. _`kombu`: http://kombu.readthedocs.org/en/latest/

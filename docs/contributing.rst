@@ -745,6 +745,7 @@ Old name for :mod:`librabbitmq`.
 
 :canonical repo: :const:`None`
 :PyPI: http://pypi.python.org/pypi/pylibrabbitmq
+
 .. _release-procedure:
 
 

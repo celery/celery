@@ -182,7 +182,7 @@ use a result backend, which is detailed in the next section.
 .. _celerytut-keeping-results:
 
 Keeping Results
----------------
+===============
 
 If you want to keep track of the tasks state, Celery needs to store or send
 the states somewhere.  There are several
@@ -239,7 +239,7 @@ will contain the original traceback as a string.
 .. _celerytut-configuration:
 
 Configuration
--------------
+=============
 
 Celery, like a consumer appliance doesn't need much to be operated.
 It has an input and an output, where you must connect the input to a broker and maybe
