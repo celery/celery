@@ -673,11 +673,13 @@ Packages
 - celery
 
 :canonical repo: https://github.com/ask/celery
+:CI: http://travis-ci.org/#!/ask/celery
 :PyPI: http://pypi.python.org/pypi/celery
 
 - kombu
 
 :canonical repo: https://github.com/ask/kombu
+:CI: http://travis-ci.org/#!/ask/kombu
 :PyPI: http://pypi.python.org/pypi/kombu
 
 - billiard
