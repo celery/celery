@@ -649,6 +649,7 @@ Committers
 - Steeve Morin
 
 :github: https://github.com/steeve
+:twitter: http://twitter.com/#!/steeve
 
 Website
 -------
