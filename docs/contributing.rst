@@ -637,16 +637,19 @@ Contacts
 Committers
 ----------
 
-- Ask Solem
+Ask Solem
+~~~~~~~~~
 
 :github: https://github.com/ask
 :twitter: http://twitter.com/#!/asksol
 
-- Mher Movsisyan
+Mher Movsisyan
+~~~~~~~~~~~~~~
 
 :github: https://github.com/mher
 
-- Steeve Morin
+Steeve Morin
+~~~~~~~~~~~~
 
 :github: https://github.com/steeve
 :twitter: http://twitter.com/#!/steeve
@@ -656,14 +659,19 @@ Website
 
 The Celery Project website is run and maintained by
 
-- Mauro Rocco
+Mauro Rocco
+~~~~~~~~~~~
 
 :github: https://github.com/fireantology
 :twitter: https://twitter.com/#!/fireantology
 
 with design by:
 
-- Jan Henrik Helmers (http://www.helmersworks.com)
+Jan Henrik Helmers
+~~~~~~~~~~~~~~~~~~
+
+:web: http://www.helmersworks.com
+:twitter: http://twitter.com/#!/helmers
 
 
 .. _packages:
@@ -671,47 +679,74 @@ with design by:
 Packages
 ========
 
-- celery
+celery
+------
 
-:canonical repo: https://github.com/ask/celery
+:git: https://github.com/ask/celery
 :CI: http://travis-ci.org/#!/ask/celery
 :PyPI: http://pypi.python.org/pypi/celery
+:docs: http://docs.celeryproject.org
 
-- kombu
+kombu
+-----
 
-:canonical repo: https://github.com/ask/kombu
+Messaging framework.
+
+:git: https://github.com/ask/kombu
 :CI: http://travis-ci.org/#!/ask/kombu
 :PyPI: http://pypi.python.org/pypi/kombu
+:docs: http://kombu.readthedocs.org
 
-- billiard
+billiard
+--------
 
-:canonical repo: https://github.com/ask/billiard
+Fork of multiprocessing containing improvements
+that will eventually be merged into the Python stdlib.
+
+:git: https://github.com/ask/billiard
 :PyPI: http://pypi.python.org/pypi/billiard
 
-- librabbitmq
+librabbitmq
+-----------
 
-:canonical repo: https://github.com/celery/librabbitmq
+Very fast Python AMQP client written in C.
+
+:git: https://github.com/celery/librabbitmq
 :PyPI: http://pypi.python.org/pypi/librabbitmq
 
-- celerymon
+celerymon
+---------
 
-:canonical repo: https://github.com/ask/celerymon
+Celery monitor web-service.
+
+:git: https://github.com/ask/celerymon
 :PyPI: http://pypi.python.org/pypi/celerymon
 
-- django-celery
+django-celery
+-------------
 
-:canonical repo: https://github.com/ask/django-celery
+Django <-> Celery Integration.
+
+:git: https://github.com/ask/django-celery
 :PyPI: http://pypi.python.org/pypi/django-celery
+:docs: http://docs.celeryproject.org/en/latest/django
 
-- cl
+cl
+--
 
-:canonical repo: https://github.com/ask/cl
+Actor framework.
+
+:git: https://github.com/ask/cl
 :PyPI: http://pypi.python.org/pypi/cl
 
-- cyme
+cyme
+----
 
-:canonical repo: https://github.com/celery/cyme
+Distributed Celery Instance manager.
+
+:git: https://github.com/celery/cyme
 :PyPI: http://pypi.python.org/pypi/cyme
+:docs: http://cyme.readthedocs.org/
 
 
 Deprecated
@@ -719,34 +754,34 @@ Deprecated
 
 - Flask-Celery
 
-:canonical repo: https://github.com/ask/Flask-Celery
+:git: https://github.com/ask/Flask-Celery
 :PyPI: http://pypi.python.org/pypi/Flask-Celery
 
 - carrot
 
-:canonical repo: https://github.com/ask/carrot
+:git: https://github.com/ask/carrot
 :PyPI: http://pypi.python.org/pypi/carrot
 
 - ghettoq
 
-:canonical repo: https://github.com/ask/ghettoq
+:git: https://github.com/ask/ghettoq
 :PyPI: http://pypi.python.org/pypi/ghettoq
 
 - kombu-sqlalchemy
 
-:canonical repo: https://github.com/ask/kombu-sqlalchemy
+:git: https://github.com/ask/kombu-sqlalchemy
 :PyPI: http://pypi.python.org/pypi/kombu-sqlalchemy
 
 - django-kombu
 
-:canonical repo: https://github.com/ask/django-kombu
+:git: https://github.com/ask/django-kombu
 :PyPI: http://pypi.python.org/pypi/django-kombu
 
 - pylibrabbitmq
 
 Old name for :mod:`librabbitmq`.
 
-:canonical repo: :const:`None`
+:git: :const:`None`
 :PyPI: http://pypi.python.org/pypi/pylibrabbitmq
 
 .. _release-procedure:
