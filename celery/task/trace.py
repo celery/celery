@@ -241,12 +241,12 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     [subtask(errback).apply_async((uuid, ))
                         for errback in task_request.errbacks or []]
                 else:
-                    if publish_result:
-                        store_result(uuid, retval, SUCCESS)
                     # callback tasks must be applied before the result is
                     # stored, so that result.children is populated.
                     [subtask(callback).apply_async((retval, ))
                         for callback in task_request.callbacks or []]
+                    if publish_result:
+                        store_result(uuid, retval, SUCCESS)
                     if task_on_success:
                         task_on_success(retval, uuid, args, kwargs)
                     if success_receivers:
