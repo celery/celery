@@ -38,10 +38,4 @@ bundles = [
     django_celery.Bundle("django-celery-with-beanstalk",
         "Bundle installing the dependencies for Django-Celery and Beanstalk",
         requires=["beanstalkc"]),
-
-    celery.Bundle("bundle-celery",
-        "Bundle that installs Celery related modules",
-        requires=[django_celery, flask_celery,
-                  "django", "setproctitle", "celerymon",
-                  "cyme", "kombu-sqlalchemy", "django-kombu"]),
 ]

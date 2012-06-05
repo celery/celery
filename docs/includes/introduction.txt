@@ -263,9 +263,6 @@ The following bundles are available:
 :`django-celery-with-mongodb`_:
     for Django, and using MongoDB as a broker.
 
-:`bundle-celery`_:
-    convenience bundle installing *Celery* and related packages.
-
 .. _`celery-with-redis`:
     http://pypi.python.org/pypi/celery-with-redis/
 .. _`celery-with-mongodb`:
@@ -274,8 +271,6 @@ The following bundles are available:
     http://pypi.python.org/pypi/django-celery-with-redis/
 .. _`django-celery-with-mongodb`:
     http://pypi.python.org/pypi/django-celery-with-mongdb/
-.. _`bundle-celery`:
-    http://pypi.python.org/pypi/bundle-celery/
 
 .. _celery-installing-from-source:
 
