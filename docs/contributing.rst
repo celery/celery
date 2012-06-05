@@ -629,7 +629,124 @@ is following the conventions.
 
         from . import submodule
 
+.. _contact_information:
+
+Contacts
+========
+
+Committers
+----------
+
+- Ask Solem
+
+:github: https://github.com/ask
+:twitter: http://twitter.com/#!/asksol
+
+- Mher Movsisyan
+
+:github: https://github.com/mher
+
+- Steeve Morin
+
+:github: https://github.com/steeve
+
+Website
+-------
+
+The Celery Project website is run and maintained by
+
+- Mauro Rocco
+
+:github: https://github.com/fireantology
+:twitter: https://twitter.com/#!/fireantology
+
+with design by:
+
+- Jan Henrik Helmers (http://www.helmersworks.com)
+
+
+.. _packages:
+
+Packages
+========
+
+- celery
+
+:canonical repo: https://github.com/ask/celery
+:PyPI: http://pypi.python.org/pypi/celery
+
+- kombu
+
+:canonical repo: https://github.com/ask/kombu
+:PyPI: http://pypi.python.org/pypi/kombu
+
+- billiard
+
+:canonical repo: https://github.com/ask/billiard
+:PyPI: http://pypi.python.org/pypi/billiard
+
+- librabbitmq
+
+:canonical repo: https://github.com/celery/librabbitmq
+:PyPI: http://pypi.python.org/pypi/librabbitmq
+
+- celerymon
+
+:canonical repo: https://github.com/ask/celerymon
+:PyPI: http://pypi.python.org/pypi/celerymon
+
+- django-celery
+
+:canonical repo: https://github.com/ask/django-celery
+:PyPI: http://pypi.python.org/pypi/django-celery
+
+- cl
+
+:canonical repo: https://github.com/ask/cl
+:PyPI: http://pypi.python.org/pypi/cl
+
+- cyme
+
+:canonical repo: https://github.com/celery/cyme
+:PyPI: http://pypi.python.org/pypi/cyme
+
+
+Deprecated
+----------
+
+- Flask-Celery
+
+:canonical repo: https://github.com/ask/Flask-Celery
+:PyPI: http://pypi.python.org/pypi/Flask-Celery
+
+- carrot
+
+:canonical repo: https://github.com/ask/carrot
+:PyPI: http://pypi.python.org/pypi/carrot
+
+- ghettoq
+
+:canonical repo: https://github.com/ask/ghettoq
+:PyPI: http://pypi.python.org/pypi/ghettoq
+
+- kombu-sqlalchemy
+
+:canonical repo: https://github.com/ask/kombu-sqlalchemy
+:PyPI: http://pypi.python.org/pypi/kombu-sqlalchemy
+
+- django-kombu
+
+:canonical repo: https://github.com/ask/django-kombu
+:PyPI: http://pypi.python.org/pypi/django-kombu
+
+- pylibrabbitmq
+
+Old name for :mod:`librabbitmq`.
+
+:canonical repo: :const:`None`
+:PyPI: http://pypi.python.org/pypi/pylibrabbitmq
 .. _release-procedure:
+
 
 Release Procedure
 =================
