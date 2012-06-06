@@ -13,22 +13,17 @@
 
 --
 
-.. contents::
-    :local:
-
-Synopsis
-========
-
 Celery is an open source asynchronous task queue/job queue based on
-distributed message passing.  It is focused on real-time operation,
-but supports scheduling as well.
+distributed message passing.
+
+It is focused on real-time operation, but supports scheduling as well.
 
 The execution units, called tasks, are executed concurrently on one or
 more worker nodes using multiprocessing, `Eventlet`_ or `gevent`_.  Tasks can
 execute asynchronously (in the background) or synchronously
 (wait until ready).
 
-Celery is used in production systems to process millions of tasks a day.
+Celery is used in production systems to process millions of tasks every hour.
 
 Celery is written in Python, but the protocol can be implemented in any
 language.  It can also `operate with other languages using webhooks`_.
@@ -300,10 +295,9 @@ please join the `celery-users`_ mailing list.
 IRC
 ---
 
-Come chat with us on IRC. The `#celery`_ channel is located at the `Freenode`_
+Come chat with us on IRC. The **#celery** channel is located at the `Freenode`_
 network.
 
-.. _`#celery`: irc://irc.freenode.net/celery
 .. _`Freenode`: http://freenode.net
 
 
