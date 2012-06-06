@@ -690,7 +690,7 @@ celery
 ------
 
 :git: https://github.com/celery/celery
-:CI: http://travis-ci.org/#!/ask/celery
+:CI: http://travis-ci.org/#!/celery/celery
 :PyPI: http://pypi.python.org/pypi/celery
 :docs: http://docs.celeryproject.org
 
@@ -700,7 +700,7 @@ kombu
 Messaging framework.
 
 :git: https://github.com/celery/kombu
-:CI: http://travis-ci.org/#!/ask/kombu
+:CI: http://travis-ci.org/#!/celery/kombu
 :PyPI: http://pypi.python.org/pypi/kombu
 :docs: http://kombu.readthedocs.org
 
