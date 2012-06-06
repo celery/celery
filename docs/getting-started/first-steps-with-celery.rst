@@ -285,7 +285,7 @@ you can also imagine your sysadmin making simple changes to the configuration
 in the event of system trobule.
 
 You can tell your Celery instance to use a configuration module,
-by calling the :meth:`@~Celery.config_from_obj` method:
+by calling the :meth:`~@Celery.config_from_obj` method:
 
 .. code-block:: python
 
