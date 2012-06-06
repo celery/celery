@@ -22,7 +22,7 @@ Synopsis
 ========
 
 Celery is an open source asynchronous task queue/job queue based on
-distributed message passing.  It is focused on real-time operation,
+distributed message passing.  Focused on real-time operation,
 but supports scheduling as well.
 
 The execution units, called tasks, are executed concurrently on one or
@@ -333,10 +333,9 @@ please join the `celery-users`_ mailing list.
 IRC
 ---
 
-Come chat with us on IRC. The `#celery`_ channel is located at the `Freenode`_
+Come chat with us on IRC. The **#celery** channel is located at the `Freenode`_
 network.
 
-.. _`#celery`: irc://irc.freenode.net/celery
 .. _`Freenode`: http://freenode.net
 
 .. _bug-tracker:

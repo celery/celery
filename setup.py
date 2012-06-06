@@ -53,11 +53,6 @@ classes = """
     License :: OSI Approved :: BSD License
     Topic :: System :: Distributed Computing
     Topic :: Software Development :: Object Brokering
-    Intended Audience :: Developers
-    Intended Audience :: Information Technology
-    Intended Audience :: Science/Research
-    Environment :: No Input/Output (Daemon)
-    Environment :: Console
     Programming Language :: Python
     Programming Language :: Python :: 2
     Programming Language :: Python :: 2.5

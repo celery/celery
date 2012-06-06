@@ -16,7 +16,7 @@ Synopsis
 ========
 
 Celery is an open source asynchronous task queue/job queue based on
-distributed message passing.  It is focused on real-time operation,
+distributed message passing.  Focused on real-time operation,
 but supports scheduling as well.
 
 The execution units, called tasks, are executed concurrently on one or
