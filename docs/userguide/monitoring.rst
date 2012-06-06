@@ -333,7 +333,7 @@ or help this project in any way, please get in touch!
 :Tip: The Django admin monitor can be used even though you're not using
       Celery with a Django project.  See :ref:`monitoring-nodjango`.
 
-.. _`celerymon`: http://github.com/ask/celerymon/
+.. _`celerymon`: http://github.com/celery/celerymon/
 
 .. _monitoring-rabbitmq:
 

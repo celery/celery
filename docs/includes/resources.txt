@@ -30,21 +30,21 @@ Bug tracker
 ===========
 
 If you have any suggestions, bug reports or annoyances please report them
-to our issue tracker at http://github.com/ask/celery/issues/
+to our issue tracker at http://github.com/celery/celery/issues/
 
 .. _wiki:
 
 Wiki
 ====
 
-http://wiki.github.com/ask/celery/
+http://wiki.github.com/celery/celery/
 
 .. _contributing-short:
 
 Contributing
 ============
 
-Development of `celery` happens at Github: http://github.com/ask/celery
+Development of `celery` happens at Github: http://github.com/celery/celery
 
 You are highly encouraged to participate in the development
 of `celery`. If you don't like Github (for some reason) you're welcome
@@ -53,7 +53,7 @@ to send regular patches.
 Be sure to also read the `Contributing to Celery`_ section in the
 documentation.
 
-.. _`Contributing to Celery`: http://ask.github.com/celery/contributing.html
+.. _`Contributing to Celery`: http://celery.github.com/celery/contributing.html
 
 .. _license:
 

@@ -21,14 +21,14 @@ Resources
 Who's using Celery
 ------------------
 
-http://wiki.github.com/ask/celery/using
+http://wiki.github.com/celery/celery/using
 
 .. _res-wiki:
 
 Wiki
 ----
 
-http://wiki.github.com/ask/celery/
+http://wiki.github.com/celery/celery/
 
 .. _res-stackoverflow:
 

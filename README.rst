@@ -4,10 +4,10 @@
 
 .. image:: http://cloud.github.com/downloads/ask/celery/celery_128.png
 
-:Version: 2.5.2
+:Version: 2.5.3
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
-:Source: http://github.com/ask/celery/
+:Source: http://github.com/celery/celery/
 :Keywords: task queue, job queue, asynchronous, rabbitmq, amqp, redis,
   python, webhooks, queue, distributed
 
@@ -76,10 +76,10 @@ integration packages:
 .. _`pyramid_celery`: http://pypi.python.org/pypi/pyramid_celery/
 .. _`django-celery`: http://pypi.python.org/pypi/django-celery
 .. _`celery-pylons`: http://pypi.python.org/pypi/celery-pylons
-.. _`flask-celery`: http://github.com/ask/flask-celery/
+.. _`flask-celery`: http://github.com/celery/flask-celery/
 .. _`web2py-celery`: http://code.google.com/p/web2py-celery/
 .. _`operate with other languages using webhooks`:
-    http://ask.github.com/celery/userguide/remote-tasks.html
+    http://celery.github.com/celery/userguide/remote-tasks.html
 .. _`limited support`:
     http://kombu.readthedocs.org/en/latest/introduction.html#transport-comparison
 
@@ -222,10 +222,13 @@ Features
 Documentation
 =============
 
-The `latest documentation`_ with user guides, tutorials and API reference
-is hosted at Github.
+Documentation for the production version can be found here:
 
-.. _`latest documentation`: http://ask.github.com/celery/
+    http://docs.celeryproject.org/en/latest
+
+and the documentation for the development version can be found here:
+
+    http://celery.github.com/celery/
 
 .. _celery-installation:
 
@@ -299,7 +302,7 @@ Using the development version
 
 You can clone the repository by doing the following::
 
-    $ git clone git://github.com/ask/celery.git
+    $ git clone git://github.com/celery/celery.git
 
 .. _getting-help:
 
@@ -333,21 +336,21 @@ Bug tracker
 ===========
 
 If you have any suggestions, bug reports or annoyances please report them
-to our issue tracker at http://github.com/ask/celery/issues/
+to our issue tracker at http://github.com/celery/celery/issues/
 
 .. _wiki:
 
 Wiki
 ====
 
-http://wiki.github.com/ask/celery/
+http://wiki.github.com/celery/celery/
 
 .. _contributing-short:
 
 Contributing
 ============
 
-Development of `celery` happens at Github: http://github.com/ask/celery
+Development of `celery` happens at Github: http://github.com/celery/celery
 
 You are highly encouraged to participate in the development
 of `celery`. If you don't like Github (for some reason) you're welcome
@@ -356,7 +359,7 @@ to send regular patches.
 Be sure to also read the `Contributing to Celery`_ section in the
 documentation.
 
-.. _`Contributing to Celery`: http://ask.github.com/celery/contributing.html
+.. _`Contributing to Celery`: http://celery.github.com/celery/contributing.html
 
 .. _license:
 

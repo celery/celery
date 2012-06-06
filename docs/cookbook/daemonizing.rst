@@ -22,7 +22,7 @@ This directory contains generic bash init scripts for :program:`celeryd`,
 that should run on Linux, FreeBSD, OpenBSD, and other Unix platforms.
 
 .. _`contrib/generic-init.d/`:
-    http://github.com/ask/celery/tree/master/contrib/generic-init.d/
+    http://github.com/celery/celery/tree/master/contrib/generic-init.d/
 
 .. _generic-initd-celeryd:
 
@@ -295,7 +295,7 @@ actual resulting output::
 * `contrib/supervisord/`_
 
 .. _`contrib/supervisord/`:
-    http://github.com/ask/celery/tree/master/contrib/supervisord/
+    http://github.com/celery/celery/tree/master/contrib/supervisord/
 .. _`supervisord`: http://supervisord.org/
 
 .. _daemon-launchd:
@@ -306,7 +306,7 @@ launchd (OS X)
 * `contrib/mac/`_
 
 .. _`contrib/mac/`:
-    http://github.com/ask/celery/tree/master/contrib/mac/
+    http://github.com/celery/celery/tree/master/contrib/mac/
 
 
 .. _daemon-windows:

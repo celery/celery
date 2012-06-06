@@ -28,7 +28,7 @@ databases is also available.
 Features
 --------
 
-See http://ask.github.com/celery/getting-started/introduction.html#features
+See http://celery.github.com/celery/getting-started/introduction.html#features
 
 Stable API
 ==========
@@ -50,7 +50,7 @@ that existed in Celery 1.0:
 See the `Celery Deprecation Timeline`_ for a list of pending removals.
 
 .. _`Celery Deprecation Timeline`:
-    http://ask.github.com/celery/internals/deprecation.html
+    http://celery.github.com/celery/internals/deprecation.html
 
 What's new?
 ===========
@@ -76,7 +76,7 @@ What's new?
     workers. This is the basis for the new real-time web monitor we're working on
     (`celerymon`_).
 
-.. _`celerymon`: http://github.com/ask/celerymon/
+.. _`celerymon`: http://github.com/celery/celerymon/
 
 * Rate limiting
 
@@ -137,7 +137,7 @@ the `changelog`_. This document contains crucial information for those
 upgrading from a previous version of Celery, so be sure to read the entire
 change set before you continue.
 
-.. _`changelog`: http://ask.github.com/celery/changelog.html
+.. _`changelog`: http://celery.github.com/celery/changelog.html
 
 **TIP:** If you install the :mod:`setproctitle` module you can see which
 task each worker process is currently executing in `ps` listings.
@@ -154,9 +154,9 @@ Resources
 
 * Changelog: http://docs.celeryproject.org/changelog.html
 
-* Code: http://github.com/ask/celery/
+* Code: http://github.com/celery/celery/
 
-* FAQ: http://ask.github.com/celery/faq.html
+* FAQ: http://celery.github.com/celery/faq.html
 
 * Mailing-list: http://groups.google.com/group/celery-users
 

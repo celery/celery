@@ -151,11 +151,11 @@ Issue Trackers
 Bugs for a package in the Celery ecosystem should be reported to the relevant
 issue tracker.
 
-* Celery: http://github.com/ask/celery/issues/
-* Django-Celery: http://github.com/ask/django-celery/issues
+* Celery: http://github.com/celery/celery/issues/
+* Django-Celery: http://github.com/celery/django-celery/issues
 * Flask-Celery: http://github.com/ask/flask-celery/issues
 * Celery-Pylons: http://bitbucket.org/ianschenck/celery-pylons/issues
-* Kombu: http://github.com/ask/kombu/issues
+* Kombu: http://github.com/celery/kombu/issues
 
 If you are unsure of the origin of the bug you can ask the
 :ref:`mailing-list`, or just use the Celery issue tracker.
@@ -180,12 +180,12 @@ Branches
 
 Current active version branches:
 
-* master (http://github.com/ask/celery/tree/master)
-* 3.0-devel (http://github.com/ask/celery/tree/3.0-devel)
+* master (http://github.com/celery/celery/tree/master)
+* 3.0-devel (http://github.com/celery/celery/tree/3.0-devel)
 
 You can see the state of any branch by looking at the Changelog:
 
-    https://github.com/ask/celery/blob/master/Changelog
+    https://github.com/celery/celery/blob/master/Changelog
 
 If the branch is in active development the topmost version info should
 contain metadata like::
@@ -305,7 +305,7 @@ When the repository is cloned enter the directory to set up easy access
 to upstream changes::
 
     $ cd celery
-    $ git remote add upstream git://github.com/ask/celery.git
+    $ git remote add upstream git://github.com/celery/celery.git
     $ git fetch upstream
 
 If you need to pull in new changes from upstream you should
