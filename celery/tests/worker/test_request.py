@@ -21,17 +21,22 @@ from celery.concurrency.base import BasePool
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import (RetryTaskError,
                                WorkerLostError, InvalidTaskError)
-from celery.task.trace import eager_trace_task, TraceInfo, mro_lookup
+from celery.task.trace import (
+    trace_task,
+    trace_task_ret,
+    TraceInfo,
+    mro_lookup,
+    build_tracer,
+)
 from celery.result import AsyncResult
 from celery.task import task as task_dec
 from celery.task.base import Task
 from celery.utils import uuid
 from celery.worker import job as module
-from celery.worker.job import Request, TaskRequest, execute_and_trace
+from celery.worker.job import Request, TaskRequest
 from celery.worker.state import revoked
 
 from celery.tests.utils import Case
-
 
 scratch = {"ACK": False}
 some_kwargs_scratchpad = {}
@@ -68,8 +73,10 @@ class test_mro_lookup(Case):
 
 def jail(task_id, name, args, kwargs):
     request = {"id": task_id}
-    return eager_trace_task(current_app.tasks[name],
-            task_id, args, kwargs, request=request, eager=False)[0]
+    task = current_app.tasks[name]
+    task.__trace__ = None  # rebuild
+    return trace_task(task,
+            task_id, args, kwargs, request=request, eager=False)
 
 
 def on_ack(*args, **kwargs):
@@ -221,6 +228,7 @@ class MockEventDispatcher(object):
 
 class test_TaskRequest(Case):
 
+
     def test_task_wrapper_repr(self):
         tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         self.assertTrue(repr(tw))
@@ -262,8 +270,11 @@ class test_TaskRequest(Case):
             einfo = ExceptionInfo()
             tw.on_failure(einfo)
             self.assertIn("task-retried", tw.eventer.sent)
-            tw._does_info = False
-            tw.on_failure(einfo)
+            prev, module._does_info = module._does_info, False
+            try:
+                tw.on_failure(einfo)
+            finally:
+                module._does_info = prev
             einfo.internal = True
             tw.on_failure(einfo)
 
@@ -408,8 +419,11 @@ class test_TaskRequest(Case):
         tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         tw.on_accepted(pid=os.getpid(), time_accepted=time.time())
         self.assertTrue(tw.acknowledged)
-        tw._does_debug = False
-        tw.on_accepted(pid=os.getpid(), time_accepted=time.time())
+        prev, module._does_debug = module._does_debug, False
+        try:
+            tw.on_accepted(pid=os.getpid(), time_accepted=time.time())
+        finally:
+            module._does_debug = prev
 
     def test_on_accepted_acks_late(self):
         tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
@@ -432,9 +446,12 @@ class test_TaskRequest(Case):
         tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         tw.time_start = 1
         tw.on_success(42)
-        tw._does_info = False
-        tw.on_success(42)
-        self.assertFalse(tw.acknowledged)
+        prev, module._does_info = module._does_info, False
+        try:
+            tw.on_success(42)
+            self.assertFalse(tw.acknowledged)
+        finally:
+            module._does_info = prev
 
     def test_on_success_BaseException(self):
         tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
@@ -539,8 +556,10 @@ class test_TaskRequest(Case):
         finally:
             mytask.ignore_result = False
 
-    def test_execute_and_trace(self):
-        res = execute_and_trace(mytask.name, uuid(), [4], {})
+    def test_trace_task_ret(self):
+        mytask.__trace__ = build_tracer(mytask.name, mytask,
+                                        current_app.loader, "test")
+        res = trace_task_ret(mytask.name, uuid(), [4], {})
         self.assertEqual(res, 4 ** 4)
 
     def test_execute_safe_catches_exception(self):
@@ -554,8 +573,7 @@ class test_TaskRequest(Case):
 
         with self.assertWarnsRegex(RuntimeWarning,
                 r'Exception raised outside'):
-            res = execute_and_trace(raising.name, uuid(),
-                                    [], {})
+            res = trace_task(raising, uuid(), [], {})
             self.assertIsInstance(res, ExceptionInfo)
 
     def test_worker_task_trace_handle_retry(self):

@@ -31,7 +31,6 @@ from celery.task.trace import (
     trace_task,
     trace_task_ret,
     report_internal_error,
-    execute_bare,
 )
 from celery.platforms import set_mp_process_title as setps
 from celery.utils import fun_takes_kwargs
@@ -60,35 +59,13 @@ revoked_tasks = state.revoked
 NEEDS_KWDICT = sys.version_info <= (2, 6)
 
 
-def execute_and_trace(name, uuid, args, kwargs, request=None, **opts):
-    """This is a pickleable method used as a target when applying to pools.
-
-    It's the same as::
-
-        >>> trace_task(name, *args, **kwargs)[0]
-
-    """
-    task = current_app.tasks[name]
-    try:
-        hostname = opts.get("hostname")
-        setps("celeryd", name, hostname, rate_limit=True)
-        try:
-            if task.__trace__ is None:
-                task.__trace__ = build_tracer(name, task, **opts)
-            return task.__trace__(uuid, args, kwargs, request)[0]
-        finally:
-            setps("celeryd", "-idle-", hostname, rate_limit=True)
-    except Exception, exc:
-        return report_internal_error(task, exc)
-
-
 class Request(object):
     """A request for task execution."""
     __slots__ = ("app", "name", "id", "args", "kwargs",
                  "on_ack", "delivery_info", "hostname",
                  "callbacks", "errbacks",
                  "eventer", "connection_errors",
-                 "task", "eta", "expires", "flags",
+                 "task", "eta", "expires",
                  "request_dict", "acknowledged", "success_msg",
                  "error_msg", "retry_msg", "time_start", "worker_pid",
                  "_already_revoked", "_terminate_on_ack", "_tzlocal")
@@ -130,7 +107,6 @@ class Request(object):
         eta = body.get("eta")
         expires = body.get("expires")
         utc = body.get("utc", False)
-        self.flags = body.get("flags", False)
         self.on_ack = on_ack
         self.hostname = hostname or socket.gethostname()
         self.eventer = eventer
@@ -202,15 +178,6 @@ class Request(object):
 
         """
         task = self.task
-        if self.flags & 0x004:
-            return pool.apply_async(execute_bare,
-                    args=(task, self.id, self.args, self.kwargs),
-                    accept_callback=self.on_accepted,
-                    timeout_callback=self.on_timeout,
-                    callback=self.on_success,
-                    error_callback=self.on_failure,
-                    soft_timeout=task.soft_time_limit,
-                    timeout=task.time_limit)
         if self.revoked():
             return
 
@@ -253,10 +220,9 @@ class Request(object):
         request.update({"loglevel": loglevel, "logfile": logfile,
                         "hostname": self.hostname, "is_eager": False,
                         "delivery_info": self.delivery_info})
-        retval, _ = trace_task(self.task, self.id, self.args, kwargs,
+        retval = trace_task(self.task, self.id, self.args, kwargs, request,
                                **{"hostname": self.hostname,
-                                  "loader": self.app.loader,
-                                  "request": request})
+                                  "loader": self.app.loader})
         self.acknowledge()
         return retval
 

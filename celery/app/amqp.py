@@ -30,10 +30,6 @@ QUEUE_FORMAT = """
 . %(name)s exchange:%(exchange)s(%(exchange_type)s) binding:%(routing_key)s
 """
 
-TASK_BARE = 0x004
-TASK_DEFAULT = 0
-
-
 class Queues(dict):
     """Queue name⇒ declaration mapping.
 
@@ -154,7 +150,7 @@ class TaskProducer(Producer):
             queue=None, now=None, retries=0, chord=None, callbacks=None,
             errbacks=None, mandatory=None, priority=None, immediate=None,
             routing_key=None, serializer=None, delivery_mode=None,
-            compression=None, bare=False, **kwargs):
+            compression=None, **kwargs):
         """Send task message."""
         # merge default and custom policy
         _rp = (dict(self.retry_policy, **retry_policy) if retry_policy
@@ -174,8 +170,6 @@ class TaskProducer(Producer):
             expires = now + timedelta(seconds=expires)
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
-        flags = TASK_DEFAULT
-        flags |= TASK_BARE if bare else 0
 
         body = {"task": task_name,
                 "id": task_id,
@@ -186,8 +180,7 @@ class TaskProducer(Producer):
                 "expires": expires,
                 "utc": self.utc,
                 "callbacks": callbacks,
-                "errbacks": errbacks,
-                "flags": flags}
+                "errbacks": errbacks}
         if taskset_id:
             body["taskset"] = taskset_id
         if chord:

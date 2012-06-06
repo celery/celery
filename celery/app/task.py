@@ -34,13 +34,12 @@ from celery.utils.mail import ErrorMail
 from .annotations import resolve_all as resolve_all_annotations
 from .registry import _unpickle_task
 
-#: extracts options related to publishing a message from a dict.
-extract_exec_options = mattrgetter("queue", "routing_key",
-                                   "exchange", "immediate",
-                                   "mandatory", "priority",
-                                   "serializer", "delivery_mode",
-                                   "compression", "expires", "bare")
-
+#: extracts attributes related to publishing a message from an object.
+extract_exec_options = mattrgetter(
+    "queue", "routing_key", "exchange",
+    "immediate", "mandatory", "priority", "expires",
+    "serializer", "delivery_mode", "compression",
+)
 
 #: Billiard sets this when execv is enabled.
 #: We use it to find out the name of the original ``__main__``

@@ -1,75 +1,135 @@
 from __future__ import absolute_import
 
 from kombu.utils import cached_property
-from kombu.utils.eventio import poll, READ, WRITE, ERR
+from kombu.utils import eventio
 
 from celery.utils.timer2 import Schedule
 
-
-class DummyLock(object):
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *exc_info):
-        pass
+READ, WRITE, ERR = eventio.READ, eventio.WRITE, eventio.ERR
 
 
 class BoundedSemaphore(object):
+    """Asynchronous Bounded Semaphore.
 
-    def __init__(self, value=1):
+    Bounded means that the value will stay within the specified
+    range even if it is released more times than it was acquired.
+
+    This type is *not thread safe*.
+
+    Example:
+
+        >>> x = BoundedSemaphore(2)
+
+        >>> def callback(i):
+        ...     print("HELLO %r" % i)
+
+        >>> x.acquire(callback, 1)
+        HELLO 1
+
+        >>> x.acquire(callback, 2)
+        HELLO 2
+
+        >>> x.acquire(callback, 3)
+        >>> x._waiters   # private, do not access directly
+        [(callback, 3)]
+
+        >>> x.release()
+        HELLO 3
+
+    """
+
+    def __init__(self, value):
         self.initial_value = self.value = value
         self._waiting = []
 
-    def grow(self):
-        self.initial_value += 1
-        self.release()
+    def acquire(self, callback, *partial_args):
+        """Acquire semaphore, applying ``callback`` when
+        the semaphore is ready.
 
-    def shrink(self):
-        self.initial_value -= 1
+        :param callback: The callback to apply.
+        :param *partial_args: partial arguments to callback.
 
-    def acquire(self, callback, *partial_args, **partial_kwargs):
+        """
         if self.value <= 0:
             self._waiting.append((callback, partial_args))
             return False
         else:
             self.value = max(self.value - 1, 0)
-            callback(*partial_args, **partial_kwargs)
+            callback(*partial_args)
             return True
 
     def release(self):
+        """Release semaphore.
+
+        This will apply any waiting callbacks from previous
+        calls to :meth:`acquire` done when the semaphore was busy.
+
+        """
         self.value = min(self.value + 1, self.initial_value)
         if self._waiting:
             waiter, args = self._waiting.pop()
             waiter(*args)
 
+    def grow(self, n=1):
+        """Change the size of the semaphore to hold more values."""
+        self.initial_value += n
+        self.value += n
+        [self.release() for _ in xrange(n)]
+
+    def shrink(self, n=1):
+        """Change the size of the semaphore to hold less values."""
+        self.initial_value = max(self.initial_value - n, 0)
+        self.value = max(self.value - n, 0)
+
     def clear(self):
-        pass
+        """Reset the sempahore, including wiping out any waiting callbacks."""
+        self._waiting[:] = []
+        self.value = self.initial_value
 
 
 class Hub(object):
-    READ, WRITE, ERR = READ, WRITE, ERR
+    """Event loop object.
+
+    :keyword timer: Specify custom :class:`~celery.utils.timer2.Schedule`.
+
+    """
+    #: Flag set if reading from an fd will not block.
+    READ = READ
+
+    #: Flag set if writing to an fd will not block.
+    WRITE = WRITE
+
+    #: Flag set on error, and the fd should be read from asap.
+    ERR = ERR
+
+    #: List of callbacks to be called when the loop is initialized,
+    #: applied with the hub instance as sole argument.
+    on_init = None
+
+    #: List of callbacks to be called when the loop is exiting,
+    #: applied with the hub instance as sole argument.
+    on_close = None
+
+    #: List of callbacks to be called when a task is received.
+    #: Takes no arguments.
+    on_task = None
 
     def __init__(self, timer=None):
+        self.timer = Schedule() if timer is None else timer
+
         self.readers = {}
         self.writers = {}
-        self.timer = Schedule() if timer is None else timer
         self.on_init = []
         self.on_close = []
         self.on_task = []
 
     def start(self):
-        self.poller = poll()
+        """Called by StartStopComponent at worker startup."""
+        self.poller = eventio.poll()
 
     def stop(self):
+        """Called by StartStopComponent at worker shutdown."""
         self.poller.close()
-
-    def __enter__(self):
-        self.init()
-        return self
-
-    def __exit__(self, *exc_info):
-        return self.close()
 
     def init(self):
         for callback in self.on_init:
@@ -106,18 +166,41 @@ class Hub(object):
     def update_writers(self, map):
         [self.add_writer(*x) for x in map.iteritems()]
 
-    def remove(self, fd):
+    def _unregister(self, fd):
         try:
             self.poller.unregister(fd)
         except (KeyError, OSError):
             pass
 
-    def close(self):
-        [self.remove(fd) for fd in self.readers.keys()]
-        [self.remove(fd) for fd in self.writers.keys()]
+    def remove(self, fd):
+        fileno = fd.fileno() if not isinstance(fd, int) else fd
+        self.readers.pop(fileno, None)
+        self.writers.pop(fileno, None)
+        self._unregister(fd)
+
+    def __enter__(self):
+        self.init()
+        return self
+
+    def close(self, *args):
+        [self._unregister(fd) for fd in self.readers]
+        self.readers.clear()
+        [self._unregister(fd) for fd in self.writers]
+        self.writers.clear()
         for callback in self.on_close:
             callback(self)
+    __exit__ = close
 
     @cached_property
     def scheduler(self):
         return iter(self.timer)
+
+
+class DummyLock(object):
+    """Pretending to be a lock."""
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        pass

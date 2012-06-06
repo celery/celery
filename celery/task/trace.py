@@ -130,30 +130,6 @@ class TraceInfo(object):
             del(tb)
 
 
-def execute_bare(task, uuid, args, kwargs, request=None, Info=TraceInfo):
-    R = I = None
-    kwargs = kwdict(kwargs)
-    try:
-        try:
-            R = retval = task(*args, **kwargs)
-            state = SUCCESS
-        except Exception, exc:
-            I = Info(FAILURE, exc)
-            state, retval = I.state, I.retval
-            R = I.handle_error_state(task)
-        except BaseException, exc:
-            raise
-        except:  # pragma: no cover
-            # For Python2.5 where raising strings are still allowed
-            # (but deprecated)
-            I = Info(FAILURE, None)
-            state, retval = I.state, I.retval
-            R = I.handle_error_state(task)
-    except Exception, exc:
-        R = report_internal_error(task, exc)
-    return R
-
-
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         Info=TraceInfo, eager=False, propagate=False):
     # If the task doesn't define a custom __call__ method
@@ -282,16 +258,16 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     return trace_task
 
 
-def trace_task(task, uuid, args, kwargs, request=None, **opts):
+def trace_task(task, uuid, args, kwargs, request={}, **opts):
     try:
         if task.__trace__ is None:
             task.__trace__ = build_tracer(task.name, task, **opts)
-        return task.__trace__(uuid, args, kwargs, request)
+        return task.__trace__(uuid, args, kwargs, request)[0]
     except Exception, exc:
-        return report_internal_error(task, exc), None
+        return report_internal_error(task, exc)
 
 
-def trace_task_ret(task, uuid, args, kwargs, request):
+def trace_task_ret(task, uuid, args, kwargs, request={}):
     return _tasks[task].__trace__(uuid, args, kwargs, request)[0]
 
 
