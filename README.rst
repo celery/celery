@@ -7,7 +7,7 @@
 :Version: 2.6.0rc4
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
-:Source: http://github.com/ask/celery/
+:Source: http://github.com/celery/celery/
 :Keywords: task queue, job queue, asynchronous, rabbitmq, amqp, redis,
   python, webhooks, queue, distributed
 
@@ -84,7 +84,7 @@ integration packages:
 .. _`Tornado`: http://www.tornadoweb.org/
 .. _`tornado-celery`: http://github.com/mher/tornado-celery/
 .. _`operate with other languages using webhooks`:
-    http://ask.github.com/celery/userguide/remote-tasks.html
+    http://celery.github.com/celery/userguide/remote-tasks.html
 .. _`limited support`:
     http://kombu.readthedocs.org/en/latest/introduction.html#transport-comparison
 
@@ -230,7 +230,7 @@ Documentation
 The `latest documentation`_ with user guides, tutorials and API reference
 is hosted at Github.
 
-.. _`latest documentation`: http://ask.github.com/celery/
+.. _`latest documentation`: http://celery.github.com/celery/
 
 .. _celery-installation:
 
@@ -299,7 +299,7 @@ Using the development version
 
 You can clone the repository by doing the following::
 
-    $ git clone https://github.com/ask/celery
+    $ git clone https://github.com/celery/celery
     $ cd celery
     $ python setup.py develop
 
@@ -307,7 +307,7 @@ The development version will usually also depend on the development
 version of `kombu`_, the messaging framework Celery uses
 to send and receive messages, so you should also install that from git::
 
-    $ git clone https://github.com/ask/kombu
+    $ git clone https://github.com/celery/kombu
     $ cd kombu
     $ python setup.py develop
 
@@ -345,21 +345,21 @@ Bug tracker
 ===========
 
 If you have any suggestions, bug reports or annoyances please report them
-to our issue tracker at http://github.com/ask/celery/issues/
+to our issue tracker at http://github.com/celery/celery/issues/
 
 .. _wiki:
 
 Wiki
 ====
 
-http://wiki.github.com/ask/celery/
+http://wiki.github.com/celery/celery/
 
 .. _contributing-short:
 
 Contributing
 ============
 
-Development of `celery` happens at Github: http://github.com/ask/celery
+Development of `celery` happens at Github: http://github.com/celery/celery
 
 You are highly encouraged to participate in the development
 of `celery`. If you don't like Github (for some reason) you're welcome
@@ -368,7 +368,7 @@ to send regular patches.
 Be sure to also read the `Contributing to Celery`_ section in the
 documentation.
 
-.. _`Contributing to Celery`: http://ask.github.com/celery/contributing.html
+.. _`Contributing to Celery`: http://celery.github.com/celery/contributing.html
 
 .. _license:
 

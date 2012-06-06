@@ -67,8 +67,8 @@ for the no-execv patch to work.
 - Issue #625
 - Issue #627
 - Issue #640
-- `django-celery #122 <http://github.com/ask/django-celery/issues/122`
-- `django-celery #124 <http://github.com/ask/django-celery/issues/122`
+- `django-celery #122 <http://github.com/celery/django-celery/issues/122`
+- `django-celery #124 <http://github.com/celery/django-celery/issues/122`
 
 Last version to support Python 2.5
 ----------------------------------

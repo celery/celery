@@ -7,4 +7,4 @@ redis
 pymongo
 SQLAlchemy
 PyOpenSSL
-https://github.com/ask/kombu/zipball/master
+https://github.com/celery/kombu/zipball/master

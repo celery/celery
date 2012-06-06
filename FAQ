@@ -89,13 +89,10 @@ Do I have to use AMQP/RabbitMQ?
 **Answer**: No.
 
 You can also use Redis, Beanstalk, CouchDB, MongoDB or an SQL database,
-see `Using other queues`_.
+see :ref:`brokers`.
 
 These "virtual transports" may have limited broadcast and event functionality.
 For example remote control commands only works with AMQP and Redis.
-
-.. _`Using other queues`:
-    http://ask.github.com/celery/tutorials/otherqueues.html
 
 Redis or a database won't perform as well as
 an AMQP broker. If you have strict reliability requirements you are
@@ -125,7 +122,7 @@ information you can even create simple web servers that enable preloading of
 code. See: `User Guide: Remote Tasks`_.
 
 .. _`User Guide: Remote Tasks`:
-    http://ask.github.com/celery/userguide/remote-tasks.html
+    http://celery.github.com/celery/userguide/remote-tasks.html
 
 .. _faq-troubleshooting:
 

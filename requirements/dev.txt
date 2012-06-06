@@ -1,3 +1,3 @@
-https://github.com/ask/billiard/zipball/master
-https://github.com/ask/kombu/zipball/master
-https://github.com/ask/celery/zipball/master
+https://github.com/celery/billiard/zipball/master
+https://github.com/celery/kombu/zipball/master
+https://github.com/celery/celery/zipball/master

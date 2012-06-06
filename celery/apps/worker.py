@@ -249,7 +249,7 @@ class Worker(configurated):
             # into the background.
             if self.app.IS_OSX:
                 # OS X can't exec from a process using threads.
-                # See http://github.com/ask/celery/issues#issue/152
+                # See http://github.com/celery/celery/issues#issue/152
                 install_HUP_not_supported_handler(worker)
             else:
                 install_worker_restart_handler(worker)
@@ -260,7 +260,7 @@ class Worker(configurated):
         install_rdb_handler()
 
     def osx_proxy_detection_workaround(self):
-        """See http://github.com/ask/celery/issues#issue/161"""
+        """See http://github.com/celery/celery/issues#issue/161"""
         os.environ.setdefault("celery_dummy_proxy", "set_by_celeryd")
 
     def set_process_status(self, info):

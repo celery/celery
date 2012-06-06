@@ -59,5 +59,5 @@ some examples taking use of Eventlet support.
     http://en.wikipedia.org/wiki/Asynchronous_I/O#Select.28.2Fpoll.29_loops
 .. _`Coroutines`: http://en.wikipedia.org/wiki/Coroutine
 .. _`Eventlet examples`:
-    https://github.com/ask/celery/tree/master/examples/eventlet
+    https://github.com/celery/celery/tree/master/examples/eventlet
 

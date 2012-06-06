@@ -217,7 +217,7 @@ Security Fixes
 
 
 .. _`CELERYSA-0001`:
-    http://github.com/ask/celery/tree/master/docs/sec/CELERYSA-0001.txt
+    http://github.com/celery/celery/tree/master/docs/sec/CELERYSA-0001.txt
 
 .. _v244-fixes:
 
@@ -592,7 +592,7 @@ Security Fixes
 
 
 .. _`CELERYSA-0001`:
-    http://github.com/ask/celery/tree/master/docs/sec/CELERYSA-0001.txt
+    http://github.com/celery/celery/tree/master/docs/sec/CELERYSA-0001.txt
 
 Fixes
 -----
@@ -633,7 +633,7 @@ News
 * Improved Contributing guide.
 
     If you'd like to contribute to Celery you should read this
-    guide: http://ask.github.com/celery/contributing.html
+    guide: http://celery.github.com/celery/contributing.html
 
     We are looking for contributors at all skill levels, so don't
     hesitate!
@@ -948,7 +948,7 @@ Security Fixes
 
 
 .. _`CELERYSA-0001`:
-    http://github.com/ask/celery/tree/master/docs/sec/CELERYSA-0001.txt
+    http://github.com/celery/celery/tree/master/docs/sec/CELERYSA-0001.txt
 
 .. _version-2.2.7:
 
@@ -2634,7 +2634,7 @@ Experimental
 
 * Added generic init.d script using `celeryd-multi`
 
-    http://github.com/ask/celery/tree/master/contrib/generic-init.d/celeryd
+    http://github.com/celery/celery/tree/master/contrib/generic-init.d/celeryd
 
 .. _v210-documentation:
 
@@ -3209,7 +3209,7 @@ Backward incompatible changes
     =====================================  =====================================
 
 .. _`deprecation timeline`:
-    http://ask.github.com/celery/internals/deprecation.html
+    http://celery.github.com/celery/internals/deprecation.html
 
 * The `celery.task.rest` module has been removed, use :mod:`celery.task.http`
   instead (as scheduled by the `deprecation timeline`_).
@@ -4420,7 +4420,7 @@ News
 * celeryd now sends events if enabled with the `-E` argument.
 
     Excellent for monitoring tools, one is already in the making
-    (http://github.com/ask/celerymon).
+    (http://github.com/celery/celerymon).
 
     Current events include: worker-heartbeat,
     task-[received/succeeded/failed/retried],
@@ -4733,7 +4733,7 @@ Important changes
     See `Cookbook: Retrying Tasks`_ for more information.
 
 .. _`Cookbook: Retrying Tasks`:
-    http://ask.github.com/celery/cookbook/task-retries.html
+    http://celery.github.com/celery/cookbook/task-retries.html
 
 * We now have an AMQP result store backend.
 
@@ -5168,7 +5168,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 .. _`Can I send some tasks to only some servers?`:
         http://bit.ly/celery_AMQP_routing
-.. _`FAQ`: http://ask.github.com/celery/faq.html
+.. _`FAQ`: http://celery.github.com/celery/faq.html
 
 * Task errors are now logged using log level `ERROR` instead of `INFO`,
   and stacktraces are dumped. Thanks to Grégoire Cachet.
