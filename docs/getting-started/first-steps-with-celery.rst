@@ -214,27 +214,32 @@ when you apply a task::
 
     >>> result = add.delay(4, 4)
 
-Here's some examples of what you can do with the result instance::
+The :meth:`~@AsyncResult.ready` method returns whether the task
+has finished processing or not::
 
-    >>> result.ready()     # returns True if the task has finished processing.
+    >>> result.ready()
     False
 
-    >>> result.result      # task is not ready, so no return value yet.
-    None
+We can wait for the result to complete, but this is rarely used
+since it turns the asynchronous call into a synchronous one::
 
-    >>> result.get()       # waits for the task and returns its retval.
-    8
+    >>> result.get(timeout=1)
+    4
 
-    >>> result.result      # direct access to result, doesn't re-raise errors.
-    8
+In case the task raised an exception, :meth:`~@AsyncResult.get` will
+re-raise the exception, but you can override this by specyfing
+the ``propagate`` argument::
 
-    >>> result.successful() # returns True if the task didn't end in failure.
-    True
+    >>> result.get(propagate=True)
 
-If the task raises an exception, the return value of
-:meth:`~@AsyncResult.failed` will be :const:`True`, and `result.result` will
-contain the exception instance raised by the task, and `result.traceback`
-will contain the original traceback as a string.
+
+If the task raised an exception we can also gain access to the
+original traceback::
+
+    >>> result.traceback
+    ...
+
+See :mod:`celery.result` for the complete result object reference.
 
 .. _celerytut-configuration:
 
@@ -280,11 +285,14 @@ you can also imagine your sysadmin making simple changes to the configuration
 in the event of system trobule.
 
 You can tell your Celery instance to use a configuration module,
-often called ``celeryconfig.py``, with :meth:`config_from_obj` method:
+by calling the :meth:`@~Celery.config_from_obj` method:
 
 .. code-block:: python
 
     celery.config_from_object("celeryconfig")
+
+This module is often called "``celeryconfig``", but you can use any
+module name.
 
 A module named ``celeryconfig.py`` must then be available to load from the
 current directory or on the Python path, it could look like this:
