@@ -78,6 +78,24 @@ arguments as it was started with.
     Restarting by HUP is disabled on OS X because of a limitation on
     that platform.
 
+
+.. _worker-process-signals:
+
+Process Signals
+===============
+
+The celeryd main process overrides the following signals:
+
++--------------+-------------------------------------------------+
+| :sig:`TERM`  | Warm shutdown, wait for tasks to complete.      |
++--------------+-------------------------------------------------+
+| :sig:`QUIT`  | Cold shutdown, terminate ASAP                   |
++--------------+-------------------------------------------------+
+| :sig:`USR1`  | Dump traceback for all active threads.          |
++--------------+-------------------------------------------------+
+| :sig:`USR2`  | Remote debug, see :mod:`celery.contrib.rdb`.    |
++--------------+-------------------------------------------------+
+
 .. _worker-concurrency:
 
 Concurrency
