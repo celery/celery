@@ -5,6 +5,18 @@
 .. contents::
     :local:
 
+.. _version-2.5.5:
+
+2.5.5
+=====
+:release-date: 2012-06-06 16:00 P.M BST
+:by: Ask Solem
+
+This is a dummy release performed for the following goals:
+
+- Protect against force upgrading to Kombu 2.2.0
+- Version parity with django-celery
+
 .. _version-2.5.3:
 
 2.5.3

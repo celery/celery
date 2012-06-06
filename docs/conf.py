@@ -105,5 +105,5 @@ html_sidebars = {
 
 if False:
     issuetracker = "github"
-    issuetracker_project = "ask/celery"
+    issuetracker_project = "celery/celery"
     issuetracker_issue_pattern = r'[Ii]ssue #(\d+)'
