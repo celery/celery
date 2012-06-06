@@ -32,8 +32,6 @@ Bug tracker
 If you have any suggestions, bug reports or annoyances please report them
 to our issue tracker at http://github.com/celery/celery/issues/
 
-.. _wiki:
-
 Wiki
 ====
 
@@ -55,12 +53,10 @@ documentation.
 
 .. _`Contributing to Celery`: http://celery.github.com/celery/contributing.html
 
-.. _license:
-
 License
 =======
 
-This software is licensed under the `New BSD License`. See the :file:`LICENSE`
+This software is licensed under the `New BSD License`. See the ``LICENSE``
 file in the top distribution directory for the full license text.
 
 .. # vim: syntax=rst expandtab tabstop=4 shiftwidth=4 shiftround

@@ -5,9 +5,10 @@ import sys
 
 dirname = ""
 
-RE_CODE_BLOCK = re.compile(r'.. code-block:: (.+?)\s*$')
+RE_CODE_BLOCK = re.compile(r'.. code-block:: (.+?)\s*$', re.MULTILINE)
 RE_INCLUDE = re.compile(r'.. include:: (.+?)\s*$')
-RE_REFERENCE = re.compile(r':(.+?):`(.+?)`')
+RE_REFERENCE = re.compile(r':(.+?):`(.+?)`', re.MULTILINE)
+RE_REF = re.compile(r'^.. _[\w\-]+:\s*$', re.MULTILINE)
 
 
 def include_file(lines, pos, match):
@@ -42,15 +43,18 @@ def replace_code_block(lines, pos, match):
     else:
         lines[prev_line_with_text] += "::"
 
-TO_RST_MAP = {RE_CODE_BLOCK: replace_code_block,
-              RE_REFERENCE: r'``\2``',
-              RE_INCLUDE: include_file}
+TO_RST_MAP = (
+    (RE_CODE_BLOCK, replace_code_block),
+    (RE_REFERENCE, r'``\2``'),
+    (RE_INCLUDE, include_file),
+    (RE_REF, ''),
+)
 
 
 def _process(lines):
-    lines = list(lines)                                 # non-destructive
+    lines = lines.readlines()
     for i, line in enumerate(lines):
-        for regex, alt in TO_RST_MAP.items():
+        for regex, alt in TO_RST_MAP:
             if callable(alt):
                 match = regex.match(line)
                 if match:

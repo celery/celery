@@ -16,8 +16,6 @@
 .. contents::
     :local:
 
-.. _celery-synopsis:
-
 Synopsis
 ========
 
@@ -34,7 +32,7 @@ Celery is used in production systems to process millions of tasks a day.
 
 Celery is written in Python, but the protocol can be implemented in any
 language.  It can also `operate with other languages using webhooks`_.
-There's also `RCelery` for the Ruby programming language, and a `PHP client`.
+There's also `RCelery`_ for the Ruby programming language, and a `PHP client`_.
 
 The recommended message broker is `RabbitMQ`_, but support for
 `Redis`_, `MongoDB`_, `Beanstalk`_, `Amazon SQS`_, `CouchDB`_ and
@@ -71,7 +69,6 @@ integration packages:
 .. _`Pylons`: http://pylonshq.com/
 .. _`Flask`: http://flask.pocoo.org/
 .. _`web2py`: http://web2py.com/
-.. _`Bottle`: http://bottlepy.org/
 .. _`Pyramid`: http://docs.pylonsproject.org/en/latest/docs/pyramid.html
 .. _`pyramid_celery`: http://pypi.python.org/pypi/pyramid_celery/
 .. _`django-celery`: http://pypi.python.org/pypi/django-celery
@@ -80,10 +77,6 @@ integration packages:
 .. _`web2py-celery`: http://code.google.com/p/web2py-celery/
 .. _`operate with other languages using webhooks`:
     http://celery.github.com/celery/userguide/remote-tasks.html
-.. _`limited support`:
-    http://kombu.readthedocs.org/en/latest/introduction.html#transport-comparison
-
-.. _celery-overview:
 
 Overview
 ========
@@ -98,8 +91,6 @@ more machines depending on the workload.
 
 The result of the task can be stored for later retrieval (called its
 "tombstone").
-
-.. _celery-example:
 
 Example
 =======
@@ -121,8 +112,6 @@ You can execute the task in the background, or wait for it to finish::
     8
 
 Simple!
-
-.. _celery-features:
 
 Features
 ========
@@ -156,7 +145,7 @@ Features
     |                 | result store backend. You can wait for the result, |
     |                 | retrieve it later, or ignore it.                   |
     +-----------------+----------------------------------------------------+
-    | Result Stores   | Database, `MongoDB`_, `Redis`_, `Tokyo Tyrant`,    |
+    | Result Stores   | Database, `MongoDB`_, `Redis`_,                    |
     |                 | `Cassandra`, or `AMQP`_ (message notification).    |
     +-----------------+----------------------------------------------------+
     | Webhooks        | Your tasks can also be HTTP callbacks, enabling    |
@@ -214,10 +203,6 @@ Features
 .. _`clustering`: http://www.rabbitmq.com/clustering.html
 .. _`HA`: http://www.rabbitmq.com/pacemaker.html
 .. _`AMQP`: http://www.amqp.org/
-.. _`Stomp`: http://stomp.codehaus.org/
-.. _`Tokyo Tyrant`: http://tokyocabinet.sourceforge.net/
-
-.. _celery-documentation:
 
 Documentation
 =============
@@ -229,8 +214,6 @@ Documentation for the production version can be found here:
 and the documentation for the development version can be found here:
 
     http://celery.github.com/celery/
-
-.. _celery-installation:
 
 Installation
 ============
@@ -280,8 +263,6 @@ The following bundles are available:
 .. _`bundle-celery`:
     http://pypi.python.org/pypi/bundle-celery/
 
-.. _celery-installing-from-source:
-
 Downloading and installing from source
 --------------------------------------
 
@@ -295,8 +276,6 @@ You can install it by doing the following,::
     $ python setup.py build
     # python setup.py install # as root
 
-.. _celery-installing-from-git:
-
 Using the development version
 -----------------------------
 
@@ -304,12 +283,10 @@ You can clone the repository by doing the following::
 
     $ git clone git://github.com/celery/celery.git
 
-.. _getting-help:
 
 Getting Help
 ============
 
-.. _mailing-list:
 
 Mailing list
 ------------
@@ -319,7 +296,6 @@ please join the `celery-users`_ mailing list.
 
 .. _`celery-users`: http://groups.google.com/group/celery-users/
 
-.. _irc-channel:
 
 IRC
 ---
@@ -330,7 +306,6 @@ network.
 .. _`#celery`: irc://irc.freenode.net/celery
 .. _`Freenode`: http://freenode.net
 
-.. _bug-tracker:
 
 Bug tracker
 ===========
@@ -338,14 +313,11 @@ Bug tracker
 If you have any suggestions, bug reports or annoyances please report them
 to our issue tracker at http://github.com/celery/celery/issues/
 
-.. _wiki:
-
 Wiki
 ====
 
 http://wiki.github.com/celery/celery/
 
-.. _contributing-short:
 
 Contributing
 ============
@@ -360,8 +332,6 @@ Be sure to also read the `Contributing to Celery`_ section in the
 documentation.
 
 .. _`Contributing to Celery`: http://celery.github.com/celery/contributing.html
-
-.. _license:
 
 License
 =======
