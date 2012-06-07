@@ -26,6 +26,8 @@ try:
             except Exception:
                 sys.stderr.write("Couldn't remove %r: %r\n" % (
                     task_path, sys.exc_info[1]))
+    except ImportError:
+        print("Upgrade: no old version found.")
     finally:
         sys.path[:] = orig_path
 except ImportError:
