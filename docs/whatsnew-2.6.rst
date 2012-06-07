@@ -125,7 +125,7 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
 
         .. code-block:: python
 
-            @task
+            @celery.task()
             def error_handler(uuid):
                 result = AsyncResult(uuid)
                 exc = result.get(propagate=False)

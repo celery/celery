@@ -110,7 +110,7 @@ Let's create the file :file:`tasks.py`:
 
     celery = Celery("tasks", broker="amqp://guest@localhost//")
 
-    @celery.task
+    @celery.task()
     def add(x, y):
         return x + y
 

@@ -7,12 +7,12 @@ from celery.utils.imports import qualname
 from celery.tests.utils import Case
 
 
-@task
+@task()
 def add(x, y):
     return x + y
 
 
-@task
+@task()
 def mul(x, y):
     return x * y
 

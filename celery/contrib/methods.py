@@ -13,7 +13,7 @@ Examples
 
     class X(object):
 
-        @task
+        @task()
         def add(self, x, y):
                 return x + y
 
@@ -42,13 +42,13 @@ Caveats
 
         class A(object):
 
-            @task
+            @task()
             def add(self, x, y):
                 return x + y
 
         class B(object):
 
-            @task
+            @task()
             def add(self, x, y):
                 return x + y
 

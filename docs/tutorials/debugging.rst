@@ -18,7 +18,7 @@ Example usage:
     from celery import task
     from celery.contrib import rdb
 
-    @task
+    @task()
     def add(x, y):
         result = x + y
         rdb.set_trace()  # <- set breakpoint

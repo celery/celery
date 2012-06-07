@@ -125,15 +125,15 @@ class AsyncResult(ResultBase):
 
         .. code-block:: python
 
-            @task
+            @task()
             def A(how_many):
                 return TaskSet(B.s(i) for i in xrange(how_many))
 
-            @task
+            @task()
             def B(i):
                 return pow2.delay(i)
 
-            @task
+            @task()
             def pow2(i):
                 return i ** 2
 

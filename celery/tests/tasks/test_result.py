@@ -24,7 +24,7 @@ from celery.tests.utils import AppCase
 from celery.tests.utils import skip_if_quick
 
 
-@task
+@task()
 def mytask():
     pass
 

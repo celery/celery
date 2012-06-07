@@ -16,17 +16,17 @@ SIG = Signature({"task": "TASK",
                  "subtask_type": ""})
 
 
-@task
+@task()
 def add(x, y):
     return x + y
 
 
-@task
+@task()
 def mul(x, y):
     return x * y
 
 
-@task
+@task()
 def div(x, y):
     return x / y
 

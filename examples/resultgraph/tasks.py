@@ -23,30 +23,30 @@ from celery.task import chord, subtask, task, TaskSet
 from celery.result import AsyncResult, ResultSet
 from collections import deque
 
-@task
+@task()
 def add(x, y):
     return x + y
 
 
-@task
+@task()
 def make_request(id, url):
     print("GET %r" % (url, ))
     return url
 
 
-@task
+@task()
 def B_callback(urls, id):
     print("batch %s done" % (id, ))
     return urls
 
 
-@task
+@task()
 def B(id):
     return chord(make_request.subtask((id, "%s %r" % (id, i, )))
                     for i in xrange(10))(B_callback.subtask((id, )))
 
 
-@task
+@task()
 def A():
     return TaskSet(B.subtask((c, )) for c in "ABCDEFGH").apply_async()
 
@@ -70,7 +70,7 @@ def joinall(R, timeout=None, propagate=True):
             yield res
 
 
-@task
+@task()
 def unlock_graph(result, callback, interval=1, propagate=False,
         max_retries=None):
     if result.ready():
@@ -82,7 +82,7 @@ def unlock_graph(result, callback, interval=1, propagate=False,
         unlock_graph.retry(countdown=interval, max_retries=max_retries)
 
 
-@task
+@task()
 def A_callback(res):
     print("Everything is done: %r" % (res, ))
     return res

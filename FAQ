@@ -505,7 +505,7 @@ How can I get the task id of the current task?
 
 **Answer**: The current id and more is available in the task request::
 
-    @celery.task
+    @celery.task()
     def mytask():
         cache.set(mytask.request.id, "Running")
 

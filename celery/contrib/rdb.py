@@ -11,9 +11,9 @@ Inspired by http://snippets.dzone.com/posts/show/7248
 .. code-block:: python
 
     from celery.contrib import rdb
-    from celery.task import task
+    from celery import task
 
-    @task
+    @task()
     def add(x, y):
         result = x + y
         rdb.set_trace()

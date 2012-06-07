@@ -132,7 +132,7 @@ Application
 
         .. code-block:: python
 
-            @task
+            @celery.task()
             def refresh_feed(url):
                 return ...
 
@@ -140,7 +140,7 @@ Application
 
         .. code-block:: python
 
-            @task(exchange="feeds")
+            @celery.task(exchange="feeds")
             def refresh_feed(url):
                 return ...
 

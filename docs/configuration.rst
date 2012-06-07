@@ -1043,7 +1043,7 @@ Example:
 
     from celery.exceptions import SoftTimeLimitExceeded
 
-    @celery.task
+    @celery.task()
     def mytask():
         try:
             return do_work()

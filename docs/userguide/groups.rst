@@ -186,11 +186,11 @@ already a standard function):
 
 .. code-block:: python
 
-    @celery.task
+    @celery.task()
     def add(x, y):
         return x + y
 
-    @celery.task
+    @celery.task()
     def tsum(numbers):
         return sum(numbers)
 

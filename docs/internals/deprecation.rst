@@ -79,7 +79,7 @@ for example::
 
     from celery.decorators import task
 
-    @task
+    @task()
     def add(x, y, task_id=None):
         print("My task id is %r" % (task_id, ))
 
@@ -87,7 +87,7 @@ must be rewritten into::
 
     from celery import task
 
-    @task
+    @task()
     def add(x, y):
         print("My task id is %r" % (add.request.id, ))
 

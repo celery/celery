@@ -28,7 +28,7 @@ from celery.bin.celery import (
 from celery.tests.utils import AppCase, WhateverIO
 
 
-@task
+@task()
 def add(x, y):
     return x + y
 

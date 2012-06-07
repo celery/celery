@@ -537,7 +537,7 @@ class Task(object):
 
         .. code-block:: python
 
-            >>> @task
+            >>> @task()
             >>> def tweet(auth, message):
             ...     twitter = Twitter(oauth=auth)
             ...     try:

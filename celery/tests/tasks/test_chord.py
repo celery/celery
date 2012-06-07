@@ -56,7 +56,7 @@ class test_unlock_chord_task(AppCase):
             is_ready = True
             value = [2, 4, 8, 6]
 
-        @task
+        @task()
         def callback(*args, **kwargs):
             pass
 
@@ -104,11 +104,11 @@ class test_chord(AppCase):
     def test_eager(self):
         from celery import chord
 
-        @task
+        @task()
         def addX(x, y):
             return x + y
 
-        @task
+        @task()
         def sumX(n):
             return sum(n)
 

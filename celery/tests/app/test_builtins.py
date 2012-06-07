@@ -8,12 +8,12 @@ from celery.state import _task_stack
 from celery.tests.utils import Case
 
 
-@task
+@task()
 def add(x, y):
     return x + y
 
 
-@task
+@task()
 def xsum(x):
     return sum(x)
 

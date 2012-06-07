@@ -1416,7 +1416,7 @@ Important Notes
 
                 from celery.decorators import task
 
-                @task
+                @task()
                 def add(x, y, **kwargs):
                     print("In task %s" % kwargs["task_id"])
                     return x + y
@@ -1427,7 +1427,7 @@ Important Notes
 
                 from celery.task import task
 
-                @task
+                @task()
                 def add(x, y):
                     print("In task %s" % add.request.id)
                     return x + y
@@ -1543,7 +1543,7 @@ Important Notes
         from celery.contrib import rdb
         from celery.task import task
 
-        @task
+        @task()
         def add(x, y):
             result = x + y
             rdb.set_trace()  # <- set breakpoint
@@ -4301,7 +4301,7 @@ Backward incompatible changes
 
         from celery.decorators import task
 
-        @task
+        @task()
         def add(x, y):
             return x + y
 

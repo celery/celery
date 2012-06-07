@@ -41,7 +41,7 @@ called `add`, returning the sum of two positional arguments:
 
 .. code-block:: python
 
-    @celery.task
+    @celery.task()
     def add(x, y):
         return x + y
 
