@@ -1,4 +1,4 @@
-include AUTHORS
+include CONTRIBUTORS.txt
 include Changelog
 include FAQ
 include INSTALL
