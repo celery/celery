@@ -110,6 +110,7 @@ class test_App(Case):
     def test_task_not_shared(self):
         with patch("celery.app.base.shared_task") as shared_task:
             app = Celery(set_as_current=False)
+
             @app.task(shared=False)
             def foo():
                 pass
@@ -175,7 +176,9 @@ class test_App(Case):
                 return y, z, x
 
         check = Mock()
+
         def deco(fun):
+
             def _inner(*args, **kwargs):
                 check(*args, **kwargs)
                 return fun(*args, **kwargs)
@@ -240,7 +243,6 @@ class test_App(Case):
                 a3cX1.pop_request()
         finally:
             _task_stack.pop()
-
 
     def test_TaskSet(self):
         ts = self.app.TaskSet()

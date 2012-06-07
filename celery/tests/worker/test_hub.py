@@ -40,7 +40,7 @@ class test_BoundedSemaphore(Case):
         x = BoundedSemaphore(2)
 
         c1 = Mock()
-        x.acquire(c1, 1);
+        x.acquire(c1, 1)
         self.assertEqual(x.value, 1)
         c1.assert_called_with(1)
 
@@ -151,6 +151,7 @@ class test_Hub(Case):
 
         e1, e2, e3 = Mock(), Mock(), Mock()
         entries = [e1, e2, e3]
+
         def se():
             if entries:
                 return None, entries.pop()

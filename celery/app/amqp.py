@@ -30,6 +30,7 @@ QUEUE_FORMAT = """
 . %(name)s exchange:%(exchange)s(%(exchange_type)s) binding:%(routing_key)s
 """
 
+
 class Queues(dict):
     """Queue name⇒ declaration mapping.
 
@@ -45,7 +46,8 @@ class Queues(dict):
     #: The rest of the queues are then used for routing only.
     _consume_from = None
 
-    def __init__(self, queues=None, default_exchange=None, create_missing=True):
+    def __init__(self, queues=None, default_exchange=None,
+            create_missing=True):
         dict.__init__(self)
         self.aliases = WeakValueDictionary()
         self.default_exchange = default_exchange
@@ -190,8 +192,8 @@ class TaskProducer(Producer):
              immediate=immediate, routing_key=routing_key,
              serializer=serializer or self.serializer,
              compression=compression or self.compression,
-             retry=retry, retry_policy=_rp, delivery_mode=delivery_mode, priority=priority,
-             declare=[self.queues[queue]] if queue else [],
+             retry=retry, retry_policy=_rp, delivery_mode=delivery_mode,
+             priority=priority, declare=[self.queues[queue]] if queue else [],
              **kwargs)
 
         signals.task_sent.send(sender=task_name, **body)
@@ -205,6 +207,7 @@ class TaskProducer(Producer):
                                                expires=expires,
                                                queue=queue)
         return task_id
+
 
 class TaskPublisher(TaskProducer):
     """Deprecated version of :class:`TaskProducer`."""

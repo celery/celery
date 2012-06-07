@@ -63,9 +63,9 @@ class test_chunks(Case):
 
         @app.task()
         def chunks_mul(l):
-            return x * y
+            return l
 
-        res = app.tasks["celery.chunks"](chunks_mul,
+        app.tasks["celery.chunks"](chunks_mul,
                 [(2, 2), (4, 4), (8, 8)], 1)
         self.assertTrue(apply_chunks.called)
 

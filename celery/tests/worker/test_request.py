@@ -228,7 +228,6 @@ class MockEventDispatcher(object):
 
 class test_TaskRequest(Case):
 
-
     def test_task_wrapper_repr(self):
         tw = TaskRequest(mytask.name, uuid(), [1], {"f": "x"})
         self.assertTrue(repr(tw))

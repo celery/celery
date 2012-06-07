@@ -22,17 +22,13 @@ from datetime import datetime
 from kombu.utils import kwdict, reprcall
 from kombu.utils.encoding import safe_repr, safe_str
 
-from celery import current_app
 from celery import exceptions
 from celery.app import app_or_default
 from celery.datastructures import ExceptionInfo
 from celery.task.trace import (
-    build_tracer,
     trace_task,
     trace_task_ret,
-    report_internal_error,
 )
-from celery.platforms import set_mp_process_title as setps
 from celery.utils import fun_takes_kwargs
 from celery.utils.functional import noop
 from celery.utils.log import get_logger

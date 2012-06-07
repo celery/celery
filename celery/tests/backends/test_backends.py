@@ -46,4 +46,3 @@ class test_backends(Case):
             sbn.side_effect = ValueError()
             with self.assertRaises(ValueError):
                 backends.get_backend_cls("xxx.xxx:foo")
-

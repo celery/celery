@@ -124,6 +124,7 @@ class test_Command(AppCase):
         with patch("celery.bin.base.symbol_by_name") as sbn:
             from types import ModuleType
             x = ModuleType("proj")
+
             def on_sbn(*args, **kwargs):
 
                 def after(*args, **kwargs):
@@ -135,7 +136,6 @@ class test_Command(AppCase):
             sbn.side_effect = on_sbn
             x.__path__ = [True]
             self.assertEqual(cmd.find_app("proj"), "quick brown fox")
-
 
     def test_parse_preload_options_shortopt(self):
         cmd = Command()

@@ -135,4 +135,3 @@ class test_Queues(AppCase):
         q = Queues()
         q.add(Queue("foo", alias="barfoo"))
         self.assertIs(q["barfoo"], q["foo"])
-
