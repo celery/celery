@@ -190,7 +190,7 @@ class TaskProducer(Producer):
              immediate=immediate, routing_key=routing_key,
              serializer=serializer or self.serializer,
              compression=compression or self.compression,
-             retry=retry, retry_policy=_rp, delivery_mode=delivery_mode,
+             retry=retry, retry_policy=_rp, delivery_mode=delivery_mode, priority=priority,
              declare=[self.queues[queue]] if queue else [],
              **kwargs)
 
