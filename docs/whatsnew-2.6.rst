@@ -645,16 +645,25 @@ to create tasks out of methods::
 
 See :mod:`celery.contrib.methods` for more information.
 
-.. _v260-deprecations:
+.. _v260-unscheduled-removals:
 
-Deprecations
-============
+Unscheduled Removals
+====================
 
+Usually we don't make backward incompatible removals,
+but these removals should have no major effect.
 
 - The following settings have been renamed:
 
     - ``CELERYD_ETA_SCHEDULER`` -> ``CELERYD_TIMER``
     - ``CELERYD_ETA_SCHEDULER_PRECISION`` -> ``CELERYD_TIMER_PRECISION``
+
+.. _v260-deprecations:
+
+Deprecations
+============
+
+See the :ref:`celery-deprecation-timeline`.
 
 Fixes
 =====

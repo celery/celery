@@ -382,6 +382,9 @@ setting:
 Redis backend settings
 ----------------------
 
+Configuring the backend URL
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. note::
 
     The Redis backend requires the :mod:`redis` library:
@@ -391,33 +394,35 @@ Redis backend settings
 
         $ pip install redis
 
-This backend requires the following configuration directives to be set.
+This backend requires the :setting:`CELERY_RESULT_BACKEND`
+setting to be set to a Redis URL::
 
-.. setting:: CELERY_REDIS_HOST
+    CELERY_RESULT_BACKEND = "redis://:password@host:port/db"
 
-CELERY_REDIS_HOST
-~~~~~~~~~~~~~~~~~
+For example::
 
-Host name of the Redis database server. e.g. `"localhost"`.
+    CELERY_RESULT_BACKEND = "redis://localhost/0"
 
-.. setting:: CELERY_REDIS_PORT
+which is the same as::
 
-CELERY_REDIS_PORT
-~~~~~~~~~~~~~~~~~
+    CELERY_RESULT_BACKEND = "redis://"
 
-Port to the Redis database server. e.g. `6379`.
+The fields of the URL is defined as folows:
 
-.. setting:: CELERY_REDIS_DB
+- *host*
 
-CELERY_REDIS_DB
-~~~~~~~~~~~~~~~
+Host name or IP address of the Redis server. e.g. `"localhost"`.
 
-Database number to use. Default is 0
+- *port*
 
-.. setting:: CELERY_REDIS_PASSWORD
+Port to the Redis server. Default is 6379.
 
-CELERY_REDIS_PASSWORD
-~~~~~~~~~~~~~~~~~~~~~
+- *db*
+
+Database number to use. Default is 0.
+The db can include an optional leading slash.
+
+- *password*
 
 Password used to connect to the database.
 
@@ -428,16 +433,6 @@ CELERY_REDIS_MAX_CONNECTIONS
 
 Maximum number of connections available in the Redis connection
 pool used for sending and retrieving results.
-
-Example configuration
-~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-    CELERY_RESULT_BACKEND = "redis"
-    CELERY_REDIS_HOST = "localhost"
-    CELERY_REDIS_PORT = 6379
-    CELERY_REDIS_DB = 0
 
 .. _conf-mongodb-result-backend:
 
