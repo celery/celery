@@ -209,6 +209,9 @@ Features
     | Error Emails    | Can be configured to send emails to the            |
     |                 | administrators when tasks fails.                   |
     +-----------------+----------------------------------------------------+
+    | Message signing | Supports message signing. Messages are signed      |
+    |                 | using public-key cryptography.                     |
+    +-----------------+----------------------------------------------------+
 
 
 .. _`clustering`: http://www.rabbitmq.com/clustering.html
