@@ -28,7 +28,7 @@ Workers
 
 .. versionadded:: 2.1
 
-:pogram:`celery` can also be used to inspect
+:program:`celery` can also be used to inspect
 and manage worker nodes (and to some degree tasks).
 
 To list all the commands available do::
@@ -292,7 +292,7 @@ please see ``djcelerymon --help``.
 .. _monitoring-celeryev:
 
 celery events: Curses Monitor
-------------------------
+-----------------------------
 
 .. versionadded:: 2.0
 

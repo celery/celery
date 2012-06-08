@@ -8,13 +8,18 @@ providing operations with the tools to maintain such a system.
 
 Celery is Open Source and licensed under the `BSD License`_.
 
-If you're new to Celery you can get started by following
-the :ref:`first-steps` tutorial.
+Getting Started
+===============
+
+- If you are new to Celery you can get started by following
+  the :ref:`first-steps` tutorial.
+
+- You can also check out the :ref:`FAQ <faq>`.
 
 .. _`BSD License`: http://www.opensource.org/licenses/BSD-3-Clause
 
-
-Contents:
+Contents
+========
 
 .. toctree::
     :maxdepth: 2
@@ -27,7 +32,6 @@ Contents:
 
     configuration
     django/index
-    cookbook/index
     contributing
     community
     tutorials/index
