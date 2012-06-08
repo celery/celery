@@ -78,6 +78,17 @@ class test_AsyncResult(AppCase):
         self.assertTrue(x.children)
         self.assertEqual(len(x.children), 3)
 
+    def test_get_children(self):
+        tid = uuid()
+        x = AsyncResult(tid)
+        child = [AsyncResult(uuid()).serializable() for i in xrange(10)]
+        x.backend._cache[tid] = {"children": child}
+        self.assertTrue(x.children)
+        self.assertEqual(len(x.children), 10)
+
+        x.backend._cache[tid] = {"result": None}
+        self.assertIsNone(x.children)
+
     def test_build_graph_get_leaf_collect(self):
         x = AsyncResult("1")
         x.backend._cache["1"] = {"status": states.SUCCESS, "result": None}
