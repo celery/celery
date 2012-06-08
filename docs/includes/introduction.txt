@@ -246,6 +246,8 @@ To install using `easy_install`,::
 
     $ easy_install -U Celery
 
+.. _bundles:
+
 Bundles
 -------
 
