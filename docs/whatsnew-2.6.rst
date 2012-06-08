@@ -663,7 +663,7 @@ but these removals should have no major effect.
 Deprecations
 ============
 
-See the :ref:`celery-deprecation-timeline`.
+See the :ref:`deprecation-timeline`.
 
 Fixes
 =====
