@@ -53,16 +53,16 @@ Misconceptions
 Does Celery really consist of 50.000 lines of code?
 ---------------------------------------------------
 
-**Answer:**: No, this and similarly large number have
-been reported in various locations.
+**Answer:** No, this and similarly large numbers have
+been reported at various locations.
 
-This a list of the actual numbers:
+The numbers as of this writing are:
 
     - core: 7,141 lines of code.
     - tests: 14,209 lines.
     - backends, contrib, compat utilities: 9,032 lines.
 
-Lines of code is not a useful metric to prove anything, so
+Lines of code is not a useful metric, so
 even if Celery did consist of 50k lines of code you would not
 be able to draw any conclusions from such a number.
 
@@ -150,7 +150,7 @@ JSON implementation.
     see :ref:`bundles`.
 
 
-.. _faq-heavyweight
+.. _faq-heavyweight:
 
 Is Celery heavy-weight?
 -----------------------
@@ -158,8 +158,8 @@ Is Celery heavy-weight?
 Celery poses very little overhead both in memory footprint and
 performance.
 
-But not that the default configuration is not optimized for either,
-see the :ref:`guide-optimizing` guide for more information.
+But please note that the default configuration is not optimized for time nor
+space, see the :ref:`guide-optimizing` guide for more information.
 
 .. _faq-serializion-is-a-choice:
 
