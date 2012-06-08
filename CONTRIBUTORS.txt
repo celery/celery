@@ -16,7 +16,7 @@ Treatment of Account
 Contributor will not allow anyone other than the Contributor to use his or
 her username or source repository login to submit code to a Celery Project
 source repository. Should Contributor become aware of any such use,
-Contributor will immediately by notifying Ask Solem.
+Contributor will immediately notify Ask Solem.
 Notification must be performed by sending an email to
 ask@celeryproject.org.  Until such notice is received, Contributor will be
 presumed to have taken all actions made through Contributor's account. If the
@@ -146,3 +146,4 @@ Harm Verhagen, 2012/06/07
 Wes Winham, 2012/06/07
 David Cramer, 2012/06/07
 Steeve Morin, 2012/06/07
+Wes Turner, 2012/06/07
