@@ -25,7 +25,7 @@ from celery.datastructures import LimitedSet
 from celery.utils import cached_property
 
 #: Worker software/platform information.
-SOFTWARE_INFO = {"sw_ident": "celeryd",
+SOFTWARE_INFO = {"sw_ident": "py-celery",
                  "sw_ver": __version__,
                  "sw_sys": platform.system()}
 

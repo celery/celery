@@ -415,9 +415,9 @@ E.g. if you have a project named 'proj' where the
 celery app is located in 'from proj.celery import celery',
 then the following will be equivalent::
 
-        $ celeryd --app=proj
-        $ celeryd --app=proj.celery:
-        $ celeryd --app=proj.celery:celery
+        $ celery worker --app=proj
+        $ celery worker --app=proj.celery:
+        $ celery worker --app=proj.celery:celery
 
 In Other News
 -------------
@@ -496,13 +496,13 @@ In Other News
         >>> import celery
         >>> print(celery.bugreport())
 
-    - Use celeryctl::
+    - Using the ``celery`` command-line program::
 
-        $ celeryctl report
+        $ celery report
 
     - Get it from remote workers::
 
-        $ celeryctl inspect report
+        $ celery inspect report
 
 - Module ``celery.log`` moved to :mod:`celery.app.log`.
 - Module ``celery.task.control`` moved to :mod:`celery.app.control`.
@@ -566,7 +566,7 @@ In Other News
 * :setting:`CELERY_FORCE_EXECV` is now enabled by default.
 
     If the old behavior is wanted the setting can be set to False,
-    or the new :option:`--no-execv` to :program:`celeryd`.
+    or the new :option:`--no-execv` to :program:`celery worker`.
 
 * Deprecated module ``celery.conf`` has been removed.
 
@@ -581,12 +581,12 @@ In Other News
   :setting:`CELERYBEAT_MAX_LOOP_INTERVAL` setting, it is instead
   set by individual schedulers.
 
-* celeryd now truncates very long message bodies in error reports.
+* Worker: now truncates very long message bodies in error reports.
 
 * :envvar:`CELERY_BENCH` environment variable, will now also list
-  memory usage statistics at celeryd shutdown.
+  memory usage statistics at worker shutdown.
 
-* celeryd now only ever use a single timer for all timing needs,
+* Worker: now only ever use a single timer for all timing needs,
   and instead set different priorities.
 
 Internals

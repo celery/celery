@@ -8,6 +8,7 @@
 .. toctree::
     :maxdepth: 2
 
-    otherqueues
+    daemonizing
     debugging
     clickcounter
+    task-cookbook

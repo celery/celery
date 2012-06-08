@@ -45,7 +45,7 @@ Enabling the HTTP task
 ----------------------
 
 To enable the HTTP dispatch task you have to add :mod:`celery.task.http`
-to :setting:`CELERY_IMPORTS`, or start ``celeryd`` with ``-I
+to :setting:`CELERY_IMPORTS`, or start the worker with ``-I
 celery.task.http``.
 
 
@@ -109,7 +109,7 @@ functionality.
     >>> res.get()
     100
 
-The output of :program:`celeryd` (or the log file if enabled) should show the
+The output of :program:`celery worker` (or the log file if enabled) should show the
 task being executed::
 
     [INFO/MainProcess] Task celery.task.http.HttpDispatchTask

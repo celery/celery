@@ -46,12 +46,12 @@ With this route enabled import feed tasks will be routed to the
 
 Now you can start server `z` to only process the feeds queue like this::
 
-    (z)$ celeryd -Q feeds
+    (z)$ celery worker -Q feeds
 
 You can specify as many queues as you want, so you can make this server
 process the default queue as well::
 
-    (z)$ celeryd -Q feeds,celery
+    (z)$ celery worker -Q feeds,celery
 
 .. _routing-changing-default-queue:
 
@@ -144,17 +144,17 @@ You can also override this using the `routing_key` argument to
 To make server `z` consume from the feed queue exclusively you can
 start it with the ``-Q`` option::
 
-    (z)$ celeryd -Q feed_tasks --hostname=z.example.com
+    (z)$ celery worker -Q feed_tasks --hostname=z.example.com
 
 Servers `x` and `y` must be configured to consume from the default queue::
 
-    (x)$ celeryd -Q default --hostname=x.example.com
-    (y)$ celeryd -Q default --hostname=y.example.com
+    (x)$ celery worker -Q default --hostname=x.example.com
+    (y)$ celery worker -Q default --hostname=y.example.com
 
 If you want, you can even have your feed processing worker handle regular
 tasks as well, maybe in times when there's a lot of work to do::
 
-    (z)$ celeryd -Q feed_tasks,default --hostname=z.example.com
+    (z)$ celery worker -Q feed_tasks,default --hostname=z.example.com
 
 If you have another queue but on another exchange you want to add,
 just specify a custom exchange and exchange type:
@@ -349,15 +349,16 @@ Related API commands
 Hands-on with the API
 ---------------------
 
-Celery comes with a tool called :program:`camqadm` (short for Celery AMQ Admin).
-It's used for command-line access to the AMQP API, enabling access to
+Celery comes with a tool called :program:`celery amqp`
+that is used for command-line access to the AMQP API, enabling access to
 administration tasks like creating/deleting queues and exchanges, purging
-queues or sending messages.
+queues or sending messages.  It can also be used for non-AMQP brokers,
+but different implementation may not implement all commands.
 
-You can write commands directly in the arguments to :program:`camqadm`,
+You can write commands directly in the arguments to :program:`celery amqp`,
 or just start with no arguments to start it in shell-mode::
 
-    $ camqadm
+    $ celery amqp
     -> connecting to amqp://guest@localhost:5672/.
     -> connected.
     1>

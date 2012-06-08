@@ -78,7 +78,7 @@ class BaseLoader(object):
         pass
 
     def on_worker_init(self):
-        """This method is called when the worker (:program:`celeryd`)
+        """This method is called when the worker (:program:`celery worker`)
         starts."""
         pass
 

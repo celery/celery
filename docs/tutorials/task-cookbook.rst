@@ -1,7 +1,7 @@
 .. _cookbook-tasks:
 
 ================
- Creating Tasks
+ Task Cookbook
 ================
 
 .. contents::

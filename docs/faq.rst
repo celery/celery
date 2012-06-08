@@ -372,9 +372,10 @@ Why won't my periodic task run?
 How do I purge all waiting tasks?
 ---------------------------------
 
-**Answer:** You can use celeryctl to purge all configured task queues::
+**Answer:** You can use the ``celery purge`` command to purge
+all configured task queues::
 
-        $ celeryctl purge
+        $ celery purge
 
 or programatically::
 
@@ -383,9 +384,9 @@ or programatically::
         1753
 
 If you only want to purge messages from a specific queue
-you have to use the AMQP API or the :program:`camqadm` utility::
+you have to use the AMQP API or the :program:`celery amqp` utility::
 
-    $ camqadm queue.purge <queue name>
+    $ celery amqp queue.purge <queue name>
 
 The number 1753 is the number of messages deleted.
 

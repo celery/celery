@@ -23,21 +23,21 @@ Workers
 .. _monitoring-celeryctl:
 
 
-celeryctl: Management Utility
------------------------------
+``celery``: Management Command-line Utility
+-------------------------------------------
 
 .. versionadded:: 2.1
 
-:mod:`~celery.bin.celeryctl` is a command line utility to inspect
+:pogram:`celery` can also be used to inspect
 and manage worker nodes (and to some degree tasks).
 
 To list all the commands available do::
 
-    $ celeryctl help
+    $ celery help
 
 or to get help for a specific command do::
 
-    $ celeryctl <command> --help
+    $ celery <command> --help
 
 Commands
 ~~~~~~~~
@@ -55,12 +55,12 @@ Commands
 * **status**: List active nodes in this cluster
     ::
 
-    $ celeryctl status
+    $ celery status
 
 * **result**: Show the result of a task
     ::
 
-        $ celeryctl result -t tasks.add 4e196aa4-0141-4601-8138-7aa33db0f577
+        $ celery result -t tasks.add 4e196aa4-0141-4601-8138-7aa33db0f577
 
     Note that you can omit the name of the task as long as the
     task doesn't use a custom result backend.
@@ -68,7 +68,7 @@ Commands
 * **purge**: Purge messages from all configured task queues.
     ::
 
-        $ celeryctl purge
+        $ celery purge
 
     .. warning::
         There is no undo for this operation, and messages will
@@ -77,14 +77,14 @@ Commands
 * **inspect active**: List active tasks
     ::
 
-        $ celeryctl inspect active
+        $ celery inspect active
 
     These are all the tasks that are currently being executed.
 
 * **inspect scheduled**: List scheduled ETA tasks
     ::
 
-        $ celeryctl inspect scheduled
+        $ celery inspect scheduled
 
     These are tasks reserved by the worker because they have the
     `eta` or `countdown` argument set.
@@ -92,7 +92,7 @@ Commands
 * **inspect reserved**: List reserved tasks
     ::
 
-        $ celeryctl inspect reserved
+        $ celery inspect reserved
 
     This will list all tasks that have been prefetched by the worker,
     and is currently waiting to be executed (does not include tasks
@@ -101,32 +101,32 @@ Commands
 * **inspect revoked**: List history of revoked tasks
     ::
 
-        $ celeryctl inspect revoked
+        $ celery inspect revoked
 
 * **inspect registered**: List registered tasks
     ::
 
-        $ celeryctl inspect registered
+        $ celery inspect registered
 
 * **inspect stats**: Show worker statistics
     ::
 
-        $ celeryctl inspect stats
+        $ celery inspect stats
 
 * **inspect enable_events**: Enable events
     ::
 
-        $ celeryctl inspect enable_events
+        $ celery inspect enable_events
 
 * **inspect disable_events**: Disable events
     ::
 
-        $ celeryctl inspect disable_events
+        $ celery inspect disable_events
 
 * **migrate**: Migrate tasks from one broker to another (**EXPERIMENTAL**).
   ::
 
-        $ celeryctl migrate redis://localhost amqp://localhost
+        $ celery migrate redis://localhost amqp://localhost
 
   This command will migrate all the tasks on one broker to another.
   As this command is new and experimental you should be sure to have
@@ -148,7 +148,7 @@ By default the inspect commands operates on all workers.
 You can specify a single, or a list of workers by using the
 `--destination` argument::
 
-    $ celeryctl inspect -d w1,w2 reserved
+    $ celery inspect -d w1,w2 reserved
 
 
 .. _monitoring-django-admin:
@@ -187,10 +187,9 @@ To start the camera run::
 
 If you haven't already enabled the sending of events you need to do so::
 
-    $ python manage.py celeryctl inspect enable_events
+    $ python manage.py celery inspect enable_events
 
-:Tip: You can enable events when the worker starts using the `-E` argument
-      to :mod:`~celery.bin.celeryd`.
+:Tip: You can enable events when the worker starts using the `-E` argument.
 
 Now that the camera has been started, and events have been enabled
 you should be able to see your workers and the tasks in the admin interface
@@ -292,31 +291,37 @@ please see ``djcelerymon --help``.
 
 .. _monitoring-celeryev:
 
-celeryev: Curses Monitor
+celery events: Curses Monitor
 ------------------------
 
 .. versionadded:: 2.0
 
-:mod:`~celery.bin.celeryev` is a simple curses monitor displaying
+`celery events` is a simple curses monitor displaying
 task and worker history.  You can inspect the result and traceback of tasks,
 and it also supports some management commands like rate limiting and shutting
 down workers.
 
+Starting::
+
+    $ celery events
+
+You should see a screen like:
+
 .. figure:: ../images/celeryevshotsm.jpg
 
 
-:mod:`~celery.bin.celeryev` is also used to start snapshot cameras (see
+`celery events` is also used to start snapshot cameras (see
 :ref:`monitoring-snapshots`::
 
-    $ celeryev --camera=<camera-class> --frequency=1.0
+    $ celery events --camera=<camera-class> --frequency=1.0
 
 and it includes a tool to dump events to :file:`stdout`::
 
-    $ celeryev --dump
+    $ celery events --dump
 
 For a complete list of options use ``--help``::
 
-    $ celeryev --help
+    $ celery events --help
 
 
 .. _monitoring-celerymon:
@@ -449,7 +454,7 @@ Events
 
 The worker has the ability to send a message whenever some event
 happens.  These events are then captured by tools like :program:`celerymon`
-and :program:`celeryev` to monitor the cluster.
+and :program:`celery events` to monitor the cluster.
 
 .. _monitoring-snapshots:
 
@@ -469,12 +474,12 @@ To take snapshots you need a Camera class, with this you can define
 what should happen every time the state is captured;  You can
 write it to a database, send it by email or something else entirely.
 
-:program:`celeryev` is then used to take snapshots with the camera,
+:program:`celery events` is then used to take snapshots with the camera,
 for example if you want to capture state every 2 seconds using the
-camera ``myapp.Camera`` you run :program:`celeryev` with the following
+camera ``myapp.Camera`` you run :program:`celery events` with the following
 arguments::
 
-    $ celeryev -c myapp.Camera --frequency=2.0
+    $ celery events -c myapp.Camera --frequency=2.0
 
 
 .. _monitoring-camera:
@@ -505,10 +510,10 @@ Here is an example camera, dumping the snapshot to screen:
 See the API reference for :mod:`celery.events.state` to read more
 about state objects.
 
-Now you can use this cam with :program:`celeryev` by specifying
+Now you can use this cam with :program:`celery events` by specifying
 it with the `-c` option::
 
-    $ celeryev -c myapp.DumpCam --frequency=2.0
+    $ celery events -c myapp.DumpCam --frequency=2.0
 
 Or you can use it programmatically like this::
 
@@ -587,7 +592,7 @@ Worker Events
     * `hostname`: Hostname of the worker.
     * `timestamp`: Event timestamp.
     * `freq`: Heartbeat frequency in seconds (float).
-    * `sw_ident`: Name of worker software (e.g. celeryd).
+    * `sw_ident`: Name of worker software (e.g. ``py-celery``).
     * `sw_ver`: Software version (e.g. 2.2.0).
     * `sw_sys`: Operating System (e.g. Linux, Windows, Darwin).
 

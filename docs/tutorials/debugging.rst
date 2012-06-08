@@ -39,7 +39,7 @@ By default the debugger will only be available from the local host,
 to enable access from the outside you have to set the environment
 variable :envvar:`CELERY_RDB_HOST`.
 
-When `celeryd` encounters your breakpoint it will log the following
+When the worker encounters your breakpoint it will log the following
 information::
 
     [INFO/MainProcess] Got task from broker:
@@ -94,7 +94,7 @@ This is the case for both main and worker processes.
 
 For example starting the worker with::
 
-    CELERY_RDBSIG=1 celeryd -l info
+    CELERY_RDBSIG=1 celery worker -l info
 
 You can start an rdb session for any of the worker processes by executing::
 

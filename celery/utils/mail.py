@@ -159,7 +159,7 @@ The contents of the full traceback was:
 
 %(EMAIL_SIGNATURE_SEP)s
 Just to let you know,
-celeryd at %%(hostname)s.
+py-celery at %%(hostname)s.
 """ % {"EMAIL_SIGNATURE_SEP": EMAIL_SIGNATURE_SEP}
 
     error_whitelist = None

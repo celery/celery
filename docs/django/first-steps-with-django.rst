@@ -96,7 +96,7 @@ For a complete listing of the command line options available, use the help comma
     $ python manage.py help celeryd
 
 .. _`Running Celery as a Daemon`:
-    http://docs.celeryq.org/en/latest/cookbook/daemonizing.html
+    http://docs.celeryproject.org/en/latest/tutorials/daemonizing.html
 
 Executing our task
 ==================

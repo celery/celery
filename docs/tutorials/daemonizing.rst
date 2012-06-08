@@ -1,8 +1,8 @@
 .. _daemonizing:
 
-=============================
- Running celeryd as a daemon
-=============================
+================================
+ Running the worker as a daemon
+================================
 
 Celery does not daemonize itself, please use one of the following
 daemonization tools.
