@@ -10,6 +10,7 @@ how to add Celery support for your application and library.
 
 .. contents::
     :local:
+    :depth: 1
 
 Using Celery in your Application
 ================================

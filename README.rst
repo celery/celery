@@ -2,7 +2,7 @@
  celery - Distributed Task Queue
 =================================
 
-.. image:: http://cloud.github.com/downloads/ask/celery/celery_128.png
+.. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
 
 :Version: 2.6.0rc4
 :Web: http://celeryproject.org/
@@ -95,7 +95,7 @@ Overview
 
 This is a high level overview of the architecture.
 
-.. image:: http://cloud.github.com/downloads/ask/celery/Celery-Overview-v4.jpg
+.. image:: http://cloud.github.com/downloads/celery/celery/Celery-Overview-v4.jpg
 
 The broker delivers tasks to the worker nodes.
 A worker node is a networked machine running `celeryd`.  This can be one or
@@ -115,7 +115,7 @@ adding two numbers:
 
     from celery import task
 
-    @task
+    @task()
     def add(x, y):
         return x + y
 
@@ -250,6 +250,8 @@ To install using `pip`,::
 To install using `easy_install`,::
 
     $ easy_install -U Celery
+
+.. _bundles:
 
 Bundles
 -------
