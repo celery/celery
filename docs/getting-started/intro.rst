@@ -21,6 +21,17 @@ What are Task Queues?
 What do I need?
 ===============
 
+.. sidebar:: Version Requirements
+    :subtitle: Celery version 2.6 runs on
+
+    - Python ❨2.5, 2.6, 2.7, 3.2, 3.3❩
+    - PyPy ❨1.8, 1.9❩
+    - Jython ❨2.5, 2.7❩.
+
+    This is the last version to support Python 2.5,
+    and from the next version Python 2.6 or newer is required.
+    The last version to support Python 2.4 was Celery series 2.2.
+
 *Celery* requires a message broker to send and receive messages,
 but this term has been stretched to include everything from
 financial-grade messaging systems to your fridge.
@@ -28,7 +39,6 @@ financial-grade messaging systems to your fridge.
 You can run *Celery* on a single or multiple machines, or even
 across datacenters.
 
-Celery runs on Python 2.6/2.7/3.2, PyPy and Jython.
 
 
 Celery is…
@@ -66,23 +76,32 @@ Celery is…
 
         - **Brokers**
 
-            :ref:`RabbitMQ <broker-rabbitmq>`, :ref:`Redis <broker-redis>`,
-            :ref:`MongoDB <broker-mongodb>`, :ref:`Beanstalk <broker-beanstalk>`,
-            :ref:`CouchDB <broker-couchdb>`, or
-            :ref:`SQLAlchemy <broker-sqlalchemy>`/:ref:`Django ORM <broker-django>`.
+            - :ref:`RabbitMQ <broker-rabbitmq>`, :ref:`Redis <broker-redis>`,
+            - :ref:`MongoDB <broker-mongodb>`, :ref:`Beanstalk <broker-beanstalk>`,
+            - :ref:`CouchDB <broker-couchdb>`, :ref:`SQLAlchemy <broker-sqlalchemy>`,
+            - :ref:`Django ORM <broker-django>`, and more…
 
         - **Concurrency**
 
-            multiprocessing, Eventlet_, gevent_ and threads.
-
-        - **Serialization & Compression**
-
-            Messages can be serialized using *pickle*, *json*, *yaml*, *msgpack*,
-            and optionally compressed using *zlib* or *bzip2*
+            - multiprocessing,
+            - Eventlet_, gevent_
+            - threads
+            - single
 
         - **Result Stores**
 
-            AMQP, Redis, memcached, MongoDB, SQLAlchemy/Django ORM, Apache Cassandra.
+            - AMQP, Redis
+            - memcached, MongoDB,
+            - SQLAlchemy/Django ORM,
+            - Apache Cassandra.
+
+        - **Serialization & Compression**
+
+            - *pickle*, *json*, *yaml*, *msgpack*.
+            - *zlib*, *bzip2*, or uncompressed.
+            - Cryptographic message signing.
+            - Fine-grained serialization settings.
+
 
 
 .. topic:: Features
