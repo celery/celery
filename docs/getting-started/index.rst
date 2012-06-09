@@ -8,6 +8,7 @@
 .. toctree::
     :maxdepth: 2
 
+    intro
     introduction
     brokers/index
     first-steps-with-celery
