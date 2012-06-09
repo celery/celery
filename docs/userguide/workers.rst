@@ -6,6 +6,7 @@
 
 .. contents::
     :local:
+    :depth: 1
 
 .. _worker-starting:
 
@@ -72,10 +73,11 @@ arguments as it was started with.
 
 .. note::
 
-    This will only work if the worker is running in the background as
-    a daemon (it does not have a controlling terminal).
+    Restarting by :sig:`HUP` only works if the worker is running
+    in the background as a daemon (it does not have a controlling
+    terminal).
 
-    Restarting by HUP is disabled on OS X because of a limitation on
+    :sig:`HUP` is disabled on OS X because of a limitation on
     that platform.
 
 
@@ -135,12 +137,19 @@ transports at this point.
 
 .. _worker-time-limits:
 
-Time limits
+Time Limits
 ===========
 
 .. versionadded:: 2.0
 
-:supported pools: processes
+pool support: *processes*
+
+.. sidebar:: Soft, or hard?
+
+    The time limit is set in two values, `soft` and `hard`.
+    The soft time limit allows the task to catch an exception
+    to clean up before it is killed: the hard timeout is not catchable
+    and force terminates the task.
 
 A single task can potentially run forever, if you have lots of tasks
 waiting for some event that will never happen you will block the worker
@@ -178,8 +187,10 @@ Changing time limits at runtime
 -------------------------------
 .. versionadded:: 2.3
 
-You can change the soft and hard time limits for a task by using the
-``time_limit`` remote control command.
+broker support: *amqp, redis, mongodb*
+
+There is a remote control command that enables you to change both soft
+and hard time limits for a task — named ``time_limit``.
 
 Example changing the time limit for the ``tasks.crawl_the_web`` task
 to have a soft time limit of one minute, and a hard time limit of
@@ -198,7 +209,7 @@ Max tasks per child setting
 
 .. versionadded:: 2.0
 
-:supported pools: processes
+pool support: *processes*
 
 With this option you can configure the maximum number of tasks
 a worker can execute before it's replaced by a new process.
@@ -209,14 +220,42 @@ for example from closed source C extensions.
 The option can be set using the workers `--maxtasksperchild` argument
 or using the :setting:`CELERYD_MAX_TASKS_PER_CHILD` setting.
 
-.. _worker-autoreload:
+.. _worker-autoscaling:
+
+Autoscaling
+===========
+
+.. versionadded:: 2.2
+pool support: *processes*, *gevent*
+
+The *autoscaler* component is used to dynamically resize the pool
+based on load:
+
+- The autoscaler adds more pool processes when there is work to do,
+    - and starts removing processes when the workload is low.
+
+It's enabled by the :option:`--autoscale` option, which needs two
+numbers: the maximum and minumum number of pool processes::
+
+        --autoscale=AUTOSCALE
+             Enable autoscaling by providing
+             max_concurrency,min_concurrency.  Example:
+               --autoscale=10,3 (always keep 3 processes, but grow to
+              10 if necessary).
+
+You can also define your own rules for the autoscaler by subclassing
+:class:`~celery.worker.autoscaler.Autoscaler`.
+Some ideas for metrics include load average or the amount of memory available.
+You can specify a custom autoscaler with the :setting:`CELERYD_AUTOSCALER` setting.
+
+.. _worker-autoreloading:
 
 Autoreloading
 =============
 
 .. versionadded:: 2.5
 
-:supported pools: processes, eventlet, gevent, threads, solo
+pool support: *processes, eventlet, gevent, threads, solo*
 
 Starting :program:`celery worker` with the :option:`--autoreload` option will
 enable the worker to watch for file system changes to all imported task
@@ -267,8 +306,8 @@ Remote control
 
 .. versionadded:: 2.0
 
-:supported pools: processes, eventlet, gevent, blocking:threads/solo (see note)
-:supported transports: amqp, redis, mongodb
+pool support: *processes, eventlet, gevent*, blocking:*threads/solo* (see note)
+broker support: *amqp, redis, mongodb*
 
 Workers have the ability to be remote controlled using a high-priority
 broadcast message queue.  The commands can be directed to all, or a specific
@@ -446,8 +485,10 @@ a worker using :program:`celery events`/:program:`celerymon`.
     >>> celery.control.broadcast("enable_events")
     >>> celery.control.broadcast("disable_events")
 
-Adding/Reloading modules
-------------------------
+.. _worker-autoreload:
+
+Autoreloading
+-------------
 
 .. versionadded:: 2.5
 

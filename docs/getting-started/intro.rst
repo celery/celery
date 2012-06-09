@@ -9,79 +9,142 @@
 What are Task Queues?
 =====================
 
+.. compound::
 
-Celery Features
+    "The quick brown fox jumps over the lazy dog"
+
+        said the Farmer.
+
+            but little did *he* know...
+
+
+What do I need?
 ===============
 
-- Messaging Transports (Brokers)
-
-Celery requires a message broker to send and receive messages,
+*Celery* requires a message broker to send and receive messages,
 but this term has been stretched to include everything from
-financial-grade messaging systems to your fridge (no offense)
+financial-grade messaging systems to your fridge.
 
-RabbitMQ, Redis, MongoDB, Amazon SQS, CouchDB, Beanstalk, Apache ZooKeeper,
-or Databases (SQLAlchemy/Django ORM).
+You can run *Celery* on a single or multiple machines, or even
+across datacenters.
 
-- HA
+Celery runs on Python 2.6/2.7/3.2, PyPy and Jython.
 
-Both clients and workers will automatically retry in the event
-of connection loss or failure, and some brokers support
-HA in way of Master/Master or Master/Slave replication.
 
-- Multiple Serializers
+Celery is…
+==========
 
-Messages can be serialized using pickle, json, yaml, msgpack or
-even custom serializers.  In addition Celery ships with a special
-serializer that signs messages using cryptographic hashes.
+.. topic:: ”
 
-- Compression
+    - **Simple**
 
-Messages can be compressed using zlib, bzip2 or custom
-compression schemes defined by the user.
+        Bla bla bla., yaddi blabla, bla bli bla do re mi, bla bi do,
+        re mi bla do blah blah yadda blah blah blah blah.
 
-Worker
-------
+    - **Fast**
 
-- Monitoring
+        Bla bla bla. librabbitmq, yaddi blabla lightweight, bla bli bla do re mi, bla bi do,
+        re mi bla do blah blah yadda blah blah blah blah.
 
-Workers emit a stream of monitoring events, that is used
-by monitoring tools like `celery events`, `celerymon` and
-the Django Admin monitor.  Users can write custom event consumers
-to analyze what the workers are doing in real-time.
+    - **Highly Available**
 
-- Time Limits
+        Workers and clients will automatically retry in the event
+        of connection loss or failure, and some brokers support
+        HA in way of *Master/Master* or -- *Master/Slave* replication.
 
-Tasks can be enforced a strict time to run, and this can be set as a default
-for all tasks, for a specific worker, or individually for each task.
+    - **Flexible**
 
-.. sidebar:: Soft, or hard?
+        Almost every part of *Celery* can be extended or used on its own,
+        Custom pool implementations, serializers, compression schemes, logging,
+        schedulers, consumers, producers, autoscalers, broker transorts and much more.
 
-    The time limit is set in two values, `soft` and `hard`.
-    The soft time limit allows the task to catch an exception
-    to clean up before it is killed: the hard timeout is not catchable
-    and force terminates the task.
 
-- Autoreloading
+.. topic:: It supports
 
-While developing the worker can be set to automatically reload
-when the source code for a task changes.
+    .. hlist::
+        :columns: 2
 
-- Autoscaling
+        - **Brokers**
 
-The worker pool can be dynamically resized based on worker load,
-and autoscaling rules can be customized by the user.
+            :ref:`RabbitMQ <broker-rabbitmq>`, :ref:`Redis <broker-redis>`,
+            :ref:`MongoDB <broker-mongodb>`, :ref:`Beanstalk <broker-beanstalk>`,
+            :ref:`CouchDB <broker-couchdb>`, or
+            :ref:`SQLAlchemy <broker-sqlalchemy>`/:ref:`Django ORM <broker-django>`.
 
-- Memory Leak Cleanup
+        - **Concurrency**
 
-Sometimes tasks contain memory leaks that are out of the
-developers control, or the task allocated other resources
-that cannot be cleaned up.  In this case the worker supports
-a :option:`--maxtasksperchild` argument that defines how
-many task a given pool process can execute before it's
-replaced by a fresh process.
+            multiprocessing, Eventlet_, gevent_ and threads.
 
-- User components
+        - **Serialization & Compression**
 
-Each worker component can be customized, and additional components
-can be defined by the user simply by defining a new boot steps
-that will be loaded as part of the workers dependency graph.
+            Messages can be serialized using *pickle*, *json*, *yaml*, *msgpack*,
+            and optionally compressed using *zlib* or *bzip2*
+
+        - **Result Stores**
+
+            AMQP, Redis, memcached, MongoDB, SQLAlchemy/Django ORM, Apache Cassandra.
+
+
+.. topic:: Features
+
+    .. hlist::
+        :columns: 2
+
+        - **Monitoring**
+
+            The stream of monitoring events emit by the worker are used
+            by built-in and external tools to tell you what your cluster
+            is doing in real-time.
+
+            :ref:`Read more… <guide-monitoring>`.
+
+        - **Time Limits & Rate Limits**
+
+            You can control how many tasks can be executed per second/minute/hour,
+            or how long a task can be allowed to run, and this can be set as
+            a default, for a specific worker or individually for each task type.
+
+            :ref:`Read more… <worker-time-limits>`.
+
+        - **Autoreloading**
+
+            While in development workers can be configured to automatically reload source
+            code as it changes.
+
+            :ref:`Read more… <worker-autoreloading>`.
+
+        - **Autoscaling**
+
+            Dynamically resizing the worker pool depending on load,
+            or custom metrics specified by the user, used to limit
+            memory usage in shared hosting/cloud environment or to
+            enforce a given quality of service.
+
+            :ref:`Read more… <worker-autoscaling>`.
+
+        - **Resource Leak Protection**
+
+            The :option:`--maxtasksperchild` option is used for user tasks
+            leaking resources, like memory or file descriptors, that
+            are out simply out of your control.
+
+            :ref:`Read more… <worker-maxtasksperchild>`.
+
+        - **User Components**
+
+            Each worker component can be customized, and additional components
+            can be defined by the user.  The worker is built up using "boot steps" — a
+            dependency graph enabling fine grained control of the workers
+            internals.
+
+.. _`RabbitMQ`: http://www.rabbitmq.com/
+.. _`Redis`: http://code.google.com/p/redis/
+.. _`SQLAlchemy`: http://www.sqlalchemy.org/
+.. _`Django ORM`: http://djangoproject.com/
+.. _`Eventlet`: http://eventlet.net/
+.. _`gevent`: http://gevent.org/
+.. _`Beanstalk`: http://kr.github.com/beanstalkd/
+.. _`MongoDB`: http://mongodb.org/
+.. _`CouchDB`: http://couchdb.apache.org/
+.. _`Amazon SQS`: http://aws.amazon.com/sqs/
+.. _`Apache ZooKeeper`: http://zookeeper.apache.org/
