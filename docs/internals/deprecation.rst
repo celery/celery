@@ -175,52 +175,57 @@ Settings
 ``BROKER`` Settings
 ~~~~~~~~~~~~~~~~~~~
 
-    =====================================  =====================================
-    **Setting name**                       **Replace with**
-    =====================================  =====================================
-    ``BROKER_HOST``                        :setting:`BROKER_URL`
-    ``BROKER_PORT``                        :setting:`BROKER_URL`
-    ``BROKER_USER``                        :setting:`BROKER_URL`
-    ``BROKER_PASSWORD``                    :setting:`BROKER_URL`
-    ``BROKER_VHOST``                       :setting:`BROKER_URL`
-    ``BROKER_INSIST``                      *no alternative*
+=====================================  =====================================
+**Setting name**                       **Replace with**
+=====================================  =====================================
+``BROKER_HOST``                        :setting:`BROKER_URL`
+``BROKER_PORT``                        :setting:`BROKER_URL`
+``BROKER_USER``                        :setting:`BROKER_URL`
+``BROKER_PASSWORD``                    :setting:`BROKER_URL`
+``BROKER_VHOST``                       :setting:`BROKER_URL`
+``BROKER_INSIST``                      *no alternative*
+=====================================  =====================================
+
 
 ``REDIS`` Result Backend Settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    =====================================  =====================================
-    **Setting name**                       **Replace with**
-    =====================================  =====================================
-    ``CELERY_REDIS_HOST``                  :setting:`CELERY_RESULT_BACKEND`
-    ``CELERY_REDIS_PORT``                  :setting:`CELERY_RESULT_BACKEND`
-    ``CELERY_REDIS_DB``                    :setting:`CELERY_RESULT_BACKEND`
-    ``CELERY_REDIS_PASSWORD``              :setting:`CELERY_RESULT_BACKEND`
-    ``REDIS_HOST``                         :setting:`CELERY_RESULT_BACKEND`
-    ``REDIS_PORT``                         :setting:`CELERY_RESULT_BACKEND`
-    ``REDIS_DB``                           :setting:`CELERY_RESULT_BACKEND`
-    ``REDIS_PASSWORD``                     :setting:`CELERY_RESULT_BACKEND`
+=====================================  =====================================
+**Setting name**                       **Replace with**
+=====================================  =====================================
+``CELERY_REDIS_HOST``                  :setting:`CELERY_RESULT_BACKEND`
+``CELERY_REDIS_PORT``                  :setting:`CELERY_RESULT_BACKEND`
+``CELERY_REDIS_DB``                    :setting:`CELERY_RESULT_BACKEND`
+``CELERY_REDIS_PASSWORD``              :setting:`CELERY_RESULT_BACKEND`
+``REDIS_HOST``                         :setting:`CELERY_RESULT_BACKEND`
+``REDIS_PORT``                         :setting:`CELERY_RESULT_BACKEND`
+``REDIS_DB``                           :setting:`CELERY_RESULT_BACKEND`
+``REDIS_PASSWORD``                     :setting:`CELERY_RESULT_BACKEND`
+=====================================  =====================================
 
 Logging Settings
 ~~~~~~~~~~~~~~~~
 
-    =====================================  =====================================
-    **Setting name**                       **Replace with**
-    =====================================  =====================================
-    ``CELERYD_LOG_LEVEL``                  :option:`--loglevel`
-    ``CELERYD_LOG_FILE``                   :option:`--logfile``
-    ``CELERYBEAT_LOG_LEVEL``               :option:`--loglevel`
-    ``CELERYBEAT_LOG_FILE``                :option:`--loglevel``
-    ``CELERYMON_LOG_LEVEL``                :option:`--loglevel`
-    ``CELERYMON_LOG_FILE``                 :option:`--loglevel``
+=====================================  =====================================
+**Setting name**                       **Replace with**
+=====================================  =====================================
+``CELERYD_LOG_LEVEL``                  :option:`--loglevel`
+``CELERYD_LOG_FILE``                   :option:`--logfile``
+``CELERYBEAT_LOG_LEVEL``               :option:`--loglevel`
+``CELERYBEAT_LOG_FILE``                :option:`--loglevel``
+``CELERYMON_LOG_LEVEL``                :option:`--loglevel`
+``CELERYMON_LOG_FILE``                 :option:`--loglevel``
+=====================================  =====================================
 
 Other Settings
 ~~~~~~~~~~~~~~
 
-    =====================================  =====================================
-    **Setting name**                       **Replace with**
-    =====================================  =====================================
-    ``CELERY_TASK_ERROR_WITELIST``         Annotate ``Task.ErrorMail``
-    ``CELERY_AMQP_TASK_RESULT_EXPIRES``    :setting:`CELERY_TASK_RESULT_EXPIRES`
+=====================================  =====================================
+**Setting name**                       **Replace with**
+=====================================  =====================================
+``CELERY_TASK_ERROR_WITELIST``         Annotate ``Task.ErrorMail``
+``CELERY_AMQP_TASK_RESULT_EXPIRES``    :setting:`CELERY_TASK_RESULT_EXPIRES`
+=====================================  =====================================
 
 
 .. _deprecations-v2.0:
@@ -230,16 +235,16 @@ Removals for version 2.0
 
 * The following settings will be removed:
 
-    =====================================  =====================================
-    **Setting name**                       **Replace with**
-    =====================================  =====================================
-    `CELERY_AMQP_CONSUMER_QUEUES`          `CELERY_QUEUES`
-    `CELERY_AMQP_CONSUMER_QUEUES`          `CELERY_QUEUES`
-    `CELERY_AMQP_EXCHANGE`                 `CELERY_DEFAULT_EXCHANGE`
-    `CELERY_AMQP_EXCHANGE_TYPE`            `CELERY_DEFAULT_AMQP_EXCHANGE_TYPE`
-    `CELERY_AMQP_CONSUMER_ROUTING_KEY`     `CELERY_QUEUES`
-    `CELERY_AMQP_PUBLISHER_ROUTING_KEY`    `CELERY_DEFAULT_ROUTING_KEY`
-    =====================================  =====================================
+=====================================  =====================================
+**Setting name**                       **Replace with**
+=====================================  =====================================
+`CELERY_AMQP_CONSUMER_QUEUES`          `CELERY_QUEUES`
+`CELERY_AMQP_CONSUMER_QUEUES`          `CELERY_QUEUES`
+`CELERY_AMQP_EXCHANGE`                 `CELERY_DEFAULT_EXCHANGE`
+`CELERY_AMQP_EXCHANGE_TYPE`            `CELERY_DEFAULT_AMQP_EXCHANGE_TYPE`
+`CELERY_AMQP_CONSUMER_ROUTING_KEY`     `CELERY_QUEUES`
+`CELERY_AMQP_PUBLISHER_ROUTING_KEY`    `CELERY_DEFAULT_ROUTING_KEY`
+=====================================  =====================================
 
 * :envvar:`CELERY_LOADER` definitions without class name.
 
