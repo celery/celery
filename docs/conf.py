@@ -70,6 +70,7 @@ intersphinx_mapping = {
         "http://docs.python.org/dev": None,
         "http://kombu.readthedocs.org/en/latest/": None,
         "http://django-celery.readthedocs.org/en/latest": None,
+        "http://cyme.readthedocs.org/en/latest": None,
 }
 
 # The name of the Pygments (syntax highlighting) style to use.
@@ -103,7 +104,7 @@ html_sidebars = {
 
 ### Issuetracker
 
-if True:
+if False:
     issuetracker = "github"
     issuetracker_project = "celery/celery"
     issuetracker_issue_pattern = r'[Ii]ssue #(\d+)'
