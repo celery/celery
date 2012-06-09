@@ -47,7 +47,7 @@ class BoundedSemaphore(object):
         the semaphore is ready.
 
         :param callback: The callback to apply.
-        :param *partial_args: partial arguments to callback.
+        :param \*partial_args: partial arguments to callback.
 
         """
         if self.value <= 0:

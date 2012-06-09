@@ -17,7 +17,7 @@ Celery Features
 
 Celery requires a message broker to send and receive messages,
 but this term has been stretched to include everything from
-financial-grade messaging systems to you fridge (no offense)
+financial-grade messaging systems to your fridge (no offense)
 
 RabbitMQ, Redis, MongoDB, Amazon SQS, CouchDB, Beanstalk, Apache ZooKeeper,
 or Databases (SQLAlchemy/Django ORM).

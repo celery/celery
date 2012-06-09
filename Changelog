@@ -236,7 +236,7 @@ Fixes
 
     Fix contributed by Mitar.
 
-* Daemonization cookbook: Adds a configuration example using Django and
+* Daemonization tutorial: Adds a configuration example using Django and
   virtualenv together (Issue #505).
 
     Contributed by Juan Ignacio Catalano.
@@ -1325,7 +1325,7 @@ Fixes
 * celeryd-multi/celeryd_detach: Now logs errors occuring when executing
   the `celeryd` command.
 
-* daemonizing cookbook: Fixed typo ``--time-limit 300`` ->
+* daemonizing tutorial: Fixed typo ``--time-limit 300`` ->
   ``--time-limit=300``
 
 * Colors in logging broke non-string objects in log messages.
@@ -2267,7 +2267,7 @@ News
     and shutting down worker nodes.
 
     There's also a Debian init.d script for :mod:`~celery.bin.celeryev` available,
-    see :doc:`cookbook/daemonizing` for more information.
+    see :doc:`tutorial/daemonizing` for more information.
 
     New command line arguments to celeryev:
 

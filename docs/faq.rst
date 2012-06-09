@@ -638,7 +638,7 @@ Can I specify a custom task_id?
 Can I use decorators with tasks?
 --------------------------------
 
-**Answer**: Yes.  But please see note in the sidebar at :ref:`tasks-basics`.
+**Answer**: Yes.  But please see note in the sidebar at :ref:`task-basics`.
 
 .. _faq-natural-task-ids:
 
