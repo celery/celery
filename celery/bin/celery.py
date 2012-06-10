@@ -12,8 +12,8 @@ from pprint import pformat
 from celery import __version__
 from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
 from celery.utils import term
+from celery.utils import text
 from celery.utils.imports import symbol_by_name
-from celery.utils.text import pluralize
 from celery.utils.timeutils import maybe_iso8601
 
 from celery.bin.base import Command as BaseCommand, Option
@@ -40,8 +40,9 @@ class Error(Exception):
         return self.reason
 
 
-def command(fun, name=None):
+def command(fun, name=None, sortpri=0):
     commands[name or fun.__name__] = fun
+    fun.sortpri = sortpri
     return fun
 
 
@@ -113,18 +114,19 @@ class Command(BaseCommand):
         c = self.colored
         try:
             return (c.green("OK"),
-                    indent(self.prettify(n["ok"])[1]))
+                    text.indent(self.prettify(n["ok"])[1], 4))
         except KeyError:
             pass
         return (c.red("ERROR"),
-                indent(self.prettify(n["error"])[1]))
+                text.indent(self.prettify(n["error"])[1], 4))
 
     def say_remote_command_reply(self, replies):
         c = self.colored
         node = replies.keys()[0]
         reply = replies[node]
         status, preply = self.prettify(reply)
-        self.say_chat("->", c.cyan(node, ": ") + status, indent(preply))
+        self.say_chat("->", c.cyan(node, ": ") + status,
+                      text.indent(preply, 4))
 
     def prettify(self, n):
         OK = str(self.colored.green("OK"))
@@ -172,10 +174,24 @@ def create_delegate(name, Command):
                                              "__module__": __name__}))
 
 
-worker = create_delegate("worker", "celery.bin.celeryd:WorkerCommand")
-events = create_delegate("events", "celery.bin.celeryev:EvCommand")
-beat = create_delegate("beat", "celery.bin.celerybeat:BeatCommand")
-amqp = create_delegate("amqp", "celery.bin.camqadm:AMQPAdminCommand")
+class worker(Delegate):
+    Command = "celery.bin.celeryd:WorkerCommand"
+worker = command(worker, sortpri=01)
+
+
+class events(Delegate):
+    Command = "celery.bin.celeryd:WorkerCommand"
+events = command(events, sortpri=10)
+
+
+class beat(Delegate):
+    Command = "celery.bin.celerybeat:BeatCommand"
+beat = command(beat, sortpri=20)
+
+
+class amqp(Delegate):
+    Command = "celery.bin.camqadm:AMQPAdminCommand"
+amqp = command(amqp, sortpri=30)
 
 
 class list_(Command):
@@ -263,11 +279,11 @@ class purge(Command):
         messages_removed = self.app.control.purge()
         if messages_removed:
             self.out("Purged %s %s from %s known task %s." % (
-                messages_removed, pluralize(messages_removed, "message"),
-                queues, pluralize(queues, "queue")))
+                messages_removed, text.pluralize(messages_removed, "message"),
+                queues, text.pluralize(queues, "queue")))
         else:
             self.out("No messages purged from %s known %s" % (
-                queues, pluralize(queues, "queue")))
+                queues, text.pluralize(queues, "queue")))
 purge = command(purge)
 
 
@@ -359,10 +375,6 @@ class inspect(Command):
 inspect = command(inspect)
 
 
-def indent(s, n=4):
-    return "\n".join(" " * n + l for l in s.split("\n"))
-
-
 class status(Command):
     option_list = inspect.option_list
 
@@ -377,7 +389,7 @@ class status(Command):
         nodecount = len(replies)
         if not kwargs.get("quiet", False):
             self.out("\n%s %s online." % (nodecount,
-                                          pluralize(nodecount, "node")))
+                                          text.pluralize(nodecount, "node")))
 status = command(status)
 
 
@@ -494,6 +506,12 @@ class shell(Command):  # pragma: no cover
 shell = command(shell)
 
 
+def commandlist(indent=0):
+    return (text.indent(command, indent)
+                for command in sorted(commands,
+                    key=lambda k: commands[k].sortpri or k))
+
+
 class help(Command):
 
     def usage(self, command):
@@ -502,8 +520,7 @@ class help(Command):
     def run(self, *args, **kwargs):
         self.parser.print_help()
         self.out(HELP % {"prog_name": self.prog_name,
-                         "commands": "\n".join(indent(command)
-                                             for command in sorted(commands))})
+                         "commands": "\n".join(commandlist(ident=4))})
 
         return EX_USAGE
 help = command(help)

@@ -1,4 +1,4 @@
-.. _guide-worker:
+.. _guide-workers:
 
 ===============
  Workers Guide
@@ -13,13 +13,15 @@
 Starting the worker
 ===================
 
+.. sidebar:: Daemonizing
+
+    You probably want to use a daemonization tool to start
+    in the background.  See :ref:`daemonizing` for help
+    detaching the worker using popular daemonization tools.
+
 You can start the worker in the foreground by executing the command::
 
-    $ celery worker --loglevel=INFO
-
-You probably want to use a daemonization tool to start
-in the background.  See :ref:`daemonizing` for help
-detaching the worker using popular daemonization tools.
+    $ celery worker --loglevel=INFO --app=app
 
 For a full list of available command line options see
 :mod:`~celery.bin.celeryd`, or simply do::
@@ -226,6 +228,7 @@ Autoscaling
 ===========
 
 .. versionadded:: 2.2
+
 pool support: *processes*, *gevent*
 
 The *autoscaler* component is used to dynamically resize the pool

@@ -39,7 +39,7 @@ a "task".
 
 Workers
 =======
-Go to :ref:`guide-worker`.
+Go to :ref:`guide-workers`.
 
 Monitoring
 ==========

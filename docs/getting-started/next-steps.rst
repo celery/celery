@@ -124,7 +124,7 @@ by passing in the `--help` flag::
 
     $ celery worker --help
 
-These options are described in more detailed in the :ref:`Workers Guide <guide-worker>`.
+These options are described in more detailed in the :ref:`Workers Guide <guide-workers>`.
 
 .. sidebar:: About the :option:`--app` argument
 
