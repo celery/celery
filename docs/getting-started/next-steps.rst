@@ -335,6 +335,8 @@ to apply the starmap after 10 seconds::
 
     >>> add.starmap(zip(range(10), range(10))).apply_async(countdown=10)
 
+.. _chunking-ov:
+
 Chunking
 --------
 
@@ -535,6 +537,7 @@ and create images::
 
 .. image:: ../images/graph.png
 
+.. _chords-ov:
 
 Chords
 ------

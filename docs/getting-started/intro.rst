@@ -9,14 +9,7 @@
 What are Task Queues?
 =====================
 
-.. compound::
-
-    "The quick brown fox jumps over the lazy dog"
-
-        said the Farmer.
-
-            but little did *he* know...
-
+HELLO
 
 What do I need?
 ===============
@@ -34,12 +27,10 @@ What do I need?
 
 *Celery* requires a message broker to send and receive messages,
 but this term has been stretched to include everything from
-financial-grade messaging systems to your fridge.
+your fridge to financial-grade messaging systems.
 
-You can run *Celery* on a single or multiple machines, or even
+*Celery* can run on a single machine, on multiple machines, or even
 across datacenters.
-
-
 
 Celery is…
 ==========
@@ -48,19 +39,34 @@ Celery is…
 
     - **Simple**
 
-        Bla bla bla., yaddi blabla, bla bli bla do re mi, bla bi do,
-        re mi bla do blah blah yadda blah blah blah blah.
+        Celery is easy to use and maintain, and does *not need configuration files*
+        It has an active, friendly community you can talk to for support,
+        including a :ref:`mailing-list <mailing-list>` and and :ref:`IRC
+        channel <irc-channel>`.
 
-    - **Fast**
+        Here's one of the simplest applications you can make:
 
-        Bla bla bla. librabbitmq, yaddi blabla lightweight, bla bli bla do re mi, bla bi do,
-        re mi bla do blah blah yadda blah blah blah blah.
+        .. code-block:: python
+
+            from celery import Celery
+
+            celery = Celery("hello", broker="amqp://guest@localhost//")
+
+            @celery.task()
+            def hello():
+                return "hello world"
 
     - **Highly Available**
 
         Workers and clients will automatically retry in the event
         of connection loss or failure, and some brokers support
         HA in way of *Master/Master* or -- *Master/Slave* replication.
+
+    - **Fast**
+
+        A single Celery process can execute millions of tasks a minute,
+        with sub-millisecond round-trip latency (using RabbitMQ,
+        py-librabbitmq, and optimized settings).
 
     - **Flexible**
 
@@ -156,14 +162,38 @@ Celery is…
             dependency graph enabling fine grained control of the workers
             internals.
 
-.. _`RabbitMQ`: http://www.rabbitmq.com/
-.. _`Redis`: http://code.google.com/p/redis/
-.. _`SQLAlchemy`: http://www.sqlalchemy.org/
-.. _`Django ORM`: http://djangoproject.com/
 .. _`Eventlet`: http://eventlet.net/
 .. _`gevent`: http://gevent.org/
-.. _`Beanstalk`: http://kr.github.com/beanstalkd/
-.. _`MongoDB`: http://mongodb.org/
-.. _`CouchDB`: http://couchdb.apache.org/
-.. _`Amazon SQS`: http://aws.amazon.com/sqs/
-.. _`Apache ZooKeeper`: http://zookeeper.apache.org/
+
+
+.. topic:: I want to ⟶
+
+    .. hlist::
+        :columns: 2
+
+        - :ref:`get the return value of a task <task-states>`
+        - :ref:`use logging from my task <task-logging>`
+        - :ref:`learn about best practices <task-best-practices>`
+        - :ref:`create a custom task base class <task-custom-classes>`
+        - :ref:`add a callback to a group of tasks <chords-ov>`
+        - :ref:`split a task into several chunks <chunking-ov>`
+        - :ref:`optimize the worker <guide-optimizing>`
+        - :ref:`see a list of built-in task states <task-builtin-states>`
+        - :ref:`create custom task states <custom-states>`
+        - :ref:`set a custom task name <task-names>`
+        - :ref:`track when a task starts <task-track-started>`
+        - :ref:`retry a task when it fails <task-retry>`
+        - :ref:`get the id of the current task <task-request-info>`
+        - :ref:`know what queue a task was delivered to <task-request-info>`
+        - :ref:`see a list of running workers <monitoring-celeryctl>`
+        - :ref:`purge all messages <monitoring-celeryctl>`
+        - :ref:`inspect what the workers are doing <monitoring-celeryctl>`
+        - :ref:`see what tasks a worker has registerd <monitoring-celeryctl>`
+        - :ref:`migrate tasks to a new broker <monitoring-celeryctl>`
+        - :ref:`see a list of event message types <event-reference>`
+        - :ref:`contribute to Celery <contributing>`
+        - :ref:`learn about available configuration settings <configuration>`
+        - :ref:`receive email when a task fails <conf-error-mails>`
+        - :ref:`get a list of people and companies using Celery <res-using-celery>`
+        - :ref:`write my own remote control command <worker-custom-control-commands>`
+        - change worker queues at runtime

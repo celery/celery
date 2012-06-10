@@ -326,6 +326,8 @@ General
     The global default can be overridden by the :setting:`CELERY_ACKS_LATE`
     setting.
 
+.. _task-track-started:
+
 .. attribute:: Task.track_started
 
     If :const:`True` the task will report its status as "started"
