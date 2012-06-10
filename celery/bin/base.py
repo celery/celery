@@ -6,7 +6,7 @@
 Preload Options
 ---------------
 
-.. cmdoption:: --app
+.. cmdoption:: -A, --app
 
     Fully qualified name of the app instance to use.
 
@@ -114,7 +114,7 @@ class Command(object):
 
     #: List of options to parse before parsing other options.
     preload_options = (
-        Option("--app", default=None),
+        Option("-A", "--app", default=None),
         Option("-b", "--broker", default=None),
         Option("--loader", default=None),
         Option("--config", default="celeryconfig", dest="config_module"),
