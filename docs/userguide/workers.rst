@@ -485,8 +485,8 @@ a worker using :program:`celery events`/:program:`celerymon`.
 
 .. code-block:: python
 
-    >>> celery.control.broadcast("enable_events")
-    >>> celery.control.broadcast("disable_events")
+    >>> celery.control.enable_events()
+    >>> celery.control.disable_events()
 
 .. _worker-autoreload:
 

@@ -121,6 +121,12 @@ class Queues(dict):
         if wanted:
             self._consume_from = dict((name, self[name]) for name in wanted)
 
+    def select_remove(self, queue):
+        if self._consume_from is None:
+            self.select_subset(k for k in self.keys() if k != queue)
+        else:
+            self._consume_from.pop(queue, None)
+
     def new_missing(self, name):
         return Queue(name, Exchange(name), name)
 

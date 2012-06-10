@@ -89,6 +89,17 @@ find_long_opt = re.compile(r'.+?(--.+?)(?:\s|,|$)')
 find_rst_ref = re.compile(r':\w+:`(.+?)`')
 
 
+class Parser(OptionParser):
+
+    def format_epilog(self, *args, **kwargs):
+        return ""
+
+    def print_help(self, *args, **kwargs):
+        OptionParser.print_help(self, *args, **kwargs)
+        if self.epilog:
+            print("\n" + self.epilog)
+
+
 class Command(object):
     """Base class for command line applications.
 
@@ -96,6 +107,8 @@ class Command(object):
     :keyword get_app: Callable returning the current app if no app provided.
 
     """
+    Parser = Parser
+
     #: Arg list used in help.
     args = ''
 
@@ -126,7 +139,11 @@ class Command(object):
     #: Default configuration namespace.
     namespace = "celery"
 
-    Parser = OptionParser
+    #: Text to print at end of --help
+    epilog = None
+
+    #: Text to print in --help before option list.
+    description = ''
 
     def __init__(self, app=None, get_app=None):
         self.app = app
@@ -207,6 +224,8 @@ class Command(object):
         return self.prepare_parser(self.Parser(prog=prog_name,
                            usage=self.usage(command),
                            version=self.version,
+                           epilog=self.epilog,
+                           description=self.description,
                            option_list=(self.preload_options +
                                         self.get_options())))
 

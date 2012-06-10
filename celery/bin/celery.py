@@ -22,11 +22,27 @@ HELP = """
 Type '%(prog_name)s <command> --help' for help using
 a specific command.
 
-Available commands:
+--- Commands ---
+
 %(commands)s
 """
 
 commands = {}
+
+command_classes = (
+    ("Main",
+        ["worker", "events", "beat", "shell", "amqp", "help"],
+        "green",
+    ),
+    ("Remote Control",
+        ["status", "inspect", "control"],
+        "blue",
+    ),
+    ("Utils",
+        ["purge", "list", "migrate", "apply", "result", "report"],
+        None,
+    ),
+)
 
 
 class Error(Exception):
@@ -52,6 +68,7 @@ class Command(BaseCommand):
     version = __version__
     prog_name = "celery"
     show_body = True
+    leaf = True
 
     option_list = (
         Option("--quiet", "-q", action="store_true"),
@@ -304,61 +321,72 @@ class result(Command):
 result = command(result)
 
 
-class rate_limit(Command):
-    args = "<task_name> <rate_limit (e.g. 10/m for 10 in a second)>"
-
-    def run(self, task_name, limit, **kwargs):
-        self.say_chat("<-", "rate_limit")
-        replies = self.app.control.rate_limit(task_name, limit, reply=True)
-        for reply in replies:
-            self.say_remote_command_reply(reply)
-rate_limit = command(rate_limit)
-
-
-class inspect(Command):
-    choices = {"active": 1.0,
-               "active_queues": 1.0,
-               "scheduled": 1.0,
-               "reserved": 1.0,
-               "stats": 1.0,
-               "revoked": 1.0,
-               "registered_tasks": 1.0,  # alias to registered
-               "registered": 1.0,
-               "enable_events": 1.0,
-               "disable_events": 1.0,
-               "ping": 0.2,
-               "add_consumer": 1.0,
-               "cancel_consumer": 1.0,
-               "report": 1.0}
+class _RemoteControl(Command):
+    name = None
+    choices = None
+    leaf = False
     option_list = Command.option_list + (
                 Option("--timeout", "-t", type="float",
                     help="Timeout in seconds (float) waiting for reply"),
                 Option("--destination", "-d",
                     help="Comma separated list of destination node names."))
 
+    @classmethod
+    def get_command_info(self, command, color=None):
+        try:
+            # see if it uses args.
+            meth = getattr(self, command)
+            return "%s %s" % (color(command), meth.__doc__)
+        except AttributeError:
+            return str(color(command))
+
+    @classmethod
+    def list_commands(self, indent=0, prefix="", color=None):
+        color = color if color else lambda x: x
+        prefix = prefix + " " if prefix else ""
+        return "\n".join(text.indent(prefix
+                    + self.get_command_info(c, color), indent)
+                        for c in sorted(self.choices))
+
+    @property
+    def epilog(self):
+        return "\n".join([
+            "[Commands]",
+            self.list_commands()
+        ])
+
     def usage(self, command):
-        return "%%prog %s [options] %s [%s]" % (
-                command, self.args, "|".join(self.choices.keys()))
+        return "%%prog %s [options] %s <command> [arg1 .. argN]" % (
+                command, self.args)
+
+    def call(self, *args, **kwargs):
+        raise NotImplementedError("get_obj")
 
     def run(self, *args, **kwargs):
         if not args:
-            raise Error("Missing inspect command. See --help")
-        command = args[0]
-        if command == "help":
-            raise Error("Did you mean 'inspect --help'?")
-        if command not in self.choices:
-            raise Error("Unknown inspect command: %s" % command)
+            raise Error("Missing %s method. See --help" % self.name)
+        return self.do_call_method(args, **kwargs)
+
+    def do_call_method(self, args, **kwargs):
+        method = args[0]
+        if method == "help":
+            raise Error("Did you mean '%s --help'?" % self.name)
+        if method not in self.choices:
+            raise Error("Unknown %s method %s" % (self.name, method))
 
         destination = kwargs.get("destination")
-        timeout = kwargs.get("timeout") or self.choices[command]
+        timeout = kwargs.get("timeout") or self.choices[method]
         if destination and isinstance(destination, basestring):
             destination = map(str.strip, destination.split(","))
 
-        self.say_chat("<-", command)
-        i = self.app.control.inspect(destination=destination,
-                                     timeout=timeout,
-                                     callback=self.say_remote_command_reply)
-        replies = getattr(i, command)(*args[1:])
+        try:
+            handler = getattr(self, method)
+        except AttributeError:
+            handler = self.call
+
+        replies = handler(method, *args[1:],
+                          timeout=timeout, destination=destination,
+                          callback=self.say_remote_command_reply)
         if not replies:
             raise Error("No nodes replied within time constraint.",
                         status=EX_UNAVAILABLE)
@@ -372,7 +400,72 @@ class inspect(Command):
         self.out(c.reset(dirstr, title))
         if body and self.show_body:
             self.out(body)
+
+
+class inspect(_RemoteControl):
+    name = "inspect"
+    choices = {"active": 1.0,
+               "active_queues": 1.0,
+               "scheduled": 1.0,
+               "reserved": 1.0,
+               "stats": 1.0,
+               "revoked": 1.0,
+               "registered_tasks": 1.0,  # alias to registered
+               "registered": 1.0,
+               "ping": 0.2,
+               "report": 1.0}
+
+    def call(self, method, *args, **options):
+        i = self.app.control.inspect(**options)
+        return getattr(i, method)(*args)
 inspect = command(inspect)
+
+
+class control(_RemoteControl):
+    name = "control"
+    choices = {"enable_events": 1.0,
+               "disable_events": 1.0,
+               "add_consumer": 1.0,
+               "cancel_consumer": 1.0,
+               "rate_limit": 1.0,
+               "time_limit": 1.0,
+               "autoscale": 1.0,
+               "pool_grow": 1.0,
+               "pool_shrink": 1.0}
+
+    def call(self, method, *args, **options):
+        return getattr(self.app.control, method)(*args, reply=True, **options)
+
+    def pool_grow(self, method, n=1, **kwargs):
+        """[N=1]"""
+        return self.call(method, n, **kwargs)
+
+    def pool_shrink(self, method, n=1, **kwargs):
+        """[N=1]"""
+        return self.call(method, n, **kwargs)
+
+    def autoscale(self, method, max=None, min=None, **kwargs):
+        """[max] [min]"""
+        return self.call(method, max, min, **kwargs)
+
+    def rate_limit(self, method, task_name, rate_limit, **kwargs):
+        """<task_name> <rate_limit (e.g. 10/m for 10 in a second)>"""
+        return self.call(method, task_name, rate_limit, **kwargs)
+
+    def time_limit(self, method, task_name, soft, hard=None, **kwargs):
+        """<task_name> <soft_secs> [hard_secs]"""
+        return self.call(method, task_name, soft, hard, **kwargs)
+
+    def add_consumer(self, method, queue, exchange=None,
+            exchange_type="direct", routing_key=None, **kwargs):
+        """<queue> [exchange [exchange_type [routing_key]]]"""
+        return self.call(method, queue, exchange,
+                         exchange_type, routing_key, **kwargs)
+
+    def cancel_consumer(self, method, queue, **kwargs):
+        """<queue>"""
+        return self.call(method, queue, **kwargs)
+control = command(control)
 
 
 class status(Command):
@@ -506,12 +599,6 @@ class shell(Command):  # pragma: no cover
 shell = command(shell)
 
 
-def commandlist(indent=0):
-    return (text.indent(command, indent)
-                for command in sorted(commands,
-                    key=lambda k: commands[k].sortpri or k))
-
-
 class help(Command):
 
     def usage(self, command):
@@ -520,7 +607,7 @@ class help(Command):
     def run(self, *args, **kwargs):
         self.parser.print_help()
         self.out(HELP % {"prog_name": self.prog_name,
-                         "commands": "\n".join(commandlist(ident=4))})
+                         "commands": CeleryCommand.list_commands()})
 
         return EX_USAGE
 help = command(help)
@@ -579,6 +666,30 @@ class CeleryCommand(BaseCommand):
                 super(CeleryCommand, self).execute_from_commandline(argv)))
         except KeyboardInterrupt:
             sys.exit(EX_FAILURE)
+
+    @classmethod
+    def get_command_info(self, command, indent=0, color=None):
+        colored = term.colored().names[color] if color else lambda x: x
+        obj = self.commands[command]
+        if obj.leaf:
+            return "celery %s" %  colored(command)
+        return obj.list_commands(indent, "celery %s" % command, colored)
+
+    @classmethod
+    def list_commands(self, indent=0):
+        white = term.colored().white
+        ret = []
+        for cls, commands, color in command_classes:
+            ret.extend([
+                text.indent("[%s]" % white(cls), indent),
+                "\n".join(text.indent(
+                    self.get_command_info(command, indent, color), indent + 4)
+                        for command in commands),
+                "",
+            ])
+        return "\n".join(ret)
+
+
 
 
 def determine_exit_status(ret):
