@@ -19,12 +19,12 @@ from celery.utils.timeutils import maybe_iso8601
 from celery.bin.base import Command as BaseCommand, Option
 
 HELP = """
-Type '%(prog_name)s <command> --help' for help using
-a specific command.
-
---- Commands ---
+---- -- - - ---- Commands- -------------- --- ------------
 
 %(commands)s
+---- -- - - --------- -- - -------------- --- ------------
+
+TIP: Type '%(prog_name)s <command> --help' for help using a specific command.
 """
 
 commands = {}
@@ -332,21 +332,21 @@ class _RemoteControl(Command):
                     help="Comma separated list of destination node names."))
 
     @classmethod
-    def get_command_info(self, command, color=None):
+    def get_command_info(self, command, indent=0, prefix="", color=None):
         try:
             # see if it uses args.
             meth = getattr(self, command)
-            return "%s %s" % (color(command), meth.__doc__)
+            return "|" + text.indent("%s%s %s" % (
+                prefix, color(command), meth.__doc__), indent)
         except AttributeError:
-            return str(color(command))
+            return "|" + text.indent(prefix + str(color(command)), indent)
 
     @classmethod
     def list_commands(self, indent=0, prefix="", color=None):
         color = color if color else lambda x: x
         prefix = prefix + " " if prefix else ""
-        return "\n".join(text.indent(prefix
-                    + self.get_command_info(c, color), indent)
-                        for c in sorted(self.choices))
+        return "\n".join(self.get_command_info(c, indent, prefix, color)
+                            for c in sorted(self.choices))
 
     @property
     def epilog(self):
@@ -410,7 +410,6 @@ class inspect(_RemoteControl):
                "reserved": 1.0,
                "stats": 1.0,
                "revoked": 1.0,
-               "registered_tasks": 1.0,  # alias to registered
                "registered": 1.0,
                "ping": 0.2,
                "report": 1.0}
@@ -449,7 +448,7 @@ class control(_RemoteControl):
         return self.call(method, max, min, **kwargs)
 
     def rate_limit(self, method, task_name, rate_limit, **kwargs):
-        """<task_name> <rate_limit (e.g. 10/m for 10 in a second)>"""
+        """<task_name> <rate_limit (e.g. 5/s | 5/m | 5/h)>"""
         return self.call(method, task_name, rate_limit, **kwargs)
 
     def time_limit(self, method, task_name, soft, hard=None, **kwargs):
@@ -458,7 +457,7 @@ class control(_RemoteControl):
 
     def add_consumer(self, method, queue, exchange=None,
             exchange_type="direct", routing_key=None, **kwargs):
-        """<queue> [exchange [exchange_type [routing_key]]]"""
+        """<queue> [exchange [type [routing_key]]]"""
         return self.call(method, queue, exchange,
                          exchange_type, routing_key, **kwargs)
 
@@ -672,7 +671,7 @@ class CeleryCommand(BaseCommand):
         colored = term.colored().names[color] if color else lambda x: x
         obj = self.commands[command]
         if obj.leaf:
-            return "celery %s" %  colored(command)
+            return "|" + text.indent("celery %s" % colored(command), indent)
         return obj.list_commands(indent, "celery %s" % command, colored)
 
     @classmethod
@@ -681,13 +680,12 @@ class CeleryCommand(BaseCommand):
         ret = []
         for cls, commands, color in command_classes:
             ret.extend([
-                text.indent("[%s]" % white(cls), indent),
-                "\n".join(text.indent(
-                    self.get_command_info(command, indent, color), indent + 4)
-                        for command in commands),
-                "",
+                text.indent("+ %s: " % white(cls), indent),
+                "\n".join(self.get_command_info(command, indent + 4, color)
+                            for command in commands),
+                ""
             ])
-        return "\n".join(ret)
+        return "\n".join(ret).strip()
 
 
 
