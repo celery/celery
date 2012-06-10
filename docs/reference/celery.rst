@@ -161,7 +161,7 @@ Application
 
         Send task by **name**.
 
-        :param name: Name of task to execute (e.g. `"tasks.add"`).
+        :param name: Name of task to call (e.g. `"tasks.add"`).
         :keyword result_cls: Specify custom result class. Default is
             using :meth:`AsyncResult`.
 
@@ -349,7 +349,7 @@ Grouping Tasks
 
     .. method:: apply(args=(), kwargs={}, **options)
 
-        Same as :meth:`apply_async` but executes inline instead
+        Same as :meth:`apply_async` but executed the task inline instead
         of sending a task message.
 
     .. method:: clone(args=(), kwargs={}, **options)

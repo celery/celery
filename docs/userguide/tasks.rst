@@ -306,7 +306,7 @@ General
     serialization methods that have been registered with
     :mod:`kombu.serialization.registry`.
 
-    Please see :ref:`executing-serializers` for more information.
+    Please see :ref:`calling-serializers` for more information.
 
 .. attribute:: Task.backend
 

@@ -1,22 +1,22 @@
-.. _guide-executing:
+.. _guide-calling:
 
 =================
- Executing Tasks
+ Calling Tasks
 =================
 
 .. contents::
     :local:
 
 
-.. _executing-basics:
+.. _calling-basics:
 
 Basics
 ======
 
-Executing a task is done with :meth:`~@Task.apply_async`,
-or its shortcut: :meth:`~@Task.delay`.
+Calling a task is done using :meth:`~@Task.apply_async`,
+or the meth:`~@Task.delay` shortcut.
 
-:meth:`~@Task.delay` is simple and convenient, as it looks like calling a regular
+:meth:`~@Task.delay` i convenient as it looks like calling a regular
 function:
 
 .. code-block:: python
@@ -48,10 +48,9 @@ called `add`, returning the sum of two positional arguments:
 .. note::
 
     If the task is not registered in the current process
-    then you can also execute a task by name.
+    you can call it by name.
 
-    You do this by using the :meth:`@send_task` method of
-    the celery instance
+    The :meth:`@send_task` method is used for this purpose:
 
     .. code-block:: python
 
@@ -59,7 +58,7 @@ called `add`, returning the sum of two positional arguments:
         >>> result.get()
         4
 
-.. _executing-eta:
+.. _calling-eta:
 
 ETA and countdown
 =================
@@ -93,7 +92,7 @@ and timezone information):
     >>> tomorrow = datetime.now() + timedelta(days=1)
     >>> add.apply_async(args=[10, 10], eta=tomorrow)
 
-.. _executing-expiration:
+.. _calling-expiration:
 
 Expiration
 ==========
@@ -116,7 +115,7 @@ either as seconds after task publish, or a specific date and time using
 When a worker receives an expired task it will mark
 the task as :state:`REVOKED` (:exc:`~@TaskRevokedError`).
 
-.. _executing-serializers:
+.. _calling-serializers:
 
 Serializers
 ===========
@@ -195,7 +194,7 @@ to use when sending a task:
 
     >>> add.apply_async(args=[10, 10], serializer="json")
 
-.. _executing-connections:
+.. _calling-connections:
 
 Connections
 ===========
@@ -238,7 +237,7 @@ Though this particular example is much better expressed as a group:
     >>> res.get()
     [4, 8, 16, 32]
 
-.. _executing-routing:
+.. _calling-routing:
 
 Routing options
 ===============
@@ -303,7 +302,7 @@ by creating a new queue that binds to `"image.crop`".
 
     To find out more about routing, please see :ref:`guide-routing`.
 
-.. _executing-amq-opts:
+.. _calling-amq-opts:
 
 AMQP options
 ============

@@ -601,11 +601,11 @@ queue for exchange, so that rejected messages is moved there.
 
 .. _faq-execute-task-by-name:
 
-Can I execute a task by name?
+Can I call a task by name?
 -----------------------------
 
 **Answer**: Yes. Use :func:`celery.execute.send_task`.
-You can also execute a task by name from any language
+You can also call a task by name from any language
 that has an AMQP client.
 
     >>> from celery.execute import send_task

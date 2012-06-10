@@ -17,8 +17,9 @@ You will learn about;
 
 - Choosing and installing a message broker.
 - Installing Celery and creating your first task
-- Starting the worker and executing tasks.
-- Keeping track of tasks as they execute, and inspecting return values.
+- Starting the worker and calling tasks.
+- Keeping track of tasks as they transition through different states,
+  and inspecting return values.
 
 Celery may seem daunting at first - but don't worry - this tutorial
 will get you started in no time. It is deliberately kept simple, so
@@ -155,22 +156,21 @@ There also several other commands available, and help is also available::
 
 .. _`supervisord`: http://supervisord.org
 
-.. _celerytut-executing-task:
+.. _celerytut-calling:
 
-Executing the task
-==================
+Calling the task
+================
 
-Whenever we want to execute our task, we use the
-:meth:`~@Task.delay` method of the task.
+To call our task we can use the :meth:`~@Task.delay` method.
 
 This is a handy shortcut to the :meth:`~@Task.apply_async`
 method which gives greater control of the task execution (see
-:ref:`guide-executing`)::
+:ref:`guide-calling`)::
 
     >>> from tasks import add
     >>> add.delay(4, 4)
 
-The task should now be executed by the worker you started earlier,
+The task should now be processed by the worker you started earlier,
 and you can verify that by looking at the workers console output.
 
 Applying a task returns an :class:`~@AsyncResult` instance,
@@ -208,7 +208,7 @@ the message broker (a popular combination)::
 
 To read more about result backends please see :ref:`task-result-backends`.
 
-Now with the result backend configured, let's execute the task again.
+Now with the result backend configured, let's call the task again.
 This time we'll hold on to the :class:`~@AsyncResult` instance returned
 when you apply a task::
 
@@ -328,7 +328,7 @@ route a misbehaving task to a dedicated queue:
     }
 
 Or instead of routing it you could rate limit the task
-instead, so that only 10 tasks of this type can execute in a minute
+instead, so that only 10 tasks of this type can be processed in a minute
 (10/m):
 
 :file:`celeryconfig.py`:
@@ -356,4 +356,4 @@ Where to go from here
 =====================
 
 After this you should read the :ref:`guide`. Specifically
-:ref:`guide-tasks` and :ref:`guide-executing`.
+:ref:`guide-tasks` and :ref:`guide-calling`.

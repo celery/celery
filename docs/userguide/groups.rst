@@ -71,7 +71,7 @@ If you have the subtask::
 
 ...
 
-Now let's execute our ``add`` task with a callback using partial
+Now let's call our ``add`` task with a callback using partial
 arguments::
 
     >>> add.apply_async((2, 2), link=add.subtask((8, )))

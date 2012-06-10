@@ -135,7 +135,7 @@ Concurrency settings
 CELERYD_CONCURRENCY
 ~~~~~~~~~~~~~~~~~~~
 
-The number of concurrent worker processes/threads/green threads, executing
+The number of concurrent worker processes/threads/green threads executing
 tasks.
 
 If you're doing mostly I/O you can have more processes,
@@ -200,7 +200,7 @@ Can be one of the following:
 .. warning:
 
     While the AMQP result backend is very efficient, you must make sure
-    you only receive the same result once.  See :doc:`userguide/executing`).
+    you only receive the same result once.  See :doc:`userguide/calling`).
 
 .. _`SQLAlchemy`: http://sqlalchemy.org
 .. _`memcached`: http://memcached.org
@@ -214,7 +214,7 @@ CELERY_RESULT_SERIALIZER
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Result serialization format.  Default is `"pickle"`. See
-:ref:`executing-serializers` for information about supported
+:ref:`calling-serializers` for information about supported
 serialization formats.
 
 .. _conf-database-result-backend:
@@ -863,7 +863,7 @@ methods that have been registered with :mod:`kombu.serialization.registry`.
 
 .. seealso::
 
-    :ref:`executing-serializers`.
+    :ref:`calling-serializers`.
 
 .. setting:: CELERY_TASK_PUBLISH_RETRY
 
@@ -1226,7 +1226,7 @@ CELERY_EVENT_SERIALIZER
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Message serialization format used when sending event messages.
-Default is `"json"`. See :ref:`executing-serializers`.
+Default is `"json"`. See :ref:`calling-serializers`.
 
 .. _conf-broadcast:
 

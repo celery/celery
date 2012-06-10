@@ -197,7 +197,7 @@ A message consists of headers and a body.  Celery uses headers to store
 the content type of the message and its content encoding.  The
 content type is usually the serialization format used to serialize the
 message. The body contains the name of the task to execute, the
-task id (UUID), the arguments to execute it with and some additional
+task id (UUID), the arguments to apply it with and some additional
 metadata -- like the number of retries or an ETA.
 
 This is an example task message represented as a Python dictionary:

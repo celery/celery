@@ -53,8 +53,8 @@ include the following in your ``.wsgi`` module::
     import djcelery
     djcelery.setup_loader()
 
-Defining and executing tasks
-============================
+Defining and calling tasks
+==========================
 
 Tasks are defined by wrapping functions in the ``@task`` decorator.
 It is a common practice to put these in their own module named ``tasks.py``,
@@ -98,11 +98,11 @@ For a complete listing of the command line options available, use the help comma
 .. _`Running Celery as a Daemon`:
     http://docs.celeryproject.org/en/latest/tutorials/daemonizing.html
 
-Executing our task
-==================
+Calling our task
+================
 
 Now that the worker is running we can open up a new terminal to actually
-execute our task::
+call our task::
 
     >>> from celerytest.tasks import add
 
@@ -111,17 +111,16 @@ execute our task::
 
 The ``delay`` method is a handy shortcut to the ``apply_async`` method which
 enables you to have greater control of the task execution.
-To read more about executing tasks, including specifying the time at which
-the task should execute see :ref:`guide-executing`.
+To read more about calling tasks, including specifying the time at which
+the task should be processed see :ref:`guide-calling`.
 
 .. note::
 
     Tasks need to be stored in a real module, they can't
-    be defined in the python shell or ipython/bpython. This is because the
-    worker server must be able to import the task function so that it can
-    execute it.
+    be defined in the python shell or IPython/bpython. This is because the
+    worker server must be able to import the task function.
 
-The task should now be executed by the worker you started earlier,
+The task should now be processed by the worker you started earlier,
 and you can verify that by looking at the workers console output.
 
 Applying a task returns an :class:`~celery.result.AsyncResult` instance,
@@ -132,7 +131,7 @@ By default django-celery stores this state in the Django database,
 you may consider choosing an alternate result backend or disabling
 states alltogether (see :ref:`task-result-backends`).
 
-To demonstrate how the results work we can execute the task again,
+To demonstrate how the results work we can call the task again,
 but this time keep the result instance returned::
 
     >>> result = add.delay(4, 4)

@@ -3707,7 +3707,7 @@ Changes
 * Added new entries to the :doc:`FAQs <faq>`:
 
     * Should I use retry or acks_late?
-    * Can I execute a task by name?
+    * Can I call a task by name?
 
 .. _version-1.0.4:
 

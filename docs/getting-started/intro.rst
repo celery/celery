@@ -64,7 +64,7 @@ Celery is…
 
     - **Fast**
 
-        A single Celery process can execute millions of tasks a minute,
+        A single Celery process can process millions of tasks a minute,
         with sub-millisecond round-trip latency (using RabbitMQ,
         py-librabbitmq, and optimized settings).
 
@@ -197,3 +197,22 @@ Celery is…
         - :ref:`get a list of people and companies using Celery <res-using-celery>`
         - :ref:`write my own remote control command <worker-custom-control-commands>`
         - change worker queues at runtime
+
+.. topic:: Jump to ⟶
+
+    .. hlist::
+        :columns: 4
+
+        - :ref:`Brokers <brokers>`
+        - :ref:`Tasks <guide-tasks>`
+        - :ref:`Calling <guide-calling>`
+        - :ref:`Workers <guide-workers>`
+        - :ref:`Monitoring <guide-monitoring>`
+        - :ref:`Optimizing <guide-optimizing>`
+        - :ref:`Security <guide-security>`
+        - :ref:`Routing <guide-routing>`
+        - :ref:`Configuration Reference <configuration>`
+        - :ref:`Django <django>`
+        - :ref:`Contributing <contributing>`
+        - :ref:`Signals <signals>`
+        - :ref:`FAQ <faq>`
