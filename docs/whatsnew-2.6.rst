@@ -30,6 +30,7 @@ as well as PyPy and Jython.
 
 .. contents::
     :local:
+    :depth: 1
 
 .. _v260-important:
 
@@ -266,6 +267,73 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
                     tasks.add(8, 8),
                     tasks.add(9, 9)]) | tasks.pow(2)
 
+Additional control commands made public
+---------------------------------------
+
+- ``add_consumer``/``cancel_consumer``
+
+    Tells workers to consume from a new queue, or cancel consuming from a
+    queue.  This command has also been changed so that the worker remembers
+    the queues added, so that the change will persist even if
+    the connection is re-connected.
+
+    These commands are available programmatically as
+    :meth:`@control.add_consumer` / :meth:`@control.cancel_consumer`:
+
+    .. code-block::
+
+        >>> celery.control.add_consumer(queue_name,
+        ...     destination=["w1.example.com"])
+        >>> celery.control.cancel_consumer(queue_name,
+        ...     destination=["w1.example.com"])
+
+    or using the :program:`celery control` command::
+
+        $ celery control -d w1.example.com add_consumer queue
+        $ celery control -d w1.example.com cancel_consumer queue
+
+    .. note::
+
+        Remember that a control command without *destination* will be
+        sent to **all workers**.
+
+- ``autoscale``
+
+    Tells workers with `--autoscale` enabled to change autoscale
+    max/min concurrency settings.
+
+    This command is available programmatically as :meth:`@control.autoscale`:
+
+    .. code-block::
+
+        >>> celery.control.autoscale(max=10, min=5,
+        ...     destination=["w1.example.com"])
+
+    or using the :program:`celery control` command::
+
+        $ celery control -d w1.example.com autoscale 10 5
+
+- ``pool_grow``/``pool_shrink``
+
+    Tells workers to add or remove pool processes.
+
+    These commands are available programmatically as
+    :meth:`@control.pool_grow` / :meth:`@control.pool_shrink`:
+
+    .. code-block::
+
+        >>> celery.control.pool_grow(2, destination=["w1.example.com"])
+        >>> celery.contorl.pool_shrink(2, destination=["w1.example.com"])
+
+    or using the :program:`celery control` command::
+
+        $ celery control -d w1.example.com pool_grow 2
+        $ celery control -d w1.example.com pool_shrink 2
+
+- :program:`celery control` now supports ``rate_limit`` & ``time_limit``
+  commands.
+
+    See ``celery control --help`` for details.
 
 Crontab now supports Day of Month, and Month of Year arguments
 --------------------------------------------------------------
@@ -664,6 +732,17 @@ Deprecations
 ============
 
 See the :ref:`deprecation-timeline`.
+
+The following undocumented API's has been moved:
+
+- ``control.inspect.add_consumer`` -> :meth:`@control.add_consumer`.
+- ``control.inspect.cancel_consumer`` -> :meth:`@control.cancel_consumer`.
+- ``control.inspect.enable_events`` -> :meth:`@control.enable_events`.
+- ``control.inspect.disable_events`` -> :meth:`@control.disable_events`.
+
+This way ``inspect()`` is only used for commands that do not
+modify anything, while idempotent control commands that make changes
+are on the control objects.
 
 Fixes
 =====

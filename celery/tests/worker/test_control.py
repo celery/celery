@@ -204,8 +204,8 @@ class test_ControlPanel(Case):
             cancelled = []
             consuming = False
 
-            def add_consumer_from_dict(self, **declaration):
-                self.queues.append(declaration["queue"])
+            def add_queue(self, queue):
+                self.queues.append(queue.name)
 
             def consume(self):
                 self.consuming = True
