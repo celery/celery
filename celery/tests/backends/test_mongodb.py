@@ -69,12 +69,12 @@ class test_MongoBackend(AppCase):
         celery.conf.CELERY_MONGODB_BACKEND_SETTINGS = None
         MongoBackend(app=celery)
 
-    def test_restore_taskset_no_entry(self):
+    def test_restore_group_no_entry(self):
         x = MongoBackend()
         x.collection = Mock()
         fo = x.collection.find_one = Mock()
         fo.return_value = None
-        self.assertIsNone(x._restore_taskset("1f3fab"))
+        self.assertIsNone(x._restore_group("1f3fab"))
 
     def test_reduce(self):
         x = MongoBackend()
@@ -217,7 +217,7 @@ class test_MongoBackend(AppCase):
         self.assertEquals({"status": states.PENDING, "result": None}, ret_val)
 
     @patch("celery.backends.mongodb.MongoBackend._get_database")
-    def test_save_taskset(self, mock_get_database):
+    def test_save_group(self, mock_get_database):
         self.backend.mongodb_taskmeta_collection = MONGODB_COLLECTION
 
         mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
@@ -226,7 +226,7 @@ class test_MongoBackend(AppCase):
         mock_get_database.return_value = mock_database
         mock_database.__getitem__.return_value = mock_collection
 
-        ret_val = self.backend._save_taskset(
+        ret_val = self.backend._save_group(
             sentinel.taskset_id, sentinel.result)
 
         mock_get_database.assert_called_once_with()
@@ -235,7 +235,7 @@ class test_MongoBackend(AppCase):
         self.assertEquals(sentinel.result, ret_val)
 
     @patch("celery.backends.mongodb.MongoBackend._get_database")
-    def test_restore_taskset(self, mock_get_database):
+    def test_restore_group(self, mock_get_database):
         self.backend.mongodb_taskmeta_collection = MONGODB_COLLECTION
 
         mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
@@ -245,7 +245,7 @@ class test_MongoBackend(AppCase):
         mock_get_database.return_value = mock_database
         mock_database.__getitem__.return_value = mock_collection
 
-        ret_val = self.backend._restore_taskset(sentinel.taskset_id)
+        ret_val = self.backend._restore_group(sentinel.taskset_id)
 
         mock_get_database.assert_called_once_with()
         mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
@@ -254,7 +254,7 @@ class test_MongoBackend(AppCase):
         self.assertEquals(['date_done', 'result', 'task_id'], ret_val.keys())
 
     @patch("celery.backends.mongodb.MongoBackend._get_database")
-    def test_delete_taskset(self, mock_get_database):
+    def test_delete_group(self, mock_get_database):
         self.backend.mongodb_taskmeta_collection = MONGODB_COLLECTION
 
         mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
@@ -263,7 +263,7 @@ class test_MongoBackend(AppCase):
         mock_get_database.return_value = mock_database
         mock_database.__getitem__.return_value = mock_collection
 
-        self.backend._delete_taskset(sentinel.taskset_id)
+        self.backend._delete_group(sentinel.taskset_id)
 
         mock_get_database.assert_called_once_with()
         mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)

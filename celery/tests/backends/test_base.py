@@ -8,7 +8,7 @@ from mock import Mock
 from nose import SkipTest
 
 from celery import current_app
-from celery.result import AsyncResult, TaskSetResult
+from celery.result import AsyncResult, GroupResult
 from celery.utils import serialization
 from celery.utils.serialization import subclass_exception
 from celery.utils.serialization import \
@@ -74,25 +74,25 @@ class test_BaseBackend_interface(Case):
         with self.assertRaises(NotImplementedError):
             b.reload_task_result("SOMExx-N0nex1stant-IDxx-")
 
-    def test_reload_taskset_result(self):
+    def test_reload_group_result(self):
         with self.assertRaises(NotImplementedError):
-            b.reload_taskset_result("SOMExx-N0nex1stant-IDxx-")
+            b.reload_group_result("SOMExx-N0nex1stant-IDxx-")
 
     def test_get_result(self):
         with self.assertRaises(NotImplementedError):
             b.get_result("SOMExx-N0nex1stant-IDxx-")
 
-    def test_restore_taskset(self):
+    def test_restore_group(self):
         with self.assertRaises(NotImplementedError):
-            b.restore_taskset("SOMExx-N0nex1stant-IDxx-")
+            b.restore_group("SOMExx-N0nex1stant-IDxx-")
 
-    def test_delete_taskset(self):
+    def test_delete_group(self):
         with self.assertRaises(NotImplementedError):
-            b.delete_taskset("SOMExx-N0nex1stant-IDxx-")
+            b.delete_group("SOMExx-N0nex1stant-IDxx-")
 
-    def test_save_taskset(self):
+    def test_save_group(self):
         with self.assertRaises(NotImplementedError):
-            b.save_taskset("SOMExx-N0nex1stant-IDxx-", "blergh")
+            b.save_group("SOMExx-N0nex1stant-IDxx-", "blergh")
 
     def test_get_traceback(self):
         with self.assertRaises(NotImplementedError):
@@ -189,16 +189,16 @@ class DictBackend(BaseDictBackend):
         BaseDictBackend.__init__(self, *args, **kwargs)
         self._data = {"can-delete": {"result": "foo"}}
 
-    def _restore_taskset(self, taskset_id):
-        if taskset_id == "exists":
-            return {"result": "taskset"}
+    def _restore_group(self, group_id):
+        if group_id == "exists":
+            return {"result": "group"}
 
     def _get_task_meta_for(self, task_id):
         if task_id == "task-exists":
             return {"result": "task"}
 
-    def _delete_taskset(self, taskset_id):
-        self._data.pop(taskset_id, None)
+    def _delete_group(self, group_id):
+        self._data.pop(group_id, None)
 
 
 class test_BaseDictBackend(Case):
@@ -206,8 +206,8 @@ class test_BaseDictBackend(Case):
     def setUp(self):
         self.b = DictBackend()
 
-    def test_delete_taskset(self):
-        self.b.delete_taskset("can-delete")
+    def test_delete_group(self):
+        self.b.delete_group("can-delete")
         self.assertNotIn("can-delete", self.b._data)
 
     def test_prepare_exception_json(self):
@@ -218,29 +218,29 @@ class test_BaseDictBackend(Case):
         self.assertEqual(e.__class__.__name__, "KeyError")
         self.assertEqual(str(e), "'foo'")
 
-    def test_save_taskset(self):
+    def test_save_group(self):
         b = BaseDictBackend()
-        b._save_taskset = Mock()
-        b.save_taskset("foofoo", "xxx")
-        b._save_taskset.assert_called_with("foofoo", "xxx")
+        b._save_group = Mock()
+        b.save_group("foofoo", "xxx")
+        b._save_group.assert_called_with("foofoo", "xxx")
 
     def test_forget_interface(self):
         b = BaseDictBackend()
         with self.assertRaises(NotImplementedError):
             b.forget("foo")
 
-    def test_restore_taskset(self):
-        self.assertIsNone(self.b.restore_taskset("missing"))
-        self.assertIsNone(self.b.restore_taskset("missing"))
-        self.assertEqual(self.b.restore_taskset("exists"), "taskset")
-        self.assertEqual(self.b.restore_taskset("exists"), "taskset")
-        self.assertEqual(self.b.restore_taskset("exists", cache=False),
-                         "taskset")
+    def test_restore_group(self):
+        self.assertIsNone(self.b.restore_group("missing"))
+        self.assertIsNone(self.b.restore_group("missing"))
+        self.assertEqual(self.b.restore_group("exists"), "group")
+        self.assertEqual(self.b.restore_group("exists"), "group")
+        self.assertEqual(self.b.restore_group("exists", cache=False),
+                         "group")
 
-    def test_reload_taskset_result(self):
+    def test_reload_group_result(self):
         self.b._cache = {}
-        self.b.reload_taskset_result("exists")
-        self.b._cache["exists"] = {"result": "taskset"}
+        self.b.reload_group_result("exists")
+        self.b._cache["exists"] = {"result": "group"}
 
     def test_reload_task_result(self):
         self.b._cache = {}
@@ -286,18 +286,18 @@ class test_KeyValueStoreBackend(Case):
         self.assertIsNone(self.b.get_result("xxx-missing"))
         self.assertEqual(self.b.get_status("xxx-missing"), states.PENDING)
 
-    def test_save_restore_delete_taskset(self):
+    def test_save_restore_delete_group(self):
         tid = uuid()
-        tsr = TaskSetResult(tid, [AsyncResult(uuid()) for _ in range(10)])
-        self.b.save_taskset(tid, tsr)
-        stored = self.b.restore_taskset(tid)
+        tsr = GroupResult(tid, [AsyncResult(uuid()) for _ in range(10)])
+        self.b.save_group(tid, tsr)
+        stored = self.b.restore_group(tid)
         print(stored)
-        self.assertEqual(self.b.restore_taskset(tid), tsr)
-        self.b.delete_taskset(tid)
-        self.assertIsNone(self.b.restore_taskset(tid))
+        self.assertEqual(self.b.restore_group(tid), tsr)
+        self.b.delete_group(tid)
+        self.assertIsNone(self.b.restore_group(tid))
 
-    def test_restore_missing_taskset(self):
-        self.assertIsNone(self.b.restore_taskset("xxx-nonexistant"))
+    def test_restore_missing_group(self):
+        self.assertIsNone(self.b.restore_group("xxx-nonexistant"))
 
 
 class test_KeyValueStoreBackend_interface(Case):

@@ -33,7 +33,7 @@ def from_serializable(r):
     if not isinstance(r, ResultBase):
         id, nodes = r
         if nodes:
-            return TaskSetResult(id, [AsyncResult(id) for id, _ in nodes])
+            return GroupResult(id, [AsyncResult(id) for id, _ in nodes])
         return AsyncResult(id)
     return r
 
@@ -127,7 +127,7 @@ class AsyncResult(ResultBase):
 
             @task()
             def A(how_many):
-                return TaskSet(B.s(i) for i in xrange(how_many))
+                return group(B.s(i) for i in xrange(how_many))
 
             @task()
             def B(i):
@@ -546,11 +546,6 @@ class ResultSet(ResultBase):
                              [r.id for r in self.results])
 
     @property
-    def total(self):
-        """Deprecated: Use ``len(r)``."""
-        return len(self)
-
-    @property
     def subtasks(self):
         """Deprecated alias to :attr:`results`."""
         return self.results
@@ -560,50 +555,44 @@ class ResultSet(ResultBase):
         return self.results[0].supports_native_join
 
 
-class TaskSetResult(ResultSet):
-    """An instance of this class is returned by
-    `TaskSet`'s :meth:`~celery.task.TaskSet.apply_async` method.
+class GroupResult(ResultSet):
+    """Like :class:`ResultSet`, but with an associated id.
+
+    This type is returned by :class:`~celery.group`, and the
+    deprecated TaskSet, meth:`~celery.task.TaskSet.apply_async` method.
 
     It enables inspection of the tasks state and return values as
     a single entity.
 
-    :param id: The id of the taskset.
+    :param id: The id of the group.
     :param results: List of result instances.
 
     """
 
-    #: The UUID of the taskset.
+    #: The UUID of the group.
     id = None
 
-    #: List/iterator of results in the taskset
+    #: List/iterator of results in the group
     results = None
 
-    def __init__(self, id, results=None, **kwargs):
+    def __init__(self, id=None, results=None, **kwargs):
         self.id = id
-
-        # XXX previously the "results" arg was named "subtasks".
-        if "subtasks" in kwargs:
-            results = kwargs["subtasks"]
         ResultSet.__init__(self, results, **kwargs)
 
     def save(self, backend=None):
-        """Save taskset result for later retrieval using :meth:`restore`.
+        """Save group-result for later retrieval using :meth:`restore`.
 
         Example::
 
             >>> result.save()
-            >>> result = TaskSetResult.restore(taskset_id)
+            >>> result = GroupResult.restore(group_id)
 
         """
-        return (backend or self.app.backend).save_taskset(self.id, self)
+        return (backend or self.app.backend).save_group(self.id, self)
 
     def delete(self, backend=None):
         """Remove this result if it was previously saved."""
-        (backend or self.app.backend).delete_taskset(self.id)
-
-    def itersubtasks(self):
-        """Depreacted.   Use ``iter(self.results)`` instead."""
-        return iter(self.results)
+        (backend or self.app.backend).delete_group(self.id)
 
     def __reduce__(self):
         return self.__class__, self.__reduce_args__()
@@ -612,7 +601,7 @@ class TaskSetResult(ResultSet):
         return self.id, self.results
 
     def __eq__(self, other):
-        if isinstance(other, TaskSetResult):
+        if isinstance(other, GroupResult):
             return other.id == self.id and other.results == self.results
         return NotImplemented
 
@@ -624,9 +613,29 @@ class TaskSetResult(ResultSet):
         return self.id, [r.serializable() for r in self.results]
 
     @classmethod
-    def restore(self, taskset_id, backend=None):
-        """Restore previously saved taskset result."""
-        return (backend or current_app.backend).restore_taskset(taskset_id)
+    def restore(self, id, backend=None):
+        """Restore previously saved group result."""
+        return (backend or current_app.backend).restore_group(id)
+
+
+class TaskSetResult(GroupResult):
+    """Deprecated version of :class:`GroupResult`"""
+
+    def __init__(self, taskset_id, results=None, **kwargs):
+        # XXX supports the taskset_id kwarg.
+        # XXX previously the "results" arg was named "subtasks".
+        if "subtasks" in kwargs:
+            results = kwargs["subtasks"]
+        GroupResult.__init__(self, taskset_id, results, **kwargs)
+
+    def itersubtasks(self):
+        """Deprecated.   Use ``iter(self.results)`` instead."""
+        return iter(self.results)
+
+    @property
+    def total(self):
+        """Deprecated: Use ``len(r)``."""
+        return len(self)
 
     def _get_taskset_id(self):
         return self.id

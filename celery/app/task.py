@@ -58,7 +58,8 @@ class Context(object):
     retries = 0
     is_eager = False
     delivery_info = None
-    taskset = None
+    taskset = None   # compat alias to group
+    group = None
     chord = None
     called_directly = True
     callbacks = None

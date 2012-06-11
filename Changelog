@@ -3296,7 +3296,7 @@ News
 * New user guides:
 
     * :doc:`userguide/workers`
-    * :doc:`userguide/tasksets`
+    * :doc:`userguide/canvas`
     * :doc:`userguide/routing`
 
 * celeryd: Standard out/error is now being redirected to the log file.
@@ -3343,14 +3343,14 @@ News
     See issue #122.
 
 * New built-in way to do task callbacks using
-  :class:`~celery.task.sets.subtask`.
+  :class:`~celery.subtask`.
 
-  See :doc:`userguide/tasksets` for more information.
+  See :doc:`userguide/canvas` for more information.
 
 * TaskSets can now contain several types of tasks.
 
   :class:`~celery.task.sets.TaskSet` has been refactored to use
-  a new syntax, please see :doc:`userguide/tasksets` for more information.
+  a new syntax, please see :doc:`userguide/canvas` for more information.
 
   The previous syntax is still supported, but will be deprecated in
   version 1.4.

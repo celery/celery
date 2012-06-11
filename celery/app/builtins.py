@@ -62,9 +62,9 @@ def add_unlock_chord_task(app):
     from celery import result as _res
 
     @app.task(name="celery.chord_unlock", max_retries=None)
-    def unlock_chord(setid, callback, interval=1, propagate=False,
+    def unlock_chord(group_id, callback, interval=1, propagate=False,
             max_retries=None, result=None):
-        result = _res.TaskSetResult(setid, map(_res.AsyncResult, result))
+        result = _res.GroupResult(group_id, map(_res.AsyncResult, result))
         j = result.join_native if result.supports_native_join else result.join
         if result.ready():
             subtask(callback).delay(j(propagate=propagate))
@@ -113,15 +113,15 @@ def add_group_task(app):
         name = "celery.group"
         accept_magic_kwargs = False
 
-        def run(self, tasks, result, setid):
+        def run(self, tasks, result, group_id):
             app = self.app
             result = from_serializable(result)
             if self.request.is_eager or app.conf.CELERY_ALWAYS_EAGER:
-                return app.TaskSetResult(result.id,
-                        [subtask(task).apply(taskset_id=setid)
+                return app.GroupResult(result.id,
+                        [subtask(task).apply(group_id=group_id)
                             for task in tasks])
             with app.default_producer() as pub:
-                [subtask(task).apply_async(taskset_id=setid, publisher=pub,
+                [subtask(task).apply_async(group_id=group_id, publisher=pub,
                                            add_to_parent=False)
                         for task in tasks]
             parent = get_current_worker_task()
@@ -131,17 +131,17 @@ def add_group_task(app):
 
         def prepare(self, options, tasks, **kwargs):
             r = []
-            options["taskset_id"] = group_id = \
+            options["group_id"] = group_id = \
                     options.setdefault("task_id", uuid())
             for task in tasks:
                 opts = task.options
-                opts["taskset_id"] = group_id
+                opts["group_id"] = group_id
                 try:
                     tid = opts["task_id"]
                 except KeyError:
                     tid = opts["task_id"] = uuid()
                 r.append(self.AsyncResult(tid))
-            return tasks, self.app.TaskSetResult(group_id, r), group_id
+            return tasks, self.app.GroupResult(group_id, r), group_id
 
         def apply_async(self, args=(), kwargs={}, **options):
             if self.app.conf.CELERY_ALWAYS_EAGER:
@@ -171,7 +171,7 @@ def add_chain_task(app):
             if self.app.conf.CELERY_ALWAYS_EAGER:
                 return self.apply(args, kwargs, **options)
             options.pop("publisher", None)
-            taskset_id = options.pop("taskset_id", None)
+            group_id = options.pop("group_id", None)
             chord = options.pop("chord", None)
             tasks = [maybe_subtask(t).clone(
                         task_id=options.pop("task_id", uuid()),
@@ -179,8 +179,8 @@ def add_chain_task(app):
                     )
                     for t in kwargs["tasks"]]
             reduce(lambda a, b: a.link(b), tasks)
-            if taskset_id:
-                tasks[-1].set(taskset_id=taskset_id)
+            if group_id:
+                tasks[-1].set(group_id=group_id)
             if chord:
                 tasks[-1].set(chord=chord)
             tasks[0].apply_async()
@@ -220,7 +220,7 @@ def add_chord_task(app):
             if not isinstance(header, group):
                 header = group(header)
             r = []
-            setid = uuid()
+            group_id = uuid()
             for task in header.tasks:
                 opts = task.options
                 try:
@@ -228,16 +228,16 @@ def add_chord_task(app):
                 except KeyError:
                     tid = opts["task_id"] = uuid()
                 opts["chord"] = body
-                opts["taskset_id"] = setid
+                opts["group_id"] = group_id
                 r.append(app.AsyncResult(tid))
             if eager:
-                return header.apply(task_id=setid)
-            app.backend.on_chord_apply(setid, body,
+                return header.apply(task_id=group_id)
+            app.backend.on_chord_apply(group_id, body,
                                        interval=interval,
                                        max_retries=max_retries,
                                        propagate=propagate,
                                        result=r)
-            return header(task_id=setid)
+            return header(task_id=group_id)
 
         def apply_async(self, args=(), kwargs={}, task_id=None, **options):
             if self.app.conf.CELERY_ALWAYS_EAGER:

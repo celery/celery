@@ -117,47 +117,47 @@ Group Results
 -------------
 
 When a  :class:`~celery.group` is applied it returns a
-:class:`~celery.result.TaskSetResult` object.
+:class:`~celery.result.GroupResult` object.
 
-:class:`~celery.result.TaskSetResult` takes a list of
+:class:`~celery.result.GroupResult` takes a list of
 :class:`~celery.result.AsyncResult` instances and operates on them as if it was a
 single task.
 
 It supports the following operations:
 
-* :meth:`~celery.result.TaskSetResult.successful`
+* :meth:`~celery.result.GroupResult.successful`
 
     Returns :const:`True` if all of the subtasks finished
     successfully (e.g. did not raise an exception).
 
-* :meth:`~celery.result.TaskSetResult.failed`
+* :meth:`~celery.result.GroupResult.failed`
 
     Returns :const:`True` if any of the subtasks failed.
 
-* :meth:`~celery.result.TaskSetResult.waiting`
+* :meth:`~celery.result.GroupResult.waiting`
 
     Returns :const:`True` if any of the subtasks
     is not ready yet.
 
-* :meth:`~celery.result.TaskSetResult.ready`
+* :meth:`~celery.result.GroupResult.ready`
 
     Return :const:`True` if all of the subtasks
     are ready.
 
-* :meth:`~celery.result.TaskSetResult.completed_count`
+* :meth:`~celery.result.GroupResult.completed_count`
 
     Returns the number of completed subtasks.
 
-* :meth:`~celery.result.TaskSetResult.revoke`
+* :meth:`~celery.result.GroupResult.revoke`
 
     Revokes all of the subtasks.
 
-* :meth:`~celery.result.TaskSetResult.iterate`
+* :meth:`~celery.result.GroupResult.iterate`
 
     Iterates over the return values of the subtasks
     as they finish, one by one.
 
-* :meth:`~celery.result.TaskSetResult.join`
+* :meth:`~celery.result.GroupResult.join`
 
     Gather the results for all of the subtasks
     and return a list with them ordered by the order of which they

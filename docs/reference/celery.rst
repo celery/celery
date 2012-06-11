@@ -171,10 +171,10 @@ Application
 
         Create new result instance. See :class:`~celery.result.AsyncResult`.
 
-    .. attribute:: TaskSetResult
+    .. attribute:: GroupResult
 
         Create new taskset result instance.
-        See :class:`~celery.result.TaskSetResult`.
+        See :class:`~celery.result.GroupResult`.
 
     .. method:: worker_main(argv=None)
 
@@ -264,7 +264,7 @@ Grouping Tasks
         >>> res.get()
         [4, 8]
 
-    The ``apply_async`` method returns :class:`~@TaskSetResult`.
+    The ``apply_async`` method returns :class:`~@GroupResult`.
 
 .. class:: chain(*tasks)
 

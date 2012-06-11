@@ -165,26 +165,26 @@ class test_DatabaseBackend(Case):
         tb = DatabaseBackend()
         self.assertTrue(loads(dumps(tb)))
 
-    def test_save__restore__delete_taskset(self):
+    def test_save__restore__delete_group(self):
         tb = DatabaseBackend()
 
         tid = uuid()
         res = {u"something": "special"}
-        self.assertEqual(tb.save_taskset(tid, res), res)
+        self.assertEqual(tb.save_group(tid, res), res)
 
-        res2 = tb.restore_taskset(tid)
+        res2 = tb.restore_group(tid)
         self.assertEqual(res2, res)
 
-        tb.delete_taskset(tid)
-        self.assertIsNone(tb.restore_taskset(tid))
+        tb.delete_group(tid)
+        self.assertIsNone(tb.restore_group(tid))
 
-        self.assertIsNone(tb.restore_taskset("xxx-nonexisting-id"))
+        self.assertIsNone(tb.restore_group("xxx-nonexisting-id"))
 
     def test_cleanup(self):
         tb = DatabaseBackend()
         for i in range(10):
             tb.mark_as_done(uuid(), 42)
-            tb.save_taskset(uuid(), {"foo": "bar"})
+            tb.save_group(uuid(), {"foo": "bar"})
         s = tb.ResultSession()
         for t in s.query(Task).all():
             t.date_done = datetime.now() - tb.expires * 2

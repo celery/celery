@@ -380,7 +380,11 @@ class Celery(object):
         return self.subclass_with_self("celery.result:AsyncResult")
 
     @cached_property
-    def TaskSetResult(self):
+    def GroupResult(self):
+        return self.subclass_with_self("celery.result:GroupResult")
+
+    @cached_property
+    def TaskSetResult(self):  # XXX compat
         return self.subclass_with_self("celery.result:TaskSetResult")
 
     @property

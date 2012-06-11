@@ -189,8 +189,8 @@ class test_Broadcast(Case):
 
     @with_mock_broadcast
     def test_revoke_from_resultset(self):
-        r = self.app.TaskSetResult(uuid(),
-                                   map(self.app.AsyncResult,
+        r = self.app.GroupResult(uuid(),
+                                 map(self.app.AsyncResult,
                                         [uuid() for i in range(10)]))
         r.revoke()
         self.assertIn("revoke", MockMailbox.sent)

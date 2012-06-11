@@ -183,7 +183,8 @@ class Request(object):
             kwargs = self.extend_with_default_kwargs()
         request = self.request_dict
         request.update({"hostname": hostname, "is_eager": False,
-                        "delivery_info": self.delivery_info})
+                        "delivery_info": self.delivery_info,
+                        "group": self.request_dict.get("taskset")})
         result = pool.apply_async(trace_task_ret,
                                   args=(self.name, self.id,
                                         self.args, kwargs, request),

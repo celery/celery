@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from celery import canvas
 from celery import current_app
 from celery import result
-from celery.result import AsyncResult, TaskSetResult
+from celery.result import AsyncResult, GroupResult
 from celery.task import task, TaskSet
 from celery.tests.utils import AppCase, Mock
 
@@ -24,7 +24,7 @@ def callback(r):
     return r
 
 
-class TSR(TaskSetResult):
+class TSR(GroupResult):
     is_ready = True
     value = None
 
@@ -49,8 +49,8 @@ def patch_unlock_retry():
 
 class test_unlock_chord_task(AppCase):
 
-    @patch("celery.result.TaskSetResult")
-    def test_unlock_ready(self, TaskSetResult):
+    @patch("celery.result.GroupResult")
+    def test_unlock_ready(self, GroupResult):
 
         class AlwaysReady(TSR):
             is_ready = True
@@ -60,14 +60,14 @@ class test_unlock_chord_task(AppCase):
         def callback(*args, **kwargs):
             pass
 
-        pts, result.TaskSetResult = result.TaskSetResult, AlwaysReady
+        pts, result.GroupResult = result.GroupResult, AlwaysReady
         callback.apply_async = Mock()
         callback_s = callback.s()
         try:
             with patch_unlock_retry() as (unlock, retry):
                 subtask, canvas.maybe_subtask = canvas.maybe_subtask, passthru
                 try:
-                    unlock("setid", callback_s,
+                    unlock("group_id", callback_s,
                            result=map(AsyncResult, [1, 2, 3]))
                 finally:
                     canvas.maybe_subtask = subtask
@@ -75,25 +75,25 @@ class test_unlock_chord_task(AppCase):
                 # did not retry
                 self.assertFalse(retry.call_count)
         finally:
-            result.TaskSetResult = pts
+            result.GroupResult = pts
 
-    @patch("celery.result.TaskSetResult")
-    def test_when_not_ready(self, TaskSetResult):
+    @patch("celery.result.GroupResult")
+    def test_when_not_ready(self, GroupResult):
         with patch_unlock_retry() as (unlock, retry):
 
             class NeverReady(TSR):
                 is_ready = False
 
-            pts, result.TaskSetResult = result.TaskSetResult, NeverReady
+            pts, result.GroupResult = result.GroupResult, NeverReady
             try:
                 callback = Mock()
-                unlock("setid", callback, interval=10, max_retries=30,
+                unlock("group_id", callback, interval=10, max_retries=30,
                             result=map(AsyncResult, [1, 2, 3]))
                 self.assertFalse(callback.delay.call_count)
                 # did retry
                 unlock.retry.assert_called_with(countdown=10, max_retries=30)
             finally:
-                result.TaskSetResult = pts
+                result.GroupResult = pts
 
     def test_is_in_registry(self):
         self.assertIn("celery.chord_unlock", current_app.tasks)

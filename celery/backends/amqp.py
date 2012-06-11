@@ -212,22 +212,22 @@ class AMQPBackend(BaseDictBackend):
         raise NotImplementedError(
                 "reload_task_result is not supported by this backend.")
 
-    def reload_taskset_result(self, task_id):
-        """Reload taskset result, even if it has been previously fetched."""
+    def reload_group_result(self, task_id):
+        """Reload group result, even if it has been previously fetched."""
         raise NotImplementedError(
-                "reload_taskset_result is not supported by this backend.")
+                "reload_group_result is not supported by this backend.")
 
-    def save_taskset(self, taskset_id, result):
+    def save_group(self, group_id, result):
         raise NotImplementedError(
-                "save_taskset is not supported by this backend.")
+                "save_group is not supported by this backend.")
 
-    def restore_taskset(self, taskset_id, cache=True):
+    def restore_group(self, group_id, cache=True):
         raise NotImplementedError(
-                "restore_taskset is not supported by this backend.")
+                "restore_group is not supported by this backend.")
 
-    def delete_taskset(self, taskset_id):
+    def delete_group(self, group_id):
         raise NotImplementedError(
-                "delete_taskset is not supported by this backend.")
+                "delete_group is not supported by this backend.")
 
     def __reduce__(self, args=(), kwargs={}):
         kwargs.update(connection=self._connection,

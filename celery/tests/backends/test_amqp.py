@@ -286,18 +286,18 @@ class test_AMQPBackend(AppCase):
         with self.assertRaises(NotImplementedError):
             self.create_backend().reload_task_result("x")
 
-    def test_reload_taskset_result(self):
+    def test_reload_group_result(self):
         with self.assertRaises(NotImplementedError):
-            self.create_backend().reload_taskset_result("x")
+            self.create_backend().reload_group_result("x")
 
-    def test_save_taskset(self):
+    def test_save_group(self):
         with self.assertRaises(NotImplementedError):
-            self.create_backend().save_taskset("x", "x")
+            self.create_backend().save_group("x", "x")
 
-    def test_restore_taskset(self):
+    def test_restore_group(self):
         with self.assertRaises(NotImplementedError):
-            self.create_backend().restore_taskset("x")
+            self.create_backend().restore_group("x")
 
-    def test_delete_taskset(self):
+    def test_delete_group(self):
         with self.assertRaises(NotImplementedError):
-            self.create_backend().delete_taskset("x")
+            self.create_backend().delete_group("x")

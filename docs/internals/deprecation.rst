@@ -111,17 +111,18 @@ is deprecated and must be set by :setting:`CELERY_ROUTES` instead.
 
 - ``BaseAsyncResult`` -> ``AsyncResult``.
 
-- ``TaskSetResult.total`` -> ``len(TaskSetResult)``
+- ``TaskSetResult`` -> ``GroupResult``.
+
+- ``TaskSetResult.total`` -> ``len(GroupResult)``
+
+- ``TaskSetResult.taskset_id`` -> ``GroupResult.id``
 
 Apply to: :class:`~celery.result.AsyncResult`,
-:class:`~celery.result.ResultSet`, :class:`~celery.result.EagerResult`,
-:class:`~celery.result.TaskSetResult`.
+:class:`~celery.result.EagerResult`::
 
 - ``Result.wait()`` -> ``Result.get()``
 
 - ``Result.task_id()`` -> ``Result.id``
-
-- ``TaskSetResult.taskset_id`` -> ``TaskSetResult.id``
 
 - ``Result.status`` -> ``Result.state``.
 

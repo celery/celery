@@ -152,7 +152,8 @@ class TaskProducer(Producer):
         super(TaskProducer, self).__init__(channel, exchange, *args, **kwargs)
 
     def delay_task(self, task_name, task_args=None, task_kwargs=None,
-            countdown=None, eta=None, task_id=None, taskset_id=None,
+            countdown=None, eta=None, task_id=None, group_id=None,
+            taskset_id=None,  # compat alias to group_id
             expires=None, exchange=None, exchange_type=None,
             event_dispatcher=None, retry=None, retry_policy=None,
             queue=None, now=None, retries=0, chord=None, callbacks=None,
@@ -189,8 +190,9 @@ class TaskProducer(Producer):
                 "utc": self.utc,
                 "callbacks": callbacks,
                 "errbacks": errbacks}
-        if taskset_id:
-            body["taskset"] = taskset_id
+        group_id = group_id or taskset_id
+        if group_id:
+            body["taskset"] = group_id
         if chord:
             body["chord"] = chord
 
