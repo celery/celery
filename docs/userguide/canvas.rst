@@ -1,22 +1,20 @@
-.. _guide-sets:
-.. _guide-groups:
+.. _guide-canvas:
 
-=======================================
- Groups, Chords, Chains and Callbacks
-=======================================
+============================
+ Canvas: Building Workflows
+============================
 
 .. contents::
     :local:
 
-.. _sets-subtasks:
-.. _groups-subtasks:
+.. _canvas-subtasks:
 
 Subtasks
 ========
 
 .. versionadded:: 2.0
 
-The :class:`~celery.task.sets.subtask` type is used to wrap the arguments and
+The :class:`~celery.subtask` type is used to wrap the arguments and
 execution options for a single task invocation:
 
 .. code-block:: python
@@ -31,7 +29,7 @@ For convenience every task also has a shortcut to create subtasks:
 
     task.subtask(args, kwargs, options)
 
-:class:`~celery.task.sets.subtask` is actually a :class:`dict` subclass,
+:class:`~celery.subtask` is actually a :class:`dict` subclass,
 which means it can be serialized with JSON or other encodings that doesn't
 support complex Python objects.
 
@@ -43,8 +41,7 @@ Also it can be regarded as a type, as the following usage works::
 
 This makes it excellent as a means to pass callbacks around to tasks.
 
-.. _sets-callbacks:
-.. _groups-callbacks:
+.. _canvas-callbacks:
 
 Callbacks
 ---------
@@ -79,17 +76,16 @@ arguments::
 As expected this will first launch one task calculating :math:`2 + 2`, then
 another task calculating :math:`4 + 8`.
 
-.. _sets-taskset:
-.. _groups-group:
+.. _canvas-group:
 
 Groups
 ======
 
-The :class:`~celery.task.sets.group` enables easy invocation of several
+The :class:`~celery.group` enables easy invocation of several
 tasks at once, and is then able to join the results in the same order as the
 tasks were invoked.
 
-``group`` takes a list of :class:`~celery.task.sets.subtask`'s::
+``group`` takes a list of :class:`~celery.subtask`'s::
 
     >>> from celery import group
     >>> from tasks import add
@@ -115,12 +111,12 @@ The first argument can alternatively be an iterator, like::
 
     >>> group(add.subtask((i, i)) for i in range(100))
 
-.. _sets-results:
+.. _canvas-group-results:
 
-Results
--------
+Group Results
+-------------
 
-When a  :class:`~celery.task.sets.group` is applied it returns a
+When a  :class:`~celery.group` is applied it returns a
 :class:`~celery.result.TaskSetResult` object.
 
 :class:`~celery.result.TaskSetResult` takes a list of

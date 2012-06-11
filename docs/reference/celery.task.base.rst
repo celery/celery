@@ -1,5 +1,5 @@
 ===================================
- celery.task.base
+ celery.task.base (Deprecated)
 ===================================
 
 .. contents::

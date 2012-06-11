@@ -141,10 +141,10 @@ These options are described in more detailed in the :ref:`Workers Guide <guide-w
         $ celery --app=proj.celery:celery
 
 
-.. _designing-work-flows:
+.. _designing-workflows:
 
-Designing Work-flows
-====================
+*Canvas*: Designing Workflows
+=============================
 
 A :func:`~celery.subtask` wraps the signature of a single task invocation:
 arguments, keyword arguments and execution options.

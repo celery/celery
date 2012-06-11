@@ -10,5 +10,4 @@
 
     daemonizing
     debugging
-    clickcounter
     task-cookbook

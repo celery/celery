@@ -990,7 +990,7 @@ Make your design asynchronous instead, for example by using *callbacks*.
 Here we instead create a chain of tasks by linking together
 different :func:`~celery.subtask`'s.
 You can read about chains and other powerful constructs
-at :ref:`designing-work-flows`.
+at :ref:`designing-workflows`.
 
 .. _task-performance-and-strategies:
 

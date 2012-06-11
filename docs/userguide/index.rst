@@ -15,7 +15,7 @@
     calling
     workers
     periodic-tasks
-    groups
+    canvas
     remote-tasks
     routing
     monitoring

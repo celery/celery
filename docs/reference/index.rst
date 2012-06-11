@@ -20,7 +20,6 @@
     celery.app.utils
     celery.task
     celery.task.base
-    celery.task.sets
     celery.result
     celery.task.http
     celery.schedules

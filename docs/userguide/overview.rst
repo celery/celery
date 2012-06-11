@@ -32,7 +32,7 @@ a "task".
 
 * Go to :ref:`guide-tasks`.
 * Go to :ref:`guide-calling`.
-* Go to :ref:`guide-sets`
+* Go to :ref:`guide-canvas`
 * Go to :ref:`guide-beat`.
 * Go to :ref:`guide-webhooks`.
 

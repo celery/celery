@@ -657,28 +657,27 @@ How can I run a task once another task has finished?
 ----------------------------------------------------
 
 **Answer**: You can safely launch a task inside a task.
-Also, a common pattern is to use callback tasks:
+Also, a common pattern is to add callbacks to tasks:
 
 .. code-block:: python
 
-    @celery.task()
-    def add(x, y, callback=None):
-        result = x + y
-        if callback:
-            subtask(callback).delay(result)
-        return result
+    from celery.utils.log import get_task_logger
 
+    logger = get_task_logger(__name__)
+
+    @celery.task()
+    def add(x, y):
+        return x + y
 
     @celery.task(ignore_result=True)
-    def log_result(result, **kwargs):
-        logger = log_result.get_logger(**kwargs)
-        logger.info("log_result got: %s" % (result, ))
+    def log_result(result):
+        logger.info("log_result got: %r" % (result, ))
 
 Invocation::
 
-    >>> add.delay(2, 2, callback=log_result.subtask())
+    >>> (add.s(2, 2) | log_result.s()).delay()
 
-See :doc:`userguide/tasksets` for more information.
+See :doc:`userguide/canvas` for more information.
 
 .. _faq-cancel-task:
 
