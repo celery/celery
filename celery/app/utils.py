@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-import celery
-import kombu
 import os
 import platform as _platform
 
@@ -16,12 +14,12 @@ SETTINGS_INFO = """%s %s"""
 
 BUGREPORT_INFO = """
 software -> celery:%(celery_v)s kombu:%(kombu_v)s py:%(py_v)s
+            billiard:%(billiard_v)s %(driver_v)s
 platform -> system:%(system)s arch:%(arch)s imp:%(py_i)s
 loader   -> %(loader)s
 settings -> transport:%(transport)s results:%(results)s
 
 %(human_settings)s
-
 """
 
 
@@ -98,13 +96,27 @@ def _unpickle_app(cls, pickler, *args):
 
 
 def bugreport(app):
-    return BUGREPORT_INFO % {"system": _platform.system(),
-                            "arch": _platform.architecture(),
-                            "py_i": platforms.pyimplementation(),
-                            "celery_v": celery.__version__,
-                            "kombu_v": kombu.__version__,
-                            "py_v": _platform.python_version(),
-                            "transport": app.conf.BROKER_TRANSPORT,
-                            "results": app.conf.CELERY_RESULT_BACKEND,
-                            "human_settings": app.conf.humanize(),
-                            "loader": qualname(app.loader.__class__)}
+    import billiard
+    import celery
+    import kombu
+
+    try:
+        trans = app.broker_connection().transport
+        driver_v = "%s:%s" % (trans.driver_name, trans.driver_version())
+    except Exception:
+        driver_v = ""
+
+    return BUGREPORT_INFO % {
+        "system": _platform.system(),
+        "arch": ', '.join(filter(None, _platform.architecture())),
+        "py_i": platforms.pyimplementation(),
+        "celery_v": celery.__version__,
+        "kombu_v": kombu.__version__,
+        "billiard_v": billiard.__version__,
+        "py_v": _platform.python_version(),
+        "driver_v": driver_v,
+        "transport": app.conf.BROKER_TRANSPORT or "amqp",
+        "results": app.conf.CELERY_RESULT_BACKEND or "disabled",
+        "human_settings": app.conf.humanize(),
+        "loader": qualname(app.loader.__class__),
+    }

@@ -254,7 +254,7 @@ class Control(object):
         with self.app.default_connection(connection) as conn:
             if channel is None:
                 channel = conn.default_channel
-            arguments = dict(arguments, **extra_kwargs)
+            arguments = dict(arguments or {}, **extra_kwargs)
             return self.mailbox(conn)._broadcast(command, arguments,
                                                  destination, reply, timeout,
                                                  limit, callback,

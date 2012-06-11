@@ -8,22 +8,19 @@ Preload Options
 
 .. cmdoption:: -A, --app
 
-    Fully qualified name of the app instance to use.
+    app instance to use (e.g. module.attr_name)
 
 .. cmdoption:: -b, --broker
 
-    Broker URL.  Default is 'amqp://guest:guest@localhost:5672//'
+    url to broker.  default is 'amqp://guest@localhost//'
 
 .. cmdoption:: --loader
 
-    Name of the loader class to use.
-    Taken from the environment variable :envvar:`CELERY_LOADER`
-    or 'default' if that is not set.
+    name of custom loader class to use.
 
 .. cmdoption:: --config
 
-    Name of the module to read configuration from,
-    default is 'celeryconfig'.
+    name of the configuration module (default: `celeryconfig`)
 
 .. _daemon-options:
 
@@ -67,12 +64,13 @@ import sys
 import warnings
 
 from collections import defaultdict
-from optparse import OptionParser, make_option as Option
+from optparse import OptionParser, IndentedHelpFormatter, make_option as Option
 from types import ModuleType
 
 import celery
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
 from celery.platforms import EX_FAILURE, EX_USAGE
+from celery.utils import text
 from celery.utils.imports import symbol_by_name, import_from_cwd
 
 # always enable DeprecationWarnings, so our users can see them.
@@ -88,16 +86,16 @@ Try --help?
 find_long_opt = re.compile(r'.+?(--.+?)(?:\s|,|$)')
 find_rst_ref = re.compile(r':\w+:`(.+?)`')
 
+class HelpFormatter(IndentedHelpFormatter):
 
-class Parser(OptionParser):
+    def format_epilog(self, epilog):
+        if epilog:
+            return "\n%s\n\n" % epilog
+        return ''
 
-    def format_epilog(self, *args, **kwargs):
-        return ""
-
-    def print_help(self, *args, **kwargs):
-        OptionParser.print_help(self, *args, **kwargs)
-        if self.epilog:
-            print("\n" + self.epilog)
+    def format_description(self, description):
+        return text.ensure_2lines(text.fill_paragraphs(
+                text.dedent(description), self.width))
 
 
 class Command(object):
@@ -107,7 +105,7 @@ class Command(object):
     :keyword get_app: Callable returning the current app if no app provided.
 
     """
-    Parser = Parser
+    Parser = OptionParser
 
     #: Arg list used in help.
     args = ''
@@ -225,6 +223,7 @@ class Command(object):
                            usage=self.usage(command),
                            version=self.version,
                            epilog=self.epilog,
+                           formatter=HelpFormatter(),
                            description=self.description,
                            option_list=(self.preload_options +
                                         self.get_options())))

@@ -35,8 +35,8 @@ event_exchange = Exchange("celeryev", type="topic")
 
 def get_exchange(conn):
     ex = copy(event_exchange)
-    if "redis" in type(conn.transport).__module__:
-        # quick hack for #436
+    if conn.transport.driver_type == "redis":
+        # quick hack for Issue #436
         ex.type = "fanout"
     return ex
 

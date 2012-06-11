@@ -1,6 +1,30 @@
 from __future__ import absolute_import
 
+import textwrap
+
 from pprint import pformat
+
+
+def dedent_initial(s, n=4):
+    return s[n:] if s[:n] == ' ' * n else s
+
+
+def dedent(s, n=4):
+    return '\n'.join(map(dedent_initial, s.splitlines()))
+
+
+def fill_paragraphs(s, width):
+    return '\n'.join(textwrap.fill(p, width) for p in s.split("\n"))
+
+
+def join(l):
+    return '\n'.join(filter(None, l))
+
+
+def ensure_2lines(s):
+    if len(s.splitlines()) <= 2:
+        return s + "\n"
+    return s
 
 
 def abbr(S, max, ellipsis="..."):
@@ -22,8 +46,8 @@ def abbrtask(S, max):
 
 
 def indent(t, indent=0):
-        """Indent text."""
-        return "\n".join(" " * indent + p for p in t.split("\n"))
+    """Indent text."""
+    return "\n".join(" " * indent + p for p in t.split("\n"))
 
 
 def truncate(text, maxlen=128, suffix='...'):
