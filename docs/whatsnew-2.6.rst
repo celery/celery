@@ -114,26 +114,8 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
     - ``link`` and ``link_error`` keyword arguments has been added
       to ``apply_async``.
 
-        The value passed can be either a subtask or a list of
-        subtasks:
-
-        .. code-block:: python
-
-            add.apply_async((2, 2), link=mul.subtask())
-            add.apply_async((2, 2), link=[mul.subtask(), echo.subtask()])
-
-        Example error callback:
-
-        .. code-block:: python
-
-            @celery.task()
-            def error_handler(uuid):
-                result = AsyncResult(uuid)
-                exc = result.get(propagate=False)
-                print("Task %r raised exception: %r\n%r" % (
-                    exc, result.traceback))
-
-            >>> add.apply_async((2, 2), link_error=error_handler)
+        These add callbacks and errbacks to the task, and
+        you can read more about them at :ref:`calling-links`.
 
     - We now track what subtasks a task sends, and some result backends
       supports retrieving this information.

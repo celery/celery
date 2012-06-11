@@ -2,14 +2,18 @@
  celery
 ========
 
+.. currentmodule:: celery
+
+.. module:: celery
+
+
 .. contents::
     :local:
 
 Application
 -----------
 
-.. class:: Celery(main=None, broker="amqp://guest:guest@localhost:5672//",
-                  loader="app", backend=None)
+.. class:: Celery(main='__main__', broker='amqp://localhost//', ...)
 
     :param main: Name of the main module if running as `__main__`.
     :keyword broker: URL of the default broker used.
@@ -25,63 +29,64 @@ Application
     :keyword set_as_current:  Make this the global current app.
     :keyword tasks: A task registry or the name of a registry class.
 
-    .. attribute:: main
+    .. attribute:: Celery.main
 
         Name of the `__main__` module.  Required for standalone scripts.
 
         If set this will be used instead of `__main__` when automatically
         generating task names.
 
-    .. attribute:: conf
+    .. attribute:: Celery.conf
 
         Current configuration.
 
-    .. attribute:: current_task
+    .. attribute:: Celery.current_task
 
         The instance of the task that is being executed, or :const:`None`.
 
-    .. attribute:: amqp
+    .. attribute:: Celery.amqp
 
         AMQP related functionality: :class:`~@amqp`.
 
-    .. attribute:: backend
+    .. attribute:: Celery.backend
 
         Current backend instance.
 
-    .. attribute:: loader
+    .. attribute:: Celery.loader
 
         Current loader instance.
 
-    .. attribute:: control
+    .. attribute:: Celery.control
 
         Remote control: :class:`~@control`.
 
-    .. attribute:: events
+    .. attribute:: Celery.events
 
         Consuming and sending events: :class:`~@events`.
 
-    .. attribute:: log
+    .. attribute:: Celery.log
 
         Logging: :class:`~@log`.
 
-    .. attribute:: tasks
+    .. attribute:: Celery.tasks
 
         Task registry.
 
-    .. attribute:: pool
+    .. attribute:: Celery.pool
 
         Broker connection pool: :class:`~@pool`.
+        This attribute is not related to the workers concurrency pool.
 
-    .. attribute:: Task
+    .. attribute:: Celery.Task
 
         Base task class for this app.
 
-    .. method:: bugreport
+    .. method:: Celery.bugreport
 
         Returns a string with information useful for the Celery core
         developers when reporting a bug.
 
-    .. method:: config_from_object(obj, silent=False)
+    .. method:: Celery.config_from_object(obj, silent=False)
 
         Reads configuration from object, where object is either
         an object or the name of a module to import.
@@ -95,7 +100,7 @@ Application
             >>> from myapp import celeryconfig
             >>> celery.config_from_object(celeryconfig)
 
-    .. method:: config_from_envvar(variable_name, silent=False)
+    .. method:: Celery.config_from_envvar(variable_name, silent=False)
 
         Read configuration from environment variable.
 
@@ -107,28 +112,17 @@ Application
             >>> os.environ["CELERY_CONFIG_MODULE"] = "myapp.celeryconfig"
             >>> celery.config_from_envvar("CELERY_CONFIG_MODULE")
 
-    .. method:: config_from_cmdline(argv, namespace="celery")
-
-        Parses argv for configuration strings.
-
-        Configuration strings must be located after a '--' sequence,
-        e.g.::
-
-            program arg1 arg2 -- celeryd.concurrency=10
-
-        :keyword namespace: Default namespace if omitted.
-
-    .. method:: start(argv=None)
+    .. method:: Celery.start(argv=None)
 
         Run :program:`celery` using `argv`.
 
         Uses :data:`sys.argv` if `argv` is not specified.
 
-    .. method:: task(fun, **options)
+    .. method:: Celery.task(fun, ...)
 
         Decorator to create a task class out of any callable.
 
-        **Examples:**
+        Examples:
 
         .. code-block:: python
 
@@ -155,48 +149,45 @@ Application
             application is fully set up (finalized).
 
 
-    .. method:: send_task(name, args=(), kwargs={}, countdown=None,
-            eta=None, task_id=None, publisher=None, connection=None,
-            result_cls=AsyncResult, expires=None, queues=None, **options)
+    .. method:: Celery.send_task(name[, args[, kwargs[, ...]]])
 
-        Send task by **name**.
+        Send task by name.
 
         :param name: Name of task to call (e.g. `"tasks.add"`).
         :keyword result_cls: Specify custom result class. Default is
             using :meth:`AsyncResult`.
 
-        Otherwise supports the same arguments as :meth:`~@Task.apply_async`.
+        Otherwise supports the same arguments as :meth:`@-Task.apply_async`.
 
-    .. attribute:: AsyncResult
+    .. attribute:: Celery.AsyncResult
 
         Create new result instance. See :class:`~celery.result.AsyncResult`.
 
-    .. attribute:: GroupResult
+    .. attribute:: Celery.GroupResult
 
         Create new taskset result instance.
         See :class:`~celery.result.GroupResult`.
 
-    .. method:: worker_main(argv=None)
+    .. method:: Celery.worker_main(argv=None)
 
         Run :program:`celeryd` using `argv`.
 
         Uses :data:`sys.argv` if `argv` is not specified."""
 
-    .. attribute:: Worker
+    .. attribute:: Celery.Worker
 
         Worker application. See :class:`~@Worker`.
 
-    .. attribute:: WorkController
+    .. attribute:: Celery.WorkController
 
         Embeddable worker. See :class:`~@WorkController`.
 
-    .. attribute:: Beat
+    .. attribute:: Celery.Beat
 
         Celerybeat scheduler application.
         See :class:`~@Beat`.
 
-    .. method:: broker_connection(url="amqp://guest:guest@localhost:5672//",
-            ssl=False, transport_options={})
+    .. method:: Celery.broker_connection(url=default, [ssl, [transport_options={}]])
 
         Establish a connection to the message broker.
 
@@ -215,7 +206,7 @@ Application
 
         :returns :class:`kombu.connection.BrokerConnection`:
 
-    .. method:: default_connection(connection=None)
+    .. method:: Celery.default_connection(connection=None)
 
         For use within a with-statement to get a connection from the pool
         if one is not already provided.
@@ -224,30 +215,30 @@ Application
                              acquired from the connection pool.
 
 
-    .. method:: mail_admins(subject, body, fail_silently=False)
+    .. method:: Celery.mail_admins(subject, body, fail_silently=False)
 
         Sends an email to the admins in the :setting:`ADMINS` setting.
 
-    .. method:: select_queues(queues=[])
+    .. method:: Celery.select_queues(queues=[])
 
         Select a subset of queues, where queues must be a list of queue
         names to keep.
 
-    .. method:: now()
+    .. method:: Celery.now()
 
         Returns the current time and date as a :class:`~datetime.datetime`
         object.
 
-    .. method:: set_current()
+    .. method:: Celery.set_current()
 
         Makes this the current app for this thread.
 
-    .. method:: finalize()
+    .. method:: Celery.finalize()
 
         Finalizes the app by loading built-in tasks,
         and evaluating pending task decorators
 
-    .. attribute:: Pickler
+    .. attribute:: Celery.Pickler
 
         Helper class used to pickle this application.
 
@@ -266,10 +257,13 @@ Grouping Tasks
 
     The ``apply_async`` method returns :class:`~@GroupResult`.
 
-.. class:: chain(*tasks)
+.. class:: chain(task1[, task2[, task3[,... taskN]]])
 
     Chains tasks together, so that each tasks follows each other
     by being applied as a callback of the previous task.
+
+    If called with only one argument, then that argument must
+    be an iterable of tasks to chain.
 
     Example::
 
@@ -332,11 +326,11 @@ Grouping Tasks
         >>> subtask(s)
         {"task": "tasks.add", args=(2, 2), kwargs={}, options={}}
 
-    .. method:: delay(*args, **kwargs)
+    .. method:: subtask.delay(*args, \*\*kwargs)
 
         Shortcut to :meth:`apply_async`.
 
-    .. method:: apply_async(args=(), kwargs={}, **options)
+    .. method:: subtask.apply_async(args=(), kwargs={}, ...)
 
         Apply this task asynchronously.
 
@@ -347,12 +341,12 @@ Grouping Tasks
 
         See :meth:`~@Task.apply_async`.
 
-    .. method:: apply(args=(), kwargs={}, **options)
+    .. method:: subtask.apply(args=(), kwargs={}, ...)
 
         Same as :meth:`apply_async` but executed the task inline instead
         of sending a task message.
 
-    .. method:: clone(args=(), kwargs={}, **options)
+    .. method:: subtask.clone(args=(), kwargs={}, ...)
 
         Returns a copy of this subtask.
 
@@ -361,28 +355,32 @@ Grouping Tasks
         :keyword options: Partial options to be merged with the existing
                           options.
 
-    .. method:: replace(args=None, kwargs=None, options=None)
+    .. method:: subtask.replace(args=None, kwargs=None, options=None)
 
         Replace the args, kwargs or options set for this subtask.
         These are only replaced if the selected is not :const:`None`.
 
-    .. method:: link(other_subtask)
+    .. method:: subtask.link(other_subtask)
 
         Add a callback task to be applied if this task
         executes successfully.
 
-    .. method:: link_error(other_subtask)
+        :returns: ``other_subtask`` (to work with :func:`~functools.reduce`).
+
+    .. method:: subtask.link_error(other_subtask)
 
         Add a callback task to be applied if an error occurs
         while executing this task.
 
-    .. method:: set(**options)
+        :returns: ``other_subtask`` (to work with :func:`~functools.reduce`)
+
+    .. method:: subtask.set(...)
 
         Set arbitrary options (same as ``.options.update(...)``).
 
         This is a chaining method call (i.e. it returns itself).
 
-    .. method:: flatten_links()
+    .. method:: subtask.flatten_links()
 
         Gives a recursive list of dependencies (unchain if you will,
         but with links intact).

@@ -308,6 +308,16 @@ General
 
     Please see :ref:`calling-serializers` for more information.
 
+.. attribute:: Task.compression
+
+    A string identifying the default compression scheme to use.
+
+    Defaults to the :setting:`CELERY_MESSAGE_COMPRESSION` setting.
+    Can be `gzip`, or `bzip2`, or any custom compression schemes
+    that have been registered with the :mod:`kombu.compression` registry.
+
+    Please see :ref:`calling-compression` for more information.
+
 .. attribute:: Task.backend
 
     The result store backend to use for this task.  Defaults to the

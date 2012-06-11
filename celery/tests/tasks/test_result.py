@@ -13,6 +13,7 @@ from celery.result import (
     AsyncResult,
     EagerResult,
     GroupResult,
+    TaskSetResult,
     ResultSet,
     from_serializable,
 )
@@ -334,14 +335,13 @@ class SimpleBackend(object):
             return ((id, {"result": i}) for i, id in enumerate(self.ids))
 
 
-class test_GroupResult(AppCase):
+class test_TaskSetResult(AppCase):
 
     def setup(self):
         self.size = 10
-        self.ts = GroupResult(uuid(), make_mock_group(self.size))
+        self.ts = TaskSetResult(uuid(), make_mock_group(self.size))
 
     def test_total(self):
-        self.assertEqual(len(self.ts), self.size)
         self.assertEqual(self.ts.total, self.size)
 
     def test_compat_properties(self):
@@ -349,15 +349,31 @@ class test_GroupResult(AppCase):
         self.ts.taskset_id = "foo"
         self.assertEqual(self.ts.taskset_id, "foo")
 
+    def test_compat_subtasks_kwarg(self):
+        x = TaskSetResult(uuid(), subtasks=[1, 2, 3])
+        self.assertEqual(x.results, [1, 2, 3])
+
+    def test_itersubtasks(self):
+        it = self.ts.itersubtasks()
+
+        for i, t in enumerate(it):
+            self.assertEqual(t.get(), i)
+
+
+class test_GroupResult(AppCase):
+
+    def setup(self):
+        self.size = 10
+        self.ts = GroupResult(uuid(), make_mock_group(self.size))
+
+    def test_len(self):
+        self.assertEqual(len(self.ts), self.size)
+
     def test_eq_other(self):
         self.assertFalse(self.ts == 1)
 
     def test_reduce(self):
         self.assertTrue(loads(dumps(self.ts)))
-
-    def test_compat_subtasks_kwarg(self):
-        x = GroupResult(uuid(), subtasks=[1, 2, 3])
-        self.assertEqual(x.results, [1, 2, 3])
 
     def test_iterate_raises(self):
         ar = MockAsyncResultFailure(uuid())
@@ -435,17 +451,8 @@ class test_GroupResult(AppCase):
         with self.assertRaises(TimeoutError):
             ts.join(timeout=0.0000001)
 
-    def test_itersubtasks(self):
-
-        it = self.ts.itersubtasks()
-
-        for i, t in enumerate(it):
-            self.assertEqual(t.get(), i)
-
     def test___iter__(self):
-
         it = iter(self.ts)
-
         results = sorted(list(it))
         self.assertListEqual(results, list(xrange(self.size)))
 
@@ -487,17 +494,6 @@ class test_failed_AsyncResult(test_GroupResult):
         save_result(failed)
         failed_res = AsyncResult(failed["id"])
         self.ts = GroupResult(uuid(), subtasks + [failed_res])
-
-    def test_itersubtasks(self):
-
-        it = self.ts.itersubtasks()
-
-        for i in xrange(self.size - 1):
-            t = it.next()
-            self.assertEqual(t.get(), i)
-        with self.assertRaises(KeyError):
-            t = it.next()   # need to do this in two lines or 2to3 borks.
-            t.get()
 
     def test_completed_count(self):
         self.assertEqual(self.ts.completed_count(), len(self.ts) - 1)

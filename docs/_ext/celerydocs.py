@@ -14,11 +14,12 @@ APPATTRS = {
     "tasks": "celery.app.registry.Registry",
 
     "AsyncResult": "celery.result.AsyncResult",
-    "TaskSetResult": "celery.result.TaskSetResult",
+    "GroupResult": "celery.result.GroupResult",
     "Worker": "celery.apps.worker.Worker",
     "WorkController": "celery.worker.WorkController",
     "Beat": "celery.apps.beat.Beat",
-    "Task": "celery.app.task.BaseTask",
+    "Task": "celery.app.task.Task",
+    "send_task": "celery.Celery.send_task",
 }
 
 ABBRS = {
