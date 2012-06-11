@@ -198,7 +198,7 @@ def create_delegate(name, Command):
 class worker(Delegate):
     """Start worker instance.
 
-    Examples:
+    Examples::
 
         celery worker --app=proj -l info
         celery worker -A proj -l info -Q hipri,lopri
@@ -215,7 +215,8 @@ worker = command(worker, sortpri=01)
 class events(Delegate):
     """Event-stream utilities.
 
-    Commands:
+    Commands::
+
         celery events --app=proj
             start graphical monitor (requires curses)
         celery events -d --app=proj
@@ -224,7 +225,8 @@ class events(Delegate):
         celery events -C <camera> [options]
             run snapshot camera.
 
-    Examples:
+    Examples::
+
         celery events
         celery events -d
         celery events -C mod.attr -F 1.0 --detach --maxrate=100/m -l info
@@ -236,7 +238,7 @@ events = command(events, sortpri=10)
 class beat(Delegate):
     """Start the celerybeat periodic task scheduler.
 
-    Examples:
+    Examples::
 
         celery beat -l info
         celery beat -s /var/run/celerybeat/schedule --detach
@@ -271,7 +273,7 @@ amqp = command(amqp, sortpri=30)
 class list_(Command):
     """Get info from broker.
 
-    Examples:
+    Examples::
 
         celery list bindings
 
@@ -309,7 +311,7 @@ list_ = command(list_, "list")
 class apply(Command):
     """Apply a task by name.
 
-    Examples:
+    Examples::
 
         celery apply tasks.add --args='[2, 2]'
         celery apply tasks.add --args='[2, 2]' --countdown=10
@@ -384,7 +386,7 @@ purge = command(purge)
 class result(Command):
     """Gives the return value for a given task id.
 
-    Examples:
+    Examples::
 
         celery result 8f511516-e2f5-4da4-9d2f-0fb83a86e500
         celery result 8f511516-e2f5-4da4-9d2f-0fb83a86e500 -t tasks.add
@@ -510,7 +512,7 @@ class inspect(_RemoteControl):
 
     Availability: RabbitMQ (amqp), Redis, and MongoDB transports.
 
-    Examples:
+    Examples::
 
         celery inspect active --timeout=5
         celery inspect scheduled -d worker1.example.com
@@ -541,7 +543,7 @@ class control(_RemoteControl):
 
     Availability: RabbitMQ (amqp), Redis, and MongoDB transports.
 
-    Examples:
+    Examples::
 
         celery control enable_events --timeout=5
         celery control -d worker1.example.com enable_events
@@ -625,7 +627,7 @@ status = command(status)
 class migrate(Command):
     """Migrate tasks from one broker to another.
 
-    Examples:
+    Examples::
 
         celery migrate redis://localhost amqp://guest@localhost//
         celery migrate django:// redis://localhost
@@ -662,7 +664,7 @@ class shell(Command):  # pragma: no cover
           subtask, Task
         - all registered tasks.
 
-    Example Session:
+    Example Session::
 
         $ celery shell
 

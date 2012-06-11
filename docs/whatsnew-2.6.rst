@@ -280,7 +280,7 @@ Additional control commands made public
     These commands are available programmatically as
     :meth:`@control.add_consumer` / :meth:`@control.cancel_consumer`:
 
-    .. code-block::
+    .. code-block:: python
 
         >>> celery.control.add_consumer(queue_name,
         ...     destination=["w1.example.com"])
@@ -304,7 +304,7 @@ Additional control commands made public
 
     This command is available programmatically as :meth:`@control.autoscale`:
 
-    .. code-block::
+    .. code-block:: python
 
         >>> celery.control.autoscale(max=10, min=5,
         ...     destination=["w1.example.com"])
@@ -320,7 +320,7 @@ Additional control commands made public
     These commands are available programmatically as
     :meth:`@control.pool_grow` / :meth:`@control.pool_shrink`:
 
-    .. code-block::
+    .. code-block:: python
 
         >>> celery.control.pool_grow(2, destination=["w1.example.com"])
         >>> celery.contorl.pool_shrink(2, destination=["w1.example.com"])
