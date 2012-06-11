@@ -64,7 +64,7 @@ function:
 
     task.delay(arg1, arg2, kwarg1="x", kwarg2="y")
 
-Using :meth:`~@Task.apply_async` instead we have to write:
+Using :meth:`~@Task.apply_async` instead we have to write::
 
 .. code-block:: python
 
@@ -76,8 +76,11 @@ Using :meth:`~@Task.apply_async` instead we have to write:
     you can use :meth:`~@send_task` to call the task by name instead.
 
 
-So `delay` is clearly convenient, but if you want to set additional execution
-options you have to use ``apply_async``.
+So `delay` is clearly convenient, but it doesn't give you as much control as using
+`apply_async`.  With `apply_async` you can override the execution options
+available as attributes on the :class:`~@Task` class (see :ref:`task-options`).
+In addition you can set countdown/eta, task expiry, provide a custom broker
+connection and more.
 
 The rest of this document will go into the task execution
 options in detail.  All examples use a task
@@ -245,6 +248,8 @@ To disable retry you can set the ``retry`` execution option to :const:`False`:
 
         - :setting:`CELERY_TASK_PUBLISH_RETRY`
         - :setting:`CELERY_TASK_PUBLISH_RETRY_POLICY`
+
+
 
 Retry Policy
 ------------
