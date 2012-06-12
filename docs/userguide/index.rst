@@ -10,7 +10,7 @@
 .. toctree::
     :maxdepth: 2
 
-    overview
+    application
     tasks
     calling
     workers
