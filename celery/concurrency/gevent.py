@@ -87,6 +87,7 @@ class TaskPool(BasePool):
 
     def on_start(self):
         self._pool = self.Pool(self.limit)
+        self._quick_put = self._pool.spawn
 
     def on_stop(self):
         if self._pool is not None:
@@ -94,8 +95,8 @@ class TaskPool(BasePool):
 
     def on_apply(self, target, args=None, kwargs=None, callback=None,
             accept_callback=None, **_):
-        return self._pool.spawn(apply_target, target, args, kwargs,
-                                callback, accept_callback)
+        return self._quick_put(apply_target, target, args, kwargs,
+                               callback, accept_callback)
 
     def grow(self, n=1):
         self._pool._semaphore.counter += n

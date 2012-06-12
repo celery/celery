@@ -6,24 +6,21 @@
 Preload Options
 ---------------
 
-.. cmdoption:: --app
+.. cmdoption:: -A, --app
 
-    Fully qualified name of the app instance to use.
+    app instance to use (e.g. module.attr_name)
 
 .. cmdoption:: -b, --broker
 
-    Broker URL.  Default is 'amqp://guest:guest@localhost:5672//'
+    url to broker.  default is 'amqp://guest@localhost//'
 
 .. cmdoption:: --loader
 
-    Name of the loader class to use.
-    Taken from the environment variable :envvar:`CELERY_LOADER`
-    or 'default' if that is not set.
+    name of custom loader class to use.
 
 .. cmdoption:: --config
 
-    Name of the module to read configuration from,
-    default is 'celeryconfig'.
+    name of the configuration module (default: `celeryconfig`)
 
 .. _daemon-options:
 
@@ -67,12 +64,13 @@ import sys
 import warnings
 
 from collections import defaultdict
-from optparse import OptionParser, make_option as Option
+from optparse import OptionParser, IndentedHelpFormatter, make_option as Option
 from types import ModuleType
 
-from celery import Celery, __version__
+import celery
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
 from celery.platforms import EX_FAILURE, EX_USAGE
+from celery.utils import text
 from celery.utils.imports import symbol_by_name, import_from_cwd
 
 # always enable DeprecationWarnings, so our users can see them.
@@ -88,6 +86,17 @@ Try --help?
 find_long_opt = re.compile(r'.+?(--.+?)(?:\s|,|$)')
 find_rst_ref = re.compile(r':\w+:`(.+?)`')
 
+class HelpFormatter(IndentedHelpFormatter):
+
+    def format_epilog(self, epilog):
+        if epilog:
+            return "\n%s\n\n" % epilog
+        return ''
+
+    def format_description(self, description):
+        return text.ensure_2lines(text.fill_paragraphs(
+                text.dedent(description), self.width))
+
 
 class Command(object):
     """Base class for command line applications.
@@ -96,11 +105,13 @@ class Command(object):
     :keyword get_app: Callable returning the current app if no app provided.
 
     """
+    Parser = OptionParser
+
     #: Arg list used in help.
     args = ''
 
     #: Application version.
-    version = __version__
+    version = celery.__version__
 
     #: If false the parser will raise an exception if positional
     #: args are provided.
@@ -114,7 +125,7 @@ class Command(object):
 
     #: List of options to parse before parsing other options.
     preload_options = (
-        Option("--app", default=None),
+        Option("-A", "--app", default=None),
         Option("-b", "--broker", default=None),
         Option("--loader", default=None),
         Option("--config", default="celeryconfig", dest="config_module"),
@@ -126,7 +137,11 @@ class Command(object):
     #: Default configuration namespace.
     namespace = "celery"
 
-    Parser = OptionParser
+    #: Text to print at end of --help
+    epilog = None
+
+    #: Text to print in --help before option list.
+    description = ''
 
     def __init__(self, app=None, get_app=None):
         self.app = app
@@ -207,6 +222,9 @@ class Command(object):
         return self.prepare_parser(self.Parser(prog=prog_name,
                            usage=self.usage(command),
                            version=self.version,
+                           epilog=self.epilog,
+                           formatter=HelpFormatter(),
+                           description=self.description,
                            option_list=(self.preload_options +
                                         self.get_options())))
 
@@ -309,7 +327,8 @@ class Command(object):
         return options
 
     def _get_default_app(self, *args, **kwargs):
-        return Celery(*args, **kwargs)
+        from celery.app import default_app
+        return default_app._get_current_object()  # omit proxy
 
 
 def daemon_options(default_pidfile=None, default_logfile=None):

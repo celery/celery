@@ -2,12 +2,12 @@
  celery - Distributed Task Queue
 =================================
 
-.. image:: http://cloud.github.com/downloads/ask/celery/celery_128.png
+.. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
 
-:Version: 2.6.0rc3
+:Version: 2.6.0rc4
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
-:Source: http://github.com/ask/celery/
+:Source: http://github.com/celery/celery/
 :Keywords: task queue, job queue, asynchronous, rabbitmq, amqp, redis,
   python, webhooks, queue, distributed
 
@@ -22,7 +22,7 @@ Synopsis
 ========
 
 Celery is an open source asynchronous task queue/job queue based on
-distributed message passing.  It is focused on real-time operation,
+distributed message passing.  Focused on real-time operation,
 but supports scheduling as well.
 
 The execution units, called tasks, are executed concurrently on one or
@@ -30,7 +30,7 @@ more worker nodes using multiprocessing, `Eventlet`_ or `gevent`_.  Tasks can
 execute asynchronously (in the background) or synchronously
 (wait until ready).
 
-Celery is used in production systems to process millions of tasks a day.
+Celery is used in production systems to process millions of tasks every hour.
 
 Celery is written in Python, but the protocol can be implemented in any
 language.  It can also `operate with other languages using webhooks`_.
@@ -64,6 +64,7 @@ integration packages:
 .. _`SQLAlchemy`: http://www.sqlalchemy.org/
 .. _`Django`: http://djangoproject.com/
 .. _`Django ORM`: http://djangoproject.com/
+.. _`Memcached`: http://memcached.org/
 .. _`Eventlet`: http://eventlet.net/
 .. _`gevent`: http://gevent.org/
 .. _`Beanstalk`: http://kr.github.com/beanstalkd/
@@ -83,7 +84,7 @@ integration packages:
 .. _`Tornado`: http://www.tornadoweb.org/
 .. _`tornado-celery`: http://github.com/mher/tornado-celery/
 .. _`operate with other languages using webhooks`:
-    http://ask.github.com/celery/userguide/remote-tasks.html
+    http://celery.github.com/celery/userguide/remote-tasks.html
 .. _`limited support`:
     http://kombu.readthedocs.org/en/latest/introduction.html#transport-comparison
 
@@ -94,7 +95,7 @@ Overview
 
 This is a high level overview of the architecture.
 
-.. image:: http://cloud.github.com/downloads/ask/celery/Celery-Overview-v4.jpg
+.. image:: http://cloud.github.com/downloads/celery/celery/Celery-Overview-v4.jpg
 
 The broker delivers tasks to the worker nodes.
 A worker node is a networked machine running `celeryd`.  This can be one or
@@ -114,7 +115,7 @@ adding two numbers:
 
     from celery import task
 
-    @task
+    @task()
     def add(x, y):
         return x + y
 
@@ -133,8 +134,8 @@ Features
 
     +-----------------+----------------------------------------------------+
     | Messaging       | Supported brokers include `RabbitMQ`_, `Redis`_,   |
-    |                 | `Beanstalk`_, `MongoDB`_, `CouchDB`_, and popular  |
-    |                 | SQL databases.                                     |
+    |                 | `MongoDB`_, `Beanstalk`_, SQL databases,           |
+    |                 | Amazon SQS and more.                               |
     +-----------------+----------------------------------------------------+
     | Fault-tolerant  | Excellent configurable error recovery when using   |
     |                 | `RabbitMQ`, ensures your tasks are never lost.     |
@@ -160,7 +161,7 @@ Features
     |                 | result store backend. You can wait for the result, |
     |                 | retrieve it later, or ignore it.                   |
     +-----------------+----------------------------------------------------+
-    | Result Stores   | Database, `MongoDB`_, `Redis`_, `Tokyo Tyrant`,    |
+    | Result Stores   | Database, `MongoDB`_, `Redis`_, `Memcached`_,      |
     |                 | `Cassandra`, or `AMQP`_ (message notification).    |
     +-----------------+----------------------------------------------------+
     | Webhooks        | Your tasks can also be HTTP callbacks, enabling    |
@@ -213,6 +214,9 @@ Features
     | Error Emails    | Can be configured to send emails to the            |
     |                 | administrators when tasks fails.                   |
     +-----------------+----------------------------------------------------+
+    | Message signing | Supports message signing. Messages are signed      |
+    |                 | using public-key cryptography.                     |
+    +-----------------+----------------------------------------------------+
 
 
 .. _`clustering`: http://www.rabbitmq.com/clustering.html
@@ -229,7 +233,7 @@ Documentation
 The `latest documentation`_ with user guides, tutorials and API reference
 is hosted at Github.
 
-.. _`latest documentation`: http://ask.github.com/celery/
+.. _`latest documentation`: http://celery.github.com/celery/
 
 .. _celery-installation:
 
@@ -246,6 +250,8 @@ To install using `pip`,::
 To install using `easy_install`,::
 
     $ easy_install -U Celery
+
+.. _bundles:
 
 Bundles
 -------
@@ -267,9 +273,6 @@ The following bundles are available:
 :`django-celery-with-mongodb`_:
     for Django, and using MongoDB as a broker.
 
-:`bundle-celery`_:
-    convenience bundle installing *Celery* and related packages.
-
 .. _`celery-with-redis`:
     http://pypi.python.org/pypi/celery-with-redis/
 .. _`celery-with-mongodb`:
@@ -278,8 +281,6 @@ The following bundles are available:
     http://pypi.python.org/pypi/django-celery-with-redis/
 .. _`django-celery-with-mongodb`:
     http://pypi.python.org/pypi/django-celery-with-mongdb/
-.. _`bundle-celery`:
-    http://pypi.python.org/pypi/bundle-celery/
 
 .. _celery-installing-from-source:
 
@@ -303,7 +304,19 @@ Using the development version
 
 You can clone the repository by doing the following::
 
-    $ git clone git://github.com/ask/celery.git
+    $ git clone https://github.com/celery/celery
+    $ cd celery
+    $ python setup.py develop
+
+The development version will usually also depend on the development
+version of `kombu`_, the messaging framework Celery uses
+to send and receive messages, so you should also install that from git::
+
+    $ git clone https://github.com/celery/kombu
+    $ cd kombu
+    $ python setup.py develop
+
+.. _`kombu`: http://kombu.readthedocs.org/en/latest/
 
 .. _getting-help:
 
@@ -325,10 +338,9 @@ please join the `celery-users`_ mailing list.
 IRC
 ---
 
-Come chat with us on IRC. The `#celery`_ channel is located at the `Freenode`_
+Come chat with us on IRC. The **#celery** channel is located at the `Freenode`_
 network.
 
-.. _`#celery`: irc://irc.freenode.net/celery
 .. _`Freenode`: http://freenode.net
 
 .. _bug-tracker:
@@ -337,21 +349,21 @@ Bug tracker
 ===========
 
 If you have any suggestions, bug reports or annoyances please report them
-to our issue tracker at http://github.com/ask/celery/issues/
+to our issue tracker at http://github.com/celery/celery/issues/
 
 .. _wiki:
 
 Wiki
 ====
 
-http://wiki.github.com/ask/celery/
+http://wiki.github.com/celery/celery/
 
 .. _contributing-short:
 
 Contributing
 ============
 
-Development of `celery` happens at Github: http://github.com/ask/celery
+Development of `celery` happens at Github: http://github.com/celery/celery
 
 You are highly encouraged to participate in the development
 of `celery`. If you don't like Github (for some reason) you're welcome
@@ -360,7 +372,7 @@ to send regular patches.
 Be sure to also read the `Contributing to Celery`_ section in the
 documentation.
 
-.. _`Contributing to Celery`: http://ask.github.com/celery/contributing.html
+.. _`Contributing to Celery`: http://celery.github.com/celery/contributing.html
 
 .. _license:
 

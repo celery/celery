@@ -5,6 +5,8 @@ import sys
 import threading
 import traceback
 
+from kombu.syn import detect_environment
+
 _Thread = threading.Thread
 _Event = threading._Event
 
@@ -81,3 +83,21 @@ class bgThread(Thread):
         self._is_stopped.wait()
         if self.is_alive():
             self.join(1e100)
+
+if detect_environment() == "default":
+    class LocalStack(threading.local):
+
+        def __init__(self):
+            self.stack = []
+            self.push = self.stack.append
+            self.pop = self.stack.pop
+
+        @property
+        def top(self):
+            try:
+                return self.stack[-1]
+            except (AttributeError, IndexError):
+                return None
+else:
+    # See #706
+    from celery.local import LocalStack  # noqa

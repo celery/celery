@@ -151,11 +151,10 @@ Issue Trackers
 Bugs for a package in the Celery ecosystem should be reported to the relevant
 issue tracker.
 
-* Celery: http://github.com/ask/celery/issues/
-* Django-Celery: http://github.com/ask/django-celery/issues
-* Flask-Celery: http://github.com/ask/flask-celery/issues
+* Celery: http://github.com/celery/celery/issues/
+* Django-Celery: http://github.com/celery/django-celery/issues
 * Celery-Pylons: http://bitbucket.org/ianschenck/celery-pylons/issues
-* Kombu: http://github.com/ask/kombu/issues
+* Kombu: http://github.com/celery/kombu/issues
 
 If you are unsure of the origin of the bug you can ask the
 :ref:`mailing-list`, or just use the Celery issue tracker.
@@ -180,12 +179,12 @@ Branches
 
 Current active version branches:
 
-* master (http://github.com/ask/celery/tree/master)
-* 3.0-devel (http://github.com/ask/celery/tree/3.0-devel)
+* master (http://github.com/celery/celery/tree/master)
+* 3.0-devel (http://github.com/celery/celery/tree/3.0-devel)
 
 You can see the state of any branch by looking at the Changelog:
 
-    https://github.com/ask/celery/blob/master/Changelog
+    https://github.com/celery/celery/blob/master/Changelog
 
 If the branch is in active development the topmost version info should
 contain metadata like::
@@ -305,7 +304,7 @@ When the repository is cloned enter the directory to set up easy access
 to upstream changes::
 
     $ cd celery
-    $ git remote add upstream git://github.com/ask/celery.git
+    $ git remote add upstream git://github.com/celery/celery.git
     $ git fetch upstream
 
 If you need to pull in new changes from upstream you should
@@ -629,7 +628,171 @@ is following the conventions.
 
         from . import submodule
 
+.. _contact_information:
+
+Contacts
+========
+
+This is a list of people that can be contacted for questions
+regarding the official git repositories, PyPI packages
+Read the Docs pages.
+
+If the issue is not an emergency then it is better
+to :ref:`report an issue <reporting-bugs>`.
+
+
+Committers
+----------
+
+Ask Solem
+~~~~~~~~~
+
+:github: https://github.com/ask
+:twitter: http://twitter.com/#!/asksol
+
+Mher Movsisyan
+~~~~~~~~~~~~~~
+
+:github: https://github.com/mher
+
+Steeve Morin
+~~~~~~~~~~~~
+
+:github: https://github.com/steeve
+:twitter: http://twitter.com/#!/steeve
+
+Website
+-------
+
+The Celery Project website is run and maintained by
+
+Mauro Rocco
+~~~~~~~~~~~
+
+:github: https://github.com/fireantology
+:twitter: https://twitter.com/#!/fireantology
+
+with design by:
+
+Jan Henrik Helmers
+~~~~~~~~~~~~~~~~~~
+
+:web: http://www.helmersworks.com
+:twitter: http://twitter.com/#!/helmers
+
+
+.. _packages:
+
+Packages
+========
+
+celery
+------
+
+:git: https://github.com/celery/celery
+:CI: http://travis-ci.org/#!/celery/celery
+:PyPI: http://pypi.python.org/pypi/celery
+:docs: http://docs.celeryproject.org
+
+kombu
+-----
+
+Messaging framework.
+
+:git: https://github.com/celery/kombu
+:CI: http://travis-ci.org/#!/celery/kombu
+:PyPI: http://pypi.python.org/pypi/kombu
+:docs: http://kombu.readthedocs.org
+
+billiard
+--------
+
+Fork of multiprocessing containing improvements
+that will eventually be merged into the Python stdlib.
+
+:git: https://github.com/celery/billiard
+:PyPI: http://pypi.python.org/pypi/billiard
+
+librabbitmq
+-----------
+
+Very fast Python AMQP client written in C.
+
+:git: https://github.com/celery/librabbitmq
+:PyPI: http://pypi.python.org/pypi/librabbitmq
+
+celerymon
+---------
+
+Celery monitor web-service.
+
+:git: https://github.com/celery/celerymon
+:PyPI: http://pypi.python.org/pypi/celerymon
+
+django-celery
+-------------
+
+Django <-> Celery Integration.
+
+:git: https://github.com/celery/django-celery
+:PyPI: http://pypi.python.org/pypi/django-celery
+:docs: http://docs.celeryproject.org/en/latest/django
+
+cl
+--
+
+Actor framework.
+
+:git: https://github.com/celery/cl
+:PyPI: http://pypi.python.org/pypi/cl
+
+cyme
+----
+
+Distributed Celery Instance manager.
+
+:git: https://github.com/celery/cyme
+:PyPI: http://pypi.python.org/pypi/cyme
+:docs: http://cyme.readthedocs.org/
+
+
+Deprecated
+----------
+
+- Flask-Celery
+
+:git: https://github.com/ask/Flask-Celery
+:PyPI: http://pypi.python.org/pypi/Flask-Celery
+
+- carrot
+
+:git: https://github.com/ask/carrot
+:PyPI: http://pypi.python.org/pypi/carrot
+
+- ghettoq
+
+:git: https://github.com/ask/ghettoq
+:PyPI: http://pypi.python.org/pypi/ghettoq
+
+- kombu-sqlalchemy
+
+:git: https://github.com/ask/kombu-sqlalchemy
+:PyPI: http://pypi.python.org/pypi/kombu-sqlalchemy
+
+- django-kombu
+
+:git: https://github.com/ask/django-kombu
+:PyPI: http://pypi.python.org/pypi/django-kombu
+
+- pylibrabbitmq
+
+Old name for :mod:`librabbitmq`.
+
+:git: :const:`None`
+:PyPI: http://pypi.python.org/pypi/pylibrabbitmq
+
 .. _release-procedure:
+
 
 Release Procedure
 =================

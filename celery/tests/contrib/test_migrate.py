@@ -10,7 +10,7 @@ from celery.contrib.migrate import (
     migrate_task,
     migrate_tasks,
 )
-from celery.utils.encoding import bytes_t
+from celery.utils.encoding import bytes_t, ensure_bytes
 from celery.tests.utils import AppCase, Case, Mock
 
 
@@ -71,9 +71,9 @@ class test_migrate_tasks(AppCase):
         migrate_tasks(x, y)
 
         yq = q(y.default_channel)
-        self.assertEqual(yq.get().body, "foo")
-        self.assertEqual(yq.get().body, "bar")
-        self.assertEqual(yq.get().body, "baz")
+        self.assertEqual(yq.get().body, ensure_bytes("foo"))
+        self.assertEqual(yq.get().body, ensure_bytes("bar"))
+        self.assertEqual(yq.get().body, ensure_bytes("baz"))
 
         Producer(x).publish("foo", exchange=name, routing_key=name)
         callback = Mock()

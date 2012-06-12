@@ -1,0 +1,90 @@
+Every contribution to Celery is as important to us,
+as every coin in the money bin is to Scrooge McDuck.
+
+Everyone who have ever contributed to Celery should be in
+this list, but in a recent policy change it has been decided
+that everyone must add themselves here, and not be added
+by others, so it's currently incomplete, waiting for everyone
+to add their names.
+
+The full list of authors can be found in docs/AUTHORS.txt.
+
+--
+
+Contributor offers to license certain software (a “Contribution” or multiple
+“Contributions”) to Celery, and Celery agrees to accept said Contributions,
+under the terms of the BSD open source license.
+Contributor understands and agrees that Celery shall have the irrevocable and perpetual right to make
+and distribute copies of any Contribution, as well as to create and distribute collective works and
+derivative works of any Contribution, under the BSD License.
+
+Contributors
+------------
+
+Ask Solem, 2012/06/07
+Sean O'Connor, 2012/06/07
+Patrick Altman, 2012/06/07
+Chris St. Pierre, 2012/06/07
+Jeff Terrace, 2012/06/07
+Mark Lavin, 2012/06/07
+Jesper Noehr, 2012/06/07
+Brad Jasper, 2012/06/07
+Juan Catalano, 2012/06/07
+Luke Zapart, 2012/06/07
+Roger Hu, 2012/06/07
+Honza Král, 2012/06/07
+Aaron Elliot Ross, 2012/06/07
+Alec Clowes, 2012/06/07
+Daniel Watkins, 2012/06/07
+Timo Sugliani, 2012/06/07
+Yury V. Zaytsev, 2012/06/7
+Marcin Kuźmiński, 2012/06/07
+Norman Richards, 2012/06/07
+Kevin Tran, 2012/06/07
+David Arthur, 2012/06/07
+Bryan Berg, 2012/06/07
+Mikhail Korobov, 2012/06/07
+Jerzy Kozera, 2012/06/07
+Ben Firshman, 2012/06/07
+Jannis Leidel, 2012/06/07
+Chris Rose, 2012/06/07
+Julien Poissonnier, 2012/06/07
+Łukasz Oleś, 2012/06/07
+David Strauss, 2012/06/07
+Chris Streeter, 2012/06/07
+Thomas Johansson, 2012/06/07
+Ales Zoulek, 2012/06/07
+Clay Gerrard, 2012/06/07
+Matt Williamson, 2012/06/07
+Travis Swicegood, 2012/06/07
+Jeff Balogh, 2012/06/07
+Harm Verhagen, 2012/06/07
+Wes Winham, 2012/06/07
+David Cramer, 2012/06/07
+Steeve Morin, 2012/06/07
+Mher Movsisyan, 2012/06/08
+Chris Peplin, 2012/06/07
+Florian Apolloner, 2012/06/07
+Juarez Bochi, 2012/06/07
+Christopher Angove, 2012/06/07
+Jason Pellerin, 2012/06/07
+Miguel Hernandez Martos, 2012/06/07
+Neil Chintomby, 2012/06/07
+Mauro Rocco, 2012/06/07
+Ionut Turturica, 2012/06/07
+Adriano Petrich, 2012/06/07
+Michael Elsdörfer, 2012/06/07
+Kornelijus Survila, 2012/06/07
+Stefán Kjartansson, 2012/06/07
+Keith Perkins, 2012/06/07
+Flavio Percoco, 2012/06/07
+Wes Turner, 2012/06/07
+Vitaly Babiy, 2012/06/07
+Tayfun Sen, 2012/06/08
+Gert Van Gool, 2012/06/08
+Akira Matsuzaki, 2012/06/08
+Simon Josi, 2012/06/08
+Sam Cooke, 2012/06/08
+Frederic Junod, 2012/06/08
+Roberto Gaiser, 2012/06/08
+Piotr Sikora, 2012/06/08

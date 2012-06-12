@@ -157,10 +157,10 @@ else:
 
 ############## format(int, ',d') ##########################
 
-if sys.version_info >= (2, 7):
+if sys.version_info >= (2, 7):  # pragma: no cover
     def format_d(i):
         return format(i, ',d')
-else:
+else:  # pragma: no cover
     def format_d(i):  # noqa
         s = '%d' % i
         groups = []

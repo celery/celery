@@ -28,8 +28,8 @@ from kombu.utils import kwdict
 
 from celery import current_app
 from celery import states, signals
-from celery.state import _task_stack
-from celery.app.task import BaseTask, Context
+from celery.state import _task_stack, default_app
+from celery.app.task import Task as BaseTask, Context
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import RetryTaskError
 from celery.utils.serialization import get_pickleable_exception
@@ -48,6 +48,8 @@ SUCCESS = states.SUCCESS
 RETRY = states.RETRY
 FAILURE = states.FAILURE
 EXCEPTION_STATES = states.EXCEPTION_STATES
+
+_tasks = default_app._tasks
 
 
 def mro_lookup(cls, attr, stop=()):
@@ -128,30 +130,6 @@ class TraceInfo(object):
             del(tb)
 
 
-def execute_bare(task, uuid, args, kwargs, request=None, Info=TraceInfo):
-    R = I = None
-    kwargs = kwdict(kwargs)
-    try:
-        try:
-            R = retval = task(*args, **kwargs)
-            state = SUCCESS
-        except Exception, exc:
-            I = Info(FAILURE, exc)
-            state, retval = I.state, I.retval
-            R = I.handle_error_state(task)
-        except BaseException, exc:
-            raise
-        except:  # pragma: no cover
-            # For Python2.5 where raising strings are still allowed
-            # (but deprecated)
-            I = Info(FAILURE, None)
-            state, retval = I.state, I.retval
-            R = I.handle_error_state(task)
-    except Exception, exc:
-        R = report_internal_error(task, exc)
-    return R
-
-
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         Info=TraceInfo, eager=False, propagate=False):
     # If the task doesn't define a custom __call__ method
@@ -185,6 +163,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     request_stack = task.request_stack
     push_request = request_stack.push
     pop_request = request_stack.pop
+    push_task = _task_stack.push
+    pop_task = _task_stack.pop
     on_chord_part_return = backend.on_chord_part_return
 
     from celery import canvas
@@ -194,7 +174,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         R = I = None
         kwargs = kwdict(kwargs)
         try:
-            _task_stack.push(task)
+            push_task(task)
             task_request = Context(request or {}, args=args,
                                    called_directly=False, kwargs=kwargs)
             push_request(task_request)
@@ -237,12 +217,12 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     [subtask(errback).apply_async((uuid, ))
                         for errback in task_request.errbacks or []]
                 else:
-                    if publish_result:
-                        store_result(uuid, retval, SUCCESS)
                     # callback tasks must be applied before the result is
                     # stored, so that result.children is populated.
                     [subtask(callback).apply_async((retval, ))
                         for callback in task_request.callbacks or []]
+                    if publish_result:
+                        store_result(uuid, retval, SUCCESS)
                     if task_on_success:
                         task_on_success(retval, uuid, args, kwargs)
                     if success_receivers:
@@ -258,7 +238,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                  args=args, kwargs=kwargs,
                                  retval=retval, state=state)
             finally:
-                _task_stack.pop()
+                pop_task()
                 pop_request()
                 if not eager:
                     try:
@@ -278,13 +258,17 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     return trace_task
 
 
-def trace_task(task, uuid, args, kwargs, request=None, **opts):
+def trace_task(task, uuid, args, kwargs, request={}, **opts):
     try:
-        if task.__tracer__ is None:
-            task.__tracer__ = build_tracer(task.name, task, **opts)
-        return task.__tracer__(uuid, args, kwargs, request)
+        if task.__trace__ is None:
+            task.__trace__ = build_tracer(task.name, task, **opts)
+        return task.__trace__(uuid, args, kwargs, request)[0]
     except Exception, exc:
-        return report_internal_error(task, exc), None
+        return report_internal_error(task, exc)
+
+
+def trace_task_ret(task, uuid, args, kwargs, request={}):
+    return _tasks[task].__trace__(uuid, args, kwargs, request)[0]
 
 
 def eager_trace_task(task, uuid, args, kwargs, request=None, **opts):

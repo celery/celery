@@ -2,7 +2,7 @@ from celery.task import task
 from eventlet.green import urllib2
 
 
-@task
+@task()
 def urlopen(url):
     print("Opening: %r" % (url, ))
     try:

@@ -5,11 +5,11 @@ import os
 import platform
 import signal as _signal
 
-
 from celery import platforms
 from celery import signals
-from celery.app import app_or_default
+from celery.state import set_default_app
 from celery.concurrency.base import BasePool
+from celery.task import trace
 from billiard.pool import Pool, RUN, CLOSE
 
 if platform.system() == "Windows":  # pragma: no cover
@@ -33,11 +33,12 @@ WORKER_SIGIGNORE = frozenset(["SIGINT"])
 
 def process_initializer(app, hostname):
     """Initializes the process so it can be used to process tasks."""
-    app = app_or_default(app)
     app.set_current()
+    set_default_app(app)
+    trace._tasks = app._tasks  # make sure this optimization is set.
     platforms.signals.reset(*WORKER_SIGRESET)
     platforms.signals.ignore(*WORKER_SIGIGNORE)
-    platforms.set_mp_process_title("celeryd", hostname=hostname)
+    platforms.set_mp_process_title("celery", hostname=hostname)
     # This is for Windows and other platforms not supporting
     # fork(). Note that init_worker makes sure it's only
     # run once per process.
@@ -48,6 +49,10 @@ def process_initializer(app, hostname):
     app.loader.init_worker()
     app.loader.init_worker_process()
     app.finalize()
+
+    from celery.task.trace import build_tracer
+    for name, task in app.tasks.iteritems():
+        task.__trace__ = build_tracer(name, task, app.loader, hostname)
     signals.worker_process_init.send(sender=None)
 
 

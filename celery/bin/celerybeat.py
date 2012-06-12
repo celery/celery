@@ -52,8 +52,6 @@ class BeatCommand(Command):
     doc = __doc__
     enable_config_from_cmdline = True
     supports_args = False
-    preload_options = (Command.preload_options
-                     + daemon_options(default_pidfile="celerybeat.pid"))
 
     def run(self, detach=False, logfile=None, pidfile=None, uid=None,
             gid=None, umask=None, working_directory=None, **kwargs):
@@ -82,7 +80,7 @@ class BeatCommand(Command):
             Option('--max-interval', type="float"),
             Option('-S', '--scheduler', dest="scheduler_cls"),
             Option('-l', '--loglevel', default=c.CELERYBEAT_LOG_LEVEL),
-        )
+        ) + daemon_options(default_pidfile="celerybeat.pid")
 
 
 def main():

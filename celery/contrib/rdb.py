@@ -11,9 +11,9 @@ Inspired by http://snippets.dzone.com/posts/show/7248
 .. code-block:: python
 
     from celery.contrib import rdb
-    from celery.task import task
+    from celery import task
 
-    @task
+    @task()
     def add(x, y):
         result = x + y
         rdb.set_trace()
@@ -31,7 +31,7 @@ Inspired by http://snippets.dzone.com/posts/show/7248
 
     Base port to bind to.  Default is 6899.
     The debugger will try to find an available port starting from the
-    base port.  The selected port will be logged by celeryd.
+    base port.  The selected port will be logged by the worker.
 
 :copyright: (c) 2009 - 2012 by Ask Solem.
 :license: BSD, see LICENSE for more details.

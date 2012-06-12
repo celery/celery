@@ -48,8 +48,6 @@ from celery.bin.base import Command, Option, daemon_options
 class EvCommand(Command):
     doc = __doc__
     supports_args = False
-    preload_options = (Command.preload_options
-                     + daemon_options(default_pidfile="celeryev.pid"))
 
     def run(self, dump=False, camera=None, frequency=1.0, maxrate=None,
             loglevel="INFO", logfile=None, prog_name="celeryev",
@@ -112,7 +110,7 @@ class EvCommand(Command):
             Option('-F', '--frequency', '--freq', type="float", default=1.0),
             Option('-r', '--maxrate'),
             Option('-l', '--loglevel', default="INFO"),
-        )
+        ) + daemon_options(default_pidfile="celeryev.pid")
 
 
 def main():

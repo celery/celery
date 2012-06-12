@@ -11,10 +11,8 @@ if sys.version_info < (2, 5):
 try:
     orig_path = sys.path[:]
     for path in (os.path.curdir, os.getcwd()):
-        try:
+        if path in sys.path:
             sys.path.remove(path)
-        except ValueError:
-            pass
     try:
         import celery.app
         import imp
@@ -25,8 +23,11 @@ try:
             print("  - removing %r package..." % task_path)
             try:
                 shutil.rmtree(os.path.abspath(task_path))
-            except Exception, exc:
-                sys.stderr.write("Couldn't remove %r: %r\n" % (task_path, exc))
+            except Exception:
+                sys.stderr.write("Couldn't remove %r: %r\n" % (
+                    task_path, sys.exc_info[1]))
+    except ImportError:
+        print("Upgrade: no old version found.")
     finally:
         sys.path[:] = orig_path
 except ImportError:
@@ -54,18 +55,11 @@ classes = """
     License :: OSI Approved :: BSD License
     Topic :: System :: Distributed Computing
     Topic :: Software Development :: Object Brokering
-    Intended Audience :: Developers
-    Intended Audience :: Information Technology
-    Intended Audience :: Science/Research
-    Environment :: No Input/Output (Daemon)
-    Environment :: Console
     Programming Language :: Python
     Programming Language :: Python :: 2
     Programming Language :: Python :: 2.5
     Programming Language :: Python :: 2.6
     Programming Language :: Python :: 2.7
-    Programming Language :: Python :: 3
-    Programming Language :: Python :: 3.2
     Programming Language :: Python :: Implementation :: CPython
     Programming Language :: Python :: Implementation :: PyPy
     Programming Language :: Python :: Implementation :: Jython
@@ -136,14 +130,13 @@ is_pypy = hasattr(sys, "pypy_version_info")
 
 
 def reqs(f):
-    return filter(None, [l.strip() for l in file(
+    return filter(None, [l.strip() for l in open(
         os.path.join(os.getcwd(), "requirements", f)).readlines()])
 
 install_requires = reqs("default-py3k.txt" if is_py3k else "default.txt")
 
 if is_jython:
     install_requires.extend(reqs("jython.txt"))
-
 if py_version[0:2] == (2, 6):
     install_requires.extend(reqs("py26.txt"))
 elif py_version[0:2] == (2, 5):

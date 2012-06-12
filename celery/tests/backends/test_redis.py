@@ -138,7 +138,7 @@ class test_RedisBackend(Case):
         self.assertEqual(b.expires, 60)
 
     def test_on_chord_apply(self):
-        self.Backend().on_chord_apply("setid", {},
+        self.Backend().on_chord_apply("group_id", {},
                                       result=map(AsyncResult, [1, 2, 3]))
 
     def test_mget(self):
@@ -151,7 +151,7 @@ class test_RedisBackend(Case):
         b.expires = None
         b.set("foo", "bar")
 
-    @patch("celery.result.TaskSetResult")
+    @patch("celery.result.GroupResult")
     def test_on_chord_part_return(self, setresult):
         b = self.MockBackend()
         deps = Mock()
@@ -163,7 +163,7 @@ class test_RedisBackend(Case):
         try:
             current_app.tasks["foobarbaz"] = task
             task.request.chord = subtask(task)
-            task.request.taskset = "setid"
+            task.request.group = "group_id"
 
             b.on_chord_part_return(task)
             self.assertTrue(b.client.incr.call_count)

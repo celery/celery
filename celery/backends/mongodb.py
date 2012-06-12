@@ -131,18 +131,18 @@ class MongoBackend(BaseDictBackend):
 
         return meta
 
-    def _save_taskset(self, taskset_id, result):
-        """Save the taskset result."""
-        meta = {"_id": taskset_id,
+    def _save_group(self, group_id, result):
+        """Save the group result."""
+        meta = {"_id": group_id,
                 "result": Binary(self.encode(result)),
                 "date_done": datetime.utcnow()}
         self.collection.save(meta, safe=True)
 
         return result
 
-    def _restore_taskset(self, taskset_id):
-        """Get the result for a taskset by id."""
-        obj = self.collection.find_one({"_id": taskset_id})
+    def _restore_group(self, group_id):
+        """Get the result for a group by id."""
+        obj = self.collection.find_one({"_id": group_id})
         if not obj:
             return
 
@@ -154,9 +154,9 @@ class MongoBackend(BaseDictBackend):
 
         return meta
 
-    def _delete_taskset(self, taskset_id):
-        """Delete a taskset by id."""
-        self.collection.remove({"_id": taskset_id})
+    def _delete_group(self, group_id):
+        """Delete a group by id."""
+        self.collection.remove({"_id": group_id})
 
     def _forget(self, task_id):
         """

@@ -1,16 +1,8 @@
 import atexit
 import os
 
-BROKER_TRANSPORT = (os.environ.get("BROKER_TRANSPORT") or
-                    os.environ.get("BROKER_BACKEND") or "amqplib")
-
-BROKER_HOST = os.environ.get("BROKER_HOST") or "localhost"
-BROKER_USER = os.environ.get("BROKER_USER") or "guest"
-BROKER_PASSWORD = os.environ.get("BROKER_PASSWORD") or "guest"
-BROKER_VHOST = os.environ.get("BROKER_VHOST") or "/"
-
-
-CELERY_RESULT_BACKEND = "amqp"
+BROKER_URL = os.environ.get("BROKER_URL") or "amqp://"
+CELERY_RESULT_BACKEND = "amqp://"
 CELERY_SEND_TASK_ERROR_EMAILS = False
 
 CELERY_DEFAULT_QUEUE = "testcelery"

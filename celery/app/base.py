@@ -27,7 +27,7 @@ from celery import platforms
 from celery.exceptions import AlwaysEagerIgnored
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
-from celery.state import _tls, get_current_app
+from celery.state import _task_stack, _tls, get_current_app
 from celery.utils.functional import first
 from celery.utils.imports import instantiate, symbol_by_name
 
@@ -223,7 +223,7 @@ class Celery(object):
         if producer:
             yield producer
         else:
-            with self.amqp.publisher_pool.acquire(block=True) as producer:
+            with self.amqp.producer_pool.acquire(block=True) as producer:
                 yield producer
 
     def with_default_connection(self, fun):
@@ -300,7 +300,7 @@ class Celery(object):
     def create_task_cls(self):
         """Creates a base task class using default configuration
         taken from this app."""
-        return self.subclass_with_self("celery.app.task:BaseTask", name="Task",
+        return self.subclass_with_self("celery.app.task:Task", name="Task",
                                        attribute="_app", abstract=True)
 
     def subclass_with_self(self, Class, name=None, attribute="app",
@@ -380,7 +380,11 @@ class Celery(object):
         return self.subclass_with_self("celery.result:AsyncResult")
 
     @cached_property
-    def TaskSetResult(self):
+    def GroupResult(self):
+        return self.subclass_with_self("celery.result:GroupResult")
+
+    @cached_property
+    def TaskSetResult(self):  # XXX compat
         return self.subclass_with_self("celery.result:TaskSetResult")
 
     @property
@@ -390,6 +394,10 @@ class Celery(object):
             self._pool = self.broker_connection().Pool(
                             limit=self.conf.BROKER_POOL_LIMIT)
         return self._pool
+
+    @property
+    def current_task(self):
+        return _task_stack.top
 
     @cached_property
     def amqp(self):

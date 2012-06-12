@@ -39,9 +39,7 @@ class WorkerComponent(StartStopComponent):
         w.mediator = None
 
     def include_if(self, w):
-        return ((not w.disable_rate_limits or
-                w.pool_cls.requires_mediator) and
-                    not w.use_eventloop)
+        return w.start_mediator
 
     def create(self, w):
         m = w.mediator = self.instantiate(w.mediator_cls, w.ready_queue,
@@ -85,4 +83,3 @@ class Mediator(bgThread):
                          extra={"data": {"id": task.id,
                                          "name": task.name,
                                          "hostname": task.hostname}})
-    move = body   # XXX compat

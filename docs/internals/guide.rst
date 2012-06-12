@@ -64,7 +64,7 @@ Naming
         Sometimes it makes sense to have a class mask as a function,
         and there is precedence for this in the stdlib (e.g.
         :class:`~contextlib.contextmanager`).  Celery examples include
-        :class:`~celery.task.sets.subtask`, :class:`~celery.task.chords.chord`,
+        :class:`~celery.subtask`, :class:`~celery.chord`,
         ``inspect``, :class:`~kombu.utils.functional.promise` and more..
 
 - Factory functions and methods must be `CamelCase` (excluding verbs):
@@ -191,7 +191,7 @@ Here's an example using Celery in single-mode:
 
     from .models import CeleryStats
 
-    @task
+    @task()
     def write_stats_to_db():
         stats = inspect().stats(timeout=1)
         for node_name, reply in stats:
@@ -205,7 +205,7 @@ and here's the same using Celery app objects:
     from .celery import celery
     from .models import CeleryStats
 
-    @celery.task
+    @celery.task()
     def write_stats_to_db():
         stats = celery.control.inspect().stats(timeout=1)
         for node_name, reply in stats:

@@ -105,14 +105,37 @@ class test_Command(AppCase):
 
     def test_with_cmdline_config(self):
         cmd = MockCommand()
-        cmd.enable_config_from_cmdline = True
-        cmd.namespace = "celeryd"
-        rest = cmd.setup_app_from_commandline(argv=[
-            "--loglevel=INFO", "--", "broker.host=broker.example.com",
-            ".prefetch_multiplier=100"])
-        self.assertEqual(cmd.app.conf.BROKER_HOST, "broker.example.com")
-        self.assertEqual(cmd.app.conf.CELERYD_PREFETCH_MULTIPLIER, 100)
-        self.assertListEqual(rest, ["--loglevel=INFO"])
+        try:
+            cmd.enable_config_from_cmdline = True
+            cmd.namespace = "celeryd"
+            rest = cmd.setup_app_from_commandline(argv=[
+                "--loglevel=INFO", "--",
+                "broker.url=amqp://broker.example.com",
+                ".prefetch_multiplier=100"])
+            self.assertEqual(cmd.app.conf.BROKER_URL,
+                             "amqp://broker.example.com")
+            self.assertEqual(cmd.app.conf.CELERYD_PREFETCH_MULTIPLIER, 100)
+            self.assertListEqual(rest, ["--loglevel=INFO"])
+        finally:
+            cmd.app.conf.BROKER_URL = "memory://"
+
+    def test_find_app(self):
+        cmd = MockCommand()
+        with patch("celery.bin.base.symbol_by_name") as sbn:
+            from types import ModuleType
+            x = ModuleType("proj")
+
+            def on_sbn(*args, **kwargs):
+
+                def after(*args, **kwargs):
+                    x.celery = "quick brown fox"
+                    x.__path__ = None
+                    return x
+                sbn.side_effect = after
+                return x
+            sbn.side_effect = on_sbn
+            x.__path__ = [True]
+            self.assertEqual(cmd.find_app("proj"), "quick brown fox")
 
     def test_parse_preload_options_shortopt(self):
         cmd = Command()

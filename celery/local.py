@@ -24,7 +24,10 @@ except ImportError:  # pragma: no cover
     try:
         from thread import get_ident  # noqa
     except ImportError:  # pragma: no cover
-        from dummy_thread import get_ident  # noqa
+        try:
+            from dummy_thread import get_ident  # noqa
+        except ImportError:  # pragma: no cover
+            from _thread import get_ident  # noqa
 
 
 def try_import(module, default=None):
@@ -345,6 +348,15 @@ class LocalStack(object):
             return stack[-1]
         else:
             return stack.pop()
+
+    @property
+    def stack(self):
+        """get_current_worker_task uses this to find
+        the original task that was executed by the worker."""
+        stack = getattr(self._local, 'stack', None)
+        if stack is not None:
+            return stack
+        return []
 
     @property
     def top(self):

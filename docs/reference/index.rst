@@ -20,12 +20,12 @@
     celery.app.utils
     celery.task
     celery.task.base
-    celery.task.sets
     celery.result
     celery.task.http
     celery.schedules
     celery.signals
     celery.security
+    celery.utils.debug
     celery.utils.mail
     celery.exceptions
     celery.loaders
@@ -37,6 +37,7 @@
     celery.contrib.batches
     celery.contrib.migrate
     celery.contrib.rdb
+    celery.contrib.methods
     celery.events
     celery.events.state
     celery.apps.worker

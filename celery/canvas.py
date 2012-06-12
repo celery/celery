@@ -99,9 +99,9 @@ class Signature(dict):
                                    subtask_type=subtask_type,
                                    immutable=immutable)
 
-    def delay(self, *argmerge, **kwmerge):
-        """Shortcut to `apply_async(argmerge, kwargs)`."""
-        return self.apply_async(args=argmerge, kwargs=kwmerge)
+    def __call__(self, *partial_args, **partial_kwargs):
+        return self.apply_async(partial_args, partial_kwargs)
+    delay = __call__
 
     def apply(self, args=(), kwargs={}, **options):
         """Apply this task locally."""
@@ -333,7 +333,7 @@ class chord(Signature):
         _chord = self.Chord
         self.kwargs["body"] = body or self.kwargs["body"]
         if _chord.app.conf.CELERY_ALWAYS_EAGER:
-            return _chord.apply((), self.kwargs)
+            return self.apply((), {}, **options)
         callback_id = body.options.setdefault("task_id", uuid())
         _chord(**self.kwargs)
         return _chord.AsyncResult(callback_id)

@@ -9,38 +9,42 @@
     :license: BSD, see LICENSE for more details.
 
 """
-
 from __future__ import absolute_import
+from __future__ import with_statement
 
-import logging
+import os
 import sys
 
-from kombu import Exchange
 from kombu.utils import cached_property
 
 from celery import current_app
 from celery import states
 from celery.__compat__ import class_property
-from celery.state import get_current_task
+from celery.state import get_current_worker_task, _task_stack
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
-from celery.local import LocalStack
 from celery.result import EagerResult
 from celery.utils import fun_takes_kwargs, uuid, maybe_reraise
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
-from celery.utils.log import get_logger
+from celery.utils.log import get_task_logger
 from celery.utils.mail import ErrorMail
 
 from .annotations import resolve_all as resolve_all_annotations
 from .registry import _unpickle_task
 
-#: extracts options related to publishing a message from a dict.
-extract_exec_options = mattrgetter("queue", "routing_key",
-                                   "exchange", "immediate",
-                                   "mandatory", "priority",
-                                   "serializer", "delivery_mode",
-                                   "compression", "expires", "bare")
+#: extracts attributes related to publishing a message from an object.
+extract_exec_options = mattrgetter(
+    "queue", "routing_key", "exchange",
+    "immediate", "mandatory", "priority", "expires",
+    "serializer", "delivery_mode", "compression",
+)
+
+#: Billiard sets this when execv is enabled.
+#: We use it to find out the name of the original ``__main__``
+#: module, so that we can properly rewrite the name of the
+#: task to be that of ``App.main``.
+MP_MAIN_FILE = os.environ.get("MP_MAIN_FILE") or None
 
 
 class Context(object):
@@ -54,7 +58,8 @@ class Context(object):
     retries = 0
     is_eager = False
     delivery_info = None
-    taskset = None
+    taskset = None   # compat alias to group
+    group = None
     chord = None
     called_directly = True
     callbacks = None
@@ -129,6 +134,13 @@ class TaskType(type):
         # with the framework.  There should only be one class for each task
         # name, so we always return the registered version.
         tasks = app._tasks
+
+        # - If the task module is used as the __main__ script
+        # - we need to rewrite the module part of the task name
+        # - to match App.main.
+        if MP_MAIN_FILE and sys.modules[task_module].__file__ == MP_MAIN_FILE:
+            # - see comment about :envvar:`MP_MAIN_FILE` above.
+            task_module = "__main__"
         if autoname and task_module == "__main__" and app.main:
             attrs["name"] = '.'.join([app.main, name])
 
@@ -145,7 +157,7 @@ class TaskType(type):
         return "<unbound %s>" % (cls.__name__, )
 
 
-class BaseTask(object):
+class Task(object):
     """Task base class.
 
     When called tasks apply the :meth:`run` method.  This method must
@@ -154,7 +166,7 @@ class BaseTask(object):
 
     """
     __metaclass__ = TaskType
-    __tracer__ = None
+    __trace__ = None
 
     ErrorMail = ErrorMail
     MaxRetriesExceededError = MaxRetriesExceededError
@@ -176,37 +188,7 @@ class BaseTask(object):
 
     #: If disabled the worker will not forward magic keyword arguments.
     #: Deprecated and scheduled for removal in v3.0.
-    accept_magic_kwargs = False
-
-    #: Destination queue.  The queue needs to exist
-    #: in :setting:`CELERY_QUEUES`.  The `routing_key`, `exchange` and
-    #: `exchange_type` attributes will be ignored if this is set.
-    queue = None
-
-    #: Overrides the apps default `routing_key` for this task.
-    routing_key = None
-
-    #: Overrides the apps default `exchange` for this task.
-    exchange = None
-
-    #: Overrides the apps default exchange type for this task.
-    exchange_type = None
-
-    #: Override the apps default delivery mode for this task.  Default is
-    #: `"persistent"`, but you can change this to `"transient"`, which means
-    #: messages will be lost if the broker is restarted.  Consult your broker
-    #: manual for any additional delivery modes.
-    delivery_mode = None
-
-    #: Mandatory message routing.
-    mandatory = False
-
-    #: Request immediate delivery.
-    immediate = False
-
-    #: Default message priority.  A number between 0 to 9, where 0 is the
-    #: highest.  Note that RabbitMQ does not support priorities.
-    priority = None
+    accept_magic_kwargs = None
 
     #: Maximum number of retries before giving up.  If set to :const:`None`,
     #: it will **never** stop retrying.
@@ -233,10 +215,6 @@ class BaseTask(object):
     #: If enabled an email will be sent to :setting:`ADMINS` whenever a task
     #: of this type fails.
     send_error_emails = False
-    disable_error_emails = False                            # FIXME
-
-    #: List of exception types to send error emails for.
-    error_whitelist = ()
 
     #: The name of a serializer that are registered with
     #: :mod:`kombu.serialization.registry`.  Default is `"pickle"`.
@@ -284,16 +262,10 @@ class BaseTask(object):
     #: Default task expiry time.
     expires = None
 
-    #: The type of task *(no longer used)*.
-    type = "regular"
-
     __bound__ = False
 
     from_config = (
-        ("exchange_type", "CELERY_DEFAULT_EXCHANGE_TYPE"),
-        ("delivery_mode", "CELERY_DEFAULT_DELIVERY_MODE"),
         ("send_error_emails", "CELERY_SEND_TASK_ERROR_EMAILS"),
-        ("error_whitelist", "CELERY_TASK_ERROR_WHITELIST"),
         ("serializer", "CELERY_TASK_SERIALIZER"),
         ("rate_limit", "CELERY_DEFAULT_RATE_LIMIT"),
         ("track_started", "CELERY_TRACK_STARTED"),
@@ -327,6 +299,7 @@ class BaseTask(object):
         if not was_bound:
             self.annotate()
 
+        from celery.utils.threads import LocalStack
         self.request_stack = LocalStack()
         self.request_stack.push(Context())
 
@@ -369,7 +342,13 @@ class BaseTask(object):
         setattr(self, attr, meth)
 
     def __call__(self, *args, **kwargs):
-        return self.run(*args, **kwargs)
+        _task_stack.push(self)
+        self.push_request()
+        try:
+            return self.run(*args, **kwargs)
+        finally:
+            self.pop_request()
+            _task_stack.pop()
 
     # - tasks are pickled into the name of the task only, and the reciever
     # - simply grabs it from the local registry.
@@ -382,65 +361,6 @@ class BaseTask(object):
 
     def start_strategy(self, app, consumer):
         return instantiate(self.Strategy, self, app, consumer)
-
-    def get_logger(self, **kwargs):
-        """Get task-aware logger object."""
-        logger = get_logger(self.name)
-        if logger.parent is logging.root:
-            logger.parent = get_logger("celery.task")
-        return logger
-
-    def establish_connection(self, connect_timeout=None):
-        """Establish a connection to the message broker."""
-        return self._get_app().broker_connection(
-                connect_timeout=connect_timeout)
-
-    def get_publisher(self, connection=None, exchange=None,
-            connect_timeout=None, exchange_type=None, **options):
-        """Get a celery task message publisher.
-
-        :rtype :class:`~celery.app.amqp.TaskProducer`:
-
-        .. warning::
-
-            If you don't specify a connection, one will automatically
-            be established for you, in that case you need to close this
-            connection after use::
-
-                >>> publisher = self.get_publisher()
-                >>> # ... do something with publisher
-                >>> publisher.connection.close()
-
-        """
-        exchange = self.exchange if exchange is None else exchange
-        if exchange_type is None:
-            exchange_type = self.exchange_type
-        connection = connection or self.establish_connection(connect_timeout)
-        return self._get_app().amqp.TaskProducer(connection,
-                exchange=exchange and Exchange(exchange, exchange_type),
-                routing_key=self.routing_key, **options)
-
-    def get_consumer(self, connection=None, queues=None, **kwargs):
-        """Get message consumer.
-
-        :rtype :class:`kombu.messaging.Consumer`:
-
-        .. warning::
-
-            If you don't specify a connection, one will automatically
-            be established for you, in that case you need to close this
-            connection after use::
-
-                >>> consumer = self.get_consumer()
-                >>> # do something with consumer
-                >>> consumer.close()
-                >>> consumer.connection.close()
-
-        """
-        app = self._get_app()
-        connection = connection or self.establish_connection()
-        return app.amqp.TaskConsumer(connection,
-            queues or app.amqp.queue_or_default(self.queue), **kwargs)
 
     def delay(self, *args, **kwargs):
         """Star argument version of :meth:`apply_async`.
@@ -456,8 +376,9 @@ class BaseTask(object):
         return self.apply_async(args, kwargs)
 
     def apply_async(self, args=None, kwargs=None,
-            task_id=None, publisher=None, connection=None,
-            router=None, link=None, link_error=None, **options):
+            task_id=None, producer=None, connection=None, router=None,
+            link=None, link_error=None, publisher=None, add_to_parent=True,
+            **options):
         """Apply tasks asynchronously by sending a message.
 
         :keyword args: The positional arguments to pass on to the
@@ -490,7 +411,7 @@ class BaseTask(object):
                         in the event of connection loss or failure.  Default
                         is taken from the :setting:`CELERY_TASK_PUBLISH_RETRY`
                         setting.  Note you need to handle the
-                        publisher/connection manually for this to work.
+                        producer/connection manually for this to work.
 
         :keyword retry_policy:  Override the retry policy used.  See the
                                 :setting:`CELERY_TASK_PUBLISH_RETRY` setting.
@@ -539,11 +460,19 @@ class BaseTask(object):
         :keyword link_error: A single, or a list of subtasks to apply
                       if an error occurs while executing the task.
 
+        :keyword producer: :class:~@amqp.TaskProducer` instance to use.
+        :keyword add_to_parent: If set to True (default) and the task
+            is applied while executing another task, then the result
+            will be appended to the parent tasks ``request.children``
+            attribute.
+        :keyword publisher: Deprecated alias to ``producer``.
+
         .. note::
             If the :setting:`CELERY_ALWAYS_EAGER` setting is set, it will
             be replaced by a local :func:`apply` call instead.
 
         """
+        producer = producer or publisher
         app = self._get_app()
         router = router or self.app.amqp.router
         conf = app.conf
@@ -558,28 +487,24 @@ class BaseTask(object):
         options = router.route(options, self.name, args, kwargs)
 
         if connection:
-            publisher = app.amqp.TaskProducer(connection)
-        publish = publisher or app.amqp.publisher_pool.acquire(block=True)
-        evd = None
-        if conf.CELERY_SEND_TASK_SENT_EVENT:
-            evd = app.events.Dispatcher(channel=publish.channel,
-                                        buffer_while_offline=False)
+            producer = app.amqp.TaskProducer(connection)
+        with app.default_producer(producer) as P:
+            evd = None
+            if conf.CELERY_SEND_TASK_SENT_EVENT:
+                evd = app.events.Dispatcher(channel=P.channel,
+                                            buffer_while_offline=False)
 
-        try:
-            task_id = publish.delay_task(self.name, args, kwargs,
-                                         task_id=task_id,
-                                         event_dispatcher=evd,
-                                         callbacks=maybe_list(link),
-                                         errbacks=maybe_list(link_error),
-                                         **options)
-        finally:
-            if not publisher:
-                publish.release()
-
+            task_id = P.delay_task(self.name, args, kwargs,
+                                   task_id=task_id,
+                                   event_dispatcher=evd,
+                                   callbacks=maybe_list(link),
+                                   errbacks=maybe_list(link_error),
+                                   **options)
         result = self.AsyncResult(task_id)
-        parent = get_current_task()
-        if parent:
-            parent.request.children.append(result)
+        if add_to_parent:
+            parent = get_current_worker_task()
+            if parent:
+                parent.request.children.append(result)
         return result
 
     def retry(self, args=None, kwargs=None, exc=None, throw=True,
@@ -613,7 +538,7 @@ class BaseTask(object):
 
         .. code-block:: python
 
-            >>> @task
+            >>> @task()
             >>> def tweet(auth, message):
             ...     twitter = Twitter(oauth=auth)
             ...     try:
@@ -682,7 +607,7 @@ class BaseTask(object):
         :rtype :class:`celery.result.EagerResult`:
 
         """
-        # trace imports BaseTask, so need to import inline.
+        # trace imports Task, so need to import inline.
         from celery.task.trace import eager_trace_task
 
         app = self._get_app()
@@ -849,7 +774,8 @@ class BaseTask(object):
         pass
 
     def send_error_email(self, context, exc, **kwargs):
-        if self.send_error_emails and not self.disable_error_emails:
+        if self.send_error_emails and \
+                not getattr(self, "disable_error_emails", None):
             self.ErrorMail(self, **kwargs).send(context, exc)
 
     def execute(self, request, pool, loglevel, logfile, **kwargs):
@@ -875,9 +801,10 @@ class BaseTask(object):
         """`repr(task)`"""
         return "<@task: %s>" % (self.name, )
 
-    @cached_property
-    def logger(self):
-        return self.get_logger()
+    def _get_logger(self, **kwargs):
+        """Get task-aware logger object."""
+        return get_task_logger(self.name)
+    logger = cached_property(_get_logger)
 
     @property
     def request(self):
@@ -886,3 +813,4 @@ class BaseTask(object):
     @property
     def __name__(self):
         return self.__class__.__name__
+BaseTask = Task  # compat alias

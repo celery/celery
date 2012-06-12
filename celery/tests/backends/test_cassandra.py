@@ -16,6 +16,31 @@ class Object(object):
     pass
 
 
+def install_exceptions(mod):
+    # py3k: cannot catch exceptions not ineheriting from BaseException.
+
+    class NotFoundException(Exception):
+        pass
+
+    class TException(Exception):
+        pass
+
+    class InvalidRequestException(Exception):
+        pass
+
+    class UnavailableException(Exception):
+        pass
+
+    class TimedOutException(Exception):
+        pass
+
+    mod.NotFoundException = NotFoundException
+    mod.TException = TException
+    mod.InvalidRequestException = InvalidRequestException
+    mod.TimedOutException = TimedOutException
+    mod.UnavailableException = UnavailableException
+
+
 class test_CassandraBackend(AppCase):
 
     def test_init_no_pycassa(self):
@@ -39,6 +64,7 @@ class test_CassandraBackend(AppCase):
         with mock_module("pycassa"):
             from celery.backends import cassandra as mod
             mod.pycassa = Mock()
+            install_exceptions(mod.pycassa)
             cons = mod.pycassa.ConsistencyLevel = Object()
             cons.LOCAL_QUORUM = "foo"
 
@@ -65,7 +91,9 @@ class test_CassandraBackend(AppCase):
         with mock_module("pycassa"):
             from celery.backends import cassandra as mod
             mod.pycassa = Mock()
+            install_exceptions(mod.pycassa)
             mod.Thrift = Mock()
+            install_exceptions(mod.Thrift)
             app = self.get_app()
             x = mod.CassandraBackend(app=app)
             Get_Column = x._get_column_family = Mock()
@@ -120,7 +148,9 @@ class test_CassandraBackend(AppCase):
         with mock_module("pycassa"):
             from celery.backends import cassandra as mod
             mod.pycassa = Mock()
+            install_exceptions(mod.pycassa)
             mod.Thrift = Mock()
+            install_exceptions(mod.Thrift)
             app = self.get_app()
             x = mod.CassandraBackend(app=app)
             Get_Column = x._get_column_family = Mock()
@@ -150,6 +180,7 @@ class test_CassandraBackend(AppCase):
         with mock_module("pycassa"):
             from celery.backends import cassandra as mod
             mod.pycassa = Mock()
+            install_exceptions(mod.pycassa)
             app = self.get_app()
             x = mod.CassandraBackend(app=app)
             self.assertTrue(x._get_column_family())

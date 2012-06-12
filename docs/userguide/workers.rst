@@ -1,4 +1,4 @@
-.. _guide-worker:
+.. _guide-workers:
 
 ===============
  Workers Guide
@@ -6,32 +6,35 @@
 
 .. contents::
     :local:
+    :depth: 1
 
 .. _worker-starting:
 
 Starting the worker
 ===================
 
-You can start celeryd to run in the foreground by executing the command::
+.. sidebar:: Daemonizing
 
-    $ celeryd --loglevel=INFO
+    You probably want to use a daemonization tool to start
+    in the background.  See :ref:`daemonizing` for help
+    detaching the worker using popular daemonization tools.
 
-You probably want to use a daemonization tool to start
-`celeryd` in the background.  See :ref:`daemonizing` for help
-using `celeryd` with popular daemonization tools.
+You can start the worker in the foreground by executing the command::
+
+    $ celery worker --loglevel=INFO --app=app
 
 For a full list of available command line options see
 :mod:`~celery.bin.celeryd`, or simply do::
 
-    $ celeryd --help
+    $ celery worker --help
 
 You can also start multiple workers on the same machine. If you do so
 be sure to give a unique name to each individual worker by specifying a
 host name with the :option:`--hostname|-n` argument::
 
-    $ celeryd --loglevel=INFO --concurrency=10 -n worker1.example.com
-    $ celeryd --loglevel=INFO --concurrency=10 -n worker2.example.com
-    $ celeryd --loglevel=INFO --concurrency=10 -n worker3.example.com
+    $ celery worker --loglevel=INFO --concurrency=10 -n worker1.example.com
+    $ celery worker --loglevel=INFO --concurrency=10 -n worker2.example.com
+    $ celery worker --loglevel=INFO --concurrency=10 -n worker3.example.com
 
 .. _worker-stopping:
 
@@ -55,7 +58,7 @@ Also as processes can't override the :sig:`KILL` signal, the worker will
 not be able to reap its children, so make sure to do so manually.  This
 command usually does the trick::
 
-    $ ps auxww | grep celeryd | awk '{print $2}' | xargs kill -9
+    $ ps auxww | grep 'celery worker' | awk '{print $2}' | xargs kill -9
 
 .. _worker-restarting:
 
@@ -72,11 +75,30 @@ arguments as it was started with.
 
 .. note::
 
-    This will only work if ``celeryd`` is running in the background as
-    a daemon (it does not have a controlling terminal).
+    Restarting by :sig:`HUP` only works if the worker is running
+    in the background as a daemon (it does not have a controlling
+    terminal).
 
-    Restarting by HUP is disabled on OS X because of a limitation on
+    :sig:`HUP` is disabled on OS X because of a limitation on
     that platform.
+
+
+.. _worker-process-signals:
+
+Process Signals
+===============
+
+The worker's main process overrides the following signals:
+
++--------------+-------------------------------------------------+
+| :sig:`TERM`  | Warm shutdown, wait for tasks to complete.      |
++--------------+-------------------------------------------------+
+| :sig:`QUIT`  | Cold shutdown, terminate ASAP                   |
++--------------+-------------------------------------------------+
+| :sig:`USR1`  | Dump traceback for all active threads.          |
++--------------+-------------------------------------------------+
+| :sig:`USR2`  | Remote debug, see :mod:`celery.contrib.rdb`.    |
++--------------+-------------------------------------------------+
 
 .. _worker-concurrency:
 
@@ -90,13 +112,13 @@ argument and defaults to the number of CPUs available on the machine.
 
 .. admonition:: Number of processes (multiprocessing)
 
-    More worker processes are usually better, but there's a cut-off point where
-    adding more processes affects performance in negative ways.
-    There is even some evidence to support that having multiple celeryd's running,
-    may perform better than having a single worker.  For example 3 celeryd's with
-    10 worker processes each.  You need to experiment to find the numbers that
-    works best for you, as this varies based on application, work load, task
-    run times and other factors.
+    More pool processes are usually better, but there's a cut-off point where
+    adding more pool processes affects performance in negative ways.
+    There is even some evidence to support that having multiple worker
+    instances running, may perform better than having a single worker.
+    For example 3 workers with 10 pool processes each.  You need to experiment
+    to find the numbers that works best for you, as this varies based on
+    application, work load, task run times and other factors.
 
 .. _worker-persistent-revokes:
 
@@ -117,12 +139,19 @@ transports at this point.
 
 .. _worker-time-limits:
 
-Time limits
+Time Limits
 ===========
 
 .. versionadded:: 2.0
 
-:supported pools: processes
+pool support: *processes*
+
+.. sidebar:: Soft, or hard?
+
+    The time limit is set in two values, `soft` and `hard`.
+    The soft time limit allows the task to catch an exception
+    to clean up before it is killed: the hard timeout is not catchable
+    and force terminates the task.
 
 A single task can potentially run forever, if you have lots of tasks
 waiting for some event that will never happen you will block the worker
@@ -140,7 +169,7 @@ time limit kills it:
     from myapp import celery
     from celery.exceptions import SoftTimeLimitExceeded
 
-    @celery.task
+    @celery.task()
     def mytask():
         try:
             do_work()
@@ -160,8 +189,10 @@ Changing time limits at runtime
 -------------------------------
 .. versionadded:: 2.3
 
-You can change the soft and hard time limits for a task by using the
-``time_limit`` remote control command.
+broker support: *amqp, redis, mongodb*
+
+There is a remote control command that enables you to change both soft
+and hard time limits for a task — named ``time_limit``.
 
 Example changing the time limit for the ``tasks.crawl_the_web`` task
 to have a soft time limit of one minute, and a hard time limit of
@@ -180,7 +211,7 @@ Max tasks per child setting
 
 .. versionadded:: 2.0
 
-:supported pools: processes
+pool support: *processes*
 
 With this option you can configure the maximum number of tasks
 a worker can execute before it's replaced by a new process.
@@ -188,19 +219,48 @@ a worker can execute before it's replaced by a new process.
 This is useful if you have memory leaks you have no control over
 for example from closed source C extensions.
 
-The option can be set using the `--maxtasksperchild` argument
-to `celeryd` or using the :setting:`CELERYD_MAX_TASKS_PER_CHILD` setting.
+The option can be set using the workers `--maxtasksperchild` argument
+or using the :setting:`CELERYD_MAX_TASKS_PER_CHILD` setting.
 
-.. _worker-autoreload:
+.. _worker-autoscaling:
+
+Autoscaling
+===========
+
+.. versionadded:: 2.2
+
+pool support: *processes*, *gevent*
+
+The *autoscaler* component is used to dynamically resize the pool
+based on load:
+
+- The autoscaler adds more pool processes when there is work to do,
+    - and starts removing processes when the workload is low.
+
+It's enabled by the :option:`--autoscale` option, which needs two
+numbers: the maximum and minumum number of pool processes::
+
+        --autoscale=AUTOSCALE
+             Enable autoscaling by providing
+             max_concurrency,min_concurrency.  Example:
+               --autoscale=10,3 (always keep 3 processes, but grow to
+              10 if necessary).
+
+You can also define your own rules for the autoscaler by subclassing
+:class:`~celery.worker.autoscaler.Autoscaler`.
+Some ideas for metrics include load average or the amount of memory available.
+You can specify a custom autoscaler with the :setting:`CELERYD_AUTOSCALER` setting.
+
+.. _worker-autoreloading:
 
 Autoreloading
 =============
 
 .. versionadded:: 2.5
 
-:supported pools: processes, eventlet, gevent, threads, solo
+pool support: *processes, eventlet, gevent, threads, solo*
 
-Starting :program:`celeryd` with the :option:`--autoreload` option will
+Starting :program:`celery worker` with the :option:`--autoreload` option will
 enable the worker to watch for file system changes to all imported task
 modules imported (and also any non-task modules added to the
 :setting:`CELERY_IMPORTS` setting or the :option:`-I|--include` option).
@@ -240,7 +300,7 @@ implementations:
 You can force an implementation by setting the :envvar:`CELERYD_FSNOTIFY`
 environment variable::
 
-    $ env CELERYD_FSNOTIFY=stat celeryd -l info --autoreload
+    $ env CELERYD_FSNOTIFY=stat celery worker -l info --autoreload
 
 .. _worker-remote-control:
 
@@ -249,8 +309,8 @@ Remote control
 
 .. versionadded:: 2.0
 
-:supported pools: processes, eventlet, gevent, blocking:threads/solo (see note)
-:supported transports: amqp, redis, mongodb
+pool support: *processes, eventlet, gevent*, blocking:*threads/solo* (see note)
+broker support: *amqp, redis, mongodb*
 
 Workers have the ability to be remote controlled using a high-priority
 broadcast message queue.  The commands can be directed to all, or a specific
@@ -272,7 +332,7 @@ to the number of destination hosts.
 
 .. seealso::
 
-    The :program:`celeryctl` program is used to execute remote control
+    The :program:`celery` program is used to execute remote control
     commands from the command line.  It supports all of the commands
     listed below.  See :ref:`monitoring-celeryctl` for more information.
 
@@ -421,15 +481,17 @@ Enable/disable events
 
 You can enable/disable events by using the `enable_events`,
 `disable_events` commands.  This is useful to temporarily monitor
-a worker using :program:`celeryev`/:program:`celerymon`.
+a worker using :program:`celery events`/:program:`celerymon`.
 
 .. code-block:: python
 
-    >>> celery.control.broadcast("enable_events")
-    >>> celery.control.broadcast("disable_events")
+    >>> celery.control.enable_events()
+    >>> celery.control.disable_events()
 
-Adding/Reloading modules
-------------------------
+.. _worker-autoreload:
+
+Autoreloading
+-------------
 
 .. versionadded:: 2.5
 

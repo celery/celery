@@ -93,7 +93,7 @@ class LRUCache(UserDict):
 
 
 def is_list(l):
-    return hasattr(l, "__iter__") and not isinstance(l, dict)
+    return hasattr(l, "__iter__") and not isinstance(l, (dict, basestring))
 
 
 def maybe_list(l):
@@ -255,6 +255,9 @@ class _regen(UserList, list):
     @cached_property
     def data(self):
         return list(self.__it)
+
+    def __iter__(self):  # needed for Python 2.5
+        return iter(self.data)
 
 
 def regen(it):

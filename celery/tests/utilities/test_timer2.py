@@ -33,6 +33,14 @@ class test_Entry(Case):
 
 class test_Schedule(Case):
 
+    def test_supports_Timer_interface(self):
+        x = timer2.Schedule()
+        x.stop()
+
+        tref = Mock()
+        x.cancel(tref)
+        tref.cancel.assert_called_with()
+
     def test_handle_error(self):
         from datetime import datetime
         mktime = timer2.mktime
@@ -150,3 +158,25 @@ class test_Timer(Case):
         t._is_shutdown.set()
         t.run()
         t._is_stopped.set.assert_called_with()
+
+    def test_to_timestamp(self):
+        self.assertIs(timer2.to_timestamp(3.13), 3.13)
+
+    def test_test_enter(self):
+        t = timer2.Timer()
+        t._do_enter = Mock()
+        e = Mock()
+        t.enter(e, 13, 0)
+        t._do_enter.assert_called_with("enter", e, 13, priority=0)
+
+    def test_test_enter_after(self):
+        t = timer2.Timer()
+        t._do_enter = Mock()
+        t.enter_after()
+        t._do_enter.assert_called_with("enter_after")
+
+    def test_cancel(self):
+        t = timer2.Timer()
+        tref = Mock()
+        t.cancel(tref)
+        tref.cancel.assert_called_with()

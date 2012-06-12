@@ -13,9 +13,9 @@ print("anyjson implementation: %r" % (anyjson.implementation.name, ))
 
 from celery import Celery, group
 
-DEFAULT_ITS = 20000
+DEFAULT_ITS = 40000
 
-BROKER_TRANSPORT = "librabbitmq"
+BROKER_TRANSPORT = os.environ.get("BROKER", "librabbitmq")
 if hasattr(sys, "pypy_version_info"):
     BROKER_TRANSPORT = "amqplib"
 

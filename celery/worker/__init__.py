@@ -33,6 +33,7 @@ from celery import platforms
 from celery.app import app_or_default, set_default_app
 from celery.app.abstract import configurated, from_config
 from celery.exceptions import SystemTerminate
+from celery.task import trace
 from celery.utils.functional import noop
 from celery.utils.imports import qualname, reload_from_cwd
 from celery.utils.log import get_logger
@@ -189,11 +190,13 @@ class Queues(abstract.Component):
     requires = ("ev", )
 
     def create(self, w):
+        w.start_mediator = True
         if not w.pool_cls.rlimit_safe:
             w.disable_rate_limits = True
         if w.disable_rate_limits:
             w.ready_queue = FastQueue()
             if w.use_eventloop:
+                w.start_mediator = False
                 if w.pool_putlocks and w.pool_cls.uses_semaphore:
                     w.ready_queue.put = w.process_task_sem
                 else:
@@ -201,6 +204,7 @@ class Queues(abstract.Component):
             elif not w.pool_cls.requires_mediator:
                 # just send task directly to pool, skip the mediator.
                 w.ready_queue.put = w.process_task
+                w.start_mediator = False
         else:
             w.ready_queue = TaskBucket(task_registry=w.app.tasks)
 
@@ -294,7 +298,6 @@ class WorkController(configurated):
     def __init__(self, loglevel=None, hostname=None, ready_callback=noop,
             queues=None, app=None, pidfile=None, **kwargs):
         self.app = app_or_default(app or self.app)
-
         # all new threads start without a current app, so if an app is not
         # passed on to the thread it will fall back to the "default app",
         # which then could be the wrong app.  So for the worker
@@ -302,6 +305,8 @@ class WorkController(configurated):
         # and means that only a single app can be used for workers
         # running in the same process.
         set_default_app(self.app)
+        self.app.finalize()
+        trace._tasks = self.app._tasks
 
         self._shutdown_complete = Event()
         self.setup_defaults(kwargs, namespace="celeryd")
@@ -353,7 +358,7 @@ class WorkController(configurated):
     def process_task(self, req):
         """Process task by sending it to the pool of workers."""
         try:
-            req.task.execute(req, self.pool, self.loglevel, self.logfile)
+            req.execute_using_pool(self.pool)
         except Exception, exc:
             logger.critical("Internal error: %r\n%s",
                             exc, traceback.format_exc(), exc_info=True)

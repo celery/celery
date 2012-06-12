@@ -2,8 +2,8 @@ from __future__ import absolute_import
 
 
 import celery
-from celery.app.task import BaseTask
-from celery.task.base import Task
+from celery.app.task import Task as ModernTask
+from celery.task.base import Task as CompatTask
 
 from celery.tests.utils import Case
 
@@ -11,19 +11,19 @@ from celery.tests.utils import Case
 class test_MagicModule(Case):
 
     def test_class_property_set_without_type(self):
-        self.assertTrue(BaseTask.__dict__["app"].__get__(Task()))
+        self.assertTrue(ModernTask.__dict__["app"].__get__(CompatTask()))
 
     def test_class_property_set_on_class(self):
-        self.assertIs(BaseTask.__dict__["app"].__set__(None, None),
-                      BaseTask.__dict__["app"])
+        self.assertIs(ModernTask.__dict__["app"].__set__(None, None),
+                      ModernTask.__dict__["app"])
 
     def test_class_property_set(self):
 
-        class X(Task):
+        class X(CompatTask):
             pass
 
         app = celery.Celery(set_as_current=False)
-        BaseTask.__dict__["app"].__set__(X(), app)
+        ModernTask.__dict__["app"].__set__(X(), app)
         self.assertEqual(X.app, app)
 
     def test_dir(self):

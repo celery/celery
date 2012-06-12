@@ -35,13 +35,14 @@ Christopher Peplin <peplin@bueda.com>
 Clay Gerrard
 Dan McGee <dan@archlinux.org>
 Daniel Hepper <daniel.hepper@gmail.com>
-Daniel Lundin <daniel.lundin@trioptima.com>
+Daniel Lundin
 Daniel Watkins <daniel@daniel-watkins.co.uk>
 David Arthur <mumrah@gmail.com>
 David Cramer <dcramer@gmail.com>
 David Miller <il.livid.dream@gmail.com>
 David Strauss <david@davidstrauss.net>
 David White <dpwhite2@ncsu.edu>
+Eran Rundstein
 Felix Berger <bflat1@gmx.net
 Flavio Percoco Premoli <flaper87@gmail.com>
 Florian Apolloner
@@ -86,6 +87,7 @@ Marcin Lulek <info@webreactor.eu>
 Mark Hellewell <mark.hellewell@gmail.com>
 Mark Lavin <mlavin@caktusgroup.com>
 Mark Stover <stovenator@gmail.com>
+Mark Thurman <mthurman@gmail.com>
 Martin Galpin <m@66laps.com>
 Martin Melin <git@martinmelin.com>
 Matt Williamson <dawsdesign@gmail.com>
@@ -100,7 +102,7 @@ Miguel Hernandez Martos <enlavin@gmail.com>
 Mikhail Gusarov <dottedmag@dottedmag.net>
 Mikhail Korobov <kmike84@gmail.com>
 Mitar <mitar@tnode.com>
-Neil Chintomby <neil@mochimedia.com>
+Neil Chintomby
 Noah Kantrowitz <noah@coderanger.net>
 Norman Richards <orb@nostacktrace.com>
 Patrick Altman <paltman@gmail.com>
@@ -119,9 +121,10 @@ Seong Won Mun <longfinfunnel@gmail.com>
 Simon Josi <simon.josi@atizo.com>
 Steeve Morin <steeve.morin@gmail.com>
 Stefan Kjartansson <esteban.supreme@gmail.com>
-Steven Skoczen <steven@aquameta.com>
+Steven Skoczen
 Tayfun Sen <tayfun.sen@markafoni.com>
-Timo Sugliani
+Thomas Johansson <prencher@prencher.dk>
+Timo Sugliani <timo.sugliani@gmail.com>
 Travis Swicegood <development@domain51.com>
 Vincent Driessen <vincent@datafox.nl>
 Vitaly Babiy <vbabiy86@gmail.com>

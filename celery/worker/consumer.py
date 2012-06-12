@@ -89,9 +89,11 @@ from kombu.utils.eventio import READ, WRITE, ERR
 from celery.app import app_or_default
 from celery.datastructures import AttributeDict
 from celery.exceptions import InvalidTaskError, SystemTerminate
+from celery.task.trace import build_tracer
 from celery.utils import timer2
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
+from celery.utils import text
 
 from . import state
 from .abstract import StartStopComponent
@@ -143,6 +145,8 @@ RETRY_CONNECTION = """\
 Consumer: Connection to broker lost. \
 Trying to re-establish the connection...\
 """
+
+task_reserved = state.task_reserved
 
 logger = get_logger(__name__)
 info, warn, error, crit = (logger.info, logger.warn,
@@ -335,11 +339,16 @@ class Consumer(object):
         if hub:
             hub.on_init.append(self.on_poll_init)
         self.hub = hub
+        self._quick_put = self.ready_queue.put
 
     def update_strategies(self):
         S = self.strategies
-        for task in self.app.tasks.itervalues():
-            S[task.name] = task.start_strategy(self.app, self)
+        app = self.app
+        loader = app.loader
+        hostname = self.hostname
+        for name, task in self.app.tasks.iteritems():
+            S[name] = task.start_strategy(app, self)
+            task.__trace__ = build_tracer(name, task, loader, hostname)
 
     def start(self):
         """Start the consumer.
@@ -375,22 +384,12 @@ class Consumer(object):
             poll = hub.poller.poll
             fire_timers = hub.fire_timers
             scheduled = hub.timer._queue
-            on_poll_start = self.connection.transport.on_poll_start
-            strategies = self.strategies
             connection = self.connection
+            on_poll_start = connection.transport.on_poll_start
+            strategies = self.strategies
             drain_nowait = connection.drain_nowait
             on_task_callbacks = hub.on_task
-            buffer = []
-
-            def flush_buffer():
-                for name, body, message in buffer:
-                    try:
-                        strategies[name](message, body, message.ack_log_error)
-                    except KeyError, exc:
-                        self.handle_unknown_task(body, message, exc)
-                    except InvalidTaskError, exc:
-                        self.handle_invalid_task(body, message, exc)
-                buffer[:] = []
+            keep_draining = connection.transport.nb_keep_draining
 
             def on_task_received(body, message):
                 if on_task_callbacks:
@@ -405,12 +404,6 @@ class Consumer(object):
                     self.handle_unknown_task(body, message, exc)
                 except InvalidTaskError, exc:
                     self.handle_invalid_task(body, message, exc)
-                #bufferlen = len(buffer)
-                #buffer.append((name, body, message))
-                #if bufferlen + 1 >= 4:
-                #    flush_buffer()
-                #if bufferlen:
-                #    fire_timers()
 
             self.task_consumer.callbacks = [on_task_received]
             self.task_consumer.consume()
@@ -449,13 +442,15 @@ class Consumer(object):
                             except socket.error:
                                 if self._state != CLOSE:  # pragma: no cover
                                     raise
+                        if not keep_draining:
+                            connection.more_to_read = False
                         if connection.more_to_read:
                             drain_nowait()
                             time_to_sleep = 0
                 else:
                     sleep(min(time_to_sleep, 0.1))
 
-    def on_task(self, task):
+    def on_task(self, task, task_reserved=task_reserved):
         """Handle received task.
 
         If the task has an `eta` we enter it into the ETA schedule,
@@ -488,8 +483,8 @@ class Consumer(object):
                 self.timer.apply_at(eta, self.apply_eta_task, (task, ),
                                     priority=6)
         else:
-            state.task_reserved(task)
-            self.ready_queue.put(task)
+            task_reserved(task)
+            self._quick_put(task)
 
     def on_control(self, body, message):
         """Process remote control command message."""
@@ -504,12 +499,12 @@ class Consumer(object):
     def apply_eta_task(self, task):
         """Method called by the timer to apply a task with an
         ETA/countdown."""
-        state.task_reserved(task)
-        self.ready_queue.put(task)
+        task_reserved(task)
+        self._quick_put(task)
         self.qos.decrement_eventually()
 
     def _message_report(self, body, message):
-        return MESSAGE_REPORT_FMT % (safe_repr(body),
+        return MESSAGE_REPORT_FMT % (text.truncate(safe_repr(body), 1024),
                                      safe_repr(message.content_type),
                                      safe_repr(message.content_encoding),
                                      safe_repr(message.delivery_info))
@@ -618,7 +613,7 @@ class Consumer(object):
         """
         crit("Can't decode message body: %r (type:%r encoding:%r raw:%r')",
              exc, message.content_type, message.content_encoding,
-             safe_repr(message.body))
+             text.truncate(safe_repr(message.body), 1024))
         message.ack()
 
     def reset_pidbox_node(self):

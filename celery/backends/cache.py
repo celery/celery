@@ -100,8 +100,8 @@ class CacheBackend(KeyValueStoreBackend):
     def delete(self, key):
         return self.client.delete(key)
 
-    def on_chord_apply(self, setid, body, result=None, **kwargs):
-        self.client.set(self.get_key_for_chord(setid), '0', time=86400)
+    def on_chord_apply(self, group_id, body, result=None, **kwargs):
+        self.client.set(self.get_key_for_chord(group_id), '0', time=86400)
 
     def incr(self, key):
         return self.client.incr(key)

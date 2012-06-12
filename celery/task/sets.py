@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-from celery.state import get_current_task
+from celery.state import get_current_worker_task
 from celery.app import app_or_default
 from celery.canvas import subtask, maybe_subtask  # noqa
 from celery.utils import uuid
@@ -44,7 +44,7 @@ class TaskSet(list):
             results = self._async_results(setid, pub)
 
             result = app.TaskSetResult(setid, results)
-            parent = get_current_task()
+            parent = get_current_worker_task()
             if parent:
                 parent.request.children.append(result)
             return result

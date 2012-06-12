@@ -12,7 +12,7 @@ from celery.utils import uuid
 from celery.tests.utils import Case
 
 
-@task
+@task()
 def mytask():
     pass
 
@@ -92,34 +92,14 @@ class test_inspect(Case):
         self.assertIn("dump_revoked", MockMailbox.sent)
 
     @with_mock_broadcast
-    def test_asks(self):
+    def test_tasks(self):
         self.i.registered()
         self.assertIn("dump_tasks", MockMailbox.sent)
-
-    @with_mock_broadcast
-    def test_enable_events(self):
-        self.i.enable_events()
-        self.assertIn("enable_events", MockMailbox.sent)
-
-    @with_mock_broadcast
-    def test_disable_events(self):
-        self.i.disable_events()
-        self.assertIn("disable_events", MockMailbox.sent)
 
     @with_mock_broadcast
     def test_ping(self):
         self.i.ping()
         self.assertIn("ping", MockMailbox.sent)
-
-    @with_mock_broadcast
-    def test_add_consumer(self):
-        self.i.add_consumer("foo")
-        self.assertIn("add_consumer", MockMailbox.sent)
-
-    @with_mock_broadcast
-    def test_cancel_consumer(self):
-        self.i.cancel_consumer("foo")
-        self.assertIn("cancel_consumer", MockMailbox.sent)
 
     @with_mock_broadcast
     def test_active_queues(self):
@@ -173,6 +153,26 @@ class test_Broadcast(Case):
         self.assertIn("time_limit", MockMailbox.sent)
 
     @with_mock_broadcast
+    def test_add_consumer(self):
+        self.control.add_consumer("foo")
+        self.assertIn("add_consumer", MockMailbox.sent)
+
+    @with_mock_broadcast
+    def test_cancel_consumer(self):
+        self.control.cancel_consumer("foo")
+        self.assertIn("cancel_consumer", MockMailbox.sent)
+
+    @with_mock_broadcast
+    def test_enable_events(self):
+        self.control.enable_events()
+        self.assertIn("enable_events", MockMailbox.sent)
+
+    @with_mock_broadcast
+    def test_disable_events(self):
+        self.control.disable_events()
+        self.assertIn("disable_events", MockMailbox.sent)
+
+    @with_mock_broadcast
     def test_revoke(self):
         self.control.revoke("foozbaaz")
         self.assertIn("revoke", MockMailbox.sent)
@@ -189,8 +189,8 @@ class test_Broadcast(Case):
 
     @with_mock_broadcast
     def test_revoke_from_resultset(self):
-        r = self.app.TaskSetResult(uuid(),
-                                   map(self.app.AsyncResult,
+        r = self.app.GroupResult(uuid(),
+                                 map(self.app.AsyncResult,
                                         [uuid() for i in range(10)]))
         r.revoke()
         self.assertIn("revoke", MockMailbox.sent)

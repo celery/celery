@@ -165,7 +165,7 @@ class test_Scheduler(Case):
 
     def test_apply_async_should_not_sync(self):
 
-        @task
+        @task()
         def not_sync():
             pass
         not_sync.apply_async = Mock()

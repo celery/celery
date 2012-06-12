@@ -12,7 +12,7 @@ from celery.task import task
 from celery.tests.utils import Case
 
 
-@task
+@task()
 def mytask():
     pass
 

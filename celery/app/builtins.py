@@ -4,7 +4,7 @@ from __future__ import with_statement
 
 from itertools import starmap
 
-from celery.state import get_current_task
+from celery.state import get_current_worker_task
 from celery.utils import uuid
 
 #: global list of functions defining tasks that should be
@@ -62,9 +62,9 @@ def add_unlock_chord_task(app):
     from celery import result as _res
 
     @app.task(name="celery.chord_unlock", max_retries=None)
-    def unlock_chord(setid, callback, interval=1, propagate=False,
+    def unlock_chord(group_id, callback, interval=1, propagate=False,
             max_retries=None, result=None):
-        result = _res.TaskSetResult(setid, map(_res.AsyncResult, result))
+        result = _res.GroupResult(group_id, map(_res.AsyncResult, result))
         j = result.join_native if result.supports_native_join else result.join
         if result.ready():
             subtask(callback).delay(j(propagate=propagate))
@@ -113,34 +113,35 @@ def add_group_task(app):
         name = "celery.group"
         accept_magic_kwargs = False
 
-        def run(self, tasks, result, setid):
+        def run(self, tasks, result, group_id):
             app = self.app
             result = from_serializable(result)
             if self.request.is_eager or app.conf.CELERY_ALWAYS_EAGER:
-                return app.TaskSetResult(result.id,
-                        [subtask(task).apply(taskset_id=setid)
+                return app.GroupResult(result.id,
+                        [subtask(task).apply(group_id=group_id)
                             for task in tasks])
             with app.default_producer() as pub:
-                [subtask(task).apply_async(taskset_id=setid, publisher=pub)
+                [subtask(task).apply_async(group_id=group_id, publisher=pub,
+                                           add_to_parent=False)
                         for task in tasks]
-            parent = get_current_task()
+            parent = get_current_worker_task()
             if parent:
                 parent.request.children.append(result)
             return result
 
         def prepare(self, options, tasks, **kwargs):
             r = []
-            options["taskset_id"] = group_id = \
+            options["group_id"] = group_id = \
                     options.setdefault("task_id", uuid())
             for task in tasks:
                 opts = task.options
-                opts["taskset_id"] = group_id
+                opts["group_id"] = group_id
                 try:
                     tid = opts["task_id"]
                 except KeyError:
                     tid = opts["task_id"] = uuid()
                 r.append(self.AsyncResult(tid))
-            return tasks, self.app.TaskSetResult(group_id, r), group_id
+            return tasks, self.app.GroupResult(group_id, r), group_id
 
         def apply_async(self, args=(), kwargs={}, **options):
             if self.app.conf.CELERY_ALWAYS_EAGER:
@@ -169,9 +170,19 @@ def add_chain_task(app):
         def apply_async(self, args=(), kwargs={}, **options):
             if self.app.conf.CELERY_ALWAYS_EAGER:
                 return self.apply(args, kwargs, **options)
-            tasks = [maybe_subtask(task).clone(task_id=uuid(), **kwargs)
-                        for task in kwargs["tasks"]]
+            options.pop("publisher", None)
+            group_id = options.pop("group_id", None)
+            chord = options.pop("chord", None)
+            tasks = [maybe_subtask(t).clone(
+                        task_id=options.pop("task_id", uuid()),
+                        **options
+                    )
+                    for t in kwargs["tasks"]]
             reduce(lambda a, b: a.link(b), tasks)
+            if group_id:
+                tasks[-1].set(group_id=group_id)
+            if chord:
+                tasks[-1].set(chord=chord)
             tasks[0].apply_async()
             results = [task.type.AsyncResult(task.options["task_id"])
                             for task in tasks]
@@ -202,14 +213,14 @@ def add_chord_task(app):
         app = _app
         name = "celery.chord"
         accept_magic_kwargs = False
-        ignore_result = True
+        ignore_result = False
 
         def run(self, header, body, interval=1, max_retries=None,
                 propagate=False, eager=False, **kwargs):
             if not isinstance(header, group):
                 header = group(header)
             r = []
-            setid = uuid()
+            group_id = uuid()
             for task in header.tasks:
                 opts = task.options
                 try:
@@ -217,14 +228,16 @@ def add_chord_task(app):
                 except KeyError:
                     tid = opts["task_id"] = uuid()
                 opts["chord"] = body
-                opts["taskset_id"] = setid
+                opts["group_id"] = group_id
                 r.append(app.AsyncResult(tid))
-            app.backend.on_chord_apply(setid, body,
+            if eager:
+                return header.apply(task_id=group_id)
+            app.backend.on_chord_apply(group_id, body,
                                        interval=interval,
                                        max_retries=max_retries,
                                        propagate=propagate,
                                        result=r)
-            return header(task_id=setid)
+            return header(task_id=group_id)
 
         def apply_async(self, args=(), kwargs={}, task_id=None, **options):
             if self.app.conf.CELERY_ALWAYS_EAGER:
@@ -238,9 +251,11 @@ def add_chord_task(app):
             body_result.parent = parent
             return body_result
 
-        def apply(self, args=(), kwargs={}, **options):
+        def apply(self, args=(), kwargs={}, propagate=True, **options):
             body = kwargs["body"]
-            res = super(Chord, self).apply(args, kwargs, **options)
-            return maybe_subtask(body).apply(args=(res.get().join(), ))
+            res = super(Chord, self).apply(args, dict(kwargs, eager=True),
+                                           **options)
+            return maybe_subtask(body).apply(
+                        args=(res.get(propagate=propagate).get().join(), ))
 
     return Chord

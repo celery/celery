@@ -23,22 +23,15 @@ It should contain all you need to run a basic Celery set-up.
 
 .. code-block:: python
 
-    # List of modules to import when celery starts.
-    CELERY_IMPORTS = ("myapp.tasks", )
-
-    ## Result store settings.
-    CELERY_RESULT_BACKEND = "database"
-    CELERY_RESULT_DBURI = "sqlite:///mydatabase.db"
-
     ## Broker settings.
     BROKER_URL = "amqp://guest:guest@localhost:5672//"
 
-    ## Worker settings
-    ## If you're doing mostly I/O you can have more processes,
-    ## but if mostly spending CPU, try to keep it close to the
-    ## number of CPUs on your machine. If not set, the number of CPUs/cores
-    ## available will be used.
-    CELERYD_CONCURRENCY = 10
+    # List of modules to import when celery starts.
+    CELERY_IMPORTS = ("myapp.tasks", )
+
+    ## Using the database to store task state and results.
+    CELERY_RESULT_BACKEND = "database"
+    CELERY_RESULT_DBURI = "sqlite:///mydatabase.db"
 
     CELERY_ANNOTATIONS = {"tasks.add": {"rate_limit": "10/s"}}
 
@@ -142,8 +135,13 @@ Concurrency settings
 CELERYD_CONCURRENCY
 ~~~~~~~~~~~~~~~~~~~
 
-The number of concurrent worker processes/threads/green threads, executing
+The number of concurrent worker processes/threads/green threads executing
 tasks.
+
+If you're doing mostly I/O you can have more processes,
+but if mostly CPU-bound, try to keep it close to the
+number of CPUs on your machine. If not set, the number of CPUs/cores
+on the host will be used.
 
 Defaults to the number of available CPUs.
 
@@ -202,7 +200,7 @@ Can be one of the following:
 .. warning:
 
     While the AMQP result backend is very efficient, you must make sure
-    you only receive the same result once.  See :doc:`userguide/executing`).
+    you only receive the same result once.  See :doc:`userguide/calling`).
 
 .. _`SQLAlchemy`: http://sqlalchemy.org
 .. _`memcached`: http://memcached.org
@@ -216,7 +214,7 @@ CELERY_RESULT_SERIALIZER
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Result serialization format.  Default is `"pickle"`. See
-:ref:`executing-serializers` for information about supported
+:ref:`calling-serializers` for information about supported
 serialization formats.
 
 .. _conf-database-result-backend:
@@ -384,6 +382,9 @@ setting:
 Redis backend settings
 ----------------------
 
+Configuring the backend URL
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. note::
 
     The Redis backend requires the :mod:`redis` library:
@@ -393,33 +394,35 @@ Redis backend settings
 
         $ pip install redis
 
-This backend requires the following configuration directives to be set.
+This backend requires the :setting:`CELERY_RESULT_BACKEND`
+setting to be set to a Redis URL::
 
-.. setting:: CELERY_REDIS_HOST
+    CELERY_RESULT_BACKEND = "redis://:password@host:port/db"
 
-CELERY_REDIS_HOST
-~~~~~~~~~~~~~~~~~
+For example::
 
-Host name of the Redis database server. e.g. `"localhost"`.
+    CELERY_RESULT_BACKEND = "redis://localhost/0"
 
-.. setting:: CELERY_REDIS_PORT
+which is the same as::
 
-CELERY_REDIS_PORT
-~~~~~~~~~~~~~~~~~
+    CELERY_RESULT_BACKEND = "redis://"
 
-Port to the Redis database server. e.g. `6379`.
+The fields of the URL is defined as folows:
 
-.. setting:: CELERY_REDIS_DB
+- *host*
 
-CELERY_REDIS_DB
-~~~~~~~~~~~~~~~
+Host name or IP address of the Redis server. e.g. `"localhost"`.
 
-Database number to use. Default is 0
+- *port*
 
-.. setting:: CELERY_REDIS_PASSWORD
+Port to the Redis server. Default is 6379.
 
-CELERY_REDIS_PASSWORD
-~~~~~~~~~~~~~~~~~~~~~
+- *db*
+
+Database number to use. Default is 0.
+The db can include an optional leading slash.
+
+- *password*
 
 Password used to connect to the database.
 
@@ -430,16 +433,6 @@ CELERY_REDIS_MAX_CONNECTIONS
 
 Maximum number of connections available in the Redis connection
 pool used for sending and retrieving results.
-
-Example configuration
-~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-    CELERY_RESULT_BACKEND = "redis"
-    CELERY_REDIS_HOST = "localhost"
-    CELERY_REDIS_PORT = 6379
-    CELERY_REDIS_DB = 0
 
 .. _conf-mongodb-result-backend:
 
@@ -676,12 +669,6 @@ BROKER_TRANSPORT
 :Aliases: ``BROKER_BACKEND``
 :Deprecated aliases: ``CARROT_BACKEND``
 
-The Kombu transport to use.  Default is ``amqplib``.
-
-You can use a custom transport class name, or select one of the
-built-in transports: ``amqplib``, ``pika``, ``redis``, ``beanstalk``,
-``sqlalchemy``, ``django``, ``mongodb``, ``couchdb``.
-
 .. setting:: BROKER_URL
 
 BROKER_URL
@@ -694,48 +681,13 @@ Default broker URL.  This must be an URL in the form of::
 Only the scheme part (``transport://``) is required, the rest
 is optional, and defaults to the specific transports default values.
 
-If this setting is defined it will override a subset of the
-other ``BROKER`` options. These options are :setting:`BROKER_HOST`,
-:setting:`BROKER_USER`, :setting:`BROKER_PASSWORD`, :setting:`BROKER_PORT`,
-and :setting:`BROKER_VHOST`.
+The transport part is the broker implementation to use, and the
+default is ``amqp``, but there are many other choices including
+``librabbitmq``, ``amqplib``, ``redis``, ``beanstalk``,
+``sqlalchemy``, ``django``, ``mongodb``, ``couchdb`` and ``pika``.
+It can also be a fully qualified path to your own transport implementation.
 
 See the Kombu documentation for more information about broker URLs.
-
-.. setting:: BROKER_HOST
-
-BROKER_HOST
-~~~~~~~~~~~
-
-Hostname of the broker.
-
-.. setting:: BROKER_PORT
-
-BROKER_PORT
-~~~~~~~~~~~
-
-Custom port of the broker.  Default is to use the default port for the
-selected backend.
-
-.. setting:: BROKER_USER
-
-BROKER_USER
-~~~~~~~~~~~
-
-Username to connect as.
-
-.. setting:: BROKER_PASSWORD
-
-BROKER_PASSWORD
-~~~~~~~~~~~~~~~
-
-Password to connect with.
-
-.. setting:: BROKER_VHOST
-
-BROKER_VHOST
-~~~~~~~~~~~~
-
-Virtual host.  Default is `"/"`.
 
 .. setting:: BROKER_USE_SSL
 
@@ -911,7 +863,7 @@ methods that have been registered with :mod:`kombu.serialization.registry`.
 
 .. seealso::
 
-    :ref:`executing-serializers`.
+    :ref:`calling-serializers`.
 
 .. setting:: CELERY_TASK_PUBLISH_RETRY
 
@@ -936,45 +888,7 @@ CELERY_TASK_PUBLISH_RETRY_POLICY
 Defines the default policy when retrying publishing a task message in
 the case of connection loss or other connection errors.
 
-This is a mapping that must contain the following keys:
-
-    * `max_retries`
-
-        Maximum number of retries before giving up, in this case the
-        exception that caused the retry to fail will be raised.
-
-        A value of 0 or :const:`None` means it will retry forever.
-
-        The default is to retry 3 times.
-
-    * `interval_start`
-
-        Defines the number of seconds (float or integer) to wait between
-        retries.  Default is 0, which means the first retry will be
-        instantaneous.
-
-    * `interval_step`
-
-        On each consecutive retry this number will be added to the retry
-        delay (float or integer).  Default is 0.2.
-
-    * `interval_max`
-
-        Maximum number of seconds (float or integer) to wait between
-        retries.  Default is 0.2.
-
-With the default policy of::
-
-    {"max_retries": 3,
-     "interval_start": 0,
-     "interval_step": 0.2,
-     "interval_max": 0.2}
-
-the maximum time spent retrying will be 0.4 seconds.  It is set relatively
-short by default because a connection failure could lead to a retry pile effect
-if the broker connection is down: e.g. many web server processes waiting
-to retry blocking other incoming requests.
-
+See :ref:`calling-retry` for more information.
 
 .. setting:: CELERY_DEFAULT_RATE_LIMIT
 
@@ -1091,7 +1005,7 @@ Example:
 
     from celery.exceptions import SoftTimeLimitExceeded
 
-    @celery.task
+    @celery.task()
     def mytask():
         try:
             return do_work()
@@ -1274,7 +1188,7 @@ CELERY_EVENT_SERIALIZER
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Message serialization format used when sending event messages.
-Default is `"json"`. See :ref:`executing-serializers`.
+Default is `"json"`. See :ref:`calling-serializers`.
 
 .. _conf-broadcast:
 

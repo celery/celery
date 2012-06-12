@@ -12,6 +12,7 @@ from celery.utils.serialization import pickle
 from celery.result import (
     AsyncResult,
     EagerResult,
+    GroupResult,
     TaskSetResult,
     ResultSet,
     from_serializable,
@@ -24,7 +25,7 @@ from celery.tests.utils import AppCase
 from celery.tests.utils import skip_if_quick
 
 
-@task
+@task()
 def mytask():
     pass
 
@@ -46,7 +47,7 @@ def save_result(task):
                 traceback=traceback)
 
 
-def make_mock_taskset(size=10):
+def make_mock_group(size=10):
     tasks = [mock_task("ts%d" % i, states.SUCCESS, i) for i in xrange(size)]
     [save_result(task) for task in tasks]
     return [AsyncResult(task["id"]) for task in tasks]
@@ -77,6 +78,17 @@ class test_AsyncResult(AppCase):
         x.backend.READY_STATES = states.READY_STATES
         self.assertTrue(x.children)
         self.assertEqual(len(x.children), 3)
+
+    def test_get_children(self):
+        tid = uuid()
+        x = AsyncResult(tid)
+        child = [AsyncResult(uuid()).serializable() for i in xrange(10)]
+        x.backend._cache[tid] = {"children": child}
+        self.assertTrue(x.children)
+        self.assertEqual(len(x.children), 10)
+
+        x.backend._cache[tid] = {"result": None}
+        self.assertIsNone(x.children)
 
     def test_build_graph_get_leaf_collect(self):
         x = AsyncResult("1")
@@ -327,10 +339,9 @@ class test_TaskSetResult(AppCase):
 
     def setup(self):
         self.size = 10
-        self.ts = TaskSetResult(uuid(), make_mock_taskset(self.size))
+        self.ts = TaskSetResult(uuid(), make_mock_group(self.size))
 
     def test_total(self):
-        self.assertEqual(len(self.ts), self.size)
         self.assertEqual(self.ts.total, self.size)
 
     def test_compat_properties(self):
@@ -338,19 +349,35 @@ class test_TaskSetResult(AppCase):
         self.ts.taskset_id = "foo"
         self.assertEqual(self.ts.taskset_id, "foo")
 
+    def test_compat_subtasks_kwarg(self):
+        x = TaskSetResult(uuid(), subtasks=[1, 2, 3])
+        self.assertEqual(x.results, [1, 2, 3])
+
+    def test_itersubtasks(self):
+        it = self.ts.itersubtasks()
+
+        for i, t in enumerate(it):
+            self.assertEqual(t.get(), i)
+
+
+class test_GroupResult(AppCase):
+
+    def setup(self):
+        self.size = 10
+        self.ts = GroupResult(uuid(), make_mock_group(self.size))
+
+    def test_len(self):
+        self.assertEqual(len(self.ts), self.size)
+
     def test_eq_other(self):
         self.assertFalse(self.ts == 1)
 
     def test_reduce(self):
         self.assertTrue(loads(dumps(self.ts)))
 
-    def test_compat_subtasks_kwarg(self):
-        x = TaskSetResult(uuid(), subtasks=[1, 2, 3])
-        self.assertEqual(x.results, [1, 2, 3])
-
     def test_iterate_raises(self):
         ar = MockAsyncResultFailure(uuid())
-        ts = TaskSetResult(uuid(), [ar])
+        ts = GroupResult(uuid(), [ar])
         it = iter(ts)
         with self.assertRaises(KeyError):
             it.next()
@@ -358,7 +385,7 @@ class test_TaskSetResult(AppCase):
     def test_forget(self):
         subs = [MockAsyncResultSuccess(uuid()),
                 MockAsyncResultSuccess(uuid())]
-        ts = TaskSetResult(uuid(), subs)
+        ts = GroupResult(uuid(), subs)
         ts.forget()
         for sub in subs:
             self.assertTrue(sub.forgotten)
@@ -366,28 +393,28 @@ class test_TaskSetResult(AppCase):
     def test_getitem(self):
         subs = [MockAsyncResultSuccess(uuid()),
                 MockAsyncResultSuccess(uuid())]
-        ts = TaskSetResult(uuid(), subs)
+        ts = GroupResult(uuid(), subs)
         self.assertIs(ts[0], subs[0])
 
     def test_save_restore(self):
         subs = [MockAsyncResultSuccess(uuid()),
                 MockAsyncResultSuccess(uuid())]
-        ts = TaskSetResult(uuid(), subs)
+        ts = GroupResult(uuid(), subs)
         ts.save()
         with self.assertRaises(AttributeError):
             ts.save(backend=object())
-        self.assertEqual(TaskSetResult.restore(ts.taskset_id).subtasks,
+        self.assertEqual(GroupResult.restore(ts.id).subtasks,
                          ts.subtasks)
         ts.delete()
-        self.assertIsNone(TaskSetResult.restore(ts.taskset_id))
+        self.assertIsNone(GroupResult.restore(ts.id))
         with self.assertRaises(AttributeError):
-            TaskSetResult.restore(ts.taskset_id, backend=object())
+            GroupResult.restore(ts.id, backend=object())
 
     def test_join_native(self):
         backend = SimpleBackend()
         subtasks = [AsyncResult(uuid(), backend=backend)
                         for i in range(10)]
-        ts = TaskSetResult(uuid(), subtasks)
+        ts = GroupResult(uuid(), subtasks)
         backend.ids = [subtask.id for subtask in subtasks]
         res = ts.join_native()
         self.assertEqual(res, range(10))
@@ -396,14 +423,14 @@ class test_TaskSetResult(AppCase):
         backend = SimpleBackend()
         subtasks = [AsyncResult(uuid(), backend=backend)
                         for i in range(10)]
-        ts = TaskSetResult(uuid(), subtasks)
+        ts = GroupResult(uuid(), subtasks)
         backend.ids = [subtask.id for subtask in subtasks]
         self.assertEqual(len(list(ts.iter_native())), 10)
 
     def test_iterate_yields(self):
         ar = MockAsyncResultSuccess(uuid())
         ar2 = MockAsyncResultSuccess(uuid())
-        ts = TaskSetResult(uuid(), [ar, ar2])
+        ts = GroupResult(uuid(), [ar, ar2])
         it = iter(ts)
         self.assertEqual(it.next(), 42)
         self.assertEqual(it.next(), 42)
@@ -411,7 +438,7 @@ class test_TaskSetResult(AppCase):
     def test_iterate_eager(self):
         ar1 = EagerResult(uuid(), 42, states.SUCCESS)
         ar2 = EagerResult(uuid(), 42, states.SUCCESS)
-        ts = TaskSetResult(uuid(), [ar1, ar2])
+        ts = GroupResult(uuid(), [ar1, ar2])
         it = iter(ts)
         self.assertEqual(it.next(), 42)
         self.assertEqual(it.next(), 42)
@@ -420,21 +447,12 @@ class test_TaskSetResult(AppCase):
         ar = MockAsyncResultSuccess(uuid())
         ar2 = MockAsyncResultSuccess(uuid())
         ar3 = AsyncResult(uuid())
-        ts = TaskSetResult(uuid(), [ar, ar2, ar3])
+        ts = GroupResult(uuid(), [ar, ar2, ar3])
         with self.assertRaises(TimeoutError):
             ts.join(timeout=0.0000001)
 
-    def test_itersubtasks(self):
-
-        it = self.ts.itersubtasks()
-
-        for i, t in enumerate(it):
-            self.assertEqual(t.get(), i)
-
     def test___iter__(self):
-
         it = iter(self.ts)
-
         results = sorted(list(it))
         self.assertListEqual(results, list(xrange(self.size)))
 
@@ -467,26 +485,15 @@ class test_pending_AsyncResult(AppCase):
         self.assertIsNone(self.task.result)
 
 
-class test_failed_AsyncResult(test_TaskSetResult):
+class test_failed_AsyncResult(test_GroupResult):
 
     def setup(self):
         self.size = 11
-        subtasks = make_mock_taskset(10)
+        subtasks = make_mock_group(10)
         failed = mock_task("ts11", states.FAILURE, KeyError("Baz"))
         save_result(failed)
         failed_res = AsyncResult(failed["id"])
-        self.ts = TaskSetResult(uuid(), subtasks + [failed_res])
-
-    def test_itersubtasks(self):
-
-        it = self.ts.itersubtasks()
-
-        for i in xrange(self.size - 1):
-            t = it.next()
-            self.assertEqual(t.get(), i)
-        with self.assertRaises(KeyError):
-            t = it.next()   # need to do this in two lines or 2to3 borks.
-            t.get()
+        self.ts = GroupResult(uuid(), subtasks + [failed_res])
 
     def test_completed_count(self):
         self.assertEqual(self.ts.completed_count(), len(self.ts) - 1)
@@ -511,12 +518,11 @@ class test_failed_AsyncResult(test_TaskSetResult):
         self.assertTrue(self.ts.failed())
 
 
-class test_pending_TaskSet(AppCase):
+class test_pending_Group(AppCase):
 
     def setup(self):
-        self.ts = TaskSetResult(uuid(), [
-                                        AsyncResult(uuid()),
-                                        AsyncResult(uuid())])
+        self.ts = GroupResult(uuid(), [AsyncResult(uuid()),
+                                       AsyncResult(uuid())])
 
     def test_completed_count(self):
         self.assertEqual(self.ts.completed_count(), 0)
@@ -573,7 +579,7 @@ class test_serializable(AppCase):
         self.assertEqual(x, from_serializable(x.serializable()))
         self.assertEqual(x, from_serializable(x))
 
-    def test_TaskSetResult(self):
-        x = TaskSetResult(uuid(), [AsyncResult(uuid()) for _ in range(10)])
+    def test_GroupResult(self):
+        x = GroupResult(uuid(), [AsyncResult(uuid()) for _ in range(10)])
         self.assertEqual(x, from_serializable(x.serializable()))
         self.assertEqual(x, from_serializable(x))

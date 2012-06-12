@@ -31,15 +31,15 @@ The action to take whenever a message of a certain type is received is called
 a "task".
 
 * Go to :ref:`guide-tasks`.
-* Go to :ref:`guide-executing`.
-* Go to :ref:`guide-sets`
+* Go to :ref:`guide-calling`.
+* Go to :ref:`guide-canvas`
 * Go to :ref:`guide-beat`.
 * Go to :ref:`guide-webhooks`.
 
 
 Workers
 =======
-Go to :ref:`guide-worker`.
+Go to :ref:`guide-workers`.
 
 Monitoring
 ==========

@@ -7,4 +7,4 @@
 .. currentmodule:: celery.app.task
 
 .. automodule:: celery.app.task
-    :members: Context, TaskType, BaseTask
+    :members: Task, Context, TaskType

@@ -5,7 +5,7 @@
 
 from __future__ import absolute_import
 
-VERSION = (2, 6, 0, "rc3")
+VERSION = (2, 6, 0, "rc4")
 __version__ = ".".join(map(str, VERSION[0:3])) + "".join(VERSION[3:])
 __author__ = "Ask Solem"
 __contact__ = "ask@celeryproject.org"
@@ -20,6 +20,7 @@ from .__compat__ import recreate_module
 old_module, new_module = recreate_module(__name__,  # pragma: no cover
     by_module={
         "celery.app":       ["Celery", "bugreport"],
+        "celery.app.task":  ["Task"],
         "celery.state":     ["current_app", "current_task"],
         "celery.canvas":    ["chain", "chord", "chunks",
                              "group", "subtask", "xmap", "xstarmap"],

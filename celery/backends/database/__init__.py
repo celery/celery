@@ -103,12 +103,12 @@ class DatabaseBackend(BaseDictBackend):
             session.close()
 
     @retry
-    def _save_taskset(self, taskset_id, result):
-        """Store the result of an executed taskset."""
+    def _save_group(self, group_id, result):
+        """Store the result of an executed group."""
         session = self.ResultSession()
         try:
-            taskset = TaskSet(taskset_id, result)
-            session.add(taskset)
+            group = TaskSet(group_id, result)
+            session.add(group)
             session.flush()
             session.commit()
             return result
@@ -116,24 +116,24 @@ class DatabaseBackend(BaseDictBackend):
             session.close()
 
     @retry
-    def _restore_taskset(self, taskset_id):
-        """Get metadata for taskset by id."""
+    def _restore_group(self, group_id):
+        """Get metadata for group by id."""
         session = self.ResultSession()
         try:
-            taskset = session.query(TaskSet).filter(
-                    TaskSet.taskset_id == taskset_id).first()
-            if taskset:
-                return taskset.to_dict()
+            group = session.query(TaskSet).filter(
+                    TaskSet.taskset_id == group_id).first()
+            if group:
+                return group.to_dict()
         finally:
             session.close()
 
     @retry
-    def _delete_taskset(self, taskset_id):
-        """Delete metadata for taskset by id."""
+    def _delete_group(self, group_id):
+        """Delete metadata for group by id."""
         session = self.ResultSession()
         try:
             session.query(TaskSet).filter(
-                    TaskSet.taskset_id == taskset_id).delete()
+                    TaskSet.taskset_id == group_id).delete()
             session.flush()
             session.commit()
         finally:

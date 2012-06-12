@@ -2,7 +2,24 @@
  Celery - Distributed Task Queue
 =================================
 
-Contents:
+Celery aims to be a fast, reliable and flexible, best-of-breed solution
+to process vast amounts of messages in a distributed fashion, while
+providing operations with the tools to maintain such a system.
+
+Celery is Open Source and licensed under the `BSD License`_.
+
+Getting Started
+===============
+
+- If you are new to Celery you can get started by following
+  the :ref:`first-steps` tutorial.
+
+- You can also check out the :ref:`FAQ <faq>`.
+
+.. _`BSD License`: http://www.opensource.org/licenses/BSD-3-Clause
+
+Contents
+========
 
 .. toctree::
     :maxdepth: 2
@@ -15,7 +32,6 @@ Contents:
 
     configuration
     django/index
-    cookbook/index
     contributing
     community
     tutorials/index

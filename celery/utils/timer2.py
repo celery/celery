@@ -57,7 +57,7 @@ class Entry(object):
         return "<TimerEntry: %s(*%r, **%r)" % (
                 self.fun.__name__, self.args, self.kwargs)
 
-    if sys.version_info >= (3, 0):
+    if sys.version_info[0] == 3:  # pragma: no cover
 
         def __hash__(self):
             return hash("|".join(map(repr, (self.fun, self.args,
@@ -217,7 +217,7 @@ class Timer(Thread):
     on_tick = None
     _timer_count = count(1).next
 
-    if TIMER_DEBUG:
+    if TIMER_DEBUG:  # pragma: no cover
         def start(self, *args, **kwargs):
             import traceback
             print("- Timer starting")

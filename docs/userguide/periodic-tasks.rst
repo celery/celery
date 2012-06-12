@@ -10,7 +10,7 @@
 Introduction
 ============
 
-:program:`celerybeat` is a scheduler.  It kicks off tasks at regular intervals,
+:program:`celery beat` is a scheduler.  It kicks off tasks at regular intervals,
 which are then executed by the worker nodes available in the cluster.
 
 By default the entries are taken from the :setting:`CELERYBEAT_SCHEDULE` setting,
@@ -46,7 +46,7 @@ Example: Run the `tasks.add` task every 30 seconds.
 
 
 Using a :class:`~datetime.timedelta` for the schedule means the task will
-be executed 30 seconds after `celerybeat` starts, and then every 30 seconds
+be executed 30 seconds after `celery beat` starts, and then every 30 seconds
 after the last run.  A crontab like schedule also exists, see the section
 on `Crontab schedules`_.
 
@@ -91,7 +91,7 @@ Available Fields
     second, minute, hour or day depending on the period of the timedelta.
 
     If `relative` is true the frequency is not rounded and will be
-    relative to the time when :program:`celerybeat` was started.
+    relative to the time when :program:`celery beat` was started.
 
 .. _beat-crontab:
 
@@ -212,29 +212,30 @@ the :setting:`CELERY_TIMEZONE` setting:
 
 .. _beat-starting:
 
-Starting celerybeat
-===================
+Starting the Scheduler
+======================
 
-To start the :program:`celerybeat` service::
+To start the :program:`celery beat` service::
 
-    $ celerybeat
+    $ celery beat
 
-You can also start `celerybeat` with `celeryd` by using the `-B` option,
-this is convenient if you only intend to use one worker node::
+You can also start embed `beat` inside the worker by enabling
+workers `-B` option, this is convenient if you only intend to
+use one worker node::
 
-    $ celeryd -B
+    $ celery worker -B
 
-Celerybeat needs to store the last run times of the tasks in a local database
+Beat needs to store the last run times of the tasks in a local database
 file (named `celerybeat-schedule` by default), so it needs access to
 write in the current directory, or alternatively you can specify a custom
 location for this file::
 
-    $ celerybeat -s /home/celery/var/run/celerybeat-schedule
+    $ celery beat -s /home/celery/var/run/celerybeat-schedule
 
 
 .. note::
 
-    To daemonize celerybeat see :ref:`daemonizing`.
+    To daemonize beat see :ref:`daemonizing`.
 
 .. _beat-custom-schedulers:
 
@@ -249,7 +250,7 @@ which is simply keeping track of the last run times in a local database file
 `django-celery` also ships with a scheduler that stores the schedule in the
 Django database::
 
-    $ celerybeat -S djcelery.schedulers.DatabaseScheduler
+    $ celery beat -S djcelery.schedulers.DatabaseScheduler
 
 Using `django-celery`'s scheduler you can add, modify and remove periodic
 tasks from the Django Admin.

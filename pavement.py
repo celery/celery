@@ -120,7 +120,6 @@ def clean_readme(options):
 def readme(options):
     sh("%s contrib/release/sphinx-to-rst.py docs/templates/readme.txt \
             > README.rst" % (sys.executable, ))
-    sh("ln -sf README.rst README")
 
 
 @task

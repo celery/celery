@@ -1,11 +1,5 @@
 Please see our Issue Tracker at GitHub:
-    http://github.com/ask/celery/issues
-
-Kombu
-=====
-
-Redis: Better acks by moving reserved messages into a temporary queue.
-       Can we use multi commands for anything?
+    http://github.com/celery/celery/issues
 
 Celerymon
 =========

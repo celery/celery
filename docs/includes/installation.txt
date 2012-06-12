@@ -27,4 +27,4 @@ Using the development version
 
 You can clone the repository by doing the following::
 
-    $ git clone git://github.com/ask/celery.git
+    $ git clone https://github.com/celery/celery
