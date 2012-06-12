@@ -85,15 +85,15 @@ parts of the Celery documentation.
 Starting the worker process
 ===========================
 
-You can start a worker instance by using the ``celeryd`` manage command::
+You can start a worker instance by using the ``celery worker`` manage command::
 
-    $ python manage.py celeryd --loglevel=info
+    $ python manage.py celery worker --loglevel=info
 
 In production you probably want to run the worker in the
 background as a daemon, see `Running Celery as a daemon`_.
 For a complete listing of the command line options available, use the help command::
 
-    $ python manage.py help celeryd
+    $ python manage.py celery help
 
 .. _`Running Celery as a Daemon`:
     http://docs.celeryproject.org/en/latest/tutorials/daemonizing.html
