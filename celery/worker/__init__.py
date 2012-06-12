@@ -327,8 +327,8 @@ class WorkController(configurated):
         # ensure all task modules are imported in case an execv happens.
         task_modules = set(task.__class__.__module__
                             for task in self.app.tasks.itervalues())
-        self.app.conf.CELERY_INCLUDE = (
-            set(self.app.conf.CELERY_INCLUDE) + set(task_modules),
+        self.app.conf.CELERY_INCLUDE = tuple(
+            set(self.app.conf.CELERY_INCLUDE) | task_modules,
         )
 
         # Initialize boot steps

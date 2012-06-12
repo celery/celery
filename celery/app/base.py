@@ -350,7 +350,6 @@ class Celery(object):
 
     @cached_property
     def Worker(self):
-        """Create new :class:`~celery.apps.worker.Worker` instance."""
         return self.subclass_with_self("celery.apps.worker:Worker")
 
     @cached_property
@@ -359,7 +358,6 @@ class Celery(object):
 
     @cached_property
     def Beat(self, **kwargs):
-        """Create new :class:`~celery.apps.beat.Beat` instance."""
         return self.subclass_with_self("celery.apps.beat:Beat")
 
     @cached_property
@@ -368,7 +366,6 @@ class Celery(object):
 
     @cached_property
     def Task(self):
-        """Default Task base class for this application."""
         return self.create_task_cls()
 
     @cached_property
@@ -401,48 +398,34 @@ class Celery(object):
 
     @cached_property
     def amqp(self):
-        """Sending/receiving messages.  See :class:`~celery.app.amqp.AMQP`."""
         return instantiate(self.amqp_cls, app=self)
 
     @cached_property
     def backend(self):
-        """Storing/retrieving task state.  See
-        :class:`~celery.backend.base.BaseBackend`."""
         return self._get_backend()
 
     @cached_property
     def conf(self):
-        """Current configuration (dict and attribute access)."""
         return self._get_config()
 
     @cached_property
     def control(self):
-        """Controlling worker nodes.  See
-        :class:`~celery.app.control.Control`."""
         return instantiate(self.control_cls, app=self)
 
     @cached_property
     def events(self):
-        """Sending/receiving events.  See :class:`~celery.events.Events`. """
         return instantiate(self.events_cls, app=self)
 
     @cached_property
     def loader(self):
-        """Current loader."""
         return get_loader_cls(self.loader_cls)(app=self)
 
     @cached_property
     def log(self):
-        """Logging utilities.  See :class:`~celery.app.log.Logging`."""
         return instantiate(self.log_cls, app=self)
 
     @cached_property
     def tasks(self):
-        """Registry of available tasks.
-
-        Accessing this attribute will also finalize the app.
-
-        """
         self.finalize()
         return self._tasks
 App = Celery  # compat
