@@ -320,7 +320,16 @@ class WorkController(configurated):
         self.pidfile = pidfile
         self.pidlock = None
         self.use_eventloop = (detect_environment() == "default" and
-                              self.app.broker_connection().is_evented)
+                              self.app.broker_connection().is_evented and
+                              not self.app.IS_WINDOWS)
+
+        # Update celery_include to have all known task modules, so that we
+        # ensure all task modules are imported in case an execv happens.
+        task_modules = set(task.__class__.__module__
+                            for task in self.app.tasks.itervalues())
+        self.app.conf.CELERY_INCLUDE = (
+            set(self.app.conf.CELERY_INCLUDE) + set(task_modules),
+        )
 
         # Initialize boot steps
         self.pool_cls = _concurrency.get_implementation(self.pool_cls)
