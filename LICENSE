@@ -1,5 +1,15 @@
-Copyright (c) 2009, 2010, 2011 Ask Solem. All Rights Reserved.
+Copyright (c) 2009, 2010, 2011, 2012 Ask Solem, and individual contributors.  All Rights Reserved.
 Copyright (c) 2012 VMware, Inc.  All rights reserved.
+
+Celery is licensed under The BSD License (3 Clause, also known as
+the new BSD license).  The license is an OSI approved Open Source
+license and is GPL-compatible(1).
+
+The license text can also be found here:
+http://www.opensource.org/licenses/BSD-3-Clause
+
+License
+=======
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -23,3 +33,13 @@ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
+
+
+Footnotes
+=========
+(1) A GPL-compatible license makes it possible to
+    combine Celery with other software that is released
+    under the GPL, it does not mean that we're distributing
+    Celery under the GPL license.  The BDS license, unlike the GPL,
+    let you distribute a modified version without making your
+    changes open source.
