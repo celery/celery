@@ -185,7 +185,7 @@ class MultiTool(object):
         return self.retcode
 
     def say(self, m, newline=True):
-        self.fh.write("%s\n" % m if m else m)
+        self.fh.write("%s\n" % m)
 
     def names(self, argv, cmd):
         p = NamespacedOptionParser(argv)
