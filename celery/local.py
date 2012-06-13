@@ -198,6 +198,13 @@ class PromiseProxy(Proxy):
         except AttributeError:
             return self.__evaluate__()
 
+    def __evaluated__(self):
+        try:
+            object.__getattribute__(self, "__thing")
+        except AttributeError:
+            return False
+        return True
+
     def __maybe_evaluate__(self):
         return self._get_current_object()
 

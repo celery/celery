@@ -4,35 +4,70 @@
  Tasks
 =======
 
+Tasks are the building blocks of Celery applications.
+
+A task can be created out of any callable and defines what happens
+when the worker receives a particular message.
+
+Every task has unique name which is referenced in the message,
+so that the worker can find the right task to execute.
+
+It's not a requirement, but it's a good idea to keep your tasks
+*idempotent*.  Idempotence means that a task can be applied multiple
+times without changing the result.
+
+This is important because the task message will not disappear
+until the message has been *acknowledged*. A worker can reserve
+many messages in advance and even if the worker is killed -- caused by a power failure
+or otherwise -- the message will be redelivered to another worker.
+
+But the worker cannot know if your tasks are idempotent, so the default
+behavior is to acknowledge the message in advance just before it's executed,
+this way a task that has been started will not be executed again.
+
+If your task is idempotent you can set the :attr:`acks_late` option
+to have the worker acknowledge the message *after* that task has been
+executed instead.  This way the task will be redelivered to another
+worker, even if the task has already started executing before.
+See also the FAQ entry :ref:`faq-acks_late-vs-retry`.
+
+--
+
+In this chapter you will learn all about defining tasks,
+and this is the **table of contents**:
+
 .. contents::
     :local:
     :depth: 1
+
 
 .. _task-basics:
 
 Basics
 ======
 
-A task is a class that encapsulates a function and its execution options.
-Given a function ``create_user`` taking two arguments: `username` and
-`password`, you can easily create a task from any function by using
-the task decorator:
+You can easily create a task from any callable by using
+the :meth:`~@Celery.task` decorator:
 
 .. code-block:: python
 
-    from django.contrib.auth import User
+    from .models import User
 
     @celery.task()
     def create_user(username, password):
         User.objects.create(username=username, password=password)
 
-Task options can be specified as arguments to the decorator:
+
+There are also many :ref:`options <task-options>` that can be set for the task,
+these can be specified as arguments to the decorator:
 
 .. code-block:: python
 
     @celery.task(serializer="json")
     def create_user(username, password):
         User.objects.create(username=username, password=password)
+
+
 
 .. sidebar:: How do I import the task decorator?
 
@@ -62,6 +97,93 @@ Task options can be specified as arguments to the decorator:
         @decorator1
         def add(x, y):
             return x + y
+
+.. _task-names:
+
+Names
+=====
+
+Every task must have a unique name, and a new name
+will be generated out of the function name if a custom name is not provided.
+
+For example:
+
+.. code-block:: python
+
+    >>> @celery.task(name="sum-of-two-numbers")
+    >>> def add(x, y):
+    ...     return x + y
+
+    >>> add.name
+    'sum-of-two-numbers'
+
+A best practice is to use the module name as a namespace,
+this way names won't collide if there's already a task with that name
+defined in another module.
+
+.. code-block:: python
+
+    >>> @celery.task(name="tasks.add")
+    >>> def add(x, y):
+    ...     return x + y
+
+You can tell the name of the task by investigating its name attribute::
+
+    >>> add.name
+    'tasks.add'
+
+Which is exactly the name that would have been generated anyway,
+if the module name is "tasks.py":
+
+:file:`tasks.py`:
+
+.. code-block:: python
+
+    @celery.task()
+    def add(x, y):
+        return x + y
+
+    >>> from tasks import add
+    >>> add.name
+    'tasks.add'
+
+.. _task-naming-relative-imports:
+
+Automatic naming and relative imports
+-------------------------------------
+
+Relative imports and automatic name generation does not go well together,
+so if you're using relative imports you should set the name explicitly.
+
+For example if the client imports the module "myapp.tasks" as ".tasks", and
+the worker imports the module as "myapp.tasks", the generated names won't match
+and an :exc:`~@NotRegistered` error will be raised by the worker.
+
+This is also the case if using Django and using `project.myapp`::
+
+    INSTALLED_APPS = ("project.myapp", )
+
+The worker will have the tasks registered as "project.myapp.tasks.*",
+while this is what happens in the client if the module is imported as
+"myapp.tasks":
+
+.. code-block:: python
+
+    >>> from myapp.tasks import add
+    >>> add.name
+    'myapp.tasks.add'
+
+For this reason you should never use "project.app", but rather
+add the project directory to the Python path::
+
+    import os
+    import sys
+    sys.path.append(os.getcwd())
+
+    INSTALLED_APPS = ("myapp", )
+
+This makes more sense from the reusable app perspective anyway.
+
 
 .. _task-request-info:
 
@@ -144,18 +266,21 @@ out/-err will be redirected to the workers logs by default (see
 
 .. _task-retry:
 
-Retrying a task if something fails
-==================================
+Retrying
+========
 
-:meth:`~@Task.retry` can be used to re-execute the task in the event
-of temporary failure, or for any other reason.
+:meth:`~@Task.retry` can be used to re-execute the task,
+for example in the event of recoverable errors.
 
-A new message will the be sent using the same task-id, and sent
-to the same queue as the current task. This also means that you
-can track retries using the task's result instance (if a result
-backend is enabled).
+When you call ``retry`` it will send a new message, using the same
+task-id, and it will take care to make sure the message is delivered
+to the same queue as the originating task.
 
-An example:
+When a task is retried this is also recorded as a task state,
+so that you can track the progress of the task using the result
+instance (see :ref:`task-states`).
+
+Here's an example using ``retry``:
 
 .. code-block:: python
 
@@ -168,11 +293,8 @@ An example:
             raise send_twitter_status.retry(exc=exc)
 
 Here we used the `exc` argument to pass the current exception to
-:meth:`~@Task.retry`. At each step of the retry this exception
-is available as the tombstone (result) of the task. When
-:attr:`~@Task.max_retries` has been exceeded this is the
-exception raised.  However, if an `exc` argument is not provided the
-:exc:`~@RetryTaskError` exception is raised instead.
+:meth:`~@Task.retry`.  Both the exception and the traceback will
+be available in the task state (if a result backend is enabled).
 
 .. note::
 
@@ -211,8 +333,16 @@ override this default.
 
 .. _task-options:
 
-Task options
-============
+List of Options
+===============
+
+The task decorator can take a number of options that change the way
+the task behaves, for example you can set the rate limit for a task
+using the :attr:`rate_limit` option.
+
+Any keyword argument passed to the task decorator will actually be set
+as an attribute of the resulting task class, and this is a list
+of the built-in attributes.
 
 General
 -------
@@ -359,97 +489,10 @@ General
 
     The API reference for :class:`~@Task`.
 
-.. _task-names:
-
-Task names
-==========
-
-The task type is identified by the *task name*.
-
-If not provided a name will be automatically generated using the module
-and class name.
-
-For example:
-
-.. code-block:: python
-
-    >>> @celery.task(name="sum-of-two-numbers")
-    >>> def add(x, y):
-    ...     return x + y
-
-    >>> add.name
-    'sum-of-two-numbers'
-
-A best practice is to use the module name as a prefix to classify the
-tasks using namespaces.  This way the name won't collide with the name from
-another module:
-
-.. code-block:: python
-
-    >>> @celery.task(name="tasks.add")
-    >>> def add(x, y):
-    ...     return x + y
-
-
-You can tell the name of the task by investigating its name attribute::
-
-    >>> add.name
-    'tasks.add'
-
-
-Which is exactly the name automatically generated for this
-task if the module name is "tasks.py":
-
-.. code-block:: python
-
-    >>> @celery.task()
-    >>> def add(x, y):
-    ...     return x + y
-
-    >>> add.name
-    'tasks.add'
-
-.. _task-naming-relative-imports:
-
-Automatic naming and relative imports
--------------------------------------
-
-Relative imports and automatic name generation does not go well together,
-so if you're using relative imports you should set the name explicitly.
-
-For example if the client imports the module "myapp.tasks" as ".tasks", and
-the worker imports the module as "myapp.tasks", the generated names won't match
-and an :exc:`~@NotRegistered` error will be raised by the worker.
-
-This is also the case if using Django and using `project.myapp`::
-
-    INSTALLED_APPS = ("project.myapp", )
-
-The worker will have the tasks registered as "project.myapp.tasks.*",
-while this is what happens in the client if the module is imported as
-"myapp.tasks":
-
-.. code-block:: python
-
-    >>> from myapp.tasks import add
-    >>> add.name
-    'myapp.tasks.add'
-
-For this reason you should never use "project.app", but rather
-add the project directory to the Python path::
-
-    import os
-    import sys
-    sys.path.append(os.getcwd())
-
-    INSTALLED_APPS = ("myapp", )
-
-This makes more sense from the reusable app perspective anyway.
-
 .. _task-states:
 
-Task States
-===========
+States
+======
 
 Celery can keep track of the tasks current state.  The state also contains the
 result of a successful task, or the exception and traceback information of a
@@ -697,8 +740,8 @@ you have to pass them as regular args:
 
 .. _task-custom-classes:
 
-Creating custom task classes
-============================
+Custom task classes
+===================
 
 All tasks inherit from the :class:`@Task` class.
 The :meth:`~@Task.run` method becomes the task body.

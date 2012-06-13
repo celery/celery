@@ -49,7 +49,11 @@ RETRY = states.RETRY
 FAILURE = states.FAILURE
 EXCEPTION_STATES = states.EXCEPTION_STATES
 
-_tasks = default_app._tasks
+try:
+    _tasks = default_app._tasks
+except AttributeError:
+    # Windows: will be set later by concurrency.processes.
+    pass
 
 
 def mro_lookup(cls, attr, stop=()):

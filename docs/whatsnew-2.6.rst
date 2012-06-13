@@ -23,6 +23,21 @@ read the `django-celery changelog`_ and upgrade to `django-celery 2.6`_.
 This version is officially supported on CPython 2.5, 2.6, 2.7, 3.2 and 3.3,
 as well as PyPy and Jython.
 
+.. topic:: Highlights
+
+    - A new and improved API, that is both simpler and more powerful.
+
+        Everyone should read the new :ref:`first-steps` tutorial,
+        and the new :ref:`next-steps` tutorial.
+
+    - Documentation rewritten and updated to use the new API
+
+    - The worker is now thread-less, giving great performance improvements.
+
+    - This is the last version to support Python 2.5
+
+    - The new "Canvas" makes it easy to define complex workflows.
+
 
 .. _`website`: http://celeryproject.org/
 .. _`django-celery changelog`: http://bit.ly/djcelery-26-changelog

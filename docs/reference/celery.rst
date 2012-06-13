@@ -72,6 +72,8 @@ Application
 
         Task registry.
 
+        Accessing this attribute will also finalize the app.
+
     .. attribute:: Celery.pool
 
         Broker connection pool: :class:`~@pool`.

@@ -70,6 +70,18 @@ to be used.
 
 If not set then the systems default local time zone is used.
 
+.. warning::
+
+    Celery requires the :mod:`pytz` library to be installed,
+    when using custom time zones (other than UTC).  You can
+    install it using :program:`pip` or :program:`easy_install`::
+
+        $ pip install pytz
+
+    Pytz is a library that defines the timzones of the world,
+    it changes quite frequently so it is not included in the Python Standard
+    Library.
+
 .. _conf-tasks:
 
 Task settings

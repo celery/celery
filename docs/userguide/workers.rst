@@ -21,7 +21,7 @@ Starting the worker
 
 You can start the worker in the foreground by executing the command::
 
-    $ celery worker --loglevel=INFO --app=app
+    $ celery worker --app=app -l info
 
 For a full list of available command line options see
 :mod:`~celery.bin.celeryd`, or simply do::
@@ -120,18 +120,133 @@ argument and defaults to the number of CPUs available on the machine.
     to find the numbers that works best for you, as this varies based on
     application, work load, task run times and other factors.
 
+.. _worker-remote-control:
+
+Remote control
+==============
+
+.. versionadded:: 2.0
+
+.. sidebar:: The ``celery`` command
+
+    The :program:`celery` program is used to execute remote control
+    commands from the command line.  It supports all of the commands
+    listed below.  See :ref:`monitoring-celeryctl` for more information.
+
+pool support: *processes, eventlet, gevent*, blocking:*threads/solo* (see note)
+broker support: *amqp, redis, mongodb*
+
+Workers have the ability to be remote controlled using a high-priority
+broadcast message queue.  The commands can be directed to all, or a specific
+list of workers.
+
+Commands can also have replies.  The client can then wait for and collect
+those replies.  Since there's no central authority to know how many
+workers are available in the cluster, there is also no way to estimate
+how many workers may send a reply, so the client has a configurable
+timeout — the deadline in seconds for replies to arrive in.  This timeout
+defaults to one second.  If the worker doesn't reply within the deadline
+it doesn't necessarily mean the worker didn't reply, or worse is dead, but
+may simply be caused by network latency or the worker being slow at processing
+commands, so adjust the timeout accordingly.
+
+In addition to timeouts, the client can specify the maximum number
+of replies to wait for.  If a destination is specified, this limit is set
+to the number of destination hosts.
+
+.. note::
+
+    The solo and threads pool supports remote control commands,
+    but any task executing will block any waiting control command,
+    so it is of limited use if the worker is very busy.  In that
+    case you must increase the timeout waitin for replies in the client.
+
+.. _worker-broadcast-fun:
+
+The :meth:`~@control.broadcast` function.
+----------------------------------------------------
+
+This is the client function used to send commands to the workers.
+Some remote control commands also have higher-level interfaces using
+:meth:`~@control.broadcast` in the background, like
+:meth:`~@control.rate_limit` and :meth:`~@control.ping`.
+
+Sending the :control:`rate_limit` command and keyword arguments::
+
+    >>> from celery.task.control import broadcast
+    >>> celery.control.broadcast("rate_limit",
+    ...                          arguments={"task_name": "myapp.mytask",
+    ...                                     "rate_limit": "200/m"})
+
+This will send the command asynchronously, without waiting for a reply.
+To request a reply you have to use the `reply` argument::
+
+    >>> celery.control.broadcast("rate_limit", {
+    ...     "task_name": "myapp.mytask", "rate_limit": "200/m"}, reply=True)
+    [{'worker1.example.com': 'New rate limit set successfully'},
+     {'worker2.example.com': 'New rate limit set successfully'},
+     {'worker3.example.com': 'New rate limit set successfully'}]
+
+Using the `destination` argument you can specify a list of workers
+to receive the command::
+
+    >>> celery.control.broadcast("rate_limit", {
+    ...     "task_name": "myapp.mytask",
+    ...     "rate_limit": "200/m"}, reply=True,
+    ...                             destination=["worker1.example.com"])
+    [{'worker1.example.com': 'New rate limit set successfully'}]
+
+
+Of course, using the higher-level interface to set rate limits is much
+more convenient, but there are commands that can only be requested
+using :meth:`~@control.broadcast`.
+
+.. control:: revoke
+
+Revoking tasks
+==============
+pool support: all
+broker support: *amqp, redis, mongodb*
+
+All worker nodes keeps a memory of revoked task ids, either in-memory or
+persistent on disk (see :ref:`worker-persistent-revokes`).
+
+When a worker receives a revoke request it will skip executing
+the task, but it won't terminate an already executing task unless
+the `terminate` option is set.
+
+If `terminate` is set the worker child process processing the task
+will be terminated.  The default signal sent is `TERM`, but you can
+specify this using the `signal` argument.  Signal can be the uppercase name
+of any signal defined in the :mod:`signal` module in the Python Standard
+Library.
+
+Terminating a task also revokes it.
+
+**Example**
+
+::
+
+    >>> celery.control.revoke("d9078da5-9915-40a0-bfa1-392c7bde42ed")
+
+    >>> celery.control.revoke("d9078da5-9915-40a0-bfa1-392c7bde42ed",
+    ...                       terminate=True)
+
+    >>> celery.control.revoke("d9078da5-9915-40a0-bfa1-392c7bde42ed",
+    ...                       terminate=True, signal="SIGKILL")
+
 .. _worker-persistent-revokes:
 
 Persistent revokes
-==================
+------------------
 
 Revoking tasks works by sending a broadcast message to all the workers,
 the workers then keep a list of revoked tasks in memory.
 
 If you want tasks to remain revoked after worker restart you need to
 specify a file for these to be stored in, either by using the `--statedb`
-argument to :mod:`~celery.bin.celeryd` or the :setting:`CELERYD_STATE_DB`
-setting.  See :setting:`CELERYD_STATE_DB` for more information.
+argument to :program:`celery worker` or the :setting:`CELERYD_STATE_DB`
+setting.
 
 Note that remote control commands must be working for revokes to work.
 Remote control commands are only supported by the amqp, redis and mongodb
@@ -203,6 +318,32 @@ two minutes::
     [{'worker1.example.com': {'ok': 'time limits set successfully'}}]
 
 Only tasks that starts executing after the time limit change will be affected.
+
+.. _worker-rate-limits:
+
+Rate Limits
+===========
+
+.. control:: rate_limit
+
+Changing rate-limits at runtime
+-------------------------------
+
+Example changing the rate limit for the `myapp.mytask` task to accept
+200 tasks a minute on all servers::
+
+    >>> celery.control.rate_limit("myapp.mytask", "200/m")
+
+Example changing the rate limit on a single host by specifying the
+destination host name::
+
+    >>> celery.control.rate_limit("myapp.mytask", "200/m",
+    ...            destination=["worker1.example.com"])
+
+.. warning::
+
+    This won't affect workers with the
+    :setting:`CELERY_DISABLE_RATE_LIMITS` setting enabled.
 
 .. _worker-maxtasksperchild:
 
@@ -302,142 +443,164 @@ environment variable::
 
     $ env CELERYD_FSNOTIFY=stat celery worker -l info --autoreload
 
-.. _worker-remote-control:
+.. _worker-autoreload:
 
-Remote control
-==============
+.. control:: pool_restart
 
-.. versionadded:: 2.0
+Pool Restart Command
+--------------------
 
-pool support: *processes, eventlet, gevent*, blocking:*threads/solo* (see note)
-broker support: *amqp, redis, mongodb*
+.. versionadded:: 2.5
 
-Workers have the ability to be remote controlled using a high-priority
-broadcast message queue.  The commands can be directed to all, or a specific
-list of workers.
+The remote control command :control:`pool_restart` sends restart requests to
+the workers child processes.  It is particularly useful for forcing
+the worker to import new modules, or for reloading already imported
+modules.  This command does not interrupt executing tasks.
 
-Commands can also have replies.  The client can then wait for and collect
-those replies.  Since there's no central authority to know how many
-workers are available in the cluster, there is also no way to estimate
-how many workers may send a reply, so the client has a configurable
-timeout — the deadline in seconds for replies to arrive in.  This timeout
-defaults to one second.  If the worker doesn't reply within the deadline
-it doesn't necessarily mean the worker didn't reply, or worse is dead, but
-may simply be caused by network latency or the worker being slow at processing
-commands, so adjust the timeout accordingly.
+Example
+~~~~~~~
 
-In addition to timeouts, the client can specify the maximum number
-of replies to wait for.  If a destination is specified, this limit is set
-to the number of destination hosts.
+Running the following command will result in the `foo` and `bar` modules
+being imported by the worker processes:
 
-.. seealso::
+.. code-block:: python
 
-    The :program:`celery` program is used to execute remote control
-    commands from the command line.  It supports all of the commands
-    listed below.  See :ref:`monitoring-celeryctl` for more information.
+    >>> from celery.task.control import broadcast
+    >>> celery.control.broadcast("pool_restart",
+    ...                          arguments={"modules": ["foo", "bar"]})
+
+Use the ``reload`` argument to reload modules it has already imported:
+
+.. code-block:: python
+
+    >>> celery.control.broadcast("pool_restart",
+    ...                          arguments={"modules": ["foo"],
+    ...                                     "reload": True})
+
+If you don't specify any modules then all known tasks modules will
+be imported/reloaded:
+
+.. code-block:: python
+
+    >>> celery.control.broadcast("pool_restart", arguments={"reload": True})
+
+The ``modules`` argument is a list of modules to modify. ``reload``
+specifies whether to reload modules if they have previously been imported.
+By default ``reload`` is disabled. The `pool_restart` command uses the
+Python :func:`reload` function to reload modules, or you can provide
+your own custom reloader by passing the ``reloader`` argument.
 
 .. note::
 
-    The solo and threads pool supports remote control commands,
-    but any task executing will block any waiting control command,
-    so it is of limited use if the worker is very busy.  In that
-    case you must increase the timeout waitin for replies in the client.
+    Module reloading comes with caveats that are documented in :func:`reload`.
+    Please read this documentation and make sure your modules are suitable
+    for reloading.
 
-.. _worker-broadcast-fun:
+.. seealso::
 
-The :meth:`~@control.broadcast` function.
-----------------------------------------------------
-
-This is the client function used to send commands to the workers.
-Some remote control commands also have higher-level interfaces using
-:meth:`~@control.broadcast` in the background, like
-:meth:`~@control.rate_limit` and :meth:`~@control.ping`.
-
-Sending the :control:`rate_limit` command and keyword arguments::
-
-    >>> from celery.task.control import broadcast
-    >>> celery.control.broadcast("rate_limit",
-    ...                          arguments={"task_name": "myapp.mytask",
-    ...                                     "rate_limit": "200/m"})
-
-This will send the command asynchronously, without waiting for a reply.
-To request a reply you have to use the `reply` argument::
-
-    >>> celery.control.broadcast("rate_limit", {
-    ...     "task_name": "myapp.mytask", "rate_limit": "200/m"}, reply=True)
-    [{'worker1.example.com': 'New rate limit set successfully'},
-     {'worker2.example.com': 'New rate limit set successfully'},
-     {'worker3.example.com': 'New rate limit set successfully'}]
-
-Using the `destination` argument you can specify a list of workers
-to receive the command::
-
-    >>> celery.control.broadcast("rate_limit", {
-    ...     "task_name": "myapp.mytask",
-    ...     "rate_limit": "200/m"}, reply=True,
-    ...                             destination=["worker1.example.com"])
-    [{'worker1.example.com': 'New rate limit set successfully'}]
+    - http://pyunit.sourceforge.net/notes/reloading.html
+    - http://www.indelible.org/ink/python-reloading/
+    - http://docs.python.org/library/functions.html#reload
 
 
-Of course, using the higher-level interface to set rate limits is much
-more convenient, but there are commands that can only be requested
-using :meth:`~@control.broadcast`.
+.. _worker-inspect:
 
-.. _worker-rate-limits:
+Inspecting workers
+==================
 
-.. control:: rate_limit
+:class:`@control.inspect` lets you inspect running workers.  It
+uses remote control commands under the hood.
 
-Rate limits
------------
+You can also use the ``celery`` command to inspect workers,
+and it supports the same commands as the :class:`@Celery.control` interface.
 
-Example changing the rate limit for the `myapp.mytask` task to accept
-200 tasks a minute on all servers::
+.. code-block:: python
 
-    >>> celery.control.rate_limit("myapp.mytask", "200/m")
+    # Inspect all nodes.
+    >>> i = celery.control.inspect()
 
-Example changing the rate limit on a single host by specifying the
-destination host name::
+    # Specify multiple nodes to inspect.
+    >>> i = celery.control.inspect(["worker1.example.com",
+                                    "worker2.example.com"])
 
-    >>> celery.control.rate_limit("myapp.mytask", "200/m",
-    ...            destination=["worker1.example.com"])
+    # Specify a single node to inspect.
+    >>> i = celery.control.inspect("worker1.example.com")
 
-.. warning::
+.. _worker-inspect-registered-tasks:
 
-    This won't affect workers with the
-    :setting:`CELERY_DISABLE_RATE_LIMITS` setting on. To re-enable rate limits
-    then you have to restart the worker.
+Dump of registered tasks
+------------------------
 
-.. control:: revoke
+You can get a list of tasks registered in the worker using the
+:meth:`~@control.inspect.registered`::
 
-Revoking tasks
---------------
+    >>> i.registered()
+    [{'worker1.example.com': ['tasks.add',
+                              'tasks.sleeptask']}]
 
-All worker nodes keeps a memory of revoked task ids, either in-memory or
-persistent on disk (see :ref:`worker-persistent-revokes`).
+.. _worker-inspect-active-tasks:
 
-When a worker receives a revoke request it will skip executing
-the task, but it won't terminate an already executing task unless
-the `terminate` option is set.
+Dump of currently executing tasks
+---------------------------------
 
-If `terminate` is set the worker child process processing the task
-will be terminated.  The default signal sent is `TERM`, but you can
-specify this using the `signal` argument.  Signal can be the uppercase name
-of any signal defined in the :mod:`signal` module in the Python Standard
-Library.
+You can get a list of active tasks using
+:meth:`~@control.inspect.active`::
 
-Terminating a task also revokes it.
+    >>> i.active()
+    [{'worker1.example.com':
+        [{"name": "tasks.sleeptask",
+          "id": "32666e9b-809c-41fa-8e93-5ae0c80afbbf",
+          "args": "(8,)",
+          "kwargs": "{}"}]}]
 
-**Example**
+.. _worker-inspect-eta-schedule:
 
-::
+Dump of scheduled (ETA) tasks
+-----------------------------
 
-    >>> celery.control.revoke("d9078da5-9915-40a0-bfa1-392c7bde42ed")
+You can get a list of tasks waiting to be scheduled by using
+:meth:`~@control.inspect.scheduled`::
 
-    >>> celery.control.revoke("d9078da5-9915-40a0-bfa1-392c7bde42ed",
-    ...                       terminate=True)
+    >>> i.scheduled()
+    [{'worker1.example.com':
+        [{"eta": "2010-06-07 09:07:52", "priority": 0,
+          "request": {
+            "name": "tasks.sleeptask",
+            "id": "1a7980ea-8b19-413e-91d2-0b74f3844c4d",
+            "args": "[1]",
+            "kwargs": "{}"}},
+         {"eta": "2010-06-07 09:07:53", "priority": 0,
+          "request": {
+            "name": "tasks.sleeptask",
+            "id": "49661b9a-aa22-4120-94b7-9ee8031d219d",
+            "args": "[2]",
+            "kwargs": "{}"}}]}]
 
-    >>> celery.control.revoke("d9078da5-9915-40a0-bfa1-392c7bde42ed",
-    ...                       terminate=True, signal="SIGKILL")
+.. note::
+
+    These are tasks with an eta/countdown argument, not periodic tasks.
+
+.. _worker-inspect-reserved:
+
+Dump of reserved tasks
+----------------------
+
+Reserved tasks are tasks that has been received, but is still waiting to be
+executed.
+
+You can get a list of these using
+:meth:`~@control.inspect.reserved`::
+
+    >>> i.reserved()
+    [{'worker1.example.com':
+        [{"name": "tasks.sleeptask",
+          "id": "32666e9b-809c-41fa-8e93-5ae0c80afbbf",
+          "args": "(8,)",
+          "kwargs": "{}"}]}]
+
+
+Additional Commands
+===================
 
 .. control:: shutdown
 
@@ -488,67 +651,10 @@ a worker using :program:`celery events`/:program:`celerymon`.
     >>> celery.control.enable_events()
     >>> celery.control.disable_events()
 
-.. _worker-autoreload:
-
-Autoreloading
--------------
-
-.. versionadded:: 2.5
-
-The remote control command ``pool_restart`` sends restart requests to
-the workers child processes.  It is particularly useful for forcing
-the worker to import new modules, or for reloading already imported
-modules.  This command does not interrupt executing tasks.
-
-Example
-~~~~~~~
-
-Running the following command will result in the `foo` and `bar` modules
-being imported by the worker processes:
-
-.. code-block:: python
-
-    >>> from celery.task.control import broadcast
-    >>> celery.control.broadcast("pool_restart",
-    ...                          arguments={"modules": ["foo", "bar"]})
-
-Use the ``reload`` argument to reload modules it has already imported:
-
-.. code-block:: python
-
-    >>> celery.control.broadcast("pool_restart",
-    ...                          arguments={"modules": ["foo"],
-    ...                                     "reload": True})
-
-If you don't specify any modules then all known tasks modules will
-be imported/reloaded:
-
-.. code-block:: python
-
-    >>> celery.control.broadcast("pool_restart", arguments={"reload": True})
-
-The ``modules`` argument is a list of modules to modify. ``reload``
-specifies whether to reload modules if they have previously been imported.
-By default ``reload`` is disabled. The `pool_restart` command uses the
-Python :func:`reload` function to reload modules, or you can provide
-your own custom reloader by passing the ``reloader`` argument.
-
-.. note::
-
-    Module reloading comes with caveats that are documented in :func:`reload`.
-    Please read this documentation and make sure your modules are suitable
-    for reloading.
-
-.. seealso::
-
-    - http://pyunit.sourceforge.net/notes/reloading.html
-    - http://www.indelible.org/ink/python-reloading/
-    - http://docs.python.org/library/functions.html#reload
-
 .. _worker-custom-control-commands:
 
 Writing your own remote control commands
-----------------------------------------
+========================================
 
 Remote control commands are registered in the control panel and
 they take a single argument: the current
@@ -567,104 +673,3 @@ Here's an example control command that restarts the broker connection:
         panel.logger.critical("Connection reset by remote control.")
         panel.consumer.reset_connection()
         return {"ok": "connection reset"}
-
-
-These can be added to task modules, or you can keep them in their own module
-then import them using the :setting:`CELERY_IMPORTS` setting::
-
-    CELERY_IMPORTS = ("myapp.worker.control", )
-
-.. _worker-inspect:
-
-Inspecting workers
-==================
-
-:class:`@control.inspect` lets you inspect running workers.  It
-uses remote control commands under the hood.
-
-.. code-block:: python
-
-    # Inspect all nodes.
-    >>> i = celery.control.inspect()
-
-    # Specify multiple nodes to inspect.
-    >>> i = celery.control.inspect(["worker1.example.com",
-                                    "worker2.example.com"])
-
-    # Specify a single node to inspect.
-    >>> i = celery.control.inspect("worker1.example.com")
-
-.. _worker-inspect-registered-tasks:
-
-Dump of registered tasks
-------------------------
-
-You can get a list of tasks registered in the worker using the
-:meth:`~@control.inspect.registered`::
-
-    >>> i.registered()
-    [{'worker1.example.com': ['celery.delete_expired_task_meta',
-                              'celery.execute_remote',
-                              'celery.map_async',
-                              'celery.ping',
-                              'celery.task.http.HttpDispatchTask',
-                              'tasks.add',
-                              'tasks.sleeptask']}]
-
-.. _worker-inspect-active-tasks:
-
-Dump of currently executing tasks
----------------------------------
-
-You can get a list of active tasks using
-:meth:`~@control.inspect.active`::
-
-    >>> i.active()
-    [{'worker1.example.com':
-        [{"name": "tasks.sleeptask",
-          "id": "32666e9b-809c-41fa-8e93-5ae0c80afbbf",
-          "args": "(8,)",
-          "kwargs": "{}"}]}]
-
-.. _worker-inspect-eta-schedule:
-
-Dump of scheduled (ETA) tasks
------------------------------
-
-You can get a list of tasks waiting to be scheduled by using
-:meth:`~@control.inspect.scheduled`::
-
-    >>> i.scheduled()
-    [{'worker1.example.com':
-        [{"eta": "2010-06-07 09:07:52", "priority": 0,
-          "request": {
-            "name": "tasks.sleeptask",
-            "id": "1a7980ea-8b19-413e-91d2-0b74f3844c4d",
-            "args": "[1]",
-            "kwargs": "{}"}},
-         {"eta": "2010-06-07 09:07:53", "priority": 0,
-          "request": {
-            "name": "tasks.sleeptask",
-            "id": "49661b9a-aa22-4120-94b7-9ee8031d219d",
-            "args": "[2]",
-            "kwargs": "{}"}}]}]
-
-Note that these are tasks with an eta/countdown argument, not periodic tasks.
-
-.. _worker-inspect-reserved:
-
-Dump of reserved tasks
-----------------------
-
-Reserved tasks are tasks that has been received, but is still waiting to be
-executed.
-
-You can get a list of these using
-:meth:`~@control.inspect.reserved`::
-
-    >>> i.reserved()
-    [{'worker1.example.com':
-        [{"name": "tasks.sleeptask",
-          "id": "32666e9b-809c-41fa-8e93-5ae0c80afbbf",
-          "args": "(8,)",
-          "kwargs": "{}"}]}]

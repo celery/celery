@@ -78,7 +78,7 @@ class EventDispatcher(object):
     def __init__(self, connection=None, hostname=None, enabled=True,
             channel=None, buffer_while_offline=True, app=None,
             serializer=None):
-        self.app = app_or_default(app)
+        self.app = app_or_default(app or self.app)
         self.connection = connection
         self.channel = channel
         self.hostname = hostname or socket.gethostname()
