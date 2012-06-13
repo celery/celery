@@ -1,10 +1,14 @@
 Every contribution to Celery is as important to us,
 as every coin in the money bin is to Scrooge McDuck.
 
+The first commit to the Celery codebase was made on
+Fri Apr 24 13:30:00 2009 +0200, and has since
+then been improved by many contributors.
+
 Everyone who have ever contributed to Celery should be in
 this list, but in a recent policy change it has been decided
 that everyone must add themselves here, and not be added
-by others, so it's currently incomplete, waiting for everyone
+by others, so it's currently incomplete waiting for everyone
 to add their names.
 
 The full list of authors can be found in docs/AUTHORS.txt.
