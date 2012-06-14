@@ -3,7 +3,7 @@
     celery.apps.beat
     ~~~~~~~~~~~~~~~~
 
-    This module is the "program-version" of :mod:`celery.beat`.
+    This module is the 'program-version' of :mod:`celery.beat`.
 
     It does everything necessary to run that module
     as an actual application, like installing signal handlers
@@ -32,17 +32,17 @@ Configuration ->
     . maxinterval -> %(hmax_interval)s (%(max_interval)ss)
 """.strip()
 
-logger = get_logger("celery.beat")
+logger = get_logger('celery.beat')
 
 
 class Beat(configurated):
     Service = beat.Service
 
     app = None
-    loglevel = from_config("log_level")
-    logfile = from_config("log_file")
-    schedule = from_config("schedule_filename")
-    scheduler_cls = from_config("scheduler")
+    loglevel = from_config('log_level')
+    logfile = from_config('log_file')
+    schedule = from_config('schedule_filename')
+    scheduler_cls = from_config('scheduler')
     redirect_stdouts = from_config()
     redirect_stdouts_level = from_config()
 
@@ -50,7 +50,7 @@ class Beat(configurated):
             socket_timeout=30, pidfile=None, **kwargs):
         """Starts the celerybeat task scheduler."""
         self.app = app = app_or_default(app or self.app)
-        self.setup_defaults(kwargs, namespace="celerybeat")
+        self.setup_defaults(kwargs, namespace='celerybeat')
 
         self.max_interval = max_interval
         self.socket_timeout = socket_timeout
@@ -63,7 +63,7 @@ class Beat(configurated):
     def run(self):
         self.setup_logging()
         print(str(self.colored.cyan(
-                    "celerybeat v%s is starting." % __version__)))
+                    'celerybeat v%s is starting.' % __version__)))
         self.init_loader()
         self.set_process_title()
         self.start_scheduler()
@@ -84,19 +84,19 @@ class Beat(configurated):
                             scheduler_cls=self.scheduler_cls,
                             schedule_filename=self.schedule)
 
-        print(str(c.blue("__    ", c.magenta("-"),
-                  c.blue("    ... __   "), c.magenta("-"),
-                  c.blue("        _\n"),
+        print(str(c.blue('__    ', c.magenta('-'),
+                  c.blue('    ... __   '), c.magenta('-'),
+                  c.blue('        _\n'),
                   c.reset(self.startup_info(beat)))))
         if self.socket_timeout:
-            logger.debug("Setting default socket timeout to %r",
+            logger.debug('Setting default socket timeout to %r',
                          self.socket_timeout)
             socket.setdefaulttimeout(self.socket_timeout)
         try:
             self.install_sync_handler(beat)
             beat.start()
         except Exception, exc:
-            logger.critical("celerybeat raised exception %s: %r",
+            logger.critical('celerybeat raised exception %s: %r',
                             exc.__class__, exc,
                             exc_info=True)
 
@@ -109,20 +109,20 @@ class Beat(configurated):
     def startup_info(self, beat):
         scheduler = beat.get_scheduler(lazy=True)
         return STARTUP_INFO_FMT % {
-            "conninfo": self.app.broker_connection().as_uri(),
-            "logfile": self.logfile or "[stderr]",
-            "loglevel": LOG_LEVELS[self.loglevel],
-            "loader": qualname(self.app.loader),
-            "scheduler": qualname(scheduler),
-            "scheduler_info": scheduler.info,
-            "hmax_interval": humanize_seconds(beat.max_interval),
-            "max_interval": beat.max_interval,
+            'conninfo': self.app.broker_connection().as_uri(),
+            'logfile': self.logfile or '[stderr]',
+            'loglevel': LOG_LEVELS[self.loglevel],
+            'loader': qualname(self.app.loader),
+            'scheduler': qualname(scheduler),
+            'scheduler_info': scheduler.info,
+            'hmax_interval': humanize_seconds(beat.max_interval),
+            'max_interval': beat.max_interval,
         }
 
     def set_process_title(self):
-        arg_start = "manage" in sys.argv[0] and 2 or 1
-        platforms.set_process_title("celerybeat",
-                               info=" ".join(sys.argv[arg_start:]))
+        arg_start = 'manage' in sys.argv[0] and 2 or 1
+        platforms.set_process_title('celerybeat',
+                               info=' '.join(sys.argv[arg_start:]))
 
     def install_sync_handler(self, beat):
         """Install a `SIGTERM` + `SIGINT` handler that saves

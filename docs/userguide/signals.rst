@@ -4,7 +4,6 @@
 Signals
 =======
 
-
 .. contents::
     :local:
 

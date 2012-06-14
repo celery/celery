@@ -19,10 +19,10 @@ from celery.utils.imports import NotAPackage, find_module
 
 from .base import BaseLoader
 
-DEFAULT_CONFIG_MODULE = "celeryconfig"
+DEFAULT_CONFIG_MODULE = 'celeryconfig'
 
 #: Warns if configuration file is missing if :envvar:`C_WNOCONF` is set.
-C_WNOCONF = strtobool(os.environ.get("C_WNOCONF", False))
+C_WNOCONF = strtobool(os.environ.get('C_WNOCONF', False))
 
 CONFIG_INVALID_NAME = """
 Error: Module '%(module)s' doesn't exist, or it's not a valid \
@@ -46,7 +46,7 @@ class Loader(BaseLoader):
     def read_configuration(self):
         """Read configuration from :file:`celeryconfig.py` and configure
         celery and Django so it can be used by regular Python."""
-        configname = os.environ.get("CELERY_CONFIG_MODULE",
+        configname = os.environ.get('CELERY_CONFIG_MODULE',
                                      DEFAULT_CONFIG_MODULE)
         try:
             self.find_module(configname)
@@ -54,17 +54,17 @@ class Loader(BaseLoader):
             if configname.endswith('.py'):
                 raise NotAPackage, NotAPackage(
                         CONFIG_WITH_SUFFIX % {
-                            "module": configname,
-                            "suggest": configname[:-3]}), sys.exc_info()[2]
+                            'module': configname,
+                            'suggest': configname[:-3]}), sys.exc_info()[2]
             raise NotAPackage, NotAPackage(
                     CONFIG_INVALID_NAME % {
-                        "module": configname}), sys.exc_info()[2]
+                        'module': configname}), sys.exc_info()[2]
         except ImportError:
             # billiard sets this if forked using execv
-            if C_WNOCONF and not os.environ.get("FORKED_BY_MULTIPROCESSING"):
+            if C_WNOCONF and not os.environ.get('FORKED_BY_MULTIPROCESSING'):
                 warnings.warn(NotConfigured(
-                    "No %r module found! Please make sure it exists and "
-                    "is available to Python." % (configname, )))
+                    'No %r module found! Please make sure it exists and '
+                    'is available to Python.' % (configname, )))
             return self.setup_settings({})
         else:
             celeryconfig = self.import_from_cwd(configname)
@@ -75,4 +75,4 @@ class Loader(BaseLoader):
             return self.setup_settings(usercfg)
 
     def wanted_module_item(self, item):
-        return item[0].isupper() and not item.startswith("_")
+        return item[0].isupper() and not item.startswith('_')

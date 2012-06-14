@@ -23,16 +23,16 @@ from datetime import datetime, timedelta
 from kombu.log import get_logger
 
 VERSION = (1, 0, 0)
-__version__ = ".".join(map(str, VERSION))
-__author__ = "Ask Solem"
-__contact__ = "ask@celeryproject.org"
-__homepage__ = "http://github.com/ask/timer2/"
-__docformat__ = "restructuredtext"
+__version__ = '.'.join(map(str, VERSION))
+__author__ = 'Ask Solem'
+__contact__ = 'ask@celeryproject.org'
+__homepage__ = 'http://github.com/ask/timer2/'
+__docformat__ = 'restructuredtext'
 
 DEFAULT_MAX_INTERVAL = 2
-TIMER_DEBUG = os.environ.get("TIMER_DEBUG")
+TIMER_DEBUG = os.environ.get('TIMER_DEBUG')
 
-logger = get_logger("timer2")
+logger = get_logger('timer2')
 
 
 class Entry(object):
@@ -51,13 +51,13 @@ class Entry(object):
         self.tref.cancelled = True
 
     def __repr__(self):
-        return "<TimerEntry: %s(*%r, **%r)" % (
+        return '<TimerEntry: %s(*%r, **%r)' % (
                 self.fun.__name__, self.args, self.kwargs)
 
     if sys.version_info[0] == 3:  # pragma: no cover
 
         def __hash__(self):
-            return hash("|".join(map(repr, (self.fun, self.args,
+            return hash('|'.join(map(repr, (self.fun, self.args,
                                             self.kwargs))))
 
         def __lt__(self, other):
@@ -92,7 +92,7 @@ class Schedule(object):
             entry()
         except Exception, exc:
             if not self.handle_error(exc):
-                logger.error("Error in timer: %r", exc, exc_info=True)
+                logger.error('Error in timer: %r', exc, exc_info=True)
 
     def handle_error(self, exc_info):
         if self.on_error:
@@ -194,7 +194,7 @@ class Schedule(object):
                              # and the operation is atomic.
 
     def info(self):
-        return ({"eta": eta, "priority": priority, "item": item}
+        return ({'eta': eta, 'priority': priority, 'item': item}
                     for eta, priority, item in self.queue)
 
     def cancel(self, tref):
@@ -217,7 +217,7 @@ class Timer(Thread):
     if TIMER_DEBUG:  # pragma: no cover
         def start(self, *args, **kwargs):
             import traceback
-            print("- Timer starting")
+            print('- Timer starting')
             traceback.print_stack()
             super(Timer, self).start(*args, **kwargs)
 
@@ -233,7 +233,7 @@ class Timer(Thread):
         self.mutex = Lock()
         self.not_empty = Condition(self.mutex)
         self.setDaemon(True)
-        self.setName("Timer-%s" % (self._timer_count(), ))
+        self.setName('Timer-%s' % (self._timer_count(), ))
 
     def _next_entry(self):
         with self.not_empty:
@@ -265,7 +265,7 @@ class Timer(Thread):
                 # so gc collected built-in modules.
                 pass
         except Exception, exc:
-            logger.error("Thread Timer crashed: %r", exc, exc_info=True)
+            logger.error('Thread Timer crashed: %r', exc, exc_info=True)
             os._exit(1)
 
     def stop(self):
@@ -287,19 +287,19 @@ class Timer(Thread):
             return entry
 
     def enter(self, entry, eta, priority=None):
-        return self._do_enter("enter", entry, eta, priority=priority)
+        return self._do_enter('enter', entry, eta, priority=priority)
 
     def apply_at(self, *args, **kwargs):
-        return self._do_enter("apply_at", *args, **kwargs)
+        return self._do_enter('apply_at', *args, **kwargs)
 
     def enter_after(self, *args, **kwargs):
-        return self._do_enter("enter_after", *args, **kwargs)
+        return self._do_enter('enter_after', *args, **kwargs)
 
     def apply_after(self, *args, **kwargs):
-        return self._do_enter("apply_after", *args, **kwargs)
+        return self._do_enter('apply_after', *args, **kwargs)
 
     def apply_interval(self, *args, **kwargs):
-        return self._do_enter("apply_interval", *args, **kwargs)
+        return self._do_enter('apply_interval', *args, **kwargs)
 
     def exit_after(self, msecs, priority=10):
         self.apply_after(msecs, sys.exit, priority)

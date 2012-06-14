@@ -43,26 +43,26 @@ class CursesMonitor(object):  # pragma: no cover
     screen_delay = 10
     selected_task = None
     selected_position = 0
-    selected_str = "Selected: "
+    selected_str = 'Selected: '
     foreground = curses.COLOR_BLACK
     background = curses.COLOR_WHITE
-    online_str = "Workers online: "
-    help_title = "Keys: "
-    help = ("j:up k:down i:info t:traceback r:result c:revoke ^c: quit")
-    greet = "celeryev %s" % __version__
-    info_str = "Info: "
+    online_str = 'Workers online: '
+    help_title = 'Keys: '
+    help = ('j:up k:down i:info t:traceback r:result c:revoke ^c: quit')
+    greet = 'celeryev %s' % __version__
+    info_str = 'Info: '
 
     def __init__(self, state, keymap=None, app=None):
         self.app = app_or_default(app)
         self.keymap = keymap or self.keymap
         self.state = state
-        default_keymap = {"J": self.move_selection_down,
-                          "K": self.move_selection_up,
-                          "C": self.revoke_selection,
-                          "T": self.selection_traceback,
-                          "R": self.selection_result,
-                          "I": self.selection_info,
-                          "L": self.selection_rate_limit}
+        default_keymap = {'J': self.move_selection_down,
+                          'K': self.move_selection_up,
+                          'C': self.revoke_selection,
+                          'T': self.selection_traceback,
+                          'R': self.selection_result,
+                          'I': self.selection_info,
+                          'L': self.selection_rate_limit}
         self.keymap = dict(default_keymap, **self.keymap)
 
     def format_row(self, uuid, task, worker, timestamp, state):
@@ -87,7 +87,7 @@ class CursesMonitor(object):  # pragma: no cover
         state = abbr(state, STATE_WIDTH).ljust(STATE_WIDTH)
         timestamp = timestamp.ljust(TIMESTAMP_WIDTH)
 
-        row = "%s %s %s %s %s " % (uuid, worker, task, timestamp, state)
+        row = '%s %s %s %s %s ' % (uuid, worker, task, timestamp, state)
         if self.screen_width is None:
             self.screen_width = len(row[:mx])
         return row[:mx]
@@ -139,9 +139,9 @@ class CursesMonitor(object):  # pragma: no cover
         except IndexError:
             self.selected_task = self.tasks[0][0]
 
-    keyalias = {curses.KEY_DOWN: "J",
-                curses.KEY_UP: "K",
-                curses.KEY_ENTER: "I"}
+    keyalias = {curses.KEY_DOWN: 'J',
+                curses.KEY_UP: 'K',
+                curses.KEY_ENTER: 'I'}
 
     def handle_keypress(self):
         try:
@@ -161,7 +161,7 @@ class CursesMonitor(object):  # pragma: no cover
             self.win.addstr(y(), 3, title, curses.A_BOLD | curses.A_UNDERLINE)
             blank_line()
         callback(my, mx, y())
-        self.win.addstr(my - 1, 0, "Press any key to continue...",
+        self.win.addstr(my - 1, 0, 'Press any key to continue...',
                         curses.A_BOLD)
         self.win.refresh()
         while 1:
@@ -178,9 +178,9 @@ class CursesMonitor(object):  # pragma: no cover
             return curses.beep()
 
         my, mx = self.win.getmaxyx()
-        r = "New rate limit: "
+        r = 'New rate limit: '
         self.win.addstr(my - 2, 3, r, curses.A_BOLD | curses.A_UNDERLINE)
-        self.win.addstr(my - 2, len(r) + 3, " " * (mx - len(r)))
+        self.win.addstr(my - 2, len(r) + 3, ' ' * (mx - len(r)))
         rlimit = self.readline(my - 2, 3 + len(r))
 
         if rlimit:
@@ -193,7 +193,7 @@ class CursesMonitor(object):  # pragma: no cover
         def callback(my, mx, xs):
             y = count(xs).next
             if not reply:
-                self.win.addstr(y(), 3, "No replies received in 1s deadline.",
+                self.win.addstr(y(), 3, 'No replies received in 1s deadline.',
                         curses.A_BOLD + curses.color_pair(2))
                 return
 
@@ -201,19 +201,19 @@ class CursesMonitor(object):  # pragma: no cover
                 curline = y()
 
                 host, response = subreply.items()[0]
-                host = "%s: " % host
+                host = '%s: ' % host
                 self.win.addstr(curline, 3, host, curses.A_BOLD)
                 attr = curses.A_NORMAL
-                text = ""
-                if "error" in response:
-                    text = response["error"]
+                text = ''
+                if 'error' in response:
+                    text = response['error']
                     attr |= curses.color_pair(2)
-                elif "ok" in response:
-                    text = response["ok"]
+                elif 'ok' in response:
+                    text = response['ok']
                     attr |= curses.color_pair(3)
                 self.win.addstr(curline, 3 + len(host), text, attr)
 
-        return self.alert(callback, "Remote Control Command Replies")
+        return self.alert(callback, 'Remote Control Command Replies')
 
     def readline(self, x, y):
         buffer = str()
@@ -248,15 +248,15 @@ class CursesMonitor(object):  # pragma: no cover
             my, mx = self.win.getmaxyx()
             y = count(xs).next
             task = self.state.tasks[self.selected_task]
-            info = task.info(extra=["state"])
-            infoitems = [("args", info.pop("args", None)),
-                         ("kwargs", info.pop("kwargs", None))] + info.items()
+            info = task.info(extra=['state'])
+            infoitems = [('args', info.pop('args', None)),
+                         ('kwargs', info.pop('kwargs', None))] + info.items()
             for key, value in infoitems:
                 if key is None:
                     continue
                 value = str(value)
                 curline = y()
-                keys = key + ": "
+                keys = key + ': '
                 self.win.addstr(curline, 3, keys, curses.A_BOLD)
                 wrapped = wrap(value, mx - 2)
                 if len(wrapped) == 1:
@@ -267,15 +267,15 @@ class CursesMonitor(object):  # pragma: no cover
                     for subline in wrapped:
                         nexty = y()
                         if nexty >= my - 1:
-                            subline = " " * 4 + "[...]"
+                            subline = ' ' * 4 + '[...]'
                         elif nexty >= my:
                             break
                         self.win.addstr(nexty, 3,
-                                abbr(" " * 4 + subline, self.screen_width - 4),
+                                abbr(' ' * 4 + subline, self.screen_width - 4),
                                 curses.A_NORMAL)
 
         return self.alert(alert_callback,
-                "Task details for %s" % self.selected_task)
+                'Task details for %s' % self.selected_task)
 
     def selection_traceback(self):
         if not self.selected_task:
@@ -286,11 +286,11 @@ class CursesMonitor(object):  # pragma: no cover
 
         def alert_callback(my, mx, xs):
             y = count(xs).next
-            for line in task.traceback.split("\n"):
+            for line in task.traceback.split('\n'):
                 self.win.addstr(y(), 3, line)
 
         return self.alert(alert_callback,
-                "Task Exception Traceback for %s" % self.selected_task)
+                'Task Exception Traceback for %s' % self.selected_task)
 
     def selection_result(self):
         if not self.selected_task:
@@ -299,13 +299,13 @@ class CursesMonitor(object):  # pragma: no cover
         def alert_callback(my, mx, xs):
             y = count(xs).next
             task = self.state.tasks[self.selected_task]
-            result = getattr(task, "result", None) or getattr(task,
-                    "exception", None)
+            result = getattr(task, 'result', None) or getattr(task,
+                    'exception', None)
             for line in wrap(result, mx - 2):
                 self.win.addstr(y(), 3, line)
 
         return self.alert(alert_callback,
-                "Task Result for %s" % self.selected_task)
+                'Task Result for %s' % self.selected_task)
 
     def display_task_row(self, lineno, task):
         state_color = self.state_colors.get(task.state)
@@ -314,7 +314,7 @@ class CursesMonitor(object):  # pragma: no cover
             attr = curses.A_STANDOUT
         timestamp = datetime.utcfromtimestamp(
                         task.timestamp or time.time())
-        timef = timestamp.strftime("%H:%M:%S")
+        timef = timestamp.strftime('%H:%M:%S')
         hostname = task.worker.hostname if task.worker else '*NONE*'
         line = self.format_row(task.uuid, task.name,
                                hostname,
@@ -333,12 +333,12 @@ class CursesMonitor(object):  # pragma: no cover
         y = blank_line = count(2).next
         my, mx = win.getmaxyx()
         win.erase()
-        win.bkgd(" ", curses.color_pair(1))
+        win.bkgd(' ', curses.color_pair(1))
         win.border()
         win.addstr(1, x, self.greet, curses.A_DIM | curses.color_pair(5))
         blank_line()
-        win.addstr(y(), x, self.format_row("UUID", "TASK",
-                                           "WORKER", "TIME", "STATE"),
+        win.addstr(y(), x, self.format_row('UUID', 'TASK',
+                                           'WORKER', 'TIME', 'STATE'),
                 curses.A_BOLD | curses.A_UNDERLINE)
         tasks = self.tasks
         if tasks:
@@ -357,22 +357,22 @@ class CursesMonitor(object):  # pragma: no cover
         # Selected Task Info
         if self.selected_task:
             win.addstr(my - 5, x, self.selected_str, curses.A_BOLD)
-            info = "Missing extended info"
-            detail = ""
+            info = 'Missing extended info'
+            detail = ''
             try:
                 selection = self.state.tasks[self.selected_task]
             except KeyError:
                 pass
             else:
-                info = selection.info(["args", "kwargs",
-                                       "result", "runtime", "eta"])
-                if "runtime" in info:
-                    info["runtime"] = "%.2fs" % info["runtime"]
-                if "result" in info:
-                    info["result"] = abbr(info["result"], 16)
-                info = " ".join("%s=%s" % (key, value)
+                info = selection.info(['args', 'kwargs',
+                                       'result', 'runtime', 'eta'])
+                if 'runtime' in info:
+                    info['runtime'] = '%.2fs' % info['runtime']
+                if 'result' in info:
+                    info['result'] = abbr(info['result'], 16)
+                info = ' '.join('%s=%s' % (key, value)
                             for key, value in info.items())
-                detail = "... -> key i"
+                detail = '... -> key i'
             infowin = abbr(info,
                            self.screen_width - len(self.selected_str) - 2,
                            detail)
@@ -383,20 +383,20 @@ class CursesMonitor(object):  # pragma: no cover
                 win.addstr(my - 5, x + len(self.selected_str) + detailpos,
                         detail, curses.A_BOLD)
         else:
-            win.addstr(my - 5, x, "No task selected", curses.A_NORMAL)
+            win.addstr(my - 5, x, 'No task selected', curses.A_NORMAL)
 
         # Workers
         if self.workers:
             win.addstr(my - 4, x, self.online_str, curses.A_BOLD)
             win.addstr(my - 4, x + len(self.online_str),
-                    ", ".join(sorted(self.workers)), curses.A_NORMAL)
+                    ', '.join(sorted(self.workers)), curses.A_NORMAL)
         else:
-            win.addstr(my - 4, x, "No workers discovered.")
+            win.addstr(my - 4, x, 'No workers discovered.')
 
         # Info
         win.addstr(my - 3, x, self.info_str, curses.A_BOLD)
         win.addstr(my - 3, x + len(self.info_str),
-                "events:%s tasks:%s workers:%s/%s" % (
+                'events:%s tasks:%s workers:%s/%s' % (
                     self.state.event_count, self.state.task_count,
                     len([w for w in self.state.workers.values()
                             if w.alive]),
@@ -475,22 +475,22 @@ class DisplayThread(threading.Thread):  # pragma: no cover
 def capture_events(app, state, display):  # pragma: no cover
 
     def on_connection_error(exc, interval):
-        sys.stderr.write("Connection Error: %r. Retry in %ss." % (
+        sys.stderr.write('Connection Error: %r. Retry in %ss.' % (
             exc, interval))
 
     while 1:
-        sys.stderr.write("-> evtop: starting capture...\n")
+        sys.stderr.write('-> evtop: starting capture...\n')
         with app.broker_connection() as conn:
             try:
                 conn.ensure_connection(on_connection_error,
                                        app.conf.BROKER_CONNECTION_MAX_RETRIES)
-                recv = app.events.Receiver(conn, handlers={"*": state.event})
+                recv = app.events.Receiver(conn, handlers={'*': state.event})
                 display.resetscreen()
                 display.init_screen()
                 with recv.consumer():
                     recv.drain_events(timeout=1, ignore_timeouts=True)
             except (conn.connection_errors, conn.channel_errors), exc:
-                sys.stderr.write("Connection lost: %r" % (exc, ))
+                sys.stderr.write('Connection lost: %r' % (exc, ))
 
 
 def evtop(app=None):  # pragma: no cover
@@ -513,5 +513,5 @@ def evtop(app=None):  # pragma: no cover
         display.resetscreen()
 
 
-if __name__ == "__main__":  # pragma: no cover
+if __name__ == '__main__':  # pragma: no cover
     evtop()

@@ -52,32 +52,32 @@ class Inspect(object):
                                       timeout=self.timeout, reply=True))
 
     def report(self):
-        return self._request("report")
+        return self._request('report')
 
     def active(self, safe=False):
-        return self._request("dump_active", safe=safe)
+        return self._request('dump_active', safe=safe)
 
     def scheduled(self, safe=False):
-        return self._request("dump_schedule", safe=safe)
+        return self._request('dump_schedule', safe=safe)
 
     def reserved(self, safe=False):
-        return self._request("dump_reserved", safe=safe)
+        return self._request('dump_reserved', safe=safe)
 
     def stats(self):
-        return self._request("stats")
+        return self._request('stats')
 
     def revoked(self):
-        return self._request("dump_revoked")
+        return self._request('dump_revoked')
 
     def registered(self):
-        return self._request("dump_tasks")
+        return self._request('dump_tasks')
     registered_tasks = registered
 
     def ping(self):
-        return self._request("ping")
+        return self._request('ping')
 
     def active_queues(self):
-        return self._request("active_queues")
+        return self._request('active_queues')
 
 
 class Control(object):
@@ -85,11 +85,11 @@ class Control(object):
 
     def __init__(self, app=None):
         self.app = app_or_default(app)
-        self.mailbox = self.Mailbox("celeryd", type="fanout")
+        self.mailbox = self.Mailbox('celeryd', type='fanout')
 
     @cached_property
     def inspect(self):
-        return self.app.subclass_with_self(Inspect, reverse="control.inspect")
+        return self.app.subclass_with_self(Inspect, reverse='control.inspect')
 
     def purge(self, connection=None):
         """Discard all waiting tasks.
@@ -105,7 +105,7 @@ class Control(object):
     discard_all = purge
 
     def revoke(self, task_id, destination=None, terminate=False,
-            signal="SIGTERM", **kwargs):
+            signal='SIGTERM', **kwargs):
         """Tell all (or specific) workers to revoke a task by id.
 
         If a task is revoked, the workers will ignore the task and
@@ -120,10 +120,10 @@ class Control(object):
         See :meth:`broadcast` for supported keyword arguments.
 
         """
-        return self.broadcast("revoke", destination=destination,
-                              arguments={"task_id": task_id,
-                                         "terminate": terminate,
-                                         "signal": signal}, **kwargs)
+        return self.broadcast('revoke', destination=destination,
+                              arguments={'task_id': task_id,
+                                         'terminate': terminate,
+                                         'signal': signal}, **kwargs)
 
     def ping(self, destination=None, timeout=1, **kwargs):
         """Ping all (or specific) workers.
@@ -133,7 +133,7 @@ class Control(object):
         See :meth:`broadcast` for supported keyword arguments.
 
         """
-        return self.broadcast("ping", reply=True, destination=destination,
+        return self.broadcast('ping', reply=True, destination=destination,
                               timeout=timeout, **kwargs)
 
     def rate_limit(self, task_name, rate_limit, destination=None, **kwargs):
@@ -142,19 +142,19 @@ class Control(object):
 
         :param task_name: Name of task to change rate limit for.
         :param rate_limit: The rate limit as tasks per second, or a rate limit
-            string (`"100/m"`, etc.
+            string (`'100/m'`, etc.
             see :attr:`celery.task.base.Task.rate_limit` for
             more information).
 
         See :meth:`broadcast` for supported keyword arguments.
 
         """
-        return self.broadcast("rate_limit", destination=destination,
-                              arguments={"task_name": task_name,
-                                         "rate_limit": rate_limit},
+        return self.broadcast('rate_limit', destination=destination,
+                              arguments={'task_name': task_name,
+                                         'rate_limit': rate_limit},
                               **kwargs)
 
-    def add_consumer(self, queue, exchange=None, exchange_type="direct",
+    def add_consumer(self, queue, exchange=None, exchange_type='direct',
             routing_key=None, **options):
         """Tell all (or specific) workers to start consuming from a new queue.
 
@@ -169,17 +169,17 @@ class Control(object):
 
         :param queue: Name of queue to start consuming from.
         :keyword exchange: Optional name of exchange.
-        :keyword exchange_type: Type of exchange (defaults to "direct")
+        :keyword exchange_type: Type of exchange (defaults to 'direct')
             command to, when empty broadcast to all workers.
         :keyword routing_key: Optional routing key.
 
         See :meth:`broadcast` for supported keyword arguments.
 
         """
-        return self.broadcast("add_consumer",
-                arguments={"queue": queue, "exchange": exchange,
-                           "exchange_type": exchange_type,
-                           "routing_key": routing_key}, **options)
+        return self.broadcast('add_consumer',
+                arguments={'queue': queue, 'exchange': exchange,
+                           'exchange_type': exchange_type,
+                           'routing_key': routing_key}, **options)
 
     def cancel_consumer(self, queue, **kwargs):
         """Tell all (or specific) workers to stop consuming from ``queue``.
@@ -187,8 +187,8 @@ class Control(object):
         Supports the same keyword arguments as :meth:`broadcast`.
 
         """
-        return self.broadcast("cancel_consumer",
-                arguments={"queue": queue}, **kwargs)
+        return self.broadcast('cancel_consumer',
+                arguments={'queue': queue}, **kwargs)
 
 
     def time_limit(self, task_name, soft=None, hard=None, **kwargs):
@@ -202,17 +202,17 @@ class Control(object):
         Any additional keyword arguments are passed on to :meth:`broadcast`.
 
         """
-        return self.broadcast("time_limit",
-                              arguments={"task_name": task_name,
-                                         "hard": hard, "soft": soft}, **kwargs)
+        return self.broadcast('time_limit',
+                              arguments={'task_name': task_name,
+                                         'hard': hard, 'soft': soft}, **kwargs)
 
     def enable_events(self, destination=None, **kwargs):
         """Tell all (or specific) workers to enable events."""
-        return self.broadcast("enable_events", {}, destination, **kwargs)
+        return self.broadcast('enable_events', {}, destination, **kwargs)
 
     def disable_events(self, destination=None, **kwargs):
         """Tell all (or specific) workers to enable events."""
-        return self.broadcast("disable_events", {}, destination, **kwargs)
+        return self.broadcast('disable_events', {}, destination, **kwargs)
 
     def pool_grow(self, n=1, destination=None, **kwargs):
         """Tell all (or specific) workers to grow the pool by ``n``.
@@ -220,7 +220,7 @@ class Control(object):
         Supports the same arguments as :meth:`broadcast`.
 
         """
-        return self.broadcast("pool_grow", {}, destination, **kwargs)
+        return self.broadcast('pool_grow', {}, destination, **kwargs)
 
     def pool_shrink(self, n=1, destination=None, **kwargs):
         """Tell all (or specific) workers to shrink the pool by ``n``.
@@ -228,7 +228,7 @@ class Control(object):
         Supports the same arguments as :meth:`broadcast`.
 
         """
-        return self.broadcast("pool_shrink", {}, destination, **kwargs)
+        return self.broadcast('pool_shrink', {}, destination, **kwargs)
 
     def broadcast(self, command, arguments=None, destination=None,
             connection=None, reply=False, timeout=1, limit=None,

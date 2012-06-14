@@ -16,7 +16,7 @@ The :program:`celery beat` command.
 .. cmdoption:: -s, --schedule
 
     Path to the schedule database. Defaults to `celerybeat-schedule`.
-    The extension ".db" may be appended to the filename.
+    The extension '.db' may be appended to the filename.
     Default is %(default)s.
 
 .. cmdoption:: -S, --scheduler
@@ -58,7 +58,7 @@ class BeatCommand(Command):
     def run(self, detach=False, logfile=None, pidfile=None, uid=None,
             gid=None, umask=None, working_directory=None, **kwargs):
         workdir = working_directory
-        kwargs.pop("app", None)
+        kwargs.pop('app', None)
         beat = partial(self.app.Beat,
                        logfile=logfile, pidfile=pidfile, **kwargs)
 
@@ -69,7 +69,7 @@ class BeatCommand(Command):
             return beat().run()
 
     def prepare_preload_options(self, options):
-        workdir = options.get("working_directory")
+        workdir = options.get('working_directory')
         if workdir:
             os.chdir(workdir)
 
@@ -77,17 +77,17 @@ class BeatCommand(Command):
         c = self.app.conf
 
         return (
-            Option('--detach', action="store_true"),
+            Option('--detach', action='store_true'),
             Option('-s', '--schedule', default=c.CELERYBEAT_SCHEDULE_FILENAME),
-            Option('--max-interval', type="float"),
-            Option('-S', '--scheduler', dest="scheduler_cls"),
+            Option('--max-interval', type='float'),
+            Option('-S', '--scheduler', dest='scheduler_cls'),
             Option('-l', '--loglevel', default=c.CELERYBEAT_LOG_LEVEL),
-        ) + daemon_options(default_pidfile="celerybeat.pid")
+        ) + daemon_options(default_pidfile='celerybeat.pid')
 
 
 def main():
     beat = BeatCommand()
     beat.execute_from_commandline()
 
-if __name__ == "__main__":      # pragma: no cover
+if __name__ == '__main__':      # pragma: no cover
     main()

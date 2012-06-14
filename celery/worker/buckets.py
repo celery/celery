@@ -45,9 +45,9 @@ class TaskBucket(object):
     `feed.refresh` and `video.compress`, the TaskBucket will consist
     of the following items::
 
-        {"twitter.update": TokenBucketQueue(fill_rate=300),
-         "feed.refresh": Queue(),
-         "video.compress": TokenBucketQueue(fill_rate=2)}
+        {'twitter.update': TokenBucketQueue(fill_rate=300),
+         'feed.refresh': Queue(),
+         'video.compress': TokenBucketQueue(fill_rate=2)}
 
     The get operation will iterate over these until one of the buckets
     is able to return an item.  The underlying datastructure is a `dict`,
@@ -172,7 +172,7 @@ class TaskBucket(object):
 
     def update_bucket_for_type(self, task_name):
         task_type = self.task_registry[task_name]
-        rate_limit = getattr(task_type, "rate_limit", None)
+        rate_limit = getattr(task_type, 'rate_limit', None)
         rate_limit = timeutils.rate(rate_limit)
         task_queue = FastQueue()
         if task_name in self.buckets:

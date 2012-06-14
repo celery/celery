@@ -32,16 +32,16 @@ from .registry import _unpickle_task
 
 #: extracts attributes related to publishing a message from an object.
 extract_exec_options = mattrgetter(
-    "queue", "routing_key", "exchange",
-    "immediate", "mandatory", "priority", "expires",
-    "serializer", "delivery_mode", "compression",
+    'queue', 'routing_key', 'exchange',
+    'immediate', 'mandatory', 'priority', 'expires',
+    'serializer', 'delivery_mode', 'compression',
 )
 
 #: Billiard sets this when execv is enabled.
 #: We use it to find out the name of the original ``__main__``
 #: module, so that we can properly rewrite the name of the
 #: task to be that of ``App.main``.
-MP_MAIN_FILE = os.environ.get("MP_MAIN_FILE") or None
+MP_MAIN_FILE = os.environ.get('MP_MAIN_FILE') or None
 
 
 class Context(object):
@@ -79,7 +79,7 @@ class Context(object):
             return default
 
     def __repr__(self):
-        return "<Context: %r>" % (vars(self, ))
+        return '<Context: %r>' % (vars(self, ))
 
     @property
     def children(self):
@@ -102,27 +102,27 @@ class TaskType(type):
 
     def __new__(cls, name, bases, attrs):
         new = super(TaskType, cls).__new__
-        task_module = attrs.get("__module__") or "__main__"
+        task_module = attrs.get('__module__') or '__main__'
 
         # - Abstract class: abstract attribute should not be inherited.
-        if attrs.pop("abstract", None) or not attrs.get("autoregister", True):
+        if attrs.pop('abstract', None) or not attrs.get('autoregister', True):
             return new(cls, name, bases, attrs)
 
         # The 'app' attribute is now a property, with the real app located
         # in the '_app' attribute.  Previously this was a regular attribute,
         # so we should support classes defining it.
-        _app1, _app2 = attrs.pop("_app", None), attrs.pop("app", None)
-        app = attrs["_app"] = _app1 or _app2 or current_app
+        _app1, _app2 = attrs.pop('_app', None), attrs.pop('app', None)
+        app = attrs['_app'] = _app1 or _app2 or current_app
 
         # - Automatically generate missing/empty name.
         autoname = False
-        if not attrs.get("name"):
+        if not attrs.get('name'):
             try:
                 module_name = sys.modules[task_module].__name__
             except KeyError:  # pragma: no cover
                 # Fix for manage.py shell_plus (Issue #366).
                 module_name = task_module
-            attrs["name"] = '.'.join(filter(None, [module_name, name]))
+            attrs['name'] = '.'.join(filter(None, [module_name, name]))
             autoname = True
 
         # - Create and register class.
@@ -137,11 +137,11 @@ class TaskType(type):
         # - to match App.main.
         if MP_MAIN_FILE and sys.modules[task_module].__file__ == MP_MAIN_FILE:
             # - see comment about :envvar:`MP_MAIN_FILE` above.
-            task_module = "__main__"
-        if autoname and task_module == "__main__" and app.main:
-            attrs["name"] = '.'.join([app.main, name])
+            task_module = '__main__'
+        if autoname and task_module == '__main__' and app.main:
+            attrs['name'] = '.'.join([app.main, name])
 
-        task_name = attrs["name"]
+        task_name = attrs['name']
         if task_name not in tasks:
             tasks.register(new(cls, name, bases, attrs))
         instance = tasks[task_name]
@@ -150,8 +150,8 @@ class TaskType(type):
 
     def __repr__(cls):
         if cls._app:
-            return "<class %s of %s>" % (cls.__name__, cls._app, )
-        return "<unbound %s>" % (cls.__name__, )
+            return '<class %s of %s>' % (cls.__name__, cls._app, )
+        return '<unbound %s>' % (cls.__name__, )
 
 
 class Task(object):
@@ -169,7 +169,7 @@ class Task(object):
     MaxRetriesExceededError = MaxRetriesExceededError
 
     #: Execution strategy used, or the qualified name of one.
-    Strategy = "celery.worker.strategy:default"
+    Strategy = 'celery.worker.strategy:default'
 
     #: This is the instance bound to if the task is a method of a class.
     __self__ = None
@@ -196,8 +196,8 @@ class Task(object):
     default_retry_delay = 3 * 60
 
     #: Rate limit for this task type.  Examples: :const:`None` (no rate
-    #: limit), `"100/s"` (hundred tasks a second), `"100/m"` (hundred tasks
-    #: a minute),`"100/h"` (hundred tasks an hour)
+    #: limit), `'100/s'` (hundred tasks a second), `'100/m'` (hundred tasks
+    #: a minute),`'100/h'` (hundred tasks an hour)
     rate_limit = None
 
     #: If enabled the worker will not store task state and return values
@@ -214,7 +214,7 @@ class Task(object):
     send_error_emails = False
 
     #: The name of a serializer that are registered with
-    #: :mod:`kombu.serialization.registry`.  Default is `"pickle"`.
+    #: :mod:`kombu.serialization.registry`.  Default is `'pickle'`.
     serializer = None
 
     #: Hard time limit.
@@ -231,12 +231,12 @@ class Task(object):
     #: If disabled this task won't be registered automatically.
     autoregister = True
 
-    #: If enabled the task will report its status as "started" when the task
+    #: If enabled the task will report its status as 'started' when the task
     #: is executed by a worker.  Disabled by default as the normal behaviour
     #: is to not report that level of granularity.  Tasks are either pending,
     #: finished, or waiting to be retried.
     #:
-    #: Having a "started" status can be useful for when there are long
+    #: Having a 'started' status can be useful for when there are long
     #: running tasks and there is a need to report which task is currently
     #: running.
     #:
@@ -262,14 +262,14 @@ class Task(object):
     __bound__ = False
 
     from_config = (
-        ("send_error_emails", "CELERY_SEND_TASK_ERROR_EMAILS"),
-        ("serializer", "CELERY_TASK_SERIALIZER"),
-        ("rate_limit", "CELERY_DEFAULT_RATE_LIMIT"),
-        ("track_started", "CELERY_TRACK_STARTED"),
-        ("acks_late", "CELERY_ACKS_LATE"),
-        ("ignore_result", "CELERY_IGNORE_RESULT"),
-        ("store_errors_even_if_ignored",
-            "CELERY_STORE_ERRORS_EVEN_IF_IGNORED"),
+        ('send_error_emails', 'CELERY_SEND_TASK_ERROR_EMAILS'),
+        ('serializer', 'CELERY_TASK_SERIALIZER'),
+        ('rate_limit', 'CELERY_DEFAULT_RATE_LIMIT'),
+        ('track_started', 'CELERY_TRACK_STARTED'),
+        ('acks_late', 'CELERY_ACKS_LATE'),
+        ('ignore_result', 'CELERY_IGNORE_RESULT'),
+        ('store_errors_even_if_ignored',
+            'CELERY_STORE_ERRORS_EVEN_IF_IGNORED'),
     )
 
     __bound__ = False
@@ -332,7 +332,7 @@ class Task(object):
     @classmethod
     def add_around(self, attr, around):
         orig = getattr(self, attr)
-        if getattr(orig, "__wrapped__", None):
+        if getattr(orig, '__wrapped__', None):
             orig = orig.__wrapped__
         meth = around(orig)
         meth.__wrapped__ = orig
@@ -354,7 +354,7 @@ class Task(object):
 
     def run(self, *args, **kwargs):
         """The body of the task executed by workers."""
-        raise NotImplementedError("Tasks must define the run method.")
+        raise NotImplementedError('Tasks must define the run method.')
 
     def start_strategy(self, app, consumer):
         return instantiate(self.Strategy, self, app, consumer)
@@ -559,26 +559,26 @@ class Task(object):
         # so just raise the original exception.
         if request.called_directly:
             maybe_reraise()
-            raise exc or RetryTaskError("Task can be retried", None)
+            raise exc or RetryTaskError("Task can be retried', None)
 
         if delivery_info:
-            options.setdefault("exchange", delivery_info.get("exchange"))
-            options.setdefault("routing_key", delivery_info.get("routing_key"))
+            options.setdefault('exchange', delivery_info.get('exchange'))
+            options.setdefault('routing_key', delivery_info.get('routing_key'))
 
         if not eta and countdown is None:
             countdown = self.default_retry_delay
 
-        options.update({"retries": request.retries + 1,
-                        "task_id": request.id,
-                        "countdown": countdown,
-                        "eta": eta})
+        options.update({'retries': request.retries + 1,
+                        'task_id': request.id,
+                        'countdown': countdown,
+                        'eta': eta})
 
-        if max_retries is not None and options["retries"] > max_retries:
+        if max_retries is not None and options['retries'] > max_retries:
             if exc:
                 maybe_reraise()
             raise self.MaxRetriesExceededError(
-                    "Can't retry %s[%s] args:%s kwargs:%s" % (
-                        self.name, options["task_id"], args, kwargs))
+                    """Can't retry %s[%s] args:%s kwargs:%s""" % (
+                        self.name, options['task_id'], args, kwargs))
 
         # If task was executed eagerly using apply(),
         # then the retry must also be executed eagerly.
@@ -586,8 +586,8 @@ class Task(object):
             self.apply(args=args, kwargs=kwargs, **options).get()
         else:
             self.apply_async(args=args, kwargs=kwargs, **options)
-        ret = RetryTaskError(eta and "Retry at %s" % eta
-                                  or "Retry in %s secs." % countdown, exc)
+        ret = RetryTaskError(eta and 'Retry at %s' % eta
+                                  or 'Retry in %s secs.' % countdown, exc)
         if throw:
             raise ret
         return ret
@@ -610,28 +610,28 @@ class Task(object):
         app = self._get_app()
         args = args or []
         kwargs = kwargs or {}
-        task_id = options.get("task_id") or uuid()
-        retries = options.get("retries", 0)
-        throw = app.either("CELERY_EAGER_PROPAGATES_EXCEPTIONS",
-                           options.pop("throw", None))
+        task_id = options.get('task_id') or uuid()
+        retries = options.get('retries', 0)
+        throw = app.either('CELERY_EAGER_PROPAGATES_EXCEPTIONS',
+                           options.pop('throw', None))
 
         # Make sure we get the task instance, not class.
         task = app._tasks[self.name]
 
-        request = {"id": task_id,
-                   "retries": retries,
-                   "is_eager": True,
-                   "logfile": options.get("logfile"),
-                   "loglevel": options.get("loglevel", 0),
-                   "delivery_info": {"is_eager": True}}
+        request = {'id': task_id,
+                   'retries': retries,
+                   'is_eager': True,
+                   'logfile': options.get('logfile'),
+                   'loglevel': options.get('loglevel', 0),
+                   'delivery_info': {'is_eager': True}}
         if self.accept_magic_kwargs:
-            default_kwargs = {"task_name": task.name,
-                              "task_id": task_id,
-                              "task_retries": retries,
-                              "task_is_eager": True,
-                              "logfile": options.get("logfile"),
-                              "loglevel": options.get("loglevel", 0),
-                              "delivery_info": {"is_eager": True}}
+            default_kwargs = {'task_name': task.name,
+                              'task_id': task_id,
+                              'task_retries': retries,
+                              'task_is_eager': True,
+                              'logfile': options.get('logfile'),
+                              'loglevel': options.get('loglevel', 0),
+                              'delivery_info': {'is_eager': True}}
             supported_keys = fun_takes_kwargs(task.run, default_kwargs)
             extend_with = dict((key, val)
                                     for key, val in default_kwargs.items()
@@ -772,7 +772,7 @@ class Task(object):
 
     def send_error_email(self, context, exc, **kwargs):
         if self.send_error_emails and \
-                not getattr(self, "disable_error_emails", None):
+                not getattr(self, 'disable_error_emails', None):
             self.ErrorMail(self, **kwargs).send(context, exc)
 
     def execute(self, request, pool, loglevel, logfile, **kwargs):
@@ -796,7 +796,7 @@ class Task(object):
 
     def __repr__(self):
         """`repr(task)`"""
-        return "<@task: %s>" % (self.name, )
+        return '<@task: %s>' % (self.name, )
 
     def _get_logger(self, **kwargs):
         """Get task-aware logger object."""

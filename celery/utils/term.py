@@ -13,13 +13,13 @@ import platform
 from .encoding import safe_str
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
-OP_SEQ = "\033[%dm"
-RESET_SEQ = "\033[0m"
-COLOR_SEQ = "\033[1;%dm"
+OP_SEQ = '\033[%dm'
+RESET_SEQ = '\033[0m'
+COLOR_SEQ = '\033[1;%dm'
 fg = lambda s: COLOR_SEQ % s
 
 SYSTEM = platform.system()
-IS_WINDOWS = SYSTEM == "Windows"
+IS_WINDOWS = SYSTEM == 'Windows'
 
 
 class colored(object):
@@ -27,25 +27,25 @@ class colored(object):
 
     Example::
         >>> c = colored(enabled=True)
-        >>> print(str(c.red("the quick "), c.blue("brown ", c.bold("fox ")),
-        ...       c.magenta(c.underline("jumps over")),
-        ...       c.yellow(" the lazy "),
-        ...       c.green("dog ")))
+        >>> print(str(c.red('the quick '), c.blue('brown ', c.bold('fox ')),
+        ...       c.magenta(c.underline('jumps over')),
+        ...       c.yellow(' the lazy '),
+        ...       c.green('dog ')))
 
     """
 
     def __init__(self, *s, **kwargs):
         self.s = s
-        self.enabled = not IS_WINDOWS and kwargs.get("enabled", True)
-        self.op = kwargs.get("op", "")
-        self.names = {"black": self.black,
-                      "red": self.red,
-                      "green": self.green,
-                      "yellow": self.yellow,
-                      "blue": self.blue,
-                      "magenta": self.magenta,
-                      "cyan": self.cyan,
-                      "white": self.white}
+        self.enabled = not IS_WINDOWS and kwargs.get('enabled', True)
+        self.op = kwargs.get('op', '')
+        self.names = {'black': self.black,
+                      'red': self.red,
+                      'green': self.green,
+                      'yellow': self.yellow,
+                      'blue': self.blue,
+                      'magenta': self.magenta,
+                      'cyan': self.cyan,
+                      'white': self.white}
 
     def _add(self, a, b):
         return unicode(a) + unicode(b)
@@ -64,16 +64,16 @@ class colored(object):
     def no_color(self):
         if self.s:
             return reduce(self._fold_no_color, self.s)
-        return ""
+        return ''
 
     def embed(self):
-        prefix = ""
+        prefix = ''
         if self.enabled:
             prefix = self.op
         return prefix + safe_str(reduce(self._add, self.s))
 
     def __unicode__(self):
-        suffix = ""
+        suffix = ''
         if self.enabled:
             suffix = RESET_SEQ
         return safe_str(self.embed() + suffix)
@@ -148,7 +148,7 @@ class colored(object):
         return self.node(s, fg(40 + WHITE))
 
     def reset(self, *s):
-        return self.node(s or [""], RESET_SEQ)
+        return self.node(s or [''], RESET_SEQ)
 
     def __add__(self, other):
         return unicode(self) + unicode(other)

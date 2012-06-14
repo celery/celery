@@ -26,7 +26,7 @@ class TaskPool(BasePool):
             import threadpool
         except ImportError:
             raise ImportError(
-                    "The threaded pool requires the threadpool module.")
+                    'The threaded pool requires the threadpool module.')
         self.WorkRequest = threadpool.WorkRequest
         self.ThreadPool = threadpool.ThreadPool
         super(TaskPool, self).__init__(*args, **kwargs)

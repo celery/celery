@@ -56,11 +56,11 @@ class Namespace(abstract.Namespace):
     own set of built-in boot-step modules.
 
     """
-    name = "worker"
-    builtin_boot_steps = ("celery.worker.autoscale",
-                          "celery.worker.autoreload",
-                          "celery.worker.consumer",
-                          "celery.worker.mediator")
+    name = 'worker'
+    builtin_boot_steps = ('celery.worker.autoscale',
+                          'celery.worker.autoreload',
+                          'celery.worker.consumer',
+                          'celery.worker.mediator')
 
     def modules(self):
         return (self.builtin_boot_steps
@@ -81,8 +81,8 @@ class Pool(abstract.StartStopComponent):
         * min_concurrency
 
     """
-    name = "worker.pool"
-    requires = ("queues", )
+    name = 'worker.pool'
+    requires = ('queues', )
 
     def __init__(self, w, autoscale=None, no_execv=False, **kwargs):
         w.autoscale = autoscale
@@ -104,7 +104,7 @@ class Pool(abstract.StartStopComponent):
         now = time.time
 
         if not pool.did_start_ok():
-            raise WorkerLostError("Could not start worker processes")
+            raise WorkerLostError('Could not start worker processes')
 
         hub.update_readers(pool.readers)
         for handler, interval in pool.timers.iteritems():
@@ -126,7 +126,7 @@ class Pool(abstract.StartStopComponent):
         def on_timeout_cancel(result):
             try:
                 result._tref.cancel()
-                delattr(result, "_tref")
+                delattr(result, '_tref')
             except AttributeError:
                 pass
 
@@ -166,7 +166,7 @@ class Beat(abstract.StartStopComponent):
     argument is set.
 
     """
-    name = "worker.beat"
+    name = 'worker.beat'
 
     def __init__(self, w, beat=False, **kwargs):
         self.enabled = w.beat = beat
@@ -183,8 +183,8 @@ class Beat(abstract.StartStopComponent):
 class Queues(abstract.Component):
     """This component initializes the internal queues
     used by the worker."""
-    name = "worker.queues"
-    requires = ("ev", )
+    name = 'worker.queues'
+    requires = ('ev', )
 
     def create(self, w):
         w.start_mediator = True
@@ -207,7 +207,7 @@ class Queues(abstract.Component):
 
 
 class EvLoop(abstract.StartStopComponent):
-    name = "worker.ev"
+    name = 'worker.ev'
 
     def __init__(self, w, **kwargs):
         w.hub = None
@@ -223,8 +223,8 @@ class EvLoop(abstract.StartStopComponent):
 
 class Timers(abstract.Component):
     """This component initializes the internal timers used by the worker."""
-    name = "worker.timers"
-    requires = ("pool", )
+    name = 'worker.timers'
+    requires = ('pool', )
 
     def include_if(self, w):
         return not w.use_eventloop
@@ -240,15 +240,15 @@ class Timers(abstract.Component):
                                    on_timer_tick=self.on_timer_tick)
 
     def on_timer_error(self, exc):
-        logger.error("Timer error: %r", exc, exc_info=True)
+        logger.error('Timer error: %r', exc, exc_info=True)
 
     def on_timer_tick(self, delay):
-        logger.debug("Timer wake-up! Next eta %s secs.", delay)
+        logger.debug('Timer wake-up! Next eta %s secs.', delay)
 
 
 class StateDB(abstract.Component):
     """This component sets up the workers state db if enabled."""
-    name = "worker.state-db"
+    name = 'worker.state-db'
 
     def __init__(self, w, **kwargs):
         self.enabled = w.state_db
@@ -268,17 +268,17 @@ class WorkController(configurated):
     app = None
     concurrency = from_config()
     loglevel = logging.ERROR
-    logfile = from_config("log_file")
+    logfile = from_config('log_file')
     send_events = from_config()
-    pool_cls = from_config("pool")
-    consumer_cls = from_config("consumer")
-    mediator_cls = from_config("mediator")
-    timer_cls = from_config("timer")
-    timer_precision = from_config("timer_precision")
-    autoscaler_cls = from_config("autoscaler")
-    autoreloader_cls = from_config("autoreloader")
+    pool_cls = from_config('pool')
+    consumer_cls = from_config('consumer')
+    mediator_cls = from_config('mediator')
+    timer_cls = from_config('timer')
+    timer_precision = from_config('timer_precision')
+    autoscaler_cls = from_config('autoscaler')
+    autoreloader_cls = from_config('autoreloader')
     schedule_filename = from_config()
-    scheduler_cls = from_config("celerybeat_scheduler")
+    scheduler_cls = from_config('celerybeat_scheduler')
     task_time_limit = from_config()
     task_soft_time_limit = from_config()
     max_tasks_per_child = from_config()
@@ -306,7 +306,7 @@ class WorkController(configurated):
         trace._tasks = self.app._tasks
 
         self._shutdown_complete = Event()
-        self.setup_defaults(kwargs, namespace="celeryd")
+        self.setup_defaults(kwargs, namespace='celeryd')
         self.app.select_queues(queues)  # select queues subset.
 
         # Options
@@ -316,7 +316,7 @@ class WorkController(configurated):
         self._finalize = Finalize(self, self.stop, exitpriority=1)
         self.pidfile = pidfile
         self.pidlock = None
-        self.use_eventloop = (detect_environment() == "default" and
+        self.use_eventloop = (detect_environment() == 'default' and
                               self.app.broker_connection().is_evented and
                               not self.app.IS_WINDOWS)
 
@@ -340,15 +340,15 @@ class WorkController(configurated):
             self.pidlock = platforms.create_pidlock(self.pidfile)
         try:
             for i, component in enumerate(self.components):
-                logger.debug("Starting %s...", qualname(component))
+                logger.debug('Starting %s...', qualname(component))
                 self._running = i + 1
                 if component:
                     component.start()
-                logger.debug("%s OK!", qualname(component))
+                logger.debug('%s OK!', qualname(component))
         except SystemTerminate:
             self.terminate()
         except Exception, exc:
-            logger.error("Unrecoverable error: %r", exc,
+            logger.error('Unrecoverable error: %r', exc,
                          exc_info=True)
             self.stop()
         except (KeyboardInterrupt, SystemExit):
@@ -366,7 +366,7 @@ class WorkController(configurated):
         try:
             req.execute_using_pool(self.pool)
         except Exception, exc:
-            logger.critical("Internal error: %r\n%s",
+            logger.critical('Internal error: %r\n%s',
                             exc, traceback.format_exc(), exc_info=True)
         except SystemTerminate:
             self.terminate()
@@ -394,7 +394,7 @@ class WorkController(configurated):
             self._shutdown(warm=False)
 
     def _shutdown(self, warm=True):
-        what = "Stopping" if warm else "Terminating"
+        what = 'Stopping' if warm else 'Terminating'
 
         if self._state in (self.CLOSE, self.TERMINATE):
             return
@@ -410,11 +410,11 @@ class WorkController(configurated):
         self._state = self.CLOSE
 
         for component in reversed(self.components):
-            logger.debug("%s %s...", what, qualname(component))
+            logger.debug('%s %s...', what, qualname(component))
             if component:
                 stop = component.stop
                 if not warm:
-                    stop = getattr(component, "terminate", None) or stop
+                    stop = getattr(component, 'terminate', None) or stop
                 stop()
 
         self.timer.stop()
@@ -431,10 +431,10 @@ class WorkController(configurated):
 
         for module in set(modules or ()):
             if module not in sys.modules:
-                logger.debug("importing module %s", module)
+                logger.debug('importing module %s', module)
                 imp(module)
             elif reload:
-                logger.debug("reloading module %s", module)
+                logger.debug('reloading module %s', module)
                 reload_from_cwd(sys.modules[module], reloader)
         self.pool.restart()
 

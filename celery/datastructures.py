@@ -158,19 +158,19 @@ class DependencyGraph(object):
 
         return result
 
-    def to_dot(self, fh, ws=" " * 4):
+    def to_dot(self, fh, ws=' ' * 4):
         """Convert the graph to DOT format.
 
         :param fh: A file, or a file-like object to write the graph to.
 
         """
-        fh.write("digraph dependencies {\n")
+        fh.write('digraph dependencies {\n')
         for obj, adjacent in self.iteritems():
             if not adjacent:
                 fh.write(ws + '"%s"\n' % (obj, ))
             for req in adjacent:
                 fh.write(ws + '"%s" -> "%s"\n' % (obj, req))
-        fh.write("}\n")
+        fh.write('}\n')
 
     def __iter__(self):
         return self.adjacent.iterkeys()
@@ -192,10 +192,10 @@ class DependencyGraph(object):
         return '\n'.join(self.repr_node(N) for N in self)
 
     def repr_node(self, obj, level=1):
-        output = ["%s(%s)" % (obj, self.valency_of(obj))]
+        output = ['%s(%s)' % (obj, self.valency_of(obj))]
         if obj in self:
             for other in self[obj]:
-                d = "%s(%s)" % (other, self.valency_of(other))
+                d = '%s(%s)' % (other, self.valency_of(other))
                 output.append('     ' * level + d)
                 output.extend(self.repr_node(other, level + 1).split('\n')[1:])
         return '\n'.join(output)
@@ -383,7 +383,7 @@ class LimitedSet(object):
     :keyword expires: Time in seconds, before a membership expires.
 
     """
-    __slots__ = ("maxlen", "expires", "_data", "__len__")
+    __slots__ = ('maxlen', 'expires', '_data', '__len__')
 
     def __init__(self, maxlen=None, expires=None):
         self.maxlen = maxlen
@@ -433,7 +433,7 @@ class LimitedSet(object):
         return iter(self._data)
 
     def __repr__(self):
-        return "LimitedSet(%r)" % (self._data.keys(), )
+        return 'LimitedSet(%r)' % (self._data.keys(), )
 
     @property
     def chronologically(self):

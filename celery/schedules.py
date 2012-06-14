@@ -76,7 +76,7 @@ class schedule(object):
         return False, rem
 
     def __repr__(self):
-        return "<freq: %s>" % self.human_seconds
+        return '<freq: %s>' % self.human_seconds
 
     def __eq__(self, other):
         if isinstance(other, schedule):
@@ -110,21 +110,21 @@ class crontab_parser(object):
     The parser is a general purpose one, useful for parsing hours, minutes and
     day_of_week expressions.  Example usage::
 
-        >>> minutes = crontab_parser(60).parse("*/15")
+        >>> minutes = crontab_parser(60).parse('*/15')
         [0, 15, 30, 45]
-        >>> hours = crontab_parser(24).parse("*/4")
+        >>> hours = crontab_parser(24).parse('*/4')
         [0, 4, 8, 12, 16, 20]
-        >>> day_of_week = crontab_parser(7).parse("*")
+        >>> day_of_week = crontab_parser(7).parse('*')
         [0, 1, 2, 3, 4, 5, 6]
 
     It can also parse day_of_month and month_of_year expressions if initialized
     with an minimum of 1.  Example usage::
 
-        >>> days_of_month = crontab_parser(31, 1).parse("*/3")
+        >>> days_of_month = crontab_parser(31, 1).parse('*/3')
         [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31]
-        >>> months_of_year = crontab_parser(12, 1).parse("*/2")
+        >>> months_of_year = crontab_parser(12, 1).parse('*/2')
         [1, 3, 5, 7, 9, 11]
-        >>> months_of_year = crontab_parser(12, 1).parse("2-12/2")
+        >>> months_of_year = crontab_parser(12, 1).parse('2-12/2')
         [2, 4, 6, 8, 10, 12]
 
     The maximum possible expanded value returned is found by the formula::
@@ -151,7 +151,7 @@ class crontab_parser(object):
         acc = set()
         for part in spec.split(','):
             if not part:
-                raise self.ParseException("empty part")
+                raise self.ParseException('empty part')
             acc |= set(self._parse_part(part))
         return acc
 
@@ -171,12 +171,12 @@ class crontab_parser(object):
 
     def _range_steps(self, toks):
         if len(toks) != 3 or not toks[2]:
-            raise self.ParseException("empty filter")
+            raise self.ParseException('empty filter')
         return self._expand_range(toks[:2])[::int(toks[2])]
 
     def _star_steps(self, toks):
         if not toks or not toks[0]:
-            raise self.ParseException("empty filter")
+            raise self.ParseException('empty filter')
         return self._expand_star()[::int(toks[0])]
 
     def _expand_star(self, *args):
@@ -184,7 +184,7 @@ class crontab_parser(object):
 
     def _expand_number(self, s):
         if isinstance(s, basestring) and s[0] == '-':
-            raise self.ParseException("negative numbers not supported")
+            raise self.ParseException('negative numbers not supported')
         try:
             i = int(s)
         except ValueError:
@@ -194,7 +194,7 @@ class crontab_parser(object):
                 raise ValueError("Invalid weekday literal '%s'." % s)
 
         if i < self.min_:
-            raise ValueError("Invalid beginning range - %s < %s." %
+            raise ValueError('Invalid beginning range: %s < %s.' %
                                                    (i, self.min_))
         return i
 
@@ -216,16 +216,16 @@ class crontab(schedule):
         - A (list of) integers from 0-59 that represent the minutes of
           an hour of when execution should occur; or
         - A string representing a crontab pattern.  This may get pretty
-          advanced, like `minute="*/15"` (for every quarter) or
-          `minute="1,13,30-45,50-59/2"`.
+          advanced, like `minute='*/15'` (for every quarter) or
+          `minute='1,13,30-45,50-59/2'`.
 
     .. attribute:: hour
 
         - A (list of) integers from 0-23 that represent the hours of
           a day of when execution should occur; or
         - A string representing a crontab pattern.  This may get pretty
-          advanced, like `hour="*/3"` (for every three hours) or
-          `hour="0,8-17/2"` (at midnight, and every two hours during
+          advanced, like `hour='*/3'` (for every three hours) or
+          `hour='0,8-17/2'` (at midnight, and every two hours during
           office hours).
 
     .. attribute:: day_of_week
@@ -234,17 +234,17 @@ class crontab(schedule):
           6, that represent the days of a week that execution should
           occur.
         - A string representing a crontab pattern.  This may get pretty
-          advanced, like `day_of_week="mon-fri"` (for weekdays only).
-          (Beware that `day_of_week="*/2"` does not literally mean
-          "every two days", but "every day that is divisible by two"!)
+          advanced, like `day_of_week='mon-fri'` (for weekdays only).
+          (Beware that `day_of_week='*/2'` does not literally mean
+          'every two days', but 'every day that is divisible by two'!)
 
     .. attribute:: day_of_month
 
         - A (list of) integers from 1-31 that represents the days of the
           month that execution should occur.
         - A string representing a crontab pattern.  This may get pretty
-          advanced, such as `day_of_month="2-30/3"` (for every even
-          numbered day) or `day_of_month="1-7,15-21"` (for the first and
+          advanced, such as `day_of_month='2-30/3'` (for every even
+          numbered day) or `day_of_month='1-7,15-21'` (for the first and
           third weeks of the month).
 
     .. attribute:: month_of_year
@@ -252,8 +252,8 @@ class crontab(schedule):
         - A (list of) integers from 1-12 that represents the months of
           the year during which execution can occur.
         - A string representing a crontab pattern.  This may get pretty
-          advanced, such as `month_of_year="*/3"` (for the first month
-          of every quarter) or `month_of_year="2-12/2"` (for every even
+          advanced, such as `month_of_year='*/3'` (for the first month
+          of every quarter) or `month_of_year='2-12/2'` (for every even
           numbered month).
 
     It is important to realize that any day on which execution should
@@ -261,7 +261,7 @@ class crontab(schedule):
     month attributes.  For example, if `day_of_week` is 0 and `day_of_month`
     is every seventh day, only months that begin on Sunday and are also
     in the `month_of_year` attribute will have execution events.  Or,
-    `day_of_week` is 1 and `day_of_month` is "1-7,15-21" means every
+    `day_of_week` is 1 and `day_of_month` is '1-7,15-21' means every
     first and third monday of every month present in `month_of_year`.
 
     """
@@ -301,16 +301,16 @@ class crontab(schedule):
             result = set(cronspec)
         else:
             raise TypeError(
-                    "Argument cronspec needs to be of any of the "
-                    "following types: int, basestring, or an iterable type. "
+                    'Argument cronspec needs to be of any of the '
+                    'following types: int, basestring, or an iterable type. '
                     "'%s' was given." % type(cronspec))
 
         # assure the result does not preceed the min or exceed the max
         for number in result:
             if number >= max_ + min_ or number < min_:
                 raise ValueError(
-                        "Invalid crontab pattern. Valid "
-                        "range is %d-%d. '%d' was found." %
+                        'Invalid crontab pattern. Valid '
+                        'range is %d-%d. '%d' was found.' %
                         (min_, max_ - 1 + min_, number))
 
         return result
@@ -389,12 +389,12 @@ class crontab(schedule):
         self.nowfun = nowfun or current_app.now
 
     def __repr__(self):
-        return ("<crontab: %s %s %s %s %s (m/h/d/dM/MY)>" %
-                                            (self._orig_minute or "*",
-                                             self._orig_hour or "*",
-                                             self._orig_day_of_week or "*",
-                                             self._orig_day_of_month or "*",
-                                             self._orig_month_of_year or "*"))
+        return ('<crontab: %s %s %s %s %s (m/h/d/dM/MY)>' %
+                                            (self._orig_minute or '*',
+                                             self._orig_hour or '*',
+                                             self._orig_day_of_week or '*',
+                                             self._orig_day_of_month or '*',
+                                             self._orig_month_of_year or '*'))
 
     def __reduce__(self):
         return (self.__class__, (self._orig_minute,
@@ -435,8 +435,8 @@ class crontab(schedule):
                                       microsecond=0)
             else:
                 next_hour = min(self.hour)
-                all_dom_moy = (self._orig_day_of_month == "*" and
-                                  self._orig_month_of_year == "*")
+                all_dom_moy = (self._orig_day_of_month == '*' and
+                                  self._orig_month_of_year == '*')
                 if all_dom_moy:
                     next_day = min([day for day in self.day_of_week
                                         if day > dow_num] or

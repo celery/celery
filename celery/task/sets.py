@@ -24,7 +24,7 @@ class TaskSet(list):
 
     Example::
 
-        >>> urls = ("http://cnn.com/rss", "http://bbc.co.uk/rss")
+        >>> urls = ('http://cnn.com/rss', 'http://bbc.co.uk/rss')
         >>> s = TaskSet(refresh_feed.s(url) for url in urls)
         >>> taskset_result = s.apply_async()
         >>> list_of_return_values = taskset_result.join()  # *expensive*

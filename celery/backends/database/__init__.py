@@ -25,8 +25,8 @@ def _sqlalchemy_installed():
         import sqlalchemy
     except ImportError:
         raise ImproperlyConfigured(
-            "The database result backend requires SQLAlchemy to be installed."
-            "See http://pypi.python.org/pypi/SQLAlchemy")
+            'The database result backend requires SQLAlchemy to be installed.'
+            'See http://pypi.python.org/pypi/SQLAlchemy')
     return sqlalchemy
 _sqlalchemy_installed()
 
@@ -37,7 +37,7 @@ def retry(fun):
 
     @wraps(fun)
     def _inner(*args, **kwargs):
-        max_retries = kwargs.pop("max_retries", 3)
+        max_retries = kwargs.pop('max_retries', 3)
 
         for retries in xrange(max_retries + 1):
             try:
@@ -63,12 +63,12 @@ class DatabaseBackend(BaseDictBackend):
         self.dburi = dburi or conf.CELERY_RESULT_DBURI
         self.engine_options = dict(engine_options or {},
                         **conf.CELERY_RESULT_ENGINE_OPTIONS or {})
-        self.short_lived_sessions = kwargs.get("short_lived_sessions",
+        self.short_lived_sessions = kwargs.get('short_lived_sessions',
                                     conf.CELERY_RESULT_DB_SHORT_LIVED_SESSIONS)
         if not self.dburi:
             raise ImproperlyConfigured(
-                    "Missing connection string! Do you have "
-                    "CELERY_RESULT_DBURI set to a real value?")
+                    'Missing connection string! Do you have '
+                    'CELERY_RESULT_DBURI set to a real value?')
 
     def ResultSession(self):
         return ResultSession(

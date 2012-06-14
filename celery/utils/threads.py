@@ -18,25 +18,25 @@ from kombu.syn import detect_environment
 _Thread = threading.Thread
 _Event = threading._Event
 
-active_count = (getattr(threading, "active_count", None) or
+active_count = (getattr(threading, 'active_count', None) or
                 threading.activeCount)
 
 
 class Event(_Event):
 
-    if not hasattr(_Event, "is_set"):     # pragma: no cover
+    if not hasattr(_Event, 'is_set'):     # pragma: no cover
         is_set = _Event.isSet
 
 
 class Thread(_Thread):
 
-    if not hasattr(_Thread, "is_alive"):  # pragma: no cover
+    if not hasattr(_Thread, 'is_alive'):  # pragma: no cover
         is_alive = _Thread.isAlive
 
-    if not hasattr(_Thread, "daemon"):    # pragma: no cover
+    if not hasattr(_Thread, 'daemon'):    # pragma: no cover
         daemon = property(_Thread.isDaemon, _Thread.setDaemon)
 
-    if not hasattr(_Thread, "name"):      # pragma: no cover
+    if not hasattr(_Thread, 'name'):      # pragma: no cover
         name = property(_Thread.getName, _Thread.setName)
 
 
@@ -50,10 +50,10 @@ class bgThread(Thread):
         self.name = name or self.__class__.__name__
 
     def body(self):
-        raise NotImplementedError("subclass responsibility")
+        raise NotImplementedError('subclass responsibility')
 
     def on_crash(self, msg, *fmt, **kwargs):
-        sys.stderr.write((msg + "\n") % fmt)
+        sys.stderr.write((msg + '\n') % fmt)
         exc_info = sys.exc_info()
         try:
             traceback.print_exception(exc_info[0], exc_info[1], exc_info[2],
@@ -70,7 +70,7 @@ class bgThread(Thread):
                     body()
                 except Exception, exc:
                     try:
-                        self.on_crash("%r crashed: %r", self.name, exc)
+                        self.on_crash('%r crashed: %r', self.name, exc)
                         self._set_stopped()
                     finally:
                         os._exit(1)  # exiting by normal means won't work
@@ -92,7 +92,7 @@ class bgThread(Thread):
         if self.is_alive():
             self.join(1e100)
 
-if detect_environment() == "default":
+if detect_environment() == 'default':
     class LocalStack(threading.local):
 
         def __init__(self):

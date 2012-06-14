@@ -41,11 +41,11 @@ In the consumer:
                    if self.is_aborted(**kwargs):
                        # Respect the aborted status and terminate
                        # gracefully
-                       logger.warning("Task aborted.")
+                       logger.warning('Task aborted.')
                        return
                y = do_something_expensive(x)
                results.append(y)
-           logger.info("Task finished.")
+           logger.info('Task finished.')
            return results
 
 
@@ -98,14 +98,14 @@ Task is aborted (typically by the producer) and should be
 aborted as soon as possible.
 
 """
-ABORTED = "ABORTED"
+ABORTED = 'ABORTED'
 
 
 class AbortableAsyncResult(AsyncResult):
     """Represents a abortable result.
 
     Specifically, this gives the `AsyncResult` a :meth:`abort()` method,
-    which sets the state of the underlying Task to `"ABORTED"`.
+    which sets the state of the underlying Task to `'ABORTED'`.
 
     """
 

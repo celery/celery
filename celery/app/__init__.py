@@ -30,11 +30,11 @@ default_app = Proxy(lambda: state.default_app)
 #: is no active app.
 app_or_default = None
 
-#: The "default" loader is the default loader used by old applications.
-default_loader = os.environ.get("CELERY_LOADER") or "default"
+#: The 'default' loader is the default loader used by old applications.
+default_loader = os.environ.get('CELERY_LOADER') or 'default'
 
 #: Global fallback app instance.
-set_default_app(Celery("default", loader=default_loader,
+set_default_app(Celery('default', loader=default_loader,
                                   set_as_current=False,
                                   accept_magic_kwargs=True))
 
@@ -53,13 +53,13 @@ def _app_or_default_trace(app=None):  # pragma: no cover
     from traceback import print_stack
     from billiard import current_process
     if app is None:
-        if getattr(state._tls, "current_app", None):
-            print("-- RETURNING TO CURRENT APP --")  # noqa+
+        if getattr(state._tls, 'current_app', None):
+            print('-- RETURNING TO CURRENT APP --')  # noqa+
             print_stack()
             return state._tls.current_app
-        if current_process()._name == "MainProcess":
-            raise Exception("DEFAULT APP")
-        print("-- RETURNING TO DEFAULT APP --")      # noqa+
+        if current_process()._name == 'MainProcess':
+            raise Exception('DEFAULT APP')
+        print('-- RETURNING TO DEFAULT APP --')      # noqa+
         print_stack()
         return state.default_app
     return app
@@ -74,7 +74,7 @@ def disable_trace():
     global app_or_default
     app_or_default = _app_or_default
 
-if os.environ.get("CELERY_TRACE_APP"):  # pragma: no cover
+if os.environ.get('CELERY_TRACE_APP'):  # pragma: no cover
     enable_trace()
 else:
     disable_trace()

@@ -82,7 +82,7 @@ from celery.utils.imports import symbol_by_name, import_from_cwd
 
 # always enable DeprecationWarnings, so our users can see them.
 for warning in (CDeprecationWarning, CPendingDeprecationWarning):
-    warnings.simplefilter("once", warning, 0)
+    warnings.simplefilter('once', warning, 0)
 
 ARGV_DISABLED = """
 Unrecognized command line arguments: %s
@@ -97,7 +97,7 @@ class HelpFormatter(IndentedHelpFormatter):
 
     def format_epilog(self, epilog):
         if epilog:
-            return "\n%s\n\n" % epilog
+            return '\n%s\n\n' % epilog
         return ''
 
     def format_description(self, description):
@@ -132,17 +132,17 @@ class Command(object):
 
     #: List of options to parse before parsing other options.
     preload_options = (
-        Option("-A", "--app", default=None),
-        Option("-b", "--broker", default=None),
-        Option("--loader", default=None),
-        Option("--config", default="celeryconfig", dest="config_module"),
+        Option('-A', '--app', default=None),
+        Option('-b', '--broker', default=None),
+        Option('--loader', default=None),
+        Option('--config', default='celeryconfig', dest='config_module'),
     )
 
     #: Enable if the application should support config from the cmdline.
     enable_config_from_cmdline = False
 
     #: Default configuration namespace.
-    namespace = "celery"
+    namespace = 'celery'
 
     #: Text to print at end of --help
     epilog = None
@@ -156,7 +156,7 @@ class Command(object):
 
     def run(self, *args, **options):
         """This is the body of the command called by :meth:`handle_argv`."""
-        raise NotImplementedError("subclass responsibility")
+        raise NotImplementedError('subclass responsibility')
 
     def execute_from_commandline(self, argv=None):
         """Execute application from command line.
@@ -173,7 +173,7 @@ class Command(object):
 
     def usage(self, command):
         """Returns the command-line usage string for this app."""
-        return "%%prog [options] %s" % (self.args, )
+        return '%%prog [options] %s' % (self.args, )
 
     def get_options(self):
         """Get supported command line options."""
@@ -212,15 +212,15 @@ class Command(object):
             self.die(ARGV_DISABLED % (', '.join(args, )), EX_USAGE)
 
     def die(self, msg, status=EX_FAILURE):
-        sys.stderr.write(msg + "\n")
+        sys.stderr.write(msg + '\n')
         sys.exit(status)
 
     def parse_options(self, prog_name, arguments):
         """Parse the available options."""
         # Don't want to load configuration to just print the version,
         # so we handle --version manually here.
-        if "--version" in arguments:
-            sys.stdout.write("%s\n" % self.version)
+        if '--version' in arguments:
+            sys.stdout.write('%s\n' % self.version)
             sys.exit(0)
         parser = self.create_parser(prog_name)
         return parser.parse_args(arguments)
@@ -241,7 +241,7 @@ class Command(object):
             for long_opt, help in doc.iteritems():
                 option = parser.get_option(long_opt)
                 if option is not None:
-                    option.help = ' '.join(help) % {"default": option.default}
+                    option.help = ' '.join(help) % {'default': option.default}
         return parser
 
     def prepare_preload_options(self, options):
@@ -256,18 +256,18 @@ class Command(object):
     def setup_app_from_commandline(self, argv):
         preload_options = self.parse_preload_options(argv)
         self.prepare_preload_options(preload_options)
-        app = (preload_options.get("app") or
-               os.environ.get("CELERY_APP") or
+        app = (preload_options.get('app') or
+               os.environ.get('CELERY_APP') or
                self.app)
-        loader = (preload_options.get("loader") or
-                  os.environ.get("CELERY_LOADER") or
-                  "default")
-        broker = preload_options.get("broker", None)
+        loader = (preload_options.get('loader') or
+                  os.environ.get('CELERY_LOADER') or
+                  'default')
+        broker = preload_options.get('broker', None)
         if broker:
-            os.environ["CELERY_BROKER_URL"] = broker
-        config_module = preload_options.get("config_module")
+            os.environ['CELERY_BROKER_URL'] = broker
+        config_module = preload_options.get('config_module')
         if config_module:
-            os.environ["CELERY_CONFIG_MODULE"] = config_module
+            os.environ['CELERY_CONFIG_MODULE'] = config_module
         if app:
             self.app = self.find_app(app)
         else:
@@ -279,8 +279,8 @@ class Command(object):
     def find_app(self, app):
         sym = self.symbol_by_name(app)
         if isinstance(sym, ModuleType):
-            if getattr(sym, "__path__", None):
-                return self.find_app("%s.celery:" % (app.replace(":", ""), ))
+            if getattr(sym, '__path__', None):
+                return self.find_app('%s.celery:' % (app.replace(':', ''), ))
             return sym.celery
         return sym
 
@@ -323,11 +323,11 @@ class Command(object):
     def parse_doc(self, doc):
         options, in_option = defaultdict(list), None
         for line in doc.splitlines():
-            if line.startswith(".. cmdoption::"):
+            if line.startswith('.. cmdoption::'):
                 m = find_long_opt.match(line)
                 if m:
                     in_option = m.groups()[0].strip()
-                assert in_option, "missing long opt"
+                assert in_option, 'missing long opt'
             elif in_option and line.startswith(' ' * 4):
                 options[in_option].append(find_rst_ref.sub(r'\1',
                     line.strip()).replace('`', ''))
@@ -340,10 +340,10 @@ class Command(object):
 
 def daemon_options(default_pidfile=None, default_logfile=None):
     return (
-        Option("-f", "--logfile", default=default_logfile),
-        Option("--pidfile", default=default_pidfile),
-        Option("--uid", default=None),
-        Option("--gid", default=None),
-        Option("--umask", default=0, type="int"),
-        Option("--workdir", default=None, dest="working_directory"),
+        Option('-f', '--logfile', default=default_logfile),
+        Option('--pidfile', default=default_pidfile),
+        Option('--uid', default=None),
+        Option('--gid', default=None),
+        Option('--umask', default=0, type='int'),
+        Option('--workdir', default=None, dest='working_directory'),
     )

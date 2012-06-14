@@ -19,13 +19,13 @@ A click counter that flushes the buffer every 100 messages, and every
     @task(base=Batches, flush_every=100, flush_interval=10)
     def count_click(requests):
         from collections import Counter
-        count = Counter(request.kwargs["url"] for request in requests)
+        count = Counter(request.kwargs['url'] for request in requests)
         for url, count in count.items():
-            print(">>> Clicks: %s -> %s" % (url, count))
+            print('>>> Clicks: %s -> %s' % (url, count))
 
 Registering the click is done as follows:
 
-    >>> count_click.delay(url="http://example.com")
+    >>> count_click.delay(url='http://example.com')
 
 .. warning::
 
@@ -81,7 +81,7 @@ def apply_batches_task(task, args, loglevel, logfile):
         result = task(*args)
     except Exception, exc:
         result = None
-        task.logger.error("Error: %r", exc, exc_info=True)
+        task.logger.error('Error: %r', exc, exc_info=True)
     finally:
         task.pop_request()
     return result
@@ -139,7 +139,7 @@ class Batches(Task):
         self._logging = None
 
     def run(self, requests):
-        raise NotImplementedError("%r must implement run(requests)" % (self, ))
+        raise NotImplementedError('%r must implement run(requests)' % (self, ))
 
     def flush(self, requests):
         return self.apply_buffer(requests, ([SimpleRequest.from_request(r)
@@ -162,15 +162,15 @@ class Batches(Task):
             self._do_flush()
 
     def _do_flush(self):
-        logger.debug("Batches: Wake-up to flush buffer...")
+        logger.debug('Batches: Wake-up to flush buffer...')
         requests = None
         if self._buffer.qsize():
             requests = list(consume_queue(self._buffer))
             if requests:
-                logger.debug("Batches: Buffer complete: %s", len(requests))
+                logger.debug('Batches: Buffer complete: %s', len(requests))
                 self.flush(requests)
         if not requests:
-            logger.debug("Batches: Cancelling timer: Nothing in buffer.")
+            logger.debug('Batches: Cancelling timer: Nothing in buffer.')
             self._tref.cancel()  # cancel timer.
             self._tref = None
 

@@ -38,8 +38,8 @@ class PickleType(_PickleType):  # pragma: no cover
             return self.comparator(x, y)
         elif self.mutable and not hasattr(x, '__eq__') and x is not None:
             util.warn_deprecated(
-                    "Objects stored with PickleType when mutable=True "
-                    "must implement __eq__() for reliable comparison.")
+                    'Objects stored with PickleType when mutable=True '
+                    'must implement __eq__() for reliable comparison.')
             a = self.pickler.dumps(x, self.protocol)
             b = self.pickler.dumps(y, self.protocol)
             return a == b

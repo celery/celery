@@ -47,17 +47,17 @@ from billiard import current_process
 
 default_port = 6899
 
-CELERY_RDB_HOST = os.environ.get("CELERY_RDB_HOST") or "127.0.0.1"
-CELERY_RDB_PORT = int(os.environ.get("CELERY_RDB_PORT") or default_port)
+CELERY_RDB_HOST = os.environ.get('CELERY_RDB_HOST') or '127.0.0.1'
+CELERY_RDB_PORT = int(os.environ.get('CELERY_RDB_PORT') or default_port)
 
 #: Holds the currently active debugger.
 _current = [None]
 
-_frame = getattr(sys, "_getframe")
+_frame = getattr(sys, '_getframe')
 
 
 class Rdb(Pdb):
-    me = "Remote Debugger"
+    me = 'Remote Debugger'
     _prev_outs = None
     _sock = None
 
@@ -71,17 +71,17 @@ class Rdb(Pdb):
         self._sock, this_port = self.get_avail_port(host, port,
             port_search_limit, port_skew)
         self._sock.listen(1)
-        me = "%s:%s" % (self.me, this_port)
-        context = self.context = {"me": me, "host": host, "port": this_port}
-        self.say("%(me)s: Please telnet %(host)s %(port)s."
-                 "  Type `exit` in session to continue." % context)
-        self.say("%(me)s: Waiting for client..." % context)
+        me = '%s:%s' % (self.me, this_port)
+        context = self.context = {'me': me, 'host': host, 'port': this_port}
+        self.say('%(me)s: Please telnet %(host)s %(port)s.'
+                 '  Type `exit` in session to continue.' % context)
+        self.say('%(me)s: Waiting for client...' % context)
 
         self._client, address = self._sock.accept()
-        context["remote_addr"] = ":".join(map(str, address))
-        self.say("%(me)s: In session with %(remote_addr)s" % context)
-        self._handle = sys.stdin = sys.stdout = self._client.makefile("rw")
-        Pdb.__init__(self, completekey="tab",
+        context['remote_addr'] = ':'.join(map(str, address))
+        self.say('%(me)s: In session with %(remote_addr)s' % context)
+        self._handle = sys.stdin = sys.stdout = self._client.makefile('rw')
+        Pdb.__init__(self, completekey='tab',
                            stdin=self._handle, stdout=self._handle)
 
     def get_avail_port(self, host, port, search_limit=100, skew=+0):
@@ -104,11 +104,11 @@ class Rdb(Pdb):
                 return _sock, this_port
         else:
             raise Exception(
-                "%s: Could not find available port. Please set using "
-                "environment variable CELERY_RDB_PORT" % (self.me, ))
+                '%s: Could not find available port. Please set using '
+                'environment variable CELERY_RDB_PORT' % (self.me, ))
 
     def say(self, m):
-        self.out.write(m + "\n")
+        self.out.write(m + '\n')
 
     def _close_session(self):
         self.stdin, self.stdout = sys.stdin, sys.stdout = self._prev_handles
@@ -116,7 +116,7 @@ class Rdb(Pdb):
         self._client.close()
         self._sock.close()
         self.active = False
-        self.say("%(me)s: Session %(remote_addr)s ended." % self.context)
+        self.say('%(me)s: Session %(remote_addr)s ended.' % self.context)
 
     def do_continue(self, arg):
         self._close_session()

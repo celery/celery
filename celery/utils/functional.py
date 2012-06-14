@@ -91,7 +91,7 @@ class LRUCache(UserDict):
 
 def is_list(l):
     """Returns true if object is list-like, but not a dict or string."""
-    return hasattr(l, "__iter__") and not isinstance(l, (dict, basestring))
+    return hasattr(l, '__iter__') and not isinstance(l, (dict, basestring))
 
 
 def maybe_list(l):
@@ -219,13 +219,13 @@ def padlist(container, size, default=None):
 
     Examples:
 
-        >>> first, last, city = padlist(["George", "Costanza", "NYC"], 3)
-        ("George", "Costanza", "NYC")
-        >>> first, last, city = padlist(["George", "Costanza"], 3)
-        ("George", "Costanza", None)
-        >>> first, last, city, planet = padlist(["George", "Costanza",
-                                                 "NYC"], 4, default="Earth")
-        ("George", "Costanza", "NYC", "Earth")
+        >>> first, last, city = padlist(['George', 'Costanza', 'NYC'], 3)
+        ('George', 'Costanza', 'NYC')
+        >>> first, last, city = padlist(['George', 'Costanza'], 3)
+        ('George', 'Costanza', None)
+        >>> first, last, city, planet = padlist(['George', 'Costanza',
+                                                 'NYC'], 4, default='Earth')
+        ('George', 'Costanza', 'NYC', 'Earth')
 
     """
     return list(container)[:size] + [default] * (size - len(container))
@@ -236,11 +236,6 @@ def mattrgetter(*attrs):
     attributes instead of raising :exc:`AttributeError`."""
     return lambda obj: dict((attr, getattr(obj, attr, None))
                                 for attr in attrs)
-
-
-def _add(s, x):
-    print("ADD %r" % (x, ))
-    s.add(x)
 
 
 def uniq(it):

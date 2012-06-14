@@ -37,7 +37,7 @@ Example:
 
 
 def say(m, fh=sys.stderr):
-    fh.write("%s\n" % (m, ))
+    fh.write('%s\n' % (m, ))
 
 
 class Spec(object):
@@ -62,14 +62,14 @@ class Spec(object):
     """
     def __init__(self, *args, **kwargs):
         self.args = args
-        self.returns = kwargs.get("returns")
+        self.returns = kwargs.get('returns')
 
     def coerce(self, index, value):
         """Coerce value for argument at index.
 
-        E.g. if :attr:`args` is `[("is_active", bool)]`:
+        E.g. if :attr:`args` is `[('is_active', bool)]`:
 
-            >>> coerce(0, "False")
+            >>> coerce(0, 'False')
             False
 
         """
@@ -84,9 +84,9 @@ class Spec(object):
 
         e.g:
 
-            >>> spec = Spec([("queue", str), ("if_unused", bool)])
-            >>> spec.str_args_to_python("pobox", "true")
-            ("pobox", True)
+            >>> spec = Spec([('queue', str), ('if_unused', bool)])
+            >>> spec.str_args_to_python('pobox', 'true')
+            ('pobox', True)
 
         """
         return tuple(self.coerce(index, value)
@@ -96,7 +96,7 @@ class Spec(object):
         """Format the return value of this command in a human-friendly way."""
         if not self.returns:
             if response is None:
-                return "ok."
+                return 'ok.'
             return response
         if callable(self.returns):
             return self.returns(response)
@@ -104,24 +104,24 @@ class Spec(object):
 
     def format_arg(self, name, type, default_value=None):
         if default_value is not None:
-            return "%s:%s" % (name, default_value)
+            return '%s:%s' % (name, default_value)
         return name
 
     def format_signature(self):
-        return " ".join(self.format_arg(*padlist(list(arg), 3))
+        return ' '.join(self.format_arg(*padlist(list(arg), 3))
                             for arg in self.args)
 
 
 def dump_message(message):
     if message is None:
-        return "No messages in queue. basic.publish something."
-    return {"body": message.body,
-            "properties": message.properties,
-            "delivery_info": message.delivery_info}
+        return 'No messages in queue. basic.publish something.'
+    return {'body': message.body,
+            'properties': message.properties,
+            'delivery_info': message.delivery_info}
 
 
 def format_declare_queue(ret):
-    return "ok. queue:%s messages:%s consumers:%s." % ret
+    return 'ok. queue:%s messages:%s consumers:%s.' % ret
 
 
 class AMQShell(cmd.Cmd):
@@ -145,55 +145,55 @@ class AMQShell(cmd.Cmd):
     """
     conn = None
     chan = None
-    prompt_fmt = "%d> "
-    identchars = cmd.IDENTCHARS = "."
+    prompt_fmt = '%d> '
+    identchars = cmd.IDENTCHARS = '.'
     needs_reconnect = False
     counter = 1
     inc_counter = count(2).next
 
-    builtins = {"EOF": "do_exit",
-                "exit": "do_exit",
-                "help": "do_help"}
+    builtins = {'EOF': 'do_exit',
+                'exit': 'do_exit',
+                'help': 'do_help'}
 
     amqp = {
-        "exchange.declare": Spec(("exchange", str),
-                                 ("type", str),
-                                 ("passive", bool, "no"),
-                                 ("durable", bool, "no"),
-                                 ("auto_delete", bool, "no"),
-                                 ("internal", bool, "no")),
-        "exchange.delete": Spec(("exchange", str),
-                                ("if_unused", bool)),
-        "queue.bind": Spec(("queue", str),
-                           ("exchange", str),
-                           ("routing_key", str)),
-        "queue.declare": Spec(("queue", str),
-                              ("passive", bool, "no"),
-                              ("durable", bool, "no"),
-                              ("exclusive", bool, "no"),
-                              ("auto_delete", bool, "no"),
+        'exchange.declare': Spec(('exchange', str),
+                                 ('type', str),
+                                 ('passive', bool, 'no'),
+                                 ('durable', bool, 'no'),
+                                 ('auto_delete', bool, 'no'),
+                                 ('internal', bool, 'no')),
+        'exchange.delete': Spec(('exchange', str),
+                                ('if_unused', bool)),
+        'queue.bind': Spec(('queue', str),
+                           ('exchange', str),
+                           ('routing_key', str)),
+        'queue.declare': Spec(('queue', str),
+                              ('passive', bool, 'no'),
+                              ('durable', bool, 'no'),
+                              ('exclusive', bool, 'no'),
+                              ('auto_delete', bool, 'no'),
                               returns=format_declare_queue),
-        "queue.delete": Spec(("queue", str),
-                             ("if_unused", bool, "no"),
-                             ("if_empty", bool, "no"),
-                             returns="ok. %d messages deleted."),
-        "queue.purge": Spec(("queue", str),
-                            returns="ok. %d messages deleted."),
-        "basic.get": Spec(("queue", str),
-                          ("no_ack", bool, "off"),
+        'queue.delete': Spec(('queue', str),
+                             ('if_unused', bool, 'no'),
+                             ('if_empty', bool, 'no'),
+                             returns='ok. %d messages deleted.'),
+        'queue.purge': Spec(('queue', str),
+                            returns='ok. %d messages deleted.'),
+        'basic.get': Spec(('queue', str),
+                          ('no_ack', bool, 'off'),
                           returns=dump_message),
-        "basic.publish": Spec(("msg", amqp.Message),
-                              ("exchange", str),
-                              ("routing_key", str),
-                              ("mandatory", bool, "no"),
-                              ("immediate", bool, "no")),
-        "basic.ack": Spec(("delivery_tag", int)),
+        'basic.publish': Spec(('msg', amqp.Message),
+                              ('exchange', str),
+                              ('routing_key', str),
+                              ('mandatory', bool, 'no'),
+                              ('immediate', bool, 'no')),
+        'basic.ack': Spec(('delivery_tag', int)),
     }
 
     def __init__(self, *args, **kwargs):
-        self.connect = kwargs.pop("connect")
-        self.silent = kwargs.pop("silent", False)
-        self.out = kwargs.pop("out", sys.stderr)
+        self.connect = kwargs.pop('connect')
+        self.silent = kwargs.pop('silent', False)
+        self.out = kwargs.pop('out', sys.stderr)
         cmd.Cmd.__init__(self, *args, **kwargs)
         self._reconnect()
 
@@ -214,7 +214,7 @@ class AMQShell(cmd.Cmd):
 
         Example:
 
-            >>> get_amqp_api_command("queue.delete", ["pobox", "yes", "no"])
+            >>> get_amqp_api_command('queue.delete', ['pobox', 'yes', 'no'])
             (<bound method Channel.queue_delete of
              <amqplib.client_0_8.channel.Channel object at 0x...>>,
              ('testfoo', True, False))
@@ -222,19 +222,19 @@ class AMQShell(cmd.Cmd):
         """
         spec = self.amqp[cmd]
         args = spec.str_args_to_python(arglist)
-        attr_name = cmd.replace(".", "_")
+        attr_name = cmd.replace('.', '_')
         if self.needs_reconnect:
             self._reconnect()
         return getattr(self.chan, attr_name), args, spec.format_response
 
     def do_exit(self, *args):
-        """The `"exit"` command."""
+        """The `'exit'` command."""
         self.note("\n-> please, don't leave!")
         sys.exit(0)
 
     def display_command_help(self, cmd, short=False):
         spec = self.amqp[cmd]
-        self.say("%s %s" % (cmd, spec.format_signature()))
+        self.say('%s %s' % (cmd, spec.format_signature()))
 
     def do_help(self, *args):
         if not args:
@@ -255,11 +255,11 @@ class AMQShell(cmd.Cmd):
         """Return all commands starting with `text`, for tab-completion."""
         names = self.get_names()
         first = [cmd for cmd in names
-                        if cmd.startswith(text.replace("_", "."))]
+                        if cmd.startswith(text.replace('_', '.'))]
         if first:
             return first
         return [cmd for cmd in names
-                    if cmd.partition(".")[2].startswith(text)]
+                    if cmd.partition('.')[2].startswith(text)]
 
     def dispatch(self, cmd, argline):
         """Dispatch and execute the command.
@@ -281,14 +281,14 @@ class AMQShell(cmd.Cmd):
 
         E.g::
 
-            >>> parseline("queue.delete A 'B' C")
-            ("queue.delete", "A 'B' C", "queue.delete A 'B' C")
+            >>> parseline('queue.delete A 'B' C')
+            ('queue.delete', 'A 'B' C', 'queue.delete A 'B' C')
 
         """
         parts = line.split()
         if parts:
-            return parts[0], " ".join(parts[1:]), line
-        return "", "", line
+            return parts[0], ' '.join(parts[1:]), line
+        return '', '', line
 
     def onecmd(self, line):
         """Parse line and execute command."""
@@ -334,28 +334,28 @@ class AMQPAdmin(object):
     Shell = AMQShell
 
     def __init__(self, *args, **kwargs):
-        self.app = app_or_default(kwargs.get("app"))
-        self.out = kwargs.setdefault("out", sys.stderr)
-        self.silent = kwargs.get("silent")
+        self.app = app_or_default(kwargs.get('app'))
+        self.out = kwargs.setdefault('out', sys.stderr)
+        self.silent = kwargs.get('silent')
         self.args = args
 
     def connect(self, conn=None):
         if conn:
             conn.close()
         conn = self.app.broker_connection()
-        self.note("-> connecting to %s." % conn.as_uri())
+        self.note('-> connecting to %s.' % conn.as_uri())
         conn.connect()
-        self.note("-> connected.")
+        self.note('-> connected.')
         return conn
 
     def run(self):
         shell = self.Shell(connect=self.connect, out=self.out)
         if self.args:
-            return shell.onecmd(" ".join(self.args))
+            return shell.onecmd(' '.join(self.args))
         try:
             return shell.cmdloop()
         except KeyboardInterrupt:
-            self.note("(bibi)")
+            self.note('(bibi)')
             pass
 
     def note(self, m):
@@ -366,7 +366,7 @@ class AMQPAdmin(object):
 class AMQPAdminCommand(Command):
 
     def run(self, *args, **options):
-        options["app"] = self.app
+        options['app'] = self.app
         return AMQPAdmin(*args, **options).run()
 
 
@@ -377,5 +377,5 @@ def camqadm(*args, **options):
 def main():
     AMQPAdminCommand().execute_from_commandline()
 
-if __name__ == "__main__":  # pragma: no cover
+if __name__ == '__main__':  # pragma: no cover
     main()

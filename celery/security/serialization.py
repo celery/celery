@@ -30,7 +30,7 @@ def b64decode(s):
 class SecureSerializer(object):
 
     def __init__(self, key=None, cert=None, cert_store=None,
-            digest="sha1", serializer="json"):
+            digest='sha1', serializer='json'):
         self._key = key
         self._cert = cert
         self._cert_store = cert_store
@@ -41,7 +41,7 @@ class SecureSerializer(object):
         """serialize data structure into string"""
         assert self._key is not None
         assert self._cert is not None
-        with reraise_errors("Unable to serialize: %r", (Exception, )):
+        with reraise_errors('Unable to serialize: %r', (Exception, )):
             content_type, content_encoding, body = encode(
                     data, serializer=self._serializer)
             # What we sign is the serialized body, not the body itself.
@@ -55,14 +55,14 @@ class SecureSerializer(object):
     def deserialize(self, data):
         """deserialize data structure from string"""
         assert self._cert_store is not None
-        with reraise_errors("Unable to deserialize: %r", (Exception, )):
+        with reraise_errors('Unable to deserialize: %r', (Exception, )):
             payload = self._unpack(data)
-            signature, signer, body = (payload["signature"],
-                                       payload["signer"],
-                                       payload["body"])
+            signature, signer, body = (payload['signature'],
+                                       payload['signer'],
+                                       payload['body'])
             self._cert_store[signer].verify(body, signature, self._digest)
-        return decode(body, payload["content_type"],
-                            payload["content_encoding"], force=True)
+        return decode(body, payload['content_type'],
+                            payload['content_encoding'], force=True)
 
     def _pack(self, body, content_type, content_encoding, signer, signature,
             sep='\x00\x01'):
@@ -70,18 +70,18 @@ class SecureSerializer(object):
                                    content_type, content_encoding, body]))
 
     def _unpack(self, payload, sep='\x00\x01',
-            fields=("signer", "signature", "content_type",
-                    "content_encoding", "body")):
+            fields=('signer', 'signature', 'content_type',
+                    'content_encoding', 'body')):
         return dict(zip(fields, b64decode(payload).split(sep)))
 
 
-def register_auth(key=None, cert=None, store=None, digest="sha1",
-        serializer="json"):
+def register_auth(key=None, cert=None, store=None, digest='sha1',
+        serializer='json'):
     """register security serializer"""
     s = SecureSerializer(key and PrivateKey(key),
                          cert and Certificate(cert),
                          store and FSCertStore(store),
                          digest=digest, serializer=serializer)
-    registry.register("auth", s.serialize, s.deserialize,
-                      content_type="application/data",
-                      content_encoding="utf-8")
+    registry.register('auth', s.serialize, s.deserialize,
+                      content_type='application/data',
+                      content_encoding='utf-8')

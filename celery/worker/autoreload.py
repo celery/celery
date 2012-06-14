@@ -37,8 +37,8 @@ logger = get_logger(__name__)
 
 
 class WorkerComponent(StartStopComponent):
-    name = "worker.autoreloader"
-    requires = ("pool", )
+    name = 'worker.autoreloader'
+    requires = ('pool', )
 
     def __init__(self, w, autoreload=None, **kwargs):
         self.enabled = w.autoreload = autoreload
@@ -54,14 +54,14 @@ class WorkerComponent(StartStopComponent):
         return w.autoreloader
 
     def create(self, w):
-        if hasattr(select, "kqueue") and w.use_eventloop:
+        if hasattr(select, 'kqueue') and w.use_eventloop:
             return self.create_ev(w)
         return self.create_threaded(w)
 
 
-def file_hash(filename, algorithm="md5"):
+def file_hash(filename, algorithm='md5'):
     hobj = hashlib.new(algorithm)
-    with open(filename, "rb") as f:
+    with open(filename, 'rb') as f:
         for chunk in iter(lambda: f.read(2 ** 20), ''):
             hobj.update(chunk)
     return hobj.digest()
@@ -78,7 +78,7 @@ class BaseMonitor(object):
         self.shutdown_event = shutdown_event or Event()
 
     def start(self):
-        raise NotImplementedError("Subclass responsibility")
+        raise NotImplementedError('Subclass responsibility')
 
     def stop(self):
         pass
@@ -199,18 +199,18 @@ class InotifyMonitor(_ProcessEvent):
 
 def default_implementation():
     # kqueue monitor not working properly at this time.
-    if hasattr(select, "kqueue"):
-        return "kqueue"
-    if sys.platform.startswith("linux") and pyinotify:
-        return "inotify"
+    if hasattr(select, 'kqueue'):
+        return 'kqueue'
+    if sys.platform.startswith('linux') and pyinotify:
+        return 'inotify'
     else:
-        return "stat"
+        return 'stat'
 
-implementations = {"kqueue": KQueueMonitor,
-                   "inotify": InotifyMonitor,
-                   "stat": StatMonitor}
+implementations = {'kqueue': KQueueMonitor,
+                   'inotify': InotifyMonitor,
+                   'stat': StatMonitor}
 Monitor = implementations[
-            os.environ.get("CELERYD_FSNOTIFY") or default_implementation()]
+            os.environ.get('CELERYD_FSNOTIFY') or default_implementation()]
 
 
 class Autoreloader(bgThread):
@@ -260,7 +260,7 @@ class Autoreloader(bgThread):
         modified = [f for f in files if self._maybe_modified(f)]
         if modified:
             names = [self._module_name(module) for module in modified]
-            logger.info("Detected modified modules: %r", names)
+            logger.info('Detected modified modules: %r', names)
             self._reload(names)
 
     def _reload(self, modules):

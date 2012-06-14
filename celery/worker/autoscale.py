@@ -31,8 +31,8 @@ debug, info, error = logger.debug, logger.info, logger.error
 
 
 class WorkerComponent(StartStopComponent):
-    name = "worker.autoscaler"
-    requires = ("pool", )
+    name = 'worker.autoscaler'
+    requires = ('pool', )
 
     def __init__(self, w, **kwargs):
         self.enabled = w.autoscale
@@ -70,7 +70,7 @@ class Autoscaler(bgThread):
         self.keepalive = keepalive
         self._last_action = None
 
-        assert self.keepalive, "can't scale down too fast."
+        assert self.keepalive, 'cannot scale down too fast.'
 
     def body(self):
         with self.mutex:
@@ -129,23 +129,23 @@ class Autoscaler(bgThread):
             return self._shrink(n)
 
     def _grow(self, n):
-        info("Scaling up %s processes.", n)
+        info('Scaling up %s processes.', n)
         self.pool.grow(n)
 
     def _shrink(self, n):
-        info("Scaling down %s processes.", n)
+        info('Scaling down %s processes.', n)
         try:
             self.pool.shrink(n)
         except ValueError:
             debug("Autoscaler won't scale down: all processes busy.")
         except Exception, exc:
-            error("Autoscaler: scale_down: %r", exc, exc_info=True)
+            error('Autoscaler: scale_down: %r', exc, exc_info=True)
 
     def info(self):
-        return {"max": self.max_concurrency,
-                "min": self.min_concurrency,
-                "current": self.processes,
-                "qty": self.qty}
+        return {'max': self.max_concurrency,
+                'min': self.min_concurrency,
+                'current': self.processes,
+                'qty': self.qty}
 
     @property
     def qty(self):

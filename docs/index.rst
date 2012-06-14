@@ -22,6 +22,12 @@ Contents
 ========
 
 .. toctree::
+    :maxdepth: 1
+
+    copyright
+    conventions
+
+.. toctree::
     :maxdepth: 2
 
     getting-started/index

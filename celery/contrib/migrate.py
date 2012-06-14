@@ -27,14 +27,14 @@ class State(object):
     @property
     def strtotal(self):
         if not self.total_apx:
-            return u"?"
+            return u'?'
         return unicode(self.total_apx)
 
 
 def migrate_task(producer, body_, message,
-        remove_props=["application_headers",
-                      "content_type",
-                      "content_encoding"]):
+        remove_props=['application_headers',
+                      'content_type',
+                      'content_encoding']):
     body = ensure_bytes(message.body)  # use raw message body.
     info, headers, props = (message.delivery_info,
                             message.headers,
@@ -42,13 +42,13 @@ def migrate_task(producer, body_, message,
     ctype, enc = message.content_type, message.content_encoding
     # remove compression header, as this will be inserted again
     # when the message is recompressed.
-    compression = headers.pop("compression", None)
+    compression = headers.pop('compression', None)
 
     for key in remove_props:
         props.pop(key, None)
 
-    producer.publish(ensure_bytes(body), exchange=info["exchange"],
-                           routing_key=info["routing_key"],
+    producer.publish(ensure_bytes(body), exchange=info['exchange'],
+                           routing_key=info['routing_key'],
                            compression=compression,
                            headers=headers,
                            content_type=ctype,

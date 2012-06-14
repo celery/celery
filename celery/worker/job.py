@@ -54,14 +54,14 @@ NEEDS_KWDICT = sys.version_info <= (2, 6)
 
 class Request(object):
     """A request for task execution."""
-    __slots__ = ("app", "name", "id", "args", "kwargs",
-                 "on_ack", "delivery_info", "hostname",
-                 "callbacks", "errbacks",
-                 "eventer", "connection_errors",
-                 "task", "eta", "expires",
-                 "request_dict", "acknowledged", "success_msg",
-                 "error_msg", "retry_msg", "time_start", "worker_pid",
-                 "_already_revoked", "_terminate_on_ack", "_tzlocal")
+    __slots__ = ('app', 'name', 'id', 'args', 'kwargs',
+                 'on_ack', 'delivery_info', 'hostname',
+                 'callbacks', 'errbacks',
+                 'eventer', 'connection_errors',
+                 'task', 'eta', 'expires',
+                 'request_dict', 'acknowledged', 'success_msg',
+                 'error_msg', 'retry_msg', 'time_start', 'worker_pid',
+                 '_already_revoked', '_terminate_on_ack', '_tzlocal')
 
     #: Format string used to log task success.
     success_msg = """\
@@ -86,20 +86,20 @@ class Request(object):
             connection_errors=None, request_dict=None,
             delivery_info=None, task=None, **opts):
         self.app = app or app_or_default(app)
-        name = self.name = body["task"]
-        self.id = body["id"]
-        self.args = body.get("args", [])
-        self.kwargs = body.get("kwargs", {})
+        name = self.name = body['task']
+        self.id = body['id']
+        self.args = body.get('args', [])
+        self.kwargs = body.get('kwargs', {})
         try:
             self.kwargs.items
         except AttributeError:
             raise exceptions.InvalidTaskError(
-                    "Task keyword arguments is not a mapping")
+                    'Task keyword arguments is not a mapping')
         if NEEDS_KWDICT:
             self.kwargs = kwdict(self.kwargs)
-        eta = body.get("eta")
-        expires = body.get("expires")
-        utc = body.get("utc", False)
+        eta = body.get('eta')
+        expires = body.get('expires')
+        utc = body.get('utc', False)
         self.on_ack = on_ack
         self.hostname = hostname or socket.gethostname()
         self.eventer = eventer
@@ -125,8 +125,8 @@ class Request(object):
 
         delivery_info = {} if delivery_info is None else delivery_info
         self.delivery_info = {
-            "exchange": delivery_info.get("exchange"),
-            "routing_key": delivery_info.get("routing_key"),
+            'exchange': delivery_info.get('exchange'),
+            'routing_key': delivery_info.get('routing_key'),
         }
 
         self.request_dict = body
@@ -135,7 +135,7 @@ class Request(object):
     def from_message(cls, message, body, **kwargs):
         # should be deprecated
         return Request(body,
-            delivery_info=getattr(message, "delivery_info", None), **kwargs)
+            delivery_info=getattr(message, 'delivery_info', None), **kwargs)
 
     def extend_with_default_kwargs(self):
         """Extend the tasks keyword arguments with standard task arguments.
@@ -150,13 +150,13 @@ class Request(object):
 
         """
         kwargs = dict(self.kwargs)
-        default_kwargs = {"logfile": None,   # deprecated
-                          "loglevel": None,  # deprecated
-                          "task_id": self.id,
-                          "task_name": self.name,
-                          "task_retries": self.request_dict.get("retries", 0),
-                          "task_is_eager": False,
-                          "delivery_info": self.delivery_info}
+        default_kwargs = {'logfile': None,   # deprecated
+                          'loglevel': None,  # deprecated
+                          'task_id': self.id,
+                          'task_name': self.name,
+                          'task_retries': self.request_dict.get('retries', 0),
+                          'task_is_eager': False,
+                          'delivery_info': self.delivery_info}
         fun = self.task.run
         supported_keys = fun_takes_kwargs(fun, default_kwargs)
         extend_with = dict((key, val) for key, val in default_kwargs.items()
@@ -179,9 +179,9 @@ class Request(object):
         if task.accept_magic_kwargs:
             kwargs = self.extend_with_default_kwargs()
         request = self.request_dict
-        request.update({"hostname": hostname, "is_eager": False,
-                        "delivery_info": self.delivery_info,
-                        "group": self.request_dict.get("taskset")})
+        request.update({'hostname': hostname, 'is_eager': False,
+                        'delivery_info': self.delivery_info,
+                        'group': self.request_dict.get('taskset')})
         result = pool.apply_async(trace_task_ret,
                                   args=(self.name, self.id,
                                         self.args, kwargs, request),
@@ -211,12 +211,12 @@ class Request(object):
         if self.task.accept_magic_kwargs:
             kwargs = self.extend_with_default_kwargs()
         request = self.request_dict
-        request.update({"loglevel": loglevel, "logfile": logfile,
-                        "hostname": self.hostname, "is_eager": False,
-                        "delivery_info": self.delivery_info})
+        request.update({'loglevel': loglevel, 'logfile': logfile,
+                        'hostname': self.hostname, 'is_eager': False,
+                        'delivery_info': self.delivery_info})
         retval = trace_task(self.task, self.id, self.args, kwargs, request,
-                               **{"hostname": self.hostname,
-                                  "loader": self.app.loader})
+                               **{'hostname': self.hostname,
+                                  'loader': self.app.loader})
         self.acknowledge()
         return retval
 
@@ -240,8 +240,8 @@ class Request(object):
         if self.expires:
             self.maybe_expire()
         if self.id in revoked_tasks:
-            warn("Skipping revoked task: %s[%s]", self.name, self.id)
-            self.send_event("task-revoked", uuid=self.id)
+            warn('Skipping revoked task: %s[%s]', self.name, self.id)
+            self.send_event('task-revoked', uuid=self.id)
             self.acknowledge()
             self._already_revoked = True
             return True
@@ -258,9 +258,9 @@ class Request(object):
         task_accepted(self)
         if not self.task.acks_late:
             self.acknowledge()
-        self.send_event("task-started", uuid=self.id, pid=pid)
+        self.send_event('task-started', uuid=self.id, pid=pid)
         if _does_debug:
-            debug("Task accepted: %s[%s] pid:%r", self.name, self.id, pid)
+            debug('Task accepted: %s[%s] pid:%r', self.name, self.id, pid)
         if self._terminate_on_ack is not None:
             _, pool, signal = self._terminate_on_ack
             self.terminate(pool, signal)
@@ -269,11 +269,11 @@ class Request(object):
         """Handler called if the task times out."""
         task_ready(self)
         if soft:
-            warn("Soft time limit (%ss) exceeded for %s[%s]",
+            warn('Soft time limit (%ss) exceeded for %s[%s]',
                  timeout, self.name, self.id)
             exc = exceptions.SoftTimeLimitExceeded(timeout)
         else:
-            error("Hard time limit (%ss) exceeded for %s[%s]",
+            error('Hard time limit (%ss) exceeded for %s[%s]',
                   timeout, self.name, self.id)
             exc = exceptions.TimeLimitExceeded(timeout)
 
@@ -295,27 +295,27 @@ class Request(object):
         if self.eventer and self.eventer.enabled:
             now = time.time()
             runtime = self.time_start and (time.time() - self.time_start) or 0
-            self.send_event("task-succeeded", uuid=self.id,
+            self.send_event('task-succeeded', uuid=self.id,
                             result=safe_repr(ret_value), runtime=runtime)
 
         if _does_info:
             now = now or time.time()
             runtime = self.time_start and (time.time() - self.time_start) or 0
             info(self.success_msg.strip(), {
-                    "id": self.id, "name": self.name,
-                    "return_value": self.repr_result(ret_value),
-                    "runtime": runtime})
+                    'id': self.id, 'name': self.name,
+                    'return_value': self.repr_result(ret_value),
+                    'runtime': runtime})
 
     def on_retry(self, exc_info):
         """Handler called if the task should be retried."""
-        self.send_event("task-retried", uuid=self.id,
+        self.send_event('task-retried', uuid=self.id,
                          exception=safe_repr(exc_info.exception.exc),
                          traceback=safe_str(exc_info.traceback))
 
         if _does_info:
             info(self.retry_msg.strip(), {
-                "id": self.id, "name": self.name,
-                "exc": safe_repr(exc_info.exception.exc)},
+                'id': self.id, 'name': self.name,
+                'exc': safe_repr(exc_info.exception.exc)},
                 exc_info=exc_info.exc_info)
 
     def on_failure(self, exc_info):
@@ -348,36 +348,36 @@ class Request(object):
             safe_repr(self.kwargs),
         )
         format = self.error_msg
-        description = "raised exception"
+        description = 'raised exception'
         severity = logging.ERROR
-        self.send_event("task-failed", uuid=self.id,
+        self.send_event('task-failed', uuid=self.id,
                          exception=exception,
                          traceback=traceback)
 
         if internal:
             format = self.internal_error_msg
-            description = "INTERNAL ERROR"
+            description = 'INTERNAL ERROR'
             severity = logging.CRITICAL
 
         context = {
-            "hostname": self.hostname,
-            "id": self.id,
-            "name": self.name,
-            "exc": exception,
-            "traceback": traceback,
-            "args": sargs,
-            "kwargs": skwargs,
-            "description": description,
+            'hostname': self.hostname,
+            'id': self.id,
+            'name': self.name,
+            'exc': exception,
+            'traceback': traceback,
+            'args': sargs,
+            'kwargs': skwargs,
+            'description': description,
         }
 
         logger.log(severity, format.strip(), context,
                    exc_info=exc_info,
-                   extra={"data": {"id": self.id,
-                                   "name": self.name,
-                                   "args": sargs,
-                                   "kwargs": skwargs,
-                                   "hostname": self.hostname,
-                                   "internal": internal}})
+                   extra={'data': {'id': self.id,
+                                   'name': self.name,
+                                   'args': sargs,
+                                   'kwargs': skwargs,
+                                   'hostname': self.hostname,
+                                   'internal': internal}})
 
         self.task.send_error_email(context, einfo.exception)
 
@@ -389,25 +389,25 @@ class Request(object):
 
     def repr_result(self, result, maxlen=46):
         # 46 is the length needed to fit
-        #     "the quick brown fox jumps over the lazy dog" :)
+        #     'the quick brown fox jumps over the lazy dog' :)
         return truncate(safe_repr(result), maxlen)
 
     def info(self, safe=False):
-        return {"id": self.id,
-                "name": self.name,
-                "args": self.args if safe else safe_repr(self.args),
-                "kwargs": self.kwargs if safe else safe_repr(self.kwargs),
-                "hostname": self.hostname,
-                "time_start": self.time_start,
-                "acknowledged": self.acknowledged,
-                "delivery_info": self.delivery_info,
-                "worker_pid": self.worker_pid}
+        return {'id': self.id,
+                'name': self.name,
+                'args': self.args if safe else safe_repr(self.args),
+                'kwargs': self.kwargs if safe else safe_repr(self.kwargs),
+                'hostname': self.hostname,
+                'time_start': self.time_start,
+                'acknowledged': self.acknowledged,
+                'delivery_info': self.delivery_info,
+                'worker_pid': self.worker_pid}
 
     def shortinfo(self):
-        return "%s[%s]%s%s" % (
+        return '%s[%s]%s%s' % (
                     self.name, self.id,
-                    " eta:[%s]" % (self.eta, ) if self.eta else "",
-                    " expires:[%s]" % (self.expires, ) if self.expires else "")
+                    ' eta:[%s]' % (self.eta, ) if self.eta else '',
+                    ' expires:[%s]' % (self.expires, ) if self.expires else '')
     __str__ = shortinfo
 
     def __repr__(self):
@@ -448,6 +448,6 @@ class TaskRequest(Request):
         """Compatibility class."""
 
         super(TaskRequest, self).__init__({
-            "task": name, "id": id, "args": args,
-            "kwargs": kwargs, "eta": eta,
-            "expires": expires}, **options)
+            'task': name, 'id': id, 'args': args,
+            'kwargs': kwargs, 'eta': eta,
+            'expires': expires}, **options)

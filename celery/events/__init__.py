@@ -27,14 +27,14 @@ from kombu.utils import cached_property
 from celery.app import app_or_default
 from celery.utils import uuid
 
-event_exchange = Exchange("celeryev", type="topic")
+event_exchange = Exchange('celeryev', type='topic')
 
 
 def get_exchange(conn):
     ex = copy(event_exchange)
-    if conn.transport.driver_type == "redis":
+    if conn.transport.driver_type == 'redis':
         # quick hack for Issue #436
-        ex.type = "fanout"
+        ex.type = 'fanout'
     return ex
 
 
@@ -45,8 +45,8 @@ def Event(type, _fields=None, **fields):
 
     """
     event = dict(_fields or {}, type=type, **fields)
-    if "timestamp" not in event:
-        event["timestamp"] = time.time()
+    if 'timestamp' not in event:
+        event['timestamp'] = time.time()
     return event
 
 
@@ -133,7 +133,7 @@ class EventDispatcher(object):
                                     clock=self.app.clock.forward(), **fields)
                 try:
                     self.publisher.publish(event,
-                                           routing_key=type.replace("-", "."))
+                                           routing_key=type.replace('-', '.'))
                 except Exception, exc:
                     if not self.buffer_while_offline:
                         raise
@@ -169,8 +169,8 @@ class EventReceiver(object):
     """
     handlers = {}
 
-    def __init__(self, connection, handlers=None, routing_key="#",
-            node_id=None, app=None, queue_prefix="celeryev"):
+    def __init__(self, connection, handlers=None, routing_key='#',
+            node_id=None, app=None, queue_prefix='celeryev'):
         self.app = app_or_default(app)
         self.connection = connection
         if handlers is not None:
@@ -190,7 +190,7 @@ class EventReceiver(object):
     def process(self, type, event):
         """Process the received event by dispatching it to the appropriate
         handler."""
-        handler = self.handlers.get(type) or self.handlers.get("*")
+        handler = self.handlers.get(type) or self.handlers.get('*')
         handler and handler(event)
 
     @contextmanager
@@ -219,7 +219,7 @@ class EventReceiver(object):
         list(self.itercapture(limit=limit, timeout=timeout, wakeup=wakeup))
 
     def wakeup_workers(self, channel=None):
-        self.app.control.broadcast("heartbeat",
+        self.app.control.broadcast('heartbeat',
                                    connection=self.connection,
                                    channel=channel)
 
@@ -228,8 +228,8 @@ class EventReceiver(object):
             pass
 
     def _receive(self, body, message):
-        type = body.pop("type").lower()
-        clock = body.get("clock")
+        type = body.pop('type').lower()
+        clock = body.get('clock')
         if clock:
             self.app.clock.adjust(clock)
         self.process(type, Event(type, body))
@@ -243,17 +243,17 @@ class Events(object):
     @cached_property
     def Receiver(self):
         return self.app.subclass_with_self(EventReceiver,
-                                           reverse="events.Receiver")
+                                           reverse='events.Receiver')
 
     @cached_property
     def Dispatcher(self):
         return self.app.subclass_with_self(EventDispatcher,
-                                           reverse="events.Dispatcher")
+                                           reverse='events.Dispatcher')
 
     @cached_property
     def State(self):
-        return self.app.subclass_with_self("celery.events.state:State",
-                                           reverse="events.State")
+        return self.app.subclass_with_self('celery.events.state:State',
+                                           reverse='events.State')
 
     @contextmanager
     def default_dispatcher(self, hostname=None, enabled=True,

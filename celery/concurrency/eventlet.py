@@ -9,7 +9,7 @@
 from __future__ import absolute_import
 
 import os
-if not os.environ.get("EVENTLET_NOPATCH"):
+if not os.environ.get('EVENTLET_NOPATCH'):
     import eventlet
     import eventlet.debug
     eventlet.monkey_patch()

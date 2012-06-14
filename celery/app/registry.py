@@ -39,16 +39,16 @@ class TaskRegistry(dict):
 
         """
         try:
-            self.pop(getattr(name, "name", name))
+            self.pop(getattr(name, 'name', name))
         except KeyError:
             raise self.NotRegistered(name)
 
     # -- these methods are irrelevant now and will be removed in 3.0
     def regular(self):
-        return self.filter_types("regular")
+        return self.filter_types('regular')
 
     def periodic(self):
-        return self.filter_types("periodic")
+        return self.filter_types('periodic')
 
     def filter_types(self, type):
         return dict((name, task) for name, task in self.iteritems()

@@ -25,23 +25,23 @@ from .local import try_import
 from billiard import current_process
 from kombu.utils.limits import TokenBucket
 
-_setproctitle = try_import("setproctitle")
-resource = try_import("resource")
-pwd = try_import("pwd")
-grp = try_import("grp")
+_setproctitle = try_import('setproctitle')
+resource = try_import('resource')
+pwd = try_import('pwd')
+grp = try_import('grp')
 
-EX_OK = getattr(os, "EX_OK", 0)
+EX_OK = getattr(os, 'EX_OK', 0)
 EX_FAILURE = 1
-EX_UNAVAILABLE = getattr(os, "EX_UNAVAILABLE", 69)
-EX_USAGE = getattr(os, "EX_USAGE", 64)
+EX_UNAVAILABLE = getattr(os, 'EX_UNAVAILABLE', 69)
+EX_USAGE = getattr(os, 'EX_USAGE', 64)
 
 SYSTEM = _platform.system()
-IS_OSX = SYSTEM == "Darwin"
-IS_WINDOWS = SYSTEM == "Windows"
+IS_OSX = SYSTEM == 'Darwin'
+IS_WINDOWS = SYSTEM == 'Windows'
 
 DAEMON_UMASK = 0
-DAEMON_WORKDIR = "/"
-DAEMON_REDIRECT_TO = getattr(os, "devnull", "/dev/null")
+DAEMON_WORKDIR = '/'
+DAEMON_REDIRECT_TO = getattr(os, 'devnull', '/dev/null')
 
 
 PIDFILE_FLAGS = os.O_CREAT | os.O_EXCL | os.O_WRONLY
@@ -54,17 +54,17 @@ Seems we're already running? (PID: %s)"""
 
 
 def pyimplementation():
-    if hasattr(_platform, "python_implementation"):
+    if hasattr(_platform, 'python_implementation'):
         return _platform.python_implementation()
-    elif sys.platform.startswith("java"):
-        return "Jython " + sys.platform
-    elif hasattr(sys, "pypy_version_info"):
-        v = ".".join(map(str, sys.pypy_version_info[:3]))
+    elif sys.platform.startswith('java'):
+        return 'Jython ' + sys.platform
+    elif hasattr(sys, 'pypy_version_info'):
+        v = '.'.join(map(str, sys.pypy_version_info[:3]))
         if sys.pypy_version_info[3:]:
-            v += "-" + "".join(map(str, sys.pypy_version_info[3:]))
-        return "PyPy " + v
+            v += '-' + ''.join(map(str, sys.pypy_version_info[3:]))
+        return 'PyPy ' + v
     else:
-        return "CPython"
+        return 'CPython'
 
 
 class LockFailed(Exception):
@@ -123,7 +123,7 @@ class PIDFile(object):
     def read_pid(self):
         """Reads and returns the current pid."""
         try:
-            fh = open(self.path, "r")
+            fh = open(self.path, 'r')
         except IOError, exc:
             if exc.errno == errno.ENOENT:
                 return
@@ -133,14 +133,14 @@ class PIDFile(object):
             line = fh.readline()
             if line.strip() == line:  # must contain '\n'
                 raise ValueError(
-                    "Partially written or invalid pidfile %r" % (self.path))
+                    'Partially written or invalid pidfile %r' % (self.path))
         finally:
             fh.close()
 
         try:
             return int(line.strip())
         except ValueError:
-            raise ValueError("PID file %r contents invalid." % self.path)
+            raise ValueError('PID file %r contents invalid.' % self.path)
 
     def remove(self):
         """Removes the lock."""
@@ -157,7 +157,7 @@ class PIDFile(object):
         try:
             pid = self.read_pid()
         except ValueError, exc:
-            sys.stderr.write("Broken pidfile found. Removing it.\n")
+            sys.stderr.write('Broken pidfile found. Removing it.\n')
             self.remove()
             return True
         if not pid:
@@ -168,17 +168,17 @@ class PIDFile(object):
             os.kill(pid, 0)
         except os.error, exc:
             if exc.errno == errno.ESRCH:
-                sys.stderr.write("Stale pidfile exists. Removing it.\n")
+                sys.stderr.write('Stale pidfile exists. Removing it.\n')
                 self.remove()
                 return True
         return False
 
     def write_pid(self):
         pid = os.getpid()
-        content = "%d\n" % (pid, )
+        content = '%d\n' % (pid, )
 
         pidfile_fd = os.open(self.path, PIDFILE_FLAGS, PIDFILE_MODE)
-        pidfile = os.fdopen(pidfile_fd, "w")
+        pidfile = os.fdopen(pidfile_fd, 'w')
         try:
             pidfile.write(content)
             # flush and sync so that the re-read below works.
@@ -215,7 +215,7 @@ def create_pidlock(pidfile):
 
     .. code-block:: python
 
-        pidlock = create_pidlock("/var/run/app.pid")
+        pidlock = create_pidlock('/var/run/app.pid')
 
     """
     pidlock = PIDFile(pidfile)
@@ -296,31 +296,31 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
         import atexit
         from celery.platforms import detached, create_pidlock
 
-        with detached(logfile="/var/log/app.log", pidfile="/var/run/app.pid",
-                      uid="nobody"):
+        with detached(logfile='/var/log/app.log', pidfile='/var/run/app.pid',
+                      uid='nobody'):
             # Now in detached child process with effective user set to nobody,
             # and we know that our logfile can be written to, and that
             # the pidfile is not locked.
-            pidlock = create_pidlock("/var/run/app.pid").acquire()
+            pidlock = create_pidlock('/var/run/app.pid').acquire()
             atexit.register(pidlock.release)
 
             # Run the program
-            program.run(logfile="/var/log/app.log")
+            program.run(logfile='/var/log/app.log')
 
     """
 
     if not resource:
-        raise RuntimeError("This platform does not support detach.")
+        raise RuntimeError('This platform does not support detach.')
     workdir = os.getcwd() if workdir is None else workdir
 
-    signals.reset("SIGCLD")  # Make sure SIGCLD is using the default handler.
+    signals.reset('SIGCLD')  # Make sure SIGCLD is using the default handler.
     if not os.geteuid():
         # no point trying to setuid unless we're root.
         maybe_drop_privileges(uid=uid, gid=gid)
 
     # Since without stderr any errors will be silently suppressed,
     # we need to know that we have access to the logfile.
-    logfile and open(logfile, "a").close()
+    logfile and open(logfile, 'a').close()
     # Doesn't actually create the pidfile, but makes sure it's not stale.
     pidfile and create_pidlock(pidfile)
 
@@ -340,7 +340,7 @@ def parse_uid(uid):
         try:
             return pwd.getpwnam(uid).pw_uid
         except (AttributeError, KeyError):
-            raise KeyError("User does not exist: %r" % (uid, ))
+            raise KeyError('User does not exist: %r' % (uid, ))
 
 
 def parse_gid(gid):
@@ -356,7 +356,7 @@ def parse_gid(gid):
         try:
             return grp.getgrnam(gid).gr_gid
         except (AttributeError, KeyError):
-            raise KeyError("Group does not exist: %r" % (gid, ))
+            raise KeyError('Group does not exist: %r' % (gid, ))
 
 
 def _setgroups_hack(groups):
@@ -381,7 +381,7 @@ def _setgroups_hack(groups):
 def setgroups(groups):
     max_groups = None
     try:
-        max_groups = os.sysconf("SC_NGROUPS_MAX")
+        max_groups = os.sysconf('SC_NGROUPS_MAX')
     except Exception:
         pass
     try:
@@ -398,7 +398,7 @@ def initgroups(uid, gid):
     if not pwd:  # pragma: no cover
         return
     username = pwd.getpwuid(uid)[0]
-    if hasattr(os, "initgroups"):  # Python 2.7+
+    if hasattr(os, 'initgroups'):  # Python 2.7+
         return os.initgroups(username, gid)
     groups = [gr.gr_gid for gr in grp.getgrall()
                             if username in gr.gr_mem]
@@ -468,23 +468,23 @@ class Signals(object):
 
         >>> from celery.platforms import signals
 
-        >>> signals["INT"] = my_handler
+        >>> signals['INT'] = my_handler
 
-        >>> signals["INT"]
+        >>> signals['INT']
         my_handler
 
-        >>> signals.supported("INT")
+        >>> signals.supported('INT')
         True
 
-        >>> signals.signum("INT")
+        >>> signals.signum('INT')
         2
 
-        >>> signals.ignore("USR1")
-        >>> signals["USR1"] == signals.ignored
+        >>> signals.ignore('USR1')
+        >>> signals['USR1'] == signals.ignored
         True
 
-        >>> signals.reset("USR1")
-        >>> signals["USR1"] == signals.default
+        >>> signals.reset('USR1')
+        >>> signals['USR1'] == signals.default
         True
 
         >>> signals.update(INT=exit_handler,
@@ -509,9 +509,9 @@ class Signals(object):
             return signal_name
         if not isinstance(signal_name, basestring) \
                 or not signal_name.isupper():
-            raise TypeError("signal name must be uppercase string.")
-        if not signal_name.startswith("SIG"):
-            signal_name = "SIG" + signal_name
+            raise TypeError('signal name must be uppercase string.')
+        if not signal_name.startswith('SIG'):
+            signal_name = 'SIG' + signal_name
         return getattr(_signal, signal_name)
 
     def reset(self, *signal_names):
@@ -561,10 +561,10 @@ ignore_signal = signals.ignore                # compat
 
 
 def strargv(argv):
-    arg_start = 2 if "manage" in argv[0] else 1
+    arg_start = 2 if 'manage' in argv[0] else 1
     if len(argv) > arg_start:
-        return " ".join(argv[arg_start:])
-    return ""
+        return ' '.join(argv[arg_start:])
+    return ''
 
 
 def set_process_title(progname, info=None):
@@ -573,14 +573,14 @@ def set_process_title(progname, info=None):
     Only works if :mod:`setproctitle` is installed.
 
     """
-    proctitle = "[%s]" % progname
-    proctitle = "%s %s" % (proctitle, info) if info else proctitle
+    proctitle = '[%s]' % progname
+    proctitle = '%s %s' % (proctitle, info) if info else proctitle
     if _setproctitle:
         _setproctitle.setproctitle(proctitle)
     return proctitle
 
 
-if os.environ.get("NOSETPS"):  # pragma: no cover
+if os.environ.get('NOSETPS'):  # pragma: no cover
 
     def set_mp_process_title(*a, **k):
         pass
@@ -595,9 +595,9 @@ else:
         """
         if not rate_limit or _setps_bucket.can_consume(1):
             if hostname:
-                progname = "%s@%s" % (progname, hostname.split(".")[0])
+                progname = '%s@%s' % (progname, hostname.split('.')[0])
             return set_process_title(
-                "%s:%s" % (progname, current_process().name), info=info)
+                '%s:%s' % (progname, current_process().name), info=info)
 
 
 def shellsplit(s, posix=True):

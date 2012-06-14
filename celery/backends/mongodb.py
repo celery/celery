@@ -39,12 +39,12 @@ class Bunch(object):
 
 
 class MongoBackend(BaseDictBackend):
-    mongodb_host = "localhost"
+    mongodb_host = 'localhost'
     mongodb_port = 27017
     mongodb_user = None
     mongodb_password = None
-    mongodb_database = "celery"
-    mongodb_taskmeta_collection = "celery_taskmeta"
+    mongodb_database = 'celery'
+    mongodb_taskmeta_collection = 'celery_taskmeta'
 
     def __init__(self, *args, **kwargs):
         """Initialize MongoDB backend instance.
@@ -54,29 +54,29 @@ class MongoBackend(BaseDictBackend):
 
         """
         super(MongoBackend, self).__init__(*args, **kwargs)
-        self.expires = kwargs.get("expires") or maybe_timedelta(
+        self.expires = kwargs.get('expires') or maybe_timedelta(
                                     self.app.conf.CELERY_TASK_RESULT_EXPIRES)
 
         if not pymongo:
             raise ImproperlyConfigured(
-                "You need to install the pymongo library to use the "
-                "MongoDB backend.")
+                'You need to install the pymongo library to use the '
+                'MongoDB backend.')
 
-        config = self.app.conf.get("CELERY_MONGODB_BACKEND_SETTINGS", None)
+        config = self.app.conf.get('CELERY_MONGODB_BACKEND_SETTINGS', None)
         if config is not None:
             if not isinstance(config, dict):
                 raise ImproperlyConfigured(
-                    "MongoDB backend settings should be grouped in a dict")
+                    'MongoDB backend settings should be grouped in a dict')
 
-            self.mongodb_host = config.get("host", self.mongodb_host)
-            self.mongodb_port = int(config.get("port", self.mongodb_port))
-            self.mongodb_user = config.get("user", self.mongodb_user)
+            self.mongodb_host = config.get('host', self.mongodb_host)
+            self.mongodb_port = int(config.get('port', self.mongodb_port))
+            self.mongodb_user = config.get('user', self.mongodb_user)
             self.mongodb_password = config.get(
-                    "password", self.mongodb_password)
+                    'password', self.mongodb_password)
             self.mongodb_database = config.get(
-                    "database", self.mongodb_database)
+                    'database', self.mongodb_database)
             self.mongodb_taskmeta_collection = config.get(
-                "taskmeta_collection", self.mongodb_taskmeta_collection)
+                'taskmeta_collection', self.mongodb_taskmeta_collection)
 
         self._connection = None
 
@@ -93,7 +93,7 @@ class MongoBackend(BaseDictBackend):
             # See pymongo.Connection() for more info.
             args = [self.mongodb_host]
             if isinstance(self.mongodb_host, basestring) \
-                    and not self.mongodb_host.startswith("mongodb://"):
+                    and not self.mongodb_host.startswith('mongodb://'):
                 args.append(self.mongodb_port)
 
             self._connection = Connection(*args)
@@ -108,12 +108,12 @@ class MongoBackend(BaseDictBackend):
 
     def _store_result(self, task_id, result, status, traceback=None):
         """Store return value and status of an executed task."""
-        meta = {"_id": task_id,
-                "status": status,
-                "result": Binary(self.encode(result)),
-                "date_done": datetime.utcnow(),
-                "traceback": Binary(self.encode(traceback)),
-                "children": Binary(self.encode(self.current_task_children()))}
+        meta = {'_id': task_id,
+                'status': status,
+                'result': Binary(self.encode(result)),
+                'date_done': datetime.utcnow(),
+                'traceback': Binary(self.encode(traceback)),
+                'children': Binary(self.encode(self.current_task_children()))}
         self.collection.save(meta, safe=True)
 
         return result
@@ -121,47 +121,47 @@ class MongoBackend(BaseDictBackend):
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
 
-        obj = self.collection.find_one({"_id": task_id})
+        obj = self.collection.find_one({'_id': task_id})
         if not obj:
-            return {"status": states.PENDING, "result": None}
+            return {'status': states.PENDING, 'result': None}
 
         meta = {
-            "task_id": obj["_id"],
-            "status": obj["status"],
-            "result": self.decode(obj["result"]),
-            "date_done": obj["date_done"],
-            "traceback": self.decode(obj["traceback"]),
-            "children": self.decode(obj["children"]),
+            'task_id': obj['_id'],
+            'status': obj['status'],
+            'result': self.decode(obj['result']),
+            'date_done': obj['date_done'],
+            'traceback': self.decode(obj['traceback']),
+            'children': self.decode(obj['children']),
         }
 
         return meta
 
     def _save_group(self, group_id, result):
         """Save the group result."""
-        meta = {"_id": group_id,
-                "result": Binary(self.encode(result)),
-                "date_done": datetime.utcnow()}
+        meta = {'_id': group_id,
+                'result': Binary(self.encode(result)),
+                'date_done': datetime.utcnow()}
         self.collection.save(meta, safe=True)
 
         return result
 
     def _restore_group(self, group_id):
         """Get the result for a group by id."""
-        obj = self.collection.find_one({"_id": group_id})
+        obj = self.collection.find_one({'_id': group_id})
         if not obj:
             return
 
         meta = {
-            "task_id": obj["_id"],
-            "result": self.decode(obj["result"]),
-            "date_done": obj["date_done"],
+            'task_id': obj['_id'],
+            'result': self.decode(obj['result']),
+            'date_done': obj['date_done'],
         }
 
         return meta
 
     def _delete_group(self, group_id):
         """Delete a group by id."""
-        self.collection.remove({"_id": group_id})
+        self.collection.remove({'_id': group_id})
 
     def _forget(self, task_id):
         """
@@ -173,13 +173,13 @@ class MongoBackend(BaseDictBackend):
         # By using safe=True, this will wait until it receives a response from
         # the server.  Likewise, it will raise an OperationsError if the
         # response was unable to be completed.
-        self.collection.remove({"_id": task_id}, safe=True)
+        self.collection.remove({'_id': task_id}, safe=True)
 
     def cleanup(self):
         """Delete expired metadata."""
         self.collection.remove({
-                "date_done": {
-                    "$lt": self.app.now() - self.expires,
+                'date_done': {
+                    '$lt': self.app.now() - self.expires,
                  }
         })
 
@@ -195,7 +195,7 @@ class MongoBackend(BaseDictBackend):
             if not db.authenticate(self.mongodb_user,
                                    self.mongodb_password):
                 raise ImproperlyConfigured(
-                    "Invalid MongoDB username or password.")
+                    'Invalid MongoDB username or password.')
         return db
 
     @cached_property

@@ -9,7 +9,7 @@
 from __future__ import absolute_import
 
 import os
-if not os.environ.get("GEVENT_NOPATCH"):
+if not os.environ.get('GEVENT_NOPATCH'):
     from gevent import monkey
     monkey.patch_all()
 

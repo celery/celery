@@ -30,7 +30,7 @@ class RedisBackend(KeyValueStoreBackend):
     redis = redis
 
     #: default Redis server hostname (`localhost`).
-    host = "localhost"
+    host = 'localhost'
 
     #: default Redis server port (6379)
     port = 6379
@@ -53,12 +53,12 @@ class RedisBackend(KeyValueStoreBackend):
         conf = self.app.conf
         if self.redis is None:
             raise ImproperlyConfigured(
-                    "You need to install the redis library in order to use "
-                  + "the Redis result store backend.")
+                    'You need to install the redis library in order to use '
+                  + 'the Redis result store backend.')
 
         # For compatibility with the old REDIS_* configuration keys.
         def _get(key):
-            for prefix in "CELERY_REDIS_%s", "REDIS_%s":
+            for prefix in 'CELERY_REDIS_%s', 'REDIS_%s':
                 try:
                     return conf[prefix % key]
                 except KeyError:
@@ -69,14 +69,14 @@ class RedisBackend(KeyValueStoreBackend):
         uhost = uport = upass = udb = None
         if url:
             _, uhost, uport, _, upass, udb, _ = _parse_url(url)
-            udb = udb.strip("/")
-        self.host = uhost or host or _get("HOST") or self.host
-        self.port = int(uport or port or _get("PORT") or self.port)
-        self.db = udb or db or _get("DB") or self.db
-        self.password = upass or password or _get("PASSWORD") or self.password
+            udb = udb.strip('/')
+        self.host = uhost or host or _get('HOST') or self.host
+        self.port = int(uport or port or _get('PORT') or self.port)
+        self.db = udb or db or _get('DB') or self.db
+        self.password = upass or password or _get('PASSWORD') or self.password
         self.expires = self.prepare_expires(expires, type=int)
         self.max_connections = (max_connections
-                                or _get("MAX_CONNECTIONS")
+                                or _get('MAX_CONNECTIONS')
                                 or self.max_connections)
 
     def get(self, key):

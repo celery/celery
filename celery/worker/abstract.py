@@ -60,14 +60,14 @@ class Namespace(object):
         will also be added the the objects ``components`` attribute.
 
         """
-        self._debug("Loading modules.")
+        self._debug('Loading modules.')
         self.load_modules()
-        self._debug("Claiming components.")
+        self._debug('Claiming components.')
         self.components = self._claim()
-        self._debug("Building boot step graph.")
+        self._debug('Building boot step graph.')
         self.boot_steps = [self.bind_component(name, parent, **kwargs)
                                 for name in self._finalize_boot_steps()]
-        self._debug("New boot order: {%s}",
+        self._debug('New boot order: {%s}',
                 ', '.join(c.name for c in self.boot_steps))
 
         for component in self.boot_steps:
@@ -105,7 +105,7 @@ class Namespace(object):
         return self._unclaimed[self.name]
 
     def _debug(self, msg, *args):
-        return logger.debug("[%s] " + msg,
+        return logger.debug('[%s] ' + msg,
                             *(self.name.capitalize(), ) + args)
 
 
@@ -113,15 +113,15 @@ class ComponentType(type):
     """Metaclass for components."""
 
     def __new__(cls, name, bases, attrs):
-        abstract = attrs.pop("abstract", False)
+        abstract = attrs.pop('abstract', False)
         if not abstract:
             try:
-                cname = attrs["name"]
+                cname = attrs['name']
             except KeyError:
-                raise NotImplementedError("Components must be named")
-            namespace = attrs.get("namespace", None)
+                raise NotImplementedError('Components must be named')
+            namespace = attrs.get('namespace', None)
             if not namespace:
-                attrs["namespace"], _, attrs["name"] = cname.partition('.')
+                attrs['namespace'], _, attrs['name'] = cname.partition('.')
         cls = super(ComponentType, cls).__new__(cls, name, bases, attrs)
         if not abstract:
             Namespace._unclaimed[cls.namespace][cls.name] = cls

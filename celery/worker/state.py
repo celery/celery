@@ -22,9 +22,9 @@ from celery.datastructures import LimitedSet
 from celery.utils import cached_property
 
 #: Worker software/platform information.
-SOFTWARE_INFO = {"sw_ident": "py-celery",
-                 "sw_ver": __version__,
-                 "sw_sys": platform.system()}
+SOFTWARE_INFO = {'sw_ident': 'py-celery',
+                 'sw_ver': __version__,
+                 'sw_sys': platform.system()}
 
 #: maximum number of revokes to keep in memory.
 REVOKES_MAX = 10000
@@ -64,7 +64,7 @@ def task_ready(request):
     reserved_requests.discard(request)
 
 
-C_BENCH = os.environ.get("C_BENCH") or os.environ.get("CELERY_BENCH")
+C_BENCH = os.environ.get('C_BENCH') or os.environ.get('CELERY_BENCH')
 if C_BENCH:  # pragma: no cover
     import atexit
 
@@ -76,7 +76,7 @@ if C_BENCH:  # pragma: no cover
     bench_first = None
     bench_start = None
     bench_last = None
-    bench_every = int(os.environ.get("CELERY_BENCH_EVERY", 1000))
+    bench_every = int(os.environ.get('CELERY_BENCH_EVERY', 1000))
     bench_sample = []
     __reserved = task_reserved
     __ready = task_ready
@@ -85,9 +85,9 @@ if C_BENCH:  # pragma: no cover
         @atexit.register
         def on_shutdown():
             if bench_first is not None and bench_last is not None:
-                print("- Time spent in benchmark: %r" % (
+                print('- Time spent in benchmark: %r' % (
                     bench_last - bench_first))
-                print("- Avg: %s" % (sum(bench_sample) / len(bench_sample)))
+                print('- Avg: %s' % (sum(bench_sample) / len(bench_sample)))
                 memdump()
 
     def task_reserved(request):  # noqa
@@ -110,8 +110,8 @@ if C_BENCH:  # pragma: no cover
         if not all_count % bench_every:
             now = time()
             diff = now - bench_start
-            print("- Time spent processing %s tasks (since first "
-                    "task received): ~%.4fs\n" % (bench_every, diff))
+            print('- Time spent processing %s tasks (since first '
+                    'task received): ~%.4fs\n' % (bench_every, diff))
             sys.stdout.flush()
             bench_start = bench_last = now
             bench_sample.append(diff)
@@ -133,13 +133,13 @@ class Persistent(object):
         self.close()
 
     def merge(self, d):
-        revoked.update(d.get("revoked") or {})
+        revoked.update(d.get('revoked') or {})
         return d
 
     def sync(self, d):
-        prev = d.get("revoked") or {}
+        prev = d.get('revoked') or {}
         prev.update(revoked.as_dict())
-        d["revoked"] = prev
+        d['revoked'] = prev
         return d
 
     def open(self):

@@ -28,14 +28,14 @@ def import_best_memcache():
                 import memcache  # noqa
             except ImportError:
                 raise ImproperlyConfigured(
-                        "Memcached backend requires either the 'pylibmc' "
-                        "or 'memcache' library")
+                    'Memcached backend requires either the pylibmc '
+                    'or memcache library')
         _imp[0] = (is_pylibmc, memcache)
     return _imp[0]
 
 
 def get_best_memcache(*args, **kwargs):
-    behaviors = kwargs.pop("behaviors", None)
+    behaviors = kwargs.pop('behaviors', None)
     is_pylibmc, memcache = import_best_memcache()
     client = memcache.Client(*args, **kwargs)
     if is_pylibmc and behaviors is not None:
@@ -65,10 +65,10 @@ class DummyClient(object):
         return self.cache.incr(key, delta)
 
 
-backends = {"memcache": lambda: get_best_memcache,
-            "memcached": lambda: get_best_memcache,
-            "pylibmc": lambda: get_best_memcache,
-            "memory": lambda: DummyClient}
+backends = {'memcache': lambda: get_best_memcache,
+            'memcached': lambda: get_best_memcache,
+            'pylibmc': lambda: get_best_memcache,
+            'memory': lambda: DummyClient}
 
 
 class CacheBackend(KeyValueStoreBackend):
@@ -84,16 +84,16 @@ class CacheBackend(KeyValueStoreBackend):
 
         self.backend = backend or self.app.conf.CELERY_CACHE_BACKEND
         if self.backend:
-            self.backend, _, servers = self.backend.partition("://")
-            self.servers = servers.rstrip('/').split(";")
+            self.backend, _, servers = self.backend.partition('://')
+            self.servers = servers.rstrip('/').split(';')
         self.expires = self.prepare_expires(expires, type=int)
         try:
             self.Client = backends[self.backend]()
         except KeyError:
             raise ImproperlyConfigured(
-                    "Unknown cache backend: %s. Please use one of the "
-                    "following backends: %s" % (self.backend,
-                                                ", ".join(backends.keys())))
+                    'Unknown cache backend: %s. Please use one of the '
+                    'following backends: %s' % (self.backend,
+                                                ', '.join(backends.keys())))
 
     def get(self, key):
         return self.client.get(key)
@@ -118,8 +118,8 @@ class CacheBackend(KeyValueStoreBackend):
         return self.Client(self.servers, **self.options)
 
     def __reduce__(self, args=(), kwargs={}):
-        servers = ";".join(self.servers)
-        backend = "%s://%s/" % (self.backend, servers)
+        servers = ';'.join(self.servers)
+        backend = '%s://%s/' % (self.backend, servers)
         kwargs.update(
             dict(backend=backend,
                  expires=self.expires,

@@ -29,8 +29,8 @@ logger = get_logger(__name__)
 
 
 class WorkerComponent(StartStopComponent):
-    name = "worker.mediator"
-    requires = ("pool", "queues", )
+    name = 'worker.mediator'
+    requires = ('pool', 'queues', )
 
     def __init__(self, w, **kwargs):
         w.mediator = None
@@ -69,14 +69,14 @@ class Mediator(bgThread):
             return
 
         if self._does_debug:
-            logger.debug("Mediator: Running callback for task: %s[%s]",
+            logger.debug('Mediator: Running callback for task: %s[%s]',
                          task.name, task.id)
 
         try:
             self.callback(task)
         except Exception, exc:
-            logger.error("Mediator callback raised exception %r",
+            logger.error('Mediator callback raised exception %r',
                          exc, exc_info=True,
-                         extra={"data": {"id": task.id,
-                                         "name": task.name,
-                                         "hostname": task.hostname}})
+                         extra={'data': {'id': task.id,
+                                         'name': task.name,
+                                         'hostname': task.hostname}})

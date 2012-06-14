@@ -58,12 +58,12 @@ Caveats
     .. code-block:: python
 
         class A(object):
-            @task(name="A.add")
+            @task(name='A.add')
             def add(self, x, y):
                 return x + y
 
         class B(object):
-            @task(name="B.add")
+            @task(name='B.add')
             def add(self, x, y):
                 return x + y
 

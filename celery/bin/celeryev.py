@@ -52,7 +52,7 @@ class EvCommand(Command):
     supports_args = False
 
     def run(self, dump=False, camera=None, frequency=1.0, maxrate=None,
-            loglevel="INFO", logfile=None, prog_name="celeryev",
+            loglevel='INFO', logfile=None, prog_name='celeryev',
             pidfile=None, uid=None, gid=None, umask=None,
             working_directory=None, detach=False, **kwargs):
         self.prog_name = prog_name
@@ -69,18 +69,18 @@ class EvCommand(Command):
         return self.run_evtop()
 
     def prepare_preload_options(self, options):
-        workdir = options.get("working_directory")
+        workdir = options.get('working_directory')
         if workdir:
             os.chdir(workdir)
 
     def run_evdump(self):
         from celery.events.dumper import evdump
-        self.set_process_status("dump")
+        self.set_process_status('dump')
         return evdump(app=self.app)
 
     def run_evtop(self):
         from celery.events.cursesmon import evtop
-        self.set_process_status("top")
+        self.set_process_status('top')
         return evtop(app=self.app)
 
     def run_evcam(self, camera, logfile=None, pidfile=None, uid=None,
@@ -88,8 +88,8 @@ class EvCommand(Command):
             detach=False, **kwargs):
         from celery.events.snapshot import evcam
         workdir = working_directory
-        self.set_process_status("cam")
-        kwargs["app"] = self.app
+        self.set_process_status('cam')
+        kwargs['app'] = self.app
         cam = partial(evcam, camera,
                       logfile=logfile, pidfile=pidfile, **kwargs)
 
@@ -99,25 +99,25 @@ class EvCommand(Command):
         else:
             return cam()
 
-    def set_process_status(self, prog, info=""):
-        prog = "%s:%s" % (self.prog_name, prog)
-        info = "%s %s" % (info, strargv(sys.argv))
+    def set_process_status(self, prog, info=''):
+        prog = '%s:%s' % (self.prog_name, prog)
+        info = '%s %s' % (info, strargv(sys.argv))
         return set_process_title(prog, info=info)
 
     def get_options(self):
         return (
-            Option('-d', '--dump', action="store_true"),
+            Option('-d', '--dump', action='store_true'),
             Option('-c', '--camera'),
-            Option('--detach', action="store_true"),
-            Option('-F', '--frequency', '--freq', type="float", default=1.0),
+            Option('--detach', action='store_true'),
+            Option('-F', '--frequency', '--freq', type='float', default=1.0),
             Option('-r', '--maxrate'),
-            Option('-l', '--loglevel', default="INFO"),
-        ) + daemon_options(default_pidfile="celeryev.pid")
+            Option('-l', '--loglevel', default='INFO'),
+        ) + daemon_options(default_pidfile='celeryev.pid')
 
 
 def main():
     ev = EvCommand()
     ev.execute_from_commandline()
 
-if __name__ == "__main__":              # pragma: no cover
+if __name__ == '__main__':              # pragma: no cover
     main()

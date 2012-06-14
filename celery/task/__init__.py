@@ -21,19 +21,19 @@ class module(MagicModule):
 
 old_module, new_module = recreate_module(__name__,  # pragma: no cover
     by_module={
-        "celery.task.base":   ["BaseTask", "Task", "PeriodicTask",
-                               "task", "periodic_task"],
-        "celery.canvas":      ["chain", "group", "chord", "subtask"],
-        "celery.task.sets":   ["TaskSet"],
+        'celery.task.base':   ['BaseTask', 'Task', 'PeriodicTask',
+                               'task', 'periodic_task'],
+        'celery.canvas':      ['chain', 'group', 'chord', 'subtask'],
+        'celery.task.sets':   ['TaskSet'],
     },
     base=module,
-    __package__="celery.task",
+    __package__='celery.task',
     __file__=__file__,
     __path__=__path__,
     __doc__=__doc__,
     current=current,
     discard_all=Proxy(lambda: current_app.control.purge),
     backend_cleanup=Proxy(
-        lambda: current_app.tasks["celery.backend_cleanup"]
+        lambda: current_app.tasks['celery.backend_cleanup']
     ),
 )

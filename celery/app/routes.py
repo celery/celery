@@ -14,7 +14,7 @@ from celery.utils import lpmerge
 from celery.utils.functional import firstmethod, mpromise
 from celery.utils.imports import instantiate
 
-_first_route = firstmethod("route_for_task")
+_first_route = firstmethod('route_for_task')
 
 
 class MapRoute(object):
@@ -45,7 +45,7 @@ class Router(object):
             route = self.lookup_route(task, args, kwargs)
             if route:  # expands 'queue' in route.
                 return lpmerge(self.expand_destination(route), options)
-        if "queue" not in options:
+        if 'queue' not in options:
             options = lpmerge(self.expand_destination(
                               self.app.conf.CELERY_DEFAULT_QUEUE), options)
         return options
@@ -57,7 +57,7 @@ class Router(object):
         else:
             # can use defaults from configured queue, but override specific
             # things (like the routing_key): great for topic exchanges.
-            queue = route.pop("queue", None)
+            queue = route.pop('queue', None)
 
         if queue:  # expand config from configured queue.
             try:
@@ -65,13 +65,13 @@ class Router(object):
             except KeyError:
                 if not self.create_missing:
                     raise QueueNotFound(
-                        "Queue %r is not defined in CELERY_QUEUES" % queue)
-                for key in "exchange", "routing_key":
+                        'Queue %r is not defined in CELERY_QUEUES' % queue)
+                for key in 'exchange', 'routing_key':
                     if route.get(key) is None:
                         route[key] = queue
                 dest = self.app.amqp.queues.add(queue, **route).as_dict()
             # needs to be declared by publisher
-            dest["queue"] = queue
+            dest['queue'] = queue
             return lpmerge(dest, route)
         return route
 

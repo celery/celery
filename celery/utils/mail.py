@@ -28,7 +28,7 @@ class SendmailWarning(UserWarning):
 class Message(object):
 
     def __init__(self, to=None, sender=None, subject=None, body=None,
-            charset="us-ascii"):
+            charset='us-ascii'):
         self.to = maybe_list(to)
         self.sender = sender
         self.subject = subject
@@ -36,20 +36,20 @@ class Message(object):
         self.charset = charset
 
     def __repr__(self):
-        return "<Email: To:%r Subject:%r>" % (self.to, self.subject)
+        return '<Email: To:%r Subject:%r>' % (self.to, self.subject)
 
     def __str__(self):
-        msg = MIMEText(self.body, "plain", self.charset)
-        msg["Subject"] = self.subject
-        msg["From"] = self.sender
-        msg["To"] = ", ".join(self.to)
+        msg = MIMEText(self.body, 'plain', self.charset)
+        msg['Subject'] = self.subject
+        msg['From'] = self.sender
+        msg['To'] = ', '.join(self.to)
         return msg.as_string()
 
 
 class Mailer(object):
     supports_timeout = supports_timeout
 
-    def __init__(self, host="localhost", port=0, user=None, password=None,
+    def __init__(self, host='localhost', port=0, user=None, password=None,
             timeout=2, use_ssl=False, use_tls=False):
         self.host = host
         self.port = port
@@ -75,9 +75,9 @@ class Mailer(object):
             if not fail_silently:
                 raise
             warnings.warn(SendmailWarning(
-                "Mail could not be sent: %r %r\n%r" % (
-                    exc, {"To": ", ".join(message.to),
-                          "Subject": message.subject},
+                'Mail could not be sent: %r %r\n%r' % (
+                    exc, {'To': ', '.join(message.to),
+                          'Subject': message.subject},
                     traceback.format_stack())))
 
     def _send(self, message, **kwargs):
@@ -136,7 +136,7 @@ class ErrorMail(object):
 
     # pep8.py borks on a inline signature separator and
     # says "trailing whitespace" ;)
-    EMAIL_SIGNATURE_SEP = "-- "
+    EMAIL_SIGNATURE_SEP = '-- '
 
     #: Format string used to generate error email subjects.
     subject = """\
@@ -157,15 +157,15 @@ The contents of the full traceback was:
 %(EMAIL_SIGNATURE_SEP)s
 Just to let you know,
 py-celery at %%(hostname)s.
-""" % {"EMAIL_SIGNATURE_SEP": EMAIL_SIGNATURE_SEP}
+""" % {'EMAIL_SIGNATURE_SEP': EMAIL_SIGNATURE_SEP}
 
     error_whitelist = None
 
     def __init__(self, task, **kwargs):
         self.task = task
-        self.email_subject = kwargs.get("subject", self.subject)
-        self.email_body = kwargs.get("body", self.body)
-        self.error_whitelist = getattr(task, "error_whitelist")
+        self.email_subject = kwargs.get('subject', self.subject)
+        self.email_body = kwargs.get('body', self.body)
+        self.error_whitelist = getattr(task, 'error_whitelist')
 
     def should_send(self, context, exc):
         """Returns true or false depending on if a task error mail

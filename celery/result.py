@@ -198,7 +198,7 @@ class AsyncResult(ResultBase):
         return hash(self.id)
 
     def __repr__(self):
-        return "<%s: %s>" % (self.__class__.__name__, self.id)
+        return '<%s: %s>' % (self.__class__.__name__, self.id)
 
     def __eq__(self, other):
         if isinstance(other, AsyncResult):
@@ -489,7 +489,7 @@ class ResultSet(ResultBase):
             if timeout:
                 remaining = timeout - (time.time() - time_start)
                 if remaining <= 0.0:
-                    raise TimeoutError("join operation timed out")
+                    raise TimeoutError('join operation timed out')
             results.append(result.get(timeout=remaining,
                                       propagate=propagate,
                                       interval=interval))
@@ -527,7 +527,7 @@ class ResultSet(ResultBase):
         acc = [None for _ in xrange(len(self))]
         for task_id, meta in self.iter_native(timeout=timeout,
                                               interval=interval):
-            acc[results.index(task_id)] = meta["result"]
+            acc[results.index(task_id)] = meta['result']
         return acc
 
     def __len__(self):
@@ -539,7 +539,7 @@ class ResultSet(ResultBase):
         return NotImplemented
 
     def __repr__(self):
-        return "<%s: %r>" % (self.__class__.__name__,
+        return '<%s: %r>' % (self.__class__.__name__,
                              [r.id for r in self.results])
 
     @property
@@ -603,7 +603,7 @@ class GroupResult(ResultSet):
         return NotImplemented
 
     def __repr__(self):
-        return "<%s: %s %r>" % (self.__class__.__name__, self.id,
+        return '<%s: %s %r>' % (self.__class__.__name__, self.id,
                                 [r.id for r in self.results])
 
     def serializable(self):
@@ -621,8 +621,8 @@ class TaskSetResult(GroupResult):
     def __init__(self, taskset_id, results=None, **kwargs):
         # XXX supports the taskset_id kwarg.
         # XXX previously the "results" arg was named "subtasks".
-        if "subtasks" in kwargs:
-            results = kwargs["subtasks"]
+        if 'subtasks' in kwargs:
+            results = kwargs['subtasks']
         GroupResult.__init__(self, taskset_id, results, **kwargs)
 
     def itersubtasks(self):

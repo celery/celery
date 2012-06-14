@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 
-The :program:`celery worker` command (previously known as ``celeryd``).
+The :program:`celery worker` command (previously known as ``celeryd``)
 
 .. program:: celery worker
 
@@ -126,7 +126,7 @@ from celery.utils.log import LOG_LEVELS, mlevel
 
 class WorkerCommand(Command):
     doc = __doc__  # parse help from this.
-    namespace = "celeryd"
+    namespace = 'celeryd'
     enable_config_from_cmdline = True
     supports_args = False
 
@@ -143,21 +143,21 @@ class WorkerCommand(Command):
         return super(WorkerCommand, self).execute_from_commandline(argv)
 
     def run(self, *args, **kwargs):
-        kwargs.pop("app", None)
+        kwargs.pop('app', None)
         # Pools like eventlet/gevent needs to patch libs as early
         # as possible.
-        kwargs["pool_cls"] = concurrency.get_implementation(
-                    kwargs.get("pool_cls") or self.app.conf.CELERYD_POOL)
-        if self.app.IS_WINDOWS and kwargs.get("beat"):
-            self.die("-B option does not work on Windows.  "
-                     "Please run celerybeat as a separate service.")
-        loglevel = kwargs.get("loglevel")
+        kwargs['pool_cls'] = concurrency.get_implementation(
+                    kwargs.get('pool_cls') or self.app.conf.CELERYD_POOL)
+        if self.app.IS_WINDOWS and kwargs.get('beat'):
+            self.die('-B option does not work on Windows.  '
+                     'Please run celerybeat as a separate service.')
+        loglevel = kwargs.get('loglevel')
         if loglevel:
             try:
-                kwargs["loglevel"] = mlevel(loglevel)
+                kwargs['loglevel'] = mlevel(loglevel)
             except KeyError:  # pragma: no cover
-                self.die("Unknown level %r. Please use one of %s." % (
-                    loglevel, "|".join(l for l in LOG_LEVELS.keys()
+                self.die('Unknown level %r. Please use one of %s.' % (
+                    loglevel, '|'.join(l for l in LOG_LEVELS.keys()
                       if isinstance(l, basestring))))
         return self.app.Worker(**kwargs).run()
 
@@ -165,32 +165,32 @@ class WorkerCommand(Command):
         conf = self.app.conf
         return (
             Option('-c', '--concurrency',
-                default=conf.CELERYD_CONCURRENCY, type="int"),
-            Option('-P', '--pool', default=conf.CELERYD_POOL, dest="pool_cls"),
-            Option('--purge', '--discard', default=False, action="store_true"),
+                default=conf.CELERYD_CONCURRENCY, type='int'),
+            Option('-P', '--pool', default=conf.CELERYD_POOL, dest='pool_cls'),
+            Option('--purge', '--discard', default=False, action='store_true'),
             Option('-f', '--logfile', default=conf.CELERYD_LOG_FILE),
             Option('-l', '--loglevel', default=conf.CELERYD_LOG_LEVEL),
             Option('-n', '--hostname'),
-            Option('-B', '--beat', action="store_true"),
-            Option('-s', '--schedule', dest="schedule_filename",
+            Option('-B', '--beat', action='store_true'),
+            Option('-s', '--schedule', dest='schedule_filename',
                 default=conf.CELERYBEAT_SCHEDULE_FILENAME),
-            Option('--scheduler', dest="scheduler_cls"),
+            Option('--scheduler', dest='scheduler_cls'),
             Option('-S', '--statedb',
-                default=conf.CELERYD_STATE_DB, dest="state_db"),
+                default=conf.CELERYD_STATE_DB, dest='state_db'),
             Option('-E', '--events', default=conf.CELERY_SEND_EVENTS,
-                action="store_true", dest="send_events"),
-            Option('--time-limit', type="int", dest="task_time_limit",
+                action='store_true', dest='send_events'),
+            Option('--time-limit', type='int', dest='task_time_limit',
                 default=conf.CELERYD_TASK_TIME_LIMIT),
-            Option('--soft-time-limit', dest="task_soft_time_limit",
-                default=conf.CELERYD_TASK_SOFT_TIME_LIMIT, type="int"),
-            Option('--maxtasksperchild', dest="max_tasks_per_child",
-                default=conf.CELERYD_MAX_TASKS_PER_CHILD, type="int"),
+            Option('--soft-time-limit', dest='task_soft_time_limit',
+                default=conf.CELERYD_TASK_SOFT_TIME_LIMIT, type='int'),
+            Option('--maxtasksperchild', dest='max_tasks_per_child',
+                default=conf.CELERYD_MAX_TASKS_PER_CHILD, type='int'),
             Option('--queues', '-Q', default=[]),
             Option('--include', '-I', default=[]),
             Option('--pidfile'),
             Option('--autoscale'),
-            Option('--autoreload', action="store_true"),
-            Option("--no-execv", action="store_true", default=False),
+            Option('--autoreload', action='store_true'),
+            Option('--no-execv', action='store_true', default=False),
         )
 
 
@@ -198,12 +198,12 @@ def main():
     # Fix for setuptools generated scripts, so that it will
     # work with multiprocessing fork emulation.
     # (see multiprocessing.forking.get_preparation_data())
-    if __name__ != "__main__":  # pragma: no cover
-        sys.modules["__main__"] = sys.modules[__name__]
+    if __name__ != '__main__':  # pragma: no cover
+        sys.modules['__main__'] = sys.modules[__name__]
     freeze_support()
     worker = WorkerCommand()
     worker.execute_from_commandline()
 
 
-if __name__ == "__main__":          # pragma: no cover
+if __name__ == '__main__':          # pragma: no cover
     main()

@@ -35,7 +35,7 @@ from celery.utils.serialization import (
         create_exception_cls,
 )
 
-EXCEPTION_ABLE_CODECS = frozenset(["pickle", "yaml"])
+EXCEPTION_ABLE_CODECS = frozenset(['pickle', 'yaml'])
 is_py3k = sys.version_info >= (3, 0)
 
 
@@ -62,8 +62,8 @@ class BaseBackend(object):
 
     def __init__(self, *args, **kwargs):
         from celery.app import app_or_default
-        self.app = app_or_default(kwargs.get("app"))
-        self.serializer = kwargs.get("serializer",
+        self.app = app_or_default(kwargs.get('app'))
+        self.serializer = kwargs.get('serializer',
                                      self.app.conf.CELERY_RESULT_SERIALIZER)
         (self.content_type,
          self.content_encoding,
@@ -97,7 +97,7 @@ class BaseBackend(object):
     def store_result(self, task_id, result, status, traceback=None):
         """Store the result and status of a task."""
         raise NotImplementedError(
-                "store_result is not supported by this backend.")
+                'store_result is not supported by this backend.')
 
     def mark_as_started(self, task_id, **meta):
         """Mark a task as started"""
@@ -126,21 +126,21 @@ class BaseBackend(object):
         """Prepare exception for serialization."""
         if self.serializer in EXCEPTION_ABLE_CODECS:
             return get_pickleable_exception(exc)
-        return {"exc_type": type(exc).__name__, "exc_message": str(exc)}
+        return {'exc_type': type(exc).__name__, 'exc_message': str(exc)}
 
     def exception_to_python(self, exc):
         """Convert serialized exception to Python exception."""
         if self.serializer in EXCEPTION_ABLE_CODECS:
             return get_pickled_exception(exc)
-        return create_exception_cls(from_utf8(exc["exc_type"]),
-                                    sys.modules[__name__])(exc["exc_message"])
+        return create_exception_cls(from_utf8(exc['exc_type']),
+                                    sys.modules[__name__])(exc['exc_message'])
 
     def prepare_value(self, result):
         """Prepare value for storage."""
         return result
 
     def forget(self, task_id):
-        raise NotImplementedError("%s does not implement forget." % (
+        raise NotImplementedError('%s does not implement forget.' % (
                     self.__class__))
 
     def wait_for(self, task_id, timeout=None, propagate=True, interval=0.5):
@@ -170,7 +170,7 @@ class BaseBackend(object):
             time.sleep(interval)
             time_elapsed += interval
             if timeout and time_elapsed >= timeout:
-                raise TimeoutError("The operation timed out.")
+                raise TimeoutError('The operation timed out.')
 
     def cleanup(self):
         """Backend cleanup. Is run by
@@ -184,52 +184,52 @@ class BaseBackend(object):
     def get_status(self, task_id):
         """Get the status of a task."""
         raise NotImplementedError(
-                "get_status is not supported by this backend.")
+                'get_status is not supported by this backend.')
 
     def get_result(self, task_id):
         """Get the result of a task."""
         raise NotImplementedError(
-                "get_result is not supported by this backend.")
+                'get_result is not supported by this backend.')
 
     def get_children(self, task_id):
         raise NotImplementedError(
-                "get_children is not supported by this backend.")
+                'get_children is not supported by this backend.')
 
     def get_traceback(self, task_id):
         """Get the traceback for a failed task."""
         raise NotImplementedError(
-                "get_traceback is not supported by this backend.")
+                'get_traceback is not supported by this backend.')
 
     def save_group(self, group_id, result):
         """Store the result and status of a task."""
         raise NotImplementedError(
-                "save_group is not supported by this backend.")
+                'save_group is not supported by this backend.')
 
     def restore_group(self, group_id, cache=True):
         """Get the result of a group."""
         raise NotImplementedError(
-                "restore_group is not supported by this backend.")
+                'restore_group is not supported by this backend.')
 
     def delete_group(self, group_id):
         raise NotImplementedError(
-                "delete_group is not supported by this backend.")
+                'delete_group is not supported by this backend.')
 
     def reload_task_result(self, task_id):
         """Reload task result, even if it has been previously fetched."""
         raise NotImplementedError(
-                "reload_task_result is not supported by this backend.")
+                'reload_task_result is not supported by this backend.')
 
     def reload_group_result(self, task_id):
         """Reload group result, even if it has been previously fetched."""
         raise NotImplementedError(
-                "reload_group_result is not supported by this backend.")
+                'reload_group_result is not supported by this backend.')
 
     def on_chord_part_return(self, task, propagate=False):
         pass
 
     def fallback_chord_unlock(self, group_id, body, result=None, **kwargs):
-        kwargs["result"] = [r.id for r in result]
-        self.app.tasks["celery.chord_unlock"].apply_async((group_id, body, ),
+        kwargs['result'] = [r.id for r in result]
+        self.app.tasks['celery.chord_unlock'].apply_async((group_id, body, ),
                                                           kwargs, countdown=1)
     on_chord_apply = fallback_chord_unlock
 
@@ -246,7 +246,7 @@ class BaseDictBackend(BaseBackend):
 
     def __init__(self, *args, **kwargs):
         super(BaseDictBackend, self).__init__(*args, **kwargs)
-        self._cache = LRUCache(limit=kwargs.get("max_cached_results") or
+        self._cache = LRUCache(limit=kwargs.get('max_cached_results') or
                                  self.app.conf.CELERY_MAX_CACHED_RESULTS)
 
     def store_result(self, task_id, result, status, traceback=None, **kwargs):
@@ -259,29 +259,29 @@ class BaseDictBackend(BaseBackend):
         self._forget(task_id)
 
     def _forget(self, task_id):
-        raise NotImplementedError("%s does not implement forget." % (
+        raise NotImplementedError('%s does not implement forget.' % (
                     self.__class__))
 
     def get_status(self, task_id):
         """Get the status of a task."""
-        return self.get_task_meta(task_id)["status"]
+        return self.get_task_meta(task_id)['status']
 
     def get_traceback(self, task_id):
         """Get the traceback for a failed task."""
-        return self.get_task_meta(task_id).get("traceback")
+        return self.get_task_meta(task_id).get('traceback')
 
     def get_result(self, task_id):
         """Get the result of a task."""
         meta = self.get_task_meta(task_id)
-        if meta["status"] in self.EXCEPTION_STATES:
-            return self.exception_to_python(meta["result"])
+        if meta['status'] in self.EXCEPTION_STATES:
+            return self.exception_to_python(meta['result'])
         else:
-            return meta["result"]
+            return meta['result']
 
     def get_children(self, task_id):
         """Get the list of subtasks sent by a task."""
         try:
-            return self.get_task_meta(task_id)["children"]
+            return self.get_task_meta(task_id)['children']
         except KeyError:
             pass
 
@@ -293,7 +293,7 @@ class BaseDictBackend(BaseBackend):
                 pass
 
         meta = self._get_task_meta_for(task_id)
-        if cache and meta.get("status") == states.SUCCESS:
+        if cache and meta.get('status') == states.SUCCESS:
             self._cache[task_id] = meta
         return meta
 
@@ -320,7 +320,7 @@ class BaseDictBackend(BaseBackend):
         """Get the result for a group."""
         meta = self.get_group_meta(group_id, cache=cache)
         if meta:
-            return meta["result"]
+            return meta['result']
 
     def save_group(self, group_id, result):
         """Store the result of an executed group."""
@@ -332,25 +332,25 @@ class BaseDictBackend(BaseBackend):
 
 
 class KeyValueStoreBackend(BaseDictBackend):
-    task_keyprefix = ensure_bytes("celery-task-meta-")
-    group_keyprefix = ensure_bytes("celery-taskset-meta-")
-    chord_keyprefix = ensure_bytes("chord-unlock-")
+    task_keyprefix = ensure_bytes('celery-task-meta-')
+    group_keyprefix = ensure_bytes('celery-taskset-meta-')
+    chord_keyprefix = ensure_bytes('chord-unlock-')
     implements_incr = False
 
     def get(self, key):
-        raise NotImplementedError("Must implement the get method.")
+        raise NotImplementedError('Must implement the get method.')
 
     def mget(self, keys):
-        raise NotImplementedError("Does not support get_many")
+        raise NotImplementedError('Does not support get_many')
 
     def set(self, key, value):
-        raise NotImplementedError("Must implement the set method.")
+        raise NotImplementedError('Must implement the set method.')
 
     def delete(self, key):
-        raise NotImplementedError("Must implement the delete method")
+        raise NotImplementedError('Must implement the delete method')
 
     def incr(self, key):
-        raise NotImplementedError("Does not implement incr")
+        raise NotImplementedError('Does not implement incr')
 
     def expire(self, key, value):
         pass
@@ -376,7 +376,7 @@ class KeyValueStoreBackend(BaseDictBackend):
         return bytes_to_str(key)
 
     def _mget_to_results(self, values, keys):
-        if hasattr(values, "items"):
+        if hasattr(values, 'items'):
             # client returns dict so mapping preserved.
             return dict((self._strip_prefix(k), self.decode(v))
                             for k, v in values.iteritems()
@@ -396,7 +396,7 @@ class KeyValueStoreBackend(BaseDictBackend):
             except KeyError:
                 pass
             else:
-                if cached["status"] in states.READY_STATES:
+                if cached['status'] in states.READY_STATES:
                     yield bytes_to_str(task_id), cached
                     cached_ids.add(task_id)
 
@@ -411,7 +411,7 @@ class KeyValueStoreBackend(BaseDictBackend):
             for key, value in r.iteritems():
                 yield bytes_to_str(key), value
             if timeout and iterations * interval >= timeout:
-                raise TimeoutError("Operation timed out (%s)" % (timeout, ))
+                raise TimeoutError('Operation timed out (%s)' % (timeout, ))
             time.sleep(interval)  # don't busy loop.
             iterations += 0
 
@@ -419,14 +419,14 @@ class KeyValueStoreBackend(BaseDictBackend):
         self.delete(self.get_key_for_task(task_id))
 
     def _store_result(self, task_id, result, status, traceback=None):
-        meta = {"status": status, "result": result, "traceback": traceback,
-                "children": self.current_task_children()}
+        meta = {'status': status, 'result': result, 'traceback': traceback,
+                'children': self.current_task_children()}
         self.set(self.get_key_for_task(task_id), self.encode(meta))
         return result
 
     def _save_group(self, group_id, result):
         self.set(self.get_key_for_group(group_id),
-                 self.encode({"result": result.serializable()}))
+                 self.encode({'result': result.serializable()}))
         return result
 
     def _delete_group(self, group_id):
@@ -436,7 +436,7 @@ class KeyValueStoreBackend(BaseDictBackend):
         """Get task metadata for a task by id."""
         meta = self.get(self.get_key_for_task(task_id))
         if not meta:
-            return {"status": states.PENDING, "result": None}
+            return {'status': states.PENDING, 'result': None}
         return self.decode(meta)
 
     def _restore_group(self, group_id):
@@ -447,9 +447,9 @@ class KeyValueStoreBackend(BaseDictBackend):
         # structure is kind of weird.
         if meta:
             meta = self.decode(meta)
-            result = meta["result"]
+            result = meta['result']
             if isinstance(result, (list, tuple)):
-                return {"result": from_serializable(result)}
+                return {'result': from_serializable(result)}
             return meta
 
     def on_chord_apply(self, group_id, body, result=None, **kwargs):
@@ -484,6 +484,6 @@ class DisabledBackend(BaseBackend):
         pass
 
     def _is_disabled(self, *args, **kwargs):
-        raise NotImplementedError("No result backend configured.  "
-                "Please see the documentation for more information.")
+        raise NotImplementedError('No result backend configured.  '
+                'Please see the documentation for more information.')
     wait_for = get_status = get_result = get_traceback = _is_disabled

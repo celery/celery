@@ -35,7 +35,7 @@ def repair_uuid(s):
     # Historically the dashes in UUIDS are removed from AMQ entity names,
     # but there is no known reason to.  Hopefully we'll be able to fix
     # this in v3.0.
-    return "%s-%s-%s-%s-%s" % (s[:8], s[8:12], s[12:16], s[16:20], s[20:])
+    return '%s-%s-%s-%s-%s' % (s[:8], s[8:12], s[12:16], s[16:20], s[20:])
 
 
 class AMQPBackend(BaseDictBackend):
@@ -50,10 +50,10 @@ class AMQPBackend(BaseDictBackend):
     supports_native_join = True
 
     retry_policy = {
-            "max_retries": 20,
-            "interval_start": 0,
-            "interval_step": 1,
-            "interval_max": 1,
+            'max_retries': 20,
+            'interval_start': 0,
+            'interval_step': 1,
+            'interval_max': 1,
     }
 
     def __init__(self, connection=None, exchange=None, exchange_type=None,
@@ -65,7 +65,7 @@ class AMQPBackend(BaseDictBackend):
         self.queue_arguments = {}
         self.persistent = (conf.CELERY_RESULT_PERSISTENT if persistent is None
                                                          else persistent)
-        delivery_mode = persistent and "persistent" or "transient"
+        delivery_mode = persistent and 'persistent' or 'transient'
         exchange = exchange or conf.CELERY_RESULT_EXCHANGE
         exchange_type = exchange_type or conf.CELERY_RESULT_EXCHANGE_TYPE
         self.exchange = self.Exchange(name=exchange,
@@ -81,18 +81,18 @@ class AMQPBackend(BaseDictBackend):
         dexpires = conf.CELERY_AMQP_TASK_RESULT_EXPIRES
 
         self.expires = None
-        if "expires" in kwargs:
-            if kwargs["expires"] is not None:
-                self.expires = self.prepare_expires(kwargs["expires"])
+        if 'expires' in kwargs:
+            if kwargs['expires'] is not None:
+                self.expires = self.prepare_expires(kwargs['expires'])
         else:
             self.expires = self.prepare_expires(dexpires)
 
         if self.expires:
-            self.queue_arguments["x-expires"] = int(self.expires * 1000)
+            self.queue_arguments['x-expires'] = int(self.expires * 1000)
         self.mutex = threading.Lock()
 
     def _create_binding(self, task_id):
-        name = task_id.replace("-", "")
+        name = task_id.replace('-', '')
         return self.Queue(name=name,
                           exchange=self.exchange,
                           routing_key=name,
@@ -107,12 +107,12 @@ class AMQPBackend(BaseDictBackend):
         """Send task return value and status."""
         with self.mutex:
             with self.app.amqp.producer_pool.acquire(block=True) as pub:
-                pub.publish({"task_id": task_id, "status": status,
-                             "result": self.encode_result(result, status),
-                             "traceback": traceback,
-                             "children": self.current_task_children()},
+                pub.publish({'task_id': task_id, 'status': status,
+                             'result': self.encode_result(result, status),
+                             'traceback': traceback,
+                             'children': self.current_task_children()},
                             exchange=self.exchange,
-                            routing_key=task_id.replace("-", ""),
+                            routing_key=task_id.replace('-', ''),
                             serializer=self.serializer,
                             retry=True, retry_policy=self.retry_policy,
                             declare=[self._create_binding(task_id)])
@@ -122,21 +122,21 @@ class AMQPBackend(BaseDictBackend):
             **kwargs):
         cached_meta = self._cache.get(task_id)
         if cache and cached_meta and \
-                cached_meta["status"] in states.READY_STATES:
+                cached_meta['status'] in states.READY_STATES:
             meta = cached_meta
         else:
             try:
                 meta = self.consume(task_id, timeout=timeout)
             except socket.timeout:
-                raise TimeoutError("The operation timed out.")
+                raise TimeoutError('The operation timed out.')
 
-        state = meta["status"]
+        state = meta['status']
         if state == states.SUCCESS:
-            return meta["result"]
+            return meta['result']
         elif state in states.PROPAGATE_STATES:
             if propagate:
-                raise self.exception_to_python(meta["result"])
-            return meta["result"]
+                raise self.exception_to_python(meta['result'])
+            return meta['result']
         else:
             return self.wait_for(task_id, timeout, cache)
 
@@ -163,7 +163,7 @@ class AMQPBackend(BaseDictBackend):
                     return self._cache[task_id]
                 except KeyError:
                     # result probably pending.
-                    return {"status": states.PENDING, "result": None}
+                    return {'status': states.PENDING, 'result': None}
     poll = get_task_meta  # XXX compat
 
     def drain_events(self, connection, consumer, timeout=None, now=time.time):
@@ -171,8 +171,8 @@ class AMQPBackend(BaseDictBackend):
         results = {}
 
         def callback(meta, message):
-            if meta["status"] in states.READY_STATES:
-                uuid = repair_uuid(message.delivery_info["routing_key"])
+            if meta['status'] in states.READY_STATES:
+                uuid = repair_uuid(message.delivery_info['routing_key'])
                 results[uuid] = meta
 
         consumer.callbacks[:] = [callback]
@@ -204,7 +204,7 @@ class AMQPBackend(BaseDictBackend):
                 except KeyError:
                     pass
                 else:
-                    if cached["status"] in states.READY_STATES:
+                    if cached['status'] in states.READY_STATES:
                         yield task_id, cached
                         cached_ids.add(task_id)
             ids ^= cached_ids
@@ -219,24 +219,24 @@ class AMQPBackend(BaseDictBackend):
 
     def reload_task_result(self, task_id):
         raise NotImplementedError(
-                "reload_task_result is not supported by this backend.")
+                'reload_task_result is not supported by this backend.')
 
     def reload_group_result(self, task_id):
         """Reload group result, even if it has been previously fetched."""
         raise NotImplementedError(
-                "reload_group_result is not supported by this backend.")
+                'reload_group_result is not supported by this backend.')
 
     def save_group(self, group_id, result):
         raise NotImplementedError(
-                "save_group is not supported by this backend.")
+                'save_group is not supported by this backend.')
 
     def restore_group(self, group_id, cache=True):
         raise NotImplementedError(
-                "restore_group is not supported by this backend.")
+                'restore_group is not supported by this backend.')
 
     def delete_group(self, group_id):
         raise NotImplementedError(
-                "delete_group is not supported by this backend.")
+                'delete_group is not supported by this backend.')
 
     def __reduce__(self, args=(), kwargs={}):
         kwargs.update(connection=self._connection,

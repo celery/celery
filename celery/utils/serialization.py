@@ -68,12 +68,12 @@ def find_nearest_pickleable_exception(exc):
 
     """
     cls = exc.__class__
-    getmro_ = getattr(cls, "mro", None)
+    getmro_ = getattr(cls, 'mro', None)
 
     # old-style classes doesn't have mro()
     if not getmro_:  # pragma: no cover
         # all Py2.4 exceptions has a baseclass.
-        if not getattr(cls, "__bases__", ()):
+        if not getattr(cls, '__bases__', ()):
             return
         # Use inspect.getmro() to traverse bases instead.
         getmro_ = lambda: inspect.getmro(cls)
@@ -84,7 +84,7 @@ def find_nearest_pickleable_exception(exc):
             # we don't care about these.
             return
         try:
-            exc_args = getattr(exc, "args", [])
+            exc_args = getattr(exc, 'args', [])
             superexc = supercls(*exc_args)
             pickle.dumps(superexc)
         except:
@@ -148,7 +148,7 @@ class UnpickleableExceptionWrapper(Exception):
     def from_exception(cls, exc):
         return cls(exc.__class__.__module__,
                    exc.__class__.__name__,
-                   getattr(exc, "args", []),
+                   getattr(exc, 'args', []),
                    safe_repr(exc))
 
 

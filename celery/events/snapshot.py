@@ -22,12 +22,12 @@ from celery.utils.imports import instantiate
 from celery.utils.log import get_logger
 from celery.utils.timeutils import rate
 
-logger = get_logger("celery.evcam")
+logger = get_logger('celery.evcam')
 
 
 class Polaroid(object):
     timer = timer2
-    shutter_signal = Signal(providing_args=("state", ))
+    shutter_signal = Signal(providing_args=('state', ))
     cleanup_signal = Signal()
     clear_after = False
 
@@ -57,13 +57,13 @@ class Polaroid(object):
         pass
 
     def cleanup(self):
-        logger.debug("Cleanup: Running...")
+        logger.debug('Cleanup: Running...')
         self.cleanup_signal.send(None)
         self.on_cleanup()
 
     def shutter(self):
         if self.maxrate is None or self.maxrate.can_consume():
-            logger.debug("Shutter: %s", self.state)
+            logger.debug('Shutter: %s', self.state)
             self.shutter_signal.send(self.state)
             self.on_shutter(self.state)
 
@@ -95,14 +95,14 @@ def evcam(camera, freq=1.0, maxrate=None, loglevel=0,
     app.log.setup_logging_subsystem(loglevel, logfile)
 
     logger.info(
-        "-> evcam: Taking snapshots with %s (every %s secs.)\n" % (
+        '-> evcam: Taking snapshots with %s (every %s secs.)\n' % (
             camera, freq))
     state = app.events.State()
     cam = instantiate(camera, state, app=app, freq=freq,
                       maxrate=maxrate, timer=timer)
     cam.install()
     conn = app.broker_connection()
-    recv = app.events.Receiver(conn, handlers={"*": state.event})
+    recv = app.events.Receiver(conn, handlers={'*': state.event})
     try:
         try:
             recv.capture(limit=None)

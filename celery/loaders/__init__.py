@@ -13,9 +13,9 @@ from celery.state import current_app
 from celery.utils import deprecated
 from celery.utils.imports import symbol_by_name
 
-LOADER_ALIASES = {"app": "celery.loaders.app:AppLoader",
-                  "default": "celery.loaders.default:Loader",
-                  "django": "djcelery.loaders:DjangoLoader"}
+LOADER_ALIASES = {'app': 'celery.loaders.app:AppLoader',
+                  'default': 'celery.loaders.default:Loader',
+                  'django': 'djcelery.loaders:DjangoLoader'}
 
 
 def get_loader_cls(loader):
@@ -23,13 +23,13 @@ def get_loader_cls(loader):
     return symbol_by_name(loader, LOADER_ALIASES)
 
 
-@deprecated(deprecation="2.5", removal="3.0",
-        alternative="celery.current_app.loader")
+@deprecated(deprecation='2.5', removal='3.0',
+        alternative='celery.current_app.loader')
 def current_loader():
     return current_app.loader
 
 
-@deprecated(deprecation="2.5", removal="3.0",
-            alternative="celery.current_app.conf")
+@deprecated(deprecation='2.5', removal='3.0',
+            alternative='celery.current_app.conf')
 def load_settings():
     return current_app.conf

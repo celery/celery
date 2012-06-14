@@ -22,13 +22,13 @@ Unknown result backend: %r.  Did you spell that correctly? (%r)\
 """
 
 BACKEND_ALIASES = {
-    "amqp": "celery.backends.amqp:AMQPBackend",
-    "cache": "celery.backends.cache:CacheBackend",
-    "redis": "celery.backends.redis:RedisBackend",
-    "mongodb": "celery.backends.mongodb:MongoBackend",
-    "database": "celery.backends.database:DatabaseBackend",
-    "cassandra": "celery.backends.cassandra:CassandraBackend",
-    "disabled": "celery.backends.base:DisabledBackend",
+    'amqp': 'celery.backends.amqp:AMQPBackend',
+    'cache': 'celery.backends.cache:CacheBackend',
+    'redis': 'celery.backends.redis:RedisBackend',
+    'mongodb': 'celery.backends.mongodb:MongoBackend',
+    'database': 'celery.backends.database:DatabaseBackend',
+    'cassandra': 'celery.backends.cassandra:CassandraBackend',
+    'disabled': 'celery.backends.base:DisabledBackend',
 }
 
 #: deprecated alias to ``current_app.backend``.
@@ -38,7 +38,7 @@ default_backend = Proxy(lambda: current_app.backend)
 @memoize(100)
 def get_backend_cls(backend=None, loader=None):
     """Get backend class by name/alias"""
-    backend = backend or "disabled"
+    backend = backend or 'disabled'
     loader = loader or current_app.loader
     aliases = dict(BACKEND_ALIASES, **loader.override_backends)
     try:

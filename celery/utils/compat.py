@@ -56,7 +56,7 @@ except ImportError:                         # pragma: no cover
     import itertools
 
     def zip_longest(*args, **kwds):  # noqa
-        fillvalue = kwds.get("fillvalue")
+        fillvalue = kwds.get('fillvalue')
 
         def sentinel(counter=([fillvalue] * (len(args) - 1)).pop):
             yield counter()     # yields the fillvalue, or raises IndexError
@@ -81,7 +81,7 @@ def _compat_chain_from_iterable(iterables):  # pragma: no cover
             yield element
 
 try:
-    chain_from_iterable = getattr(chain, "from_iterable")
+    chain_from_iterable = getattr(chain, 'from_iterable')
 except AttributeError:   # pragma: no cover
     chain_from_iterable = _compat_chain_from_iterable
 
@@ -92,7 +92,7 @@ import os
 from stat import ST_DEV, ST_INO
 import platform as _platform
 
-if _platform.system() == "Windows":  # pragma: no cover
+if _platform.system() == 'Windows':  # pragma: no cover
     #since windows doesn't go with WatchedFileHandler use FileHandler instead
     WatchedFileHandler = logging.FileHandler
 else:

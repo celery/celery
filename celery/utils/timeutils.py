@@ -24,20 +24,20 @@ except ImportError:     # pragma: no cover
     pytz = None         # noqa
 
 
-DAYNAMES = "sun", "mon", "tue", "wed", "thu", "fri", "sat"
+DAYNAMES = 'sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'
 WEEKDAYS = dict((name, dow) for name, dow in zip(DAYNAMES, range(7)))
 
-RATE_MODIFIER_MAP = {"s": lambda n: n,
-                     "m": lambda n: n / 60.0,
-                     "h": lambda n: n / 60.0 / 60.0}
+RATE_MODIFIER_MAP = {'s': lambda n: n,
+                     'm': lambda n: n / 60.0,
+                     'h': lambda n: n / 60.0 / 60.0}
 
 
-HAVE_TIMEDELTA_TOTAL_SECONDS = hasattr(timedelta, "total_seconds")
+HAVE_TIMEDELTA_TOTAL_SECONDS = hasattr(timedelta, 'total_seconds')
 
-TIME_UNITS = (("day", 60 * 60 * 24.0, lambda n: "%.2f" % n),
-              ("hour", 60 * 60.0, lambda n: "%.2f" % n),
-              ("minute", 60.0, lambda n: "%.2f" % n),
-              ("second", 1.0, lambda n: "%.2f" % n))
+TIME_UNITS = (('day', 60 * 60 * 24.0, lambda n: '%.2f' % n),
+              ('hour', 60 * 60.0, lambda n: '%.2f' % n),
+              ('minute', 60.0, lambda n: '%.2f' % n),
+              ('second', 1.0, lambda n: '%.2f' % n))
 
 
 class _Zone(object):
@@ -54,10 +54,10 @@ class _Zone(object):
     def get_timezone(self, zone):
         if isinstance(zone, basestring):
             if pytz is None:
-                if zone == "UTC":
-                    return tz.gettz("UTC")
+                if zone == 'UTC':
+                    return tz.gettz('UTC')
                 raise ImproperlyConfigured(
-                    "Timezones requires the pytz library")
+                    'Timezones requires the pytz library')
             return pytz.timezone(zone)
         return zone
 
@@ -67,7 +67,7 @@ class _Zone(object):
 
     @cached_property
     def utc(self):
-        return self.get_timezone("UTC")
+        return self.get_timezone('UTC')
 timezone = _Zone()
 
 
@@ -150,8 +150,8 @@ def rate(rate):
     and converts them to seconds."""
     if rate:
         if isinstance(rate, basestring):
-            ops, _, modifier = rate.partition("/")
-            return RATE_MODIFIER_MAP[modifier or "s"](int(ops)) or 0
+            ops, _, modifier = rate.partition('/')
+            return RATE_MODIFIER_MAP[modifier or 's'](int(ops)) or 0
         return rate or 0
     return 0
 
@@ -161,7 +161,7 @@ def weekday(name):
 
     Example::
 
-        >>> weekday("sunday"), weekday("sun"), weekday("mon")
+        >>> weekday('sunday'), weekday('sun'), weekday('mon')
         (0, 0, 1)
 
     """
@@ -173,16 +173,16 @@ def weekday(name):
         raise KeyError(name)
 
 
-def humanize_seconds(secs, prefix=""):
+def humanize_seconds(secs, prefix=''):
     """Show seconds in human form, e.g. 60 is "1 minute", 7200 is "2
     hours"."""
     secs = float(secs)
     for unit, divider, formatter in TIME_UNITS:
         if secs >= divider:
             w = secs / divider
-            return "%s%s %s" % (prefix, formatter(w),
+            return '%s%s %s' % (prefix, formatter(w),
                                 pluralize(w, unit))
-    return "now"
+    return 'now'
 
 
 def maybe_iso8601(dt):

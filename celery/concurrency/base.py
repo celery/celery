@@ -17,7 +17,7 @@ from kombu.utils.encoding import safe_repr
 from celery.utils import timer2
 from celery.utils.log import get_logger
 
-logger = get_logger("celery.concurrency")
+logger = get_logger('celery.concurrency')
 
 
 def apply_target(target, args=(), kwargs={}, callback=None,
@@ -88,11 +88,11 @@ class BasePool(object):
 
     def terminate_job(self, pid):
         raise NotImplementedError(
-                "%s does not implement kill_job" % (self.__class__, ))
+                '%s does not implement kill_job' % (self.__class__, ))
 
     def restart(self):
         raise NotImplementedError(
-                "%s does not implement restart" % (self.__class__, ))
+                '%s does not implement restart' % (self.__class__, ))
 
     def stop(self):
         self.on_stop()
@@ -124,7 +124,7 @@ class BasePool(object):
 
         """
         if self._does_debug:
-            logger.debug("TaskPool: Apply %s (args:%s kwargs:%s)",
+            logger.debug('TaskPool: Apply %s (args:%s kwargs:%s)',
                          target, safe_repr(args), safe_repr(kwargs))
 
         return self.on_apply(target, args, kwargs,

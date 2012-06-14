@@ -52,7 +52,7 @@ def add_backend_cleanup_task(app):
 
     """
 
-    @app.task(name="celery.backend_cleanup")
+    @app.task(name='celery.backend_cleanup')
     def backend_cleanup():
         app.backend.cleanup()
     return backend_cleanup
@@ -69,7 +69,7 @@ def add_unlock_chord_task(app):
     from celery.canvas import subtask
     from celery import result as _res
 
-    @app.task(name="celery.chord_unlock", max_retries=None)
+    @app.task(name='celery.chord_unlock', max_retries=None)
     def unlock_chord(group_id, callback, interval=1, propagate=False,
             max_retries=None, result=None):
         result = _res.GroupResult(group_id, map(_res.AsyncResult, result))
@@ -85,7 +85,7 @@ def add_unlock_chord_task(app):
 def add_map_task(app):
     from celery.canvas import subtask
 
-    @app.task(name="celery.map")
+    @app.task(name='celery.map')
     def xmap(task, it):
         task = subtask(task).type
         return list(map(task, it))
@@ -95,7 +95,7 @@ def add_map_task(app):
 def add_starmap_task(app):
     from celery.canvas import subtask
 
-    @app.task(name="celery.starmap")
+    @app.task(name='celery.starmap')
     def xstarmap(task, it):
         task = subtask(task).type
         return list(starmap(task, it))
@@ -105,7 +105,7 @@ def add_starmap_task(app):
 def add_chunk_task(app):
     from celery.canvas import chunks as _chunks
 
-    @app.task(name="celery.chunks")
+    @app.task(name='celery.chunks')
     def chunks(task, it, n):
         return _chunks.apply_chunks(task, it, n)
 
@@ -118,7 +118,7 @@ def add_group_task(app):
 
     class Group(app.Task):
         app = _app
-        name = "celery.group"
+        name = 'celery.group'
         accept_magic_kwargs = False
 
         def run(self, tasks, result, group_id):
@@ -139,15 +139,15 @@ def add_group_task(app):
 
         def prepare(self, options, tasks, **kwargs):
             r = []
-            options["group_id"] = group_id = \
-                    options.setdefault("task_id", uuid())
+            options['group_id'] = group_id = \
+                    options.setdefault('task_id', uuid())
             for task in tasks:
                 opts = task.options
-                opts["group_id"] = group_id
+                opts['group_id'] = group_id
                 try:
-                    tid = opts["task_id"]
+                    tid = opts['task_id']
                 except KeyError:
-                    tid = opts["task_id"] = uuid()
+                    tid = opts['task_id'] = uuid()
                 r.append(self.AsyncResult(tid))
             return tasks, self.app.GroupResult(group_id, r), group_id
 
@@ -172,33 +172,33 @@ def add_chain_task(app):
 
     class Chain(app.Task):
         app = _app
-        name = "celery.chain"
+        name = 'celery.chain'
         accept_magic_kwargs = False
 
         def apply_async(self, args=(), kwargs={}, **options):
             if self.app.conf.CELERY_ALWAYS_EAGER:
                 return self.apply(args, kwargs, **options)
-            options.pop("publisher", None)
-            group_id = options.pop("group_id", None)
-            chord = options.pop("chord", None)
+            options.pop('publisher', None)
+            group_id = options.pop('group_id', None)
+            chord = options.pop('chord', None)
             tasks = [maybe_subtask(t).clone(
-                        task_id=options.pop("task_id", uuid()),
+                        task_id=options.pop('task_id', uuid()),
                         **options
                     )
-                    for t in kwargs["tasks"]]
+                    for t in kwargs['tasks']]
             reduce(lambda a, b: a.link(b), tasks)
             if group_id:
                 tasks[-1].set(group_id=group_id)
             if chord:
                 tasks[-1].set(chord=chord)
             tasks[0].apply_async()
-            results = [task.type.AsyncResult(task.options["task_id"])
+            results = [task.type.AsyncResult(task.options['task_id'])
                             for task in tasks]
             reduce(lambda a, b: a.set_parent(b), reversed(results))
             return results[-1]
 
         def apply(self, args=(), kwargs={}, **options):
-            tasks = [maybe_subtask(task).clone() for task in kwargs["tasks"]]
+            tasks = [maybe_subtask(task).clone() for task in kwargs['tasks']]
             res = prev = None
             for task in tasks:
                 res = task.apply((prev.get(), ) if prev else ())
@@ -219,7 +219,7 @@ def add_chord_task(app):
 
     class Chord(app.Task):
         app = _app
-        name = "celery.chord"
+        name = 'celery.chord'
         accept_magic_kwargs = False
         ignore_result = False
 
@@ -232,11 +232,11 @@ def add_chord_task(app):
             for task in header.tasks:
                 opts = task.options
                 try:
-                    tid = opts["task_id"]
+                    tid = opts['task_id']
                 except KeyError:
-                    tid = opts["task_id"] = uuid()
-                opts["chord"] = body
-                opts["group_id"] = group_id
+                    tid = opts['task_id'] = uuid()
+                opts['chord'] = body
+                opts['group_id'] = group_id
                 r.append(app.AsyncResult(tid))
             if eager:
                 return header.apply(task_id=group_id)
@@ -250,17 +250,17 @@ def add_chord_task(app):
         def apply_async(self, args=(), kwargs={}, task_id=None, **options):
             if self.app.conf.CELERY_ALWAYS_EAGER:
                 return self.apply(args, kwargs, **options)
-            header, body = (list(kwargs["header"]),
-                            maybe_subtask(kwargs["body"]))
+            header, body = (list(kwargs['header']),
+                            maybe_subtask(kwargs['body']))
 
-            callback_id = body.options.setdefault("task_id", task_id or uuid())
+            callback_id = body.options.setdefault('task_id', task_id or uuid())
             parent = super(Chord, self).apply_async((header, body), **options)
             body_result = self.AsyncResult(callback_id)
             body_result.parent = parent
             return body_result
 
         def apply(self, args=(), kwargs={}, propagate=True, **options):
-            body = kwargs["body"]
+            body = kwargs['body']
             res = super(Chord, self).apply(args, dict(kwargs, eager=True),
                                            **options)
             return maybe_subtask(body).apply(
