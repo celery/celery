@@ -93,7 +93,7 @@ from celery.utils.log import get_logger
 from celery.utils import text
 
 from . import state
-from .abstract import StartStopComponent
+from .bootsteps import StartStopComponent
 from .control import Panel
 from .heartbeat import Heart
 

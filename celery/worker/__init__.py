@@ -6,7 +6,7 @@
     :class:`WorkController` can be used to instantiate in-process workers.
 
     The worker consists of several components, all managed by boot-steps
-    (mod:`celery.abstract`).
+    (mod:`celery.worker.bootsteps`).
 
 """
 from __future__ import absolute_import
@@ -37,7 +37,7 @@ from celery.utils.log import get_logger
 from celery.utils.threads import Event
 from celery.utils.timer2 import Schedule
 
-from . import abstract
+from . import bootsteps
 from . import state
 from .buckets import TaskBucket, FastQueue
 from .hub import Hub, BoundedSemaphore
@@ -49,7 +49,7 @@ TERMINATE = 0x3
 logger = get_logger(__name__)
 
 
-class Namespace(abstract.Namespace):
+class Namespace(bootsteps.Namespace):
     """This is the boot-step namespace of the :class:`WorkController`.
 
     It loads modules from :setting:`CELERYD_BOOT_STEPS`, and its
@@ -67,7 +67,7 @@ class Namespace(abstract.Namespace):
               + self.app.conf.CELERYD_BOOT_STEPS)
 
 
-class Pool(abstract.StartStopComponent):
+class Pool(bootsteps.StartStopComponent):
     """The pool component.
 
     Describes how to initialize the worker pool, and starts and stops
@@ -159,7 +159,7 @@ class Pool(abstract.StartStopComponent):
         return pool
 
 
-class Beat(abstract.StartStopComponent):
+class Beat(bootsteps.StartStopComponent):
     """Component used to embed a celerybeat process.
 
     This will only be enabled if the ``beat``
@@ -180,7 +180,7 @@ class Beat(abstract.StartStopComponent):
         return b
 
 
-class Queues(abstract.Component):
+class Queues(bootsteps.Component):
     """This component initializes the internal queues
     used by the worker."""
     name = 'worker.queues'
@@ -206,7 +206,7 @@ class Queues(abstract.Component):
             w.ready_queue = TaskBucket(task_registry=w.app.tasks)
 
 
-class EvLoop(abstract.StartStopComponent):
+class EvLoop(bootsteps.StartStopComponent):
     name = 'worker.ev'
 
     def __init__(self, w, **kwargs):
@@ -221,7 +221,7 @@ class EvLoop(abstract.StartStopComponent):
         return hub
 
 
-class Timers(abstract.Component):
+class Timers(bootsteps.Component):
     """This component initializes the internal timers used by the worker."""
     name = 'worker.timers'
     requires = ('pool', )
@@ -246,7 +246,7 @@ class Timers(abstract.Component):
         logger.debug('Timer wake-up! Next eta %s secs.', delay)
 
 
-class StateDB(abstract.Component):
+class StateDB(bootsteps.Component):
     """This component sets up the workers state db if enabled."""
     name = 'worker.state-db'
 

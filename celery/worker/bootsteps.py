@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    celery.worker.abstract
-    ~~~~~~~~~~~~~~~~~~~~~~
+    celery.worker.bootsteps
+    ~~~~~~~~~~~~~~~~~~~~~~~
 
     The boot-step components.
 

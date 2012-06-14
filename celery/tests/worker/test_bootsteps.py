@@ -3,34 +3,34 @@ from __future__ import with_statement
 
 from mock import Mock
 
-from celery.worker import abstract
+from celery.worker import bootsteps
 
 from celery.tests.utils import AppCase, Case
 
 
 class test_Component(Case):
 
-    class Def(abstract.Component):
+    class Def(bootsteps.Component):
         name = "test_Component.Def"
 
     def test_components_must_be_named(self):
         with self.assertRaises(NotImplementedError):
 
-            class X(abstract.Component):
+            class X(bootsteps.Component):
                 pass
 
-        class Y(abstract.Component):
-            abstract = True
+        class Y(bootsteps.Component):
+            bootsteps = True
 
     def test_namespace_name(self, ns="test_namespace_name"):
 
-        class X(abstract.Component):
+        class X(bootsteps.Component):
             namespace = ns
             name = "X"
         self.assertEqual(X.namespace, ns)
         self.assertEqual(X.name, "X")
 
-        class Y(abstract.Component):
+        class Y(bootsteps.Component):
             name = "%s.Y" % (ns, )
         self.assertEqual(Y.namespace, ns)
         self.assertEqual(Y.name, "Y")
@@ -73,7 +73,7 @@ class test_Component(Case):
 
 class test_StartStopComponent(Case):
 
-    class Def(abstract.StartStopComponent):
+    class Def(bootsteps.StartStopComponent):
         name = "test_StartStopComponent.Def"
 
     def setUp(self):
@@ -125,13 +125,13 @@ class test_StartStopComponent(Case):
 
 class test_Namespace(AppCase):
 
-    class NS(abstract.Namespace):
+    class NS(bootsteps.Namespace):
         name = "test_Namespace"
 
-    class ImportingNS(abstract.Namespace):
+    class ImportingNS(bootsteps.Namespace):
 
         def __init__(self, *args, **kwargs):
-            abstract.Namespace.__init__(self, *args, **kwargs)
+            bootsteps.Namespace.__init__(self, *args, **kwargs)
             self.imported = []
 
         def modules(self):
@@ -142,13 +142,13 @@ class test_Namespace(AppCase):
 
     def test_components_added_to_unclaimed(self):
 
-        class tnA(abstract.Component):
+        class tnA(bootsteps.Component):
             name = "test_Namespace.A"
 
-        class tnB(abstract.Component):
+        class tnB(bootsteps.Component):
             name = "test_Namespace.B"
 
-        class xxA(abstract.Component):
+        class xxA(bootsteps.Component):
             name = "xx.A"
 
         self.assertIn("A", self.NS._unclaimed["test_Namespace"])
@@ -172,24 +172,24 @@ class test_Namespace(AppCase):
 
     def test_apply(self):
 
-        class MyNS(abstract.Namespace):
+        class MyNS(bootsteps.Namespace):
             name = "test_apply"
 
             def modules(self):
                 return ["A", "B"]
 
-        class A(abstract.Component):
+        class A(bootsteps.Component):
             name = "test_apply.A"
             requires = ["C"]
 
-        class B(abstract.Component):
+        class B(bootsteps.Component):
             name = "test_apply.B"
 
-        class C(abstract.Component):
+        class C(bootsteps.Component):
             name = "test_apply.C"
             requires = ["B"]
 
-        class D(abstract.Component):
+        class D(bootsteps.Component):
             name = "test_apply.D"
             last = True
 
@@ -217,7 +217,7 @@ class test_Namespace(AppCase):
 
     def test_find_last_but_no_components(self):
 
-        class MyNS(abstract.Namespace):
+        class MyNS(bootsteps.Namespace):
             name = "qwejwioqjewoqiej"
 
         x = MyNS(app=self.app)

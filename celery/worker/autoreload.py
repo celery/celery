@@ -24,7 +24,7 @@ from celery.utils.imports import module_file
 from celery.utils.log import get_logger
 from celery.utils.threads import bgThread, Event
 
-from .abstract import StartStopComponent
+from .bootsteps import StartStopComponent
 
 try:                        # pragma: no cover
     import pyinotify

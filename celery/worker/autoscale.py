@@ -23,7 +23,7 @@ from celery.utils.log import get_logger
 from celery.utils.threads import bgThread
 
 from . import state
-from .abstract import StartStopComponent
+from .bootsteps import StartStopComponent
 from .hub import DummyLock
 
 logger = get_logger(__name__)
