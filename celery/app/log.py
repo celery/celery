@@ -1,3 +1,15 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.app.log
+    ~~~~~~~~~~~~~~
+
+    The Celery instances logging section: ``Celery.log``.
+
+    Sets up logging for the worker and other programs,
+    redirects stdouts, colors log output, patches logging
+    related compatibility fixes, and so on.
+
+"""
 from __future__ import absolute_import
 
 import logging

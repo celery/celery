@@ -1,4 +1,13 @@
 # -*- coding: utf-8 -*-
+"""
+    celery.backends.amqp
+    ~~~~~~~~~~~~~~~~~~~~
+
+    The AMQP result backend.
+
+    This backend publishes results as messages.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 

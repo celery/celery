@@ -5,9 +5,6 @@
 
     Utilities for functions.
 
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
-
 """
 from __future__ import absolute_import
 from __future__ import with_statement
@@ -93,10 +90,12 @@ class LRUCache(UserDict):
 
 
 def is_list(l):
+    """Returns true if object is list-like, but not a dict or string."""
     return hasattr(l, "__iter__") and not isinstance(l, (dict, basestring))
 
 
 def maybe_list(l):
+    """Returns list of one element if ``l`` is a scalar."""
     return l if l is None or is_list(l) else [l]
 
 
@@ -239,12 +238,24 @@ def mattrgetter(*attrs):
                                 for attr in attrs)
 
 
+def _add(s, x):
+    print("ADD %r" % (x, ))
+    s.add(x)
+
+
 def uniq(it):
+    """Returns all unique elements in ``it``, preserving order."""
     seen = set()
-    for obj in it:
-        if obj not in seen:
-            yield obj
-            seen.add(obj)
+    return (seen.add(obj) or obj for obj in it if obj not in seen)
+
+
+def regen(it):
+    """Regen takes any iterable, and if the object is an
+    generator it will cache the evaluated list on first access,
+    so that the generator can be "consumed" multiple times."""
+    if isinstance(it, (list, tuple)):
+        return it
+    return _regen(it)
 
 
 class _regen(UserList, list):
@@ -258,9 +269,3 @@ class _regen(UserList, list):
 
     def __iter__(self):  # needed for Python 2.5
         return iter(self.data)
-
-
-def regen(it):
-    if isinstance(it, (list, tuple)):
-        return it
-    return _regen(it)

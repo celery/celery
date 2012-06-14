@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+"""
+    celery.utils.log
+    ~~~~~~~~~~~~~~~~
+
+    Logging utilities.
+
+"""
 from __future__ import absolute_import
 
 import logging

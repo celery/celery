@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-"""camqadm
+"""
+The :program:`celery amqp` command.
 
-.. program:: camqadm
+.. program:: celery amqp
 
 """
 from __future__ import absolute_import

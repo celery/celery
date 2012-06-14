@@ -3,10 +3,7 @@
     celery.beat
     ~~~~~~~~~~~
 
-    The Celery periodic task scheduler.
-
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
+    The periodic task scheduler.
 
 """
 from __future__ import absolute_import

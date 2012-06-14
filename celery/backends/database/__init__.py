@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+"""
+    celery.backends.database
+    ~~~~~~~~~~~~~~~~~~~~~~~~
+
+    SQLAlchemy result store backend.
+
+"""
 from __future__ import absolute_import
 
 from functools import wraps

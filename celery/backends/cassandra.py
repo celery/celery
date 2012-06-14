@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
-"""celery.backends.cassandra"""
+"""
+    celery.backends.cassandra
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    Apache Cassandra result store backend.
+
+"""
 from __future__ import absolute_import
 
 try:  # pragma: no cover

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 
+.. program:: celeryd-multi
+
 Examples
 ========
 

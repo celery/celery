@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+"""
+    celery.backends.database.models
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    Database tables for the SQLAlchemy result store backend.
+
+"""
 from __future__ import absolute_import
 
 from datetime import datetime

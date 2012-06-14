@@ -8,9 +8,6 @@
     This includes the currently active and reserved tasks,
     statistics, and revoked tasks.
 
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
-
 """
 from __future__ import absolute_import
 

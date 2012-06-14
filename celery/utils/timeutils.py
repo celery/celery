@@ -3,10 +3,7 @@
     celery.utils.timeutils
     ~~~~~~~~~~~~~~~~~~~~~~
 
-    This module contains various utilities relating to dates and times.
-
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
+    This module contains various utilities related to dates and times.
 
 """
 from __future__ import absolute_import

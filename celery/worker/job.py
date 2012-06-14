@@ -6,9 +6,6 @@
     This module defines the :class:`Request` class,
     which specifies how tasks are executed.
 
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
-
 """
 from __future__ import absolute_import
 

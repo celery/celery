@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.security
+    ~~~~~~~~~~~~~~~
+
+    Module implementing the signing message serializer.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 

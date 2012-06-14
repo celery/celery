@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+"""
+
+The :program:`celery` umbrella command.
+
+.. program:: celery
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 
@@ -860,8 +867,6 @@ class CeleryCommand(BaseCommand):
                 ""
             ])
         return "\n".join(ret).strip()
-
-
 
 
 def determine_exit_status(ret):

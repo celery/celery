@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.security.certificate
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    X.509 certificates.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 

@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.contrib.bundles
+    ~~~~~~~~~~~~~~~~~~~~~~
+
+    Celery PyPI Bundles.
+
+"""
 from __future__ import absolute_import
 
 from celery import VERSION

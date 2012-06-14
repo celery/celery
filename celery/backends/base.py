@@ -1,5 +1,18 @@
 # -*- coding: utf-8 -*-
-"""celery.backends.base"""
+"""
+    celery.backends.base
+    ~~~~~~~~~~~~~~~~~~~~
+
+    Result backend base classes.
+
+    - :class:`BaseBackend` defines the interface.
+
+    - :class:`BaseDictBackend` assumes the fields are stored in a dict.
+
+    - :class:`KeyValueStoreBackend` is a common base class
+      using K/V semantics like _get and _put.
+
+"""
 from __future__ import absolute_import
 
 import time

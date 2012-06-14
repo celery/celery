@@ -1,3 +1,15 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.app.annotations
+    ~~~~~~~~~~~~~~~~~~~~~~
+
+    Annotations is a nice term for moneky patching
+    task classes in the configuration.
+
+    This prepares and performs the annotations in the
+    :setting:`CELERY_ANNOTATIONS` setting.
+
+"""
 from __future__ import absolute_import
 
 from celery.utils.functional import firstmethod, mpromise

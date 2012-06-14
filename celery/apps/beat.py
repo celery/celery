@@ -1,4 +1,15 @@
 # -*- coding: utf-8 -*-
+"""
+    celery.apps.beat
+    ~~~~~~~~~~~~~~~~
+
+    This module is the "program-version" of :mod:`celery.beat`.
+
+    It does everything necessary to run that module
+    as an actual application, like installing signal handlers
+    and so on.
+
+"""
 from __future__ import absolute_import
 
 import socket

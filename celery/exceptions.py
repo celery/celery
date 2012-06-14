@@ -3,10 +3,7 @@
     celery.exceptions
     ~~~~~~~~~~~~~~~~~
 
-    This module contains Celery-specific exceptions.
-
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
+    This module contains all exceptions used by the Celery API.
 
 """
 from __future__ import absolute_import

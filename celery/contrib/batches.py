@@ -36,9 +36,6 @@ Registering the click is done as follows:
     In the future we hope to add the ability to direct batching tasks
     to a channel with different QoS requirements than the task channel.
 
-:copyright: (c) 2009 - 2012 by Ask Solem.
-:license: BSD, see LICENSE for more details.
-
 """
 from __future__ import absolute_import
 

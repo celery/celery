@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.app.utils
+    ~~~~~~~~~~~~~~~~
+
+    App utilities: Compat settings, bugreport tool, pickling apps.
+
+"""
 from __future__ import absolute_import
 
 import os

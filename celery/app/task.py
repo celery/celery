@@ -3,10 +3,7 @@
     celery.app.task
     ~~~~~~~~~~~~~~~
 
-    Tasks Implementation.
-
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
+    Task Implementation: Task request context, and the base task class.
 
 """
 from __future__ import absolute_import

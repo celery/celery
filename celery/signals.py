@@ -3,10 +3,13 @@
     celery.signals
     ~~~~~~~~~~~~~~
 
-    See :ref:`signals`.
+    This module defines the signals (Observer pattern) sent by
+    both workers and clients.
 
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
+    Functions can be connected to these signals, and connected
+    functions are called whenever a signal is called.
+
+    See :ref:`signals` for more information.
 
 """
 from __future__ import absolute_import

@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 
-.. program:: celeryev
+The :program:`celery events` command.
+
+.. program:: celery events
 
 .. seealso::
 

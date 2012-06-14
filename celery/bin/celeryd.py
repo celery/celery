@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
-"""celeryd
+"""
 
-.. program:: celeryd
+The :program:`celery worker` command (previously known as ``celeryd``).
+
+.. program:: celery worker
 
 .. seealso::
 

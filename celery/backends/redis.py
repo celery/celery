@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+"""
+    celery.backends.redis
+    ~~~~~~~~~~~~~~~~~~~~~
+
+    Redis result store backend.
+
+"""
 from __future__ import absolute_import
 
 from kombu.utils.url import _parse_url

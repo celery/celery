@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.utils.threads
+    ~~~~~~~~~~~~~~~~~~~~
+
+    Threading utilities.
+
+"""
 from __future__ import absolute_import
 
 import os

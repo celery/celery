@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """Distributed Task Queue"""
-# :copyright: (c) 2009 - 2012 by Ask Solem.
-# :license:   BSD, see LICENSE for more details.
+# :copyright: (c) 2009 - 2012 Ask Solem and individual contributors,
+#                 All rights reserved.
+# :copyright: (c) 2012 VMware, Inc., All rights reserved.
+# :license:   BSD (3 Clause), see LICENSE for more details.
 
 from __future__ import absolute_import
 

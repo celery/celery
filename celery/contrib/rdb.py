@@ -33,9 +33,6 @@ Inspired by http://snippets.dzone.com/posts/show/7248
     The debugger will try to find an available port starting from the
     base port.  The selected port will be logged by the worker.
 
-:copyright: (c) 2009 - 2012 by Ask Solem.
-:license: BSD, see LICENSE for more details.
-
 """
 from __future__ import absolute_import
 

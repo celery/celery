@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+"""
+    celery.utils.debug
+    ~~~~~~~~~~~~~~~~~~
+
+    Utilities for debugging memory usage.
+
+"""
 from __future__ import absolute_import
 
 import os

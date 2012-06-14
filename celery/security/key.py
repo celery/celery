@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.security.key
+    ~~~~~~~~~~~~~~~~~~~
+
+    Private key for the security serializer.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 

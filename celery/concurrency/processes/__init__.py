@@ -1,4 +1,14 @@
 # -*- coding: utf-8 -*-
+"""
+    celery.concurrency.processes
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    Pool implementation using :mod:`multiprocessing`.
+
+    We use the billiard fork of multiprocessing which contains
+    numerous improvements.
+
+"""
 from __future__ import absolute_import
 
 import os

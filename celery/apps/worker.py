@@ -1,4 +1,15 @@
 # -*- coding: utf-8 -*-
+"""
+    celery.apps.worker
+    ~~~~~~~~~~~~~~~~~~
+
+    This module is the "program-version" of :mod:`celery.worker`.
+
+    It does everything necessary to run that module
+    as an actual application, like installing signal handlers,
+    platform tweaks, and so on.
+
+"""
 from __future__ import absolute_import
 
 import logging

@@ -3,10 +3,7 @@
     celery.task
     ~~~~~~~~~~~
 
-    Creating tasks, subtasks, sets and chords.
-
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
+    This is the old task module, it should not be used anymore.
 
 """
 from __future__ import absolute_import

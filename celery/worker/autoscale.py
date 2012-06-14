@@ -10,9 +10,6 @@
     The autoscale thread is only enabled if autoscale
     has been enabled on the command line.
 
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
-
 """
 from __future__ import absolute_import
 from __future__ import with_statement

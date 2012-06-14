@@ -5,10 +5,8 @@
 
     The task implementation has been moved to :mod:`celery.app.task`.
 
-    This contains the backward compatible Task class used in the old API.
-
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
+    This contains the backward compatible Task class used in the old API,
+    and shouldn't be used anymore.
 
 """
 from __future__ import absolute_import

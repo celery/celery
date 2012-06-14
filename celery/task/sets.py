@@ -1,4 +1,12 @@
 # -*- coding: utf-8 -*-
+"""
+    celery.task.sets
+    ~~~~~~~~~~~~~~~~
+
+    Old ``group`` implementation, this module should
+    not be used anymore use :func:`celery.group` instead.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 

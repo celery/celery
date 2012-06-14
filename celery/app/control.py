@@ -6,9 +6,6 @@
     Client for worker remote control commands.
     Server implementation is in :mod:`celery.worker.control`.
 
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
-
 """
 from __future__ import absolute_import
 from __future__ import with_statement
@@ -252,8 +249,6 @@ class Control(object):
 
         """
         with self.app.default_connection(connection) as conn:
-            if channel is None:
-                channel = conn.default_channel
             arguments = dict(arguments or {}, **extra_kwargs)
             return self.mailbox(conn)._broadcast(command, arguments,
                                                  destination, reply, timeout,

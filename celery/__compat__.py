@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.__compat__
+    ~~~~~~~~~~~~~~~~~
+
+    This module contains utilities to dynamically
+    recreate modules, either for lazy loading or
+    to create old modules at runtime instead of
+    having them litter the source tree.
+
+"""
 from __future__ import absolute_import
 
 import operator

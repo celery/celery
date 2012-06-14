@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+"""
+    celery.concurrency.threads
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    Pool implementation using threads.
+
+"""
 from __future__ import absolute_import
 
 from celery.utils.compat import UserDict

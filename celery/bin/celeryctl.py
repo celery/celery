@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.bin.celeryctl
+    ~~~~~~~~~~~~~~~~~~~~
+
+    Now replaced by the :program:`celery` command.
+
+"""
 from __future__ import absolute_import
 
 from celery.bin.celery import (  # noqa

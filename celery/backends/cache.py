@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+"""
+    celery.backends.cache
+    ~~~~~~~~~~~~~~~~~~~~~
+
+    Memcache and in-memory cache result backend.
+
+"""
 from __future__ import absolute_import
 
 from celery.datastructures import LRUCache

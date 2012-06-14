@@ -1,4 +1,12 @@
 # -*- coding: utf-8 -*-
+"""
+    celery.app.builtins
+    ~~~~~~~~~~~~~~~~~~~
+
+    Built-in tasks that are always available in all
+    app instances. E.g. chord, group and xmap.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 

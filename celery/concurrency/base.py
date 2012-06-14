@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+"""
+    celery.concurrency.base
+    ~~~~~~~~~~~~~~~~~~~~~~~
+
+    TaskPool interface.
+
+"""
 from __future__ import absolute_import
 
 import logging

@@ -3,12 +3,9 @@
     celery.events
     ~~~~~~~~~~~~~
 
-    Events are messages sent for actions happening
+    Events is a stream of messages sent for certain actions occurring
     in the worker (and clients if :setting:`CELERY_SEND_TASK_SENT_EVENT`
     is enabled), used for monitoring purposes.
-
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
 
 """
 from __future__ import absolute_import

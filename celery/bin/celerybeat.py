@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
-"""celerybeat
+"""
 
-.. program:: celerybeat
+The :program:`celery beat` command.
+
+.. program:: celery beat
 
 .. seealso::
 

@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.utils.text
+    ~~~~~~~~~~~~~~~~~
+
+    Text formatting utilities
+
+"""
 from __future__ import absolute_import
 
 import textwrap

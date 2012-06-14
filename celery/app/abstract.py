@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.app.abstract
+    ~~~~~~~~~~~~~~~~~~~
+
+    Abstract class that takes default attribute values
+    from the configuration.
+
+"""
 from __future__ import absolute_import
 
 

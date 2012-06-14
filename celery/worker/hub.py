@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.worker.hub
+    ~~~~~~~~~~~~~~~~~
+
+    Event-loop implementation.
+
+"""
 from __future__ import absolute_import
 
 from kombu.utils import cached_property

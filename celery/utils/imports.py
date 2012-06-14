@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.utils.import
+    ~~~~~~~~~~~~~~~~~~~
+
+    Utilities related to importing modules and symbols by name.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 

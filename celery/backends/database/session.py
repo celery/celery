@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+"""
+    celery.backends.database.session
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    SQLAlchemy sessions.
+
+"""
 from __future__ import absolute_import
 
 from collections import defaultdict

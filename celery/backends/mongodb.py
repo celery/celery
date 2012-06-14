@@ -1,6 +1,11 @@
-
 # -*- coding: utf-8 -*-
-"""MongoDB backend for celery."""
+"""
+    celery.backends.mongodb
+    ~~~~~~~~~~~~~~~~~~~~~~~
+
+    MongoDB result store backend.
+
+"""
 from __future__ import absolute_import
 
 from datetime import datetime
