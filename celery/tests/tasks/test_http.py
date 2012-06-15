@@ -42,23 +42,23 @@ def _response(res):
 
 
 def success_response(value):
-    return _response(dumps({"status": "success", "retval": value}))
+    return _response(dumps({'status': 'success', 'retval': value}))
 
 
 def fail_response(reason):
-    return _response(dumps({"status": "failure", "reason": reason}))
+    return _response(dumps({'status': 'failure', 'reason': reason}))
 
 
 def unknown_response():
-    return _response(dumps({"status": "u.u.u.u", "retval": True}))
+    return _response(dumps({'status': 'u.u.u.u', 'retval': True}))
 
 
 class test_encodings(Case):
 
     def test_utf8dict(self):
-        uk = "foobar"
-        d = {u"følelser ær langé": u"ærbadægzaååÆØÅ",
-             from_utf8(uk): from_utf8("xuzzybaz")}
+        uk = 'foobar'
+        d = {u'følelser ær langé': u'ærbadægzaååÆØÅ',
+             from_utf8(uk): from_utf8('xuzzybaz')}
 
         for key, value in http.utf8dict(d.items()).items():
             self.assertIsInstance(key, str)
@@ -68,87 +68,87 @@ class test_encodings(Case):
 class test_MutableURL(Case):
 
     def test_url_query(self):
-        url = http.MutableURL("http://example.com?x=10&y=20&z=Foo")
-        self.assertDictContainsSubset({"x": "10",
-                                       "y": "20",
-                                       "z": "Foo"}, url.query)
-        url.query["name"] = "George"
+        url = http.MutableURL('http://example.com?x=10&y=20&z=Foo')
+        self.assertDictContainsSubset({'x': '10',
+                                       'y': '20',
+                                       'z': 'Foo'}, url.query)
+        url.query['name'] = 'George'
         url = http.MutableURL(str(url))
-        self.assertDictContainsSubset({"x": "10",
-                                       "y": "20",
-                                       "z": "Foo",
-                                       "name": "George"}, url.query)
+        self.assertDictContainsSubset({'x': '10',
+                                       'y': '20',
+                                       'z': 'Foo',
+                                       'name': 'George'}, url.query)
 
     def test_url_keeps_everything(self):
-        url = "https://e.com:808/foo/bar#zeta?x=10&y=20"
+        url = 'https://e.com:808/foo/bar#zeta?x=10&y=20'
         url = http.MutableURL(url)
 
-        self.assertEqual(str(url).split("?")[0],
-            "https://e.com:808/foo/bar#zeta")
+        self.assertEqual(str(url).split('?')[0],
+            'https://e.com:808/foo/bar#zeta')
 
     def test___repr__(self):
-        url = http.MutableURL("http://e.com/foo/bar")
-        self.assertTrue(repr(url).startswith("<MutableURL: http://e.com"))
+        url = http.MutableURL('http://e.com/foo/bar')
+        self.assertTrue(repr(url).startswith('<MutableURL: http://e.com'))
 
     def test_set_query(self):
-        url = http.MutableURL("http://e.com/foo/bar/?x=10")
-        url.query = {"zzz": "xxx"}
+        url = http.MutableURL('http://e.com/foo/bar/?x=10')
+        url.query = {'zzz': 'xxx'}
         url = http.MutableURL(str(url))
-        self.assertEqual(url.query, {"zzz": "xxx"})
+        self.assertEqual(url.query, {'zzz': 'xxx'})
 
 
 class test_HttpDispatch(Case):
 
     def test_dispatch_success(self):
-        logger = logging.getLogger("celery.unittest")
+        logger = logging.getLogger('celery.unittest')
 
         with mock_urlopen(success_response(100)):
-            d = http.HttpDispatch("http://example.com/mul", "GET", {
-                                    "x": 10, "y": 10}, logger)
+            d = http.HttpDispatch('http://example.com/mul', 'GET', {
+                                    'x': 10, 'y': 10}, logger)
             self.assertEqual(d.dispatch(), 100)
 
     def test_dispatch_failure(self):
-        logger = logging.getLogger("celery.unittest")
+        logger = logging.getLogger('celery.unittest')
 
-        with mock_urlopen(fail_response("Invalid moon alignment")):
-            d = http.HttpDispatch("http://example.com/mul", "GET", {
-                                    "x": 10, "y": 10}, logger)
+        with mock_urlopen(fail_response('Invalid moon alignment')):
+            d = http.HttpDispatch('http://example.com/mul', 'GET', {
+                                    'x': 10, 'y': 10}, logger)
             with self.assertRaises(http.RemoteExecuteError):
                 d.dispatch()
 
     def test_dispatch_empty_response(self):
-        logger = logging.getLogger("celery.unittest")
+        logger = logging.getLogger('celery.unittest')
 
-        with mock_urlopen(_response("")):
-            d = http.HttpDispatch("http://example.com/mul", "GET", {
-                                    "x": 10, "y": 10}, logger)
+        with mock_urlopen(_response('')):
+            d = http.HttpDispatch('http://example.com/mul', 'GET', {
+                                    'x': 10, 'y': 10}, logger)
             with self.assertRaises(http.InvalidResponseError):
                 d.dispatch()
 
     def test_dispatch_non_json(self):
-        logger = logging.getLogger("celery.unittest")
+        logger = logging.getLogger('celery.unittest')
 
         with mock_urlopen(_response("{'#{:'''")):
-            d = http.HttpDispatch("http://example.com/mul", "GET", {
-                                    "x": 10, "y": 10}, logger)
+            d = http.HttpDispatch('http://example.com/mul', 'GET', {
+                                    'x': 10, 'y': 10}, logger)
             with self.assertRaises(http.InvalidResponseError):
                 d.dispatch()
 
     def test_dispatch_unknown_status(self):
-        logger = logging.getLogger("celery.unittest")
+        logger = logging.getLogger('celery.unittest')
 
         with mock_urlopen(unknown_response()):
-            d = http.HttpDispatch("http://example.com/mul", "GET", {
-                                    "x": 10, "y": 10}, logger)
+            d = http.HttpDispatch('http://example.com/mul', 'GET', {
+                                    'x': 10, 'y': 10}, logger)
             with self.assertRaises(http.UnknownStatusError):
                 d.dispatch()
 
     def test_dispatch_POST(self):
-        logger = logging.getLogger("celery.unittest")
+        logger = logging.getLogger('celery.unittest')
 
         with mock_urlopen(success_response(100)):
-            d = http.HttpDispatch("http://example.com/mul", "POST", {
-                                    "x": 10, "y": 10}, logger)
+            d = http.HttpDispatch('http://example.com/mul', 'POST', {
+                                    'x': 10, 'y': 10}, logger)
             self.assertEqual(d.dispatch(), 100)
 
 
@@ -157,11 +157,11 @@ class test_URL(Case):
     def test_URL_get_async(self):
         with eager_tasks():
             with mock_urlopen(success_response(100)):
-                d = http.URL("http://example.com/mul").get_async(x=10, y=10)
+                d = http.URL('http://example.com/mul').get_async(x=10, y=10)
                 self.assertEqual(d.get(), 100)
 
     def test_URL_post_async(self):
         with eager_tasks():
             with mock_urlopen(success_response(100)):
-                d = http.URL("http://example.com/mul").post_async(x=10, y=10)
+                d = http.URL('http://example.com/mul').post_async(x=10, y=10)
                 self.assertEqual(d.get(), 100)

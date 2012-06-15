@@ -16,7 +16,7 @@ def T():
 tid = uuid()
 P = TaskPool()
 hostname = socket.gethostname()
-task = {"task": T.name, "args": (), "kwargs": {}, "id": tid, "flags": 0}
+task = {'task': T.name, 'args': (), 'kwargs': {}, 'id': tid, 'flags': 0}
 app = current_app._get_current_object()
 ready_queue = Queue()
 

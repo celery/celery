@@ -17,7 +17,7 @@ class test_try_import(Case):
 
     def test_when_default(self):
         default = object()
-        self.assertIs(try_import("foobar.awqewqe.asdwqewq", default), default)
+        self.assertIs(try_import('foobar.awqewqe.asdwqewq', default), default)
 
 
 class test_Proxy(Case):
@@ -26,15 +26,15 @@ class test_Proxy(Case):
 
         def real():
             """real function"""
-            return "REAL"
+            return 'REAL'
 
-        x = Proxy(lambda: real, name="xyz")
-        self.assertEqual(x.__name__, "xyz")
+        x = Proxy(lambda: real, name='xyz')
+        self.assertEqual(x.__name__, 'xyz')
 
         y = Proxy(lambda: real)
-        self.assertEqual(y.__name__, "real")
+        self.assertEqual(y.__name__, 'real')
 
-        self.assertEqual(x.__doc__, "real function")
+        self.assertEqual(x.__doc__, 'real function')
 
         self.assertEqual(x.__class__, type(real))
         self.assertEqual(x.__dict__, real.__dict__)
@@ -64,27 +64,27 @@ class test_Proxy(Case):
         class X(object):
 
             def __unicode__(self):
-                return u"UNICODE"
+                return u'UNICODE'
 
             def __repr__(self):
-                return "REPR"
+                return 'REPR'
 
         x = Proxy(lambda: X())
-        self.assertEqual(unicode(x), u"UNICODE")
+        self.assertEqual(unicode(x), u'UNICODE')
         del(X.__unicode__)
-        self.assertEqual(unicode(x), "REPR")
+        self.assertEqual(unicode(x), 'REPR')
 
     def test_dir(self):
         if sys.version_info < (2, 6):
-            raise SkipTest("Not relevant for Py2.5")
+            raise SkipTest('Not relevant for Py2.5')
 
         class X(object):
 
             def __dir__(self):
-                return ["a", "b", "c"]
+                return ['a', 'b', 'c']
 
         x = Proxy(lambda: X())
-        self.assertListEqual(dir(x), ["a", "b", "c"])
+        self.assertListEqual(dir(x), ['a', 'b', 'c'])
 
         class Y(object):
 
@@ -95,7 +95,7 @@ class test_Proxy(Case):
 
     def test_getsetdel_attr(self):
         if sys.version_info < (2, 6):
-            raise SkipTest("Not relevant for Py2.5")
+            raise SkipTest('Not relevant for Py2.5')
 
         class X(object):
             a = 1
@@ -103,17 +103,17 @@ class test_Proxy(Case):
             c = 3
 
             def __dir__(self):
-                return ["a", "b", "c"]
+                return ['a', 'b', 'c']
 
         v = X()
 
         x = Proxy(lambda: v)
-        self.assertListEqual(x.__members__, ["a", "b", "c"])
+        self.assertListEqual(x.__members__, ['a', 'b', 'c'])
         self.assertEqual(x.a, 1)
         self.assertEqual(x.b, 2)
         self.assertEqual(x.c, 3)
 
-        setattr(x, "a", 10)
+        setattr(x, 'a', 10)
         self.assertEqual(x.a, 10)
 
         del(x.a)
@@ -122,13 +122,13 @@ class test_Proxy(Case):
     def test_dictproxy(self):
         v = {}
         x = Proxy(lambda: v)
-        x["foo"] = 42
-        self.assertEqual(x["foo"], 42)
+        x['foo'] = 42
+        self.assertEqual(x['foo'], 42)
         self.assertEqual(len(x), 1)
-        self.assertIn("foo", x)
-        del(x["foo"])
+        self.assertIn('foo', x)
+        del(x['foo'])
         with self.assertRaises(KeyError):
-            x["foo"]
+            x['foo']
         self.assertTrue(iter(x))
 
     def test_listproxy(self):

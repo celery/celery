@@ -11,11 +11,11 @@ from celery.tests.utils import Case
 class test_MagicModule(Case):
 
     def test_class_property_set_without_type(self):
-        self.assertTrue(ModernTask.__dict__["app"].__get__(CompatTask()))
+        self.assertTrue(ModernTask.__dict__['app'].__get__(CompatTask()))
 
     def test_class_property_set_on_class(self):
-        self.assertIs(ModernTask.__dict__["app"].__set__(None, None),
-                      ModernTask.__dict__["app"])
+        self.assertIs(ModernTask.__dict__['app'].__set__(None, None),
+                      ModernTask.__dict__['app'])
 
     def test_class_property_set(self):
 
@@ -23,7 +23,7 @@ class test_MagicModule(Case):
             pass
 
         app = celery.Celery(set_as_current=False)
-        ModernTask.__dict__["app"].__set__(X(), app)
+        ModernTask.__dict__['app'].__set__(X(), app)
         self.assertEqual(X.app, app)
 
     def test_dir(self):
@@ -31,14 +31,14 @@ class test_MagicModule(Case):
 
     def test_direct(self):
         import sys
-        prev_celery = sys.modules.pop("celery", None)
-        prev_task = sys.modules.pop("celery.task", None)
+        prev_celery = sys.modules.pop('celery', None)
+        prev_task = sys.modules.pop('celery.task', None)
         try:
             import celery
             self.assertTrue(celery.task)
         finally:
-            sys.modules["celery"] = prev_celery
-            sys.modules["celery.task"] = prev_task
+            sys.modules['celery'] = prev_celery
+            sys.modules['celery.task'] = prev_task
 
     def test_app_attrs(self):
         self.assertEqual(celery.task.control.broadcast,

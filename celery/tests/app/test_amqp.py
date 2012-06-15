@@ -20,7 +20,7 @@ class test_TaskProducer(AppCase):
 
     def test_declare(self):
         publisher = self.app.amqp.TaskProducer(self.app.broker_connection())
-        publisher.exchange.name = "foo"
+        publisher.exchange.name = 'foo'
         publisher.declare()
         publisher.exchange.name = None
         publisher.declare()
@@ -28,30 +28,30 @@ class test_TaskProducer(AppCase):
     def test_retry_policy(self):
         pub = self.app.amqp.TaskProducer(Mock())
         pub.channel.connection.client.declared_entities = set()
-        pub.delay_task("tasks.add", (2, 2), {},
-                       retry_policy={"frobulate": 32.4})
+        pub.delay_task('tasks.add', (2, 2), {},
+                       retry_policy={'frobulate': 32.4})
 
     def test_publish_no_retry(self):
         pub = self.app.amqp.TaskProducer(Mock())
         pub.channel.connection.client.declared_entities = set()
-        pub.delay_task("tasks.add", (2, 2), {}, retry=False, chord=123)
+        pub.delay_task('tasks.add', (2, 2), {}, retry=False, chord=123)
         self.assertFalse(pub.connection.ensure.call_count)
 
 
 class test_compat_TaskPublisher(AppCase):
 
     def test_compat_exchange_is_string(self):
-        producer = TaskPublisher(exchange="foo", app=self.app)
+        producer = TaskPublisher(exchange='foo', app=self.app)
         self.assertIsInstance(producer.exchange, Exchange)
-        self.assertEqual(producer.exchange.name, "foo")
-        self.assertEqual(producer.exchange.type, "direct")
-        producer = TaskPublisher(exchange="foo", exchange_type="topic",
+        self.assertEqual(producer.exchange.name, 'foo')
+        self.assertEqual(producer.exchange.type, 'direct')
+        producer = TaskPublisher(exchange='foo', exchange_type='topic',
                                  app=self.app)
-        self.assertEqual(producer.exchange.type, "topic")
+        self.assertEqual(producer.exchange.type, 'topic')
 
     def test_compat_exchange_is_Exchange(self):
-        producer = TaskPublisher(exchange=Exchange("foo"))
-        self.assertEqual(producer.exchange.name, "foo")
+        producer = TaskPublisher(exchange=Exchange('foo'))
+        self.assertEqual(producer.exchange.name, 'foo')
 
 
 class test_PublisherPool(AppCase):
@@ -60,10 +60,10 @@ class test_PublisherPool(AppCase):
         L = self.app.conf.BROKER_POOL_LIMIT
         self.app.conf.BROKER_POOL_LIMIT = None
         try:
-            delattr(self.app, "_pool")
+            delattr(self.app, '_pool')
         except AttributeError:
             pass
-        self.app.amqp.__dict__.pop("producer_pool", None)
+        self.app.amqp.__dict__.pop('producer_pool', None)
         try:
             pool = self.app.amqp.producer_pool
             self.assertEqual(pool.limit, self.app.pool.limit)
@@ -82,10 +82,10 @@ class test_PublisherPool(AppCase):
         L = self.app.conf.BROKER_POOL_LIMIT
         self.app.conf.BROKER_POOL_LIMIT = 2
         try:
-            delattr(self.app, "_pool")
+            delattr(self.app, '_pool')
         except AttributeError:
             pass
-        self.app.amqp.__dict__.pop("producer_pool", None)
+        self.app.amqp.__dict__.pop('producer_pool', None)
         try:
             pool = self.app.amqp.producer_pool
             self.assertEqual(pool.limit, self.app.pool.limit)
@@ -111,7 +111,7 @@ class test_Queues(AppCase):
         prev, self.app.amqp.queues._consume_from = \
                 self.app.amqp.queues._consume_from, {}
         try:
-            self.assertEqual(self.app.amqp.queues.format(), "")
+            self.assertEqual(self.app.amqp.queues.format(), '')
         finally:
             self.app.amqp.queues._consume_from = prev
 
@@ -120,18 +120,18 @@ class test_Queues(AppCase):
 
     def test_add(self):
         q = Queues()
-        q.add("foo", exchange="ex", routing_key="rk")
-        self.assertIn("foo", q)
-        self.assertIsInstance(q["foo"], Queue)
-        self.assertEqual(q["foo"].routing_key, "rk")
+        q.add('foo', exchange='ex', routing_key='rk')
+        self.assertIn('foo', q)
+        self.assertIsInstance(q['foo'], Queue)
+        self.assertEqual(q['foo'].routing_key, 'rk')
 
     def test_add_default_exchange(self):
-        ex = Exchange("fff", "fanout")
+        ex = Exchange('fff', 'fanout')
         q = Queues(default_exchange=ex)
-        q.add(Queue("foo"))
-        self.assertEqual(q["foo"].exchange, ex)
+        q.add(Queue('foo'))
+        self.assertEqual(q['foo'].exchange, ex)
 
     def test_alias(self):
         q = Queues()
-        q.add(Queue("foo", alias="barfoo"))
-        self.assertIs(q["barfoo"], q["foo"])
+        q.add(Queue('foo', alias='barfoo'))
+        self.assertIs(q['barfoo'], q['foo'])

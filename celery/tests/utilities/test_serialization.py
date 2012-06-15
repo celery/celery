@@ -9,11 +9,11 @@ from celery.tests.utils import Case, mask_modules
 class test_AAPickle(Case):
 
     def test_no_cpickle(self):
-        prev = sys.modules.pop("celery.utils.serialization", None)
+        prev = sys.modules.pop('celery.utils.serialization', None)
         try:
-            with mask_modules("cPickle"):
+            with mask_modules('cPickle'):
                 from celery.utils.serialization import pickle
                 import pickle as orig_pickle
                 self.assertIs(pickle.dumps, orig_pickle.dumps)
         finally:
-            sys.modules["celery.utils.serialization"] = prev
+            sys.modules['celery.utils.serialization'] = prev

@@ -20,8 +20,8 @@ class test_Certificate(SecurityCase):
 
     def test_invalid_certificate(self):
         self.assertRaises(TypeError, Certificate, None)
-        self.assertRaises(SecurityError, Certificate, "")
-        self.assertRaises(SecurityError, Certificate, "foo")
+        self.assertRaises(SecurityError, Certificate, '')
+        self.assertRaises(SecurityError, Certificate, 'foo')
         self.assertRaises(SecurityError, Certificate, CERT1[:20] + CERT1[21:])
         self.assertRaises(SecurityError, Certificate, KEY1)
 
@@ -51,30 +51,30 @@ class test_CertStore(SecurityCase):
 
 class test_FSCertStore(SecurityCase):
 
-    @patch("os.path.isdir")
-    @patch("glob.glob")
-    @patch("celery.security.certificate.Certificate")
+    @patch('os.path.isdir')
+    @patch('glob.glob')
+    @patch('celery.security.certificate.Certificate')
     def test_init(self, Certificate, glob, isdir):
         cert = Certificate.return_value = Mock()
         cert.has_expired.return_value = False
         isdir.return_value = True
-        glob.return_value = ["foo.cert"]
+        glob.return_value = ['foo.cert']
         with mock_open():
             cert.get_id.return_value = 1
-            x = FSCertStore("/var/certs")
+            x = FSCertStore('/var/certs')
             self.assertIn(1, x._certs)
-            glob.assert_called_with("/var/certs/*")
+            glob.assert_called_with('/var/certs/*')
 
             # they both end up with the same id
-            glob.return_value = ["foo.cert", "bar.cert"]
+            glob.return_value = ['foo.cert', 'bar.cert']
             with self.assertRaises(SecurityError):
-                x = FSCertStore("/var/certs")
-            glob.return_value = ["foo.cert"]
+                x = FSCertStore('/var/certs')
+            glob.return_value = ['foo.cert']
 
             cert.has_expired.return_value = True
             with self.assertRaises(SecurityError):
-                x = FSCertStore("/var/certs")
+                x = FSCertStore('/var/certs')
 
             isdir.return_value = False
             with self.assertRaises(SecurityError):
-                x = FSCertStore("/var/certs")
+                x = FSCertStore('/var/certs')

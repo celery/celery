@@ -173,7 +173,6 @@ Some remote control commands also have higher-level interfaces using
 
 Sending the :control:`rate_limit` command and keyword arguments::
 
-    >>> from celery.task.control import broadcast
     >>> celery.control.broadcast("rate_limit",
     ...                          arguments={"task_name": "myapp.mytask",
     ...                                     "rate_limit": "200/m"})
@@ -465,7 +464,6 @@ being imported by the worker processes:
 
 .. code-block:: python
 
-    >>> from celery.task.control import broadcast
     >>> celery.control.broadcast("pool_restart",
     ...                          arguments={"modules": ["foo", "bar"]})
 

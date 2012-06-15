@@ -26,7 +26,7 @@ def raises(exc):
 
 
 def trace(task, args=(), kwargs={}, propagate=False):
-    return eager_trace_task(task, "id-1", args, kwargs,
+    return eager_trace_task(task, 'id-1', args, kwargs,
                       propagate=propagate)
 
 
@@ -42,33 +42,33 @@ class test_trace(Case):
             trace(raises, (SystemExit(), ), {})
 
     def test_trace_RetryTaskError(self):
-        exc = RetryTaskError("foo", "bar")
+        exc = RetryTaskError('foo', 'bar')
         _, info = trace(raises, (exc, ), {})
         self.assertEqual(info.state, states.RETRY)
         self.assertIs(info.retval, exc)
 
     def test_trace_exception(self):
-        exc = KeyError("foo")
+        exc = KeyError('foo')
         _, info = trace(raises, (exc, ), {})
         self.assertEqual(info.state, states.FAILURE)
         self.assertIs(info.retval, exc)
 
     def test_trace_exception_propagate(self):
         with self.assertRaises(KeyError):
-            trace(raises, (KeyError("foo"), ), {}, propagate=True)
+            trace(raises, (KeyError('foo'), ), {}, propagate=True)
 
-    @patch("celery.task.trace.build_tracer")
-    @patch("celery.task.trace.report_internal_error")
+    @patch('celery.task.trace.build_tracer')
+    @patch('celery.task.trace.report_internal_error')
     def test_outside_body_error(self, report_internal_error, build_tracer):
         tracer = Mock()
-        tracer.side_effect = KeyError("foo")
+        tracer.side_effect = KeyError('foo')
         build_tracer.return_value = tracer
 
         @current_app.task
         def xtask():
             pass
 
-        trace_task(xtask, "uuid", (), {})
+        trace_task(xtask, 'uuid', (), {})
         self.assertTrue(report_internal_error.call_count)
         self.assertIs(xtask.__trace__, tracer)
 
@@ -76,7 +76,7 @@ class test_trace(Case):
 class test_TraceInfo(Case):
 
     class TI(TraceInfo):
-        __slots__ = TraceInfo.__slots__ + ("__dict__", )
+        __slots__ = TraceInfo.__slots__ + ('__dict__', )
 
     def test_handle_error_state(self):
         x = self.TI(states.FAILURE)

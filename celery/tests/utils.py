@@ -41,7 +41,7 @@ from .compat import catch_warnings
 class Mock(mock.Mock):
 
     def __init__(self, *args, **kwargs):
-        attrs = kwargs.pop("attrs", None) or {}
+        attrs = kwargs.pop('attrs', None) or {}
         super(Mock, self).__init__(*args, **kwargs)
         for attr_name, attr_value in attrs.items():
             setattr(self, attr_name, attr_value)
@@ -56,7 +56,7 @@ def skip_unless_module(module):
             try:
                 importlib.import_module(module)
             except ImportError:
-                raise SkipTest("Does not have %s" % (module, ))
+                raise SkipTest('Does not have %s' % (module, ))
 
             return fun(*args, **kwargs)
 
@@ -90,7 +90,7 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
                 v.__warningregistry__ = {}
         self.warnings_manager = catch_warnings(record=True)
         self.warnings = self.warnings_manager.__enter__()
-        warnings.simplefilter("always", self.expected)
+        warnings.simplefilter('always', self.expected)
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
@@ -122,10 +122,10 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
             raise self.failureException('%r does not match %r' %
                      (self.expected_regex.pattern, str(first_matching)))
         if self.obj_name:
-            raise self.failureException("%s not triggered by %s"
+            raise self.failureException('%s not triggered by %s'
                 % (exc_name, self.obj_name))
         else:
-            raise self.failureException("%s not triggered"
+            raise self.failureException('%s not triggered'
                 % exc_name)
 
 
@@ -145,21 +145,21 @@ class Case(unittest.TestCase):
             if key not in actual:
                 missing.append(key)
             elif value != actual[key]:
-                mismatched.append("%s, expected: %s, actual: %s" % (
+                mismatched.append('%s, expected: %s, actual: %s' % (
                     safe_repr(key), safe_repr(value),
                     safe_repr(actual[key])))
 
         if not (missing or mismatched):
             return
 
-        standard_msg = ""
+        standard_msg = ''
         if missing:
-            standard_msg = "Missing: %s" % ','.join(map(safe_repr, missing))
+            standard_msg = 'Missing: %s' % ','.join(map(safe_repr, missing))
 
         if mismatched:
             if standard_msg:
-                standard_msg += "; "
-            standard_msg += "Mismatched values: %s" % (
+                standard_msg += '; '
+            standard_msg += 'Mismatched values: %s' % (
                 ','.join(mismatched))
 
         self.fail(self._formatMessage(msg, standard_msg))
@@ -296,7 +296,7 @@ def skip_if_environ(env_var_name):
         @wraps(fun)
         def _skips_if_environ(*args, **kwargs):
             if os.environ.get(env_var_name):
-                raise SkipTest("SKIP %s: %s set\n" % (
+                raise SkipTest('SKIP %s: %s set\n' % (
                     fun.__name__, env_var_name))
             return fun(*args, **kwargs)
 
@@ -306,7 +306,7 @@ def skip_if_environ(env_var_name):
 
 
 def skip_if_quick(fun):
-    return skip_if_environ("QUICKTEST")(fun)
+    return skip_if_environ('QUICKTEST')(fun)
 
 
 def _skip_test(reason, sign):
@@ -315,7 +315,7 @@ def _skip_test(reason, sign):
 
         @wraps(fun)
         def _skipped_test(*args, **kwargs):
-            raise SkipTest("%s: %s" % (sign, reason))
+            raise SkipTest('%s: %s' % (sign, reason))
 
         return _skipped_test
     return _wrap_test
@@ -323,12 +323,12 @@ def _skip_test(reason, sign):
 
 def todo(reason):
     """TODO test decorator."""
-    return _skip_test(reason, "TODO")
+    return _skip_test(reason, 'TODO')
 
 
 def skip(reason):
     """Skip test decorator."""
-    return _skip_test(reason, "SKIP")
+    return _skip_test(reason, 'SKIP')
 
 
 def skip_if(predicate, reason):
@@ -353,11 +353,11 @@ def mask_modules(*modnames):
 
     For example:
 
-        >>> with missing_modules("sys"):
+        >>> with missing_modules('sys'):
         ...     try:
         ...         import sys
         ...     except ImportError:
-        ...         print "sys not found"
+        ...         print 'sys not found'
         sys not found
 
         >>> import sys
@@ -370,7 +370,7 @@ def mask_modules(*modnames):
 
     def myimp(name, *args, **kwargs):
         if name in modnames:
-            raise ImportError("No module named %s" % name)
+            raise ImportError('No module named %s' % name)
         else:
             return realimport(name, *args, **kwargs)
 
@@ -430,10 +430,10 @@ def replace_module_value(module, name, value=None):
         except AttributeError:
             pass
 pypy_version = partial(
-    replace_module_value, sys, "pypy_version_info",
+    replace_module_value, sys, 'pypy_version_info',
 )
 platform_pyimp = partial(
-    replace_module_value, platform, "python_implementation",
+    replace_module_value, platform, 'python_implementation',
 )
 
 
@@ -502,7 +502,7 @@ def mock_context(mock, typ=Mock):
 
 @contextmanager
 def mock_open(typ=WhateverIO, side_effect=None):
-    with mock.patch("__builtin__.open") as open_:
+    with mock.patch('__builtin__.open') as open_:
         with mock_context(open_) as context:
             if side_effect is not None:
                 context.__enter__.side_effect = side_effect

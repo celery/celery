@@ -559,7 +559,7 @@ class Task(object):
         # so just raise the original exception.
         if request.called_directly:
             maybe_reraise()
-            raise exc or RetryTaskError("Task can be retried', None)
+            raise exc or RetryTaskError('Task can be retried', None)
 
         if delivery_info:
             options.setdefault('exchange', delivery_info.get('exchange'))

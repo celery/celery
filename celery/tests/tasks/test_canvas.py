@@ -9,11 +9,11 @@ from celery.result import EagerResult
 
 from celery.tests.utils import Case
 
-SIG = Signature({"task": "TASK",
-                 "args": ("A1", ),
-                 "kwargs": {"K1": "V1"},
-                 "options": {"task_id": "TASK_ID"},
-                 "subtask_type": ""})
+SIG = Signature({'task': 'TASK',
+                 'args': ('A1', ),
+                 'kwargs': {'K1': 'V1'},
+                 'options': {'task_id': 'TASK_ID'},
+                 'subtask_type': ''})
 
 
 @task()
@@ -41,37 +41,37 @@ class test_Signature(Case):
         self.assertTrue(Signature.subtask_type)
 
     def test_getitem_property(self):
-        self.assertEqual(SIG.task, "TASK")
-        self.assertEqual(SIG.args, ("A1", ))
-        self.assertEqual(SIG.kwargs, {"K1": "V1"})
-        self.assertEqual(SIG.options, {"task_id": "TASK_ID"})
-        self.assertEqual(SIG.subtask_type, "")
+        self.assertEqual(SIG.task, 'TASK')
+        self.assertEqual(SIG.args, ('A1', ))
+        self.assertEqual(SIG.kwargs, {'K1': 'V1'})
+        self.assertEqual(SIG.options, {'task_id': 'TASK_ID'})
+        self.assertEqual(SIG.subtask_type, '')
 
     def test_replace(self):
-        x = Signature("TASK", ("A"), {})
-        self.assertTupleEqual(x.replace(args=("B", )).args, ("B", ))
-        self.assertDictEqual(x.replace(kwargs={"FOO": "BAR"}).kwargs,
-                {"FOO": "BAR"})
-        self.assertDictEqual(x.replace(options={"task_id": "123"}).options,
-                {"task_id": "123"})
+        x = Signature('TASK', ('A'), {})
+        self.assertTupleEqual(x.replace(args=('B', )).args, ('B', ))
+        self.assertDictEqual(x.replace(kwargs={'FOO': 'BAR'}).kwargs,
+                {'FOO': 'BAR'})
+        self.assertDictEqual(x.replace(options={'task_id': '123'}).options,
+                {'task_id': '123'})
 
     def test_set(self):
-        self.assertDictEqual(Signature("TASK", x=1).set(task_id="2").options,
-                {"x": 1, "task_id": "2"})
+        self.assertDictEqual(Signature('TASK', x=1).set(task_id='2').options,
+                {'x': 1, 'task_id': '2'})
 
     def test_link(self):
         x = subtask(SIG)
         x.link(SIG)
         x.link(SIG)
-        self.assertIn(SIG, x.options["link"])
-        self.assertEqual(len(x.options["link"]), 1)
+        self.assertIn(SIG, x.options['link'])
+        self.assertEqual(len(x.options['link']), 1)
 
     def test_link_error(self):
         x = subtask(SIG)
         x.link_error(SIG)
         x.link_error(SIG)
-        self.assertIn(SIG, x.options["link_error"])
-        self.assertEqual(len(x.options["link_error"]), 1)
+        self.assertIn(SIG, x.options['link_error'])
+        self.assertEqual(len(x.options['link_error']), 1)
 
     def test_flatten_links(self):
         tasks = [add.s(2, 2), mul.s(4), div.s(2)]
@@ -151,20 +151,20 @@ class test_chord(Case):
     def test_clone_clones_body(self):
         x = chord([add.s(2, 2), add.s(4, 4)], body=mul.s(4))
         y = x.clone()
-        self.assertIsNot(x.kwargs["body"], y.kwargs["body"])
-        y.kwargs.pop("body")
+        self.assertIsNot(x.kwargs['body'], y.kwargs['body'])
+        y.kwargs.pop('body')
         z = y.clone()
-        self.assertIsNone(z.kwargs.get("body"))
+        self.assertIsNone(z.kwargs.get('body'))
 
     def test_links_to_body(self):
         x = chord([add.s(2, 2), add.s(4, 4)], body=mul.s(4))
         x.link(div.s(2))
-        self.assertFalse(x.options.get("link"))
-        self.assertTrue(x.kwargs["body"].options["link"])
+        self.assertFalse(x.options.get('link'))
+        self.assertTrue(x.kwargs['body'].options['link'])
 
         x.link_error(div.s(2))
-        self.assertFalse(x.options.get("link_error"))
-        self.assertTrue(x.kwargs["body"].options["link_error"])
+        self.assertFalse(x.options.get('link_error'))
+        self.assertTrue(x.kwargs['body'].options['link_error'])
 
         self.assertTrue(x.tasks)
         self.assertTrue(x.body)
@@ -172,5 +172,5 @@ class test_chord(Case):
     def test_repr(self):
         x = chord([add.s(2, 2), add.s(4, 4)], body=mul.s(4))
         self.assertTrue(repr(x))
-        x.kwargs["body"] = None
-        self.assertIn("without body", repr(x))
+        x.kwargs['body'] = None
+        self.assertIn('without body', repr(x))

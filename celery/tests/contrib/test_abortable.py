@@ -28,7 +28,7 @@ class test_AbortableTask(Case):
     def test_is_aborted_not_abort_result(self):
         t = MyAbortableTask()
         t.AsyncResult = AsyncResult
-        t.request.id = "foo"
+        t.request.id = 'foo'
         self.assertFalse(t.is_aborted())
 
     def test_abort_yields_aborted(self):

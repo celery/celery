@@ -19,7 +19,7 @@ def long_something():
 
 def raise_something(i):
     try:
-        raise KeyError("FOO EXCEPTION")
+        raise KeyError('FOO EXCEPTION')
     except KeyError:
         return ExceptionInfo()
 
@@ -28,9 +28,9 @@ class test_TaskPool(Case):
 
     def setUp(self):
         try:
-            __import__("multiprocessing")
+            __import__('multiprocessing')
         except ImportError:
-            raise SkipTest("multiprocessing not supported")
+            raise SkipTest('multiprocessing not supported')
         from celery.concurrency.processes import TaskPool
         self.TaskPool = TaskPool
 
@@ -48,7 +48,7 @@ class test_TaskPool(Case):
         def mycallback(ret_value):
             process = proc_counter()
             scratchpad[process] = {}
-            scratchpad[process]["ret_value"] = ret_value
+            scratchpad[process]['ret_value'] = ret_value
 
         myerrback = mycallback
 
@@ -58,26 +58,26 @@ class test_TaskPool(Case):
 
         self.assertEqual(res.get(), 100)
         time.sleep(0.5)
-        self.assertDictContainsSubset({"ret_value": 100},
+        self.assertDictContainsSubset({'ret_value': 100},
                                        scratchpad.get(0))
 
         self.assertIsInstance(res2.get(), ExceptionInfo)
         self.assertTrue(scratchpad.get(1))
         time.sleep(1)
-        self.assertIsInstance(scratchpad[1]["ret_value"],
+        self.assertIsInstance(scratchpad[1]['ret_value'],
                               ExceptionInfo)
-        self.assertEqual(scratchpad[1]["ret_value"].exception.args,
-                          ("FOO EXCEPTION", ))
+        self.assertEqual(scratchpad[1]['ret_value'].exception.args,
+                          ('FOO EXCEPTION', ))
 
         self.assertEqual(res3.get(), 400)
         time.sleep(0.5)
-        self.assertDictContainsSubset({"ret_value": 400},
+        self.assertDictContainsSubset({'ret_value': 400},
                                        scratchpad.get(2))
 
         res3 = p.apply_async(do_something, args=[30], callback=mycallback)
 
         self.assertEqual(res3.get(), 900)
         time.sleep(0.5)
-        self.assertDictContainsSubset({"ret_value": 900},
+        self.assertDictContainsSubset({'ret_value': 900},
                                        scratchpad.get(3))
         p.stop()

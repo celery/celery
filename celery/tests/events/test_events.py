@@ -25,7 +25,7 @@ class MockProducer(object):
 
     def has_event(self, kind):
         for event in self.sent:
-            if event["type"] == kind:
+            if event['type'] == kind:
                 return event
         return False
 
@@ -33,9 +33,9 @@ class MockProducer(object):
 class test_Event(AppCase):
 
     def test_constructor(self):
-        event = events.Event("world war II")
-        self.assertEqual(event["type"], "world war II")
-        self.assertTrue(event["timestamp"])
+        event = events.Event('world war II')
+        self.assertEqual(event['type'], 'world war II')
+        self.assertTrue(event['timestamp'])
 
 
 class test_EventDispatcher(AppCase):
@@ -45,18 +45,18 @@ class test_EventDispatcher(AppCase):
         eventer = self.app.events.Dispatcher(object(), enabled=False)
         eventer.publisher = producer
         eventer.enabled = True
-        eventer.send("World War II", ended=True)
-        self.assertTrue(producer.has_event("World War II"))
+        eventer.send('World War II', ended=True)
+        self.assertTrue(producer.has_event('World War II'))
         eventer.enabled = False
-        eventer.send("World War III")
-        self.assertFalse(producer.has_event("World War III"))
+        eventer.send('World War III')
+        self.assertFalse(producer.has_event('World War III'))
 
-        evs = ("Event 1", "Event 2", "Event 3")
+        evs = ('Event 1', 'Event 2', 'Event 3')
         eventer.enabled = True
         eventer.publisher.raise_on_publish = True
         eventer.buffer_while_offline = False
         with self.assertRaises(KeyError):
-            eventer.send("Event X")
+            eventer.send('Event X')
         eventer.buffer_while_offline = True
         for ev in evs:
             eventer.send(ev)
@@ -110,7 +110,7 @@ class test_EventDispatcher(AppCase):
             self.assertFalse(dispatcher.enabled)
             self.assertIsNone(dispatcher.publisher)
             self.assertFalse(dispatcher2.channel.closed,
-                             "does not close manually provided channel")
+                             'does not close manually provided channel')
 
             dispatcher.enable()
             self.assertTrue(dispatcher.enabled)
@@ -125,7 +125,7 @@ class test_EventReceiver(AppCase):
 
     def test_process(self):
 
-        message = {"type": "world-war"}
+        message = {'type': 'world-war'}
 
         got_event = [False]
 
@@ -133,16 +133,16 @@ class test_EventReceiver(AppCase):
             got_event[0] = True
 
         connection = Mock()
-        connection.transport_cls = "memory"
+        connection.transport_cls = 'memory'
         r = events.EventReceiver(connection,
-                                 handlers={"world-war": my_handler},
-                                 node_id="celery.tests")
+                                 handlers={'world-war': my_handler},
+                                 node_id='celery.tests')
         r._receive(message, object())
         self.assertTrue(got_event[0])
 
     def test_catch_all_event(self):
 
-        message = {"type": "world-war"}
+        message = {'type': 'world-war'}
 
         got_event = [False]
 
@@ -150,9 +150,9 @@ class test_EventReceiver(AppCase):
             got_event[0] = True
 
         connection = Mock()
-        connection.transport_cls = "memory"
-        r = events.EventReceiver(connection, node_id="celery.tests")
-        events.EventReceiver.handlers["*"] = my_handler
+        connection.transport_cls = 'memory'
+        r = events.EventReceiver(connection, node_id='celery.tests')
+        events.EventReceiver.handlers['*'] = my_handler
         try:
             r._receive(message, object())
             self.assertTrue(got_event[0])
@@ -162,7 +162,7 @@ class test_EventReceiver(AppCase):
     def test_itercapture(self):
         connection = self.app.broker_connection()
         try:
-            r = self.app.events.Receiver(connection, node_id="celery.tests")
+            r = self.app.events.Receiver(connection, node_id='celery.tests')
             it = r.itercapture(timeout=0.0001, wakeup=False)
             consumer = it.next()
             self.assertTrue(consumer.queues)
@@ -189,9 +189,9 @@ class test_EventReceiver(AppCase):
                                                   enabled=True,
                                                   channel=channel)
             r = self.app.events.Receiver(connection,
-                                         handlers={"*": handler},
-                                         node_id="celery.tests")
-            evs = ["ev1", "ev2", "ev3", "ev4", "ev5"]
+                                         handlers={'*': handler},
+                                         node_id='celery.tests')
+            evs = ['ev1', 'ev2', 'ev3', 'ev4', 'ev5']
             for ev in evs:
                 producer.send(ev)
             it = r.itercapture(limit=4, wakeup=True)

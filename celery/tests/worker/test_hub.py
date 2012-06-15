@@ -118,7 +118,7 @@ class test_BoundedSemaphore(Case):
 
 class test_Hub(Case):
 
-    @patch("kombu.utils.eventio.poll")
+    @patch('kombu.utils.eventio.poll')
     def test_start_stop(self, poll):
         hub = Hub()
         hub.start()

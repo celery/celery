@@ -29,8 +29,8 @@ class test_TaskFormatter(Case):
 
     def test_no_task(self):
         class Record(object):
-            msg = "hello world"
-            levelname = "info"
+            msg = 'hello world'
+            levelname = 'info'
             exc_text = exc_info = None
             stack_info = None
 
@@ -39,50 +39,50 @@ class test_TaskFormatter(Case):
         record = Record()
         x = TaskFormatter()
         x.format(record)
-        self.assertEqual(record.task_name, "???")
-        self.assertEqual(record.task_id, "???")
+        self.assertEqual(record.task_name, '???')
+        self.assertEqual(record.task_id, '???')
 
 
 class test_ColorFormatter(Case):
 
-    @patch("celery.utils.log.safe_str")
-    @patch("logging.Formatter.formatException")
+    @patch('celery.utils.log.safe_str')
+    @patch('logging.Formatter.formatException')
     def test_formatException_not_string(self, fe, safe_str):
-        x = ColorFormatter("HELLO")
+        x = ColorFormatter('HELLO')
         value = KeyError()
         fe.return_value = value
         self.assertIs(x.formatException(value), value)
         self.assertTrue(fe.called)
         self.assertFalse(safe_str.called)
 
-    @patch("logging.Formatter.formatException")
-    @patch("celery.utils.log.safe_str")
-    def test_formatException_string(self, safe_str, fe, value="HELLO"):
+    @patch('logging.Formatter.formatException')
+    @patch('celery.utils.log.safe_str')
+    def test_formatException_string(self, safe_str, fe, value='HELLO'):
         x = ColorFormatter(value)
         fe.return_value = value
         self.assertTrue(x.formatException(value))
         if sys.version_info[0] == 2:
             self.assertTrue(safe_str.called)
 
-    @patch("celery.utils.log.safe_str")
+    @patch('celery.utils.log.safe_str')
     def test_format_raises(self, safe_str):
-        x = ColorFormatter("HELLO")
+        x = ColorFormatter('HELLO')
 
         def on_safe_str(s):
             try:
-                raise ValueError("foo")
+                raise ValueError('foo')
             finally:
                 safe_str.side_effect = None
         safe_str.side_effect = on_safe_str
 
         class Record(object):
-            levelname = "ERROR"
-            msg = "HELLO"
-            exc_text = "error text"
+            levelname = 'ERROR'
+            msg = 'HELLO'
+            exc_text = 'error text'
             stack_info = None
 
             def __str__(self):
-                return on_safe_str("")
+                return on_safe_str('')
 
             def getMessage(self):
                 return self.msg
@@ -91,18 +91,18 @@ class test_ColorFormatter(Case):
         safe_str.return_value = record
 
         x.format(record)
-        self.assertIn("<Unrepresentable", record.msg)
+        self.assertIn('<Unrepresentable', record.msg)
         self.assertEqual(safe_str.call_count, 2)
 
-    @patch("celery.utils.log.safe_str")
+    @patch('celery.utils.log.safe_str')
     def test_format_raises_no_color(self, safe_str):
         if sys.version_info[0] == 3:
-            raise SkipTest("py3k")
-        x = ColorFormatter("HELLO", False)
+            raise SkipTest('py3k')
+        x = ColorFormatter('HELLO', False)
         record = Mock()
-        record.levelname = "ERROR"
-        record.msg = "HELLO"
-        record.exc_text = "error text"
+        record.levelname = 'ERROR'
+        record.msg = 'HELLO'
+        record.exc_text = 'error text'
         x.format(record)
         self.assertEqual(safe_str.call_count, 1)
 
@@ -116,7 +116,7 @@ class test_default_logger(AppCase):
         Logging._setup = False
 
     def test_get_logger_sets_parent(self):
-        logger = get_logger("celery.test_get_logger")
+        logger = get_logger('celery.test_get_logger')
         self.assertEqual(logger.parent.name, base_logger.name)
 
     def test_get_logger_root(self):
@@ -165,7 +165,7 @@ class test_default_logger(AppCase):
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
                                    root=False, colorize=None)
         self.assertIs(get_handlers(logger)[0].stream, sys.__stderr__,
-                "setup_logger logs to stderr without logfile argument.")
+                'setup_logger logs to stderr without logfile argument.')
 
     def test_setup_logger_no_handlers_stream(self):
         l = self.get_logger()
@@ -175,13 +175,13 @@ class test_default_logger(AppCase):
             stdout, stderr = outs
             l = self.setup_logger(logfile=sys.stderr, loglevel=logging.INFO,
                                 root=False)
-            l.info("The quick brown fox...")
-            self.assertIn("The quick brown fox...", stderr.getvalue())
+            l.info('The quick brown fox...')
+            self.assertIn('The quick brown fox...', stderr.getvalue())
 
     def test_setup_logger_no_handlers_file(self):
         l = self.get_logger()
         l.handlers = []
-        tempfile = mktemp(suffix="unittest", prefix="celery")
+        tempfile = mktemp(suffix='unittest', prefix='celery')
         l = self.setup_logger(logfile=tempfile, loglevel=0, root=False)
         self.assertIsInstance(get_handlers(l)[0],
                               logging.FileHandler)
@@ -192,8 +192,8 @@ class test_default_logger(AppCase):
         try:
             with wrap_logger(logger) as sio:
                 log.redirect_stdouts_to_logger(logger, loglevel=logging.ERROR)
-                logger.error("foo")
-                self.assertIn("foo", sio.getvalue())
+                logger.error('foo')
+                self.assertIn('foo', sio.getvalue())
                 log.redirect_stdouts_to_logger(logger, stdout=False,
                         stderr=False)
         finally:
@@ -206,12 +206,12 @@ class test_default_logger(AppCase):
         with wrap_logger(logger) as sio:
             p = LoggingProxy(logger, loglevel=logging.ERROR)
             p.close()
-            p.write("foo")
-            self.assertNotIn("foo", sio.getvalue())
+            p.write('foo')
+            self.assertNotIn('foo', sio.getvalue())
             p.closed = False
-            p.write("foo")
-            self.assertIn("foo", sio.getvalue())
-            lines = ["baz", "xuzzy"]
+            p.write('foo')
+            self.assertIn('foo', sio.getvalue())
+            lines = ['baz', 'xuzzy']
             p.writelines(lines)
             for line in lines:
                 self.assertIn(line, sio.getvalue())
@@ -226,7 +226,7 @@ class test_default_logger(AppCase):
         p = LoggingProxy(logger, loglevel=logging.ERROR)
         p._thread.recurse_protection = True
         try:
-            self.assertIsNone(p.write("FOOFO"))
+            self.assertIsNone(p.write('FOOFO'))
         finally:
             p._thread.recurse_protection = False
 
@@ -234,7 +234,7 @@ class test_default_logger(AppCase):
 class test_task_logger(test_default_logger):
 
     def setup(self):
-        logger = self.logger = get_logger("celery.task")
+        logger = self.logger = get_logger('celery.task')
         logger.handlers = []
         logging.root.manager.loggerDict.pop(logger.name, None)
         self.uid = uuid()

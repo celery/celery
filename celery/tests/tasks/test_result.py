@@ -36,42 +36,42 @@ def mock_task(name, state, result):
 
 def save_result(task):
     app = app_or_default()
-    traceback = "Some traceback"
-    if task["state"] == states.SUCCESS:
-        app.backend.mark_as_done(task["id"], task["result"])
-    elif task["state"] == states.RETRY:
-        app.backend.mark_as_retry(task["id"], task["result"],
+    traceback = 'Some traceback'
+    if task['state'] == states.SUCCESS:
+        app.backend.mark_as_done(task['id'], task['result'])
+    elif task['state'] == states.RETRY:
+        app.backend.mark_as_retry(task['id'], task['result'],
                 traceback=traceback)
     else:
-        app.backend.mark_as_failure(task["id"], task["result"],
+        app.backend.mark_as_failure(task['id'], task['result'],
                 traceback=traceback)
 
 
 def make_mock_group(size=10):
-    tasks = [mock_task("ts%d" % i, states.SUCCESS, i) for i in xrange(size)]
+    tasks = [mock_task('ts%d' % i, states.SUCCESS, i) for i in xrange(size)]
     [save_result(task) for task in tasks]
-    return [AsyncResult(task["id"]) for task in tasks]
+    return [AsyncResult(task['id']) for task in tasks]
 
 
 class test_AsyncResult(AppCase):
 
     def setup(self):
-        self.task1 = mock_task("task1", states.SUCCESS, "the")
-        self.task2 = mock_task("task2", states.SUCCESS, "quick")
-        self.task3 = mock_task("task3", states.FAILURE, KeyError("brown"))
-        self.task4 = mock_task("task3", states.RETRY, KeyError("red"))
+        self.task1 = mock_task('task1', states.SUCCESS, 'the')
+        self.task2 = mock_task('task2', states.SUCCESS, 'quick')
+        self.task3 = mock_task('task3', states.FAILURE, KeyError('brown'))
+        self.task4 = mock_task('task3', states.RETRY, KeyError('red'))
 
         for task in (self.task1, self.task2, self.task3, self.task4):
             save_result(task)
 
     def test_compat_properties(self):
-        x = AsyncResult("1")
+        x = AsyncResult('1')
         self.assertEqual(x.task_id, x.id)
-        x.task_id = "2"
-        self.assertEqual(x.id, "2")
+        x.task_id = '2'
+        self.assertEqual(x.id, '2')
 
     def test_children(self):
-        x = AsyncResult("1")
+        x = AsyncResult('1')
         children = [EagerResult(str(i), i, states.SUCCESS) for i in range(3)]
         x.backend = Mock()
         x.backend.get_children.return_value = children
@@ -83,16 +83,16 @@ class test_AsyncResult(AppCase):
         tid = uuid()
         x = AsyncResult(tid)
         child = [AsyncResult(uuid()).serializable() for i in xrange(10)]
-        x.backend._cache[tid] = {"children": child}
+        x.backend._cache[tid] = {'children': child}
         self.assertTrue(x.children)
         self.assertEqual(len(x.children), 10)
 
-        x.backend._cache[tid] = {"result": None}
+        x.backend._cache[tid] = {'result': None}
         self.assertIsNone(x.children)
 
     def test_build_graph_get_leaf_collect(self):
-        x = AsyncResult("1")
-        x.backend._cache["1"] = {"status": states.SUCCESS, "result": None}
+        x = AsyncResult('1')
+        x.backend._cache['1'] = {'status': states.SUCCESS, 'result': None}
         c = [EagerResult(str(i), i, states.SUCCESS) for i in range(3)]
         x.iterdeps = Mock()
         x.iterdeps.return_value = (
@@ -115,8 +115,8 @@ class test_AsyncResult(AppCase):
         ])
 
     def test_iterdeps(self):
-        x = AsyncResult("1")
-        x.backend._cache["1"] = {"status": states.SUCCESS, "result": None}
+        x = AsyncResult('1')
+        x.backend._cache['1'] = {'status': states.SUCCESS, 'result': None}
         c = [EagerResult(str(i), i, states.SUCCESS) for i in range(3)]
         for child in c:
             child.backend = Mock()
@@ -130,7 +130,7 @@ class test_AsyncResult(AppCase):
             (x, c[1]),
             (x, c[2]),
         ])
-        x.backend._cache.pop("1")
+        x.backend._cache.pop('1')
         x.ready = Mock()
         x.ready.return_value = False
         with self.assertRaises(IncompleteStream):
@@ -138,21 +138,21 @@ class test_AsyncResult(AppCase):
         list(x.iterdeps(intermediate=True))
 
     def test_eq_not_implemented(self):
-        self.assertFalse(AsyncResult("1") == object())
+        self.assertFalse(AsyncResult('1') == object())
 
     def test_reduce(self):
-        a1 = AsyncResult("uuid", task_name=mytask.name)
+        a1 = AsyncResult('uuid', task_name=mytask.name)
         restored = pickle.loads(pickle.dumps(a1))
-        self.assertEqual(restored.id, "uuid")
+        self.assertEqual(restored.id, 'uuid')
         self.assertEqual(restored.task_name, mytask.name)
 
-        a2 = AsyncResult("uuid")
-        self.assertEqual(pickle.loads(pickle.dumps(a2)).id, "uuid")
+        a2 = AsyncResult('uuid')
+        self.assertEqual(pickle.loads(pickle.dumps(a2)).id, 'uuid')
 
     def test_successful(self):
-        ok_res = AsyncResult(self.task1["id"])
-        nok_res = AsyncResult(self.task3["id"])
-        nok_res2 = AsyncResult(self.task4["id"])
+        ok_res = AsyncResult(self.task1['id'])
+        nok_res = AsyncResult(self.task3['id'])
+        nok_res2 = AsyncResult(self.task4['id'])
 
         self.assertTrue(ok_res.successful())
         self.assertFalse(nok_res.successful())
@@ -162,43 +162,43 @@ class test_AsyncResult(AppCase):
         self.assertFalse(pending_res.successful())
 
     def test_str(self):
-        ok_res = AsyncResult(self.task1["id"])
-        ok2_res = AsyncResult(self.task2["id"])
-        nok_res = AsyncResult(self.task3["id"])
-        self.assertEqual(str(ok_res), self.task1["id"])
-        self.assertEqual(str(ok2_res), self.task2["id"])
-        self.assertEqual(str(nok_res), self.task3["id"])
+        ok_res = AsyncResult(self.task1['id'])
+        ok2_res = AsyncResult(self.task2['id'])
+        nok_res = AsyncResult(self.task3['id'])
+        self.assertEqual(str(ok_res), self.task1['id'])
+        self.assertEqual(str(ok2_res), self.task2['id'])
+        self.assertEqual(str(nok_res), self.task3['id'])
 
         pending_id = uuid()
         pending_res = AsyncResult(pending_id)
         self.assertEqual(str(pending_res), pending_id)
 
     def test_repr(self):
-        ok_res = AsyncResult(self.task1["id"])
-        ok2_res = AsyncResult(self.task2["id"])
-        nok_res = AsyncResult(self.task3["id"])
-        self.assertEqual(repr(ok_res), "<AsyncResult: %s>" % (
-                self.task1["id"]))
-        self.assertEqual(repr(ok2_res), "<AsyncResult: %s>" % (
-                self.task2["id"]))
-        self.assertEqual(repr(nok_res), "<AsyncResult: %s>" % (
-                self.task3["id"]))
+        ok_res = AsyncResult(self.task1['id'])
+        ok2_res = AsyncResult(self.task2['id'])
+        nok_res = AsyncResult(self.task3['id'])
+        self.assertEqual(repr(ok_res), '<AsyncResult: %s>' % (
+                self.task1['id']))
+        self.assertEqual(repr(ok2_res), '<AsyncResult: %s>' % (
+                self.task2['id']))
+        self.assertEqual(repr(nok_res), '<AsyncResult: %s>' % (
+                self.task3['id']))
 
         pending_id = uuid()
         pending_res = AsyncResult(pending_id)
-        self.assertEqual(repr(pending_res), "<AsyncResult: %s>" % (
+        self.assertEqual(repr(pending_res), '<AsyncResult: %s>' % (
                 pending_id))
 
     def test_hash(self):
-        self.assertEqual(hash(AsyncResult("x0w991")),
-                         hash(AsyncResult("x0w991")))
-        self.assertNotEqual(hash(AsyncResult("x0w991")),
-                            hash(AsyncResult("x1w991")))
+        self.assertEqual(hash(AsyncResult('x0w991')),
+                         hash(AsyncResult('x0w991')))
+        self.assertNotEqual(hash(AsyncResult('x0w991')),
+                            hash(AsyncResult('x1w991')))
 
     def test_get_traceback(self):
-        ok_res = AsyncResult(self.task1["id"])
-        nok_res = AsyncResult(self.task3["id"])
-        nok_res2 = AsyncResult(self.task4["id"])
+        ok_res = AsyncResult(self.task1['id'])
+        nok_res = AsyncResult(self.task3['id'])
+        nok_res2 = AsyncResult(self.task4['id'])
         self.assertFalse(ok_res.traceback)
         self.assertTrue(nok_res.traceback)
         self.assertTrue(nok_res2.traceback)
@@ -207,21 +207,21 @@ class test_AsyncResult(AppCase):
         self.assertFalse(pending_res.traceback)
 
     def test_get(self):
-        ok_res = AsyncResult(self.task1["id"])
-        ok2_res = AsyncResult(self.task2["id"])
-        nok_res = AsyncResult(self.task3["id"])
-        nok2_res = AsyncResult(self.task4["id"])
+        ok_res = AsyncResult(self.task1['id'])
+        ok2_res = AsyncResult(self.task2['id'])
+        nok_res = AsyncResult(self.task3['id'])
+        nok2_res = AsyncResult(self.task4['id'])
 
-        self.assertEqual(ok_res.get(), "the")
-        self.assertEqual(ok2_res.get(), "quick")
+        self.assertEqual(ok_res.get(), 'the')
+        self.assertEqual(ok2_res.get(), 'quick')
         with self.assertRaises(KeyError):
             nok_res.get()
         self.assertTrue(nok_res.get(propagate=False))
         self.assertIsInstance(nok2_res.result, KeyError)
-        self.assertEqual(ok_res.info, "the")
+        self.assertEqual(ok_res.info, 'the')
 
     def test_get_timeout(self):
-        res = AsyncResult(self.task4["id"])             # has RETRY state
+        res = AsyncResult(self.task4['id'])             # has RETRY state
         with self.assertRaises(TimeoutError):
             res.get(timeout=0.1)
 
@@ -231,16 +231,16 @@ class test_AsyncResult(AppCase):
 
     @skip_if_quick
     def test_get_timeout_longer(self):
-        res = AsyncResult(self.task4["id"])             # has RETRY state
+        res = AsyncResult(self.task4['id'])             # has RETRY state
         with self.assertRaises(TimeoutError):
             res.get(timeout=1)
 
     def test_ready(self):
-        oks = (AsyncResult(self.task1["id"]),
-               AsyncResult(self.task2["id"]),
-               AsyncResult(self.task3["id"]))
+        oks = (AsyncResult(self.task1['id']),
+               AsyncResult(self.task2['id']),
+               AsyncResult(self.task3['id']))
         self.assertTrue(all(result.ready() for result in oks))
-        self.assertFalse(AsyncResult(self.task4["id"]).ready())
+        self.assertFalse(AsyncResult(self.task4['id']).ready())
 
         self.assertFalse(AsyncResult(uuid()).ready())
 
@@ -275,14 +275,14 @@ class test_ResultSet(AppCase):
 
     def test_add_discard(self):
         x = ResultSet([])
-        x.add(AsyncResult("1"))
-        self.assertIn(AsyncResult("1"), x.results)
-        x.discard(AsyncResult("1"))
-        x.discard(AsyncResult("1"))
-        x.discard("1")
-        self.assertNotIn(AsyncResult("1"), x.results)
+        x.add(AsyncResult('1'))
+        self.assertIn(AsyncResult('1'), x.results)
+        x.discard(AsyncResult('1'))
+        x.discard(AsyncResult('1'))
+        x.discard('1')
+        self.assertNotIn(AsyncResult('1'), x.results)
 
-        x.update([AsyncResult("2")])
+        x.update([AsyncResult('2')])
 
     def test_clear(self):
         x = ResultSet([])
@@ -295,7 +295,7 @@ class MockAsyncResultFailure(AsyncResult):
 
     @property
     def result(self):
-        return KeyError("baz")
+        return KeyError('baz')
 
     @property
     def state(self):
@@ -332,7 +332,7 @@ class SimpleBackend(object):
             self.ids = ids
 
         def get_many(self, *args, **kwargs):
-            return ((id, {"result": i}) for i, id in enumerate(self.ids))
+            return ((id, {'result': i}) for i, id in enumerate(self.ids))
 
 
 class test_TaskSetResult(AppCase):
@@ -346,8 +346,8 @@ class test_TaskSetResult(AppCase):
 
     def test_compat_properties(self):
         self.assertEqual(self.ts.taskset_id, self.ts.id)
-        self.ts.taskset_id = "foo"
-        self.assertEqual(self.ts.taskset_id, "foo")
+        self.ts.taskset_id = 'foo'
+        self.assertEqual(self.ts.taskset_id, 'foo')
 
     def test_compat_subtasks_kwarg(self):
         x = TaskSetResult(uuid(), subtasks=[1, 2, 3])
@@ -490,9 +490,9 @@ class test_failed_AsyncResult(test_GroupResult):
     def setup(self):
         self.size = 11
         subtasks = make_mock_group(10)
-        failed = mock_task("ts11", states.FAILURE, KeyError("Baz"))
+        failed = mock_task('ts11', states.FAILURE, KeyError('Baz'))
         save_result(failed)
-        failed_res = AsyncResult(failed["id"])
+        failed_res = AsyncResult(failed['id'])
         self.ts = GroupResult(uuid(), subtasks + [failed_res])
 
     def test_completed_count(self):
@@ -546,7 +546,7 @@ class test_pending_Group(AppCase):
 class RaisingTask(Task):
 
     def run(self, x, y):
-        raise KeyError("xy")
+        raise KeyError('xy')
 
 
 class test_EagerResult(AppCase):
@@ -558,13 +558,13 @@ class test_EagerResult(AppCase):
         self.assertTrue(res.wait(propagate=False))
 
     def test_wait(self):
-        res = EagerResult("x", "x", states.RETRY)
+        res = EagerResult('x', 'x', states.RETRY)
         res.wait()
         self.assertEqual(res.state, states.RETRY)
         self.assertEqual(res.status, states.RETRY)
 
     def test_forget(self):
-        res = EagerResult("x", "x", states.RETRY)
+        res = EagerResult('x', 'x', states.RETRY)
         res.forget()
 
     def test_revoke(self):

@@ -310,7 +310,7 @@ class crontab(schedule):
             if number >= max_ + min_ or number < min_:
                 raise ValueError(
                         'Invalid crontab pattern. Valid '
-                        'range is %d-%d. '%d' was found.' %
+                        "range is %d-%d. '%d' was found." %
                         (min_, max_ - 1 + min_, number))
 
         return result

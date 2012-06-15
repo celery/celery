@@ -190,7 +190,6 @@ class Control(object):
         return self.broadcast('cancel_consumer',
                 arguments={'queue': queue}, **kwargs)
 
-
     def time_limit(self, task_name, soft=None, hard=None, **kwargs):
         """Tell all (or specific) workers to set time limits for
         a task by type.

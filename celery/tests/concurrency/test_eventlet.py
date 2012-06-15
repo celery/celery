@@ -20,13 +20,13 @@ from celery.tests.utils import Case, mock_module, patch_many
 class EventletCase(Case):
 
     def setUp(self):
-        if getattr(sys, "pypy_version_info", None):
-            raise SkipTest("Does not work on PyPy")
+        if getattr(sys, 'pypy_version_info', None):
+            raise SkipTest('Does not work on PyPy')
         try:
-            self.eventlet = __import__("eventlet")
+            self.eventlet = __import__('eventlet')
         except ImportError:
             raise SkipTest(
-                "eventlet not installed, skipping related tests.")
+                'eventlet not installed, skipping related tests.')
 
 
 class test_eventlet_patch(EventletCase):
@@ -35,23 +35,23 @@ class test_eventlet_patch(EventletCase):
         monkey_patched = []
         prev_monkey_patch = self.eventlet.monkey_patch
         self.eventlet.monkey_patch = lambda: monkey_patched.append(True)
-        prev_eventlet = sys.modules.pop("celery.concurrency.eventlet", None)
-        os.environ.pop("EVENTLET_NOPATCH")
+        prev_eventlet = sys.modules.pop('celery.concurrency.eventlet', None)
+        os.environ.pop('EVENTLET_NOPATCH')
         try:
             import celery.concurrency.eventlet  # noqa
             self.assertTrue(monkey_patched)
         finally:
-            sys.modules["celery.concurrency.eventlet"] = prev_eventlet
-            os.environ["EVENTLET_NOPATCH"] = "yes"
+            sys.modules['celery.concurrency.eventlet'] = prev_eventlet
+            os.environ['EVENTLET_NOPATCH'] = 'yes'
             self.eventlet.monkey_patch = prev_monkey_patch
 
 
 eventlet_modules = (
-    "eventlet",
-    "eventlet.debug",
-    "eventlet.greenthread",
-    "eventlet.greenpool",
-    "greenlet",
+    'eventlet',
+    'eventlet.debug',
+    'eventlet.greenthread',
+    'eventlet.greenpool',
+    'greenlet',
 )
 
 
@@ -59,8 +59,8 @@ class test_Schedule(Case):
 
     def test_sched(self):
         with mock_module(*eventlet_modules):
-            with patch_many("eventlet.greenthread.spawn_after",
-                            "greenlet.GreenletExit") as (spawn_after,
+            with patch_many('eventlet.greenthread.spawn_after',
+                            'greenlet.GreenletExit') as (spawn_after,
                                                          GreenletExit):
                 x = Schedule()
                 x.GreenletExit = KeyError
@@ -85,8 +85,8 @@ class test_TasKPool(Case):
 
     def test_pool(self):
         with mock_module(*eventlet_modules):
-            with patch_many("eventlet.greenpool.GreenPool",
-                            "eventlet.greenthread") as (GreenPool,
+            with patch_many('eventlet.greenpool.GreenPool',
+                            'eventlet.greenthread') as (GreenPool,
                                                         greenthread):
                 x = TaskPool()
                 x.on_start()
@@ -96,7 +96,7 @@ class test_TasKPool(Case):
                 x.on_stop()
                 self.assertTrue(x.getpid())
 
-    @patch("celery.concurrency.eventlet.base")
+    @patch('celery.concurrency.eventlet.base')
     def test_apply_target(self, base):
         apply_target(Mock(), getpid=Mock())
         self.assertTrue(base.apply_target.called)

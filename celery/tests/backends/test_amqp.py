@@ -26,7 +26,7 @@ class SomeClass(object):
 class test_AMQPBackend(AppCase):
 
     def create_backend(self, **opts):
-        opts = dict(dict(serializer="pickle", persistent=False), **opts)
+        opts = dict(dict(serializer='pickle', persistent=False), **opts)
         return AMQPBackend(**opts)
 
     def test_mark_as_done(self):
@@ -50,12 +50,12 @@ class test_AMQPBackend(AppCase):
         tb2 = self.create_backend()
 
         tid2 = uuid()
-        result = {"foo": "baz", "bar": SomeClass(12345)}
+        result = {'foo': 'baz', 'bar': SomeClass(12345)}
         tb1.mark_as_done(tid2, result)
         # is serialized properly.
         rindb = tb2.get_result(tid2)
-        self.assertEqual(rindb.get("foo"), "baz")
-        self.assertEqual(rindb.get("bar").data, 12345)
+        self.assertEqual(rindb.get('foo'), 'baz')
+        self.assertEqual(rindb.get('bar').data, 12345)
 
     def test_mark_as_failure(self):
         tb1 = self.create_backend()
@@ -63,7 +63,7 @@ class test_AMQPBackend(AppCase):
 
         tid3 = uuid()
         try:
-            raise KeyError("foo")
+            raise KeyError('foo')
         except KeyError, exception:
             einfo = ExceptionInfo()
             tb1.mark_as_failure(tid3, exception, traceback=einfo.traceback)
@@ -75,7 +75,7 @@ class test_AMQPBackend(AppCase):
         from celery.backends.amqp import repair_uuid
         for i in range(10):
             tid = uuid()
-            self.assertEqual(repair_uuid(tid.replace("-", "")), tid)
+            self.assertEqual(repair_uuid(tid.replace('-', '')), tid)
 
     def test_expires_defaults_to_config_deprecated_setting(self):
         app = app_or_default()
@@ -83,21 +83,21 @@ class test_AMQPBackend(AppCase):
         app.conf.CELERY_AMQP_TASK_RESULT_EXPIRES = 10
         try:
             b = self.create_backend()
-            self.assertEqual(b.queue_arguments.get("x-expires"), 10 * 1000.0)
+            self.assertEqual(b.queue_arguments.get('x-expires'), 10 * 1000.0)
         finally:
             app.conf.CELERY_AMQP_TASK_RESULT_EXPIRES = prev
 
     def test_expires_is_int(self):
         b = self.create_backend(expires=48)
-        self.assertEqual(b.queue_arguments.get("x-expires"), 48 * 1000.0)
+        self.assertEqual(b.queue_arguments.get('x-expires'), 48 * 1000.0)
 
     def test_expires_is_float(self):
         b = self.create_backend(expires=48.3)
-        self.assertEqual(b.queue_arguments.get("x-expires"), 48.3 * 1000.0)
+        self.assertEqual(b.queue_arguments.get('x-expires'), 48.3 * 1000.0)
 
     def test_expires_is_timedelta(self):
         b = self.create_backend(expires=timedelta(minutes=1))
-        self.assertEqual(b.queue_arguments.get("x-expires"), 60 * 1000.0)
+        self.assertEqual(b.queue_arguments.get('x-expires'), 60 * 1000.0)
 
     @sleepdeprived()
     def test_store_result_retries(self):
@@ -108,24 +108,24 @@ class test_AMQPBackend(AppCase):
             if iterations[0] > stop_raising_at[0]:
                 return
             iterations[0] += 1
-            raise KeyError("foo")
+            raise KeyError('foo')
 
         backend = AMQPBackend()
         from celery.app.amqp import TaskProducer
         prod, TaskProducer.publish = TaskProducer.publish, publish
         try:
             with self.assertRaises(KeyError):
-                backend.retry_policy["max_retries"] = None
-                backend.store_result("foo", "bar", "STARTED")
+                backend.retry_policy['max_retries'] = None
+                backend.store_result('foo', 'bar', 'STARTED')
 
             with self.assertRaises(KeyError):
-                backend.retry_policy["max_retries"] = 10
-                backend.store_result("foo", "bar", "STARTED")
+                backend.retry_policy['max_retries'] = 10
+                backend.store_result('foo', 'bar', 'STARTED')
         finally:
             TaskProducer.publish = prod
 
     def assertState(self, retval, state):
-        self.assertEqual(retval["status"], state)
+        self.assertEqual(retval['status'], state)
 
     def test_poll_no_messages(self):
         b = self.create_backend()
@@ -138,8 +138,8 @@ class test_AMQPBackend(AppCase):
         class Message(object):
 
             def __init__(self, **merge):
-                self.payload = dict({"status": states.STARTED,
-                                     "result": None}, **merge)
+                self.payload = dict({'status': states.STARTED,
+                                     'result': None}, **merge)
 
         class MockBinding(object):
 
@@ -168,22 +168,22 @@ class test_AMQPBackend(AppCase):
         results.put(Message(status=states.STARTED, seq=2))
         results.put(Message(status=states.FAILURE, seq=3))
         r1 = backend.get_task_meta(uuid())
-        self.assertDictContainsSubset({"status": states.FAILURE,
-                                       "seq": 3}, r1,
-                                       "FFWDs to the last state")
+        self.assertDictContainsSubset({'status': states.FAILURE,
+                                       'seq': 3}, r1,
+                                       'FFWDs to the last state')
 
         # Caches last known state.
         results.put(Message())
         tid = uuid()
         backend.get_task_meta(tid)
-        self.assertIn(tid, backend._cache, "Caches last known state")
+        self.assertIn(tid, backend._cache, 'Caches last known state')
 
         # Returns cache if no new states.
         results.queue.clear()
         assert not results.qsize()
-        backend._cache[tid] = "hello"
-        self.assertEqual(backend.get_task_meta(tid), "hello",
-                         "Returns cache if no new states")
+        backend._cache[tid] = 'hello'
+        self.assertEqual(backend.get_task_meta(tid), 'hello',
+                         'Returns cache if no new states')
 
     def test_wait_for(self):
         b = self.create_backend()
@@ -201,9 +201,9 @@ class test_AMQPBackend(AppCase):
         self.assertEqual(b.wait_for(tid, timeout=1), 42)
         b.store_result(tid, 56, states.SUCCESS)
         self.assertEqual(b.wait_for(tid, timeout=1), 42,
-                         "result is cached")
+                         'result is cached')
         self.assertEqual(b.wait_for(tid, timeout=1, cache=False), 56)
-        b.store_result(tid, KeyError("foo"), states.FAILURE)
+        b.store_result(tid, KeyError('foo'), states.FAILURE)
         with self.assertRaises(KeyError):
             b.wait_for(tid, timeout=1, cache=False)
 
@@ -231,17 +231,17 @@ class test_AMQPBackend(AppCase):
             tids.append(tid)
 
         res = list(b.get_many(tids, timeout=1))
-        expected_results = [(tid, {"status": states.SUCCESS,
-                                    "result": i,
-                                    "traceback": None,
-                                    "task_id": tid,
-                                    "children": None})
+        expected_results = [(tid, {'status': states.SUCCESS,
+                                    'result': i,
+                                    'traceback': None,
+                                    'task_id': tid,
+                                    'children': None})
                                 for i, tid in enumerate(tids)]
         self.assertEqual(sorted(res), sorted(expected_results))
         self.assertDictEqual(b._cache[res[0][0]], res[0][1])
         cached_res = list(b.get_many(tids, timeout=1))
         self.assertEqual(sorted(cached_res), sorted(expected_results))
-        b._cache[res[0][0]]["status"] = states.RETRY
+        b._cache[res[0][0]]['status'] = states.RETRY
         with self.assertRaises(socket.timeout):
             list(b.get_many(tids, timeout=0.01))
 
@@ -250,22 +250,22 @@ class test_AMQPBackend(AppCase):
         class Backend(AMQPBackend):
 
             def Consumer(*args, **kwargs):
-                raise KeyError("foo")
+                raise KeyError('foo')
 
         b = Backend()
         with self.assertRaises(KeyError):
-            b.get_many(["id1"]).next()
+            b.get_many(['id1']).next()
 
     def test_test_get_many_raises_inner_block(self):
 
         class Backend(AMQPBackend):
 
             def drain_events(self, *args, **kwargs):
-                raise KeyError("foo")
+                raise KeyError('foo')
 
         b = Backend()
         with self.assertRaises(KeyError):
-            b.get_many(["id1"]).next()
+            b.get_many(['id1']).next()
 
     def test_no_expires(self):
         b = self.create_backend(expires=None)
@@ -275,7 +275,7 @@ class test_AMQPBackend(AppCase):
         try:
             b = self.create_backend(expires=None)
             with self.assertRaises(KeyError):
-                b.queue_arguments["x-expires"]
+                b.queue_arguments['x-expires']
         finally:
             app.conf.CELERY_AMQP_TASK_RESULT_EXPIRES = prev
 
@@ -284,20 +284,20 @@ class test_AMQPBackend(AppCase):
 
     def test_reload_task_result(self):
         with self.assertRaises(NotImplementedError):
-            self.create_backend().reload_task_result("x")
+            self.create_backend().reload_task_result('x')
 
     def test_reload_group_result(self):
         with self.assertRaises(NotImplementedError):
-            self.create_backend().reload_group_result("x")
+            self.create_backend().reload_group_result('x')
 
     def test_save_group(self):
         with self.assertRaises(NotImplementedError):
-            self.create_backend().save_group("x", "x")
+            self.create_backend().save_group('x', 'x')
 
     def test_restore_group(self):
         with self.assertRaises(NotImplementedError):
-            self.create_backend().restore_group("x")
+            self.create_backend().restore_group('x')
 
     def test_delete_group(self):
         with self.assertRaises(NotImplementedError):
-            self.create_backend().delete_group("x")
+            self.create_backend().delete_group('x')

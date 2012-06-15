@@ -19,7 +19,7 @@
 #    ...                           A_callback.subtask()), countdown=1)
 
 
-from celery.task import chord, subtask, task, TaskSet
+from celery import chord, task, subtask
 from celery.result import AsyncResult, ResultSet
 from collections import deque
 
@@ -30,25 +30,25 @@ def add(x, y):
 
 @task()
 def make_request(id, url):
-    print("GET %r" % (url, ))
+    print('GET %r' % (url, ))
     return url
 
 
 @task()
 def B_callback(urls, id):
-    print("batch %s done" % (id, ))
+    print('batch %s done' % (id, ))
     return urls
 
 
 @task()
 def B(id):
-    return chord(make_request.subtask((id, "%s %r" % (id, i, )))
-                    for i in xrange(10))(B_callback.subtask((id, )))
+    return chord(make_request.s(id, '%s %r' % (id, i, ))
+                    for i in xrange(10))(B_callback.s(id))
 
 
 @task()
 def A():
-    return TaskSet(B.subtask((c, )) for c in "ABCDEFGH").apply_async()
+    return group(B.s(c) for c in 'ABCDEFGH').apply_async()
 
 
 def joinall(R, timeout=None, propagate=True):
@@ -84,7 +84,7 @@ def unlock_graph(result, callback, interval=1, propagate=False,
 
 @task()
 def A_callback(res):
-    print("Everything is done: %r" % (res, ))
+    print('Everything is done: %r' % (res, ))
     return res
 
 
@@ -95,5 +95,5 @@ class chord2(object):
         self.options = options
 
     def __call__(self, body, **options):
-        body.options.setdefault("task_id", uuid())
+        body.options.setdefault('task_id', uuid())
         unlock_graph.apply_async()

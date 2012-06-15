@@ -11,4 +11,4 @@ class SecurityCase(Case):
         try:
             from OpenSSL import crypto  # noqa
         except ImportError:
-            raise SkipTest("OpenSSL.crypto not installed")
+            raise SkipTest('OpenSSL.crypto not installed')

@@ -143,7 +143,7 @@ def time_limit(panel, task_name=None, hard=None, soft=None, **kwargs):
 def dump_schedule(panel, safe=False, **kwargs):
     schedule = panel.consumer.timer.schedule
     if not schedule.queue:
-        logger.info('--Empty schedule--')
+        logger.debug('--Empty schedule--')
         return []
 
     formatitem = lambda (i, item): '%s. %s pri%s %r' % (i,
@@ -166,7 +166,7 @@ def dump_reserved(panel, safe=False, **kwargs):
     ready_queue = panel.consumer.ready_queue
     reserved = ready_queue.items
     if not reserved:
-        logger.info('--Empty queue--')
+        logger.debug('--Empty queue--')
         return []
     logger.debug('* Dump of currently reserved tasks:\n%s',
                  '\n'.join(map(safe_repr, reserved)))

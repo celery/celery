@@ -18,7 +18,7 @@ if sys.platform.startswith('java'):
         gc.collect()
         time.sleep(0.1)
 
-elif hasattr(sys, "pypy_version_info"):
+elif hasattr(sys, 'pypy_version_info'):
 
     def garbage_collect():  # noqa
         # Collecting weakreferences can take two collections on PyPy.
@@ -42,7 +42,7 @@ class Callable(object):
     def a(self, val, **kwargs):
         return val
 
-a_signal = Signal(providing_args=["val"])
+a_signal = Signal(providing_args=['val'])
 
 
 class DispatcherTests(Case):
@@ -57,16 +57,16 @@ class DispatcherTests(Case):
 
     def testExact(self):
         a_signal.connect(receiver_1_arg, sender=self)
-        expected = [(receiver_1_arg, "test")]
-        result = a_signal.send(sender=self, val="test")
+        expected = [(receiver_1_arg, 'test')]
+        result = a_signal.send(sender=self, val='test')
         self.assertEqual(result, expected)
         a_signal.disconnect(receiver_1_arg, sender=self)
         self._testIsClean(a_signal)
 
     def testIgnoredSender(self):
         a_signal.connect(receiver_1_arg)
-        expected = [(receiver_1_arg, "test")]
-        result = a_signal.send(sender=self, val="test")
+        expected = [(receiver_1_arg, 'test')]
+        result = a_signal.send(sender=self, val='test')
         self.assertEqual(result, expected)
         a_signal.disconnect(receiver_1_arg)
         self._testIsClean(a_signal)
@@ -77,7 +77,7 @@ class DispatcherTests(Case):
         expected = []
         del a
         garbage_collect()
-        result = a_signal.send(sender=self, val="test")
+        result = a_signal.send(sender=self, val='test')
         self.assertEqual(result, expected)
         self._testIsClean(a_signal)
 
@@ -89,7 +89,7 @@ class DispatcherTests(Case):
         a_signal.connect(a)
         a_signal.connect(a)
         a_signal.connect(a)
-        result = a_signal.send(sender=self, val="test")
+        result = a_signal.send(sender=self, val='test')
         self.assertEqual(len(result), 1)
         self.assertEqual(len(a_signal.receivers), 1)
         del a
@@ -105,10 +105,10 @@ class DispatcherTests(Case):
         def uid_based_receiver_2(**kwargs):
             pass
 
-        a_signal.connect(uid_based_receiver_1, dispatch_uid="uid")
-        a_signal.connect(uid_based_receiver_2, dispatch_uid="uid")
+        a_signal.connect(uid_based_receiver_1, dispatch_uid='uid')
+        a_signal.connect(uid_based_receiver_2, dispatch_uid='uid')
         self.assertEqual(len(a_signal.receivers), 1)
-        a_signal.disconnect(dispatch_uid="uid")
+        a_signal.disconnect(dispatch_uid='uid')
         self._testIsClean(a_signal)
 
     def testRobust(self):
@@ -118,7 +118,7 @@ class DispatcherTests(Case):
             raise ValueError('this')
 
         a_signal.connect(fails)
-        result = a_signal.send_robust(sender=self, val="test")
+        result = a_signal.send_robust(sender=self, val='test')
         err = result[0][1]
         self.assertTrue(isinstance(err, ValueError))
         self.assertEqual(err.args, ('this',))

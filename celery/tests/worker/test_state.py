@@ -50,7 +50,7 @@ class MyPersistent(state.Persistent):
 class test_Persistent(StateResetCase):
 
     def on_setup(self):
-        self.p = MyPersistent(filename="celery-state")
+        self.p = MyPersistent(filename='celery-state')
 
     def test_close_twice(self):
         self.p._is_open = False
@@ -61,30 +61,30 @@ class test_Persistent(StateResetCase):
         self.assertEqual(self.p.db.filename, self.p.filename)
 
     def test_save(self):
-        self.p.db["foo"] = "bar"
+        self.p.db['foo'] = 'bar'
         self.p.save()
         self.assertTrue(self.p.db.in_sync)
         self.assertTrue(self.p.db.closed)
 
     def add_revoked(self, *ids):
         for id in ids:
-            self.p.db.setdefault("revoked", LimitedSet()).add(id)
+            self.p.db.setdefault('revoked', LimitedSet()).add(id)
 
-    def test_merge(self, data=["foo", "bar", "baz"]):
+    def test_merge(self, data=['foo', 'bar', 'baz']):
         self.add_revoked(*data)
         self.p.merge(self.p.db)
         for item in data:
             self.assertIn(item, state.revoked)
 
-    def test_sync(self, data1=["foo", "bar", "baz"],
-                        data2=["baz", "ini", "koz"]):
+    def test_sync(self, data1=['foo', 'bar', 'baz'],
+                        data2=['baz', 'ini', 'koz']):
         self.add_revoked(*data1)
         for item in data2:
             state.revoked.add(item)
         self.p.sync(self.p.db)
 
         for item in data2:
-            self.assertIn(item, self.p.db["revoked"])
+            self.assertIn(item, self.p.db['revoked'])
 
 
 class SimpleReq(object):
@@ -95,20 +95,20 @@ class SimpleReq(object):
 
 class test_state(StateResetCase):
 
-    def test_accepted(self, requests=[SimpleReq("foo"),
-                                      SimpleReq("bar"),
-                                      SimpleReq("baz"),
-                                      SimpleReq("baz")]):
+    def test_accepted(self, requests=[SimpleReq('foo'),
+                                      SimpleReq('bar'),
+                                      SimpleReq('baz'),
+                                      SimpleReq('baz')]):
         for request in requests:
             state.task_accepted(request)
         for req in requests:
             self.assertIn(req, state.active_requests)
-        self.assertEqual(state.total_count["foo"], 1)
-        self.assertEqual(state.total_count["bar"], 1)
-        self.assertEqual(state.total_count["baz"], 2)
+        self.assertEqual(state.total_count['foo'], 1)
+        self.assertEqual(state.total_count['bar'], 1)
+        self.assertEqual(state.total_count['baz'], 2)
 
-    def test_ready(self, requests=[SimpleReq("foo"),
-                                   SimpleReq("bar")]):
+    def test_ready(self, requests=[SimpleReq('foo'),
+                                   SimpleReq('bar')]):
         for request in requests:
             state.task_accepted(request)
         self.assertEqual(len(state.active_requests), 2)

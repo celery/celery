@@ -48,23 +48,23 @@ class test_chunks(Case):
 class test_utils(Case):
 
     def test_is_iterable(self):
-        for a in "f", ["f"], ("f", ), {"f": "f"}:
+        for a in 'f', ['f'], ('f', ), {'f': 'f'}:
             self.assertTrue(utils.is_iterable(a))
         for b in object(), 1:
             self.assertFalse(utils.is_iterable(b))
 
     def test_padlist(self):
         self.assertListEqual(functional.padlist(
-                ["George", "Costanza", "NYC"], 3),
-                ["George", "Costanza", "NYC"])
-        self.assertListEqual(functional.padlist(["George", "Costanza"], 3),
-                ["George", "Costanza", None])
+                ['George', 'Costanza', 'NYC'], 3),
+                ['George', 'Costanza', 'NYC'])
+        self.assertListEqual(functional.padlist(['George', 'Costanza'], 3),
+                ['George', 'Costanza', None])
         self.assertListEqual(functional.padlist(
-                ["George", "Costanza", "NYC"], 4, default="Earth"),
-                ["George", "Costanza", "NYC", "Earth"])
+                ['George', 'Costanza', 'NYC'], 4, default='Earth'),
+                ['George', 'Costanza', 'NYC', 'Earth'])
 
     def test_firstmethod_AttributeError(self):
-        self.assertIsNone(functional.firstmethod("foo")([object()]))
+        self.assertIsNone(functional.firstmethod('foo')([object()]))
 
     def test_firstmethod_promises(self):
 
@@ -76,10 +76,10 @@ class test_utils(Case):
             def m(self):
                 return self.value
 
-        self.assertEqual("four", functional.firstmethod("m")([
-            A(), A(), A(), A("four"), A("five")]))
-        self.assertEqual("four", functional.firstmethod("m")([
-            A(), A(), A(), promise(lambda: A("four")), A("five")]))
+        self.assertEqual('four', functional.firstmethod('m')([
+            A(), A(), A(), A('four'), A('five')]))
+        self.assertEqual('four', functional.firstmethod('m')([
+            A(), A(), A(), promise(lambda: A('four')), A('five')]))
 
     def test_first(self):
         iterations = [0]
@@ -98,24 +98,24 @@ class test_utils(Case):
         self.assertEqual(iterations[0], 10)
 
     def test_truncate_text(self):
-        self.assertEqual(text.truncate("ABCDEFGHI", 3), "ABC...")
-        self.assertEqual(text.truncate("ABCDEFGHI", 10), "ABCDEFGHI")
+        self.assertEqual(text.truncate('ABCDEFGHI', 3), 'ABC...')
+        self.assertEqual(text.truncate('ABCDEFGHI', 10), 'ABCDEFGHI')
 
     def test_abbr(self):
-        self.assertEqual(text.abbr(None, 3), "???")
-        self.assertEqual(text.abbr("ABCDEFGHI", 6), "ABC...")
-        self.assertEqual(text.abbr("ABCDEFGHI", 20), "ABCDEFGHI")
-        self.assertEqual(text.abbr("ABCDEFGHI", 6, None), "ABCDEF")
+        self.assertEqual(text.abbr(None, 3), '???')
+        self.assertEqual(text.abbr('ABCDEFGHI', 6), 'ABC...')
+        self.assertEqual(text.abbr('ABCDEFGHI', 20), 'ABCDEFGHI')
+        self.assertEqual(text.abbr('ABCDEFGHI', 6, None), 'ABCDEF')
 
     def test_abbrtask(self):
-        self.assertEqual(text.abbrtask(None, 3), "???")
-        self.assertEqual(text.abbrtask("feeds.tasks.refresh", 10),
-                                        "[.]refresh")
-        self.assertEqual(text.abbrtask("feeds.tasks.refresh", 30),
-                                        "feeds.tasks.refresh")
+        self.assertEqual(text.abbrtask(None, 3), '???')
+        self.assertEqual(text.abbrtask('feeds.tasks.refresh', 10),
+                                        '[.]refresh')
+        self.assertEqual(text.abbrtask('feeds.tasks.refresh', 30),
+                                        'feeds.tasks.refresh')
 
     def test_pretty(self):
-        self.assertTrue(text.pretty(("a", "b", "c")))
+        self.assertTrue(text.pretty(('a', 'b', 'c')))
 
     def test_cached_property(self):
 
@@ -132,9 +132,9 @@ class test_utils(Case):
         self.assertEqual(maybe_list([1]), [1])
         self.assertIsNone(maybe_list(None))
 
-    @patch("warnings.warn")
+    @patch('warnings.warn')
     def test_warn_deprecated(self, warn):
-        utils.warn_deprecated("Foo")
+        utils.warn_deprecated('Foo')
         self.assertTrue(warn.called)
 
 
@@ -147,4 +147,4 @@ class test_mpromise(Case):
         self.assertEqual(p(), 20)
         self.assertTrue(p.evaluated)
         self.assertEqual(p(), 20)
-        self.assertEqual(repr(p), "20")
+        self.assertEqual(repr(p), '20')

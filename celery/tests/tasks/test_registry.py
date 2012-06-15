@@ -7,14 +7,14 @@ from celery.tests.utils import Case
 
 
 class MockTask(Task):
-    name = "celery.unittest.test_task"
+    name = 'celery.unittest.test_task'
 
     def run(self, **kwargs):
         return True
 
 
 class MockPeriodicTask(PeriodicTask):
-    name = "celery.unittest.test_periodic_task"
+    name = 'celery.unittest.test_periodic_task'
     run_every = 10
 
     def run(self, **kwargs):
@@ -24,7 +24,7 @@ class MockPeriodicTask(PeriodicTask):
 class test_TaskRegistry(Case):
 
     def test_NotRegistered_str(self):
-        self.assertTrue(repr(TaskRegistry.NotRegistered("tasks.add")))
+        self.assertTrue(repr(TaskRegistry.NotRegistered('tasks.add')))
 
     def assertRegisterUnregisterCls(self, r, task):
         with self.assertRaises(r.NotRegistered):
@@ -41,7 +41,7 @@ class test_TaskRegistry(Case):
     def test_task_registry(self):
         r = TaskRegistry()
         self.assertIsInstance(r, dict,
-                "TaskRegistry is mapping")
+                'TaskRegistry is mapping')
 
         self.assertRegisterUnregisterCls(r, MockTask)
         self.assertRegisterUnregisterCls(r, MockPeriodicTask)

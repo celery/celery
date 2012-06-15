@@ -15,24 +15,24 @@ from celery.concurrency.gevent import (
 
 from celery.tests.utils import Case, mock_module, patch_many
 gevent_modules = (
-    "gevent",
-    "gevent.monkey",
-    "gevent.greenlet",
-    "gevent.pool",
-    "greenlet",
+    'gevent',
+    'gevent.monkey',
+    'gevent.greenlet',
+    'gevent.pool',
+    'greenlet',
 )
 
 
 class GeventCase(Case):
 
     def setUp(self):
-        if getattr(sys, "pypy_version_info", None):
-            raise SkipTest("Does not work on PyPy")
+        if getattr(sys, 'pypy_version_info', None):
+            raise SkipTest('Does not work on PyPy')
         try:
-            self.eventlet = __import__("gevent")
+            self.eventlet = __import__('gevent')
         except ImportError:
             raise SkipTest(
-                "gevent not installed, skipping related tests.")
+                'gevent not installed, skipping related tests.')
 
 
 class test_gevent_patch(GeventCase):
@@ -43,14 +43,14 @@ class test_gevent_patch(GeventCase):
             from gevent import monkey
             prev_monkey_patch = monkey.patch_all
             monkey.patch_all = lambda: monkey_patched.append(True)
-            prev_gevent = sys.modules.pop("celery.concurrency.gevent", None)
-            os.environ.pop("GEVENT_NOPATCH")
+            prev_gevent = sys.modules.pop('celery.concurrency.gevent', None)
+            os.environ.pop('GEVENT_NOPATCH')
             try:
                 import celery.concurrency.gevent  # noqa
                 self.assertTrue(monkey_patched)
             finally:
-                sys.modules["celery.concurrency.gevent"] = prev_gevent
-                os.environ["GEVENT_NOPATCH"] = "yes"
+                sys.modules['celery.concurrency.gevent'] = prev_gevent
+                os.environ['GEVENT_NOPATCH'] = 'yes'
                 monkey.patch_all = prev_monkey_patch
 
 
@@ -58,8 +58,8 @@ class test_Schedule(Case):
 
     def test_sched(self):
         with mock_module(*gevent_modules):
-            with patch_many("gevent.greenlet",
-                    "gevent.greenlet.GreenletExit") as (greenlet,
+            with patch_many('gevent.greenlet',
+                    'gevent.greenlet.GreenletExit') as (greenlet,
                                                         GreenletExit):
                 greenlet.Greenlet = object
                 x = Schedule()
@@ -85,7 +85,7 @@ class test_TasKPool(Case):
 
     def test_pool(self):
         with mock_module(*gevent_modules):
-            with patch_many("gevent.spawn_raw", "gevent.pool.Pool") as (
+            with patch_many('gevent.spawn_raw', 'gevent.pool.Pool') as (
                     spawn_raw, Pool):
                 x = TaskPool()
                 x.on_start()

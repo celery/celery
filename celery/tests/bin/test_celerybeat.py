@@ -56,13 +56,13 @@ class MockBeat3(beatapp.Beat):
     Service = MockService
 
     def install_sync_handler(self, b):
-        raise TypeError("xxx")
+        raise TypeError('xxx')
 
 
 class test_Beat(AppCase):
 
     def test_loglevel_string(self):
-        b = beatapp.Beat(loglevel="DEBUG")
+        b = beatapp.Beat(loglevel='DEBUG')
         self.assertEqual(b.loglevel, logging.DEBUG)
 
         b2 = beatapp.Beat(loglevel=logging.DEBUG)
@@ -103,14 +103,14 @@ class test_Beat(AppCase):
         MockService.in_sync = False
         handlers = self.psig(b.install_sync_handler, clock)
         with self.assertRaises(SystemExit):
-            handlers["SIGINT"]("SIGINT", object())
+            handlers['SIGINT']('SIGINT', object())
         self.assertTrue(MockService.in_sync)
         MockService.in_sync = False
 
     def test_setup_logging(self):
         try:
             # py3k
-            delattr(sys.stdout, "logger")
+            delattr(sys.stdout, 'logger')
         except AttributeError:
             pass
         b = beatapp.Beat()
@@ -120,16 +120,16 @@ class test_Beat(AppCase):
             sys.stdout.logger
 
     @redirect_stdouts
-    @patch("celery.apps.beat.logger")
+    @patch('celery.apps.beat.logger')
     def test_logs_errors(self, logger, stdout, stderr):
         b = MockBeat3(socket_timeout=None)
         b.start_scheduler()
         self.assertTrue(logger.critical.called)
 
     @redirect_stdouts
-    @patch("celery.platforms.create_pidlock")
+    @patch('celery.platforms.create_pidlock')
     def test_use_pidfile(self, create_pidlock, stdout, stderr):
-        b = MockBeat2(pidfile="pidfilelockfilepid", socket_timeout=None)
+        b = MockBeat2(pidfile='pidfilelockfilepid', socket_timeout=None)
         b.start_scheduler()
         self.assertTrue(create_pidlock.called)
 
@@ -162,7 +162,7 @@ class test_div(AppCase):
         beatapp.Beat = self.prev
 
     def test_main(self):
-        sys.argv = [sys.argv[0], "-s", "foo"]
+        sys.argv = [sys.argv[0], '-s', 'foo']
         try:
             celerybeat_bin.main()
             self.assertTrue(MockBeat.running)
@@ -176,14 +176,14 @@ class test_div(AppCase):
         self.assertTrue(MockDaemonContext.opened)
         self.assertTrue(MockDaemonContext.closed)
 
-    @patch("os.chdir")
+    @patch('os.chdir')
     def test_prepare_preload_options(self, chdir):
         cmd = celerybeat_bin.BeatCommand()
-        cmd.prepare_preload_options({"working_directory": "/opt/Project"})
-        chdir.assert_called_with("/opt/Project")
+        cmd.prepare_preload_options({'working_directory': '/opt/Project'})
+        chdir.assert_called_with('/opt/Project')
 
     def test_parse_options(self):
         cmd = celerybeat_bin.BeatCommand()
         cmd.app = app_or_default()
-        options, args = cmd.parse_options("celerybeat", ["-s", "foo"])
-        self.assertEqual(options.schedule, "foo")
+        options, args = cmd.parse_options('celerybeat', ['-s', 'foo'])
+        self.assertEqual(options.schedule, 'foo')

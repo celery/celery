@@ -34,8 +34,8 @@ class test_WorkerComponent(AppCase):
         x.instantiate.assert_called_with(w.autoreloader_cls, w)
         self.assertIs(r, w.autoreloader)
 
-    @patch("select.kevent", create=True)
-    @patch("select.kqueue", create=True)
+    @patch('select.kevent', create=True)
+    @patch('select.kqueue', create=True)
     def test_create_ev(self, kqueue, kevent):
         w = Mock()
         w.use_eventloop = True
@@ -52,39 +52,39 @@ class test_file_hash(Case):
 
     def test_hash(self):
         with mock_open() as a:
-            a.write("the quick brown fox\n")
+            a.write('the quick brown fox\n')
             a.seek(0)
-            A = file_hash("foo")
+            A = file_hash('foo')
         with mock_open() as b:
-            b.write("the quick brown bar\n")
+            b.write('the quick brown bar\n')
             b.seek(0)
-            B = file_hash("bar")
+            B = file_hash('bar')
         self.assertNotEqual(A, B)
 
 
 class test_BaseMonitor(Case):
 
     def test_start_stop_on_change(self):
-        x = BaseMonitor(["a", "b"])
+        x = BaseMonitor(['a', 'b'])
 
         with self.assertRaises(NotImplementedError):
             x.start()
         x.stop()
         x.on_change([])
         x._on_change = Mock()
-        x.on_change("foo")
-        x._on_change.assert_called_with("foo")
+        x.on_change('foo')
+        x._on_change.assert_called_with('foo')
 
 
 class test_StatMonitor(Case):
 
-    @patch("os.stat")
+    @patch('os.stat')
     def test_start(self, stat):
 
         class st(object):
             st_mtime = time()
         stat.return_value = st()
-        x = StatMonitor(["a", "b"])
+        x = StatMonitor(['a', 'b'])
 
         def on_is_set():
             if x.shutdown_event.is_set.call_count > 3:
@@ -101,12 +101,12 @@ class test_StatMonitor(Case):
 
 class test_KQueueMontior(Case):
 
-    @patch("select.kqueue", create=True)
-    @patch("os.close")
+    @patch('select.kqueue', create=True)
+    @patch('os.close')
     def test_stop(self, close, kqueue):
-        x = KQueueMonitor(["a", "b"])
+        x = KQueueMonitor(['a', 'b'])
         x.poller = Mock()
-        x.filemap["a"] = 10
+        x.filemap['a'] = 10
         x.stop()
         x.poller.close.assert_called_with()
         close.assert_called_with(10)
@@ -115,16 +115,16 @@ class test_KQueueMontior(Case):
         close.side_effect.errno = errno.EBADF
         x.stop()
 
-    @patch("kombu.utils.eventio.kqueue", create=True)
-    @patch("kombu.utils.eventio.kevent", create=True)
-    @patch("os.open")
-    @patch("select.kqueue", create=True)
+    @patch('kombu.utils.eventio.kqueue', create=True)
+    @patch('kombu.utils.eventio.kevent', create=True)
+    @patch('os.open')
+    @patch('select.kqueue', create=True)
     def test_start(self, _kq, osopen, kevent, kqueue):
         from kombu.utils import eventio
         prev_poll, eventio.poll = eventio.poll, kqueue
         prev = {}
-        flags = ["KQ_FILTER_VNODE", "KQ_EV_ADD", "KQ_EV_ENABLE",
-                 "KQ_EV_CLEAR", "KQ_NOTE_WRITE", "KQ_NOTE_EXTEND"]
+        flags = ['KQ_FILTER_VNODE', 'KQ_EV_ADD', 'KQ_EV_ENABLE',
+                 'KQ_EV_CLEAR', 'KQ_NOTE_WRITE', 'KQ_NOTE_EXTEND']
         for i, flag in enumerate(flags):
             prev[flag] = getattr(eventio, flag, None)
             if not prev[flag]:
@@ -137,7 +137,7 @@ class test_KQueueMontior(Case):
                 filter = eventio.KQ_FILTER_VNODE
                 fflags = eventio.KQ_NOTE_WRITE
             kq.control.return_value = [ev()]
-            x = KQueueMonitor(["a"])
+            x = KQueueMonitor(['a'])
             osopen.return_value = 10
             calls = [0]
 
@@ -160,9 +160,9 @@ class test_KQueueMontior(Case):
 
 class test_InotifyMonitor(Case):
 
-    @patch("celery.worker.autoreload.pyinotify")
+    @patch('celery.worker.autoreload.pyinotify')
     def test_start(self, inotify):
-            x = InotifyMonitor(["a"])
+            x = InotifyMonitor(['a'])
             inotify.IN_MODIFY = 1
             inotify.IN_ATTRIB = 2
             x.start()
@@ -181,23 +181,23 @@ class test_InotifyMonitor(Case):
 
 class test_default_implementation(Case):
 
-    @patch("select.kqueue", create=True)
+    @patch('select.kqueue', create=True)
     def test_kqueue(self, kqueue):
-        self.assertEqual(default_implementation(), "kqueue")
+        self.assertEqual(default_implementation(), 'kqueue')
 
-    @patch("celery.worker.autoreload.pyinotify")
+    @patch('celery.worker.autoreload.pyinotify')
     def test_inotify(self, pyinotify):
-        kq = getattr(select, "kqueue", None)
+        kq = getattr(select, 'kqueue', None)
         try:
-            delattr(select, "kqueue")
+            delattr(select, 'kqueue')
         except AttributeError:
             pass
-        platform, sys.platform = sys.platform, "linux"
+        platform, sys.platform = sys.platform, 'linux'
         try:
-            self.assertEqual(default_implementation(), "inotify")
+            self.assertEqual(default_implementation(), 'inotify')
             ino, autoreload.pyinotify = autoreload.pyinotify, None
             try:
-                self.assertEqual(default_implementation(), "stat")
+                self.assertEqual(default_implementation(), 'stat')
             finally:
                 autoreload.pyinotify = ino
         finally:
@@ -208,7 +208,7 @@ class test_default_implementation(Case):
 
 class test_Autoreloader(AppCase):
 
-    @patch("celery.worker.autoreload.file_hash")
+    @patch('celery.worker.autoreload.file_hash')
     def test_start(self, fhash):
         x = Autoreloader(Mock(), modules=[__name__])
         x.Monitor = Mock()
@@ -222,14 +222,14 @@ class test_Autoreloader(AppCase):
         mon.start.side_effect = None
         x.body()
 
-    @patch("celery.worker.autoreload.file_hash")
+    @patch('celery.worker.autoreload.file_hash')
     def test_maybe_modified(self, fhash):
-        fhash.return_value = "abcd"
+        fhash.return_value = 'abcd'
         x = Autoreloader(Mock(), modules=[__name__])
         x._hashes = {}
-        x._hashes[__name__] = "dcba"
+        x._hashes[__name__] = 'dcba'
         self.assertTrue(x._maybe_modified(__name__))
-        x._hashes[__name__] = "abcd"
+        x._hashes[__name__] = 'abcd'
         self.assertFalse(x._maybe_modified(__name__))
 
     def test_on_change(self):
@@ -258,4 +258,4 @@ class test_Autoreloader(AppCase):
 
     def test_module_name(self):
         x = Autoreloader(Mock(), modules=[__name__])
-        self.assertEqual(x._module_name("foo/bar/baz.py"), "baz")
+        self.assertEqual(x._module_name('foo/bar/baz.py'), 'baz')

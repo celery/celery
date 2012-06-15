@@ -22,7 +22,7 @@ from celery.tests.utils import (Case, mask_modules, platform_pyimp,
 from celery.utils import uuid
 from celery.utils.mail import ErrorMail
 
-THIS_IS_A_KEY = "this is a value"
+THIS_IS_A_KEY = 'this is a value'
 
 
 class Object(object):
@@ -35,7 +35,7 @@ class Object(object):
 def _get_test_config():
     return dict((key, getattr(config, key))
                     for key in dir(config)
-                        if key.isupper() and not key.startswith("_"))
+                        if key.isupper() and not key.startswith('_'))
 
 test_config = _get_test_config()
 
@@ -56,23 +56,23 @@ class test_App(Case):
         self.app.conf.update(test_config)
 
     def test_task(self):
-        app = Celery("foozibari", set_as_current=False)
+        app = Celery('foozibari', set_as_current=False)
 
         def fun():
             pass
 
-        fun.__module__ = "__main__"
+        fun.__module__ = '__main__'
         task = app.task(fun)
-        self.assertEqual(task.name, app.main + ".fun")
+        self.assertEqual(task.name, app.main + '.fun')
 
     def test_with_broker(self):
-        prev = os.environ.get("CELERY_BROKER_URL")
-        os.environ.pop("CELERY_BROKER_URL", None)
+        prev = os.environ.get('CELERY_BROKER_URL')
+        os.environ.pop('CELERY_BROKER_URL', None)
         try:
-            app = Celery(set_as_current=False, broker="foo://baribaz")
-            self.assertEqual(app.conf.BROKER_HOST, "foo://baribaz")
+            app = Celery(set_as_current=False, broker='foo://baribaz')
+            self.assertEqual(app.conf.BROKER_HOST, 'foo://baribaz')
         finally:
-            os.environ["CELERY_BROKER_URL"] = prev
+            os.environ['CELERY_BROKER_URL'] = prev
 
     def test_repr(self):
         self.assertTrue(repr(self.app))
@@ -83,8 +83,8 @@ class test_App(Case):
         self.assertIs(app2.tasks, app1.tasks)
 
     def test_include_argument(self):
-        app = Celery(set_as_current=False, include=("foo", "bar.foo"))
-        self.assertEqual(app.conf.CELERY_IMPORTS, ("foo", "bar.foo"))
+        app = Celery(set_as_current=False, include=('foo', 'bar.foo'))
+        self.assertEqual(app.conf.CELERY_IMPORTS, ('foo', 'bar.foo'))
 
     def test_set_as_current(self):
         current = state._tls.current_app
@@ -108,7 +108,7 @@ class test_App(Case):
             state._task_stack.pop()
 
     def test_task_not_shared(self):
-        with patch("celery.app.base.shared_task") as shared_task:
+        with patch('celery.app.base.shared_task') as shared_task:
             app = Celery(set_as_current=False)
 
             @app.task(shared=False)
@@ -146,13 +146,13 @@ class test_App(Case):
         from celery.app import task as _task
         _task.MP_MAIN_FILE = __file__
         try:
-            app = Celery("xuzzy", set_as_current=False)
+            app = Celery('xuzzy', set_as_current=False)
 
             @app.task
             def foo():
                 pass
 
-            self.assertEqual(foo.name, "xuzzy.foo")
+            self.assertEqual(foo.name, 'xuzzy.foo')
         finally:
             _task.MP_MAIN_FILE = None
 
@@ -186,7 +186,7 @@ class test_App(Case):
 
         app = Celery(set_as_current=False)
         app.conf.CELERY_ANNOTATIONS = {
-                adX.name: {"@__call__": deco}
+                adX.name: {'@__call__': deco}
         }
         adX.bind(app)
         self.assertIs(adX.app, app)
@@ -201,14 +201,14 @@ class test_App(Case):
     def test_apply_async_has__self__(self):
         app = Celery(set_as_current=False)
 
-        @app.task(__self__="hello")
+        @app.task(__self__='hello')
         def aawsX():
             pass
 
-        with patch("celery.app.amqp.TaskProducer.delay_task") as dt:
+        with patch('celery.app.amqp.TaskProducer.delay_task') as dt:
             aawsX.apply_async((4, 5))
             args = dt.call_args[0][1]
-            self.assertEqual(args, ("hello", 4, 5))
+            self.assertEqual(args, ('hello', 4, 5))
 
     def test_apply_async__connection_arg(self):
         app = Celery(set_as_current=False)
@@ -217,7 +217,7 @@ class test_App(Case):
         def aacaX():
             pass
 
-        connection = app.broker_connection("asd://")
+        connection = app.broker_connection('asd://')
         with self.assertRaises(KeyError):
             aacaX.apply_async(connection=connection)
 
@@ -250,8 +250,8 @@ class test_App(Case):
         self.assertIs(ts.app, self.app)
 
     def test_pickle_app(self):
-        changes = dict(THE_FOO_BAR="bars",
-                       THE_MII_MAR="jars")
+        changes = dict(THE_FOO_BAR='bars',
+                       THE_MII_MAR='jars')
         self.app.conf.update(changes)
         saved = pickle.dumps(self.app)
         self.assertLess(len(saved), 2048)
@@ -268,15 +268,15 @@ class test_App(Case):
 
         prev, celeryd.WorkerCommand = celeryd.WorkerCommand, WorkerCommand
         try:
-            ret = self.app.worker_main(argv=["--version"])
-            self.assertListEqual(ret, ["--version"])
+            ret = self.app.worker_main(argv=['--version'])
+            self.assertListEqual(ret, ['--version'])
         finally:
             celeryd.WorkerCommand = prev
 
     def test_config_from_envvar(self):
-        os.environ["CELERYTEST_CONFIG_OBJECT"] = "celery.tests.app.test_app"
-        self.app.config_from_envvar("CELERYTEST_CONFIG_OBJECT")
-        self.assertEqual(self.app.conf.THIS_IS_A_KEY, "this is a value")
+        os.environ['CELERYTEST_CONFIG_OBJECT'] = 'celery.tests.app.test_app'
+        self.app.config_from_envvar('CELERYTEST_CONFIG_OBJECT')
+        self.assertEqual(self.app.conf.THIS_IS_A_KEY, 'this is a value')
 
     def test_config_from_object(self):
 
@@ -296,28 +296,28 @@ class test_App(Case):
         self.assertTrue(self.app.conf.UNDERSTAND_ME)
 
     def test_config_from_cmdline(self):
-        cmdline = [".always_eager=no",
-                   ".result_backend=/dev/null",
+        cmdline = ['.always_eager=no',
+                   '.result_backend=/dev/null',
                    '.task_error_whitelist=(list)["a", "b", "c"]',
-                   "celeryd.prefetch_multiplier=368",
-                   ".foobarstring=(string)300",
-                   ".foobarint=(int)300",
+                   'celeryd.prefetch_multiplier=368',
+                   '.foobarstring=(string)300',
+                   '.foobarint=(int)300',
                    '.result_engine_options=(dict){"foo": "bar"}']
-        self.app.config_from_cmdline(cmdline, namespace="celery")
+        self.app.config_from_cmdline(cmdline, namespace='celery')
         self.assertFalse(self.app.conf.CELERY_ALWAYS_EAGER)
-        self.assertEqual(self.app.conf.CELERY_RESULT_BACKEND, "/dev/null")
+        self.assertEqual(self.app.conf.CELERY_RESULT_BACKEND, '/dev/null')
         self.assertEqual(self.app.conf.CELERYD_PREFETCH_MULTIPLIER, 368)
         self.assertListEqual(self.app.conf.CELERY_TASK_ERROR_WHITELIST,
-                             ["a", "b", "c"])
-        self.assertEqual(self.app.conf.CELERY_FOOBARSTRING, "300")
+                             ['a', 'b', 'c'])
+        self.assertEqual(self.app.conf.CELERY_FOOBARSTRING, '300')
         self.assertEqual(self.app.conf.CELERY_FOOBARINT, 300)
         self.assertDictEqual(self.app.conf.CELERY_RESULT_ENGINE_OPTIONS,
-                             {"foo": "bar"})
+                             {'foo': 'bar'})
 
     def test_compat_setting_CELERY_BACKEND(self):
 
-        self.app.config_from_object(Object(CELERY_BACKEND="set_by_us"))
-        self.assertEqual(self.app.conf.CELERY_RESULT_BACKEND, "set_by_us")
+        self.app.config_from_object(Object(CELERY_BACKEND='set_by_us'))
+        self.assertEqual(self.app.conf.CELERY_RESULT_BACKEND, 'set_by_us')
 
     def test_setting_BROKER_TRANSPORT_OPTIONS(self):
 
@@ -334,8 +334,8 @@ class test_App(Case):
         self.assertFalse(self.app.log.supports_color())
 
     def test_compat_setting_CARROT_BACKEND(self):
-        self.app.config_from_object(Object(CARROT_BACKEND="set_by_us"))
-        self.assertEqual(self.app.conf.BROKER_TRANSPORT, "set_by_us")
+        self.app.config_from_object(Object(CARROT_BACKEND='set_by_us'))
+        self.assertEqual(self.app.conf.BROKER_TRANSPORT, 'set_by_us')
 
     def test_WorkController(self):
         x = self.app.WorkController
@@ -346,13 +346,13 @@ class test_App(Case):
         self.assertIs(x.app, self.app)
 
     def test_AsyncResult(self):
-        x = self.app.AsyncResult("1")
+        x = self.app.AsyncResult('1')
         self.assertIs(x.app, self.app)
         r = loads(dumps(x))
         # not set as current, so ends up as default app after reduce
         self.assertIs(r.app, state.default_app)
 
-    @patch("celery.bin.celery.CeleryCommand.execute_from_commandline")
+    @patch('celery.bin.celery.CeleryCommand.execute_from_commandline')
     def test_start(self, execute):
         self.app.start()
         self.assertTrue(execute.called)
@@ -366,23 +366,23 @@ class test_App(Case):
 
         self.app.loader = Loader()
         self.app.conf.ADMINS = None
-        self.assertFalse(self.app.mail_admins("Subject", "Body"))
-        self.app.conf.ADMINS = [("George Costanza", "george@vandelay.com")]
-        self.assertTrue(self.app.mail_admins("Subject", "Body"))
+        self.assertFalse(self.app.mail_admins('Subject', 'Body'))
+        self.app.conf.ADMINS = [('George Costanza', 'george@vandelay.com')]
+        self.assertTrue(self.app.mail_admins('Subject', 'Body'))
 
     def test_amqp_get_broker_info(self):
-        self.assertDictContainsSubset({"hostname": "localhost",
-                                       "userid": "guest",
-                                       "password": "guest",
-                                       "virtual_host": "/"},
-                            self.app.broker_connection("amqplib://").info())
+        self.assertDictContainsSubset({'hostname': 'localhost',
+                                       'userid': 'guest',
+                                       'password': 'guest',
+                                       'virtual_host': '/'},
+                            self.app.broker_connection('amqplib://').info())
         self.app.conf.BROKER_PORT = 1978
-        self.app.conf.BROKER_VHOST = "foo"
-        self.assertDictContainsSubset({"port": 1978,
-                                       "virtual_host": "foo"},
-                    self.app.broker_connection("amqplib://:1978/foo").info())
-        conn = self.app.broker_connection("amqplib:////value")
-        self.assertDictContainsSubset({"virtual_host": "/value"},
+        self.app.conf.BROKER_VHOST = 'foo'
+        self.assertDictContainsSubset({'port': 1978,
+                                       'virtual_host': 'foo'},
+                    self.app.broker_connection('amqplib://:1978/foo').info())
+        conn = self.app.broker_connection('amqplib:////value')
+        self.assertDictContainsSubset({'virtual_host': '/value'},
                                       conn.info())
 
     def test_BROKER_BACKEND_alias(self):
@@ -407,7 +407,7 @@ class test_App(Case):
         self.app._after_fork(self.app)
 
     def test_pool_no_multiprocessing(self):
-        with mask_modules("multiprocessing.util"):
+        with mask_modules('multiprocessing.util'):
             pool = self.app.pool
             self.assertIs(pool, self.app._pool)
 
@@ -425,46 +425,46 @@ class test_App(Case):
         conn = self.app.broker_connection()
         chan = conn.channel()
         try:
-            for e in ("foo_exchange", "moo_exchange", "bar_exchange"):
-                chan.exchange_declare(e, "direct", durable=True)
+            for e in ('foo_exchange', 'moo_exchange', 'bar_exchange'):
+                chan.exchange_declare(e, 'direct', durable=True)
                 chan.queue_declare(e, durable=True)
                 chan.queue_bind(e, e, e)
         finally:
             chan.close()
-        assert conn.transport_cls == "memory"
+        assert conn.transport_cls == 'memory'
 
         pub = self.app.amqp.TaskProducer(conn,
-                exchange=Exchange("foo_exchange"))
+                exchange=Exchange('foo_exchange'))
 
         dispatcher = Dispatcher()
-        self.assertTrue(pub.delay_task("footask", (), {},
-                                       exchange="moo_exchange",
-                                       routing_key="moo_exchange",
+        self.assertTrue(pub.delay_task('footask', (), {},
+                                       exchange='moo_exchange',
+                                       routing_key='moo_exchange',
                                        event_dispatcher=dispatcher))
         self.assertTrue(dispatcher.sent)
-        self.assertEqual(dispatcher.sent[0][0], "task-sent")
-        self.assertTrue(pub.delay_task("footask", (), {},
+        self.assertEqual(dispatcher.sent[0][0], 'task-sent')
+        self.assertTrue(pub.delay_task('footask', (), {},
                                        event_dispatcher=dispatcher,
-                                       exchange="bar_exchange",
-                                       routing_key="bar_exchange"))
+                                       exchange='bar_exchange',
+                                       routing_key='bar_exchange'))
 
     def test_error_mail_sender(self):
-        x = ErrorMail.subject % {"name": "task_name",
-                                 "id": uuid(),
-                                 "exc": "FOOBARBAZ",
-                                 "hostname": "lana"}
+        x = ErrorMail.subject % {'name': 'task_name',
+                                 'id': uuid(),
+                                 'exc': 'FOOBARBAZ',
+                                 'hostname': 'lana'}
         self.assertTrue(x)
 
 
 class test_defaults(Case):
 
     def test_str_to_bool(self):
-        for s in ("false", "no", "0"):
+        for s in ('false', 'no', '0'):
             self.assertFalse(defaults.strtobool(s))
-        for s in ("true", "yes", "1"):
+        for s in ('true', 'yes', '1'):
             self.assertTrue(defaults.strtobool(s))
         with self.assertRaises(TypeError):
-            defaults.strtobool("unsure")
+            defaults.strtobool('unsure')
 
 
 class test_debugging_utils(Case):
@@ -482,24 +482,24 @@ class test_debugging_utils(Case):
 class test_pyimplementation(Case):
 
     def test_platform_python_implementation(self):
-        with platform_pyimp(lambda: "Xython"):
-            self.assertEqual(pyimplementation(), "Xython")
+        with platform_pyimp(lambda: 'Xython'):
+            self.assertEqual(pyimplementation(), 'Xython')
 
     def test_platform_jython(self):
         with platform_pyimp():
-            with sys_platform("java 1.6.51"):
-                self.assertIn("Jython", pyimplementation())
+            with sys_platform('java 1.6.51'):
+                self.assertIn('Jython', pyimplementation())
 
     def test_platform_pypy(self):
         with platform_pyimp():
-            with sys_platform("darwin"):
+            with sys_platform('darwin'):
                 with pypy_version((1, 4, 3)):
-                    self.assertIn("PyPy", pyimplementation())
-                with pypy_version((1, 4, 3, "a4")):
-                    self.assertIn("PyPy", pyimplementation())
+                    self.assertIn('PyPy', pyimplementation())
+                with pypy_version((1, 4, 3, 'a4')):
+                    self.assertIn('PyPy', pyimplementation())
 
     def test_platform_fallback(self):
         with platform_pyimp():
-            with sys_platform("darwin"):
+            with sys_platform('darwin'):
                 with pypy_version():
-                    self.assertEqual("CPython", pyimplementation())
+                    self.assertEqual('CPython', pyimplementation())

@@ -6,5 +6,5 @@ import views
 # admin.autodiscover()
 
 urlpatterns = patterns('',
-        url(r'^multiply/', views.multiply, name="multiply"),
+        url(r'^multiply/', views.multiply, name='multiply'),
 )

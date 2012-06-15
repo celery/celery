@@ -468,7 +468,7 @@ class _RemoteControl(Command):
     def do_call_method(self, args, **kwargs):
         method = args[0]
         if method == 'help':
-            raise Error("Did you mean '%s --help'?' % self.name)
+            raise Error("Did you mean '%s --help'?" % self.name)
         if method not in self.choices:
             raise Error('Unknown %s method %s' % (self.name, method))
 

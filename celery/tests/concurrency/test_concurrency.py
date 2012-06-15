@@ -24,28 +24,28 @@ class test_BasePool(Case):
 
             return callback
 
-        apply_target(gen_callback("target", 42),
+        apply_target(gen_callback('target', 42),
                      args=(8, 16),
-                     callback=gen_callback("callback"),
-                     accept_callback=gen_callback("accept_callback"))
+                     callback=gen_callback('callback'),
+                     accept_callback=gen_callback('accept_callback'))
 
         self.assertDictContainsSubset({
-                              "target": (1, (8, 16)),
-                              "callback": (2, (42, ))}, scratch)
-        pa1 = scratch["accept_callback"]
+                              'target': (1, (8, 16)),
+                              'callback': (2, (42, ))}, scratch)
+        pa1 = scratch['accept_callback']
         self.assertEqual(0, pa1[0])
         self.assertEqual(pa1[1][0], os.getpid())
         self.assertTrue(pa1[1][1])
 
         # No accept callback
         scratch.clear()
-        apply_target(gen_callback("target", 42),
+        apply_target(gen_callback('target', 42),
                      args=(8, 16),
-                     callback=gen_callback("callback"),
+                     callback=gen_callback('callback'),
                      accept_callback=None)
         self.assertDictEqual(scratch,
-                              {"target": (3, (8, 16)),
-                               "callback": (4, (42, ))})
+                              {'target': (3, (8, 16)),
+                               'callback': (4, (42, ))})
 
     def test_does_not_debug(self):
         x = BasePool(10)

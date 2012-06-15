@@ -23,7 +23,7 @@ class test_backend_cleanup(Case):
     def test_run(self):
         prev = app.backend
         app.backend.cleanup = Mock()
-        app.backend.cleanup.__name__ = "cleanup"
+        app.backend.cleanup.__name__ = 'cleanup'
         try:
             cleanup_task = builtins.add_backend_cleanup_task(app)
             cleanup_task()
@@ -40,7 +40,7 @@ class test_map(Case):
         def map_mul(x):
             return x[0] * x[1]
 
-        res = app.tasks["celery.map"](map_mul, [(2, 2), (4, 4), (8, 8)])
+        res = app.tasks['celery.map'](map_mul, [(2, 2), (4, 4), (8, 8)])
         self.assertEqual(res, [4, 16, 64])
 
 
@@ -52,20 +52,20 @@ class test_starmap(Case):
         def smap_mul(x, y):
             return x * y
 
-        res = app.tasks["celery.starmap"](smap_mul, [(2, 2), (4, 4), (8, 8)])
+        res = app.tasks['celery.starmap'](smap_mul, [(2, 2), (4, 4), (8, 8)])
         self.assertEqual(res, [4, 16, 64])
 
 
 class test_chunks(Case):
 
-    @patch("celery.canvas.chunks.apply_chunks")
+    @patch('celery.canvas.chunks.apply_chunks')
     def test_run(self, apply_chunks):
 
         @app.task()
         def chunks_mul(l):
             return l
 
-        app.tasks["celery.chunks"](chunks_mul,
+        app.tasks['celery.chunks'](chunks_mul,
                 [(2, 2), (4, 4), (8, 8)], 1)
         self.assertTrue(apply_chunks.called)
 
@@ -73,11 +73,11 @@ class test_chunks(Case):
 class test_group(Case):
 
     def setUp(self):
-        self.prev = app.tasks.get("celery.group")
+        self.prev = app.tasks.get('celery.group')
         self.task = builtins.add_group_task(app)()
 
     def tearDown(self):
-        app.tasks["celery.group"] = self.prev
+        app.tasks['celery.group'] = self.prev
 
     def test_apply_async_eager(self):
         self.task.apply = Mock()
@@ -118,11 +118,11 @@ class test_group(Case):
 class test_chain(Case):
 
     def setUp(self):
-        self.prev = app.tasks.get("celery.chain")
+        self.prev = app.tasks.get('celery.chain')
         self.task = builtins.add_chain_task(app)()
 
     def tearDown(self):
-        app.tasks["celery.chain"] = self.prev
+        app.tasks['celery.chain'] = self.prev
 
     def test_apply_async(self):
         c = add.s(2, 2) | add.s(4) | add.s(8)
@@ -135,11 +135,11 @@ class test_chain(Case):
 class test_chord(Case):
 
     def setUp(self):
-        self.prev = app.tasks.get("celery.chord")
+        self.prev = app.tasks.get('celery.chord')
         self.task = builtins.add_chord_task(app)()
 
     def tearDown(self):
-        app.tasks["celery.chord"] = self.prev
+        app.tasks['celery.chord'] = self.prev
 
     def test_apply_async(self):
         x = chord([add.s(i, i) for i in xrange(10)], body=xsum.s())

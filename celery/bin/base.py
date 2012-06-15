@@ -93,6 +93,7 @@ Try --help?
 find_long_opt = re.compile(r'.+?(--.+?)(?:\s|,|$)')
 find_rst_ref = re.compile(r':\w+:`(.+?)`')
 
+
 class HelpFormatter(IndentedHelpFormatter):
 
     def format_epilog(self, epilog):

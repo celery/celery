@@ -41,14 +41,14 @@ class Object(object):
 class DummyLoader(base.BaseLoader):
 
     def read_configuration(self):
-        return {"foo": "bar", "CELERY_IMPORTS": ("os", "sys")}
+        return {'foo': 'bar', 'CELERY_IMPORTS': ('os', 'sys')}
 
 
 class test_loaders(AppCase):
 
     def test_get_loader_cls(self):
 
-        self.assertEqual(loaders.get_loader_cls("default"),
+        self.assertEqual(loaders.get_loader_cls('default'),
                           default.Loader)
 
     def test_current_loader(self):
@@ -63,26 +63,26 @@ class test_loaders(AppCase):
 
 
 class test_LoaderBase(Case):
-    message_options = {"subject": "Subject",
-                       "body": "Body",
-                       "sender": "x@x.com",
-                       "to": "y@x.com"}
-    server_options = {"host": "smtp.x.com",
-                      "port": 1234,
-                      "user": "x",
-                      "password": "qwerty",
-                      "timeout": 3}
+    message_options = {'subject': 'Subject',
+                       'body': 'Body',
+                       'sender': 'x@x.com',
+                       'to': 'y@x.com'}
+    server_options = {'host': 'smtp.x.com',
+                      'port': 1234,
+                      'user': 'x',
+                      'password': 'qwerty',
+                      'timeout': 3}
 
     def setUp(self):
         self.loader = DummyLoader()
         self.app = app_or_default()
 
     def test_handlers_pass(self):
-        self.loader.on_task_init("foo.task", "feedface-cafebabe")
+        self.loader.on_task_init('foo.task', 'feedface-cafebabe')
         self.loader.on_worker_init()
 
     def test_import_task_module(self):
-        self.assertEqual(sys, self.loader.import_task_module("sys"))
+        self.assertEqual(sys, self.loader.import_task_module('sys'))
 
     def test_init_worker_process(self):
         self.loader.on_worker_process_init()
@@ -92,18 +92,18 @@ class test_LoaderBase(Case):
 
     def test_config_from_object_module(self):
         self.loader.import_from_cwd = Mock()
-        self.loader.config_from_object("module_name")
-        self.loader.import_from_cwd.assert_called_with("module_name")
+        self.loader.config_from_object('module_name')
+        self.loader.import_from_cwd.assert_called_with('module_name')
 
     def test_conf_property(self):
-        self.assertEqual(self.loader.conf["foo"], "bar")
-        self.assertEqual(self.loader._conf["foo"], "bar")
-        self.assertEqual(self.loader.conf["foo"], "bar")
+        self.assertEqual(self.loader.conf['foo'], 'bar')
+        self.assertEqual(self.loader._conf['foo'], 'bar')
+        self.assertEqual(self.loader.conf['foo'], 'bar')
 
     def test_import_default_modules(self):
         modnames = lambda l: [m.__name__ for m in l]
         prev, self.app.conf.CELERY_IMPORTS = \
-                self.app.conf.CELERY_IMPORTS, ("os", "sys")
+                self.app.conf.CELERY_IMPORTS, ('os', 'sys')
         try:
             self.assertEqual(sorted(modnames(
                                 self.loader.import_default_modules())),
@@ -117,10 +117,10 @@ class test_LoaderBase(Case):
             imp.called = True
         imp.called = False
 
-        self.loader.import_from_cwd("foo", imp=imp)
+        self.loader.import_from_cwd('foo', imp=imp)
         self.assertTrue(imp.called)
 
-    @patch("celery.utils.mail.Mailer._send")
+    @patch('celery.utils.mail.Mailer._send')
     def test_mail_admins_errors(self, send):
         send.side_effect = KeyError()
         opts = dict(self.message_options, **self.server_options)
@@ -131,16 +131,16 @@ class test_LoaderBase(Case):
         with self.assertRaises(KeyError):
             self.loader.mail_admins(fail_silently=False, **opts)
 
-    @patch("celery.utils.mail.Mailer._send")
+    @patch('celery.utils.mail.Mailer._send')
     def test_mail_admins(self, send):
         opts = dict(self.message_options, **self.server_options)
         self.loader.mail_admins(**opts)
         self.assertTrue(send.call_args)
         message = send.call_args[0][0]
-        self.assertEqual(message.to, [self.message_options["to"]])
-        self.assertEqual(message.subject, self.message_options["subject"])
-        self.assertEqual(message.sender, self.message_options["sender"])
-        self.assertEqual(message.body, self.message_options["body"])
+        self.assertEqual(message.to, [self.message_options['to']])
+        self.assertEqual(message.subject, self.message_options['subject'])
+        self.assertEqual(message.sender, self.message_options['sender'])
+        self.assertEqual(message.body, self.message_options['body'])
 
     def test_mail_attribute(self):
         from celery.utils import mail
@@ -149,39 +149,39 @@ class test_LoaderBase(Case):
 
     def test_cmdline_config_ValueError(self):
         with self.assertRaises(ValueError):
-            self.loader.cmdline_config_parser(["broker.port=foobar"])
+            self.loader.cmdline_config_parser(['broker.port=foobar'])
 
 
 class test_DefaultLoader(Case):
 
     def test_wanted_module_item(self):
         l = default.Loader()
-        self.assertTrue(l.wanted_module_item("FOO"))
-        self.assertTrue(l.wanted_module_item("Foo"))
-        self.assertFalse(l.wanted_module_item("_FOO"))
-        self.assertFalse(l.wanted_module_item("__FOO"))
-        self.assertFalse(l.wanted_module_item("foo"))
+        self.assertTrue(l.wanted_module_item('FOO'))
+        self.assertTrue(l.wanted_module_item('Foo'))
+        self.assertFalse(l.wanted_module_item('_FOO'))
+        self.assertFalse(l.wanted_module_item('__FOO'))
+        self.assertFalse(l.wanted_module_item('foo'))
 
-    @patch("celery.loaders.default.find_module")
+    @patch('celery.loaders.default.find_module')
     def test_read_configuration_not_a_package(self, find_module):
         find_module.side_effect = NotAPackage()
         l = default.Loader()
         with self.assertRaises(NotAPackage):
             l.read_configuration()
 
-    @patch("celery.loaders.default.find_module")
+    @patch('celery.loaders.default.find_module')
     def test_read_configuration_py_in_name(self, find_module):
-        prev = os.environ["CELERY_CONFIG_MODULE"]
-        os.environ["CELERY_CONFIG_MODULE"] = "celeryconfig.py"
+        prev = os.environ['CELERY_CONFIG_MODULE']
+        os.environ['CELERY_CONFIG_MODULE'] = 'celeryconfig.py'
         try:
             find_module.side_effect = NotAPackage()
             l = default.Loader()
             with self.assertRaises(NotAPackage):
                 l.read_configuration()
         finally:
-            os.environ["CELERY_CONFIG_MODULE"] = prev
+            os.environ['CELERY_CONFIG_MODULE'] = prev
 
-    @patch("celery.loaders.default.find_module")
+    @patch('celery.loaders.default.find_module')
     def test_read_configuration_importerror(self, find_module):
         default.C_WNOCONF = True
         find_module.side_effect = ImportError()
@@ -195,18 +195,18 @@ class test_DefaultLoader(Case):
         class ConfigModule(ModuleType):
             pass
 
-        celeryconfig = ConfigModule("celeryconfig")
-        celeryconfig.CELERY_IMPORTS = ("os", "sys")
-        configname = os.environ.get("CELERY_CONFIG_MODULE") or "celeryconfig"
+        celeryconfig = ConfigModule('celeryconfig')
+        celeryconfig.CELERY_IMPORTS = ('os', 'sys')
+        configname = os.environ.get('CELERY_CONFIG_MODULE') or 'celeryconfig'
 
         prevconfig = sys.modules.get(configname)
         sys.modules[configname] = celeryconfig
         try:
             l = default.Loader()
             settings = l.read_configuration()
-            self.assertTupleEqual(settings.CELERY_IMPORTS, ("os", "sys"))
+            self.assertTupleEqual(settings.CELERY_IMPORTS, ('os', 'sys'))
             settings = l.read_configuration()
-            self.assertTupleEqual(settings.CELERY_IMPORTS, ("os", "sys"))
+            self.assertTupleEqual(settings.CELERY_IMPORTS, ('os', 'sys'))
             l.on_worker_init()
         finally:
             if prevconfig:
@@ -219,15 +219,15 @@ class test_DefaultLoader(Case):
             sys.path.remove(os.getcwd())
         except ValueError:
             pass
-        celery = sys.modules.pop("celery", None)
+        celery = sys.modules.pop('celery', None)
         try:
-            self.assertTrue(l.import_from_cwd("celery"))
-            sys.modules.pop("celery", None)
+            self.assertTrue(l.import_from_cwd('celery'))
+            sys.modules.pop('celery', None)
             sys.path.insert(0, os.getcwd())
-            self.assertTrue(l.import_from_cwd("celery"))
+            self.assertTrue(l.import_from_cwd('celery'))
         finally:
             sys.path = old_path
-            sys.modules["celery"] = celery
+            sys.modules['celery'] = celery
 
     def test_unconfigured_settings(self):
         context_executed = [False]
@@ -250,32 +250,32 @@ class test_AppLoader(Case):
         self.app = app_or_default()
         self.loader = AppLoader(app=self.app)
 
-    def test_config_from_envvar(self, key="CELERY_HARNESS_CFG1"):
-        self.assertFalse(self.loader.config_from_envvar("HDSAJIHWIQHEWQU",
+    def test_config_from_envvar(self, key='CELERY_HARNESS_CFG1'):
+        self.assertFalse(self.loader.config_from_envvar('HDSAJIHWIQHEWQU',
                                                         silent=True))
         with self.assertRaises(ImproperlyConfigured):
-            self.loader.config_from_envvar("HDSAJIHWIQHEWQU", silent=False)
-        os.environ[key] = __name__ + ".object_config"
+            self.loader.config_from_envvar('HDSAJIHWIQHEWQU', silent=False)
+        os.environ[key] = __name__ + '.object_config'
         self.assertTrue(self.loader.config_from_envvar(key))
-        self.assertEqual(self.loader.conf["FOO"], 1)
-        self.assertEqual(self.loader.conf["BAR"], 2)
+        self.assertEqual(self.loader.conf['FOO'], 1)
+        self.assertEqual(self.loader.conf['BAR'], 2)
 
-        os.environ[key] = "unknown_asdwqe.asdwqewqe"
+        os.environ[key] = 'unknown_asdwqe.asdwqewqe'
         with self.assertRaises(ImportError):
             self.loader.config_from_envvar(key, silent=False)
         self.assertFalse(self.loader.config_from_envvar(key, silent=True))
 
-        os.environ[key] = __name__ + ".dict_config"
+        os.environ[key] = __name__ + '.dict_config'
         self.assertTrue(self.loader.config_from_envvar(key))
-        self.assertEqual(self.loader.conf["FOO"], 10)
-        self.assertEqual(self.loader.conf["BAR"], 20)
+        self.assertEqual(self.loader.conf['FOO'], 10)
+        self.assertEqual(self.loader.conf['BAR'], 20)
 
     def test_on_worker_init(self):
         prev, self.app.conf.CELERY_IMPORTS = \
-                self.app.conf.CELERY_IMPORTS, ("subprocess", )
+                self.app.conf.CELERY_IMPORTS, ('subprocess', )
         try:
-            sys.modules.pop("subprocess", None)
+            sys.modules.pop('subprocess', None)
             self.loader.init_worker()
-            self.assertIn("subprocess", sys.modules)
+            self.assertIn('subprocess', sys.modules)
         finally:
             self.app.conf.CELERY_IMPORTS = prev

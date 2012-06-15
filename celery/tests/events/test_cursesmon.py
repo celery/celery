@@ -17,7 +17,7 @@ class test_CursesDisplay(Case):
         try:
             import curses  # noqa
         except ImportError:
-            raise SkipTest("curses monitor requires curses")
+            raise SkipTest('curses monitor requires curses')
 
         from celery.events import cursesmon
         self.monitor = cursesmon.CursesMonitor(object())
@@ -50,8 +50,8 @@ class test_CursesDisplay(Case):
 
     def test_format_title_row(self):
         self.win.x, self.win.y = 80, 24
-        row = self.monitor.format_row("UUID", "TASK",
-                                      "WORKER", "TIME", "STATE")
+        row = self.monitor.format_row('UUID', 'TASK',
+                                      'WORKER', 'TIME', 'STATE')
         self.assertEqual('UUID                      WORKER          '
                          'TASK             TIME     STATE   ',
                          row)

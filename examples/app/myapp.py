@@ -17,12 +17,12 @@ You can also specify the app to use with celeryd::
 """
 from celery import Celery
 
-celery = Celery("myapp", broker="amqp://guest@localhost//")
+celery = Celery('myapp', broker='amqp://guest@localhost//')
 
 
 @celery.task()
 def add(x, y):
     return x + y
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     celery.start()

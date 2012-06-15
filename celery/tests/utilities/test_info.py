@@ -18,14 +18,14 @@ RANDTEXT_RES = """\
     lazy dog\
 """
 
-QUEUES = {"queue1": {
-            "exchange": "exchange1",
-            "exchange_type": "type1",
-            "routing_key": "bind1"},
-         "queue2": {
-            "exchange": "exchange2",
-            "exchange_type": "type2",
-            "routing_key": "bind2"}}
+QUEUES = {'queue1': {
+            'exchange': 'exchange1',
+            'exchange_type': 'type1',
+            'routing_key': 'bind1'},
+         'queue2': {
+            'exchange': 'exchange2',
+            'exchange_type': 'type2',
+            'routing_key': 'bind2'}}
 
 
 QUEUE_FORMAT1 = """. queue1:      exchange:exchange1(type1) binding:bind1"""
@@ -40,5 +40,5 @@ class test_Info(Case):
     def test_format_queues(self):
         celery = Celery(set_as_current=False)
         celery.amqp.queues = celery.amqp.Queues(QUEUES)
-        self.assertEqual(sorted(celery.amqp.queues.format().split("\n")),
+        self.assertEqual(sorted(celery.amqp.queues.format().split('\n')),
                          sorted([QUEUE_FORMAT1, QUEUE_FORMAT2]))

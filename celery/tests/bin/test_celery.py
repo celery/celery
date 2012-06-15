@@ -36,7 +36,7 @@ def add(x, y):
 class test_Command(AppCase):
 
     def test_Error_repr(self):
-        x = Error("something happened")
+        x = Error('something happened')
         self.assertIsNotNone(x.status)
         self.assertTrue(x.reason)
         self.assertTrue(str(x))
@@ -48,49 +48,49 @@ class test_Command(AppCase):
 
     def test_show_help(self):
         self.cmd.run_from_argv = Mock()
-        self.assertEqual(self.cmd.show_help("foo"), EX_USAGE)
+        self.assertEqual(self.cmd.show_help('foo'), EX_USAGE)
         self.cmd.run_from_argv.assert_called_with(
-                self.cmd.prog_name, ["foo", "--help"]
+                self.cmd.prog_name, ['foo', '--help']
         )
 
     def test_error(self):
         self.cmd.out = Mock()
-        self.cmd.error("FOO")
+        self.cmd.error('FOO')
         self.assertTrue(self.cmd.out.called)
 
     def test_out(self):
         f = Mock()
-        self.cmd.out("foo", f)
-        f.write.assert_called_with("foo\n")
-        self.cmd.out("foo\n", f)
+        self.cmd.out('foo', f)
+        f.write.assert_called_with('foo\n')
+        self.cmd.out('foo\n', f)
 
     def test_call(self):
         self.cmd.run = Mock()
         self.cmd.run.return_value = None
         self.assertEqual(self.cmd(), EX_OK)
 
-        self.cmd.run.side_effect = Error("error", EX_FAILURE)
+        self.cmd.run.side_effect = Error('error', EX_FAILURE)
         self.assertEqual(self.cmd(), EX_FAILURE)
 
     def test_run_from_argv(self):
         with self.assertRaises(NotImplementedError):
-            self.cmd.run_from_argv("prog", ["foo", "bar"])
-        self.assertEqual(self.cmd.prog_name, "prog")
+            self.cmd.run_from_argv('prog', ['foo', 'bar'])
+        self.assertEqual(self.cmd.prog_name, 'prog')
 
     def test_prettify_list(self):
-        self.assertEqual(self.cmd.prettify([])[1], "- empty -")
-        self.assertIn("bar", self.cmd.prettify(["foo", "bar"])[1])
+        self.assertEqual(self.cmd.prettify([])[1], '- empty -')
+        self.assertIn('bar', self.cmd.prettify(['foo', 'bar'])[1])
 
     def test_prettify_dict(self):
-        self.assertIn("OK",
-            str(self.cmd.prettify({"ok": "the quick brown fox"})[0]))
-        self.assertIn("ERROR",
-            str(self.cmd.prettify({"error": "the quick brown fox"})[0]))
+        self.assertIn('OK',
+            str(self.cmd.prettify({'ok': 'the quick brown fox'})[0]))
+        self.assertIn('ERROR',
+            str(self.cmd.prettify({'error': 'the quick brown fox'})[0]))
 
     def test_prettify(self):
-        self.assertIn("OK", str(self.cmd.prettify("the quick brown")))
-        self.assertIn("OK", str(self.cmd.prettify(object())))
-        self.assertIn("OK", str(self.cmd.prettify({"foo": "bar"})))
+        self.assertIn('OK', str(self.cmd.prettify('the quick brown')))
+        self.assertIn('OK', str(self.cmd.prettify(object())))
+        self.assertIn('OK', str(self.cmd.prettify({'foo': 'bar'})))
 
 
 class test_Delegate(AppCase):
@@ -116,74 +116,74 @@ class test_list(AppCase):
 
     def test_run(self):
         l = list_(app=self.app, stderr=WhateverIO())
-        l.run("bindings")
+        l.run('bindings')
 
         with self.assertRaises(Error):
             l.run(None)
 
         with self.assertRaises(Error):
-            l.run("foo")
+            l.run('foo')
 
 
 class test_apply(AppCase):
 
-    @patch("celery.app.base.Celery.send_task")
+    @patch('celery.app.base.Celery.send_task')
     def test_run(self, send_task):
         a = apply(app=self.app, stderr=WhateverIO(), stdout=WhateverIO())
-        a.run("tasks.add")
+        a.run('tasks.add')
         self.assertTrue(send_task.called)
 
-        a.run("tasks.add",
+        a.run('tasks.add',
               args=dumps([4, 4]),
-              kwargs=dumps({"x": 2, "y": 2}))
-        self.assertEqual(send_task.call_args[1]["args"], [4, 4])
-        self.assertEqual(send_task.call_args[1]["kwargs"], {"x": 2, "y": 2})
+              kwargs=dumps({'x': 2, 'y': 2}))
+        self.assertEqual(send_task.call_args[1]['args'], [4, 4])
+        self.assertEqual(send_task.call_args[1]['kwargs'], {'x': 2, 'y': 2})
 
-        a.run("tasks.add", expires=10, countdown=10)
-        self.assertEqual(send_task.call_args[1]["expires"], 10)
-        self.assertEqual(send_task.call_args[1]["countdown"], 10)
+        a.run('tasks.add', expires=10, countdown=10)
+        self.assertEqual(send_task.call_args[1]['expires'], 10)
+        self.assertEqual(send_task.call_args[1]['countdown'], 10)
 
         now = datetime.now()
         iso = now.isoformat()
-        a.run("tasks.add", expires=iso)
-        self.assertEqual(send_task.call_args[1]["expires"], now)
+        a.run('tasks.add', expires=iso)
+        self.assertEqual(send_task.call_args[1]['expires'], now)
         with self.assertRaises(ValueError):
-            a.run("tasks.add", expires="foobaribazibar")
+            a.run('tasks.add', expires='foobaribazibar')
 
 
 class test_purge(AppCase):
 
-    @patch("celery.app.control.Control.purge")
+    @patch('celery.app.control.Control.purge')
     def test_run(self, purge_):
         out = WhateverIO()
         a = purge(app=self.app, stdout=out)
         purge_.return_value = 0
         a.run()
-        self.assertIn("No messages purged", out.getvalue())
+        self.assertIn('No messages purged', out.getvalue())
 
         purge_.return_value = 100
         a.run()
-        self.assertIn("100 messages", out.getvalue())
+        self.assertIn('100 messages', out.getvalue())
 
 
 class test_result(AppCase):
 
-    @patch("celery.result.AsyncResult.get")
+    @patch('celery.result.AsyncResult.get')
     def test_run(self, get):
         out = WhateverIO()
         r = result(app=self.app, stdout=out)
-        get.return_value = "Jerry"
-        r.run("id")
-        self.assertIn("Jerry", out.getvalue())
+        get.return_value = 'Jerry'
+        r.run('id')
+        self.assertIn('Jerry', out.getvalue())
 
-        get.return_value = "Elaine"
-        r.run("id", task=add.name)
-        self.assertIn("Elaine", out.getvalue())
+        get.return_value = 'Elaine'
+        r.run('id', task=add.name)
+        self.assertIn('Elaine', out.getvalue())
 
 
 class test_status(AppCase):
 
-    @patch("celery.bin.celery.inspect")
+    @patch('celery.bin.celery.inspect')
     def test_run(self, inspect_):
         out, err = WhateverIO(), WhateverIO()
         ins = inspect_.return_value = Mock()
@@ -192,15 +192,15 @@ class test_status(AppCase):
         with self.assertRaises(Error):
             s.run()
 
-        ins.run.return_value = ["a", "b", "c"]
+        ins.run.return_value = ['a', 'b', 'c']
         s.run()
-        self.assertIn("3 nodes online", out.getvalue())
+        self.assertIn('3 nodes online', out.getvalue())
         s.run(quiet=True)
 
 
 class test_migrate(AppCase):
 
-    @patch("celery.contrib.migrate.migrate_tasks")
+    @patch('celery.contrib.migrate.migrate_tasks')
     def test_run(self, migrate_tasks):
         out = WhateverIO()
         m = migrate(app=self.app, stdout=out, stderr=WhateverIO())
@@ -208,14 +208,14 @@ class test_migrate(AppCase):
             m.run()
         self.assertFalse(migrate_tasks.called)
 
-        m.run("memory://foo", "memory://bar")
+        m.run('memory://foo', 'memory://bar')
         self.assertTrue(migrate_tasks.called)
 
         state = Mock()
         state.count = 10
         state.strtotal = 30
-        m.on_migrate_task(state, {"task": "tasks.add", "id": "ID"}, None)
-        self.assertIn("10/30", out.getvalue())
+        m.on_migrate_task(state, {'task': 'tasks.add', 'id': 'ID'}, None)
+        self.assertIn('10/30', out.getvalue())
 
 
 class test_report(AppCase):
@@ -235,7 +235,7 @@ class test_help(AppCase):
         h.parser = Mock()
         self.assertEqual(h.run(), EX_USAGE)
         self.assertTrue(out.getvalue())
-        self.assertTrue(h.usage("help"))
+        self.assertTrue(h.usage('help'))
         h.parser.print_help.assert_called_with()
 
 
@@ -257,86 +257,86 @@ class test_CeleryCommand(AppCase):
             x.execute_from_commandline()
 
     def test_determine_exit_status(self):
-        self.assertEqual(determine_exit_status("true"), EX_OK)
-        self.assertEqual(determine_exit_status(""), EX_FAILURE)
+        self.assertEqual(determine_exit_status('true'), EX_OK)
+        self.assertEqual(determine_exit_status(''), EX_FAILURE)
 
     def test_remove_options_at_beginning(self):
         x = CeleryCommand(app=self.app)
         self.assertEqual(x.remove_options_at_beginning(None), [])
-        self.assertEqual(x.remove_options_at_beginning(["-c 3", "--foo"]), [])
-        self.assertEqual(x.remove_options_at_beginning(["--foo", "-c 3"]), [])
+        self.assertEqual(x.remove_options_at_beginning(['-c 3', '--foo']), [])
+        self.assertEqual(x.remove_options_at_beginning(['--foo', '-c 3']), [])
         self.assertEqual(x.remove_options_at_beginning(
-            ["foo", "--foo=1"]), ["foo", "--foo=1"])
+            ['foo', '--foo=1']), ['foo', '--foo=1'])
 
     def test_handle_argv(self):
         x = CeleryCommand(app=self.app)
         x.execute = Mock()
-        x.handle_argv("celery", [])
-        x.execute.assert_called_with("help", ["help"])
+        x.handle_argv('celery', [])
+        x.execute.assert_called_with('help', ['help'])
 
-        x.handle_argv("celery", ["start", "foo"])
-        x.execute.assert_called_with("start", ["start", "foo"])
+        x.handle_argv('celery', ['start', 'foo'])
+        x.execute.assert_called_with('start', ['start', 'foo'])
 
     def test_execute(self):
         x = CeleryCommand(app=self.app)
-        Help = x.commands["help"] = Mock()
+        Help = x.commands['help'] = Mock()
         help = Help.return_value = Mock()
-        x.execute("fooox", ["a"])
-        help.run_from_argv.assert_called_with(x.prog_name, ["help"])
+        x.execute('fooox', ['a'])
+        help.run_from_argv.assert_called_with(x.prog_name, ['help'])
         help.reset()
-        x.execute("help", ["help"])
-        help.run_from_argv.assert_called_with(x.prog_name, ["help"])
+        x.execute('help', ['help'])
+        help.run_from_argv.assert_called_with(x.prog_name, ['help'])
 
-        Dummy = x.commands["dummy"] = Mock()
+        Dummy = x.commands['dummy'] = Mock()
         dummy = Dummy.return_value = Mock()
-        dummy.run_from_argv.side_effect = Error("foo", status="EX_FAILURE")
+        dummy.run_from_argv.side_effect = Error('foo', status='EX_FAILURE')
         help.reset()
-        x.execute("dummy", ["dummy"])
-        dummy.run_from_argv.assert_called_with(x.prog_name, ["dummy"])
-        help.run_from_argv.assert_called_with(x.prog_name, ["dummy"])
+        x.execute('dummy', ['dummy'])
+        dummy.run_from_argv.assert_called_with(x.prog_name, ['dummy'])
+        help.run_from_argv.assert_called_with(x.prog_name, ['dummy'])
 
 
 class test_inspect(AppCase):
 
     def test_usage(self):
-        self.assertTrue(inspect(app=self.app).usage("foo"))
+        self.assertTrue(inspect(app=self.app).usage('foo'))
 
-    @patch("celery.app.control.Control.inspect")
+    @patch('celery.app.control.Control.inspect')
     def test_run(self, real):
         out = WhateverIO()
         i = inspect(app=self.app, stdout=out)
         with self.assertRaises(Error):
             i.run()
         with self.assertRaises(Error):
-            i.run("help")
+            i.run('help')
         with self.assertRaises(Error):
-            i.run("xyzzybaz")
+            i.run('xyzzybaz')
 
-        i.run("ping")
+        i.run('ping')
         self.assertTrue(real.called)
-        i.run("ping", destination="foo,bar")
-        self.assertEqual(real.call_args[1]["destination"], ["foo", "bar"])
-        self.assertEqual(real.call_args[1]["timeout"], 0.2)
-        callback = real.call_args[1]["callback"]
+        i.run('ping', destination='foo,bar')
+        self.assertEqual(real.call_args[1]['destination'], ['foo', 'bar'])
+        self.assertEqual(real.call_args[1]['timeout'], 0.2)
+        callback = real.call_args[1]['callback']
 
-        callback({"foo": {"ok": "pong"}})
-        self.assertIn("OK", out.getvalue())
+        callback({'foo': {'ok': 'pong'}})
+        self.assertIn('OK', out.getvalue())
 
         instance = real.return_value = Mock()
         instance.ping.return_value = None
         with self.assertRaises(Error):
-            i.run("ping")
+            i.run('ping')
 
         out.seek(0)
         out.truncate()
         i.quiet = True
-        i.say('<-', "hello")
+        i.say('<-', 'hello')
         self.assertFalse(out.getvalue())
 
 
 class test_main(AppCase):
 
-    @patch("celery.bin.celery.CeleryCommand")
+    @patch('celery.bin.celery.CeleryCommand')
     def test_main(self, Command):
         command = Command.return_value = Mock()
         main()

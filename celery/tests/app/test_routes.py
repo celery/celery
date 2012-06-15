@@ -43,24 +43,24 @@ def with_queues(**queues):
     return patch_fun
 
 
-a_queue = {"exchange": "fooexchange",
-           "exchange_type": "fanout",
-           "routing_key": "xuzzy"}
-b_queue = {"exchange": "barexchange",
-           "exchange_type": "topic",
-           "routing_key": "b.b.#"}
-d_queue = {"exchange": current_app.conf.CELERY_DEFAULT_EXCHANGE,
-           "exchange_type": current_app.conf.CELERY_DEFAULT_EXCHANGE_TYPE,
-           "routing_key": current_app.conf.CELERY_DEFAULT_ROUTING_KEY}
+a_queue = {'exchange': 'fooexchange',
+           'exchange_type': 'fanout',
+           'routing_key': 'xuzzy'}
+b_queue = {'exchange': 'barexchange',
+           'exchange_type': 'topic',
+           'routing_key': 'b.b.#'}
+d_queue = {'exchange': current_app.conf.CELERY_DEFAULT_EXCHANGE,
+           'exchange_type': current_app.conf.CELERY_DEFAULT_EXCHANGE_TYPE,
+           'routing_key': current_app.conf.CELERY_DEFAULT_ROUTING_KEY}
 
 
 class RouteCase(Case):
 
     def assertAnswer(self, answer, expected):
-        self.assertEqual(answer["exchange"].name, expected["exchange"])
-        self.assertEqual(answer["routing_key"], expected["routing_key"])
-        if "queue" in expected:
-            self.assertEqual(answer["queue"], expected["queue"])
+        self.assertEqual(answer['exchange'].name, expected['exchange'])
+        self.assertEqual(answer['routing_key'], expected['routing_key'])
+        if 'queue' in expected:
+            self.assertEqual(answer['queue'], expected['queue'])
 
 
 class test_MapRoute(RouteCase):
@@ -68,9 +68,9 @@ class test_MapRoute(RouteCase):
     @with_queues(foo=a_queue, bar=b_queue)
     def test_route_for_task_expanded_route(self):
         expand = E(current_app.amqp.queues)
-        route = routes.MapRoute({mytask.name: {"queue": "foo"}})
+        route = routes.MapRoute({mytask.name: {'queue': 'foo'}})
         self.assertAnswer(expand(route.route_for_task(mytask.name)), a_queue)
-        self.assertIsNone(route.route_for_task("celery.awesome"))
+        self.assertIsNone(route.route_for_task('celery.awesome'))
 
     @with_queues(foo=a_queue, bar=b_queue)
     def test_route_for_task(self):
@@ -78,14 +78,14 @@ class test_MapRoute(RouteCase):
         route = routes.MapRoute({mytask.name: b_queue})
         self.assertDictContainsSubset(b_queue,
                              expand(route.route_for_task(mytask.name)))
-        self.assertIsNone(route.route_for_task("celery.awesome"))
+        self.assertIsNone(route.route_for_task('celery.awesome'))
 
     def test_expand_route_not_found(self):
         expand = E(current_app.amqp.Queues(
                     current_app.conf.CELERY_QUEUES, False))
-        route = routes.MapRoute({"a": {"queue": "x"}})
+        route = routes.MapRoute({'a': {'queue': 'x'}})
         with self.assertRaises(QueueNotFound):
-            expand(route.route_for_task("a"))
+            expand(route.route_for_task('a'))
 
 
 class test_lookup_route(RouteCase):
@@ -96,8 +96,8 @@ class test_lookup_route(RouteCase):
 
     @with_queues(foo=a_queue, bar=b_queue)
     def test_lookup_takes_first(self):
-        R = routes.prepare(({mytask.name: {"queue": "bar"}},
-                            {mytask.name: {"queue": "foo"}}))
+        R = routes.prepare(({mytask.name: {'queue': 'bar'}},
+                            {mytask.name: {'queue': 'foo'}}))
         router = routes.Router(R, current_app.amqp.queues)
         self.assertAnswer(router.route({}, mytask.name,
                           args=[1, 2], kwargs={}), b_queue)
@@ -109,33 +109,33 @@ class test_lookup_route(RouteCase):
                                create_missing=True)
         # apply_async forwards all arguments, even exchange=None etc,
         # so need to make sure it's merged correctly.
-        route = router.route({"queue": "testq",
-                              "exchange": None,
-                              "routing_key": None,
-                              "immediate": False},
+        route = router.route({'queue': 'testq',
+                              'exchange': None,
+                              'routing_key': None,
+                              'immediate': False},
                              mytask.name,
                              args=[1, 2], kwargs={})
-        self.assertDictContainsSubset({"routing_key": "testq",
-                                       "immediate": False},
+        self.assertDictContainsSubset({'routing_key': 'testq',
+                                       'immediate': False},
                                        route)
-        self.assertEqual(route["exchange"].name, "testq")
-        self.assertIn("queue", route)
+        self.assertEqual(route['exchange'].name, 'testq')
+        self.assertIn('queue', route)
 
     @with_queues(foo=a_queue, bar=b_queue)
     def test_expand_destination_string(self):
         x = routes.Router({}, current_app.amqp.queues)
-        dest = x.expand_destination("foo")
-        self.assertEqual(dest["exchange"].name, "fooexchange")
+        dest = x.expand_destination('foo')
+        self.assertEqual(dest['exchange'].name, 'fooexchange')
 
     @with_queues(foo=a_queue, bar=b_queue, **{
         current_app.conf.CELERY_DEFAULT_QUEUE: d_queue})
     def test_lookup_paths_traversed(self):
-        R = routes.prepare(({"celery.xaza": {"queue": "bar"}},
-                            {mytask.name: {"queue": "foo"}}))
+        R = routes.prepare(({'celery.xaza': {'queue': 'bar'}},
+                            {mytask.name: {'queue': 'foo'}}))
         router = routes.Router(R, current_app.amqp.queues)
         self.assertAnswer(router.route({}, mytask.name,
                           args=[1, 2], kwargs={}), a_queue)
-        self.assertAnswer(router.route({}, "celery.poza"),
+        self.assertAnswer(router.route({}, 'celery.poza'),
                 dict(d_queue, queue=current_app.conf.CELERY_DEFAULT_QUEUE))
 
 
@@ -144,8 +144,8 @@ class test_prepare(Case):
     def test_prepare(self):
         from celery.datastructures import LRUCache
         o = object()
-        R = [{"foo": "bar"},
-                  "celery.datastructures.LRUCache",
+        R = [{'foo': 'bar'},
+                  'celery.datastructures.LRUCache',
                   o]
         p = routes.prepare(R)
         self.assertIsInstance(p[0], routes.MapRoute)
@@ -155,6 +155,6 @@ class test_prepare(Case):
         self.assertEqual(routes.prepare(o), [o])
 
     def test_prepare_item_is_dict(self):
-        R = {"foo": "bar"}
+        R = {'foo': 'bar'}
         p = routes.prepare(R)
         self.assertIsInstance(p[0], routes.MapRoute)

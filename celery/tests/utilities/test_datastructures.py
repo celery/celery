@@ -21,30 +21,30 @@ class test_DictAttribute(Case):
 
     def test_get_set(self):
         x = DictAttribute(Object())
-        x["foo"] = "The quick brown fox"
-        self.assertEqual(x["foo"], "The quick brown fox")
-        self.assertEqual(x["foo"], x.obj.foo)
-        self.assertEqual(x.get("foo"), "The quick brown fox")
-        self.assertIsNone(x.get("bar"))
+        x['foo'] = 'The quick brown fox'
+        self.assertEqual(x['foo'], 'The quick brown fox')
+        self.assertEqual(x['foo'], x.obj.foo)
+        self.assertEqual(x.get('foo'), 'The quick brown fox')
+        self.assertIsNone(x.get('bar'))
         with self.assertRaises(KeyError):
-            x["bar"]
+            x['bar']
 
     def test_setdefault(self):
         x = DictAttribute(Object())
-        self.assertEqual(x.setdefault("foo", "NEW"), "NEW")
-        self.assertEqual(x.setdefault("foo", "XYZ"), "NEW")
+        self.assertEqual(x.setdefault('foo', 'NEW'), 'NEW')
+        self.assertEqual(x.setdefault('foo', 'XYZ'), 'NEW')
 
     def test_contains(self):
         x = DictAttribute(Object())
-        x["foo"] = 1
-        self.assertIn("foo", x)
-        self.assertNotIn("bar", x)
+        x['foo'] = 1
+        self.assertIn('foo', x)
+        self.assertNotIn('bar', x)
 
     def test_items(self):
         obj = Object()
         obj.attr1 = 1
         x = DictAttribute(obj)
-        x["attr2"] = 2
+        x['attr2'] = 2
         self.assertDictEqual(dict(x.iteritems()),
                              dict(attr1=1, attr2=2))
         self.assertDictEqual(dict(x.items()),
@@ -54,19 +54,19 @@ class test_DictAttribute(Case):
 class test_ConfigurationView(Case):
 
     def setUp(self):
-        self.view = ConfigurationView({"changed_key": 1,
-                                       "both": 2},
-                                      [{"default_key": 1,
-                                       "both": 1}])
+        self.view = ConfigurationView({'changed_key': 1,
+                                       'both': 2},
+                                      [{'default_key': 1,
+                                       'both': 1}])
 
     def test_setdefault(self):
-        self.assertEqual(self.view.setdefault("both", 36), 2)
-        self.assertEqual(self.view.setdefault("new", 36), 36)
+        self.assertEqual(self.view.setdefault('both', 36), 2)
+        self.assertEqual(self.view.setdefault('new', 36), 36)
 
     def test_get(self):
-        self.assertEqual(self.view.get("both"), 2)
+        self.assertEqual(self.view.get('both'), 2)
         sp = object()
-        self.assertIs(self.view.get("nonexisting", sp), sp)
+        self.assertIs(self.view.get('nonexisting', sp), sp)
 
     def test_update(self):
         changes = dict(self.view.changes)
@@ -75,18 +75,18 @@ class test_ConfigurationView(Case):
                              dict(changes, a=1, b=2, c=3))
 
     def test_contains(self):
-        self.assertIn("changed_key", self.view)
-        self.assertIn("default_key", self.view)
-        self.assertNotIn("new", self.view)
+        self.assertIn('changed_key', self.view)
+        self.assertIn('default_key', self.view)
+        self.assertNotIn('new', self.view)
 
     def test_repr(self):
-        self.assertIn("changed_key", repr(self.view))
-        self.assertIn("default_key", repr(self.view))
+        self.assertIn('changed_key', repr(self.view))
+        self.assertIn('default_key', repr(self.view))
 
     def test_iter(self):
-        expected = {"changed_key": 1,
-                    "default_key": 1,
-                    "both": 2}
+        expected = {'changed_key': 1,
+                    'default_key': 1,
+                    'both': 2}
         self.assertDictEqual(dict(self.view.items()), expected)
         self.assertItemsEqual(list(iter(self.view)),
                               expected.keys())
@@ -99,13 +99,13 @@ class test_ExceptionInfo(Case):
     def test_exception_info(self):
 
         try:
-            raise LookupError("The quick brown fox jumps...")
+            raise LookupError('The quick brown fox jumps...')
         except Exception:
             einfo = ExceptionInfo()
             self.assertEqual(str(einfo), einfo.traceback)
             self.assertIsInstance(einfo.exception, LookupError)
             self.assertTupleEqual(einfo.exception.args,
-                    ("The quick brown fox jumps...", ))
+                    ('The quick brown fox jumps...', ))
             self.assertTrue(einfo.traceback)
 
             r = repr(einfo)
@@ -116,18 +116,18 @@ class test_LimitedSet(Case):
 
     def test_add(self):
         s = LimitedSet(maxlen=2)
-        s.add("foo")
-        s.add("bar")
-        for n in "foo", "bar":
+        s.add('foo')
+        s.add('bar')
+        for n in 'foo', 'bar':
             self.assertIn(n, s)
-        s.add("baz")
-        for n in "bar", "baz":
+        s.add('baz')
+        for n in 'bar', 'baz':
             self.assertIn(n, s)
-        self.assertNotIn("foo", s)
+        self.assertNotIn('foo', s)
 
     def test_iter(self):
         s = LimitedSet(maxlen=2)
-        items = "foo", "bar"
+        items = 'foo', 'bar'
         for item in items:
             s.add(item)
         l = list(iter(s))
@@ -136,37 +136,37 @@ class test_LimitedSet(Case):
 
     def test_repr(self):
         s = LimitedSet(maxlen=2)
-        items = "foo", "bar"
+        items = 'foo', 'bar'
         for item in items:
             s.add(item)
-        self.assertIn("LimitedSet(", repr(s))
+        self.assertIn('LimitedSet(', repr(s))
 
     def test_clear(self):
         s = LimitedSet(maxlen=2)
-        s.add("foo")
-        s.add("bar")
+        s.add('foo')
+        s.add('bar')
         self.assertEqual(len(s), 2)
         s.clear()
         self.assertFalse(s)
 
     def test_update(self):
         s1 = LimitedSet(maxlen=2)
-        s1.add("foo")
-        s1.add("bar")
+        s1.add('foo')
+        s1.add('bar')
 
         s2 = LimitedSet(maxlen=2)
         s2.update(s1)
-        self.assertItemsEqual(list(s2), ["foo", "bar"])
+        self.assertItemsEqual(list(s2), ['foo', 'bar'])
 
-        s2.update(["bla"])
-        self.assertItemsEqual(list(s2), ["bla", "bar"])
+        s2.update(['bla'])
+        self.assertItemsEqual(list(s2), ['bla', 'bar'])
 
-        s2.update(["do", "re"])
-        self.assertItemsEqual(list(s2), ["do", "re"])
+        s2.update(['do', 're'])
+        self.assertItemsEqual(list(s2), ['do', 're'])
 
     def test_as_dict(self):
         s = LimitedSet(maxlen=2)
-        s.add("foo")
+        s.add('foo')
         self.assertIsInstance(s.as_dict(), dict)
 
 
@@ -233,13 +233,13 @@ class test_LRUCache(Case):
             burglar.stop()
 
     def test_safe_to_remove_while_iteritems(self):
-        self.assertSafeIter("iteritems")
+        self.assertSafeIter('iteritems')
 
     def test_safe_to_remove_while_keys(self):
-        self.assertSafeIter("keys")
+        self.assertSafeIter('keys')
 
     def test_safe_to_remove_while_itervalues(self):
-        self.assertSafeIter("itervalues")
+        self.assertSafeIter('itervalues')
 
     def test_items(self):
         c = LRUCache()
@@ -250,22 +250,22 @@ class test_LRUCache(Case):
 class test_AttributeDict(Case):
 
     def test_getattr__setattr(self):
-        x = AttributeDict({"foo": "bar"})
-        self.assertEqual(x["foo"], "bar")
+        x = AttributeDict({'foo': 'bar'})
+        self.assertEqual(x['foo'], 'bar')
         with self.assertRaises(AttributeError):
             x.bar
-        x.bar = "foo"
-        self.assertEqual(x["bar"], "foo")
+        x.bar = 'foo'
+        self.assertEqual(x['bar'], 'foo')
 
 
 class test_DependencyGraph(Case):
 
     def graph1(self):
         return DependencyGraph([
-            ("A", []),
-            ("B", []),
-            ("C", ["A"]),
-            ("D", ["C", "B"]),
+            ('A', []),
+            ('B', []),
+            ('C', ['A']),
+            ('D', ['C', 'B']),
         ])
 
     def test_repr(self):
@@ -274,20 +274,20 @@ class test_DependencyGraph(Case):
     def test_topsort(self):
         order = self.graph1().topsort()
         # C must start before D
-        self.assertLess(order.index("C"), order.index("D"))
+        self.assertLess(order.index('C'), order.index('D'))
         # and B must start before D
-        self.assertLess(order.index("B"), order.index("D"))
+        self.assertLess(order.index('B'), order.index('D'))
         # and A must start before C
-        self.assertLess(order.index("A"), order.index("C"))
+        self.assertLess(order.index('A'), order.index('C'))
 
     def test_edges(self):
         self.assertListEqual(list(self.graph1().edges()),
-                             ["C", "D"])
+                             ['C', 'D'])
 
     def test_items(self):
         self.assertDictEqual(dict(self.graph1().items()),
-                {"A": [], "B": [],
-                 "C": ["A"], "D": ["C", "B"]})
+                {'A': [], 'B': [],
+                 'C': ['A'], 'D': ['C', 'B']})
 
     def test_to_dot(self):
         s = WhateverIO()

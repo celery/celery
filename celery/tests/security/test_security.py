@@ -60,24 +60,24 @@ class test_security(SecurityCase):
         self.assertIn('application/x-python-serialize', disabled)
         disabled.clear()
 
-    @patch("celery.security.register_auth")
-    @patch("celery.security.disable_untrusted_serializers")
-    def test_setup_registry_complete(self, dis, reg, key="KEY", cert="CERT"):
+    @patch('celery.security.register_auth')
+    @patch('celery.security.disable_untrusted_serializers')
+    def test_setup_registry_complete(self, dis, reg, key='KEY', cert='CERT'):
         calls = [0]
 
         def effect(*args):
             try:
                 m = Mock()
-                m.read.return_value = "B" if calls[0] else "A"
+                m.read.return_value = 'B' if calls[0] else 'A'
                 return m
             finally:
                 calls[0] += 1
 
         with mock_open(side_effect=effect):
             store = Mock()
-            setup_security(["json"], key, cert, store)
-            dis.assert_called_with(["json"])
-            reg.assert_called_with("A", "B", store)
+            setup_security(['json'], key, cert, store)
+            dis.assert_called_with(['json'])
+            reg.assert_called_with('A', 'B', store)
 
     def test_security_conf(self):
         current_app.conf.CELERY_TASK_SERIALIZER = 'auth'

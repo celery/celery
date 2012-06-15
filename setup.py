@@ -6,7 +6,7 @@ import codecs
 import platform
 
 if sys.version_info < (2, 5):
-    raise Exception("Celery requires Python 2.5 or higher.")
+    raise Exception('Celery requires Python 2.5 or higher.')
 
 try:
     orig_path = sys.path[:]
@@ -17,17 +17,17 @@ try:
         import celery.app
         import imp
         import shutil
-        _, task_path, _ = imp.find_module("task", celery.app.__path__)
-        if task_path.endswith("/task"):
-            print("- force upgrading previous installation")
-            print("  - removing %r package..." % task_path)
+        _, task_path, _ = imp.find_module('task', celery.app.__path__)
+        if task_path.endswith('/task'):
+            print('- force upgrading previous installation')
+            print('  - removing %r package...' % task_path)
             try:
                 shutil.rmtree(os.path.abspath(task_path))
             except Exception:
-                sys.stderr.write("Couldn't remove %r: %r\n" % (
+                sys.stderr.write('Could not remove %r: %r\n' % (
                     task_path, sys.exc_info[1]))
     except ImportError:
-        print("Upgrade: no old version found.")
+        print('Upgrade: no old version found.')
     finally:
         sys.path[:] = orig_path
 except ImportError:
@@ -44,7 +44,7 @@ except ImportError:
     from setuptools import setup, find_packages           # noqa
     from setuptools.command.test import test              # noqa
 
-NAME = "celery"
+NAME = 'celery'
 entrypoints = {}
 extra = {}
 
@@ -89,18 +89,18 @@ def add_default(m):
 
 
 def add_version(m):
-    v = list(map(rq, m.groups()[0].split(", ")))
-    return (("VERSION", ".".join(v[0:3]) + "".join(v[3:])), )
+    v = list(map(rq, m.groups()[0].split(', ')))
+    return (('VERSION', '.'.join(v[0:3]) + ''.join(v[3:])), )
 
 
 def add_doc(m):
-    return (("doc", m.groups()[0]), )
+    return (('doc', m.groups()[0]), )
 
 pats = {re_meta: add_default,
         re_vers: add_version,
         re_doc: add_doc}
 here = os.path.abspath(os.path.dirname(__file__))
-meta_fh = open(os.path.join(here, "celery/__init__.py"))
+meta_fh = open(os.path.join(here, 'celery/__init__.py'))
 try:
     meta = {}
     for line in meta_fh:
@@ -125,41 +125,41 @@ class quicktest(test):
 
 # -*- Installation Dependencies -*-
 py_version = sys.version_info
-is_jython = sys.platform.startswith("java")
-is_pypy = hasattr(sys, "pypy_version_info")
+is_jython = sys.platform.startswith('java')
+is_pypy = hasattr(sys, 'pypy_version_info')
 
 
 def reqs(f):
     return filter(None, [l.strip() for l in open(
-        os.path.join(os.getcwd(), "requirements", f)).readlines()])
+        os.path.join(os.getcwd(), 'requirements', f)).readlines()])
 
-install_requires = reqs("default-py3k.txt" if is_py3k else "default.txt")
+install_requires = reqs('default-py3k.txt' if is_py3k else 'default.txt')
 
 if is_jython:
-    install_requires.extend(reqs("jython.txt"))
+    install_requires.extend(reqs('jython.txt'))
 if py_version[0:2] == (2, 6):
-    install_requires.extend(reqs("py26.txt"))
+    install_requires.extend(reqs('py26.txt'))
 elif py_version[0:2] == (2, 5):
-    install_requires.extend(reqs("py25.txt"))
+    install_requires.extend(reqs('py25.txt'))
 
 # -*- Tests Requires -*-
 
-tests_require = ["nose", "nose-cover3", "sqlalchemy", "mock==dev"]
+tests_require = ['nose', 'nose-cover3', 'sqlalchemy', 'mock==dev']
 if sys.version_info < (2, 7):
-    tests_require.append("unittest2")
+    tests_require.append('unittest2')
 elif sys.version_info <= (2, 5):
-    tests_require.append("simplejson")
+    tests_require.append('simplejson')
 
 # -*- Long Description -*-
 
-if os.path.exists("README.rst"):
-    long_description = codecs.open("README.rst", "r", "utf-8").read()
+if os.path.exists('README.rst'):
+    long_description = codecs.open('README.rst', 'r', 'utf-8').read()
 else:
-    long_description = "See http://pypi.python.org/pypi/celery"
+    long_description = 'See http://pypi.python.org/pypi/celery'
 
 # -*- Entry Points -*- #
 
-console_scripts = entrypoints["console_scripts"] = [
+console_scripts = entrypoints['console_scripts'] = [
         'celery = celery.bin.celery:main',
         'celeryd = celery.bin.celeryd:main',
         'celerybeat = celery.bin.celerybeat:main',
@@ -170,25 +170,25 @@ console_scripts = entrypoints["console_scripts"] = [
 ]
 
 # bundles: Only relevant for Celery developers.
-entrypoints["bundle.bundles"] = ["celery = celery.contrib.bundles:bundles"]
+entrypoints['bundle.bundles'] = ['celery = celery.contrib.bundles:bundles']
 
 # -*- %%% -*-
 
 setup(
     name=NAME,
-    version=meta["VERSION"],
-    description=meta["doc"],
-    author=meta["author"],
-    author_email=meta["contact"],
-    url=meta["homepage"],
-    platforms=["any"],
-    license="BSD",
+    version=meta['VERSION'],
+    description=meta['doc'],
+    author=meta['author'],
+    author_email=meta['contact'],
+    url=meta['homepage'],
+    platforms=['any'],
+    license='BSD',
     packages=find_packages(exclude=['ez_setup', 'tests', 'tests.*']),
     zip_safe=False,
     install_requires=install_requires,
     tests_require=tests_require,
-    test_suite="nose.collector",
-    cmdclass={"quicktest": quicktest},
+    test_suite='nose.collector',
+    cmdclass={'quicktest': quicktest},
     classifiers=classifiers,
     entry_points=entrypoints,
     long_description=long_description,

@@ -30,9 +30,9 @@ class MockPool(BasePool):
 
     def shrink(self, n=1):
         if self.shrink_raises_exception:
-            raise KeyError("foo")
+            raise KeyError('foo')
         if self.shrink_raises_ValueError:
-            raise ValueError("foo")
+            raise ValueError('foo')
         self._pool._processes -= n
 
     @property
@@ -105,7 +105,7 @@ class test_Autoscaler(Case):
         x.pool.shrink_raises_exception = True
         x.scale_down(1)
 
-    @patch("celery.worker.autoscale.debug")
+    @patch('celery.worker.autoscale.debug')
     def test_shrink_raises_ValueError(self, debug):
         x = autoscale.Autoscaler(self.pool, 10, 3)
         x.scale_up(3)
@@ -143,14 +143,14 @@ class test_Autoscaler(Case):
         self.assertEqual(info['min'], 3)
         self.assertEqual(info['current'], 3)
 
-    @patch("os._exit")
+    @patch('os._exit')
     def test_thread_crash(self, _exit):
 
         class _Autoscaler(autoscale.Autoscaler):
 
             def body(self):
                 self._is_shutdown.set()
-                raise OSError("foo")
+                raise OSError('foo')
         x = _Autoscaler(self.pool, 10, 3)
 
         stderr = Mock()
