@@ -20,7 +20,7 @@ class test_Component(Case):
                 pass
 
         class Y(bootsteps.Component):
-            bootsteps = True
+            abstract = True
 
     def test_namespace_name(self, ns='test_namespace_name'):
 
