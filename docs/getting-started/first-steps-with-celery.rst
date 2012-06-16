@@ -75,7 +75,7 @@ for very small installations.  Celery can use the SQLAlchemy and Django ORM.
 
 In addition to the above, there are several other transport implementations
 to choose from, including :ref:`broker-mongodb`, :ref:`broker-django`,
-:ref:`broker-sqlalchemy`, and SQS.
+:ref:`broker-sqlalchemy`, and :ref:`Amazon SQS <broker-sqs>`.
 
 .. _`RabbitMQ`: http://www.rabbitmq.com/
 .. _`Redis`: http://redis.io/
