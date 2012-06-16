@@ -796,7 +796,7 @@ class test_WorkController(AppCase):
         self.assertTrue(app.loader.init_worker.call_count)
         self.assertTrue(on_worker_process_init.called)
         self.assertIs(_tls.current_app, app)
-        set_mp_process_title.assert_called_with('celery',
+        set_mp_process_title.assert_called_with('celeryd',
                         hostname='awesome.worker.com')
 
     def test_with_rate_limits_disabled(self):
