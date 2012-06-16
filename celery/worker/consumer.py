@@ -436,8 +436,11 @@ class Consumer(object):
                                 if event & WRITE:
                                     writers[fileno](fileno, event)
                                 if event & ERR:
-                                    readers[fileno](fileno, event)
-                                    writers[fileno](fileno, event)
+                                    for handlermap in readers, writers:
+                                        try:
+                                            handlermap[fileno](fileno, event)
+                                        except KeyError:
+                                            pass
                             except Empty:
                                 break
                             except socket.error:
