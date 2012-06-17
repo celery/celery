@@ -69,7 +69,7 @@ class RedisBackend(KeyValueStoreBackend):
         uhost = uport = upass = udb = None
         if url:
             _, uhost, uport, _, upass, udb, _ = _parse_url(url)
-            udb = udb.strip('/')
+            udb = udb.strip('/') if udb else 0
         self.host = uhost or host or _get('HOST') or self.host
         self.port = int(uport or port or _get('PORT') or self.port)
         self.db = udb or db or _get('DB') or self.db

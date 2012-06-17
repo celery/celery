@@ -106,6 +106,10 @@ class Pool(bootsteps.StartStopComponent):
         if not pool.did_start_ok():
             raise WorkerLostError('Could not start worker processes')
 
+        # need to handle pool results before every task
+        # since multiple tasks can be received in a single poll()
+        hub.on_task.append(pool.maybe_handle_result)
+
         hub.update_readers(pool.readers)
         for handler, interval in pool.timers.iteritems():
             hub.timer.apply_interval(interval * 1000.0, handler)

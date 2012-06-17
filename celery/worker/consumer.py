@@ -405,6 +405,7 @@ class Consumer(object):
                     self.handle_unknown_task(body, message, exc)
                 except InvalidTaskError, exc:
                     self.handle_invalid_task(body, message, exc)
+                fire_timers()
 
             self.task_consumer.callbacks = [on_task_received]
             self.task_consumer.consume()

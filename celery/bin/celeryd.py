@@ -77,11 +77,11 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
 .. cmdoption:: --time-limit
 
-    Enables a hard time limit (in seconds) for tasks.
+    Enables a hard time limit (in seconds int/float) for tasks.
 
 .. cmdoption:: --soft-time-limit
 
-    Enables a soft time limit (in seconds) for tasks.
+    Enables a soft time limit (in seconds int/float) for tasks.
 
 .. cmdoption:: --maxtasksperchild
 
@@ -179,10 +179,10 @@ class WorkerCommand(Command):
                 default=conf.CELERYD_STATE_DB, dest='state_db'),
             Option('-E', '--events', default=conf.CELERY_SEND_EVENTS,
                 action='store_true', dest='send_events'),
-            Option('--time-limit', type='int', dest='task_time_limit',
+            Option('--time-limit', type='float', dest='task_time_limit',
                 default=conf.CELERYD_TASK_TIME_LIMIT),
             Option('--soft-time-limit', dest='task_soft_time_limit',
-                default=conf.CELERYD_TASK_SOFT_TIME_LIMIT, type='int'),
+                default=conf.CELERYD_TASK_SOFT_TIME_LIMIT, type='float'),
             Option('--maxtasksperchild', dest='max_tasks_per_child',
                 default=conf.CELERYD_MAX_TASKS_PER_CHILD, type='int'),
             Option('--queues', '-Q', default=[]),

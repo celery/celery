@@ -83,6 +83,9 @@ class BasePool(object):
     def on_hard_timeout(self, job):
         pass
 
+    def maybe_handle_result(self, *args):
+        pass
+
     def maintain_pool(self, *args, **kwargs):
         pass
 

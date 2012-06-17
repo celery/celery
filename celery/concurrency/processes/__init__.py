@@ -79,10 +79,14 @@ class TaskPool(BasePool):
         Will pre-fork all workers so they're ready to accept tasks.
 
         """
-        self._pool = self.Pool(processes=self.limit,
-                               initializer=process_initializer,
-                               **self.options)
-        self.on_apply = self._pool.apply_async
+        P = self._pool = self.Pool(processes=self.limit,
+                                   initializer=process_initializer,
+                                   **self.options)
+        self.on_apply = P.apply_async
+        self.on_soft_timeout = P._timeout_handler.on_soft_timeout
+        self.on_hard_timeout = P._timeout_handler.on_hard_timeout
+        self.maintain_pool = P.maintain_pool
+        self.maybe_handle_result = P._result_handler.handle_event
 
     def did_start_ok(self):
         return self._pool.did_start_ok()
@@ -130,15 +134,6 @@ class TaskPool(BasePool):
     def handle_timeouts(self):
         if self._pool._timeout_handler:
             self._pool._timeout_handler.handle_event()
-
-    def on_soft_timeout(self, job):
-        self._pool._timeout_handler.on_soft_timeout(job)
-
-    def on_hard_timeout(self, job):
-        self._pool._timeout_handler.on_hard_timeout(job)
-
-    def maintain_pool(self, *args, **kwargs):
-        self._pool.maintain_pool(*args, **kwargs)
 
     @property
     def num_processes(self):
