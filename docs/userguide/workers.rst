@@ -173,15 +173,15 @@ Some remote control commands also have higher-level interfaces using
 
 Sending the :control:`rate_limit` command and keyword arguments::
 
-    >>> celery.control.broadcast("rate_limit",
-    ...                          arguments={"task_name": "myapp.mytask",
-    ...                                     "rate_limit": "200/m"})
+    >>> celery.control.broadcast('rate_limit',
+    ...                          arguments={'task_name': 'myapp.mytask',
+    ...                                     'rate_limit': '200/m'})
 
 This will send the command asynchronously, without waiting for a reply.
 To request a reply you have to use the `reply` argument::
 
-    >>> celery.control.broadcast("rate_limit", {
-    ...     "task_name": "myapp.mytask", "rate_limit": "200/m"}, reply=True)
+    >>> celery.control.broadcast('rate_limit', {
+    ...     'task_name': 'myapp.mytask', 'rate_limit': '200/m'}, reply=True)
     [{'worker1.example.com': 'New rate limit set successfully'},
      {'worker2.example.com': 'New rate limit set successfully'},
      {'worker3.example.com': 'New rate limit set successfully'}]
@@ -189,10 +189,10 @@ To request a reply you have to use the `reply` argument::
 Using the `destination` argument you can specify a list of workers
 to receive the command::
 
-    >>> celery.control.broadcast("rate_limit", {
-    ...     "task_name": "myapp.mytask",
-    ...     "rate_limit": "200/m"}, reply=True,
-    ...                             destination=["worker1.example.com"])
+    >>> celery.control.broadcast('rate_limit', {
+    ...     'task_name': 'myapp.mytask',
+    ...     'rate_limit': '200/m'}, reply=True,
+    ...                             destination=['worker1.example.com'])
     [{'worker1.example.com': 'New rate limit set successfully'}]
 
 
@@ -226,13 +226,13 @@ Terminating a task also revokes it.
 
 ::
 
-    >>> celery.control.revoke("d9078da5-9915-40a0-bfa1-392c7bde42ed")
+    >>> celery.control.revoke('d9078da5-9915-40a0-bfa1-392c7bde42ed')
 
-    >>> celery.control.revoke("d9078da5-9915-40a0-bfa1-392c7bde42ed",
+    >>> celery.control.revoke('d9078da5-9915-40a0-bfa1-392c7bde42ed',
     ...                       terminate=True)
 
-    >>> celery.control.revoke("d9078da5-9915-40a0-bfa1-392c7bde42ed",
-    ...                       terminate=True, signal="SIGKILL")
+    >>> celery.control.revoke('d9078da5-9915-40a0-bfa1-392c7bde42ed',
+    ...                       terminate=True, signal='SIGKILL')
 
 .. _worker-persistent-revokes:
 
@@ -312,7 +312,7 @@ Example changing the time limit for the ``tasks.crawl_the_web`` task
 to have a soft time limit of one minute, and a hard time limit of
 two minutes::
 
-    >>> celery.control.time_limit("tasks.crawl_the_web",
+    >>> celery.control.time_limit('tasks.crawl_the_web',
                                   soft=60, hard=120, reply=True)
     [{'worker1.example.com': {'ok': 'time limits set successfully'}}]
 
@@ -331,13 +331,13 @@ Changing rate-limits at runtime
 Example changing the rate limit for the `myapp.mytask` task to accept
 200 tasks a minute on all servers::
 
-    >>> celery.control.rate_limit("myapp.mytask", "200/m")
+    >>> celery.control.rate_limit('myapp.mytask', '200/m')
 
 Example changing the rate limit on a single host by specifying the
 destination host name::
 
-    >>> celery.control.rate_limit("myapp.mytask", "200/m",
-    ...            destination=["worker1.example.com"])
+    >>> celery.control.rate_limit('myapp.mytask', '200/m',
+    ...            destination=['worker1.example.com'])
 
 .. warning::
 
@@ -464,23 +464,23 @@ being imported by the worker processes:
 
 .. code-block:: python
 
-    >>> celery.control.broadcast("pool_restart",
-    ...                          arguments={"modules": ["foo", "bar"]})
+    >>> celery.control.broadcast('pool_restart',
+    ...                          arguments={'modules': ['foo', 'bar']})
 
 Use the ``reload`` argument to reload modules it has already imported:
 
 .. code-block:: python
 
-    >>> celery.control.broadcast("pool_restart",
-    ...                          arguments={"modules": ["foo"],
-    ...                                     "reload": True})
+    >>> celery.control.broadcast('pool_restart',
+    ...                          arguments={'modules': ['foo'],
+    ...                                     'reload': True})
 
 If you don't specify any modules then all known tasks modules will
 be imported/reloaded:
 
 .. code-block:: python
 
-    >>> celery.control.broadcast("pool_restart", arguments={"reload": True})
+    >>> celery.control.broadcast('pool_restart', arguments={'reload': True})
 
 The ``modules`` argument is a list of modules to modify. ``reload``
 specifies whether to reload modules if they have previously been imported.
@@ -518,11 +518,11 @@ and it supports the same commands as the :class:`@Celery.control` interface.
     >>> i = celery.control.inspect()
 
     # Specify multiple nodes to inspect.
-    >>> i = celery.control.inspect(["worker1.example.com",
-                                    "worker2.example.com"])
+    >>> i = celery.control.inspect(['worker1.example.com',
+                                    'worker2.example.com'])
 
     # Specify a single node to inspect.
-    >>> i = celery.control.inspect("worker1.example.com")
+    >>> i = celery.control.inspect('worker1.example.com')
 
 .. _worker-inspect-registered-tasks:
 
@@ -546,10 +546,10 @@ You can get a list of active tasks using
 
     >>> i.active()
     [{'worker1.example.com':
-        [{"name": "tasks.sleeptask",
-          "id": "32666e9b-809c-41fa-8e93-5ae0c80afbbf",
-          "args": "(8,)",
-          "kwargs": "{}"}]}]
+        [{'name': 'tasks.sleeptask',
+          'id': '32666e9b-809c-41fa-8e93-5ae0c80afbbf',
+          'args': '(8,)',
+          'kwargs': '{}'}]}]
 
 .. _worker-inspect-eta-schedule:
 
@@ -561,18 +561,18 @@ You can get a list of tasks waiting to be scheduled by using
 
     >>> i.scheduled()
     [{'worker1.example.com':
-        [{"eta": "2010-06-07 09:07:52", "priority": 0,
-          "request": {
-            "name": "tasks.sleeptask",
-            "id": "1a7980ea-8b19-413e-91d2-0b74f3844c4d",
-            "args": "[1]",
-            "kwargs": "{}"}},
-         {"eta": "2010-06-07 09:07:53", "priority": 0,
-          "request": {
-            "name": "tasks.sleeptask",
-            "id": "49661b9a-aa22-4120-94b7-9ee8031d219d",
-            "args": "[2]",
-            "kwargs": "{}"}}]}]
+        [{'eta': '2010-06-07 09:07:52', 'priority': 0,
+          'request': {
+            'name': 'tasks.sleeptask',
+            'id': '1a7980ea-8b19-413e-91d2-0b74f3844c4d',
+            'args': '[1]',
+            'kwargs': '{}'}},
+         {'eta': '2010-06-07 09:07:53', 'priority': 0,
+          'request': {
+            'name': 'tasks.sleeptask',
+            'id': '49661b9a-aa22-4120-94b7-9ee8031d219d',
+            'args': '[2]',
+            'kwargs': '{}'}}]}]
 
 .. note::
 
@@ -591,10 +591,10 @@ You can get a list of these using
 
     >>> i.reserved()
     [{'worker1.example.com':
-        [{"name": "tasks.sleeptask",
-          "id": "32666e9b-809c-41fa-8e93-5ae0c80afbbf",
-          "args": "(8,)",
-          "kwargs": "{}"}]}]
+        [{'name': 'tasks.sleeptask',
+          'id': '32666e9b-809c-41fa-8e93-5ae0c80afbbf',
+          'args': '(8,)',
+          'kwargs': '{}'}]}]
 
 
 Additional Commands
@@ -607,8 +607,8 @@ Remote shutdown
 
 This command will gracefully shut down the worker remotely::
 
-    >>> celery.control.broadcast("shutdown") # shutdown all workers
-    >>> celery.control.broadcast("shutdown, destination="worker1.example.com")
+    >>> celery.control.broadcast('shutdown') # shutdown all workers
+    >>> celery.control.broadcast('shutdown, destination='worker1.example.com')
 
 .. control:: ping
 
@@ -668,6 +668,6 @@ Here's an example control command that restarts the broker connection:
 
     @Panel.register
     def reset_connection(panel):
-        panel.logger.critical("Connection reset by remote control.")
+        panel.logger.critical('Connection reset by remote control.')
         panel.consumer.reset_connection()
-        return {"ok": "connection reset"}
+        return {'ok': 'connection reset'}

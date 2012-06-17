@@ -69,7 +69,7 @@ that could result in a race condition leading to an annoying warning.
     As an alternative to deleting the old exchange you can
     configure a new name for the exchange::
 
-        CELERY_RESULT_EXCHANGE = "celeryresults2"
+        CELERY_RESULT_EXCHANGE = 'celeryresults2'
 
     But you have to make sure that all clients and workers
     use this new setting, so they are updated to use the same
@@ -269,22 +269,22 @@ for the ``tasks.add`` task:
 
 .. code-block:: python
 
-    CELERY_ANNOTATIONS = {"tasks.add": {"rate_limit": "10/s"}}
+    CELERY_ANNOTATIONS = {'tasks.add': {'rate_limit': '10/s'}}
 
 or change the same for all tasks:
 
 .. code-block:: python
 
-   CELERY_ANNOTATIONS = {"*": {"rate_limit": "10/s"}}
+   CELERY_ANNOTATIONS = {'*': {'rate_limit': '10/s'}}
 
 You can change methods too, for example the ``on_failure`` handler:
 
 .. code-block:: python
 
     def my_on_failure(self, exc, task_id, args, kwargs, einfo):
-        print("Oh no! Task failed: %r" % (exc, ))
+        print('Oh no! Task failed: %r' % (exc, ))
 
-    CELERY_ANNOTATIONS = {"*": {"on_failure": my_on_failure}}
+    CELERY_ANNOTATIONS = {'*': {'on_failure': my_on_failure}}
 
 If you need more flexibility then you can also create objects
 that filter for tasks to annotate:
@@ -294,8 +294,8 @@ that filter for tasks to annotate:
     class MyAnnotate(object):
 
         def annotate(self, task):
-            if task.name.startswith("tasks."):
-                return {"rate_limit": "10/s"}
+            if task.name.startswith('tasks.'):
+                return {'rate_limit': '10/s'}
 
     CELERY_ANNOTATIONS = (MyAnnotate(), {...})
 

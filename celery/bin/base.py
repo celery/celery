@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-    celery.bin.base
-    ~~~~~~~~~~~~~~~
-
-    Base class for command line programs.
-
-    Implements tools for command line arguments parsing,
-    and more.
 
 .. _preload-options:
 

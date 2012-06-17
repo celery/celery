@@ -63,7 +63,7 @@ these can be specified as arguments to the decorator:
 
 .. code-block:: python
 
-    @celery.task(serializer="json")
+    @celery.task(serializer='json')
     def create_user(username, password):
         User.objects.create(username=username, password=password)
 
@@ -110,7 +110,7 @@ For example:
 
 .. code-block:: python
 
-    >>> @celery.task(name="sum-of-two-numbers")
+    >>> @celery.task(name='sum-of-two-numbers')
     >>> def add(x, y):
     ...     return x + y
 
@@ -123,7 +123,7 @@ defined in another module.
 
 .. code-block:: python
 
-    >>> @celery.task(name="tasks.add")
+    >>> @celery.task(name='tasks.add')
     >>> def add(x, y):
     ...     return x + y
 
@@ -161,7 +161,7 @@ and an :exc:`~@NotRegistered` error will be raised by the worker.
 
 This is also the case if using Django and using `project.myapp`::
 
-    INSTALLED_APPS = ("project.myapp", )
+    INSTALLED_APPS = ('project.myapp', )
 
 The worker will have the tasks registered as "project.myapp.tasks.*",
 while this is what happens in the client if the module is imported as
@@ -180,7 +180,7 @@ add the project directory to the Python path::
     import sys
     sys.path.append(os.getcwd())
 
-    INSTALLED_APPS = ("myapp", )
+    INSTALLED_APPS = ('myapp', )
 
 This makes more sense from the reusable app perspective anyway.
 
@@ -227,7 +227,7 @@ An example task accessing information in the context is:
 
     @celery.task()
     def dump_context(x, y):
-        print("Executing task id %r, args: %r kwargs: %r" % (
+        print('Executing task id %r, args: %r kwargs: %r' % (
             add.request.id, add.request.args, add.request.kwargs))
 
 .. _task-logging:
@@ -253,7 +253,7 @@ for all of your tasks at the top of your module:
 
     @celery.task()
     def add(x, y):
-        logger.info("Adding %s + %s" % (x, y))
+        logger.info('Adding %s + %s' % (x, y))
         return x + y
 
 Celery uses the standard Python logger library,
@@ -479,7 +479,7 @@ General
     task is currently running.
 
     The host name and process id of the worker executing the task
-    will be available in the state metadata (e.g. `result.info["pid"]`)
+    will be available in the state metadata (e.g. `result.info['pid']`)
 
     The global default can be overridden by the
     :setting:`CELERY_TRACK_STARTED` setting.
@@ -671,8 +671,8 @@ Use :meth:`~@Task.update_state` to update a task's state::
     @celery.task()
     def upload_files(filenames):
         for i, file in enumerate(filenames):
-            current_task.update_state(state="PROGRESS",
-                meta={"current": i, "total": len(filenames)})
+            current_task.update_state(state='PROGRESS',
+                meta={'current': i, 'total': len(filenames)})
 
 
 Here we created the state `"PROGRESS"`, which tells any application
@@ -786,7 +786,7 @@ If you have a task,
     class NaiveAuthenticateServer(Task):
 
         def __init__(self):
-            self.users = {"george": "password"}
+            self.users = {'george': 'password'}
 
         def run(self, username, password):
             try:
@@ -822,7 +822,7 @@ base class for new task types.
         abstract = True
 
         def after_return(self, *args, **kwargs):
-            print("Task returned: %r" % (self.request, ))
+            print('Task returned: %r' % (self.request, ))
 
 
     @celery.task(base=DebugTask)
@@ -1132,7 +1132,7 @@ that automatically expands some abbreviations in it:
 
     @celery.task()
     def expand_abbreviations(article):
-        article.body.replace("MyCorp", "My Corporation")
+        article.body.replace('MyCorp', 'My Corporation')
         article.save()
 
 First, an author creates an article and saves it, then the author
@@ -1154,7 +1154,7 @@ re-fetch the article in the task body:
     @celery.task()
     def expand_abbreviations(article_id):
         article = Article.objects.get(id=article_id)
-        article.body.replace("MyCorp", "My Corporation")
+        article.body.replace('MyCorp', 'My Corporation')
         article.save()
 
     >>> expand_abbreviations(article_id)
@@ -1228,19 +1228,19 @@ The comment model looks like this:
 
 
     class Comment(models.Model):
-        name = models.CharField(_("name"), max_length=64)
-        email_address = models.EmailField(_("email address"))
-        homepage = models.URLField(_("home page"),
+        name = models.CharField(_('name'), max_length=64)
+        email_address = models.EmailField(_('email address'))
+        homepage = models.URLField(_('home page'),
                                    blank=True, verify_exists=False)
-        comment = models.TextField(_("comment"))
-        pub_date = models.DateTimeField(_("Published date"),
+        comment = models.TextField(_('comment'))
+        pub_date = models.DateTimeField(_('Published date'),
                                         editable=False, auto_add_now=True)
-        is_spam = models.BooleanField(_("spam?"),
+        is_spam = models.BooleanField(_('spam?'),
                                       default=False, editable=False)
 
         class Meta:
-            verbose_name = _("comment")
-            verbose_name_plural = _("comments")
+            verbose_name = _('comment')
+            verbose_name_plural = _('comments')
 
 
 In the view where the comment is posted, we first write the comment
@@ -1268,11 +1268,11 @@ blog/views.py
             model = Comment
 
 
-    def add_comment(request, slug, template_name="comments/create.html"):
+    def add_comment(request, slug, template_name='comments/create.html'):
         post = get_object_or_404(Entry, slug=slug)
-        remote_addr = request.META.get("REMOTE_ADDR")
+        remote_addr = request.META.get('REMOTE_ADDR')
 
-        if request.method == "post":
+        if request.method == 'post':
             form = CommentForm(request.POST, request.FILES)
             if form.is_valid():
                 comment = form.save()
@@ -1283,7 +1283,7 @@ blog/views.py
         else:
             form = CommentForm()
 
-        context = RequestContext(request, {"form": form})
+        context = RequestContext(request, {'form': form})
         return render_to_response(template_name, context_instance=context)
 
 
@@ -1315,13 +1315,13 @@ blog/tasks.py
     @celery.task()
     def spam_filter(comment_id, remote_addr=None):
         logger = spam_filter.get_logger()
-        logger.info("Running spam filter for comment %s" % comment_id)
+        logger.info('Running spam filter for comment %s' % comment_id)
 
         comment = Comment.objects.get(pk=comment_id)
         current_domain = Site.objects.get_current().domain
-        akismet = Akismet(settings.AKISMET_KEY, "http://%s" % domain)
+        akismet = Akismet(settings.AKISMET_KEY, 'http://%s' % domain)
         if not akismet.verify_key():
-            raise ImproperlyConfigured("Invalid AKISMET_KEY")
+            raise ImproperlyConfigured('Invalid AKISMET_KEY')
 
 
         is_spam = akismet.comment_check(user_ip=remote_addr,

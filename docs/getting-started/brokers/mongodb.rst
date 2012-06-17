@@ -28,7 +28,7 @@ Configuration
 Configuration is easy, set the transport, and configure the location of
 your MongoDB database::
 
-    BROKER_URL = "mongodb://localhost:27017/database_name"
+    BROKER_URL = 'mongodb://localhost:27017/database_name'
 
 Where the URL is in the format of::
 

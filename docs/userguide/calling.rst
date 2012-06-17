@@ -39,7 +39,7 @@ The API defines a standard set of execution options, as well as three methods:
     - ``T.delay(arg, kwarg=value)``
         always a shortcut to ``.apply_async``.
 
-    - ``T.apply_async((arg, ), {"kwarg": value})``
+    - ``T.apply_async((arg, ), {'kwarg': value})``
 
     - ``T.apply_async(countdown=10)``
         executes 10 seconds from now.
@@ -62,13 +62,13 @@ function:
 
 .. code-block:: python
 
-    task.delay(arg1, arg2, kwarg1="x", kwarg2="y")
+    task.delay(arg1, arg2, kwarg1='x', kwarg2='y')
 
 Using :meth:`~@Task.apply_async` instead we have to write:
 
 .. code-block:: python
 
-    task.apply_async(args=[arg1, arg2], kwargs={"kwarg1": "x", "kwarg2": "y"})
+    task.apply_async(args=[arg1, arg2], kwargs={'kwarg1': 'x', 'kwarg2': 'y'})
 
 .. sidebar:: Tip
 
@@ -99,7 +99,7 @@ called `add`, returning the sum of two arguments:
 
     .. code-block:: python
 
-        task.s(arg1, arg2, kwarg1="x", kwargs2="y").apply_async()
+        task.s(arg1, arg2, kwarg1='x', kwargs2='y').apply_async()
 
 .. _calling-links:
 
@@ -146,7 +146,7 @@ This is an example error callback:
     def error_handler(uuid):
         result = AsyncResult(uuid)
         exc = result.get(propagate=False)
-        print("Task %r raised exception: %r\n%r" % (
+        print('Task %r raised exception: %r\n%r' % (
               exc, result.traceback))
 
 it can be added to the task using the ``link_error`` execution
@@ -282,10 +282,10 @@ For example, the default policy correlates to:
 .. code-block:: python
 
     add.apply_async((2, 2), retry=True, retry_policy={
-        "max_retries": 3,
-        "interval_start": 0,
-        "interval_step": 0.2,
-        "interval_max": 0.2,
+        'max_retries': 3,
+        'interval_start': 0,
+        'interval_step': 0.2,
+        'interval_max': 0.2,
     })
 
 the maximum time spent retrying will be 0.4 seconds.  It is set relatively
@@ -383,7 +383,7 @@ Example setting a custom serializer for a single task invocation:
 
 .. code-block:: python
 
-    >>> add.apply_async((10, 10), serializer="json")
+    >>> add.apply_async((10, 10), serializer='json')
 
 .. _calling-compression:
 
@@ -403,7 +403,7 @@ to use when sending a task:
 
 Example specifying the compression used when calling a task::
 
-    >>> add.apply_async((2, 2), compression="zlib")
+    >>> add.apply_async((2, 2), compression='zlib')
 
 .. _calling-connections:
 
@@ -457,7 +457,7 @@ Celery can route tasks to different queues.
 
 Simple routing (name <-> name) is accomplished using the ``queue`` option::
 
-    add.apply_async(queue="priority.high")
+    add.apply_async(queue='priority.high')
 
 You can then assign workers to the ``priority.high`` queue by using
 the workers :option:`-Q` argument::

@@ -25,7 +25,6 @@ Contents
     :maxdepth: 1
 
     copyright
-    conventions
 
 .. toctree::
     :maxdepth: 2

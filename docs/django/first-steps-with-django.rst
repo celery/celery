@@ -38,7 +38,7 @@ to your Django project's ``settings.py`` module. For example
 we can configure the :setting:`BROKER_URL` setting to specify
 what broker to use::
 
-    BROKER_URL = "amqp://guest:guest@localhost:5672/"
+    BROKER_URL = 'amqp://guest:guest@localhost:5672/'
 
 That's it.
 

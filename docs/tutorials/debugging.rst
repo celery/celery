@@ -68,7 +68,7 @@ change it and continue execution of the task::
 
     (Pdb) result
     4
-    (Pdb) result = "hello from rdb"
+    (Pdb) result = 'hello from rdb'
     (Pdb) continue
     Connection closed by foreign host.
 

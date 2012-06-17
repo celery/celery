@@ -76,7 +76,7 @@ creates partials:
 
     >>> s = add.s(2, 2)
     >>> s.delay(debug=True)                    # -> add(2, 2, debug=True)
-    >>> s.apply_async(kwargs={"debug": True})  # same
+    >>> s.apply_async(kwargs={'debug': True})  # same
 
 - Any options added will be merged with the options in the signature,
   with the new options taking precedence::
@@ -89,7 +89,7 @@ You can also clone subtasks to augment these::
     >>> s = add.s(2)
     proj.tasks.add(2)
 
-    >>> s.clone(args=(4, ), kwargs={"debug": True})
+    >>> s.clone(args=(4, ), kwargs={'debug': True})
     proj.tasks.add(2, 4, debug=True)
 
 Partials are meant to be used with callbacks, any tasks linked or chord
@@ -219,8 +219,8 @@ the error callbacks take the id of the parent task as argument instead:
     def log_error(task_id):
         result = celery.AsyncResult(task_id)
         result.get(propagate=False)  # make sure result written.
-        with open("/var/errors/%s" % (task_id, )) as fh:
-            fh.write("--\n\n%s %s %s" % (
+        with open('/var/errors/%s' % (task_id, )) as fh:
+            fh.write('--\n\n%s %s %s' % (
                 task_id, result.result, result.traceback))
 
 To make it even easier to link tasks together there is
@@ -288,7 +288,7 @@ In addition you can work with the result graph as a
 
 You can even convert these graphs to *dot* format::
 
-    >>> with open("graph.dot", "w") as fh:
+    >>> with open('graph.dot', 'w') as fh:
     ...     res.parent.parent.graph.to_dot(fh)
 
 
@@ -562,7 +562,7 @@ to apply the starmap after 10 seconds::
 
     >>> add.starmap(zip(range(10), range(10))).apply_async(countdown=10)
 
-.. _chunking-ov:
+.. _chunking:
 
 Chunking
 ========

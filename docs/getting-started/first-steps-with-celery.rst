@@ -109,13 +109,13 @@ Let's create the file :file:`tasks.py`:
 
     from celery import Celery
 
-    celery = Celery("tasks", broker="amqp://guest@localhost//")
+    celery = Celery('tasks', broker='amqp://guest@localhost//')
 
     @celery.task()
     def add(x, y):
         return x + y
 
-    if __name__ == "__main__":
+    if __name__ == '__main__':
         celery.start()
 
 The first argument to :class:`~celery.app.Celery` is the name of the current module,
@@ -199,12 +199,12 @@ as messages.  The backend is specified via the ``backend`` argument to
 :class:`@Celery`, (or via the :setting:`CELERY_RESULT_BACKEND` setting if
 you choose to use a configuration module)::
 
-    celery = Celery("tasks", backend="amqp", broker="amqp://")
+    celery = Celery('tasks', backend='amqp', broker='amqp://')
 
 or if you want to use Redis as the result backend, but still use RabbitMQ as
 the message broker (a popular combination)::
 
-    celery = Celery("tasks", backend="redis://localhost", broker="amqp://")
+    celery = Celery('tasks', backend='redis://localhost', broker='amqp://')
 
 To read more about result backends please see :ref:`task-result-backends`.
 
@@ -263,16 +263,16 @@ task payloads by changing the :setting:`CELERY_TASK_SERIALIZER` setting:
 
 .. code-block:: python
 
-    celery.conf.CELERY_TASK_SERIALIZER = "json"
+    celery.conf.CELERY_TASK_SERIALIZER = 'json'
 
 If you are configuring many settings at once you can use ``update``:
 
 .. code-block:: python
 
     celery.conf.update(
-        CELERY_TASK_SERIALIZER="json",
-        CELERY_RESULT_SERIALIZER="json",
-        CELERY_TIMEZONE="Europe/Oslo",
+        CELERY_TASK_SERIALIZER='json',
+        CELERY_RESULT_SERIALIZER='json',
+        CELERY_TIMEZONE='Europe/Oslo',
         CELERY_ENABLE_UTC=True,
     )
 
@@ -289,7 +289,7 @@ by calling the :meth:`~@Celery.config_from_object` method:
 
 .. code-block:: python
 
-    celery.config_from_object("celeryconfig")
+    celery.config_from_object('celeryconfig')
 
 This module is often called "``celeryconfig``", but you can use any
 module name.
@@ -301,12 +301,12 @@ current directory or on the Python path, it could look like this:
 
 .. code-block:: python
 
-    BROKER_URL = "amqp://"
-    CELERY_RESULT_BACKEND = "amqp://"
+    BROKER_URL = 'amqp://'
+    CELERY_RESULT_BACKEND = 'amqp://'
 
-    CELERY_TASK_SERIALIZER = "json"
-    CELERY_RESULT_SERIALIZER = "json"
-    CELERY_TIMEZONE = "Europe/Oslo"
+    CELERY_TASK_SERIALIZER = 'json'
+    CELERY_RESULT_SERIALIZER = 'json'
+    CELERY_TIMEZONE = 'Europe/Oslo'
     CELERY_ENABLE_UTC = True
 
 To verify that your configuration file works properly, and does't
@@ -324,7 +324,7 @@ route a misbehaving task to a dedicated queue:
 .. code-block:: python
 
     CELERY_ROUTES = {
-        "tasks.add": "low-priority",
+        'tasks.add': 'low-priority',
     }
 
 Or instead of routing it you could rate limit the task
@@ -336,7 +336,7 @@ instead, so that only 10 tasks of this type can be processed in a minute
 .. code-block:: python
 
     CELERY_ANNOTATIONS = {
-        "tasks.add": {"rate_limit": "10/m"}
+        'tasks.add': {'rate_limit': '10/m'}
     }
 
 If you are using RabbitMQ, Redis or MongoDB as the

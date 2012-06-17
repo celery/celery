@@ -28,7 +28,7 @@ Configuration
 Configuration is easy, just configure the location of
 your Redis database::
 
-    BROKER_URL = "redis://localhost:6379/0"
+    BROKER_URL = 'redis://localhost:6379/0'
 
 Where the URL is in the format of::
 
@@ -42,7 +42,7 @@ Results
 If you also want to store the state and return values of tasks in Redis,
 you should configure these settings::
 
-    CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 
 For a complete list of options supported by the Redis result backend see
 :ref:`conf-redis-result-backend`

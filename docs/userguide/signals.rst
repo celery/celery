@@ -30,7 +30,7 @@ Example connecting to the :signal:`task_sent` signal:
     @task_sent.connect
     def task_sent_handler(sender=None, task_id=None, task=None, args=None,
                           kwargs=None, \*\*kwds):
-        print("Got signal task_sent for task id %s" % (task_id, ))
+        print('Got signal task_sent for task id %s' % (task_id, ))
 
 
 Some signals also have a sender which you can filter by. For example the
@@ -41,10 +41,10 @@ has been sent by providing the `sender` argument to
 
 .. code-block:: python
 
-    @task_sent.connect(task_sent_handler, sender="tasks.add")
+    @task_sent.connect(task_sent_handler, sender='tasks.add')
     def task_sent_handler(sender=None, task_id=None, task=None, args=None,
                           kwargs=None, \*\*kwds):
-        print("Got signal task_sent for task id %s" % (task_id, ))
+        print('Got signal task_sent for task id %s' % (task_id, ))
 
 .. _signal-ref:
 
@@ -193,9 +193,9 @@ to setup worker specific configuration:
 
     from celery.signals import celeryd_init
 
-    @celeryd_init.connect(sender="worker12.example.com")
+    @celeryd_init.connect(sender='worker12.example.com')
     def configure_worker12(conf=None, **kwargs):
-        conf.CELERY_DEFAULT_RATE_LIMIT = "10/m"
+        conf.CELERY_DEFAULT_RATE_LIMIT = '10/m'
 
 or to set up configuration for multiple workers you can omit specifying a
 sender when you connect:
@@ -206,9 +206,9 @@ sender when you connect:
 
     @celeryd_init.connect
     def configure_workers(sender=None, conf=None, **kwargs):
-        if sender in ("worker1.example.com", "worker2.example.com"):
-            conf.CELERY_DEFAULT_RATE_LIMIT = "10/m"
-        if sender == "worker3.example.com":
+        if sender in ('worker1.example.com', 'worker2.example.com'):
+            conf.CELERY_DEFAULT_RATE_LIMIT = '10/m'
+        if sender == 'worker3.example.com':
             conf.CELERYD_PREFETCH_MULTIPLIER = 0
 
 Provides arguments:

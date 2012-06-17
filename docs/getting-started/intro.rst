@@ -50,11 +50,11 @@ Celery is…
 
             from celery import Celery
 
-            celery = Celery("hello", broker="amqp://guest@localhost//")
+            celery = Celery('hello', broker='amqp://guest@localhost//')
 
             @celery.task()
             def hello():
-                return "hello world"
+                return 'hello world'
 
     - **Highly Available**
 
@@ -175,8 +175,8 @@ Celery is…
         - :ref:`use logging from my task <task-logging>`
         - :ref:`learn about best practices <task-best-practices>`
         - :ref:`create a custom task base class <task-custom-classes>`
-        - :ref:`add a callback to a group of tasks <chords-ov>`
-        - :ref:`split a task into several chunks <chunking-ov>`
+        - :ref:`add a callback to a group of tasks <chords>`
+        - :ref:`split a task into several chunks <chunking>`
         - :ref:`optimize the worker <guide-optimizing>`
         - :ref:`see a list of built-in task states <task-builtin-states>`
         - :ref:`create custom task states <custom-states>`

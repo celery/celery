@@ -160,7 +160,7 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
 
             .. code-block:: python
 
-                with open("graph.dot") as fh:
+                with open('graph.dot') as fh:
                     result.graph.to_dot(fh)
 
             which can than be used to produce an image::
@@ -192,7 +192,7 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
 
 - Adds ``subtask.link(subtask)`` + ``subtask.link_error(subtask)``
 
-    Shortcut to ``s.options.setdefault("link", []).append(subtask)``
+    Shortcut to ``s.options.setdefault('link', []).append(subtask)``
 
 - Adds ``subtask.flatten_links()``
 
@@ -214,7 +214,7 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
 
     as a shortcut to::
 
-        >>> task.subtask((arg1, arg2), {"kw": 1})
+        >>> task.subtask((arg1, arg2), {'kw': 1})
 
 - Tasks can be chained by using the ``|`` operator::
 
@@ -280,9 +280,9 @@ Additional control commands made public
     .. code-block:: python
 
         >>> celery.control.add_consumer(queue_name,
-        ...     destination=["w1.example.com"])
+        ...     destination=['w1.example.com'])
         >>> celery.control.cancel_consumer(queue_name,
-        ...     destination=["w1.example.com"])
+        ...     destination=['w1.example.com'])
 
     or using the :program:`celery control` command::
 
@@ -304,7 +304,7 @@ Additional control commands made public
     .. code-block:: python
 
         >>> celery.control.autoscale(max=10, min=5,
-        ...     destination=["w1.example.com"])
+        ...     destination=['w1.example.com'])
 
     or using the :program:`celery control` command::
 
@@ -319,8 +319,8 @@ Additional control commands made public
 
     .. code-block:: python
 
-        >>> celery.control.pool_grow(2, destination=["w1.example.com"])
-        >>> celery.contorl.pool_shrink(2, destination=["w1.example.com"])
+        >>> celery.control.pool_grow(2, destination=['w1.example.com'])
+        >>> celery.contorl.pool_shrink(2, destination=['w1.example.com'])
 
     or using the :program:`celery control` command::
 
@@ -388,7 +388,7 @@ Logging support now conforms better with best practices.
 
         @celery.task()
         def add(x, y):
-            logger.debug("Adding %r + %r" % (x, y))
+            logger.debug('Adding %r + %r' % (x, y))
             return x + y
 
     The resulting logger will then inherit from the ``"celery.task"`` logger
@@ -437,7 +437,7 @@ without also initializing the default app environment::
         abstract = True
 
         def __call__(self, *args, **kwargs):
-            print("CALLING %r" % (self, ))
+            print('CALLING %r' % (self, ))
             return self.run(*args, **kwargs)
 
     >>> DebugTask
@@ -513,13 +513,13 @@ In Other News
 
     .. code-block:: python
 
-        celery = Celery(broker="redis://")
+        celery = Celery(broker='redis://')
 
 - Result backends can now be set using an URL
 
     Currently only supported by redis.  Example use::
 
-        CELERY_RESULT_BACKEND = "redis://localhost/1"
+        CELERY_RESULT_BACKEND = 'redis://localhost/1'
 
 - Heartbeat frequency now every 5s, and frequency sent with event
 
@@ -544,11 +544,11 @@ In Other News
 
             @wraps(fun)
             def _inner(*args, **kwargs):
-                print("ARGS: %r" % (args, ))
+                print('ARGS: %r' % (args, ))
             return _inner
 
         CELERY_ANNOTATIONS = {
-            "tasks.add": {"@__call__": debug_args},
+            'tasks.add': {'@__call__': debug_args},
         }
 
     Also tasks are now always bound by class so that
@@ -616,7 +616,7 @@ In Other News
 
     .. code-block:: python
 
-        i = celery.control.inspect(connection=BrokerConnection("redis://"))
+        i = celery.control.inspect(connection=BrokerConnection('redis://'))
         i.active_queues()
 
 * Module :mod:`celery.app.task` is now a module instead of a package.
@@ -702,7 +702,7 @@ to create tasks out of methods::
         def __init__(self):
             self.value = 1
 
-        @celery.task(name="Counter.increment", filter=task_method)
+        @celery.task(name='Counter.increment', filter=task_method)
         def increment(self, n=1):
             self.value += 1
             return self.value
