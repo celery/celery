@@ -29,7 +29,7 @@ where the URL format is::
 
     sqs://aws_access_key_id@aws_secret_access_key@
 
-remember to include the "@" at the end.
+you must *remember to include the "@" at the end*.
 
 The login credentials can also be set using the environment variables
 :envvar:`AWS_ACCESS_KEY_ID` and :envvar:`AWS_SECRET_ACCESS_KEY`,
@@ -38,7 +38,7 @@ in that case the broker url may only be ``sqs://``.
 Options
 =======
 
-region
+Region
 ------
 
 The default region is ``us-east-1`` but you can select another region
@@ -52,7 +52,7 @@ by configuring the :setting:`BROKER_TRANSPORT_OPTIONS` setting::
 
         http://aws.amazon.com/about-aws/globalinfrastructure/
 
-visibility_timeout
+Visibility Timeout
 ------------------
 
 The visibility timeout defines the number of seconds to wait
@@ -63,10 +63,31 @@ This option is set via the :setting:`BROKER_TRANSPORT_OPTIONS` setting::
 
     BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 3600}  # 1 hour.
 
-The default visibility timeout is 120 seconds.
+The default visibility timeout is 30 seconds.
 
-queue_name_prefix
------------------
+Polling Interval
+----------------
+
+The polling interval decides the number of seconds to sleep between
+unsuccessful polls.  This value can be either an int or a float.
+By default the value is 1 second, which means that the worker will
+sleep for one second whenever there are no more messages to read.
+
+You should note that **more frequent polling is also more expensive, so increasing
+the polling interval can save you money**.
+
+The polling interval can be set via the :setting:`BROKER_TRANSPORT_OPTIONS`
+setting::
+
+    BROKER_TRANSPORT_OPTIONS = {'polling_interval': 0.3}
+
+Very frequent polling intervals can cause *busy loops*, which results in the
+worker using a lot of CPU time.  If you need sub-millisecond precision you
+should consider using another transport, like `RabbitMQ <broker-amqp`,
+or `Redis <broker-redis>`.
+
+Queue Prefix
+------------
 
 By default Celery will not assign any prefix to the queue names,
 If you have other services using SQS you can configure it do so
@@ -124,4 +145,4 @@ at this point.
 
     It will create one queue for every task, and the queues will
     not be collected.  This could cost you money that would be better
-    spent contributing an Amazon WS result store backend back to Celery :)
+    spent contributing an AWS result store backend back to Celery :)
