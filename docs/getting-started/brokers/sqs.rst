@@ -27,7 +27,7 @@ You have to specify SQS in the broker URL::
 
 where the URL format is::
 
-    sqs://aws_access_key_id@aws_secret_access_key@
+    sqs://aws_access_key_id:aws_secret_access_key@
 
 you must *remember to include the "@" at the end*.
 
