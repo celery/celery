@@ -53,3 +53,5 @@ Limitations
 The Beanstalk message transport does not currently support:
 
     * Remote control commands (celeryctl, broadcast)
+
+[Q: What's Beanstalk got to do with CouchDB? what are the CouchDB limitations?]

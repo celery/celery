@@ -16,7 +16,7 @@ Synopsis
 ========
 
 Celery is an open source asynchronous task queue/job queue based on
-distributed message passing.  Focused on real-time operation,
+distributed message passing. It is focused on real-time operation,
 but supports scheduling as well.
 
 The execution units, called tasks, are executed concurrently on one or
@@ -95,6 +95,10 @@ The broker delivers tasks to the worker nodes.
 A worker node is a networked machine running `celeryd`.  This can be one or
 more machines depending on the workload.
 
+[Q: Do you mean 'there can be many worker nodes' or 'A worker node can
+be more than one machine'? I think the former...]
+
+
 The result of the task can be stored for later retrieval (called its
 "tombstone").
 
@@ -104,7 +108,7 @@ Example
 =======
 
 You probably want to see some code by now, so here's an example task
-adding two numbers:
+which adds two numbers:
 
 .. code-block:: python
 

@@ -2,7 +2,7 @@
 .. _first-steps:
 
 ========================
- First steps with Celery
+ First Steps with Celery
 ========================
 
 Celery is a task queue with batteries included.
@@ -23,7 +23,7 @@ You will learn about;
 
 Celery may seem daunting at first - but don't worry - this tutorial
 will get you started in no time. It is deliberately kept simple, so
-to not confuse you with advances features.
+to not confuse you with advanced features.
 After you have finished this tutorial
 it's a good idea to browse the rest of the documentation,
 for example the :ref:`next-steps` tutorial, which will

@@ -11,7 +11,7 @@ Installation
 
 For the Redis support you have to install additional dependencies.
 You can install both Celery and these dependencies in one go using
-ehter the `celery-with-redis`_, or the `django-celery-with-redis` bundles::
+either the `celery-with-redis`_, or the `django-celery-with-redis` bundles::
 
     $ pip install -U celery-with-redis
 
@@ -44,5 +44,5 @@ you should configure these settings::
 
     CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 
-For a complete list of options supported by the Redis result backend see
+For a complete list of options supported by the Redis result backend, see
 :ref:`conf-redis-result-backend`
