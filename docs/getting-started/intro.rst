@@ -61,9 +61,7 @@ Celery is…
 
         Workers and clients will automatically retry in the event
         of connection loss or failure, and some brokers support
-        HA in way of *Master/Master* or -- *Master/Slave* replication.
-
-[Q: What's the purpose of the '--' before Master/Slave?]
+        HA in way of *Master/Master* or *Master/Slave* replication.
 
     - **Fast**
 
@@ -214,7 +212,6 @@ Celery is…
         - :ref:`get a list of people and companies using Celery <res-using-celery>`
         - :ref:`write my own remote control command <worker-custom-control-commands>`
         - change worker queues at runtime
-[Q: is there a reference for this?]
 
 .. topic:: Jump to ⟶
 

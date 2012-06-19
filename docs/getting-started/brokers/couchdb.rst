@@ -50,8 +50,6 @@ Storing task state and results in CouchDB is currently **not supported**.
 Limitations
 ===========
 
-The Beanstalk message transport does not currently support:
+The CouchDB message transport does not currently support:
 
     * Remote control commands (celeryctl, broadcast)
-
-[Q: What's Beanstalk got to do with CouchDB? what are the CouchDB limitations?]
