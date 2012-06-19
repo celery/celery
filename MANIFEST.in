@@ -4,7 +4,6 @@ include README.rst
 include MANIFEST.in
 include LICENSE
 include TODO
-include THANKS
 include setup.cfg
 recursive-include celery *.py
 recursive-include funtests *.py
