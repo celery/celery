@@ -27,7 +27,7 @@ Configuration
 =============
 
 Configuration is easy, set the transport, and configure the location of
-your CouchDB database::
+your Beanstalk database::
 
     BROKER_URL = 'beanstalk://localhost:11300'
 

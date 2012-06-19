@@ -39,7 +39,8 @@ Celery is…
 
     - **Simple**
 
-        Celery is easy to use and maintain, and does *not need configuration files*
+        Celery is easy to use and maintain, and does *not need configuration files*.
+
         It has an active, friendly community you can talk to for support,
         including a :ref:`mailing-list <mailing-list>` and and :ref:`IRC
         channel <irc-channel>`.
@@ -62,6 +63,8 @@ Celery is…
         of connection loss or failure, and some brokers support
         HA in way of *Master/Master* or -- *Master/Slave* replication.
 
+[Q: What's the purpose of the '--' before Master/Slave?]
+
     - **Fast**
 
         A single Celery process can process millions of tasks a minute,
@@ -82,10 +85,15 @@ Celery is…
 
         - **Brokers**
 
-            - :ref:`RabbitMQ <broker-rabbitmq>`, :ref:`Redis <broker-redis>`,
-            - :ref:`MongoDB <broker-mongodb>`, :ref:`Beanstalk <broker-beanstalk>`,
-            - :ref:`CouchDB <broker-couchdb>`, :ref:`SQLAlchemy <broker-sqlalchemy>`,
-            - :ref:`Django ORM <broker-django>`, :ref:`Amazon SQS <broker-sqs>`, and more…
+            - :ref:`RabbitMQ <broker-rabbitmq>`
+            - :ref:`Redis <broker-redis>`,
+            - :ref:`MongoDB <broker-mongodb>` 
+            - :ref:`Beanstalk <broker-beanstalk>`
+            - :ref:`CouchDB <broker-couchdb>` 
+            - :ref:`SQLAlchemy <broker-sqlalchemy>`
+            - :ref:`Django ORM <broker-django>` 
+            - :ref:`Amazon SQS <broker-sqs>`
+            - and more…
 
         - **Concurrency**
 
@@ -96,17 +104,26 @@ Celery is…
 
         - **Result Stores**
 
-            - AMQP, Redis
-            - memcached, MongoDB,
-            - SQLAlchemy/Django ORM,
-            - Apache Cassandra.
+            - AMQP 
+            - Redis
+            - memcached 
+            - MongoDB
+            - SQLAlchemy
+            - Django ORM
+            - Apache Cassandra
 
-        - **Serialization & Compression**
+        - **Serialization**
 
             - *pickle*, *json*, *yaml*, *msgpack*.
-            - *zlib*, *bzip2*, or uncompressed.
-            - Cryptographic message signing.
             - Fine-grained serialization settings.
+
+        - **Compression**
+
+            - *zlib*, *bzip2*, or uncompressed.
+
+        - **Crypto**
+
+            - Cryptographic message signing.
 
 
 
@@ -117,7 +134,7 @@ Celery is…
 
         - **Monitoring**
 
-            The stream of monitoring events emit by the worker are used
+            The stream of monitoring events emitted by the worker are used
             by built-in and external tools to tell you what your cluster
             is doing in real-time.
 
@@ -151,7 +168,7 @@ Celery is…
 
             The :option:`--maxtasksperchild` option is used for user tasks
             leaking resources, like memory or file descriptors, that
-            are out simply out of your control.
+            are simply out of your control.
 
             :ref:`Read more… <worker-maxtasksperchild>`.
 
@@ -159,7 +176,7 @@ Celery is…
 
             Each worker component can be customized, and additional components
             can be defined by the user.  The worker is built up using "boot steps" — a
-            dependency graph enabling fine grained control of the workers
+            dependency graph enabling fine grained control of the worker's
             internals.
 
 .. _`Eventlet`: http://eventlet.net/
@@ -197,6 +214,7 @@ Celery is…
         - :ref:`get a list of people and companies using Celery <res-using-celery>`
         - :ref:`write my own remote control command <worker-custom-control-commands>`
         - change worker queues at runtime
+[Q: is there a reference for this?]
 
 .. topic:: Jump to ⟶
 
