@@ -35,6 +35,7 @@ extract_exec_options = mattrgetter(
     'queue', 'routing_key', 'exchange',
     'immediate', 'mandatory', 'priority', 'expires',
     'serializer', 'delivery_mode', 'compression',
+    'time_limit', 'soft_time_limit',
 )
 
 #: Billiard sets this when execv is enabled.
@@ -517,6 +518,8 @@ class Task(object):
         :keyword eta: Explicit time and date to run the retry at
                       (must be a :class:`~datetime.datetime` instance).
         :keyword max_retries: If set, overrides the default retry limit.
+        :keyword time_limit: If set, overrides the default time limit.
+        :keyword soft_time_limit: If set, overrides the default soft time limit.
         :keyword \*\*options: Any extra options to pass on to
                               meth:`apply_async`.
         :keyword throw: If this is :const:`False`, do not raise the
