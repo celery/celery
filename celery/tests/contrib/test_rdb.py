@@ -11,7 +11,7 @@ from celery.contrib.rdb import (
     debugger,
     set_trace,
 )
-from celery.tests.utils import Case, WhateverIO
+from celery.tests.utils import Case, WhateverIO, skip_if_pypy
 
 
 class test_Rdb(Case):
@@ -30,6 +30,7 @@ class test_Rdb(Case):
         self.assertTrue(debugger.return_value.set_trace.called)
 
     @patch('celery.contrib.rdb.Rdb.get_avail_port')
+    @skip_if_pypy
     def test_rdb(self, get_avail_port):
         sock = Mock()
         get_avail_port.return_value = (sock, 8000)
@@ -70,6 +71,7 @@ class test_Rdb(Case):
         rdb.set_quit.assert_called_with()
 
     @patch('socket.socket')
+    @skip_if_pypy
     def test_get_avail_port(self, sock):
         out = WhateverIO()
         sock.return_value.accept.return_value = (Mock(), ['helu'])
