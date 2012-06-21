@@ -156,7 +156,7 @@ class TaskProducer(Producer):
             queue=None, now=None, retries=0, chord=None, callbacks=None,
             errbacks=None, mandatory=None, priority=None, immediate=None,
             routing_key=None, serializer=None, delivery_mode=None,
-            compression=None, time_limit=None, soft_time_limit=None,
+            compression=None, timeout=None, soft_timeout=None,
             **kwargs):
         """Send task message."""
         # merge default and custom policy
@@ -177,7 +177,7 @@ class TaskProducer(Producer):
             expires = now + timedelta(seconds=expires)
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
-        time_limits = (time_limit, soft_time_limit)
+        timeouts = (timeout, soft_timeout)
 
         body = {'task': task_name,
                 'id': task_id,
@@ -189,7 +189,7 @@ class TaskProducer(Producer):
                 'utc': self.utc,
                 'callbacks': callbacks,
                 'errbacks': errbacks,
-                'time_limits': time_limits}
+                'timeouts': timeouts}
         group_id = group_id or taskset_id
         if group_id:
             body['taskset'] = group_id

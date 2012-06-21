@@ -182,9 +182,9 @@ class Request(object):
         request.update({'hostname': hostname, 'is_eager': False,
                         'delivery_info': self.delivery_info,
                         'group': self.request_dict.get('taskset')})
-        time_limit, soft_time_limit = request.get('time_limits', (None, None))
-        time_limit = time_limit or task.time_limit
-        soft_time_limit = soft_time_limit or task.soft_time_limit
+        timeout, soft_timeout = request.get('timeouts', (None, None))
+        timeout = timeout or task.time_limit
+        soft_timeout = soft_timeout or task.soft_time_limit
         result = pool.apply_async(trace_task_ret,
                                   args=(self.name, self.id,
                                         self.args, kwargs, request),
@@ -192,8 +192,8 @@ class Request(object):
                                   timeout_callback=self.on_timeout,
                                   callback=self.on_success,
                                   error_callback=self.on_failure,
-                                  soft_timeout=soft_time_limit,
-                                  timeout=time_limit)
+                                  soft_timeout=soft_timeout,
+                                  timeout=timeout)
         return result
 
     def execute(self, loglevel=None, logfile=None):
