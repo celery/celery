@@ -67,6 +67,7 @@ class Command(BaseCommand):
     prog_name = 'celery'
     show_body = True
     leaf = True
+    show_reply = True
 
     option_list = (
         Option('--quiet', '-q', action='store_true'),
@@ -141,7 +142,7 @@ class Command(BaseCommand):
         reply = replies[node]
         status, preply = self.prettify(reply)
         self.say_chat('->', c.cyan(node, ': ') + status,
-                      text.indent(preply, 4))
+                      text.indent(preply, 4) if self.show_reply else '')
 
     def prettify(self, n):
         OK = str(self.colored.green('OK'))
@@ -525,6 +526,7 @@ class inspect(_RemoteControl):
         'ping': (0.2, 'ping worker(s)'),
         'report': (1.0, 'get bugreport info')
     }
+    show_reply = False
 
     def call(self, method, *args, **options):
         i = self.app.control.inspect(**options)
