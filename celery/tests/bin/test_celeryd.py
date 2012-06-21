@@ -23,7 +23,12 @@ from celery.exceptions import ImproperlyConfigured, SystemTerminate
 from celery.utils.log import ensure_process_aware_logger
 from celery.worker import state
 
-from celery.tests.utils import AppCase, WhateverIO
+from celery.tests.utils import (
+    AppCase,
+    WhateverIO,
+    skip_if_pypy,
+    skip_if_jython,
+)
 
 ensure_process_aware_logger()
 
@@ -580,11 +585,9 @@ class test_signal_handlers(AppCase):
                 state.should_stop = False
 
     @patch('sys.__stderr__')
+    @skip_if_pypy
+    @skip_if_jython
     def test_worker_cry_handler(self, stderr):
-        if sys.platform.startswith('java'):
-            raise SkipTest('Cry handler does not work on Jython')
-        if hasattr(sys, 'pypy_version_info'):
-            raise SkipTest('Cry handler does not work on PyPy')
         if sys.version_info > (2, 5):
             handlers = self.psig(cd.install_cry_handler)
             self.assertIsNone(handlers['SIGUSR1']('SIGUSR1', object()))

@@ -14,14 +14,13 @@ from celery.concurrency.eventlet import (
     TaskPool,
 )
 
-from celery.tests.utils import Case, mock_module, patch_many
+from celery.tests.utils import Case, mock_module, patch_many, skip_if_pypy
 
 
 class EventletCase(Case):
 
+    @skip_if_pypy
     def setUp(self):
-        if getattr(sys, 'pypy_version_info', None):
-            raise SkipTest('Does not work on PyPy')
         try:
             self.eventlet = __import__('eventlet')
         except ImportError:

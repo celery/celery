@@ -14,7 +14,12 @@ from celery.exceptions import ImproperlyConfigured
 from celery.result import AsyncResult
 from celery.utils import uuid
 
-from celery.tests.utils import Case, mask_modules
+from celery.tests.utils import (
+    Case,
+    mask_modules,
+    skip_if_pypy,
+    skip_if_jython,
+)
 
 try:
     import sqlalchemy  # noqa
@@ -33,11 +38,9 @@ class SomeClass(object):
 
 class test_DatabaseBackend(Case):
 
+    @skip_if_pypy
+    @skip_if_jython
     def setUp(self):
-        if sys.platform.startswith('java'):
-            raise SkipTest('SQLite not available on Jython')
-        if hasattr(sys, 'pypy_version_info'):
-            raise SkipTest('Known to not pass on PyPy')
         if DatabaseBackend is None:
             raise SkipTest('sqlalchemy not installed')
 

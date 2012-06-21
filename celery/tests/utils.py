@@ -543,3 +543,23 @@ def assert_signal_called(signal, **expected):
     finally:
         signal.disconnect(call_handler)
     handler.assert_called_with(signal=signal, **expected)
+
+
+def skip_if_pypy(fun):
+
+    @wraps(fun)
+    def _inner(*args, **kwargs):
+        if getattr(sys, 'pypy_version_info', None):
+            raise SkipTest('does not work on PyPy')
+        return fun(*args, **kwargs)
+    return _inner
+
+
+def skip_if_jython(fun):
+
+    @wraps(fun)
+    def _inner(*args, **kwargs):
+        if sys.platform.startswith('java'):
+            raise SkipTest('does not work on Jython')
+        return fun(*args, **kwargs)
+    return _inner
