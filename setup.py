@@ -3,7 +3,6 @@
 import os
 import sys
 import codecs
-import platform
 
 if sys.version_info < (2, 5):
     raise Exception('Celery requires Python 2.5 or higher.')
@@ -71,7 +70,7 @@ classes = """
 classifiers = [s.strip() for s in classes.split('\n') if s]
 
 # -*- Python 3 -*-
-is_py3k  = sys.version_info >= (3, 0)
+is_py3k = sys.version_info[0] == 3
 if is_py3k:
     extra.update(use_2to3=True)
 
@@ -82,6 +81,7 @@ re_meta = re.compile(r'__(\w+?)__\s*=\s*(.*)')
 re_vers = re.compile(r'VERSION\s*=\s*\((.*?)\)')
 re_doc = re.compile(r'^"""(.+?)"""')
 rq = lambda s: s.strip("\"'")
+
 
 def add_default(m):
     attr_name, attr_value = m.groups()
@@ -115,6 +115,7 @@ finally:
 
 # -*- Custom Commands -*-
 
+
 class quicktest(test):
     extra_env = dict(SKIP_RLIMITS=1, QUICKTEST=1)
 
@@ -123,14 +124,19 @@ class quicktest(test):
             os.environ[env_name] = str(env_value)
         test.run(self, *args, **kwargs)
 
-# -*- Installation Dependencies -*-
+# -*- Installation Requires -*-
+
 py_version = sys.version_info
 is_jython = sys.platform.startswith('java')
 is_pypy = hasattr(sys, 'pypy_version_info')
 
 
+def strip_comments(l):
+    return l.split('#', 1)[0].strip()
+
+
 def reqs(f):
-    return filter(None, [l.strip() for l in open(
+    return filter(None, [strip_comments(l) for l in open(
         os.path.join(os.getcwd(), 'requirements', f)).readlines()])
 
 install_requires = reqs('default-py3k.txt' if is_py3k else 'default.txt')
@@ -144,11 +150,15 @@ elif py_version[0:2] == (2, 5):
 
 # -*- Tests Requires -*-
 
-tests_require = ['nose', 'nose-cover3', 'sqlalchemy', 'mock==dev']
-if sys.version_info < (2, 7):
-    tests_require.append('unittest2')
-elif sys.version_info <= (2, 5):
-    tests_require.append('simplejson')
+if is_py3k:
+    tests_require = reqs('test-py3k.txt')
+elif is_pypy:
+    tests_require = reqs('test-pypy.txt')
+else:
+    tests_require = reqs('test.txt')
+
+if py_version[0:2] == (2, 5):
+    tests_require.extend(reqs('test-py25.txt'))
 
 # -*- Long Description -*-
 
