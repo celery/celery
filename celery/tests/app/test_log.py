@@ -17,6 +17,7 @@ from celery.utils.log import (
     get_logger,
     ColorFormatter,
     logger as base_logger,
+    get_task_logger,
 )
 from celery.tests.utils import (
     AppCase, Case, override_stdouts, wrap_logger, get_handlers,
@@ -242,7 +243,7 @@ class test_task_logger(test_default_logger):
         @current_app.task
         def test_task():
             pass
-        test_task.logger.handlers = []
+        self.get_logger().handlers = []
         self.task = test_task
         from celery.state import _task_stack
         _task_stack.push(test_task)
@@ -255,7 +256,7 @@ class test_task_logger(test_default_logger):
         return log.setup_task_loggers(*args, **kwargs)
 
     def get_logger(self, *args, **kwargs):
-        return self.task.logger
+        return get_task_logger("test_task_logger")
 
 
 class MockLogger(logging.Logger):

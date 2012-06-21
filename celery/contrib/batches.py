@@ -81,7 +81,7 @@ def apply_batches_task(task, args, loglevel, logfile):
         result = task(*args)
     except Exception, exc:
         result = None
-        task.logger.error('Error: %r', exc, exc_info=True)
+        logger.error('Error: %r', exc, exc_info=True)
     finally:
         task.pop_request()
     return result

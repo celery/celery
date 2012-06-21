@@ -57,6 +57,9 @@ class Option(object):
     def to_python(self, value):
         return self.typemap[self.type](value)
 
+    def __repr__(self):
+        return '<Option: type->%s default->%r>' % (self.type, self.default)
+
 
 NAMESPACES = {
     'BROKER': {

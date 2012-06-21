@@ -24,7 +24,6 @@ from celery.result import EagerResult
 from celery.utils import fun_takes_kwargs, uuid, maybe_reraise
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
-from celery.utils.log import get_task_logger
 from celery.utils.mail import ErrorMail
 
 from .annotations import resolve_all as resolve_all_annotations
@@ -798,13 +797,9 @@ class Task(object):
         """`repr(task)`"""
         return '<@task: %s>' % (self.name, )
 
-    def _get_logger(self, **kwargs):
-        """Get task-aware logger object."""
-        return get_task_logger(self.name)
-    logger = cached_property(_get_logger)
-
     @property
     def request(self):
+        """Current request object."""
         return self.request_stack.top
 
     @property

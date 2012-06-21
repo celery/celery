@@ -29,11 +29,13 @@ In the consumer:
 .. code-block:: python
 
    from celery.contrib.abortable import AbortableTask
+   from celery.utils.log import get_task_logger
+
+   logger = get_logger(__name__)
 
    class MyLongRunningTask(AbortableTask):
 
        def run(self, **kwargs):
-           logger = self.get_logger(**kwargs)
            results = []
            for x in xrange(100):
                # Check after every 5 loops..

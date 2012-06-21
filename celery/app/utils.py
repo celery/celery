@@ -18,8 +18,7 @@ from celery.utils.imports import qualname
 
 from .defaults import find
 
-SETTINGS_INFO = '%s %s'
-
+#: Format used to generate bugreport information.
 BUGREPORT_INFO = """
 software -> celery:%(celery_v)s kombu:%(kombu_v)s py:%(py_v)s
             billiard:%(billiard_v)s %(driver_v)s
@@ -32,16 +31,14 @@ settings -> transport:%(transport)s results:%(results)s
 
 
 class Settings(datastructures.ConfigurationView):
+    """Celery settings object."""
 
     @property
     def CELERY_RESULT_BACKEND(self):
-        """Resolves deprecated alias ``CELERY_BACKEND``."""
         return self.first('CELERY_RESULT_BACKEND', 'CELERY_BACKEND')
 
     @property
     def BROKER_TRANSPORT(self):
-        """Resolves compat aliases :setting:`BROKER_BACKEND`
-        and :setting:`CARROT_BACKEND`."""
         return self.first('BROKER_TRANSPORT',
                           'BROKER_BACKEND', 'CARROT_BACKEND')
 
@@ -56,21 +53,45 @@ class Settings(datastructures.ConfigurationView):
                 self.first('BROKER_URL', 'BROKER_HOST'))
 
     def without_defaults(self):
+        """Returns the current configuration, but without defaults."""
         # the last stash is the default settings, so just skip that
         return Settings({}, self._order[:-1])
 
-    def find_value_for_key(self, name, namespace='celery'):
-        return self.get_by_parts(*self.find_option(name, namespace)[:-1])
-
     def find_option(self, name, namespace='celery'):
+        """Search for option by name.
+
+        Will return ``(namespace, option_name, Option)`` tuple, e.g.::
+
+            >>> celery.conf.find_option('disable_rate_limits')
+            ('CELERY', 'DISABLE_RATE_LIMITS',
+             <Option: type->bool default->False>))
+
+        :param name: Name of option, cannot be partial.
+        :keyword namespace: Preferred namespace (``CELERY`` by default).
+
+        """
         return find(name, namespace)
 
+    def find_value_for_key(self, name, namespace='celery'):
+        """Shortcut to ``get_by_parts(*find_option(name)[:-1])``"""
+        return self.get_by_parts(*self.find_option(name, namespace)[:-1])
+
     def get_by_parts(self, *parts):
+        """Returns the current value for setting specified as a path.
+
+        Example::
+
+            >>> celery.conf.get_by_parts('CELERY', 'DISABLE_RATE_LIMITS')
+            False
+
+        """
         return self['_'.join(filter(None, parts))]
 
     def humanize(self):
-        return '\n'.join(SETTINGS_INFO % (key + ':', pretty(value, width=50))
-                    for key, value in self.without_defaults().iteritems())
+        """Returns a human readable string showing changes to the
+        configuration."""
+        return '\n'.join('%s %s' % (key + ':', pretty(value, width=50))
+                        for key, value in self.without_defaults().iteritems())
 
 
 class AppPickler(object):
@@ -104,6 +125,7 @@ def _unpickle_app(cls, pickler, *args):
 
 
 def bugreport(app):
+    """Returns a string containing information useful in bug reports."""
     import billiard
     import celery
     import kombu

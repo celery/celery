@@ -20,9 +20,11 @@ except ImportError:  # pragma: no cover
     from cgi import parse_qsl  # noqa
 
 from celery import __version__ as celery_version
+from celery.utils.log import get_task_logger
 from .base import Task as BaseTask
 
 GET_METHODS = frozenset(['GET', 'HEAD'])
+logger = get_task_logger(__name__)
 
 
 class InvalidResponseError(Exception):
@@ -128,11 +130,11 @@ class HttpDispatch(object):
     user_agent = 'celery/%s' % celery_version
     timeout = 5
 
-    def __init__(self, url, method, task_kwargs, logger=None):
+    def __init__(self, url, method, task_kwargs, **kwargs):
         self.url = url
         self.method = method
         self.task_kwargs = task_kwargs
-        self.logger = logger
+        self.logger = kwargs.get("logger") or logger
 
     def make_request(self, url, method, params):
         """Makes an HTTP request and returns the response."""
@@ -188,7 +190,7 @@ class HttpDispatchTask(BaseTask):
     def run(self, url=None, method='GET', **kwargs):
         url = url or self.url
         method = method or self.method
-        return HttpDispatch(url, method, kwargs, self.logger).dispatch()
+        return HttpDispatch(url, method, kwargs).dispatch()
 
 
 class URL(MutableURL):
