@@ -469,7 +469,7 @@ class KeyValueStoreBackend(BaseDictBackend):
         key = self.get_key_for_chord(gid)
         deps = GroupResult.restore(gid, backend=task.backend)
         val = self.incr(key)
-        if val >= deps.total:
+        if val >= len(deps):
             subtask(task.request.chord).delay(deps.join(propagate=propagate))
             deps.delete()
             self.client.delete(key)
