@@ -65,6 +65,9 @@ class MockPool(object):
 
     def __init__(self, *args, **kwargs):
         self.started = True
+        self._timeout_handler = Mock()
+        self._result_handler = Mock()
+        self.maintain_pool = Mock()
         self._state = mp.RUN
         self._processes = kwargs.get('processes')
         self._pool = [Object(pid=i) for i in range(self._processes)]
