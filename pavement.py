@@ -63,17 +63,17 @@ def upload_docs(options):
 
 @task
 def autodoc(options):
-    sh('contrib/release/doc4allmods celery')
+    sh('extra/release/doc4allmods celery')
 
 
 @task
 def verifyindex(options):
-    sh('contrib/release/verify-reference-index.sh')
+    sh('extra/release/verify-reference-index.sh')
 
 
 @task
 def verifyconfigref(options):
-    sh('PYTHONPATH=. %s contrib/release/verify_config_reference.py \
+    sh('PYTHONPATH=. %s extra/release/verify_config_reference.py \
             docs/configuration.rst' % (sys.executable, ))
 
 
@@ -118,13 +118,13 @@ def clean_readme(options):
 @task
 @needs('clean_readme')
 def readme(options):
-    sh('%s contrib/release/sphinx-to-rst.py docs/templates/readme.txt \
+    sh('%s extra/release/sphinx-to-rst.py docs/templates/readme.txt \
             > README.rst' % (sys.executable, ))
 
 
 @task
 def bump(options):
-    sh("contrib/release/bump_version.py \
+    sh("extra/release/bump_version.py \
             celery/__init__.py docs/includes/introduction.txt \
             --before-commit='paver readme'")
 
@@ -188,12 +188,12 @@ def release(options):
 
 @task
 def verify_authors(options):
-    sh('git shortlog -se | cut -f2 | contrib/release/attribution.py')
+    sh('git shortlog -se | cut -f2 | extra/release/attribution.py')
 
 
 @task
 def coreloc(options):
-    sh('xargs sloccount < contrib/release/core-modules.txt')
+    sh('xargs sloccount < extra/release/core-modules.txt')
 
 
 @task

@@ -1847,7 +1847,7 @@ News
 * Redis result backend: Removed deprecated settings `REDIS_TIMEOUT` and
   `REDIS_CONNECT_RETRY`.
 
-* CentOS init script for :program:`celeryd` now available in `contrib/centos`.
+* CentOS init script for :program:`celeryd` now available in `extra/centos`.
 
 * Now depends on `pyparsing` version 1.5.0 or higher.
 
@@ -2634,7 +2634,7 @@ Experimental
 
 * Added generic init.d script using `celeryd-multi`
 
-    http://github.com/celery/celery/tree/master/contrib/generic-init.d/celeryd
+    http://github.com/celery/celery/tree/master/extra/generic-init.d/celeryd
 
 .. _v210-documentation:
 
@@ -3547,7 +3547,7 @@ News
 
     Before you run the tests you need to install the test requirements::
 
-        $ pip install -r contrib/requirements/test.txt
+        $ pip install -r requirements/test.txt
 
     Running all tests::
 
@@ -4205,7 +4205,7 @@ Fixes
   `nose` + `django-nose` for test discovery, and `unittest2` for test
   cases.
 
-* New pip requirements files available in `contrib/requirements`.
+* New pip requirements files available in :file:`requirements`.
 
 * TaskPublisher: Declarations are now done once (per process).
 
@@ -4239,22 +4239,22 @@ Backward incompatible changes
 
     We've had too many problems with celeryd daemonizing itself, so it was
     decided it has to be removed. Example startup scripts has been added to
-    `contrib/`:
+    the `extra/` directory:
 
     * Debian, Ubuntu, (start-stop-daemon)
 
-        `contrib/debian/init.d/celeryd`
-        `contrib/debian/init.d/celerybeat`
+        `extra/debian/init.d/celeryd`
+        `extra/debian/init.d/celerybeat`
 
     * Mac OS X launchd
 
-        `contrib/mac/org.celeryq.celeryd.plist`
-        `contrib/mac/org.celeryq.celerybeat.plist`
-        `contrib/mac/org.celeryq.celerymon.plist`
+        `extra/mac/org.celeryq.celeryd.plist`
+        `extra/mac/org.celeryq.celerybeat.plist`
+        `extra/mac/org.celeryq.celerymon.plist`
 
     * Supervisord (http://supervisord.org)
 
-        `contrib/supervisord/supervisord.conf`
+        `extra/supervisord/supervisord.conf`
 
     In addition to `--detach`, the following program arguments has been
     removed: `--uid`, `--gid`, `--workdir`, `--chroot`, `--pidfile`,
