@@ -120,7 +120,7 @@ class Pool(bootsteps.StartStopComponent):
                 if hard:
                     R._tref = apply_at(now() + (hard - soft),
                                        on_hard_timeout, (R, ))
-                    on_soft_timeout(R)
+                on_soft_timeout(R)
             if soft:
                 R._tref = apply_after(soft * 1000.0, _on_soft_timeout)
             elif hard:
