@@ -4,7 +4,7 @@
 
 .. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
 
-:Version: 2.6.0rc4
+:Version: 2.6.0rc5
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/celery/celery/
@@ -22,7 +22,7 @@ Synopsis
 ========
 
 Celery is an open source asynchronous task queue/job queue based on
-distributed message passing.  Focused on real-time operation,
+distributed message passing. It is focused on real-time operation,
 but supports scheduling as well.
 
 The execution units, called tasks, are executed concurrently on one or
@@ -97,12 +97,13 @@ This is a high level overview of the architecture.
 
 .. image:: http://cloud.github.com/downloads/celery/celery/Celery-Overview-v4.jpg
 
-The broker delivers tasks to the worker nodes.
-A worker node is a networked machine running `celeryd`.  This can be one or
-more machines depending on the workload.
+The broker delivers tasks to the worker instances.
+A worker instance is started by running the `celery worker` program.
+You can have many networked machines running worker instances, forming a
+cluster, or you can run everything on a single machine.
 
-The result of the task can be stored for later retrieval (called its
-"tombstone").
+The return value of the task can be stored for later retrieval,
+and the progress of the task can be tracked (called the task's *state*).
 
 .. _celery-example:
 
@@ -110,7 +111,7 @@ Example
 =======
 
 You probably want to see some code by now, so here's an example task
-adding two numbers:
+which adds two numbers:
 ::
 
     from celery import task
