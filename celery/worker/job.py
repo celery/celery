@@ -20,6 +20,7 @@ from kombu.utils import kwdict, reprcall
 from kombu.utils.encoding import safe_repr, safe_str
 
 from celery import exceptions
+from celery import signals
 from celery.app import app_or_default
 from celery.datastructures import ExceptionInfo
 from celery.task.trace import (
@@ -44,6 +45,7 @@ _does_info = logger.isEnabledFor(logging.INFO)
 tz_to_local = timezone.to_local
 tz_or_local = timezone.tz_or_local
 tz_utc = timezone.utc
+send_revoked = signals.task_revoked.send
 
 task_accepted = state.task_accepted
 task_ready = state.task_ready
@@ -229,9 +231,10 @@ class Request(object):
 
     def terminate(self, pool, signal=None):
         if self.time_start:
-            return pool.terminate_job(self.worker_pid, signal)
+            pool.terminate_job(self.worker_pid, signal)
+            send_revoked(self.task, terminated=True, signal=signal)
         else:
-            self._terminate_on_ack = (True, pool, signal)
+            self._terminate_on_ack = pool, signal
 
     def revoked(self):
         """If revoked, skip task and mark state."""
@@ -244,6 +247,7 @@ class Request(object):
             self.send_event('task-revoked', uuid=self.id)
             self.acknowledge()
             self._already_revoked = True
+            send_revoked(self.task, terminated=False)
             return True
         return False
 
@@ -262,8 +266,7 @@ class Request(object):
         if _does_debug:
             debug('Task accepted: %s[%s] pid:%r', self.name, self.id, pid)
         if self._terminate_on_ack is not None:
-            _, pool, signal = self._terminate_on_ack
-            self.terminate(pool, signal)
+            self.terminate(*self._terminate_on_ack)
 
     def on_timeout(self, soft, timeout):
         """Handler called if the task times out."""

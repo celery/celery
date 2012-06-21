@@ -177,6 +177,24 @@ Provides arguments:
 * einfo
     The :class:`celery.datastructures.ExceptionInfo` instance.
 
+.. signal:: task_revoked
+
+task_revoked
+~~~~~~~~~~~~
+
+Dispatched when a task is revoked/terminated by the worker.
+
+Sender is the task class revoked/terminated.
+
+Provides arguments:
+
+* terminated
+    :const:`True` if the task was terminated.
+
+* signal
+    Signal number used to terminate the task. If this is :const:`None` and
+    terminated is :const:`True` then :sig:`TERM` should be assumed.
+
 Worker Signals
 --------------
 

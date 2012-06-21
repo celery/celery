@@ -570,7 +570,12 @@ In Other News
         $ celery inspect report
 
 - Module ``celery.log`` moved to :mod:`celery.app.log`.
+
 - Module ``celery.task.control`` moved to :mod:`celery.app.control`.
+
+- New signal: :signal:`task-revoked`
+
+    Sent in the main process when the task is revoked or terminated.
 
 - ``AsyncResult.task_id`` renamed to ``AsyncResult.id``
 
