@@ -250,9 +250,14 @@ def add_chord_task(app):
         def apply_async(self, args=(), kwargs={}, task_id=None, **options):
             if self.app.conf.CELERY_ALWAYS_EAGER:
                 return self.apply(args, kwargs, **options)
+            group_id = options.pop('group_id', None)
+            chord = options.pop('chord', None)
             header, body = (list(kwargs['header']),
                             maybe_subtask(kwargs['body']))
-
+            if group_id:
+                body.set(group_id=group_id)
+            if chord:
+                body.set(chord=chord)
             callback_id = body.options.setdefault('task_id', task_id or uuid())
             parent = super(Chord, self).apply_async((header, body), **options)
             body_result = self.AsyncResult(callback_id)
