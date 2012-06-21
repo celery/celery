@@ -531,3 +531,15 @@ def patch_settings(app=None, **config):
 
     for key, value in prev.iteritems():
         setattr(app.conf, key, value)
+
+
+@contextmanager
+def assert_signal_called(signal, **expected):
+    handler = Mock()
+    call_handler = partial(handler)
+    signal.connect(call_handler)
+    try:
+        yield handler
+    finally:
+        signal.disconnect(call_handler)
+    handler.assert_called_with(signal=signal, **expected)

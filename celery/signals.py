@@ -23,7 +23,7 @@ task_postrun = Signal(providing_args=[
 task_success = Signal(providing_args=['result'])
 task_failure = Signal(providing_args=[
     'task_id', 'exception', 'args', 'kwargs', 'traceback', 'einfo'])
-task_revoked = Signal(providing_args=['terminated', 'signal'])
+task_revoked = Signal(providing_args=['terminated', 'signum', 'expired'])
 celeryd_init = Signal(providing_args=['instance'])
 worker_init = Signal(providing_args=[])
 worker_process_init = Signal(providing_args=[])

@@ -23,6 +23,7 @@ from celery import exceptions
 from celery import signals
 from celery.app import app_or_default
 from celery.datastructures import ExceptionInfo
+from celery.platforms import signals as _signals
 from celery.task.trace import (
     trace_task,
     trace_task_ret,
@@ -228,26 +229,31 @@ class Request(object):
             revoked_tasks.add(self.id)
             if self.store_errors:
                 self.task.backend.mark_as_revoked(self.id)
+            return True
 
     def terminate(self, pool, signal=None):
         if self.time_start:
+            signal = _signals.signum(signal or 'TERM')
             pool.terminate_job(self.worker_pid, signal)
-            send_revoked(self.task, terminated=True, signal=signal)
+            send_revoked(self.task, signum=signal,
+                         terminated=True, expired=False)
         else:
             self._terminate_on_ack = pool, signal
 
     def revoked(self):
         """If revoked, skip task and mark state."""
+        expired = False
         if self._already_revoked:
             return True
         if self.expires:
-            self.maybe_expire()
+            expired = self.maybe_expire()
         if self.id in revoked_tasks:
             warn('Skipping revoked task: %s[%s]', self.name, self.id)
             self.send_event('task-revoked', uuid=self.id)
             self.acknowledge()
             self._already_revoked = True
-            send_revoked(self.task, terminated=False)
+            send_revoked(self.task, terminated=False,
+                         signum=None, expired=expired)
             return True
         return False
 

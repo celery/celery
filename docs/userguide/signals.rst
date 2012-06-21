@@ -189,11 +189,14 @@ Sender is the task class revoked/terminated.
 Provides arguments:
 
 * terminated
-    :const:`True` if the task was terminated.
+    Set to :const:`True` if the task was terminated.
 
-* signal
+* signum
     Signal number used to terminate the task. If this is :const:`None` and
     terminated is :const:`True` then :sig:`TERM` should be assumed.
+
+* expired
+  Set to :const:`True` if the task expired.
 
 Worker Signals
 --------------
