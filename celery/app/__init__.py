@@ -11,8 +11,8 @@ from __future__ import absolute_import
 import os
 
 from celery.local import Proxy
-from celery import state
-from celery.state import (  # noqa
+from celery import _state
+from celery._state import (  # noqa
         set_default_app,
         get_current_app as current_app,
         get_current_task as current_task,
@@ -21,7 +21,7 @@ from celery.state import (  # noqa
 from .base import Celery, AppPickler  # noqa
 
 #: Proxy always returning the app set as default.
-default_app = Proxy(lambda: state.default_app)
+default_app = Proxy(lambda: _state.default_app)
 
 #: Function returning the app provided or the default app if none.
 #:
@@ -45,7 +45,7 @@ def bugreport():
 
 def _app_or_default(app=None):
     if app is None:
-        return state.get_current_app()
+        return _state.get_current_app()
     return app
 
 
@@ -53,15 +53,15 @@ def _app_or_default_trace(app=None):  # pragma: no cover
     from traceback import print_stack
     from billiard import current_process
     if app is None:
-        if getattr(state._tls, 'current_app', None):
+        if getattr(_state._tls, 'current_app', None):
             print('-- RETURNING TO CURRENT APP --')  # noqa+
             print_stack()
-            return state._tls.current_app
+            return _state._tls.current_app
         if current_process()._name == 'MainProcess':
             raise Exception('DEFAULT APP')
         print('-- RETURNING TO DEFAULT APP --')      # noqa+
         print_stack()
-        return state.default_app
+        return _state.default_app
     return app
 
 

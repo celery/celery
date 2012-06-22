@@ -24,7 +24,7 @@ from celery import platforms
 from celery.exceptions import AlwaysEagerIgnored
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
-from celery.state import _task_stack, _tls, get_current_app
+from celery._state import _task_stack, _tls, get_current_app
 from celery.utils.functional import first
 from celery.utils.imports import instantiate, symbol_by_name
 

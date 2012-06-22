@@ -12,7 +12,7 @@ from __future__ import with_statement
 
 from itertools import starmap
 
-from celery.state import get_current_worker_task
+from celery._state import get_current_worker_task
 from celery.utils import uuid
 
 #: global list of functions defining tasks that should be

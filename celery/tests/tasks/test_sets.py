@@ -148,7 +148,7 @@ class test_TaskSet(Case):
         @current_app.task
         def xyz():
             pass
-        from celery.state import _task_stack
+        from celery._state import _task_stack
         _task_stack.push(xyz)
         try:
             ts.apply_async(publisher=Publisher())

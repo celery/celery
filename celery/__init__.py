@@ -23,7 +23,7 @@ old_module, new_module = recreate_module(__name__,  # pragma: no cover
     by_module={
         'celery.app':       ['Celery', 'bugreport'],
         'celery.app.task':  ['Task'],
-        'celery.state':     ['current_app', 'current_task'],
+        'celery._state':    ['current_app', 'current_task'],
         'celery.canvas':    ['chain', 'chord', 'chunks',
                              'group', 'subtask', 'xmap', 'xstarmap'],
         'celery.utils':     ['uuid'],

@@ -17,7 +17,7 @@ from kombu.utils import cached_property
 from celery import current_app
 from celery import states
 from celery.__compat__ import class_property
-from celery.state import get_current_worker_task, _task_stack
+from celery._state import get_current_worker_task, _task_stack
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
 from celery.result import EagerResult

@@ -10,7 +10,7 @@ from kombu import Exchange
 
 from celery import Celery
 from celery import app as _app
-from celery import state
+from celery import _state
 from celery.app import defaults
 from celery.loaders.base import BaseLoader
 from celery.platforms import pyimplementation
@@ -43,7 +43,7 @@ test_config = _get_test_config()
 class test_module(Case):
 
     def test_default_app(self):
-        self.assertEqual(_app.default_app, state.default_app)
+        self.assertEqual(_app.default_app, _state.default_app)
 
     def test_bugreport(self):
         self.assertTrue(_app.bugreport())
@@ -87,12 +87,12 @@ class test_App(Case):
         self.assertEqual(app.conf.CELERY_IMPORTS, ('foo', 'bar.foo'))
 
     def test_set_as_current(self):
-        current = state._tls.current_app
+        current = _state._tls.current_app
         try:
             app = Celery(set_as_current=True)
-            self.assertIs(state._tls.current_app, app)
+            self.assertIs(_state._tls.current_app, app)
         finally:
-            state._tls.current_app = current
+            _state._tls.current_app = current
 
     def test_current_task(self):
         app = Celery(set_as_current=False)
@@ -101,11 +101,11 @@ class test_App(Case):
         def foo():
             pass
 
-        state._task_stack.push(foo)
+        _state._task_stack.push(foo)
         try:
             self.assertEqual(app.current_task.name, foo.name)
         finally:
-            state._task_stack.pop()
+            _state._task_stack.pop()
 
     def test_task_not_shared(self):
         with patch('celery.app.base.shared_task') as shared_task:
@@ -222,7 +222,7 @@ class test_App(Case):
             aacaX.apply_async(connection=connection)
 
     def test_apply_async_adds_children(self):
-        from celery.state import _task_stack
+        from celery._state import _task_stack
         app = Celery(set_as_current=False)
 
         @app.task()
@@ -350,7 +350,7 @@ class test_App(Case):
         self.assertIs(x.app, self.app)
         r = loads(dumps(x))
         # not set as current, so ends up as default app after reduce
-        self.assertIs(r.app, state.default_app)
+        self.assertIs(r.app, _state.default_app)
 
     @patch('celery.bin.celery.CeleryCommand.execute_from_commandline')
     def test_start(self, execute):

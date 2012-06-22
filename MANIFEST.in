@@ -12,11 +12,4 @@ recursive-include docs *
 recursive-include extra *
 recursive-include examples *
 recursive-include requirements *.txt
-prune tests/*.pyc
-prune docs/*.pyc
-prune extra/*.pyc
-prune celery/*.pyc
-prune examples/*.pyc
-prune bin/*.pyc
-prune docs/.build
-prune .tox/*
+prune *.pyc

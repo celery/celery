@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-    celery.state
+    celery._state
     ~~~~~~~~~~~~~~~
 
     This is an internal module containing thread state
-    like the current_app, and current_task.  But these
-    should not be imported from here.
+    like the ``current_app``, and ``current_task``.
+
+    This module shouldn't be used directly.
 
 """
 from __future__ import absolute_import

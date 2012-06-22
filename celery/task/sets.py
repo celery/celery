@@ -10,7 +10,7 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-from celery.state import get_current_worker_task
+from celery._state import get_current_worker_task
 from celery.app import app_or_default
 from celery.canvas import subtask, maybe_subtask  # noqa
 from celery.utils import uuid

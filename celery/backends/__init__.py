@@ -13,7 +13,7 @@ import sys
 from kombu.utils.url import _parse_url
 
 from celery.local import Proxy
-from celery.state import current_app
+from celery._state import current_app
 from celery.utils.imports import symbol_by_name
 from celery.utils.functional import memoize
 

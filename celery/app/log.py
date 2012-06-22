@@ -19,7 +19,7 @@ import sys
 from kombu.log import NullHandler
 
 from celery import signals
-from celery.state import get_current_task
+from celery._state import get_current_task
 from celery.utils import isatty
 from celery.utils.compat import WatchedFileHandler
 from celery.utils.log import (

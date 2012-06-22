@@ -4,7 +4,7 @@ from mock import Mock, patch
 
 from celery import current_app as app, group, task, chord
 from celery.app import builtins
-from celery.state import _task_stack
+from celery._state import _task_stack
 from celery.tests.utils import Case
 
 

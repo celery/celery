@@ -17,7 +17,7 @@ import signal as _signal
 
 from celery import platforms
 from celery import signals
-from celery.state import set_default_app
+from celery._state import set_default_app
 from celery.concurrency.base import BasePool
 from celery.task import trace
 from billiard.pool import Pool, RUN, CLOSE
