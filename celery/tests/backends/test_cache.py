@@ -65,7 +65,8 @@ class test_CacheBackend(Case):
         tb = CacheBackend(backend='memory://')
 
         deps = Mock()
-        deps.total = 2
+        deps.__len__ = Mock()
+        deps.__len__.return_value = 2
         setresult.restore.return_value = deps
         task = Mock()
         task.name = 'foobarbaz'

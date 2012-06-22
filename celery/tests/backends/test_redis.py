@@ -155,7 +155,8 @@ class test_RedisBackend(Case):
     def test_on_chord_part_return(self, setresult):
         b = self.MockBackend()
         deps = Mock()
-        deps.total = 10
+        deps.__len__ = Mock()
+        deps.__len__.return_value = 10
         setresult.restore.return_value = deps
         b.client.incr.return_value = 1
         task = Mock()
@@ -168,7 +169,7 @@ class test_RedisBackend(Case):
             b.on_chord_part_return(task)
             self.assertTrue(b.client.incr.call_count)
 
-            b.client.incr.return_value = deps.total
+            b.client.incr.return_value = len(deps)
             b.on_chord_part_return(task)
             deps.join.assert_called_with(propagate=False)
             deps.delete.assert_called_with()
