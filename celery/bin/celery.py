@@ -37,7 +37,7 @@ Type '%(prog_name)s <command> --help' for help using a specific command.
 commands = {}
 
 command_classes = (
-    ('Main', ['worker', 'events', 'beat', 'shell', 'amqp', 'help'], 'green'),
+    ('Main', ['worker', 'events', 'beat', 'shell', 'multi', 'amqp', 'help'], 'green'),
     ('Remote Control', ['status', 'inspect', 'control'], 'blue'),
     ('Utils', ['purge', 'list', 'migrate', 'apply', 'result', 'report'], None),
 )
@@ -187,6 +187,18 @@ class Delegate(Command):
     def run(self, *args, **kwargs):
         self.target.check_args(args)
         return self.target.run(*args, **kwargs)
+
+
+class multi(Command):
+    """Start multiple worker instances."""
+
+    def get_options(self):
+        return ()
+
+    def run_from_argv(self, prog_name, argv):
+        from celery.bin.celeryd_multi import MultiTool
+        return MultiTool().execute_from_commandline(argv, prog_name)
+multi = command(multi)
 
 
 class worker(Delegate):
