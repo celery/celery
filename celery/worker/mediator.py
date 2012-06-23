@@ -45,6 +45,7 @@ class WorkerComponent(StartStopComponent):
 
 
 class Mediator(bgThread):
+    """Mediator thread."""
 
     #: The task queue, a :class:`~Queue.Queue` instance.
     ready_queue = None

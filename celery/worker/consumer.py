@@ -423,32 +423,35 @@ class Consumer(object):
                 # the number of seconds until we need to fire timers again.
                 poll_timeout = fire_timers() if scheduled else 1
 
-                if qos.prev != qos.value:
-                    update_qos()
-
                 update_readers(on_poll_start())
                 if readers or writers:
                     connection.more_to_read = True
-                    for fileno, event in poll(poll_timeout) or ():
-                        try:
-                            if event & READ:
-                                readers[fileno](fileno, event)
-                            if event & WRITE:
-                                writers[fileno](fileno, event)
-                            if event & ERR:
-                                for handlermap in readers, writers:
-                                    try:
-                                        handlermap[fileno](fileno, event)
-                                    except KeyError:
-                                        pass
-                        except Empty:
-                            break
-                        except socket.error:
-                            if self._state != CLOSE:  # pragma: no cover
-                                raise
-                    while keep_draining and connection.more_to_read:
-                        drain_nowait()
-                    poll_timeout = 0
+                    while connection.more_to_read:
+                        if qos.prev != qos.value:
+                            update_qos()
+
+                        for fileno, event in poll(poll_timeout) or ():
+                            try:
+                                if event & READ:
+                                    readers[fileno](fileno, event)
+                                if event & WRITE:
+                                    writers[fileno](fileno, event)
+                                if event & ERR:
+                                    for handlermap in readers, writers:
+                                        try:
+                                            handlermap[fileno](fileno, event)
+                                        except KeyError:
+                                            pass
+                            except Empty:
+                                continue
+                            except socket.error:
+                                if self._state != CLOSE:  # pragma: no cover
+                                    raise
+                        if keep_draining:
+                            drain_nowait()
+                            poll_timeout = 0
+                        else:
+                            connection.more_to_read = False
                 else:
                     # no sockets yet, startup is probably not done.
                     sleep(min(poll_timeout, 0.1))
@@ -464,7 +467,7 @@ class Consumer(object):
             return
 
         if self._does_info:
-            info('Got task from broker: %s', task.shortinfo())
+            info('Got task from broker: %s', task)
 
         if self.event_dispatcher.enabled:
             self.event_dispatcher.send('task-received', uuid=task.id,
