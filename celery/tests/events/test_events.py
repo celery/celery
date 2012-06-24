@@ -70,7 +70,7 @@ class test_EventDispatcher(AppCase):
         eventer.flush()
 
     def test_enter_exit(self):
-        with self.app.broker_connection() as conn:
+        with self.app.connection() as conn:
             d = self.app.events.Dispatcher(conn)
             d.close = Mock()
             with d as _d:
@@ -80,7 +80,7 @@ class test_EventDispatcher(AppCase):
     def test_enable_disable_callbacks(self):
         on_enable = Mock()
         on_disable = Mock()
-        with self.app.broker_connection() as conn:
+        with self.app.connection() as conn:
             with self.app.events.Dispatcher(conn, enabled=False) as d:
                 d.on_enabled.add(on_enable)
                 d.on_disabled.add(on_disable)
@@ -90,7 +90,7 @@ class test_EventDispatcher(AppCase):
                 on_disable.assert_called_with()
 
     def test_enabled_disable(self):
-        connection = self.app.broker_connection()
+        connection = self.app.connection()
         channel = connection.channel()
         try:
             dispatcher = self.app.events.Dispatcher(connection,
@@ -160,7 +160,7 @@ class test_EventReceiver(AppCase):
             events.EventReceiver.handlers = {}
 
     def test_itercapture(self):
-        connection = self.app.broker_connection()
+        connection = self.app.connection()
         try:
             r = self.app.events.Receiver(connection, node_id='celery.tests')
             it = r.itercapture(timeout=0.0001, wakeup=False)
@@ -177,7 +177,7 @@ class test_EventReceiver(AppCase):
             connection.close()
 
     def test_itercapture_limit(self):
-        connection = self.app.broker_connection()
+        connection = self.app.connection()
         channel = connection.channel()
         try:
             events_received = [0]

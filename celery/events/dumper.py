@@ -76,7 +76,7 @@ def evdump(app=None, out=sys.stdout):
     app = app_or_default(app)
     dumper = Dumper(out=out)
     dumper.say('-> evdump: starting capture...')
-    conn = app.broker_connection()
+    conn = app.connection()
     recv = app.events.Receiver(conn, handlers={'*': dumper.on_event})
     try:
         recv.capture()

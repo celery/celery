@@ -101,7 +101,7 @@ def evcam(camera, freq=1.0, maxrate=None, loglevel=0,
     cam = instantiate(camera, state, app=app, freq=freq,
                       maxrate=maxrate, timer=timer)
     cam.install()
-    conn = app.broker_connection()
+    conn = app.connection()
     recv = app.events.Receiver(conn, handlers={'*': state.event})
     try:
         try:

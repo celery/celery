@@ -308,7 +308,7 @@ class list_(Command):
         if what not in topics:
             raise Error('unknown topic %r (choose one of: %s)' % (
                             what, available))
-        with self.app.broker_connection() as conn:
+        with self.app.connection() as conn:
             self.app.amqp.TaskConsumer(conn).declare()
             topics[what](conn.manager)
 list_ = command(list_, 'list')
@@ -655,11 +655,11 @@ class migrate(Command):
     def run(self, *args, **kwargs):
         if len(args) != 2:
             return self.show_help('migrate')
-        from kombu import BrokerConnection
+        from kombu import Connection
         from celery.contrib.migrate import migrate_tasks
 
-        migrate_tasks(BrokerConnection(args[0]),
-                      BrokerConnection(args[1]),
+        migrate_tasks(Connection(args[0]),
+                      Connection(args[1]),
                       callback=self.on_migrate_task)
 migrate = command(migrate)
 

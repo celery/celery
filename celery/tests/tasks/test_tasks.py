@@ -345,7 +345,7 @@ class test_tasks(Case):
     def test_send_task_sent_event(self):
         T1 = self.createTask('c.unittest.t.t1')
         app = T1.app
-        conn = app.broker_connection()
+        conn = app.connection()
         chan = conn.channel()
         app.conf.CELERY_SEND_TASK_SENT_EVENT = True
         dispatcher = [None]
@@ -366,7 +366,7 @@ class test_tasks(Case):
         self.assertTrue(dispatcher[0])
 
     def test_get_publisher(self):
-        connection = app_or_default().broker_connection()
+        connection = app_or_default().connection()
         p = increment_counter.get_publisher(connection, auto_declare=False,
                                             exchange='foo')
         self.assertEqual(p.exchange.name, 'foo')

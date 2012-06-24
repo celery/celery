@@ -19,9 +19,7 @@ from collections import deque
 from contextlib import contextmanager
 from copy import copy
 
-from kombu.common import eventloop
-from kombu.entity import Exchange, Queue
-from kombu.messaging import Consumer, Producer
+from kombu import eventloop, Exchange, Queue, Consumer, Producer
 from kombu.utils import cached_property
 
 from celery.app import app_or_default

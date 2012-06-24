@@ -131,7 +131,7 @@ def bugreport(app):
     import kombu
 
     try:
-        trans = app.broker_connection().transport
+        trans = app.connection().transport
         driver_v = '%s:%s' % (trans.driver_name, trans.driver_version())
     except Exception:
         driver_v = ''

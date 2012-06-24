@@ -222,7 +222,7 @@ class Worker(configurated):
             'app': appr,
             'hostname': self.hostname,
             'version': __version__,
-            'conninfo': self.app.broker_connection().as_uri(),
+            'conninfo': self.app.connection().as_uri(),
             'concurrency': concurrency,
             'events': events,
             'queues': app.amqp.queues.format(indent=0, indent_first=False),

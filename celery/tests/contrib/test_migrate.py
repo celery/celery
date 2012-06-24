@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-from kombu import BrokerConnection, Producer, Queue, Exchange
+from kombu import Connection, Producer, Queue, Exchange
 from kombu.exceptions import StdChannelError
 from mock import patch
 
@@ -53,8 +53,8 @@ class test_migrate_task(Case):
 class test_migrate_tasks(AppCase):
 
     def test_migrate(self, name='testcelery'):
-        x = BrokerConnection('memory://foo')
-        y = BrokerConnection('memory://foo')
+        x = Connection('memory://foo')
+        y = Connection('memory://foo')
         # use separate state
         x.default_channel.queues = {}
         y.default_channel.queues = {}
@@ -93,7 +93,7 @@ class test_migrate_tasks(AppCase):
             qd.side_effect = effect
             migrate_tasks(x, y)
 
-        x = BrokerConnection('memory://')
+        x = Connection('memory://')
         x.default_channel.queues = {}
         y.default_channel.queues = {}
         callback = Mock()

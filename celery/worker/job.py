@@ -417,7 +417,7 @@ class Request(object):
                     self.name, self.id,
                     ' eta:[%s]' % (self.eta, ) if self.eta else '',
                     ' expires:[%s]' % (self.expires, ) if self.expires else '')
-    shortinfo == __str__
+    shortinfo = __str__
 
     def __repr__(self):
         return '<%s %s: %s>' % (type(self).__name__, self.id,

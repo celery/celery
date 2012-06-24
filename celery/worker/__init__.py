@@ -321,7 +321,7 @@ class WorkController(configurated):
         self.pidfile = pidfile
         self.pidlock = None
         self.use_eventloop = (detect_environment() == 'default' and
-                              self.app.broker_connection().is_evented and
+                              self.app.connection().is_evented and
                               not self.app.IS_WINDOWS)
 
         # Update celery_include to have all known task modules, so that we

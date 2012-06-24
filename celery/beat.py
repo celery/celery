@@ -299,7 +299,7 @@ class Scheduler(object):
 
     @cached_property
     def connection(self):
-        return self.app.broker_connection()
+        return self.app.connection()
 
     @cached_property
     def publisher(self):

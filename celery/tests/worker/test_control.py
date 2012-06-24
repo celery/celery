@@ -125,7 +125,7 @@ class test_ControlPanel(Case):
     def test_active_queues(self):
         import kombu
 
-        x = kombu.Consumer(current_app.broker_connection(),
+        x = kombu.Consumer(current_app.connection(),
                            [kombu.Queue('foo', kombu.Exchange('foo'), 'foo'),
                             kombu.Queue('bar', kombu.Exchange('bar'), 'bar')],
                            auto_declare=False)

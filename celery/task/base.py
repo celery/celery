@@ -75,7 +75,7 @@ class Task(BaseTask):
     def establish_connection(self, connect_timeout=None):
         """Deprecated method used to get a broker connection.
 
-        Should be replaced with :meth:`@Celery.broker_connection`
+        Should be replaced with :meth:`@Celery.connection`
         instead, or by acquiring connections from the connection pool:
 
         .. code-block:: python
@@ -85,10 +85,10 @@ class Task(BaseTask):
                 ...
 
             # establish fresh connection
-            with celery.broker_connection() as conn:
+            with celery.connection() as conn:
                 ...
         """
-        return self._get_app().broker_connection(
+        return self._get_app().connection(
                 connect_timeout=connect_timeout)
 
     def get_publisher(self, connection=None, exchange=None,
@@ -99,7 +99,7 @@ class Task(BaseTask):
 
         .. code-block:: python
 
-            with celery.broker_connection() as conn:
+            with celery.connection() as conn:
                 with celery.amqp.TaskProducer(conn) as prod:
                     my_task.apply_async(producer=prod)
 

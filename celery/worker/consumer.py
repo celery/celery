@@ -331,7 +331,7 @@ class Consumer(object):
         self.pidbox_node = self.app.control.mailbox.Node(self.hostname,
                                                          state=pidbox_state,
                                                          handlers=Panel.data)
-        conninfo = self.app.broker_connection()
+        conninfo = self.app.connection()
         self.connection_errors = conninfo.connection_errors
         self.channel_errors = conninfo.channel_errors
 
@@ -739,7 +739,7 @@ class Consumer(object):
 
         # remember that the connection is lazy, it won't establish
         # until it's needed.
-        conn = self.app.broker_connection()
+        conn = self.app.connection()
         if not self.app.conf.BROKER_CONNECTION_RETRY:
             # retry disabled, just call connect directly.
             conn.connect()

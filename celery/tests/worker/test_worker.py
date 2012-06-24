@@ -8,9 +8,9 @@ from datetime import datetime, timedelta
 from Queue import Empty
 
 from billiard.exceptions import WorkerLostError
+from kombu import Connection
 from kombu.exceptions import StdChannelError
 from kombu.transport.base import Message
-from kombu.connection import BrokerConnection
 from mock import Mock, patch
 from nose import SkipTest
 
@@ -221,7 +221,7 @@ class test_Consumer(Case):
         self.assertEqual(info['prefetch_count'], 10)
         self.assertFalse(info['broker'])
 
-        l.connection = current_app.broker_connection()
+        l.connection = current_app.connection()
         info = l.info
         self.assertTrue(info['broker'])
 
@@ -234,7 +234,7 @@ class test_Consumer(Case):
         l = MyKombuConsumer(self.ready_queue, timer=self.timer)
 
         l.reset_connection()
-        self.assertIsInstance(l.connection, BrokerConnection)
+        self.assertIsInstance(l.connection, Connection)
 
         l._state = RUN
         l.event_dispatcher = None
@@ -247,7 +247,7 @@ class test_Consumer(Case):
         self.assertIsNone(l.task_consumer)
 
         l.reset_connection()
-        self.assertIsInstance(l.connection, BrokerConnection)
+        self.assertIsInstance(l.connection, Connection)
         l.stop_consumers()
 
         l.stop()
@@ -379,7 +379,7 @@ class test_Consumer(Case):
 
     def test_consume_messages_ignores_socket_timeout(self):
 
-        class Connection(current_app.broker_connection().__class__):
+        class Connection(current_app.connection().__class__):
             obj = None
 
             def drain_events(self, **kwargs):
@@ -395,7 +395,7 @@ class test_Consumer(Case):
 
     def test_consume_messages_when_socket_error(self):
 
-        class Connection(current_app.broker_connection().__class__):
+        class Connection(current_app.connection().__class__):
             obj = None
 
             def drain_events(self, **kwargs):
@@ -417,7 +417,7 @@ class test_Consumer(Case):
 
     def test_consume_messages(self):
 
-        class Connection(current_app.broker_connection().__class__):
+        class Connection(current_app.connection().__class__):
             obj = None
 
             def drain_events(self, **kwargs):
@@ -647,7 +647,7 @@ class test_Consumer(Case):
         self.assertIsNone(l.connection)
         self.assertTrue(connections[0].closed)
 
-    @patch('kombu.connection.BrokerConnection._establish_connection')
+    @patch('kombu.connection.Connection._establish_connection')
     @patch('kombu.utils.sleep')
     def test_open_connection_errback(self, sleep, connect):
         l = MyKombuConsumer(self.ready_queue, timer=self.timer)
@@ -691,7 +691,7 @@ class test_Consumer(Case):
         l.task_consumer = Mock()
         l.broadcast_consumer = Mock()
         l.qos = _QoS()
-        l.connection = BrokerConnection()
+        l.connection = Connection()
         l.iterations = 0
 
         def raises_KeyError(limit=None):
@@ -714,7 +714,7 @@ class test_Consumer(Case):
         l.qos = _QoS()
         l.task_consumer = Mock()
         l.broadcast_consumer = Mock()
-        l.connection = BrokerConnection()
+        l.connection = Connection()
         l.consume_messages = Mock(side_effect=socket.error('foo'))
         with self.assertRaises(socket.error):
             l.start()

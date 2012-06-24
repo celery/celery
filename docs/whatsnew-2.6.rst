@@ -621,7 +621,9 @@ In Other News
 
     .. code-block:: python
 
-        i = celery.control.inspect(connection=BrokerConnection('redis://'))
+        from kombu import Connection
+
+        i = celery.control.inspect(connection=Connection('redis://'))
         i.active_queues()
 
 * Module :mod:`celery.app.task` is now a module instead of a package.

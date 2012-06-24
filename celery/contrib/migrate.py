@@ -13,7 +13,7 @@ import socket
 
 from functools import partial
 
-from kombu.common import eventloop
+from kombu import eventloop
 from kombu.exceptions import StdChannelError
 from kombu.utils.encoding import ensure_bytes
 

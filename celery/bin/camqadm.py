@@ -342,7 +342,7 @@ class AMQPAdmin(object):
     def connect(self, conn=None):
         if conn:
             conn.close()
-        conn = self.app.broker_connection()
+        conn = self.app.connection()
         self.note('-> connecting to %s.' % conn.as_uri())
         conn.connect()
         self.note('-> connected.')

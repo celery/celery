@@ -188,12 +188,12 @@ class Celery(object):
                                                   countdown=countdown, eta=eta,
                                                   expires=expires, **options))
 
-    def broker_connection(self, hostname=None, userid=None,
+    def connection(self, hostname=None, userid=None,
             password=None, virtual_host=None, port=None, ssl=None,
             insist=None, connect_timeout=None, transport=None,
             transport_options=None, **kwargs):
         conf = self.conf
-        return self.amqp.BrokerConnection(
+        return self.amqp.Connection(
                     hostname or conf.BROKER_HOST,
                     userid or conf.BROKER_USER,
                     password or conf.BROKER_PASSWORD,
@@ -206,6 +206,7 @@ class Celery(object):
                                 'BROKER_CONNECTION_TIMEOUT', connect_timeout),
                     transport_options=dict(conf.BROKER_TRANSPORT_OPTIONS,
                                            **transport_options or {}))
+    broker_connection = connection
 
     @contextmanager
     def default_connection(self, connection=None, *args, **kwargs):
@@ -385,8 +386,8 @@ class Celery(object):
     def pool(self):
         if self._pool is None:
             register_after_fork(self, self._after_fork)
-            self._pool = self.broker_connection().Pool(
-                            limit=self.conf.BROKER_POOL_LIMIT)
+            limit = self.conf.BROKER_POOL_LIMIT
+            self._pool = self.connection().Pool(limit=limit)
         return self._pool
 
     @property

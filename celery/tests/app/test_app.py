@@ -217,7 +217,7 @@ class test_App(Case):
         def aacaX():
             pass
 
-        connection = app.broker_connection('asd://')
+        connection = app.connection('asd://')
         with self.assertRaises(KeyError):
             aacaX.apply_async(connection=connection)
 
@@ -375,13 +375,13 @@ class test_App(Case):
                                        'userid': 'guest',
                                        'password': 'guest',
                                        'virtual_host': '/'},
-                            self.app.broker_connection('amqplib://').info())
+                            self.app.connection('amqplib://').info())
         self.app.conf.BROKER_PORT = 1978
         self.app.conf.BROKER_VHOST = 'foo'
         self.assertDictContainsSubset({'port': 1978,
                                        'virtual_host': 'foo'},
-                    self.app.broker_connection('amqplib://:1978/foo').info())
-        conn = self.app.broker_connection('amqplib:////value')
+                    self.app.connection('amqplib://:1978/foo').info())
+        conn = self.app.connection('amqplib:////value')
         self.assertDictContainsSubset({'virtual_host': '/value'},
                                       conn.info())
 
@@ -422,7 +422,7 @@ class test_App(Case):
             def send(self, type, **fields):
                 self.sent.append((type, fields))
 
-        conn = self.app.broker_connection()
+        conn = self.app.connection()
         chan = conn.channel()
         try:
             for e in ('foo_exchange', 'moo_exchange', 'bar_exchange'):

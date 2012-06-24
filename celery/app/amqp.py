@@ -11,7 +11,7 @@ from __future__ import absolute_import
 from datetime import timedelta
 from weakref import WeakValueDictionary
 
-from kombu import BrokerConnection, Consumer, Exchange, Producer, Queue
+from kombu import Connection, Consumer, Exchange, Producer, Queue
 from kombu.common import entry_to_queue
 from kombu.pools import ProducerPool
 
@@ -240,8 +240,11 @@ class TaskConsumer(Consumer):
 
 
 class AMQP(object):
-    BrokerConnection = BrokerConnection
+    Connection = Connection
     Consumer = Consumer
+
+    #: compat alias to Connection
+    BrokerConnection = Connection
 
     #: Cached and prepared routing table.
     _rtable = None

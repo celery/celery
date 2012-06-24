@@ -72,7 +72,7 @@ COMPAT_MODULES = {
         'messaging': {
             'TaskPublisher': 'amqp.TaskPublisher',
             'TaskConsumer': 'amqp.TaskConsumer',
-            'establish_connection': 'broker_connection',
+            'establish_connection': 'connection',
             'with_connection': 'with_default_connection',
             'get_consumer_set': 'amqp.TaskConsumer',
         },

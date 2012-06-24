@@ -11,15 +11,14 @@ from celery.tests.utils import AppCase
 class test_TaskProducer(AppCase):
 
     def test__exit__(self):
-
-        publisher = self.app.amqp.TaskProducer(self.app.broker_connection())
+        publisher = self.app.amqp.TaskProducer(self.app.connection())
         publisher.release = Mock()
         with publisher:
             pass
         publisher.release.assert_called_with()
 
     def test_declare(self):
-        publisher = self.app.amqp.TaskProducer(self.app.broker_connection())
+        publisher = self.app.amqp.TaskProducer(self.app.connection())
         publisher.exchange.name = 'foo'
         publisher.declare()
         publisher.exchange.name = None

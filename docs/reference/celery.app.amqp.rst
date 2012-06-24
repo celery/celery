@@ -10,10 +10,10 @@
 
     .. autoclass:: AMQP
 
-        .. attribute:: BrokerConnection
+        .. attribute:: Connection
 
             Broker connection class used.  Default is
-            :class:`kombu.connection.BrokerConnection`.
+            :class:`kombu.connection.Connection`.
 
         .. attribute:: Consumer
 

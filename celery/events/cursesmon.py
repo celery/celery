@@ -480,7 +480,7 @@ def capture_events(app, state, display):  # pragma: no cover
 
     while 1:
         sys.stderr.write('-> evtop: starting capture...\n')
-        with app.broker_connection() as conn:
+        with app.connection() as conn:
             try:
                 conn.ensure_connection(on_connection_error,
                                        app.conf.BROKER_CONNECTION_MAX_RETRIES)
