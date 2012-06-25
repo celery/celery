@@ -321,7 +321,7 @@ class test_ControlPanel(Case):
              'destination': hostname,
              'arguments': {'task_id': tid,
                            'task_name': mytask.name}}
-        self.panel.dispatch_from_message(m)
+        self.panel.handle_message(m)
         self.assertIn(tid, revoked)
 
     def test_revoke_with_name_not_in_registry(self):
@@ -330,7 +330,7 @@ class test_ControlPanel(Case):
              'destination': hostname,
              'arguments': {'task_id': tid,
                            'task_name': 'xxxxxxxxx33333333388888'}}
-        self.panel.dispatch_from_message(m)
+        self.panel.handle_message(m)
         self.assertIn(tid, revoked)
 
     def test_revoke(self):
@@ -338,13 +338,13 @@ class test_ControlPanel(Case):
         m = {'method': 'revoke',
              'destination': hostname,
              'arguments': {'task_id': tid}}
-        self.panel.dispatch_from_message(m)
+        self.panel.handle_message(m)
         self.assertIn(tid, revoked)
 
         m = {'method': 'revoke',
              'destination': 'does.not.exist',
              'arguments': {'task_id': tid + 'xxx'}}
-        self.panel.dispatch_from_message(m)
+        self.panel.handle_message(m)
         self.assertNotIn(tid + 'xxx', revoked)
 
     def test_revoke_terminate(self):
@@ -370,24 +370,24 @@ class test_ControlPanel(Case):
         m = {'method': 'autoscale',
              'destination': hostname,
              'arguments': {'max': '10', 'min': '2'}}
-        r = self.panel.dispatch_from_message(m)
+        r = self.panel.handle_message(m)
         self.assertIn('ok', r)
 
         self.panel.state.consumer.controller.autoscaler = None
-        r = self.panel.dispatch_from_message(m)
+        r = self.panel.handle_message(m)
         self.assertIn('error', r)
 
     def test_ping(self):
         m = {'method': 'ping',
              'destination': hostname}
-        r = self.panel.dispatch_from_message(m)
+        r = self.panel.handle_message(m)
         self.assertEqual(r, 'pong')
 
     def test_shutdown(self):
         m = {'method': 'shutdown',
              'destination': hostname}
         with self.assertRaises(SystemExit):
-            self.panel.dispatch_from_message(m)
+            self.panel.handle_message(m)
 
     def test_panel_reply(self):
 
