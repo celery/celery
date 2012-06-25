@@ -37,7 +37,8 @@ Type '%(prog_name)s <command> --help' for help using a specific command.
 commands = {}
 
 command_classes = (
-    ('Main', ['worker', 'events', 'beat', 'shell', 'multi', 'amqp', 'help'], 'green'),
+    ('Main', ['worker', 'events', 'beat',
+              'shell', 'multi', 'amqp', 'help'], 'green'),
     ('Remote Control', ['status', 'inspect', 'control'], 'blue'),
     ('Utils', ['purge', 'list', 'migrate', 'apply', 'result', 'report'], None),
 )

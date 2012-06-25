@@ -12,8 +12,6 @@ from __future__ import with_statement
 import os
 import sys
 
-from kombu.utils import cached_property
-
 from celery import current_app
 from celery import states
 from celery.__compat__ import class_property

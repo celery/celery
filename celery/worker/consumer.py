@@ -183,9 +183,7 @@ class Component(StartStopComponent):
 
 
 class QoS(object):
-    """Quality of Service for Channel.
-
-    For thread-safe increment/decrement of a channels prefetch count value.
+    """Thread safe increment/decrement of a channels prefetch_count.
 
     :param consumer: A :class:`kombu.messaging.Consumer` instance.
     :param initial_value: Initial prefetch count value.
@@ -220,7 +218,6 @@ class QoS(object):
         with self._mutex:
             if self.value:
                 self.value -= n
-                print("DECREMENT %r" % (self.value, ))
         return self.value
 
     def set(self, pcount):
@@ -239,7 +236,6 @@ class QoS(object):
     def update(self):
         """Update prefetch count with current value."""
         with self._mutex:
-            print("SET: %r " % (self.value, ))
             return self.set(self.value)
 
 
