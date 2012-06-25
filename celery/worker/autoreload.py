@@ -212,10 +212,11 @@ class Autoreloader(bgThread):
         self._hashes = None
 
     def body(self):
-        files = [module_file(sys.modules[m]) for m in self.modules]
-        self._monitor = self.Monitor(files, self.on_change,
+        self.files_to_modules = dict((module_file(sys.modules[m]), m) for m in self.modules)
+        
+        self._monitor = self.Monitor(self.files_to_modules.keys(), self.on_change,
                 shutdown_event=self._is_shutdown, **self.options)
-        self._hashes = dict([(f, file_hash(f)) for f in files])
+        self._hashes = dict([(f, file_hash(f)) for f in self.files_to_modules])
         try:
             self._monitor.start()
         except OSError, exc:
@@ -232,7 +233,7 @@ class Autoreloader(bgThread):
     def on_change(self, files):
         modified = [f for f in files if self._maybe_modified(f)]
         if modified:
-            names = [self._module_name(module) for module in modified]
+            names = [self.files_to_modules[module] for module in modified]
             self.logger.info("Detected modified modules: %r", names)
             self._reload(names)
 
@@ -242,7 +243,3 @@ class Autoreloader(bgThread):
     def stop(self):
         if self._monitor:
             self._monitor.stop()
-
-    @staticmethod
-    def _module_name(path):
-        return os.path.splitext(os.path.basename(path))[0]
