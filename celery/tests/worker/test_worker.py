@@ -111,29 +111,27 @@ class test_QoS(Case):
 
     def test_qos_increment_decrement(self):
         qos = self._QoS(10)
-        self.assertEqual(qos.increment(), 11)
-        self.assertEqual(qos.increment(3), 14)
-        self.assertEqual(qos.increment(-30), 14)
-        self.assertEqual(qos.decrement(7), 7)
-        self.assertEqual(qos.decrement(), 6)
-        with self.assertRaises(AssertionError):
-            qos.decrement(10)
+        self.assertEqual(qos.increment_eventually(), 11)
+        self.assertEqual(qos.increment_eventually(3), 14)
+        self.assertEqual(qos.increment_eventually(-30), 14)
+        self.assertEqual(qos.decrement_eventually(7), 7)
+        self.assertEqual(qos.decrement_eventually(), 6)
 
     def test_qos_disabled_increment_decrement(self):
         qos = self._QoS(0)
-        self.assertEqual(qos.increment(), 0)
-        self.assertEqual(qos.increment(3), 0)
-        self.assertEqual(qos.increment(-30), 0)
-        self.assertEqual(qos.decrement(7), 0)
-        self.assertEqual(qos.decrement(), 0)
-        self.assertEqual(qos.decrement(10), 0)
+        self.assertEqual(qos.increment_eventually(), 0)
+        self.assertEqual(qos.increment_eventually(3), 0)
+        self.assertEqual(qos.increment_eventually(-30), 0)
+        self.assertEqual(qos.decrement_eventually(7), 0)
+        self.assertEqual(qos.decrement_eventually(), 0)
+        self.assertEqual(qos.decrement_eventually(10), 0)
 
     def test_qos_thread_safe(self):
         qos = self._QoS(10)
 
         def add():
             for i in xrange(1000):
-                qos.increment()
+                qos.increment_eventually()
 
         def sub():
             for i in xrange(1000):
@@ -158,13 +156,13 @@ class test_QoS(Case):
         qos = QoS(Mock(), PREFETCH_COUNT_MAX - 1)
         qos.update()
         self.assertEqual(qos.value, PREFETCH_COUNT_MAX - 1)
-        qos.increment()
+        qos.increment_eventually()
         self.assertEqual(qos.value, PREFETCH_COUNT_MAX)
-        qos.increment()
+        qos.increment_eventually()
         self.assertEqual(qos.value, PREFETCH_COUNT_MAX + 1)
-        qos.decrement()
+        qos.decrement_eventually()
         self.assertEqual(qos.value, PREFETCH_COUNT_MAX)
-        qos.decrement()
+        qos.decrement_eventually()
         self.assertEqual(qos.value, PREFETCH_COUNT_MAX - 1)
 
     def test_consumer_increment_decrement(self):
@@ -173,7 +171,8 @@ class test_QoS(Case):
         qos.update()
         self.assertEqual(qos.value, 10)
         consumer.qos.assert_called_with(prefetch_count=10)
-        qos.decrement()
+        qos.decrement_eventually()
+        qos.update()
         self.assertEqual(qos.value, 9)
         consumer.qos.assert_called_with(prefetch_count=9)
         qos.decrement_eventually()
@@ -183,9 +182,9 @@ class test_QoS(Case):
 
         # Does not decrement 0 value
         qos.value = 0
-        qos.decrement()
+        qos.decrement_eventually()
         self.assertEqual(qos.value, 0)
-        qos.increment()
+        qos.increment_eventually()
         self.assertEqual(qos.value, 0)
 
     def test_consumer_decrement_eventually(self):
@@ -433,8 +432,12 @@ class test_Consumer(Case):
         l.consume_messages()
         self.assertTrue(l.task_consumer.consume.call_count)
         l.task_consumer.qos.assert_called_with(prefetch_count=10)
-        l.qos.decrement()
-        l.consume_messages()
+        l.task_consumer.qos = Mock()
+        self.assertEqual(l.qos.value, 10)
+        l.qos.decrement_eventually()
+        self.assertEqual(l.qos.value, 9)
+        l.qos.update()
+        self.assertEqual(l.qos.value, 9)
         l.task_consumer.qos.assert_called_with(prefetch_count=9)
 
     def test_maybe_conn_error(self):
@@ -467,6 +470,7 @@ class test_Consumer(Case):
 
         l.task_consumer = Mock()
         l.qos = QoS(l.task_consumer, l.initial_prefetch_count)
+        current_pcount = l.qos.value
         l.event_dispatcher = Mock()
         l.enabled = False
         l.update_strategies()
@@ -479,7 +483,7 @@ class test_Consumer(Case):
             if item.args[0].name == foo_task.name:
                 found = True
         self.assertTrue(found)
-        self.assertTrue(l.task_consumer.qos.call_count)
+        self.assertGreater(l.qos.value, current_pcount)
         l.timer.stop()
 
     def test_on_control(self):

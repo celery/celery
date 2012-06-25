@@ -196,30 +196,10 @@ class QoS(object):
     def __init__(self, consumer, initial_value):
         self.consumer = consumer
         self._mutex = threading.RLock()
-        self.value = initial_value
+        self.value = initial_value or 0
 
-    def increment(self, n=1):
-        """Increment the current prefetch count value by n."""
-        with self._mutex:
-            if self.value:
-                new_value = self.value + max(n, 0)
-                self.value = self.set(new_value)
-        return self.value
-
-    def _sub(self, n=1):
-        assert self.value - n > 1
-        self.value -= n
-
-    def decrement(self, n=1):
-        """Decrement the current prefetch count value by n."""
-        with self._mutex:
-            if self.value:
-                self._sub(n)
-                self.set(self.value)
-        return self.value
-
-    def decrement_eventually(self, n=1):
-        """Decrement the value, but do not update the qos.
+    def increment_eventually(self, n=1):
+        """Increment the value, but do not update the channels QoS.
 
         The MainThread will be responsible for calling :meth:`update`
         when necessary.
@@ -227,7 +207,21 @@ class QoS(object):
         """
         with self._mutex:
             if self.value:
-                self._sub(n)
+                self.value = self.value + max(n, 0)
+        return self.value
+
+    def decrement_eventually(self, n=1):
+        """Decrement the value, but do not update the channels QoS.
+
+        The MainThread will be responsible for calling :meth:`update`
+        when necessary.
+
+        """
+        with self._mutex:
+            if self.value:
+                self.value -= n
+                print("DECREMENT %r" % (self.value, ))
+        return self.value
 
     def set(self, pcount):
         """Set channel prefetch_count setting."""
@@ -245,6 +239,7 @@ class QoS(object):
     def update(self):
         """Update prefetch count with current value."""
         with self._mutex:
+            print("SET: %r " % (self.value, ))
             return self.set(self.value)
 
 
@@ -405,7 +400,7 @@ class Consumer(object):
                     self.handle_unknown_task(body, message, exc)
                 except InvalidTaskError, exc:
                     self.handle_invalid_task(body, message, exc)
-                fire_timers()
+                #fire_timers()
 
             self.task_consumer.callbacks = [on_task_received]
             self.task_consumer.consume()
@@ -423,13 +418,16 @@ class Consumer(object):
                 # the number of seconds until we need to fire timers again.
                 poll_timeout = fire_timers() if scheduled else 1
 
+                # We only update QoS when there is no more messages to read.
+                # This groups together qos calls, and makes sure that remote
+                # control commands will be prioritized over task messages.
+                if qos.prev != qos.value:
+                    update_qos()
+
                 update_readers(on_poll_start())
                 if readers or writers:
                     connection.more_to_read = True
                     while connection.more_to_read:
-                        if qos.prev != qos.value:
-                            update_qos()
-
                         for fileno, event in poll(poll_timeout) or ():
                             try:
                                 if event & READ:
@@ -485,7 +483,7 @@ class Consumer(object):
                       task.eta, exc, task.info(safe=True), exc_info=True)
                 task.acknowledge()
             else:
-                self.qos.increment()
+                self.qos.increment_eventually()
                 self.timer.apply_at(eta, self.apply_eta_task, (task, ),
                                     priority=6)
         else:
