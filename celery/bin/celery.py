@@ -75,12 +75,14 @@ class Command(BaseCommand):
     )
 
     def __init__(self, app=None, no_color=False, stdout=sys.stdout,
-            stderr=sys.stderr):
+            stderr=sys.stderr, show_reply=True):
         super(Command, self).__init__(app=app)
         self.colored = term.colored(enabled=not no_color)
         self.stdout = stdout
         self.stderr = stderr
         self.quiet = False
+        if show_reply is not None:
+            self.show_reply = show_reply
 
     def __call__(self, *args, **kwargs):
         try:
@@ -538,7 +540,6 @@ class inspect(_RemoteControl):
         'ping': (0.2, 'ping worker(s)'),
         'report': (1.0, 'get bugreport info')
     }
-    show_reply = False
 
     def call(self, method, *args, **options):
         i = self.app.control.inspect(**options)
@@ -622,7 +623,8 @@ class status(Command):
     def run(self, *args, **kwargs):
         replies = inspect(app=self.app,
                           no_color=kwargs.get('no_color', False),
-                          stdout=self.stdout, stderr=self.stderr) \
+                          stdout=self.stdout, stderr=self.stderr,
+                          show_reply=False) \
                     .run('ping', **dict(kwargs, quiet=True, show_body=False))
         if not replies:
             raise Error('No nodes replied within time constraint',
