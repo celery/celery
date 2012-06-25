@@ -637,7 +637,6 @@ class Consumer(object):
         self.pidbox_node.channel = self.connection.channel()
         self.broadcast_consumer = self.pidbox_node.listen(
                                         callback=self.on_control)
-        self.broadcast_consumer.consume()
 
     def stop_pidbox_node(self):
         if self._pidbox_node_stopped:
