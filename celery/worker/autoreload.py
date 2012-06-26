@@ -225,12 +225,16 @@ class Autoreloader(bgThread):
         self.options = options
         self._monitor = None
         self._hashes = None
+        self.file_to_module = {}
 
     def on_init(self):
-        files = [module_file(sys.modules[m]) for m in self.modules]
-        self._hashes = dict((f, file_hash(f)) for f in files)
-        self._monitor = self.Monitor(files, self.on_change,
+        files = self.file_to_module
+        files.update(dict((module_file(sys.modules[m]), m)
+                        for m in self.modules))
+
+        self._monitor = self.Monitor(files.keys(), self.on_change,
                 shutdown_event=self._is_shutdown, **self.options)
+        self._hashes = dict([(f, file_hash(f)) for f in files])
 
     def on_poll_init(self, hub):
         if self._monitor is None:
@@ -259,7 +263,7 @@ class Autoreloader(bgThread):
     def on_change(self, files):
         modified = [f for f in files if self._maybe_modified(f)]
         if modified:
-            names = [self._module_name(module) for module in modified]
+            names = [self.file_to_module[module] for module in modified]
             logger.info('Detected modified modules: %r', names)
             self._reload(names)
 
@@ -269,7 +273,3 @@ class Autoreloader(bgThread):
     def stop(self):
         if self._monitor:
             self._monitor.stop()
-
-    @staticmethod
-    def _module_name(path):
-        return os.path.splitext(os.path.basename(path))[0]

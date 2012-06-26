@@ -237,7 +237,7 @@ class test_Autoreloader(AppCase):
         mm = x._maybe_modified = Mock(0)
         mm.return_value = True
         x._reload = Mock()
-        x._module_name = Mock()
+        x.file_to_module[__name__] = __name__
         x.on_change([__name__])
         self.assertTrue(x._reload.called)
         mm.return_value = False
@@ -255,7 +255,3 @@ class test_Autoreloader(AppCase):
         x._monitor = Mock()
         x.stop()
         x._monitor.stop.assert_called_with()
-
-    def test_module_name(self):
-        x = Autoreloader(Mock(), modules=[__name__])
-        self.assertEqual(x._module_name('foo/bar/baz.py'), 'baz')
