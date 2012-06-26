@@ -35,6 +35,11 @@ from celery.datastructures import AttributeDict, LRUCache
 HEARTBEAT_EXPIRE_WINDOW = 200
 
 
+def heartbeat_expires(timestamp, freq=60,
+        expire_window=HEARTBEAT_EXPIRE_WINDOW):
+    return timestamp + freq * (expire_window / 1e2)
+
+
 class Element(AttributeDict):
     """Base class for worker state elements."""
 
@@ -76,7 +81,8 @@ class Worker(Element):
 
     @property
     def heartbeat_expires(self):
-        return self.heartbeats[-1] + self.freq * (self.expire_window / 1e2)
+        return heartbeat_expires(self.heartbeats[-1],
+                                 self.freq, self.expire_window)
 
     @property
     def alive(self):
