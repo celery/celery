@@ -1,3 +1,3 @@
-billiard>=2.7.3.9
+billiard>=2.7.3.10
 python-dateutil>=1.5,<2.0
 kombu>=2.2.1,<3.0
