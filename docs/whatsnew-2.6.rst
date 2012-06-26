@@ -45,7 +45,7 @@ as well as PyPy and Jython.
 
 .. contents::
     :local:
-    :depth: 1
+    :depth: 2
 
 .. _v260-important:
 
