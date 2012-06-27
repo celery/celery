@@ -61,7 +61,6 @@ class Beat(configurated):
             self.loglevel = LOG_LEVELS[self.loglevel.upper()]
 
     def run(self):
-        self.setup_logging()
         print(str(self.colored.cyan(
                     'celerybeat v%s is starting.' % __version__)))
         self.init_loader()
@@ -88,6 +87,7 @@ class Beat(configurated):
                   c.blue('    ... __   '), c.magenta('-'),
                   c.blue('        _\n'),
                   c.reset(self.startup_info(beat)))))
+        self.setup_logging()
         if self.socket_timeout:
             logger.debug('Setting default socket timeout to %r',
                          self.socket_timeout)
