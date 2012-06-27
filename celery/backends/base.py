@@ -26,7 +26,7 @@ from celery import states
 from celery.app import current_task
 from celery.datastructures import LRUCache
 from celery.exceptions import TimeoutError, TaskRevokedError
-from celery.result import from_serializable
+from celery.result import from_serializable, GroupResult
 from celery.utils import timeutils
 from celery.utils.serialization import (
         get_pickled_exception,
@@ -107,6 +107,8 @@ class BaseBackend(object):
 
     def prepare_value(self, result):
         """Prepare value for storage."""
+        if isinstance(result, GroupResult):
+            return result.serializable()
         return result
 
     def encode(self, data):
