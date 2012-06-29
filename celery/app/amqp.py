@@ -159,6 +159,7 @@ class TaskProducer(Producer):
             compression=None, **kwargs):
         """Send task message."""
         # merge default and custom policy
+        retry = self.retry if retry is None else retry
         _rp = (dict(self.retry_policy, **retry_policy) if retry_policy
                                                        else self.retry_policy)
         task_id = task_id or uuid()
