@@ -12,6 +12,8 @@ from billiard.exceptions import (  # noqa
     SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLostError,
 )
 
+from .utils.encoding import safe_repr
+
 UNREGISTERED_FMT = """\
 Task of kind %s is not registered, please make sure it's imported.\
 """
@@ -59,9 +61,26 @@ class MaxRetriesExceededError(Exception):
 class RetryTaskError(Exception):
     """The task is to be retried later."""
 
-    def __init__(self, message, exc, *args, **kwargs):
-        self.exc = exc
-        Exception.__init__(self, message, exc, *args, **kwargs)
+    def __init__(self, exc=None, when=None, **kwargs):
+        if isinstance(exc, basestring):
+            self.exc, self.excs = None, exc
+        else:
+            self.exc, self.excs = exc, safe_repr(exc) if exc else None
+        self.when = when
+        Exception.__init__(self, exc, when, **kwargs)
+
+    def humanize(self):
+        if isinstance(self.when, int):
+            return 'in %ss' % self.when
+        return 'at %s' % (self.when, )
+
+    def __str__(self):
+        if self.excs:
+            return 'Retry %s: %r' % (self.humanize(), self.excs)
+        return 'Retry %s' % self.humanize()
+
+    def __reduce__(self):
+        return self.__class__, (self.excs, self.when)
 
 
 class TaskRevokedError(Exception):

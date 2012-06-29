@@ -324,8 +324,7 @@ class Request(object):
         if _does_info:
             info(self.retry_msg.strip(), {
                 'id': self.id, 'name': self.name,
-                'exc': safe_repr(exc_info.exception.exc)},
-                exc_info=exc_info.exc_info)
+                'exc': exc_info.exception})
 
     def on_failure(self, exc_info):
         """Handler called if the task raised an exception."""

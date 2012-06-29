@@ -93,20 +93,16 @@ class TraceInfo(object):
 
     def handle_retry(self, task, store_errors=True):
         """Handle retry exception."""
-        # Create a simpler version of the RetryTaskError that stringifies
-        # the original exception instead of including the exception instance.
-        # This is for reporting the retry in logs, email etc, while
-        # guaranteeing pickleability.
+        # the exception raised is the RetryTaskError semi-predicate,
+        # and it's exc' attribute is the original exception raised (if any).
         req = task.request
         type_, _, tb = sys.exc_info()
         try:
-            exc = self.retval
-            message, orig_exc = exc.args
-            expanded_msg = '%s: %s' % (message, str(orig_exc))
-            einfo = ExceptionInfo((type_, type_(expanded_msg, None), tb))
+            retrypred = self.retval
+            einfo = ExceptionInfo((type_, retrypred, tb))
             if store_errors:
-                task.backend.mark_as_retry(req.id, orig_exc, einfo.traceback)
-            task.on_retry(exc, req.id, req.args, req.kwargs, einfo)
+                task.backend.mark_as_retry(req.id, retrypred.exc, einfo.traceback)
+            task.on_retry(retrypred.exc, req.id, req.args, req.kwargs, einfo)
             return einfo
         finally:
             del(tb)

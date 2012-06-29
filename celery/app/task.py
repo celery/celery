@@ -488,12 +488,12 @@ class Task(object):
                 evd = app.events.Dispatcher(channel=P.channel,
                                             buffer_while_offline=False)
 
-            task_id = P.delay_task(self.name, args, kwargs,
-                                   task_id=task_id,
-                                   event_dispatcher=evd,
-                                   callbacks=maybe_list(link),
-                                   errbacks=maybe_list(link_error),
-                                   **options)
+            task_id = P.publish_task(self.name, args, kwargs,
+                                     task_id=task_id,
+                                     event_dispatcher=evd,
+                                     callbacks=maybe_list(link),
+                                     errbacks=maybe_list(link_error),
+                                     **options)
         result = self.AsyncResult(task_id)
         if add_to_parent:
             parent = get_current_worker_task()
@@ -583,8 +583,7 @@ class Task(object):
             self.apply(args=args, kwargs=kwargs, **options).get()
         else:
             self.apply_async(args=args, kwargs=kwargs, **options)
-        ret = RetryTaskError(eta and 'Retry at %s' % eta
-                                  or 'Retry in %s secs.' % countdown, exc)
+        ret = RetryTaskError(exc, eta or countdown)
         if throw:
             raise ret
         return ret
