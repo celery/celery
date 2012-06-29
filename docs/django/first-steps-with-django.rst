@@ -62,7 +62,7 @@ and the worker will automatically go through the apps in ``INSTALLED_APPS``
 to import these modules.
 
 For a simple demonstration we can create a new Django app called
-``celerytest``.  To create this app you need to be in the directoryw
+``celerytest``.  To create this app you need to be in the directory
 of your Django project where ``manage.py`` is located and execute::
 
     $ python manage.py startapp celerytest
@@ -79,7 +79,7 @@ a new file called ``celerytest/tasks.py``:
         return x + y
 
 Our example task is pretty pointless, it just returns the sum of two
-arguments, but it will do for demonstration, and it is referenced in many
+arguments, but it will do for demonstration, and it is referred to in many
 parts of the Celery documentation.
 
 Starting the worker process
