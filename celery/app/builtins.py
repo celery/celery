@@ -155,13 +155,13 @@ def add_group_task(app):
             if self.app.conf.CELERY_ALWAYS_EAGER:
                 return self.apply(args, kwargs, **options)
             tasks, result, gid = self.prepare(options, **kwargs)
-            super(Group, self).apply_async(
-                    (list(tasks), result, gid), **options)
+            super(Group, self).apply_async((
+                list(tasks), result.serializable(), gid), **options)
             return result
 
         def apply(self, args=(), kwargs={}, **options):
-            tasks, result, gid = self.prepare(options, **kwargs)
-            return super(Group, self).apply((tasks, result, gid), **options)
+            return super(Group, self).apply(
+                    self.prepare(options, **kwargs), **options)
     return Group
 
 
@@ -226,7 +226,7 @@ def add_chord_task(app):
         def run(self, header, body, interval=1, max_retries=None,
                 propagate=False, eager=False, **kwargs):
             if not isinstance(header, group):
-                header = group(header)
+                header = group(map(maybe_subtask, header))
             r = []
             group_id = uuid()
             for task in header.tasks:

@@ -148,7 +148,7 @@ class TaskProducer(Producer):
         self.queues = self.app.amqp.queues  # shortcut
         super(TaskProducer, self).__init__(channel, exchange, *args, **kwargs)
 
-    def delay_task(self, task_name, task_args=None, task_kwargs=None,
+    def publish_task(self, task_name, task_args=None, task_kwargs=None,
             countdown=None, eta=None, task_id=None, group_id=None,
             taskset_id=None,  # compat alias to group_id
             expires=None, exchange=None, exchange_type=None,
@@ -213,6 +213,7 @@ class TaskProducer(Producer):
                                                expires=expires,
                                                queue=queue)
         return task_id
+    delay_task = publish_task   # XXX Compat
 
 
 class TaskPublisher(TaskProducer):
