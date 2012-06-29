@@ -1,10 +1,21 @@
-from __future__ import absolute_import
+# -*- coding: utf-8 -*-
+"""
+    celery.backends.amqrpc
+    ~~~~~~~~~~~~~~~~~~~~~~
 
+    RPC-style result backend, using reply-to and one queue per client.
+
+"""
+from __future__ import absolute_import
+from __future__ import with_statement
+
+import kombu
 import os
 import uuid
 
 from threading import local
 
+from kombu.common import maybe_declare
 from celery.backends import amqp
 
 try:
@@ -21,18 +32,23 @@ _nodeid = uuid.getnode()
 class AMQRPCBackend(amqp.AMQPBackend):
     _tls = local()
 
+    class Consumer(kombu.Consumer):
+        auto_declare = False
+
     def _create_exchange(self, name, type='direct', persistent=False):
         return self.Exchange('c.amqrpc', type=type, delivery_mode=1,
                 durable=False, auto_delete=False)
 
     def on_task_apply(self, task_id):
         with self.app.pool.acquire_channel(block=True) as (conn, channel):
-            self.binding(channel).declare()
+            maybe_declare(self.binding(channel), retry=True)
             return {'reply_to': self.oid}
 
     def _create_binding(self, task_id):
-        print("BINDING: %r" % (self.binding, ))
         return self.binding
+
+    def _many_bindings(self, ids):
+        return [self.binding]
 
     def _routing_key(self, task_id):
         from celery import current_task
@@ -41,7 +57,7 @@ class AMQRPCBackend(amqp.AMQPBackend):
     @property
     def binding(self):
         return self.Queue(self.oid, self.exchange, self.oid,
-                          durable=False, auto_delete=True)
+                          durable=False, auto_delete=False)
 
     @property
     def oid(self):
