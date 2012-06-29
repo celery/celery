@@ -98,11 +98,11 @@ class TraceInfo(object):
         req = task.request
         type_, _, tb = sys.exc_info()
         try:
-            retrypred = self.retval
-            einfo = ExceptionInfo((type_, retrypred, tb))
+            pred = self.retval
+            einfo = ExceptionInfo((type_, pred, tb))
             if store_errors:
-                task.backend.mark_as_retry(req.id, retrypred.exc, einfo.traceback)
-            task.on_retry(retrypred.exc, req.id, req.args, req.kwargs, einfo)
+                task.backend.mark_as_retry(req.id, pred.exc, einfo.traceback)
+            task.on_retry(pred.exc, req.id, req.args, req.kwargs, einfo)
             return einfo
         finally:
             del(tb)
