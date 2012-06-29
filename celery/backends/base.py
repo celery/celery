@@ -224,6 +224,9 @@ class BaseBackend(object):
         raise NotImplementedError(
                 'reload_group_result is not supported by this backend.')
 
+    def on_task_apply(self, task_id):
+        pass
+
     def on_chord_part_return(self, task, propagate=False):
         pass
 

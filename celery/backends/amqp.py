@@ -65,14 +65,10 @@ class AMQPBackend(BaseDictBackend):
         self.queue_arguments = {}
         self.persistent = (conf.CELERY_RESULT_PERSISTENT if persistent is None
                                                          else persistent)
-        delivery_mode = persistent and 'persistent' or 'transient'
         exchange = exchange or conf.CELERY_RESULT_EXCHANGE
         exchange_type = exchange_type or conf.CELERY_RESULT_EXCHANGE_TYPE
-        self.exchange = self.Exchange(name=exchange,
-                                      type=exchange_type,
-                                      delivery_mode=delivery_mode,
-                                      durable=self.persistent,
-                                      auto_delete=False)
+        self.exchange = self._create_exchange(exchange, exchange_type,
+                                              self.persistent)
         self.serializer = serializer or conf.CELERY_RESULT_SERIALIZER
         self.auto_delete = auto_delete
 
@@ -91,6 +87,14 @@ class AMQPBackend(BaseDictBackend):
             self.queue_arguments['x-expires'] = int(self.expires * 1000)
         self.mutex = threading.Lock()
 
+    def _create_exchange(self, name, type='direct', persistent=True):
+        delivery_mode = persistent and 'persistent' or 'transient'
+        return self.Exchange(name=name,
+                             type=type,
+                             delivery_mode=delivery_mode,
+                             durable=self.persistent,
+                             auto_delete=False)
+
     def _create_binding(self, task_id):
         name = task_id.replace('-', '')
         return self.Queue(name=name,
@@ -103,16 +107,21 @@ class AMQPBackend(BaseDictBackend):
     def revive(self, channel):
         pass
 
+    def _routing_key(self, task_id):
+        return task_id.replace('-', '')
+
     def _store_result(self, task_id, result, status, traceback=None):
         """Send task return value and status."""
         with self.mutex:
             with self.app.amqp.producer_pool.acquire(block=True) as pub:
+                print("PUBLISH TO exchange=%r rkey=%r" % (self.exchange,
+                    self._routing_key(task_id)))
                 pub.publish({'task_id': task_id, 'status': status,
                              'result': self.encode_result(result, status),
                              'traceback': traceback,
                              'children': self.current_task_children()},
                             exchange=self.exchange,
-                            routing_key=task_id.replace('-', ''),
+                            routing_key=self._routing_key(task_id),
                             serializer=self.serializer,
                             retry=True, retry_policy=self.retry_policy,
                             declare=[self._create_binding(task_id)])

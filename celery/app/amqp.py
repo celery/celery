@@ -156,8 +156,9 @@ class TaskProducer(Producer):
             queue=None, now=None, retries=0, chord=None, callbacks=None,
             errbacks=None, mandatory=None, priority=None, immediate=None,
             routing_key=None, serializer=None, delivery_mode=None,
-            compression=None, **kwargs):
+            compression=None, reply_to=None, **kwargs):
         """Send task message."""
+        retry = self.retry if retry is None else retry
         # merge default and custom policy
         _rp = (dict(self.retry_policy, **retry_policy) if retry_policy
                                                        else self.retry_policy)
@@ -186,7 +187,8 @@ class TaskProducer(Producer):
                 'expires': expires,
                 'utc': self.utc,
                 'callbacks': callbacks,
-                'errbacks': errbacks}
+                'errbacks': errbacks,
+                'reply_to': reply_to}
         group_id = group_id or taskset_id
         if group_id:
             body['taskset'] = group_id

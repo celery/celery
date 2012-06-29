@@ -466,6 +466,7 @@ class Task(object):
             be replaced by a local :func:`apply` call instead.
 
         """
+        task_id = task_id or uuid()
         producer = producer or publisher
         app = self._get_app()
         router = router or self.app.amqp.router
@@ -488,12 +489,13 @@ class Task(object):
                 evd = app.events.Dispatcher(channel=P.channel,
                                             buffer_while_offline=False)
 
+            extra_properties = self.backend.on_task_apply(task_id)
             task_id = P.delay_task(self.name, args, kwargs,
                                    task_id=task_id,
                                    event_dispatcher=evd,
                                    callbacks=maybe_list(link),
                                    errbacks=maybe_list(link_error),
-                                   **options)
+                                   **dict(options, **extra_properties))
         result = self.AsyncResult(task_id)
         if add_to_parent:
             parent = get_current_worker_task()
