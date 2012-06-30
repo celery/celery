@@ -46,6 +46,7 @@ Contents
     changelog
     reference/index
     internals/index
+    glossary
 
 
 Indices and tables
