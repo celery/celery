@@ -61,13 +61,13 @@ It is a common practice to put these in their own module named ``tasks.py``,
 and the worker will automatically go through the apps in ``INSTALLED_APPS``
 to import these modules.
 
-For a simple demonstration we can create a new Django app called
-``celerytest``.  To create this app you need to be in the directoryw
+For a simple demonstration create a new Django app called
+``celerytest``.  To create this app you need to be in the directory
 of your Django project where ``manage.py`` is located and execute::
 
     $ python manage.py startapp celerytest
 
-After our new app has been created we can define our task by editing
+After the new app has been created, define a task by creating
 a new file called ``celerytest/tasks.py``:
 
 .. code-block:: python
@@ -79,30 +79,29 @@ a new file called ``celerytest/tasks.py``:
         return x + y
 
 Our example task is pretty pointless, it just returns the sum of two
-arguments, but it will do for demonstration, and it is referenced in many
+arguments, but it will do for demonstration, and it is referred to in many
 parts of the Celery documentation.
 
 Starting the worker process
 ===========================
 
-You can start a worker instance by using the ``celery worker`` manage command::
+In a production environment you will want to run the worker in the background
+as a daemon - see :ref:`daemonizing` - but for testing and
+development it is useful to be able to start a worker instance by using the
+``celery worker`` manage command, much as you would use Django's runserver::
 
     $ python manage.py celery worker --loglevel=info
 
-In production you probably want to run the worker in the
-background as a daemon, see `Running Celery as a daemon`_.
-For a complete listing of the command line options available, use the help command::
+For a complete listing of the command line options available,
+use the help command::
 
     $ python manage.py celery help
-
-.. _`Running Celery as a Daemon`:
-    http://docs.celeryproject.org/en/latest/tutorials/daemonizing.html
 
 Calling our task
 ================
 
-Now that the worker is running we can open up a new terminal to actually
-call our task::
+Now that the worker is running, open up a new terminal to actually
+call the task we defined::
 
     >>> from celerytest.tasks import add
 
@@ -121,18 +120,18 @@ the task should be processed see :ref:`guide-calling`.
     worker server must be able to import the task function.
 
 The task should now be processed by the worker you started earlier,
-and you can verify that by looking at the workers console output.
+and you can verify that by looking at the worker's console output.
 
-Applying a task returns an :class:`~celery.result.AsyncResult` instance,
+Calling a task returns an :class:`~celery.result.AsyncResult` instance,
 which can be used to check the state of the task, wait for the task to finish
 or get its return value (or if the task failed, the exception and traceback).
 
-By default django-celery stores this state in the Django database,
-you may consider choosing an alternate result backend or disabling
+By default django-celery stores this state in the Django database.
+You may consider choosing an alternate result backend or disabling
 states alltogether (see :ref:`task-result-backends`).
 
-To demonstrate how the results work we can call the task again,
-but this time keep the result instance returned::
+To demonstrate how the results work call the task again, but this time
+keep the result instance returned::
 
     >>> result = add.delay(4, 4)
     >>> result.ready() # returns True if the task has finished processing.
