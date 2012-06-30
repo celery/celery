@@ -37,6 +37,7 @@ def migrate_task(producer, body_, message, queues=None,
                       'content_type',
                       'content_encoding',
                       'headers']):
+    queues = {} if queues is None else queues
     body = ensure_bytes(message.body)  # use raw message body.
     info, headers, props = (message.delivery_info,
                             message.headers,
