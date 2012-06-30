@@ -647,8 +647,21 @@ class migrate(Command):
     NOTE: This command is experimental, make sure you have
           a backup of the tasks before you continue.
     """
-    def usage(self, command):
-        return '%%prog %s <source_url> <dest_url>' % (command, )
+    args = '<source_url> <dest_url>'
+    option_list = Command.option_list + (
+            Option('--limit', '-n', type='int',
+                    help='Number of tasks to consume (int)'),
+            Option('--timeout', '-t', type='float', default=1.0,
+                    help='Timeout in seconds (float) waiting for tasks'),
+            Option('--ack-messages', '-a', action='store_true',
+                    help='Ack messages from source broker.'),
+            Option('--tasks', '-T',
+                    help='List of task names to filter on.'),
+            Option('--queues', '-Q',
+                    help='List of queues to migrate.'),
+            Option('--forever', '-F', action='store_true',
+                    help='Continually migrate tasks until killed.'),
+    )
 
     def on_migrate_task(self, state, body, message):
         self.out('Migrating task %s/%s: %s[%s]' % (
@@ -662,7 +675,8 @@ class migrate(Command):
 
         migrate_tasks(Connection(args[0]),
                       Connection(args[1]),
-                      callback=self.on_migrate_task)
+                      callback=self.on_migrate_task,
+                      **kwargs)
 migrate = command(migrate)
 
 
