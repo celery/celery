@@ -183,10 +183,10 @@ class Celery(object):
                            self.conf.CELERY_MESSAGE_COMPRESSION)
         options = router.route(options, name, args, kwargs)
         with self.default_producer(publisher) as producer:
-            return result_cls(producer.delay_task(name, args, kwargs,
-                                                  task_id=task_id,
-                                                  countdown=countdown, eta=eta,
-                                                  expires=expires, **options))
+            return result_cls(producer.publish_task(name, args, kwargs,
+                        task_id=task_id,
+                        countdown=countdown, eta=eta,
+                        expires=expires, **options))
 
     def connection(self, hostname=None, userid=None,
             password=None, virtual_host=None, port=None, ssl=None,

@@ -583,7 +583,7 @@ class Task(object):
             self.apply(args=args, kwargs=kwargs, **options).get()
         else:
             self.apply_async(args=args, kwargs=kwargs, **options)
-        ret = RetryTaskError(exc, eta or countdown)
+        ret = RetryTaskError(exc=exc, when=eta or countdown)
         if throw:
             raise ret
         return ret

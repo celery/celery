@@ -350,14 +350,14 @@ class test_tasks(Case):
         app.conf.CELERY_SEND_TASK_SENT_EVENT = True
         dispatcher = [None]
 
-        class Pub(object):
+        class Prod(object):
             channel = chan
 
-            def delay_task(self, *args, **kwargs):
+            def publish_task(self, *args, **kwargs):
                 dispatcher[0] = kwargs.get('event_dispatcher')
 
         try:
-            T1.apply_async(publisher=Pub())
+            T1.apply_async(producer=Prod())
         finally:
             app.conf.CELERY_SEND_TASK_SENT_EVENT = False
             chan.close()

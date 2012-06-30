@@ -205,7 +205,7 @@ class test_App(Case):
         def aawsX():
             pass
 
-        with patch('celery.app.amqp.TaskProducer.delay_task') as dt:
+        with patch('celery.app.amqp.TaskProducer.publish_task') as dt:
             aawsX.apply_async((4, 5))
             args = dt.call_args[0][1]
             self.assertEqual(args, ('hello', 4, 5))
@@ -433,20 +433,20 @@ class test_App(Case):
             chan.close()
         assert conn.transport_cls == 'memory'
 
-        pub = self.app.amqp.TaskProducer(conn,
+        prod = self.app.amqp.TaskProducer(conn,
                 exchange=Exchange('foo_exchange'))
 
         dispatcher = Dispatcher()
-        self.assertTrue(pub.delay_task('footask', (), {},
-                                       exchange='moo_exchange',
-                                       routing_key='moo_exchange',
-                                       event_dispatcher=dispatcher))
+        self.assertTrue(prod.publish_task('footask', (), {},
+                                          exchange='moo_exchange',
+                                          routing_key='moo_exchange',
+                                          event_dispatcher=dispatcher))
         self.assertTrue(dispatcher.sent)
         self.assertEqual(dispatcher.sent[0][0], 'task-sent')
-        self.assertTrue(pub.delay_task('footask', (), {},
-                                       event_dispatcher=dispatcher,
-                                       exchange='bar_exchange',
-                                       routing_key='bar_exchange'))
+        self.assertTrue(prod.publish_task('footask', (), {},
+                                          event_dispatcher=dispatcher,
+                                          exchange='bar_exchange',
+                                          routing_key='bar_exchange'))
 
     def test_error_mail_sender(self):
         x = ErrorMail.subject % {'name': 'task_name',

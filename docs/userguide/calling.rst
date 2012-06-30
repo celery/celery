@@ -28,9 +28,11 @@ The API defines a standard set of execution options, as well as three methods:
         Shortcut to send a task message, but does not support execution
         options.
 
-    - ``apply()``
+    - *calling* (``__call__``)
 
-        Does not send a message but executes the task inline instead.
+        Applying an object supporting the calling API (e.g. ``add(2, 2)``)
+        means that the task will be executed in the current process, and
+        not by a worker (a message will not be sent).
 
 .. _calling-cheat:
 

@@ -61,7 +61,8 @@ class MaxRetriesExceededError(Exception):
 class RetryTaskError(Exception):
     """The task is to be retried later."""
 
-    def __init__(self, exc=None, when=None, **kwargs):
+    def __init__(self, message=None, exc=None, when=None, **kwargs):
+        self.message = message
         if isinstance(exc, basestring):
             self.exc, self.excs = None, exc
         else:
@@ -75,12 +76,14 @@ class RetryTaskError(Exception):
         return 'at %s' % (self.when, )
 
     def __str__(self):
+        if self.message:
+            return self.message
         if self.excs:
             return 'Retry %s: %r' % (self.humanize(), self.excs)
         return 'Retry %s' % self.humanize()
 
     def __reduce__(self):
-        return self.__class__, (self.excs, self.when)
+        return self.__class__, (self.message, self.excs, self.when)
 
 
 class TaskRevokedError(Exception):
