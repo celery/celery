@@ -276,7 +276,7 @@ Grouping Tasks
         >>> res.get()
         8
 
-    Applying a chain will return the result of the last task in the chain.
+    Calling a chain will return the result of the last task in the chain.
     You can get to the other tasks by following the ``result.parent``'s::
 
         >>> res.parent.get()

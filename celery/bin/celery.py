@@ -39,7 +39,7 @@ commands = {}
 command_classes = (
     ('Main', ['worker', 'events', 'beat', 'shell', 'multi', 'amqp'], 'green'),
     ('Remote Control', ['status', 'inspect', 'control'], 'blue'),
-    ('Utils', ['purge', 'list', 'migrate', 'apply', 'result', 'report'], None),
+    ('Utils', ['purge', 'list', 'migrate', 'call', 'result', 'report'], None),
 )
 
 
@@ -316,13 +316,13 @@ class list_(Command):
 list_ = command(list_, 'list')
 
 
-class apply(Command):
-    """Apply a task by name.
+class call(Command):
+    """Call a task by name.
 
     Examples::
 
-        celery apply tasks.add --args='[2, 2]'
-        celery apply tasks.add --args='[2, 2]' --countdown=10
+        celery call tasks.add --args='[2, 2]'
+        celery call tasks.add --args='[2, 2]' --countdown=10
     """
     args = '<task_name>'
     option_list = Command.option_list + (
@@ -369,7 +369,7 @@ class apply(Command):
                                  eta=maybe_iso8601(kw.get('eta')),
                                  expires=expires)
         self.out(res.id)
-apply = command(apply)
+call = command(call)
 
 
 class purge(Command):

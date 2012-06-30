@@ -105,7 +105,7 @@ The ``.si()`` shortcut can also be used to create immutable subtasks::
     >>> add.apply_async((2, 2), link=reset_buffers.si())
 
 Only the execution options can be set when a subtask is immutable,
-and it's not possible to apply the subtask with partial args/kwargs.
+so it's not possible to call the subtask with partial args/kwargs.
 
 .. note::
 
@@ -237,7 +237,7 @@ you chain tasks together:
     proj.tasks.add(4, 4) | proj.tasks.mul(8)
 
 
-Calling the chain will apply the tasks in the current process
+Calling the chain will call the tasks in the current process
 and return the result of the last task in the chain::
 
     >>> res = chain(add.s(4, 4), mul.s(8), mul.s(10))
@@ -245,7 +245,7 @@ and return the result of the last task in the chain::
     640
 
 And calling ``apply_async`` will create a dedicated
-task so that the act of applying the chain happens
+task so that the act of calling the chain happens
 in a worker::
 
     >>> res = chain(add.s(4, 4), mul.s(8), mul.s(10))
@@ -324,7 +324,7 @@ or tell how many tasks are ready and so on::
     [4, 8]
 
 However, if you call ``apply_async`` on the group it will
-send a special grouping task, so that the action of applying
+send a special grouping task, so that the action of calling
 the tasks happens in a worker instead of the current process::
 
     >>> res = g.apply_async()
@@ -479,7 +479,7 @@ Important Notes
 ---------------
 
 By default the synchronization step is implemented by having a recurring task
-poll the completion of the taskset every second, applying the subtask when
+poll the completion of the taskset every second, calling the subtask when
 ready.
 
 Example implementation:
@@ -558,7 +558,7 @@ is the same as having a task doing:
 
 Both ``map`` and ``starmap`` are subtasks, so they can be used as
 other subtasks and combined in groups etc., for example
-to apply the starmap after 10 seconds::
+to call the starmap after 10 seconds::
 
     >>> add.starmap(zip(range(10), range(10))).apply_async(countdown=10)
 
@@ -583,7 +583,7 @@ To create a chunks subtask you can use :meth:`@Task.chunks`:
     >>> add.chunks(zip(range(100), range(100)), 10)
 
 As with :class:`~celery.group` the act of **calling**
-the chunks will apply the tasks in the current process:
+the chunks will call the tasks in the current process:
 
 .. code-block:: python
 

@@ -341,7 +341,7 @@ Immutable subtasks
 ------------------
 
 ``subtask``'s can now be immutable, which means that the arguments
-will not be modified when applying callbacks::
+will not be modified when calling callbacks::
 
     >>> chain(add.s(2, 2), clear_static_electricity.si())
 
@@ -583,7 +583,7 @@ In Other News
 
 - ``xmap(task, sequence)`` and ``xstarmap(task, sequence)``
 
-    Returns a list of the results applying the task to every item
+    Returns a list of the results applying the task function to every item
     in the sequence.
 
     Example::

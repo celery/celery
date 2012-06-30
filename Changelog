@@ -753,7 +753,7 @@ News
 * Automatic connection pool support.
 
     The pool is used by everything that requires a broker connection.  For
-    example applying tasks, sending broadcast commands, retrieving results
+    example calling tasks, sending broadcast commands, retrieving results
     with the AMQP result backend, and so on.
 
     The pool is disabled by default, but you can enable it by configuring the
@@ -1821,7 +1821,7 @@ News
     If enabled an event will be sent with every task, so monitors can
     track tasks before the workers receive them.
 
-* `celerybeat`: Now reuses the broker connection when applying
+* `celerybeat`: Now reuses the broker connection when calling
    scheduled tasks.
 
 * The configuration module and loader to use can now be specified on
@@ -4990,7 +4990,7 @@ News
   restarted if it crashes). To use this start celeryd with the
   --supervised` option (or alternatively `-S`).
 
-* views.apply: View applying a task. Example
+* views.apply: View calling a task. Example
 
     ::
 

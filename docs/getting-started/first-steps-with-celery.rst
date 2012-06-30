@@ -100,7 +100,7 @@ the entry-point for everything you want to do in Celery, like creating tasks and
 managing workers, it must be possible for other modules to import it.
 
 In this tutorial we will keep everything contained in a single module,
-but for larger projects you probably want to create
+but for larger projects you want to create
 a :ref:`dedicated module <project-layout>`.
 
 Let's create the file :file:`tasks.py`:
@@ -136,12 +136,12 @@ We defined a single task, called ``add``, which returns the sum of two numbers.
 Running the celery worker server
 ================================
 
-We can now run the worker by executing our program with the ``worker``
+We now run the worker by executing our program with the ``worker``
 argument::
 
     $ python tasks.py worker --loglevel=info
 
-In production you will probably want to run the worker in the
+In production you will want to run the worker in the
 background as a daemon.  To do this you need to use the tools provided
 by your platform, or something like `supervisord`_ (see :ref:`daemonizing`
 for more information).
@@ -170,10 +170,10 @@ method which gives greater control of the task execution (see
     >>> from tasks import add
     >>> add.delay(4, 4)
 
-The task should now be processed by the worker you started earlier,
+The task has now been processed by the worker you started earlier,
 and you can verify that by looking at the workers console output.
 
-Applying a task returns an :class:`~@AsyncResult` instance,
+Calling a task returns an :class:`~@AsyncResult` instance,
 which can be used to check the state of the task, wait for the task to finish
 or get its return value (or if the task failed, the exception and traceback).
 But this isn't enabled by default, and you have to configure Celery to
@@ -210,7 +210,7 @@ To read more about result backends please see :ref:`task-result-backends`.
 
 Now with the result backend configured, let's call the task again.
 This time we'll hold on to the :class:`~@AsyncResult` instance returned
-when you apply a task::
+when you call a task::
 
     >>> result = add.delay(4, 4)
 
