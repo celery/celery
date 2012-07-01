@@ -403,6 +403,8 @@ class WorkController(configurated):
         if self._state in (self.CLOSE, self.TERMINATE):
             return
 
+        self.app.loader.shutdown_worker()
+
         if self.pool:
             self.pool.close()
 
