@@ -12,7 +12,7 @@ from celery.bin.celery import (
     Error,
     worker,
     list_,
-    apply,
+    call,
     purge,
     result,
     inspect,
@@ -125,11 +125,11 @@ class test_list(AppCase):
             l.run('foo')
 
 
-class test_apply(AppCase):
+class test_call(AppCase):
 
     @patch('celery.app.base.Celery.send_task')
     def test_run(self, send_task):
-        a = apply(app=self.app, stderr=WhateverIO(), stdout=WhateverIO())
+        a = call(app=self.app, stderr=WhateverIO(), stdout=WhateverIO())
         a.run('tasks.add')
         self.assertTrue(send_task.called)
 
