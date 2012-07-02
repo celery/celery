@@ -153,7 +153,7 @@ Where to go from here
 =====================
 
 To learn more you should read the `Celery User Guide`_, and the
-`Celery Documentation`_ in general
+`Celery Documentation`_ in general.
 
 
 .. _`Celery User Guide`: http://docs.celeryproject.org/en/latest/userguide/
