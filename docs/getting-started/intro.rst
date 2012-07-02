@@ -73,7 +73,7 @@ Celery is…
 
         Almost every part of *Celery* can be extended or used on its own,
         Custom pool implementations, serializers, compression schemes, logging,
-        schedulers, consumers, producers, autoscalers, broker transorts and much more.
+        schedulers, consumers, producers, autoscalers, broker transports and much more.
 
 
 .. topic:: It supports
