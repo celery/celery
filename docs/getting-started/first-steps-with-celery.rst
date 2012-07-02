@@ -42,44 +42,66 @@ comes in the form of a separate service called a *message broker*.
 
 There are several choices available, including:
 
-* :ref:`broker-rabbitmq`
+RabbitMQ
+--------
 
-`RabbitMQ`_ is feature-complete, stable, durable and easy to install.
+`RabbitMQ`_ is feature-complete, stable, durable and easy to install. It's an excellent choice for a production environment. Detailed information about using RabbitMQ:
+    
+    :ref:`broker-rabbitmq`
 
-If you are using Ubuntu or Debian you can install RabbitMQ by executing this
+.. _`RabbitMQ`: http://www.rabbitmq.com/
+
+If you are using Ubuntu or Debian install RabbitMQ by executing this
 command::
 
     $ sudo apt-get install rabbitmq-server
 
 When the command completes the broker is already running in the background,
-ready to move messages for you.
+ready to move messages for you: ``Starting rabbitmq-server: SUCCESS``.
 
-And don't worry if you're not running Ubuntu or Debian,
-you can go to this website to find similarly simple installation instructions
-for other platforms, including Microsoft Windows:
+And don't worry if you're not running Ubuntu or Debian, you can go to this
+website to find similarly simple installation instructions for other
+platforms, including Microsoft Windows:
 
     http://www.rabbitmq.com/download.html
 
-* :ref:`broker-redis`
+
+Redis
+-----
 
 `Redis`_ is also feature-complete, but is more susceptible to data loss in
-the event of abrupt termination or power failures.
+the event of abrupt termination or power failures. Detailed information about using Redis:
+    
+    :ref:`broker-redis`
 
-* :ref:`broker-sqlalchemy`
-* :ref:`broker-django`
+.. _`Redis`: http://redis.io/
+
+
+Using a database
+----------------
 
 Using a database as a message queue is not recommended, but can be sufficient
-for very small installations.  Celery can use the SQLAlchemy and Django ORM.
+for very small installations.  Your options include:
+    
+* :ref:`broker-sqlalchemy`
+* :ref:`broker-django`
+* :ref:`broker-mongodb`
 
-* and more.
+If you're already using a Django database for example, using it as your
+message broker can be convenient while developing even if you use a more
+robust system in production.
+                         
+Other brokers
+-------------
 
-In addition to the above, there are several other transport implementations
-to choose from, including :ref:`broker-mongodb`, :ref:`broker-django`,
-:ref:`broker-sqlalchemy`, and :ref:`Amazon SQS <broker-sqs>`.
+In addition to the above, there are other transport implementations
+to choose from, including
 
-.. _`RabbitMQ`: http://www.rabbitmq.com/
-.. _`Redis`: http://redis.io/
-.. _`Transport Comparison`: http://kombu.rtfd.org/transport-comparison
+* :ref:`Amazon SQS <broker-sqs>`
+
+See also `Transport Comparison`_.
+
+.. _`Transport Comparison`: http://kombu.readthedocs.org/en/latest/introduction.html#transport-comparison
 
 .. _celerytut-installation:
 
@@ -184,7 +206,7 @@ use a result backend, which is detailed in the next section.
 Keeping Results
 ===============
 
-If you want to keep track of the tasks state, Celery needs to store or send
+If you want to keep track of the tasks' states, Celery needs to store or send
 the states somewhere.  There are several
 built-in result backends to choose from: `SQLAlchemy`_/`Django`_ ORM,
 `Memcached`_, `Redis`_, AMQP (`RabbitMQ`_), and `MongoDB`_ -- or you can define your own.
