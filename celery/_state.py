@@ -12,6 +12,7 @@
 from __future__ import absolute_import
 
 import threading
+import weakref
 
 from celery.local import Proxy
 from celery.utils.threads import LocalStack
@@ -62,3 +63,25 @@ def get_current_worker_task():
 
 current_app = Proxy(get_current_app)
 current_task = Proxy(get_current_task)
+
+#: WeakSet does not seem to work properly,
+#: it doesn't recognize when objects go out of scope.
+_apps = set()
+
+
+def _register_app(app):
+    _apps.add(weakref.ref(app))
+
+
+def _get_active_apps():
+    dirty = []
+    try:
+        for appref in _apps:
+            app = appref()
+            if app is None:
+                dirty.append(appref)
+            else:
+                yield app
+    finally:
+        while dirty:
+            _apps.discard(dirty.pop())

@@ -7,6 +7,7 @@
 
 """
 from __future__ import absolute_import
+from __future__ import with_statement
 
 import os
 
@@ -16,8 +17,11 @@ from celery._state import (  # noqa
         set_default_app,
         get_current_app as current_app,
         get_current_task as current_task,
+        _get_active_apps,
 )
+from celery.utils import gen_task_name
 
+from .builtins import shared_task as _shared_task
 from .base import Celery, AppPickler  # noqa
 
 #: Proxy always returning the app set as default.
@@ -80,3 +84,55 @@ else:
     disable_trace()
 
 App = Celery  # XXX Compat
+
+
+def shared_task(*args, **kwargs):
+    """Task decorator that creates shared tasks,
+    and returns a proxy that always returns the task from the current apps
+    task registry.
+
+    This can be used by library authors to create tasks that will work
+    for any app environment.
+
+    Example:
+
+        >>> from celery import Celery, shared_task
+        >>> @shared_task
+        ... def add(x, y):
+        ...     return x + y
+
+        >>> app1 = Celery(broker='amqp://')
+        >>> add.app is app1
+        True
+
+        >>> app2 = Celery(broker='redis://')
+        >>> add.app is app2
+
+    """
+
+    def create_shared_task(**options):
+
+        def __inner(fun):
+            name = options.get('name')
+            # Set as shared task so that unfinalized apps,
+            # and future apps will load the task.
+            _shared_task(lambda app: app._task_from_fun(fun, **options))
+
+            # Force all finalized apps to take this task as well.
+            for app in _get_active_apps():
+                if app.finalized:
+                    with app._finalize_mutex:
+                        app._task_from_fun(fun, **options)
+
+            # Returns a proxy that always gets the task from the current
+            # apps task registry.
+            def task_by_cons():
+                app = current_app()
+                return app.tasks[name or gen_task_name(app,
+                            fun.__name__, fun.__module__)]
+            return Proxy(task_by_cons)
+        return __inner
+
+    if len(args) == 1 and callable(args[0]):
+        return create_shared_task(**kwargs)(args[0])
+    return create_shared_task(**kwargs)

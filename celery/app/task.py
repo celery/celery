@@ -9,9 +9,6 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-import os
-import sys
-
 from celery import current_app
 from celery import states
 from celery.__compat__ import class_property
@@ -19,7 +16,7 @@ from celery._state import get_current_worker_task, _task_stack
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
 from celery.result import EagerResult
-from celery.utils import fun_takes_kwargs, uuid, maybe_reraise
+from celery.utils import gen_task_name, fun_takes_kwargs, uuid, maybe_reraise
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
 from celery.utils.mail import ErrorMail
@@ -33,12 +30,6 @@ extract_exec_options = mattrgetter(
     'immediate', 'mandatory', 'priority', 'expires',
     'serializer', 'delivery_mode', 'compression',
 )
-
-#: Billiard sets this when execv is enabled.
-#: We use it to find out the name of the original ``__main__``
-#: module, so that we can properly rewrite the name of the
-#: task to be that of ``App.main``.
-MP_MAIN_FILE = os.environ.get('MP_MAIN_FILE') or None
 
 
 class Context(object):
@@ -112,15 +103,9 @@ class TaskType(type):
         app = attrs['_app'] = _app1 or _app2 or current_app
 
         # - Automatically generate missing/empty name.
-        autoname = False
-        if not attrs.get('name'):
-            try:
-                module_name = sys.modules[task_module].__name__
-            except KeyError:  # pragma: no cover
-                # Fix for manage.py shell_plus (Issue #366).
-                module_name = task_module
-            attrs['name'] = '.'.join(filter(None, [module_name, name]))
-            autoname = True
+        task_name = attrs.get('name')
+        if not task_name:
+            attrs['name'] = task_name = gen_task_name(app, name, task_module)
 
         # - Create and register class.
         # Because of the way import happens (recursively)
@@ -128,17 +113,6 @@ class TaskType(type):
         # with the framework.  There should only be one class for each task
         # name, so we always return the registered version.
         tasks = app._tasks
-
-        # - If the task module is used as the __main__ script
-        # - we need to rewrite the module part of the task name
-        # - to match App.main.
-        if MP_MAIN_FILE and sys.modules[task_module].__file__ == MP_MAIN_FILE:
-            # - see comment about :envvar:`MP_MAIN_FILE` above.
-            task_module = '__main__'
-        if autoname and task_module == '__main__' and app.main:
-            attrs['name'] = '.'.join([app.main, name])
-
-        task_name = attrs['name']
         if task_name not in tasks:
             tasks.register(new(cls, name, bases, attrs))
         instance = tasks[task_name]

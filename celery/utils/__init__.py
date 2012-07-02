@@ -10,6 +10,7 @@ from __future__ import absolute_import
 from __future__ import with_statement
 
 import operator
+import os
 import sys
 import threading
 import traceback
@@ -34,6 +35,12 @@ DEPRECATION_FMT = """
     %(description)s is deprecated and scheduled for removal in
     version %(removal)s. %(alternative)s
 """
+
+#: Billiard sets this when execv is enabled.
+#: We use it to find out the name of the original ``__main__``
+#: module, so that we can properly rewrite the name of the
+#: task to be that of ``App.main``.
+MP_MAIN_FILE = os.environ.get('MP_MAIN_FILE') or None
 
 
 def warn_deprecated(description=None, deprecation=None, removal=None,
@@ -172,6 +179,26 @@ def strtobool(term, table={'false': False, 'no': False, '0': False,
         except KeyError:
             raise TypeError('Cannot coerce %r to type bool' % (term, ))
     return term
+
+
+def gen_task_name(app, name, module_name):
+    try:
+        module = sys.modules[module_name]
+    except KeyError:
+        # Fix for manage.py shell_plus (Issue #366)
+        module = None
+
+    if module is not None:
+        module_name = module.__name__
+        # - If the task module is used as the __main__ script
+        # - we need to rewrite the module part of the task name
+        # - to match App.main.
+        if MP_MAIN_FILE and module.__file__ == MP_MAIN_FILE:
+            # - see comment about :envvar:`MP_MAIN_FILE` above.
+            module_name = '__main__'
+    if module_name == '__main__' and app.main:
+        return '.'.join([app.main, name])
+    return '.'.join(filter(None, [module_name, name]))
 
 # ------------------------------------------------------------------------ #
 # > XXX Compat

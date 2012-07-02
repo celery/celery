@@ -15,6 +15,7 @@ from collections import deque
 from contextlib import contextmanager
 from copy import deepcopy
 from functools import wraps
+from threading import Lock
 
 from billiard.util import register_after_fork
 from kombu.clocks import LamportClock
@@ -24,7 +25,7 @@ from celery import platforms
 from celery.exceptions import AlwaysEagerIgnored
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
-from celery._state import _task_stack, _tls, get_current_app
+from celery._state import _task_stack, _tls, get_current_app, _register_app
 from celery.utils.functional import first
 from celery.utils.imports import instantiate, symbol_by_name
 
@@ -73,6 +74,7 @@ class Celery(object):
         self.accept_magic_kwargs = accept_magic_kwargs
 
         self.finalized = False
+        self._finalize_mutex = Lock()
         self._pending = deque()
         self._tasks = tasks
         if not isinstance(self._tasks, TaskRegistry):
@@ -89,6 +91,7 @@ class Celery(object):
         if self.set_as_current:
             self.set_current()
         self.on_init()
+        _register_app(self)
 
     def set_current(self):
         _tls.current_app = self
@@ -148,16 +151,17 @@ class Celery(object):
         return task
 
     def finalize(self):
-        if not self.finalized:
-            self.finalized = True
-            load_shared_tasks(self)
+        with self._finalize_mutex:
+            if not self.finalized:
+                self.finalized = True
+                load_shared_tasks(self)
 
-            pending = self._pending
-            while pending:
-                maybe_evaluate(pending.pop())
+                pending = self._pending
+                while pending:
+                    maybe_evaluate(pending.pop())
 
-            for task in self._tasks.itervalues():
-                task.bind(self)
+                for task in self._tasks.itervalues():
+                    task.bind(self)
 
     def config_from_object(self, obj, silent=False):
         del(self.conf)

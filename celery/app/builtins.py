@@ -89,6 +89,7 @@ def add_map_task(app):
     def xmap(task, it):
         task = subtask(task).type
         return list(map(task, it))
+    return xmap
 
 
 @shared_task
@@ -99,6 +100,7 @@ def add_starmap_task(app):
     def xstarmap(task, it):
         task = subtask(task).type
         return list(starmap(task, it))
+    return xstarmap
 
 
 @shared_task
@@ -108,6 +110,7 @@ def add_chunk_task(app):
     @app.task(name='celery.chunks')
     def chunks(task, it, n):
         return _chunks.apply_chunks(task, it, n)
+    return chunks
 
 
 @shared_task
@@ -204,7 +207,6 @@ def add_chain_task(app):
                 res = task.apply((prev.get(), ) if prev else ())
                 res.parent, prev = prev, res
             return res
-
     return Chain
 
 
@@ -270,5 +272,4 @@ def add_chord_task(app):
                                            **options)
             return maybe_subtask(body).apply(
                         args=(res.get(propagate=propagate).get().join(), ))
-
     return Chord
