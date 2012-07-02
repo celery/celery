@@ -143,8 +143,8 @@ class test_App(Case):
         check.assert_called_with(foo)
 
     def test_task_sets_main_name_MP_MAIN_FILE(self):
-        from celery.app import task as _task
-        _task.MP_MAIN_FILE = __file__
+        from celery import utils as _utils
+        _utils.MP_MAIN_FILE = __file__
         try:
             app = Celery('xuzzy', set_as_current=False)
 
@@ -154,7 +154,7 @@ class test_App(Case):
 
             self.assertEqual(foo.name, 'xuzzy.foo')
         finally:
-            _task.MP_MAIN_FILE = None
+            _utils.MP_MAIN_FILE = None
 
     def test_base_task_inherits_magic_kwargs_from_app(self):
         from celery.app.task import Task
