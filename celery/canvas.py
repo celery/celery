@@ -390,4 +390,6 @@ def subtask(varies, *args, **kwargs):
 
 
 def maybe_subtask(d):
-    return subtask(d) if d is not None and not isinstance(d, Signature) else d
+    if d is not None and isinstance(d, dict) and not isinstance(d, Signature):
+        return subtask(d)
+    return d
