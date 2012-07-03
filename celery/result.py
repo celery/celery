@@ -217,10 +217,6 @@ class AsyncResult(ResultBase):
     def __reduce_args__(self):
         return self.id, self.backend, self.task_name, self.parent
 
-    def set_parent(self, parent):
-        self.parent = parent
-        return parent
-
     @cached_property
     def graph(self):
         return self.build_graph()
