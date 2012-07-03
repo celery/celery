@@ -201,8 +201,7 @@ class chain(Signature):
 
     def __init__(self, *tasks, **options):
         tasks = tasks[0] if len(tasks) == 1 and is_list(tasks[0]) else tasks
-        Signature.__init__(self, 'celery.chain', (), {'tasks': tasks},
-                           options, immutable=True)
+        Signature.__init__(self, 'celery.chain', (), {'tasks': tasks}, options)
         self.tasks = tasks
         self.subtask_type = 'chain'
 
