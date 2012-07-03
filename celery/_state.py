@@ -17,7 +17,11 @@ import weakref
 from celery.local import Proxy
 from celery.utils.threads import LocalStack
 
+#: Global default app used when no current app.
 default_app = None
+
+#: List of all app instances (weakrefs), must not be used directly.
+_apps = set()
 
 
 class _TLS(threading.local):
@@ -61,12 +65,11 @@ def get_current_worker_task():
             return task
 
 
+#: Proxy to current app.
 current_app = Proxy(get_current_app)
-current_task = Proxy(get_current_task)
 
-#: WeakSet does not seem to work properly,
-#: it doesn't recognize when objects go out of scope.
-_apps = set()
+#: Proxy to current task.
+current_task = Proxy(get_current_task)
 
 
 def _register_app(app):

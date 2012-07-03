@@ -254,7 +254,7 @@ def add_chord_task(app):
                 return self.apply(args, kwargs, **options)
             group_id = options.pop('group_id', None)
             chord = options.pop('chord', None)
-            header, body = (list(kwargs['header']),
+            header, body = (list(maybe_subtask(kwargs['header'])),
                             maybe_subtask(kwargs['body']))
             if group_id:
                 body.set(group_id=group_id)
