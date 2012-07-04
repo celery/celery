@@ -304,9 +304,9 @@ class group(Signature):
         return group(d['kwargs']['tasks'], **kwdict(d['options']))
 
     def __call__(self, *partial_args, **options):
-        tasks, result, gid = self.type.prepare(options,
-                                map(Signature.clone, self.tasks))
-        return self.type(tasks, result, gid, partial_args)
+        tasks, result, gid, args = self.type.prepare(options,
+                    map(Signature.clone, self.tasks), partial_args)
+        return self.type(tasks, result, gid, args)
 
     def skew(self, start=1.0, stop=None, step=1.0):
         _next_skew = fxrange(start, stop, step, repeatlast=True).next
@@ -328,8 +328,7 @@ class chord(Signature):
     def __init__(self, header, body=None, **options):
         Signature.__init__(self, 'celery.chord', (),
                          {'header': _maybe_group(header),
-                          'body': maybe_subtask(body)},
-                         options, immutable=True)
+                          'body': maybe_subtask(body)}, options)
         self.subtask_type = 'chord'
 
     @classmethod

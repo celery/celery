@@ -128,8 +128,8 @@ def add_group_task(app):
         def run(self, tasks, result, group_id, partial_args):
             app = self.app
             result = from_serializable(result)
-            # any partial args are added to the first task in the group
-            taskit = (subtask(task) if i else subtask(task).clone(partial_args)
+            # any partial args are added to all tasks in the group
+            taskit = (subtask(task).clone(partial_args)
                         for i, task in enumerate(tasks))
             if self.request.is_eager or app.conf.CELERY_ALWAYS_EAGER:
                 return app.GroupResult(result.id,
@@ -142,7 +142,7 @@ def add_group_task(app):
                 parent.request.children.append(result)
             return result
 
-        def prepare(self, options, tasks, **kwargs):
+        def prepare(self, options, tasks, args, **kwargs):
             options['group_id'] = group_id = \
                     options.setdefault('task_id', uuid())
 
@@ -157,19 +157,22 @@ def add_group_task(app):
                 return task, self.AsyncResult(tid)
 
             tasks, results = zip(*[prepare_member(task) for task in tasks])
-            return tasks, self.app.GroupResult(group_id, results), group_id
+            return (tasks, self.app.GroupResult(group_id, results),
+                    group_id, args)
 
         def apply_async(self, partial_args=(), kwargs={}, **options):
             if self.app.conf.CELERY_ALWAYS_EAGER:
                 return self.apply(args, kwargs, **options)
-            tasks, result, gid = self.prepare(options, **kwargs)
+            tasks, result, gid, args = self.prepare(options,
+                                            args=partial_args, **kwargs)
             super(Group, self).apply_async((list(tasks),
-                result.serializable(), gid, partial_args), **options)
+                result.serializable(), gid, args), **options)
             return result
 
         def apply(self, args=(), kwargs={}, **options):
             return super(Group, self).apply(
-                    self.prepare(options, **kwargs) + (args, ), **options)
+                    self.prepare(options, args=args, **kwargs),
+                    **options).get()
     return Group
 
 
@@ -184,7 +187,6 @@ def add_chain_task(app):
         accept_magic_kwargs = False
 
         def prepare_steps(self, args, tasks):
-            print('ARGS: %r' % (args, ))
             steps = deque(tasks)
             next_step = prev_task = prev_res = None
             tasks, results = [], []
@@ -233,8 +235,6 @@ def add_chain_task(app):
             if task_id:
                 tasks[-1].set(task_id=task_id)
                 result = tasks[-1].type.AsyncResult(task_id)
-            print("TASKS[-1]: %r" % (tasks[-1], ))
-            print("ID: %r" % (tasks[-1].options, ))
             tasks[0].apply_async()
             return result
 
