@@ -296,18 +296,17 @@ class group(Signature):
     def __init__(self, *tasks, **options):
         if len(tasks) == 1:
             tasks = _maybe_group(tasks[0])
-        Signature.__init__(self, 'celery.group', (),
-                {'tasks': tasks}, options, immutable=True)
+        Signature.__init__(self, 'celery.group', (), {'tasks': tasks}, options)
         self.tasks, self.subtask_type = tasks, 'group'
 
     @classmethod
     def from_dict(self, d):
         return group(d['kwargs']['tasks'], **kwdict(d['options']))
 
-    def __call__(self, **options):
+    def __call__(self, *partial_args, **options):
         tasks, result, gid = self.type.prepare(options,
                                 map(Signature.clone, self.tasks))
-        return self.type(tasks, result, gid)
+        return self.type(tasks, result, gid, partial_args)
 
     def skew(self, start=1.0, stop=None, step=1.0):
         _next_skew = fxrange(start, stop, step, repeatlast=True).next
