@@ -126,19 +126,23 @@ by passing in the `--help` flag::
 
 These options are described in more detailed in the :ref:`Workers Guide <guide-workers>`.
 
-.. sidebar:: About the :option:`--app` argument
 
-    The :option:`--app` argument specifies the Celery app instance to use,
-    it must be in the form of ``module.path:celery``, where the part before the colon
-    is the name of the module, and the attribute name comes last.
-    If a package name is specified instead it will automatically
-    try to find a ``celery`` module in that package, and if the name
-    is a module it will try to find a ``celery`` attribute in that module.
-    This means that these are all equal:
+.. _app-argument:
 
-        $ celery --app=proj
-        $ celery --app=proj.celery:
-        $ celery --app=proj.celery:celery
+About the :option:`--app` argument
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The :option:`--app` argument specifies the Celery app instance to use,
+it must be in the form of ``module.path:celery``, where the part before the colon
+is the name of the module, and the attribute name comes last.
+If a package name is specified instead it will automatically
+try to find a ``celery`` module in that package, and if the name
+is a module it will try to find a ``celery`` attribute in that module.
+This means that these are all equal:
+
+    $ celery --app=proj
+    $ celery --app=proj.celery:
+    $ celery --app=proj.celery:celery
 
 
 .. _calling-tasks:
