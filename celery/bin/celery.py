@@ -598,21 +598,21 @@ class control(_RemoteControl):
 
     def rate_limit(self, method, task_name, rate_limit, **kwargs):
         """<task_name> <rate_limit> (e.g. 5/s | 5/m | 5/h)>"""
-        return self.call(method, task_name, rate_limit, **kwargs)
+        return self.call(method, task_name, rate_limit, reply=True, **kwargs)
 
     def time_limit(self, method, task_name, soft, hard=None, **kwargs):
         """<task_name> <soft_secs> [hard_secs]"""
-        return self.call(method, task_name, soft, hard, **kwargs)
+        return self.call(method, task_name, soft, hard, reply=True, **kwargs)
 
     def add_consumer(self, method, queue, exchange=None,
             exchange_type='direct', routing_key=None, **kwargs):
         """<queue> [exchange [type [routing_key]]]"""
         return self.call(method, queue, exchange,
-                         exchange_type, routing_key, **kwargs)
+                         exchange_type, routing_key, reply=True, **kwargs)
 
     def cancel_consumer(self, method, queue, **kwargs):
         """<queue>"""
-        return self.call(method, queue, **kwargs)
+        return self.call(method, queue, reply=True, **kwargs)
 control = command(control)
 
 
