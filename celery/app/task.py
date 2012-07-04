@@ -155,7 +155,7 @@ class Task(object):
     abstract = True
 
     #: If disabled the worker will not forward magic keyword arguments.
-    #: Deprecated and scheduled for removal in v3.0.
+    #: Deprecated and scheduled for removal in v4.0.
     accept_magic_kwargs = None
 
     #: Maximum number of retries before giving up.  If set to :const:`None`,

@@ -1,8 +1,8 @@
-.. _whatsnew-2.6:
+.. _whatsnew-3.0:
 
-==========================
- What's new in Celery 2.6
-==========================
+===========================================
+ What's new in Celery 3.0 (Chiastic Slide)
+===========================================
 
 Celery is a simple, flexible and reliable distributed system to
 process vast amounts of messages, while providing operations with
@@ -21,7 +21,7 @@ While this version is backward compatible with previous versions
 it's important that you read the following section.
 
 If you use Celery in combination with Django you must also
-read the `django-celery changelog`_ and upgrade to `django-celery 2.6`_.
+read the `django-celery changelog`_ and upgrade to `django-celery 3.0`_.
 
 This version is officially supported on CPython 2.5, 2.6, 2.7, 3.2 and 3.3,
 as well as PyPy and Jython.
@@ -58,7 +58,7 @@ as well as PyPy and Jython.
 
 .. _`website`: http://celeryproject.org/
 .. _`django-celery changelog`: http://bit.ly/djcelery-26-changelog
-.. _`django-celery 2.6`: http://pypi.python.org/pypi/django-celery/
+.. _`django-celery 3.0`: http://pypi.python.org/pypi/django-celery/
 
 .. contents::
     :local:
@@ -106,15 +106,16 @@ for the no-execv patch to work.
 Last version to support Python 2.5
 ----------------------------------
 
-The 2.6 series will be last series to support Python 2.5.
+The 3.0 series will be last version to support Python 2.5,
+and starting from 3.1 Python 2.6 and later will be required.
 
 With several other distributions taking the step to discontinue
 Python 2.5 support, we feel that it is time too.
 
 Python 2.6 should be widely available at this point, and we urge
 you to upgrade, but if that is not possible you still have the option
-to continue using the Celery 2.6 series, and important bug fixes
-introduced in Celery 2.7 will be back-ported to Celery 2.6 upon request.
+to continue using the Celery 3.0, and important bug fixes
+introduced in Celery 3.1 will be back-ported to Celery 3.0 upon request.
 
 .. _v260-news:
 

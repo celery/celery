@@ -15,7 +15,7 @@ from __future__ import absolute_import
 import socket
 import sys
 
-from celery import __version__, platforms, beat
+from celery import VERSION_BANNER, platforms, beat
 from celery.app import app_or_default
 from celery.app.abstract import configurated, from_config
 from celery.utils.imports import qualname
@@ -62,7 +62,7 @@ class Beat(configurated):
 
     def run(self):
         print(str(self.colored.cyan(
-                    'celerybeat v%s is starting.' % __version__)))
+                    'celerybeat v%s is starting.' % VERSION_BANNER)))
         self.init_loader()
         self.set_process_title()
         self.start_scheduler()

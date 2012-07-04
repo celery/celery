@@ -152,7 +152,7 @@ Deprecations
 
 * The :mod:`celery.decorators` module has changed status
   from pending deprecation to deprecated, and is scheduled for removal
-  in version 3.0.  The ``celery.task`` module must be used instead.
+  in version 4.0.  The ``celery.task`` module must be used instead.
 
 .. _v250-news:
 

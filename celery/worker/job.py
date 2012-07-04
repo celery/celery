@@ -149,7 +149,7 @@ class Request(object):
         See :meth:`celery.task.base.Task.run` for more information.
 
         Magic keyword arguments are deprecated and will be removed
-        in version 3.0.
+        in version 4.0.
 
         """
         kwargs = dict(self.kwargs)

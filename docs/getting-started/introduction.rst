@@ -38,7 +38,7 @@ What do I need?
 ===============
 
 .. sidebar:: Version Requirements
-    :subtitle: Celery version 2.6 runs on
+    :subtitle: Celery version 3.0 runs on
 
     - Python ❨2.5, 2.6, 2.7, 3.2, 3.3❩
     - PyPy ❨1.8, 1.9❩
@@ -60,7 +60,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you are
-new to Celery 2.6 coming from previous versions then you should our
+new to Celery 3.0 coming from previous versions then you should read our
 getting started tutorials:
 
 - :ref:`first-steps`

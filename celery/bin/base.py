@@ -112,7 +112,7 @@ class Command(object):
     args = ''
 
     #: Application version.
-    version = celery.__version__
+    version = celery.VERSION_BANNER
 
     #: If false the parser will raise an exception if positional
     #: args are provided.
@@ -161,6 +161,7 @@ class Command(object):
         """
         if argv is None:
             argv = list(sys.argv)
+        self.early_version(argv)
         argv = self.setup_app_from_commandline(argv)
         prog_name = os.path.basename(argv[0])
         return self.handle_argv(prog_name, argv[1:])
@@ -209,13 +210,15 @@ class Command(object):
         sys.stderr.write(msg + '\n')
         sys.exit(status)
 
+    def early_version(self, argv):
+        if '--version' in argv:
+            sys.stdout.write('%s\n' % self.version)
+            sys.exit(0)
+
     def parse_options(self, prog_name, arguments):
         """Parse the available options."""
         # Don't want to load configuration to just print the version,
         # so we handle --version manually here.
-        if '--version' in arguments:
-            sys.stdout.write('%s\n' % self.version)
-            sys.exit(0)
         parser = self.create_parser(prog_name)
         return parser.parse_args(arguments)
 

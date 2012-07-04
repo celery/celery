@@ -103,7 +103,7 @@ from time import sleep
 from kombu.utils import cached_property
 from kombu.utils.encoding import from_utf8
 
-from celery import __version__
+from celery import VERSION_BANNER
 from celery.platforms import PIDFile, shellsplit
 from celery.utils import term
 from celery.utils.text import pluralize
@@ -367,7 +367,7 @@ class MultiTool(object):
     def splash(self):
         if not self.nosplash:
             c = self.colored
-            self.note(c.cyan('celeryd-multi v%s' % __version__))
+            self.note(c.cyan('celeryd-multi v%s' % VERSION_BANNER))
 
     def waitexec(self, argv, path=sys.executable):
         args = ' '.join([path] + list(argv))

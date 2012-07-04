@@ -22,7 +22,7 @@ from functools import partial
 
 from billiard import cpu_count, current_process
 
-from celery import __version__, platforms, signals
+from celery import VERSION_BANNER, platforms, signals
 from celery.app import app_or_default
 from celery.app.abstract import configurated, from_config
 from celery.exceptions import ImproperlyConfigured, SystemTerminate
@@ -221,7 +221,7 @@ class Worker(configurated):
         banner = (BANNER % {
             'app': appr,
             'hostname': self.hostname,
-            'version': __version__,
+            'version': VERSION_BANNER,
             'conninfo': self.app.connection().as_uri(),
             'concurrency': concurrency,
             'events': events,

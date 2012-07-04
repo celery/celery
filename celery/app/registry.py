@@ -43,7 +43,7 @@ class TaskRegistry(dict):
         except KeyError:
             raise self.NotRegistered(name)
 
-    # -- these methods are irrelevant now and will be removed in 3.0
+    # -- these methods are irrelevant now and will be removed in 4.0
     def regular(self):
         return self.filter_types('regular')
 

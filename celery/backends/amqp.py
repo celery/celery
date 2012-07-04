@@ -34,7 +34,7 @@ class BacklogLimitExceeded(Exception):
 def repair_uuid(s):
     # Historically the dashes in UUIDS are removed from AMQ entity names,
     # but there is no known reason to.  Hopefully we'll be able to fix
-    # this in v3.0.
+    # this in v4.0.
     return '%s-%s-%s-%s-%s' % (s[:8], s[8:12], s[12:16], s[16:20], s[20:])
 
 
@@ -77,7 +77,7 @@ class AMQPBackend(BaseDictBackend):
         self.auto_delete = auto_delete
 
         # AMQP_TASK_RESULT_EXPIRES setting is deprecated and will be
-        # removed in version 3.0.
+        # removed in version 4.0.
         dexpires = conf.CELERY_AMQP_TASK_RESULT_EXPIRES
 
         self.expires = None

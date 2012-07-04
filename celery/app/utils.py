@@ -140,7 +140,7 @@ def bugreport(app):
         'system': _platform.system(),
         'arch': ', '.join(filter(None, _platform.architecture())),
         'py_i': platforms.pyimplementation(),
-        'celery_v': celery.__version__,
+        'celery_v': celery.VERSION_BANNER,
         'kombu_v': kombu.__version__,
         'billiard_v': billiard.__version__,
         'py_v': _platform.python_version(),

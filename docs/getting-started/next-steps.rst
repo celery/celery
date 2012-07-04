@@ -72,7 +72,7 @@ The :program:`celery` program can be used to start the worker::
 
 When the worker starts you should see a banner and some messages::
 
-     -------------- celery@halcyon.local v2.6.0rc4
+     -------------- celery@halcyon.local v3.0 (Chiastic Slide)
      ---- **** -----
      --- * ***  * -- [Configuration]
      -- * - **** --- . broker:      amqp://guest@localhost:5672//

@@ -5,14 +5,14 @@
 .. contents::
     :local:
 
-.. _version-2.6.0:
+.. _version-3.0.0:
 
-2.6.0
-=====
+3.0.0 (Chiastic Slide)
+======================
 :status: FROZEN
 :branch: master
 
-See :ref:`whatsnew-2.6`.
+See :ref:`whatsnew-3.0`.
 
 .. _version-2.5.2:
 
@@ -324,7 +324,7 @@ Important Notes
     :setting:`CELERY_TASK_RESULT_EXPIRES` setting.
 
     The old :setting:`CELERY_AMQP_TASK_RESULT_EXPIRES` setting has been
-    deprecated and will be removed in version 3.0.
+    deprecated and will be removed in version 4.0.
 
     Note that this means that the result backend requires RabbitMQ 1.1.0 or
     higher, and that you have to disable expiration if you are running
@@ -396,12 +396,12 @@ Important Notes
     white-list setting.
 
     The :setting:`CELERY_TASK_ERROR_WHITELIST` setting has been deprecated,
-    and will be removed completely in version 3.0.
+    and will be removed completely in version 4.0.
 
 * Additional Deprecations
 
     The following functions has been deprecated and is scheduled for removal in
-    version 3.0:
+    version 4.0:
 
     =====================================  ===================================
     **Old function**                       **Alternative**
@@ -414,7 +414,7 @@ Important Notes
     =====================================  ===================================
 
     The following settings has been deprecated and is scheduled for removal
-    in version 3.0:
+    in version 4.0:
 
     =====================================  ===================================
     **Old setting**                        **Alternative**
@@ -1440,11 +1440,11 @@ Important Notes
         Using the decorators in :mod:`celery.decorators` emits a
         :class:`PendingDeprecationWarning` with a helpful message urging
         you to change your code, in version 2.4 this will be replaced with
-        a :class:`DeprecationWarning`, and in version 3.0 the
+        a :class:`DeprecationWarning`, and in version 4.0 the
         :mod:`celery.decorators` module will be removed and no longer exist.
 
         Similarly, the `task.accept_magic_kwargs` attribute will no
-        longer have any effect starting from version 3.0.
+        longer have any effect starting from version 4.0.
 
 * The magic keyword arguments are now available as `task.request`
 

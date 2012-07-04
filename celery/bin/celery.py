@@ -16,7 +16,6 @@ from billiard import freeze_support
 from importlib import import_module
 from pprint import pformat
 
-from celery import __version__
 from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
 from celery.utils import term
 from celery.utils import text
@@ -63,7 +62,6 @@ def command(fun, name=None, sortpri=0):
 class Command(BaseCommand):
     help = ''
     args = ''
-    version = __version__
     prog_name = 'celery'
     show_body = True
     leaf = True

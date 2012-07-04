@@ -13,12 +13,12 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
+import celery
 import os
 import sys
 
 from optparse import OptionParser, BadOptionError
 
-from celery import __version__
 from celery.platforms import EX_FAILURE, detached
 from celery.utils.log import get_logger
 
@@ -104,7 +104,7 @@ class PartialOptionParser(OptionParser):
 class detached_celeryd(object):
     option_list = OPTION_LIST
     usage = '%prog [options] [celeryd options]'
-    version = __version__
+    version = celery.VERSION_BANNER
     description = ('Detaches Celery worker nodes.  See `celeryd --help` '
                    'for the list of supported worker arguments.')
     command = sys.executable

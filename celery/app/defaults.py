@@ -36,8 +36,8 @@ DEFAULT_LOG_FMT = '[%(asctime)s: %(levelname)s] %(message)s'
 DEFAULT_TASK_LOG_FMT = """[%(asctime)s: %(levelname)s/%(processName)s] \
 %(task_name)s[%(task_id)s]: %(message)s"""
 
-_BROKER_OLD = {'deprecate_by': '2.5', 'remove_by': '3.0', 'alt': 'BROKER_URL'}
-_REDIS_OLD = {'deprecate_by': '2.5', 'remove_by': '3.0',
+_BROKER_OLD = {'deprecate_by': '2.5', 'remove_by': '4.0', 'alt': 'BROKER_URL'}
+_REDIS_OLD = {'deprecate_by': '2.5', 'remove_by': '4.0',
               'alt': 'URL form of CELERY_RESULT_BACKEND'}
 
 
@@ -69,7 +69,7 @@ NAMESPACES = {
         'CONNECTION_MAX_RETRIES': Option(100, type='int'),
         'POOL_LIMIT': Option(10, type='int'),
         'INSIST': Option(False, type='bool',
-                         deprecate_by='2.4', remove_by='3.0'),
+                         deprecate_by='2.4', remove_by='4.0'),
         'USE_SSL': Option(False, type='bool'),
         'TRANSPORT': Option(type='string'),
         'TRANSPORT_OPTIONS': Option({}, type='dict'),
@@ -91,7 +91,7 @@ NAMESPACES = {
         'ACKS_LATE': Option(False, type='bool'),
         'ALWAYS_EAGER': Option(False, type='bool'),
         'AMQP_TASK_RESULT_EXPIRES': Option(type='float',
-                deprecate_by='2.5', remove_by='3.0',
+                deprecate_by='2.5', remove_by='4.0',
                 alt='CELERY_TASK_RESULT_EXPIRES'),
         'AMQP_TASK_RESULT_CONNECTION_MAX': Option(1, type='int',
                 remove_by='2.5', alt='BROKER_POOL_LIMIT'),
@@ -137,7 +137,7 @@ NAMESPACES = {
         'SEND_TASK_SENT_EVENT': Option(False, type='bool'),
         'STORE_ERRORS_EVEN_IF_IGNORED': Option(False, type='bool'),
         'TASK_ERROR_WHITELIST': Option((), type='tuple',
-            deprecate_by='2.5', remove_by='3.0'),
+            deprecate_by='2.5', remove_by='4.0'),
         'TASK_PUBLISH_RETRY': Option(True, type='bool'),
         'TASK_PUBLISH_RETRY_POLICY': Option({
                 'max_retries': 100,
@@ -167,9 +167,9 @@ NAMESPACES = {
         'CONSUMER': Option(type='string'),
         'LOG_FORMAT': Option(DEFAULT_PROCESS_LOG_FMT),
         'LOG_COLOR': Option(type='bool'),
-        'LOG_LEVEL': Option('WARN', deprecate_by='2.4', remove_by='3.0',
+        'LOG_LEVEL': Option('WARN', deprecate_by='2.4', remove_by='4.0',
                             alt='--loglevel argument'),
-        'LOG_FILE': Option(deprecate_by='2.4', remove_by='3.0',
+        'LOG_FILE': Option(deprecate_by='2.4', remove_by='4.0',
                             alt='--logfile argument'),
         'MEDIATOR': Option('celery.worker.mediator.Mediator'),
         'MAX_TASKS_PER_CHILD': Option(type='int'),
@@ -187,15 +187,15 @@ NAMESPACES = {
         'SCHEDULER': Option('celery.beat.PersistentScheduler'),
         'SCHEDULE_FILENAME': Option('celerybeat-schedule'),
         'MAX_LOOP_INTERVAL': Option(0, type='float'),
-        'LOG_LEVEL': Option('INFO', deprecate_by='2.4', remove_by='3.0',
+        'LOG_LEVEL': Option('INFO', deprecate_by='2.4', remove_by='4.0',
                             alt='--loglevel argument'),
-        'LOG_FILE': Option(deprecate_by='2.4', remove_by='3.0',
+        'LOG_FILE': Option(deprecate_by='2.4', remove_by='4.0',
                            alt='--logfile argument'),
     },
     'CELERYMON': {
-        'LOG_LEVEL': Option('INFO', deprecate_by='2.4', remove_by='3.0',
+        'LOG_LEVEL': Option('INFO', deprecate_by='2.4', remove_by='4.0',
                             alt='--loglevel argument'),
-        'LOG_FILE': Option(deprecate_by='2.4', remove_by='3.0',
+        'LOG_FILE': Option(deprecate_by='2.4', remove_by='4.0',
                            alt='--logfile argument'),
         'LOG_FORMAT': Option(DEFAULT_LOG_FMT),
     },

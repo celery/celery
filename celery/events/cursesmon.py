@@ -19,7 +19,7 @@ from itertools import count
 from textwrap import wrap
 from math import ceil
 
-from celery import __version__
+from celery import VERSION_BANNER
 from celery import states
 from celery.app import app_or_default
 from celery.utils.text import abbr, abbrtask
@@ -49,7 +49,7 @@ class CursesMonitor(object):  # pragma: no cover
     online_str = 'Workers online: '
     help_title = 'Keys: '
     help = ('j:up k:down i:info t:traceback r:result c:revoke ^c: quit')
-    greet = 'celeryev %s' % __version__
+    greet = 'celeryev %s' % VERSION_BANNER
     info_str = 'Info: '
 
     def __init__(self, state, keymap=None, app=None):

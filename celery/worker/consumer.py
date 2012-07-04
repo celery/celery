@@ -647,7 +647,7 @@ class Consumer(object):
         """Sets up the process mailbox when running in a greenlet
         environment."""
         # THIS CODE IS TERRIBLE
-        # Luckily work has already started rewriting the Consumer for 3.0.
+        # Luckily work has already started rewriting the Consumer for 4.0.
         self._pidbox_node_shutdown = threading.Event()
         self._pidbox_node_stopped = threading.Event()
         try:

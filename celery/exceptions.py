@@ -12,8 +12,6 @@ from billiard.exceptions import (  # noqa
     SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLostError,
 )
 
-from .utils.encoding import safe_repr
-
 UNREGISTERED_FMT = """\
 Task of kind %s is not registered, please make sure it's imported.\
 """
@@ -62,6 +60,7 @@ class RetryTaskError(Exception):
     """The task is to be retried later."""
 
     def __init__(self, message=None, exc=None, when=None, **kwargs):
+        from kombu.utils.encoding import safe_repr
         self.message = message
         if isinstance(exc, basestring):
             self.exc, self.excs = None, exc
