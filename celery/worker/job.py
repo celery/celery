@@ -337,6 +337,9 @@ class Request(object):
                          exception=safe_repr(exc_info.exception.exc),
                          traceback=safe_str(exc_info.traceback))
 
+        if self.task.acks_late:
+            self.acknowledge()
+
         if self._does_info:
             self.logger.info(self.retry_msg.strip(),
                             {"id": self.id,
