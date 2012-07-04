@@ -185,7 +185,7 @@ is the task id.
 
 The ``delay`` and ``apply_async`` methods return an :class:`~@AsyncResult`
 instance, which can be used to keep track of the tasks execution state.
-But for this you need to enable a :ref:`result backend <task-result-backend>` so that
+But for this you need to enable a :ref:`result backend <task-result-backends>` so that
 the state can be stored somewhere.
 
 Results are disabled by default because of the fact that there is no result
@@ -558,4 +558,4 @@ guide.
 
 
 
-**This document is incomplete - and ends here :(*
+**This document is incomplete - and ends here :(**
