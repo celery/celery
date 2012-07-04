@@ -312,7 +312,7 @@ From any subtask instance we can inspect the different fields::
 And there's that calling API again...
 -------------------------------------
 
-Subtask instances also support the calling API, which means you can use
+Subtask instances also supports the calling API, which means you can use
 ``delay``, ``apply_async``, or *calling* it directly.
 
 But there is a difference in that the subtask may already have
@@ -331,7 +331,7 @@ But, you can also make incomplete signatures to create what we call
     >>> s2 = add.s(2)
 
 ``s2`` is now a partial subtask that needs another argument to be complete,
-and this can actually be resolved when calling the subtask::
+and this can be resolved when calling the subtask::
 
     # resolves the partial: add(8, 2)
     >>> res = s2.delay(8)
@@ -347,8 +347,7 @@ existing keyword arguments, but with new arguments taking precedence::
     >>> s3 = add.s(2, 2, debug=True)
     >>> s3.delay(debug=False)   # debug is now False.
 
-As stated subtasks supports the calling API, and with the introduction
-of partial arguments, which means that:
+As stated subtasks supports the calling API, which means that:
 
 - ``subtask.apply_async(args=(), kwargs={}, **options)``
 
@@ -521,12 +520,10 @@ Here's some examples::
         >>> res.get()
         160
 
-    Which means that you can combine chains too::
+    Which means that you can combine chains::
 
         # ((4 + 16) * 2 + 4) * 8
         >>> c2 = (add.s(4, 16) | mul.s(2) | (add.s(4) | mul.s(8)))
-        >>> c2
-        tasks.add(16) | tasks.mul(2) | tasks.add(4) | tasks.mul(8)
 
         >>> res = c2()
         >>> res.get()

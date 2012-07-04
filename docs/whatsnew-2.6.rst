@@ -33,9 +33,8 @@ as well as PyPy and Jython.
         Everyone must read the new :ref:`first-steps` tutorial,
         and the new :ref:`next-steps` tutorial.
 
-        There's no plans to deprecate the old API, so you don't have
-        to be in a hurry to port your applications to the new API,
-        but it's better to be prepared.
+        There are no current plans to deprecate the old API,
+        so you don't have to be in a hurry to port your applications.
 
     - The worker is now thread-less, giving great performance improvements.
 
