@@ -34,7 +34,8 @@ as well as PyPy and Jython.
         and the new :ref:`next-steps` tutorial.
 
         There's no plans to deprecate the old API, so you don't have
-        to be in a hurry to port your applications to the new API.
+        to be in a hurry to port your applications to the new API,
+        but it's better to be prepared.
 
     - The worker is now thread-less, giving great performance improvements.
 
@@ -47,6 +48,14 @@ as well as PyPy and Jython.
         or even combine multiple chains.
 
         Read more in the :ref:`Canvas <guide-canvas>` user guide.
+
+    - Support for the new librabbitmq C client.
+
+        Celery will automatically use the :mod:`librabbitmq` module
+        if installed, which is a very fast and memory-optimized
+        replacement for the amqplib module.
+
+    - Redis support is more reliable with improved ack emulation.
 
 .. _`website`: http://celeryproject.org/
 .. _`django-celery changelog`: http://bit.ly/djcelery-26-changelog

@@ -536,8 +536,8 @@ Here's some examples::
         >>> res.get()
         90
 
-    Groups and chords accepts partial arguments too, which in case
-    the return value of the previous task is sent to all tasks in the group::
+    Groups and chords accepts partial arguments too, so in a chain
+    the return value of the previous task is forwarded to all tasks in the group::
 
 
         >>> new_user_workflow = (create_user.s() | group(
@@ -552,3 +552,6 @@ Here's some examples::
 Be sure to read more about workflows in the :ref:`Canvas <guide-canvas>` user
 guide.
 
+
+
+**This document is incomplete - and ends here :(*
