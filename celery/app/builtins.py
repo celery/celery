@@ -183,12 +183,16 @@ def add_chain_task(app):
         accept_magic_kwargs = False
 
         def prepare_steps(self, args, tasks):
+            print('ARGS: %r' % (args, ))
             steps = deque(tasks)
             next_step = prev_task = prev_res = None
             tasks, results = [], []
+            i = 0
             while steps:
                 # First task get partial args from chain.
-                task = maybe_subtask(steps.popleft()).clone()
+                task = maybe_subtask(steps.popleft())
+                task = task.clone() if i else task.clone(args)
+                i += 1
                 tid = task.options.get('task_id')
                 if tid is None:
                     tid = task.options['task_id'] = uuid()
@@ -212,9 +216,6 @@ def add_chain_task(app):
                 tasks.append(task)
                 prev_task, prev_res = task, res
 
-            # First task receives partial args for chain()
-            if args and not tasks[0].immutable:
-                tasks[0].args = tuple(args) + tuple(tasks[0].args or ())
             return tasks, results
 
         def apply_async(self, args=(), kwargs={}, group_id=None, chord=None,

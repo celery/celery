@@ -206,7 +206,7 @@ class chain(Signature):
         self.subtask_type = 'chain'
 
     def __call__(self, *args, **kwargs):
-        return self.apply_async(*args, **kwargs)
+        return self.apply_async(args, kwargs)
 
     @classmethod
     def from_dict(self, d):

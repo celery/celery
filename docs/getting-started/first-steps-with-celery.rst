@@ -1,9 +1,9 @@
 .. _tut-celery:
 .. _first-steps:
 
-========================
+=========================
  First Steps with Celery
-========================
+=========================
 
 Celery is a task queue with batteries included.
 It is easy to use so that you can get started without learning

@@ -4,18 +4,21 @@
  What's new in Celery 2.6
 ==========================
 
-Celery aims to be a flexible and reliable, best-of-breed solution
-to process vast amounts of messages in a distributed fashion, while
-providing operations with the tools to maintain such a system.
+Celery is a simple, flexible and reliable distributed system to
+process vast amounts of messages, while providing operations with
+the tools required to maintain such a system.
+
+It's a task queue with focus on real-time processing, while also
+supporting task scheduling.
 
 Celery has a large and diverse community of users and contributors,
 you should come join us :ref:`on IRC <irc-channel>`
 or :ref:`our mailing-list <mailing-list>`.
 
-To read more about Celery you should visit our `website`_.
+To read more about Celery you should go read the :ref:`introduction <intro>`.
 
 While this version is backward compatible with previous versions
-it is important that you read the following section.
+it's important that you read the following section.
 
 If you use Celery in combination with Django you must also
 read the `django-celery changelog`_ and upgrade to `django-celery 2.6`_.
@@ -27,10 +30,11 @@ as well as PyPy and Jython.
 
     - A new and improved API, that is both simpler and more powerful.
 
-        Everyone should read the new :ref:`first-steps` tutorial,
+        Everyone must read the new :ref:`first-steps` tutorial,
         and the new :ref:`next-steps` tutorial.
 
-    - Documentation rewritten and updated to use the new API
+        There's no plans to deprecate the old API, so you don't have
+        to be in a hurry to port your applications to the new API.
 
     - The worker is now thread-less, giving great performance improvements.
 
@@ -38,6 +42,11 @@ as well as PyPy and Jython.
 
     - The new "Canvas" makes it easy to define complex workflows.
 
+        Ever wanted to chain tasks together? This is possible, but
+        not just that, now you can even chain together groups and chords,
+        or even combine multiple chains.
+
+        Read more in the :ref:`Canvas <guide-canvas>` user guide.
 
 .. _`website`: http://celeryproject.org/
 .. _`django-celery changelog`: http://bit.ly/djcelery-26-changelog
@@ -200,9 +209,6 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
 
 `group`/`chord`/`chain` are now subtasks
 ----------------------------------------
-
-- The source code for these, including subtask, has been moved
-  to new module celery.canvas.
 
 - group is no longer an alias to TaskSet, but new alltogether,
   since it was very difficult to migrate the TaskSet class to become
@@ -429,7 +435,7 @@ by default, it will first be bound (and configured) when
 a concrete subclass is created.
 
 This means that you can safely import and make task base classes,
-without also initializing the default app environment::
+without also initializing the app environment::
 
     from celery.task import Task
 

@@ -391,6 +391,130 @@ You can also define your own rules for the autoscaler by subclassing
 Some ideas for metrics include load average or the amount of memory available.
 You can specify a custom autoscaler with the :setting:`CELERYD_AUTOSCALER` setting.
 
+.. _worker-queues:
+
+Queues
+======
+
+A worker instance can consume from any number of queues.
+By default it will consume from all queues defined in the
+:setting:`CELERY_QUEUES` setting (which if not specified defaults to the
+queue named ``celery``).
+
+You can specify what queues to consume from at startup,
+by giving a comma separated list of queues to the :option:`-Q` option::
+
+    $ celery worker -l info -Q foo,bar,baz
+
+If the queue name is defined in :setting:`CELERY_QUEUES` it will use that
+configuration, but if it's not defined in the list of queues Celery will
+automatically generate a new queue for you (depending on the
+:setting:`CELERY_CREATE_MISSING_QUEUES` option).
+
+You can also tell the worker to start and stop consuming from a queue at
+runtime using the remote control commands :control:`add_consumer` and
+:control:`cancel_consumer`.
+
+.. control:: add_consumer
+
+Queues: Adding consumers
+------------------------
+
+The :control:`add_consumer` control command will tell one or more workers
+to start consuming from a queue. This operation is idempotent.
+
+To tell all workers in the cluster to start consuming from a queue
+named "``foo``" you can use the :program:`celery control` program::
+
+    $ celery control add_consumer foo
+    -> worker1.local: OK
+        started consuming from u'foo'
+
+If you want to specify a specific worker you can use the
+:option:`--destination`` argument::
+
+    $ celery control add_consumer foo -d worker1.local
+
+The same can be accomplished dynamically using the :meth:`@control.add_consumer` method::
+
+    >>> myapp.control.add_consumer('foo', reply=True)
+    [{u'worker1.local': {u'ok': u"already consuming from u'foo'"}}]
+
+    >>> myapp.control.add_consumer('foo', reply=True,
+    ...                            destination=['worker1.local'])
+    [{u'worker1.local': {u'ok': u"already consuming from u'foo'"}}]
+
+
+By now we have only used automatic queues, which is only using a queue name.
+If you need more control you can also specify the exchange, routing_key and
+other options::
+
+    >>> myapp.control.add_consumer(
+    ...     queue='baz',
+    ...     exchange='ex',
+    ...     exchange_type='topic',
+    ...     routing_key='media.*',
+    ...     options={
+    ...         'queue_durable': False,
+    ...         'exchange_durable': False,
+    ...     },
+    ...     reply=True,
+    ...     destination=['worker1.local', 'worker2.local'])
+
+
+.. control:: cancel_consumer
+
+Queues: Cancelling consumers
+----------------------------
+
+You can cancel a consumer by queue name using the :control:`cancel_consumer`
+control command.
+
+To force all workers in the cluster to cancel consuming from a queue
+you can use the :program:`celery control` program::
+
+    $ celery control cancel_consumer foo
+
+The :option:`--destination` argument can be used to specify a worker, or a
+list of workers, to act on the command::
+
+    $ celery control cancel_consumer foo -d worker1.local
+
+
+You can also cancel consumers programmatically using the
+:meth:`@control.cancel_consumer` method::
+
+    >>> myapp.control.cancel_consumer('foo', reply=True)
+    [{u'worker1.local': {u'ok': u"no longer consuming from u'foo'"}}]
+
+.. control:: active_queues
+
+Queues: List of active queues
+-----------------------------
+
+You can get a list of queues that a worker consumes from by using
+the :control:`active_queues` control command::
+
+    $ celery inspect active_queues
+    [...]
+
+Like all other remote control commands this also supports the
+:option:`--destination` argument used to specify which workers should
+reply to the request::
+
+    $ celery inspect active_queues -d worker1.local
+    [...]
+
+
+This can also be done programmatically by using the
+:meth:`@control.inspect.active_queues` method::
+
+    >>> myapp.inspect().active_queues()
+    [...]
+
+    >>> myapp.inspect(['worker1.local']).active_queues()
+    [...]
+
 .. _worker-autoreloading:
 
 Autoreloading

@@ -155,7 +155,7 @@ class Control(object):
                               **kwargs)
 
     def add_consumer(self, queue, exchange=None, exchange_type='direct',
-            routing_key=None, **options):
+            routing_key=None, options=None, **kwargs):
         """Tell all (or specific) workers to start consuming from a new queue.
 
         Only the queue name is required as if only the queue is specified
@@ -177,9 +177,10 @@ class Control(object):
 
         """
         return self.broadcast('add_consumer',
-                arguments={'queue': queue, 'exchange': exchange,
-                           'exchange_type': exchange_type,
-                           'routing_key': routing_key}, **options)
+                arguments=dict({'queue': queue, 'exchange': exchange,
+                                'exchange_type': exchange_type,
+                                'routing_key': routing_key}, **options),
+                **kwargs)
 
     def cancel_consumer(self, queue, **kwargs):
         """Tell all (or specific) workers to stop consuming from ``queue``.
