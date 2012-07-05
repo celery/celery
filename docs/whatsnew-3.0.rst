@@ -1,4 +1,4 @@
-.. _whatsnew-3.0: (Chiastic Slide) (Chiastic Slide)
+.. _whatsnew-3.0:
 
 ===========================================
  What's new in Celery 3.0 (Chiastic Slide)
