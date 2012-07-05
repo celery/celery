@@ -1,7 +1,7 @@
 from fileinput import input
 from sys import exit, stderr
 
-from celery.app.defaults import DEFAULTS
+from celery.app.defaults import NAMESPACES, flatten
 
 ignore = frozenset([
     "BROKER_INSIST",
@@ -19,13 +19,18 @@ ignore = frozenset([
 ])
 
 
+def is_ignored(setting, option):
+    return setting in ignore or option.deprecate_by
+
+
 def find_undocumented_settings(directive=".. setting:: "):
-    all = set(DEFAULTS)
+    settings = dict(flatten(NAMESPACES))
+    all = set(settings)
     documented = set(line.strip()[len(directive):].strip()
                         for line in input()
                             if line.strip().startswith(directive))
     return [setting for setting in all ^ documented
-                if setting not in ignore]
+                if not is_ignored(setting, settings[setting])]
 
 
 if __name__ == "__main__":
