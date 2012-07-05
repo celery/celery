@@ -34,7 +34,7 @@ else:
         if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
             return qualname(obj.__class__)
 
-        return '.'.join([str(obj.__module__), str(obj.__name__)])
+        return '%s.%s' % (obj.__module__, obj.__name__)
 
 
 def symbol_by_name(name, aliases={}, imp=None, package=None,
