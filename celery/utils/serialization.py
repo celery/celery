@@ -132,7 +132,7 @@ class UnpickleableExceptionWrapper(Exception):
         safe_exc_args = []
         for arg in exc_args:
             try:
-                pickle.dumps(deepcopy(arg))
+                pickle.dumps(arg)
                 safe_exc_args.append(arg)
             except Exception:
                 safe_exc_args.append(safe_repr(arg))
