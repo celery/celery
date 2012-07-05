@@ -137,9 +137,6 @@ Let's create the file :file:`tasks.py`:
     def add(x, y):
         return x + y
 
-    if __name__ == '__main__':
-        celery.start()
-
 The first argument to :class:`~celery.app.Celery` is the name of the current module,
 this is needed so that names can be automatically generated, the second
 argument is the broker keyword argument which specifies the URL of the
@@ -161,7 +158,7 @@ Running the celery worker server
 We now run the worker by executing our program with the ``worker``
 argument::
 
-    $ python tasks.py worker --loglevel=info
+    $ celery -A tasks worker --loglevel=info
 
 In production you will want to run the worker in the
 background as a daemon.  To do this you need to use the tools provided
@@ -170,11 +167,11 @@ for more information).
 
 For a complete listing of the command line options available, do::
 
-    $  python tasks.py worker --help
+    $  celery worker --help
 
 There also several other commands available, and help is also available::
 
-    $ python tasks.py --help
+    $ celery help
 
 .. _`supervisord`: http://supervisord.org
 
@@ -365,7 +362,7 @@ If you are using RabbitMQ, Redis or MongoDB as the
 broker then you can also direct the workers to set a new rate limit
 for the task at runtime::
 
-    $ python tasks.py rate_limit tasks.add 10/m
+    $ celery control rate_limit tasks.add 10/m
     worker.example.com: OK
         new rate limit set successfully
 
@@ -377,5 +374,6 @@ and how to monitor what your workers are doing.
 Where to go from here
 =====================
 
-After this you should read the :ref:`guide`. Specifically
-:ref:`guide-tasks` and :ref:`guide-calling`.
+If you want to learn more you should continue to the
+:ref:`Next Steps <next-steps>` tutorial, and after that you
+can study the :ref:`User Guide <guide>`.
