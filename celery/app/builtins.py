@@ -162,7 +162,7 @@ def add_group_task(app):
 
         def apply_async(self, partial_args=(), kwargs={}, **options):
             if self.app.conf.CELERY_ALWAYS_EAGER:
-                return self.apply(args, kwargs, **options)
+                return self.apply(partial_args, kwargs, **options)
             tasks, result, gid, args = self.prepare(options,
                                             args=partial_args, **kwargs)
             super(Group, self).apply_async((list(tasks),
@@ -310,5 +310,5 @@ def add_chord_task(app):
             res = super(Chord, self).apply(args, dict(kwargs, eager=True),
                                            **options)
             return maybe_subtask(body).apply(
-                        args=(res.get(propagate=propagate).get().join(), ))
+                        args=(res.get(propagate=propagate).get(), ))
     return Chord

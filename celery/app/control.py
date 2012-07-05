@@ -179,7 +179,7 @@ class Control(object):
         return self.broadcast('add_consumer',
                 arguments=dict({'queue': queue, 'exchange': exchange,
                                 'exchange_type': exchange_type,
-                                'routing_key': routing_key}, **options),
+                                'routing_key': routing_key}, **options or {}),
                 **kwargs)
 
     def cancel_consumer(self, queue, **kwargs):

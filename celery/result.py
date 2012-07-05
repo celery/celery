@@ -693,3 +693,7 @@ class EagerResult(AsyncResult):
     def traceback(self):
         """The traceback if the task failed."""
         return self._traceback
+
+    @property
+    def supports_native_join(self):
+        return False

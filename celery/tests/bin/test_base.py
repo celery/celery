@@ -44,10 +44,10 @@ class test_Command(AppCase):
             Command().run()
 
     @patch('sys.stdout')
-    def test_parse_options_version_only(self, stdout):
+    def test_early_version(self, stdout):
         cmd = Command()
         with self.assertRaises(SystemExit):
-            cmd.parse_options('prog', ['--version'])
+            cmd.early_version(['--version'])
         stdout.write.assert_called_with(cmd.version + '\n')
 
     def test_execute_from_commandline(self):

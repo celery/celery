@@ -92,7 +92,7 @@ class test_group(Case):
         x = group([add.s(4, 4), add.s(8, 8)])
         x.name = self.task.name
         res = x.apply()
-        self.assertEqual(res.get().join(), [8, 16])
+        self.assertEqual(res.get(), [8, 16])
 
     def test_apply_async(self):
         x = group([add.s(4, 4), add.s(8, 8)])

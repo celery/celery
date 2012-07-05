@@ -1,4 +1,4 @@
-.. _whatsnew-3.0:
+.. _whatsnew-3.0: (Chiastic Slide) (Chiastic Slide)
 
 ===========================================
  What's new in Celery 3.0 (Chiastic Slide)
@@ -391,7 +391,7 @@ Logging support now conforms better with best practices.
       currently executing task.
 
 - In fact, ``task.get_logger`` is no longer recommended, it is better
-  to add module-level logger to your tasks module.
+  to add a module-level logger to your tasks module.
 
     For example, like this:
 
