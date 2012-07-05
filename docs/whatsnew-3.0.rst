@@ -72,13 +72,13 @@ Important Notes
 Eventloop
 ---------
 
-The worker is now running *without threads* when used with AMQP or Redis as a
-broker, resulting in::
+The worker is now running *without threads* when used with RabbitMQ (AMQP),
+or Redis as a broker, resulting in:
 
-    - Much better performance overall.
-    - Fixes several edge case race conditions.
-    - Sub-millisecond timer precision.
-    - Faster shutdown times.
+- Much better overall performance.
+- Fixes several edge case race conditions.
+- Sub-millisecond timer precision.
+- Faster shutdown times.
 
 The transports supported are:  ``amqplib``, ``librabbitmq``, and ``redis``
 Hopefully this can be extended to include additional broker transports

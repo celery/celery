@@ -50,11 +50,12 @@ this default or the default retry policy see
 :setting:`CELERY_TASK_PUBLISH_RETRY` and
 :setting:`CELERY_TASK_PUBLISH_RETRY_POLICY`.
 
-AMQP Result Backend: Exchange is no longer *auto delete*
---------------------------------------------------------
+Rabbit Result Backend: Exchange is no longer *auto delete*
+----------------------------------------------------------
 
-The exchange used for results used to have the *auto_delete* flag set,
-that could result in a race condition leading to an annoying warning.
+The exchange used for results in the Rabbit (AMQP) result backend
+used to have the *auto_delete* flag set, which could result in a
+race condition leading to an annoying warning.
 
 .. admonition:: For RabbitMQ users
 
@@ -340,9 +341,9 @@ In Other News
 
     Contributed by Dan McGee.
 
-- Adds Chord support for the AMQP backend
+- Adds Chord support for the Rabbit result backend (amqp)
 
-    The AMQP backend can now use the fallback chord solution.
+    The Rabbit result backend can now use the fallback chord solution.
 
 - Sending :sig:`QUIT` to celeryd will now cause it cold terminate.
 

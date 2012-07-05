@@ -370,10 +370,10 @@ Here's some examples::
         ...                         email='art@vandelay.com')
 
 
-.. _canvas-chains:
+.. _canvas-chain:
 
-Chaining
---------
+Chains
+------
 
 .. versionadded:: 3.0
 
@@ -630,7 +630,7 @@ It supports the following operations:
     and return a list with them ordered by the order of which they
     were called.
 
-.. _chords:
+.. _canvas-chord:
 
 Chords
 ------
@@ -735,6 +735,8 @@ implemented in other backends (suggestions welcome!).
             do_something()
             super(MyTask, self).after_return(*args, **kwargs)
 
+.. _canvas-map:
+
 Map & Starmap
 -------------
 
@@ -783,12 +785,12 @@ to call the starmap after 10 seconds::
 
     >>> add.starmap(zip(range(10), range(10))).apply_async(countdown=10)
 
-.. _chunking:
+.. _canvas-chunks:
 
-Chunking
---------
+Chunks
+------
 
--- Chunking lets you divide a iterable of work into pieces,
+-- Chunking lets you divide an iterable of work into pieces,
    so that if you have one million objects, you can create
    10 tasks with hundred thousand objects each.
 

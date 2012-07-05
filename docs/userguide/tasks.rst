@@ -524,7 +524,7 @@ Result Backends
 
 Celery needs to store or send the states somewhere.  There are several
 built-in backends to choose from: SQLAlchemy/Django ORM, Memcached, Redis,
-AMQP, MongoDB, Tokyo Tyrant and Redis -- or you can define your own.
+RabbitMQ (amqp), MongoDB, Tokyo Tyrant and Redis -- or you can define your own.
 
 No backend works well for every use case.
 You should read about the strengths and weaknesses of each backend, and choose
@@ -535,11 +535,11 @@ the most appropriate for your needs.
 
     :ref:`conf-result-backend`
 
-AMQP Result Backend
-~~~~~~~~~~~~~~~~~~~
+RabbitMQ Result Backend
+~~~~~~~~~~~~~~~~~~~~~~~
 
-The AMQP result backend is special as it does not actually *store* the states,
-but rather sends them as messages.  This is an important difference as it
+The RabbitMQ result backend (amqp) is special as it does not actually *store*
+the states, but rather sends them as messages.  This is an important difference as it
 means that a result *can only be retrieved once*; If you have two processes
 waiting for the same result, one of the processes will never receive the
 result!
@@ -548,8 +548,8 @@ Even with that limitation, it is an excellent choice if you need to receive
 state changes in real-time.  Using messaging means the client does not have to
 poll for new states.
 
-There are several other pitfalls you should be aware of when using the AMQP
-backend:
+There are several other pitfalls you should be aware of when using the
+RabbitMQ result backend:
 
 * Every new task creates a new queue on the server, with thousands of tasks
   the broker may be overloaded with queues and this will affect performance in
@@ -563,7 +563,7 @@ backend:
   expire after 1 day: if you have a very busy cluster you should lower
   this value.
 
-For a list of options supported by the AMQP result backend, please see
+For a list of options supported by the RabbitMQ result backend, please see
 :ref:`conf-amqp-result-backend`.
 
 

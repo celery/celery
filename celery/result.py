@@ -97,7 +97,7 @@ class AsyncResult(ResultBase):
         :keyword propagate: Re-raise exception if the task failed.
         :keyword interval: Time to wait (in seconds) before retrying to
            retrieve the result.  Note that this does not have any effect
-           when using the AMQP result store backend, as it does not
+           when using the amqp result store backend, as it does not
            use polling.
 
         :raises celery.exceptions.TimeoutError: if `timeout` is not
@@ -468,7 +468,7 @@ class ResultSet(ResultBase):
 
         :keyword interval: Time to wait (in seconds) before retrying to
                            retrieve a result from the set.  Note that this
-                           does not have any effect when using the AMQP
+                           does not have any effect when using the amqp
                            result store backend, as it does not use polling.
 
         :raises celery.exceptions.TimeoutError: if `timeout` is not
@@ -499,7 +499,7 @@ class ResultSet(ResultBase):
         Note that this does not support collecting the results
         for different task types using different backends.
 
-        This is currently only supported by the AMQP, Redis and cache
+        This is currently only supported by the amqp, Redis and cache
         result backends.
 
         """
@@ -515,7 +515,7 @@ class ResultSet(ResultBase):
         Note that this does not support collecting the results
         for different task types using different backends.
 
-        This is currently only supported by the AMQP, Redis and cache
+        This is currently only supported by the amqp, Redis and cache
         result backends.
 
         """

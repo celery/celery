@@ -269,8 +269,8 @@ Quickjump
         - :ref:`use logging from my task <task-logging>`
         - :ref:`learn about best practices <task-best-practices>`
         - :ref:`create a custom task base class <task-custom-classes>`
-        - :ref:`add a callback to a group of tasks <chords>`
-        - :ref:`split a task into several chunks <chunking>`
+        - :ref:`add a callback to a group of tasks <canvas-chord>`
+        - :ref:`split a task into several chunks <canvas-chunks>`
         - :ref:`optimize the worker <guide-optimizing>`
         - :ref:`see a list of built-in task states <task-builtin-states>`
         - :ref:`create custom task states <custom-states>`

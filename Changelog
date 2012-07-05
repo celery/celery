@@ -787,7 +787,7 @@ News
         ...         for i in xrange(100))(tsum.subtask()).get()
         9900
 
-    Please read the :ref:`Chords section in the user guide <chords>`, if you
+    Please read the :ref:`Chords section in the user guide <canvas-chord>`, if you
     want to know more.
 
 * Time limits can now be set for individual tasks.
