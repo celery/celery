@@ -12,8 +12,6 @@ import inspect
 import sys
 import types
 
-from copy import deepcopy
-
 import pickle as pypickle
 try:
     import cPickle as cpickle
@@ -159,7 +157,7 @@ def get_pickleable_exception(exc):
         return nearest
 
     try:
-        pickle.dumps(deepcopy(exc))
+        pickle.dumps(exc)
     except Exception:
         return UnpickleableExceptionWrapper.from_exception(exc)
     return exc
