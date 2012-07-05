@@ -131,11 +131,18 @@ class UnpickleableExceptionWrapper(Exception):
     exc_args = None
 
     def __init__(self, exc_module, exc_cls_name, exc_args, text=None):
+        safe_exc_args = []
+        for arg in exc_args:
+            try:
+                pickle.dumps(deepcopy(arg))
+                safe_exc_args.append(arg)
+            except Exception:
+                safe_exc_args.append(safe_repr(arg))
         self.exc_module = exc_module
         self.exc_cls_name = exc_cls_name
-        self.exc_args = exc_args
+        self.exc_args = safe_exc_args
         self.text = text
-        Exception.__init__(self, exc_module, exc_cls_name, exc_args, text)
+        Exception.__init__(self, exc_module, exc_cls_name, safe_exc_args, text)
 
     def restore(self):
         return create_exception_cls(self.exc_cls_name,
