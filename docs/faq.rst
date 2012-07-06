@@ -562,8 +562,8 @@ Tasks
 
 .. _faq-tasks-connection-reuse:
 
-How can I reuse the same connection when applying tasks?
---------------------------------------------------------
+How can I reuse the same connection when calling tasks?
+-------------------------------------------------------
 
 **Answer**: See the :setting:`BROKER_POOL_LIMIT` setting.
 The connection pool is enabled by default since version 2.5.

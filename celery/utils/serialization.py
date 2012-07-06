@@ -5,17 +5,12 @@
 
     Utilities for safely pickling exceptions.
 
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
-
 """
 from __future__ import absolute_import
 
 import inspect
 import sys
 import types
-
-from copy import deepcopy
 
 import pickle as pypickle
 try:
@@ -71,12 +66,12 @@ def find_nearest_pickleable_exception(exc):
 
     """
     cls = exc.__class__
-    getmro_ = getattr(cls, "mro", None)
+    getmro_ = getattr(cls, 'mro', None)
 
     # old-style classes doesn't have mro()
     if not getmro_:  # pragma: no cover
         # all Py2.4 exceptions has a baseclass.
-        if not getattr(cls, "__bases__", ()):
+        if not getattr(cls, '__bases__', ()):
             return
         # Use inspect.getmro() to traverse bases instead.
         getmro_ = lambda: inspect.getmro(cls)
@@ -87,7 +82,7 @@ def find_nearest_pickleable_exception(exc):
             # we don't care about these.
             return
         try:
-            exc_args = getattr(exc, "args", [])
+            exc_args = getattr(exc, 'args', [])
             superexc = supercls(*exc_args)
             pickle.dumps(superexc)
         except:
@@ -134,11 +129,18 @@ class UnpickleableExceptionWrapper(Exception):
     exc_args = None
 
     def __init__(self, exc_module, exc_cls_name, exc_args, text=None):
+        safe_exc_args = []
+        for arg in exc_args:
+            try:
+                pickle.dumps(arg)
+                safe_exc_args.append(arg)
+            except Exception:
+                safe_exc_args.append(safe_repr(arg))
         self.exc_module = exc_module
         self.exc_cls_name = exc_cls_name
-        self.exc_args = exc_args
+        self.exc_args = safe_exc_args
         self.text = text
-        Exception.__init__(self, exc_module, exc_cls_name, exc_args, text)
+        Exception.__init__(self, exc_module, exc_cls_name, safe_exc_args, text)
 
     def restore(self):
         return create_exception_cls(self.exc_cls_name,
@@ -151,7 +153,7 @@ class UnpickleableExceptionWrapper(Exception):
     def from_exception(cls, exc):
         return cls(exc.__class__.__module__,
                    exc.__class__.__name__,
-                   getattr(exc, "args", []),
+                   getattr(exc, 'args', []),
                    safe_repr(exc))
 
 
@@ -162,7 +164,7 @@ def get_pickleable_exception(exc):
         return nearest
 
     try:
-        pickle.dumps(deepcopy(exc))
+        pickle.dumps(exc)
     except Exception:
         return UnpickleableExceptionWrapper.from_exception(exc)
     return exc

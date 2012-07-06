@@ -49,10 +49,10 @@ class test_ScheduleEntry(Case):
     Entry = beat.ScheduleEntry
 
     def create_entry(self, **kwargs):
-        entry = dict(name="celery.unittest.add",
+        entry = dict(name='celery.unittest.add',
                      schedule=schedule(timedelta(seconds=10)),
                      args=(2, 2),
-                     options={"routing_key": "cpu"})
+                     options={'routing_key': 'cpu'})
         return self.Entry(**dict(entry, **kwargs))
 
     def test_next(self):
@@ -80,24 +80,24 @@ class test_ScheduleEntry(Case):
 
     def test_repr(self):
         entry = self.create_entry()
-        self.assertIn("<Entry:", repr(entry))
+        self.assertIn('<Entry:', repr(entry))
 
     def test_update(self):
         entry = self.create_entry()
         self.assertEqual(entry.schedule, timedelta(seconds=10))
         self.assertTupleEqual(entry.args, (2, 2))
         self.assertDictEqual(entry.kwargs, {})
-        self.assertDictEqual(entry.options, {"routing_key": "cpu"})
+        self.assertDictEqual(entry.options, {'routing_key': 'cpu'})
 
         entry2 = self.create_entry(schedule=timedelta(minutes=20),
                                    args=(16, 16),
-                                   kwargs={"callback": "foo.bar.baz"},
-                                   options={"routing_key": "urgent"})
+                                   kwargs={'callback': 'foo.bar.baz'},
+                                   options={'routing_key': 'urgent'})
         entry.update(entry2)
         self.assertEqual(entry.schedule, schedule(timedelta(minutes=20)))
         self.assertTupleEqual(entry.args, (16, 16))
-        self.assertDictEqual(entry.kwargs, {"callback": "foo.bar.baz"})
-        self.assertDictEqual(entry.options, {"routing_key": "urgent"})
+        self.assertDictEqual(entry.kwargs, {'callback': 'foo.bar.baz'})
+        self.assertDictEqual(entry.options, {'routing_key': 'urgent'})
 
 
 class mScheduler(beat.Scheduler):
@@ -107,23 +107,23 @@ class mScheduler(beat.Scheduler):
         beat.Scheduler.__init__(self, *args, **kwargs)
 
     def send_task(self, name=None, args=None, kwargs=None, **options):
-        self.sent.append({"name": name,
-                          "args": args,
-                          "kwargs": kwargs,
-                          "options": options})
+        self.sent.append({'name': name,
+                          'args': args,
+                          'kwargs': kwargs,
+                          'options': options})
         return AsyncResult(uuid())
 
 
 class mSchedulerSchedulingError(mScheduler):
 
     def send_task(self, *args, **kwargs):
-        raise beat.SchedulingError("Could not apply task")
+        raise beat.SchedulingError('Could not apply task')
 
 
 class mSchedulerRuntimeError(mScheduler):
 
     def maybe_due(self, *args, **kwargs):
-        raise RuntimeError("dict modified while itervalues")
+        raise RuntimeError('dict modified while itervalues')
 
 
 class mocked_schedule(schedule):
@@ -144,7 +144,7 @@ always_pending = mocked_schedule(False, 1)
 class test_Scheduler(Case):
 
     def test_custom_schedule_dict(self):
-        custom = {"foo": "bar"}
+        custom = {'foo': 'bar'}
         scheduler = mScheduler(schedule=custom, lazy=True)
         self.assertIs(scheduler.data, custom)
 
@@ -182,11 +182,11 @@ class test_Scheduler(Case):
         s.apply_async(s.Entry(task=not_sync.name))
         self.assertFalse(s._do_sync.called)
 
-    @patch("celery.app.base.Celery.send_task")
+    @patch('celery.app.base.Celery.send_task')
     def test_send_task(self, send_task):
         b = beat.Scheduler()
-        b.send_task("tasks.add", countdown=10)
-        send_task.assert_called_with("tasks.add", countdown=10)
+        b.send_task('tasks.add', countdown=10)
+        send_task.assert_called_with('tasks.add', countdown=10)
 
     def test_info(self):
         scheduler = mScheduler()
@@ -194,18 +194,18 @@ class test_Scheduler(Case):
 
     def test_maybe_entry(self):
         s = mScheduler()
-        entry = s.Entry(name="add every", task="tasks.add")
+        entry = s.Entry(name='add every', task='tasks.add')
         self.assertIs(s._maybe_entry(entry.name, entry), entry)
-        self.assertTrue(s._maybe_entry("add every", {
-            "task": "tasks.add",
+        self.assertTrue(s._maybe_entry('add every', {
+            'task': 'tasks.add',
         }))
 
     def test_set_schedule(self):
         s = mScheduler()
-        s.schedule = {"foo": "bar"}
-        self.assertEqual(s.data, {"foo": "bar"})
+        s.schedule = {'foo': 'bar'}
+        self.assertEqual(s.data, {'foo': 'bar'})
 
-    @patch("kombu.connection.Connection.ensure_connection")
+    @patch('kombu.connection.Connection.ensure_connection')
     def test_ensure_connection_error_handler(self, ensure):
         s = mScheduler()
         self.assertTrue(s._ensure_connected())
@@ -219,60 +219,60 @@ class test_Scheduler(Case):
                             CELERYBEAT_SCHEDULE={}):
             s = mScheduler()
             s.install_default_entries({})
-            self.assertNotIn("celery.backend_cleanup", s.data)
+            self.assertNotIn('celery.backend_cleanup', s.data)
         with patch_settings(CELERY_TASK_RESULT_EXPIRES=30,
                             CELERYBEAT_SCHEDULE={}):
             s = mScheduler()
             s.install_default_entries({})
-            self.assertIn("celery.backend_cleanup", s.data)
+            self.assertIn('celery.backend_cleanup', s.data)
 
     def test_due_tick(self):
         scheduler = mScheduler()
-        scheduler.add(name="test_due_tick",
+        scheduler.add(name='test_due_tick',
                       schedule=always_due,
                       args=(1, 2),
-                      kwargs={"foo": "bar"})
+                      kwargs={'foo': 'bar'})
         self.assertEqual(scheduler.tick(), 1)
 
-    @patch("celery.beat.error")
+    @patch('celery.beat.error')
     def test_due_tick_SchedulingError(self, error):
         scheduler = mSchedulerSchedulingError()
-        scheduler.add(name="test_due_tick_SchedulingError",
+        scheduler.add(name='test_due_tick_SchedulingError',
                       schedule=always_due)
         self.assertEqual(scheduler.tick(), 1)
         self.assertTrue(error.called)
 
     def test_due_tick_RuntimeError(self):
         scheduler = mSchedulerRuntimeError()
-        scheduler.add(name="test_due_tick_RuntimeError",
+        scheduler.add(name='test_due_tick_RuntimeError',
                       schedule=always_due)
         self.assertEqual(scheduler.tick(), scheduler.max_interval)
 
     def test_pending_tick(self):
         scheduler = mScheduler()
-        scheduler.add(name="test_pending_tick",
+        scheduler.add(name='test_pending_tick',
                       schedule=always_pending)
         self.assertEqual(scheduler.tick(), 1)
 
     def test_honors_max_interval(self):
         scheduler = mScheduler()
         maxi = scheduler.max_interval
-        scheduler.add(name="test_honors_max_interval",
+        scheduler.add(name='test_honors_max_interval',
                       schedule=mocked_schedule(False, maxi * 4))
         self.assertEqual(scheduler.tick(), maxi)
 
     def test_ticks(self):
         scheduler = mScheduler()
         nums = [600, 300, 650, 120, 250, 36]
-        s = dict(("test_ticks%s" % i,
-                 {"schedule": mocked_schedule(False, j)})
+        s = dict(('test_ticks%s' % i,
+                 {'schedule': mocked_schedule(False, j)})
                     for i, j in enumerate(nums))
         scheduler.update_from_dict(s)
         self.assertEqual(scheduler.tick(), min(nums))
 
     def test_schedule_no_remain(self):
         scheduler = mScheduler()
-        scheduler.add(name="test_schedule_no_remain",
+        scheduler.add(name='test_schedule_no_remain',
                       schedule=mocked_schedule(False, None))
         self.assertEqual(scheduler.tick(), scheduler.max_interval)
 
@@ -285,15 +285,15 @@ class test_Scheduler(Case):
     def test_merge_inplace(self):
         a = mScheduler()
         b = mScheduler()
-        a.update_from_dict({"foo": {"schedule": mocked_schedule(True, 10)},
-                            "bar": {"schedule": mocked_schedule(True, 20)}})
-        b.update_from_dict({"bar": {"schedule": mocked_schedule(True, 40)},
-                            "baz": {"schedule": mocked_schedule(True, 10)}})
+        a.update_from_dict({'foo': {'schedule': mocked_schedule(True, 10)},
+                            'bar': {'schedule': mocked_schedule(True, 20)}})
+        b.update_from_dict({'bar': {'schedule': mocked_schedule(True, 40)},
+                            'baz': {'schedule': mocked_schedule(True, 10)}})
         a.merge_inplace(b.schedule)
 
-        self.assertNotIn("foo", a.schedule)
-        self.assertIn("baz", a.schedule)
-        self.assertEqual(a.schedule["bar"].schedule._next_run_at, 40)
+        self.assertNotIn('foo', a.schedule)
+        self.assertIn('baz', a.schedule)
+        self.assertEqual(a.schedule['bar'].schedule._next_run_at, 40)
 
 
 def create_persistent_scheduler(shelv=None):
@@ -319,12 +319,12 @@ def create_persistent_scheduler(shelv=None):
 
 class test_PersistentScheduler(Case):
 
-    @patch("os.remove")
+    @patch('os.remove')
     def test_remove_db(self, remove):
-        s = create_persistent_scheduler()[0](schedule_filename="schedule")
+        s = create_persistent_scheduler()[0](schedule_filename='schedule')
         s._remove_db()
         remove.assert_has_calls(
-            [call("schedule" + suffix) for suffix in s.known_suffixes]
+            [call('schedule' + suffix) for suffix in s.known_suffixes]
         )
         err = OSError()
         err.errno = errno.ENOENT
@@ -335,7 +335,7 @@ class test_PersistentScheduler(Case):
             s._remove_db()
 
     def test_setup_schedule(self):
-        s = create_persistent_scheduler()[0](schedule_filename="schedule")
+        s = create_persistent_scheduler()[0](schedule_filename='schedule')
         opens = s.persistence.open = Mock()
         s._remove_db = Mock()
 
@@ -347,15 +347,15 @@ class test_PersistentScheduler(Case):
         s.setup_schedule()
         s._remove_db.assert_called_with()
 
-        s._store = {"__version__": 1}
+        s._store = {'__version__': 1}
         s.setup_schedule()
 
     def test_get_schedule(self):
-        s = create_persistent_scheduler()[0](schedule_filename="schedule")
-        s._store = {"entries": {}}
-        s.schedule = {"foo": "bar"}
-        self.assertDictEqual(s.schedule, {"foo": "bar"})
-        self.assertDictEqual(s._store["entries"], s.schedule)
+        s = create_persistent_scheduler()[0](schedule_filename='schedule')
+        s._store = {'entries': {}}
+        s.schedule = {'foo': 'bar'}
+        self.assertDictEqual(s.schedule, {'foo': 'bar'})
+        self.assertDictEqual(s._store['entries'], s.schedule)
 
 
 class test_Service(Case):
@@ -370,7 +370,7 @@ class test_Service(Case):
         self.assertIsInstance(schedule, dict)
         self.assertIsInstance(s.scheduler, beat.Scheduler)
         scheduled = schedule.keys()
-        for task_name in sh["entries"].keys():
+        for task_name in sh['entries'].keys():
             self.assertIn(task_name, scheduled)
 
         s.sync()
@@ -419,7 +419,7 @@ class test_EmbeddedService(Case):
         try:
             import _multiprocessing  # noqa
         except ImportError:
-            raise SkipTest("multiprocessing not available")
+            raise SkipTest('multiprocessing not available')
 
         from billiard.process import Process
 

@@ -1,10 +1,22 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.app.annotations
+    ~~~~~~~~~~~~~~~~~~~~~~
+
+    Annotations is a nice term for moneky patching
+    task classes in the configuration.
+
+    This prepares and performs the annotations in the
+    :setting:`CELERY_ANNOTATIONS` setting.
+
+"""
 from __future__ import absolute_import
 
 from celery.utils.functional import firstmethod, mpromise
 from celery.utils.imports import instantiate
 
-_first_match = firstmethod("annotate")
-_first_match_any = firstmethod("annotate_any")
+_first_match = firstmethod('annotate')
+_first_match_any = firstmethod('annotate_any')
 
 
 def resolve_all(anno, task):
@@ -15,7 +27,7 @@ class MapAnnotation(dict):
 
     def annotate_any(self):
         try:
-            return dict(self["*"])
+            return dict(self['*'])
         except KeyError:
             pass
 

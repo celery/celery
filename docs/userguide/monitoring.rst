@@ -502,9 +502,9 @@ Here is an example camera, dumping the snapshot to screen:
             if not state.event_count:
                 # No new events since last snapshot.
                 return
-            print("Workers: %s" % (pformat(state.workers, indent=4), ))
-            print("Tasks: %s" % (pformat(state.tasks, indent=4), ))
-            print("Total: %s events, %s tasks" % (
+            print('Workers: %s' % (pformat(state.workers, indent=4), ))
+            print('Tasks: %s' % (pformat(state.tasks, indent=4), ))
+            print('Total: %s events, %s tasks' % (
                 state.event_count, state.task_count))
 
 See the API reference for :mod:`celery.events.state` to read more
@@ -525,11 +525,11 @@ Or you can use it programmatically like this::
     def main():
         state = State()
         with establish_connection() as connection:
-            recv = EventReceiver(connection, handlers={"*": state.event})
+            recv = EventReceiver(connection, handlers={'*': state.event})
             with DumpCam(state, freq=1.0):
                 recv.capture(limit=None, timeout=None)
 
-    if __name__ == "__main__":
+    if __name__ == '__main__':
         main()
 
 

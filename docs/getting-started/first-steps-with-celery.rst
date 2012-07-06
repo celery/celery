@@ -1,9 +1,9 @@
 .. _tut-celery:
 .. _first-steps:
 
-========================
- First steps with Celery
-========================
+=========================
+ First Steps with Celery
+=========================
 
 Celery is a task queue with batteries included.
 It is easy to use so that you can get started without learning
@@ -23,7 +23,7 @@ You will learn about;
 
 Celery may seem daunting at first - but don't worry - this tutorial
 will get you started in no time. It is deliberately kept simple, so
-to not confuse you with advances features.
+to not confuse you with advanced features.
 After you have finished this tutorial
 it's a good idea to browse the rest of the documentation,
 for example the :ref:`next-steps` tutorial, which will
@@ -42,44 +42,66 @@ comes in the form of a separate service called a *message broker*.
 
 There are several choices available, including:
 
-* :ref:`broker-rabbitmq`
+RabbitMQ
+--------
 
-`RabbitMQ`_ is feature-complete, stable, durable and easy to install.
+`RabbitMQ`_ is feature-complete, stable, durable and easy to install. It's an excellent choice for a production environment. Detailed information about using RabbitMQ:
+    
+    :ref:`broker-rabbitmq`
 
-If you are using Ubuntu or Debian you can install RabbitMQ by executing this
+.. _`RabbitMQ`: http://www.rabbitmq.com/
+
+If you are using Ubuntu or Debian install RabbitMQ by executing this
 command::
 
     $ sudo apt-get install rabbitmq-server
 
 When the command completes the broker is already running in the background,
-ready to move messages for you.
+ready to move messages for you: ``Starting rabbitmq-server: SUCCESS``.
 
-And don't worry if you're not running Ubuntu or Debian,
-you can go to this website to find similarly simple installation instructions
-for other platforms, including Microsoft Windows:
+And don't worry if you're not running Ubuntu or Debian, you can go to this
+website to find similarly simple installation instructions for other
+platforms, including Microsoft Windows:
 
     http://www.rabbitmq.com/download.html
 
-* :ref:`broker-redis`
+
+Redis
+-----
 
 `Redis`_ is also feature-complete, but is more susceptible to data loss in
-the event of abrupt termination or power failures.
+the event of abrupt termination or power failures. Detailed information about using Redis:
+    
+    :ref:`broker-redis`
 
-* :ref:`broker-sqlalchemy`
-* :ref:`broker-django`
+.. _`Redis`: http://redis.io/
+
+
+Using a database
+----------------
 
 Using a database as a message queue is not recommended, but can be sufficient
-for very small installations.  Celery can use the SQLAlchemy and Django ORM.
+for very small installations.  Your options include:
+    
+* :ref:`broker-sqlalchemy`
+* :ref:`broker-django`
+* :ref:`broker-mongodb`
 
-* and more.
+If you're already using a Django database for example, using it as your
+message broker can be convenient while developing even if you use a more
+robust system in production.
+                         
+Other brokers
+-------------
 
-In addition to the above, there are several other transport implementations
-to choose from, including :ref:`broker-mongodb`, :ref:`broker-django`,
-:ref:`broker-sqlalchemy`, and SQS.
+In addition to the above, there are other transport implementations
+to choose from, including
 
-.. _`RabbitMQ`: http://www.rabbitmq.com/
-.. _`Redis`: http://redis.io/
-.. _`Transport Comparison`: http://kombu.rtfd.org/transport-comparison
+* :ref:`Amazon SQS <broker-sqs>`
+
+See also `Transport Comparison`_.
+
+.. _`Transport Comparison`: http://kombu.readthedocs.org/en/latest/introduction.html#transport-comparison
 
 .. _celerytut-installation:
 
@@ -100,7 +122,7 @@ the entry-point for everything you want to do in Celery, like creating tasks and
 managing workers, it must be possible for other modules to import it.
 
 In this tutorial we will keep everything contained in a single module,
-but for larger projects you probably want to create
+but for larger projects you want to create
 a :ref:`dedicated module <project-layout>`.
 
 Let's create the file :file:`tasks.py`:
@@ -109,14 +131,11 @@ Let's create the file :file:`tasks.py`:
 
     from celery import Celery
 
-    celery = Celery("tasks", broker="amqp://guest@localhost//")
+    celery = Celery('tasks', broker='amqp://guest@localhost//')
 
     @celery.task()
     def add(x, y):
         return x + y
-
-    if __name__ == "__main__":
-        celery.start()
 
 The first argument to :class:`~celery.app.Celery` is the name of the current module,
 this is needed so that names can be automatically generated, the second
@@ -136,23 +155,23 @@ We defined a single task, called ``add``, which returns the sum of two numbers.
 Running the celery worker server
 ================================
 
-We can now run the worker by executing our program with the ``worker``
+We now run the worker by executing our program with the ``worker``
 argument::
 
-    $ python tasks.py worker --loglevel=info
+    $ celery -A tasks worker --loglevel=info
 
-In production you will probably want to run the worker in the
+In production you will want to run the worker in the
 background as a daemon.  To do this you need to use the tools provided
 by your platform, or something like `supervisord`_ (see :ref:`daemonizing`
 for more information).
 
 For a complete listing of the command line options available, do::
 
-    $  python tasks.py worker --help
+    $  celery worker --help
 
 There also several other commands available, and help is also available::
 
-    $ python tasks.py --help
+    $ celery help
 
 .. _`supervisord`: http://supervisord.org
 
@@ -170,10 +189,10 @@ method which gives greater control of the task execution (see
     >>> from tasks import add
     >>> add.delay(4, 4)
 
-The task should now be processed by the worker you started earlier,
+The task has now been processed by the worker you started earlier,
 and you can verify that by looking at the workers console output.
 
-Applying a task returns an :class:`~@AsyncResult` instance,
+Calling a task returns an :class:`~@AsyncResult` instance,
 which can be used to check the state of the task, wait for the task to finish
 or get its return value (or if the task failed, the exception and traceback).
 But this isn't enabled by default, and you have to configure Celery to
@@ -184,7 +203,7 @@ use a result backend, which is detailed in the next section.
 Keeping Results
 ===============
 
-If you want to keep track of the tasks state, Celery needs to store or send
+If you want to keep track of the tasks' states, Celery needs to store or send
 the states somewhere.  There are several
 built-in result backends to choose from: `SQLAlchemy`_/`Django`_ ORM,
 `Memcached`_, `Redis`_, AMQP (`RabbitMQ`_), and `MongoDB`_ -- or you can define your own.
@@ -199,18 +218,18 @@ as messages.  The backend is specified via the ``backend`` argument to
 :class:`@Celery`, (or via the :setting:`CELERY_RESULT_BACKEND` setting if
 you choose to use a configuration module)::
 
-    celery = Celery("tasks", backend="amqp", broker="amqp://")
+    celery = Celery('tasks', backend='amqp', broker='amqp://')
 
 or if you want to use Redis as the result backend, but still use RabbitMQ as
 the message broker (a popular combination)::
 
-    celery = Celery("tasks", backend="redis://localhost", broker="amqp://")
+    celery = Celery('tasks', backend='redis://localhost', broker='amqp://')
 
 To read more about result backends please see :ref:`task-result-backends`.
 
 Now with the result backend configured, let's call the task again.
 This time we'll hold on to the :class:`~@AsyncResult` instance returned
-when you apply a task::
+when you call a task::
 
     >>> result = add.delay(4, 4)
 
@@ -263,16 +282,16 @@ task payloads by changing the :setting:`CELERY_TASK_SERIALIZER` setting:
 
 .. code-block:: python
 
-    celery.conf.CELERY_TASK_SERIALIZER = "json"
+    celery.conf.CELERY_TASK_SERIALIZER = 'json'
 
 If you are configuring many settings at once you can use ``update``:
 
 .. code-block:: python
 
     celery.conf.update(
-        CELERY_TASK_SERIALIZER="json",
-        CELERY_RESULT_SERIALIZER="json",
-        CELERY_TIMEZONE="Europe/Oslo",
+        CELERY_TASK_SERIALIZER='json',
+        CELERY_RESULT_SERIALIZER='json',
+        CELERY_TIMEZONE='Europe/Oslo',
         CELERY_ENABLE_UTC=True,
     )
 
@@ -289,7 +308,7 @@ by calling the :meth:`~@Celery.config_from_object` method:
 
 .. code-block:: python
 
-    celery.config_from_object("celeryconfig")
+    celery.config_from_object('celeryconfig')
 
 This module is often called "``celeryconfig``", but you can use any
 module name.
@@ -301,12 +320,12 @@ current directory or on the Python path, it could look like this:
 
 .. code-block:: python
 
-    BROKER_URL = "amqp://"
-    CELERY_RESULT_BACKEND = "amqp://"
+    BROKER_URL = 'amqp://'
+    CELERY_RESULT_BACKEND = 'amqp://'
 
-    CELERY_TASK_SERIALIZER = "json"
-    CELERY_RESULT_SERIALIZER = "json"
-    CELERY_TIMEZONE = "Europe/Oslo"
+    CELERY_TASK_SERIALIZER = 'json'
+    CELERY_RESULT_SERIALIZER = 'json'
+    CELERY_TIMEZONE = 'Europe/Oslo'
     CELERY_ENABLE_UTC = True
 
 To verify that your configuration file works properly, and does't
@@ -324,7 +343,7 @@ route a misbehaving task to a dedicated queue:
 .. code-block:: python
 
     CELERY_ROUTES = {
-        "tasks.add": "low-priority",
+        'tasks.add': 'low-priority',
     }
 
 Or instead of routing it you could rate limit the task
@@ -336,14 +355,14 @@ instead, so that only 10 tasks of this type can be processed in a minute
 .. code-block:: python
 
     CELERY_ANNOTATIONS = {
-        "tasks.add": {"rate_limit": "10/m"}
+        'tasks.add': {'rate_limit': '10/m'}
     }
 
 If you are using RabbitMQ, Redis or MongoDB as the
 broker then you can also direct the workers to set a new rate limit
 for the task at runtime::
 
-    $ python tasks.py rate_limit tasks.add 10/m
+    $ celery control rate_limit tasks.add 10/m
     worker.example.com: OK
         new rate limit set successfully
 
@@ -355,5 +374,6 @@ and how to monitor what your workers are doing.
 Where to go from here
 =====================
 
-After this you should read the :ref:`guide`. Specifically
-:ref:`guide-tasks` and :ref:`guide-calling`.
+If you want to learn more you should continue to the
+:ref:`Next Steps <next-steps>` tutorial, and after that you
+can study the :ref:`User Guide <guide>`.

@@ -2,9 +2,16 @@
  Celery - Distributed Task Queue
 =================================
 
-Celery aims to be a fast, reliable and flexible, best-of-breed solution
-to process vast amounts of messages in a distributed fashion, while
-providing operations with the tools to maintain such a system.
+Celery is a simple, flexible and reliable distributed system to
+process vast amounts of messages, while providing operations with
+the tools required to maintain such a system.
+
+It's a task queue with focus on real-time processing, while also
+supporting task scheduling.
+
+Celery has a large and diverse community of users and contributors,
+you should come join us :ref:`on IRC <irc-channel>`
+or :ref:`our mailing-list <mailing-list>`.
 
 Celery is Open Source and licensed under the `BSD License`_.
 
@@ -22,6 +29,11 @@ Contents
 ========
 
 .. toctree::
+    :maxdepth: 1
+
+    copyright
+
+.. toctree::
     :maxdepth: 2
 
     getting-started/index
@@ -36,11 +48,12 @@ Contents
     community
     tutorials/index
     faq
-    whatsnew-2.6
+    whatsnew-3.0
     whatsnew-2.5
     changelog
     reference/index
     internals/index
+    glossary
 
 
 Indices and tables

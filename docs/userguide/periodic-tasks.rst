@@ -37,10 +37,10 @@ Example: Run the `tasks.add` task every 30 seconds.
     from datetime import timedelta
 
     CELERYBEAT_SCHEDULE = {
-        "runs-every-30-seconds": {
-            "task": "tasks.add",
-            "schedule": timedelta(seconds=30),
-            "args": (16, 16)
+        'runs-every-30-seconds': {
+            'task': 'tasks.add',
+            'schedule': timedelta(seconds=30),
+            'args': (16, 16)
         },
     }
 
@@ -108,10 +108,10 @@ the :class:`~celery.schedules.crontab` schedule type:
 
     CELERYBEAT_SCHEDULE = {
         # Executes every Monday morning at 7:30 A.M
-        "every-monday-morning": {
-            "task": "tasks.add",
-            "schedule": crontab(hour=7, minute=30, day_of_week=1),
-            "args": (16, 16),
+        'every-monday-morning': {
+            'task': 'tasks.add',
+            'schedule': crontab(hour=7, minute=30, day_of_week=1),
+            'args': (16, 16),
         },
     }
 
@@ -124,51 +124,51 @@ The syntax of these crontab expressions are very flexible.  Some examples:
 +-----------------------------------------+--------------------------------------------+
 | ``crontab(minute=0, hour=0)``           | Execute daily at midnight.                 |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(minute=0, hour="*/3")``       | Execute every three hours:                 |
+| ``crontab(minute=0, hour='*/3')``       | Execute every three hours:                 |
 |                                         | 3am, 6am, 9am, noon, 3pm, 6pm, 9pm.        |
 +-----------------------------------------+--------------------------------------------+
 | ``crontab(minute=0,``                   | Same as previous.                          |
 |         ``hour=[0,3,6,9,12,15,18,21])`` |                                            |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(minute="*/15")``              | Execute every 15 minutes.                  |
+| ``crontab(minute='*/15')``              | Execute every 15 minutes.                  |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(day_of_week="sunday")``       | Execute every minute (!) at Sundays.       |
+| ``crontab(day_of_week='sunday')``       | Execute every minute (!) at Sundays.       |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(minute="*",``                 | Same as previous.                          |
-|         ``hour="*",``                   |                                            |
-|         ``day_of_week="sun")``          |                                            |
+| ``crontab(minute='*',``                 | Same as previous.                          |
+|         ``hour='*',``                   |                                            |
+|         ``day_of_week='sun')``          |                                            |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(minute="*/10",``              | Execute every ten minutes, but only        |
-|         ``hour="3,17,22",``             | between 3-4 am, 5-6 pm and 10-11 pm on     |
-|         ``day_of_week="thu,fri")``      | Thursdays or Fridays.                      |
+| ``crontab(minute='*/10',``              | Execute every ten minutes, but only        |
+|         ``hour='3,17,22',``             | between 3-4 am, 5-6 pm and 10-11 pm on     |
+|         ``day_of_week='thu,fri')``      | Thursdays or Fridays.                      |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(minute=0, hour="*/2,*/3")``   | Execute every even hour, and every hour    |
+| ``crontab(minute=0, hour='*/2,*/3')``   | Execute every even hour, and every hour    |
 |                                         | divisible by three. This means:            |
 |                                         | at every hour *except*: 1am,               |
 |                                         | 5am, 7am, 11am, 1pm, 5pm, 7pm,             |
 |                                         | 11pm                                       |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(minute=0, hour="*/5")``       | Execute hour divisible by 5. This means    |
+| ``crontab(minute=0, hour='*/5')``       | Execute hour divisible by 5. This means    |
 |                                         | that it is triggered at 3pm, not 5pm       |
 |                                         | (since 3pm equals the 24-hour clock        |
 |                                         | value of "15", which is divisible by 5).   |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(minute=0, hour="*/3,8-17")``  | Execute every hour divisible by 3, and     |
+| ``crontab(minute=0, hour='*/3,8-17')``  | Execute every hour divisible by 3, and     |
 |                                         | every hour during office hours (8am-5pm).  |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(day_of_month="2")``           | Execute on the second day of every month.  |
+| ``crontab(day_of_month='2')``           | Execute on the second day of every month.  |
 |                                         |                                            |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(day_of_month="2-30/3")``      | Execute on every even numbered day.        |
+| ``crontab(day_of_month='2-30/3')``      | Execute on every even numbered day.        |
 |                                         |                                            |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(day_of_month="1-7,15-21")``   | Execute on the first and third weeks of    |
+| ``crontab(day_of_month='1-7,15-21')``   | Execute on the first and third weeks of    |
 |                                         | the month.                                 |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(day_of_month="11",``          | Execute on 11th of May every year.         |
-|         ``month_of_year="5")``          |                                            |
+| ``crontab(day_of_month='11',``          | Execute on 11th of May every year.         |
+|         ``month_of_year='5')``          |                                            |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(month_of_year="*/3")``        | Execute on the first month of every        |
+| ``crontab(month_of_year='*/3')``        | Execute on the first month of every        |
 |                                         | quarter.                                   |
 +-----------------------------------------+--------------------------------------------+
 
@@ -186,7 +186,7 @@ the :setting:`CELERY_TIMEZONE` setting:
 .. code-block:: python
 
     CELERY_ENABLE_UTC = True
-    CELERY_TIMEZONE = "Europe/London"
+    CELERY_TIMEZONE = 'Europe/London'
 
 .. admonition:: Django Users
 

@@ -38,22 +38,22 @@ class test_timeutils(Case):
         self.assertEqual(timeutils.timedelta_seconds(delta), 0)
 
     def test_humanize_seconds(self):
-        t = ((4 * 60 * 60 * 24, "4.00 days"),
-             (1 * 60 * 60 * 24, "1.00 day"),
-             (4 * 60 * 60, "4.00 hours"),
-             (1 * 60 * 60, "1.00 hour"),
-             (4 * 60, "4.00 minutes"),
-             (1 * 60, "1.00 minute"),
-             (4, "4.00 seconds"),
-             (1, "1.00 second"),
-             (4.3567631221, "4.36 seconds"),
-             (0, "now"))
+        t = ((4 * 60 * 60 * 24, '4.00 days'),
+             (1 * 60 * 60 * 24, '1.00 day'),
+             (4 * 60 * 60, '4.00 hours'),
+             (1 * 60 * 60, '1.00 hour'),
+             (4 * 60, '4.00 minutes'),
+             (1 * 60, '1.00 minute'),
+             (4, '4.00 seconds'),
+             (1, '1.00 second'),
+             (4.3567631221, '4.36 seconds'),
+             (0, 'now'))
 
         for seconds, human in t:
             self.assertEqual(timeutils.humanize_seconds(seconds), human)
 
-        self.assertEqual(timeutils.humanize_seconds(4, prefix="about "),
-                          "about 4.00 seconds")
+        self.assertEqual(timeutils.humanize_seconds(4, prefix='about '),
+                          'about 4.00 seconds')
 
     def test_maybe_iso8601_datetime(self):
         now = datetime.now()
@@ -77,15 +77,15 @@ class test_timezone(Case):
     def test_get_timezone_with_pytz(self):
         prev, timeutils.pytz = timeutils.pytz, Mock()
         try:
-            self.assertTrue(timezone.get_timezone("UTC"))
+            self.assertTrue(timezone.get_timezone('UTC'))
         finally:
             timeutils.pytz = prev
 
     def test_get_timezone_without_pytz(self):
         prev, timeutils.pytz = timeutils.pytz, None
         try:
-            self.assertTrue(timezone.get_timezone("UTC"))
+            self.assertTrue(timezone.get_timezone('UTC'))
             with self.assertRaises(ImproperlyConfigured):
-                timezone.get_timezone("Europe/Oslo")
+                timezone.get_timezone('Europe/Oslo')
         finally:
             timeutils.pytz = prev

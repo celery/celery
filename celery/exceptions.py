@@ -3,10 +3,7 @@
     celery.exceptions
     ~~~~~~~~~~~~~~~~~
 
-    This module contains Celery-specific exceptions.
-
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
+    This module contains all exceptions used by the Celery API.
 
 """
 from __future__ import absolute_import
@@ -62,9 +59,30 @@ class MaxRetriesExceededError(Exception):
 class RetryTaskError(Exception):
     """The task is to be retried later."""
 
-    def __init__(self, message, exc, *args, **kwargs):
-        self.exc = exc
-        Exception.__init__(self, message, exc, *args, **kwargs)
+    def __init__(self, message=None, exc=None, when=None, **kwargs):
+        from kombu.utils.encoding import safe_repr
+        self.message = message
+        if isinstance(exc, basestring):
+            self.exc, self.excs = None, exc
+        else:
+            self.exc, self.excs = exc, safe_repr(exc) if exc else None
+        self.when = when
+        Exception.__init__(self, exc, when, **kwargs)
+
+    def humanize(self):
+        if isinstance(self.when, int):
+            return 'in %ss' % self.when
+        return 'at %s' % (self.when, )
+
+    def __str__(self):
+        if self.message:
+            return self.message
+        if self.excs:
+            return 'Retry %s: %r' % (self.humanize(), self.excs)
+        return 'Retry %s' % self.humanize()
+
+    def __reduce__(self):
+        return self.__class__, (self.message, self.excs, self.when)
 
 
 class TaskRevokedError(Exception):

@@ -6,10 +6,7 @@
     :class:`WorkController` can be used to instantiate in-process workers.
 
     The worker consists of several components, all managed by boot-steps
-    (mod:`celery.abstract`).
-
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
+    (mod:`celery.worker.bootsteps`).
 
 """
 from __future__ import absolute_import
@@ -40,7 +37,7 @@ from celery.utils.log import get_logger
 from celery.utils.threads import Event
 from celery.utils.timer2 import Schedule
 
-from . import abstract
+from . import bootsteps
 from . import state
 from .buckets import TaskBucket, FastQueue
 from .hub import Hub, BoundedSemaphore
@@ -52,25 +49,25 @@ TERMINATE = 0x3
 logger = get_logger(__name__)
 
 
-class Namespace(abstract.Namespace):
+class Namespace(bootsteps.Namespace):
     """This is the boot-step namespace of the :class:`WorkController`.
 
     It loads modules from :setting:`CELERYD_BOOT_STEPS`, and its
     own set of built-in boot-step modules.
 
     """
-    name = "worker"
-    builtin_boot_steps = ("celery.worker.autoscale",
-                          "celery.worker.autoreload",
-                          "celery.worker.consumer",
-                          "celery.worker.mediator")
+    name = 'worker'
+    builtin_boot_steps = ('celery.worker.autoscale',
+                          'celery.worker.autoreload',
+                          'celery.worker.consumer',
+                          'celery.worker.mediator')
 
     def modules(self):
         return (self.builtin_boot_steps
               + self.app.conf.CELERYD_BOOT_STEPS)
 
 
-class Pool(abstract.StartStopComponent):
+class Pool(bootsteps.StartStopComponent):
     """The pool component.
 
     Describes how to initialize the worker pool, and starts and stops
@@ -84,8 +81,8 @@ class Pool(abstract.StartStopComponent):
         * min_concurrency
 
     """
-    name = "worker.pool"
-    requires = ("queues", )
+    name = 'worker.pool'
+    requires = ('queues', )
 
     def __init__(self, w, autoscale=None, no_execv=False, **kwargs):
         w.autoscale = autoscale
@@ -107,7 +104,11 @@ class Pool(abstract.StartStopComponent):
         now = time.time
 
         if not pool.did_start_ok():
-            raise WorkerLostError("Could not start worker processes")
+            raise WorkerLostError('Could not start worker processes')
+
+        # need to handle pool results before every task
+        # since multiple tasks can be received in a single poll()
+        hub.on_task.append(pool.maybe_handle_result)
 
         hub.update_readers(pool.readers)
         for handler, interval in pool.timers.iteritems():
@@ -119,7 +120,7 @@ class Pool(abstract.StartStopComponent):
                 if hard:
                     R._tref = apply_at(now() + (hard - soft),
                                        on_hard_timeout, (R, ))
-                    on_soft_timeout(R)
+                on_soft_timeout(R)
             if soft:
                 R._tref = apply_after(soft * 1000.0, _on_soft_timeout)
             elif hard:
@@ -129,7 +130,7 @@ class Pool(abstract.StartStopComponent):
         def on_timeout_cancel(result):
             try:
                 result._tref.cancel()
-                delattr(result, "_tref")
+                delattr(result, '_tref')
             except AttributeError:
                 pass
 
@@ -162,14 +163,14 @@ class Pool(abstract.StartStopComponent):
         return pool
 
 
-class Beat(abstract.StartStopComponent):
+class Beat(bootsteps.StartStopComponent):
     """Component used to embed a celerybeat process.
 
     This will only be enabled if the ``beat``
     argument is set.
 
     """
-    name = "worker.beat"
+    name = 'worker.beat'
 
     def __init__(self, w, beat=False, **kwargs):
         self.enabled = w.beat = beat
@@ -183,11 +184,11 @@ class Beat(abstract.StartStopComponent):
         return b
 
 
-class Queues(abstract.Component):
+class Queues(bootsteps.Component):
     """This component initializes the internal queues
     used by the worker."""
-    name = "worker.queues"
-    requires = ("ev", )
+    name = 'worker.queues'
+    requires = ('ev', )
 
     def create(self, w):
         w.start_mediator = True
@@ -209,8 +210,8 @@ class Queues(abstract.Component):
             w.ready_queue = TaskBucket(task_registry=w.app.tasks)
 
 
-class EvLoop(abstract.StartStopComponent):
-    name = "worker.ev"
+class EvLoop(bootsteps.StartStopComponent):
+    name = 'worker.ev'
 
     def __init__(self, w, **kwargs):
         w.hub = None
@@ -224,10 +225,10 @@ class EvLoop(abstract.StartStopComponent):
         return hub
 
 
-class Timers(abstract.Component):
+class Timers(bootsteps.Component):
     """This component initializes the internal timers used by the worker."""
-    name = "worker.timers"
-    requires = ("pool", )
+    name = 'worker.timers'
+    requires = ('pool', )
 
     def include_if(self, w):
         return not w.use_eventloop
@@ -243,15 +244,15 @@ class Timers(abstract.Component):
                                    on_timer_tick=self.on_timer_tick)
 
     def on_timer_error(self, exc):
-        logger.error("Timer error: %r", exc, exc_info=True)
+        logger.error('Timer error: %r', exc, exc_info=True)
 
     def on_timer_tick(self, delay):
-        logger.debug("Timer wake-up! Next eta %s secs.", delay)
+        logger.debug('Timer wake-up! Next eta %s secs.', delay)
 
 
-class StateDB(abstract.Component):
+class StateDB(bootsteps.Component):
     """This component sets up the workers state db if enabled."""
-    name = "worker.state-db"
+    name = 'worker.state-db'
 
     def __init__(self, w, **kwargs):
         self.enabled = w.state_db
@@ -271,17 +272,17 @@ class WorkController(configurated):
     app = None
     concurrency = from_config()
     loglevel = logging.ERROR
-    logfile = from_config("log_file")
+    logfile = from_config('log_file')
     send_events = from_config()
-    pool_cls = from_config("pool")
-    consumer_cls = from_config("consumer")
-    mediator_cls = from_config("mediator")
-    timer_cls = from_config("timer")
-    timer_precision = from_config("timer_precision")
-    autoscaler_cls = from_config("autoscaler")
-    autoreloader_cls = from_config("autoreloader")
+    pool_cls = from_config('pool')
+    consumer_cls = from_config('consumer')
+    mediator_cls = from_config('mediator')
+    timer_cls = from_config('timer')
+    timer_precision = from_config('timer_precision')
+    autoscaler_cls = from_config('autoscaler')
+    autoreloader_cls = from_config('autoreloader')
     schedule_filename = from_config()
-    scheduler_cls = from_config("celerybeat_scheduler")
+    scheduler_cls = from_config('celerybeat_scheduler')
     task_time_limit = from_config()
     task_soft_time_limit = from_config()
     max_tasks_per_child = from_config()
@@ -309,7 +310,7 @@ class WorkController(configurated):
         trace._tasks = self.app._tasks
 
         self._shutdown_complete = Event()
-        self.setup_defaults(kwargs, namespace="celeryd")
+        self.setup_defaults(kwargs, namespace='celeryd')
         self.app.select_queues(queues)  # select queues subset.
 
         # Options
@@ -319,8 +320,8 @@ class WorkController(configurated):
         self._finalize = Finalize(self, self.stop, exitpriority=1)
         self.pidfile = pidfile
         self.pidlock = None
-        self.use_eventloop = (detect_environment() == "default" and
-                              self.app.broker_connection().is_evented and
+        self.use_eventloop = (detect_environment() == 'default' and
+                              self.app.connection().is_evented and
                               not self.app.IS_WINDOWS)
 
         # Update celery_include to have all known task modules, so that we
@@ -343,15 +344,15 @@ class WorkController(configurated):
             self.pidlock = platforms.create_pidlock(self.pidfile)
         try:
             for i, component in enumerate(self.components):
-                logger.debug("Starting %s...", qualname(component))
+                logger.debug('Starting %s...', qualname(component))
                 self._running = i + 1
                 if component:
                     component.start()
-                logger.debug("%s OK!", qualname(component))
+                logger.debug('%s OK!', qualname(component))
         except SystemTerminate:
             self.terminate()
         except Exception, exc:
-            logger.error("Unrecoverable error: %r", exc,
+            logger.error('Unrecoverable error: %r', exc,
                          exc_info=True)
             self.stop()
         except (KeyboardInterrupt, SystemExit):
@@ -369,7 +370,7 @@ class WorkController(configurated):
         try:
             req.execute_using_pool(self.pool)
         except Exception, exc:
-            logger.critical("Internal error: %r\n%s",
+            logger.critical('Internal error: %r\n%s',
                             exc, traceback.format_exc(), exc_info=True)
         except SystemTerminate:
             self.terminate()
@@ -397,10 +398,12 @@ class WorkController(configurated):
             self._shutdown(warm=False)
 
     def _shutdown(self, warm=True):
-        what = "Stopping" if warm else "Terminating"
+        what = 'Stopping' if warm else 'Terminating'
 
         if self._state in (self.CLOSE, self.TERMINATE):
             return
+
+        self.app.loader.shutdown_worker()
 
         if self.pool:
             self.pool.close()
@@ -413,11 +416,11 @@ class WorkController(configurated):
         self._state = self.CLOSE
 
         for component in reversed(self.components):
-            logger.debug("%s %s...", what, qualname(component))
+            logger.debug('%s %s...', what, qualname(component))
             if component:
                 stop = component.stop
                 if not warm:
-                    stop = getattr(component, "terminate", None) or stop
+                    stop = getattr(component, 'terminate', None) or stop
                 stop()
 
         self.timer.stop()
@@ -434,10 +437,10 @@ class WorkController(configurated):
 
         for module in set(modules or ()):
             if module not in sys.modules:
-                logger.debug("importing module %s", module)
+                logger.debug('importing module %s', module)
                 imp(module)
             elif reload:
-                logger.debug("reloading module %s", module)
+                logger.debug('reloading module %s', module)
                 reload_from_cwd(sys.modules[module], reloader)
         self.pool.restart()
 

@@ -29,11 +29,13 @@ In the consumer:
 .. code-block:: python
 
    from celery.contrib.abortable import AbortableTask
+   from celery.utils.log import get_task_logger
+
+   logger = get_logger(__name__)
 
    class MyLongRunningTask(AbortableTask):
 
        def run(self, **kwargs):
-           logger = self.get_logger(**kwargs)
            results = []
            for x in xrange(100):
                # Check after every 5 loops..
@@ -41,11 +43,11 @@ In the consumer:
                    if self.is_aborted(**kwargs):
                        # Respect the aborted status and terminate
                        # gracefully
-                       logger.warning("Task aborted.")
+                       logger.warning('Task aborted.')
                        return
                y = do_something_expensive(x)
                results.append(y)
-           logger.info("Task finished.")
+           logger.info('Task finished.')
            return results
 
 
@@ -98,14 +100,14 @@ Task is aborted (typically by the producer) and should be
 aborted as soon as possible.
 
 """
-ABORTED = "ABORTED"
+ABORTED = 'ABORTED'
 
 
 class AbortableAsyncResult(AsyncResult):
     """Represents a abortable result.
 
     Specifically, this gives the `AsyncResult` a :meth:`abort()` method,
-    which sets the state of the underlying Task to `"ABORTED"`.
+    which sets the state of the underlying Task to `'ABORTED'`.
 
     """
 

@@ -14,8 +14,8 @@ from celery.tests.utils import unittest
 
 import suite
 
-GET_RSIZE = "/bin/ps -p %(pid)s -o rss="
-QUICKTEST = int(os.environ.get("QUICKTEST", 0))
+GET_RSIZE = '/bin/ps -p %(pid)s -o rss='
+QUICKTEST = int(os.environ.get('QUICKTEST', 0))
 
 
 class Sizes(list):
@@ -32,15 +32,15 @@ class LeakFunCase(unittest.TestCase):
 
     def setUp(self):
         self.app = current_app
-        self.debug = os.environ.get("TEST_LEAK_DEBUG", False)
+        self.debug = os.environ.get('TEST_LEAK_DEBUG', False)
 
     def get_rsize(self, cmd=GET_RSIZE):
         try:
             return int(subprocess.Popen(
-                        shlex.split(cmd % {"pid": os.getpid()}),
+                        shlex.split(cmd % {'pid': os.getpid()}),
                             stdout=subprocess.PIPE).communicate()[0].strip())
         except OSError, exc:
-            raise SkipTest("Can't execute command: %r: %r" % (cmd, exc))
+            raise SkipTest('Can't execute command: %r: %r' % (cmd, exc))
 
     def sample_allocated(self, fun, *args, **kwargs):
         before = self.get_rsize()
@@ -68,17 +68,17 @@ class LeakFunCase(unittest.TestCase):
                 if not first:
                     first = after
                 if self.debug:
-                    print("%r %s: before/after: %s/%s" % (
+                    print('%r %s: before/after: %s/%s' % (
                             fun, i, before, after))
                 else:
-                    sys.stderr.write(".")
+                    sys.stderr.write('.')
                 sizes.add(self.appx(after))
             self.assertEqual(gc.collect(), 0)
             self.assertEqual(gc.garbage, [])
             try:
                 assert self.appx(first) >= self.appx(after)
             except AssertionError:
-                print("BASE: %r AVG: %r SIZES: %r" % (
+                print('BASE: %r AVG: %r SIZES: %r' % (
                     base, sizes.average(), sizes, ))
                 raise
         finally:
@@ -89,7 +89,7 @@ class test_leaks(LeakFunCase):
 
     def test_task_apply_leak(self):
         its = QUICKTEST and 10 or 1000
-        self.assertNotEqual(self.app.conf.BROKER_TRANSPORT, "memory")
+        self.assertNotEqual(self.app.conf.BROKER_TRANSPORT, 'memory')
 
         @self.app.task
         def task1():
@@ -109,7 +109,7 @@ class test_leaks(LeakFunCase):
 
     def test_task_apply_leak_with_pool(self):
         its = QUICKTEST and 10 or 1000
-        self.assertNotEqual(self.app.conf.BROKER_TRANSPORT, "memory")
+        self.assertNotEqual(self.app.conf.BROKER_TRANSPORT, 'memory')
 
         @self.app.task
         def task2():
@@ -118,7 +118,7 @@ class test_leaks(LeakFunCase):
         try:
             pool_limit = self.app.conf.BROKER_POOL_LIMIT
         except AttributeError:
-            raise SkipTest("This version does not support autopool")
+            raise SkipTest('This version does not support autopool')
 
         self.app.conf.BROKER_POOL_LIMIT = 10
         try:
@@ -127,5 +127,5 @@ class test_leaks(LeakFunCase):
         finally:
             self.app.conf.BROKER_POOL_LIMIT = pool_limit
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

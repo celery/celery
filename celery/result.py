@@ -5,9 +5,6 @@
 
     Task results/state and groups of results.
 
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
-
 """
 from __future__ import absolute_import
 from __future__ import with_statement
@@ -100,7 +97,7 @@ class AsyncResult(ResultBase):
         :keyword propagate: Re-raise exception if the task failed.
         :keyword interval: Time to wait (in seconds) before retrying to
            retrieve the result.  Note that this does not have any effect
-           when using the AMQP result store backend, as it does not
+           when using the amqp result store backend, as it does not
            use polling.
 
         :raises celery.exceptions.TimeoutError: if `timeout` is not
@@ -201,7 +198,7 @@ class AsyncResult(ResultBase):
         return hash(self.id)
 
     def __repr__(self):
-        return "<%s: %s>" % (self.__class__.__name__, self.id)
+        return '<%s: %s>' % (self.__class__.__name__, self.id)
 
     def __eq__(self, other):
         if isinstance(other, AsyncResult):
@@ -219,10 +216,6 @@ class AsyncResult(ResultBase):
 
     def __reduce_args__(self):
         return self.id, self.backend, self.task_name, self.parent
-
-    def set_parent(self, parent):
-        self.parent = parent
-        return parent
 
     @cached_property
     def graph(self):
@@ -475,7 +468,7 @@ class ResultSet(ResultBase):
 
         :keyword interval: Time to wait (in seconds) before retrying to
                            retrieve a result from the set.  Note that this
-                           does not have any effect when using the AMQP
+                           does not have any effect when using the amqp
                            result store backend, as it does not use polling.
 
         :raises celery.exceptions.TimeoutError: if `timeout` is not
@@ -492,7 +485,7 @@ class ResultSet(ResultBase):
             if timeout:
                 remaining = timeout - (time.time() - time_start)
                 if remaining <= 0.0:
-                    raise TimeoutError("join operation timed out")
+                    raise TimeoutError('join operation timed out')
             results.append(result.get(timeout=remaining,
                                       propagate=propagate,
                                       interval=interval))
@@ -506,7 +499,7 @@ class ResultSet(ResultBase):
         Note that this does not support collecting the results
         for different task types using different backends.
 
-        This is currently only supported by the AMQP, Redis and cache
+        This is currently only supported by the amqp, Redis and cache
         result backends.
 
         """
@@ -522,7 +515,7 @@ class ResultSet(ResultBase):
         Note that this does not support collecting the results
         for different task types using different backends.
 
-        This is currently only supported by the AMQP, Redis and cache
+        This is currently only supported by the amqp, Redis and cache
         result backends.
 
         """
@@ -530,7 +523,7 @@ class ResultSet(ResultBase):
         acc = [None for _ in xrange(len(self))]
         for task_id, meta in self.iter_native(timeout=timeout,
                                               interval=interval):
-            acc[results.index(task_id)] = meta["result"]
+            acc[results.index(task_id)] = meta['result']
         return acc
 
     def __len__(self):
@@ -542,7 +535,7 @@ class ResultSet(ResultBase):
         return NotImplemented
 
     def __repr__(self):
-        return "<%s: %r>" % (self.__class__.__name__,
+        return '<%s: %r>' % (self.__class__.__name__,
                              [r.id for r in self.results])
 
     @property
@@ -606,7 +599,7 @@ class GroupResult(ResultSet):
         return NotImplemented
 
     def __repr__(self):
-        return "<%s: %s %r>" % (self.__class__.__name__, self.id,
+        return '<%s: %s %r>' % (self.__class__.__name__, self.id,
                                 [r.id for r in self.results])
 
     def serializable(self):
@@ -624,8 +617,8 @@ class TaskSetResult(GroupResult):
     def __init__(self, taskset_id, results=None, **kwargs):
         # XXX supports the taskset_id kwarg.
         # XXX previously the "results" arg was named "subtasks".
-        if "subtasks" in kwargs:
-            results = kwargs["subtasks"]
+        if 'subtasks' in kwargs:
+            results = kwargs['subtasks']
         GroupResult.__init__(self, taskset_id, results, **kwargs)
 
     def itersubtasks(self):
@@ -700,3 +693,7 @@ class EagerResult(AsyncResult):
     def traceback(self):
         """The traceback if the task failed."""
         return self._traceback
+
+    @property
+    def supports_native_join(self):
+        return False

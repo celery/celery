@@ -40,7 +40,7 @@ class TSR(GroupResult):
 
 @contextmanager
 def patch_unlock_retry():
-    unlock = current_app.tasks["celery.chord_unlock"]
+    unlock = current_app.tasks['celery.chord_unlock']
     retry = Mock()
     prev, unlock.retry = unlock.retry, retry
     yield unlock, retry
@@ -49,7 +49,7 @@ def patch_unlock_retry():
 
 class test_unlock_chord_task(AppCase):
 
-    @patch("celery.result.GroupResult")
+    @patch('celery.result.GroupResult')
     def test_unlock_ready(self, GroupResult):
 
         class AlwaysReady(TSR):
@@ -67,7 +67,7 @@ class test_unlock_chord_task(AppCase):
             with patch_unlock_retry() as (unlock, retry):
                 subtask, canvas.maybe_subtask = canvas.maybe_subtask, passthru
                 try:
-                    unlock("group_id", callback_s,
+                    unlock('group_id', callback_s,
                            result=map(AsyncResult, [1, 2, 3]))
                 finally:
                     canvas.maybe_subtask = subtask
@@ -77,7 +77,7 @@ class test_unlock_chord_task(AppCase):
         finally:
             result.GroupResult = pts
 
-    @patch("celery.result.GroupResult")
+    @patch('celery.result.GroupResult')
     def test_when_not_ready(self, GroupResult):
         with patch_unlock_retry() as (unlock, retry):
 
@@ -87,7 +87,7 @@ class test_unlock_chord_task(AppCase):
             pts, result.GroupResult = result.GroupResult, NeverReady
             try:
                 callback = Mock()
-                unlock("group_id", callback, interval=10, max_retries=30,
+                unlock('group_id', callback, interval=10, max_retries=30,
                             result=map(AsyncResult, [1, 2, 3]))
                 self.assertFalse(callback.delay.call_count)
                 # did retry
@@ -96,7 +96,7 @@ class test_unlock_chord_task(AppCase):
                 result.GroupResult = pts
 
     def test_is_in_registry(self):
-        self.assertIn("celery.chord_unlock", current_app.tasks)
+        self.assertIn('celery.chord_unlock', current_app.tasks)
 
 
 class test_chord(AppCase):
@@ -133,7 +133,7 @@ class test_chord(AppCase):
             x = chord(add.s(i, i) for i in xrange(10))
             body = add.s(2)
             result = x(body)
-            self.assertEqual(result.id, body.options["task_id"])
+            self.assertEqual(result.id, body.options['task_id'])
             self.assertTrue(chord.Chord.called)
         finally:
             chord.Chord = prev
@@ -144,9 +144,9 @@ class test_Chord_task(AppCase):
     def test_run(self):
         prev, current_app.backend = current_app.backend, Mock()
         current_app.backend.cleanup = Mock()
-        current_app.backend.cleanup.__name__ = "cleanup"
+        current_app.backend.cleanup.__name__ = 'cleanup'
         try:
-            Chord = current_app.tasks["celery.chord"]
+            Chord = current_app.tasks['celery.chord']
 
             body = dict()
             Chord(TaskSet(add.subtask((i, i)) for i in xrange(5)), body)

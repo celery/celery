@@ -1,8 +1,16 @@
 # -*- coding: utf-8 -*-
+"""
+    celery.task.sets
+    ~~~~~~~~~~~~~~~~
+
+    Old ``group`` implementation, this module should
+    not be used anymore use :func:`celery.group` instead.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 
-from celery.state import get_current_worker_task
+from celery._state import get_current_worker_task
 from celery.app import app_or_default
 from celery.canvas import subtask, maybe_subtask  # noqa
 from celery.utils import uuid
@@ -16,7 +24,7 @@ class TaskSet(list):
 
     Example::
 
-        >>> urls = ("http://cnn.com/rss", "http://bbc.co.uk/rss")
+        >>> urls = ('http://cnn.com/rss', 'http://bbc.co.uk/rss')
         >>> s = TaskSet(refresh_feed.s(url) for url in urls)
         >>> taskset_result = s.apply_async()
         >>> list_of_return_values = taskset_result.join()  # *expensive*

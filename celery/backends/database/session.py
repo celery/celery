@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+"""
+    celery.backends.database.session
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    SQLAlchemy sessions.
+
+"""
 from __future__ import absolute_import
 
 from collections import defaultdict
@@ -28,9 +35,9 @@ def create_session(dburi, short_lived_sessions=False, **kwargs):
 
 
 def setup_results(engine):
-    if not _SETUP["results"]:
+    if not _SETUP['results']:
         ResultModelBase.metadata.create_all(engine)
-        _SETUP["results"] = True
+        _SETUP['results'] = True
 
 
 def ResultSession(dburi, **kwargs):

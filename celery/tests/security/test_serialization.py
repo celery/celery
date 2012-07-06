@@ -21,34 +21,34 @@ class test_SecureSerializer(SecurityCase):
 
     def test_serialize(self):
         s = self._get_s(KEY1, CERT1, [CERT1])
-        self.assertEqual(s.deserialize(s.serialize("foo")), "foo")
+        self.assertEqual(s.deserialize(s.serialize('foo')), 'foo')
 
     def test_deserialize(self):
         s = self._get_s(KEY1, CERT1, [CERT1])
-        self.assertRaises(SecurityError, s.deserialize, "bad data")
+        self.assertRaises(SecurityError, s.deserialize, 'bad data')
 
     def test_unmatched_key_cert(self):
         s = self._get_s(KEY1, CERT2, [CERT1, CERT2])
         self.assertRaises(SecurityError,
-                          s.deserialize, s.serialize("foo"))
+                          s.deserialize, s.serialize('foo'))
 
     def test_unknown_source(self):
         s1 = self._get_s(KEY1, CERT1, [CERT2])
         s2 = self._get_s(KEY1, CERT1, [])
         self.assertRaises(SecurityError,
-                          s1.deserialize, s1.serialize("foo"))
+                          s1.deserialize, s1.serialize('foo'))
         self.assertRaises(SecurityError,
-                          s2.deserialize, s2.serialize("foo"))
+                          s2.deserialize, s2.serialize('foo'))
 
     def test_self_send(self):
         s1 = self._get_s(KEY1, CERT1, [CERT1])
         s2 = self._get_s(KEY1, CERT1, [CERT1])
-        self.assertEqual(s2.deserialize(s1.serialize("foo")), "foo")
+        self.assertEqual(s2.deserialize(s1.serialize('foo')), 'foo')
 
     def test_separate_ends(self):
         s1 = self._get_s(KEY1, CERT1, [CERT2])
         s2 = self._get_s(KEY2, CERT2, [CERT1])
-        self.assertEqual(s2.deserialize(s1.serialize("foo")), "foo")
+        self.assertEqual(s2.deserialize(s1.serialize('foo')), 'foo')
 
     def test_register_auth(self):
         register_auth(KEY1, CERT1, '')

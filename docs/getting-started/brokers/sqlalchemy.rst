@@ -17,7 +17,7 @@ Configuration
 Celery needs to know the location of your database, which should be the usual
 SQLAlchemy connection string, but with 'sqla+' prepended to it::
 
-    BROKER_URL = "sqla+sqlite:///celerydb.sqlite"
+    BROKER_URL = 'sqla+sqlite:///celerydb.sqlite'
 
 This transport uses only the :setting:`BROKER_URL` setting, which have to be
 an SQLAlchemy database URI.
@@ -30,16 +30,16 @@ Here's a list of examples using a selection of other `SQLAlchemy Connection Stri
 .. code-block:: python
 
     # sqlite (filename)
-    BROKER_URL = "sqla+sqlite:///celerydb.sqlite"
+    BROKER_URL = 'sqla+sqlite:///celerydb.sqlite'
 
     # mysql
-    BROKER_URL = "sqla+mysql://scott:tiger@localhost/foo"
+    BROKER_URL = 'sqla+mysql://scott:tiger@localhost/foo'
 
     # postgresql
-    BROKER_URL = "sqla+postgresql://scott:tiger@localhost/mydatabase"
+    BROKER_URL = 'sqla+postgresql://scott:tiger@localhost/mydatabase'
 
     # oracle
-    BROKER_URL = "sqla+oracle://scott:tiger@127.0.0.1:1521/sidname"
+    BROKER_URL = 'sqla+oracle://scott:tiger@127.0.0.1:1521/sidname'
 
 .. _`SQLAlchemy: Supported Databases`:
     http://www.sqlalchemy.org/docs/core/engines.html#supported-databases

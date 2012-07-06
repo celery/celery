@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-dfd042c7
+    celery.backends.database.dfd042c7
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-SQLAlchemy 0.5.8 version of a805d4bd, see the docstring of that module
-for an explanation of this workaround.
+    SQLAlchemy 0.5.8 version of :mod:`~celery.backends.database.a805d4bd`,
+    see the docstring of that module for an explanation of why we need
+    this workaround.
 
 """
 from __future__ import absolute_import
@@ -36,8 +38,8 @@ class PickleType(_PickleType):  # pragma: no cover
             return self.comparator(x, y)
         elif self.mutable and not hasattr(x, '__eq__') and x is not None:
             util.warn_deprecated(
-                    "Objects stored with PickleType when mutable=True "
-                    "must implement __eq__() for reliable comparison.")
+                    'Objects stored with PickleType when mutable=True '
+                    'must implement __eq__() for reliable comparison.')
             a = self.pickler.dumps(x, self.protocol)
             b = self.pickler.dumps(y, self.protocol)
             return a == b

@@ -7,8 +7,8 @@ class WarningMessage(object):
 
     """Holds the result of a single showwarning() call."""
 
-    _WARNING_DETAILS = ("message", "category", "filename", "lineno", "file",
-                        "line")
+    _WARNING_DETAILS = ('message', 'category', 'filename', 'lineno', 'file',
+                        'line')
 
     def __init__(self, message, category, filename, lineno, file=None,
                     line=None):
@@ -19,8 +19,8 @@ class WarningMessage(object):
         self._category_name = category and category.__name__ or None
 
     def __str__(self):
-        return ("{message : %r, category : %r, filename : %r, lineno : %s, "
-                    "line : %r}" % (self.message, self._category_name,
+        return ('{message : %r, category : %r, filename : %r, lineno : %s, '
+                    'line : %r}' % (self.message, self._category_name,
                                     self.filename, self.lineno, self.line))
 
 
@@ -50,21 +50,21 @@ class catch_warnings(object):
 
         """
         self._record = record
-        self._module = module is None and sys.modules["warnings"] or module
+        self._module = module is None and sys.modules['warnings'] or module
         self._entered = False
 
     def __repr__(self):
         args = []
         if self._record:
-            args.append("record=True")
+            args.append('record=True')
         if self._module is not sys.modules['warnings']:
-            args.append("module=%r" % self._module)
+            args.append('module=%r' % self._module)
         name = type(self).__name__
-        return "%s(%s)" % (name, ", ".join(args))
+        return '%s(%s)' % (name, ', '.join(args))
 
     def __enter__(self):
         if self._entered:
-            raise RuntimeError("Cannot enter %r twice" % self)
+            raise RuntimeError('Cannot enter %r twice' % self)
         self._entered = True
         self._filters = self._module.filters
         self._module.filters = self._filters[:]
@@ -80,6 +80,6 @@ class catch_warnings(object):
 
     def __exit__(self, *exc_info):
         if not self._entered:
-            raise RuntimeError("Cannot exit %r without entering first" % self)
+            raise RuntimeError('Cannot exit %r without entering first' % self)
         self._module.filters = self._filters
         self._module.showwarning = self._showwarning

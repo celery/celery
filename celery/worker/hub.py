@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.worker.hub
+    ~~~~~~~~~~~~~~~~~
+
+    Event-loop implementation.
+
+"""
 from __future__ import absolute_import
 
 from kombu.utils import cached_property
@@ -21,7 +29,7 @@ class BoundedSemaphore(object):
         >>> x = BoundedSemaphore(2)
 
         >>> def callback(i):
-        ...     print("HELLO %r" % i)
+        ...     print('HELLO %r' % i)
 
         >>> x.acquire(callback, 1)
         HELLO 1

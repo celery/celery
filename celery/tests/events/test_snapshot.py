@@ -86,7 +86,7 @@ class test_Polaroid(Case):
         self.assertTrue(shutter_signal_sent[0])
 
     def test_shutter_maxrate(self):
-        x = Polaroid(self.state, app=self.app, maxrate="1/h")
+        x = Polaroid(self.state, app=self.app, maxrate='1/h')
         shutter_signal_sent = [0]
 
         def handler(**kwargs):
@@ -124,7 +124,7 @@ class test_evcam(Case):
 
     def test_evcam(self):
         evcam(Polaroid, timer=timer)
-        evcam(Polaroid, timer=timer, loglevel="CRITICAL")
+        evcam(Polaroid, timer=timer, loglevel='CRITICAL')
         self.MockReceiver.raise_keyboard_interrupt = True
         try:
             with self.assertRaises(SystemExit):
@@ -132,7 +132,7 @@ class test_evcam(Case):
         finally:
             self.MockReceiver.raise_keyboard_interrupt = False
 
-    @patch("celery.platforms.create_pidlock")
+    @patch('celery.platforms.create_pidlock')
     def test_evcam_pidfile(self, create_pidlock):
-        evcam(Polaroid, timer=timer, pidfile="/var/pid")
-        create_pidlock.assert_called_with("/var/pid")
+        evcam(Polaroid, timer=timer, pidfile='/var/pid')
+        create_pidlock.assert_called_with('/var/pid')

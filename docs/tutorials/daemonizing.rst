@@ -16,13 +16,13 @@ daemonization tools.
 Generic init scripts
 ====================
 
-See the `contrib/generic-init.d/`_ directory Celery distribution.
+See the `extra/generic-init.d/`_ directory Celery distribution.
 
 This directory contains generic bash init scripts for :program:`celeryd`,
 that should run on Linux, FreeBSD, OpenBSD, and other Unix platforms.
 
-.. _`contrib/generic-init.d/`:
-    http://github.com/celery/celery/tree/master/contrib/generic-init.d/
+.. _`extra/generic-init.d/`:
+    http://github.com/celery/celery/tree/master/extra/generic-init.d/
 
 .. _generic-initd-celeryd:
 
@@ -292,10 +292,10 @@ actual resulting output::
 `supervisord`_
 ==============
 
-* `contrib/supervisord/`_
+* `extra/supervisord/`_
 
-.. _`contrib/supervisord/`:
-    http://github.com/celery/celery/tree/master/contrib/supervisord/
+.. _`extra/supervisord/`:
+    http://github.com/celery/celery/tree/master/extra/supervisord/
 .. _`supervisord`: http://supervisord.org/
 
 .. _daemon-launchd:
@@ -303,10 +303,10 @@ actual resulting output::
 launchd (OS X)
 ==============
 
-* `contrib/mac/`_
+* `extra/mac/`_
 
-.. _`contrib/mac/`:
-    http://github.com/celery/celery/tree/master/contrib/mac/
+.. _`extra/mac/`:
+    http://github.com/celery/celery/tree/master/extra/mac/
 
 
 .. _daemon-windows:

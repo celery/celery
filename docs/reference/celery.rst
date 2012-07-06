@@ -189,7 +189,7 @@ Application
         Celerybeat scheduler application.
         See :class:`~@Beat`.
 
-    .. method:: Celery.broker_connection(url=default, [ssl, [transport_options={}]])
+    .. method:: Celery.connection(url=default, [ssl, [transport_options={}]])
 
         Establish a connection to the message broker.
 
@@ -206,7 +206,7 @@ Application
         :keyword transport: defaults to the :setting:`BROKER_TRANSPORT`
                  setting.
 
-        :returns :class:`kombu.connection.BrokerConnection`:
+        :returns :class:`kombu.connection.Connection`:
 
     .. method:: Celery.default_connection(connection=None)
 
@@ -276,7 +276,7 @@ Grouping Tasks
         >>> res.get()
         8
 
-    Applying a chain will return the result of the last task in the chain.
+    Calling a chain will return the result of the last task in the chain.
     You can get to the other tasks by following the ``result.parent``'s::
 
         >>> res.parent.get()

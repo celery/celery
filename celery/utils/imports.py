@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.utils.import
+    ~~~~~~~~~~~~~~~~~~~
+
+    Utilities related to importing modules and symbols by name.
+
+"""
 from __future__ import absolute_import
 from __future__ import with_statement
 
@@ -23,10 +31,10 @@ if sys.version_info >= (3, 3):  # pragma: no cover
 else:
 
     def qualname(obj):  # noqa
-        if not hasattr(obj, "__name__") and hasattr(obj, "__class__"):
+        if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
             return qualname(obj.__class__)
 
-        return '.'.join([obj.__module__, obj.__name__])
+        return '%s.%s' % (obj.__module__, obj.__name__)
 
 
 def symbol_by_name(name, aliases={}, imp=None, package=None,
@@ -51,11 +59,11 @@ def symbol_by_name(name, aliases={}, imp=None, package=None,
 
     Examples:
 
-        >>> symbol_by_name("celery.concurrency.processes.TaskPool")
+        >>> symbol_by_name('celery.concurrency.processes.TaskPool')
         <class 'celery.concurrency.processes.TaskPool'>
 
-        >>> symbol_by_name("default", {
-        ...     "default": "celery.concurrency.processes.TaskPool"})
+        >>> symbol_by_name('default', {
+        ...     'default': 'celery.concurrency.processes.TaskPool'})
         <class 'celery.concurrency.processes.TaskPool'>
 
         # Does not try to look up non-string names.
@@ -118,11 +126,11 @@ def find_module(module, path=None, imp=None):
     if imp is None:
         imp = importlib.import_module
     with cwd_in_path():
-        if "." in module:
+        if '.' in module:
             last = None
-            parts = module.split(".")
+            parts = module.split('.')
             for i, part in enumerate(parts[:-1]):
-                mpart = imp(".".join(parts[:i + 1]))
+                mpart = imp('.'.join(parts[:i + 1]))
                 try:
                     path = mpart.__path__
                 except AttributeError:
@@ -154,4 +162,4 @@ def reload_from_cwd(module, reloader=None):
 
 def module_file(module):
     name = module.__file__
-    return name[:-1] if name.endswith(".pyc") else name
+    return name[:-1] if name.endswith('.pyc') else name

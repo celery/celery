@@ -1,3 +1,15 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.app.log
+    ~~~~~~~~~~~~~~
+
+    The Celery instances logging section: ``Celery.log``.
+
+    Sets up logging for the worker and other programs,
+    redirects stdouts, colors log output, patches logging
+    related compatibility fixes, and so on.
+
+"""
 from __future__ import absolute_import
 
 import logging
@@ -7,7 +19,7 @@ import sys
 from kombu.log import NullHandler
 
 from celery import signals
-from celery.state import get_current_task
+from celery._state import get_current_task
 from celery.utils import isatty
 from celery.utils.compat import WatchedFileHandler
 from celery.utils.log import (
@@ -29,8 +41,8 @@ class TaskFormatter(ColorFormatter):
             record.__dict__.update(task_id=task.request.id,
                                    task_name=task.name)
         else:
-            record.__dict__.setdefault("task_name", "???")
-            record.__dict__.setdefault("task_id", "???")
+            record.__dict__.setdefault('task_name', '???')
+            record.__dict__.setdefault('task_id', '???')
         return ColorFormatter.format(self, record)
 
 
@@ -48,17 +60,17 @@ class Logging(object):
         self.colorize = self.app.conf.CELERYD_LOG_COLOR
 
     def setup(self, loglevel=None, logfile=None, redirect_stdouts=False,
-            redirect_level="WARNING"):
+            redirect_level='WARNING'):
         handled = self.setup_logging_subsystem(loglevel, logfile)
         if not handled:
-            logger = get_logger("celery.redirected")
+            logger = get_logger('celery.redirected')
             if redirect_stdouts:
                 self.redirect_stdouts_to_logger(logger,
                                 loglevel=redirect_level)
         os.environ.update(
-            CELERY_LOG_LEVEL=str(loglevel) if loglevel else "",
-            CELERY_LOG_FILE=str(logfile) if logfile else "",
-            CELERY_LOG_REDIRECT="1" if redirect_stdouts else "",
+            CELERY_LOG_LEVEL=str(loglevel) if loglevel else '',
+            CELERY_LOG_FILE=str(logfile) if logfile else '',
+            CELERY_LOG_REDIRECT='1' if redirect_stdouts else '',
             CELERY_LOG_REDIRECT_LEVEL=str(redirect_level))
 
     def setup_logging_subsystem(self, loglevel=None, logfile=None,
@@ -95,7 +107,7 @@ class Logging(object):
 
         # This is a hack for multiprocessing's fork+exec, so that
         # logging before Process.run works.
-        logfile_name = logfile if isinstance(logfile, basestring) else ""
+        logfile_name = logfile if isinstance(logfile, basestring) else ''
         os.environ.update(_MP_FORK_LOGLEVEL_=str(loglevel),
                           _MP_FORK_LOGFILE_=logfile_name,
                           _MP_FORK_LOGFORMAT_=format)
@@ -115,7 +127,7 @@ class Logging(object):
         if colorize is None:
             colorize = self.supports_color(logfile)
 
-        logger = self.setup_handlers(get_logger("celery.task"),
+        logger = self.setup_handlers(get_logger('celery.task'),
                                      logfile, format, colorize,
                                      formatter=TaskFormatter, **kwargs)
         logger.setLevel(loglevel)
@@ -169,7 +181,7 @@ class Logging(object):
         """Create log handler with either a filename, an open stream
         or :const:`None` (stderr)."""
         logfile = sys.__stderr__ if logfile is None else logfile
-        if hasattr(logfile, "write"):
+        if hasattr(logfile, 'write'):
             return logging.StreamHandler(logfile)
         return WatchedFileHandler(logfile)
 
@@ -179,12 +191,12 @@ class Logging(object):
 
     def _is_configured(self, logger):
         return self._has_handler(logger) and not getattr(
-                logger, "_rudimentary_setup", False)
+                logger, '_rudimentary_setup', False)
 
-    def setup_logger(self, name="celery", *args, **kwargs):
+    def setup_logger(self, name='celery', *args, **kwargs):
         """Deprecated: No longer used."""
         self.setup_logging_subsystem(*args, **kwargs)
         return logging.root
 
-    def get_default_logger(self, name="celery", **kwargs):
+    def get_default_logger(self, name='celery', **kwargs):
         return get_logger(name)

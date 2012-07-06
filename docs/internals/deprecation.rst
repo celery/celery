@@ -7,9 +7,9 @@
 .. contents::
     :local:
 
-.. _deprecations-v3.0:
+.. _deprecations-v4.0:
 
-Removals for version 3.0
+Removals for version 4.0
 ========================
 
 Old Task API
@@ -72,7 +72,7 @@ Magic keyword arguments
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 The magic keyword arguments accepted by tasks will be removed
-in 3.0, so you should start rewriting any tasks
+in 4.0, so you should start rewriting any tasks
 using the ``celery.decorators`` module and depending
 on keyword arguments being passed to the task,
 for example::

@@ -89,14 +89,14 @@ to process it.
 * callbacks
     :`<list>subtask`:
 
-    .. versionadded:: 2.6
+    .. versionadded:: 3.0
 
     A list of subtasks to apply if the task exited successfully.
 
 * errbacks
     :`<list>subtask`:
 
-    .. versionadded:: 2.6
+    .. versionadded:: 3.0
 
     A list of subtasks to apply if an error occurs while executing the task.
 

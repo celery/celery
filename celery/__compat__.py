@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.__compat__
+    ~~~~~~~~~~~~~~~~~
+
+    This module contains utilities to dynamically
+    recreate modules, either for lazy loading or
+    to create old modules at runtime instead of
+    having them litter the source tree.
+
+"""
 from __future__ import absolute_import
 
 import operator
@@ -12,7 +23,7 @@ MODULE_DEPRECATED = """
 The module %s is deprecated and will be removed in a future version.
 """
 
-DEFAULT_ATTRS = set(["__file__", "__path__", "__doc__", "__all__"])
+DEFAULT_ATTRS = set(['__file__', '__path__', '__doc__', '__all__'])
 
 # im_func is no longer available in Py3.
 # instead the unbound method itself can be used.
@@ -26,61 +37,61 @@ else:
 
 def getappattr(path):
     """Gets attribute from the current_app recursively,
-    e.g. getappattr("amqp.get_task_consumer")``."""
+    e.g. getappattr('amqp.get_task_consumer')``."""
     from celery import current_app
     return current_app._rgetattr(path)
 
 
 def _compat_task_decorator(*args, **kwargs):
     from celery import current_app
-    kwargs.setdefault("accept_magic_kwargs", True)
+    kwargs.setdefault('accept_magic_kwargs', True)
     return current_app.task(*args, **kwargs)
 
 
 def _compat_periodic_task_decorator(*args, **kwargs):
     from celery.task import periodic_task
-    kwargs.setdefault("accept_magic_kwargs", True)
+    kwargs.setdefault('accept_magic_kwargs', True)
     return periodic_task(*args, **kwargs)
 
 
 COMPAT_MODULES = {
-    "celery": {
-        "execute": {
-            "send_task": "send_task",
+    'celery': {
+        'execute': {
+            'send_task': 'send_task',
         },
-        "decorators": {
-            "task": _compat_task_decorator,
-            "periodic_task": _compat_periodic_task_decorator,
+        'decorators': {
+            'task': _compat_task_decorator,
+            'periodic_task': _compat_periodic_task_decorator,
         },
-        "log": {
-            "get_default_logger": "log.get_default_logger",
-            "setup_logger": "log.setup_logger",
-            "setup_loggig_subsystem": "log.setup_logging_subsystem",
-            "redirect_stdouts_to_logger": "log.redirect_stdouts_to_logger",
+        'log': {
+            'get_default_logger': 'log.get_default_logger',
+            'setup_logger': 'log.setup_logger',
+            'setup_loggig_subsystem': 'log.setup_logging_subsystem',
+            'redirect_stdouts_to_logger': 'log.redirect_stdouts_to_logger',
         },
-        "messaging": {
-            "TaskPublisher": "amqp.TaskPublisher",
-            "TaskConsumer": "amqp.TaskConsumer",
-            "establish_connection": "broker_connection",
-            "with_connection": "with_default_connection",
-            "get_consumer_set": "amqp.TaskConsumer",
+        'messaging': {
+            'TaskPublisher': 'amqp.TaskPublisher',
+            'TaskConsumer': 'amqp.TaskConsumer',
+            'establish_connection': 'connection',
+            'with_connection': 'with_default_connection',
+            'get_consumer_set': 'amqp.TaskConsumer',
         },
-        "registry": {
-            "tasks": "tasks",
+        'registry': {
+            'tasks': 'tasks',
         },
     },
-    "celery.task": {
-        "control": {
-            "broadcast": "control.broadcast",
-            "rate_limit": "control.rate_limit",
-            "time_limit": "control.time_limit",
-            "ping": "control.ping",
-            "revoke": "control.revoke",
-            "discard_all": "control.purge",
-            "inspect": "control.inspect",
+    'celery.task': {
+        'control': {
+            'broadcast': 'control.broadcast',
+            'rate_limit': 'control.rate_limit',
+            'time_limit': 'control.time_limit',
+            'ping': 'control.ping',
+            'revoke': 'control.revoke',
+            'discard_all': 'control.purge',
+            'inspect': 'control.inspect',
         },
-        "schedules": "celery.schedules",
-        "chords": "celery.canvas",
+        'schedules': 'celery.schedules',
+        'chords': 'celery.canvas',
     }
 }
 
@@ -176,7 +187,7 @@ def get_compat_module(pkg, name):
         fqdn = '.'.join([pkg.__name__, name])
         module = sys.modules[fqdn] = import_module(attrs)
         return module
-    attrs["__all__"] = attrs.keys()
+    attrs['__all__'] = attrs.keys()
     return create_module(name, dict(attrs), pkg=pkg, prepare_attr=prepare)
 
 

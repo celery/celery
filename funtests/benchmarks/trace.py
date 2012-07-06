@@ -16,7 +16,7 @@ def T():
 tid = uuid()
 P = TaskPool()
 hostname = socket.gethostname()
-task = {"task": T.name, "args": (), "kwargs": {}, "id": tid, "flags": 0}
+task = {'task': T.name, 'args': (), 'kwargs': {}, 'id': tid, 'flags': 0}
 app = current_app._get_current_object()
 ready_queue = Queue()
 
@@ -36,10 +36,10 @@ ts = time()
 from celery.datastructures import AttributeDict
 from celery.task.trace import trace_task_ret
 request = AttributeDict(
-                {"called_directly": False,
-                 "callbacks": [],
-                 "errbacks": [],
-                 "chord": None}, **task)
+                {'called_directly': False,
+                 'callbacks': [],
+                 'errbacks': [],
+                 'chord': None}, **task)
 for i in xrange(100000):
     trace_task_ret(T, tid, (), {}, request)
 print(time() - ts)

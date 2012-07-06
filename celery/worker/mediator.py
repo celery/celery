@@ -12,9 +12,6 @@
     rate limits will also disable this machinery,
     and can improve performance.
 
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
-
 """
 from __future__ import absolute_import
 
@@ -26,14 +23,14 @@ from celery.app import app_or_default
 from celery.utils.threads import bgThread
 from celery.utils.log import get_logger
 
-from .abstract import StartStopComponent
+from .bootsteps import StartStopComponent
 
 logger = get_logger(__name__)
 
 
 class WorkerComponent(StartStopComponent):
-    name = "worker.mediator"
-    requires = ("pool", "queues", )
+    name = 'worker.mediator'
+    requires = ('pool', 'queues', )
 
     def __init__(self, w, **kwargs):
         w.mediator = None
@@ -48,6 +45,7 @@ class WorkerComponent(StartStopComponent):
 
 
 class Mediator(bgThread):
+    """Mediator thread."""
 
     #: The task queue, a :class:`~Queue.Queue` instance.
     ready_queue = None
@@ -72,14 +70,14 @@ class Mediator(bgThread):
             return
 
         if self._does_debug:
-            logger.debug("Mediator: Running callback for task: %s[%s]",
+            logger.debug('Mediator: Running callback for task: %s[%s]',
                          task.name, task.id)
 
         try:
             self.callback(task)
         except Exception, exc:
-            logger.error("Mediator callback raised exception %r",
+            logger.error('Mediator callback raised exception %r',
                          exc, exc_info=True,
-                         extra={"data": {"id": task.id,
-                                         "name": task.name,
-                                         "hostname": task.hostname}})
+                         extra={'data': {'id': task.id,
+                                         'name': task.name,
+                                         'hostname': task.hostname}})

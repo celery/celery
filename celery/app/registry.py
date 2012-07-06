@@ -5,9 +5,6 @@
 
     Registry of available tasks.
 
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
-
 """
 from __future__ import absolute_import
 
@@ -42,20 +39,20 @@ class TaskRegistry(dict):
 
         """
         try:
-            self.pop(getattr(name, "name", name))
+            self.pop(getattr(name, 'name', name))
         except KeyError:
             raise self.NotRegistered(name)
 
-    # -- these methods are irrelevant now and will be removed in 3.0
+    # -- these methods are irrelevant now and will be removed in 4.0
     def regular(self):
-        return self.filter_types("regular")
+        return self.filter_types('regular')
 
     def periodic(self):
-        return self.filter_types("periodic")
+        return self.filter_types('periodic')
 
     def filter_types(self, type):
         return dict((name, task) for name, task in self.iteritems()
-                                    if task.type == type)
+                                if getattr(task, 'type', 'regular') == type)
 
 
 def _unpickle_task(name):

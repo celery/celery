@@ -1,23 +1,25 @@
 # -*- coding: utf-8 -*-
 """
-a805d4bd
-This module fixes a bug with pickling and relative imports in Python < 2.6.
+    celery.backends.database.a805d4bd
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The problem is with pickling an e.g. `exceptions.KeyError` instance.
-As SQLAlchemy has its own `exceptions` module, pickle will try to
-lookup :exc:`KeyError` in the wrong module, resulting in this exception::
+    This module fixes a bug with pickling and relative imports in Python < 2.6.
 
-    cPickle.PicklingError: Can't pickle <type 'exceptions.KeyError'>:
-        attribute lookup exceptions.KeyError failed
+    The problem is with pickling an e.g. `exceptions.KeyError` instance.
+    As SQLAlchemy has its own `exceptions` module, pickle will try to
+    lookup :exc:`KeyError` in the wrong module, resulting in this exception::
 
-doing `import exceptions` just before the dump in `sqlalchemy.types`
-reveals the source of the bug::
+        cPickle.PicklingError: Can't pickle <type 'exceptions.KeyError'>:
+            attribute lookup exceptions.KeyError failed
 
-    EXCEPTIONS: <module 'sqlalchemy.exc' from '/var/lib/hudson/jobs/celery/
-        workspace/buildenv/lib/python2.5/site-packages/sqlalchemy/exc.pyc'>
+    doing `import exceptions` just before the dump in `sqlalchemy.types`
+    reveals the source of the bug::
 
-Hence the random module name "a805d5bd" is taken to decrease the chances of
-a collision.
+        EXCEPTIONS: <module 'sqlalchemy.exc' from '/var/lib/hudson/jobs/celery/
+            workspace/buildenv/lib/python2.5/site-packages/sqlalchemy/exc.pyc'>
+
+    Hence the random module name 'a805d5bd' is taken to decrease the chances of
+    a collision.
 
 """
 from __future__ import absolute_import

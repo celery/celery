@@ -28,7 +28,7 @@ Configuration
 Configuration is easy, set the transport, and configure the location of
 your CouchDB database::
 
-    BROKER_URL = "couchdb://localhost:5984/database_name"
+    BROKER_URL = 'couchdb://localhost:5984/database_name'
 
 Where the URL is in the format of::
 
@@ -50,6 +50,6 @@ Storing task state and results in CouchDB is currently **not supported**.
 Limitations
 ===========
 
-The Beanstalk message transport does not currently support:
+The CouchDB message transport does not currently support:
 
     * Remote control commands (celeryctl, broadcast)

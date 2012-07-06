@@ -58,58 +58,58 @@ class test_inspect(Case):
         self.app.control = self.prev
 
     def test_prepare_reply(self):
-        self.assertDictEqual(self.i._prepare([{"w1": {"ok": 1}},
-                                              {"w2": {"ok": 1}}]),
-                             {"w1": {"ok": 1}, "w2": {"ok": 1}})
+        self.assertDictEqual(self.i._prepare([{'w1': {'ok': 1}},
+                                              {'w2': {'ok': 1}}]),
+                             {'w1': {'ok': 1}, 'w2': {'ok': 1}})
 
-        i = self.c.inspect(destination="w1")
-        self.assertEqual(i._prepare([{"w1": {"ok": 1}}]),
-                         {"ok": 1})
+        i = self.c.inspect(destination='w1')
+        self.assertEqual(i._prepare([{'w1': {'ok': 1}}]),
+                         {'ok': 1})
 
     @with_mock_broadcast
     def test_active(self):
         self.i.active()
-        self.assertIn("dump_active", MockMailbox.sent)
+        self.assertIn('dump_active', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_scheduled(self):
         self.i.scheduled()
-        self.assertIn("dump_schedule", MockMailbox.sent)
+        self.assertIn('dump_schedule', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_reserved(self):
         self.i.reserved()
-        self.assertIn("dump_reserved", MockMailbox.sent)
+        self.assertIn('dump_reserved', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_stats(self):
         self.i.stats()
-        self.assertIn("stats", MockMailbox.sent)
+        self.assertIn('stats', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_revoked(self):
         self.i.revoked()
-        self.assertIn("dump_revoked", MockMailbox.sent)
+        self.assertIn('dump_revoked', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_tasks(self):
         self.i.registered()
-        self.assertIn("dump_tasks", MockMailbox.sent)
+        self.assertIn('dump_tasks', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_ping(self):
         self.i.ping()
-        self.assertIn("ping", MockMailbox.sent)
+        self.assertIn('ping', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_active_queues(self):
         self.i.active_queues()
-        self.assertIn("active_queues", MockMailbox.sent)
+        self.assertIn('active_queues', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_report(self):
         self.i.report()
-        self.assertIn("report", MockMailbox.sent)
+        self.assertIn('report', MockMailbox.sent)
 
 
 class test_Broadcast(Case):
@@ -127,65 +127,65 @@ class test_Broadcast(Case):
 
     @with_mock_broadcast
     def test_broadcast(self):
-        self.control.broadcast("foobarbaz", arguments=[])
-        self.assertIn("foobarbaz", MockMailbox.sent)
+        self.control.broadcast('foobarbaz', arguments=[])
+        self.assertIn('foobarbaz', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_broadcast_limit(self):
-        self.control.broadcast("foobarbaz1", arguments=[], limit=None,
+        self.control.broadcast('foobarbaz1', arguments=[], limit=None,
                 destination=[1, 2, 3])
-        self.assertIn("foobarbaz1", MockMailbox.sent)
+        self.assertIn('foobarbaz1', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_broadcast_validate(self):
         with self.assertRaises(ValueError):
-            self.control.broadcast("foobarbaz2",
-                                   destination="foo")
+            self.control.broadcast('foobarbaz2',
+                                   destination='foo')
 
     @with_mock_broadcast
     def test_rate_limit(self):
-        self.control.rate_limit(mytask.name, "100/m")
-        self.assertIn("rate_limit", MockMailbox.sent)
+        self.control.rate_limit(mytask.name, '100/m')
+        self.assertIn('rate_limit', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_time_limit(self):
         self.control.time_limit(mytask.name, soft=10, hard=20)
-        self.assertIn("time_limit", MockMailbox.sent)
+        self.assertIn('time_limit', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_add_consumer(self):
-        self.control.add_consumer("foo")
-        self.assertIn("add_consumer", MockMailbox.sent)
+        self.control.add_consumer('foo')
+        self.assertIn('add_consumer', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_cancel_consumer(self):
-        self.control.cancel_consumer("foo")
-        self.assertIn("cancel_consumer", MockMailbox.sent)
+        self.control.cancel_consumer('foo')
+        self.assertIn('cancel_consumer', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_enable_events(self):
         self.control.enable_events()
-        self.assertIn("enable_events", MockMailbox.sent)
+        self.assertIn('enable_events', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_disable_events(self):
         self.control.disable_events()
-        self.assertIn("disable_events", MockMailbox.sent)
+        self.assertIn('disable_events', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_revoke(self):
-        self.control.revoke("foozbaaz")
-        self.assertIn("revoke", MockMailbox.sent)
+        self.control.revoke('foozbaaz')
+        self.assertIn('revoke', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_ping(self):
         self.control.ping()
-        self.assertIn("ping", MockMailbox.sent)
+        self.assertIn('ping', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_revoke_from_result(self):
-        self.app.AsyncResult("foozbazzbar").revoke()
-        self.assertIn("revoke", MockMailbox.sent)
+        self.app.AsyncResult('foozbazzbar').revoke()
+        self.assertIn('revoke', MockMailbox.sent)
 
     @with_mock_broadcast
     def test_revoke_from_resultset(self):
@@ -193,4 +193,4 @@ class test_Broadcast(Case):
                                  map(self.app.AsyncResult,
                                         [uuid() for i in range(10)]))
         r.revoke()
-        self.assertIn("revoke", MockMailbox.sent)
+        self.assertIn('revoke', MockMailbox.sent)

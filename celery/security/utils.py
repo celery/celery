@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.security.utils
+    ~~~~~~~~~~~~~~~~~~~~~
+
+    Utilities used by the message signing serializer.
+
+"""
 from __future__ import absolute_import
 
 import sys
@@ -13,7 +21,7 @@ except ImportError:  # pragma: no cover
 
 
 @contextmanager
-def reraise_errors(msg="%r", errors=None):
+def reraise_errors(msg='%r', errors=None):
     assert crypto is not None
     errors = (crypto.Error, ) if errors is None else errors
     try:

@@ -24,13 +24,13 @@ class MyAnnotation(object):
 class test_MapAnnotation(Case):
 
     def test_annotate(self):
-        x = MapAnnotation({add.name: {"foo": 1}})
-        self.assertDictEqual(x.annotate(add), {"foo": 1})
+        x = MapAnnotation({add.name: {'foo': 1}})
+        self.assertDictEqual(x.annotate(add), {'foo': 1})
         self.assertIsNone(x.annotate(mul))
 
     def test_annotate_any(self):
-        x = MapAnnotation({'*': {"foo": 2}})
-        self.assertDictEqual(x.annotate_any(), {"foo": 2})
+        x = MapAnnotation({'*': {'foo': 2}})
+        self.assertDictEqual(x.annotate_any(), {'foo': 2})
 
         x = MapAnnotation()
         self.assertIsNone(x.annotate_any())
@@ -39,7 +39,7 @@ class test_MapAnnotation(Case):
 class test_prepare(Case):
 
     def test_dict_to_MapAnnotation(self):
-        x = prepare({add.name: {"foo": 3}})
+        x = prepare({add.name: {'foo': 3}})
         self.assertIsInstance(x[0], MapAnnotation)
 
     def test_returns_list(self):

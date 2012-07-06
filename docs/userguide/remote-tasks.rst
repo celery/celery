@@ -35,11 +35,11 @@ Whether to use GET or POST is up to you and your requirements.
 The web page should then return a response in the following format
 if the execution was successful::
 
-    {"status": "success", "retval": ....}
+    {'status': 'success', 'retval': ....}
 
 or if there was an error::
 
-    {"status": "failure": "reason": "Invalid moon alignment."}
+    {'status': 'failure': 'reason': 'Invalid moon alignment.'}
 
 Enabling the HTTP task
 ----------------------
@@ -63,11 +63,11 @@ With this information you could define a simple task in Django:
 
 
     def multiply(request):
-        x = int(request.GET["x"])
-        y = int(request.GET["y"])
+        x = int(request.GET['x'])
+        y = int(request.GET['y'])
         result = x * y
-        response = {"status": "success", "retval": result}
-        return HttpResponse(serialize(response), mimetype="application/json")
+        response = {'status': 'success', 'retval': result}
+        return HttpResponse(serialize(response), mimetype='application/json')
 
 .. _webhook-rails-example:
 
@@ -82,7 +82,7 @@ or in Ruby on Rails:
         @x = params[:x].to_i
         @y = params[:y].to_i
 
-        @status = {:status => "success", :retval => @x * @y}
+        @status = {:status => 'success', :retval => @x * @y}
 
         render :json => @status
     end
@@ -98,7 +98,7 @@ Calling webhook tasks
 To call a task you can use the :class:`~celery.task.http.URL` class:
 
     >>> from celery.task.http import URL
-    >>> res = URL("http://example.com/multiply").get_async(x=10, y=10)
+    >>> res = URL('http://example.com/multiply').get_async(x=10, y=10)
 
 
 :class:`~celery.task.http.URL` is a shortcut to the :class:`HttpDispatchTask`.
@@ -106,7 +106,9 @@ You can subclass this to extend the
 functionality.
 
     >>> from celery.task.http import HttpDispatchTask
-    >>> res = HttpDispatchTask.delay(url="http://example.com/multiply", method="GET", x=10, y=10)
+    >>> res = HttpDispatchTask.delay(
+    ...     url='http://example.com/multiply',
+    ...     method='GET', x=10, y=10)
     >>> res.get()
     100
 
@@ -116,7 +118,7 @@ task being executed::
     [INFO/MainProcess] Task celery.task.http.HttpDispatchTask
             [f2cc8efc-2a14-40cd-85ad-f1c77c94beeb] processed: 100
 
-Since applying tasks can be done via HTTP using the
+Since calling tasks can be done via HTTP using the
 :func:`djcelery.views.apply` view, calling tasks from other languages is easy.
 For an example service exposing tasks via HTTP you should have a look at
 `examples/celery_http_gateway` in the Celery distribution:

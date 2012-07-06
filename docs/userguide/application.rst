@@ -55,7 +55,7 @@ Whenever you define a task, that task will also be added to the local registry:
     >>> add.name
     __main__.add
 
-    >>> celery.tasks["__main__.add"]
+    >>> celery.tasks['__main__.add']
     <@task: __main__.add>
 
 and there we see that ``__main__`` again; whenever Celery is not able
@@ -94,9 +94,9 @@ You can specify another name for the main module:
 
 .. code-block:: python
 
-    >>> celery = Celery("tasks")
+    >>> celery = Celery('tasks')
     >>> celery.main
-    "tasks"
+    'tasks'
 
     >>> @celery.task()
     ... def add(x, y):
@@ -117,7 +117,7 @@ or you can use a dedicated configuration module.
 The configuration is available as :attr:`@Celery.conf`::
 
     >>> celery.conf.CELERY_TIMEZONE
-    "Europe/London"
+    'Europe/London'
 
 where you can set configuration values directly::
 
@@ -127,7 +127,7 @@ or you can update several keys at once by using the ``update`` method::
 
     >>> celery.conf.update(
     ...     CELERY_ENABLE_UTC=True,
-    ...     CELERY_TIMEZONE="Europe/London",
+    ...     CELERY_TIMEZONE='Europe/London',
     ...)
 
 The configuration object consists of multiple dictionaries
@@ -172,7 +172,7 @@ Example 1: Using the name of a module
     from celery import Celery
 
     celery = Celery()
-    celery.config_from_object("celeryconfig")
+    celery.config_from_object('celeryconfig')
 
 
 The ``celeryconfig`` module may then look like this:
@@ -182,7 +182,7 @@ The ``celeryconfig`` module may then look like this:
 .. code-block:: python
 
     CELERY_ENABLE_UTC = True
-    CELERY_TIMEZONE = "Europe/London"
+    CELERY_TIMEZONE = 'Europe/London'
 
 Example 2: Using a configuration module
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -206,7 +206,7 @@ Example 3:  Using a configuration class/object
 
     class Config:
         CELERY_ENABLE_UTC = True
-        CELERY_TIMEZONE = "Europe/London"
+        CELERY_TIMEZONE = 'Europe/London'
 
     celery.config_from_object(Config)
 
@@ -225,10 +225,10 @@ environment variable named :envvar:`CELERY_CONFIG_MODULE`:
     from celery import Celery
 
     #: Set default configuration module name
-    os.environ.setdefault("CELERY_CONFIG_MODULE", "celeryconfig")
+    os.environ.setdefault('CELERY_CONFIG_MODULE', 'celeryconfig')
 
     celery = Celery()
-    celery.config_from_envvar("CELERY_CONFIG_MODULE")
+    celery.config_from_envvar('CELERY_CONFIG_MODULE')
 
 You can then specify the configuration module to use via the environment::
 
@@ -381,11 +381,11 @@ chain breaks::
     .. code-block:: python
 
         def hello(to):
-            return "hello %s" % to
+            return 'hello %s' % to
 
         >>> from celery.execute import apply_async
 
-        >>> apply_async(hello, ("world!", ))
+        >>> apply_async(hello, ('world!', ))
 
     or you could also create a ``Task`` class to set
     certain options, or override other behavior
@@ -399,10 +399,10 @@ chain breaks::
             send_error_emails = True
 
             def run(self, to):
-                return "hello %s" % to
+                return 'hello %s' % to
         tasks.register(Hello)
 
-        >>> Hello.delay("world!")
+        >>> Hello.delay('world!')
 
     Later, it was decided that passing arbitrary call-ables
     was an anti-pattern, since it makes it very hard to use
@@ -415,7 +415,7 @@ chain breaks::
 
         @task(send_error_emails=True)
         def hello(x):
-            return "hello %s" % to
+            return 'hello %s' % to
 
 Abstract Tasks
 ==============
@@ -442,7 +442,7 @@ class: :class:`celery.Task`.
         abstract = True
 
         def __call__(self, *args, **kwargs):
-            print("TASK STARTING: %s[%s]" % (self.name, self.request.id))
+            print('TASK STARTING: %s[%s]' % (self.name, self.request.id))
             return self.run(*args, **kwargs)
 
 

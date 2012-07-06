@@ -15,9 +15,6 @@
     take "pictures" of this state at regular intervals
     to e.g. store that in a database.
 
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
-
 """
 from __future__ import absolute_import
 from __future__ import with_statement
@@ -38,6 +35,11 @@ from celery.datastructures import AttributeDict, LRUCache
 HEARTBEAT_EXPIRE_WINDOW = 200
 
 
+def heartbeat_expires(timestamp, freq=60,
+        expire_window=HEARTBEAT_EXPIRE_WINDOW):
+    return timestamp + freq * (expire_window / 1e2)
+
+
 class Element(AttributeDict):
     """Base class for worker state elements."""
 
@@ -48,7 +50,7 @@ class Worker(Element):
     expire_window = HEARTBEAT_EXPIRE_WINDOW
 
     def __init__(self, **fields):
-        fields.setdefault("freq", 60)
+        fields.setdefault('freq', 60)
         super(Worker, self).__init__(**fields)
         self.heartbeats = []
 
@@ -74,12 +76,13 @@ class Worker(Element):
                 self.heartbeats = self.heartbeats[self.heartbeat_max:]
 
     def __repr__(self):
-        return "<Worker: %s (%s)" % (self.hostname,
-                                     self.alive and "ONLINE" or "OFFLINE")
+        return '<Worker: %s (%s)' % (self.hostname,
+                                     self.alive and 'ONLINE' or 'OFFLINE')
 
     @property
     def heartbeat_expires(self):
-        return self.heartbeats[-1] + self.freq * (self.expire_window / 1e2)
+        return heartbeat_expires(self.heartbeats[-1],
+                                 self.freq, self.expire_window)
 
     @property
     def alive(self):
@@ -94,15 +97,15 @@ class Task(Element):
     #: happened before a task-failed event).
     #:
     #: A merge rule consists of a state and a list of fields to keep from
-    #: that state. ``(RECEIVED, ("name", "args")``, means the name and args
+    #: that state. ``(RECEIVED, ('name', 'args')``, means the name and args
     #: fields are always taken from the RECEIVED state, and any values for
     #: these fields received before or after is simply ignored.
-    merge_rules = {states.RECEIVED: ("name", "args", "kwargs",
-                                     "retries", "eta", "expires")}
+    merge_rules = {states.RECEIVED: ('name', 'args', 'kwargs',
+                                     'retries', 'eta', 'expires')}
 
     #: meth:`info` displays these fields by default.
-    _info_fields = ("args", "kwargs", "retries", "result",
-                    "eta", "runtime", "expires", "exception")
+    _info_fields = ('args', 'kwargs', 'retries', 'result',
+                    'eta', 'runtime', 'expires', 'exception')
 
     #: Default values.
     _defaults = dict(uuid=None, name=None, state=states.PENDING,
@@ -189,7 +192,7 @@ class Task(Element):
                             if getattr(self, key, None) is not None)
 
     def __repr__(self):
-        return "<Task: %s(%s) %s>" % (self.name, self.uuid, self.state)
+        return '<Task: %s(%s) %s>' % (self.name, self.uuid, self.state)
 
     @property
     def ready(self):
@@ -206,12 +209,12 @@ class State(object):
         self.workers = LRUCache(limit=max_workers_in_memory)
         self.tasks = LRUCache(limit=max_tasks_in_memory)
         self.event_callback = callback
-        self.group_handlers = {"worker": self.worker_event,
-                               "task": self.task_event}
+        self.group_handlers = {'worker': self.worker_event,
+                               'task': self.task_event}
         self._mutex = Lock()
 
     def freeze_while(self, fun, *args, **kwargs):
-        clear_after = kwargs.pop("clear_after", False)
+        clear_after = kwargs.pop('clear_after', False)
         with self._mutex:
             try:
                 return fun(*args, **kwargs)
@@ -262,21 +265,21 @@ class State(object):
 
     def worker_event(self, type, fields):
         """Process worker event."""
-        hostname = fields.pop("hostname", None)
+        hostname = fields.pop('hostname', None)
         if hostname:
             worker = self.get_or_create_worker(hostname)
-            handler = getattr(worker, "on_%s" % type, None)
+            handler = getattr(worker, 'on_%s' % type, None)
             if handler:
                 handler(**fields)
 
     def task_event(self, type, fields):
         """Process task event."""
-        uuid = fields.pop("uuid")
-        hostname = fields.pop("hostname")
+        uuid = fields.pop('uuid')
+        hostname = fields.pop('hostname')
         worker = self.get_or_create_worker(hostname)
         task = self.get_or_create_task(uuid)
-        handler = getattr(task, "on_%s" % type, None)
-        if type == "received":
+        handler = getattr(task, 'on_%s' % type, None)
+        if type == 'received':
             self.task_count += 1
         if handler:
             handler(**fields)
@@ -291,7 +294,7 @@ class State(object):
     def _dispatch_event(self, event):
         self.event_count += 1
         event = kwdict(event)
-        group, _, type = event.pop("type").partition("-")
+        group, _, type = event.pop('type').partition('-')
         self.group_handlers[group](type, event)
         if self.event_callback:
             self.event_callback(self, event)
@@ -344,7 +347,7 @@ class State(object):
         return [w for w in self.workers.values() if w.alive]
 
     def __repr__(self):
-        return "<ClusterState: events=%s tasks=%s>" % (self.event_count,
+        return '<ClusterState: events=%s tasks=%s>' % (self.event_count,
                                                        self.task_count)
 
 

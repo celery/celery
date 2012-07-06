@@ -5,14 +5,12 @@
 
     Utility functions.
 
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
-
 """
 from __future__ import absolute_import
 from __future__ import with_statement
 
 import operator
+import os
 import sys
 import threading
 import traceback
@@ -38,12 +36,18 @@ DEPRECATION_FMT = """
     version %(removal)s. %(alternative)s
 """
 
+#: Billiard sets this when execv is enabled.
+#: We use it to find out the name of the original ``__main__``
+#: module, so that we can properly rewrite the name of the
+#: task to be that of ``App.main``.
+MP_MAIN_FILE = os.environ.get('MP_MAIN_FILE') or None
+
 
 def warn_deprecated(description=None, deprecation=None, removal=None,
         alternative=None):
-    ctx = {"description": description,
-           "deprecation": deprecation, "removal": removal,
-           "alternative": alternative}
+    ctx = {'description': description,
+           'deprecation': deprecation, 'removal': removal,
+           'alternative': alternative}
     if deprecation is not None:
         w = CPendingDeprecationWarning(PENDING_DEPRECATION_FMT % ctx)
     else:
@@ -99,15 +103,15 @@ def fun_takes_kwargs(fun, kwlist=[]):
 
         >>> def foo(self, x, y, logfile=None, loglevel=None):
         ...     return x * y
-        >>> fun_takes_kwargs(foo, ["logfile", "loglevel", "task_id"])
-        ["logfile", "loglevel"]
+        >>> fun_takes_kwargs(foo, ['logfile', 'loglevel', 'task_id'])
+        ['logfile', 'loglevel']
 
         >>> def foo(self, x, y, **kwargs):
-        >>> fun_takes_kwargs(foo, ["logfile", "loglevel", "task_id"])
-        ["logfile", "loglevel", "task_id"]
+        >>> fun_takes_kwargs(foo, ['logfile', 'loglevel', 'task_id'])
+        ['logfile', 'loglevel', 'task_id']
 
     """
-    argspec = getattr(fun, "argspec", getargspec(fun))
+    argspec = getattr(fun, 'argspec', getargspec(fun))
     args, _varargs, keywords, _defaults = argspec
     if keywords != None:
         return kwlist
@@ -117,7 +121,7 @@ def fun_takes_kwargs(fun, kwlist=[]):
 def isatty(fh):
     # Fixes bug with mod_wsgi:
     #   mod_wsgi.Log object has no attribute isatty.
-    return getattr(fh, "isatty", None) and fh.isatty()
+    return getattr(fh, 'isatty', None) and fh.isatty()
 
 
 def cry():  # pragma: no cover
@@ -131,26 +135,26 @@ def cry():  # pragma: no cover
     # get a map of threads by their ID so we can print their names
     # during the traceback dump
     for t in threading.enumerate():
-        if getattr(t, "ident", None):
+        if getattr(t, 'ident', None):
             tmap[t.ident] = t
         else:
             main_thread = t
 
     out = StringIO()
-    sep = "=" * 49 + "\n"
+    sep = '=' * 49 + '\n'
     for tid, frame in sys._current_frames().iteritems():
         thread = tmap.get(tid, main_thread)
         if not thread:
             # skip old junk (left-overs from a fork)
             continue
-        out.write("%s\n" % (thread.getName(), ))
+        out.write('%s\n' % (thread.getName(), ))
         out.write(sep)
         traceback.print_stack(frame, file=out)
         out.write(sep)
-        out.write("LOCAL VARIABLES\n")
+        out.write('LOCAL VARIABLES\n')
         out.write(sep)
         pprint(frame.f_locals, stream=out)
-        out.write("\n\n")
+        out.write('\n\n')
     return out.getvalue()
 
 
@@ -166,15 +170,35 @@ def maybe_reraise():
         del(exc_info)
 
 
-def strtobool(term, table={"false": False, "no": False, "0": False,
-                             "true":  True, "yes": True,  "1": True,
-                             "on":    True, "off": False}):
+def strtobool(term, table={'false': False, 'no': False, '0': False,
+                             'true':  True, 'yes': True,  '1': True,
+                             'on':    True, 'off': False}):
     if isinstance(term, basestring):
         try:
             return table[term.lower()]
         except KeyError:
-            raise TypeError("Can't coerce %r to type bool" % (term, ))
+            raise TypeError('Cannot coerce %r to type bool' % (term, ))
     return term
+
+
+def gen_task_name(app, name, module_name):
+    try:
+        module = sys.modules[module_name]
+    except KeyError:
+        # Fix for manage.py shell_plus (Issue #366)
+        module = None
+
+    if module is not None:
+        module_name = module.__name__
+        # - If the task module is used as the __main__ script
+        # - we need to rewrite the module part of the task name
+        # - to match App.main.
+        if MP_MAIN_FILE and module.__file__ == MP_MAIN_FILE:
+            # - see comment about :envvar:`MP_MAIN_FILE` above.
+            module_name = '__main__'
+    if module_name == '__main__' and app.main:
+        return '.'.join([app.main, name])
+    return '.'.join(filter(None, [module_name, name]))
 
 # ------------------------------------------------------------------------ #
 # > XXX Compat

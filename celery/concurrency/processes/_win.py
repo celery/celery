@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+"""
+    celery.concurrency.processes._win
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    Windows utilities to terminate process groups.
+
+"""
 from __future__ import absolute_import
 
 import os

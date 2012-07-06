@@ -5,9 +5,6 @@
 
     Loader base class.
 
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
-
 """
 from __future__ import absolute_import
 
@@ -48,6 +45,9 @@ class BaseLoader(object):
         * What happens when the worker starts?
             See :meth:`on_worker_init`.
 
+        * What happens when the worker shuts down?
+            See :meth:`on_worker_shutdown`.
+
         * What modules are imported to find tasks?
 
     """
@@ -82,6 +82,11 @@ class BaseLoader(object):
         starts."""
         pass
 
+    def on_worker_shutdown(self):
+        """This method is called when the worker (:program:`celery worker`)
+        shuts down."""
+        pass
+
     def on_worker_process_init(self):
         """This method is called when a child process starts."""
         pass
@@ -110,6 +115,9 @@ class BaseLoader(object):
             self.import_default_modules()
             self.on_worker_init()
 
+    def shutdown_worker(self):
+        self.on_worker_shutdown()
+
     def init_worker_process(self):
         self.on_worker_process_init()
 
@@ -124,7 +132,7 @@ class BaseLoader(object):
     def config_from_object(self, obj, silent=False):
         if isinstance(obj, basestring):
             try:
-                if "." in obj:
+                if '.' in obj:
                     obj = symbol_by_name(obj, imp=self.import_from_cwd)
                 else:
                     obj = self.import_from_cwd(obj)
@@ -132,17 +140,17 @@ class BaseLoader(object):
                 if silent:
                     return False
                 raise
-        if not hasattr(obj, "__getitem__"):
+        if not hasattr(obj, '__getitem__'):
             obj = DictAttribute(obj)
         self._conf = obj
         return True
 
-    def cmdline_config_parser(self, args, namespace="celery",
-                re_type=re.compile(r"\((\w+)\)"),
-                extra_types={"json": anyjson.loads},
-                override_types={"tuple": "json",
-                                "list": "json",
-                                "dict": "json"}):
+    def cmdline_config_parser(self, args, namespace='celery',
+                re_type=re.compile(r'\((\w+)\)'),
+                extra_types={'json': anyjson.loads},
+                override_types={'tuple': 'json',
+                                'list': 'json',
+                                'dict': 'json'}):
         from celery.app.defaults import Option, NAMESPACES
         namespace = namespace.upper()
         typemap = dict(Option.typemap, **extra_types)
@@ -154,7 +162,7 @@ class BaseLoader(object):
             ## find key/value
             # ns.key=value|ns_key=value (case insensitive)
             key, value = arg.split('=', 1)
-            key = key.upper().replace(".", "_")
+            key = key.upper().replace('.', '_')
 
             ## find namespace.
             # .key=value|_key=value expands to default namespace.
@@ -164,7 +172,7 @@ class BaseLoader(object):
                 # find namespace part of key
                 ns, key = key.split('_', 1)
 
-            ns_key = (ns and ns + "_" or "") + key
+            ns_key = (ns and ns + '_' or '') + key
 
             # (type)value makes cast to custom type.
             cast = re_type.match(value)
@@ -178,7 +186,7 @@ class BaseLoader(object):
                     value = NAMESPACES[ns][key].to_python(value)
                 except ValueError, exc:
                     # display key name in error message.
-                    raise ValueError("%r: %s" % (ns_key, exc))
+                    raise ValueError('%r: %s' % (ns_key, exc))
             return ns_key, value
 
         return dict(map(getarg, args))
@@ -208,4 +216,4 @@ class BaseLoader(object):
 
     @cached_property
     def mail(self):
-        return self.import_module("celery.utils.mail")
+        return self.import_module('celery.utils.mail')

@@ -1,11 +1,11 @@
 ========================================
- celery.state
+ celery._state
 ========================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.state
+.. currentmodule:: celery._state
 
-.. automodule:: celery.state
+.. automodule:: celery._state
     :members:
     :undoc-members:

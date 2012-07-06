@@ -44,8 +44,8 @@ class ev_worker_online_offline(replay):
 
     def setup(self):
         self.events = [
-            Event("worker-online", hostname="utest1"),
-            Event("worker-offline", hostname="utest1"),
+            Event('worker-online', hostname='utest1'),
+            Event('worker-offline', hostname='utest1'),
         ]
 
 
@@ -53,9 +53,9 @@ class ev_worker_heartbeats(replay):
 
     def setup(self):
         self.events = [
-            Event("worker-heartbeat", hostname="utest1",
+            Event('worker-heartbeat', hostname='utest1',
                 timestamp=time() - HEARTBEAT_EXPIRE_WINDOW * 2),
-            Event("worker-heartbeat", hostname="utest1"),
+            Event('worker-heartbeat', hostname='utest1'),
         ]
 
 
@@ -64,17 +64,17 @@ class ev_task_states(replay):
     def setup(self):
         tid = self.tid = uuid()
         self.events = [
-            Event("task-received", uuid=tid, name="task1",
-                args="(2, 2)", kwargs="{'foo': 'bar'}",
-                retries=0, eta=None, hostname="utest1"),
-            Event("task-started", uuid=tid, hostname="utest1"),
-            Event("task-revoked", uuid=tid, hostname="utest1"),
-            Event("task-retried", uuid=tid, exception="KeyError('bar')",
-                traceback="line 2 at main", hostname="utest1"),
-            Event("task-failed", uuid=tid, exception="KeyError('foo')",
-                traceback="line 1 at main", hostname="utest1"),
-            Event("task-succeeded", uuid=tid, result="4",
-                runtime=0.1234, hostname="utest1"),
+            Event('task-received', uuid=tid, name='task1',
+                args='(2, 2)', kwargs="{'foo': 'bar'}",
+                retries=0, eta=None, hostname='utest1'),
+            Event('task-started', uuid=tid, hostname='utest1'),
+            Event('task-revoked', uuid=tid, hostname='utest1'),
+            Event('task-retried', uuid=tid, exception="KeyError('bar')",
+                traceback='line 2 at main', hostname='utest1'),
+            Event('task-failed', uuid=tid, exception="KeyError('foo')",
+                traceback='line 1 at main', hostname='utest1'),
+            Event('task-succeeded', uuid=tid, result='4',
+                runtime=0.1234, hostname='utest1'),
         ]
 
 
@@ -82,35 +82,35 @@ class ev_snapshot(replay):
 
     def setup(self):
         self.events = [
-            Event("worker-online", hostname="utest1"),
-            Event("worker-online", hostname="utest2"),
-            Event("worker-online", hostname="utest3"),
+            Event('worker-online', hostname='utest1'),
+            Event('worker-online', hostname='utest2'),
+            Event('worker-online', hostname='utest3'),
         ]
         for i in range(20):
-            worker = not i % 2 and "utest2" or "utest1"
-            type = not i % 2 and "task2" or "task1"
-            self.events.append(Event("task-received", name=type,
+            worker = not i % 2 and 'utest2' or 'utest1'
+            type = not i % 2 and 'task2' or 'task1'
+            self.events.append(Event('task-received', name=type,
                           uuid=uuid(), hostname=worker))
 
 
 class test_Worker(Case):
 
     def test_survives_missing_timestamp(self):
-        worker = Worker(hostname="foo")
+        worker = Worker(hostname='foo')
         worker.on_heartbeat(timestamp=None)
         self.assertEqual(worker.heartbeats, [])
 
     def test_repr(self):
-        self.assertTrue(repr(Worker(hostname="foo")))
+        self.assertTrue(repr(Worker(hostname='foo')))
 
 
 class test_Task(Case):
 
     def test_info(self):
-        task = Task(uuid="abcdefg",
-                    name="tasks.add",
-                    args="(2, 2)",
-                    kwargs="{}",
+        task = Task(uuid='abcdefg',
+                    name='tasks.add',
+                    args='(2, 2)',
+                    kwargs='{}',
                     retries=2,
                     result=42,
                     eta=1,
@@ -123,23 +123,23 @@ class test_Task(Case):
         self.assertEqual(sorted(list(task._info_fields)),
                               sorted(task.info().keys()))
 
-        self.assertEqual(sorted(list(task._info_fields + ("received", ))),
-                              sorted(task.info(extra=("received", ))))
+        self.assertEqual(sorted(list(task._info_fields + ('received', ))),
+                              sorted(task.info(extra=('received', ))))
 
-        self.assertEqual(sorted(["args", "kwargs"]),
-                         sorted(task.info(["args", "kwargs"]).keys()))
+        self.assertEqual(sorted(['args', 'kwargs']),
+                         sorted(task.info(['args', 'kwargs']).keys()))
 
     def test_ready(self):
-        task = Task(uuid="abcdefg",
-                    name="tasks.add")
+        task = Task(uuid='abcdefg',
+                    name='tasks.add')
         task.on_received(timestamp=time())
         self.assertFalse(task.ready)
         task.on_succeeded(timestamp=time())
         self.assertTrue(task.ready)
 
     def test_sent(self):
-        task = Task(uuid="abcdefg",
-                    name="tasks.add")
+        task = Task(uuid='abcdefg',
+                    name='tasks.add')
         task.on_sent(timestamp=time())
         self.assertEqual(task.state, states.PENDING)
 
@@ -147,15 +147,15 @@ class test_Task(Case):
         task = Task()
         task.on_failed(timestamp=time())
         task.on_started(timestamp=time())
-        task.on_received(timestamp=time(), name="tasks.add", args=(2, 2))
+        task.on_received(timestamp=time(), name='tasks.add', args=(2, 2))
         self.assertEqual(task.state, states.FAILURE)
-        self.assertEqual(task.name, "tasks.add")
+        self.assertEqual(task.name, 'tasks.add')
         self.assertTupleEqual(task.args, (2, 2))
         task.on_retried(timestamp=time())
         self.assertEqual(task.state, states.RETRY)
 
     def test_repr(self):
-        self.assertTrue(repr(Task(uuid="xxx", name="tasks.add")))
+        self.assertTrue(repr(Task(uuid='xxx', name='tasks.add')))
 
 
 class test_State(Case):
@@ -167,24 +167,24 @@ class test_State(Case):
         r = ev_worker_online_offline(State())
         r.next()
         self.assertTrue(r.state.alive_workers())
-        self.assertTrue(r.state.workers["utest1"].alive)
+        self.assertTrue(r.state.workers['utest1'].alive)
         r.play()
         self.assertFalse(r.state.alive_workers())
-        self.assertFalse(r.state.workers["utest1"].alive)
+        self.assertFalse(r.state.workers['utest1'].alive)
 
     def test_itertasks(self):
         s = State()
-        s.tasks = {"a": "a", "b": "b", "c": "c", "d": "d"}
+        s.tasks = {'a': 'a', 'b': 'b', 'c': 'c', 'd': 'd'}
         self.assertEqual(len(list(s.itertasks(limit=2))), 2)
 
     def test_worker_heartbeat_expire(self):
         r = ev_worker_heartbeats(State())
         r.next()
         self.assertFalse(r.state.alive_workers())
-        self.assertFalse(r.state.workers["utest1"].alive)
+        self.assertFalse(r.state.workers['utest1'].alive)
         r.play()
         self.assertTrue(r.state.alive_workers())
-        self.assertTrue(r.state.workers["utest1"].alive)
+        self.assertTrue(r.state.workers['utest1'].alive)
 
     def test_task_states(self):
         r = ev_task_states(State())
@@ -196,49 +196,49 @@ class test_State(Case):
         self.assertEqual(task.state, states.RECEIVED)
         self.assertTrue(task.received)
         self.assertEqual(task.timestamp, task.received)
-        self.assertEqual(task.worker.hostname, "utest1")
+        self.assertEqual(task.worker.hostname, 'utest1')
 
         # STARTED
         r.next()
-        self.assertTrue(r.state.workers["utest1"].alive,
-                "any task event adds worker heartbeat")
+        self.assertTrue(r.state.workers['utest1'].alive,
+                'any task event adds worker heartbeat')
         self.assertEqual(task.state, states.STARTED)
         self.assertTrue(task.started)
         self.assertEqual(task.timestamp, task.started)
-        self.assertEqual(task.worker.hostname, "utest1")
+        self.assertEqual(task.worker.hostname, 'utest1')
 
         # REVOKED
         r.next()
         self.assertEqual(task.state, states.REVOKED)
         self.assertTrue(task.revoked)
         self.assertEqual(task.timestamp, task.revoked)
-        self.assertEqual(task.worker.hostname, "utest1")
+        self.assertEqual(task.worker.hostname, 'utest1')
 
         # RETRY
         r.next()
         self.assertEqual(task.state, states.RETRY)
         self.assertTrue(task.retried)
         self.assertEqual(task.timestamp, task.retried)
-        self.assertEqual(task.worker.hostname, "utest1")
+        self.assertEqual(task.worker.hostname, 'utest1')
         self.assertEqual(task.exception, "KeyError('bar')")
-        self.assertEqual(task.traceback, "line 2 at main")
+        self.assertEqual(task.traceback, 'line 2 at main')
 
         # FAILURE
         r.next()
         self.assertEqual(task.state, states.FAILURE)
         self.assertTrue(task.failed)
         self.assertEqual(task.timestamp, task.failed)
-        self.assertEqual(task.worker.hostname, "utest1")
+        self.assertEqual(task.worker.hostname, 'utest1')
         self.assertEqual(task.exception, "KeyError('foo')")
-        self.assertEqual(task.traceback, "line 1 at main")
+        self.assertEqual(task.traceback, 'line 1 at main')
 
         # SUCCESS
         r.next()
         self.assertEqual(task.state, states.SUCCESS)
         self.assertTrue(task.succeeded)
         self.assertEqual(task.timestamp, task.succeeded)
-        self.assertEqual(task.worker.hostname, "utest1")
-        self.assertEqual(task.result, "4")
+        self.assertEqual(task.worker.hostname, 'utest1')
+        self.assertEqual(task.result, '4')
         self.assertEqual(task.runtime, 0.1234)
 
     def assertStateEmpty(self, state):
@@ -298,7 +298,7 @@ class test_State(Case):
     def test_task_types(self):
         r = ev_snapshot(State())
         r.play()
-        self.assertEqual(sorted(r.state.task_types()), ["task1", "task2"])
+        self.assertEqual(sorted(r.state.task_types()), ['task1', 'task2'])
 
     def test_tasks_by_timestamp(self):
         r = ev_snapshot(State())
@@ -308,8 +308,8 @@ class test_State(Case):
     def test_tasks_by_type(self):
         r = ev_snapshot(State())
         r.play()
-        self.assertEqual(len(r.state.tasks_by_type("task1")), 10)
-        self.assertEqual(len(r.state.tasks_by_type("task2")), 10)
+        self.assertEqual(len(r.state.tasks_by_type('task1')), 10)
+        self.assertEqual(len(r.state.tasks_by_type('task2')), 10)
 
     def test_alive_workers(self):
         r = ev_snapshot(State())
@@ -319,27 +319,27 @@ class test_State(Case):
     def test_tasks_by_worker(self):
         r = ev_snapshot(State())
         r.play()
-        self.assertEqual(len(r.state.tasks_by_worker("utest1")), 10)
-        self.assertEqual(len(r.state.tasks_by_worker("utest2")), 10)
+        self.assertEqual(len(r.state.tasks_by_worker('utest1')), 10)
+        self.assertEqual(len(r.state.tasks_by_worker('utest2')), 10)
 
     def test_survives_unknown_worker_event(self):
         s = State()
-        s.worker_event("worker-unknown-event-xxx", {"foo": "bar"})
-        s.worker_event("worker-unknown-event-xxx", {"hostname": "xxx",
-                                                    "foo": "bar"})
+        s.worker_event('worker-unknown-event-xxx', {'foo': 'bar'})
+        s.worker_event('worker-unknown-event-xxx', {'hostname': 'xxx',
+                                                    'foo': 'bar'})
 
     def test_survives_unknown_task_event(self):
         s = State()
-        s.task_event("task-unknown-event-xxx", {"foo": "bar",
-                                                "uuid": "x",
-                                                "hostname": "y"})
+        s.task_event('task-unknown-event-xxx', {'foo': 'bar',
+                                                'uuid': 'x',
+                                                'hostname': 'y'})
 
     def test_callback(self):
         scratch = {}
 
         def callback(state, event):
-            scratch["recv"] = True
+            scratch['recv'] = True
 
         s = State(callback=callback)
-        s.event({"type": "worker-online"})
-        self.assertTrue(scratch.get("recv"))
+        s.event({'type': 'worker-online'})
+        self.assertTrue(scratch.get('recv'))

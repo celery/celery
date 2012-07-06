@@ -1,10 +1,14 @@
 Every contribution to Celery is as important to us,
 as every coin in the money bin is to Scrooge McDuck.
 
+The first commit to the Celery codebase was made on
+Fri Apr 24 13:30:00 2009 +0200, and has since
+then been improved by many contributors.
+
 Everyone who have ever contributed to Celery should be in
 this list, but in a recent policy change it has been decided
 that everyone must add themselves here, and not be added
-by others, so it's currently incomplete, waiting for everyone
+by others, so it's currently incomplete waiting for everyone
 to add their names.
 
 The full list of authors can be found in docs/AUTHORS.txt.
@@ -98,3 +102,9 @@ David Miller 2012/06/11
 Matthew Morrison, 2012/06/11
 Leo Dirac, 2012/06/11
 Mark Thurman, 2012/06/11
+Dimitrios Kouzis-Loukas, 2012/06/13
+Steven Skoczen, 2012/06/17
+Loren Abrams, 2012/06/19
+Eran Rundstein, 2012/06/24
+John Watson, 2012/06/27
+David Markey, 2012/07/05

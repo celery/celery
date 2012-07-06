@@ -32,7 +32,7 @@ Running the tests using Python 2.5
 
 ::
 
-    $ pip -E $VIRTUAL_ENV install -U -r contrib/requirements/py25.txt
-    $ pip -E $VIRTUAL_ENV install -U -r contrib/requirements/default.txt
-    $ pip -E $VIRTUAL_ENV install -U -r contrib/requirements/test.txt
+    $ pip -E $VIRTUAL_ENV install -U -r requirements/py25.txt
+    $ pip -E $VIRTUAL_ENV install -U -r requirements/default.txt
+    $ pip -E $VIRTUAL_ENV install -U -r requirements/test.txt
 

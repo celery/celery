@@ -24,7 +24,7 @@ from celery.utils.imports import module_file
 from celery.utils.log import get_logger
 from celery.utils.threads import bgThread, Event
 
-from .abstract import StartStopComponent
+from .bootsteps import StartStopComponent
 
 try:                        # pragma: no cover
     import pyinotify
@@ -37,8 +37,8 @@ logger = get_logger(__name__)
 
 
 class WorkerComponent(StartStopComponent):
-    name = "worker.autoreloader"
-    requires = ("pool", )
+    name = 'worker.autoreloader'
+    requires = ('pool', )
 
     def __init__(self, w, autoreload=None, **kwargs):
         self.enabled = w.autoreload = autoreload
@@ -54,14 +54,14 @@ class WorkerComponent(StartStopComponent):
         return w.autoreloader
 
     def create(self, w):
-        if hasattr(select, "kqueue") and w.use_eventloop:
+        if hasattr(select, 'kqueue') and w.use_eventloop:
             return self.create_ev(w)
         return self.create_threaded(w)
 
 
-def file_hash(filename, algorithm="md5"):
+def file_hash(filename, algorithm='md5'):
     hobj = hashlib.new(algorithm)
-    with open(filename, "rb") as f:
+    with open(filename, 'rb') as f:
         for chunk in iter(lambda: f.read(2 ** 20), ''):
             hobj.update(chunk)
     return hobj.digest()
@@ -78,7 +78,7 @@ class BaseMonitor(object):
         self.shutdown_event = shutdown_event or Event()
 
     def start(self):
-        raise NotImplementedError("Subclass responsibility")
+        raise NotImplementedError('Subclass responsibility')
 
     def stop(self):
         pass
@@ -199,18 +199,18 @@ class InotifyMonitor(_ProcessEvent):
 
 def default_implementation():
     # kqueue monitor not working properly at this time.
-    if hasattr(select, "kqueue"):
-        return "kqueue"
-    if sys.platform.startswith("linux") and pyinotify:
-        return "inotify"
+    if hasattr(select, 'kqueue'):
+        return 'kqueue'
+    if sys.platform.startswith('linux') and pyinotify:
+        return 'inotify'
     else:
-        return "stat"
+        return 'stat'
 
-implementations = {"kqueue": KQueueMonitor,
-                   "inotify": InotifyMonitor,
-                   "stat": StatMonitor}
+implementations = {'kqueue': KQueueMonitor,
+                   'inotify': InotifyMonitor,
+                   'stat': StatMonitor}
 Monitor = implementations[
-            os.environ.get("CELERYD_FSNOTIFY") or default_implementation()]
+            os.environ.get('CELERYD_FSNOTIFY') or default_implementation()]
 
 
 class Autoreloader(bgThread):
@@ -225,12 +225,16 @@ class Autoreloader(bgThread):
         self.options = options
         self._monitor = None
         self._hashes = None
+        self.file_to_module = {}
 
     def on_init(self):
-        files = [module_file(sys.modules[m]) for m in self.modules]
-        self._hashes = dict((f, file_hash(f)) for f in files)
-        self._monitor = self.Monitor(files, self.on_change,
+        files = self.file_to_module
+        files.update(dict((module_file(sys.modules[m]), m)
+                        for m in self.modules))
+
+        self._monitor = self.Monitor(files.keys(), self.on_change,
                 shutdown_event=self._is_shutdown, **self.options)
+        self._hashes = dict([(f, file_hash(f)) for f in files])
 
     def on_poll_init(self, hub):
         if self._monitor is None:
@@ -259,8 +263,8 @@ class Autoreloader(bgThread):
     def on_change(self, files):
         modified = [f for f in files if self._maybe_modified(f)]
         if modified:
-            names = [self._module_name(module) for module in modified]
-            logger.info("Detected modified modules: %r", names)
+            names = [self.file_to_module[module] for module in modified]
+            logger.info('Detected modified modules: %r', names)
             self._reload(names)
 
     def _reload(self, modules):
@@ -269,7 +273,3 @@ class Autoreloader(bgThread):
     def stop(self):
         if self._monitor:
             self._monitor.stop()
-
-    @staticmethod
-    def _module_name(path):
-        return os.path.splitext(os.path.basename(path))[0]

@@ -50,11 +50,12 @@ this default or the default retry policy see
 :setting:`CELERY_TASK_PUBLISH_RETRY` and
 :setting:`CELERY_TASK_PUBLISH_RETRY_POLICY`.
 
-AMQP Result Backend: Exchange is no longer *auto delete*
---------------------------------------------------------
+Rabbit Result Backend: Exchange is no longer *auto delete*
+----------------------------------------------------------
 
-The exchange used for results used to have the *auto_delete* flag set,
-that could result in a race condition leading to an annoying warning.
+The exchange used for results in the Rabbit (AMQP) result backend
+used to have the *auto_delete* flag set, which could result in a
+race condition leading to an annoying warning.
 
 .. admonition:: For RabbitMQ users
 
@@ -69,7 +70,7 @@ that could result in a race condition leading to an annoying warning.
     As an alternative to deleting the old exchange you can
     configure a new name for the exchange::
 
-        CELERY_RESULT_EXCHANGE = "celeryresults2"
+        CELERY_RESULT_EXCHANGE = 'celeryresults2'
 
     But you have to make sure that all clients and workers
     use this new setting, so they are updated to use the same
@@ -152,7 +153,7 @@ Deprecations
 
 * The :mod:`celery.decorators` module has changed status
   from pending deprecation to deprecated, and is scheduled for removal
-  in version 3.0.  The ``celery.task`` module must be used instead.
+  in version 4.0.  The ``celery.task`` module must be used instead.
 
 .. _v250-news:
 
@@ -269,22 +270,22 @@ for the ``tasks.add`` task:
 
 .. code-block:: python
 
-    CELERY_ANNOTATIONS = {"tasks.add": {"rate_limit": "10/s"}}
+    CELERY_ANNOTATIONS = {'tasks.add': {'rate_limit': '10/s'}}
 
 or change the same for all tasks:
 
 .. code-block:: python
 
-   CELERY_ANNOTATIONS = {"*": {"rate_limit": "10/s"}}
+   CELERY_ANNOTATIONS = {'*': {'rate_limit': '10/s'}}
 
 You can change methods too, for example the ``on_failure`` handler:
 
 .. code-block:: python
 
     def my_on_failure(self, exc, task_id, args, kwargs, einfo):
-        print("Oh no! Task failed: %r" % (exc, ))
+        print('Oh no! Task failed: %r' % (exc, ))
 
-    CELERY_ANNOTATIONS = {"*": {"on_failure": my_on_failure}}
+    CELERY_ANNOTATIONS = {'*': {'on_failure': my_on_failure}}
 
 If you need more flexibility then you can also create objects
 that filter for tasks to annotate:
@@ -294,8 +295,8 @@ that filter for tasks to annotate:
     class MyAnnotate(object):
 
         def annotate(self, task):
-            if task.name.startswith("tasks."):
-                return {"rate_limit": "10/s"}
+            if task.name.startswith('tasks.'):
+                return {'rate_limit': '10/s'}
 
     CELERY_ANNOTATIONS = (MyAnnotate(), {...})
 
@@ -340,9 +341,9 @@ In Other News
 
     Contributed by Dan McGee.
 
-- Adds Chord support for the AMQP backend
+- Adds Chord support for the Rabbit result backend (amqp)
 
-    The AMQP backend can now use the fallback chord solution.
+    The Rabbit result backend can now use the fallback chord solution.
 
 - Sending :sig:`QUIT` to celeryd will now cause it cold terminate.
 

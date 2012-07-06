@@ -27,8 +27,7 @@ import re
 import time
 import urlparse
 
-from celery.task import task
-from celery.task.sets import TaskSet
+from celery import task, group
 from eventlet import Timeout
 from eventlet.green import urllib2
 
@@ -41,12 +40,12 @@ url_regex = re.compile(
 
 def domain(url):
     """Returns the domain part of an URL."""
-    return urlparse.urlsplit(url)[1].split(":")[0]
+    return urlparse.urlsplit(url)[1].split(':')[0]
 
 
-@task(ignore_result=True, serializer="pickle", compression="zlib")
+@task(ignore_result=True, serializer='pickle', compression='zlib')
 def crawl(url, seen=None):
-    print("crawling: %r" % (url, ))
+    print('crawling: %r' % (url, ))
     if not seen:
         seen = BloomFilter(capacity=50000, error_rate=0.0001)
 
@@ -65,5 +64,5 @@ def crawl(url, seen=None):
             wanted_urls.append(url)
             seen.add(url)
 
-    subtasks = TaskSet(crawl.subtask((url, seen)) for url in wanted_urls)
+    subtasks = group(crawl.s(url, seen) for url in wanted_urls)
     subtasks.apply_async()

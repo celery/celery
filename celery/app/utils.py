@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+    celery.app.utils
+    ~~~~~~~~~~~~~~~~
+
+    App utilities: Compat settings, bugreport tool, pickling apps.
+
+"""
 from __future__ import absolute_import
 
 import os
@@ -10,8 +18,7 @@ from celery.utils.imports import qualname
 
 from .defaults import find
 
-SETTINGS_INFO = """%s %s"""
-
+#: Format used to generate bugreport information.
 BUGREPORT_INFO = """
 software -> celery:%(celery_v)s kombu:%(kombu_v)s py:%(py_v)s
             billiard:%(billiard_v)s %(driver_v)s
@@ -24,18 +31,16 @@ settings -> transport:%(transport)s results:%(results)s
 
 
 class Settings(datastructures.ConfigurationView):
+    """Celery settings object."""
 
     @property
     def CELERY_RESULT_BACKEND(self):
-        """Resolves deprecated alias ``CELERY_BACKEND``."""
-        return self.first("CELERY_RESULT_BACKEND", "CELERY_BACKEND")
+        return self.first('CELERY_RESULT_BACKEND', 'CELERY_BACKEND')
 
     @property
     def BROKER_TRANSPORT(self):
-        """Resolves compat aliases :setting:`BROKER_BACKEND`
-        and :setting:`CARROT_BACKEND`."""
-        return self.first("BROKER_TRANSPORT",
-                          "BROKER_BACKEND", "CARROT_BACKEND")
+        return self.first('BROKER_TRANSPORT',
+                          'BROKER_BACKEND', 'CARROT_BACKEND')
 
     @property
     def BROKER_BACKEND(self):
@@ -44,25 +49,49 @@ class Settings(datastructures.ConfigurationView):
 
     @property
     def BROKER_HOST(self):
-        return (os.environ.get("CELERY_BROKER_URL") or
-                self.first("BROKER_URL", "BROKER_HOST"))
+        return (os.environ.get('CELERY_BROKER_URL') or
+                self.first('BROKER_URL', 'BROKER_HOST'))
 
     def without_defaults(self):
+        """Returns the current configuration, but without defaults."""
         # the last stash is the default settings, so just skip that
         return Settings({}, self._order[:-1])
 
-    def find_value_for_key(self, name, namespace="celery"):
-        return self.get_by_parts(*self.find_option(name, namespace)[:-1])
+    def find_option(self, name, namespace='celery'):
+        """Search for option by name.
 
-    def find_option(self, name, namespace="celery"):
+        Will return ``(namespace, option_name, Option)`` tuple, e.g.::
+
+            >>> celery.conf.find_option('disable_rate_limits')
+            ('CELERY', 'DISABLE_RATE_LIMITS',
+             <Option: type->bool default->False>))
+
+        :param name: Name of option, cannot be partial.
+        :keyword namespace: Preferred namespace (``CELERY`` by default).
+
+        """
         return find(name, namespace)
 
+    def find_value_for_key(self, name, namespace='celery'):
+        """Shortcut to ``get_by_parts(*find_option(name)[:-1])``"""
+        return self.get_by_parts(*self.find_option(name, namespace)[:-1])
+
     def get_by_parts(self, *parts):
-        return self["_".join(filter(None, parts))]
+        """Returns the current value for setting specified as a path.
+
+        Example::
+
+            >>> celery.conf.get_by_parts('CELERY', 'DISABLE_RATE_LIMITS')
+            False
+
+        """
+        return self['_'.join(filter(None, parts))]
 
     def humanize(self):
-        return "\n".join(SETTINGS_INFO % (key + ':', pretty(value, width=50))
-                    for key, value in self.without_defaults().iteritems())
+        """Returns a human readable string showing changes to the
+        configuration."""
+        return '\n'.join('%s %s' % (key + ':', pretty(value, width=50))
+                        for key, value in self.without_defaults().iteritems())
 
 
 class AppPickler(object):
@@ -75,7 +104,7 @@ class AppPickler(object):
         return app
 
     def prepare(self, app, **kwargs):
-        app.conf.update(kwargs["changes"])
+        app.conf.update(kwargs['changes'])
 
     def build_kwargs(self, *args):
         return self.build_standard_kwargs(*args)
@@ -96,27 +125,28 @@ def _unpickle_app(cls, pickler, *args):
 
 
 def bugreport(app):
+    """Returns a string containing information useful in bug reports."""
     import billiard
     import celery
     import kombu
 
     try:
-        trans = app.broker_connection().transport
-        driver_v = "%s:%s" % (trans.driver_name, trans.driver_version())
+        trans = app.connection().transport
+        driver_v = '%s:%s' % (trans.driver_name, trans.driver_version())
     except Exception:
-        driver_v = ""
+        driver_v = ''
 
     return BUGREPORT_INFO % {
-        "system": _platform.system(),
-        "arch": ', '.join(filter(None, _platform.architecture())),
-        "py_i": platforms.pyimplementation(),
-        "celery_v": celery.__version__,
-        "kombu_v": kombu.__version__,
-        "billiard_v": billiard.__version__,
-        "py_v": _platform.python_version(),
-        "driver_v": driver_v,
-        "transport": app.conf.BROKER_TRANSPORT or "amqp",
-        "results": app.conf.CELERY_RESULT_BACKEND or "disabled",
-        "human_settings": app.conf.humanize(),
-        "loader": qualname(app.loader.__class__),
+        'system': _platform.system(),
+        'arch': ', '.join(filter(None, _platform.architecture())),
+        'py_i': platforms.pyimplementation(),
+        'celery_v': celery.VERSION_BANNER,
+        'kombu_v': kombu.__version__,
+        'billiard_v': billiard.__version__,
+        'py_v': _platform.python_version(),
+        'driver_v': driver_v,
+        'transport': app.conf.BROKER_TRANSPORT or 'amqp',
+        'results': app.conf.CELERY_RESULT_BACKEND or 'disabled',
+        'human_settings': app.conf.humanize(),
+        'loader': qualname(app.loader.__class__),
     }

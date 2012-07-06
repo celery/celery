@@ -17,5 +17,6 @@ Celery supports several message transport alternatives.
     sqlalchemy
     django
     mongodb
+    sqs
     couchdb
     beanstalk

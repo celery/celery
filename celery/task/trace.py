@@ -6,9 +6,6 @@
     This module defines how the task execution is traced:
     errors are recorded, handlers are applied and so on.
 
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
-
 """
 from __future__ import absolute_import
 
@@ -28,7 +25,7 @@ from kombu.utils import kwdict
 
 from celery import current_app
 from celery import states, signals
-from celery.state import _task_stack, default_app
+from celery._state import _task_stack, default_app
 from celery.app.task import Task as BaseTask, Context
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import RetryTaskError
@@ -78,7 +75,7 @@ def task_has_custom(task, attr):
 
 
 class TraceInfo(object):
-    __slots__ = ("state", "retval")
+    __slots__ = ('state', 'retval')
 
     def __init__(self, state, retval=None):
         self.state = state
@@ -96,20 +93,16 @@ class TraceInfo(object):
 
     def handle_retry(self, task, store_errors=True):
         """Handle retry exception."""
-        # Create a simpler version of the RetryTaskError that stringifies
-        # the original exception instead of including the exception instance.
-        # This is for reporting the retry in logs, email etc, while
-        # guaranteeing pickleability.
+        # the exception raised is the RetryTaskError semi-predicate,
+        # and it's exc' attribute is the original exception raised (if any).
         req = task.request
         type_, _, tb = sys.exc_info()
         try:
-            exc = self.retval
-            message, orig_exc = exc.args
-            expanded_msg = "%s: %s" % (message, str(orig_exc))
-            einfo = ExceptionInfo((type_, type_(expanded_msg, None), tb))
+            pred = self.retval
+            einfo = ExceptionInfo((type_, pred, tb))
             if store_errors:
-                task.backend.mark_as_retry(req.id, orig_exc, einfo.traceback)
-            task.on_retry(exc, req.id, req.args, req.kwargs, einfo)
+                task.backend.mark_as_retry(req.id, pred.exc, einfo.traceback)
+            task.on_retry(pred.exc, req.id, req.args, req.kwargs, einfo)
             return einfo
         finally:
             del(tb)
@@ -139,7 +132,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     # If the task doesn't define a custom __call__ method
     # we optimize it away by simply calling the run method directly,
     # saving the extra method call and a line less in the stack trace.
-    fun = task if task_has_custom(task, "__call__") else task.run
+    fun = task if task_has_custom(task, '__call__') else task.run
 
     loader = loader or current_app.loader
     backend = task.backend
@@ -154,9 +147,9 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
 
     task_on_success = None
     task_after_return = None
-    if task_has_custom(task, "on_success"):
+    if task_has_custom(task, 'on_success'):
         task_on_success = task.on_success
-    if task_has_custom(task, "after_return"):
+    if task_has_custom(task, 'after_return'):
         task_after_return = task.after_return
 
     store_result = backend.store_result
@@ -189,8 +182,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                 args=args, kwargs=kwargs)
                 loader_task_init(uuid, task)
                 if track_started:
-                    store_result(uuid, {"pid": pid,
-                                        "hostname": hostname}, STARTED)
+                    store_result(uuid, {'pid': pid,
+                                        'hostname': hostname}, STARTED)
 
                 # -*- TRACE -*-
                 try:
@@ -251,7 +244,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     except (KeyboardInterrupt, SystemExit, MemoryError):
                         raise
                     except Exception, exc:
-                        _logger.error("Process cleanup failed: %r", exc,
+                        _logger.error('Process cleanup failed: %r', exc,
                                       exc_info=True)
         except Exception, exc:
             if eager:
@@ -276,7 +269,7 @@ def trace_task_ret(task, uuid, args, kwargs, request={}):
 
 
 def eager_trace_task(task, uuid, args, kwargs, request=None, **opts):
-    opts.setdefault("eager", True)
+    opts.setdefault('eager', True)
     return build_tracer(task.name, task, **opts)(
             uuid, args, kwargs, request)
 
@@ -287,7 +280,7 @@ def report_internal_error(task, exc):
         _value = task.backend.prepare_exception(exc)
         exc_info = ExceptionInfo((_type, _value, _tb), internal=True)
         warn(RuntimeWarning(
-            "Exception raised outside body: %r:\n%s" % (
+            'Exception raised outside body: %r:\n%s' % (
                 exc, exc_info.traceback)))
         return exc_info
     finally:

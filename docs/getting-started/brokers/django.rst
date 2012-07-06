@@ -19,11 +19,11 @@ configuration values.
 
 #. Set your broker transport::
 
-    BROKER_URL = "django://"
+    BROKER_URL = 'django://'
 
 #. Add :mod:`djcelery.transport` to `INSTALLED_APPS`::
 
-    INSTALLED_APPS = ("djcelery.transport", )
+    INSTALLED_APPS = ('djcelery.transport', )
 
 #. Sync your database schema::
 

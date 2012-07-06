@@ -20,7 +20,7 @@
     celery.worker.strategy
     celery.worker.autoreload
     celery.worker.autoscale
-    celery.worker.abstract
+    celery.worker.bootsteps
     celery.concurrency
     celery.concurrency.solo
     celery.concurrency.processes
@@ -37,7 +37,6 @@
     celery.backends.mongodb
     celery.backends.redis
     celery.backends.cassandra
-    celery.state
     celery.task.trace
     celery.app.abstract
     celery.app.annotations
@@ -67,3 +66,4 @@
     celery.utils.dispatch.signal
     celery.utils.dispatch.saferef
     celery.platforms
+    celery._state

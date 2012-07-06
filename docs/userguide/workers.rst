@@ -173,16 +173,15 @@ Some remote control commands also have higher-level interfaces using
 
 Sending the :control:`rate_limit` command and keyword arguments::
 
-    >>> from celery.task.control import broadcast
-    >>> celery.control.broadcast("rate_limit",
-    ...                          arguments={"task_name": "myapp.mytask",
-    ...                                     "rate_limit": "200/m"})
+    >>> celery.control.broadcast('rate_limit',
+    ...                          arguments={'task_name': 'myapp.mytask',
+    ...                                     'rate_limit': '200/m'})
 
 This will send the command asynchronously, without waiting for a reply.
 To request a reply you have to use the `reply` argument::
 
-    >>> celery.control.broadcast("rate_limit", {
-    ...     "task_name": "myapp.mytask", "rate_limit": "200/m"}, reply=True)
+    >>> celery.control.broadcast('rate_limit', {
+    ...     'task_name': 'myapp.mytask', 'rate_limit': '200/m'}, reply=True)
     [{'worker1.example.com': 'New rate limit set successfully'},
      {'worker2.example.com': 'New rate limit set successfully'},
      {'worker3.example.com': 'New rate limit set successfully'}]
@@ -190,10 +189,10 @@ To request a reply you have to use the `reply` argument::
 Using the `destination` argument you can specify a list of workers
 to receive the command::
 
-    >>> celery.control.broadcast("rate_limit", {
-    ...     "task_name": "myapp.mytask",
-    ...     "rate_limit": "200/m"}, reply=True,
-    ...                             destination=["worker1.example.com"])
+    >>> celery.control.broadcast('rate_limit', {
+    ...     'task_name': 'myapp.mytask',
+    ...     'rate_limit': '200/m'}, reply=True,
+    ...                             destination=['worker1.example.com'])
     [{'worker1.example.com': 'New rate limit set successfully'}]
 
 
@@ -227,13 +226,13 @@ Terminating a task also revokes it.
 
 ::
 
-    >>> celery.control.revoke("d9078da5-9915-40a0-bfa1-392c7bde42ed")
+    >>> celery.control.revoke('d9078da5-9915-40a0-bfa1-392c7bde42ed')
 
-    >>> celery.control.revoke("d9078da5-9915-40a0-bfa1-392c7bde42ed",
+    >>> celery.control.revoke('d9078da5-9915-40a0-bfa1-392c7bde42ed',
     ...                       terminate=True)
 
-    >>> celery.control.revoke("d9078da5-9915-40a0-bfa1-392c7bde42ed",
-    ...                       terminate=True, signal="SIGKILL")
+    >>> celery.control.revoke('d9078da5-9915-40a0-bfa1-392c7bde42ed',
+    ...                       terminate=True, signal='SIGKILL')
 
 .. _worker-persistent-revokes:
 
@@ -313,7 +312,7 @@ Example changing the time limit for the ``tasks.crawl_the_web`` task
 to have a soft time limit of one minute, and a hard time limit of
 two minutes::
 
-    >>> celery.control.time_limit("tasks.crawl_the_web",
+    >>> celery.control.time_limit('tasks.crawl_the_web',
                                   soft=60, hard=120, reply=True)
     [{'worker1.example.com': {'ok': 'time limits set successfully'}}]
 
@@ -332,13 +331,13 @@ Changing rate-limits at runtime
 Example changing the rate limit for the `myapp.mytask` task to accept
 200 tasks a minute on all servers::
 
-    >>> celery.control.rate_limit("myapp.mytask", "200/m")
+    >>> celery.control.rate_limit('myapp.mytask', '200/m')
 
 Example changing the rate limit on a single host by specifying the
 destination host name::
 
-    >>> celery.control.rate_limit("myapp.mytask", "200/m",
-    ...            destination=["worker1.example.com"])
+    >>> celery.control.rate_limit('myapp.mytask', '200/m',
+    ...            destination=['worker1.example.com'])
 
 .. warning::
 
@@ -391,6 +390,130 @@ You can also define your own rules for the autoscaler by subclassing
 :class:`~celery.worker.autoscaler.Autoscaler`.
 Some ideas for metrics include load average or the amount of memory available.
 You can specify a custom autoscaler with the :setting:`CELERYD_AUTOSCALER` setting.
+
+.. _worker-queues:
+
+Queues
+======
+
+A worker instance can consume from any number of queues.
+By default it will consume from all queues defined in the
+:setting:`CELERY_QUEUES` setting (which if not specified defaults to the
+queue named ``celery``).
+
+You can specify what queues to consume from at startup,
+by giving a comma separated list of queues to the :option:`-Q` option::
+
+    $ celery worker -l info -Q foo,bar,baz
+
+If the queue name is defined in :setting:`CELERY_QUEUES` it will use that
+configuration, but if it's not defined in the list of queues Celery will
+automatically generate a new queue for you (depending on the
+:setting:`CELERY_CREATE_MISSING_QUEUES` option).
+
+You can also tell the worker to start and stop consuming from a queue at
+runtime using the remote control commands :control:`add_consumer` and
+:control:`cancel_consumer`.
+
+.. control:: add_consumer
+
+Queues: Adding consumers
+------------------------
+
+The :control:`add_consumer` control command will tell one or more workers
+to start consuming from a queue. This operation is idempotent.
+
+To tell all workers in the cluster to start consuming from a queue
+named "``foo``" you can use the :program:`celery control` program::
+
+    $ celery control add_consumer foo
+    -> worker1.local: OK
+        started consuming from u'foo'
+
+If you want to specify a specific worker you can use the
+:option:`--destination`` argument::
+
+    $ celery control add_consumer foo -d worker1.local
+
+The same can be accomplished dynamically using the :meth:`@control.add_consumer` method::
+
+    >>> myapp.control.add_consumer('foo', reply=True)
+    [{u'worker1.local': {u'ok': u"already consuming from u'foo'"}}]
+
+    >>> myapp.control.add_consumer('foo', reply=True,
+    ...                            destination=['worker1.local'])
+    [{u'worker1.local': {u'ok': u"already consuming from u'foo'"}}]
+
+
+By now we have only used automatic queues, which is only using a queue name.
+If you need more control you can also specify the exchange, routing_key and
+other options::
+
+    >>> myapp.control.add_consumer(
+    ...     queue='baz',
+    ...     exchange='ex',
+    ...     exchange_type='topic',
+    ...     routing_key='media.*',
+    ...     options={
+    ...         'queue_durable': False,
+    ...         'exchange_durable': False,
+    ...     },
+    ...     reply=True,
+    ...     destination=['worker1.local', 'worker2.local'])
+
+
+.. control:: cancel_consumer
+
+Queues: Cancelling consumers
+----------------------------
+
+You can cancel a consumer by queue name using the :control:`cancel_consumer`
+control command.
+
+To force all workers in the cluster to cancel consuming from a queue
+you can use the :program:`celery control` program::
+
+    $ celery control cancel_consumer foo
+
+The :option:`--destination` argument can be used to specify a worker, or a
+list of workers, to act on the command::
+
+    $ celery control cancel_consumer foo -d worker1.local
+
+
+You can also cancel consumers programmatically using the
+:meth:`@control.cancel_consumer` method::
+
+    >>> myapp.control.cancel_consumer('foo', reply=True)
+    [{u'worker1.local': {u'ok': u"no longer consuming from u'foo'"}}]
+
+.. control:: active_queues
+
+Queues: List of active queues
+-----------------------------
+
+You can get a list of queues that a worker consumes from by using
+the :control:`active_queues` control command::
+
+    $ celery inspect active_queues
+    [...]
+
+Like all other remote control commands this also supports the
+:option:`--destination` argument used to specify which workers should
+reply to the request::
+
+    $ celery inspect active_queues -d worker1.local
+    [...]
+
+
+This can also be done programmatically by using the
+:meth:`@control.inspect.active_queues` method::
+
+    >>> myapp.inspect().active_queues()
+    [...]
+
+    >>> myapp.inspect(['worker1.local']).active_queues()
+    [...]
 
 .. _worker-autoreloading:
 
@@ -465,24 +588,23 @@ being imported by the worker processes:
 
 .. code-block:: python
 
-    >>> from celery.task.control import broadcast
-    >>> celery.control.broadcast("pool_restart",
-    ...                          arguments={"modules": ["foo", "bar"]})
+    >>> celery.control.broadcast('pool_restart',
+    ...                          arguments={'modules': ['foo', 'bar']})
 
 Use the ``reload`` argument to reload modules it has already imported:
 
 .. code-block:: python
 
-    >>> celery.control.broadcast("pool_restart",
-    ...                          arguments={"modules": ["foo"],
-    ...                                     "reload": True})
+    >>> celery.control.broadcast('pool_restart',
+    ...                          arguments={'modules': ['foo'],
+    ...                                     'reload': True})
 
 If you don't specify any modules then all known tasks modules will
 be imported/reloaded:
 
 .. code-block:: python
 
-    >>> celery.control.broadcast("pool_restart", arguments={"reload": True})
+    >>> celery.control.broadcast('pool_restart', arguments={'reload': True})
 
 The ``modules`` argument is a list of modules to modify. ``reload``
 specifies whether to reload modules if they have previously been imported.
@@ -520,11 +642,11 @@ and it supports the same commands as the :class:`@Celery.control` interface.
     >>> i = celery.control.inspect()
 
     # Specify multiple nodes to inspect.
-    >>> i = celery.control.inspect(["worker1.example.com",
-                                    "worker2.example.com"])
+    >>> i = celery.control.inspect(['worker1.example.com',
+                                    'worker2.example.com'])
 
     # Specify a single node to inspect.
-    >>> i = celery.control.inspect("worker1.example.com")
+    >>> i = celery.control.inspect('worker1.example.com')
 
 .. _worker-inspect-registered-tasks:
 
@@ -548,10 +670,10 @@ You can get a list of active tasks using
 
     >>> i.active()
     [{'worker1.example.com':
-        [{"name": "tasks.sleeptask",
-          "id": "32666e9b-809c-41fa-8e93-5ae0c80afbbf",
-          "args": "(8,)",
-          "kwargs": "{}"}]}]
+        [{'name': 'tasks.sleeptask',
+          'id': '32666e9b-809c-41fa-8e93-5ae0c80afbbf',
+          'args': '(8,)',
+          'kwargs': '{}'}]}]
 
 .. _worker-inspect-eta-schedule:
 
@@ -563,18 +685,18 @@ You can get a list of tasks waiting to be scheduled by using
 
     >>> i.scheduled()
     [{'worker1.example.com':
-        [{"eta": "2010-06-07 09:07:52", "priority": 0,
-          "request": {
-            "name": "tasks.sleeptask",
-            "id": "1a7980ea-8b19-413e-91d2-0b74f3844c4d",
-            "args": "[1]",
-            "kwargs": "{}"}},
-         {"eta": "2010-06-07 09:07:53", "priority": 0,
-          "request": {
-            "name": "tasks.sleeptask",
-            "id": "49661b9a-aa22-4120-94b7-9ee8031d219d",
-            "args": "[2]",
-            "kwargs": "{}"}}]}]
+        [{'eta': '2010-06-07 09:07:52', 'priority': 0,
+          'request': {
+            'name': 'tasks.sleeptask',
+            'id': '1a7980ea-8b19-413e-91d2-0b74f3844c4d',
+            'args': '[1]',
+            'kwargs': '{}'}},
+         {'eta': '2010-06-07 09:07:53', 'priority': 0,
+          'request': {
+            'name': 'tasks.sleeptask',
+            'id': '49661b9a-aa22-4120-94b7-9ee8031d219d',
+            'args': '[2]',
+            'kwargs': '{}'}}]}]
 
 .. note::
 
@@ -593,10 +715,10 @@ You can get a list of these using
 
     >>> i.reserved()
     [{'worker1.example.com':
-        [{"name": "tasks.sleeptask",
-          "id": "32666e9b-809c-41fa-8e93-5ae0c80afbbf",
-          "args": "(8,)",
-          "kwargs": "{}"}]}]
+        [{'name': 'tasks.sleeptask',
+          'id': '32666e9b-809c-41fa-8e93-5ae0c80afbbf',
+          'args': '(8,)',
+          'kwargs': '{}'}]}]
 
 
 Additional Commands
@@ -609,8 +731,8 @@ Remote shutdown
 
 This command will gracefully shut down the worker remotely::
 
-    >>> celery.control.broadcast("shutdown") # shutdown all workers
-    >>> celery.control.broadcast("shutdown, destination="worker1.example.com")
+    >>> celery.control.broadcast('shutdown') # shutdown all workers
+    >>> celery.control.broadcast('shutdown, destination='worker1.example.com')
 
 .. control:: ping
 
@@ -670,6 +792,6 @@ Here's an example control command that restarts the broker connection:
 
     @Panel.register
     def reset_connection(panel):
-        panel.logger.critical("Connection reset by remote control.")
+        panel.logger.critical('Connection reset by remote control.')
         panel.consumer.reset_connection()
-        return {"ok": "connection reset"}
+        return {'ok': 'connection reset'}

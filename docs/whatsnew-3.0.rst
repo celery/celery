@@ -1,24 +1,27 @@
-.. _whatsnew-2.6:
+.. _whatsnew-3.0:
 
-==========================
- What's new in Celery 2.6
-==========================
+===========================================
+ What's new in Celery 3.0 (Chiastic Slide)
+===========================================
 
-Celery aims to be a flexible and reliable, best-of-breed solution
-to process vast amounts of messages in a distributed fashion, while
-providing operations with the tools to maintain such a system.
+Celery is a simple, flexible and reliable distributed system to
+process vast amounts of messages, while providing operations with
+the tools required to maintain such a system.
+
+It's a task queue with focus on real-time processing, while also
+supporting task scheduling.
 
 Celery has a large and diverse community of users and contributors,
 you should come join us :ref:`on IRC <irc-channel>`
 or :ref:`our mailing-list <mailing-list>`.
 
-To read more about Celery you should visit our `website`_.
+To read more about Celery you should go read the :ref:`introduction <intro>`.
 
 While this version is backward compatible with previous versions
-it is important that you read the following section.
+it's important that you read the following section.
 
 If you use Celery in combination with Django you must also
-read the `django-celery changelog`_ and upgrade to `django-celery 2.6`_.
+read the `django-celery changelog`_ and upgrade to `django-celery 3.0`_.
 
 This version is officially supported on CPython 2.5, 2.6, 2.7, 3.2 and 3.3,
 as well as PyPy and Jython.
@@ -27,10 +30,11 @@ as well as PyPy and Jython.
 
     - A new and improved API, that is both simpler and more powerful.
 
-        Everyone should read the new :ref:`first-steps` tutorial,
+        Everyone must read the new :ref:`first-steps` tutorial,
         and the new :ref:`next-steps` tutorial.
 
-    - Documentation rewritten and updated to use the new API
+        There are no current plans to deprecate the old API,
+        so you don't have to be in a hurry to port your applications.
 
     - The worker is now thread-less, giving great performance improvements.
 
@@ -38,14 +42,27 @@ as well as PyPy and Jython.
 
     - The new "Canvas" makes it easy to define complex workflows.
 
+        Ever wanted to chain tasks together? This is possible, but
+        not just that, now you can even chain together groups and chords,
+        or even combine multiple chains.
+
+        Read more in the :ref:`Canvas <guide-canvas>` user guide.
+
+    - Support for the new librabbitmq C client.
+
+        Celery will automatically use the :mod:`librabbitmq` module
+        if installed, which is a very fast and memory-optimized
+        replacement for the amqplib module.
+
+    - Redis support is more reliable with improved ack emulation.
 
 .. _`website`: http://celeryproject.org/
 .. _`django-celery changelog`: http://bit.ly/djcelery-26-changelog
-.. _`django-celery 2.6`: http://pypi.python.org/pypi/django-celery/
+.. _`django-celery 3.0`: http://pypi.python.org/pypi/django-celery/
 
 .. contents::
     :local:
-    :depth: 1
+    :depth: 2
 
 .. _v260-important:
 
@@ -55,13 +72,13 @@ Important Notes
 Eventloop
 ---------
 
-The worker is now running *without threads* when used with AMQP or Redis as a
-broker, resulting in::
+The worker is now running *without threads* when used with RabbitMQ (AMQP),
+or Redis as a broker, resulting in:
 
-    - Much better performance overall.
-    - Fixes several edge case race conditions.
-    - Sub-millisecond timer precision.
-    - Faster shutdown times.
+- Much better overall performance.
+- Fixes several edge case race conditions.
+- Sub-millisecond timer precision.
+- Faster shutdown times.
 
 The transports supported are:  ``amqplib``, ``librabbitmq``, and ``redis``
 Hopefully this can be extended to include additional broker transports
@@ -89,15 +106,16 @@ for the no-execv patch to work.
 Last version to support Python 2.5
 ----------------------------------
 
-The 2.6 series will be last series to support Python 2.5.
+The 3.0 series will be last version to support Python 2.5,
+and starting from 3.1 Python 2.6 and later will be required.
 
 With several other distributions taking the step to discontinue
 Python 2.5 support, we feel that it is time too.
 
 Python 2.6 should be widely available at this point, and we urge
 you to upgrade, but if that is not possible you still have the option
-to continue using the Celery 2.6 series, and important bug fixes
-introduced in Celery 2.7 will be back-ported to Celery 2.6 upon request.
+to continue using the Celery 3.0, and important bug fixes
+introduced in Celery 3.1 will be back-ported to Celery 3.0 upon request.
 
 .. _v260-news:
 
@@ -160,7 +178,7 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
 
             .. code-block:: python
 
-                with open("graph.dot") as fh:
+                with open('graph.dot') as fh:
                     result.graph.to_dot(fh)
 
             which can than be used to produce an image::
@@ -192,7 +210,7 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
 
 - Adds ``subtask.link(subtask)`` + ``subtask.link_error(subtask)``
 
-    Shortcut to ``s.options.setdefault("link", []).append(subtask)``
+    Shortcut to ``s.options.setdefault('link', []).append(subtask)``
 
 - Adds ``subtask.flatten_links()``
 
@@ -200,9 +218,6 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
 
 `group`/`chord`/`chain` are now subtasks
 ----------------------------------------
-
-- The source code for these, including subtask, has been moved
-  to new module celery.canvas.
 
 - group is no longer an alias to TaskSet, but new alltogether,
   since it was very difficult to migrate the TaskSet class to become
@@ -214,7 +229,7 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
 
     as a shortcut to::
 
-        >>> task.subtask((arg1, arg2), {"kw": 1})
+        >>> task.subtask((arg1, arg2), {'kw': 1})
 
 - Tasks can be chained by using the ``|`` operator::
 
@@ -280,9 +295,9 @@ Additional control commands made public
     .. code-block:: python
 
         >>> celery.control.add_consumer(queue_name,
-        ...     destination=["w1.example.com"])
+        ...     destination=['w1.example.com'])
         >>> celery.control.cancel_consumer(queue_name,
-        ...     destination=["w1.example.com"])
+        ...     destination=['w1.example.com'])
 
     or using the :program:`celery control` command::
 
@@ -304,7 +319,7 @@ Additional control commands made public
     .. code-block:: python
 
         >>> celery.control.autoscale(max=10, min=5,
-        ...     destination=["w1.example.com"])
+        ...     destination=['w1.example.com'])
 
     or using the :program:`celery control` command::
 
@@ -319,8 +334,8 @@ Additional control commands made public
 
     .. code-block:: python
 
-        >>> celery.control.pool_grow(2, destination=["w1.example.com"])
-        >>> celery.contorl.pool_shrink(2, destination=["w1.example.com"])
+        >>> celery.control.pool_grow(2, destination=['w1.example.com'])
+        >>> celery.contorl.pool_shrink(2, destination=['w1.example.com'])
 
     or using the :program:`celery control` command::
 
@@ -341,7 +356,7 @@ Immutable subtasks
 ------------------
 
 ``subtask``'s can now be immutable, which means that the arguments
-will not be modified when applying callbacks::
+will not be modified when calling callbacks::
 
     >>> chain(add.s(2, 2), clear_static_electricity.si())
 
@@ -376,7 +391,7 @@ Logging support now conforms better with best practices.
       currently executing task.
 
 - In fact, ``task.get_logger`` is no longer recommended, it is better
-  to add module-level logger to your tasks module.
+  to add a module-level logger to your tasks module.
 
     For example, like this:
 
@@ -388,7 +403,7 @@ Logging support now conforms better with best practices.
 
         @celery.task()
         def add(x, y):
-            logger.debug("Adding %r + %r" % (x, y))
+            logger.debug('Adding %r + %r' % (x, y))
             return x + y
 
     The resulting logger will then inherit from the ``"celery.task"`` logger
@@ -429,7 +444,7 @@ by default, it will first be bound (and configured) when
 a concrete subclass is created.
 
 This means that you can safely import and make task base classes,
-without also initializing the default app environment::
+without also initializing the app environment::
 
     from celery.task import Task
 
@@ -437,7 +452,7 @@ without also initializing the default app environment::
         abstract = True
 
         def __call__(self, *args, **kwargs):
-            print("CALLING %r" % (self, ))
+            print('CALLING %r' % (self, ))
             return self.run(*args, **kwargs)
 
     >>> DebugTask
@@ -513,13 +528,13 @@ In Other News
 
     .. code-block:: python
 
-        celery = Celery(broker="redis://")
+        celery = Celery(broker='redis://')
 
 - Result backends can now be set using an URL
 
     Currently only supported by redis.  Example use::
 
-        CELERY_RESULT_BACKEND = "redis://localhost/1"
+        CELERY_RESULT_BACKEND = 'redis://localhost/1'
 
 - Heartbeat frequency now every 5s, and frequency sent with event
 
@@ -544,11 +559,11 @@ In Other News
 
             @wraps(fun)
             def _inner(*args, **kwargs):
-                print("ARGS: %r" % (args, ))
+                print('ARGS: %r' % (args, ))
             return _inner
 
         CELERY_ANNOTATIONS = {
-            "tasks.add": {"@__call__": debug_args},
+            'tasks.add': {'@__call__': debug_args},
         }
 
     Also tasks are now always bound by class so that
@@ -570,7 +585,12 @@ In Other News
         $ celery inspect report
 
 - Module ``celery.log`` moved to :mod:`celery.app.log`.
+
 - Module ``celery.task.control`` moved to :mod:`celery.app.control`.
+
+- New signal: :signal:`task-revoked`
+
+    Sent in the main process when the task is revoked or terminated.
 
 - ``AsyncResult.task_id`` renamed to ``AsyncResult.id``
 
@@ -578,7 +598,7 @@ In Other News
 
 - ``xmap(task, sequence)`` and ``xstarmap(task, sequence)``
 
-    Returns a list of the results applying the task to every item
+    Returns a list of the results applying the task function to every item
     in the sequence.
 
     Example::
@@ -616,7 +636,9 @@ In Other News
 
     .. code-block:: python
 
-        i = celery.control.inspect(connection=BrokerConnection("redis://"))
+        from kombu import Connection
+
+        i = celery.control.inspect(connection=Connection('redis://'))
         i.active_queues()
 
 * Module :mod:`celery.app.task` is now a module instead of a package.
@@ -702,7 +724,7 @@ to create tasks out of methods::
         def __init__(self):
             self.value = 1
 
-        @celery.task(name="Counter.increment", filter=task_method)
+        @celery.task(name='Counter.increment', filter=task_method)
         def increment(self, n=1):
             self.value += 1
             return self.value

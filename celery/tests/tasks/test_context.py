@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-"
+# -*- coding: utf-8 -*-'
 from __future__ import absolute_import
 
 from celery.task.base import Context
@@ -10,7 +10,7 @@ from celery.tests.utils import Case
 def get_context_as_dict(ctx, getter=getattr):
     defaults = {}
     for attr_name in dir(ctx):
-        if attr_name.startswith("_"):
+        if attr_name.startswith('_'):
             continue   # Ignore pseudo-private attributes
         attr = getter(ctx, attr_name)
         if callable(attr):
@@ -30,7 +30,7 @@ class test_Context(Case):
 
     def test_updated_context(self):
         expected = dict(default_context)
-        changes = dict(id="unique id", args=["some", 1], wibble="wobble")
+        changes = dict(id='unique id', args=['some', 1], wibble='wobble')
         ctx = Context()
         expected.update(changes)
         ctx.update(changes)
@@ -40,15 +40,15 @@ class test_Context(Case):
     def test_modified_context(self):
         expected = dict(default_context)
         ctx = Context()
-        expected["id"] = "unique id"
-        expected["args"] = ["some", 1]
-        ctx.id = "unique id"
-        ctx.args = ["some", 1]
+        expected['id'] = 'unique id'
+        expected['args'] = ['some', 1]
+        ctx.id = 'unique id'
+        ctx.args = ['some', 1]
         self.assertDictEqual(get_context_as_dict(ctx), expected)
         self.assertDictEqual(get_context_as_dict(Context()), default_context)
 
     def test_cleared_context(self):
-        changes = dict(id="unique id", args=["some", 1], wibble="wobble")
+        changes = dict(id='unique id', args=['some', 1], wibble='wobble')
         ctx = Context()
         ctx.update(changes)
         ctx.clear()
@@ -58,7 +58,7 @@ class test_Context(Case):
 
     def test_context_get(self):
         expected = dict(default_context)
-        changes = dict(id="unique id", args=["some", 1], wibble="wobble")
+        changes = dict(id='unique id', args=['some', 1], wibble='wobble')
         ctx = Context()
         expected.update(changes)
         ctx.update(changes)

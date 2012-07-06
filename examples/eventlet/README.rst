@@ -40,8 +40,8 @@ To open several URLs at once you can do:
     $ cd examples/eventlet
     $ python
     >>> from tasks import urlopen
-    >>> from celery.task.sets import TaskSet
-    >>> result = TaskSet(urlopen.subtask((url, ))
+    >>> from celery import group
+    >>> result = gruop(urlopen.s(url)
     ...                     for url in LIST_OF_URLS).apply_async()
     >>> for incoming_result in result.iter_native():
     ...     print(incoming_result, )

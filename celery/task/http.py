@@ -3,10 +3,7 @@
     celery.task.http
     ~~~~~~~~~~~~~~~~
 
-    Task webhooks implementation.
-
-    :copyright: (c) 2009 - 2012 by Ask Solem.
-    :license: BSD, see LICENSE for more details.
+    Webhook task implementation.
 
 """
 from __future__ import absolute_import
@@ -23,9 +20,11 @@ except ImportError:  # pragma: no cover
     from cgi import parse_qsl  # noqa
 
 from celery import __version__ as celery_version
+from celery.utils.log import get_task_logger
 from .base import Task as BaseTask
 
-GET_METHODS = frozenset(["GET", "HEAD"])
+GET_METHODS = frozenset(['GET', 'HEAD'])
+logger = get_task_logger(__name__)
 
 
 class InvalidResponseError(Exception):
@@ -43,7 +42,7 @@ class UnknownStatusError(InvalidResponseError):
 def maybe_utf8(value):
     """Encode to utf-8, only if the value is Unicode."""
     if isinstance(value, unicode):
-        return value.encode("utf-8")
+        return value.encode('utf-8')
     return value
 
 
@@ -58,25 +57,25 @@ else:
     def utf8dict(tup):  # noqa
         """With a dict's items() tuple return a new dict with any utf-8
         keys/values encoded."""
-        return dict((key.encode("utf-8"), maybe_utf8(value))
+        return dict((key.encode('utf-8'), maybe_utf8(value))
                         for key, value in tup)
 
 
 def extract_response(raw_response, loads=anyjson.loads):
     """Extract the response text from a raw JSON response."""
     if not raw_response:
-        raise InvalidResponseError("Empty response")
+        raise InvalidResponseError('Empty response')
     try:
         payload = loads(raw_response)
     except ValueError, exc:
         raise InvalidResponseError, InvalidResponseError(
                 str(exc)), sys.exc_info()[2]
 
-    status = payload["status"]
-    if status == "success":
-        return payload["retval"]
-    elif status == "failure":
-        raise RemoteExecuteError(payload.get("reason"))
+    status = payload['status']
+    if status == 'success':
+        return payload['retval']
+    elif status == 'failure':
+        raise RemoteExecuteError(payload.get('reason'))
     else:
         raise UnknownStatusError(str(status))
 
@@ -90,13 +89,13 @@ class MutableURL(object):
 
     Examples
 
-        >>> url = URL("http://www.google.com:6580/foo/bar?x=3&y=4#foo")
+        >>> url = URL('http://www.google.com:6580/foo/bar?x=3&y=4#foo')
         >>> url.query
         {'x': '3', 'y': '4'}
         >>> str(url)
         'http://www.google.com:6580/foo/bar?y=4&x=3#foo'
-        >>> url.query["x"] = 10
-        >>> url.query.update({"George": "Costanza"})
+        >>> url.query['x'] = 10
+        >>> url.query.update({'George': 'Costanza'})
         >>> str(url)
         'http://www.google.com:6580/foo/bar?y=4&x=10&George=Costanza#foo'
 
@@ -108,14 +107,14 @@ class MutableURL(object):
     def __str__(self):
         scheme, netloc, path, params, query, fragment = self.parts
         query = urlencode(utf8dict(self.query.items()))
-        components = [scheme + "://", netloc, path or "/",
-                      ";%s" % params   if params   else "",
-                      "?%s" % query    if query    else "",
-                      "#%s" % fragment if fragment else ""]
-        return "".join(filter(None, components))
+        components = [scheme + '://', netloc, path or '/',
+                      ';%s' % params   if params   else '',
+                      '?%s' % query    if query    else '',
+                      '#%s' % fragment if fragment else '']
+        return ''.join(filter(None, components))
 
     def __repr__(self):
-        return "<%s: %s>" % (self.__class__.__name__, str(self))
+        return '<%s: %s>' % (self.__class__.__name__, str(self))
 
 
 class HttpDispatch(object):
@@ -128,14 +127,14 @@ class HttpDispatch(object):
     :param logger: Logger used for user/system feedback.
 
     """
-    user_agent = "celery/%s" % celery_version
+    user_agent = 'celery/%s' % celery_version
     timeout = 5
 
-    def __init__(self, url, method, task_kwargs, logger=None):
+    def __init__(self, url, method, task_kwargs, **kwargs):
         self.url = url
         self.method = method
         self.task_kwargs = task_kwargs
-        self.logger = logger
+        self.logger = kwargs.get("logger") or logger
 
     def make_request(self, url, method, params):
         """Makes an HTTP request and returns the response."""
@@ -158,7 +157,7 @@ class HttpDispatch(object):
 
     @property
     def http_headers(self):
-        headers = {"User-Agent": self.user_agent}
+        headers = {'User-Agent': self.user_agent}
         return headers
 
 
@@ -188,10 +187,10 @@ class HttpDispatchTask(BaseTask):
     method = None
     accept_magic_kwargs = False
 
-    def run(self, url=None, method="GET", **kwargs):
+    def run(self, url=None, method='GET', **kwargs):
         url = url or self.url
         method = method or self.method
-        return HttpDispatch(url, method, kwargs, self.logger).dispatch()
+        return HttpDispatch(url, method, kwargs).dispatch()
 
 
 class URL(MutableURL):
@@ -211,7 +210,7 @@ class URL(MutableURL):
         self.dispatcher = dispatcher or self.dispatcher
 
     def get_async(self, **kwargs):
-        return self.dispatcher.delay(str(self), "GET", **kwargs)
+        return self.dispatcher.delay(str(self), 'GET', **kwargs)
 
     def post_async(self, **kwargs):
-        return self.dispatcher.delay(str(self), "POST", **kwargs)
+        return self.dispatcher.delay(str(self), 'POST', **kwargs)

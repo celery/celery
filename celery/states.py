@@ -60,14 +60,14 @@ from __future__ import absolute_import
 #: State precedence.
 #: None represents the precedence of an unknown state.
 #: Lower index means higher precedence.
-PRECEDENCE = ["SUCCESS",
-              "FAILURE",
+PRECEDENCE = ['SUCCESS',
+              'FAILURE',
               None,
-              "REVOKED",
-              "STARTED",
-              "RECEIVED",
-              "RETRY",
-              "PENDING"]
+              'REVOKED',
+              'STARTED',
+              'RECEIVED',
+              'RETRY',
+              'PENDING']
 
 
 def precedence(state):
@@ -101,13 +101,13 @@ class state(str):
     def __le__(self, other):
         return self.compare(other, lambda a, b: a >= b, False)
 
-PENDING = "PENDING"
-RECEIVED = "RECEIVED"
-STARTED = "STARTED"
-SUCCESS = "SUCCESS"
-FAILURE = "FAILURE"
-REVOKED = "REVOKED"
-RETRY = "RETRY"
+PENDING = 'PENDING'
+RECEIVED = 'RECEIVED'
+STARTED = 'STARTED'
+SUCCESS = 'SUCCESS'
+FAILURE = 'FAILURE'
+REVOKED = 'REVOKED'
+RETRY = 'RETRY'
 
 READY_STATES = frozenset([SUCCESS, FAILURE, REVOKED])
 UNREADY_STATES = frozenset([PENDING, RECEIVED, STARTED, RETRY])
