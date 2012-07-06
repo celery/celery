@@ -50,7 +50,7 @@ What do I need?
 
 *Celery* requires a message broker to send and receive messages.
 The RabbitMQ, Redis and MongoDB broker transports are feature complete,
-but there is also support for a myriad of other solutions, including
+but there's also support for a myriad of other solutions, including
 using SQLite for local development.
 
 *Celery* can run on a single machine, on multiple machines, or even
@@ -69,7 +69,7 @@ getting started tutorials:
 Celery is…
 ==========
 
-.. topic:: ”
+.. topic:: \ 
 
     - **Simple**
 
@@ -141,7 +141,6 @@ Celery is…
             - *pickle*, *json*, *yaml*, *msgpack*.
             - *zlib*, *bzip2* compression.
             - Cryptographic message signing.
-
 
 Features
 ========
@@ -313,3 +312,5 @@ Quickjump
         - :ref:`Signals <signals>`
         - :ref:`FAQ <faq>`
         - :ref:`API Reference <apiref>`
+
+.. include:: ../includes/installation.txt
