@@ -50,7 +50,7 @@ you simply import this instance.
     While results are disabled by default we use the amqp backend here
     to demonstrate how retrieving the results work, you may want to use
     a different backend for your application, as they all have different
-    strenghts and weaknesses.  If you don't need results it's best
+    strengths and weaknesses.  If you don't need results it's best
     to disable them.  Results can also be disabled for individual tasks
     by setting the ``@task(ignore_result=True)`` option.
 
@@ -130,6 +130,68 @@ by passing in the `--help` flag::
 
 These options are described in more detailed in the :ref:`Workers Guide <guide-workers>`.
 
+Stopping the worker
+~~~~~~~~~~~~~~~~~~~
+
+To stop the worker simply hit Ctrl+C.  A list of signals supported
+by the worker is detailed in the :ref:`Worker Guide <guide-worker>`.
+
+In the background
+~~~~~~~~~~~~~~~~~
+
+In production you will want to run the worker in the background, this is
+described in detail in the :ref:`daemonization tutorial <daemonizing>`.
+
+The daemonization scripts uses the :program:`celery multi` command to
+start one or more workers in the background::
+
+    $ celery multi start w1 -A proj -l info
+    celeryd-multi v3.0.0 (Chiastic Slide)
+    > Starting nodes...
+        > w1.halcyon.local: OK
+
+You can restart it too::
+
+    $ celery multi restart w1 -A proj -l info
+    celeryd-multi v3.0.0 (Chiastic Slide)
+    > Stopping nodes...
+        > w1.halcyon.local: TERM -> 64024
+    > Waiting for 1 node.....
+        > w1.halcyon.local: OK
+    > Restarting node w1.halcyon.local: OK
+    celeryd-multi v3.0.0 (Chiastic Slide)
+    > Stopping nodes...
+        > w1.halcyon.local: TERM -> 64052
+
+or stop it::
+
+    $ celery multi stop -w1 -A proj -l info
+
+.. note::
+
+    :program:`celery multi` doesn't store information about workers
+    so you need to use the same command line parameters when restarting.
+    Also the same pidfile and logfile arguments must be used when
+    stopping/killing.
+
+By default it will create pid and log files in the current directory,
+to protect against multiple workers launching on top of each other
+you are encouraged to put these in a dedicated directory::
+
+    $ mkdir -p /var/run/celery
+    $ mkdir -p /var/log/celery
+    $ celery multi start w1 -A proj -l info --pidfile=/var/run/celery/%n.pid \
+                                            --logfile=/var/log/celery/%n.pid
+
+With the multi command you can start multiple workers, and there is a powerful
+command line syntax to specify arguments for different workers too,
+e.g::
+
+    $ celeryd multi start 10 -A proj -l info -Q:1-3 images,video -Q:4,5 data \
+        -Q default -L:4,5 debug
+
+For more examples see the :mod:`~celery.bin.celeryd_multi` module in the API
+reference.
 
 .. _app-argument:
 
@@ -522,7 +584,7 @@ control commands are received by every worker in the cluster.
 
 You can also specify one or more workers to act on the request
 using the :option:`--destination` option, which is a comma separated
-list of worker hostnames::
+list of worker host names::
 
     $ celery -A proj inspect active --destination=worker1.example.com
 
@@ -567,6 +629,21 @@ and shows a list of online workers in the cluster::
 You can read more about the :program:`celery` command and monitoring
 in the :ref:`Monitoring Guide <guide-monitoring>`.
 
+Optimization
+============
+
+The default configuration is not optimized for throughput by default,
+it tries to walk the middle way between many short tasks and fewer long
+tasks, a compromise between throughput and fair scheduling.
+
+If you have strict fair scheduling requirements, or want to optimize
+for throughput then you should read the :ref:`Optimizing Guide
+<guide-optimizing>`.
+
+If you're using RabbitMQ then you should install the :mod:`librabbitmq`
+module, which is an AMQP client implemented in C::
+
+    $ pip install librabbitmq
 
 What to do now?
 ===============
