@@ -374,7 +374,7 @@ chain breaks::
     created.
 
     For example, in the beginning it was possible to use any callable as
-    a task::
+    a task:
 
     .. code-block:: python
 
