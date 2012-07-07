@@ -153,9 +153,9 @@ Features
 
         - **Monitoring**
 
-            The stream of monitoring events emitted by the worker are used
-            by built-in and external tools to tell you what your cluster
-            is doing in real-time.
+            A stream of monitoring events is emitted by workers and
+            is used by built-in and external tools to tell you what
+            your cluster is doing -- in real-time.
 
             :ref:`Read more… <guide-monitoring>`.
 
