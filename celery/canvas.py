@@ -11,7 +11,6 @@
 """
 from __future__ import absolute_import
 
-from functools import partial
 from operator import itemgetter
 from itertools import chain as _chain
 
@@ -326,7 +325,6 @@ class group(Signature):
     def __repr__(self):
         return repr(self.tasks)
 Signature.register_type(group)
-igroup = partial(group, immutable=True)
 
 
 class chord(Signature):
@@ -383,7 +381,6 @@ class chord(Signature):
     def body(self):
         return self.kwargs.get('body')
 Signature.register_type(chord)
-ichord = partial(chord, immutable=True)
 
 
 def subtask(varies, *args, **kwargs):

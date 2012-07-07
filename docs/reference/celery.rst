@@ -259,10 +259,6 @@ Grouping Tasks
 
     The ``apply_async`` method returns :class:`~@GroupResult`.
 
-.. class:: igroup(task1[, task2[, task3[,... taskN]]])
-
-    Immutable :class:`group` (i.e. will not modify arguments).
-
 .. class:: chain(task1[, task2[, task3[,... taskN]]])
 
     Chains tasks together, so that each tasks follows each other
@@ -303,10 +299,6 @@ Grouping Tasks
 
     The body is applied with the return values of all the header
     tasks as a list.
-
-.. class:: ichord(header[, body])
-
-    Immutable :class:`chord` (i.e. will not modify arguments).
 
 .. class:: subtask(task=None, args=(), kwargs={}, options={})
 
