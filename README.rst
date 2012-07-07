@@ -4,7 +4,7 @@
 
 .. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
 
-:Version: 3.0.0rc5 (Chiastic Slide)
+:Version: 3.0.0 (Chiastic Slide)
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/celery/celery/
@@ -15,30 +15,154 @@
 
 .. contents::
     :local:
+    :depth: 1
 
-.. _celery-synopsis:
+What is a Task Queue?
+=====================
 
-Synopsis
-========
+Task queues are used as a mechanism to distribute work across threads or
+machines.
 
-Celery is an open source asynchronous task queue/job queue based on
-distributed message passing. It is focused on real-time operation,
-but supports scheduling as well.
+A task queue's input is a unit of work, called a task, dedicated worker
+processes then constantly monitor the queue for new work to perform.
 
-The execution units, called tasks, are executed concurrently on one or
-more worker nodes using multiprocessing, `Eventlet`_ or `gevent`_.  Tasks can
-execute asynchronously (in the background) or synchronously
-(wait until ready).
+Celery communicates via messages using a broker
+to mediate between clients and workers.  To initiate a task a client puts a
+message on the queue, the broker then delivers the message to a worker.
 
-Celery is used in production systems to process millions of tasks every hour.
+A Celery system can consist of multiple workers and brokers, giving way
+to high availability and horizontal scaling.
 
 Celery is written in Python, but the protocol can be implemented in any
-language.  It can also `operate with other languages using webhooks`_.
-There's also `RCelery` for the Ruby programming language, and a `PHP client`.
+language.  So far there's RCelery_ for the Ruby programming language, and a
+`PHP client`, but language interoperability can also be achieved
+by using webhooks.
 
-The recommended message broker is `RabbitMQ`_, but support for
-`Redis`_, `MongoDB`_, `Beanstalk`_, `Amazon SQS`_, `CouchDB`_ and
-databases (using `SQLAlchemy`_ or the `Django ORM`_) is also available.
+.. _RCelery: http://leapfrogdevelopment.github.com/rcelery/
+.. _`PHP client`: https://github.com/gjedeer/celery-php
+.. _`using webhooks`:
+    http://celery.github.com/celery/userguide/remote-tasks.html
+
+What do I need?
+===============
+
+Celery version 3.0 runs on,
+
+- Python ❨2.5, 2.6, 2.7, 3.2, 3.3❩
+- PyPy ❨1.8, 1.9❩
+- Jython ❨2.5, 2.7❩.
+
+This is the last version to support Python 2.5,
+and from Celery 3.1, Python 2.6 or later is required.
+The last version to support Python 2.4 was Celery series 2.2.
+
+*Celery* requires a message broker to send and receive messages.
+The RabbitMQ, Redis and MongoDB broker transports are feature complete,
+but there's also support for a myriad of other solutions, including
+using SQLite for local development.
+
+*Celery* can run on a single machine, on multiple machines, or even
+across datacenters.
+
+Get Started
+===========
+
+If this is the first time you're trying to use Celery, or you are
+new to Celery 3.0 coming from previous versions then you should read our
+getting started tutorials:
+
+- `First steps with Celery`_
+
+    Tutorial teaching you the bare minimum needed to get started with Celery.
+
+- `Next steps`_
+
+    A more complete overview, showing more features.
+
+.. _`First steps with Celery`:
+    http://docs.celeryproject.org/en/latest/getting-started/first-steps-with-celery.html
+
+.. _`Next steps`:
+    http://docs.celeryproject.org/en/latest/getting-started/next-steps.html
+
+Celery is…
+==========
+
+- **Simple**
+
+    Celery is easy to use and maintain, and does *not need configuration files*.
+
+    It has an active, friendly community you can talk to for support,
+    including a `mailing-list`_ and and an IRC channel.
+
+    Here's one of the simplest applications you can make::
+
+        from celery import Celery
+
+        celery = Celery('hello', broker='amqp://guest@localhost//')
+
+        @celery.task()
+        def hello():
+            return 'hello world'
+
+- **Highly Available**
+
+    Workers and clients will automatically retry in the event
+    of connection loss or failure, and some brokers support
+    HA in way of *Master/Master* or *Master/Slave* replication.
+
+- **Fast**
+
+    A single Celery process can process millions of tasks a minute,
+    with sub-millisecond round-trip latency (using RabbitMQ,
+    py-librabbitmq, and optimized settings).
+
+- **Flexible**
+
+    Almost every part of *Celery* can be extended or used on its own,
+    Custom pool implementations, serializers, compression schemes, logging,
+    schedulers, consumers, producers, autoscalers, broker transports and much more.
+
+It supports...
+==============
+
+    - **Brokers**
+
+        - RabbitMQ_, Redis_,
+        - MongoDB_, Beanstalk_,
+        - CouchDB_, SQLAlchemy_,
+        - Django ORM, Amazon SQS,
+        - and more…
+
+    - **Concurrency**
+
+        - multiprocessing, Eventlet_, gevent_, threads/single threaded
+
+    - **Result Stores**
+
+        - AMQP, Redis
+        - memcached, MongoDB
+        - SQLAlchemy, Django ORM
+        - Apache Cassandra
+
+    - **Serialization**
+
+        - *pickle*, *json*, *yaml*, *msgpack*.
+        - *zlib*, *bzip2* compression.
+        - Cryptographic message signing.
+
+.. _`Eventlet`: http://eventlet.net/
+.. _`gevent`: http://gevent.org/
+
+.. _RabbitMQ: http://rabbitmq.com
+.. _Redis: http://redis.io
+.. _MongoDB: http://mongodb.org
+.. _Beanstalk: http://kr.github.com/beanstalkd
+.. _CouchDB: http://couchdb.apache.org
+.. _SQLAlchemy: http://sqlalchemy.org
+
+Framework Integration
+=====================
 
 Celery is easy to integrate with web frameworks, some of which even have
 integration packages:
@@ -50,27 +174,18 @@ integration packages:
     +--------------------+------------------------+
     | `Pylons`_          | `celery-pylons`_       |
     +--------------------+------------------------+
-    | `Flask`_           | `flask-celery`_        |
+    | `Flask`_           | not needed             |
     +--------------------+------------------------+
     | `web2py`_          | `web2py-celery`_       |
     +--------------------+------------------------+
     | `Tornado`_         | `tornado-celery`_      |
     +--------------------+------------------------+
 
-.. _`RCelery`: http://leapfrogdevelopment.github.com/rcelery/
-.. _`PHP client`: https://github.com/gjedeer/celery-php
-.. _`RabbitMQ`: http://www.rabbitmq.com/
-.. _`Redis`: http://code.google.com/p/redis/
-.. _`SQLAlchemy`: http://www.sqlalchemy.org/
+The integration packages are not strictly necessary, but they can make
+development easier, and sometimes they add important hooks like closing
+database connections at ``fork``.
+
 .. _`Django`: http://djangoproject.com/
-.. _`Django ORM`: http://djangoproject.com/
-.. _`Memcached`: http://memcached.org/
-.. _`Eventlet`: http://eventlet.net/
-.. _`gevent`: http://gevent.org/
-.. _`Beanstalk`: http://kr.github.com/beanstalkd/
-.. _`MongoDB`: http://mongodb.org/
-.. _`CouchDB`: http://couchdb.apache.org/
-.. _`Amazon SQS`: http://aws.amazon.com/sqs/
 .. _`Pylons`: http://pylonshq.com/
 .. _`Flask`: http://flask.pocoo.org/
 .. _`web2py`: http://web2py.com/
@@ -79,152 +194,9 @@ integration packages:
 .. _`pyramid_celery`: http://pypi.python.org/pypi/pyramid_celery/
 .. _`django-celery`: http://pypi.python.org/pypi/django-celery
 .. _`celery-pylons`: http://pypi.python.org/pypi/celery-pylons
-.. _`flask-celery`: http://github.com/ask/flask-celery/
 .. _`web2py-celery`: http://code.google.com/p/web2py-celery/
 .. _`Tornado`: http://www.tornadoweb.org/
 .. _`tornado-celery`: http://github.com/mher/tornado-celery/
-.. _`operate with other languages using webhooks`:
-    http://celery.github.com/celery/userguide/remote-tasks.html
-.. _`limited support`:
-    http://kombu.readthedocs.org/en/latest/introduction.html#transport-comparison
-
-.. _celery-overview:
-
-Overview
-========
-
-This is a high level overview of the architecture.
-
-.. image:: http://cloud.github.com/downloads/celery/celery/Celery-Overview-v4.jpg
-
-The broker delivers tasks to the worker instances.
-A worker instance is started by running the `celery worker` program.
-You can have many networked machines running worker instances, forming a
-cluster, or you can run everything on a single machine.
-
-The return value of the task can be stored for later retrieval,
-and the progress of the task can be tracked (called the task's *state*).
-
-.. _celery-example:
-
-Example
-=======
-
-You probably want to see some code by now, so here's an example task
-which adds two numbers:
-::
-
-    from celery import task
-
-    @task()
-    def add(x, y):
-        return x + y
-
-You can execute the task in the background, or wait for it to finish::
-
-    >>> result = add.delay(4, 4)
-    >>> result.wait() # wait for and return the result
-    8
-
-Simple!
-
-.. _celery-features:
-
-Features
-========
-
-    +-----------------+----------------------------------------------------+
-    | Messaging       | Supported brokers include `RabbitMQ`_, `Redis`_,   |
-    |                 | `MongoDB`_, `Beanstalk`_, SQL databases,           |
-    |                 | Amazon SQS and more.                               |
-    +-----------------+----------------------------------------------------+
-    | Fault-tolerant  | Excellent configurable error recovery when using   |
-    |                 | `RabbitMQ`, ensures your tasks are never lost.     |
-    +-----------------+----------------------------------------------------+
-    | Distributed     | Runs on one or more machines. Supports             |
-    |                 | broker `clustering`_ and `HA`_ when used in        |
-    |                 | combination with `RabbitMQ`_.  You can set up new  |
-    |                 | workers without central configuration (e.g. use    |
-    |                 | your grandma's laptop to help if the queue is      |
-    |                 | temporarily congested).                            |
-    +-----------------+----------------------------------------------------+
-    | Concurrency     | Concurrency is achieved by using multiprocessing,  |
-    |                 | `Eventlet`_, `gevent` or a mix of these.           |
-    +-----------------+----------------------------------------------------+
-    | Scheduling      | Supports recurring tasks like cron, or specifying  |
-    |                 | an exact date or countdown for when after the task |
-    |                 | should be executed.                                |
-    +-----------------+----------------------------------------------------+
-    | Latency         | Low latency means you are able to execute tasks    |
-    |                 | *while the user is waiting*.                       |
-    +-----------------+----------------------------------------------------+
-    | Return Values   | Task return values can be saved to the selected    |
-    |                 | result store backend. You can wait for the result, |
-    |                 | retrieve it later, or ignore it.                   |
-    +-----------------+----------------------------------------------------+
-    | Result Stores   | Database, `MongoDB`_, `Redis`_, `Memcached`_,      |
-    |                 | `Cassandra`, or `AMQP`_ (message notification).    |
-    +-----------------+----------------------------------------------------+
-    | Webhooks        | Your tasks can also be HTTP callbacks, enabling    |
-    |                 | cross-language communication.                      |
-    +-----------------+----------------------------------------------------+
-    | Rate limiting   | Supports rate limiting by using the token bucket   |
-    |                 | algorithm, which accounts for bursts of traffic.   |
-    |                 | Rate limits can be set for each task type, or      |
-    |                 | globally for all.                                  |
-    +-----------------+----------------------------------------------------+
-    | Routing         | Using AMQP's flexible routing model you can route  |
-    |                 | tasks to different workers, or select different    |
-    |                 | message topologies, by configuration or even at    |
-    |                 | runtime.                                           |
-    +-----------------+----------------------------------------------------+
-    | Remote-control  | Worker nodes can be controlled from remote by      |
-    |                 | using broadcast messaging.  A range of built-in    |
-    |                 | commands exist in addition to the ability to       |
-    |                 | easily define your own. (AMQP/Redis only)          |
-    +-----------------+----------------------------------------------------+
-    | Monitoring      | You can capture everything happening with the      |
-    |                 | workers in real-time by subscribing to events.     |
-    |                 | A real-time web monitor is in development.         |
-    +-----------------+----------------------------------------------------+
-    | Serialization   | Supports Pickle, JSON, YAML, or easily defined     |
-    |                 | custom schemes. One task invocation can have a     |
-    |                 | different scheme than another.                     |
-    +-----------------+----------------------------------------------------+
-    | Tracebacks      | Errors and tracebacks are stored and can be        |
-    |                 | investigated after the fact.                       |
-    +-----------------+----------------------------------------------------+
-    | UUID            | Every task has an UUID (Universally Unique         |
-    |                 | Identifier), which is the task id used to query    |
-    |                 | task status and return value.                      |
-    +-----------------+----------------------------------------------------+
-    | Retries         | Tasks can be retried if they fail, with            |
-    |                 | configurable maximum number of retries, and delays |
-    |                 | between each retry.                                |
-    +-----------------+----------------------------------------------------+
-    | Task Sets       | A Task set is a task consisting of several         |
-    |                 | sub-tasks. You can find out how many, or if all    |
-    |                 | of the sub-tasks has been executed, and even       |
-    |                 | retrieve the results in order. Progress bars,      |
-    |                 | anyone?                                            |
-    +-----------------+----------------------------------------------------+
-    | Made for Web    | You can query status and results via URLs,         |
-    |                 | enabling the ability to poll task status using     |
-    |                 | Ajax.                                              |
-    +-----------------+----------------------------------------------------+
-    | Error Emails    | Can be configured to send emails to the            |
-    |                 | administrators when tasks fails.                   |
-    +-----------------+----------------------------------------------------+
-    | Message signing | Supports message signing. Messages are signed      |
-    |                 | using public-key cryptography.                     |
-    +-----------------+----------------------------------------------------+
-
-
-.. _`clustering`: http://www.rabbitmq.com/clustering.html
-.. _`HA`: http://www.rabbitmq.com/pacemaker.html
-.. _`AMQP`: http://www.amqp.org/
-.. _`Stomp`: http://stomp.codehaus.org/
-.. _`Tokyo Tyrant`: http://tokyocabinet.sourceforge.net/
 
 .. _celery-documentation:
 
@@ -232,9 +204,9 @@ Documentation
 =============
 
 The `latest documentation`_ with user guides, tutorials and API reference
-is hosted at Github.
+is hosted at Read The Docs.
 
-.. _`latest documentation`: http://celery.github.com/celery/
+.. _`latest documentation`: http://docs.celeryproject.org/en/latest/
 
 .. _celery-installation:
 
@@ -296,7 +268,10 @@ You can install it by doing the following,::
     $ tar xvfz celery-0.0.0.tar.gz
     $ cd celery-0.0.0
     $ python setup.py build
-    # python setup.py install # as root
+    # python setup.py install
+
+The last command must be executed as a privileged user if
+you are not currently using a virtualenv.
 
 .. _celery-installing-from-git:
 
