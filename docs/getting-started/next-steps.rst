@@ -629,6 +629,24 @@ and shows a list of online workers in the cluster::
 You can read more about the :program:`celery` command and monitoring
 in the :ref:`Monitoring Guide <guide-monitoring>`.
 
+Timezone
+========
+
+All times and dates, internally and in messages uses the UTC timezone.
+
+When the worker receives a message, for example with a countdown set it
+converts that UTC time to local time.  If you wish to use
+a different timezone than the system timezone then you must
+configure that using the :setting:`CELERY_TIMEZONE` setting.
+
+To use custom timezones you also have to install the :mod:`pytz` library::
+
+    $ pip install pytz
+
+Setting a custom timezone::
+
+    celery.conf.CELERY_TIMEZONE = 'Europe/London'
+
 Optimization
 ============
 

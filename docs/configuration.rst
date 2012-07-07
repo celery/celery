@@ -49,6 +49,8 @@ Time and date settings
 CELERY_ENABLE_UTC
 ~~~~~~~~~~~~~~~~~
 
+.. versionadded:: 2.5
+
 If enabled dates and times in messages will be converted to use
 the UTC timezone.
 
@@ -56,7 +58,7 @@ Note that workers running Celery versions below 2.5 will assume a local
 timezone for all messages, so only enable if all workers have been
 upgraded.
 
-Disabled by default.  UTC will be enabled by default in version 4.0.
+Enabled by default since version 3.0.
 
 .. setting:: CELERY_TIMEZONE
 
