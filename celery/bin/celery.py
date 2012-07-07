@@ -684,8 +684,8 @@ class shell(Command):  # pragma: no cover
     The following symbols will be added to the main globals:
 
         - celery:  the current application.
-        - chord, group, chain, chunks, xmap, xstarmap
-          subtask, Task
+        - chord, ichord, group, igroup, chain,
+          chunks, xmap, xstarmap subtask, Task
         - all registered tasks.
 
     Example Session::
@@ -729,7 +729,9 @@ class shell(Command):  # pragma: no cover
         self.locals = {'celery': self.app,
                        'Task': celery.Task,
                        'chord': celery.chord,
+                       'ichord': celery.ichord,
                        'group': celery.group,
+                       'igroup': celery.igroup,
                        'chain': celery.chain,
                        'chunks': celery.chunks,
                        'xmap': celery.xmap,

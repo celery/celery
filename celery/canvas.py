@@ -8,6 +8,7 @@
 """
 from __future__ import absolute_import
 
+from functools import partial
 from operator import itemgetter
 from itertools import chain as _chain
 
@@ -201,7 +202,7 @@ class chain(Signature):
 
     def __init__(self, *tasks, **options):
         tasks = tasks[0] if len(tasks) == 1 and is_list(tasks[0]) else tasks
-        Signature.__init__(self, 'celery.chain', (), {'tasks': tasks}, options)
+        Signature.__init__(self, 'celery.chain', (), {'tasks': tasks}, **options)
         self.tasks = tasks
         self.subtask_type = 'chain'
 
@@ -296,7 +297,7 @@ class group(Signature):
     def __init__(self, *tasks, **options):
         if len(tasks) == 1:
             tasks = _maybe_group(tasks[0])
-        Signature.__init__(self, 'celery.group', (), {'tasks': tasks}, options)
+        Signature.__init__(self, 'celery.group', (), {'tasks': tasks}, **options)
         self.tasks, self.subtask_type = tasks, 'group'
 
     @classmethod
@@ -320,6 +321,7 @@ class group(Signature):
     def __repr__(self):
         return repr(self.tasks)
 Signature.register_type(group)
+igroup = partial(group, immutable=True)
 
 
 class chord(Signature):
@@ -328,7 +330,7 @@ class chord(Signature):
     def __init__(self, header, body=None, **options):
         Signature.__init__(self, 'celery.chord', (),
                          {'header': _maybe_group(header),
-                          'body': maybe_subtask(body)}, options)
+                          'body': maybe_subtask(body)}, **options)
         self.subtask_type = 'chord'
 
     @classmethod
@@ -376,7 +378,7 @@ class chord(Signature):
     def body(self):
         return self.kwargs.get('body')
 Signature.register_type(chord)
-
+ichord = partial(chord, immutable=True)
 
 def subtask(varies, *args, **kwargs):
     if not (args or kwargs) and isinstance(varies, dict):

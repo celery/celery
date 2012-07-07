@@ -247,7 +247,7 @@ Application
 Grouping Tasks
 --------------
 
-.. class:: group(tasks=[])
+.. class:: group(task1[, task2[, task3[,... taskN]]])
 
     Creates a group of tasks to be executed in parallel.
 
@@ -258,6 +258,10 @@ Grouping Tasks
         [4, 8]
 
     The ``apply_async`` method returns :class:`~@GroupResult`.
+
+.. class:: igroup(task1[, task2[, task3[,... taskN]]])
+
+    Immutable :class:`group` (i.e. will not modify arguments).
 
 .. class:: chain(task1[, task2[, task3[,... taskN]]])
 
@@ -282,7 +286,7 @@ Grouping Tasks
         >>> res.parent.get()
         4
 
-.. class:: chord(header)(body)
+.. class:: chord(header[, body])
 
     A chord consists of a header and a body.
     The header is a group of tasks that must complete before the callback is
@@ -299,6 +303,10 @@ Grouping Tasks
 
     The body is applied with the return values of all the header
     tasks as a list.
+
+.. class:: ichord(header[, body])
+
+    Immutable :class:`chord` (i.e. will not modify arguments).
 
 .. class:: subtask(task=None, args=(), kwargs={}, options={})
 
