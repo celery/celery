@@ -155,6 +155,21 @@ for the no-execv patch to work.
 - `django-celery #122 <http://github.com/celery/django-celery/issues/122`
 - `django-celery #124 <http://github.com/celery/django-celery/issues/122`
 
+:mod:`celery.app.task` no longer a package
+------------------------------------------
+
+The :mod:`celery.app.task` module is now a module instead of a package.
+
+The setup.py install script will try to remove the old package,
+but if that doesn't work for some reason you have to remove
+it manually.  This command helps::
+
+    $ rm -r $(dirname $(python -c '
+        import celery;print(celery.__file__)'))/app/task/
+
+If you experience an error like ``ImportError: cannot import name _unpickle_task``,
+you just have to remove the old package and everything is fine.
+
 Last version to support Python 2.5
 ----------------------------------
 
@@ -780,7 +795,7 @@ In Other News
     Internally :attr:`@amqp.queues` is now a mapping of name/Queue instances,
     instead of converting on the fly.
 
-* Can now specify connection for :class:`@control.inspect`.
+- Can now specify connection for :class:`@control.inspect`.
 
     .. code-block:: python
 
@@ -789,66 +804,57 @@ In Other News
         i = celery.control.inspect(connection=Connection('redis://'))
         i.active_queues()
 
-* Module :mod:`celery.app.task` is now a module instead of a package.
-
-    The setup.py install script will try to remove the old package,
-    if that doesn't work for some reason you have to remove
-    it manually, you can do so by executing the command::
-
-        $ rm -r $(dirname $(python -c '
-            import celery;print(celery.__file__)'))/app/task/
-
-* :setting:`CELERY_FORCE_EXECV` is now enabled by default.
+- :setting:`CELERY_FORCE_EXECV` is now enabled by default.
 
     If the old behavior is wanted the setting can be set to False,
     or the new :option:`--no-execv` to :program:`celery worker`.
 
-* Deprecated module ``celery.conf`` has been removed.
+- Deprecated module ``celery.conf`` has been removed.
 
-* The :setting:`CELERY_TIMEZONE` now always require the :mod:`pytz`
+- The :setting:`CELERY_TIMEZONE` now always require the :mod:`pytz`
   library to be installed (exept if the timezone is set to `UTC`).
 
-* The Tokyo Tyrant backend has been removed and is no longer supported.
+- The Tokyo Tyrant backend has been removed and is no longer supported.
 
-* Now uses :func:`~kombu.common.maybe_declare` to cache queue declarations.
+- Now uses :func:`~kombu.common.maybe_declare` to cache queue declarations.
 
-* There is no longer a global default for the
+- There is no longer a global default for the
   :setting:`CELERYBEAT_MAX_LOOP_INTERVAL` setting, it is instead
   set by individual schedulers.
 
-* Worker: now truncates very long message bodies in error reports.
+- Worker: now truncates very long message bodies in error reports.
 
-* No longer deepcopies exceptions when trying to serialize errors.
+- No longer deepcopies exceptions when trying to serialize errors.
 
-* :envvar:`CELERY_BENCH` environment variable, will now also list
+- :envvar:`CELERY_BENCH` environment variable, will now also list
   memory usage statistics at worker shutdown.
 
-* Worker: now only ever use a single timer for all timing needs,
+- Worker: now only ever use a single timer for all timing needs,
   and instead set different priorities.
 
-* An exceptions arguments are now safely pickled
+- An exceptions arguments are now safely pickled
 
     Contributed by Matt Long.
 
-* Worker/Celerybeat no longer logs the startup banner.
+- Worker/Celerybeat no longer logs the startup banner.
 
     Previously it would be logged with severity warning,
     no it's only written to stdout.
 
-* The ``contrib/`` directory in the distribution has been renamed to
+- The ``contrib/`` directory in the distribution has been renamed to
   ``extra/``.
 
-* New signal: :signal:`task_revoked`
+- New signal: :signal:`task_revoked`
 
-* celery.contrib.migrate: Many improvements including
+- celery.contrib.migrate: Many improvements including
   filtering, queue migration, and support for acking messages on the broker
   migrating from.
 
     Contributed by John Watson.
 
-* Worker: Prefetch count increments are now optimized and grouped together.
+- Worker: Prefetch count increments are now optimized and grouped together.
 
-* Worker: No longer calls ``consume`` on the remote control command queue
+- Worker: No longer calls ``consume`` on the remote control command queue
   twice.
 
     Probably didn't cause any problems, but was unecessary.
@@ -856,37 +862,37 @@ In Other News
 Internals
 ---------
 
-* ``app.broker_connection`` is now ``app.connection``
+- ``app.broker_connection`` is now ``app.connection``
 
     Both names still work.
 
-* Compat modules are now generated dynamically upon use.
+- Compat modules are now generated dynamically upon use.
 
     These modules are ``celery.messaging``, ``celery.log``,
     ``celery.decorators`` and ``celery.registry``.
 
-* :mod:`celery.utils` refactored into multiple modules:
+- :mod:`celery.utils` refactored into multiple modules:
 
     :mod:`celery.utils.text`
     :mod:`celery.utils.imports`
     :mod:`celery.utils.functional`
 
-* Now using :mod:`kombu.utils.encoding` instead of
+- Now using :mod:`kombu.utils.encoding` instead of
   `:mod:`celery.utils.encoding`.
 
-* Renamed module ``celery.routes`` -> :mod:`celery.app.routes`.
+- Renamed module ``celery.routes`` -> :mod:`celery.app.routes`.
 
-* Renamed package ``celery.db`` -> :mod:`celery.backends.database`.
+- Renamed package ``celery.db`` -> :mod:`celery.backends.database`.
 
-* Renamed module ``celery.abstract`` -> :mod:`celery.worker.bootsteps`.
+- Renamed module ``celery.abstract`` -> :mod:`celery.worker.bootsteps`.
 
-* Command-line docs are now parsed from the module docstrings.
+- Command-line docs are now parsed from the module docstrings.
 
-* Test suite directory has been reorganized.
+- Test suite directory has been reorganized.
 
-* :program:`setup.py` now reads docs from the :file:`requirements/` directory.
+- :program:`setup.py` now reads docs from the :file:`requirements/` directory.
 
-* Celery commands no longer wraps output (Issue #700).
+- Celery commands no longer wraps output (Issue #700).
 
     Contributed by Thomas Johansson.
 
