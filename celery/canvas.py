@@ -3,7 +3,10 @@
     celery.canvas
     ~~~~~~~~~~~~~
 
-    Designing task workflows.
+    Composing task workflows.
+
+    Documentation for these functions are in :mod:`celery`.
+    You should not import from this module directly.
 
 """
 from __future__ import absolute_import
@@ -202,7 +205,8 @@ class chain(Signature):
 
     def __init__(self, *tasks, **options):
         tasks = tasks[0] if len(tasks) == 1 and is_list(tasks[0]) else tasks
-        Signature.__init__(self, 'celery.chain', (), {'tasks': tasks}, **options)
+        Signature.__init__(self,
+            'celery.chain', (), {'tasks': tasks}, **options)
         self.tasks = tasks
         self.subtask_type = 'chain'
 
@@ -297,7 +301,8 @@ class group(Signature):
     def __init__(self, *tasks, **options):
         if len(tasks) == 1:
             tasks = _maybe_group(tasks[0])
-        Signature.__init__(self, 'celery.group', (), {'tasks': tasks}, **options)
+        Signature.__init__(self,
+            'celery.group', (),{'tasks': tasks}, **options)
         self.tasks, self.subtask_type = tasks, 'group'
 
     @classmethod
@@ -379,6 +384,7 @@ class chord(Signature):
         return self.kwargs.get('body')
 Signature.register_type(chord)
 ichord = partial(chord, immutable=True)
+
 
 def subtask(varies, *args, **kwargs):
     if not (args or kwargs) and isinstance(varies, dict):
