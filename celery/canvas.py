@@ -301,7 +301,7 @@ class group(Signature):
         if len(tasks) == 1:
             tasks = _maybe_group(tasks[0])
         Signature.__init__(self,
-            'celery.group', (),{'tasks': tasks}, **options)
+            'celery.group', (), {'tasks': tasks}, **options)
         self.tasks, self.subtask_type = tasks, 'group'
 
     @classmethod

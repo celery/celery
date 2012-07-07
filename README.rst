@@ -13,10 +13,6 @@
 
 --
 
-.. contents::
-    :local:
-    :depth: 1
-
 What is a Task Queue?
 =====================
 
@@ -48,9 +44,9 @@ What do I need?
 
 Celery version 3.0 runs on,
 
-- Python ❨2.5, 2.6, 2.7, 3.2, 3.3❩
-- PyPy ❨1.8, 1.9❩
-- Jython ❨2.5, 2.7❩.
+- Python (2.5, 2.6, 2.7, 3.2, 3.3)
+- PyPy (1.8, 1.9)
+- Jython (2.5, 2.7).
 
 This is the last version to support Python 2.5,
 and from Celery 3.1, Python 2.6 or later is required.
@@ -85,8 +81,8 @@ getting started tutorials:
 .. _`Next steps`:
     http://docs.celeryproject.org/en/latest/getting-started/next-steps.html
 
-Celery is…
-==========
+Celery is...
+============
 
 - **Simple**
 
@@ -132,7 +128,7 @@ It supports...
         - MongoDB_, Beanstalk_,
         - CouchDB_, SQLAlchemy_,
         - Django ORM, Amazon SQS,
-        - and more…
+        - and more...
 
     - **Concurrency**
 
