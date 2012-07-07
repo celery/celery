@@ -9,16 +9,48 @@
 
 3.0.0 (Chiastic Slide)
 ======================
-:status: FROZEN
-:branch: master
+:release-date: 2012-07-07 01:30 P.M BST
+:by: Ask Solem
 
 See :ref:`whatsnew-3.0`.
+
+.. _version-2.5.5:
+
+2.5.5
+=====
+:release-date: 2012-06-06 16:00 P.M BST
+:by: Ask Solem
+
+This is a dummy release performed for the following goals:
+
+- Protect against force upgrading to Kombu 2.2.0
+- Version parity with django-celery
+
+.. _version-2.5.3:
+
+2.5.3
+=====
+:release-date: 2012-04-16 07:00 P.M BST
+:by: Ask Solem
+
+* A bug causes messages to be sent with UTC timestamps even though
+  :setting:`CELERY_ENABLE_UTC` was not enabled (Issue #636).
+
+* celerybeat: No longer crashes if an entry's args is set to None
+  (Issue #657).
+
+* Autoreload did not work if a module's ``__file__`` attribute
+  was set to the modules '.pyc' file.  (Issue #647).
+
+* Fixes early 2.5 compatibility where __package__ does not exist
+  (Issue #638).
 
 .. _version-2.5.2:
 
 2.5.2
 =====
 :release-date: 2012-04-13 04:30 P.M GMT
+:by: Ask Solem
 
 .. _v252-news:
 

@@ -73,14 +73,15 @@ Highlights
 
 
 .. _`website`: http://celeryproject.org/
-.. _`django-celery changelog`: http://bit.ly/djcelery-26-changelog
+.. _`django-celery changelog`:
+    http://github.com/celery/django-celery/tree/master/Changelog
 .. _`django-celery 3.0`: http://pypi.python.org/pypi/django-celery/
 
 .. contents::
     :local:
     :depth: 2
 
-.. _v260-important:
+.. _v300-important:
 
 Important Notes
 ===============
@@ -215,7 +216,7 @@ Redis: Ack emulation improvements
     but if so happens you could temporarily set the visibility timeout lower
     to flush out messages when you start up the systems again.
 
-.. _v260-news:
+.. _v300-news:
 
 News
 ====
@@ -889,7 +890,7 @@ Internals
 
     Contributed by Thomas Johansson.
 
-.. _v260-experimental:
+.. _v300-experimental:
 
 Experimental
 ============
@@ -916,7 +917,7 @@ to create tasks out of methods::
 
 See :mod:`celery.contrib.methods` for more information.
 
-.. _v260-unscheduled-removals:
+.. _v300-unscheduled-removals:
 
 Unscheduled Removals
 ====================
@@ -929,7 +930,7 @@ but these removals should have no major effect.
     - ``CELERYD_ETA_SCHEDULER`` -> ``CELERYD_TIMER``
     - ``CELERYD_ETA_SCHEDULER_PRECISION`` -> ``CELERYD_TIMER_PRECISION``
 
-.. _v260-deprecations:
+.. _v300-deprecations:
 
 Deprecations
 ============
