@@ -85,7 +85,7 @@ class Control(object):
 
     def __init__(self, app=None):
         self.app = app_or_default(app)
-        self.mailbox = self.Mailbox('celeryd', type='fanout')
+        self.mailbox = self.Mailbox('celery', type='fanout')
 
     @cached_property
     def inspect(self):
