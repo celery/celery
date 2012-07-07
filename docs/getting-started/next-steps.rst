@@ -269,6 +269,9 @@ e.g, for a task that is retried two times the stages would be::
 To read more about task states you should see the :ref:`task-states` section
 in the tasks user guide.
 
+Calling tasks is described in detail in the
+:ref:`Calling Guide <guide-calling>`.
+
 .. _designing-workflows:
 
 *Canvas*: Designing Workflows
@@ -351,7 +354,7 @@ To get to that we must introduce the canvas primitives...
 The Primitives
 --------------
 
-.. topic:: overview of primitives
+.. topic:: \ 
 
     .. hlist::
         :columns: 2
@@ -363,12 +366,103 @@ The Primitives
         - :ref:`starmap <canvas-map>`
         - :ref:`chunks <canvas-chunks>`
 
-The primitives are also subtasks themselves, so that they can be combined
+The primitives are subtasks themselves, so that they can be combined
 in any number of ways to compose complex workflows.
+
+.. note::
+
+    These examples retrieve results, so to try them out you need
+    to configure a result backend. The example project
+    above already does that (see the backend argument to :class:`~celery.Celery`).
+
+Let's look at some examples:
+
+Groups
+~~~~~~
+
+A :class:`~celery.group` calls a list of tasks in parallel,
+and it returns a special result instance that lets you inspect the results
+as a group, and retrieve the return values in order.
+
+.. code-block:: python
+
+    >>> from celery import group
+    >>> from proj.tasks import add
+
+    >>> group(add.s(i, i) for i in xrange(10))().get()
+    [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
+
+- Partial group
+
+.. code-block:: python
+
+    >>> g = group(add.s(i) for i in xrange(10))
+    >>> g(10).get()
+    [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+
+Chains
+~~~~~~
+
+Tasks can be linked together so that after one task returns the other
+is called:
+
+.. code-block:: python
+
+    >>> from celery imoport chain
+    >>> from proj.tasks import add, mul
+
+    # (4 + 4) * 8
+    >>> chain(add.s(4, 4) | mul.s(8))().get()
+    64
+
+
+or a partial chain:
+
+.. code-block:: python
+
+    # (? + 4) * 8
+    >>> g = chain(add.s(4) | mul.s(8))
+    >>> g(4).get()
+    64
+
+
+Chains can also be written like this:
+
+.. code-block:: python
+
+    >>> (add.s(4, 4) | mul.s(8))().get()
+    64
+
+Chords
+~~~~~~
+
+A chord is a group with a callback:
+
+.. code-block:: python
+
+    >>> from celery import chord
+    >>> from proj.tasks import add, xsum
+
+    >>> chord((add.s(i, i) for i in xrange(10)), xsum.s())().get()
+    90
+
+
+A group chained to another task will be automatically converted
+to a chord:
+
+.. code-block:: python
+
+    >>> (group(add.s(i, i) for i in xrange(10)) | xsum.s())().get()
+    90
+
+
+Since these primitives are all of the subtask type they
+can be combined almost however you want, e.g::
+
+    >>> upload_document.s(file) | group(apply_filter.s() for filter in filters)
 
 Be sure to read more about workflows in the :ref:`Canvas <guide-canvas>` user
 guide.
-
 
 Routing
 =======
@@ -408,7 +502,3 @@ give equal weight to the queues.
 
 To learn more about routing, including taking use of the full
 power of AMQP routing, see the :ref:`Routing Guide <guide-routing>`.
-
-
-
-**This document is incomplete - and ends here :(**
