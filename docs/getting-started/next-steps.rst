@@ -134,7 +134,7 @@ Stopping the worker
 ~~~~~~~~~~~~~~~~~~~
 
 To stop the worker simply hit Ctrl+C.  A list of signals supported
-by the worker is detailed in the :ref:`Worker Guide <guide-worker>`.
+by the worker is detailed in the :ref:`Workers Guide <guide-workers>`.
 
 In the background
 ~~~~~~~~~~~~~~~~~
