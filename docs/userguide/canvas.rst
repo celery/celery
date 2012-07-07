@@ -207,7 +207,7 @@ The Primitives
         The map primitive works like the built-in ``map`` function, but creates
         a temporary task where a list of arguments is applied to the task.
         E.g. ``task.map([1, 2])`` results in a single task
-        being called, appyling the arguments in order to the task function so
+        being called, applying the arguments in order to the task function so
         that the result is::
 
             res = [task(1), task(2)]

@@ -8,6 +8,10 @@ The :ref:`first-steps` guide is intentionally minimal.  In this guide
 we will demonstrate what Celery offers in more detail, including
 how to add Celery support for your application and library.
 
+This document does not document all of Celery's features and
+best practices, so it's recommended that you also read the
+:ref:`User Guide <guide>`
+
 .. contents::
     :local:
     :depth: 1
@@ -502,3 +506,72 @@ give equal weight to the queues.
 
 To learn more about routing, including taking use of the full
 power of AMQP routing, see the :ref:`Routing Guide <guide-routing>`.
+
+Remote Control
+==============
+
+If you're using RabbitMQ (AMQP), Redis or MongoDB as the broker then
+you can control and inspect the worker at runtime.
+
+For example you can see what tasks the worker is currently working on::
+
+    $ celery -A proj inspect active
+
+This is implemented by using broadcast messaging, so all remote
+control commands are received by every worker in the cluster.
+
+You can also specify one or more workers to act on the request
+using the :option:`--destination` option, which is a comma separated
+list of worker hostnames::
+
+    $ celery -A proj inspect active --destination=worker1.example.com
+
+If a destination is not provided then every worker will act and reply
+to the request.
+
+The :program:`celery inspect` command contains commands that
+does not change anything in the worker, it only replies information
+and statistics about what is going on inside the worker.
+For a list of inspect commands you can execute::
+
+    $ celery -A proj inspect --help
+
+Then there is the :program:`celery control` command, which contains
+commands that actually changes things in the worker at runtime::
+
+    $ celery -A proj control --help
+
+For example you can force workers to enable event messages (used
+for monitoring tasks and workers)::
+
+    $ celery -A proj control enable_events
+
+When events are enabled you can then start the event dumper
+to see what the workers are doing::
+
+    $ celery -A proj events --dump
+
+or you can start the curses interface::
+
+    $ celery -A proj events
+
+when you're finished monitoring you can disable events again::
+
+    $ celery -A proj control disable_events
+
+The :program:`celery status` command also uses remote control commands
+and shows a list of online workers in the cluster::
+
+    $ celery -A proj status
+
+You can read more about the :program:`celery` command and monitoring
+in the :ref:`Monitoring Guide <guide-monitoring>`.
+
+
+What to do now?
+===============
+
+Now that you have read this document you should continue
+to the :ref:`User Guide <guide>`.
+
+There's also an :ref:`API reference <apiref>` if you are so inclined.

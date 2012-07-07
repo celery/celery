@@ -8,8 +8,8 @@
     :local:
     :depth: 1
 
-The Celery library must instantiated before use, and this instance
-is called the application.
+The Celery library must be instantiated before use, this instance
+is called an application (or *app* for short).
 
 The application is thread-safe so that multiple Celery applications
 with different configuration, components and tasks can co-exist in the
@@ -143,12 +143,10 @@ that are consulted in order:
     Go to the :ref:`Configuration reference <configuration>` for a complete
     listing of all the available settings, and their default values.
 
-
-
 ``config_from_object``
 ----------------------
 
-.. sidebar:: Timezones & Pytz.
+.. sidebar:: Timezones & pytz
 
     Setting a time zone other than UTC requires the :mod:`pytz` library
     to be installed, see the :setting:`CELERY_TIMEZONE` setting for more
