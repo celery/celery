@@ -40,10 +40,6 @@ Highlights
         There are no current plans to deprecate the old API,
         so you don't have to be in a hurry to port your applications.
 
-    - Over 600 commits, 30k additions/36k deletions.
-
-        In comparison from 1.0 to 2.0 had 18k additions/8k deletions.
-
     - The worker is now thread-less, giving great performance improvements.
 
     - The new "Canvas" makes it easy to define complex workflows.
@@ -70,6 +66,11 @@ Highlights
     - Redis support is more reliable with improved ack emulation.
 
     - Celery now always uses UTC
+
+    - Over 600 commits, 30k additions/36k deletions.
+
+        In comparison 1.0➝ 2.0 had 18k additions/8k deletions.
+
 
 .. _`website`: http://celeryproject.org/
 .. _`django-celery changelog`: http://bit.ly/djcelery-26-changelog
@@ -176,6 +177,44 @@ versions prior to 2.5.
 You can disable UTC and revert back to old local time by setting
 the :setting:`CELERY_ENABLE_UTC` setting.
 
+Redis: Ack emulation improvements
+---------------------------------
+
+    Reducing the possibility of data loss.
+
+    Acks are now implemented by storing a copy of the message when the message
+    is consumed.  The copy is not removed until the consumer acknowledges
+    or rejects it.
+
+    This means that unacknowledged messages will be redelivered either
+    when the connection is closed, or when the visibility timeout is exceeded.
+
+    - Visibility timeout
+
+        This is a timeout for acks, so that if the consumer
+        does not ack the message within this time limit, the message
+        is redelivered to another consumer.
+
+        The timeout is set to one hour by default, but
+        can be changed by configuring a transport option::
+
+            BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 18000}  # 5 hours
+
+
+    .. note::
+
+        Messages that have not been acked will be redelivered
+        if the visibility timeout is exceeded, for Celery users
+        this means that ETA/countdown tasks that are scheduled to execute
+        with a time that exceeds the visibility timeout will be executed
+        twice (or more).  If you plan on using long ETA/countdowns you
+        should tweak the visibility timeout accordingly.
+
+    Setting a long timeout means that it will take a long time
+    for messages to be redelivered in the event of a power failure,
+    but if so happens you could temporarily set the visibility timeout lower
+    to flush out messages when you start up the systems again.
+
 .. _v260-news:
 
 News
@@ -274,6 +313,52 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
 - Adds ``subtask.flatten_links()``
 
     Returns a flattened list of all dependencies (recursively)
+
+Redis: Priority support.
+------------------------
+
+The message's ``priority`` field is now respected by the Redis
+transport by having multiple lists for each named queue.
+The queues are then consumed by in order of priority.
+
+The priority field is a number in the range of 0 - 9, where
+0 is the default and highest priority.
+
+The priority range is collapsed into four steps by default, since it is
+unlikely that nine steps will yield more benefit than using four steps.
+The number of steps can be configured by setting the ``priority_steps``
+transport option, which must be a list of numbers in **sorted order**::
+
+    >>> BROKER_TRANSPORT_OPTIONS = {
+    ...     'priority_steps': [0, 2, 4, 6, 8, 9],
+    ... }
+
+Priorities implemented in this way is not as reliable as
+priorities on the server side, which is why
+nickname the feature "quasi-priorities";
+**Using routing is still the suggested way of ensuring
+quality of service**, as client implemented priorities
+fall short in a number of ways, e.g. if the worker
+is busy with long running tasks, has prefetched many messages,
+or the queues are congested.
+
+Still, it is possible that using priorities in combination
+with routing can be more beneficial than using routing
+or priorities alone.  Experimentation and monitoring
+should be used to prove this.
+
+Contributed by Germán M. Bravo.
+
+Redis: Now cycles queues so that consuming is fair.
+---------------------------------------------------
+
+This ensures that a very busy queue won't block messages
+from other queues, and ensures that all queues have
+an equal chance of being consumed from.
+
+This used to be the case before, but the behavior was
+accidentally changed while switching to using blocking pop.
+
 
 `group`/`chord`/`chain` are now subtasks
 ----------------------------------------
