@@ -161,10 +161,37 @@ class Command(object):
         """
         if argv is None:
             argv = list(sys.argv)
+        # Should we load any special concurrency environment?
+        pool_option = self.with_pool_option(argv)
+        if pool_option:
+            self.maybe_patch_concurrency(argv, *pool_option)
+
+        # Dump version and exit if '--version' arg set.
         self.early_version(argv)
         argv = self.setup_app_from_commandline(argv)
         prog_name = os.path.basename(argv[0])
         return self.handle_argv(prog_name, argv[1:])
+
+    def _find_option_with_arg(self, argv, short_opts=None, long_opts=None):
+        for i, arg in enumerate(argv):
+            if arg.startswith('-'):
+                if long_opts and arg.startswith('--'):
+                    name, val = arg.split('=', 1)
+                    if name in long_opts:
+                        return val
+                if short_opts and arg in short_opts:
+                    return argv[i + 1]
+        raise KeyError('|'.join(short_opts or [] + long_opts or []))
+
+    def maybe_patch_concurrency(self, argv, short_opts=None, long_opts=None):
+        try:
+            pool = self._find_option_with_arg(argv, short_opts, long_opts)
+        except KeyError:
+            pass
+        else:
+            from celery import concurrency
+            # set up eventlet/gevent environments ASAP.
+            concurrency.get_implementation(pool)
 
     def usage(self, command):
         """Returns the command-line usage string for this app."""
@@ -329,6 +356,16 @@ class Command(object):
                 options[in_option].append(find_rst_ref.sub(r'\1',
                     line.strip()).replace('`', ''))
         return options
+
+    def with_pool_option(self, argv):
+        """Returns tuple of ``(short_opts, long_opts)`` if the command
+        supports a pool argument, and used to monkey patch eventlet/gevent
+        environments as early as possible.
+
+        E.g::
+              has_pool_option = (['-P'], ['--pool'])
+        """
+        pass
 
     def _get_default_app(self, *args, **kwargs):
         from celery.app import default_app

@@ -133,13 +133,6 @@ class WorkerCommand(Command):
     def execute_from_commandline(self, argv=None):
         if argv is None:
             argv = list(sys.argv)
-        try:
-            pool = argv[argv.index('-P') + 1]
-        except ValueError:
-            pass
-        else:
-            # set up eventlet/gevent environments ASAP.
-            concurrency.get_implementation(pool)
         return super(WorkerCommand, self).execute_from_commandline(argv)
 
     def run(self, *args, **kwargs):
@@ -160,6 +153,11 @@ class WorkerCommand(Command):
                     loglevel, '|'.join(l for l in LOG_LEVELS.keys()
                       if isinstance(l, basestring))))
         return self.app.Worker(**kwargs).run()
+
+    def with_pool_option(self, argv):
+        # this command support custom pools
+        # that may have to be loaded as early as possible.
+        return (['-P'], ['--pool'])
 
     def get_options(self):
         conf = self.app.conf

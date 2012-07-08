@@ -885,6 +885,12 @@ class CeleryCommand(BaseCommand):
             ])
         return '\n'.join(ret).strip()
 
+    def with_pool_option(self, argv):
+        if len(argv) > 1 and argv[1] == 'worker':
+            # this command supports custom pools
+            # that may have to be loaded as early as possible.
+            return (['-P'], ['--pool'])
+
 
 def determine_exit_status(ret):
     if isinstance(ret, int):
