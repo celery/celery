@@ -8,6 +8,10 @@ The :ref:`first-steps` guide is intentionally minimal.  In this guide
 we will demonstrate what Celery offers in more detail, including
 how to add Celery support for your application and library.
 
+This document does not document all of Celery's features and
+best practices, so it's recommended that you also read the
+:ref:`User Guide <guide>`
+
 .. contents::
     :local:
     :depth: 1
@@ -46,7 +50,7 @@ you simply import this instance.
     While results are disabled by default we use the amqp backend here
     to demonstrate how retrieving the results work, you may want to use
     a different backend for your application, as they all have different
-    strenghts and weaknesses.  If you don't need results it's best
+    strengths and weaknesses.  If you don't need results it's best
     to disable them.  Results can also be disabled for individual tasks
     by setting the ``@task(ignore_result=True)`` option.
 
@@ -126,6 +130,68 @@ by passing in the `--help` flag::
 
 These options are described in more detailed in the :ref:`Workers Guide <guide-workers>`.
 
+Stopping the worker
+~~~~~~~~~~~~~~~~~~~
+
+To stop the worker simply hit Ctrl+C.  A list of signals supported
+by the worker is detailed in the :ref:`Workers Guide <guide-workers>`.
+
+In the background
+~~~~~~~~~~~~~~~~~
+
+In production you will want to run the worker in the background, this is
+described in detail in the :ref:`daemonization tutorial <daemonizing>`.
+
+The daemonization scripts uses the :program:`celery multi` command to
+start one or more workers in the background::
+
+    $ celery multi start w1 -A proj -l info
+    celeryd-multi v3.0.0 (Chiastic Slide)
+    > Starting nodes...
+        > w1.halcyon.local: OK
+
+You can restart it too::
+
+    $ celery multi restart w1 -A proj -l info
+    celeryd-multi v3.0.0 (Chiastic Slide)
+    > Stopping nodes...
+        > w1.halcyon.local: TERM -> 64024
+    > Waiting for 1 node.....
+        > w1.halcyon.local: OK
+    > Restarting node w1.halcyon.local: OK
+    celeryd-multi v3.0.0 (Chiastic Slide)
+    > Stopping nodes...
+        > w1.halcyon.local: TERM -> 64052
+
+or stop it::
+
+    $ celery multi stop -w1 -A proj -l info
+
+.. note::
+
+    :program:`celery multi` doesn't store information about workers
+    so you need to use the same command line parameters when restarting.
+    Also the same pidfile and logfile arguments must be used when
+    stopping/killing.
+
+By default it will create pid and log files in the current directory,
+to protect against multiple workers launching on top of each other
+you are encouraged to put these in a dedicated directory::
+
+    $ mkdir -p /var/run/celery
+    $ mkdir -p /var/log/celery
+    $ celery multi start w1 -A proj -l info --pidfile=/var/run/celery/%n.pid \
+                                            --logfile=/var/log/celery/%n.pid
+
+With the multi command you can start multiple workers, and there is a powerful
+command line syntax to specify arguments for different workers too,
+e.g::
+
+    $ celeryd multi start 10 -A proj -l info -Q:1-3 images,video -Q:4,5 data \
+        -Q default -L:4,5 debug
+
+For more examples see the :mod:`~celery.bin.celeryd_multi` module in the API
+reference.
 
 .. _app-argument:
 
@@ -269,6 +335,9 @@ e.g, for a task that is retried two times the stages would be::
 To read more about task states you should see the :ref:`task-states` section
 in the tasks user guide.
 
+Calling tasks is described in detail in the
+:ref:`Calling Guide <guide-calling>`.
+
 .. _designing-workflows:
 
 *Canvas*: Designing Workflows
@@ -351,7 +420,7 @@ To get to that we must introduce the canvas primitives...
 The Primitives
 --------------
 
-.. topic:: overview of primitives
+.. topic:: \ 
 
     .. hlist::
         :columns: 2
@@ -363,14 +432,241 @@ The Primitives
         - :ref:`starmap <canvas-map>`
         - :ref:`chunks <canvas-chunks>`
 
-The primitives are also subtasks themselves, so that they can be combined
+The primitives are subtasks themselves, so that they can be combined
 in any number of ways to compose complex workflows.
 
-Here's some examples::
+.. note::
+
+    These examples retrieve results, so to try them out you need
+    to configure a result backend. The example project
+    above already does that (see the backend argument to :class:`~celery.Celery`).
+
+Let's look at some examples:
+
+Groups
+~~~~~~
+
+A :class:`~celery.group` calls a list of tasks in parallel,
+and it returns a special result instance that lets you inspect the results
+as a group, and retrieve the return values in order.
+
+.. code-block:: python
+
+    >>> from celery import group
+    >>> from proj.tasks import add
+
+    >>> group(add.s(i, i) for i in xrange(10))().get()
+    [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
+
+- Partial group
+
+.. code-block:: python
+
+    >>> g = group(add.s(i) for i in xrange(10))
+    >>> g(10).get()
+    [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+
+Chains
+~~~~~~
+
+Tasks can be linked together so that after one task returns the other
+is called:
+
+.. code-block:: python
+
+    >>> from celery imoport chain
+    >>> from proj.tasks import add, mul
+
+    # (4 + 4) * 8
+    >>> chain(add.s(4, 4) | mul.s(8))().get()
+    64
+
+
+or a partial chain:
+
+.. code-block:: python
+
+    # (? + 4) * 8
+    >>> g = chain(add.s(4) | mul.s(8))
+    >>> g(4).get()
+    64
+
+
+Chains can also be written like this:
+
+.. code-block:: python
+
+    >>> (add.s(4, 4) | mul.s(8))().get()
+    64
+
+Chords
+~~~~~~
+
+A chord is a group with a callback:
+
+.. code-block:: python
+
+    >>> from celery import chord
+    >>> from proj.tasks import add, xsum
+
+    >>> chord((add.s(i, i) for i in xrange(10)), xsum.s())().get()
+    90
+
+
+A group chained to another task will be automatically converted
+to a chord:
+
+.. code-block:: python
+
+    >>> (group(add.s(i, i) for i in xrange(10)) | xsum.s())().get()
+    90
+
+
+Since these primitives are all of the subtask type they
+can be combined almost however you want, e.g::
+
+    >>> upload_document.s(file) | group(apply_filter.s() for filter in filters)
 
 Be sure to read more about workflows in the :ref:`Canvas <guide-canvas>` user
 guide.
 
+Routing
+=======
 
+Celery supports all of the routing facilities provided by AMQP,
+but it also supports simple routing where messages are sent to named queues.
 
-**This document is incomplete - and ends here :(**
+The :setting:`CELERY_ROUTES` setting enables you to route tasks by name
+and keep everything centralized in one location::
+
+    celery.conf.update(
+        CELERY_ROUTES = {
+            'proj.tasks.add': {'queue': 'hipri'},
+        },
+    )
+
+You can also specify the queue at runtime
+with the ``queue`` argument to ``apply_async``::
+
+    >>> from proj.tasks import add
+    >>> add.apply_async((2, 2), queue='hipri')
+
+You can then make a worker consume from this queue by
+specifying the :option:`-Q` option::
+
+    $ celery -A proj worker -Q hipri
+
+You may specify multiple queues by using a comma separated list,
+for example you can make the worker consume from both the default
+queue, and the ``hipri`` queue, where
+the default queue is named ``celery`` for historical reasons::
+
+    $ celery -A proj worker -Q hipri,celery
+
+The order of the queues doesn't matter as the worker will
+give equal weight to the queues.
+
+To learn more about routing, including taking use of the full
+power of AMQP routing, see the :ref:`Routing Guide <guide-routing>`.
+
+Remote Control
+==============
+
+If you're using RabbitMQ (AMQP), Redis or MongoDB as the broker then
+you can control and inspect the worker at runtime.
+
+For example you can see what tasks the worker is currently working on::
+
+    $ celery -A proj inspect active
+
+This is implemented by using broadcast messaging, so all remote
+control commands are received by every worker in the cluster.
+
+You can also specify one or more workers to act on the request
+using the :option:`--destination` option, which is a comma separated
+list of worker host names::
+
+    $ celery -A proj inspect active --destination=worker1.example.com
+
+If a destination is not provided then every worker will act and reply
+to the request.
+
+The :program:`celery inspect` command contains commands that
+does not change anything in the worker, it only replies information
+and statistics about what is going on inside the worker.
+For a list of inspect commands you can execute::
+
+    $ celery -A proj inspect --help
+
+Then there is the :program:`celery control` command, which contains
+commands that actually changes things in the worker at runtime::
+
+    $ celery -A proj control --help
+
+For example you can force workers to enable event messages (used
+for monitoring tasks and workers)::
+
+    $ celery -A proj control enable_events
+
+When events are enabled you can then start the event dumper
+to see what the workers are doing::
+
+    $ celery -A proj events --dump
+
+or you can start the curses interface::
+
+    $ celery -A proj events
+
+when you're finished monitoring you can disable events again::
+
+    $ celery -A proj control disable_events
+
+The :program:`celery status` command also uses remote control commands
+and shows a list of online workers in the cluster::
+
+    $ celery -A proj status
+
+You can read more about the :program:`celery` command and monitoring
+in the :ref:`Monitoring Guide <guide-monitoring>`.
+
+Timezone
+========
+
+All times and dates, internally and in messages uses the UTC timezone.
+
+When the worker receives a message, for example with a countdown set it
+converts that UTC time to local time.  If you wish to use
+a different timezone than the system timezone then you must
+configure that using the :setting:`CELERY_TIMEZONE` setting.
+
+To use custom timezones you also have to install the :mod:`pytz` library::
+
+    $ pip install pytz
+
+Setting a custom timezone::
+
+    celery.conf.CELERY_TIMEZONE = 'Europe/London'
+
+Optimization
+============
+
+The default configuration is not optimized for throughput by default,
+it tries to walk the middle way between many short tasks and fewer long
+tasks, a compromise between throughput and fair scheduling.
+
+If you have strict fair scheduling requirements, or want to optimize
+for throughput then you should read the :ref:`Optimizing Guide
+<guide-optimizing>`.
+
+If you're using RabbitMQ then you should install the :mod:`librabbitmq`
+module, which is an AMQP client implemented in C::
+
+    $ pip install librabbitmq
+
+What to do now?
+===============
+
+Now that you have read this document you should continue
+to the :ref:`User Guide <guide>`.
+
+There's also an :ref:`API reference <apiref>` if you are so inclined.

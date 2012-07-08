@@ -159,7 +159,7 @@ to the number of destination hosts.
     The solo and threads pool supports remote control commands,
     but any task executing will block any waiting control command,
     so it is of limited use if the worker is very busy.  In that
-    case you must increase the timeout waitin for replies in the client.
+    case you must increase the timeout waiting for replies in the client.
 
 .. _worker-broadcast-fun:
 
@@ -248,7 +248,7 @@ argument to :program:`celery worker` or the :setting:`CELERYD_STATE_DB`
 setting.
 
 Note that remote control commands must be working for revokes to work.
-Remote control commands are only supported by the amqp, redis and mongodb
+Remote control commands are only supported by the RabbitMQ (amqp), Redis and MongDB
 transports at this point.
 
 .. _worker-time-limits:
@@ -378,7 +378,7 @@ based on load:
     - and starts removing processes when the workload is low.
 
 It's enabled by the :option:`--autoscale` option, which needs two
-numbers: the maximum and minumum number of pool processes::
+numbers: the maximum and minimum number of pool processes::
 
         --autoscale=AUTOSCALE
              Enable autoscaling by providing

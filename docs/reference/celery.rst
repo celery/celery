@@ -247,7 +247,7 @@ Application
 Grouping Tasks
 --------------
 
-.. class:: group(tasks=[])
+.. class:: group(task1[, task2[, task3[,... taskN]]])
 
     Creates a group of tasks to be executed in parallel.
 
@@ -282,7 +282,7 @@ Grouping Tasks
         >>> res.parent.get()
         4
 
-.. class:: chord(header)(body)
+.. class:: chord(header[, body])
 
     A chord consists of a header and a body.
     The header is a group of tasks that must complete before the callback is

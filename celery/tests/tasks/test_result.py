@@ -248,7 +248,7 @@ class test_AsyncResult(AppCase):
 class test_ResultSet(AppCase):
 
     def test_resultset_repr(self):
-        self.assertTrue(repr(ResultSet(map(AsyncResult, [1, 2, 3]))))
+        self.assertTrue(repr(ResultSet(map(AsyncResult, ['1', '2', '3']))))
 
     def test_eq_other(self):
         self.assertFalse(ResultSet([1, 3, 3]) == 1)

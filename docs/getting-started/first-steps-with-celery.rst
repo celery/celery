@@ -45,8 +45,10 @@ There are several choices available, including:
 RabbitMQ
 --------
 
-`RabbitMQ`_ is feature-complete, stable, durable and easy to install. It's an excellent choice for a production environment. Detailed information about using RabbitMQ:
-    
+`RabbitMQ`_ is feature-complete, stable, durable and easy to install.
+It's an excellent choice for a production environment.
+Detailed information about using RabbitMQ with Celery:
+
     :ref:`broker-rabbitmq`
 
 .. _`RabbitMQ`: http://www.rabbitmq.com/
@@ -71,7 +73,7 @@ Redis
 
 `Redis`_ is also feature-complete, but is more susceptible to data loss in
 the event of abrupt termination or power failures. Detailed information about using Redis:
-    
+
     :ref:`broker-redis`
 
 .. _`Redis`: http://redis.io/
@@ -82,15 +84,14 @@ Using a database
 
 Using a database as a message queue is not recommended, but can be sufficient
 for very small installations.  Your options include:
-    
+
 * :ref:`broker-sqlalchemy`
 * :ref:`broker-django`
-* :ref:`broker-mongodb`
 
 If you're already using a Django database for example, using it as your
 message broker can be convenient while developing even if you use a more
 robust system in production.
-                         
+
 Other brokers
 -------------
 
@@ -98,6 +99,7 @@ In addition to the above, there are other transport implementations
 to choose from, including
 
 * :ref:`Amazon SQS <broker-sqs>`
+* :ref:`broker-mongodb`
 
 See also `Transport Comparison`_.
 
@@ -133,7 +135,7 @@ Let's create the file :file:`tasks.py`:
 
     celery = Celery('tasks', broker='amqp://guest@localhost//')
 
-    @celery.task()
+    @celery.task
     def add(x, y):
         return x + y
 
@@ -298,10 +300,10 @@ If you are configuring many settings at once you can use ``update``:
 For larger projects using a dedicated configuration module is useful,
 in fact you are discouraged from hard coding
 periodic task intervals and task routing options, as it is much
-better to keep this in a centralized location, and especially for libaries
+better to keep this in a centralized location, and especially for libraries
 it makes it possible for users to control how they want your tasks to behave,
-you can also imagine your sysadmin making simple changes to the configuration
-in the event of system trobule.
+you can also imagine your SysAdmin making simple changes to the configuration
+in the event of system trouble.
 
 You can tell your Celery instance to use a configuration module,
 by calling the :meth:`~@Celery.config_from_object` method:
@@ -328,7 +330,7 @@ current directory or on the Python path, it could look like this:
     CELERY_TIMEZONE = 'Europe/Oslo'
     CELERY_ENABLE_UTC = True
 
-To verify that your configuration file works properly, and does't
+To verify that your configuration file works properly, and doesn't
 contain any syntax errors, you can try to import it::
 
     $ python -m celeryconfig

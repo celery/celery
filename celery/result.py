@@ -535,8 +535,8 @@ class ResultSet(ResultBase):
         return NotImplemented
 
     def __repr__(self):
-        return '<%s: %r>' % (self.__class__.__name__,
-                             [r.id for r in self.results])
+        return '<%s: [%s]>' % (self.__class__.__name__,
+                               ', '.join(r.id for r in self.results))
 
     @property
     def subtasks(self):
@@ -599,8 +599,8 @@ class GroupResult(ResultSet):
         return NotImplemented
 
     def __repr__(self):
-        return '<%s: %s %r>' % (self.__class__.__name__, self.id,
-                                [r.id for r in self.results])
+        return '<%s: %s [%s]>' % (self.__class__.__name__, self.id,
+                                  ', '.join(r.id for r in self.results))
 
     def serializable(self):
         return self.id, [r.serializable() for r in self.results]

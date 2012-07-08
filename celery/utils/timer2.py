@@ -157,6 +157,10 @@ class Schedule(object):
         tref._last_run = None
         return self.enter_after(msecs, tref, priority)
 
+    @property
+    def schedule(self):
+        return self
+
     def __iter__(self):
         """The iterator yields the time to sleep for between runs."""
 

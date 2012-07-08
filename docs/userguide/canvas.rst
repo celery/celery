@@ -207,7 +207,7 @@ The Primitives
         The map primitive works like the built-in ``map`` function, but creates
         a temporary task where a list of arguments is applied to the task.
         E.g. ``task.map([1, 2])`` results in a single task
-        being called, appyling the arguments in order to the task function so
+        being called, applying the arguments in order to the task function so
         that the result is::
 
             res = [task(1), task(2)]
@@ -240,6 +240,8 @@ Here's some examples::
     to the next task in the chain, and so on.
 
     .. code-block:: python
+
+        >>> from celery import chain
 
         # 2 + 2 + 4 + 8
         >>> res = chain(add.s(2, 2), add.s(4), add.s(8))()
@@ -282,6 +284,7 @@ Here's some examples::
 
     We can easily create a group of tasks to execute in parallel::
 
+        >>> from celery import group
         >>> res = group(add.s(i, i) for i in xrange(10))()
         >>> res.get(timeout=1)
         [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
@@ -313,6 +316,7 @@ Here's some examples::
     all of the tasks in a group has finished executing, which is often
     required for algorithms that aren't embarrassingly parallel::
 
+        >>> from celery import chord
         >>> res = chord((add.s(i, i) for i in xrange(10)), xsum.s())()
         >>> res.get()
         90
@@ -368,6 +372,27 @@ Here's some examples::
         ...                         first='Art',
         ...                         last='Vandelay',
         ...                         email='art@vandelay.com')
+
+
+    If you don't want to forward arguments to the group then
+    you can make the subtasks in the group immutable::
+
+        >>> res = (add.s(4, 4) | group(add.si(i, i) for i in xrange(10)))()
+        >>> res.get()
+        <GroupResult: de44df8c-821d-4c84-9a6a-44769c738f98 [
+            bc01831b-9486-4e51-b046-480d7c9b78de,
+            2650a1b8-32bf-4771-a645-b0a35dcc791b,
+            dcbee2a5-e92d-4b03-b6eb-7aec60fd30cf,
+            59f92e0a-23ea-41ce-9fad-8645a0e7759c,
+            26e1e707-eccf-4bf4-bbd8-1e1729c3cce3,
+            2d10a5f4-37f0-41b2-96ac-a973b1df024d,
+            e13d3bdb-7ae3-4101-81a4-6f17ee21df2d,
+            104b2be0-7b75-44eb-ac8e-f9220bdfa140,
+            c5c551a5-0386-4973-aa37-b65cbeb2624b,
+            83f72d71-4b71-428e-b604-6f16599a9f37]>
+
+        >>> res.parent.get()
+        8
 
 
 .. _canvas-chain:

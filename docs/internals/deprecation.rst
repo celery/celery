@@ -68,6 +68,23 @@ on the class, but have to instantiate the task first::
     >>> MyTask().delay()        # WORKS!
 
 
+TaskSet
+~~~~~~~
+
+TaskSet has been renamed to group and TaskSet will be removed in version 4.0.
+
+Old::
+
+    >>> from celery.task import TaskSet
+
+    >>> TaskSet(add.subtask((i, i)) for i in xrange(10)).apply_async()
+
+New::
+
+    >>> from celery import group
+    >>> group(add.s(i, i) for i in xrange(10))()
+
+
 Magic keyword arguments
 ~~~~~~~~~~~~~~~~~~~~~~~
 

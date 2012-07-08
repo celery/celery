@@ -50,11 +50,11 @@ What do I need?
 
 *Celery* requires a message broker to send and receive messages.
 The RabbitMQ, Redis and MongoDB broker transports are feature complete,
-but there is also support for a myriad of other solutions, including
+but there's also support for a myriad of other solutions, including
 using SQLite for local development.
 
 *Celery* can run on a single machine, on multiple machines, or even
-across datacenters.
+across data centers.
 
 Get Started
 ===========
@@ -69,15 +69,16 @@ getting started tutorials:
 Celery is…
 ==========
 
-.. topic:: ”
+.. _`mailing-list`: http://groups.google.com/group/celery-users
+
+.. topic:: \ 
 
     - **Simple**
 
-        Celery is easy to use and maintain, and does *not need configuration files*.
+        Celery is easy to use and maintain, and it *doesn't need configuration files*.
 
         It has an active, friendly community you can talk to for support,
-        including a :ref:`mailing-list <mailing-list>` and and :ref:`IRC
-        channel <irc-channel>`.
+        including a `mailing-list`_ and an :ref:`IRC channel <irc-channel>`.
 
         Here's one of the simplest applications you can make:
 
@@ -142,7 +143,6 @@ Celery is…
             - *zlib*, *bzip2* compression.
             - Cryptographic message signing.
 
-
 Features
 ========
 
@@ -189,7 +189,7 @@ Features
         - **Autoreloading**
 
             In development workers can be configured to automatically reload source
-            code as it changes, including inotify support on Linux.
+            code as it changes, including :manpage:`inotify(7)` support on Linux.
 
             :ref:`Read more… <worker-autoreloading>`.
 
@@ -242,7 +242,7 @@ integration packages:
 
 The integration packages are not strictly necessary, but they can make
 development easier, and sometimes they add important hooks like closing
-database connections at ``fork``.
+database connections at :manpage:`fork(2)`.
 
 .. _`Django`: http://djangoproject.com/
 .. _`Pylons`: http://pylonshq.com/
@@ -313,3 +313,5 @@ Quickjump
         - :ref:`Signals <signals>`
         - :ref:`FAQ <faq>`
         - :ref:`API Reference <apiref>`
+
+.. include:: ../includes/installation.txt

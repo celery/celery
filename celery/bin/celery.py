@@ -684,8 +684,8 @@ class shell(Command):  # pragma: no cover
     The following symbols will be added to the main globals:
 
         - celery:  the current application.
-        - chord, group, chain, chunks, xmap, xstarmap
-          subtask, Task
+        - chord, group, chain, chunks,
+          xmap, xstarmap subtask, Task
         - all registered tasks.
 
     Example Session::
