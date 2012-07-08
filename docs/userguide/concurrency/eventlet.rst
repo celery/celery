@@ -40,9 +40,9 @@ Enabling Eventlet
 =================
 
 You can enable the Eventlet pool by using the ``-P`` option to
-:program:`celeryd`::
+:program:`celery worker`::
 
-    $ celeryd -P eventlet -c 1000
+    $ celery worker -P eventlet -c 1000
 
 .. _eventlet-examples:
 
