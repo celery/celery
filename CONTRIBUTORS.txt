@@ -107,6 +107,7 @@ Steven Skoczen, 2012/06/17
 Loren Abrams, 2012/06/19
 Eran Rundstein, 2012/06/24
 John Watson, 2012/06/27
+Matt Long, 2012/07/04
 David Markey, 2012/07/05
 Jared Biel, 2012/07/05
 Jed Smith, 2012/07/08
