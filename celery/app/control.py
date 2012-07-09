@@ -27,12 +27,13 @@ class Inspect(object):
     app = None
 
     def __init__(self, destination=None, timeout=1, callback=None,
-            connection=None, app=None):
+            connection=None, app=None, limit=None):
         self.app = app or self.app
         self.destination = destination
         self.timeout = timeout
         self.callback = callback
         self.connection = connection
+        self.limit = limit
 
     def _prepare(self, reply):
         if not reply:
@@ -49,6 +50,7 @@ class Inspect(object):
                                       destination=self.destination,
                                       callback=self.callback,
                                       connection=self.connection,
+                                      limit=self.limit,
                                       timeout=self.timeout, reply=True))
 
     def report(self):
