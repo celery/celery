@@ -134,6 +134,10 @@ Provides arguments:
 * retval
     The return value of the task.
 
+* state
+
+    Name of the resulting state.
+
 .. signal:: task_success
 
 task_success
