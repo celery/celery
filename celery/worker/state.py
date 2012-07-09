@@ -65,6 +65,8 @@ def task_ready(request):
 
 
 C_BENCH = os.environ.get('C_BENCH') or os.environ.get('CELERY_BENCH')
+C_BENCH_EVERY = int(os.environ.get('C_BENCH_EVERY') or
+                    os.environ.get('CELERY_BENCH_EVERY') or 1000)
 if C_BENCH:  # pragma: no cover
     import atexit
 
@@ -76,7 +78,7 @@ if C_BENCH:  # pragma: no cover
     bench_first = None
     bench_start = None
     bench_last = None
-    bench_every = int(os.environ.get('CELERY_BENCH_EVERY', 1000))
+    bench_every = C_BENCH_EVERY
     bench_sample = []
     __reserved = task_reserved
     __ready = task_ready
