@@ -48,7 +48,7 @@ class _Zone(object):
         return self.get_timezone(tzinfo)
 
     def to_local(self, dt, local=None, orig=None):
-        return to_tz(dt, orig or self.utc).astimezone(
+        return set_tz(dt, orig or self.utc).astimezone(
                     self.tz_or_local(local))
 
     def get_timezone(self, zone):
