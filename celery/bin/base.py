@@ -176,7 +176,7 @@ class Command(object):
         for i, arg in enumerate(argv):
             if arg.startswith('-'):
                 if long_opts and arg.startswith('--'):
-                    name, val = arg.split('=', 1)
+                    name, _, val = arg.partition('=')
                     if name in long_opts:
                         return val
                 if short_opts and arg in short_opts:

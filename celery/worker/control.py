@@ -141,6 +141,7 @@ def time_limit(panel, task_name=None, hard=None, soft=None, **kwargs):
 
 @Panel.register
 def dump_schedule(panel, safe=False, **kwargs):
+    from celery.worker.job import Request
     schedule = panel.consumer.timer.schedule
     if not schedule.queue:
         logger.debug('--Empty schedule--')
@@ -153,11 +154,13 @@ def dump_schedule(panel, safe=False, **kwargs):
     info = map(formatitem, enumerate(schedule.info()))
     logger.debug('* Dump of current schedule:\n%s', '\n'.join(info))
     scheduled_tasks = []
-    for item in schedule.info():
-        scheduled_tasks.append({'eta': item['eta'],
-                                'priority': item['priority'],
-                                'request':
-                                    item['item'].args[0].info(safe=safe)})
+    for info in schedule.info():
+        item = info['item']
+        if item.args and isinstance(item.args[0], Request):
+            scheduled_tasks.append({'eta': info['eta'],
+                                    'priority': info['priority'],
+                                    'request':
+                                        item.args[0].info(safe=safe)})
     return scheduled_tasks
 
 
