@@ -29,7 +29,7 @@ try:
         print('Upgrade: no old version found.')
     finally:
         sys.path[:] = orig_path
-except ImportError:
+except:
     pass
 
 
