@@ -41,7 +41,6 @@ command_classes = (
     ('Utils', ['purge', 'list', 'migrate', 'call', 'result', 'report'], None),
 )
 
-
 class Error(Exception):
 
     def __init__(self, reason, status=EX_FAILURE):
@@ -57,6 +56,20 @@ def command(fun, name=None, sortpri=0):
     commands[name or fun.__name__] = fun
     fun.sortpri = sortpri
     return fun
+
+
+def get_extension_commands(namespace='celery.commands'):
+    try:
+        from pkg_resources import iter_entry_points
+    except ImportError:
+        return
+
+    for ep in iter_entry_points(namespace):
+        for attr in ep.attrs:
+            command(symbol_by_name(':'.join([ep.module_name, attr])),
+                    name=ep.name)
+get_extension_commands()
+
 
 
 class Command(BaseCommand):
