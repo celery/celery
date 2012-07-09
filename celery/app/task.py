@@ -156,7 +156,7 @@ class Task(object):
 
     #: If disabled the worker will not forward magic keyword arguments.
     #: Deprecated and scheduled for removal in v4.0.
-    accept_magic_kwargs = None
+    accept_magic_kwargs = False
 
     #: Maximum number of retries before giving up.  If set to :const:`None`,
     #: it will **never** stop retrying.
@@ -257,7 +257,6 @@ class Task(object):
         for attr_name, config_name in self.from_config:
             if getattr(self, attr_name, None) is None:
                 setattr(self, attr_name, conf[config_name])
-        self.accept_magic_kwargs = app.accept_magic_kwargs
         if self.accept_magic_kwargs is None:
             self.accept_magic_kwargs = app.accept_magic_kwargs
         if self.backend is None:
