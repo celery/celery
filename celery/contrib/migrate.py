@@ -216,4 +216,3 @@ def start_filter(app, conn, filter, limit=None, timeout=1.0,
         except socket.timeout:
             pass
     return state
-
