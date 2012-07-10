@@ -48,7 +48,7 @@ class _Zone(object):
         return self.get_timezone(tzinfo)
 
     def to_local(self, dt, local=None, orig=None):
-        return dt.replace(tzinfo=orig or self.utc).astimezone(
+        return set_tz(dt, orig or self.utc).astimezone(
                     self.tz_or_local(local))
 
     def get_timezone(self, zone):
@@ -192,3 +192,22 @@ def maybe_iso8601(dt):
     if isinstance(dt, datetime):
         return dt
     return parse_iso8601(dt)
+
+
+def is_naive(dt):
+    """Returns :const:`True` if the datetime is naive
+    (does not have timezone information)."""
+    return dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None
+
+
+def set_tz(dt, tz):
+    """Sets the timezone for a datetime object."""
+    if hasattr(tz, 'localize'):
+        # works on pytz timezones
+        return tz.localize(dt, is_dst=None)
+    return dt.replace(tzinfo=tz)
+
+
+def to_utc(dt):
+    """Converts naive datetime to UTC"""
+    return set_tz(dt, timezone.utc)

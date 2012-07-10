@@ -17,7 +17,8 @@ from dateutil.relativedelta import relativedelta
 from . import current_app
 from .utils import is_iterable
 from .utils.timeutils import (timedelta_seconds, weekday, maybe_timedelta,
-                              remaining, humanize_seconds)
+                              remaining, humanize_seconds, is_naive, to_utc,
+                              timezone)
 from .datastructures import AttributeDict
 
 
@@ -38,8 +39,11 @@ class schedule(object):
 
     def remaining_estimate(self, last_run_at):
         """Returns when the periodic task should run next as a timedelta."""
-        return remaining(last_run_at, self.run_every, relative=self.relative,
-                         now=self.now())
+        now = self.now()
+        if not is_naive(last_run_at):
+            now = to_utc(now)
+        return remaining(last_run_at, self.run_every,
+                         relative=self.relative, now=now)
 
     def is_due(self, last_run_at):
         """Returns tuple of two items `(is_due, next_time_to_run)`,
@@ -405,6 +409,8 @@ class crontab(schedule):
 
     def remaining_estimate(self, last_run_at):
         """Returns when the periodic task should run next as a timedelta."""
+        if not is_naive(last_run_at):
+            last_run_at = last_run_at.astimezone(timezone.utc)
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
 
         execute_this_date = (last_run_at.month in self.month_of_year and

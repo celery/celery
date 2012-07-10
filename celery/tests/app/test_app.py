@@ -157,14 +157,22 @@ class test_App(Case):
             _utils.MP_MAIN_FILE = None
 
     def test_base_task_inherits_magic_kwargs_from_app(self):
-        from celery.app.task import Task
+        from celery.task import Task as OldTask
 
-        class timkX(Task):
+        class timkX(OldTask):
             abstract = True
 
         app = Celery(set_as_current=False, accept_magic_kwargs=True)
         timkX.bind(app)
         self.assertTrue(timkX.accept_magic_kwargs)
+
+        from celery import Task as NewTask
+
+        class timkY(NewTask):
+            abstract = True
+
+        timkY.bind(app)
+        self.assertFalse(timkY.accept_magic_kwargs)
 
     def test_annotate_decorator(self):
         from celery.app.task import Task

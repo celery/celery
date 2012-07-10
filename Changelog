@@ -5,6 +5,49 @@
 .. contents::
     :local:
 
+.. _version-3.0.1:
+
+3.0.1
+=====
+
+- inspect now supports limit argument::
+
+    myapp.control.inspect(limit=1).ping()
+
+- Beat: now works with timezone aware datetimes.
+
+- Task classes inheriting ``from celery import Task``
+  mistakingly enabled ``accept_magic_kwargs``.
+
+- Fixed bug in ``inspect scheduled`` (Issue #829).
+
+- Beat: Now resets the schedule to upgrade to UTC.
+
+- The :program:`celery worker` command now works with eventlet/gevent.
+
+    Previously it would not patch the environment early enough.
+
+- The :program:`celery` command now supports extension commands
+  using setuptools entrypoints.
+
+    Libraries can add additional commands to the :program:`celery`
+    command by adding an entrypoint like::
+
+        setup(
+            entry_points=[
+                'celery.commands': [
+                    'foo = my.module:Command',
+            ],
+        ],
+        ...)
+
+    The command must then support the interface of
+    :class:`celery.bin.base.Command`.
+
+- Fixes bug with installing on Python 3.
+
+    Fix contributed by Jed Smith.
+
 .. _version-3.0.0:
 
 3.0.0 (Chiastic Slide)
