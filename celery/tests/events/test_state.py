@@ -119,6 +119,8 @@ class test_Task(Case):
                     exception=1,
                     received=time() - 10,
                     started=time() - 8,
+                    exchange='celery',
+                    routing_key='celery',
                     succeeded=time())
         self.assertEqual(sorted(list(task._info_fields)),
                               sorted(task.info().keys()))

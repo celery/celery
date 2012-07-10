@@ -15,6 +15,7 @@ from celery.task import task
 from celery.utils import uuid
 from celery.utils.timer2 import Timer
 from celery.worker import WorkController as _WC
+from celery.worker import consumer
 from celery.worker import control
 from celery.worker import state
 from celery.worker.buckets import FastQueue
@@ -35,7 +36,7 @@ class WorkController(object):
     autoscaler = None
 
 
-class Consumer(object):
+class Consumer(consumer.Consumer):
 
     def __init__(self):
         self.ready_queue = FastQueue()
@@ -47,6 +48,7 @@ class Consumer(object):
         self.app = current_app
         self.event_dispatcher = Mock()
         self.controller = WorkController()
+        self.task_consumer = Mock()
 
         from celery.concurrency.base import BasePool
         self.pool = BasePool(10)
