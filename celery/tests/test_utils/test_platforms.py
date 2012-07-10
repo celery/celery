@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from mock import patch
 
 from celery import platforms
@@ -18,4 +20,3 @@ class test_drop_privileges(unittest.TestCase):
 
         setuid.assert_called_with(20)
         setgid.assert_called_with(20)
-
