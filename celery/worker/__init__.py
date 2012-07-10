@@ -27,6 +27,7 @@ from kombu.utils.finalize import Finalize
 
 from celery import concurrency as _concurrency
 from celery import platforms
+from celery import signals
 from celery.app import app_or_default, set_default_app
 from celery.app.abstract import configurated, from_config
 from celery.exceptions import SystemTerminate
@@ -134,9 +135,17 @@ class Pool(bootsteps.StartStopComponent):
             except AttributeError:
                 pass
 
+        def on_process_up(w):
+            add_reader(w.sentinel, maintain_pool)
+            signals.pool_process_up.send(sender=self)
+
+        def on_process_down(w):
+            remove(w.sentinel)
+            signals.pool_process_down.send(sender=self)
+
         pool.init_callbacks(
-            on_process_up=lambda w: add_reader(w.sentinel, maintain_pool),
-            on_process_down=lambda w: remove(w.sentinel),
+            on_process_up=on_process_up,
+            on_process_down=on_process_down,
             on_timeout_set=on_timeout_set,
             on_timeout_cancel=on_timeout_cancel,
         )
