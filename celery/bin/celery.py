@@ -11,6 +11,7 @@ from __future__ import with_statement
 
 import anyjson
 import sys
+import warnings
 
 from billiard import freeze_support
 from importlib import import_module
@@ -19,6 +20,7 @@ from pprint import pformat
 from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
 from celery.utils import term
 from celery.utils import text
+from celery.utils.functional import memoize
 from celery.utils.imports import symbol_by_name
 from celery.utils.timeutils import maybe_iso8601
 
@@ -35,11 +37,19 @@ Type '%(prog_name)s <command> --help' for help using a specific command.
 
 commands = {}
 
-command_classes = (
+command_classes = [
     ('Main', ['worker', 'events', 'beat', 'shell', 'multi', 'amqp'], 'green'),
     ('Remote Control', ['status', 'inspect', 'control'], 'blue'),
     ('Utils', ['purge', 'list', 'migrate', 'call', 'result', 'report'], None),
-)
+]
+
+
+@memoize()
+def _get_extension_classes():
+    extensions = []
+    command_classes.append(('Extensions', extensions, 'magenta'))
+    return extensions
+
 
 class Error(Exception):
 
@@ -65,11 +75,15 @@ def get_extension_commands(namespace='celery.commands'):
         return
 
     for ep in iter_entry_points(namespace):
-        for attr in ep.attrs:
-            command(symbol_by_name(':'.join([ep.module_name, attr])),
-                    name=ep.name)
+        _get_extension_classes().append(ep.name)
+        sym = ':'.join([ep.module_name, ep.attrs[0]])
+        try:
+            cls = symbol_by_name(sym)
+        except (ImportError, SyntaxError), exc:
+            warnings.warn('Cannot load extension %r: %r' % (sym, exc))
+        else:
+            command(cls, name=ep.name)
 get_extension_commands()
-
 
 
 class Command(BaseCommand):
@@ -77,7 +91,6 @@ class Command(BaseCommand):
     args = ''
     prog_name = 'celery'
     show_body = True
-    leaf = True
     show_reply = True
 
     option_list = (
@@ -915,10 +928,14 @@ def main():
     # Fix for setuptools generated scripts, so that it will
     # work with multiprocessing fork emulation.
     # (see multiprocessing.forking.get_preparation_data())
-    if __name__ != '__main__':  # pragma: no cover
-        sys.modules['__main__'] = sys.modules[__name__]
-    freeze_support()
-    CeleryCommand().execute_from_commandline()
+    try:
+        if __name__ != '__main__':  # pragma: no cover
+            sys.modules['__main__'] = sys.modules[__name__]
+        freeze_support()
+        CeleryCommand().execute_from_commandline()
+    except KeyboardInterrupt:
+        pass
+
 
 if __name__ == '__main__':          # pragma: no cover
     main()
