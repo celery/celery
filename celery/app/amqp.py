@@ -14,6 +14,7 @@ from weakref import WeakValueDictionary
 from kombu import Connection, Consumer, Exchange, Producer, Queue
 from kombu.common import entry_to_queue
 from kombu.pools import ProducerPool
+from kombu.utils.encoding import safe_repr
 
 from celery import signals
 from celery.utils import cached_property, uuid
@@ -204,14 +205,19 @@ class TaskProducer(Producer):
 
         signals.task_sent.send(sender=task_name, **body)
         if event_dispatcher:
+            exname = exchange or self.exchange
+            if isinstance(exname, Exchange):
+                exname = exname.name
             event_dispatcher.send('task-sent', uuid=task_id,
                                                name=task_name,
-                                               args=repr(task_args),
-                                               kwargs=repr(task_kwargs),
+                                               args=safe_repr(task_args),
+                                               kwargs=safe_repr(task_kwargs),
                                                retries=retries,
                                                eta=eta,
                                                expires=expires,
-                                               queue=queue)
+                                               queue=queue,
+                                               exchange=exname,
+                                               routing_key=routing_key)
         return task_id
     delay_task = publish_task   # XXX Compat
 

@@ -20,7 +20,7 @@ from celery.utils.log import get_logger
 from . import state
 from .state import revoked
 
-TASK_INFO_FIELDS = ('exchange', 'routing_key', 'rate_limit')
+DEFAULT_TASK_INFO_ITEMS = ('exchange', 'routing_key', 'rate_limit')
 logger = get_logger(__name__)
 
 
@@ -200,12 +200,13 @@ def dump_revoked(panel, **kwargs):
 
 
 @Panel.register
-def dump_tasks(panel, **kwargs):
+def dump_tasks(panel, taskinfoitems=None, **kwargs):
     tasks = panel.app.tasks
+    taskinfoitems = taskinfoitems or DEFAULT_TASK_INFO_ITEMS
 
     def _extract_info(task):
         fields = dict((field, str(getattr(task, field, None)))
-                        for field in TASK_INFO_FIELDS
+                        for field in taskinfoitems
                             if getattr(task, field, None) is not None)
         info = map('='.join, fields.items())
         if not info:
