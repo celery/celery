@@ -364,8 +364,7 @@ class CursesMonitor(object):  # pragma: no cover
             except KeyError:
                 pass
             else:
-                info = selection.info(['args', 'kwargs',
-                                       'result', 'runtime', 'eta'])
+                info = selection.info()
                 if 'runtime' in info:
                     info['runtime'] = '%.2fs' % info['runtime']
                 if 'result' in info:

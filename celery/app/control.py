@@ -71,8 +71,8 @@ class Inspect(object):
     def revoked(self):
         return self._request('dump_revoked')
 
-    def registered(self):
-        return self._request('dump_tasks')
+    def registered(self, *taskinfoitems):
+        return self._request('dump_tasks', taskinfoitems=taskinfoitems)
     registered_tasks = registered
 
     def ping(self):

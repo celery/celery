@@ -105,7 +105,8 @@ class Task(Element):
 
     #: meth:`info` displays these fields by default.
     _info_fields = ('args', 'kwargs', 'retries', 'result',
-                    'eta', 'runtime', 'expires', 'exception')
+                    'eta', 'runtime', 'expires', 'exception',
+                    'exchange', 'routing_key')
 
     #: Default values.
     _defaults = dict(uuid=None, name=None, state=states.PENDING,
@@ -114,7 +115,7 @@ class Task(Element):
                      revoked=False, args=None, kwargs=None, eta=None,
                      expires=None, retries=None, worker=None, result=None,
                      exception=None, timestamp=None, runtime=None,
-                     traceback=None)
+                     traceback=None, exchange=None, routing_key=None)
 
     def __init__(self, **fields):
         super(Task, self).__init__(**dict(self._defaults, **fields))
@@ -185,11 +186,15 @@ class Task(Element):
 
     def info(self, fields=None, extra=[]):
         """Information about this task suitable for on-screen display."""
-        if fields is None:
-            fields = self._info_fields
-        return dict((key, getattr(self, key, None))
-                        for key in list(fields) + list(extra)
-                            if getattr(self, key, None) is not None)
+        fields = self._info_fields if fields is None else fields
+
+        def _keys():
+            for key in list(fields) + list(extra):
+                value = getattr(self, key, None)
+                if value is not None:
+                    yield key, value
+
+        return dict(_keys())
 
     def __repr__(self):
         return '<Task: %s(%s) %s>' % (self.name, self.uuid, self.state)
