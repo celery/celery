@@ -135,6 +135,7 @@ def bump(*files, **kwargs):
     files = [filetype_to_type(f) for f in files]
     versions = [v.parse() for v in files]
     current = list(reversed(sorted(versions)))[0]  # find highest
+    current = current.split()[0]  # only first sentence
 
     if version:
         next = from_str(version)

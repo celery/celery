@@ -144,6 +144,9 @@ class Command(object):
     #: Text to print in --help before option list.
     description = ''
 
+    #: Set to true if this command doesn't have subcommands
+    leaf = True
+
     def __init__(self, app=None, get_app=None):
         self.app = app
         self.get_app = get_app or self._get_default_app

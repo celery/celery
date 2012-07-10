@@ -9,12 +9,16 @@
 
 3.0.1
 =====
+:release-date: 2012-07-10 06:00 P.M BST
+:by: Ask Solem
+
+- Now depends on kombu 2.2.5
 
 - inspect now supports limit argument::
 
     myapp.control.inspect(limit=1).ping()
 
-- Beat: now works with timezone aware datetimes.
+- Beat: now works with timezone aware datetime's.
 
 - Task classes inheriting ``from celery import Task``
   mistakingly enabled ``accept_magic_kwargs``.
@@ -28,10 +32,10 @@
     Previously it would not patch the environment early enough.
 
 - The :program:`celery` command now supports extension commands
-  using setuptools entrypoints.
+  using setuptools entry-points.
 
     Libraries can add additional commands to the :program:`celery`
-    command by adding an entrypoint like::
+    command by adding an entry-point like::
 
         setup(
             entry_points=[
@@ -43,6 +47,14 @@
 
     The command must then support the interface of
     :class:`celery.bin.base.Command`.
+
+- contrib.migrate: New utilities to move tasks from one queue to another.
+
+    - :func:`~celery.contrib.migrate.move_tasks`
+    - :func:`~celery.contrib.migrate.move_task_by_id`
+
+- The task-sent event now contains ``exchange`` and ``routing_key``
+  fields.
 
 - Fixes bug with installing on Python 3.
 
