@@ -10,6 +10,8 @@
 3.0.1
 =====
 
+- Now depends on kombu 2.2.5
+
 - inspect now supports limit argument::
 
     myapp.control.inspect(limit=1).ping()
@@ -43,6 +45,14 @@
 
     The command must then support the interface of
     :class:`celery.bin.base.Command`.
+
+- contrib.migrate: New utilities to move tasks from one queue to another.
+
+    - :func:`~celery.contrib.migrate.move_tasks`
+    - :func:`~celery.contrib.migrate.move_task_by_id`
+
+- The task-sent event now contains ``exchange`` and ``routing_key``
+  fields.
 
 - Fixes bug with installing on Python 3.
 
