@@ -9,6 +9,8 @@
 
 3.0.1
 =====
+:release-date: 2012-07-10 06:00 P.M BST
+:by: Ask Solem
 
 - Now depends on kombu 2.2.5
 
