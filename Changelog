@@ -5,6 +5,13 @@
 .. contents::
     :local:
 
+.. _version-3.0.2:
+
+3.0.2
+=====
+
+- `Task.apply_async` now supports timeout and soft_timeout arguments (Issue #802)
+
 .. _version-3.0.1:
 
 3.0.1
