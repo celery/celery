@@ -157,7 +157,8 @@ class TaskProducer(Producer):
             queue=None, now=None, retries=0, chord=None, callbacks=None,
             errbacks=None, mandatory=None, priority=None, immediate=None,
             routing_key=None, serializer=None, delivery_mode=None,
-            compression=None, **kwargs):
+            compression=None, timeout=None, soft_timeout=None,
+            **kwargs):
         """Send task message."""
         # merge default and custom policy
         retry = self.retry if retry is None else retry
@@ -178,6 +179,7 @@ class TaskProducer(Producer):
             expires = now + timedelta(seconds=expires)
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
+        timeouts = (timeout, soft_timeout)
 
         body = {'task': task_name,
                 'id': task_id,
@@ -188,7 +190,8 @@ class TaskProducer(Producer):
                 'expires': expires,
                 'utc': self.utc,
                 'callbacks': callbacks,
-                'errbacks': errbacks}
+                'errbacks': errbacks,
+                'timeouts': timeouts}
         group_id = group_id or taskset_id
         if group_id:
             body['taskset'] = group_id

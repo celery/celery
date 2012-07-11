@@ -29,6 +29,7 @@ extract_exec_options = mattrgetter(
     'queue', 'routing_key', 'exchange',
     'immediate', 'mandatory', 'priority', 'expires',
     'serializer', 'delivery_mode', 'compression',
+    'timeout', 'soft_timeout',
 )
 
 
@@ -487,6 +488,8 @@ class Task(object):
         :keyword eta: Explicit time and date to run the retry at
                       (must be a :class:`~datetime.datetime` instance).
         :keyword max_retries: If set, overrides the default retry limit.
+        :keyword timeout: If set, overrides the default timeout.
+        :keyword soft_timeout: If set, overrides the default soft timeout.
         :keyword \*\*options: Any extra options to pass on to
                               meth:`apply_async`.
         :keyword throw: If this is :const:`False`, do not raise the
