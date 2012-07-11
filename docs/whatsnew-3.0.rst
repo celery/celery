@@ -299,7 +299,7 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
 
                 $ dot -Tpng graph.dot -o graph.png
 
-- A new special subtask called ``chain`` is also included::
+- A new special subtask called ``chain`` is also included:
 
     .. code-block:: python
 
@@ -351,7 +351,7 @@ transport option, which must be a list of numbers in **sorted order**::
 
 Priorities implemented in this way is not as reliable as
 priorities on the server side, which is why
-nickname the feature "quasi-priorities";
+the feature is nicknamed "quasi-priorities";
 **Using routing is still the suggested way of ensuring
 quality of service**, as client implemented priorities
 fall short in a number of ways, e.g. if the worker
@@ -383,7 +383,9 @@ accidentally changed while switching to using blocking pop.
   since it was very difficult to migrate the TaskSet class to become
   a subtask.
 
-- A new shortcut has been added to tasks::
+- A new shortcut has been added to tasks:
+
+    ::
 
         >>> task.s(arg1, arg2, kw=1)
 
@@ -395,7 +397,9 @@ accidentally changed while switching to using blocking pop.
 
         >>> (add.s(2, 2), pow.s(2)).apply_async()
 
-- Subtasks can be "evaluated" using the ``~`` operator::
+- Subtasks can be "evaluated" using the ``~`` operator:
+
+    ::
 
         >>> ~add.s(2, 2)
         4
@@ -839,7 +843,7 @@ In Other News
 - Worker/Celerybeat no longer logs the startup banner.
 
     Previously it would be logged with severity warning,
-    no it's only written to stdout.
+    now it's only written to stdout.
 
 - The ``contrib/`` directory in the distribution has been renamed to
   ``extra/``.
@@ -878,7 +882,7 @@ Internals
     :mod:`celery.utils.functional`
 
 - Now using :mod:`kombu.utils.encoding` instead of
-  `:mod:`celery.utils.encoding`.
+  :mod:`celery.utils.encoding`.
 
 - Renamed module ``celery.routes`` -> :mod:`celery.app.routes`.
 
