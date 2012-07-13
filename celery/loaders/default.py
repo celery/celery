@@ -75,4 +75,4 @@ class Loader(BaseLoader):
             return self.setup_settings(usercfg)
 
     def wanted_module_item(self, item):
-        return item[0].isupper() and not item.startswith('_')
+        return not item.startswith('_')
