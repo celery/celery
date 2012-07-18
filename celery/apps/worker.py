@@ -148,6 +148,10 @@ class Worker(configurated):
     def run(self):
         self.init_queues()
         self.app.loader.init_worker()
+        # this signal can be used to e.g. change queues after
+        # the -Q option has been applied.
+        signals.celeryd_after_setup.send(sender=self.hostname, instance=self,
+                                         conf=self.app.conf)
 
         if getattr(os, 'getuid', None) and os.getuid() == 0:
             warnings.warn(RuntimeWarning(
@@ -163,10 +167,6 @@ class Worker(configurated):
         self.set_process_status('-active-')
 
         self.redirect_stdouts_to_logger()
-        # this signal can be used to e.g. change queues after
-        # the -Q option has been applied.
-        signals.celeryd_after_setup.send(sender=self.hostname, instance=self,
-                                         conf=self.app.conf)
         try:
             self.run_worker()
         except IGNORE_ERRORS:
