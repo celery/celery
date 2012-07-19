@@ -15,6 +15,8 @@ import sys
 import threading
 import traceback
 import warnings
+import types
+import datetime
 
 from functools import partial, wraps
 from inspect import getargspec
@@ -179,6 +181,35 @@ def strtobool(term, table={'false': False, 'no': False, '0': False,
         except KeyError:
             raise TypeError('Cannot coerce %r to type bool' % (term, ))
     return term
+
+
+def jsonify(obj):
+    "Transforms object making it suitable for json serialization"
+    if isinstance(obj, (int, float, basestring, types.NoneType)):
+        return obj
+    elif isinstance(obj, (tuple, list)):
+        return map(jsonify, obj)
+    elif isinstance(obj, dict):
+        return dict([(k,jsonify(v)) for k,v in obj.iteritems()])
+    # See "Date Time String Format" in the ECMA-262 specification.
+    elif isinstance(obj, datetime.datetime):
+        r = obj.isoformat()
+        if obj.microsecond:
+            r = r[:23] + r[26:]
+        if r.endswith('+00:00'):
+            r = r[:-6] + 'Z'
+        return r
+    elif isinstance(obj, datetime.date):
+        return obj.isoformat()
+    elif isinstance(obj, datetime.time):
+        r = obj.isoformat()
+        if obj.microsecond:
+            r = r[:12]
+        return r
+    elif isinstance(obj, datetime.timedelta):
+        return str(obj)
+    else:
+        raise ValueError("Unsupported type: %s" % type(obj))
 
 
 def gen_task_name(app, name, module_name):
