@@ -213,12 +213,16 @@ class Celery(object):
     broker_connection = connection
 
     @contextmanager
-    def default_connection(self, connection=None, *args, **kwargs):
+    def default_connection(self, connection=None, pool=True, *args, **kwargs):
         if connection:
             yield connection
         else:
-            with self.pool.acquire(block=True) as connection:
-                yield connection
+            if pool:
+                with self.pool.acquire(block=True) as connection:
+                    yield connection
+            else:
+                with self.connection() as connection:
+                    yield connection
 
     @contextmanager
     def default_producer(self, producer=None):
