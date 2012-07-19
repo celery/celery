@@ -771,10 +771,9 @@ class Consumer(object):
             q = self.app.amqp.queues[queue]
         except KeyError:
             exchange = queue if exchange is None else exchange
-            routing_key = queue if routing_key is None else routing_key
             exchange_type = 'direct' if exchange_type is None \
                                      else exchange_type
-            q = self.app.amqp.queues.add(queue,
+            q = self.app.amqp.queues.select_add(queue,
                     exchange=exchange,
                     exchange_type=exchange_type,
                     routing_key=routing_key, **options)
