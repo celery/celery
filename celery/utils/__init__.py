@@ -22,6 +22,8 @@ from functools import partial, wraps
 from inspect import getargspec
 from pprint import pprint
 
+from kombu import Exchange, Queue
+
 from celery.exceptions import CPendingDeprecationWarning, CDeprecationWarning
 from .compat import StringIO
 
@@ -43,6 +45,21 @@ DEPRECATION_FMT = """
 #: module, so that we can properly rewrite the name of the
 #: task to be that of ``App.main``.
 MP_MAIN_FILE = os.environ.get('MP_MAIN_FILE') or None
+
+#: Exchange for worker direct queues.
+WORKER_DIRECT_EXCHANGE = Exchange('C.dq')
+
+#: Format for worker direct queue names.
+WORKER_DIRECT_QUEUE_FORMAT = '%s.dq'
+
+
+def worker_direct(hostname):
+    if isinstance(hostname, Queue):
+        return hostname
+    return Queue(WORKER_DIRECT_QUEUE_FORMAT % hostname,
+                 WORKER_DIRECT_EXCHANGE,
+                 hostname,
+                 auto_delete=True)
 
 
 def warn_deprecated(description=None, deprecation=None, removal=None,
