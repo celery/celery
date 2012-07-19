@@ -154,6 +154,7 @@ NAMESPACES = {
         'SECURITY_KEY': Option(type='string'),
         'SECURITY_CERTIFICATE': Option(type='string'),
         'SECURITY_CERT_STORE': Option(type='string'),
+        'WORKER_DIRECT': Option(False, type='bool'),
     },
     'CELERYD': {
         'AUTOSCALER': Option('celery.worker.autoscale.Autoscaler'),
