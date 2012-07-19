@@ -92,6 +92,8 @@ class Queues(dict):
     def add_compat(self, name, **options):
         # docs used to use binding_key as routing key
         options.setdefault('routing_key', options.get('binding_key'))
+        if options['routing_key'] is None:
+            options['routing_key'] = name
         q = self[name] = entry_to_queue(name, **options)
         return q
 
@@ -109,6 +111,14 @@ class Queues(dict):
         if indent_first:
             return textindent('\n'.join(info), indent)
         return info[0] + '\n' + textindent('\n'.join(info[1:]), indent)
+
+    def select_add(self, queue, **kwargs):
+        """Add new task queue that will be consumed from even when
+        a subset has been selected using the :option:`-Q` option."""
+        q = self.add(queue, **kwargs)
+        if self._consume_from is not None:
+            self._consume_from[q.name] = q
+        return q
 
     def select_subset(self, wanted):
         """Sets :attr:`consume_from` by selecting a subset of the
