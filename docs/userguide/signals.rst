@@ -205,6 +205,43 @@ Provides arguments:
 Worker Signals
 --------------
 
+.. signal:: celeryd_after_setup
+
+celeryd_after_setup
+~~~~~~~~~~~~~~~~~~~
+
+This signal is sent after the worker instance is set up,
+but before it calls run.  This means that any queues from the :option:`-Q`
+option is enabled, logging has been set up and so on.
+
+It can be used to e.g. add custom queues that should always be consumed
+from, disregarding the :option:`-Q` option.  Here's an example
+that sets up a direct queue for each worker, these queues can then be
+used to route a task to any specific worker:
+
+.. code-block:: python
+
+    from celery.signals import celeryd_after_setup
+
+    @celeryd_after_setup.connect
+    def setup_direct_queue(sender, instance, **kwargs):
+        queue_name = '%s.dq' % sender   # sender is the hostname of the worker
+        instance.app.queues.add(queue_name, routing_key=queue_name)
+
+Provides arguments:
+
+* sender
+  Hostname of the worker.
+
+* instance
+    This is the :class:`celery.apps.worker.Worker` instance to be initialized.
+    Note that only the :attr:`app` and :attr:`hostname` attributes have been
+    set so far, and the rest of ``__init__`` has not been executed.
+
+* conf
+    The configuration of the current app.
+
+
 .. signal:: celeryd_init
 
 celeryd_init
@@ -237,6 +274,9 @@ sender when you connect:
             conf.CELERYD_PREFETCH_MULTIPLIER = 0
 
 Provides arguments:
+
+* sender
+  Hostname of the worker.
 
 * instance
     This is the :class:`celery.apps.worker.Worker` instance to be initialized.

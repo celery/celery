@@ -175,15 +175,15 @@ class Task(object):
     #: If enabled the worker will not store task state and return values
     #: for this task.  Defaults to the :setting:`CELERY_IGNORE_RESULT`
     #: setting.
-    ignore_result = False
+    ignore_result = None
 
     #: When enabled errors will be stored even if the task is otherwise
     #: configured to ignore results.
-    store_errors_even_if_ignored = False
+    store_errors_even_if_ignored = None
 
     #: If enabled an email will be sent to :setting:`ADMINS` whenever a task
     #: of this type fails.
-    send_error_emails = False
+    send_error_emails = None
 
     #: The name of a serializer that are registered with
     #: :mod:`kombu.serialization.registry`.  Default is `'pickle'`.
@@ -214,7 +214,7 @@ class Task(object):
     #:
     #: The application default can be overridden using the
     #: :setting:`CELERY_TRACK_STARTED` setting.
-    track_started = False
+    track_started = None
 
     #: When enabled messages for this task will be acknowledged **after**
     #: the task has been executed, and not *just before* which is the

@@ -176,6 +176,8 @@ class Control(object):
         :keyword exchange_type: Type of exchange (defaults to 'direct')
             command to, when empty broadcast to all workers.
         :keyword routing_key: Optional routing key.
+        :keyword options: Additional options as supported
+            by :meth:`kombu.entitiy.Queue.from_dict`.
 
         See :meth:`broadcast` for supported keyword arguments.
 
