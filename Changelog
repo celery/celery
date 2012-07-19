@@ -11,6 +11,7 @@
 =====
 
 - `Task.apply_async` now supports timeout and soft_timeout arguments (Issue #802)
+- `App.control.Inspect.conf` can be used for inspecting worker configuration
 
 .. _version-3.0.1:
 
