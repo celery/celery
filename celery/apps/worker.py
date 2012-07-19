@@ -27,7 +27,7 @@ from celery.app import app_or_default
 from celery.app.abstract import configurated, from_config
 from celery.exceptions import ImproperlyConfigured, SystemTerminate
 from celery.loaders.app import AppLoader
-from celery.utils import cry, isatty
+from celery.utils import cry, isatty, worker_direct
 from celery.utils.imports import qualname
 from celery.utils.log import get_logger, mlevel, set_in_sighandler
 from celery.utils.text import pluralize
@@ -181,6 +181,8 @@ class Worker(configurated):
             self.app.select_queues(self.use_queues)
         except KeyError, exc:
             raise ImproperlyConfigured(UNKNOWN_QUEUE % (self.use_queues, exc))
+        if self.app.conf.CELERY_WORKER_DIRECT:
+            self.app.amqp.queues.select_add(worker_direct(self.hostname))
 
     def redirect_stdouts_to_logger(self):
         self.app.log.setup(self.loglevel, self.logfile,
