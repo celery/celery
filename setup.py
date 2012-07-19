@@ -1,5 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+try:
+    from setuptools import setup, find_packages
+    from setuptools.command.test import test
+except ImportError:
+    raise
+    from ez_setup import use_setuptools
+    use_setuptools()
+    from setuptools import setup, find_packages           # noqa
+    from setuptools.command.test import test              # noqa
+
 import os
 import sys
 import codecs
@@ -32,16 +43,6 @@ try:
 except:
     pass
 
-
-try:
-    from setuptools import setup, find_packages
-    from setuptools.command.test import test
-except ImportError:
-    raise
-    from ez_setup import use_setuptools
-    use_setuptools()
-    from setuptools import setup, find_packages           # noqa
-    from setuptools.command.test import test              # noqa
 
 NAME = 'celery'
 entrypoints = {}
