@@ -248,7 +248,7 @@ class Celery(object):
         def _inner(*args, **kwargs):
             connection = kwargs.pop('connection', None)
             with self.default_connection(connection) as c:
-                return fun(*args, **dict(kwargs, connection=c))
+                return fun(*args, connection=c, **kwargs)
         return _inner
 
     def prepare_config(self, c):

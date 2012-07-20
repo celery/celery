@@ -644,7 +644,7 @@ class status(Command):
                           no_color=kwargs.get('no_color', False),
                           stdout=self.stdout, stderr=self.stderr,
                           show_reply=False) \
-                    .run('ping', **dict(kwargs, quiet=True, show_body=False))
+                    .run('ping', quiet=True, show_body=False, **kwargs)
         if not replies:
             raise Error('No nodes replied within time constraint',
                         status=EX_UNAVAILABLE)
