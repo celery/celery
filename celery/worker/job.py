@@ -127,6 +127,9 @@ class Request(object):
             self.expires = None
 
         self.delivery_info = delivery_info or {}
+        # amqplib transport adds the channel here for some reason, so need
+        # to remove it.
+        self.delivery_info.pop('channel', None)
         self.request_dict = body
 
     @classmethod
