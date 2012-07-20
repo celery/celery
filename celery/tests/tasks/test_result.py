@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 from pickle import loads, dumps
 from mock import Mock

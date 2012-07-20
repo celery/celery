@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 from celery.app.registry import TaskRegistry
 from celery.task import Task, PeriodicTask
