@@ -476,6 +476,7 @@ class test_Consumer(Case):
         l.update_strategies()
         l.receive_message(m.decode(), m)
         l.timer.stop()
+        l.timer.join()
 
         items = [entry[2] for entry in self.timer.queue]
         found = 0
