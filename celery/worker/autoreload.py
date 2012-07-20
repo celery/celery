@@ -6,7 +6,6 @@
     This module implements automatic module reloading
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import errno
 import hashlib

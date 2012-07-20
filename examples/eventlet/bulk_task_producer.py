@@ -1,4 +1,3 @@
-from __future__ import with_statement
 
 from eventlet import spawn_n, monkey_patch, Timeout
 from eventlet.queue import LightQueue

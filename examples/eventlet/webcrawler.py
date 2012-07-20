@@ -21,7 +21,6 @@ to "zlib", and the serializer to "pickle".
 
 """
 
-from __future__ import with_statement
 
 import re
 import time
