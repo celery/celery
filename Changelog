@@ -5,6 +5,8 @@
 .. contents::
     :local:
 
+.. _version-3.1.0:
+
 3.1.0
 =====
 :state: DEVEL
@@ -12,6 +14,16 @@
 
 - `Task.apply_async` now supports timeout and soft_timeout arguments (Issue #802)
 - `App.control.Inspect.conf` can be used for inspecting worker configuration
+
+.. _version-3.0.3:
+
+3.0.3
+=====
+:release-date: 2012-07-20 09:17 P.M BST
+:by: Ask Solem
+
+- amqplib passes the channel object as part of the delivery_info
+  and it's not pickleable, so we now remove it.
 
 .. _version-3.0.2:
 
