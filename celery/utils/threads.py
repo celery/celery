@@ -20,6 +20,7 @@ _Event = threading._Event
 
 active_count = (getattr(threading, 'active_count', None) or
                 threading.activeCount)
+USE_PURE_LOCALS = os.environ.get("USE_PURE_LOCALS")
 
 
 class Event(_Event):
@@ -92,7 +93,7 @@ class bgThread(Thread):
         if self.is_alive():
             self.join(1e100)
 
-if detect_environment() == 'default':
+if detect_environment() == 'default' and not USE_PURE_LOCALS:
     class LocalStack(threading.local):
 
         def __init__(self):
