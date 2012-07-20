@@ -13,7 +13,7 @@
 # ============================================
 #
 # :Usage: /etc/init.d/${basename $0} {start|stop|restart|status}
-# :Configuration file: /etc/default/celeryd
+# :Configuration file: /etc/sysconfig/celeryd
 #
 # To implement separate init scripts, do NOT copy this script.  Instead,
 # symlink it.  I.e., if my new application, "little-worker" needs an init, I
@@ -21,9 +21,7 @@
 #
 #   ln -s /etc/init.d/celeryd /etc/init.d/little-worker
 #
-# You can then configure this by manipulating /etc/sysconfig/little-worker.  It
-# will still read defaults from /etc/defaults/celeryd, but everything can be
-# overriden by sysconfig.
+# You can then configure this by manipulating /etc/sysconfig/little-worker.
 #
 
 # Setting `prog` here allows you to symlink this init script, making it easy
@@ -77,7 +75,7 @@ start_workers () {
                                --logfile=$CELERYD_LOG_FILE \
                                --loglevel=$CELERYD_LOG_LEVEL \
                                --cmd="$CELERYD" \
-			                   --quiet \
+                                --quiet \
                                $CELERYD_OPTS
     RETVAL=$?
 
@@ -96,7 +94,7 @@ stop_workers () {
     # If we haven't ended, explicitly kill it!
     if [ ! -f $CELERYD_PID_FILE ] || [ ! -e /proc/$(cat $CELERYD_PID_FILE) ]; then
         failure
-	echo
+    echo
         return
     fi
 
