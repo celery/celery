@@ -84,6 +84,7 @@ def load_extension_commands(namespace='celery.commands'):
         else:
             command(cls, name=ep.name)
 
+
 class Command(BaseCommand):
     help = ''
     args = ''

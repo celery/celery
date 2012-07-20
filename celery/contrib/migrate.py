@@ -11,7 +11,7 @@ from __future__ import with_statement
 
 import socket
 
-from functools import partial, wraps
+from functools import partial
 from itertools import cycle, islice
 
 from kombu import eventloop, Queue
