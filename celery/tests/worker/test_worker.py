@@ -4,6 +4,7 @@ import socket
 
 from collections import deque
 from datetime import datetime, timedelta
+from threading import Event
 from Queue import Empty
 
 from billiard.exceptions import WorkerLostError
@@ -28,7 +29,6 @@ from celery.worker.consumer import BlockingConsumer
 from celery.worker.consumer import QoS, RUN, PREFETCH_COUNT_MAX, CLOSE
 from celery.utils.serialization import pickle
 from celery.utils.timer2 import Timer
-from celery.utils.threads import Event
 
 from celery.tests.utils import AppCase, Case
 

@@ -519,10 +519,9 @@ class _RemoteControl(Command):
         except AttributeError:
             handler = self.call
 
-        # XXX Python 2.5 does not support X(*args, foo=1)
-        kwargs = {"timeout": timeout, "destination": destination,
-                  "callback": self.say_remote_command_reply}
-        replies = handler(method, *args[1:], **kwargs)
+        replies = handler(method, *args[1:], timeout=timeout,
+                          destination=destination,
+                          callback=self.say_remote_command_reply)
         if not replies:
             raise Error('No nodes replied within time constraint.',
                         status=EX_UNAVAILABLE)
@@ -602,9 +601,7 @@ class control(_RemoteControl):
     }
 
     def call(self, method, *args, **options):
-        # XXX Python 2.5 doesn't support X(*args, reply=True, **kwargs)
-        return getattr(self.app.control, method)(
-                *args, **dict(options, retry=True))
+        return getattr(self.app.control, method)(*args, retry=True, **options)
 
     def pool_grow(self, method, n=1, **kwargs):
         """[N=1]"""

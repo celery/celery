@@ -15,13 +15,14 @@ import sys
 import time
 
 from collections import defaultdict
+from threading import Event
 
 from kombu.utils import eventio
 
 from celery.platforms import ignore_EBADF
 from celery.utils.imports import module_file
 from celery.utils.log import get_logger
-from celery.utils.threads import bgThread, Event
+from celery.utils.threads import bgThread
 
 from .bootsteps import StartStopComponent
 

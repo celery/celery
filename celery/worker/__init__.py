@@ -19,6 +19,7 @@ import time
 import traceback
 
 from functools import partial
+from threading import Event
 
 from billiard import forking_enable
 from billiard.exceptions import WorkerLostError
@@ -34,7 +35,6 @@ from celery.task import trace
 from celery.utils.functional import noop
 from celery.utils.imports import qualname, reload_from_cwd
 from celery.utils.log import get_logger
-from celery.utils.threads import Event
 from celery.utils.timer2 import Schedule
 
 from . import bootsteps

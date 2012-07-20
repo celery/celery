@@ -225,16 +225,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         for errback in task_request.errbacks or []]
                 except BaseException as exc:
                     raise
-                except:  # pragma: no cover
-                    # For Python2.5 where raising strings are still allowed
-                    # (but deprecated)
-                    if propagate:
-                        raise
-                    I = Info(FAILURE, None)
-                    state, retval = I.state, I.retval
-                    R = I.handle_error_state(task, eager=eager)
-                    [subtask(errback).apply_async((uuid, ))
-                        for errback in task_request.errbacks or []]
                 else:
                     # callback tasks must be applied before the result is
                     # stored, so that result.children is populated.

@@ -285,8 +285,7 @@ def add_chord_task(app):
                                        propagate=propagate,
                                        result=results)
             # - call the header group, returning the GroupResult.
-            # XXX Python 2.5 doesn't allow kwargs after star-args.
-            return header(*partial_args, **{'task_id': group_id})
+            return header(*partial_args, task_id=group_id)
 
         def _prepare_member(self, task, body, group_id):
             opts = task.options

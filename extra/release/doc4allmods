@@ -13,8 +13,6 @@ SKIP_FILES="celery.__compat__.rst
             celery.local.rst
             celery.app.base.rst
             celery.apps.rst
-            celery.backends.database.a805d4bd.rst
-            celery.backends.database.dfd042c7.rst
             celery.canvas.rst
             celery.utils.encoding.rst"
 

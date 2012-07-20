@@ -11,16 +11,11 @@ from __future__ import absolute_import
 from datetime import datetime
 
 import sqlalchemy as sa
+from sqlalchemy.types import PickleType
 
 from celery import states
 
 from .session import ResultModelBase
-
-# See docstring of a805d4bd for an explanation for this workaround ;)
-if sa.__version__.startswith('0.5'):
-    from .dfd042c7 import PickleType
-else:
-    from .a805d4bd import PickleType  # noqa
 
 
 class Task(ResultModelBase):

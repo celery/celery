@@ -260,6 +260,3 @@ class _regen(UserList, list):
     @cached_property
     def data(self):
         return list(self.__it)
-
-    def __iter__(self):  # needed for Python 2.5
-        return iter(self.data)

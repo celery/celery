@@ -599,12 +599,8 @@ else:
                 '%s:%s' % (progname, current_process().name), info=info)
 
 
-def shellsplit(s, posix=True):
-    # posix= option to shlex.split first available in Python 2.6+
-    lexer = shlex.shlex(s, posix=not IS_WINDOWS)
-    lexer.whitespace_split = True
-    lexer.commenters = ''
-    return list(lexer)
+def shellsplit(s):
+    return shlex.split(s, posix=not IS_WINDOWS)
 
 
 @contextmanager

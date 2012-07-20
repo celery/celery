@@ -15,38 +15,17 @@ import traceback
 
 from kombu.syn import detect_environment
 
-_Thread = threading.Thread
-_Event = threading._Event
-
 active_count = (getattr(threading, 'active_count', None) or
                 threading.activeCount)
 USE_PURE_LOCALS = os.environ.get("USE_PURE_LOCALS")
 
 
-class Event(_Event):
-
-    if not hasattr(_Event, 'is_set'):     # pragma: no cover
-        is_set = _Event.isSet
-
-
-class Thread(_Thread):
-
-    if not hasattr(_Thread, 'is_alive'):  # pragma: no cover
-        is_alive = _Thread.isAlive
-
-    if not hasattr(_Thread, 'daemon'):    # pragma: no cover
-        daemon = property(_Thread.isDaemon, _Thread.setDaemon)
-
-    if not hasattr(_Thread, 'name'):      # pragma: no cover
-        name = property(_Thread.getName, _Thread.setName)
-
-
-class bgThread(Thread):
+class bgThread(threading.Thread):
 
     def __init__(self, name=None, **kwargs):
         super(bgThread, self).__init__()
-        self._is_shutdown = Event()
-        self._is_stopped = Event()
+        self._is_shutdown = threading.Event()
+        self._is_stopped = threading.Event()
         self.daemon = True
         self.name = name or self.__class__.__name__
 

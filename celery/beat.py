@@ -15,6 +15,8 @@ import shelve
 import sys
 import traceback
 
+from threading import Event, Thread
+
 from billiard import Process, ensure_multiprocessing
 from kombu.utils import reprcall
 from kombu.utils.functional import maybe_promise
@@ -27,7 +29,6 @@ from .app import app_or_default
 from .schedules import maybe_schedule, crontab
 from .utils import cached_property
 from .utils.imports import instantiate
-from .utils.threads import Event, Thread
 from .utils.timeutils import humanize_seconds
 from .utils.log import get_logger
 
