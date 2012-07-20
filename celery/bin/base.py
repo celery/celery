@@ -168,6 +168,7 @@ class Command(object):
         pool_option = self.with_pool_option(argv)
         if pool_option:
             self.maybe_patch_concurrency(argv, *pool_option)
+        self.on_concurrency_setup()
 
         # Dump version and exit if '--version' arg set.
         self.early_version(argv)
@@ -195,6 +196,9 @@ class Command(object):
             from celery import concurrency
             # set up eventlet/gevent environments ASAP.
             concurrency.get_implementation(pool)
+
+    def on_concurrency_setup(self):
+        pass
 
     def usage(self, command):
         """Returns the command-line usage string for this app."""
