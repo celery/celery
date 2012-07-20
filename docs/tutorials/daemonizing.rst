@@ -103,7 +103,7 @@ This is an example configuration for those using `django-celery`::
     CELERYD_GROUP="celery"
 
     # Name of the projects settings module.
-    export DJANGO_SETTINGS_MODULE="settings"
+    export DJANGO_SETTINGS_MODULE="MyProject.settings"
 
 .. _generic-initd-celeryd-django-with-env-example:
 
@@ -145,7 +145,7 @@ environment's python interpreter::
     CELERYD_GROUP="celery"
 
     # Name of the projects settings module.
-    export DJANGO_SETTINGS_MODULE="settings"
+    export DJANGO_SETTINGS_MODULE="MyProject.settings"
 
 .. _generic-initd-celeryd-options:
 
