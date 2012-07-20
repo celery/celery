@@ -15,8 +15,8 @@ import os
 import sys
 import codecs
 
-if sys.version_info < (2, 5):
-    raise Exception('Celery requires Python 2.5 or higher.')
+if sys.version_info < (2, 6):
+    raise Exception('Celery 3.1 requires Python 2.6 or higher.')
 
 try:
     orig_path = sys.path[:]
@@ -57,7 +57,6 @@ classes = """
     Topic :: Software Development :: Object Brokering
     Programming Language :: Python
     Programming Language :: Python :: 2
-    Programming Language :: Python :: 2.5
     Programming Language :: Python :: 2.6
     Programming Language :: Python :: 2.7
     Programming Language :: Python :: Implementation :: CPython
@@ -146,8 +145,6 @@ if is_jython:
     install_requires.extend(reqs('jython.txt'))
 if py_version[0:2] == (2, 6):
     install_requires.extend(reqs('py26.txt'))
-elif py_version[0:2] == (2, 5):
-    install_requires.extend(reqs('py25.txt'))
 
 # -*- Tests Requires -*-
 
@@ -157,9 +154,6 @@ elif is_pypy:
     tests_require = reqs('test-pypy.txt')
 else:
     tests_require = reqs('test.txt')
-
-if py_version[0:2] == (2, 5):
-    tests_require.extend(reqs('test-py25.txt'))
 
 # -*- Long Description -*-
 

@@ -420,7 +420,7 @@ To run the tests for all supported Python versions simply execute::
 If you only want to test specific Python versions use the :option:`-e`
 option::
 
-    $ tox -e py25,py26
+    $ tox -e py26
 
 Building the documentation
 --------------------------
