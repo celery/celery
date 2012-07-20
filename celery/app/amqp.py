@@ -28,6 +28,7 @@ QUEUE_FORMAT = """
 . %(name)s exchange:%(exchange)s(%(exchange_type)s) binding:%(routing_key)s
 """
 
+
 class Queues(dict):
     """Queue name⇒ declaration mapping.
 

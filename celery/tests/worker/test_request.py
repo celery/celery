@@ -773,7 +773,7 @@ class test_TaskRequest(Case):
                     'task_id': tw.id,
                     'task_retries': 0,
                     'task_is_eager': False,
-                    'delivery_info': {'exchange': None, 'routing_key': None},
+                    'delivery_info': {},
                     'task_name': tw.name})
 
     @patch('celery.worker.job.logger')

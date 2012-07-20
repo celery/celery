@@ -215,7 +215,8 @@ class Worker(configurated):
                 loader = loader[14:]
             appr += ' (%s)' % loader
         if self.autoscale:
-            concurrency = '{min=%s, max=%s}' % tuple(self.autoscale)
+            max, min = self.autoscale
+            concurrency = '{min=%s, max=%s}' % (min, max)
         pool = self.pool_cls
         if not isinstance(pool, basestring):
             pool = pool.__module__

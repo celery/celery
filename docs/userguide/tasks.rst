@@ -219,6 +219,8 @@ The request defines the following attributes:
                 containing the exchange and routing key used to deliver this
                 task.  Used by e.g. :meth:`~@Task.retry`
                 to resend the task to the same destination queue.
+                Availability of keys in this dict depends on the
+                message broker used.
 
 
 An example task accessing information in the context is:
