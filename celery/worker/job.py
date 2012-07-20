@@ -130,6 +130,7 @@ class Request(object):
         self.delivery_info = {
             'exchange': delivery_info.get('exchange'),
             'routing_key': delivery_info.get('routing_key'),
+            'priority': delivery_info.get('priority'),
         }
 
         self.request_dict = body
