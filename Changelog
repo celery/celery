@@ -5,6 +5,16 @@
 .. contents::
     :local:
 
+.. _version-3.0.3:
+
+3.0.3
+=====
+:release-date: 2012-07-20 09:17 P.M BST
+:by: Ask Solem
+
+- amqplib passes the channel object as part of the delivery_info
+  and it's not pickleable, so we now remove it.
+
 .. _version-3.0.2:
 
 3.0.2
