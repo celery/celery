@@ -110,7 +110,7 @@ class TraceInfo(object):
     def handle_failure(self, task, store_errors=True):
         """Handle exception."""
         req = task.request
-        _, type_, tb = sys.exc_info()
+        type_, _, tb = sys.exc_info()
         try:
             exc = self.retval
             einfo = ExceptionInfo((type_, get_pickleable_exception(exc), tb))

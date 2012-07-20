@@ -68,7 +68,7 @@ def command(fun, name=None, sortpri=0):
     return fun
 
 
-def get_extension_commands(namespace='celery.commands'):
+def load_extension_commands(namespace='celery.commands'):
     try:
         from pkg_resources import iter_entry_points
     except ImportError:
@@ -83,8 +83,6 @@ def get_extension_commands(namespace='celery.commands'):
             warnings.warn('Cannot load extension %r: %r' % (sym, exc))
         else:
             command(cls, name=ep.name)
-get_extension_commands()
-
 
 class Command(BaseCommand):
     help = ''
@@ -916,6 +914,9 @@ class CeleryCommand(BaseCommand):
             # this command supports custom pools
             # that may have to be loaded as early as possible.
             return (['-P'], ['--pool'])
+
+    def on_concurrency_setup(self):
+        load_extension_commands()
 
 
 def determine_exit_status(ret):
