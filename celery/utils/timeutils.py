@@ -48,8 +48,9 @@ class _Zone(object):
         return self.get_timezone(tzinfo)
 
     def to_local(self, dt, local=None, orig=None):
-        return set_tz(dt, orig or self.utc).astimezone(
-                    self.tz_or_local(local))
+        if is_naive(dt):
+            dt = set_tz(dt, orig or self.utc)
+        return dt.astimezone(self.tz_or_local(local))
 
     def get_timezone(self, zone):
         if isinstance(zone, basestring):
@@ -202,10 +203,13 @@ def is_naive(dt):
 
 def set_tz(dt, tz):
     """Sets the timezone for a datetime object."""
-    if hasattr(tz, 'localize'):
+    try:
+        localize = tz.localize
+    except AttributeError:
+        return dt.replace(tzinfo=tz)
+    else:
         # works on pytz timezones
-        return tz.localize(dt, is_dst=None)
-    return dt.replace(tzinfo=tz)
+        return localize(dt, is_dst=None)
 
 
 def to_utc(dt):
