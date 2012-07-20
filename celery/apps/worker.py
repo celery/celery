@@ -179,7 +179,7 @@ class Worker(configurated):
     def init_queues(self):
         try:
             self.app.select_queues(self.use_queues)
-        except KeyError, exc:
+        except KeyError as exc:
             raise ImproperlyConfigured(UNKNOWN_QUEUE % (self.use_queues, exc))
         if self.app.conf.CELERY_WORKER_DIRECT:
             self.app.amqp.queues.select_add(worker_direct(self.hostname))

@@ -67,7 +67,7 @@ def extract_response(raw_response, loads=anyjson.loads):
         raise InvalidResponseError('Empty response')
     try:
         payload = loads(raw_response)
-    except ValueError, exc:
+    except ValueError as exc:
         raise InvalidResponseError, InvalidResponseError(
                 str(exc)), sys.exc_info()[2]
 

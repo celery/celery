@@ -85,7 +85,7 @@ def symbol_by_name(name, aliases={}, imp=None, package=None,
     try:
         try:
             module = imp(module_name, package=package, **kwargs)
-        except ValueError, exc:
+        except ValueError as exc:
             raise ValueError, ValueError(
                     "Couldn't import %r: %s" % (name, exc)), sys.exc_info()[2]
         return getattr(module, cls_name) if cls_name else module

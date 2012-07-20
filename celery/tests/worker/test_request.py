@@ -141,7 +141,7 @@ class test_RetryTaskError(Case):
     def test_retry_task_error(self):
         try:
             raise Exception('foo')
-        except Exception, exc:
+        except Exception as exc:
             ret = RetryTaskError('Retrying task', exc)
             self.assertEqual(ret.exc, exc)
 
@@ -600,10 +600,10 @@ class test_TaskRequest(Case):
         mytask.request.update({'id': tid})
         try:
             raise ValueError('foo')
-        except Exception, exc:
+        except Exception as exc:
             try:
                 raise RetryTaskError(str(exc), exc=exc)
-            except RetryTaskError, exc:
+            except RetryTaskError as exc:
                 w = TraceInfo(states.RETRY, exc)
                 w.handle_retry(mytask, store_errors=False)
                 self.assertEqual(mytask.backend.get_status(tid),
@@ -620,7 +620,7 @@ class test_TaskRequest(Case):
         try:
             try:
                 raise ValueError('foo')
-            except Exception, exc:
+            except Exception as exc:
                 w = TraceInfo(states.FAILURE, exc)
                 w.handle_failure(mytask, store_errors=False)
                 self.assertEqual(mytask.backend.get_status(tid),

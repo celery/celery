@@ -69,7 +69,7 @@ class bgThread(Thread):
             while not shutdown_set():
                 try:
                     body()
-                except Exception, exc:
+                except Exception as exc:
                     try:
                         self.on_crash('%r crashed: %r', self.name, exc)
                         self._set_stopped()

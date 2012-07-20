@@ -39,7 +39,7 @@ class LeakFunCase(unittest.TestCase):
             return int(subprocess.Popen(
                         shlex.split(cmd % {'pid': os.getpid()}),
                             stdout=subprocess.PIPE).communicate()[0].strip())
-        except OSError, exc:
+        except OSError as exc:
             raise SkipTest('Can't execute command: %r: %r' % (cmd, exc))
 
     def sample_allocated(self, fun, *args, **kwargs):

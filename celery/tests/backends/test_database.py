@@ -128,7 +128,7 @@ class test_DatabaseBackend(Case):
         tid = uuid()
         try:
             raise KeyError('foo')
-        except KeyError, exception:
+        except KeyError as exception:
             import traceback
             trace = '\n'.join(traceback.format_stack())
             tb.mark_as_retry(tid, exception, traceback=trace)
@@ -142,7 +142,7 @@ class test_DatabaseBackend(Case):
         tid3 = uuid()
         try:
             raise KeyError('foo')
-        except KeyError, exception:
+        except KeyError as exception:
             import traceback
             trace = '\n'.join(traceback.format_stack())
             tb.mark_as_failure(tid3, exception, traceback=trace)

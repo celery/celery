@@ -71,7 +71,7 @@ class Mailer(object):
                     self._send(message)
                 finally:
                     socket.setdefaulttimeout(old_timeout)
-        except Exception, exc:
+        except Exception as exc:
             if not fail_silently:
                 raise
             warnings.warn(SendmailWarning(

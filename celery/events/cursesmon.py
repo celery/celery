@@ -487,7 +487,7 @@ def capture_events(app, state, display):  # pragma: no cover
                 display.init_screen()
                 with recv.consumer():
                     recv.drain_events(timeout=1, ignore_timeouts=True)
-            except (conn.connection_errors, conn.channel_errors), exc:
+            except conn.connection_errors + conn.channel_errors as exc:
                 sys.stderr.write('Connection lost: %r' % (exc, ))
 
 

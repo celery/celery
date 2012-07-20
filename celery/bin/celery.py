@@ -78,7 +78,7 @@ def load_extension_commands(namespace='celery.commands'):
         sym = ':'.join([ep.module_name, ep.attrs[0]])
         try:
             cls = symbol_by_name(sym)
-        except (ImportError, SyntaxError), exc:
+        except (ImportError, SyntaxError) as exc:
             warnings.warn('Cannot load extension %r: %r' % (sym, exc))
         else:
             command(cls, name=ep.name)
@@ -109,7 +109,7 @@ class Command(BaseCommand):
     def __call__(self, *args, **kwargs):
         try:
             ret = self.run(*args, **kwargs)
-        except Error, exc:
+        except Error as exc:
             self.error(self.colored.red('Error: %s' % exc))
             return exc.status
 

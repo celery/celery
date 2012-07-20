@@ -79,7 +79,7 @@ def apply_batches_task(task, args, loglevel, logfile):
     task.push_request(loglevel=loglevel, logfile=logfile)
     try:
         result = task(*args)
-    except Exception, exc:
+    except Exception as exc:
         result = None
         logger.error('Error: %r', exc, exc_info=True)
     finally:

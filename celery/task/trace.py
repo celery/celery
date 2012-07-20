@@ -211,11 +211,11 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 try:
                     R = retval = fun(*args, **kwargs)
                     state = SUCCESS
-                except RetryTaskError, exc:
+                except RetryTaskError as exc:
                     I = Info(RETRY, exc)
                     state, retval = I.state, I.retval
                     R = I.handle_error_state(task, eager=eager)
-                except Exception, exc:
+                except Exception as exc:
                     if propagate:
                         raise
                     I = Info(FAILURE, exc)
@@ -223,7 +223,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     R = I.handle_error_state(task, eager=eager)
                     [subtask(errback).apply_async((uuid, ))
                         for errback in task_request.errbacks or []]
-                except BaseException, exc:
+                except BaseException as exc:
                     raise
                 except:  # pragma: no cover
                     # For Python2.5 where raising strings are still allowed
@@ -265,10 +265,10 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         loader_cleanup()
                     except (KeyboardInterrupt, SystemExit, MemoryError):
                         raise
-                    except Exception, exc:
+                    except Exception as exc:
                         _logger.error('Process cleanup failed: %r', exc,
                                       exc_info=True)
-        except Exception, exc:
+        except Exception as exc:
             if eager:
                 raise
             R = report_internal_error(task, exc)
@@ -282,7 +282,7 @@ def trace_task(task, uuid, args, kwargs, request={}, **opts):
         if task.__trace__ is None:
             task.__trace__ = build_tracer(task.name, task, **opts)
         return task.__trace__(uuid, args, kwargs, request)[0]
-    except Exception, exc:
+    except Exception as exc:
         return report_internal_error(task, exc)
 
 

@@ -111,7 +111,7 @@ class UnpickleableExceptionWrapper(Exception):
 
         >>> try:
         ...     something_raising_unpickleable_exc()
-        >>> except Exception, e:
+        >>> except Exception as e:
         ...     exc = UnpickleableException(e.__class__.__module__,
         ...                                 e.__class__.__name__,
         ...                                 e.args)

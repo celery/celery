@@ -248,7 +248,7 @@ class Autoreloader(bgThread):
         self.on_init()
         try:
             self._monitor.start()
-        except OSError, exc:
+        except OSError as exc:
             if exc.errno not in (errno.EINTR, errno.EAGAIN):
                 raise
 

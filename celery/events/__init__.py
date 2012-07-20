@@ -131,7 +131,7 @@ class EventDispatcher(object):
                 try:
                     self.publisher.publish(event,
                                            routing_key=type.replace('-', '.'))
-                except Exception, exc:
+                except Exception as exc:
                     if not self.buffer_while_offline:
                         raise
                     self._outbound_buffer.append((type, fields, exc))

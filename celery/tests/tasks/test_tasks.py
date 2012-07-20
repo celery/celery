@@ -110,7 +110,7 @@ def retry_task_customexc(arg1, arg2, kwarg=1, **kwargs):
     else:
         try:
             raise MyCustomException('Elaine Marie Benes')
-        except MyCustomException, exc:
+        except MyCustomException as exc:
             kwargs.update(kwarg=kwarg)
             raise current.retry(countdown=0, exc=exc)
 

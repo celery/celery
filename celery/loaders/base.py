@@ -184,7 +184,7 @@ class BaseLoader(object):
             else:
                 try:
                     value = NAMESPACES[ns][key].to_python(value)
-                except ValueError, exc:
+                except ValueError as exc:
                     # display key name in error message.
                     raise ValueError('%r: %s' % (ns_key, exc))
             return ns_key, value

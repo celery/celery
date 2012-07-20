@@ -138,7 +138,7 @@ class BoundMethodWeakref(object):  # pragma: no cover
                 try:
                     if callable(function):
                         function(self)
-                except Exception, exc:
+                except Exception as exc:
                     try:
                         traceback.print_exc()
                     except AttributeError:

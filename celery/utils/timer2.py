@@ -89,7 +89,7 @@ class Schedule(object):
     def apply_entry(self, entry):
         try:
             entry()
-        except Exception, exc:
+        except Exception as exc:
             if not self.handle_error(exc):
                 logger.error('Error in timer: %r', exc, exc_info=True)
 
@@ -114,7 +114,7 @@ class Schedule(object):
         if isinstance(eta, datetime):
             try:
                 eta = to_timestamp(eta)
-            except OverflowError, exc:
+            except OverflowError as exc:
                 if not self.handle_error(exc):
                     raise
                 return
@@ -267,7 +267,7 @@ class Timer(Thread):
                 # we lost the race at interpreter shutdown,
                 # so gc collected built-in modules.
                 pass
-        except Exception, exc:
+        except Exception as exc:
             logger.error('Thread Timer crashed: %r', exc, exc_info=True)
             os._exit(1)
 

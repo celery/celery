@@ -351,7 +351,7 @@ class WorkController(configurated):
                 logger.debug('%s OK!', qualname(component))
         except SystemTerminate:
             self.terminate()
-        except Exception, exc:
+        except Exception as exc:
             logger.error('Unrecoverable error: %r', exc,
                          exc_info=True)
             self.stop()
@@ -369,13 +369,13 @@ class WorkController(configurated):
         """Process task by sending it to the pool of workers."""
         try:
             req.execute_using_pool(self.pool)
-        except Exception, exc:
+        except Exception as exc:
             logger.critical('Internal error: %r\n%s',
                             exc, traceback.format_exc(), exc_info=True)
         except SystemTerminate:
             self.terminate()
             raise
-        except BaseException, exc:
+        except BaseException as exc:
             self.stop()
             raise exc
 

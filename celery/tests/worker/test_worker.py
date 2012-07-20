@@ -849,7 +849,7 @@ class test_WorkController(AppCase):
 
         try:
             raise KeyError('foo')
-        except KeyError, exc:
+        except KeyError as exc:
             Timers(worker).on_timer_error(exc)
             msg, args = self.logger.error.call_args[0]
             self.assertIn('KeyError', msg % args)

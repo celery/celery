@@ -98,7 +98,7 @@ def rate_limit(panel, task_name, rate_limit, **kwargs):
 
     try:
         timeutils.rate(rate_limit)
-    except ValueError, exc:
+    except ValueError as exc:
         return {'error': 'Invalid rate limit string: %s' % exc}
 
     try:

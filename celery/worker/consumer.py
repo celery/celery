@@ -391,9 +391,9 @@ class Consumer(object):
                     return self.handle_unknown_message(body, message)
                 try:
                     strategies[name](message, body, message.ack_log_error)
-                except KeyError, exc:
+                except KeyError as exc:
                     self.handle_unknown_task(body, message, exc)
-                except InvalidTaskError, exc:
+                except InvalidTaskError as exc:
                     self.handle_invalid_task(body, message, exc)
                 #fire_timers()
 
@@ -473,7 +473,7 @@ class Consumer(object):
         if task.eta:
             try:
                 eta = timer2.to_timestamp(task.eta)
-            except OverflowError, exc:
+            except OverflowError as exc:
                 error("Couldn't convert eta %s to timestamp: %r. Task: %r",
                       task.eta, exc, task.info(safe=True), exc_info=True)
                 task.acknowledge()
@@ -489,9 +489,9 @@ class Consumer(object):
         """Process remote control command message."""
         try:
             self.pidbox_node.handle_message(body, message)
-        except KeyError, exc:
+        except KeyError as exc:
             error('No such control command: %s', exc)
-        except Exception, exc:
+        except Exception as exc:
             error('Control command error: %r', exc, exc_info=True)
             self.reset_pidbox_node()
 
@@ -534,9 +534,9 @@ class Consumer(object):
 
         try:
             self.strategies[name](message, body, message.ack_log_error)
-        except KeyError, exc:
+        except KeyError as exc:
             self.handle_unknown_task(body, message, exc)
-        except InvalidTaskError, exc:
+        except InvalidTaskError as exc:
             self.handle_invalid_task(body, message, exc)
 
     def maybe_conn_error(self, fun):

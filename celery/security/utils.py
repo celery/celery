@@ -26,5 +26,5 @@ def reraise_errors(msg='%r', errors=None):
     errors = (crypto.Error, ) if errors is None else errors
     try:
         yield
-    except errors, exc:
+    except errors as exc:
         raise SecurityError, SecurityError(msg % (exc, )), sys.exc_info()[2]

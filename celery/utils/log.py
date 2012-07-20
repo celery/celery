@@ -86,7 +86,7 @@ class ColorFormatter(logging.Formatter):
         if self.use_color and color:
             try:
                 record.msg = safe_str(str_t(color(record.msg)))
-            except Exception, exc:
+            except Exception as exc:
                 record.msg = '<Unrepresentable %r: %r>' % (
                         type(record.msg), exc)
                 record.exc_info = True

@@ -96,7 +96,7 @@ class Rdb(Pdb):
             this_port = port + skew + i
             try:
                 _sock.bind((host, this_port))
-            except socket.error, exc:
+            except socket.error as exc:
                 if exc.errno in [errno.EADDRINUSE, errno.EINVAL]:
                     continue
                 raise
@@ -135,7 +135,7 @@ class Rdb(Pdb):
             frame = _frame().f_back
         try:
             Pdb.set_trace(self, frame)
-        except socket.error, exc:
+        except socket.error as exc:
             # connection reset by peer.
             if exc.errno != errno.ECONNRESET:
                 raise
