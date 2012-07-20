@@ -160,7 +160,7 @@ class test_DefaultLoader(Case):
         self.assertTrue(l.wanted_module_item('Foo'))
         self.assertFalse(l.wanted_module_item('_FOO'))
         self.assertFalse(l.wanted_module_item('__FOO'))
-        self.assertFalse(l.wanted_module_item('foo'))
+        self.assertTrue(l.wanted_module_item('foo'))
 
     @patch('celery.loaders.default.find_module')
     def test_read_configuration_not_a_package(self, find_module):
