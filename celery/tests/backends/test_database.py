@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-import sys
-
 from datetime import datetime
 
 from nose import SkipTest

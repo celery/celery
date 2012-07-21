@@ -62,7 +62,7 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 .. cmdoption:: -S, --statedb
 
     Path to the state database. The extension '.db' may
-    be appended to the filename. Default: %(default)s
+    be appended to the filename. Default: {default}
 
 .. cmdoption:: -E, --events
 

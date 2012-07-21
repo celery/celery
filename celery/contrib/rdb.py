@@ -34,7 +34,7 @@ Inspired by http://snippets.dzone.com/posts/show/7248
     base port.  The selected port will be logged by the worker.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import errno
 import os
@@ -108,7 +108,7 @@ class Rdb(Pdb):
                 'environment variable CELERY_RDB_PORT' % (self.me, ))
 
     def say(self, m):
-        self.out.write(m + '\n')
+        print(m, file=self.out)
 
     def _close_session(self):
         self.stdin, self.stdout = sys.stdin, sys.stdout = self._prev_handles

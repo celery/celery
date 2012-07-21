@@ -58,7 +58,8 @@ class Option(object):
         return self.typemap[self.type](value)
 
     def __repr__(self):
-        return '<Option: type->%s default->%r>' % (self.type, self.default)
+        return '<Option: type->{0} default->{1!r}>'.format(self.type,
+                                                           self.default)
 
 
 NAMESPACES = {
@@ -230,7 +231,7 @@ def find_deprecated_settings(source):
     from celery.utils import warn_deprecated
     for name, opt in flatten(NAMESPACES):
         if (opt.deprecate_by or opt.remove_by) and getattr(source, name, None):
-            warn_deprecated(description='The %r setting' % (name, ),
+            warn_deprecated(description='The {0!r} setting'.format(name),
                             deprecation=opt.deprecate_by,
                             removal=opt.remove_by,
                             alternative=opt.alt)

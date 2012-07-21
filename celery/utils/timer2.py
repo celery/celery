@@ -50,7 +50,7 @@ class Entry(object):
         self.tref.cancelled = True
 
     def __repr__(self):
-        return '<TimerEntry: %s(*%r, **%r)' % (
+        return '<TimerEntry: {0}(*{1!r}, **{2!r})'.format(
                 self.fun.__name__, self.args, self.kwargs)
 
     if sys.version_info[0] == 3:  # pragma: no cover
@@ -235,12 +235,12 @@ class Timer(Thread):
         self._is_stopped = Event()
         self.mutex = Lock()
         self.not_empty = Condition(self.mutex)
-        self.setDaemon(True)
-        self.setName('Timer-%s' % (self._timer_count(), ))
+        self.daemon = True
+        self.name = 'Timer-{0}'.format(self._timer_count())
 
     def _next_entry(self):
         with self.not_empty:
-            delay, entry = self.scheduler.next()
+            delay, entry = next(self.scheduler)
             if entry is None:
                 if delay is None:
                     self.not_empty.wait(1.0)

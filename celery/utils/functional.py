@@ -57,7 +57,7 @@ class LRUCache(UserDict):
         # remove least recently used key.
         with self.mutex:
             if self.limit and len(self.data) >= self.limit:
-                self.data.pop(iter(self.data).next())
+                self.data.pop(next(iter(self.data)))
             self.data[key] = value
 
     def __iter__(self):

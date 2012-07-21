@@ -88,7 +88,7 @@ Examples
     celeryd -n xuzzy.myhost -c 3
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import errno
 import os
@@ -187,7 +187,7 @@ class MultiTool(object):
         return self.retcode
 
     def say(self, m, newline=True):
-        self.fh.write('%s%s' % (m, '\n' if newline else ''))
+        print(m, file=self.fh, end='\n' if newline else '')
 
     def names(self, argv, cmd):
         p = NamespacedOptionParser(argv)

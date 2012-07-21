@@ -6,12 +6,13 @@
     Custom types and data structures.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import sys
 import time
 
 from collections import defaultdict
+from functools import partial
 from itertools import chain
 
 from billiard.einfo import ExceptionInfo  # noqa
@@ -163,13 +164,14 @@ class DependencyGraph(object):
         :param fh: A file, or a file-like object to write the graph to.
 
         """
-        fh.write('digraph dependencies {\n')
+        P = partial(print, file=fh)
+        P('digraph dependencies {')
         for obj, adjacent in self.iteritems():
             if not adjacent:
-                fh.write(ws + '"%s"\n' % (obj, ))
+                P(ws + '"{0}"'.format(obj))
             for req in adjacent:
-                fh.write(ws + '"%s" -> "%s"\n' % (obj, req))
-        fh.write('}\n')
+                P(ws + '"{0}" -> "{1}"'.format(obj, req))
+        P('}')
 
     def __iter__(self):
         return self.adjacent.iterkeys()

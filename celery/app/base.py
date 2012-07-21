@@ -338,8 +338,8 @@ class Celery(object):
         return reduce(getattr, [self] + path.split('.'))
 
     def __repr__(self):
-        return '<%s %s:0x%x>' % (self.__class__.__name__,
-                                 self.main or '__main__', id(self), )
+        return '<{0} {1}:0x{2:x}>'.format(
+            type(self).__name__, self.main or '__main__', id(self))
 
     def __reduce__(self):
         # Reduce only pickles the configuration changes,

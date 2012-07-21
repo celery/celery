@@ -9,13 +9,11 @@
 from __future__ import absolute_import
 
 import inspect
-import sys
-import types
 
 try:
     import cPickle as pickle
 except ImportError:
-    import pickle
+    import pickle  # noqa
 
 from .encoding import safe_repr
 

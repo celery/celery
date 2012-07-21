@@ -1,11 +1,6 @@
 from __future__ import absolute_import
 
-import sys
-
-from nose import SkipTest
-
 from celery.local import Proxy, PromiseProxy, maybe_evaluate, try_import
-
 from celery.tests.utils import Case
 
 

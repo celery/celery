@@ -34,8 +34,6 @@ from ..app import app_or_default
 from ..utils.compat import WhateverIO
 from ..utils.functional import noop
 
-from .compat import catch_warnings
-
 
 class Mock(mock.Mock):
 
@@ -87,7 +85,7 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
         for v in sys.modules.values():
             if getattr(v, '__warningregistry__', None):
                 v.__warningregistry__ = {}
-        self.warnings_manager = catch_warnings(record=True)
+        self.warnings_manager = warnings.catch_warnings(record=True)
         self.warnings = self.warnings_manager.__enter__()
         warnings.simplefilter('always', self.expected)
         return self

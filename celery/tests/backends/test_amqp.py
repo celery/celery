@@ -253,7 +253,7 @@ class test_AMQPBackend(AppCase):
 
         b = Backend()
         with self.assertRaises(KeyError):
-            b.get_many(['id1']).next()
+            next(b.get_many(['id1']))
 
     def test_test_get_many_raises_inner_block(self):
 
@@ -264,7 +264,7 @@ class test_AMQPBackend(AppCase):
 
         b = Backend()
         with self.assertRaises(KeyError):
-            b.get_many(['id1']).next()
+            next(b.get_many(['id1']))
 
     def test_no_expires(self):
         b = self.create_backend(expires=None)

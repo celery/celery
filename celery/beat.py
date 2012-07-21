@@ -204,7 +204,7 @@ class Scheduler(object):
                 (time.time() - self._last_sync) > self.sync_every)
 
     def reserve(self, entry):
-        new_entry = self.schedule[entry.name] = entry.next()
+        new_entry = self.schedule[entry.name] = next(entry)
         return new_entry
 
     def apply_async(self, entry, publisher=None, **kwargs):

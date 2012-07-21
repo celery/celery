@@ -5,13 +5,14 @@ The :program:`celery amqp` command.
 .. program:: celery amqp
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import cmd
 import sys
 import shlex
 import pprint
 
+from functools import partial
 from itertools import count
 
 from amqplib import client_0_8 as amqp
@@ -35,9 +36,7 @@ Example:
     -> queue.delete myqueue yes no
 """
 
-
-def say(m, fh=sys.stderr):
-    fh.write('%s\n' % (m, ))
+say = partial(print, file=sys.stderr)
 
 
 class Spec(object):
@@ -200,10 +199,10 @@ class AMQShell(cmd.Cmd):
     def note(self, m):
         """Say something to the user. Disabled if :attr:`silent`."""
         if not self.silent:
-            say(m, fh=self.out)
+            say(m, file=self.out)
 
     def say(self, m):
-        say(m, fh=self.out)
+        say(m, file=self.out)
 
     def get_amqp_api_command(self, cmd, arglist):
         """With a command name and a list of arguments, convert the arguments
@@ -360,7 +359,7 @@ class AMQPAdmin(object):
 
     def note(self, m):
         if not self.silent:
-            say(m, fh=self.out)
+            say(m, file=self.out)
 
 
 class AMQPAdminCommand(Command):

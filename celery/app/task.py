@@ -67,7 +67,7 @@ class Context(object):
             return default
 
     def __repr__(self):
-        return '<Context: %r>' % (vars(self, ))
+        return '<Context: {0!r}>'.format(vars(self))
 
     @property
     def children(self):
@@ -120,9 +120,8 @@ class TaskType(type):
         return instance.__class__
 
     def __repr__(cls):
-        if cls._app:
-            return '<class %s of %s>' % (cls.__name__, cls._app, )
-        return '<unbound %s>' % (cls.__name__, )
+        return ('<class {0.__name__} of {0._app}>' if cls._app
+           else '<unbound {0.__name__}>').format(cls)
 
 
 class Task(object):
@@ -549,7 +548,7 @@ class Task(object):
             if exc:
                 maybe_reraise()
             raise self.MaxRetriesExceededError(
-                    """Can't retry %s[%s] args:%s kwargs:%s""" % (
+                    "Can't retry {0}[{1}] args:{2} kwargs:{3}".format(
                         self.name, options['task_id'], args, kwargs))
 
         # If task was executed eagerly using apply(),
@@ -767,7 +766,7 @@ class Task(object):
 
     def __repr__(self):
         """`repr(task)`"""
-        return '<@task: %s>' % (self.name, )
+        return '<@task: {0.name}>'.format(self)
 
     @property
     def request(self):

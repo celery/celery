@@ -17,7 +17,7 @@ The :program:`celery beat` command.
 
     Path to the schedule database. Defaults to `celerybeat-schedule`.
     The extension '.db' may be appended to the filename.
-    Default is %(default)s.
+    Default is {default}.
 
 .. cmdoption:: -S, --scheduler
 

@@ -25,7 +25,7 @@ class test_Certificate(SecurityCase):
         self.assertRaises(SecurityError, Certificate, KEY1)
 
     def test_has_expired(self):
-        self.assertTrue(Certificate(CERT1).has_expired())
+        self.assertFalse(Certificate(CERT1).has_expired())
 
 
 class test_CertStore(SecurityCase):

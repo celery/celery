@@ -6,7 +6,7 @@
     Logging utilities.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import logging
 import os
@@ -87,7 +87,7 @@ class ColorFormatter(logging.Formatter):
             try:
                 record.msg = safe_str(str_t(color(record.msg)))
             except Exception as exc:
-                record.msg = '<Unrepresentable %r: %r>' % (
+                record.msg = '<Unrepresentable {0!r}: {1!r}>'.format(
                         type(record.msg), exc)
                 record.exc_info = True
 
@@ -147,7 +147,7 @@ class LoggingProxy(object):
     def write(self, data):
         """Write message to logging object."""
         if in_sighandler:
-            return sys.__stderr__.write(safe_str(data))
+            print(safe_str(data), file=sys.__stderr__)
         if getattr(self._thread, 'recurse_protection', False):
             # Logger is logging back to this file, so stop recursing.
             return
@@ -234,7 +234,8 @@ def _patch_logger_class():
 
                 def log(self, *args, **kwargs):
                     if in_sighandler:
-                        sys.__stderr__.write('CANNOT LOG IN SIGHANDLER')
+                        print('CANNOT LOG IN SIGHANDLER',  # noqa
+                                file=sys.__stderr__)
                         return
                     return OldLoggerClass.log(self, *args, **kwargs)
             logging.setLoggerClass(SigSafeLogger)

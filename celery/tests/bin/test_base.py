@@ -47,7 +47,6 @@ class test_Command(AppCase):
         cmd = Command()
         with self.assertRaises(SystemExit):
             cmd.early_version(['--version'])
-        stdout.write.assert_called_with(cmd.version + '\n')
 
     def test_execute_from_commandline(self):
         cmd = MockCommand()

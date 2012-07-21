@@ -6,7 +6,7 @@
     Threading utilities.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import os
 import sys
@@ -33,7 +33,7 @@ class bgThread(threading.Thread):
         raise NotImplementedError('subclass responsibility')
 
     def on_crash(self, msg, *fmt, **kwargs):
-        sys.stderr.write((msg + '\n') % fmt)
+        print(msg % fmt, file=sys.stderr)
         exc_info = sys.exc_info()
         try:
             traceback.print_exception(exc_info[0], exc_info[1], exc_info[2],

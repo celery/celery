@@ -16,12 +16,13 @@ import logging
 import os
 import sys
 
+from logging.handlers import WatchedFileHandler
+
 from kombu.log import NullHandler
 
 from celery import signals
 from celery._state import get_current_task
 from celery.utils import isatty
-from celery.utils.compat import WatchedFileHandler
 from celery.utils.log import (
     get_logger, mlevel,
     ColorFormatter, ensure_process_aware_logger,

@@ -6,7 +6,7 @@ The :program:`celery` umbrella command.
 .. program:: celery
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import anyjson
 import sys
@@ -123,10 +123,7 @@ class Command(BaseCommand):
         self.out(s, fh=self.stderr)
 
     def out(self, s, fh=None):
-        s = str(s)
-        if not s.endswith('\n'):
-            s += '\n'
-        (fh or self.stdout).write(s)
+        print(s, file=fh or self.stdout)
 
     def run_from_argv(self, prog_name, argv):
         self.prog_name = prog_name
@@ -644,7 +641,7 @@ class status(Command):
                           no_color=kwargs.get('no_color', False),
                           stdout=self.stdout, stderr=self.stderr,
                           show_reply=False) \
-                    .run('ping', quiet=True, show_body=False, **kwargs)
+                    .run('ping', **dict(kwargs, quiet=True, show_body=False))
         if not replies:
             raise Error('No nodes replied within time constraint',
                         status=EX_UNAVAILABLE)

@@ -68,9 +68,10 @@ class TaskSet(list):
     def _sync_results(self, taskset_id):
         return [task.apply(taskset_id=taskset_id) for task in self]
 
-    def _get_tasks(self):
+    @property
+    def tasks(self):
         return self
 
-    def _set_tasks(self, tasks):
+    @tasks.setter  # noqa
+    def tasks(self, tasks):
         self[:] = tasks
-    tasks = property(_get_tasks, _set_tasks)

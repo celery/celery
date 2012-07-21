@@ -163,12 +163,12 @@ class test_EventReceiver(AppCase):
         try:
             r = self.app.events.Receiver(connection, node_id='celery.tests')
             it = r.itercapture(timeout=0.0001, wakeup=False)
-            consumer = it.next()
+            consumer = next(it)
             self.assertTrue(consumer.queues)
             self.assertEqual(consumer.callbacks[0], r._receive)
 
             with self.assertRaises(socket.timeout):
-                it.next()
+                next(it)
 
             with self.assertRaises(socket.timeout):
                 r.capture(timeout=0.00001)
@@ -194,7 +194,7 @@ class test_EventReceiver(AppCase):
             for ev in evs:
                 producer.send(ev)
             it = r.itercapture(limit=4, wakeup=True)
-            it.next()  # skip consumer (see itercapture)
+            next(it)  # skip consumer (see itercapture)
             list(it)
             self.assertEqual(events_received[0], 4)
         finally:

@@ -10,7 +10,7 @@
     platform tweaks, and so on.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import logging
 import os
@@ -49,7 +49,7 @@ def active_thread_count():
 
 
 def safe_say(msg):
-    sys.__stderr__.write('\n%s\n' % msg)
+    print('\n{0}'.format(msg), file=sys.__stderr__)
 
 ARTLINES = [
     ' --------------',
@@ -67,25 +67,25 @@ ARTLINES = [
 ]
 
 BANNER = """\
-celery@%(hostname)s v%(version)s
+celery@{hostname} v{version}
 
 [Configuration]
-. broker:      %(conninfo)s
-. app:         %(app)s
-. concurrency: %(concurrency)s
-. events:      %(events)s
+. broker:      {conninfo}
+. app:         {app}
+. concurrency: {concurrency}
+. events:      {events}
 
 [Queues]
-%(queues)s
+{queues}
 """
 
 EXTRA_INFO_FMT = """
 [Tasks]
-%(tasks)s
+{tasks}
 """
 
 UNKNOWN_QUEUE = """\
-Trying to select queue subset of %r, but queue %s is not
+Trying to select queue subset of {0!r}, but queue {1} is not
 defined in the CELERY_QUEUES setting.
 
 If you want to automatically declare unknown queues you can
@@ -173,13 +173,14 @@ class Worker(configurated):
 
     def on_consumer_ready(self, consumer):
         signals.worker_ready.send(sender=consumer)
-        print('celery@%s has started.' % self.hostname)
+        print('celery@{0.hostname} has started.'.format(self))
 
     def init_queues(self):
         try:
             self.app.select_queues(self.use_queues)
         except KeyError as exc:
-            raise ImproperlyConfigured(UNKNOWN_QUEUE % (self.use_queues, exc))
+            raise ImproperlyConfigured(
+                    UNKNOWN_QUEUE.format(self.use_queues, exc))
         if self.app.conf.CELERY_WORKER_DIRECT:
             self.app.amqp.queues.select_add(worker_direct(self.hostname))
 
@@ -189,50 +190,50 @@ class Worker(configurated):
 
     def purge_messages(self):
         count = self.app.control.purge()
-        print('purge: Erased %d %s from the queue.\n' % (
+        print('purge: Erased {0} {1} from the queue.\n'.format(
                 count, pluralize(count, 'message')))
 
     def tasklist(self, include_builtins=True):
         tasks = self.app.tasks.keys()
         if not include_builtins:
             tasks = filter(lambda s: not s.startswith('celery.'), tasks)
-        return '\n'.join('  . %s' % task for task in sorted(tasks))
+        return '\n'.join('  . {0}'.format(task) for task in sorted(tasks))
 
     def extra_info(self):
         if self.loglevel <= logging.INFO:
             include_builtins = self.loglevel <= logging.DEBUG
             tasklist = self.tasklist(include_builtins=include_builtins)
-            return EXTRA_INFO_FMT % {'tasks': tasklist}
+            return EXTRA_INFO_FMT.format(tasks=tasklist)
 
     def startup_info(self):
         app = self.app
         concurrency = unicode(self.concurrency)
-        appr = '%s:0x%x' % (app.main or '__main__', id(app))
+        appr = '{0}:0x{1:x}'.format(app.main or '__main__', id(app))
         if not isinstance(app.loader, AppLoader):
             loader = qualname(app.loader)
             if loader.startswith('celery.loaders'):
                 loader = loader[14:]
-            appr += ' (%s)' % loader
+            appr += ' ({0})'.format(loader)
         if self.autoscale:
             max, min = self.autoscale
-            concurrency = '{min=%s, max=%s}' % (min, max)
+            concurrency = '{{min={0}, max={1}}}'.format(min, max)
         pool = self.pool_cls
         if not isinstance(pool, basestring):
             pool = pool.__module__
-        concurrency += ' (%s)' % pool.split('.')[-1]
+        concurrency += ' ({0})'.format(pool.split('.')[-1])
         events = 'ON'
         if not self.send_events:
             events = 'OFF (enable -E to monitor this worker)'
 
-        banner = (BANNER % {
-            'app': appr,
-            'hostname': self.hostname,
-            'version': VERSION_BANNER,
-            'conninfo': self.app.connection().as_uri(),
-            'concurrency': concurrency,
-            'events': events,
-            'queues': app.amqp.queues.format(indent=0, indent_first=False),
-        }).splitlines()
+        banner = BANNER.format(
+            app=appr,
+            hostname=self.hostname,
+            version=VERSION_BANNER,
+            conninfo=self.app.connection().as_uri(),
+            concurrency=concurrency,
+            events=events,
+            queues=app.amqp.queues.format(indent=0, indent_first=False),
+        ).splitlines()
 
         # integrate the ASCII art.
         for i, x in enumerate(banner):
@@ -282,7 +283,7 @@ class Worker(configurated):
 
     def set_process_status(self, info):
         return platforms.set_mp_process_title('celeryd',
-                info='%s (%s)' % (info, platforms.strargv(sys.argv)),
+                info='{0} ({1})'.format(info, platforms.strargv(sys.argv)),
                 hostname=self.hostname)
 
 
@@ -296,7 +297,7 @@ def _shutdown_handler(worker, sig='TERM', how='Warm', exc=SystemExit,
             if current_process()._name == 'MainProcess':
                 if callback:
                     callback(worker)
-                safe_say('celeryd: %s shutdown (MainProcess)' % how)
+                safe_say('celeryd: {0} shutdown (MainProcess)'.format(how))
             if active_thread_count() > 1:
                 setattr(state, {'Warm': 'should_stop',
                                 'Cold': 'should_terminate'}[how], True)
@@ -327,7 +328,7 @@ def install_worker_restart_handler(worker, sig='SIGHUP'):
     def restart_worker_sig_handler(signum, frame):
         """Signal handler restarting the current python program."""
         set_in_sighandler(True)
-        safe_say('Restarting celeryd (%s)' % (' '.join(sys.argv), ))
+        safe_say('Restarting celeryd ({0})'.format(' '.join(sys.argv)))
         pid = os.fork()
         if pid == 0:
             os.execv(sys.executable, [sys.executable] + sys.argv)
@@ -373,8 +374,8 @@ def install_HUP_not_supported_handler(worker, sig='SIGHUP'):
     def warn_on_HUP_handler(signum, frame):
         set_in_sighandler(True)
         try:
-            safe_say('%(sig)s not supported: Restarting with %(sig)s is '
-                     'unstable on this platform!' % {'sig': sig})
+            safe_say('{sig} not supported: Restarting with {sig} is '
+                     'unstable on this platform!'.format(sig=sig))
         finally:
             set_in_sighandler(False)
     platforms.signals[sig] = warn_on_HUP_handler

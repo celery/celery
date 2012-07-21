@@ -56,7 +56,7 @@ Daemon Options
     Optional directory to change to after detaching.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import os
 import re
@@ -78,7 +78,7 @@ for warning in (CDeprecationWarning, CPendingDeprecationWarning):
     warnings.simplefilter('once', warning, 0)
 
 ARGV_DISABLED = """
-Unrecognized command line arguments: %s
+Unrecognized command line arguments: {0}
 
 Try --help?
 """
@@ -91,7 +91,7 @@ class HelpFormatter(IndentedHelpFormatter):
 
     def format_epilog(self, epilog):
         if epilog:
-            return '\n%s\n\n' % epilog
+            return '\n{0}\n\n'.format(epilog)
         return ''
 
     def format_description(self, description):
@@ -202,7 +202,7 @@ class Command(object):
 
     def usage(self, command):
         """Returns the command-line usage string for this app."""
-        return '%%prog [options] %s' % (self.args, )
+        return '%%prog [options] {0.args}'.format(self)
 
     def get_options(self):
         """Get supported command line options."""
@@ -238,15 +238,15 @@ class Command(object):
 
     def check_args(self, args):
         if not self.supports_args and args:
-            self.die(ARGV_DISABLED % (', '.join(args, )), EX_USAGE)
+            self.die(ARGV_DISABLED.format(', '.join(args)), EX_USAGE)
 
     def die(self, msg, status=EX_FAILURE):
-        sys.stderr.write(msg + '\n')
+        print(msg, file=sys.stderr)
         sys.exit(status)
 
     def early_version(self, argv):
         if '--version' in argv:
-            sys.stdout.write('%s\n' % self.version)
+            print(self.version)
             sys.exit(0)
 
     def parse_options(self, prog_name, arguments):
@@ -272,7 +272,7 @@ class Command(object):
             for long_opt, help in doc.iteritems():
                 option = parser.get_option(long_opt)
                 if option is not None:
-                    option.help = ' '.join(help) % {'default': option.default}
+                    option.help = ' '.join(help).format(default=option.default)
         return parser
 
     def prepare_preload_options(self, options):
@@ -311,7 +311,8 @@ class Command(object):
         sym = self.symbol_by_name(app)
         if isinstance(sym, ModuleType):
             if getattr(sym, '__path__', None):
-                return self.find_app('%s.celery:' % (app.replace(':', ''), ))
+                return self.find_app('{0}.celery:'.format(
+                            app.replace(':', '')))
             return sym.celery
         return sym
 

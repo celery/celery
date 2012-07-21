@@ -7,7 +7,7 @@
     users, groups, and so on.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import atexit
 import errno
@@ -48,8 +48,8 @@ PIDFILE_MODE = ((os.R_OK | os.W_OK) << 6) | ((os.R_OK) << 3) | ((os.R_OK))
 
 _setps_bucket = TokenBucket(0.5)  # 30/m, every 2 seconds
 
-PIDLOCKED = """ERROR: Pidfile (%s) already exists.
-Seems we're already running? (PID: %s)"""
+PIDLOCKED = """ERROR: Pidfile ({0}) already exists.
+Seems we're already running? (PID: {1})"""
 
 
 def pyimplementation():
@@ -132,14 +132,14 @@ class PIDFile(object):
             line = fh.readline()
             if line.strip() == line:  # must contain '\n'
                 raise ValueError(
-                    'Partially written or invalid pidfile %r' % (self.path))
+                    'Partial or invalid pidfile {0.path}'.format(self))
         finally:
             fh.close()
 
         try:
             return int(line.strip())
         except ValueError:
-            raise ValueError('PID file %r contents invalid.' % self.path)
+            raise ValueError('PID file {0.path} invalid.'.format(self))
 
     def remove(self):
         """Removes the lock."""
@@ -156,7 +156,7 @@ class PIDFile(object):
         try:
             pid = self.read_pid()
         except ValueError as exc:
-            sys.stderr.write('Broken pidfile found. Removing it.\n')
+            print('Broken pidfile found. Removing it.', file=sys.stderr)
             self.remove()
             return True
         if not pid:
@@ -167,14 +167,14 @@ class PIDFile(object):
             os.kill(pid, 0)
         except os.error as exc:
             if exc.errno == errno.ESRCH:
-                sys.stderr.write('Stale pidfile exists. Removing it.\n')
+                print('Stale pidfile exists. Removing it.', file=sys.stderr)
                 self.remove()
                 return True
         return False
 
     def write_pid(self):
         pid = os.getpid()
-        content = '%d\n' % (pid, )
+        content = '{0}\n'.format(pid)
 
         pidfile_fd = os.open(self.path, PIDFILE_FLAGS, PIDFILE_MODE)
         pidfile = os.fdopen(pidfile_fd, 'w')
@@ -219,7 +219,7 @@ def create_pidlock(pidfile):
     """
     pidlock = PIDFile(pidfile)
     if pidlock.is_locked() and not pidlock.remove_if_stale():
-        raise SystemExit(PIDLOCKED % (pidfile, pidlock.read_pid()))
+        raise SystemExit(PIDLOCKED.format(pidfile, pidlock.read_pid()))
     pidlock.acquire()
     atexit.register(pidlock.release)
     return pidlock
@@ -339,7 +339,7 @@ def parse_uid(uid):
         try:
             return pwd.getpwnam(uid).pw_uid
         except (AttributeError, KeyError):
-            raise KeyError('User does not exist: %r' % (uid, ))
+            raise KeyError('User does not exist: {0}'.format(uid))
 
 
 def parse_gid(gid):
@@ -355,7 +355,7 @@ def parse_gid(gid):
         try:
             return grp.getgrnam(gid).gr_gid
         except (AttributeError, KeyError):
-            raise KeyError('Group does not exist: %r' % (gid, ))
+            raise KeyError('Group does not exist: {0}'.format(gid))
 
 
 def _setgroups_hack(groups):
@@ -572,8 +572,8 @@ def set_process_title(progname, info=None):
     Only works if :mod:`setproctitle` is installed.
 
     """
-    proctitle = '[%s]' % progname
-    proctitle = '%s %s' % (proctitle, info) if info else proctitle
+    proctitle = '[{0}]'.format(progname)
+    proctitle = '{0} {1}'.format(proctitle, info) if info else proctitle
     if _setproctitle:
         _setproctitle.setproctitle(proctitle)
     return proctitle
@@ -594,9 +594,9 @@ else:
         """
         if not rate_limit or _setps_bucket.can_consume(1):
             if hostname:
-                progname = '%s@%s' % (progname, hostname.split('.')[0])
+                progname = '{0}@{1}'.format(progname, hostname.split('.')[0])
             return set_process_title(
-                '%s:%s' % (progname, current_process().name), info=info)
+                '{0}:{1}'.format(progname, current_process().name), info=info)
 
 
 def shellsplit(s):

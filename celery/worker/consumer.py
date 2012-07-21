@@ -133,7 +133,7 @@ The full contents of the message body was:
 """
 
 MESSAGE_REPORT_FMT = """\
-body: %s {content_type:%s content_encoding:%s delivery_info:%s}\
+body: {0} {{content_type:{1} content_encoding:{2} delivery_info:{3}}}\
 """
 
 
@@ -503,10 +503,10 @@ class Consumer(object):
         self.qos.decrement_eventually()
 
     def _message_report(self, body, message):
-        return MESSAGE_REPORT_FMT % (dump_body(message, body),
-                                     safe_repr(message.content_type),
-                                     safe_repr(message.content_encoding),
-                                     safe_repr(message.delivery_info))
+        return MESSAGE_REPORT_FMT.format(dump_body(message, body),
+                                         safe_repr(message.content_type),
+                                         safe_repr(message.content_encoding),
+                                         safe_repr(message.delivery_info))
 
     def handle_unknown_message(self, body, message):
         warn(UNKNOWN_FORMAT, self._message_report(body, message))

@@ -19,7 +19,6 @@ from kombu.utils import fxrange, kwdict, reprcall
 from celery import current_app
 from celery.local import Proxy
 from celery.utils import cached_property, uuid
-from celery.utils.compat import chain_from_iterable
 from celery.utils.functional import (
     maybe_list, is_list, regen,
     chunks as _chunks,
@@ -161,7 +160,7 @@ class Signature(dict):
         return self.append_to_list_option('link_error', errback)
 
     def flatten_links(self):
-        return list(chain_from_iterable(_chain([[self]],
+        return list(_chain.from_iterable(_chain([[self]],
                 (link.flatten_links()
                     for link in maybe_list(self.options.get('link')) or []))))
 

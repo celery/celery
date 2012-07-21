@@ -26,7 +26,7 @@ from celery.utils.functional import maybe_list
 BUILTIN_MODULES = frozenset()
 
 ERROR_ENVVAR_NOT_SET = (
-"""The environment variable %r is not set,
+"""The environment variable {0!r} is not set,
 and as such the configuration could not be loaded.
 Please set this variable and make it point to
 a configuration module.""")
@@ -126,7 +126,8 @@ class BaseLoader(object):
         if not module_name:
             if silent:
                 return False
-            raise ImproperlyConfigured(self.error_envvar_not_set % module_name)
+            raise ImproperlyConfigured(
+                    self.error_envvar_not_set.format(module_name))
         return self.config_from_object(module_name, silent=silent)
 
     def config_from_object(self, obj, silent=False):
@@ -186,7 +187,7 @@ class BaseLoader(object):
                     value = NAMESPACES[ns][key].to_python(value)
                 except ValueError as exc:
                     # display key name in error message.
-                    raise ValueError('%r: %s' % (ns_key, exc))
+                    raise ValueError('{0!r}: {1}'.format(ns_key, exc))
             return ns_key, value
 
         return dict(map(getarg, args))
