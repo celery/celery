@@ -40,7 +40,7 @@ class LeakFunCase(unittest.TestCase):
                         shlex.split(cmd % {'pid': os.getpid()}),
                             stdout=subprocess.PIPE).communicate()[0].strip())
         except OSError, exc:
-            raise SkipTest('Can't execute command: %r: %r' % (cmd, exc))
+            raise SkipTest("Can't execute command: %r: %r" % (cmd, exc))
 
     def sample_allocated(self, fun, *args, **kwargs):
         before = self.get_rsize()
