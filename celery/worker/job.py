@@ -225,8 +225,6 @@ class Request(object):
         """If expired, mark the task as revoked."""
         if self.expires and datetime.now(self.tzlocal) > self.expires:
             revoked_tasks.add(self.id)
-            if self.store_errors:
-                self.task.backend.mark_as_revoked(self.id)
             return True
 
     def terminate(self, pool, signal=None):
@@ -248,6 +246,8 @@ class Request(object):
         if self.id in revoked_tasks:
             warn('Skipping revoked task: %s[%s]', self.name, self.id)
             self.send_event('task-revoked', uuid=self.id)
+            if self.store_errors:
+                self.task.backend.mark_as_revoked(self.id)
             self.acknowledge()
             self._already_revoked = True
             send_revoked(self.task, terminated=False,
