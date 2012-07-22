@@ -78,7 +78,7 @@ class RetryTaskError(Exception):
         if self.message:
             return self.message
         if self.excs:
-            return 'Retry {0}: {!r}'.format(self.humanize(), self.excs)
+            return 'Retry {0}: {1!r}'.format(self.humanize(), self.excs)
         return 'Retry {0}'.format(self.humanize())
 
     def __reduce__(self):
