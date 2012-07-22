@@ -13,7 +13,7 @@ import warnings
 from collections import deque
 from contextlib import contextmanager
 from copy import deepcopy
-from functools import wraps
+from functools import reduce, wraps
 from threading import Lock
 
 from billiard.util import register_after_fork
