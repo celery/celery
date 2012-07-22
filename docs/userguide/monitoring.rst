@@ -502,10 +502,10 @@ Here is an example camera, dumping the snapshot to screen:
             if not state.event_count:
                 # No new events since last snapshot.
                 return
-            print('Workers: %s' % (pformat(state.workers, indent=4), ))
-            print('Tasks: %s' % (pformat(state.tasks, indent=4), ))
-            print('Total: %s events, %s tasks' % (
-                state.event_count, state.task_count))
+            print('Workers: {0}'.format(pformat(state.workers, indent=4)))
+            print('Tasks: {0}'.format(pformat(state.tasks, indent=4)))
+            print('Total: {0.event_count} events, %s {0.task_count}'.format(
+                state))
 
 See the API reference for :mod:`celery.events.state` to read more
 about state objects.

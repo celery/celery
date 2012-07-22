@@ -229,8 +229,8 @@ An example task accessing information in the context is:
 
     @celery.task()
     def dump_context(x, y):
-        print('Executing task id %r, args: %r kwargs: %r' % (
-            add.request.id, add.request.args, add.request.kwargs))
+        print('Executing task id {0.id}, args: {0.args!r} kwargs: {0.kwargs!r}'.format(
+                add.request))
 
 .. _task-logging:
 
@@ -255,7 +255,7 @@ for all of your tasks at the top of your module:
 
     @celery.task()
     def add(x, y):
-        logger.info('Adding %s + %s' % (x, y))
+        logger.info('Adding {0} + {1}'.format(x, y))
         return x + y
 
 Celery uses the standard Python logger library,
@@ -824,7 +824,7 @@ base class for new task types.
         abstract = True
 
         def after_return(self, *args, **kwargs):
-            print('Task returned: %r' % (self.request, ))
+            print('Task returned: {0!r}'.format(self.request)
 
 
     @celery.task(base=DebugTask)
@@ -1317,11 +1317,11 @@ blog/tasks.py
     @celery.task()
     def spam_filter(comment_id, remote_addr=None):
         logger = spam_filter.get_logger()
-        logger.info('Running spam filter for comment %s' % comment_id)
+        logger.info('Running spam filter for comment %s', comment_id)
 
         comment = Comment.objects.get(pk=comment_id)
         current_domain = Site.objects.get_current().domain
-        akismet = Akismet(settings.AKISMET_KEY, 'http://%s' % domain)
+        akismet = Akismet(settings.AKISMET_KEY, 'http://{0}'.format(domain))
         if not akismet.verify_key():
             raise ImproperlyConfigured('Invalid AKISMET_KEY')
 

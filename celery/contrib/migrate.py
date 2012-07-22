@@ -6,7 +6,7 @@
     Migration tools.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import socket
 
@@ -20,6 +20,12 @@ from kombu.utils.encoding import ensure_bytes
 
 from celery.app import app_or_default
 from celery.utils import worker_direct
+
+
+MOVING_PROGRESS_FMT = """\
+Moving task {state.filtered}/{state.strtotal}: \
+{body[task]}[{body[id]}]\
+"""
 
 
 class StopFiltering(Exception):
@@ -39,8 +45,8 @@ class State(object):
 
     def __repr__(self):
         if self.filtered:
-            return '^%s' % self.filtered
-        return '%s/%s' % (self.count, self.strtotal)
+            return '^{0.filtered}'.format(self)
+        return '{0.count}/{0.strtotal}'.format(self)
 
 
 def republish(producer, message, exchange=None, routing_key=None,
@@ -349,7 +355,5 @@ move_direct_by_id = partial(move_task_by_id, transform=worker_direct)
 move_direct_by_idmap = partial(move_by_idmap, transform=worker_direct)
 move_direct_by_taskmap = partial(move_by_taskmap, transform=worker_direct)
 
-
-def filter_status(state, body, message):
-    print('Moving task %s/%s: %s[%s]' % (
-            state.filtered, state.strtotal, body['task'], body['id']))
+def filter_status(state, body, message, **kwargs):
+    print(MOVING_PROGRESS_FMT.format(state=state, body=body, **kwargs))

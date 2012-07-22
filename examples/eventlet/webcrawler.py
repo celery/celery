@@ -44,7 +44,7 @@ def domain(url):
 
 @task(ignore_result=True, serializer='pickle', compression='zlib')
 def crawl(url, seen=None):
-    print('crawling: %r' % (url, ))
+    print('crawling: {0}'.format(url))
     if not seen:
         seen = BloomFilter(capacity=50000, error_rate=0.0001)
 

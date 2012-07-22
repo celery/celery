@@ -44,7 +44,7 @@ class Task(ResultModelBase):
                 'date_done': self.date_done}
 
     def __repr__(self):
-        return '<Task %s state: %s>' % (self.task_id, self.status)
+        return '<Task {0.task_id} state: {0.status}>'.format(self)
 
 
 class TaskSet(ResultModelBase):
@@ -69,4 +69,4 @@ class TaskSet(ResultModelBase):
                 'date_done': self.date_done}
 
     def __repr__(self):
-        return '<TaskSet: %s>' % (self.taskset_id, )
+        return '<TaskSet: {0.taskset_id}>'.format(self)

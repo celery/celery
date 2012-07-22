@@ -150,11 +150,12 @@ info, warn, error, crit = (logger.info, logger.warn,
 
 
 def debug(msg, *args, **kwargs):
-    logger.debug('Consumer: %s' % (msg, ), *args, **kwargs)
+    logger.debug('Consumer: {0}'.format(msg), *args, **kwargs)
 
 
 def dump_body(m, body):
-    return "%s (%sb)" % (text.truncate(safe_repr(body), 1024), len(m.body))
+    return "{0} ({1}b)".format(text.truncate(safe_repr(body), 1024),
+                               len(m.body))
 
 
 class Component(StartStopComponent):

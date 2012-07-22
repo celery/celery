@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 import sys
 import time
@@ -9,7 +11,7 @@ JSONIMP = os.environ.get('JSONIMP')
 if JSONIMP:
     anyjson.force_implementation(JSONIMP)
 
-print('anyjson implementation: %r' % (anyjson.implementation.name, ))
+print('anyjson implementation: {0!r}'.format(anyjson.implementation.name))
 
 from celery import Celery, group
 
@@ -51,14 +53,14 @@ def it(_, n):
     i = it.cur  # use internal counter, as ordering can be skewed
                 # by previous runs, or the broker.
     if i and not i % 5000:
-        print >> sys.stderr, '(%s so far: %ss)' % (i, tdiff(it.subt))
+        print('({0} so far: {1}s)'.format(i, tdiff(it.subt)), file=sys.stderr)
         it.subt = time.time()
     if not i:
         it.subt = it.time_start = time.time()
     elif i == n - 1:
         total = tdiff(it.time_start)
-        print >> sys.stderr, '(%s so far: %ss)' % (i, tdiff(it.subt))
-        print('-- process %s tasks: %ss total, %s tasks/s} ' % (
+        print('({0} so far: {1}s)'.format(i, tdiff(it.subt)), file=sys.stderr)
+        print('-- process {0} tasks: {1}s total, {2} tasks/s} '.format(
                 n, total, n / (total + .0)))
         sys.exit()
     it.cur += 1
@@ -67,7 +69,7 @@ def it(_, n):
 def bench_apply(n=DEFAULT_ITS):
     time_start = time.time()
     group(it.s(i, n) for i in xrange(n))()
-    print('-- apply %s tasks: %ss' % (n, time.time() - time_start, ))
+    print('-- apply {0} tasks: {1}s'.format(n, time.time() - time_start))
 
 
 def bench_work(n=DEFAULT_ITS, loglevel='CRITICAL'):
@@ -93,8 +95,8 @@ def bench_both(n=DEFAULT_ITS):
 def main(argv=sys.argv):
     n = DEFAULT_ITS
     if len(argv) < 2:
-        print('Usage: %s [apply|work|both] [n=20k]' % (
-                os.path.basename(argv[0]), ))
+        print('Usage: {0} [apply|work|both] [n=20k]'.format(
+                os.path.basename(argv[0])))
         return sys.exit(1)
     try:
         try:

@@ -244,7 +244,8 @@ class xmap(_basemap):
 
     def __repr__(self):
         task, it = self._unpack_args(self.kwargs)
-        return '[%s(x) for x in %s]' % (task.task, truncate(repr(it), 100))
+        return '[{0}(x) for x in {1}]'.format(task.task,
+                                              truncate(repr(it), 100))
 Signature.register_type(xmap)
 
 
@@ -253,7 +254,8 @@ class xstarmap(_basemap):
 
     def __repr__(self):
         task, it = self._unpack_args(self.kwargs)
-        return '[%s(*x) for x in %s]' % (task.task, truncate(repr(it), 100))
+        return '[{0}(*x) for x in {1}]'.format(task.task,
+                                               truncate(repr(it), 100))
 Signature.register_type(xstarmap)
 
 
@@ -370,7 +372,7 @@ class chord(Signature):
     def __repr__(self):
         if self.body:
             return self.body.reprcall(self.tasks)
-        return '<chord without body: %r>' % (self.tasks, )
+        return '<chord without body: {0.tasks!r}>'.format(self)
 
     @property
     def tasks(self):

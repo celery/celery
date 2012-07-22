@@ -216,6 +216,6 @@ class Signal(object):  # pragma: no cover
                     del self.receivers[idx]
 
     def __repr__(self):
-        return '<Signal: %s>' % (self.__class__.__name__, )
+        return '<Signal: {0}>'.format(type(self).__name__)
 
     __str__ = __repr__

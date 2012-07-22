@@ -197,7 +197,7 @@ class AsyncResult(ResultBase):
         return hash(self.id)
 
     def __repr__(self):
-        return '<%s: %s>' % (self.__class__.__name__, self.id)
+        return '<{0}: {1}>'.format(type(self).__name__, self.id)
 
     def __eq__(self, other):
         if isinstance(other, AsyncResult):
@@ -534,8 +534,8 @@ class ResultSet(ResultBase):
         return NotImplemented
 
     def __repr__(self):
-        return '<%s: [%s]>' % (self.__class__.__name__,
-                               ', '.join(r.id for r in self.results))
+        return '<{0}: [{1}]>'.format(type(self).__name__,
+                                     ', '.join(r.id for r in self.results))
 
     @property
     def subtasks(self):
@@ -598,8 +598,8 @@ class GroupResult(ResultSet):
         return NotImplemented
 
     def __repr__(self):
-        return '<%s: %s [%s]>' % (self.__class__.__name__, self.id,
-                                  ', '.join(r.id for r in self.results))
+        return '<{0}: {1} [{2}]>'.format(type(self).__name__, self.id,
+                                         ', '.join(r.id for r in self.results))
 
     def serializable(self):
         return self.id, [r.serializable() for r in self.results]
@@ -675,7 +675,7 @@ class EagerResult(AsyncResult):
         self._state = states.REVOKED
 
     def __repr__(self):
-        return "<EagerResult: %s>" % self.id
+        return "<EagerResult: {0.id}>".format(self)
 
     @property
     def result(self):

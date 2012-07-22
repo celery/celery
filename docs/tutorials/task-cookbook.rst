@@ -43,7 +43,7 @@ The cache key expires after some time in case something unexpected happens
         # The cache key consists of the task name and the MD5 digest
         # of the feed URL.
         feed_url_digest = md5(feed_url).hexdigest()
-        lock_id = '%s-lock-%s' % (self.name, feed_url_hexdigest)
+        lock_id = '{0}-lock-{1}'.format(self.name, feed_url_hexdigest)
 
         # cache.add fails if if the key already exists
         acquire_lock = lambda: cache.add(lock_id, 'true', LOCK_EXPIRE)
@@ -51,7 +51,7 @@ The cache key expires after some time in case something unexpected happens
         # advantage of using add() for atomic locking
         release_lock = lambda: cache.delete(lock_id)
 
-        logger.debug('Importing feed: %s' % feed_url)
+        logger.debug('Importing feed: %s', feed_url)
         if acquire_lock():
             try:
                 feed = Feed.objects.import_feed(feed_url)
@@ -60,4 +60,4 @@ The cache key expires after some time in case something unexpected happens
             return feed.url
 
         logger.debug(
-            'Feed %s is already being imported by another worker' % feed_url)
+            'Feed %s is already being imported by another worker', feed_url)

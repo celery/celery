@@ -30,11 +30,11 @@ try:
         _, task_path, _ = imp.find_module('task', celery.app.__path__)
         if task_path.endswith('/task'):
             print('- force upgrading previous installation')
-            print('  - removing %r package...' % task_path)
+            print('  - removing {0!r} package...'.format(task_path))
             try:
                 shutil.rmtree(os.path.abspath(task_path))
             except Exception:
-                sys.stderr.write('Could not remove %r: %r\n' % (
+                sys.stderr.write('Could not remove {0!r}: {1!r}\n'.format(
                     task_path, sys.exc_info[1]))
     except ImportError:
         print('Upgrade: no old version found.')

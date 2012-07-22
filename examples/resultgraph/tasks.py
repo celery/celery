@@ -30,19 +30,19 @@ def add(x, y):
 
 @task()
 def make_request(id, url):
-    print('GET %r' % (url, ))
+    print('GET {0!r}'.format(url)
     return url
 
 
 @task()
 def B_callback(urls, id):
-    print('batch %s done' % (id, ))
+    print('batch {0} done'.format(id))
     return urls
 
 
 @task()
 def B(id):
-    return chord(make_request.s(id, '%s %r' % (id, i, ))
+    return chord(make_request.s(id, '{0} {1!r}'.format(id, i))
                     for i in xrange(10))(B_callback.s(id))
 
 
@@ -84,7 +84,7 @@ def unlock_graph(result, callback, interval=1, propagate=False,
 
 @task()
 def A_callback(res):
-    print('Everything is done: %r' % (res, ))
+    print('Everything is done: {0!r}'.format(res))
     return res
 
 

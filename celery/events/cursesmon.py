@@ -34,6 +34,10 @@ MIN_TASK_WIDTH = 16
 # this module is considered experimental
 # we don't care about coverage.
 
+STATUS_SCREEN = """\
+events: {s.event_count} tasks:{s.task_count} workers:{w_alive}/{w_all}
+"""
+
 
 class CursesMonitor(object):  # pragma: no cover
     keymap = {}
@@ -48,7 +52,7 @@ class CursesMonitor(object):  # pragma: no cover
     online_str = 'Workers online: '
     help_title = 'Keys: '
     help = ('j:up k:down i:info t:traceback r:result c:revoke ^c: quit')
-    greet = 'celeryev %s' % VERSION_BANNER
+    greet = 'celeryev {0}'.format(VERSION_BANNER)
     info_str = 'Info: '
 
     def __init__(self, state, keymap=None, app=None):
@@ -86,7 +90,8 @@ class CursesMonitor(object):  # pragma: no cover
         state = abbr(state, STATE_WIDTH).ljust(STATE_WIDTH)
         timestamp = timestamp.ljust(TIMESTAMP_WIDTH)
 
-        row = '%s %s %s %s %s ' % (uuid, worker, task, timestamp, state)
+        row = '{0} {1} {2} {3} {4} '.format(uuid, worker, task,
+                                            timestamp, state)
         if self.screen_width is None:
             self.screen_width = len(row[:mx])
         return row[:mx]
@@ -200,7 +205,7 @@ class CursesMonitor(object):  # pragma: no cover
                 curline = y()
 
                 host, response = subreply.items()[0]
-                host = '%s: ' % host
+                host = '{0}: '.format(host)
                 self.win.addstr(curline, 3, host, curses.A_BOLD)
                 attr = curses.A_NORMAL
                 text = ''
@@ -274,7 +279,7 @@ class CursesMonitor(object):  # pragma: no cover
                                 curses.A_NORMAL)
 
         return self.alert(alert_callback,
-                'Task details for %s' % self.selected_task)
+                'Task details for {0.selected_task}'.format(self))
 
     def selection_traceback(self):
         if not self.selected_task:
@@ -289,7 +294,7 @@ class CursesMonitor(object):  # pragma: no cover
                 self.win.addstr(y(), 3, line)
 
         return self.alert(alert_callback,
-                'Task Exception Traceback for %s' % self.selected_task)
+                'Task Exception Traceback for {0.selected_task}'.format(self))
 
     def selection_result(self):
         if not self.selected_task:
@@ -304,7 +309,7 @@ class CursesMonitor(object):  # pragma: no cover
                 self.win.addstr(y(), 3, line)
 
         return self.alert(alert_callback,
-                'Task Result for %s' % self.selected_task)
+                'Task Result for {0.selected_task}'.format(self))
 
     def display_task_row(self, lineno, task):
         state_color = self.state_colors.get(task.state)
@@ -365,10 +370,10 @@ class CursesMonitor(object):  # pragma: no cover
             else:
                 info = selection.info()
                 if 'runtime' in info:
-                    info['runtime'] = '%.2fs' % info['runtime']
+                    info['runtime'] = '{0:.2fs}'.format(info['runtime'])
                 if 'result' in info:
                     info['result'] = abbr(info['result'], 16)
-                info = ' '.join('%s=%s' % (key, value)
+                info = ' '.join('{0}={1}'.format(key, value)
                             for key, value in info.items())
                 detail = '... -> key i'
             infowin = abbr(info,
@@ -394,11 +399,10 @@ class CursesMonitor(object):  # pragma: no cover
         # Info
         win.addstr(my - 3, x, self.info_str, curses.A_BOLD)
         win.addstr(my - 3, x + len(self.info_str),
-                'events:%s tasks:%s workers:%s/%s' % (
-                    self.state.event_count, self.state.task_count,
-                    len([w for w in self.state.workers.values()
-                            if w.alive]),
-                    len(self.state.workers)),
+                STATUS_SCREEN.format(s=self.state,
+                    w_alive=len([w for w in self.state.workers.values()
+                                    if w.alive]),
+                    w_all=len(self.state.workers)),
                 curses.A_DIM)
 
         # Help

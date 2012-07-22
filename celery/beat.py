@@ -119,9 +119,8 @@ class ScheduleEntry(object):
         return vars(self).iteritems()
 
     def __repr__(self):
-        return ('<Entry: %s %s {%s}' % (self.name,
-                    reprcall(self.task, self.args or (), self.kwargs or {}),
-                    self.schedule))
+        return '<Entry: {0.name} {call} {0.schedule}'.format(self,
+            call=reprcall(self.task, self.args or (), self.kwargs or {}))
 
 
 class Scheduler(object):
@@ -225,8 +224,8 @@ class Scheduler(object):
                                         **entry.options)
         except Exception as exc:
             raise SchedulingError, SchedulingError(
-                "Couldn't apply scheduled task %s: %s" % (
-                    entry.name, exc)), sys.exc_info()[2]
+                "Couldn't apply scheduled task {0.name}: {exc}".format(
+                    entry, exc)), sys.exc_info()[2]
         finally:
             if self.should_sync():
                 self._do_sync()
@@ -370,7 +369,7 @@ class PersistentScheduler(Scheduler):
 
     @property
     def info(self):
-        return '    . db -> %s' % (self.schedule_filename, )
+        return '    . db -> {self.schedule_filename}'.format(self=self)
 
 
 class Service(object):
@@ -473,7 +472,7 @@ def EmbeddedService(*args, **kwargs):
     """Return embedded clock service.
 
     :keyword thread: Run threaded instead of as a separate process.
-        Default is :const:`False`.
+        Uses :mod:`multiprocessing` by default, if available.
 
     """
     if kwargs.pop('thread', False) or _Process is None:

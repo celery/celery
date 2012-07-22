@@ -29,7 +29,7 @@ class BoundedSemaphore(object):
         >>> x = BoundedSemaphore(2)
 
         >>> def callback(i):
-        ...     print('HELLO %r' % i)
+        ...     print('HELLO {0!r}'.format(i))
 
         >>> x.acquire(callback, 1)
         HELLO 1

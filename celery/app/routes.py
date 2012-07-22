@@ -64,7 +64,7 @@ class Router(object):
             except KeyError:
                 if not self.create_missing:
                     raise QueueNotFound(
-                        'Queue %r is not defined in CELERY_QUEUES' % queue)
+                        'Queue {0!r} missing from CELERY_QUEUES'.format(queue))
                 for key in 'exchange', 'routing_key':
                     if route.get(key) is None:
                         route[key] = queue

@@ -21,7 +21,7 @@ A click counter that flushes the buffer every 100 messages, and every
         from collections import Counter
         count = Counter(request.kwargs['url'] for request in requests)
         for url, count in count.items():
-            print('>>> Clicks: %s -> %s' % (url, count))
+            print('>>> Clicks: {0} -> {1}'.format(url, count))
 
 Registering the click is done as follows:
 
@@ -139,7 +139,7 @@ class Batches(Task):
         self._logging = None
 
     def run(self, requests):
-        raise NotImplementedError('%r must implement run(requests)' % (self, ))
+        raise NotImplementedError('must implement run(requests)')
 
     def flush(self, requests):
         return self.apply_buffer(requests, ([SimpleRequest.from_request(r)
