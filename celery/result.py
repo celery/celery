@@ -276,12 +276,14 @@ class AsyncResult(ResultBase):
         return self.backend.get_status(self.id)
     status = state
 
-    def _get_task_id(self):
+    @property
+    def task_id(self):
+        """compat alias to :attr:`id`"""
         return self.id
 
-    def _set_task_id(self, id):
+    @task_id.setter  # noqa
+    def task_id(self, id):
         self.id = id
-    task_id = property(_get_task_id, _set_task_id)
 BaseAsyncResult = AsyncResult  # for backwards compatibility.
 
 
@@ -629,12 +631,14 @@ class TaskSetResult(GroupResult):
         """Deprecated: Use ``len(r)``."""
         return len(self)
 
-    def _get_taskset_id(self):
+    @property
+    def taskset_id(self):
+        """compat alias to :attr:`self.id`"""
         return self.id
 
-    def _set_taskset_id(self, id):
+    @taskset_id.setter  # noqa
+    def taskset_id(self, id):
         self.id = id
-    taskset_id = property(_get_taskset_id, _set_taskset_id)
 
 
 class EagerResult(AsyncResult):

@@ -87,7 +87,7 @@ def flake8(options):
     sh("""flake8 celery | perl -mstrict -mwarnings -nle'
         my $ignore = m/too complex \((\d+)\)/ && $1 le {0};
         if (! $ignore) {{ print STDERR; our $FOUND_FLAKE = 1 }}
-    }{exit $FOUND_FLAKE;
+    }}{{exit $FOUND_FLAKE;
         '""".format(complexity), ignore_error=noerror)
 
 

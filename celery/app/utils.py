@@ -145,7 +145,7 @@ def bugreport(app):
         billiard_v=billiard.__version__,
         py_v=_platform.python_version(),
         driver_v=driver_v,
-        transport= app.conf.BROKER_TRANSPORT or 'amqp',
+        transport=app.conf.BROKER_TRANSPORT or 'amqp',
         results=app.conf.CELERY_RESULT_BACKEND or 'disabled',
         human_settings=app.conf.humanize(),
         loader=qualname(app.loader.__class__),
