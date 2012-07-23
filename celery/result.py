@@ -432,7 +432,7 @@ class ResultSet(ResultBase):
             time.sleep(interval)
             elapsed += interval
             if timeout and elapsed >= timeout:
-                raise TimeoutError("The operation timed out")
+                raise TimeoutError('The operation timed out')
 
     def get(self, timeout=None, propagate=True, interval=0.5):
         """See :meth:`join`
@@ -679,7 +679,7 @@ class EagerResult(AsyncResult):
         self._state = states.REVOKED
 
     def __repr__(self):
-        return "<EagerResult: {0.id}>".format(self)
+        return '<EagerResult: {0.id}>'.format(self)
 
     @property
     def result(self):

@@ -70,8 +70,8 @@ Type `exit` in session to continue.
 {self.ident}: Waiting for client...
 """
 
-SESSION_STARTED = "{self.ident}: Now in session with {self.remote_addr}."
-SESSION_ENDED = "{self.ident}: Session with {self.remote_addr} ended."
+SESSION_STARTED = '{self.ident}: Now in session with {self.remote_addr}.'
+SESSION_ENDED = '{self.ident}: Session with {self.remote_addr} ended.'
 
 
 class Rdb(Pdb):

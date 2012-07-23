@@ -154,7 +154,7 @@ def debug(msg, *args, **kwargs):
 
 
 def dump_body(m, body):
-    return "{0} ({1}b)".format(text.truncate(safe_repr(body), 1024),
+    return '{0} ({1}b)'.format(text.truncate(safe_repr(body), 1024),
                                len(m.body))
 
 

@@ -15,7 +15,7 @@ import traceback
 
 from kombu.syn import detect_environment
 
-USE_PURE_LOCALS = os.environ.get("USE_PURE_LOCALS")
+USE_PURE_LOCALS = os.environ.get('USE_PURE_LOCALS')
 
 
 class bgThread(threading.Thread):

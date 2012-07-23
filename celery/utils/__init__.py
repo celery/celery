@@ -199,7 +199,7 @@ def strtobool(term, table={'false': False, 'no': False, '0': False,
 
 
 def jsonify(obj):
-    "Transforms object making it suitable for json serialization"
+    """Transforms object making it suitable for json serialization"""
     if isinstance(obj, (int, float, basestring, types.NoneType)):
         return obj
     elif isinstance(obj, (tuple, list)):
@@ -224,7 +224,7 @@ def jsonify(obj):
     elif isinstance(obj, datetime.timedelta):
         return str(obj)
     else:
-        raise ValueError("Unsupported type: {0}".format(type(obj)))
+        raise ValueError('Unsupported type: {0}'.format(type(obj)))
 
 
 def gen_task_name(app, name, module_name):

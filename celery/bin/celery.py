@@ -407,8 +407,8 @@ class purge(Command):
     WARNING: There is no undo operation for this command.
 
     """
-    fmt_purged = "Purged {mnum} {messages} from {qnum} known task {queues}."
-    fmt_empty = "No messages purged from {qnum} {queues}"
+    fmt_purged = 'Purged {mnum} {messages} from {qnum} known task {queues}.'
+    fmt_empty = 'No messages purged from {qnum} {queues}'
 
     def run(self, *args, **kwargs):
         queues = len(self.app.amqp.queues.keys())
