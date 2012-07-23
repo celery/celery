@@ -300,7 +300,8 @@ class Consumer(object):
     def __init__(self, ready_queue,
             init_callback=noop, send_events=False, hostname=None,
             initial_prefetch_count=2, pool=None, app=None,
-            timer=None, controller=None, hub=None, **kwargs):
+            timer=None, controller=None, hub=None, amq_heartbeat=None,
+            **kwargs):
         self.app = app_or_default(app)
         self.connection = None
         self.task_consumer = None
@@ -332,6 +333,11 @@ class Consumer(object):
             hub.on_init.append(self.on_poll_init)
         self.hub = hub
         self._quick_put = self.ready_queue.put
+        self.amq_heartbeat = amq_heartbeat
+        if self.amq_heartbeat is None:
+            self.amq_heartbeat = self.app.conf.BROKER_HEARTBEAT
+        if not hub:
+            self.amq_heartbeat = 0
 
     def update_strategies(self):
         S = self.strategies
@@ -377,11 +383,16 @@ class Consumer(object):
             fire_timers = hub.fire_timers
             scheduled = hub.timer._queue
             connection = self.connection
+            hb = self.amq_heartbeat
+            hbtick = getattr(connection.connection, 'heartbeat_tick')
             on_poll_start = connection.transport.on_poll_start
             strategies = self.strategies
             drain_nowait = connection.drain_nowait
             on_task_callbacks = hub.on_task
             keep_draining = connection.transport.nb_keep_draining
+
+            if hb and hbtick is not None:
+                hub.timer.apply_interval(hb * 1000.0, hbtick)
 
             def on_task_received(body, message):
                 if on_task_callbacks:
@@ -732,7 +743,7 @@ class Consumer(object):
 
         # remember that the connection is lazy, it won't establish
         # until it's needed.
-        conn = self.app.connection()
+        conn = self.app.connection(heartbeat=self.amq_heartbeat)
         if not self.app.conf.BROKER_CONNECTION_RETRY:
             # retry disabled, just call connect directly.
             conn.connect()
