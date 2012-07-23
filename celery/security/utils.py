@@ -21,10 +21,10 @@ except ImportError:  # pragma: no cover
 
 
 @contextmanager
-def reraise_errors(msg='%r', errors=None):
+def reraise_errors(msg='{0!r}', errors=None):
     assert crypto is not None
     errors = (crypto.Error, ) if errors is None else errors
     try:
         yield
-    except errors, exc:
-        raise SecurityError, SecurityError(msg % (exc, )), sys.exc_info()[2]
+    except errors as exc:
+        raise SecurityError, SecurityError(msg.format(exc)), sys.exc_info()[2]

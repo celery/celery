@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 from anyjson import dumps
 from datetime import datetime
@@ -61,8 +60,6 @@ class test_Command(AppCase):
     def test_out(self):
         f = Mock()
         self.cmd.out('foo', f)
-        f.write.assert_called_with('foo\n')
-        self.cmd.out('foo\n', f)
 
     def test_call(self):
         self.cmd.run = Mock()

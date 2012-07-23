@@ -56,7 +56,7 @@ Daemon Options
     Optional directory to change to after detaching.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import os
 import re
@@ -78,7 +78,7 @@ for warning in (CDeprecationWarning, CPendingDeprecationWarning):
     warnings.simplefilter('once', warning, 0)
 
 ARGV_DISABLED = """
-Unrecognized command line arguments: %s
+Unrecognized command line arguments: {0}
 
 Try --help?
 """
@@ -91,7 +91,7 @@ class HelpFormatter(IndentedHelpFormatter):
 
     def format_epilog(self, epilog):
         if epilog:
-            return '\n%s\n\n' % epilog
+            return '\n{0}\n\n'.format(epilog)
         return ''
 
     def format_description(self, description):
@@ -144,6 +144,9 @@ class Command(object):
     #: Text to print in --help before option list.
     description = ''
 
+    #: Set to true if this command doesn't have subcommands
+    leaf = True
+
     def __init__(self, app=None, get_app=None):
         self.app = app
         self.get_app = get_app or self._get_default_app
@@ -161,14 +164,45 @@ class Command(object):
         """
         if argv is None:
             argv = list(sys.argv)
+        # Should we load any special concurrency environment?
+        pool_option = self.with_pool_option(argv)
+        if pool_option:
+            self.maybe_patch_concurrency(argv, *pool_option)
+        self.on_concurrency_setup()
+
+        # Dump version and exit if '--version' arg set.
         self.early_version(argv)
         argv = self.setup_app_from_commandline(argv)
         prog_name = os.path.basename(argv[0])
         return self.handle_argv(prog_name, argv[1:])
 
+    def _find_option_with_arg(self, argv, short_opts=None, long_opts=None):
+        for i, arg in enumerate(argv):
+            if arg.startswith('-'):
+                if long_opts and arg.startswith('--'):
+                    name, _, val = arg.partition('=')
+                    if name in long_opts:
+                        return val
+                if short_opts and arg in short_opts:
+                    return argv[i + 1]
+        raise KeyError('|'.join(short_opts or [] + long_opts or []))
+
+    def maybe_patch_concurrency(self, argv, short_opts=None, long_opts=None):
+        try:
+            pool = self._find_option_with_arg(argv, short_opts, long_opts)
+        except KeyError:
+            pass
+        else:
+            from celery import concurrency
+            # set up eventlet/gevent environments ASAP.
+            concurrency.get_implementation(pool)
+
+    def on_concurrency_setup(self):
+        pass
+
     def usage(self, command):
         """Returns the command-line usage string for this app."""
-        return '%%prog [options] %s' % (self.args, )
+        return '%%prog [options] {0.args}'.format(self)
 
     def get_options(self):
         """Get supported command line options."""
@@ -204,15 +238,15 @@ class Command(object):
 
     def check_args(self, args):
         if not self.supports_args and args:
-            self.die(ARGV_DISABLED % (', '.join(args, )), EX_USAGE)
+            self.die(ARGV_DISABLED.format(', '.join(args)), EX_USAGE)
 
     def die(self, msg, status=EX_FAILURE):
-        sys.stderr.write(msg + '\n')
+        print(msg, file=sys.stderr)
         sys.exit(status)
 
     def early_version(self, argv):
         if '--version' in argv:
-            sys.stdout.write('%s\n' % self.version)
+            print(self.version)
             sys.exit(0)
 
     def parse_options(self, prog_name, arguments):
@@ -238,7 +272,7 @@ class Command(object):
             for long_opt, help in doc.iteritems():
                 option = parser.get_option(long_opt)
                 if option is not None:
-                    option.help = ' '.join(help) % {'default': option.default}
+                    option.help = ' '.join(help).format(default=option.default)
         return parser
 
     def prepare_preload_options(self, options):
@@ -277,7 +311,8 @@ class Command(object):
         sym = self.symbol_by_name(app)
         if isinstance(sym, ModuleType):
             if getattr(sym, '__path__', None):
-                return self.find_app('%s.celery:' % (app.replace(':', ''), ))
+                return self.find_app('{0}.celery:'.format(
+                            app.replace(':', '')))
             return sym.celery
         return sym
 
@@ -329,6 +364,16 @@ class Command(object):
                 options[in_option].append(find_rst_ref.sub(r'\1',
                     line.strip()).replace('`', ''))
         return options
+
+    def with_pool_option(self, argv):
+        """Returns tuple of ``(short_opts, long_opts)`` if the command
+        supports a pool argument, and used to monkey patch eventlet/gevent
+        environments as early as possible.
+
+        E.g::
+              has_pool_option = (['-P'], ['--pool'])
+        """
+        pass
 
     def _get_default_app(self, *args, **kwargs):
         from celery.app import default_app

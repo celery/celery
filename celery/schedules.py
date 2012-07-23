@@ -17,8 +17,19 @@ from dateutil.relativedelta import relativedelta
 from . import current_app
 from .utils import is_iterable
 from .utils.timeutils import (timedelta_seconds, weekday, maybe_timedelta,
-                              remaining, humanize_seconds)
+                              remaining, humanize_seconds, is_naive, to_utc,
+                              timezone)
 from .datastructures import AttributeDict
+
+CRON_PATTERN_INVALID = """\
+Invalid crontab pattern. Valid range is {min}-{max}. \
+'{value}' was found.\
+"""
+
+CRON_INVALID_TYPE = """\
+Argument cronspec needs to be of any of the following types: \
+int, basestring, or an iterable type. {type!r} was given.\
+"""
 
 
 class ParseException(Exception):
@@ -38,8 +49,11 @@ class schedule(object):
 
     def remaining_estimate(self, last_run_at):
         """Returns when the periodic task should run next as a timedelta."""
-        return remaining(last_run_at, self.run_every, relative=self.relative,
-                         now=self.now())
+        now = self.now()
+        if not is_naive(last_run_at):
+            now = to_utc(now)
+        return remaining(last_run_at, self.run_every,
+                         relative=self.relative, now=now)
 
     def is_due(self, last_run_at):
         """Returns tuple of two items `(is_due, next_time_to_run)`,
@@ -76,7 +90,7 @@ class schedule(object):
         return False, rem
 
     def __repr__(self):
-        return '<freq: %s>' % self.human_seconds
+        return '<freq: {0.human_seconds}>'.format(self)
 
     def __eq__(self, other):
         if isinstance(other, schedule):
@@ -191,11 +205,11 @@ class crontab_parser(object):
             try:
                 i = weekday(s)
             except KeyError:
-                raise ValueError("Invalid weekday literal '%s'." % s)
+                raise ValueError("Invalid weekday literal {0!r}.".format(s))
 
         if i < self.min_:
-            raise ValueError('Invalid beginning range: %s < %s.' %
-                                                   (i, self.min_))
+            raise ValueError(
+                'Invalid beginning range: {0} < {1}.'.format(i, self.min_))
         return i
 
 
@@ -300,19 +314,13 @@ class crontab(schedule):
         elif is_iterable(cronspec):
             result = set(cronspec)
         else:
-            raise TypeError(
-                    'Argument cronspec needs to be of any of the '
-                    'following types: int, basestring, or an iterable type. '
-                    "'%s' was given." % type(cronspec))
+            raise TypeError(CRON_INVALID_TYPE.format(type=type(cronspec)))
 
         # assure the result does not preceed the min or exceed the max
         for number in result:
             if number >= max_ + min_ or number < min_:
-                raise ValueError(
-                        'Invalid crontab pattern. Valid '
-                        "range is %d-%d. '%d' was found." %
-                        (min_, max_ - 1 + min_, number))
-
+                raise ValueError(CRON_PATTERN_INVALID.format(
+                    min=min_, max=max_ - 1 + min_, value=number))
         return result
 
     def _delta_to_next(self, last_run_at, next_hour, next_minute):
@@ -405,6 +413,8 @@ class crontab(schedule):
 
     def remaining_estimate(self, last_run_at):
         """Returns when the periodic task should run next as a timedelta."""
+        if not is_naive(last_run_at):
+            last_run_at = last_run_at.astimezone(timezone.utc)
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
 
         execute_this_date = (last_run_at.month in self.month_of_year and

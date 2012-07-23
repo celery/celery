@@ -17,7 +17,6 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import heapq
 
@@ -76,8 +75,11 @@ class Worker(Element):
                 self.heartbeats = self.heartbeats[self.heartbeat_max:]
 
     def __repr__(self):
-        return '<Worker: %s (%s)' % (self.hostname,
-                                     self.alive and 'ONLINE' or 'OFFLINE')
+        return '<Worker: {0.hostname} (0.status_string)'.format(self)
+
+    @property
+    def status_string(self):
+        return 'ONLINE' if self.alive else 'OFFLINE'
 
     @property
     def heartbeat_expires(self):
@@ -105,7 +107,8 @@ class Task(Element):
 
     #: meth:`info` displays these fields by default.
     _info_fields = ('args', 'kwargs', 'retries', 'result',
-                    'eta', 'runtime', 'expires', 'exception')
+                    'eta', 'runtime', 'expires', 'exception',
+                    'exchange', 'routing_key')
 
     #: Default values.
     _defaults = dict(uuid=None, name=None, state=states.PENDING,
@@ -114,7 +117,7 @@ class Task(Element):
                      revoked=False, args=None, kwargs=None, eta=None,
                      expires=None, retries=None, worker=None, result=None,
                      exception=None, timestamp=None, runtime=None,
-                     traceback=None)
+                     traceback=None, exchange=None, routing_key=None)
 
     def __init__(self, **fields):
         super(Task, self).__init__(**dict(self._defaults, **fields))
@@ -185,14 +188,18 @@ class Task(Element):
 
     def info(self, fields=None, extra=[]):
         """Information about this task suitable for on-screen display."""
-        if fields is None:
-            fields = self._info_fields
-        return dict((key, getattr(self, key, None))
-                        for key in list(fields) + list(extra)
-                            if getattr(self, key, None) is not None)
+        fields = self._info_fields if fields is None else fields
+
+        def _keys():
+            for key in list(fields) + list(extra):
+                value = getattr(self, key, None)
+                if value is not None:
+                    yield key, value
+
+        return dict(_keys())
 
     def __repr__(self):
-        return '<Task: %s(%s) %s>' % (self.name, self.uuid, self.state)
+        return '<Task: {0.name}({0.uuid}) {0.state}>'.format(self)
 
     @property
     def ready(self):
@@ -268,7 +275,7 @@ class State(object):
         hostname = fields.pop('hostname', None)
         if hostname:
             worker = self.get_or_create_worker(hostname)
-            handler = getattr(worker, 'on_%s' % type, None)
+            handler = getattr(worker, 'on_' + type, None)
             if handler:
                 handler(**fields)
 
@@ -278,7 +285,7 @@ class State(object):
         hostname = fields.pop('hostname')
         worker = self.get_or_create_worker(hostname)
         task = self.get_or_create_task(uuid)
-        handler = getattr(task, 'on_%s' % type, None)
+        handler = getattr(task, 'on_' + type, None)
         if type == 'received':
             self.task_count += 1
         if handler:
@@ -347,8 +354,8 @@ class State(object):
         return [w for w in self.workers.values() if w.alive]
 
     def __repr__(self):
-        return '<ClusterState: events=%s tasks=%s>' % (self.event_count,
-                                                       self.task_count)
+        return '<State: events={0.event_count} tasks={0.task_count}>' \
+                    .format(self)
 
 
 state = State()

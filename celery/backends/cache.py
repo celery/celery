@@ -91,9 +91,9 @@ class CacheBackend(KeyValueStoreBackend):
             self.Client = backends[self.backend]()
         except KeyError:
             raise ImproperlyConfigured(
-                    'Unknown cache backend: %s. Please use one of the '
-                    'following backends: %s' % (self.backend,
-                                                ', '.join(backends.keys())))
+                    'Unknown cache backend: {0}. Please use one of the '
+                    'following backends: {1}'.format(self.backend,
+                                        ', '.join(backends.keys())))
 
     def get(self, key):
         return self.client.get(key)
@@ -119,7 +119,7 @@ class CacheBackend(KeyValueStoreBackend):
 
     def __reduce__(self, args=(), kwargs={}):
         servers = ';'.join(self.servers)
-        backend = '%s://%s/' % (self.backend, servers)
+        backend = '{0}://{1}/'.format(self.backend, servers)
         kwargs.update(
             dict(backend=backend,
                  expires=self.expires,

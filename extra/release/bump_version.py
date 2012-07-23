@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import errno
 import os
@@ -58,7 +57,7 @@ class TupleVersion(object):
 
         def quote(lit):
             if isinstance(lit, basestring):
-                return '"%s"' % (lit, )
+                return '"{0}"'.format(lit)
             return str(lit)
 
         if not v[-1]:
@@ -73,8 +72,8 @@ class VersionFile(object):
         self._kept = None
 
     def _as_orig(self, version):
-        return self.wb % {"version": self.type.encode(version),
-                          "kept": self._kept}
+        return self.wb.format(version=self.type.encode(version),
+                              kept=self._kept)
 
     def write(self, version):
         pattern = self.regex
@@ -102,19 +101,19 @@ class VersionFile(object):
 
 class PyVersion(VersionFile):
     regex = re.compile(r'^VERSION\s*=\s*\((.+?)\)')
-    wb = "VERSION = (%(version)s)\n"
+    wb = "VERSION = ({version})\n"
     type = TupleVersion()
 
 
 class SphinxVersion(VersionFile):
     regex = re.compile(r'^:[Vv]ersion:\s*(.+?)$')
-    wb = ':Version: %(version)s\n'
+    wb = ':Version: {version}\n'
     type = StringVersion()
 
 
 class CPPVersion(VersionFile):
     regex = re.compile(r'^\#\s*define\s*(?P<keep>\w*)VERSION\s+(.+)')
-    wb = '#define %(kept)sVERSION "%(version)s"\n'
+    wb = '#define {kept}VERSION "{version}"\n'
     type = StringVersion()
 
 
@@ -135,6 +134,7 @@ def bump(*files, **kwargs):
     files = [filetype_to_type(f) for f in files]
     versions = [v.parse() for v in files]
     current = list(reversed(sorted(versions)))[0]  # find highest
+    current = current.split()[0]  # only first sentence
 
     if version:
         next = from_str(version)
@@ -144,18 +144,18 @@ def bump(*files, **kwargs):
             raise Exception("Can't bump alpha releases")
         next = (major, minor, release + 1, text)
 
-    print("Bump version from %s -> %s" % (to_str(current), to_str(next)))
+    print("Bump version from {0} -> {1}".format(to_str(current), to_str(next)))
 
     for v in files:
-        print("  writing %r..." % (v.filename, ))
+        print("  writing {0.filename!r}...".format(v))
         v.write(next)
 
     if before_commit:
         cmd(*shlex.split(before_commit))
 
-    print(cmd("git", "commit", "-m", "Bumps version to %s" % (to_str(next), ),
-        *[f.filename for f in files]))
-    print(cmd("git", "tag", "v%s" % (to_str(next), )))
+    print(cmd("git", "commit", "-m", "Bumps version to {0}".format(
+        to_str(next)), *[f.filename for f in files]))
+    print(cmd("git", "tag", "v{0}".format(to_str(next))))
 
 
 def main(argv=sys.argv, version=None, before_commit=None):

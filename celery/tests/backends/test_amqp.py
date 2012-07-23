@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import socket
 
@@ -64,7 +63,7 @@ class test_AMQPBackend(AppCase):
         tid3 = uuid()
         try:
             raise KeyError('foo')
-        except KeyError, exception:
+        except KeyError as exception:
             einfo = ExceptionInfo()
             tb1.mark_as_failure(tid3, exception, traceback=einfo.traceback)
             self.assertEqual(tb2.get_status(tid3), states.FAILURE)
@@ -254,7 +253,7 @@ class test_AMQPBackend(AppCase):
 
         b = Backend()
         with self.assertRaises(KeyError):
-            b.get_many(['id1']).next()
+            next(b.get_many(['id1']))
 
     def test_test_get_many_raises_inner_block(self):
 
@@ -265,7 +264,7 @@ class test_AMQPBackend(AppCase):
 
         b = Backend()
         with self.assertRaises(KeyError):
-            b.get_many(['id1']).next()
+            next(b.get_many(['id1']))
 
     def test_no_expires(self):
         b = self.create_backend(expires=None)

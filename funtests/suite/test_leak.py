@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import gc
 import os
 import sys
@@ -14,7 +16,7 @@ from celery.tests.utils import unittest
 
 import suite
 
-GET_RSIZE = '/bin/ps -p %(pid)s -o rss='
+GET_RSIZE = '/bin/ps -p {pid} -o rss='
 QUICKTEST = int(os.environ.get('QUICKTEST', 0))
 
 
@@ -37,10 +39,11 @@ class LeakFunCase(unittest.TestCase):
     def get_rsize(self, cmd=GET_RSIZE):
         try:
             return int(subprocess.Popen(
-                        shlex.split(cmd % {'pid': os.getpid()}),
+                        shlex.split(cmd.format(pid=os.getpid())),
                             stdout=subprocess.PIPE).communicate()[0].strip())
-        except OSError, exc:
-            raise SkipTest('Can't execute command: %r: %r' % (cmd, exc))
+        except OSError as exc:
+            raise SkipTest(
+                'Cannot execute command: {0!r}: {1!r}'.format(cmd, exc))
 
     def sample_allocated(self, fun, *args, **kwargs):
         before = self.get_rsize()
@@ -68,7 +71,7 @@ class LeakFunCase(unittest.TestCase):
                 if not first:
                     first = after
                 if self.debug:
-                    print('%r %s: before/after: %s/%s' % (
+                    print('{0!r} {1}: before/after: {2}/{3}'.format(
                             fun, i, before, after))
                 else:
                     sys.stderr.write('.')
@@ -78,8 +81,8 @@ class LeakFunCase(unittest.TestCase):
             try:
                 assert self.appx(first) >= self.appx(after)
             except AssertionError:
-                print('BASE: %r AVG: %r SIZES: %r' % (
-                    base, sizes.average(), sizes, ))
+                print('BASE: {0!r} AVG: {1!r} SIZES: {2!r}'.format(
+                    base, sizes.average(), sizes))
                 raise
         finally:
             self.app.control.purge()

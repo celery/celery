@@ -6,7 +6,6 @@
     This module implements automatic module reloading
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import errno
 import hashlib
@@ -16,13 +15,14 @@ import sys
 import time
 
 from collections import defaultdict
+from threading import Event
 
 from kombu.utils import eventio
 
 from celery.platforms import ignore_EBADF
 from celery.utils.imports import module_file
 from celery.utils.log import get_logger
-from celery.utils.threads import bgThread, Event
+from celery.utils.threads import bgThread
 
 from .bootsteps import StartStopComponent
 
@@ -249,7 +249,7 @@ class Autoreloader(bgThread):
         self.on_init()
         try:
             self._monitor.start()
-        except OSError, exc:
+        except OSError as exc:
             if exc.errno not in (errno.EINTR, errno.EAGAIN):
                 raise
 

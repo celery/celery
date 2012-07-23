@@ -151,7 +151,7 @@ Callbacks
 .. versionadded:: 3.0
 
 Callbacks can be added to any task using the ``link`` argument
-to ``apply_async``:
+to ``apply_async``::
 
     add.apply_async((2, 2), link=other_task.subtask())
 
@@ -232,7 +232,7 @@ The Primitives
 The primitives are also subtasks themselves, so that they can be combined
 in any number of ways to compose complex workflows.
 
-Here's some examples::
+Here's some examples:
 
 - Simple chain
 
@@ -457,15 +457,17 @@ the error callbacks take the id of the parent task as argument instead:
 
 .. code-block:: python
 
+    from __future__ import print_function
+    import os
     from proj.celery import celery
 
     @celery.task()
     def log_error(task_id):
         result = celery.AsyncResult(task_id)
         result.get(propagate=False)  # make sure result written.
-        with open('/var/errors/%s' % (task_id, )) as fh:
-            fh.write('--\n\n%s %s %s' % (
-                task_id, result.result, result.traceback))
+        with open(os.path.join('/var/errors', task_id)) as fh:
+            print('--\n\n{0} {1} {2}'.format(
+                task_id, result.result, result.traceback), file=fh)
 
 To make it even easier to link tasks together there is
 a special subtask called :class:`~celery.chain` that lets
@@ -478,13 +480,13 @@ you chain tasks together:
 
     # (4 + 4) * 8 * 10
     >>> res = chain(add.s(4, 4), mul.s(8), mul.s(10))
-    proj.tasks.add(4, 4) | proj.tasks.mul(8)
+    proj.tasks.add(4, 4) | proj.tasks.mul(8) | proj.tasks.mul(10)
 
 
 Calling the chain will call the tasks in the current process
 and return the result of the last task in the chain::
 
-    >>> res = chain(add.s(4, 4), mul.s(8), mul.s(10))
+    >>> res = chain(add.s(4, 4), mul.s(8), mul.s(10))()
     >>> res.get()
     640
 
@@ -492,7 +494,7 @@ And calling ``apply_async`` will create a dedicated
 task so that the act of calling the chain happens
 in a worker::
 
-    >>> res = chain(add.s(4, 4), mul.s(8), mul.s(10))
+    >>> res = chain(add.s(4, 4), mul.s(8), mul.s(10)).apply_async()
     >>> res.get()
     640
 
@@ -612,8 +614,8 @@ that it works on the group as a whole::
     [4, 8, 16, 32, 64]
 
 The :class:`~celery.result.GroupResult` takes a list of
-:class:`~celery.result.AsyncResult` instances and operates on them as if it was a
-single task.
+:class:`~celery.result.AsyncResult` instances and operates on them as
+if it was a single task.
 
 It supports the following operations:
 
@@ -738,11 +740,11 @@ Example implementation:
         raise unlock_chord.retry(countdown=interval, max_retries=max_retries)
 
 
-This is used by all result backends except Redis and Memcached, which increment a
-counter after each task in the header, then applying the callback when the
-counter exceeds the number of tasks in the set. *Note:* chords do not properly
-work with Redis before version 2.2; you will need to upgrade to at least 2.2 to
-use them.
+This is used by all result backends except Redis and Memcached, which
+increment a counter after each task in the header, then applying the callback
+when the counter exceeds the number of tasks in the set. *Note:* chords do not
+properly work with Redis before version 2.2; you will need to upgrade to at
+least 2.2 to use them.
 
 The Redis and Memcached approach is a much better solution, but not easily
 implemented in other backends (suggestions welcome!).
@@ -815,9 +817,9 @@ to call the starmap after 10 seconds::
 Chunks
 ------
 
--- Chunking lets you divide an iterable of work into pieces,
-   so that if you have one million objects, you can create
-   10 tasks with hundred thousand objects each.
+Chunking lets you divide an iterable of work into pieces, so that if
+you have one million objects, you can create 10 tasks with hundred
+thousand objects each.
 
 Some may worry that chunking your tasks results in a degradation
 of parallelism, but this is rarely true for a busy cluster

@@ -30,7 +30,7 @@ Example connecting to the :signal:`task_sent` signal:
     @task_sent.connect
     def task_sent_handler(sender=None, task_id=None, task=None, args=None,
                           kwargs=None, \*\*kwds):
-        print('Got signal task_sent for task id %s' % (task_id, ))
+        print('Got signal task_sent for task id {0}'.format(task_id))
 
 
 Some signals also have a sender which you can filter by. For example the
@@ -44,7 +44,7 @@ has been sent by providing the `sender` argument to
     @task_sent.connect(task_sent_handler, sender='tasks.add')
     def task_sent_handler(sender=None, task_id=None, task=None, args=None,
                           kwargs=None, \*\*kwds):
-        print('Got signal task_sent for task id %s' % (task_id, ))
+        print('Got signal task_sent for task id {0}'.format(task_id)
 
 .. _signal-ref:
 
@@ -134,6 +134,10 @@ Provides arguments:
 * retval
     The return value of the task.
 
+* state
+
+    Name of the resulting state.
+
 .. signal:: task_success
 
 task_success
@@ -201,6 +205,43 @@ Provides arguments:
 Worker Signals
 --------------
 
+.. signal:: celeryd_after_setup
+
+celeryd_after_setup
+~~~~~~~~~~~~~~~~~~~
+
+This signal is sent after the worker instance is set up,
+but before it calls run.  This means that any queues from the :option:`-Q`
+option is enabled, logging has been set up and so on.
+
+It can be used to e.g. add custom queues that should always be consumed
+from, disregarding the :option:`-Q` option.  Here's an example
+that sets up a direct queue for each worker, these queues can then be
+used to route a task to any specific worker:
+
+.. code-block:: python
+
+    from celery.signals import celeryd_after_setup
+
+    @celeryd_after_setup.connect
+    def setup_direct_queue(sender, instance, **kwargs):
+        queue_name = '{0}.dq'.format(sender)  # sender is the hostname of the worker
+        instance.app.queues.select_add(queue_name)
+
+Provides arguments:
+
+* sender
+  Hostname of the worker.
+
+* instance
+    This is the :class:`celery.apps.worker.Worker` instance to be initialized.
+    Note that only the :attr:`app` and :attr:`hostname` attributes have been
+    set so far, and the rest of ``__init__`` has not been executed.
+
+* conf
+    The configuration of the current app.
+
+
 .. signal:: celeryd_init
 
 celeryd_init
@@ -233,6 +274,9 @@ sender when you connect:
             conf.CELERYD_PREFETCH_MULTIPLIER = 0
 
 Provides arguments:
+
+* sender
+  Hostname of the worker.
 
 * instance
     This is the :class:`celery.apps.worker.Worker` instance to be initialized.

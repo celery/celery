@@ -119,6 +119,8 @@ class test_Task(Case):
                     exception=1,
                     received=time() - 10,
                     started=time() - 8,
+                    exchange='celery',
+                    routing_key='celery',
                     succeeded=time())
         self.assertEqual(sorted(list(task._info_fields)),
                               sorted(task.info().keys()))
@@ -165,7 +167,7 @@ class test_State(Case):
 
     def test_worker_online_offline(self):
         r = ev_worker_online_offline(State())
-        r.next()
+        next(r)
         self.assertTrue(r.state.alive_workers())
         self.assertTrue(r.state.workers['utest1'].alive)
         r.play()
@@ -179,7 +181,7 @@ class test_State(Case):
 
     def test_worker_heartbeat_expire(self):
         r = ev_worker_heartbeats(State())
-        r.next()
+        next(r)
         self.assertFalse(r.state.alive_workers())
         self.assertFalse(r.state.workers['utest1'].alive)
         r.play()
@@ -190,7 +192,7 @@ class test_State(Case):
         r = ev_task_states(State())
 
         # RECEIVED
-        r.next()
+        next(r)
         self.assertTrue(r.tid in r.state.tasks)
         task = r.state.tasks[r.tid]
         self.assertEqual(task.state, states.RECEIVED)
@@ -199,7 +201,7 @@ class test_State(Case):
         self.assertEqual(task.worker.hostname, 'utest1')
 
         # STARTED
-        r.next()
+        next(r)
         self.assertTrue(r.state.workers['utest1'].alive,
                 'any task event adds worker heartbeat')
         self.assertEqual(task.state, states.STARTED)
@@ -208,14 +210,14 @@ class test_State(Case):
         self.assertEqual(task.worker.hostname, 'utest1')
 
         # REVOKED
-        r.next()
+        next(r)
         self.assertEqual(task.state, states.REVOKED)
         self.assertTrue(task.revoked)
         self.assertEqual(task.timestamp, task.revoked)
         self.assertEqual(task.worker.hostname, 'utest1')
 
         # RETRY
-        r.next()
+        next(r)
         self.assertEqual(task.state, states.RETRY)
         self.assertTrue(task.retried)
         self.assertEqual(task.timestamp, task.retried)
@@ -224,7 +226,7 @@ class test_State(Case):
         self.assertEqual(task.traceback, 'line 2 at main')
 
         # FAILURE
-        r.next()
+        next(r)
         self.assertEqual(task.state, states.FAILURE)
         self.assertTrue(task.failed)
         self.assertEqual(task.timestamp, task.failed)
@@ -233,7 +235,7 @@ class test_State(Case):
         self.assertEqual(task.traceback, 'line 1 at main')
 
         # SUCCESS
-        r.next()
+        next(r)
         self.assertEqual(task.state, states.SUCCESS)
         self.assertTrue(task.succeeded)
         self.assertEqual(task.timestamp, task.succeeded)

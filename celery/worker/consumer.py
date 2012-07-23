@@ -71,7 +71,6 @@ up and running.
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import logging
 import socket
@@ -134,7 +133,7 @@ The full contents of the message body was:
 """
 
 MESSAGE_REPORT_FMT = """\
-body: %s {content_type:%s content_encoding:%s delivery_info:%s}\
+body: {0} {{content_type:{1} content_encoding:{2} delivery_info:{3}}}\
 """
 
 
@@ -151,11 +150,12 @@ info, warn, error, crit = (logger.info, logger.warn,
 
 
 def debug(msg, *args, **kwargs):
-    logger.debug('Consumer: %s' % (msg, ), *args, **kwargs)
+    logger.debug('Consumer: {0}'.format(msg), *args, **kwargs)
 
 
 def dump_body(m, body):
-    return "%s (%sb)" % (text.truncate(safe_repr(body), 1024), len(m.body))
+    return "{0} ({1}b)".format(text.truncate(safe_repr(body), 1024),
+                               len(m.body))
 
 
 class Component(StartStopComponent):
@@ -392,9 +392,9 @@ class Consumer(object):
                     return self.handle_unknown_message(body, message)
                 try:
                     strategies[name](message, body, message.ack_log_error)
-                except KeyError, exc:
+                except KeyError as exc:
                     self.handle_unknown_task(body, message, exc)
-                except InvalidTaskError, exc:
+                except InvalidTaskError as exc:
                     self.handle_invalid_task(body, message, exc)
                 #fire_timers()
 
@@ -474,7 +474,7 @@ class Consumer(object):
         if task.eta:
             try:
                 eta = timer2.to_timestamp(task.eta)
-            except OverflowError, exc:
+            except OverflowError as exc:
                 error("Couldn't convert eta %s to timestamp: %r. Task: %r",
                       task.eta, exc, task.info(safe=True), exc_info=True)
                 task.acknowledge()
@@ -490,9 +490,9 @@ class Consumer(object):
         """Process remote control command message."""
         try:
             self.pidbox_node.handle_message(body, message)
-        except KeyError, exc:
+        except KeyError as exc:
             error('No such control command: %s', exc)
-        except Exception, exc:
+        except Exception as exc:
             error('Control command error: %r', exc, exc_info=True)
             self.reset_pidbox_node()
 
@@ -504,10 +504,10 @@ class Consumer(object):
         self.qos.decrement_eventually()
 
     def _message_report(self, body, message):
-        return MESSAGE_REPORT_FMT % (dump_body(message, body),
-                                     safe_repr(message.content_type),
-                                     safe_repr(message.content_encoding),
-                                     safe_repr(message.delivery_info))
+        return MESSAGE_REPORT_FMT.format(dump_body(message, body),
+                                         safe_repr(message.content_type),
+                                         safe_repr(message.content_encoding),
+                                         safe_repr(message.delivery_info))
 
     def handle_unknown_message(self, body, message):
         warn(UNKNOWN_FORMAT, self._message_report(body, message))
@@ -535,9 +535,9 @@ class Consumer(object):
 
         try:
             self.strategies[name](message, body, message.ack_log_error)
-        except KeyError, exc:
+        except KeyError as exc:
             self.handle_unknown_task(body, message, exc)
-        except InvalidTaskError, exc:
+        except InvalidTaskError as exc:
             self.handle_invalid_task(body, message, exc)
 
     def maybe_conn_error(self, fun):
@@ -763,6 +763,28 @@ class Consumer(object):
             raise SystemExit()
         elif state.should_terminate:
             raise SystemTerminate()
+
+    def add_task_queue(self, queue, exchange=None, exchange_type=None,
+            routing_key=None, **options):
+        cset = self.task_consumer
+        try:
+            q = self.app.amqp.queues[queue]
+        except KeyError:
+            exchange = queue if exchange is None else exchange
+            exchange_type = 'direct' if exchange_type is None \
+                                     else exchange_type
+            q = self.app.amqp.queues.select_add(queue,
+                    exchange=exchange,
+                    exchange_type=exchange_type,
+                    routing_key=routing_key, **options)
+        if not cset.consuming_from(queue):
+            cset.add_queue(q)
+            cset.consume()
+            logger.info('Started consuming from %r', queue)
+
+    def cancel_task_queue(self, queue):
+        self.app.amqp.queues.select_remove(queue)
+        self.task_consumer.cancel_by_queue(queue)
 
     @property
     def info(self):

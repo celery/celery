@@ -6,13 +6,13 @@
     Custom types and data structures.
 
 """
-from __future__ import absolute_import
-from __future__ import with_statement
+from __future__ import absolute_import, print_function
 
 import sys
 import time
 
 from collections import defaultdict
+from functools import partial
 from itertools import chain
 
 from billiard.einfo import ExceptionInfo  # noqa
@@ -164,13 +164,14 @@ class DependencyGraph(object):
         :param fh: A file, or a file-like object to write the graph to.
 
         """
-        fh.write('digraph dependencies {\n')
+        P = partial(print, file=fh)
+        P('digraph dependencies {')
         for obj, adjacent in self.iteritems():
             if not adjacent:
-                fh.write(ws + '"%s"\n' % (obj, ))
+                P(ws + '"{0}"'.format(obj))
             for req in adjacent:
-                fh.write(ws + '"%s" -> "%s"\n' % (obj, req))
-        fh.write('}\n')
+                P(ws + '"{0}" -> "{1}"'.format(obj, req))
+        P('}')
 
     def __iter__(self):
         return self.adjacent.iterkeys()
@@ -191,11 +192,11 @@ class DependencyGraph(object):
     def __repr__(self):
         return '\n'.join(self.repr_node(N) for N in self)
 
-    def repr_node(self, obj, level=1):
-        output = ['%s(%s)' % (obj, self.valency_of(obj))]
+    def repr_node(self, obj, level=1, fmt='{0}({1})'):
+        output = [fmt.format(obj, self.valency_of(obj))]
         if obj in self:
             for other in self[obj]:
-                d = '%s(%s)' % (other, self.valency_of(other))
+                d = fmt.format(other, self.valency_of(other))
                 output.append('     ' * level + d)
                 output.extend(self.repr_node(other, level + 1).split('\n')[1:])
         return '\n'.join(output)
@@ -214,7 +215,8 @@ class AttributeDictMixin(object):
             return self[k]
         except KeyError:
             raise AttributeError(
-                "'%s' object has no attribute '%s'" % (type(self).__name__, k))
+                "{0!r} object has no attribute {1!r}".format(
+                    type(self).__name__, k))
 
     def __setattr__(self, key, value):
         """`d[key] = value -> d.key = value`"""
@@ -433,7 +435,7 @@ class LimitedSet(object):
         return iter(self._data)
 
     def __repr__(self):
-        return 'LimitedSet(%r)' % (self._data.keys(), )
+        return 'LimitedSet({0!r})'.format(self._data.keys())
 
     @property
     def chronologically(self):

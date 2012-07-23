@@ -44,11 +44,11 @@ def memdump(samples=10):
     if filter(None, _mem_sample):
         print('- rss (sample):')
         for mem in sample(_mem_sample, samples):
-            print('-    > %s,' % mem)
+            print('-    > {0},'.format(mem))
         _mem_sample[:] = []
     import gc
     gc.collect()
-    print('- rss (end): %s.' % (mem_rss()))
+    print('- rss (end): {0}.'.format(mem_rss()))
 
 
 def sample(x, n, k=0):
@@ -70,7 +70,7 @@ def mem_rss():
     """Returns RSS memory usage as a humanized string."""
     p = ps()
     if p is not None:
-        return '%sMB' % (format_d(p.get_memory_info().rss // 1024), )
+        return '{0}MB'.format(format_d(p.get_memory_info().rss // 1024))
 
 
 def ps():

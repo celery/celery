@@ -22,25 +22,10 @@ class test_Message(Case):
 
 class test_Mailer(Case):
 
-    def test_send_supports_timeout(self):
+    def test_send_wrapper(self):
         mailer = Mailer()
-        mailer.supports_timeout = True
         mailer._send = Mock()
         mailer.send(msg)
-        mailer._send.assert_called_with(msg, timeout=2)
-
-    @patch('socket.setdefaulttimeout')
-    @patch('socket.getdefaulttimeout')
-    def test_send_no_timeout(self, get, set):
-        mailer = Mailer()
-        mailer.supports_timeout = False
-        mailer._send = Mock()
-        get.return_value = 10
-        mailer.send(msg)
-        get.assert_called_with()
-        sets = set.call_args_list
-        self.assertEqual(sets[0][0], (2, ))
-        self.assertEqual(sets[1][0], (10, ))
         mailer._send.assert_called_with(msg)
 
     @patch('smtplib.SMTP_SSL', create=True)

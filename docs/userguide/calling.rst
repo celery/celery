@@ -148,8 +148,8 @@ This is an example error callback:
     def error_handler(uuid):
         result = AsyncResult(uuid)
         exc = result.get(propagate=False)
-        print('Task %r raised exception: %r\n%r' % (
-              exc, result.traceback))
+        print('Task {0} raised exception: {1!r}\n{2!r}'.format(
+              uuid, exc, result.traceback))
 
 it can be added to the task using the ``link_error`` execution
 option:

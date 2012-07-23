@@ -6,11 +6,11 @@ The :program:`celery` umbrella command.
 .. program:: celery
 
 """
-from __future__ import absolute_import
-from __future__ import with_statement
+from __future__ import absolute_import, print_function
 
 import anyjson
 import sys
+import warnings
 
 from billiard import freeze_support
 from importlib import import_module
@@ -19,6 +19,7 @@ from pprint import pformat
 from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
 from celery.utils import term
 from celery.utils import text
+from celery.utils.functional import memoize
 from celery.utils.imports import symbol_by_name
 from celery.utils.timeutils import maybe_iso8601
 
@@ -27,19 +28,31 @@ from celery.bin.base import Command as BaseCommand, Option
 HELP = """
 ---- -- - - ---- Commands- -------------- --- ------------
 
-%(commands)s
+{commands}
 ---- -- - - --------- -- - -------------- --- ------------
 
-Type '%(prog_name)s <command> --help' for help using a specific command.
+Type '{prog_name} <command> --help' for help using a specific command.
+"""
+
+MIGRATE_PROGRESS_FMT = """\
+Migrating task {state.count}/{state.strtotal}: \
+{body[task]}[{body[id]}]\
 """
 
 commands = {}
 
-command_classes = (
+command_classes = [
     ('Main', ['worker', 'events', 'beat', 'shell', 'multi', 'amqp'], 'green'),
     ('Remote Control', ['status', 'inspect', 'control'], 'blue'),
     ('Utils', ['purge', 'list', 'migrate', 'call', 'result', 'report'], None),
-)
+]
+
+
+@memoize()
+def _get_extension_classes():
+    extensions = []
+    command_classes.append(('Extensions', extensions, 'magenta'))
+    return extensions
 
 
 class Error(Exception):
@@ -59,12 +72,29 @@ def command(fun, name=None, sortpri=0):
     return fun
 
 
+def load_extension_commands(namespace='celery.commands'):
+    try:
+        from pkg_resources import iter_entry_points
+    except ImportError:
+        return
+
+    for ep in iter_entry_points(namespace):
+        _get_extension_classes().append(ep.name)
+        sym = ':'.join([ep.module_name, ep.attrs[0]])
+        try:
+            cls = symbol_by_name(sym)
+        except (ImportError, SyntaxError) as exc:
+            warnings.warn(
+                'Cannot load extension {0!r}: {1!r}'.format(sym, exc))
+        else:
+            command(cls, name=ep.name)
+
+
 class Command(BaseCommand):
     help = ''
     args = ''
     prog_name = 'celery'
     show_body = True
-    leaf = True
     show_reply = True
 
     option_list = (
@@ -85,8 +115,8 @@ class Command(BaseCommand):
     def __call__(self, *args, **kwargs):
         try:
             ret = self.run(*args, **kwargs)
-        except Error, exc:
-            self.error(self.colored.red('Error: %s' % exc))
+        except Error as exc:
+            self.error(self.colored.red('Error: {0!r}'.format(exc)))
             return exc.status
 
         return ret if ret is not None else EX_OK
@@ -99,10 +129,7 @@ class Command(BaseCommand):
         self.out(s, fh=self.stderr)
 
     def out(self, s, fh=None):
-        s = str(s)
-        if not s.endswith('\n'):
-            s += '\n'
-        (fh or self.stdout).write(s)
+        print(s, file=fh or self.stdout)
 
     def run_from_argv(self, prog_name, argv):
         self.prog_name = prog_name
@@ -117,13 +144,13 @@ class Command(BaseCommand):
         return self(*args, **options)
 
     def usage(self, command):
-        return '%%prog %s [options] %s' % (command, self.args)
+        return '%%prog {0} [options] {self.args}'.format(command, self=self)
 
     def prettify_list(self, n):
         c = self.colored
         if not n:
             return '- empty -'
-        return '\n'.join(str(c.reset(c.white('*'), ' %s' % (item, )))
+        return '\n'.join(str(c.reset(c.white('*'), ' {0}'.format(item)))
                             for item in n)
 
     def prettify_dict_ok_error(self, n):
@@ -293,8 +320,7 @@ class list_(Command):
         except NotImplementedError:
             raise Error('Your transport cannot list bindings.')
 
-        fmt = lambda q, e, r: self.out('%s %s %s' % (q.ljust(28),
-                                                     e.ljust(28), r))
+        fmt = lambda q, e, r: self.out('{0:<28} {1:<28} {2}'.format(q, e, r))
         fmt('Queue', 'Exchange', 'Routing Key')
         fmt('-' * 16, '-' * 16, '-' * 16)
         for b in bindings:
@@ -304,9 +330,9 @@ class list_(Command):
         topics = {'bindings': self.list_bindings}
         available = ', '.join(topics.keys())
         if not what:
-            raise Error('You must specify what to list (%s)' % available)
+            raise Error('You must specify one of {0}'.format(available))
         if what not in topics:
-            raise Error('unknown topic %r (choose one of: %s)' % (
+            raise Error('unknown topic {0!r} (choose one of: {1})'.format(
                             what, available))
         with self.app.connection() as conn:
             self.app.amqp.TaskConsumer(conn).declare()
@@ -376,16 +402,17 @@ class purge(Command):
     WARNING: There is no undo operation for this command.
 
     """
+    fmt_purged = "Purged {mnum} {messages} from {qnum} known task {queues}."
+    fmt_empty = "No messages purged from {qnum} {queues}"
+
     def run(self, *args, **kwargs):
         queues = len(self.app.amqp.queues.keys())
-        messages_removed = self.app.control.purge()
-        if messages_removed:
-            self.out('Purged %s %s from %s known task %s.' % (
-                messages_removed, text.pluralize(messages_removed, 'message'),
-                queues, text.pluralize(queues, 'queue')))
-        else:
-            self.out('No messages purged from %s known %s' % (
-                queues, text.pluralize(queues, 'queue')))
+        messages = self.app.control.purge()
+        fmt = self.fmt_purged if messages else self.fmt_empty
+        self.out(fmt.format(
+            mnum=messages, qnum=queues,
+            messages=text.pluralize(messages, 'message'),
+            queues=text.pluralize(queues, 'queue')))
 purge = command(purge)
 
 
@@ -443,8 +470,8 @@ class _RemoteControl(Command):
             # see if it uses args.
             meth = getattr(self, command)
             return text.join([
-                '|' + text.indent('%s%s %s' % (prefix, color(command),
-                                               meth.__doc__), indent), help,
+                '|' + text.indent('{0}{1} {2}'.format(prefix, color(command),
+                                                meth.__doc__), indent), help,
             ])
 
         except AttributeError:
@@ -467,7 +494,7 @@ class _RemoteControl(Command):
         ])
 
     def usage(self, command):
-        return '%%prog %s [options] %s <command> [arg1 .. argN]' % (
+        return '%%prog {0} [options] {1} <command> [arg1 .. argN]'.format(
                 command, self.args)
 
     def call(self, *args, **kwargs):
@@ -475,15 +502,15 @@ class _RemoteControl(Command):
 
     def run(self, *args, **kwargs):
         if not args:
-            raise Error('Missing %s method. See --help' % self.name)
+            raise Error('Missing {0.name} method. See --help'.format(self))
         return self.do_call_method(args, **kwargs)
 
     def do_call_method(self, args, **kwargs):
         method = args[0]
         if method == 'help':
-            raise Error("Did you mean '%s --help'?" % self.name)
+            raise Error("Did you mean '{0.name} --help'?".format(self))
         if method not in self.choices:
-            raise Error('Unknown %s method %s' % (self.name, method))
+            raise Error('Unknown {0.name} method {1}'.format(self, method))
 
         destination = kwargs.get('destination')
         timeout = kwargs.get('timeout') or self.choices[method][0]
@@ -495,10 +522,9 @@ class _RemoteControl(Command):
         except AttributeError:
             handler = self.call
 
-        # XXX Python 2.5 does not support X(*args, foo=1)
-        kwargs = {"timeout": timeout, "destination": destination,
-                  "callback": self.say_remote_command_reply}
-        replies = handler(method, *args[1:], **kwargs)
+        replies = handler(method, *args[1:], timeout=timeout,
+                          destination=destination,
+                          callback=self.say_remote_command_reply)
         if not replies:
             raise Error('No nodes replied within time constraint.',
                         status=EX_UNAVAILABLE)
@@ -578,9 +604,7 @@ class control(_RemoteControl):
     }
 
     def call(self, method, *args, **options):
-        # XXX Python 2.5 doesn't support X(*args, reply=True, **kwargs)
-        return getattr(self.app.control, method)(
-                *args, **dict(options, retry=True))
+        return getattr(self.app.control, method)(*args, retry=True, **options)
 
     def pool_grow(self, method, n=1, **kwargs):
         """[N=1]"""
@@ -629,8 +653,8 @@ class status(Command):
                         status=EX_UNAVAILABLE)
         nodecount = len(replies)
         if not kwargs.get('quiet', False):
-            self.out('\n%s %s online.' % (nodecount,
-                                          text.pluralize(nodecount, 'node')))
+            self.out('\n{0} {1} online.'.format(
+                nodecount, text.pluralize(nodecount, 'node')))
 status = command(status)
 
 
@@ -660,10 +684,10 @@ class migrate(Command):
             Option('--forever', '-F', action='store_true',
                     help='Continually migrate tasks until killed.'),
     )
+    progress_fmt = MIGRATE_PROGRESS_FMT
 
     def on_migrate_task(self, state, body, message):
-        self.out('Migrating task %s/%s: %s[%s]' % (
-            state.count, state.strtotal, body['task'], body['id']))
+        self.out(self.progress_fmt.format(state=state, body=body))
 
     def run(self, *args, **kwargs):
         if len(args) != 2:
@@ -794,12 +818,12 @@ class help(Command):
     """Show help screen and exit."""
 
     def usage(self, command):
-        return '%%prog <command> [options] %s' % (self.args, )
+        return '%%prog <command> [options] {0.args}'.format(self)
 
     def run(self, *args, **kwargs):
         self.parser.print_help()
-        self.out(HELP % {'prog_name': self.prog_name,
-                         'commands': CeleryCommand.list_commands()})
+        self.out(HELP.format(prog_name=self.prog_name,
+                             commands=CeleryCommand.list_commands()))
 
         return EX_USAGE
 help = command(help)
@@ -864,12 +888,13 @@ class CeleryCommand(BaseCommand):
     def get_command_info(self, command, indent=0, color=None):
         colored = term.colored().names[color] if color else lambda x: x
         obj = self.commands[command]
+        cmd = 'celery {0}'.format(colored(command))
         if obj.leaf:
-            return '|' + text.indent('celery %s' % colored(command), indent)
+            return '|' + text.indent(cmd, indent)
         return text.join([
             ' ',
-            '|' + text.indent('celery %s --help' % colored(command), indent),
-            obj.list_commands(indent, 'celery %s' % command, colored),
+            '|' + text.indent('{0} --help'.format(cmd), indent),
+            obj.list_commands(indent, 'celery {0}'.format(command), colored),
         ])
 
     @classmethod
@@ -878,12 +903,21 @@ class CeleryCommand(BaseCommand):
         ret = []
         for cls, commands, color in command_classes:
             ret.extend([
-                text.indent('+ %s: ' % white(cls), indent),
+                text.indent('+ {0}: '.format(white(cls)), indent),
                 '\n'.join(self.get_command_info(command, indent + 4, color)
                             for command in commands),
                 ''
             ])
         return '\n'.join(ret).strip()
+
+    def with_pool_option(self, argv):
+        if len(argv) > 1 and argv[1] == 'worker':
+            # this command supports custom pools
+            # that may have to be loaded as early as possible.
+            return (['-P'], ['--pool'])
+
+    def on_concurrency_setup(self):
+        load_extension_commands()
 
 
 def determine_exit_status(ret):
@@ -896,10 +930,14 @@ def main():
     # Fix for setuptools generated scripts, so that it will
     # work with multiprocessing fork emulation.
     # (see multiprocessing.forking.get_preparation_data())
-    if __name__ != '__main__':  # pragma: no cover
-        sys.modules['__main__'] = sys.modules[__name__]
-    freeze_support()
-    CeleryCommand().execute_from_commandline()
+    try:
+        if __name__ != '__main__':  # pragma: no cover
+            sys.modules['__main__'] = sys.modules[__name__]
+        freeze_support()
+        CeleryCommand().execute_from_commandline()
+    except KeyboardInterrupt:
+        pass
+
 
 if __name__ == '__main__':          # pragma: no cover
     main()

@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import logging
 import os
@@ -588,12 +587,9 @@ class test_signal_handlers(AppCase):
     @skip_if_pypy
     @skip_if_jython
     def test_worker_cry_handler(self, stderr):
-        if sys.version_info > (2, 5):
-            handlers = self.psig(cd.install_cry_handler)
-            self.assertIsNone(handlers['SIGUSR1']('SIGUSR1', object()))
-            self.assertTrue(stderr.write.called)
-        else:
-            raise SkipTest('Needs Python 2.5 or later')
+        handlers = self.psig(cd.install_cry_handler)
+        self.assertIsNone(handlers['SIGUSR1']('SIGUSR1', object()))
+        self.assertTrue(stderr.write.called)
 
     @disable_stdouts
     def test_worker_term_handler_only_stop_MainProcess(self):

@@ -36,7 +36,6 @@ The :program:`celery events` command.
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import os
 import sys
@@ -100,8 +99,8 @@ class EvCommand(Command):
             return cam()
 
     def set_process_status(self, prog, info=''):
-        prog = '%s:%s' % (self.prog_name, prog)
-        info = '%s %s' % (info, strargv(sys.argv))
+        prog = '{0}:{1}'.format(self.prog_name, prog)
+        info = '{0} {1}'.format(info, strargv(sys.argv))
         return set_process_title(prog, info=info)
 
     def get_options(self):

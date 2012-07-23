@@ -82,7 +82,7 @@ class Proxy(object):
         try:
             return getattr(self.__local, self.__name__)
         except AttributeError:
-            raise RuntimeError('no object bound to %s' % self.__name__)
+            raise RuntimeError('no object bound to {0.__name__}'.format(self))
 
     @property
     def __dict__(self):
@@ -95,7 +95,7 @@ class Proxy(object):
         try:
             obj = self._get_current_object()
         except RuntimeError:  # pragma: no cover
-            return '<%s unbound>' % self.__class__.__name__
+            return '<{0} unbound>'.format(self.__class__.__name__)
         return repr(obj)
 
     def __nonzero__(self):
@@ -425,7 +425,5 @@ class LocalManager(object):
             release_local(local)
 
     def __repr__(self):
-        return '<%s storages: %d>' % (
-            self.__class__.__name__,
-            len(self.locals)
-        )
+        return '<{0} storages: {1}>'.format(
+            self.__class__.__name__, len(self.locals))

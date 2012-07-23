@@ -7,7 +7,6 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import warnings
 
@@ -213,12 +212,16 @@ class Celery(object):
     broker_connection = connection
 
     @contextmanager
-    def default_connection(self, connection=None, *args, **kwargs):
+    def default_connection(self, connection=None, pool=True, *args, **kwargs):
         if connection:
             yield connection
         else:
-            with self.pool.acquire(block=True) as connection:
-                yield connection
+            if pool:
+                with self.pool.acquire(block=True) as connection:
+                    yield connection
+            else:
+                with self.connection() as connection:
+                    yield connection
 
     @contextmanager
     def default_producer(self, producer=None):
@@ -245,7 +248,7 @@ class Celery(object):
         def _inner(*args, **kwargs):
             connection = kwargs.pop('connection', None)
             with self.default_connection(connection) as c:
-                return fun(*args, **dict(kwargs, connection=c))
+                return fun(*args, connection=c, **kwargs)
         return _inner
 
     def prepare_config(self, c):
@@ -335,8 +338,8 @@ class Celery(object):
         return reduce(getattr, [self] + path.split('.'))
 
     def __repr__(self):
-        return '<%s %s:0x%x>' % (self.__class__.__name__,
-                                 self.main or '__main__', id(self), )
+        return '<{0} {1}:0x{2:x}>'.format(
+            type(self).__name__, self.main or '__main__', id(self))
 
     def __reduce__(self):
         # Reduce only pickles the configuration changes,

@@ -7,7 +7,6 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import operator
 
@@ -58,7 +57,7 @@ class LRUCache(UserDict):
         # remove least recently used key.
         with self.mutex:
             if self.limit and len(self.data) >= self.limit:
-                self.data.pop(iter(self.data).next())
+                self.data.pop(next(iter(self.data)))
             self.data[key] = value
 
     def __iter__(self):
@@ -261,6 +260,3 @@ class _regen(UserList, list):
     @cached_property
     def data(self):
         return list(self.__it)
-
-    def __iter__(self):  # needed for Python 2.5
-        return iter(self.data)

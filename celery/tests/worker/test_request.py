@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import anyjson
 import os
@@ -142,7 +141,7 @@ class test_RetryTaskError(Case):
     def test_retry_task_error(self):
         try:
             raise Exception('foo')
-        except Exception, exc:
+        except Exception as exc:
             ret = RetryTaskError('Retrying task', exc)
             self.assertEqual(ret.exc, exc)
 
@@ -601,10 +600,10 @@ class test_TaskRequest(Case):
         mytask.request.update({'id': tid})
         try:
             raise ValueError('foo')
-        except Exception, exc:
+        except Exception as exc:
             try:
                 raise RetryTaskError(str(exc), exc=exc)
-            except RetryTaskError, exc:
+            except RetryTaskError as exc:
                 w = TraceInfo(states.RETRY, exc)
                 w.handle_retry(mytask, store_errors=False)
                 self.assertEqual(mytask.backend.get_status(tid),
@@ -621,7 +620,7 @@ class test_TaskRequest(Case):
         try:
             try:
                 raise ValueError('foo')
-            except Exception, exc:
+            except Exception as exc:
                 w = TraceInfo(states.FAILURE, exc)
                 w.handle_failure(mytask, store_errors=False)
                 self.assertEqual(mytask.backend.get_status(tid),
@@ -773,7 +772,7 @@ class test_TaskRequest(Case):
                     'task_id': tw.id,
                     'task_retries': 0,
                     'task_is_eager': False,
-                    'delivery_info': {'exchange': None, 'routing_key': None},
+                    'delivery_info': {},
                     'task_name': tw.name})
 
     @patch('celery.worker.job.logger')

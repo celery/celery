@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import errno
 
@@ -62,9 +61,9 @@ class test_ScheduleEntry(Case):
         self.assertEqual(entry.total_run_count, 0)
 
         next_run_at = entry.last_run_at + timedelta(seconds=10)
-        next = entry.next(next_run_at)
-        self.assertGreaterEqual(next.last_run_at, next_run_at)
-        self.assertEqual(next.total_run_count, 1)
+        next_entry = entry.next(next_run_at)
+        self.assertGreaterEqual(next_entry.last_run_at, next_run_at)
+        self.assertEqual(next_entry.total_run_count, 1)
 
     def test_is_due(self):
         entry = self.create_entry(schedule=timedelta(seconds=10))
@@ -73,8 +72,8 @@ class test_ScheduleEntry(Case):
         self.assertGreater(next_time_to_run1, 9)
 
         next_run_at = entry.last_run_at - timedelta(seconds=10)
-        next = entry.next(next_run_at)
-        due2, next_time_to_run2 = next.is_due()
+        next_entry = entry.next(next_run_at)
+        due2, next_time_to_run2 = next_entry.is_due()
         self.assertTrue(due2)
         self.assertGreater(next_time_to_run2, 9)
 

@@ -25,12 +25,12 @@ DEFAULT_CONFIG_MODULE = 'celeryconfig'
 C_WNOCONF = strtobool(os.environ.get('C_WNOCONF', False))
 
 CONFIG_INVALID_NAME = """
-Error: Module '%(module)s' doesn't exist, or it's not a valid \
+Error: Module '{module}' doesn't exist, or it's not a valid \
 Python module name.
 """
 
 CONFIG_WITH_SUFFIX = CONFIG_INVALID_NAME + """
-Did you mean '%(suggest)s'?
+Did you mean '{suggest}'?
 """
 
 
@@ -53,18 +53,18 @@ class Loader(BaseLoader):
         except NotAPackage:
             if configname.endswith('.py'):
                 raise NotAPackage, NotAPackage(
-                        CONFIG_WITH_SUFFIX % {
-                            'module': configname,
-                            'suggest': configname[:-3]}), sys.exc_info()[2]
+                        CONFIG_WITH_SUFFIX.format(
+                            module=configname,
+                            suggest=configname[:-3])), sys.exc_info()[2]
             raise NotAPackage, NotAPackage(
-                    CONFIG_INVALID_NAME % {
-                        'module': configname}), sys.exc_info()[2]
+                    CONFIG_INVALID_NAME.format(
+                        module=configname)), sys.exc_info()[2]
         except ImportError:
             # billiard sets this if forked using execv
             if C_WNOCONF and not os.environ.get('FORKED_BY_MULTIPROCESSING'):
                 warnings.warn(NotConfigured(
-                    'No %r module found! Please make sure it exists and '
-                    'is available to Python.' % (configname, )))
+                    'No {module} module found! Please make sure it exists and '
+                    'is available to Python.'.format(module=configname)))
             return self.setup_settings({})
         else:
             celeryconfig = self.import_from_cwd(configname)
@@ -75,4 +75,4 @@ class Loader(BaseLoader):
             return self.setup_settings(usercfg)
 
     def wanted_module_item(self, item):
-        return item[0].isupper() and not item.startswith('_')
+        return not item.startswith('_')

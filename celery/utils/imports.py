@@ -7,7 +7,6 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import imp as _imp
 import importlib
@@ -86,9 +85,10 @@ def symbol_by_name(name, aliases={}, imp=None, package=None,
     try:
         try:
             module = imp(module_name, package=package, **kwargs)
-        except ValueError, exc:
+        except ValueError as exc:
             raise ValueError, ValueError(
-                    "Couldn't import %r: %s" % (name, exc)), sys.exc_info()[2]
+                    "Couldn't import {0!r}: {1}".format(
+                        name, exc)), sys.exc_info()[2]
         return getattr(module, cls_name) if cls_name else module
     except (ImportError, AttributeError):
         if default is None:

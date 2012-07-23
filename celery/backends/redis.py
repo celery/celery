@@ -58,9 +58,9 @@ class RedisBackend(KeyValueStoreBackend):
 
         # For compatibility with the old REDIS_* configuration keys.
         def _get(key):
-            for prefix in 'CELERY_REDIS_%s', 'REDIS_%s':
+            for prefix in 'CELERY_REDIS_{0}', 'REDIS_{0}':
                 try:
-                    return conf[prefix % key]
+                    return conf[prefix.format(key)]
                 except KeyError:
                     pass
         if host and '://' in host:

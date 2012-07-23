@@ -1,7 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
-
-import sys
 
 from datetime import datetime
 
@@ -49,23 +46,6 @@ class test_DatabaseBackend(Case):
             from celery.backends.database import _sqlalchemy_installed
             with self.assertRaises(ImproperlyConfigured):
                 _sqlalchemy_installed()
-
-    def test_pickle_hack_for_sqla_05(self):
-        import sqlalchemy as sa
-        from celery.backends.database import session
-        prev_base = session.ResultModelBase
-        prev_ver, sa.__version__ = sa.__version__, '0.5.0'
-        prev_models = sys.modules.pop('celery.backends.database.models', None)
-        try:
-            from sqlalchemy.ext.declarative import declarative_base
-            session.ResultModelBase = declarative_base()
-            from celery.backends.database.dfd042c7 import PickleType as Type1
-            from celery.backends.database.models import PickleType as Type2
-            self.assertIs(Type1, Type2)
-        finally:
-            sys.modules['celery.backends.database.models'] = prev_models
-            sa.__version__ = prev_ver
-            session.ResultModelBase = prev_base
 
     def test_missing_dburi_raises_ImproperlyConfigured(self):
         conf = app_or_default().conf
@@ -129,7 +109,7 @@ class test_DatabaseBackend(Case):
         tid = uuid()
         try:
             raise KeyError('foo')
-        except KeyError, exception:
+        except KeyError as exception:
             import traceback
             trace = '\n'.join(traceback.format_stack())
             tb.mark_as_retry(tid, exception, traceback=trace)
@@ -143,7 +123,7 @@ class test_DatabaseBackend(Case):
         tid3 = uuid()
         try:
             raise KeyError('foo')
-        except KeyError, exception:
+        except KeyError as exception:
             import traceback
             trace = '\n'.join(traceback.format_stack())
             tb.mark_as_failure(tid3, exception, traceback=trace)
