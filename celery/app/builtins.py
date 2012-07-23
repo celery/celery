@@ -143,6 +143,7 @@ def add_group_task(app):
             return result
 
         def prepare(self, options, tasks, args, **kwargs):
+            AsyncResult = self.AsyncResult
             options['group_id'] = group_id = \
                     options.setdefault('task_id', uuid())
 
@@ -154,9 +155,12 @@ def add_group_task(app):
                     tid = opts['task_id']
                 except KeyError:
                     tid = opts['task_id'] = uuid()
-                return task, self.AsyncResult(tid)
+                return task, AsyncResult(tid)
 
-            tasks, results = zip(*[prepare_member(task) for task in tasks])
+            try:
+                tasks, results = zip(*[prepare_member(task) for task in tasks])
+            except ValueError:  # tasks empty
+                tasks, results = [], []
             return (tasks, self.app.GroupResult(group_id, results),
                     group_id, args)
 
