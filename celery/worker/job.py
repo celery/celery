@@ -128,8 +128,10 @@ class Request(object):
 
         self.delivery_info = delivery_info or {}
         # amqplib transport adds the channel here for some reason, so need
-        # to remove it.
-        self.delivery_info.pop('channel', None)
+        # to remove it. sqs also adds additional unpickleable attributes
+        # than need to be removed.
+        for key in ['channel', 'sqs_message', 'sqs_queue']:
+            self.delivery_info.pop(key, None)
         self.request_dict = body
 
     @classmethod
