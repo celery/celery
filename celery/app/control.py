@@ -102,7 +102,7 @@ class Control(object):
         :returns: the number of tasks discarded.
 
         """
-        with self.app.default_connection(connection) as conn:
+        with self.app.connection_or_acquire(connection) as conn:
             return self.app.amqp.TaskConsumer(conn).purge()
     discard_all = purge
 
@@ -252,7 +252,7 @@ class Control(object):
             received.
 
         """
-        with self.app.default_connection(connection) as conn:
+        with self.app.connection_or_acquire(connection) as conn:
             arguments = dict(arguments or {}, **extra_kwargs)
             return self.mailbox(conn)._broadcast(command, arguments,
                                                  destination, reply, timeout,

@@ -394,7 +394,7 @@ class ResultSet(ResultBase):
 
     def revoke(self, connection=None):
         """Revoke all tasks in the set."""
-        with self.app.default_connection(connection) as conn:
+        with self.app.connection_or_acquire(connection) as conn:
             for result in self.results:
                 result.revoke(connection=conn)
 

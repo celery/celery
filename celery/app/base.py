@@ -175,8 +175,10 @@ class Celery(object):
         self.conf.update(self.loader.cmdline_config_parser(argv, namespace))
 
     def send_task(self, name, args=None, kwargs=None, countdown=None,
-            eta=None, task_id=None, publisher=None, connection=None,
-            result_cls=None, expires=None, queues=None, **options):
+            eta=None, task_id=None, producer=None, connection=None,
+            result_cls=None, expires=None, queues=None, publisher=None,
+            **options):
+        producer = producer or publisher  # XXX compat
         if self.conf.CELERY_ALWAYS_EAGER:  # pragma: no cover
             warnings.warn(AlwaysEagerIgnored(
                 'CELERY_ALWAYS_EAGER has no effect on send_task'))
@@ -186,7 +188,7 @@ class Celery(object):
         options.setdefault('compression',
                            self.conf.CELERY_MESSAGE_COMPRESSION)
         options = router.route(options, name, args, kwargs)
-        with self.default_producer(publisher) as producer:
+        with self.producer_or_acquire(producer) as producer:
             return result_cls(producer.publish_task(name, args, kwargs,
                         task_id=task_id,
                         countdown=countdown, eta=eta,
@@ -213,7 +215,8 @@ class Celery(object):
     broker_connection = connection
 
     @contextmanager
-    def default_connection(self, connection=None, pool=True, *args, **kwargs):
+    def connection_or_acquire(self, connection=None, pool=True,
+            *args, **kwargs):
         if connection:
             yield connection
         else:
@@ -223,14 +226,16 @@ class Celery(object):
             else:
                 with self.connection() as connection:
                     yield connection
+    default_connection = connection_or_acquire  # XXX compat
 
     @contextmanager
-    def default_producer(self, producer=None):
+    def producer_or_acquire(self, producer=None):
         if producer:
             yield producer
         else:
             with self.amqp.producer_pool.acquire(block=True) as producer:
                 yield producer
+    default_producer = producer_or_acquire  # XXX compat
 
     def with_default_connection(self, fun):
         """With any function accepting a `connection`
@@ -242,13 +247,13 @@ class Celery(object):
 
         **Deprecated**
 
-        Use ``with app.default_connection(connection)`` instead.
+        Use ``with app.connection_or_acquire(connection)`` instead.
 
         """
         @wraps(fun)
         def _inner(*args, **kwargs):
             connection = kwargs.pop('connection', None)
-            with self.default_connection(connection) as c:
+            with self.connection_or_acquire(connection) as c:
                 return fun(*args, **dict(kwargs, connection=c))
         return _inner
 

@@ -455,7 +455,7 @@ class Task(object):
 
         if connection:
             producer = app.amqp.TaskProducer(connection)
-        with app.default_producer(producer) as P:
+        with app.producer_or_acquire(producer) as P:
             evd = None
             if conf.CELERY_SEND_TASK_SENT_EVENT:
                 evd = app.events.Dispatcher(channel=P.channel,
