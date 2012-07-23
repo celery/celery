@@ -13,6 +13,7 @@ from kombu.utils import cached_property
 from datetime import datetime, timedelta
 from dateutil import tz
 from dateutil.parser import parse as parse_iso8601
+from future_builtins import zip
 
 from celery.exceptions import ImproperlyConfigured
 
@@ -25,7 +26,7 @@ except ImportError:     # pragma: no cover
 
 
 DAYNAMES = 'sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'
-WEEKDAYS = dict((name, dow) for name, dow in zip(DAYNAMES, range(7)))
+WEEKDAYS = dict(zip(DAYNAMES, range(7)))
 
 RATE_MODIFIER_MAP = {'s': lambda n: n,
                      'm': lambda n: n / 60.0,

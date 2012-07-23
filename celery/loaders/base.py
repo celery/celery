@@ -13,6 +13,7 @@ import importlib
 import os
 import re
 
+from future_builtins import map
 from datetime import datetime
 
 from kombu.utils.encoding import safe_str

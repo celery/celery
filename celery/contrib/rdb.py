@@ -41,6 +41,7 @@ import os
 import socket
 import sys
 
+from future_builtins import map
 from pdb import Pdb
 
 from billiard import current_process

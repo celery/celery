@@ -19,6 +19,7 @@ import time
 import sys
 
 from datetime import timedelta
+from future_builtins import map
 
 from kombu import serialization
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8

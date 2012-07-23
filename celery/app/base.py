@@ -14,6 +14,7 @@ from collections import deque
 from contextlib import contextmanager
 from copy import deepcopy
 from functools import reduce, wraps
+from operator import attrgetter
 from threading import Lock
 
 from billiard.util import register_after_fork
@@ -335,7 +336,7 @@ class Celery(object):
         return type(name or Class.__name__, (Class, ), attrs)
 
     def _rgetattr(self, path):
-        return reduce(getattr, [self] + path.split('.'))
+        return attrgetter(path)(self)
 
     def __repr__(self):
         return '<{0} {1}:0x{2:x}>'.format(

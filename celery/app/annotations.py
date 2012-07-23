@@ -12,6 +12,8 @@
 """
 from __future__ import absolute_import
 
+from future_builtins import filter
+
 from celery.utils.functional import firstmethod, mpromise
 from celery.utils.imports import instantiate
 
@@ -52,4 +54,4 @@ def prepare(annotations):
         return ()
     elif not isinstance(annotations, (list, tuple)):
         annotations = (annotations, )
-    return map(expand_annotation, annotations)
+    return [expand_annotation(a) for a in annotations]

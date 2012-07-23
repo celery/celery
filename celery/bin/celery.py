@@ -13,6 +13,7 @@ import sys
 import warnings
 
 from billiard import freeze_support
+from future_builtins import map
 from importlib import import_module
 from pprint import pformat
 
@@ -518,7 +519,7 @@ class _RemoteControl(Command):
         destination = kwargs.get('destination')
         timeout = kwargs.get('timeout') or self.choices[method][0]
         if destination and isinstance(destination, basestring):
-            destination = map(str.strip, destination.split(','))
+            destination = list(map(str.strip, destination.split(',')))
 
         try:
             handler = getattr(self, method)

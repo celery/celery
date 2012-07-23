@@ -7,6 +7,8 @@
 
 from __future__ import absolute_import
 
+from future_builtins import map
+
 SERIES = 'DEVEL'
 VERSION = (3, 1, 0, 'a1')
 __version__ = '.'.join(map(str, VERSION[0:3])) + ''.join(VERSION[3:])

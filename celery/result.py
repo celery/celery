@@ -12,7 +12,7 @@ import time
 
 from collections import deque
 from copy import copy
-from itertools import imap
+from future_builtins import map
 
 from . import current_app
 from . import states
@@ -228,7 +228,7 @@ class AsyncResult(ResultBase):
     def children(self):
         children = self.backend.get_children(self.id)
         if children:
-            return map(from_serializable, children)
+            return [from_serializable(child) for child in children]
 
     @property
     def result(self):
@@ -386,7 +386,7 @@ class ResultSet(ResultBase):
         :returns: the number of tasks completed.
 
         """
-        return sum(imap(int, (result.successful() for result in self.results)))
+        return sum(map(int, (result.successful() for result in self.results)))
 
     def forget(self):
         """Forget about (and possible remove the result of) all the tasks."""

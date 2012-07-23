@@ -8,6 +8,7 @@
 """
 from __future__ import absolute_import
 
+from future_builtins import map
 from datetime import datetime
 
 from kombu.utils.encoding import safe_repr
@@ -145,23 +146,16 @@ def dump_schedule(panel, safe=False, **kwargs):
     from celery.worker.job import Request
     schedule = panel.consumer.timer.schedule
     if not schedule.queue:
-        logger.debug('--Empty schedule--')
         return []
 
-    formatitem = lambda (i, item): '{0}. {1} pri{2} {3!r}'.format(i,
-            datetime.utcfromtimestamp(item['eta']),
-            item['priority'], item['item'])
-    info = map(formatitem, enumerate(schedule.info()))
-    logger.debug('* Dump of current schedule:\n%s', '\n'.join(info))
-    scheduled_tasks = []
-    for info in schedule.info():
-        item = info['item']
-        if item.args and isinstance(item.args[0], Request):
-            scheduled_tasks.append({'eta': info['eta'],
-                                    'priority': info['priority'],
-                                    'request':
-                                        item.args[0].info(safe=safe)})
-    return scheduled_tasks
+    def prepare_entries():
+        for entry in schedule.info():
+            item = entry['item']
+            if item.args and isinstance(item.args[0], Request):
+                yield {'eta': entry['eta'],
+                       'priority': entry['priority'],
+                       'request': item.args[0].info(safe=safe)}
+    return list(prepare_entries())
 
 
 @Panel.register
@@ -208,16 +202,12 @@ def dump_tasks(panel, taskinfoitems=None, **kwargs):
         fields = dict((field, str(getattr(task, field, None)))
                         for field in taskinfoitems
                             if getattr(task, field, None) is not None)
-        info = map('='.join, fields.items())
-        if not info:
-            return task.name
-        return '{0} [{1}]'.format(task.name, ' '.join(info))
+        if fields:
+            info = map('='.join, fields.iteritems())
+            return '{0} [{1}]'.format(task.name, ' '.join(info))
+        return task.name
 
-    info = map(_extract_info, (tasks[task]
-                                    for task in sorted(tasks.keys())))
-    logger.debug('* Dump of currently registered tasks:\n%s', '\n'.join(info))
-
-    return info
+    return [_extract_info(tasks[task]) for task in sorted(tasks)]
 
 
 @Panel.register

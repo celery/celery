@@ -95,12 +95,13 @@ class Logging(object):
             if self.app.conf.CELERYD_HIJACK_ROOT_LOGGER:
                 root.handlers = []
 
-            for logger in filter(None, (root, get_multiprocessing_logger())):
-                self.setup_handlers(logger, logfile, format,
-                                    colorize, **kwargs)
-                if loglevel:
-                    logger.setLevel(loglevel)
-                signals.after_setup_logger.send(sender=None, logger=logger,
+            for logger in root, get_multiprocessing_logger():
+                if logger is not None:
+                    self.setup_handlers(logger, logfile, format,
+                                        colorize, **kwargs)
+                    if loglevel:
+                        logger.setLevel(loglevel)
+                    signals.after_setup_logger.send(sender=None, logger=logger,
                                             loglevel=loglevel, logfile=logfile,
                                             format=format, colorize=colorize)
             # then setup the root task logger.

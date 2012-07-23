@@ -11,6 +11,7 @@
 """
 from __future__ import absolute_import
 
+from future_builtins import map
 from operator import itemgetter
 from itertools import chain as _chain
 
@@ -311,7 +312,7 @@ class group(Signature):
 
     def __call__(self, *partial_args, **options):
         tasks, result, gid, args = self.type.prepare(options,
-                    map(Signature.clone, self.tasks), partial_args)
+                    [Signature.clone(t) for t in self.tasks], partial_args)
         return self.type(tasks, result, gid, args)
 
     def skew(self, start=1.0, stop=None, step=1.0):

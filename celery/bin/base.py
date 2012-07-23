@@ -64,6 +64,7 @@ import sys
 import warnings
 
 from collections import defaultdict
+from future_builtins import zip
 from optparse import OptionParser, IndentedHelpFormatter, make_option as Option
 from types import ModuleType
 
@@ -232,7 +233,7 @@ class Command(object):
             options = dict((k, self.expanduser(v))
                             for k, v in vars(options).iteritems()
                                 if not k.startswith('_'))
-        args = map(self.expanduser, args)
+        args = [self.expanduser(arg) for arg in args]
         self.check_args(args)
         return options, args
 

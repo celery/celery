@@ -8,7 +8,8 @@
 """
 from __future__ import absolute_import
 
-import textwrap
+from future_builtins import filter, map
+from textwrap import fill
 
 from pprint import pformat
 
@@ -22,7 +23,7 @@ def dedent(s, n=4):
 
 
 def fill_paragraphs(s, width):
-    return '\n'.join(textwrap.fill(p, width) for p in s.split('\n'))
+    return '\n'.join(fill(p, width) for p in s.split('\n'))
 
 
 def join(l):
