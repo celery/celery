@@ -135,7 +135,7 @@ def add_group_task(app):
             if self.request.is_eager or app.conf.CELERY_ALWAYS_EAGER:
                 return app.GroupResult(result.id,
                         [task.apply(group_id=group_id) for task in taskit])
-            with app.default_producer() as pub:
+            with app.producer_or_acquire() as pub:
                 [task.apply_async(group_id=group_id, publisher=pub,
                                   add_to_parent=False) for task in taskit]
             parent = get_current_worker_task()

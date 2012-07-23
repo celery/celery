@@ -44,7 +44,7 @@ class TaskSet(list):
         if app.conf.CELERY_ALWAYS_EAGER:
             return self.apply(taskset_id=taskset_id)
 
-        with app.default_connection(connection) as conn:
+        with app.connection_or_acquire(connection) as conn:
             setid = taskset_id or uuid()
             pub = publisher or self.Publisher(conn)
             results = self._async_results(setid, pub)

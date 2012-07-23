@@ -182,7 +182,7 @@ def move(predicate, connection=None, exchange=None, routing_key=None,
     """
     app = app_or_default(app)
     queues = [_maybe_queue(app, queue) for queue in source or []] or None
-    with app.default_connection(connection, pool=False) as conn:
+    with app.connection_or_acquire(connection, pool=False) as conn:
         producer = app.amqp.TaskProducer(conn)
         state = State()
 
