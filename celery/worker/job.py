@@ -23,6 +23,7 @@ from celery import exceptions
 from celery import signals
 from celery.app import app_or_default
 from celery.datastructures import ExceptionInfo
+from celery.exceptions import TaskRevokedError
 from celery.platforms import signals as _signals
 from celery.task.trace import (
     trace_task,
@@ -170,10 +171,13 @@ class Request(object):
 
         :param pool: A :class:`celery.concurrency.base.TaskPool` instance.
 
+        :raises celery.exceptions.TaskRevokedError: if the task was revoked
+            and ignored.
+
         """
         task = self.task
         if self.revoked():
-            return
+            raise TaskRevokedError(self.id)
 
         hostname = self.hostname
         kwargs = self.kwargs
@@ -228,8 +232,6 @@ class Request(object):
         """If expired, mark the task as revoked."""
         if self.expires and datetime.now(self.tzlocal) > self.expires:
             revoked_tasks.add(self.id)
-            if self.store_errors:
-                self.task.backend.mark_as_revoked(self.id)
             return True
 
     def terminate(self, pool, signal=None):
@@ -251,6 +253,8 @@ class Request(object):
         if self.id in revoked_tasks:
             warn('Skipping revoked task: %s[%s]', self.name, self.id)
             self.send_event('task-revoked', uuid=self.id)
+            if self.store_errors:
+                self.task.backend.mark_as_revoked(self.id)
             self.acknowledge()
             self._already_revoked = True
             send_revoked(self.task, terminated=False,
