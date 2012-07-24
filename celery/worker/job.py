@@ -127,7 +127,13 @@ class Request(object):
         else:
             self.expires = None
 
-        self.delivery_info = delivery_info or {}
+        delivery_info = {} if delivery_info is None else delivery_info
+        self.delivery_info = {
+            'exchange': delivery_info.get('exchange'),
+            'routing_key': delivery_info.get('routing_key'),
+            'priority': delivery_info.get('priority'),
+        }
+
         # amqplib transport adds the channel here for some reason, so need
         # to remove it.
         self.delivery_info.pop('channel', None)
