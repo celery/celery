@@ -388,14 +388,14 @@ class Consumer(object):
             scheduled = hub.timer._queue
             connection = self.connection
             hb = self.amqheartbeat
-            hbtick = getattr(connection.connection, 'heartbeat_tick')
+            hbtick = connection.heartbeat_check
             on_poll_start = connection.transport.on_poll_start
             strategies = self.strategies
             drain_nowait = connection.drain_nowait
             on_task_callbacks = hub.on_task
             keep_draining = connection.transport.nb_keep_draining
 
-            if hb and hbtick is not None:
+            if hb and connection.supports_heartbeats:
                 hub.timer.apply_interval(
                     hb * 1000.0 / hbrate, hbtick, (hbrate, ))
 
