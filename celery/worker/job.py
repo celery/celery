@@ -126,12 +126,10 @@ class Request(object):
         else:
             self.expires = None
 
-        delivery_info = {} if delivery_info is None else delivery_info
-        self.delivery_info = {
-            'exchange': delivery_info.get('exchange'),
-            'routing_key': delivery_info.get('routing_key'),
-        }
-
+        self.delivery_info = delivery_info or {}
+        # amqplib transport adds the channel here for some reason, so need
+        # to remove it.
+        self.delivery_info.pop('channel', None)
         self.request_dict = body
 
     @classmethod
@@ -418,15 +416,14 @@ class Request(object):
                 'worker_pid': self.worker_pid}
 
     def __str__(self):
-        return '%s[%s]%s%s' % (
-                    self.name, self.id,
-                    ' eta:[%s]' % (self.eta, ) if self.eta else '',
-                    ' expires:[%s]' % (self.expires, ) if self.expires else '')
+        return '{0.name}[{0.id}]{1}{2}'.format(self,
+                ' eta:[{0}]'.format(self.eta) if self.eta else '',
+                ' expires:[{0}]'.format(self.expires) if self.expires else '')
     shortinfo = __str__
 
     def __repr__(self):
-        return '<%s %s: %s>' % (type(self).__name__, self.id,
-            reprcall(self.name, self.args, self.kwargs))
+        return '<{0} {1}: {2}>'.format(type(self).__name__, self.id,
+                reprcall(self.name, self.args, self.kwargs))
 
     @property
     def tzlocal(self):
@@ -439,19 +436,23 @@ class Request(object):
         return (not self.task.ignore_result
                  or self.task.store_errors_even_if_ignored)
 
-    def _compat_get_task_id(self):
+    @property
+    def task_id(self):
+        # XXX compat
         return self.id
 
-    def _compat_set_task_id(self, value):
+    @task_id.setter  # noqa
+    def task_id(self, value):
         self.id = value
-    task_id = property(_compat_get_task_id, _compat_set_task_id)
 
-    def _compat_get_task_name(self):
+    @property
+    def task_name(self):
+        # XXX compat
         return self.name
 
-    def _compat_set_task_name(self, value):
+    @task_name.setter  # noqa
+    def task_name(self, value):
         self.name = value
-    task_name = property(_compat_get_task_name, _compat_set_task_name)
 
 
 class TaskRequest(Request):

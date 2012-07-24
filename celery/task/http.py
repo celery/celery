@@ -67,7 +67,7 @@ def extract_response(raw_response, loads=anyjson.loads):
         raise InvalidResponseError('Empty response')
     try:
         payload = loads(raw_response)
-    except ValueError, exc:
+    except ValueError as exc:
         raise InvalidResponseError, InvalidResponseError(
                 str(exc)), sys.exc_info()[2]
 
@@ -108,13 +108,13 @@ class MutableURL(object):
         scheme, netloc, path, params, query, fragment = self.parts
         query = urlencode(utf8dict(self.query.items()))
         components = [scheme + '://', netloc, path or '/',
-                      ';%s' % params   if params   else '',
-                      '?%s' % query    if query    else '',
-                      '#%s' % fragment if fragment else '']
+                      ';{0}'.format(params)   if params   else '',
+                      '?{0}'.format(query)    if query    else '',
+                      '#{0}'.format(fragment) if fragment else '']
         return ''.join(filter(None, components))
 
     def __repr__(self):
-        return '<%s: %s>' % (self.__class__.__name__, str(self))
+        return '<{0}: {1}>'.format(type(self).__name__, self)
 
 
 class HttpDispatch(object):
@@ -127,14 +127,14 @@ class HttpDispatch(object):
     :param logger: Logger used for user/system feedback.
 
     """
-    user_agent = 'celery/%s' % celery_version
+    user_agent = 'celery/{version}'.format(version=celery_version)
     timeout = 5
 
     def __init__(self, url, method, task_kwargs, **kwargs):
         self.url = url
         self.method = method
         self.task_kwargs = task_kwargs
-        self.logger = kwargs.get("logger") or logger
+        self.logger = kwargs.get('logger') or logger
 
     def make_request(self, url, method, params):
         """Makes an HTTP request and returns the response."""

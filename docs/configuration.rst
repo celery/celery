@@ -119,7 +119,7 @@ You can change methods too, for example the ``on_failure`` handler:
 .. code-block:: python
 
     def my_on_failure(self, exc, task_id, args, kwargs, einfo):
-        print("Oh no! Task failed: %r" % (exc, ))
+        print("Oh no! Task failed: {0!r}".format(exc))
 
     CELERY_ANNOTATIONS = {"*": {"on_failure": my_on_failure}}
 

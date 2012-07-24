@@ -71,7 +71,6 @@ up and running.
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import logging
 import socket
@@ -99,6 +98,9 @@ from .heartbeat import Heart
 
 RUN = 0x1
 CLOSE = 0x2
+
+#: Heartbeat check is called every heartbeat_seconds' / rate'.
+AMQHEARTBEAT_RATE = 2.0
 
 #: Prefetch count can't exceed short.
 PREFETCH_COUNT_MAX = 0xFFFF
@@ -134,7 +136,7 @@ The full contents of the message body was:
 """
 
 MESSAGE_REPORT_FMT = """\
-body: %s {content_type:%s content_encoding:%s delivery_info:%s}\
+body: {0} {{content_type:{1} content_encoding:{2} delivery_info:{3}}}\
 """
 
 
@@ -151,11 +153,12 @@ info, warn, error, crit = (logger.info, logger.warn,
 
 
 def debug(msg, *args, **kwargs):
-    logger.debug('Consumer: %s' % (msg, ), *args, **kwargs)
+    logger.debug('Consumer: {0}'.format(msg), *args, **kwargs)
 
 
 def dump_body(m, body):
-    return "%s (%sb)" % (text.truncate(safe_repr(body), 1024), len(m.body))
+    return '{0} ({1}b)'.format(text.truncate(safe_repr(body), 1024),
+                               len(m.body))
 
 
 class Component(StartStopComponent):
@@ -300,7 +303,8 @@ class Consumer(object):
     def __init__(self, ready_queue,
             init_callback=noop, send_events=False, hostname=None,
             initial_prefetch_count=2, pool=None, app=None,
-            timer=None, controller=None, hub=None, **kwargs):
+            timer=None, controller=None, hub=None, amqheartbeat=None,
+            **kwargs):
         self.app = app_or_default(app)
         self.connection = None
         self.task_consumer = None
@@ -332,6 +336,11 @@ class Consumer(object):
             hub.on_init.append(self.on_poll_init)
         self.hub = hub
         self._quick_put = self.ready_queue.put
+        self.amqheartbeat = amqheartbeat
+        if self.amqheartbeat is None:
+            self.amqheartbeat = self.app.conf.BROKER_HEARTBEAT
+        if not hub:
+            self.amqheartbeat = 0
 
     def update_strategies(self):
         S = self.strategies
@@ -365,7 +374,8 @@ class Consumer(object):
         hub.update_readers(self.connection.eventmap)
         self.connection.transport.on_poll_init(hub.poller)
 
-    def consume_messages(self, sleep=sleep, min=min, Empty=Empty):
+    def consume_messages(self, sleep=sleep, min=min, Empty=Empty,
+            hbrate=AMQHEARTBEAT_RATE):
         """Consume messages forever (or until an exception is raised)."""
 
         with self.hub as hub:
@@ -377,11 +387,17 @@ class Consumer(object):
             fire_timers = hub.fire_timers
             scheduled = hub.timer._queue
             connection = self.connection
+            hb = self.amqheartbeat
+            hbtick = getattr(connection.connection, 'heartbeat_tick')
             on_poll_start = connection.transport.on_poll_start
             strategies = self.strategies
             drain_nowait = connection.drain_nowait
             on_task_callbacks = hub.on_task
             keep_draining = connection.transport.nb_keep_draining
+
+            if hb and hbtick is not None:
+                hub.timer.apply_interval(
+                    hb * 1000.0 / hbrate, hbtick, (hbrate, ))
 
             def on_task_received(body, message):
                 if on_task_callbacks:
@@ -392,9 +408,9 @@ class Consumer(object):
                     return self.handle_unknown_message(body, message)
                 try:
                     strategies[name](message, body, message.ack_log_error)
-                except KeyError, exc:
+                except KeyError as exc:
                     self.handle_unknown_task(body, message, exc)
-                except InvalidTaskError, exc:
+                except InvalidTaskError as exc:
                     self.handle_invalid_task(body, message, exc)
                 #fire_timers()
 
@@ -436,7 +452,7 @@ class Consumer(object):
                                             handlermap[fileno](fileno, event)
                                         except KeyError:
                                             pass
-                            except Empty:
+                            except (KeyError, Empty):
                                 continue
                             except socket.error:
                                 if self._state != CLOSE:  # pragma: no cover
@@ -474,7 +490,7 @@ class Consumer(object):
         if task.eta:
             try:
                 eta = timer2.to_timestamp(task.eta)
-            except OverflowError, exc:
+            except OverflowError as exc:
                 error("Couldn't convert eta %s to timestamp: %r. Task: %r",
                       task.eta, exc, task.info(safe=True), exc_info=True)
                 task.acknowledge()
@@ -490,9 +506,9 @@ class Consumer(object):
         """Process remote control command message."""
         try:
             self.pidbox_node.handle_message(body, message)
-        except KeyError, exc:
+        except KeyError as exc:
             error('No such control command: %s', exc)
-        except Exception, exc:
+        except Exception as exc:
             error('Control command error: %r', exc, exc_info=True)
             self.reset_pidbox_node()
 
@@ -504,10 +520,10 @@ class Consumer(object):
         self.qos.decrement_eventually()
 
     def _message_report(self, body, message):
-        return MESSAGE_REPORT_FMT % (dump_body(message, body),
-                                     safe_repr(message.content_type),
-                                     safe_repr(message.content_encoding),
-                                     safe_repr(message.delivery_info))
+        return MESSAGE_REPORT_FMT.format(dump_body(message, body),
+                                         safe_repr(message.content_type),
+                                         safe_repr(message.content_encoding),
+                                         safe_repr(message.delivery_info))
 
     def handle_unknown_message(self, body, message):
         warn(UNKNOWN_FORMAT, self._message_report(body, message))
@@ -535,9 +551,9 @@ class Consumer(object):
 
         try:
             self.strategies[name](message, body, message.ack_log_error)
-        except KeyError, exc:
+        except KeyError as exc:
             self.handle_unknown_task(body, message, exc)
-        except InvalidTaskError, exc:
+        except InvalidTaskError as exc:
             self.handle_invalid_task(body, message, exc)
 
     def maybe_conn_error(self, fun):
@@ -732,7 +748,7 @@ class Consumer(object):
 
         # remember that the connection is lazy, it won't establish
         # until it's needed.
-        conn = self.app.connection()
+        conn = self.app.connection(heartbeat=self.amqheartbeat)
         if not self.app.conf.BROKER_CONNECTION_RETRY:
             # retry disabled, just call connect directly.
             conn.connect()

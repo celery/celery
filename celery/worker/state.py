@@ -87,9 +87,10 @@ if C_BENCH:  # pragma: no cover
         @atexit.register
         def on_shutdown():
             if bench_first is not None and bench_last is not None:
-                print('- Time spent in benchmark: %r' % (
-                    bench_last - bench_first))
-                print('- Avg: %s' % (sum(bench_sample) / len(bench_sample)))
+                print('- Time spent in benchmark: {0!r}'.format(
+                        bench_last - bench_first))
+                print('- Avg: {0}'.format(
+                        sum(bench_sample) / len(bench_sample)))
                 memdump()
 
     def task_reserved(request):  # noqa
@@ -113,7 +114,7 @@ if C_BENCH:  # pragma: no cover
             now = time()
             diff = now - bench_start
             print('- Time spent processing %s tasks (since first '
-                    'task received): ~%.4fs\n' % (bench_every, diff))
+                    'task received): ~{0:.4f}s\n'.format(bench_every, diff))
             sys.stdout.flush()
             bench_start = bench_last = now
             bench_sample.append(diff)

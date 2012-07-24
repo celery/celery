@@ -33,7 +33,7 @@ def html(options):
 def qhtml(options):
     destdir = path('Documentation')
     builtdocs = sphinx_builddir(options)
-    sh('rsync -az %s/ %s' % (builtdocs, destdir))
+    sh('rsync -az {0}/ {1}'.format(builtdocs, destdir))
 
 
 @task
@@ -41,17 +41,17 @@ def qhtml(options):
 def ghdocs(options):
     builtdocs = sphinx_builddir(options)
     sh("git checkout gh-pages && \
-            cp -r %s/* .    && \
+            cp -r {0}/* .    && \
             git commit . -m 'Rendered documentation for Github Pages.' && \
             git push origin gh-pages && \
-            git checkout master" % builtdocs)
+            git checkout master".format(builtdocs))
 
 
 @task
 @needs('clean_docs', 'paver.doctools.html')
 def upload_pypi_docs(options):
     builtdocs = path('docs') / options.builddir / 'html'
-    sh("%s setup.py upload_sphinx --upload-dir='%s'" % (
+    sh("{0} setup.py upload_sphinx --upload-dir='{1}'".format(
         sys.executable, builtdocs))
 
 
@@ -73,8 +73,8 @@ def verifyindex(options):
 
 @task
 def verifyconfigref(options):
-    sh('PYTHONPATH=. %s extra/release/verify_config_reference.py \
-            docs/configuration.rst' % (sys.executable, ))
+    sh('PYTHONPATH=. {0} extra/release/verify_config_reference.py \
+            docs/configuration.rst'.format(sys.executable))
 
 
 @task
@@ -85,10 +85,10 @@ def flake8(options):
     noerror = getattr(options, 'noerror', False)
     complexity = getattr(options, 'complexity', 22)
     sh("""flake8 celery | perl -mstrict -mwarnings -nle'
-        my $ignore = m/too complex \((\d+)\)/ && $1 le %s;
-        if (! $ignore) { print STDERR; our $FOUND_FLAKE = 1 }
-    }{exit $FOUND_FLAKE;
-        '""" % (complexity, ), ignore_error=noerror)
+        my $ignore = m/too complex \((\d+)\)/ && $1 le {0};
+        if (! $ignore) {{ print STDERR; our $FOUND_FLAKE = 1 }}
+    }}{{exit $FOUND_FLAKE;
+        '""".format(complexity), ignore_error=noerror)
 
 
 @task
@@ -97,7 +97,7 @@ def flake8(options):
 ])
 def flakeplus(options):
     noerror = getattr(options, 'noerror', False)
-    sh('flakeplus celery', ignore_error=noerror)
+    sh('flakeplus celery --2.6', ignore_error=noerror)
 
 
 @task
@@ -118,8 +118,8 @@ def clean_readme(options):
 @task
 @needs('clean_readme')
 def readme(options):
-    sh('%s extra/release/sphinx-to-rst.py docs/templates/readme.txt \
-            > README.rst' % (sys.executable, ))
+    sh('{0} extra/release/sphinx-to-rst.py docs/templates/readme.txt \
+            > README.rst'.format(sys.executable))
 
 
 @task
@@ -139,7 +139,7 @@ def test(options):
     if getattr(options, 'coverage', False):
         cmd += ' --with-coverage3'
     if getattr(options, 'quick', False):
-        cmd = 'QUICKTEST=1 SKIP_RLIMITS=1 %s' % cmd
+        cmd = 'QUICKTEST=1 SKIP_RLIMITS=1 {0}'.format(cmd)
     if getattr(options, 'verbose', False):
         cmd += ' --verbosity=2'
     sh(cmd)
@@ -157,8 +157,8 @@ def pep8(options):
 
 @task
 def removepyc(options):
-    sh('find . -type f -a \\( %s \\) | xargs rm' % (
-        ' -o '.join("-name '%s'" % (pat, ) for pat in PYCOMPILE_CACHES), ))
+    sh('find . -type f -a \\( {0} \\) | xargs rm'.format(
+        ' -o '.join("-name '{0}'".format(pat) for pat in PYCOMPILE_CACHES)))
 
 
 @task

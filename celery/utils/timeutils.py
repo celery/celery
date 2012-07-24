@@ -13,6 +13,7 @@ from kombu.utils import cached_property
 from datetime import datetime, timedelta
 from dateutil import tz
 from dateutil.parser import parse as parse_iso8601
+from future_builtins import zip
 
 from celery.exceptions import ImproperlyConfigured
 
@@ -25,7 +26,7 @@ except ImportError:     # pragma: no cover
 
 
 DAYNAMES = 'sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'
-WEEKDAYS = dict((name, dow) for name, dow in zip(DAYNAMES, range(7)))
+WEEKDAYS = dict(zip(DAYNAMES, range(7)))
 
 RATE_MODIFIER_MAP = {'s': lambda n: n,
                      'm': lambda n: n / 60.0,
@@ -34,10 +35,10 @@ RATE_MODIFIER_MAP = {'s': lambda n: n,
 
 HAVE_TIMEDELTA_TOTAL_SECONDS = hasattr(timedelta, 'total_seconds')
 
-TIME_UNITS = (('day', 60 * 60 * 24.0, lambda n: '%.2f' % n),
-              ('hour', 60 * 60.0, lambda n: '%.2f' % n),
-              ('minute', 60.0, lambda n: '%.2f' % n),
-              ('second', 1.0, lambda n: '%.2f' % n))
+TIME_UNITS = (('day',    60 * 60 * 24.0, lambda n: format(n, '.2f')),
+              ('hour',   60 * 60.0,      lambda n: format(n, '.2f')),
+              ('minute', 60.0,           lambda n: format(n, '.2f')),
+              ('second', 1.0,            lambda n: format(n, '.2f')))
 
 
 class _Zone(object):
@@ -48,8 +49,9 @@ class _Zone(object):
         return self.get_timezone(tzinfo)
 
     def to_local(self, dt, local=None, orig=None):
-        return set_tz(dt, orig or self.utc).astimezone(
-                    self.tz_or_local(local))
+        if is_naive(dt):
+            dt = set_tz(dt, orig or self.utc)
+        return dt.astimezone(self.tz_or_local(local))
 
     def get_timezone(self, zone):
         if isinstance(zone, basestring):
@@ -180,8 +182,8 @@ def humanize_seconds(secs, prefix=''):
     for unit, divider, formatter in TIME_UNITS:
         if secs >= divider:
             w = secs / divider
-            return '%s%s %s' % (prefix, formatter(w),
-                                pluralize(w, unit))
+            return '{0}{1} {2}'.format(prefix, formatter(w),
+                                       pluralize(w, unit))
     return 'now'
 
 
@@ -202,10 +204,13 @@ def is_naive(dt):
 
 def set_tz(dt, tz):
     """Sets the timezone for a datetime object."""
-    if hasattr(tz, 'localize'):
+    try:
+        localize = tz.localize
+    except AttributeError:
+        return dt.replace(tzinfo=tz)
+    else:
         # works on pytz timezones
-        return tz.localize(dt, is_dst=None)
-    return dt.replace(tzinfo=tz)
+        return localize(dt, is_dst=None)
 
 
 def to_utc(dt):

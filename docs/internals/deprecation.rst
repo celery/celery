@@ -100,13 +100,13 @@ for example::
     def add(x, y, task_id=None):
         print("My task id is %r" % (task_id, ))
 
-must be rewritten into::
+should be rewritten into::
 
     from celery import task
 
     @task()
     def add(x, y):
-        print("My task id is %r" % (add.request.id, ))
+        print("My task id is {0.request.id}".format(add))
 
 
 Task attributes
@@ -201,7 +201,6 @@ Settings
 ``BROKER_USER``                        :setting:`BROKER_URL`
 ``BROKER_PASSWORD``                    :setting:`BROKER_URL`
 ``BROKER_VHOST``                       :setting:`BROKER_URL`
-``BROKER_INSIST``                      *no alternative*
 =====================================  =====================================
 
 

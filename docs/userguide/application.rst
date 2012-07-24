@@ -379,7 +379,7 @@ chain breaks::
     .. code-block:: python
 
         def hello(to):
-            return 'hello %s' % to
+            return 'hello {0}'.format(to)
 
         >>> from celery.execute import apply_async
 
@@ -397,7 +397,7 @@ chain breaks::
             send_error_emails = True
 
             def run(self, to):
-                return 'hello %s' % to
+                return 'hello {0}'.format(to)
         tasks.register(Hello)
 
         >>> Hello.delay('world!')
@@ -413,7 +413,7 @@ chain breaks::
 
         @task(send_error_emails=True)
         def hello(x):
-            return 'hello %s' % to
+            return 'hello {0}'.format(to)
 
 Abstract Tasks
 ==============
@@ -440,7 +440,7 @@ class: :class:`celery.Task`.
         abstract = True
 
         def __call__(self, *args, **kwargs):
-            print('TASK STARTING: %s[%s]' % (self.name, self.request.id))
+            print('TASK STARTING: {0.name}[{0.request.id}].format(self))
             return self.run(*args, **kwargs)
 
 

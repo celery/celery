@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 from celery.exceptions import SecurityError
 from celery.security.certificate import Certificate, CertStore, FSCertStore
@@ -26,7 +25,7 @@ class test_Certificate(SecurityCase):
         self.assertRaises(SecurityError, Certificate, KEY1)
 
     def test_has_expired(self):
-        self.assertTrue(Certificate(CERT1).has_expired())
+        self.assertFalse(Certificate(CERT1).has_expired())
 
 
 class test_CertStore(SecurityCase):

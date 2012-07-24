@@ -8,7 +8,8 @@
 """
 from __future__ import absolute_import
 
-import textwrap
+from future_builtins import filter, map
+from textwrap import fill
 
 from pprint import pformat
 
@@ -22,7 +23,7 @@ def dedent(s, n=4):
 
 
 def fill_paragraphs(s, width):
-    return '\n'.join(textwrap.fill(p, width) for p in s.split('\n'))
+    return '\n'.join(fill(p, width) for p in s.split('\n'))
 
 
 def join(l):
@@ -73,8 +74,8 @@ def pluralize(n, text, suffix='s'):
 
 def pretty(value, width=80, nl_width=80, **kw):
     if isinstance(value, dict):
-        return '{\n %s' % (pformat(value, 4, nl_width)[1:])
+        return '{{\n {0}'.format(pformat(value, 4, nl_width)[1:])
     elif isinstance(value, tuple):
-        return '\n%s%s' % (' ' * 4, pformat(value, width=nl_width, **kw))
+        return '\n{0}{1}'.format(' ' * 4, pformat(value, width=nl_width, **kw))
     else:
         return pformat(value, width=width, **kw)

@@ -11,6 +11,7 @@
 """
 from __future__ import absolute_import
 
+from future_builtins import map
 from operator import itemgetter
 from itertools import chain as _chain
 
@@ -19,7 +20,6 @@ from kombu.utils import fxrange, kwdict, reprcall
 from celery import current_app
 from celery.local import Proxy
 from celery.utils import cached_property, uuid
-from celery.utils.compat import chain_from_iterable
 from celery.utils.functional import (
     maybe_list, is_list, regen,
     chunks as _chunks,
@@ -161,7 +161,7 @@ class Signature(dict):
         return self.append_to_list_option('link_error', errback)
 
     def flatten_links(self):
-        return list(chain_from_iterable(_chain([[self]],
+        return list(_chain.from_iterable(_chain([[self]],
                 (link.flatten_links()
                     for link in maybe_list(self.options.get('link')) or []))))
 
@@ -245,7 +245,8 @@ class xmap(_basemap):
 
     def __repr__(self):
         task, it = self._unpack_args(self.kwargs)
-        return '[%s(x) for x in %s]' % (task.task, truncate(repr(it), 100))
+        return '[{0}(x) for x in {1}]'.format(task.task,
+                                              truncate(repr(it), 100))
 Signature.register_type(xmap)
 
 
@@ -254,7 +255,8 @@ class xstarmap(_basemap):
 
     def __repr__(self):
         task, it = self._unpack_args(self.kwargs)
-        return '[%s(*x) for x in %s]' % (task.task, truncate(repr(it), 100))
+        return '[{0}(*x) for x in {1}]'.format(task.task,
+                                               truncate(repr(it), 100))
 Signature.register_type(xstarmap)
 
 
@@ -310,7 +312,7 @@ class group(Signature):
 
     def __call__(self, *partial_args, **options):
         tasks, result, gid, args = self.type.prepare(options,
-                    map(Signature.clone, self.tasks), partial_args)
+                    [Signature.clone(t) for t in self.tasks], partial_args)
         return self.type(tasks, result, gid, args)
 
     def skew(self, start=1.0, stop=None, step=1.0):
@@ -371,7 +373,7 @@ class chord(Signature):
     def __repr__(self):
         if self.body:
             return self.body.reprcall(self.tasks)
-        return '<chord without body: %r>' % (self.tasks, )
+        return '<chord without body: {0.tasks!r}>'.format(self)
 
     @property
     def tasks(self):

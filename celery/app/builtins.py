@@ -8,9 +8,9 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 from collections import deque
+from future_builtins import map, zip
 from itertools import starmap
 
 from celery._state import get_current_worker_task
@@ -73,7 +73,8 @@ def add_unlock_chord_task(app):
     @app.task(name='celery.chord_unlock', max_retries=None)
     def unlock_chord(group_id, callback, interval=1, propagate=False,
             max_retries=None, result=None):
-        result = _res.GroupResult(group_id, map(_res.AsyncResult, result))
+        AR = _res.AsyncResult
+        result = _res.GroupResult(group_id, [AR(r) for r in result])
         j = result.join_native if result.supports_native_join else result.join
         if result.ready():
             subtask(callback).delay(j(propagate=propagate))
@@ -134,7 +135,7 @@ def add_group_task(app):
             if self.request.is_eager or app.conf.CELERY_ALWAYS_EAGER:
                 return app.GroupResult(result.id,
                         [task.apply(group_id=group_id) for task in taskit])
-            with app.default_producer() as pub:
+            with app.producer_or_acquire() as pub:
                 [task.apply_async(group_id=group_id, publisher=pub,
                                   add_to_parent=False) for task in taskit]
             parent = get_current_worker_task()
@@ -156,9 +157,8 @@ def add_group_task(app):
                     tid = opts['task_id'] = uuid()
                 return task, self.AsyncResult(tid)
 
-            tasks, results = zip(*[prepare_member(task) for task in tasks])
-            return (tasks, self.app.GroupResult(group_id, results),
-                    group_id, args)
+            tasks, res = list(zip(*[prepare_member(task) for task in tasks]))
+            return (tasks, self.app.GroupResult(group_id, res), group_id, args)
 
         def apply_async(self, partial_args=(), kwargs={}, **options):
             if self.app.conf.CELERY_ALWAYS_EAGER:
@@ -271,7 +271,7 @@ def add_chord_task(app):
 
             # - convert back to group if serialized
             if not isinstance(header, group):
-                header = group(map(maybe_subtask, header))
+                header = group([maybe_subtask(t) for t in  header])
             # - eager applies the group inline
             if eager:
                 return header.apply(args=partial_args, task_id=group_id)
@@ -286,8 +286,7 @@ def add_chord_task(app):
                                        propagate=propagate,
                                        result=results)
             # - call the header group, returning the GroupResult.
-            # XXX Python 2.5 doesn't allow kwargs after star-args.
-            return header(*partial_args, **{'task_id': group_id})
+            return header(*partial_args, task_id=group_id)
 
         def _prepare_member(self, task, body, group_id):
             opts = task.options

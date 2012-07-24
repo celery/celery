@@ -1,10 +1,10 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import socket
 
 from collections import deque
 from datetime import datetime, timedelta
+from threading import Event
 from Queue import Empty
 
 from billiard.exceptions import WorkerLostError
@@ -29,7 +29,6 @@ from celery.worker.consumer import BlockingConsumer
 from celery.worker.consumer import QoS, RUN, PREFETCH_COUNT_MAX, CLOSE
 from celery.utils.serialization import pickle
 from celery.utils.timer2 import Timer
-from celery.utils.threads import Event
 
 from celery.tests.utils import AppCase, Case
 
@@ -476,6 +475,7 @@ class test_Consumer(Case):
         l.update_strategies()
         l.receive_message(m.decode(), m)
         l.timer.stop()
+        l.timer.join(1)
 
         items = [entry[2] for entry in self.timer.queue]
         found = 0
@@ -849,7 +849,7 @@ class test_WorkController(AppCase):
 
         try:
             raise KeyError('foo')
-        except KeyError, exc:
+        except KeyError as exc:
             Timers(worker).on_timer_error(exc)
             msg, args = self.logger.error.call_args[0]
             self.assertIn('KeyError', msg % args)

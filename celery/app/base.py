@@ -7,14 +7,14 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import warnings
 
 from collections import deque
 from contextlib import contextmanager
 from copy import deepcopy
-from functools import wraps
+from functools import reduce, wraps
+from operator import attrgetter
 from threading import Lock
 
 from billiard.util import register_after_fork
@@ -175,8 +175,10 @@ class Celery(object):
         self.conf.update(self.loader.cmdline_config_parser(argv, namespace))
 
     def send_task(self, name, args=None, kwargs=None, countdown=None,
-            eta=None, task_id=None, publisher=None, connection=None,
-            result_cls=None, expires=None, queues=None, **options):
+            eta=None, task_id=None, producer=None, connection=None,
+            result_cls=None, expires=None, queues=None, publisher=None,
+            **options):
+        producer = producer or publisher  # XXX compat
         if self.conf.CELERY_ALWAYS_EAGER:  # pragma: no cover
             warnings.warn(AlwaysEagerIgnored(
                 'CELERY_ALWAYS_EAGER has no effect on send_task'))
@@ -186,16 +188,15 @@ class Celery(object):
         options.setdefault('compression',
                            self.conf.CELERY_MESSAGE_COMPRESSION)
         options = router.route(options, name, args, kwargs)
-        with self.default_producer(publisher) as producer:
+        with self.producer_or_acquire(producer) as producer:
             return result_cls(producer.publish_task(name, args, kwargs,
                         task_id=task_id,
                         countdown=countdown, eta=eta,
                         expires=expires, **options))
 
-    def connection(self, hostname=None, userid=None,
-            password=None, virtual_host=None, port=None, ssl=None,
-            insist=None, connect_timeout=None, transport=None,
-            transport_options=None, **kwargs):
+    def connection(self, hostname=None, userid=None, password=None,
+            virtual_host=None, port=None, ssl=None, connect_timeout=None,
+            transport=None, transport_options=None, heartbeat=None, **kwargs):
         conf = self.conf
         return self.amqp.Connection(
                     hostname or conf.BROKER_HOST,
@@ -204,16 +205,17 @@ class Celery(object):
                     virtual_host or conf.BROKER_VHOST,
                     port or conf.BROKER_PORT,
                     transport=transport or conf.BROKER_TRANSPORT,
-                    insist=self.either('BROKER_INSIST', insist),
                     ssl=self.either('BROKER_USE_SSL', ssl),
                     connect_timeout=self.either(
-                                'BROKER_CONNECTION_TIMEOUT', connect_timeout),
+                        'BROKER_CONNECTION_TIMEOUT', connect_timeout),
+                    heartbeat=heartbeat,
                     transport_options=dict(conf.BROKER_TRANSPORT_OPTIONS,
                                            **transport_options or {}))
     broker_connection = connection
 
     @contextmanager
-    def default_connection(self, connection=None, pool=True, *args, **kwargs):
+    def connection_or_acquire(self, connection=None, pool=True,
+            *args, **kwargs):
         if connection:
             yield connection
         else:
@@ -223,14 +225,16 @@ class Celery(object):
             else:
                 with self.connection() as connection:
                     yield connection
+    default_connection = connection_or_acquire  # XXX compat
 
     @contextmanager
-    def default_producer(self, producer=None):
+    def producer_or_acquire(self, producer=None):
         if producer:
             yield producer
         else:
             with self.amqp.producer_pool.acquire(block=True) as producer:
                 yield producer
+    default_producer = producer_or_acquire  # XXX compat
 
     def with_default_connection(self, fun):
         """With any function accepting a `connection`
@@ -242,14 +246,14 @@ class Celery(object):
 
         **Deprecated**
 
-        Use ``with app.default_connection(connection)`` instead.
+        Use ``with app.connection_or_acquire(connection)`` instead.
 
         """
         @wraps(fun)
         def _inner(*args, **kwargs):
             connection = kwargs.pop('connection', None)
-            with self.default_connection(connection) as c:
-                return fun(*args, **dict(kwargs, connection=c))
+            with self.connection_or_acquire(connection) as c:
+                return fun(*args, connection=c, **kwargs)
         return _inner
 
     def prepare_config(self, c):
@@ -336,11 +340,11 @@ class Celery(object):
         return type(name or Class.__name__, (Class, ), attrs)
 
     def _rgetattr(self, path):
-        return reduce(getattr, [self] + path.split('.'))
+        return attrgetter(path)(self)
 
     def __repr__(self):
-        return '<%s %s:0x%x>' % (self.__class__.__name__,
-                                 self.main or '__main__', id(self), )
+        return '<{0} {1}:0x{2:x}>'.format(
+            type(self).__name__, self.main or '__main__', id(self))
 
     def __reduce__(self):
         # Reduce only pickles the configuration changes,

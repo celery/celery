@@ -7,8 +7,7 @@
     users, groups, and so on.
 
 """
-from __future__ import absolute_import
-from __future__ import with_statement
+from __future__ import absolute_import, print_function
 
 import atexit
 import errno
@@ -19,6 +18,7 @@ import signal as _signal
 import sys
 
 from contextlib import contextmanager
+from future_builtins import map
 
 from .local import try_import
 
@@ -49,8 +49,8 @@ PIDFILE_MODE = ((os.R_OK | os.W_OK) << 6) | ((os.R_OK) << 3) | ((os.R_OK))
 
 _setps_bucket = TokenBucket(0.5)  # 30/m, every 2 seconds
 
-PIDLOCKED = """ERROR: Pidfile (%s) already exists.
-Seems we're already running? (PID: %s)"""
+PIDLOCKED = """ERROR: Pidfile ({0}) already exists.
+Seems we're already running? (PID: {1})"""
 
 
 def pyimplementation():
@@ -106,7 +106,7 @@ class PIDFile(object):
         """Acquire lock."""
         try:
             self.write_pid()
-        except OSError, exc:
+        except OSError as exc:
             raise LockFailed, LockFailed(str(exc)), sys.exc_info()[2]
         return self
     __enter__ = acquire
@@ -124,7 +124,7 @@ class PIDFile(object):
         """Reads and returns the current pid."""
         try:
             fh = open(self.path, 'r')
-        except IOError, exc:
+        except IOError as exc:
             if exc.errno == errno.ENOENT:
                 return
             raise
@@ -133,20 +133,20 @@ class PIDFile(object):
             line = fh.readline()
             if line.strip() == line:  # must contain '\n'
                 raise ValueError(
-                    'Partially written or invalid pidfile %r' % (self.path))
+                    'Partial or invalid pidfile {0.path}'.format(self))
         finally:
             fh.close()
 
         try:
             return int(line.strip())
         except ValueError:
-            raise ValueError('PID file %r contents invalid.' % self.path)
+            raise ValueError('PID file {0.path} invalid.'.format(self))
 
     def remove(self):
         """Removes the lock."""
         try:
             os.unlink(self.path)
-        except OSError, exc:
+        except OSError as exc:
             if exc.errno in (errno.ENOENT, errno.EACCES):
                 return
             raise
@@ -156,8 +156,8 @@ class PIDFile(object):
         (does not respond to signals)."""
         try:
             pid = self.read_pid()
-        except ValueError, exc:
-            sys.stderr.write('Broken pidfile found. Removing it.\n')
+        except ValueError as exc:
+            print('Broken pidfile found. Removing it.', file=sys.stderr)
             self.remove()
             return True
         if not pid:
@@ -166,16 +166,16 @@ class PIDFile(object):
 
         try:
             os.kill(pid, 0)
-        except os.error, exc:
+        except os.error as exc:
             if exc.errno == errno.ESRCH:
-                sys.stderr.write('Stale pidfile exists. Removing it.\n')
+                print('Stale pidfile exists. Removing it.', file=sys.stderr)
                 self.remove()
                 return True
         return False
 
     def write_pid(self):
         pid = os.getpid()
-        content = '%d\n' % (pid, )
+        content = '{0}\n'.format(pid)
 
         pidfile_fd = os.open(self.path, PIDFILE_FLAGS, PIDFILE_MODE)
         pidfile = os.fdopen(pidfile_fd, 'w')
@@ -220,7 +220,7 @@ def create_pidlock(pidfile):
     """
     pidlock = PIDFile(pidfile)
     if pidlock.is_locked() and not pidlock.remove_if_stale():
-        raise SystemExit(PIDLOCKED % (pidfile, pidlock.read_pid()))
+        raise SystemExit(PIDLOCKED.format(pidfile, pidlock.read_pid()))
     pidlock.acquire()
     atexit.register(pidlock.release)
     return pidlock
@@ -245,10 +245,7 @@ class DaemonContext(object):
             os.chdir(self.workdir)
             os.umask(self.umask)
 
-            for fd in reversed(range(get_fdmax(default=2048))):
-                with ignore_EBADF():
-                    os.close(fd)
-
+            os.closerange(1, get_fdmax(default=2048))
             os.open(DAEMON_REDIRECT_TO, os.O_RDWR)
             os.dup2(0, 1)
             os.dup2(0, 2)
@@ -340,7 +337,7 @@ def parse_uid(uid):
         try:
             return pwd.getpwnam(uid).pw_uid
         except (AttributeError, KeyError):
-            raise KeyError('User does not exist: %r' % (uid, ))
+            raise KeyError('User does not exist: {0}'.format(uid))
 
 
 def parse_gid(gid):
@@ -356,7 +353,7 @@ def parse_gid(gid):
         try:
             return grp.getgrnam(gid).gr_gid
         except (AttributeError, KeyError):
-            raise KeyError('Group does not exist: %r' % (gid, ))
+            raise KeyError('Group does not exist: {0}'.format(gid))
 
 
 def _setgroups_hack(groups):
@@ -372,7 +369,7 @@ def _setgroups_hack(groups):
             if len(groups) <= 1:
                 raise
             groups[:] = groups[:-1]
-        except OSError, exc:  # error from the OS.
+        except OSError as exc:  # error from the OS.
             if exc.errno != errno.EINVAL or len(groups) <= 1:
                 raise
             groups[:] = groups[:-1]
@@ -386,7 +383,7 @@ def setgroups(groups):
         pass
     try:
         return _setgroups_hack(groups[:max_groups])
-    except OSError, exc:
+    except OSError as exc:
         if exc.errno != errno.EPERM:
             raise
         if any(group not in groups for group in os.getgroups()):
@@ -573,8 +570,8 @@ def set_process_title(progname, info=None):
     Only works if :mod:`setproctitle` is installed.
 
     """
-    proctitle = '[%s]' % progname
-    proctitle = '%s %s' % (proctitle, info) if info else proctitle
+    proctitle = '[{0}]'.format(progname)
+    proctitle = '{0} {1}'.format(proctitle, info) if info else proctitle
     if _setproctitle:
         _setproctitle.setproctitle(proctitle)
     return proctitle
@@ -595,23 +592,19 @@ else:
         """
         if not rate_limit or _setps_bucket.can_consume(1):
             if hostname:
-                progname = '%s@%s' % (progname, hostname.split('.')[0])
+                progname = '{0}@{1}'.format(progname, hostname.split('.')[0])
             return set_process_title(
-                '%s:%s' % (progname, current_process().name), info=info)
+                '{0}:{1}'.format(progname, current_process().name), info=info)
 
 
-def shellsplit(s, posix=True):
-    # posix= option to shlex.split first available in Python 2.6+
-    lexer = shlex.shlex(s, posix=not IS_WINDOWS)
-    lexer.whitespace_split = True
-    lexer.commenters = ''
-    return list(lexer)
+def shellsplit(s):
+    return shlex.split(s, posix=not IS_WINDOWS)
 
 
 @contextmanager
 def ignore_EBADF():
     try:
         yield
-    except OSError, exc:
+    except OSError as exc:
         if exc.errno != errno.EBADF:
             raise

@@ -6,7 +6,7 @@
     Threading utilities.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import os
 import sys
@@ -15,38 +15,15 @@ import traceback
 
 from kombu.syn import detect_environment
 
-_Thread = threading.Thread
-_Event = threading._Event
-
-active_count = (getattr(threading, 'active_count', None) or
-                threading.activeCount)
-USE_PURE_LOCALS = os.environ.get("USE_PURE_LOCALS")
+USE_PURE_LOCALS = os.environ.get('USE_PURE_LOCALS')
 
 
-class Event(_Event):
-
-    if not hasattr(_Event, 'is_set'):     # pragma: no cover
-        is_set = _Event.isSet
-
-
-class Thread(_Thread):
-
-    if not hasattr(_Thread, 'is_alive'):  # pragma: no cover
-        is_alive = _Thread.isAlive
-
-    if not hasattr(_Thread, 'daemon'):    # pragma: no cover
-        daemon = property(_Thread.isDaemon, _Thread.setDaemon)
-
-    if not hasattr(_Thread, 'name'):      # pragma: no cover
-        name = property(_Thread.getName, _Thread.setName)
-
-
-class bgThread(Thread):
+class bgThread(threading.Thread):
 
     def __init__(self, name=None, **kwargs):
         super(bgThread, self).__init__()
-        self._is_shutdown = Event()
-        self._is_stopped = Event()
+        self._is_shutdown = threading.Event()
+        self._is_stopped = threading.Event()
         self.daemon = True
         self.name = name or self.__class__.__name__
 
@@ -54,7 +31,7 @@ class bgThread(Thread):
         raise NotImplementedError('subclass responsibility')
 
     def on_crash(self, msg, *fmt, **kwargs):
-        sys.stderr.write((msg + '\n') % fmt)
+        print(msg.format(*fmt), file=sys.stderr)
         exc_info = sys.exc_info()
         try:
             traceback.print_exception(exc_info[0], exc_info[1], exc_info[2],
@@ -69,9 +46,9 @@ class bgThread(Thread):
             while not shutdown_set():
                 try:
                     body()
-                except Exception, exc:
+                except Exception as exc:
                     try:
-                        self.on_crash('%r crashed: %r', self.name, exc)
+                        self.on_crash('{0!r} crashed: {1!r}', self.name, exc)
                         self._set_stopped()
                     finally:
                         os._exit(1)  # exiting by normal means won't work

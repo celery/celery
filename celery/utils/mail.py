@@ -8,17 +8,15 @@
 """
 from __future__ import absolute_import
 
-import sys
 import smtplib
 import traceback
 import warnings
 
 from email.mime.text import MIMEText
+from future_builtins import map
 
 from .functional import maybe_list
 from .imports import symbol_by_name
-
-supports_timeout = sys.version_info >= (2, 6)
 
 
 class SendmailWarning(UserWarning):
@@ -36,7 +34,7 @@ class Message(object):
         self.charset = charset
 
     def __repr__(self):
-        return '<Email: To:%r Subject:%r>' % (self.to, self.subject)
+        return '<Email: To:{0.to!r} Subject:{0.subject!r}>'.format(self)
 
     def __str__(self):
         msg = MIMEText(self.body, 'plain', self.charset)
@@ -47,7 +45,6 @@ class Message(object):
 
 
 class Mailer(object):
-    supports_timeout = supports_timeout
 
     def __init__(self, host='localhost', port=0, user=None, password=None,
             timeout=2, use_ssl=False, use_tls=False):
@@ -59,30 +56,21 @@ class Mailer(object):
         self.use_ssl = use_ssl
         self.use_tls = use_tls
 
-    def send(self, message, fail_silently=False):
+    def send(self, message, fail_silently=False, **kwargs):
         try:
-            if self.supports_timeout:
-                self._send(message, timeout=self.timeout)
-            else:
-                import socket
-                old_timeout = socket.getdefaulttimeout()
-                socket.setdefaulttimeout(self.timeout)
-                try:
-                    self._send(message)
-                finally:
-                    socket.setdefaulttimeout(old_timeout)
-        except Exception, exc:
+            self._send(message, **kwargs)
+        except Exception as exc:
             if not fail_silently:
                 raise
             warnings.warn(SendmailWarning(
-                'Mail could not be sent: %r %r\n%r' % (
+                'Mail could not be sent: {0!r} {1!r}\n{2!r}'.format(
                     exc, {'To': ', '.join(message.to),
                           'Subject': message.subject},
                     traceback.format_stack())))
 
     def _send(self, message, **kwargs):
         Client = smtplib.SMTP_SSL if self.use_ssl else smtplib.SMTP
-        client = Client(self.host, self.port, **kwargs)
+        client = Client(self.host, self.port, timeout=self.timeout, **kwargs)
 
         if self.use_tls:
             client.ehlo()
@@ -140,44 +128,40 @@ class ErrorMail(object):
 
     #: Format string used to generate error email subjects.
     subject = """\
-        [celery@%(hostname)s] Error: Task %(name)s (%(id)s): %(exc)s
+        [celery@{hostname}] Error: Task {name} ({id}): {exc!r}
     """
 
     #: Format string used to generate error email content.
     body = """
-Task %%(name)s with id %%(id)s raised exception:\n%%(exc)r
+Task {{name}} with id {{id}} raised exception:\n{{exc!r}}
 
 
-Task was called with args: %%(args)s kwargs: %%(kwargs)s.
+Task was called with args: {{args}} kwargs: {{kwargs}}.
 
 The contents of the full traceback was:
 
-%%(traceback)s
+{{traceback}}
 
-%(EMAIL_SIGNATURE_SEP)s
+{EMAIL_SIGNATURE_SEP}
 Just to let you know,
-py-celery at %%(hostname)s.
-""" % {'EMAIL_SIGNATURE_SEP': EMAIL_SIGNATURE_SEP}
-
-    error_whitelist = None
+py-celery at {{hostname}}.
+""".format(EMAIL_SIGNATURE_SEP=EMAIL_SIGNATURE_SEP)
 
     def __init__(self, task, **kwargs):
         self.task = task
         self.email_subject = kwargs.get('subject', self.subject)
         self.email_body = kwargs.get('body', self.body)
-        self.error_whitelist = getattr(task, 'error_whitelist')
 
     def should_send(self, context, exc):
         """Returns true or false depending on if a task error mail
         should be sent for this type of error."""
-        allow_classes = tuple(map(symbol_by_name,  self.error_whitelist))
-        return not self.error_whitelist or isinstance(exc, allow_classes)
+        return True
 
     def format_subject(self, context):
-        return self.subject.strip() % context
+        return self.subject.strip().format(**context)
 
     def format_body(self, context):
-        return self.body.strip() % context
+        return self.body.strip().format(**context)
 
     def send(self, context, exc, fail_silently=True):
         if self.should_send(context, exc):

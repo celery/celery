@@ -15,6 +15,8 @@ import shelve
 import sys
 import traceback
 
+from threading import Event, Thread
+
 from billiard import Process, ensure_multiprocessing
 from kombu.utils import reprcall
 from kombu.utils.functional import maybe_promise
@@ -27,7 +29,6 @@ from .app import app_or_default
 from .schedules import maybe_schedule, crontab
 from .utils import cached_property
 from .utils.imports import instantiate
-from .utils.threads import Event, Thread
 from .utils.timeutils import humanize_seconds
 from .utils.log import get_logger
 
@@ -118,9 +119,8 @@ class ScheduleEntry(object):
         return vars(self).iteritems()
 
     def __repr__(self):
-        return ('<Entry: %s %s {%s}' % (self.name,
-                    reprcall(self.task, self.args or (), self.kwargs or {}),
-                    self.schedule))
+        return '<Entry: {0.name} {call} {0.schedule}'.format(self,
+            call=reprcall(self.task, self.args or (), self.kwargs or {}))
 
 
 class Scheduler(object):
@@ -174,7 +174,7 @@ class Scheduler(object):
             info('Scheduler: Sending due task %s', entry.task)
             try:
                 result = self.apply_async(entry, publisher=publisher)
-            except Exception, exc:
+            except Exception as exc:
                 error('Message Error: %s\n%s',
                       exc, traceback.format_stack(), exc_info=True)
             else:
@@ -203,7 +203,7 @@ class Scheduler(object):
                 (time.time() - self._last_sync) > self.sync_every)
 
     def reserve(self, entry):
-        new_entry = self.schedule[entry.name] = entry.next()
+        new_entry = self.schedule[entry.name] = next(entry)
         return new_entry
 
     def apply_async(self, entry, publisher=None, **kwargs):
@@ -222,10 +222,10 @@ class Scheduler(object):
                 result = self.send_task(entry.task, entry.args, entry.kwargs,
                                         publisher=publisher,
                                         **entry.options)
-        except Exception, exc:
+        except Exception as exc:
             raise SchedulingError, SchedulingError(
-                "Couldn't apply scheduled task %s: %s" % (
-                    entry.name, exc)), sys.exc_info()[2]
+                "Couldn't apply scheduled task {0.name}: {exc}".format(
+                    entry, exc)), sys.exc_info()[2]
         finally:
             if self.should_sync():
                 self._do_sync()
@@ -324,7 +324,7 @@ class PersistentScheduler(Scheduler):
         for suffix in self.known_suffixes:
             try:
                 os.remove(self.schedule_filename + suffix)
-            except OSError, exc:
+            except OSError as exc:
                 if exc.errno != errno.ENOENT:
                     raise
 
@@ -333,7 +333,7 @@ class PersistentScheduler(Scheduler):
             self._store = self.persistence.open(self.schedule_filename,
                                                 writeback=True)
             entries = self._store.setdefault('entries', {})
-        except Exception, exc:
+        except Exception as exc:
             error('Removing corrupted schedule file %r: %r',
                   self.schedule_filename, exc, exc_info=True)
             self._remove_db()
@@ -369,7 +369,7 @@ class PersistentScheduler(Scheduler):
 
     @property
     def info(self):
-        return '    . db -> %s' % (self.schedule_filename, )
+        return '    . db -> {self.schedule_filename}'.format(self=self)
 
 
 class Service(object):
@@ -472,7 +472,7 @@ def EmbeddedService(*args, **kwargs):
     """Return embedded clock service.
 
     :keyword thread: Run threaded instead of as a separate process.
-        Default is :const:`False`.
+        Uses :mod:`multiprocessing` by default, if available.
 
     """
     if kwargs.pop('thread', False) or _Process is None:

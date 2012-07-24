@@ -25,8 +25,10 @@ from . import routes as _routes
 
 #: Human readable queue declaration.
 QUEUE_FORMAT = """
-. %(name)s exchange:%(exchange)s(%(exchange_type)s) binding:%(routing_key)s
+. {0.name:<16} exchange={0.exchange.name}({0.exchange.type}) \
+key={0.routing_key}
 """
+
 
 class Queues(dict):
     """Queue name⇒ declaration mapping.
@@ -101,12 +103,8 @@ class Queues(dict):
         active = self.consume_from
         if not active:
             return ''
-        info = [QUEUE_FORMAT.strip() % {
-                    'name': (name + ':').ljust(12),
-                    'exchange': q.exchange.name,
-                    'exchange_type': q.exchange.type,
-                    'routing_key': q.routing_key}
-                        for name, q in sorted(active.iteritems())]
+        info = [QUEUE_FORMAT.strip().format(q)
+                    for _, q in sorted(active.iteritems())]
         if indent_first:
             return textindent('\n'.join(info), indent)
         return info[0] + '\n' + textindent('\n'.join(info[1:]), indent)

@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 from datetime import datetime, timedelta
 from functools import wraps
@@ -111,7 +110,7 @@ def retry_task_customexc(arg1, arg2, kwarg=1, **kwargs):
     else:
         try:
             raise MyCustomException('Elaine Marie Benes')
-        except MyCustomException, exc:
+        except MyCustomException as exc:
             kwargs.update(kwarg=kwarg)
             raise current.retry(countdown=0, exc=exc)
 

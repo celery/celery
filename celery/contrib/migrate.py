@@ -6,12 +6,11 @@
     Migration tools.
 
 """
-from __future__ import absolute_import
-from __future__ import with_statement
+from __future__ import absolute_import, print_function
 
 import socket
 
-from functools import partial, wraps
+from functools import partial
 from itertools import cycle, islice
 
 from kombu import eventloop, Queue
@@ -21,6 +20,12 @@ from kombu.utils.encoding import ensure_bytes
 
 from celery.app import app_or_default
 from celery.utils import worker_direct
+
+
+MOVING_PROGRESS_FMT = """\
+Moving task {state.filtered}/{state.strtotal}: \
+{body[task]}[{body[id]}]\
+"""
 
 
 class StopFiltering(Exception):
@@ -40,8 +45,8 @@ class State(object):
 
     def __repr__(self):
         if self.filtered:
-            return '^%s' % self.filtered
-        return '%s/%s' % (self.count, self.strtotal)
+            return '^{0.filtered}'.format(self)
+        return '{0.count}/{0.strtotal}'.format(self)
 
 
 def republish(producer, message, exchange=None, routing_key=None,
@@ -177,7 +182,7 @@ def move(predicate, connection=None, exchange=None, routing_key=None,
     """
     app = app_or_default(app)
     queues = [_maybe_queue(app, queue) for queue in source or []] or None
-    with app.default_connection(connection, pool=False) as conn:
+    with app.connection_or_acquire(connection, pool=False) as conn:
         producer = app.amqp.TaskProducer(conn)
         state = State()
 
@@ -345,12 +350,11 @@ def move_by_taskmap(map, **kwargs):
     return move(task_name_in_map, **kwargs)
 
 
+def filter_status(state, body, message, **kwargs):
+    print(MOVING_PROGRESS_FMT.format(state=state, body=body, **kwargs))
+
+
 move_direct = partial(move, transform=worker_direct)
 move_direct_by_id = partial(move_task_by_id, transform=worker_direct)
 move_direct_by_idmap = partial(move_by_idmap, transform=worker_direct)
 move_direct_by_taskmap = partial(move_by_taskmap, transform=worker_direct)
-
-
-def filter_status(state, body, message):
-    print('Moving task %s/%s: %s[%s]' % (
-            state.filtered, state.strtotal, body['task'], body['id']))

@@ -671,7 +671,7 @@ Also, a common pattern is to add callbacks to tasks:
 
     @celery.task(ignore_result=True)
     def log_result(result):
-        logger.info("log_result got: %r" % (result, ))
+        logger.info("log_result got: %r", result)
 
 Invocation::
 

@@ -20,13 +20,13 @@ from .defaults import find
 
 #: Format used to generate bugreport information.
 BUGREPORT_INFO = """
-software -> celery:%(celery_v)s kombu:%(kombu_v)s py:%(py_v)s
-            billiard:%(billiard_v)s %(driver_v)s
-platform -> system:%(system)s arch:%(arch)s imp:%(py_i)s
-loader   -> %(loader)s
-settings -> transport:%(transport)s results:%(results)s
+software -> celery:{celery_v} kombu:{kombu_v} py:{py_v}
+            billiard:{billiard_v} {driver_v}
+platform -> system:{system} arch:{arch} imp:{py_i}
+loader   -> {loader}
+settings -> transport:{transport} results:{results}
 
-%(human_settings)s
+{human_settings}
 """
 
 
@@ -85,12 +85,12 @@ class Settings(datastructures.ConfigurationView):
             False
 
         """
-        return self['_'.join(filter(None, parts))]
+        return self['_'.join(part for part in parts if part)]
 
     def humanize(self):
         """Returns a human readable string showing changes to the
         configuration."""
-        return '\n'.join('%s %s' % (key + ':', pretty(value, width=50))
+        return '\n'.join('{0}: {1}'.format(key, pretty(value, width=50))
                         for key, value in self.without_defaults().iteritems())
 
 
@@ -132,21 +132,21 @@ def bugreport(app):
 
     try:
         trans = app.connection().transport
-        driver_v = '%s:%s' % (trans.driver_name, trans.driver_version())
+        driver_v = '{0}:{1}'.format(trans.driver_name, trans.driver_version())
     except Exception:
         driver_v = ''
 
-    return BUGREPORT_INFO % {
-        'system': _platform.system(),
-        'arch': ', '.join(filter(None, _platform.architecture())),
-        'py_i': platforms.pyimplementation(),
-        'celery_v': celery.VERSION_BANNER,
-        'kombu_v': kombu.__version__,
-        'billiard_v': billiard.__version__,
-        'py_v': _platform.python_version(),
-        'driver_v': driver_v,
-        'transport': app.conf.BROKER_TRANSPORT or 'amqp',
-        'results': app.conf.CELERY_RESULT_BACKEND or 'disabled',
-        'human_settings': app.conf.humanize(),
-        'loader': qualname(app.loader.__class__),
-    }
+    return BUGREPORT_INFO.format(
+        system=_platform.system(),
+        arch=', '.join(x for x in _platform.architecture() if x),
+        py_i=platforms.pyimplementation(),
+        celery_v=celery.VERSION_BANNER,
+        kombu_v=kombu.__version__,
+        billiard_v=billiard.__version__,
+        py_v=_platform.python_version(),
+        driver_v=driver_v,
+        transport=app.conf.BROKER_TRANSPORT or 'amqp',
+        results=app.conf.CELERY_RESULT_BACKEND or 'disabled',
+        human_settings=app.conf.humanize(),
+        loader=qualname(app.loader.__class__),
+    )

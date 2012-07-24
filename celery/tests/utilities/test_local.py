@@ -1,12 +1,6 @@
 from __future__ import absolute_import
-from __future__ import with_statement
-
-import sys
-
-from nose import SkipTest
 
 from celery.local import Proxy, PromiseProxy, maybe_evaluate, try_import
-
 from celery.tests.utils import Case
 
 
@@ -75,8 +69,6 @@ class test_Proxy(Case):
         self.assertEqual(unicode(x), 'REPR')
 
     def test_dir(self):
-        if sys.version_info < (2, 6):
-            raise SkipTest('Not relevant for Py2.5')
 
         class X(object):
 
@@ -94,8 +86,6 @@ class test_Proxy(Case):
         self.assertListEqual(dir(y), [])
 
     def test_getsetdel_attr(self):
-        if sys.version_info < (2, 6):
-            raise SkipTest('Not relevant for Py2.5')
 
         class X(object):
             a = 1

@@ -30,7 +30,7 @@ Example connecting to the :signal:`task_sent` signal:
     @task_sent.connect
     def task_sent_handler(sender=None, task_id=None, task=None, args=None,
                           kwargs=None, \*\*kwds):
-        print('Got signal task_sent for task id %s' % (task_id, ))
+        print('Got signal task_sent for task id {0}'.format(task_id))
 
 
 Some signals also have a sender which you can filter by. For example the
@@ -44,7 +44,7 @@ has been sent by providing the `sender` argument to
     @task_sent.connect(task_sent_handler, sender='tasks.add')
     def task_sent_handler(sender=None, task_id=None, task=None, args=None,
                           kwargs=None, \*\*kwds):
-        print('Got signal task_sent for task id %s' % (task_id, ))
+        print('Got signal task_sent for task id {0}'.format(task_id)
 
 .. _signal-ref:
 
@@ -225,7 +225,7 @@ used to route a task to any specific worker:
 
     @celeryd_after_setup.connect
     def setup_direct_queue(sender, instance, **kwargs):
-        queue_name = '%s.dq' % sender   # sender is the hostname of the worker
+        queue_name = '{0}.dq'.format(sender)  # sender is the hostname of the worker
         instance.app.queues.select_add(queue_name)
 
 Provides arguments:

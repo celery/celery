@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import os
 
@@ -306,7 +305,6 @@ class test_App(Case):
     def test_config_from_cmdline(self):
         cmdline = ['.always_eager=no',
                    '.result_backend=/dev/null',
-                   '.task_error_whitelist=(list)["a", "b", "c"]',
                    'celeryd.prefetch_multiplier=368',
                    '.foobarstring=(string)300',
                    '.foobarint=(int)300',
@@ -315,8 +313,6 @@ class test_App(Case):
         self.assertFalse(self.app.conf.CELERY_ALWAYS_EAGER)
         self.assertEqual(self.app.conf.CELERY_RESULT_BACKEND, '/dev/null')
         self.assertEqual(self.app.conf.CELERYD_PREFETCH_MULTIPLIER, 368)
-        self.assertListEqual(self.app.conf.CELERY_TASK_ERROR_WHITELIST,
-                             ['a', 'b', 'c'])
         self.assertEqual(self.app.conf.CELERY_FOOBARSTRING, '300')
         self.assertEqual(self.app.conf.CELERY_FOOBARINT, 300)
         self.assertDictEqual(self.app.conf.CELERY_RESULT_ENGINE_OPTIONS,

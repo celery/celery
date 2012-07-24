@@ -34,13 +34,14 @@ Inspired by http://snippets.dzone.com/posts/show/7248
     base port.  The selected port will be logged by the worker.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import errno
 import os
 import socket
 import sys
 
+from future_builtins import map
 from pdb import Pdb
 
 from billiard import current_process
@@ -54,6 +55,23 @@ CELERY_RDB_PORT = int(os.environ.get('CELERY_RDB_PORT') or default_port)
 _current = [None]
 
 _frame = getattr(sys, '_getframe')
+
+NO_AVAILABLE_PORT = """\
+{self.ident}: Couldn't find an available port.
+
+Please specify one using the CELERY_RDB_PORT environment variable.
+"""
+
+BANNER = """\
+{self.ident}: Please telnet into {self.host} {self.port}.
+
+Type `exit` in session to continue.
+
+{self.ident}: Waiting for client...
+"""
+
+SESSION_STARTED = '{self.ident}: Now in session with {self.remote_addr}.'
+SESSION_ENDED = '{self.ident}: Session with {self.remote_addr} ended.'
 
 
 class Rdb(Pdb):
@@ -71,15 +89,14 @@ class Rdb(Pdb):
         self._sock, this_port = self.get_avail_port(host, port,
             port_search_limit, port_skew)
         self._sock.listen(1)
-        me = '%s:%s' % (self.me, this_port)
-        context = self.context = {'me': me, 'host': host, 'port': this_port}
-        self.say('%(me)s: Please telnet %(host)s %(port)s.'
-                 '  Type `exit` in session to continue.' % context)
-        self.say('%(me)s: Waiting for client...' % context)
+        self.ident = '{0}:{1}'.format(self.me, this_port)
+        self.host = host
+        self.port = this_port
+        self.say(BANNER.format(self=self))
 
         self._client, address = self._sock.accept()
-        context['remote_addr'] = ':'.join(map(str, address))
-        self.say('%(me)s: In session with %(remote_addr)s' % context)
+        self.remote_addr = ':'.join(map(str, address))
+        self.say(SESSION_STARTED.format(self=self))
         self._handle = sys.stdin = sys.stdout = self._client.makefile('rw')
         Pdb.__init__(self, completekey='tab',
                            stdin=self._handle, stdout=self._handle)
@@ -96,19 +113,17 @@ class Rdb(Pdb):
             this_port = port + skew + i
             try:
                 _sock.bind((host, this_port))
-            except socket.error, exc:
+            except socket.error as exc:
                 if exc.errno in [errno.EADDRINUSE, errno.EINVAL]:
                     continue
                 raise
             else:
                 return _sock, this_port
         else:
-            raise Exception(
-                '%s: Could not find available port. Please set using '
-                'environment variable CELERY_RDB_PORT' % (self.me, ))
+            raise Exception(NO_AVAILABLE_PORT.format(self=self))
 
     def say(self, m):
-        self.out.write(m + '\n')
+        print(m, file=self.out)
 
     def _close_session(self):
         self.stdin, self.stdout = sys.stdin, sys.stdout = self._prev_handles
@@ -116,7 +131,7 @@ class Rdb(Pdb):
         self._client.close()
         self._sock.close()
         self.active = False
-        self.say('%(me)s: Session %(remote_addr)s ended.' % self.context)
+        self.say(SESSION_ENDED.format(self=self))
 
     def do_continue(self, arg):
         self._close_session()
@@ -135,7 +150,7 @@ class Rdb(Pdb):
             frame = _frame().f_back
         try:
             Pdb.set_trace(self, frame)
-        except socket.error, exc:
+        except socket.error as exc:
             # connection reset by peer.
             if exc.errno != errno.ECONNRESET:
                 raise

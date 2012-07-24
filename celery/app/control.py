@@ -8,7 +8,6 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 from kombu.pidbox import Mailbox
 from kombu.utils import cached_property
@@ -84,6 +83,7 @@ class Inspect(object):
     def conf(self):
         return self._request('dump_conf')
 
+
 class Control(object):
     Mailbox = Mailbox
 
@@ -104,7 +104,7 @@ class Control(object):
         :returns: the number of tasks discarded.
 
         """
-        with self.app.default_connection(connection) as conn:
+        with self.app.connection_or_acquire(connection) as conn:
             return self.app.amqp.TaskConsumer(conn).purge()
     discard_all = purge
 
@@ -254,7 +254,7 @@ class Control(object):
             received.
 
         """
-        with self.app.default_connection(connection) as conn:
+        with self.app.connection_or_acquire(connection) as conn:
             arguments = dict(arguments or {}, **extra_kwargs)
             return self.mailbox(conn)._broadcast(command, arguments,
                                                  destination, reply, timeout,

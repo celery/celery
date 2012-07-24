@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import errno
 import signal
@@ -188,7 +187,7 @@ class test_MultiTool(Case):
         pipe.wait.return_value = 2
         self.assertEqual(self.t.waitexec(['-m', 'foo'], 'path'), 2)
         self.t.note.assert_called_with(
-                '* Child terminated with failure code 2')
+                '* Child terminated with errorcode 2')
 
         pipe.wait.return_value = 0
         self.assertFalse(self.t.waitexec(['-m', 'foo', 'path']))

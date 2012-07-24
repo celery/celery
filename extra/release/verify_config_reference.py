@@ -1,12 +1,12 @@
+from __future__ import print_function
+
 from fileinput import input
 from sys import exit, stderr
 
 from celery.app.defaults import NAMESPACES, flatten
 
 ignore = frozenset([
-    "BROKER_INSIST",
     "CELERYD_POOL_PUTLOCKS",
-    "CELERY_AMQP_TASK_RESULT_CONNECTION_MAX",
     "BROKER_HOST",
     "BROKER_USER",
     "BROKER_PASSWORD",
@@ -37,8 +37,8 @@ if __name__ == "__main__":
     sep = """\n  * """
     missing = find_undocumented_settings()
     if missing:
-        stderr.write("Error: found undocumented settings:%s%s\n" % (
-                        sep, sep.join(sorted(missing))))
+        print("Error: found undocumented settings:{0}{1}".format(
+                sep, sep.join(sorted(missing))), file=sys.stderr)
         exit(1)
     print("OK: Configuration reference complete :-)")
     exit(0)

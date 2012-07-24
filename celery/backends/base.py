@@ -19,6 +19,7 @@ import time
 import sys
 
 from datetime import timedelta
+from future_builtins import map
 
 from kombu import serialization
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
@@ -140,8 +141,7 @@ class BaseBackend(object):
         return result
 
     def forget(self, task_id):
-        raise NotImplementedError('%s does not implement forget.' % (
-                    self.__class__))
+        raise NotImplementedError('backend does not implement forget.')
 
     def wait_for(self, task_id, timeout=None, propagate=True, interval=0.5):
         """Wait for task and return its result.
@@ -259,8 +259,7 @@ class BaseDictBackend(BaseBackend):
         self._forget(task_id)
 
     def _forget(self, task_id):
-        raise NotImplementedError('%s does not implement forget.' % (
-                    self.__class__))
+        raise NotImplementedError('backend does not implement forget.')
 
     def get_status(self, task_id):
         """Get the status of a task."""
@@ -411,7 +410,7 @@ class KeyValueStoreBackend(BaseDictBackend):
             for key, value in r.iteritems():
                 yield bytes_to_str(key), value
             if timeout and iterations * interval >= timeout:
-                raise TimeoutError('Operation timed out (%s)' % (timeout, ))
+                raise TimeoutError('Operation timed out ({0})'.format(timeout))
             time.sleep(interval)  # don't busy loop.
             iterations += 0
 

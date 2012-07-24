@@ -8,6 +8,7 @@
 """
 from __future__ import absolute_import
 
+from future_builtins import map
 from datetime import datetime
 
 from kombu.utils.encoding import safe_repr
@@ -43,12 +44,12 @@ def revoke(panel, task_id, terminate=False, signal=None, **kwargs):
         signum = _signals.signum(signal or 'TERM')
         for request in state.active_requests:
             if request.id == task_id:
-                action = 'terminated (%s)' % (signum, )
+                action = 'terminated ({0})'.format(signum)
                 request.terminate(panel.consumer.pool, signal=signum)
                 break
 
     logger.info('Task %s %s.', task_id, action)
-    return {'ok': 'task %s %s' % (task_id, action)}
+    return {'ok': 'task {0} {1}'.format(task_id, action)}
 
 
 @Panel.register
@@ -98,8 +99,8 @@ def rate_limit(panel, task_name, rate_limit, **kwargs):
 
     try:
         timeutils.rate(rate_limit)
-    except ValueError, exc:
-        return {'error': 'Invalid rate limit string: %s' % exc}
+    except ValueError as exc:
+        return {'error': 'Invalid rate limit string: {0!r}'.format(exc)}
 
     try:
         panel.app.tasks[task_name].rate_limit = rate_limit
@@ -145,24 +146,16 @@ def dump_schedule(panel, safe=False, **kwargs):
     from celery.worker.job import Request
     schedule = panel.consumer.timer.schedule
     if not schedule.queue:
-        logger.debug('--Empty schedule--')
         return []
 
-    formatitem = lambda (i, item): '%s. %s pri%s %r' % (i,
-            datetime.utcfromtimestamp(item['eta']),
-            item['priority'],
-            item['item'])
-    info = map(formatitem, enumerate(schedule.info()))
-    logger.debug('* Dump of current schedule:\n%s', '\n'.join(info))
-    scheduled_tasks = []
-    for info in schedule.info():
-        item = info['item']
-        if item.args and isinstance(item.args[0], Request):
-            scheduled_tasks.append({'eta': info['eta'],
-                                    'priority': info['priority'],
-                                    'request':
-                                        item.args[0].info(safe=safe)})
-    return scheduled_tasks
+    def prepare_entries():
+        for entry in schedule.info():
+            item = entry['item']
+            if item.args and isinstance(item.args[0], Request):
+                yield {'eta': entry['eta'],
+                       'priority': entry['priority'],
+                       'request': item.args[0].info(safe=safe)}
+    return list(prepare_entries())
 
 
 @Panel.register
@@ -209,16 +202,12 @@ def dump_tasks(panel, taskinfoitems=None, **kwargs):
         fields = dict((field, str(getattr(task, field, None)))
                         for field in taskinfoitems
                             if getattr(task, field, None) is not None)
-        info = map('='.join, fields.items())
-        if not info:
-            return task.name
-        return '%s [%s]' % (task.name, ' '.join(info))
+        if fields:
+            info = map('='.join, fields.iteritems())
+            return '{0} [{1}]'.format(task.name, ' '.join(info))
+        return task.name
 
-    info = map(_extract_info, (tasks[task]
-                                    for task in sorted(tasks.keys())))
-    logger.debug('* Dump of currently registered tasks:\n%s', '\n'.join(info))
-
-    return info
+    return [_extract_info(tasks[task]) for task in sorted(tasks)]
 
 
 @Panel.register
@@ -255,7 +244,7 @@ def autoscale(panel, max=None, min=None):
     autoscaler = panel.consumer.controller.autoscaler
     if autoscaler:
         max_, min_ = autoscaler.update(max, min)
-        return {'ok': 'autoscale now min=%r max=%r' % (max_, min_)}
+        return {'ok': 'autoscale now min={0} max={1}'.format(max_, min_)}
     raise ValueError('Autoscale not enabled')
 
 
@@ -270,13 +259,13 @@ def add_consumer(panel, queue, exchange=None, exchange_type=None,
         routing_key=None, **options):
     panel.consumer.add_task_queue(queue, exchange, exchange_type,
                                   routing_key, **options)
-    return {'ok': 'add consumer %r' % (queue, )}
+    return {'ok': 'add consumer {0}'.format(queue)}
 
 
 @Panel.register
 def cancel_consumer(panel, queue=None, **_):
     panel.consumer.cancel_task_queue(queue)
-    return {'ok': 'no longer consuming from %s' % (queue, )}
+    return {'ok': 'no longer consuming from {0}'.format(queue)}
 
 
 @Panel.register

@@ -7,7 +7,6 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 from celery import current_app
 from celery import states
@@ -68,7 +67,7 @@ class Context(object):
             return default
 
     def __repr__(self):
-        return '<Context: %r>' % (vars(self, ))
+        return '<Context: {0!r}>'.format(vars(self))
 
     @property
     def children(self):
@@ -121,9 +120,8 @@ class TaskType(type):
         return instance.__class__
 
     def __repr__(cls):
-        if cls._app:
-            return '<class %s of %s>' % (cls.__name__, cls._app, )
-        return '<unbound %s>' % (cls.__name__, )
+        return ('<class {0.__name__} of {0._app}>' if cls._app
+           else '<unbound {0.__name__}>').format(cls)
 
 
 class Task(object):
@@ -456,7 +454,7 @@ class Task(object):
 
         if connection:
             producer = app.amqp.TaskProducer(connection)
-        with app.default_producer(producer) as P:
+        with app.producer_or_acquire(producer) as P:
             evd = None
             if conf.CELERY_SEND_TASK_SENT_EVENT:
                 evd = app.events.Dispatcher(channel=P.channel,
@@ -513,7 +511,7 @@ class Task(object):
             ...     twitter = Twitter(oauth=auth)
             ...     try:
             ...         twitter.post_status_update(message)
-            ...     except twitter.FailWhale, exc:
+            ...     except twitter.FailWhale as exc:
             ...         # Retry in 5 minutes.
             ...         raise tweet.retry(countdown=60 * 5, exc=exc)
 
@@ -550,7 +548,7 @@ class Task(object):
             if exc:
                 maybe_reraise()
             raise self.MaxRetriesExceededError(
-                    """Can't retry %s[%s] args:%s kwargs:%s""" % (
+                    "Can't retry {0}[{1}] args:{2} kwargs:{3}".format(
                         self.name, options['task_id'], args, kwargs))
 
         # If task was executed eagerly using apply(),
@@ -768,7 +766,7 @@ class Task(object):
 
     def __repr__(self):
         """`repr(task)`"""
-        return '<@task: %s>' % (self.name, )
+        return '<@task: {0.name}>'.format(self)
 
     @property
     def request(self):

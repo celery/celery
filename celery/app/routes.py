@@ -64,7 +64,7 @@ class Router(object):
             except KeyError:
                 if not self.create_missing:
                     raise QueueNotFound(
-                        'Queue %r is not defined in CELERY_QUEUES' % queue)
+                        'Queue {0!r} missing from CELERY_QUEUES'.format(queue))
                 for key in 'exchange', 'routing_key':
                     if route.get(key) is None:
                         route[key] = queue
@@ -92,4 +92,4 @@ def prepare(routes):
         return ()
     if not isinstance(routes, (list, tuple)):
         routes = (routes, )
-    return map(expand_route, routes)
+    return [expand_route(route) for route in routes]

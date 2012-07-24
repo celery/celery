@@ -13,7 +13,7 @@ from billiard.exceptions import (  # noqa
 )
 
 UNREGISTERED_FMT = """\
-Task of kind %s is not registered, please make sure it's imported.\
+Task of kind {0} is not registered, please make sure it's imported.\
 """
 
 
@@ -41,7 +41,7 @@ class NotRegistered(KeyError):
     """The task is not registered."""
 
     def __repr__(self):
-        return UNREGISTERED_FMT % str(self)
+        return UNREGISTERED_FMT.format(self)
 
 
 class AlreadyRegistered(Exception):
@@ -71,15 +71,15 @@ class RetryTaskError(Exception):
 
     def humanize(self):
         if isinstance(self.when, int):
-            return 'in %ss' % self.when
-        return 'at %s' % (self.when, )
+            return 'in {0.when}s'.format(self)
+        return 'at {0.when}'.format(self)
 
     def __str__(self):
         if self.message:
             return self.message
         if self.excs:
-            return 'Retry %s: %r' % (self.humanize(), self.excs)
-        return 'Retry %s' % self.humanize()
+            return 'Retry {0}: {1!r}'.format(self.humanize(), self.excs)
+        return 'Retry {0}'.format(self.humanize())
 
     def __reduce__(self):
         return self.__class__, (self.message, self.excs, self.when)

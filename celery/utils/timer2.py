@@ -7,7 +7,6 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import atexit
 import heapq
@@ -15,6 +14,7 @@ import os
 import sys
 
 from functools import wraps
+from future_builtins import map
 from itertools import count
 from threading import Condition, Event, Lock, Thread
 from time import time, sleep, mktime
@@ -51,14 +51,13 @@ class Entry(object):
         self.tref.cancelled = True
 
     def __repr__(self):
-        return '<TimerEntry: %s(*%r, **%r)' % (
+        return '<TimerEntry: {0}(*{1!r}, **{2!r})'.format(
                 self.fun.__name__, self.args, self.kwargs)
 
     if sys.version_info[0] == 3:  # pragma: no cover
 
         def __hash__(self):
-            return hash('|'.join(map(repr, (self.fun, self.args,
-                                            self.kwargs))))
+            return hash('{0.fun!r}|{0.args!r}|{0.kwargs!r}'.format(self))
 
         def __lt__(self, other):
             return hash(self) < hash(other)
@@ -90,7 +89,7 @@ class Schedule(object):
     def apply_entry(self, entry):
         try:
             entry()
-        except Exception, exc:
+        except Exception as exc:
             if not self.handle_error(exc):
                 logger.error('Error in timer: %r', exc, exc_info=True)
 
@@ -115,7 +114,7 @@ class Schedule(object):
         if isinstance(eta, datetime):
             try:
                 eta = to_timestamp(eta)
-            except OverflowError, exc:
+            except OverflowError as exc:
                 if not self.handle_error(exc):
                     raise
                 return
@@ -207,7 +206,7 @@ class Schedule(object):
     @property
     def queue(self):
         events = list(self._queue)
-        return map(heapq.heappop, [events] * len(events))
+        return [heapq.heappop(x) for x in [events] * len(events)]
 
 
 class Timer(Thread):
@@ -236,12 +235,12 @@ class Timer(Thread):
         self._is_stopped = Event()
         self.mutex = Lock()
         self.not_empty = Condition(self.mutex)
-        self.setDaemon(True)
-        self.setName('Timer-%s' % (self._timer_count(), ))
+        self.daemon = True
+        self.name = 'Timer-{0}'.format(self._timer_count())
 
     def _next_entry(self):
         with self.not_empty:
-            delay, entry = self.scheduler.next()
+            delay, entry = next(self.scheduler)
             if entry is None:
                 if delay is None:
                     self.not_empty.wait(1.0)
@@ -268,7 +267,7 @@ class Timer(Thread):
                 # we lost the race at interpreter shutdown,
                 # so gc collected built-in modules.
                 pass
-        except Exception, exc:
+        except Exception as exc:
             logger.error('Thread Timer crashed: %r', exc, exc_info=True)
             os._exit(1)
 
