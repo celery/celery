@@ -19,8 +19,12 @@ from celery import states
 from celery.app import app_or_default
 from celery.concurrency.base import BasePool
 from celery.datastructures import ExceptionInfo
-from celery.exceptions import (RetryTaskError,
-                               WorkerLostError, InvalidTaskError)
+from celery.exceptions import (
+    RetryTaskError,
+    WorkerLostError,
+    InvalidTaskError,
+    TaskRevokedError,
+)
 from celery.task.trace import (
     trace_task,
     trace_task_ret,
@@ -417,7 +421,8 @@ class test_TaskRequest(Case):
     def test_execute_using_pool_does_not_execute_revoked(self):
         tw = TaskRequest(mytask.name, uuid(), [1], {'f': 'x'})
         revoked.add(tw.id)
-        tw.execute_using_pool(None)
+        with self.assertRaises(TaskRevokedError):
+            tw.execute_using_pool(None)
 
     def test_on_accepted_acks_early(self):
         tw = TaskRequest(mytask.name, uuid(), [1], {'f': 'x'})
