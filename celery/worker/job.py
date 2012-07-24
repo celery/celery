@@ -23,6 +23,7 @@ from celery import exceptions
 from celery import signals
 from celery.app import app_or_default
 from celery.datastructures import ExceptionInfo
+from celery.exceptions import TaskRevokedError
 from celery.platforms import signals as _signals
 from celery.task.trace import (
     trace_task,
@@ -170,10 +171,13 @@ class Request(object):
 
         :param pool: A :class:`celery.concurrency.base.TaskPool` instance.
 
+        :raises celery.exceptions.TaskRevokedError: if the task was revoked
+            and ignored.
+
         """
         task = self.task
         if self.revoked():
-            return
+            raise TaskRevokedError(self.id)
 
         hostname = self.hostname
         kwargs = self.kwargs

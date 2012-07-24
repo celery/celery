@@ -66,9 +66,6 @@ class Mediator(bgThread):
         except Empty:
             return
 
-        if task.revoked():
-            return
-
         if self._does_debug:
             logger.debug('Mediator: Running callback for task: %s[%s]',
                          task.name, task.id)
