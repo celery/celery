@@ -153,6 +153,41 @@ You can specify a single, or a list of workers by using the
 
 .. _monitoring-django-admin:
 
+Celery Flower: Web interface
+----------------------------
+
+Celery Flower is a web based, real-time monitor and administration tool.
+
+Features
+~~~~~~~~
+
+* Workers monitoring and management
+* Configuration viewer
+* Worker pool control
+* Broker options viewer
+* Queues management
+* Tasks execution statistics
+* Task viewer
+
+*Screenshot*
+
+.. figure:: https://github.com/mher/flower/raw/master/docs/screenshots/dashborad.png
+
+More screenshots_:
+
+.. _screenshots: https://github.com/mher/flower/tree/master/docs/screenshots
+
+Usage
+~~~~~
+
+Install Celery Flower: ::
+
+    $ pip flower
+
+Launch Celery Flower and open http://localhost:8008 in browser: ::
+
+    $ celery flower
+
 Django Admin Monitor
 --------------------
 
