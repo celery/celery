@@ -182,7 +182,7 @@ Usage
 
 Install Celery Flower: ::
 
-    $ pip flower
+    $ pip install flower
 
 Launch Celery Flower and open http://localhost:8008 in browser: ::
 
