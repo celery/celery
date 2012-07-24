@@ -112,21 +112,3 @@ class test_Mediator(Case):
         m.run()
         self.assertTrue(m._is_shutdown.isSet())
         self.assertTrue(m._is_stopped.isSet())
-
-    def test_mediator_body_revoked(self):
-        ready_queue = Queue()
-        got = {}
-
-        def mycallback(value):
-            got['value'] = value.value
-
-        m = Mediator(ready_queue, mycallback)
-        t = MockTask('Jerry Seinfeld')
-        t.id = uuid()
-        revoked_tasks.add(t.id)
-        ready_queue.put(t)
-
-        m.body()
-
-        self.assertNotIn('value', got)
-        self.assertTrue(t.on_ack.call_count)
