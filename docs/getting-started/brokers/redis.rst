@@ -32,7 +32,10 @@ your Redis database::
 
 Where the URL is in the format of::
 
-    redis://userid:password@hostname:port/db_number
+    redis://:password@hostname:port/db_number
+
+all fields after the scheme are optional, and will default to localhost on port 6379,
+using database 0.
 
 .. _redis-results-configuration:
 
