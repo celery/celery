@@ -75,7 +75,7 @@ def add_unlock_chord_task(app):
     def unlock_chord(group_id, callback, interval=None, propagate=False,
             max_retries=None, result=None):
         if interval is None:
-            interval = self.default_retry_delay
+            interval = unlock_chord.default_retry_delay
         result = _res.GroupResult(group_id, map(_res.AsyncResult, result))
         j = result.join_native if result.supports_native_join else result.join
         if result.ready():

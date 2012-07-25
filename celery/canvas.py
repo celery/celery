@@ -76,7 +76,7 @@ class Signature(dict):
     def from_dict(self, d):
         typ = d.get('subtask_type')
         if typ:
-            return self.TYPES[typ].from_dict(d)
+            return self.TYPES[typ].from_dict(kwdict(d))
         return Signature(d)
 
     def __init__(self, task=None, args=None, kwargs=None, options=None,
@@ -330,19 +330,22 @@ Signature.register_type(group)
 class chord(Signature):
     Chord = Chord
 
-    def __init__(self, header, body=None, **options):
-        kwargs = options.get('kwargs') or {}
-        Signature.__init__(self, 'celery.chord', (),
-                         dict(kwargs, header=_maybe_group(header),
-                                      body=maybe_subtask(body)), **options)
+    def __init__(self, header, body=None, task='celery.chord',
+            args=(), kwargs={}, **options):
+        Signature.__init__(self, task, args, dict(kwargs,
+            header=_maybe_group(header), body=maybe_subtask(body)), **options)
         self.subtask_type = 'chord'
 
     @classmethod
     def from_dict(self, d):
-        kwargs = d['kwargs']
-        header = kwargs.pop('header')
-        body = kwargs.pop('body', None)
-        return chord(header, body, **kwdict(d))
+        args, d['kwargs'] = self._unpack_args(**kwdict(d['kwargs']))
+        return self(*args, **kwdict(d))
+
+    @staticmethod
+    def _unpack_args(header=None, body=None, **kwargs):
+        # Python signatures are better at extracting keys from dicts
+        # than manually popping things off.
+        return (header, body), kwargs
 
     def __call__(self, body=None, **kwargs):
         _chord = self.Chord
