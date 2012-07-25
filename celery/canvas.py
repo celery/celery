@@ -331,24 +331,26 @@ class chord(Signature):
     Chord = Chord
 
     def __init__(self, header, body=None, **options):
+        kwargs = options.get('kwargs') or {}
         Signature.__init__(self, 'celery.chord', (),
-                         {'header': _maybe_group(header),
-                          'body': maybe_subtask(body)}, **options)
+                         dict(kwargs, header=_maybe_group(header),
+                                      body=maybe_subtask(body)), **options)
         self.subtask_type = 'chord'
 
     @classmethod
     def from_dict(self, d):
         kwargs = d['kwargs']
-        return chord(kwargs['header'], kwargs.get('body'),
-                     **kwdict(d['options']))
+        header = kwargs.pop('header')
+        body = kwargs.pop('body', None)
+        return chord(header, body, **kwdict(d))
 
-    def __call__(self, body=None, **options):
+    def __call__(self, body=None, **kwargs):
         _chord = self.Chord
         body = self.kwargs['body'] = body or self.kwargs['body']
         if _chord.app.conf.CELERY_ALWAYS_EAGER:
-            return self.apply((), {}, **options)
+            return self.apply((), kwargs)
         callback_id = body.options.setdefault('task_id', uuid())
-        _chord(**self.kwargs)
+        _chord(**dict(self.kwargs, **kwargs))
         return _chord.AsyncResult(callback_id)
 
     def clone(self, *args, **kwargs):

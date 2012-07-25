@@ -70,9 +70,12 @@ def add_unlock_chord_task(app):
     from celery.canvas import subtask
     from celery import result as _res
 
-    @app.task(name='celery.chord_unlock', max_retries=None)
-    def unlock_chord(group_id, callback, interval=1, propagate=False,
+    @app.task(name='celery.chord_unlock', max_retries=None,
+              default_retry_delay=1)
+    def unlock_chord(group_id, callback, interval=None, propagate=False,
             max_retries=None, result=None):
+        if interval is None:
+            interval = self.default_retry_delay
         result = _res.GroupResult(group_id, map(_res.AsyncResult, result))
         j = result.join_native if result.supports_native_join else result.join
         if result.ready():
@@ -308,15 +311,17 @@ def add_chord_task(app):
                 return self.apply(args, kwargs, **options)
             group_id = options.pop('group_id', None)
             chord = options.pop('chord', None)
-            header, body = (list(maybe_subtask(kwargs['header'])),
-                            maybe_subtask(kwargs['body']))
+            header = kwargs.pop('header')
+            body = kwargs.pop('body')
+            header, body = (list(maybe_subtask(header)),
+                            maybe_subtask(body))
             if group_id:
                 body.set(group_id=group_id)
             if chord:
                 body.set(chord=chord)
             callback_id = body.options.setdefault('task_id', task_id or uuid())
             parent = super(Chord, self).apply_async((header, body, args),
-                                                    **options)
+                                                     kwargs, **options)
             body_result = self.AsyncResult(callback_id)
             body_result.parent = parent
             return body_result
