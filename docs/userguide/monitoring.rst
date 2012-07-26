@@ -161,17 +161,17 @@ Celery Flower is a web based, real-time monitor and administration tool.
 Features
 ~~~~~~~~
 
-* Workers monitoring and management
-* Configuration viewer
-* Worker pool control
-* Broker options viewer
-* Queues management
-* Tasks execution statistics
-* Task viewer
+- Workers monitoring and management
+- Configuration viewer
+- Worker pool control
+- Broker options viewer
+- Queues management
+- Tasks execution statistics
+- Task viewer
 
-*Screenshot*
+**Screenshot**
 
-.. figure:: https://github.com/mher/flower/raw/master/docs/screenshots/dashborad.png
+.. figure:: ../images/dashboard.png
 
 More screenshots_:
 
