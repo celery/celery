@@ -327,10 +327,11 @@ if not current_app.IS_WINDOWS:
         @patch('os.chdir')
         @patch('os.umask')
         @patch('os.close')
+        @patch('os.closerange')
         @patch('os.open')
         @patch('os.dup2')
-        def test_open(self, dup2, open, close, umask, chdir, _exit, setsid,
-                fork):
+        def test_open(self, dup2, open, close, closer, umask, chdir,
+                _exit, setsid, fork):
             x = DaemonContext(workdir='/opt/workdir')
 
             fork.return_value = 0

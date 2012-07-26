@@ -182,7 +182,7 @@ def move(predicate, connection=None, exchange=None, routing_key=None,
     """
     app = app_or_default(app)
     queues = [_maybe_queue(app, queue) for queue in source or []] or None
-    with app.default_connection(connection, pool=False) as conn:
+    with app.connection_or_acquire(connection, pool=False) as conn:
         producer = app.amqp.TaskProducer(conn)
         state = State()
 
@@ -350,10 +350,11 @@ def move_by_taskmap(map, **kwargs):
     return move(task_name_in_map, **kwargs)
 
 
+def filter_status(state, body, message, **kwargs):
+    print(MOVING_PROGRESS_FMT.format(state=state, body=body, **kwargs))
+
+
 move_direct = partial(move, transform=worker_direct)
 move_direct_by_id = partial(move_task_by_id, transform=worker_direct)
 move_direct_by_idmap = partial(move_by_idmap, transform=worker_direct)
 move_direct_by_taskmap = partial(move_by_taskmap, transform=worker_direct)
-
-def filter_status(state, body, message, **kwargs):
-    print(MOVING_PROGRESS_FMT.format(state=state, body=body, **kwargs))

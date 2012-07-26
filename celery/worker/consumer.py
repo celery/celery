@@ -99,6 +99,9 @@ from .heartbeat import Heart
 RUN = 0x1
 CLOSE = 0x2
 
+#: Heartbeat check is called every heartbeat_seconds' / rate'.
+AMQHEARTBEAT_RATE = 2.0
+
 #: Prefetch count can't exceed short.
 PREFETCH_COUNT_MAX = 0xFFFF
 
@@ -154,7 +157,7 @@ def debug(msg, *args, **kwargs):
 
 
 def dump_body(m, body):
-    return "{0} ({1}b)".format(text.truncate(safe_repr(body), 1024),
+    return '{0} ({1}b)'.format(text.truncate(safe_repr(body), 1024),
                                len(m.body))
 
 
@@ -300,7 +303,8 @@ class Consumer(object):
     def __init__(self, ready_queue,
             init_callback=noop, send_events=False, hostname=None,
             initial_prefetch_count=2, pool=None, app=None,
-            timer=None, controller=None, hub=None, **kwargs):
+            timer=None, controller=None, hub=None, amqheartbeat=None,
+            **kwargs):
         self.app = app_or_default(app)
         self.connection = None
         self.task_consumer = None
@@ -332,6 +336,11 @@ class Consumer(object):
             hub.on_init.append(self.on_poll_init)
         self.hub = hub
         self._quick_put = self.ready_queue.put
+        self.amqheartbeat = amqheartbeat
+        if self.amqheartbeat is None:
+            self.amqheartbeat = self.app.conf.BROKER_HEARTBEAT
+        if not hub:
+            self.amqheartbeat = 0
 
     def update_strategies(self):
         S = self.strategies
@@ -365,7 +374,8 @@ class Consumer(object):
         hub.update_readers(self.connection.eventmap)
         self.connection.transport.on_poll_init(hub.poller)
 
-    def consume_messages(self, sleep=sleep, min=min, Empty=Empty):
+    def consume_messages(self, sleep=sleep, min=min, Empty=Empty,
+            hbrate=AMQHEARTBEAT_RATE):
         """Consume messages forever (or until an exception is raised)."""
 
         with self.hub as hub:
@@ -377,11 +387,17 @@ class Consumer(object):
             fire_timers = hub.fire_timers
             scheduled = hub.timer._queue
             connection = self.connection
+            hb = self.amqheartbeat
+            hbtick = connection.heartbeat_check
             on_poll_start = connection.transport.on_poll_start
             strategies = self.strategies
             drain_nowait = connection.drain_nowait
             on_task_callbacks = hub.on_task
             keep_draining = connection.transport.nb_keep_draining
+
+            if hb and connection.supports_heartbeats:
+                hub.timer.apply_interval(
+                    hb * 1000.0 / hbrate, hbtick, (hbrate, ))
 
             def on_task_received(body, message):
                 if on_task_callbacks:
@@ -436,7 +452,7 @@ class Consumer(object):
                                             handlermap[fileno](fileno, event)
                                         except KeyError:
                                             pass
-                            except Empty:
+                            except (KeyError, Empty):
                                 continue
                             except socket.error:
                                 if self._state != CLOSE:  # pragma: no cover
@@ -732,7 +748,7 @@ class Consumer(object):
 
         # remember that the connection is lazy, it won't establish
         # until it's needed.
-        conn = self.app.connection()
+        conn = self.app.connection(heartbeat=self.amqheartbeat)
         if not self.app.conf.BROKER_CONNECTION_RETRY:
             # retry disabled, just call connect directly.
             conn.connect()

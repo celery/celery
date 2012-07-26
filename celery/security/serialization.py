@@ -10,6 +10,7 @@ from __future__ import absolute_import
 
 import base64
 
+from future_builtins import zip
 from kombu.serialization import registry, encode, decode
 from kombu.utils.encoding import bytes_to_str, str_to_bytes
 

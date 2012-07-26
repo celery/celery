@@ -134,7 +134,7 @@ class HttpDispatch(object):
         self.url = url
         self.method = method
         self.task_kwargs = task_kwargs
-        self.logger = kwargs.get("logger") or logger
+        self.logger = kwargs.get('logger') or logger
 
     def make_request(self, url, method, params):
         """Makes an HTTP request and returns the response."""

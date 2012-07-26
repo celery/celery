@@ -85,7 +85,7 @@ class Settings(datastructures.ConfigurationView):
             False
 
         """
-        return self['_'.join(filter(None, parts))]
+        return self['_'.join(part for part in parts if part)]
 
     def humanize(self):
         """Returns a human readable string showing changes to the
@@ -138,14 +138,14 @@ def bugreport(app):
 
     return BUGREPORT_INFO.format(
         system=_platform.system(),
-        arch=', '.join(filter(None, _platform.architecture())),
+        arch=', '.join(x for x in _platform.architecture() if x),
         py_i=platforms.pyimplementation(),
         celery_v=celery.VERSION_BANNER,
         kombu_v=kombu.__version__,
         billiard_v=billiard.__version__,
         py_v=_platform.python_version(),
         driver_v=driver_v,
-        transport= app.conf.BROKER_TRANSPORT or 'amqp',
+        transport=app.conf.BROKER_TRANSPORT or 'amqp',
         results=app.conf.CELERY_RESULT_BACKEND or 'disabled',
         human_settings=app.conf.humanize(),
         loader=qualname(app.loader.__class__),

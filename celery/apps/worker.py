@@ -196,7 +196,7 @@ class Worker(configurated):
     def tasklist(self, include_builtins=True):
         tasks = self.app.tasks.keys()
         if not include_builtins:
-            tasks = filter(lambda s: not s.startswith('celery.'), tasks)
+            tasks = [t for t in tasks if not t.startswith('celery.')]
         return '\n'.join('  . {0}'.format(task) for task in sorted(tasks))
 
     def extra_info(self):

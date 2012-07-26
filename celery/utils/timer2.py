@@ -14,6 +14,7 @@ import os
 import sys
 
 from functools import wraps
+from future_builtins import map
 from itertools import count
 from threading import Condition, Event, Lock, Thread
 from time import time, sleep, mktime
@@ -56,8 +57,7 @@ class Entry(object):
     if sys.version_info[0] == 3:  # pragma: no cover
 
         def __hash__(self):
-            return hash('|'.join(map(repr, (self.fun, self.args,
-                                            self.kwargs))))
+            return hash('{0.fun!r}|{0.args!r}|{0.kwargs!r}'.format(self))
 
         def __lt__(self, other):
             return hash(self) < hash(other)
@@ -206,7 +206,7 @@ class Schedule(object):
     @property
     def queue(self):
         events = list(self._queue)
-        return map(heapq.heappop, [events] * len(events))
+        return [heapq.heappop(x) for x in [events] * len(events)]
 
 
 class Timer(Thread):

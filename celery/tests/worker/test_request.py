@@ -19,8 +19,12 @@ from celery import states
 from celery.app import app_or_default
 from celery.concurrency.base import BasePool
 from celery.datastructures import ExceptionInfo
-from celery.exceptions import (RetryTaskError,
-                               WorkerLostError, InvalidTaskError)
+from celery.exceptions import (
+    RetryTaskError,
+    WorkerLostError,
+    InvalidTaskError,
+    TaskRevokedError,
+)
 from celery.task.trace import (
     trace_task,
     trace_task_ret,
@@ -375,21 +379,12 @@ class test_TaskRequest(Case):
             einfo = get_ei()
             mail_sent[0] = False
             mytask.send_error_emails = True
-            mytask.error_whitelist = [KeyError]
             tw.on_failure(einfo)
             self.assertTrue(mail_sent[0])
-
-            einfo = get_ei()
-            mail_sent[0] = False
-            mytask.send_error_emails = True
-            mytask.error_whitelist = [SyntaxError]
-            tw.on_failure(einfo)
-            self.assertFalse(mail_sent[0])
 
         finally:
             app.mail_admins = old_mail_admins
             mytask.send_error_emails = old_enable_mails
-            mytask.error_whitelist = ()
 
     def test_already_revoked(self):
         tw = TaskRequest(mytask.name, uuid(), [1], {'f': 'x'})
@@ -426,7 +421,8 @@ class test_TaskRequest(Case):
     def test_execute_using_pool_does_not_execute_revoked(self):
         tw = TaskRequest(mytask.name, uuid(), [1], {'f': 'x'})
         revoked.add(tw.id)
-        tw.execute_using_pool(None)
+        with self.assertRaises(TaskRevokedError):
+            tw.execute_using_pool(None)
 
     def test_on_accepted_acks_early(self):
         tw = TaskRequest(mytask.name, uuid(), [1], {'f': 'x'})
@@ -772,7 +768,11 @@ class test_TaskRequest(Case):
                     'task_id': tw.id,
                     'task_retries': 0,
                     'task_is_eager': False,
-                    'delivery_info': {},
+                    'delivery_info': {
+                        'exchange': None,
+                        'routing_key': None,
+                        'priority': None,
+                    },
                     'task_name': tw.name})
 
     @patch('celery.worker.job.logger')

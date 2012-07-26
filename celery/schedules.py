@@ -205,7 +205,7 @@ class crontab_parser(object):
             try:
                 i = weekday(s)
             except KeyError:
-                raise ValueError("Invalid weekday literal {0!r}.".format(s))
+                raise ValueError('Invalid weekday literal {0!r}.'.format(s))
 
         if i < self.min_:
             raise ValueError(

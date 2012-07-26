@@ -208,7 +208,7 @@ Application
 
         :returns :class:`kombu.connection.Connection`:
 
-    .. method:: Celery.default_connection(connection=None)
+    .. method:: Celery.connection_or_acquire(connection=None)
 
         For use within a with-statement to get a connection from the pool
         if one is not already provided.
@@ -216,6 +216,13 @@ Application
         :keyword connection: If not provided, then a connection will be
                              acquired from the connection pool.
 
+    .. method:: Celery.producer_or_acquire(producer=None)
+
+        For use within a with-statement to get a producer from the pool
+        if one is not already provided
+
+        :keyword producer: If not provided, then a producer will be
+                           acquired from the producer pool.
 
     .. method:: Celery.mail_admins(subject, body, fail_silently=False)
 

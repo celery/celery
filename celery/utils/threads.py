@@ -15,9 +15,7 @@ import traceback
 
 from kombu.syn import detect_environment
 
-active_count = (getattr(threading, 'active_count', None) or
-                threading.activeCount)
-USE_PURE_LOCALS = os.environ.get("USE_PURE_LOCALS")
+USE_PURE_LOCALS = os.environ.get('USE_PURE_LOCALS')
 
 
 class bgThread(threading.Thread):

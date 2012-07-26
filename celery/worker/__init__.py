@@ -30,7 +30,7 @@ from celery import concurrency as _concurrency
 from celery import platforms
 from celery.app import app_or_default, set_default_app
 from celery.app.abstract import configurated, from_config
-from celery.exceptions import SystemTerminate
+from celery.exceptions import SystemTerminate, TaskRevokedError
 from celery.task import trace
 from celery.utils.functional import noop
 from celery.utils.imports import qualname, reload_from_cwd
@@ -369,6 +369,9 @@ class WorkController(configurated):
         """Process task by sending it to the pool of workers."""
         try:
             req.execute_using_pool(self.pool)
+        except TaskRevokedError:
+            if self.semaphore:  # (Issue #877)
+                self.semaphore.release()
         except Exception as exc:
             logger.critical('Internal error: %r\n%s',
                             exc, traceback.format_exc(), exc_info=True)

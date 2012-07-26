@@ -75,17 +75,9 @@ class AMQPBackend(BaseDictBackend):
         self.serializer = serializer or conf.CELERY_RESULT_SERIALIZER
         self.auto_delete = auto_delete
 
-        # AMQP_TASK_RESULT_EXPIRES setting is deprecated and will be
-        # removed in version 4.0.
-        dexpires = conf.CELERY_AMQP_TASK_RESULT_EXPIRES
-
         self.expires = None
-        if 'expires' in kwargs:
-            if kwargs['expires'] is not None:
-                self.expires = self.prepare_expires(kwargs['expires'])
-        else:
-            self.expires = self.prepare_expires(dexpires)
-
+        if 'expires' not in kwargs or kwargs['expires'] is not None:
+            self.expires = self.prepare_expires(kwargs.get('expires'))
         if self.expires:
             self.queue_arguments['x-expires'] = int(self.expires * 1000)
         self.mutex = threading.Lock()

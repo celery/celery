@@ -163,9 +163,6 @@ class test_EventReceiver(AppCase):
         try:
             r = self.app.events.Receiver(connection, node_id='celery.tests')
             it = r.itercapture(timeout=0.0001, wakeup=False)
-            consumer = next(it)
-            self.assertTrue(consumer.queues)
-            self.assertEqual(consumer.callbacks[0], r._receive)
 
             with self.assertRaises(socket.timeout):
                 next(it)

@@ -8,7 +8,6 @@
 """
 from __future__ import absolute_import, print_function
 
-import operator
 import os
 import sys
 import threading
@@ -129,11 +128,10 @@ def fun_takes_kwargs(fun, kwlist=[]):
         ['logfile', 'loglevel', 'task_id']
 
     """
-    argspec = getattr(fun, 'argspec', getargspec(fun))
-    args, _varargs, keywords, _defaults = argspec
-    if keywords != None:
+    S = getattr(fun, 'argspec', getargspec(fun))
+    if S.keywords != None:
         return kwlist
-    return filter(partial(operator.contains, args), kwlist)
+    return [kw for kw in kwlist if kw in S.args]
 
 
 def isatty(fh):
@@ -201,13 +199,13 @@ def strtobool(term, table={'false': False, 'no': False, '0': False,
 
 
 def jsonify(obj):
-    "Transforms object making it suitable for json serialization"
+    """Transforms object making it suitable for json serialization"""
     if isinstance(obj, (int, float, basestring, types.NoneType)):
         return obj
     elif isinstance(obj, (tuple, list)):
-        return map(jsonify, obj)
+        return [jsonify(o) for o in obj]
     elif isinstance(obj, dict):
-        return dict([(k, jsonify(v)) for k, v in obj.iteritems()])
+        return dict((k, jsonify(v)) for k, v in obj.iteritems())
     # See "Date Time String Format" in the ECMA-262 specification.
     elif isinstance(obj, datetime.datetime):
         r = obj.isoformat()
@@ -226,7 +224,7 @@ def jsonify(obj):
     elif isinstance(obj, datetime.timedelta):
         return str(obj)
     else:
-        raise ValueError("Unsupported type: {0}".format(type(obj)))
+        raise ValueError('Unsupported type: {0}'.format(type(obj)))
 
 
 def gen_task_name(app, name, module_name):

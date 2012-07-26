@@ -201,7 +201,6 @@ Settings
 ``BROKER_USER``                        :setting:`BROKER_URL`
 ``BROKER_PASSWORD``                    :setting:`BROKER_URL`
 ``BROKER_VHOST``                       :setting:`BROKER_URL`
-``BROKER_INSIST``                      *no alternative*
 =====================================  =====================================
 
 
