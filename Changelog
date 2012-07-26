@@ -5,6 +5,138 @@
 .. contents::
     :local:
 
+.. _version-3.0.4:
+
+3.0.4
+=====
+:release-date: 2012-07-26 07:00 P.M BST
+
+- Now depends on Kombu 2.3
+
+- New experimental standalone Celery monitor: Flower
+
+    See :ref:`monitoring-flower` to read more about it!
+
+    Contributed by Mher Movsisyan.
+
+- Now supports AMQP heartbeats if using the new ``pyamqp://`` transport.
+
+    - The py-amqp transport requires the :mod:`amqp` library to be installed::
+
+        $ pip install amqp
+
+    - Then you need to set the transport URL prefix to ``pyamqp://``.
+
+    - The default heartbeat value is 10 seconds, but this can be changed using
+      the :setting:`BROKER_HEARTBEAT` setting::
+
+        BROKER_HEARTBEAT = 5.0
+
+    - If the broker heartbeat is set to 10 seconds, the heartbeats will be
+      monitored every 5 seconds (double the hertbeat rate).
+
+    See the `Kombu 2.3 changelog`_ for more information.
+
+.. _`Kombu 2.3 changelog`:
+    http://kombu.readthedocs.org/en/latest/changelog.html#version-2-3-0
+
+- Now supports RabbitMQ Consumer Cancel Notifications, using the ``pyamqp://``
+  transport.
+
+    This is essential when running RabbitMQ in a cluster.
+
+    See the `Kombu 2.3 changelog`_ for more information.
+
+- Delivery info is no longer passed directly through.
+
+    It was discovered that the SQS transport adds objects that can't
+    be pickled to the delivery info mapping, so we had to go back
+    to using the whitelist again.
+
+    Fixing this bug also means that the SQS transport is now working again.
+
+- The semaphore was not properly released when a task was revoked (Issue #877).
+
+    This could lead to tasks being swallowed and not released until a worker
+    restart.
+
+    Thanks to Hynek Schlawack for debugging the issue.
+
+- Retrying a task now also forwards any linked tasks.
+
+    This means that if a task is part of a chain (or linked in some other
+    way) and that even if the task is retried, then the next task in the chain
+    will be executed when the retry succeeds.
+
+- Chords: Now supports setting the interval and other keyword arguments
+  to the chord unlock task.
+
+    - The interval can now be set as part of the chord subtasks kwargs::
+
+        chord(header)(body, interval=10.0)
+
+    - In addition the chord unlock task now honors the Task.default_retry_delay
+      option, used when none is specified, which also means that the default
+      interval can also be changed using annotations:
+
+        .. code-block:: python
+
+            CELERY_ANNOTATIONS = {
+                'celery.chord_unlock': {
+                    'default_retry_delay': 10.0,
+                }
+            }
+
+- New :meth:`@Celery.add_defaults` method can add new default configuration
+  dicts to the applications configuration.
+
+    For example::
+
+        config = {'FOO': 10}
+
+        celery.add_defaults(config)
+
+    is the same as ``celery.conf.update(config)`` except that data will not be
+    copied, and that it will not be pickled when the worker spawns child
+    processes.
+
+    In addition the method accepts a callable::
+
+        def initialize_config():
+            # insert heavy stuff that can't be done at import time here.
+
+        celery.add_defaults(initialize_config)
+
+    which means the same as the above except that it will not happen
+    until the celery configuration is actually used.
+
+    As an example, Celery can lazily use the configuration of a Flask app::
+
+        flask_app = Flask()
+        celery = Celery()
+        celery.add_defaults(lambda: flask_app.config)
+
+- Revoked tasks were not marked as revoked in the result backend (Issue #871).
+
+    Fix contributed by Hynek Schlawack.
+
+- Eventloop now properly handles the case when the epoll poller object
+  has been closed (Issue #882).
+
+- Fixed syntax error in ``funtests/test_leak.py``
+
+    Fix contributed by Catalin Iacob.
+
+- group/chunks: Now accepts empty task list (Issue #873).
+
+- New method names:
+
+    - ``Celery.default_connection()` ➠  :meth:`~@Celery.connection_or_acquire`.
+    - ``Celery.default_producer()`   ➠  :meth:`~@Celery.producer_or_acquire`.
+
+    The old names still work for backward compatibility.
+
+
 .. _version-3.0.3:
 
 3.0.3

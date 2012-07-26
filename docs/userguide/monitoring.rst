@@ -151,7 +151,7 @@ You can specify a single, or a list of workers by using the
     $ celery inspect -d w1,w2 reserved
 
 
-.. _monitoring-django-admin:
+.. _monitoring-flower:
 
 Celery Flower: Web interface
 ----------------------------
@@ -187,6 +187,8 @@ Install Celery Flower: ::
 Launch Celery Flower and open http://localhost:8008 in browser: ::
 
     $ celery flower
+
+.. _monitoring-django-admin:
 
 Django Admin Monitor
 --------------------
