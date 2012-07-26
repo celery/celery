@@ -73,6 +73,9 @@ class Celery(object):
         self.registry_cls = symbol_by_name(self.registry_cls)
         self.accept_magic_kwargs = accept_magic_kwargs
 
+        self.configured = False
+        self._pending_defaults = deque()
+
         self.finalized = False
         self._finalize_mutex = Lock()
         self._pending = deque()
@@ -158,10 +161,17 @@ class Celery(object):
 
                 pending = self._pending
                 while pending:
-                    maybe_evaluate(pending.pop())
+                    maybe_evaluate(pending.popleft())
 
                 for task in self._tasks.itervalues():
                     task.bind(self)
+
+    def add_defaults(self, fun):
+        if not callable(fun):
+            d, fun = fun, lambda: d
+        if self.configured:
+            return self.conf.add_defaults(fun())
+        self._pending_defaults.append(fun)
 
     def config_from_object(self, obj, silent=False):
         del(self.conf)
@@ -297,8 +307,14 @@ class Celery(object):
         return backend(app=self, url=url)
 
     def _get_config(self):
+        self.configured = True
         s = Settings({}, [self.prepare_config(self.loader.conf),
                              deepcopy(DEFAULTS)])
+
+        # load lazy config dict initializers.
+        pending = self._pending_defaults
+        while pending:
+            s.add_defaults(pending.popleft()())
         if self._preconf:
             for key, value in self._preconf.iteritems():
                 setattr(s, key, value)

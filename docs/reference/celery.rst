@@ -114,6 +114,23 @@ Application
             >>> os.environ["CELERY_CONFIG_MODULE"] = "myapp.celeryconfig"
             >>> celery.config_from_envvar("CELERY_CONFIG_MODULE")
 
+    .. method:: Celery.add_defaults(d)
+
+        Add default configuration from dict ``d``.
+
+        If the argument is a callable function then it will be regarded
+        as a promise, and it won't be loaded until the configuration is
+        actually needed.
+
+        This method can be compared to::
+
+            >>> celery.conf.update(d)
+
+        with a difference that 1) no copy will be made and 2) the dict will
+        not be transferred when the worker spawns child processes, so
+        it's important that the same configuration happens at import time
+        when pickle restores the object on the other side.
+
     .. method:: Celery.start(argv=None)
 
         Run :program:`celery` using `argv`.
