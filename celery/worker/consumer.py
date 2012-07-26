@@ -440,7 +440,11 @@ class Consumer(object):
                 if readers or writers:
                     connection.more_to_read = True
                     while connection.more_to_read:
-                        for fileno, event in poll(poll_timeout) or ():
+                        try:
+                            events = poll(poll_timeout):
+                        except ValueError:  # Issue 882
+                            return
+                        for fileno, event in events or ():
                             try:
                                 if event & READ:
                                     readers[fileno](fileno, event)
