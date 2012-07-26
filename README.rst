@@ -249,7 +249,7 @@ The following bundles are available:
 .. _`django-celery-with-redis`:
     http://pypi.python.org/pypi/django-celery-with-redis/
 .. _`django-celery-with-mongodb`:
-    http://pypi.python.org/pypi/django-celery-with-mongdb/
+    http://pypi.python.org/pypi/django-celery-with-mongodb/
 
 .. _celery-installing-from-source:
 
