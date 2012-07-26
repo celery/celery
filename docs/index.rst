@@ -53,6 +53,7 @@ Contents
     changelog
     reference/index
     internals/index
+    history/index
     glossary
 
 
