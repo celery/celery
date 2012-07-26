@@ -32,9 +32,22 @@ You can also start multiple workers on the same machine. If you do so
 be sure to give a unique name to each individual worker by specifying a
 host name with the :option:`--hostname|-n` argument::
 
-    $ celery worker --loglevel=INFO --concurrency=10 -n worker1.example.com
-    $ celery worker --loglevel=INFO --concurrency=10 -n worker2.example.com
-    $ celery worker --loglevel=INFO --concurrency=10 -n worker3.example.com
+    $ celery worker --loglevel=INFO --concurrency=10 -n worker1.%h
+    $ celery worker --loglevel=INFO --concurrency=10 -n worker2.%h
+    $ celery worker --loglevel=INFO --concurrency=10 -n worker3.%h
+
+The hostname argument can expand the following variables:
+
+    - ``%h``:  Hostname including domain name.
+    - ``%n``:  Hostname only.
+    - ``%d``:  Domain name only.
+
+E.g. if the current hostname is ``george.example.com`` then
+these will expand to:
+
+    - ``worker1.%h`` -> ``worker1.george.example.com``
+    - ``worker1.%n`` -> ``worker1.george``
+    - ``worker1.%d`` -> ``worker1.example.com``
 
 .. _worker-stopping:
 

@@ -31,7 +31,8 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
 .. cmdoption:: -n, --hostname
 
-    Set custom hostname, e.g. 'foo.example.com'.
+    Set custom hostname, e.g. 'w1.%h'. Expands: %h (hostname),
+    %n (name) and %d, (domain).
 
 .. cmdoption:: -B, --beat
 
@@ -135,24 +136,26 @@ class WorkerCommand(Command):
             argv = list(sys.argv)
         return super(WorkerCommand, self).execute_from_commandline(argv)
 
-    def run(self, *args, **kwargs):
-        kwargs.pop('app', None)
+    def run(self, hostname=None, pool_cls=None, loglevel=None,
+            app=None, **kwargs):
         # Pools like eventlet/gevent needs to patch libs as early
         # as possible.
-        kwargs['pool_cls'] = concurrency.get_implementation(
-                    kwargs.get('pool_cls') or self.app.conf.CELERYD_POOL)
+        pool_cls = (concurrency.get_implementation(pool_cls) or
+                    self.app.conf.CELERYD_POOL)
         if self.app.IS_WINDOWS and kwargs.get('beat'):
             self.die('-B option does not work on Windows.  '
                      'Please run celerybeat as a separate service.')
-        loglevel = kwargs.get('loglevel')
+        hostname = self.simple_format(hostname)
         if loglevel:
             try:
-                kwargs['loglevel'] = mlevel(loglevel)
+                loglevel = mlevel(loglevel)
             except KeyError:  # pragma: no cover
                 self.die('Unknown level {0!r}. Please use one of {1}.'.format(
                     loglevel, '|'.join(l for l in LOG_LEVELS.keys()
                       if isinstance(l, basestring))))
-        return self.app.Worker(**kwargs).run()
+        return self.app.Worker(
+            hostname=hostname, pool_cls=pool_cls, loglevel=loglevel, **kwargs
+        ).run()
 
     def with_pool_option(self, argv):
         # this command support custom pools

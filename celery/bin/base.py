@@ -60,6 +60,7 @@ from __future__ import absolute_import, print_function
 
 import os
 import re
+import socket
 import sys
 import warnings
 
@@ -86,6 +87,7 @@ Try --help?
 
 find_long_opt = re.compile(r'.+?(--.+?)(?:\s|,|$)')
 find_rst_ref = re.compile(r':\w+:`(.+?)`')
+find_sformat = re.compile(r'%(\w)')
 
 
 class HelpFormatter(IndentedHelpFormatter):
@@ -375,6 +377,12 @@ class Command(object):
               has_pool_option = (['-P'], ['--pool'])
         """
         pass
+
+    def simple_format(self, s, match=find_sformat, expand=r'\1', **keys):
+        host = socket.gethostname()
+        name, _, domain = host.partition('.')
+        keys = dict({'%': '%', 'h': host, 'n': name, 'd': domain}, **keys)
+        return match.sub(lambda m: keys[m.expand(expand)], s)
 
     def _get_default_app(self, *args, **kwargs):
         from celery.app import default_app
