@@ -113,12 +113,12 @@ Commands
 
         $ celery inspect stats
 
-* **inspect enable_events**: Enable events
+* **control enable_events**: Enable events
     ::
 
-        $ celery inspect enable_events
+        $ celery control enable_events
 
-* **inspect disable_events**: Disable events
+* **control disable_events**: Disable events
     ::
 
         $ celery inspect disable_events
@@ -222,7 +222,7 @@ To start the camera run::
 
 If you haven't already enabled the sending of events you need to do so::
 
-    $ python manage.py celery inspect enable_events
+    $ python manage.py celery control enable_events
 
 :Tip: You can enable events when the worker starts using the `-E` argument.
 
