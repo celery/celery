@@ -441,7 +441,7 @@ class Consumer(object):
                     connection.more_to_read = True
                     while connection.more_to_read:
                         try:
-                            events = poll(poll_timeout):
+                            events = poll(poll_timeout)
                         except ValueError:  # Issue 882
                             return
                         for fileno, event in events or ():
