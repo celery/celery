@@ -624,7 +624,7 @@ News
 
     Screenshot:
 
-    .. figure:: images/celeryevshotsm.jpg
+    .. figure:: ../images/celeryevshotsm.jpg
 
     If you run `celeryev` with the `-d` switch it will act as an event
     dumper, simply dumping the events it receives to standard out::
