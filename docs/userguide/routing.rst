@@ -542,7 +542,8 @@ Broadcast
 ---------
 
 Celery can also support broadcast routing.
-Here is an example exchange ``bcast`` that uses this:
+Here is an example exchange ``broadcast_tasks`` that delivers
+copies of tasks to all workers connected to it:
 
 .. code-block:: python
 

@@ -542,7 +542,9 @@ class Task(object):
         options.update({'retries': request.retries + 1,
                         'task_id': request.id,
                         'countdown': countdown,
-                        'eta': eta})
+                        'eta': eta,
+                        'link': request.callbacks,
+                        'link_error': request.errbacks})
 
         if max_retries is not None and options['retries'] > max_retries:
             if exc:

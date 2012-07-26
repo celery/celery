@@ -76,7 +76,7 @@ class Signature(dict):
     def from_dict(self, d):
         typ = d.get('subtask_type')
         if typ:
-            return self.TYPES[typ].from_dict(d)
+            return self.TYPES[typ].from_dict(kwdict(d))
         return Signature(d)
 
     def __init__(self, task=None, args=None, kwargs=None, options=None,
@@ -332,25 +332,30 @@ Signature.register_type(group)
 class chord(Signature):
     Chord = Chord
 
-    def __init__(self, header, body=None, **options):
-        Signature.__init__(self, 'celery.chord', (),
-                         {'header': _maybe_group(header),
-                          'body': maybe_subtask(body)}, **options)
+    def __init__(self, header, body=None, task='celery.chord',
+            args=(), kwargs={}, **options):
+        Signature.__init__(self, task, args, dict(kwargs,
+            header=_maybe_group(header), body=maybe_subtask(body)), **options)
         self.subtask_type = 'chord'
 
     @classmethod
     def from_dict(self, d):
-        kwargs = d['kwargs']
-        return chord(kwargs['header'], kwargs.get('body'),
-                     **kwdict(d['options']))
+        args, d['kwargs'] = self._unpack_args(**kwdict(d['kwargs']))
+        return self(*args, **kwdict(d))
 
-    def __call__(self, body=None, **options):
+    @staticmethod
+    def _unpack_args(header=None, body=None, **kwargs):
+        # Python signatures are better at extracting keys from dicts
+        # than manually popping things off.
+        return (header, body), kwargs
+
+    def __call__(self, body=None, **kwargs):
         _chord = self.Chord
         body = self.kwargs['body'] = body or self.kwargs['body']
         if _chord.app.conf.CELERY_ALWAYS_EAGER:
-            return self.apply((), {}, **options)
+            return self.apply((), kwargs)
         callback_id = body.options.setdefault('task_id', uuid())
-        _chord(**self.kwargs)
+        _chord(**dict(self.kwargs, **kwargs))
         return _chord.AsyncResult(callback_id)
 
     def clone(self, *args, **kwargs):
