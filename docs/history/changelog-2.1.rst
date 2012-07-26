@@ -348,7 +348,7 @@ News
     and shutting down worker nodes.
 
     There's also a Debian init.d script for :mod:`~celery.bin.celeryev` available,
-    see :doc:`tutorials/daemonizing` for more information.
+    see :ref:`daemonizing` for more information.
 
     New command line arguments to celeryev:
 

@@ -81,7 +81,7 @@ Changes
 
     See issue #111.
 
-* Added new entries to the :doc:`FAQs <faq>`:
+* Added new entries to the :ref:`FAQs <faq>`:
 
     * Should I use retry or acks_late?
     * Can I call a task by name?

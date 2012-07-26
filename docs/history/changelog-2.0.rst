@@ -649,9 +649,9 @@ News
 
 * New user guides:
 
-    * :doc:`userguide/workers`
-    * :doc:`userguide/canvas`
-    * :doc:`userguide/routing`
+    * :ref:`guide-workers`
+    * :ref:`guide-canvas`
+    * :ref:`guide-routing`
 
 * celeryd: Standard out/error is now being redirected to the log file.
 
@@ -685,7 +685,7 @@ News
 
     >>> crontab(minute="*/30", hour="8-17,1-2", day_of_week="thu-fri")
 
-  See :doc:`userguide/periodic-tasks`.
+  See :ref:`guide-beat`.
 
 * celeryd: Now waits for available pool processes before applying new
   tasks to the pool.
@@ -699,12 +699,12 @@ News
 * New built-in way to do task callbacks using
   :class:`~celery.subtask`.
 
-  See :doc:`userguide/canvas` for more information.
+  See :ref:`guide-canvas` for more information.
 
 * TaskSets can now contain several types of tasks.
 
   :class:`~celery.task.sets.TaskSet` has been refactored to use
-  a new syntax, please see :doc:`userguide/canvas` for more information.
+  a new syntax, please see :ref:`guide-canvas` for more information.
 
   The previous syntax is still supported, but will be deprecated in
   version 1.4.
@@ -734,7 +734,7 @@ News
        $ celeryd -Q video, image
 
    See the new routing section of the User Guide for more information:
-   :doc:`userguide/routing`.
+   :ref:`guide-routing`.
 
 * New Task option: `Task.queue`
 
