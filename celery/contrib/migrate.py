@@ -117,22 +117,19 @@ def move(predicate, connection=None, exchange=None, routing_key=None,
         source=None, app=None, callback=None, limit=None, transform=None,
         **kwargs):
     """Find tasks by filtering them and move the tasks to a new queue.
-    :param predicate: Predicate function used to filter messages to move.
-        Must accept the standard signature of ``(body, message)`` used
-        by Kombu consumer callbacks.  If the predicate wants the message
-        to be moved it should return the hostname of the worker to move it
-        to, otherwise it should return :const:`False`
-    :keyword queues: A list of queues to consume from, if not specified
-        it will consume from all configured task queues in ``CELERY_QUEUES``.
 
     :param predicate: Filter function used to decide which messages
         to move.  Must accept the standard signature of ``(body, message)``
         used by Kombu consumer callbacks. If the predicate wants the message
-        to be moved it must return either
+        to be moved it must return either:
+
             1) a tuple of ``(exchange, routing_key)``, or
+
             2) a :class:`~kombu.entity.Queue` instance, or
+
             3) any other true value which means the specified
                ``exchange`` and ``routing_key`` arguments will be used.
+
     :keyword connection: Custom connection to use.
     :keyword source: Optional list of source queues to use instead of the
         default (which is the queues in :setting:`CELERY_QUEUES`).
@@ -160,6 +157,8 @@ def move(predicate, connection=None, exchange=None, routing_key=None,
         move(is_wanted_task)
 
     or with a transform:
+
+    .. code-block:: python
 
         def transform(value):
             if isinstance(value, basestring):
