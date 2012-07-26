@@ -729,6 +729,26 @@ It can also be a fully qualified path to your own transport implementation.
 
 See the Kombu documentation for more information about broker URLs.
 
+.. setting:: BROKER_HEARTBEAT
+
+BROKER_HEARTBEAT
+~~~~~~~~~~~~~~~~
+:transports supported: ``pyamqp``
+
+It's not always possible to detect connection loss in a timely
+manner using TCP/IP alone, so AMQP defines something called heartbeats
+that's is used both by the client and the broker to detect if
+a connection was closed.
+
+Heartbeats are currently only supported by the ``pyamqp://`` transport,
+and this requires the :mod:`amqp` module::
+
+    $ pip install amqp
+
+The default heartbeat value is 10 seconds,
+the heartbeat will then be monitored at double the rate of the heartbeat value
+(so for the default 10 seconds, the heartbeat is checked every 5 seconds).
+
 .. setting:: BROKER_USE_SSL
 
 BROKER_USE_SSL
