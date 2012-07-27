@@ -9,7 +9,6 @@
 from __future__ import absolute_import
 
 from future_builtins import map
-from datetime import datetime
 
 from kombu.utils.encoding import safe_repr
 

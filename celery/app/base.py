@@ -13,7 +13,7 @@ import warnings
 from collections import deque
 from contextlib import contextmanager
 from copy import deepcopy
-from functools import reduce, wraps
+from functools import wraps
 from operator import attrgetter
 from threading import Lock
 

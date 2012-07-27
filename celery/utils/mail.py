@@ -13,10 +13,8 @@ import traceback
 import warnings
 
 from email.mime.text import MIMEText
-from future_builtins import map
 
 from .functional import maybe_list
-from .imports import symbol_by_name
 
 
 class SendmailWarning(UserWarning):

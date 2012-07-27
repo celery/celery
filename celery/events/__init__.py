@@ -18,7 +18,7 @@ from collections import deque
 from contextlib import contextmanager
 from copy import copy
 
-from kombu import eventloop, Exchange, Queue, Consumer, Producer
+from kombu import Exchange, Queue, Producer
 from kombu.mixins import ConsumerMixin
 from kombu.utils import cached_property
 
