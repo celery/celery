@@ -449,8 +449,8 @@ One for video, one for images and one default queue for everything else:
 
     CELERY_QUEUES = (
         Queue('default', default_exchange, routing_key='default'),
-        Queue('videos', media_exchange', routing_key='media.video')
-        Queue('images', media_exchange', routing_key='media.image')
+        Queue('videos', media_exchange, routing_key='media.video')
+        Queue('images', media_exchange, routing_key='media.image')
     )
     CELERY_DEFAULT_QUEUE = 'default'
     CELERY_DEFAULT_EXCHANGE = 'default'
@@ -542,7 +542,8 @@ Broadcast
 ---------
 
 Celery can also support broadcast routing.
-Here is an example exchange ``bcast`` that uses this:
+Here is an example exchange ``broadcast_tasks`` that delivers
+copies of tasks to all workers connected to it:
 
 .. code-block:: python
 

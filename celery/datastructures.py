@@ -304,6 +304,10 @@ class ConfigurationView(AttributeDictMixin):
         self.__dict__.update(changes=changes, defaults=defaults,
                              _order=[changes] + defaults)
 
+    def add_defaults(self, d):
+        self.defaults.insert(0, d)
+        self._order.insert(1, d)
+
     def __getitem__(self, key):
         for d in self._order:
             try:

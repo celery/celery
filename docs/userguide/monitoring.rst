@@ -113,12 +113,12 @@ Commands
 
         $ celery inspect stats
 
-* **inspect enable_events**: Enable events
+* **control enable_events**: Enable events
     ::
 
-        $ celery inspect enable_events
+        $ celery control enable_events
 
-* **inspect disable_events**: Disable events
+* **control disable_events**: Disable events
     ::
 
         $ celery inspect disable_events
@@ -151,7 +151,7 @@ You can specify a single, or a list of workers by using the
     $ celery inspect -d w1,w2 reserved
 
 
-.. _monitoring-django-admin:
+.. _monitoring-flower:
 
 Celery Flower: Web interface
 ----------------------------
@@ -161,17 +161,17 @@ Celery Flower is a web based, real-time monitor and administration tool.
 Features
 ~~~~~~~~
 
-* Workers monitoring and management
-* Configuration viewer
-* Worker pool control
-* Broker options viewer
-* Queues management
-* Tasks execution statistics
-* Task viewer
+- Workers monitoring and management
+- Configuration viewer
+- Worker pool control
+- Broker options viewer
+- Queues management
+- Tasks execution statistics
+- Task viewer
 
-*Screenshot*
+**Screenshot**
 
-.. figure:: https://github.com/mher/flower/raw/master/docs/screenshots/dashborad.png
+.. figure:: ../images/dashboard.png
 
 More screenshots_:
 
@@ -187,6 +187,8 @@ Install Celery Flower: ::
 Launch Celery Flower and open http://localhost:8008 in browser: ::
 
     $ celery flower
+
+.. _monitoring-django-admin:
 
 Django Admin Monitor
 --------------------
@@ -222,7 +224,7 @@ To start the camera run::
 
 If you haven't already enabled the sending of events you need to do so::
 
-    $ python manage.py celery inspect enable_events
+    $ python manage.py celery control enable_events
 
 :Tip: You can enable events when the worker starts using the `-E` argument.
 
@@ -581,7 +583,7 @@ Task Events
 ~~~~~~~~~~~
 
 * ``task-sent(uuid, name, args, kwargs, retries, eta, expires,
-              queue, exchange, routing_key)``
+  queue, exchange, routing_key)``
 
    Sent when a task message is published and
    the :setting:`CELERY_SEND_TASK_SENT_EVENT` setting is enabled.
