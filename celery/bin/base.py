@@ -379,10 +379,11 @@ class Command(object):
         pass
 
     def simple_format(self, s, match=find_sformat, expand=r'\1', **keys):
-        host = socket.gethostname()
-        name, _, domain = host.partition('.')
-        keys = dict({'%': '%', 'h': host, 'n': name, 'd': domain}, **keys)
-        return match.sub(lambda m: keys[m.expand(expand)], s)
+        if s:
+            host = socket.gethostname()
+            name, _, domain = host.partition('.')
+            keys = dict({'%': '%', 'h': host, 'n': name, 'd': domain}, **keys)
+            return match.sub(lambda m: keys[m.expand(expand)], s)
 
     def _get_default_app(self, *args, **kwargs):
         from celery.app import default_app
