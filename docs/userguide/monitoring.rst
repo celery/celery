@@ -263,6 +263,39 @@ The events also expire after some time, so the database doesn't fill up.
 Successful tasks are deleted after 1 day, failed tasks after 3 days,
 and tasks in other states after 5 days.
 
+.. _monitoring-django-reset:
+
+Resetting monitor data
+~~~~~~~~~~~~~~~~~~~~~~
+
+To reset the monitor data you need to clear out two models::
+
+    >>> from djcelery.models import WorkerState, TaskState
+
+    # delete worker history
+    >>> WorkerState.objects.all().delete()
+
+    # delete task history
+    >>> TaskState.objects.all().update(hidden=True)
+    >>> TaskState.objects.purge()
+
+.. _monitoring-django-expiration:
+
+Expiration
+~~~~~~~~~~
+
+By default monitor data for successful tasks will expire in 1 day,
+failed tasks in 3 days and pending tasks in 5 days.
+
+You can change the expiry times for each of these using
+adding the following settings to your :file:`settings.py`::
+
+    from datetime import timedelta
+
+    CELERYCAM_EXPIRE_SUCCESS = timedelta(hours=1)
+    CELERYCAM_EXPIRE_ERROR = timedelta(hours=2)
+    CELERYCAM_EXPIRE_PENDING = timedelta(hours=2)
+
 .. _monitoring-nodjango:
 
 Using outside of Django
