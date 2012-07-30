@@ -7,8 +7,6 @@
 
     - :class:`BaseBackend` defines the interface.
 
-    - :class:`BaseDictBackend` assumes the fields are stored in a dict.
-
     - :class:`KeyValueStoreBackend` is a common base class
       using K/V semantics like _get and _put.
 
@@ -46,7 +44,6 @@ def unpickle_backend(cls, args, kwargs):
 
 
 class BaseBackend(object):
-    """Base backend class."""
     READY_STATES = states.READY_STATES
     UNREADY_STATES = states.UNREADY_STATES
     EXCEPTION_STATES = states.EXCEPTION_STATES
@@ -61,44 +58,15 @@ class BaseBackend(object):
     #: If true the backend must implement :meth:`get_many`.
     supports_native_join = False
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, app=None, serializer=None, max_cached_results=None, **kwargs):
         from celery.app import app_or_default
-        self.app = app_or_default(kwargs.get('app'))
-        self.serializer = kwargs.get('serializer',
-                                     self.app.conf.CELERY_RESULT_SERIALIZER)
+        self.app = app_or_default(app)
+        self.serializer = serializer or self.app.conf.CELERY_RESULT_SERIALIZER
         (self.content_type,
          self.content_encoding,
          self.encoder) = serialization.registry._encoders[self.serializer]
-
-    def encode(self, data):
-        _, _, payload = serialization.encode(data, serializer=self.serializer)
-        return payload
-
-    def decode(self, payload):
-        payload = is_py3k and payload or str(payload)
-        return serialization.decode(payload,
-                                    content_type=self.content_type,
-                                    content_encoding=self.content_encoding)
-
-    def prepare_expires(self, value, type=None):
-        if value is None:
-            value = self.app.conf.CELERY_TASK_RESULT_EXPIRES
-        if isinstance(value, timedelta):
-            value = timeutils.timedelta_seconds(value)
-        if value is not None and type:
-            return type(value)
-        return value
-
-    def encode_result(self, result, status):
-        if status in self.EXCEPTION_STATES and isinstance(result, Exception):
-            return self.prepare_exception(result)
-        else:
-            return self.prepare_value(result)
-
-    def store_result(self, task_id, result, status, traceback=None):
-        """Store the result and status of a task."""
-        raise NotImplementedError(
-                'store_result is not supported by this backend.')
+        self._cache = LRUCache(limit=max_cached_results or
+                                      self.app.conf.CELERY_MAX_CACHED_RESULTS)
 
     def mark_as_started(self, task_id, **meta):
         """Mark a task as started"""
@@ -140,8 +108,15 @@ class BaseBackend(object):
         """Prepare value for storage."""
         return result
 
-    def forget(self, task_id):
-        raise NotImplementedError('backend does not implement forget.')
+    def encode(self, data):
+        _, _, payload = serialization.encode(data, serializer=self.serializer)
+        return payload
+
+    def decode(self, payload):
+        payload = is_py3k and payload or str(payload)
+        return serialization.decode(payload,
+                                    content_type=self.content_type,
+                                    content_encoding=self.content_encoding)
 
     def wait_for(self, task_id, timeout=None, propagate=True, interval=0.5):
         """Wait for task and return its result.
@@ -172,85 +147,23 @@ class BaseBackend(object):
             if timeout and time_elapsed >= timeout:
                 raise TimeoutError('The operation timed out.')
 
-    def cleanup(self):
-        """Backend cleanup. Is run by
-        :class:`celery.task.DeleteExpiredTaskMetaTask`."""
-        pass
+    def prepare_expires(self, value, type=None):
+        if value is None:
+            value = self.app.conf.CELERY_TASK_RESULT_EXPIRES
+        if isinstance(value, timedelta):
+            value = timeutils.timedelta_seconds(value)
+        if value is not None and type:
+            return type(value)
+        return value
 
-    def process_cleanup(self):
-        """Cleanup actions to do at the end of a task worker process."""
-        pass
-
-    def get_status(self, task_id):
-        """Get the status of a task."""
-        raise NotImplementedError(
-                'get_status is not supported by this backend.')
-
-    def get_result(self, task_id):
-        """Get the result of a task."""
-        raise NotImplementedError(
-                'get_result is not supported by this backend.')
-
-    def get_children(self, task_id):
-        raise NotImplementedError(
-                'get_children is not supported by this backend.')
-
-    def get_traceback(self, task_id):
-        """Get the traceback for a failed task."""
-        raise NotImplementedError(
-                'get_traceback is not supported by this backend.')
-
-    def save_group(self, group_id, result):
-        """Store the result and status of a task."""
-        raise NotImplementedError(
-                'save_group is not supported by this backend.')
-
-    def restore_group(self, group_id, cache=True):
-        """Get the result of a group."""
-        raise NotImplementedError(
-                'restore_group is not supported by this backend.')
-
-    def delete_group(self, group_id):
-        raise NotImplementedError(
-                'delete_group is not supported by this backend.')
-
-    def reload_task_result(self, task_id):
-        """Reload task result, even if it has been previously fetched."""
-        raise NotImplementedError(
-                'reload_task_result is not supported by this backend.')
-
-    def reload_group_result(self, task_id):
-        """Reload group result, even if it has been previously fetched."""
-        raise NotImplementedError(
-                'reload_group_result is not supported by this backend.')
-
-    def on_chord_part_return(self, task, propagate=False):
-        pass
-
-    def fallback_chord_unlock(self, group_id, body, result=None, **kwargs):
-        kwargs['result'] = [r.id for r in result]
-        self.app.tasks['celery.chord_unlock'].apply_async((group_id, body, ),
-                                                          kwargs, countdown=1)
-    on_chord_apply = fallback_chord_unlock
-
-    def current_task_children(self):
-        current = current_task()
-        if current:
-            return [r.serializable() for r in current.request.children]
-
-    def __reduce__(self, args=(), kwargs={}):
-        return (unpickle_backend, (self.__class__, args, kwargs))
-
-
-class BaseDictBackend(BaseBackend):
-
-    def __init__(self, *args, **kwargs):
-        super(BaseDictBackend, self).__init__(*args, **kwargs)
-        self._cache = LRUCache(limit=kwargs.get('max_cached_results') or
-                                 self.app.conf.CELERY_MAX_CACHED_RESULTS)
+    def encode_result(self, result, status):
+        if status in self.EXCEPTION_STATES and isinstance(result, Exception):
+            return self.prepare_exception(result)
+        else:
+            return self.prepare_value(result)
 
     def store_result(self, task_id, result, status, traceback=None, **kwargs):
-        """Store task result and status."""
+        """Update task state and result."""
         result = self.encode_result(result, status)
         return self._store_result(task_id, result, status, traceback, **kwargs)
 
@@ -297,12 +210,13 @@ class BaseDictBackend(BaseBackend):
         return meta
 
     def reload_task_result(self, task_id):
+        """Reload task result, even if it has been previously fetched."""
         self._cache[task_id] = self.get_task_meta(task_id, cache=False)
 
     def reload_group_result(self, group_id):
+        """Reload group result, even if it has been previously fetched."""
         self._cache[group_id] = self.get_group_meta(group_id,
                                                     cache=False)
-
     def get_group_meta(self, group_id, cache=True):
         if cache:
             try:
@@ -329,8 +243,35 @@ class BaseDictBackend(BaseBackend):
         self._cache.pop(group_id, None)
         return self._delete_group(group_id)
 
+    def cleanup(self):
+        """Backend cleanup. Is run by
+        :class:`celery.task.DeleteExpiredTaskMetaTask`."""
+        pass
 
-class KeyValueStoreBackend(BaseDictBackend):
+    def process_cleanup(self):
+        """Cleanup actions to do at the end of a task worker process."""
+        pass
+
+    def on_chord_part_return(self, task, propagate=False):
+        pass
+
+    def fallback_chord_unlock(self, group_id, body, result=None, **kwargs):
+        kwargs['result'] = [r.id for r in result]
+        self.app.tasks['celery.chord_unlock'].apply_async((group_id, body, ),
+                                                          kwargs, countdown=1)
+    on_chord_apply = fallback_chord_unlock
+
+    def current_task_children(self):
+        current = current_task()
+        if current:
+            return [r.serializable() for r in current.request.children]
+
+    def __reduce__(self, args=(), kwargs={}):
+        return (unpickle_backend, (self.__class__, args, kwargs))
+BaseDictBackend = BaseBackend  # XXX compat
+
+
+class KeyValueStoreBackend(BaseBackend):
     task_keyprefix = ensure_bytes('celery-task-meta-')
     group_keyprefix = ensure_bytes('celery-taskset-meta-')
     chord_keyprefix = ensure_bytes('chord-unlock-')

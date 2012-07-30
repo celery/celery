@@ -14,7 +14,7 @@ from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.timeutils import maybe_timedelta
 
-from celery.backends.base import BaseDictBackend
+from celery.backends.base import BaseBackend
 
 from .models import Task, TaskSet
 from .session import ResultSession
@@ -49,7 +49,7 @@ def retry(fun):
     return _inner
 
 
-class DatabaseBackend(BaseDictBackend):
+class DatabaseBackend(BaseBackend):
     """The database result backend."""
     # ResultSet.iterate should sleep this much between each pool,
     # to not bombard the database with queries.

@@ -23,12 +23,12 @@ from celery.exceptions import ImproperlyConfigured
 from celery.utils.log import get_logger
 from celery.utils.timeutils import maybe_timedelta, timedelta_seconds
 
-from .base import BaseDictBackend
+from .base import BaseBackend
 
 logger = get_logger(__name__)
 
 
-class CassandraBackend(BaseDictBackend):
+class CassandraBackend(BaseBackend):
     """Highly fault tolerant Cassandra backend.
 
     .. attribute:: servers

@@ -21,7 +21,7 @@ from celery import states
 from celery.exceptions import TimeoutError
 from celery.utils.log import get_logger
 
-from .base import BaseDictBackend
+from .base import BaseBackend
 
 logger = get_logger(__name__)
 
@@ -37,7 +37,7 @@ def repair_uuid(s):
     return '%s-%s-%s-%s-%s' % (s[:8], s[8:12], s[12:16], s[16:20], s[20:])
 
 
-class AMQPBackend(BaseDictBackend):
+class AMQPBackend(BaseBackend):
     """Publishes results by sending messages."""
     Exchange = Exchange
     Queue = Queue
