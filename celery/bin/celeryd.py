@@ -155,7 +155,7 @@ class WorkerCommand(Command):
                       if isinstance(l, basestring))))
         return self.app.Worker(
             hostname=hostname, pool_cls=pool_cls, loglevel=loglevel, **kwargs
-        ).run()
+        ).start()
 
     def with_pool_option(self, argv):
         # this command support custom pools

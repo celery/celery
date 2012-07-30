@@ -12,7 +12,6 @@
 from __future__ import absolute_import
 
 import atexit
-import logging
 import socket
 import sys
 import time
@@ -21,20 +20,23 @@ import traceback
 from functools import partial
 from threading import Event
 
-from billiard import forking_enable
+from billiard import cpu_count, forking_enable
 from billiard.exceptions import WorkerLostError
 from kombu.syn import detect_environment
 from kombu.utils.finalize import Finalize
 
 from celery import concurrency as _concurrency
 from celery import platforms
+from celery import signals
 from celery.app import app_or_default, set_default_app
 from celery.app.abstract import configurated, from_config
-from celery.exceptions import SystemTerminate, TaskRevokedError
+from celery.exceptions import (
+    ImproperlyConfigured, SystemTerminate, TaskRevokedError,
+)
 from celery.task import trace
-from celery.utils.functional import noop
+from celery.utils import worker_direct
 from celery.utils.imports import qualname, reload_from_cwd
-from celery.utils.log import get_logger
+from celery.utils.log import get_logger, mlevel
 from celery.utils.timer2 import Schedule
 
 from . import bootsteps
@@ -42,9 +44,23 @@ from . import state
 from .buckets import TaskBucket, FastQueue
 from .hub import Hub, BoundedSemaphore
 
+try:
+    from greenlet import GreenletExit
+    IGNORE_ERRORS = (GreenletExit, )
+except ImportError:  # pragma: no cover
+    IGNORE_ERRORS = ()
+
 RUN = 0x1
 CLOSE = 0x2
 TERMINATE = 0x3
+
+UNKNOWN_QUEUE = """\
+Trying to select queue subset of {0!r}, but queue {1} is not
+defined in the CELERY_QUEUES setting.
+
+If you want to automatically declare unknown queues you can
+enable the CELERY_CREATE_MISSING_QUEUES setting.
+"""
 
 logger = get_logger(__name__)
 
@@ -85,6 +101,9 @@ class Pool(bootsteps.StartStopComponent):
     requires = ('queues', )
 
     def __init__(self, w, autoscale=None, no_execv=False, **kwargs):
+        if isinstance(autoscale, basestring):
+            max_c, _, min_c = autoscale.partition(',')
+            autoscale = [int(max_c), min_c and int(min_c) or 0]
         w.autoscale = autoscale
         w.pool = None
         w.max_concurrency = None
@@ -271,7 +290,7 @@ class WorkController(configurated):
 
     app = None
     concurrency = from_config()
-    loglevel = logging.ERROR
+    loglevel = from_config('log_level')
     logfile = from_config('log_file')
     send_events = from_config()
     pool_cls = from_config('pool')
@@ -295,9 +314,9 @@ class WorkController(configurated):
 
     _state = None
     _running = 0
+    pidlock = None
 
-    def __init__(self, loglevel=None, hostname=None, ready_callback=noop,
-            queues=None, app=None, pidfile=None, **kwargs):
+    def __init__(self, app=None, hostname=None, **kwargs):
         self.app = app_or_default(app or self.app)
         # all new threads start without a current app, so if an app is not
         # passed on to the thread it will fall back to the "default app",
@@ -307,36 +326,81 @@ class WorkController(configurated):
         # running in the same process.
         set_default_app(self.app)
         self.app.finalize()
-        trace._tasks = self.app._tasks
+        trace._tasks = self.app._tasks   # optimization
+        self.hostname = hostname or socket.gethostname()
+        self.on_before_init(**kwargs)
 
+        self._finalize = Finalize(self, self.stop, exitpriority=1)
         self._shutdown_complete = Event()
+        self.setup_instance(**self.prepare_args(**kwargs))
+
+    def on_before_init(self, **kwargs):
+        pass
+
+    def on_start(self):
+        pass
+
+    def on_consumer_ready(self, consumer):
+        pass
+
+    def setup_instance(self, queues=None, ready_callback=None,
+            pidfile=None, include=None, **kwargs):
+        self.pidfile = pidfile
+        self.app.loader.init_worker()
         self.setup_defaults(kwargs, namespace='celeryd')
-        self.app.select_queues(queues)  # select queues subset.
+        self.setup_queues(queues)
+        self.setup_includes(include)
+
+        # Set default concurrency
+        if not self.concurrency:
+            try:
+                self.concurrency = cpu_count()
+            except NotImplementedError:
+                self.concurrency = 2
 
         # Options
-        self.loglevel = loglevel or self.loglevel
-        self.hostname = hostname or socket.gethostname()
-        self.ready_callback = ready_callback
-        self._finalize = Finalize(self, self.stop, exitpriority=1)
-        self.pidfile = pidfile
-        self.pidlock = None
+        self.loglevel = mlevel(self.loglevel)
+        self.ready_callback = ready_callback or self.on_consumer_ready
         self.use_eventloop = self.should_use_eventloop()
 
-        # Update celery_include to have all known task modules, so that we
-        # ensure all task modules are imported in case an execv happens.
-        task_modules = set(task.__class__.__module__
-                            for task in self.app.tasks.itervalues())
-        self.app.conf.CELERY_INCLUDE = tuple(
-            set(self.app.conf.CELERY_INCLUDE) | task_modules,
-        )
+        signals.worker_init.send(sender=self)
 
         # Initialize boot steps
         self.pool_cls = _concurrency.get_implementation(self.pool_cls)
         self.components = []
         self.namespace = Namespace(app=self.app).apply(self, **kwargs)
 
+    def setup_queues(self, queues):
+        if isinstance(queues, basestring):
+            queues = queues.split(',')
+        self.queues = queues
+        try:
+            self.app.select_queues(queues)
+        except KeyError as exc:
+            raise ImproperlyConfigured(
+                    UNKNOWN_QUEUE.format(queues, exc))
+        if self.app.conf.CELERY_WORKER_DIRECT:
+            self.app.amqp.queues.select_add(worker_direct(self.hostname))
+
+    def setup_includes(self, includes):
+        # Update celery_include to have all known task modules, so that we
+        # ensure all task modules are imported in case an execv happens.
+        inc = self.app.conf.CELERY_INCLUDE
+        if includes:
+            if isinstance(includes, basestring):
+                includes = includes.split(',')
+            inc = self.app.conf.CELERY_INCLUDE = tuple(inc) + tuple(includes)
+        self.include = includes
+        task_modules = set(task.__class__.__module__
+                            for task in self.app.tasks.itervalues())
+        self.app.conf.CELERY_INCLUDE = tuple(set(inc) | task_modules)
+
+    def prepare_args(self, **kwargs):
+        return kwargs
+
     def start(self):
         """Starts the workers main loop."""
+        self.on_start()
         self._state = self.RUN
         if self.pidfile:
             self.pidlock = platforms.create_pidlock(self.pidfile)
@@ -356,9 +420,13 @@ class WorkController(configurated):
         except (KeyboardInterrupt, SystemExit):
             self.stop()
 
-        # Will only get here if running green,
-        # makes sure all greenthreads have exited.
-        self._shutdown_complete.wait()
+        try:
+            # Will only get here if running green,
+            # makes sure all greenthreads have exited.
+            self._shutdown_complete.wait()
+        except IGNORE_ERRORS:
+            pass
+    run = start   # XXX Compat
 
     def process_task_sem(self, req):
         return self.semaphore.acquire(self.process_task, req)
