@@ -82,7 +82,7 @@ class Pool(bootsteps.StartStopComponent):
 
     """
     name = 'worker.pool'
-    requires = ('queues', )
+    requires = ('queues', 'beat', )
 
     def __init__(self, w, autoscale=None, no_execv=False, **kwargs):
         w.autoscale = autoscale
