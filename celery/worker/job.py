@@ -333,6 +333,9 @@ class Request(object):
 
     def on_retry(self, exc_info):
         """Handler called if the task should be retried."""
+        if self.task.acks_late:
+            self.acknowledge()
+
         self.send_event("task-retried", uuid=self.id,
                          exception=safe_repr(exc_info.exception.exc),
                          traceback=safe_str(exc_info.traceback))
