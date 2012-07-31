@@ -8,6 +8,8 @@
 """
 from __future__ import absolute_import
 
+import os
+
 from future_builtins import map
 
 from kombu.utils.encoding import safe_repr
@@ -184,7 +186,8 @@ def stats(panel, **kwargs):
     return {'total': state.total_count,
             'consumer': panel.consumer.info,
             'pool': panel.consumer.pool.info,
-            'autoscaler': asinfo}
+            'autoscaler': asinfo,
+            'pid': os.getpid()}
 
 
 @Panel.register
