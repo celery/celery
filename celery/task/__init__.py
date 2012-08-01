@@ -18,6 +18,17 @@ __all__ = [
     'group', 'chord', 'subtask', 'TaskSet',
 ]
 
+# This is for static analyzers
+BaseTask = None
+Task = None
+PeriodicTask = None
+task = None
+periodic_task = None
+group = None
+chord = None
+subtask = None
+TaskSet = None
+
 
 class module(MagicModule):
 
