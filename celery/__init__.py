@@ -22,6 +22,22 @@ __all__ = [
 ]
 VERSION_BANNER = '%s (%s)' % (__version__, SERIES)
 
+# This is for static analyzers
+Celery = None
+bugreport = None
+shared_task = None
+Task = None
+current_app = None
+current_task = None
+chain = None
+chord = None
+chunks = None
+group = None
+subtask = None
+xmap = None
+xstarmap = None
+uuid = None
+
 # -eof meta-
 
 # Lazy loading
