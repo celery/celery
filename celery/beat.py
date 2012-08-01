@@ -387,6 +387,10 @@ class Service(object):
         self._is_shutdown = Event()
         self._is_stopped = Event()
 
+    def __reduce__(self):
+        return self.__class__, (self.max_interval, self.schedule_filename,
+                                self.scheduler_cls, self.app)
+
     def start(self, embedded_process=False):
         info('Celerybeat: Starting...')
         debug('Celerybeat: Ticking with max interval->%s',

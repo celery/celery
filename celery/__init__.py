@@ -7,8 +7,6 @@
 
 from __future__ import absolute_import
 
-from future_builtins import map
-
 SERIES = 'DEVEL'
 VERSION = (3, 1, 0, 'a1')
 __version__ = '.'.join(map(str, VERSION[0:3])) + ''.join(VERSION[3:])
@@ -16,7 +14,29 @@ __author__ = 'Ask Solem'
 __contact__ = 'ask@celeryproject.org'
 __homepage__ = 'http://celeryproject.org'
 __docformat__ = 'restructuredtext'
+__all__ = [
+    'celery', 'bugreport', 'shared_task', 'task',
+    'current_app', 'current_task',
+    'chain', 'chord', 'chunks', 'group', 'subtask',
+    'xmap', 'xstarmap', 'uuid', 'version', '__version__',
+]
 VERSION_BANNER = '{0} ({1})'.format(__version__, SERIES)
+
+# This is for static analyzers
+Celery = object
+bugreport = lambda *a, **kw: None
+shared_task = lambda *a, **kw: None
+Task = object
+current_app = object()
+current_task = object()
+chain = lambda *a, **kw: None
+chord = lambda *a, **kw: None
+chunks = lambda *a, **kw: None
+group = lambda *a, **kw: None
+subtask = lambda *a, **kw: None
+xmap = lambda *a, **kw: None
+xstarmap = lambda *a, **kw: None
+uuid = lambda: None
 
 # -eof meta-
 

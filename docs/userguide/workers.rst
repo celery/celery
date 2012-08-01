@@ -588,6 +588,8 @@ Pool Restart Command
 
 .. versionadded:: 2.5
 
+Requires the :setting:`CELERYD_POOL_RESTARTS` setting to be enabled.
+
 The remote control command :control:`pool_restart` sends restart requests to
 the workers child processes.  It is particularly useful for forcing
 the worker to import new modules, or for reloading already imported

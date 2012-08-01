@@ -100,6 +100,7 @@ class WorkController(configurated):
     task_soft_time_limit = from_config()
     max_tasks_per_child = from_config()
     pool_putlocks = from_config()
+    pool_restarts = from_config()
     force_execv = from_config()
     prefetch_multiplier = from_config()
     state_db = from_config()
