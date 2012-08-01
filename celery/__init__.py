@@ -23,20 +23,20 @@ __all__ = [
 VERSION_BANNER = '%s (%s)' % (__version__, SERIES)
 
 # This is for static analyzers
-Celery = None
-bugreport = None
-shared_task = None
-Task = None
-current_app = None
-current_task = None
-chain = None
-chord = None
-chunks = None
-group = None
-subtask = None
-xmap = None
-xstarmap = None
-uuid = None
+Celery = object
+bugreport = lambda *a, **kw: None
+shared_task = lambda *a, **kw: None
+Task = object
+current_app = object()
+current_task = object()
+chain = lambda *a, **kw: None
+chord = lambda *a, **kw: None
+chunks = lambda *a, **kw: None
+group = lambda *a, **kw: None
+subtask = lambda *a, **kw: None
+xmap = lambda *a, **kw: None
+xstarmap = lambda *a, **kw: None
+uuid = lambda: None
 
 # -eof meta-
 

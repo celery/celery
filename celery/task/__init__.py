@@ -19,15 +19,15 @@ __all__ = [
 ]
 
 # This is for static analyzers
-BaseTask = None
-Task = None
-PeriodicTask = None
-task = None
-periodic_task = None
-group = None
-chord = None
-subtask = None
-TaskSet = None
+BaseTask = object
+Task = object
+PeriodicTask = object
+task = lambda *a, **kw: None
+periodic_task = lambda *a, **kw: None
+group = lambda *a, **kw: None
+chord = lambda *a, **kw: None
+subtask = lambda *a, **kw: None
+TaskSet = object
 
 
 class module(MagicModule):
