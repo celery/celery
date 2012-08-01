@@ -177,6 +177,7 @@ NAMESPACES = {
         'MAX_TASKS_PER_CHILD': Option(type='int'),
         'POOL': Option(DEFAULT_POOL),
         'POOL_PUTLOCKS': Option(True, type='bool'),
+        'POOL_RESTARTS': Option(False, type='bool'),
         'PREFETCH_MULTIPLIER': Option(4, type='int'),
         'STATE_DB': Option(),
         'TASK_LOG_FORMAT': Option(DEFAULT_TASK_LOG_FMT),

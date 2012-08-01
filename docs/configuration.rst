@@ -1429,6 +1429,16 @@ the built-in aliases: ``processes``, ``eventlet``, ``gevent``.
 
 Default is ``processes``.
 
+.. setting:: CELERYD_POOL_RESTARTS
+
+CELERYD_POOL_RESTARTS
+~~~~~~~~~~~~~~~~~~~~~
+
+If enabled the worker pool can be restarted using the
+:control:`pool_restart` remote control command.
+
+Disabled by default.
+
 .. setting:: CELERYD_AUTOSCALER
 
 CELERYD_AUTOSCALER

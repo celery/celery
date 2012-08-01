@@ -84,7 +84,8 @@ class Pool(bootsteps.StartStopComponent):
     name = 'worker.pool'
     requires = ('queues', 'beat', )
 
-    def __init__(self, w, autoscale=None, no_execv=False, **kwargs):
+    def __init__(self, w, autoscale=None, autoreload=False,
+            no_execv=False, **kwargs):
         w.autoscale = autoscale
         w.pool = None
         w.max_concurrency = None
@@ -92,6 +93,7 @@ class Pool(bootsteps.StartStopComponent):
         w.no_execv = no_execv
         if w.autoscale:
             w.max_concurrency, w.min_concurrency = w.autoscale
+        self.autoreload_enabled = autoreload
 
     def on_poll_init(self, pool, hub):
         apply_after = hub.timer.apply_after
@@ -148,6 +150,7 @@ class Pool(bootsteps.StartStopComponent):
         if not threaded:
             semaphore = w.semaphore = BoundedSemaphore(procs)
             max_restarts = 100
+        allow_restart = self.autoreload_enabled or w.pool_restarts
         pool = w.pool = self.instantiate(w.pool_cls, w.min_concurrency,
                             initargs=(w.app, w.hostname),
                             maxtasksperchild=w.max_tasks_per_child,
@@ -157,6 +160,7 @@ class Pool(bootsteps.StartStopComponent):
                             lost_worker_timeout=w.worker_lost_wait,
                             threads=threaded,
                             max_restarts=max_restarts,
+                            allow_restart=allow_restart,
                             semaphore=semaphore)
         if w.hub:
             w.hub.on_init.append(partial(self.on_poll_init, pool))
@@ -287,6 +291,7 @@ class WorkController(configurated):
     task_soft_time_limit = from_config()
     max_tasks_per_child = from_config()
     pool_putlocks = from_config()
+    pool_restarts = from_config()
     force_execv = from_config()
     prefetch_multiplier = from_config()
     state_db = from_config()
