@@ -9,6 +9,32 @@
 
 If you're looking for versions prior to 3.x you should see :ref:`history`.
 
+.. _version-3.0.5:
+
+3.0.5
+=====
+:release-date: 2012-08-01 04:00 P.M BST
+
+- Now depends on kombu 2.3.1 + billiard 2.7.3.11
+
+- Fixed a bug with the -B option (``cannot pickle thread.lock objects``)
+  (Issue #894 + Issue #892, + django-celery #154).
+
+- The :control:`restart_pool` control command now requires the
+  :setting:`CELERYD_POOL_RESTARTS` setting to be enabled
+
+    This change was necessary as the multiprocessing event that the restart
+    command depends on is responsible for creating many semaphores/file
+    descriptors, resulting in problems in some environments.
+
+- ``chain.apply`` now passes args to the first task (Issue #889).
+
+- Documented previously secret options to the Django-Celery monitor
+  in the monitoring userguide (Issue #396).
+
+- Old changelog are now organized in separate documents for each series,
+  see :ref:`history`.
+
 .. _version-3.0.4:
 
 3.0.4
