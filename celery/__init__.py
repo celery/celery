@@ -14,6 +14,12 @@ __author__ = 'Ask Solem'
 __contact__ = 'ask@celeryproject.org'
 __homepage__ = 'http://celeryproject.org'
 __docformat__ = 'restructuredtext'
+__all__ = [
+    'Celery', 'bugreport', 'shared_task', 'Task',
+    'current_app', 'current_task',
+    'chain', 'chord', 'chunks', 'group', 'subtask',
+    'xmap', 'xstarmap', 'uuid', 'VERSION', '__version__',
+]
 VERSION_BANNER = '%s (%s)' % (__version__, SERIES)
 
 # -eof meta-
