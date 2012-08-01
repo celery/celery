@@ -12,6 +12,12 @@ from celery._state import current_app, current_task as current
 from celery.__compat__ import MagicModule, recreate_module
 from celery.local import Proxy
 
+__all__ = [
+    'BaseTask', 'Task', 'PeriodicTask',
+    'task', 'periodic_task',
+    'group', 'chord', 'subtask', 'TaskSet',
+]
+
 
 class module(MagicModule):
 
