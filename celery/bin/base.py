@@ -69,7 +69,7 @@ from types import ModuleType
 
 import celery
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
-from celery.platforms import EX_FAILURE, EX_USAGE
+from celery.platforms import EX_FAILURE, EX_USAGE, maybe_patch_concurrency
 from celery.utils import text
 from celery.utils.imports import symbol_by_name, import_from_cwd
 
@@ -165,9 +165,7 @@ class Command(object):
         if argv is None:
             argv = list(sys.argv)
         # Should we load any special concurrency environment?
-        pool_option = self.with_pool_option(argv)
-        if pool_option:
-            self.maybe_patch_concurrency(argv, *pool_option)
+        self.maybe_patch_concurrency(argv)
         self.on_concurrency_setup()
 
         # Dump version and exit if '--version' arg set.
@@ -176,26 +174,12 @@ class Command(object):
         prog_name = os.path.basename(argv[0])
         return self.handle_argv(prog_name, argv[1:])
 
-    def _find_option_with_arg(self, argv, short_opts=None, long_opts=None):
-        for i, arg in enumerate(argv):
-            if arg.startswith('-'):
-                if long_opts and arg.startswith('--'):
-                    name, _, val = arg.partition('=')
-                    if name in long_opts:
-                        return val
-                if short_opts and arg in short_opts:
-                    return argv[i + 1]
-        raise KeyError('|'.join(short_opts or [] + long_opts or []))
-
-    def maybe_patch_concurrency(self, argv, short_opts=None, long_opts=None):
-        try:
-            pool = self._find_option_with_arg(argv, short_opts, long_opts)
-        except KeyError:
-            pass
-        else:
-            from celery import concurrency
-            # set up eventlet/gevent environments ASAP.
-            concurrency.get_implementation(pool)
+    def maybe_patch_concurrency(self, argv=None):
+        argv = argv or sys.argv
+        pool_option = self.with_pool_option(argv)
+        if pool_option:
+            maybe_patch_concurrency(argv, *pool_option)
+            short_opts, long_opts = pool_option
 
     def on_concurrency_setup(self):
         pass

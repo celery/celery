@@ -228,9 +228,24 @@ An example task accessing information in the context is:
 .. code-block:: python
 
     @celery.task()
-    def dump_context(x, y):
+    def add(x, y):
         print('Executing task id %r, args: %r kwargs: %r' % (
             add.request.id, add.request.args, add.request.kwargs))
+        return x + y
+
+
+:data:`~celery.current_task` can also be used:
+
+.. code-block:: python
+
+    from celery import current_task
+
+    @celery.task()
+    def add(x, y):
+        request = current_task.request
+        print('Executing task id %r, args: %r kwargs: %r' % (
+            request.id, request.args, request.kwargs))
+        return x + y
 
 .. _task-logging:
 

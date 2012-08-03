@@ -12,7 +12,6 @@ from __future__ import with_statement
 import operator
 import os
 import sys
-import threading
 import traceback
 import warnings
 
@@ -147,6 +146,8 @@ def cry():  # pragma: no cover
     From https://gist.github.com/737056
 
     """
+    import threading
+
     tmap = {}
     main_thread = None
     # get a map of threads by their ID so we can print their names
