@@ -166,8 +166,7 @@ def dump_schedule(panel, safe=False, **kwargs):
 
 @Panel.register
 def dump_reserved(panel, safe=False, **kwargs):
-    ready_queue = panel.consumer.ready_queue
-    reserved = ready_queue.items
+    reserved = state.reserved_requests
     if not reserved:
         logger.debug('--Empty queue--')
         return []
