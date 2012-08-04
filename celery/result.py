@@ -74,14 +74,20 @@ class AsyncResult(ResultBase):
         """Forget about (and possibly remove the result of) this task."""
         self.backend.forget(self.id)
 
-    def revoke(self, connection=None):
+    def revoke(self, connection=None, terminate=False, signal=None):
         """Send revoke signal to all workers.
 
         Any worker receiving the task, or having reserved the
         task, *must* ignore it.
 
+        :keyword terminate: Also terminate the process currently working
+            on the task (if any).
+        :keyword signal: Name of signal to send to process if terminate.
+            Default is TERM.
+
         """
-        self.app.control.revoke(self.id, connection=connection)
+        self.app.control.revoke(self.id, connection=connection,
+                                terminate=terminate, signal=signal)
 
     def get(self, timeout=None, propagate=True, interval=0.5):
         """Wait until task is ready, and return its result.

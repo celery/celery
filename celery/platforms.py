@@ -22,7 +22,6 @@ from future_builtins import map
 
 from .local import try_import
 
-from billiard import current_process
 from kombu.utils.limits import TokenBucket
 
 _setproctitle = try_import('setproctitle')
@@ -65,6 +64,29 @@ def pyimplementation():
         return 'PyPy ' + v
     else:
         return 'CPython'
+
+
+def _find_option_with_arg(argv, short_opts=None, long_opts=None):
+    for i, arg in enumerate(argv):
+        if arg.startswith('-'):
+            if long_opts and arg.startswith('--'):
+                name, _, val = arg.partition('=')
+                if name in long_opts:
+                    return val
+            if short_opts and arg in short_opts:
+                return argv[i + 1]
+    raise KeyError('|'.join(short_opts or [] + long_opts or []))
+
+
+def maybe_patch_concurrency(argv, short_opts=None, long_opts=None):
+    try:
+        pool = _find_option_with_arg(argv, short_opts, long_opts)
+    except KeyError:
+        pass
+    else:
+        # set up eventlet/gevent environments ASAP.
+        from celery import concurrency
+        concurrency.get_implementation(pool)
 
 
 class LockFailed(Exception):
@@ -591,6 +613,7 @@ else:
 
         """
         if not rate_limit or _setps_bucket.can_consume(1):
+            from billiard import current_process
             if hostname:
                 progname = '{0}@{1}'.format(progname, hostname.split('.')[0])
             return set_process_title(

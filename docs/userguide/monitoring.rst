@@ -642,10 +642,15 @@ Task Events
 
     Sent if the execution of the task failed.
 
-* ``task-revoked(uuid)``
+* ``task-revoked(uuid, terminated, signum, expired)``
 
     Sent if the task has been revoked (Note that this is likely
     to be sent by more than one worker).
+
+    - ``terminated`` is set to true if the task process was terminated,
+      and the ``signum`` field set to the signal used.
+
+    - ``expired`` is set to true if the task expired.
 
 * ``task-retried(uuid, exception, traceback, hostname, timestamp)``
 

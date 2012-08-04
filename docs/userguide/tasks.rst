@@ -230,7 +230,20 @@ An example task accessing information in the context is:
     @celery.task()
     def dump_context(x, y):
         print('Executing task id {0.id}, args: {0.args!r} kwargs: {0.kwargs!r}'.format(
-                add.request))
+                dump_context.request))
+
+
+:data:`~celery.current_task` can also be used:
+
+.. code-block:: python
+
+    from celery import current_task
+
+    @celery.task()
+    def dump_context(x, y):
+        print('Executing task id {0.id}, args: {0.args!r} kwargs: {0.kwargs!r}'.format(
+                current_task.request))
+
 
 .. _task-logging:
 

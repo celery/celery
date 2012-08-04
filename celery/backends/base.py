@@ -87,8 +87,8 @@ class BaseBackend(object):
         return self.store_result(task_id, exc, status=states.RETRY,
                                  traceback=traceback)
 
-    def mark_as_revoked(self, task_id):
-        return self.store_result(task_id, TaskRevokedError(),
+    def mark_as_revoked(self, task_id, reason=''):
+        return self.store_result(task_id, TaskRevokedError(reason),
                                  status=states.REVOKED, traceback=None)
 
     def prepare_exception(self, exc):

@@ -117,6 +117,9 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 from __future__ import absolute_import
 
 import sys
+import sys
+from celery.platforms import maybe_patch_concurrency
+maybe_patch_concurrency(sys.argv, ['-P'], ['--pool'])
 
 from billiard import freeze_support
 

@@ -8,12 +8,15 @@ The :program:`celery` umbrella command.
 """
 from __future__ import absolute_import, print_function
 
-import anyjson
 import sys
+from celery.platforms import maybe_patch_concurrency
+maybe_patch_concurrency(sys.argv, ['-P'], ['--pool'])
+
+import anyjson
 import warnings
 
-from billiard import freeze_support
 from future_builtins import map
+
 from importlib import import_module
 from pprint import pformat
 
@@ -936,8 +939,11 @@ def main():
     try:
         if __name__ != '__main__':  # pragma: no cover
             sys.modules['__main__'] = sys.modules[__name__]
+        cmd = CeleryCommand()
+        cmd.maybe_patch_concurrency()
+        from billiard import freeze_support
         freeze_support()
-        CeleryCommand().execute_from_commandline()
+        cmd.execute_from_commandline()
     except KeyboardInterrupt:
         pass
 
