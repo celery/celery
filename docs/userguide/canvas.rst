@@ -199,9 +199,9 @@ The Primitives
 
     - ``chord``
 
-        A chord is just like a group but with a callback.  A group consists
+        A chord is just like a group but with a callback.  A chord consists
         of a header group and a body,  where the body is a task that should execute
-        after all of the tasks in the header is complete.
+        after all of the tasks in the header are complete.
 
     - ``map``
 
@@ -314,7 +314,7 @@ Here's some examples:
 - Simple chord
 
     The chord primitive enables us to add callback to be called when
-    all of the tasks in a group has finished executing, which is often
+    all of the tasks in a group have finished executing, which is often
     required for algorithms that aren't embarrassingly parallel::
 
         >>> from celery import chord
@@ -323,7 +323,7 @@ Here's some examples:
         90
 
     The above example creates 10 task that all start in parallel,
-    and when all of them is complete the return values is combined
+    and when all of them are complete the return values are combined
     into a list and sent to the ``xsum`` task.
 
     The body of a chord can also be immutable, so that the return value
@@ -584,7 +584,7 @@ Group also supports iterators::
 
     >>> group(add.s(i, i) for i in xrange(100))()
 
-A group is a subclass instance, so it can be used in combination
+A group is a subtask instance, so it can be used in combination
 with other subtasks.
 
 Group Results
@@ -665,7 +665,7 @@ Chords
 
 .. versionadded:: 2.3
 
-A chord is a task that only executes after all of the tasks in a taskset has
+A chord is a task that only executes after all of the tasks in a taskset have
 finished executing.
 
 
@@ -715,7 +715,7 @@ Let's break the chord expression down::
     9900
 
 Remember, the callback can only be executed after all of the tasks in the
-header has returned.  Each step in the header is executed as a task, in
+header have returned.  Each step in the header is executed as a task, in
 parallel, possibly on different nodes.  The callback is then applied with
 the return value of each task in the header.  The task id returned by
 :meth:`chord` is the id of the callback, so you can wait for it to complete
