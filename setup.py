@@ -18,30 +18,37 @@ import codecs
 if sys.version_info < (2, 6):
     raise Exception('Celery 3.1 requires Python 2.6 or higher.')
 
+downgrade_packages = [
+    'celery.app.task',
+    'celery.concurrency.processes',
+]
+orig_path = sys.path[:]
+for path in (os.path.curdir, os.getcwd()):
+    if path in sys.path:
+        sys.path.remove(path)
 try:
-    orig_path = sys.path[:]
-    for path in (os.path.curdir, os.getcwd()):
-        if path in sys.path:
-            sys.path.remove(path)
-    try:
-        import celery.app
-        import imp
-        import shutil
-        _, task_path, _ = imp.find_module('task', celery.app.__path__)
-        if task_path.endswith('/task'):
-            print('- force upgrading previous installation')
-            print('  - removing {0!r} package...'.format(task_path))
-            try:
-                shutil.rmtree(os.path.abspath(task_path))
-            except Exception:
-                sys.stderr.write('Could not remove {0!r}: {1!r}\n'.format(
-                    task_path, sys.exc_info[1]))
-    except ImportError:
-        print('Upgrade: no old version found.')
-    finally:
-        sys.path[:] = orig_path
+    import imp
+    import shutil
+    for pkg in downgrade_packages:
+        try:
+            parent, module = pkg.rsplit('.', 1)
+            print('- Trying to upgrade %r in %r' % (module, parent))
+            parent_mod = __import__(parent, None, None, [parent])
+            _, mod_path, _ = imp.find_module(module, parent_mod.__path__)
+            if mod_path.endswith('/' + module):
+                print('- force upgrading previous installation')
+                print('  - removing {0!r} package...'.format(mod_path))
+                try:
+                    shutil.rmtree(os.path.abspath(mod_path))
+                except Exception:
+                    sys.stderr.write('Could not remove {0!r}: {1!r}\n'.format(
+                        mod_path, sys.exc_info[1]))
+        except ImportError:
+            print('- upgrade %s: no old version found.' % module)
 except:
     pass
+finally:
+    sys.path[:] = orig_path
 
 
 NAME = 'celery'
