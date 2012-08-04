@@ -12,8 +12,6 @@
 from __future__ import absolute_import
 
 import os
-import platform
-import signal as _signal
 
 from celery import platforms
 from celery import signals

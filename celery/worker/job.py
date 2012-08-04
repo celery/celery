@@ -240,10 +240,19 @@ class Request(object):
         if self.time_start:
             signal = _signals.signum(signal or 'TERM')
             pool.terminate_job(self.worker_pid, signal)
-            send_revoked(self.task, signum=signal,
-                         terminated=True, expired=False)
+            self._announce_revoked('terminated', True, signal, False)
         else:
             self._terminate_on_ack = pool, signal
+
+    def _announce_revoked(self, reason, terminated, signum, expired):
+        self.send_event('task-revoked', uuid=self.id,
+                        terminated=terminated, signum=signum, expired=expired)
+        if self.store_errors:
+            self.task.backend.mark_as_revoked(self.id, reason)
+        self.acknowledge()
+        self._already_revoked = True
+        send_revoked(self.task, terminated=terminated,
+                     signum=signum, expired=expired)
 
     def revoked(self):
         """If revoked, skip task and mark state."""
@@ -254,13 +263,8 @@ class Request(object):
             expired = self.maybe_expire()
         if self.id in revoked_tasks:
             warn('Skipping revoked task: %s[%s]', self.name, self.id)
-            self.send_event('task-revoked', uuid=self.id)
-            if self.store_errors:
-                self.task.backend.mark_as_revoked(self.id)
-            self.acknowledge()
-            self._already_revoked = True
-            send_revoked(self.task, terminated=False,
-                         signum=None, expired=expired)
+            self._announce_revoked('expired' if expired else 'revoked',
+                False, None, expired)
             return True
         return False
 
