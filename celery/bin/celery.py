@@ -9,12 +9,9 @@ The :program:`celery` umbrella command.
 from __future__ import absolute_import
 from __future__ import with_statement
 
-import sys
-from celery.platforms import maybe_patch_concurrency
-maybe_patch_concurrency(sys.argv, ['-P'], ['--pool'])
-
 import anyjson
 import warnings
+import sys
 
 from importlib import import_module
 from pprint import pformat
@@ -928,7 +925,7 @@ def determine_exit_status(ret):
     return EX_OK if ret else EX_FAILURE
 
 
-def main():
+def main(argv=None):
     # Fix for setuptools generated scripts, so that it will
     # work with multiprocessing fork emulation.
     # (see multiprocessing.forking.get_preparation_data())
@@ -939,7 +936,7 @@ def main():
         cmd.maybe_patch_concurrency()
         from billiard import freeze_support
         freeze_support()
-        cmd.execute_from_commandline()
+        cmd.execute_from_commandline(argv)
     except KeyboardInterrupt:
         pass
 

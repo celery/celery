@@ -15,6 +15,8 @@ import os
 import sys
 import codecs
 
+CELERY_COMPAT_PROGRAMS = os.environ.get('CELERY_COMPAT_PROGRAMS')
+
 if sys.version_info < (2, 5):
     raise Exception('Celery requires Python 2.5 or higher.')
 
@@ -174,14 +176,18 @@ else:
 # -*- Entry Points -*- #
 
 console_scripts = entrypoints['console_scripts'] = [
-        'celery = celery.bin.celery:main',
+    'celery = celery.__main__:main',
+]
+
+if CELERY_COMPAT_PROGRAMS:
+    console_scripts.extend([
         'celeryd = celery.bin.celeryd:main',
         'celerybeat = celery.bin.celerybeat:main',
         'camqadm = celery.bin.camqadm:main',
         'celeryev = celery.bin.celeryev:main',
         'celeryctl = celery.bin.celeryctl:main',
         'celeryd-multi = celery.bin.celeryd_multi:main',
-]
+    ])
 
 # bundles: Only relevant for Celery developers.
 entrypoints['bundle.bundles'] = ['celery = celery.contrib.bundles:bundles']
