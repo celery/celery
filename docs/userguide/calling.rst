@@ -66,7 +66,7 @@ function:
 
     task.delay(arg1, arg2, kwarg1='x', kwarg2='y')
 
-Using :meth:`~@Task.apply_async` instead we have to write:
+Using :meth:`~@Task.apply_async` instead you have to write:
 
 .. code-block:: python
 
@@ -118,7 +118,7 @@ as a partial argument:
 
 .. sidebar:: What is ``s``?
 
-    The ``add.s`` call used here is called a subtask, we talk
+    The ``add.s`` call used here is called a subtask, I talk
     more about subtasks in the :ref:`canvas guide <guide-canvas>`,
     where you can also learn about :class:`~celery.chain`, which
     is a simpler way to chain tasks together.

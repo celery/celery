@@ -5,7 +5,7 @@
 ============
 
 The :ref:`first-steps` guide is intentionally minimal.  In this guide
-we will demonstrate what Celery offers in more detail, including
+I will demonstrate what Celery offers in more detail, including
 how to add Celery support for your application and library.
 
 This document does not document all of Celery's features and
@@ -36,7 +36,7 @@ Project layout::
 .. literalinclude:: ../../examples/next-steps/proj/celery.py
     :language: python
 
-In this module we created our :class:`@Celery` instance (sometimes
+In this module you created our :class:`@Celery` instance (sometimes
 referred to as the *app*).  To use Celery within your project
 you simply import this instance.
 
@@ -47,17 +47,17 @@ you simply import this instance.
 - The ``backend`` argument specifies the result backend to use,
 
     It's used to keep track of task state and results.
-    While results are disabled by default we use the amqp backend here
-    to demonstrate how retrieving the results work, you may want to use
-    a different backend for your application, as they all have different
-    strengths and weaknesses.  If you don't need results it's best
+    While results are disabled by default I use the amqp backend here
+    because I demonstrate how retrieving results work later, you may want to use
+    a different backend for your application. They all have different
+    strengths and weaknesses.  If you don't need results it's better
     to disable them.  Results can also be disabled for individual tasks
     by setting the ``@task(ignore_result=True)`` option.
 
     See :ref:`celerytut-keeping-results` for more information.
 
 - The ``include`` argument is a list of modules to import when
-  the worker starts.  We need to add our tasks module here so
+  the worker starts.  You need to add our tasks module here so
   that the worker is able to find our tasks.
 
 :file:`proj/tasks.py`
@@ -275,9 +275,9 @@ backend that suits every application, so to choose one you need to consider
 the drawbacks of each individual backend.  For many tasks
 keeping the return value isn't even very useful, so it's a sensible default to
 have.  Also note that result backends are not used for monitoring tasks and workers,
-for that we use dedicated event messages (see :ref:`guide-monitoring`).
+for that Celery uses dedicated event messages (see :ref:`guide-monitoring`).
 
-If you have a result backend configured we can retrieve the return
+If you have a result backend configured you can retrieve the return
 value of a task::
 
     >>> res = add.delay(2, 2)
@@ -289,7 +289,7 @@ You can find the task's id by looking at the :attr:`id` attribute::
     >>> res.id
     d6b3aea2-fb9b-4ebc-8da4-848818db9114
 
-We can also inspect the exception and traceback if the task raised an
+You can also inspect the exception and traceback if the task raised an
 exception, in fact ``result.get()`` will propagate any errors by default::
 
     >>> res = add.delay(2)
@@ -359,7 +359,7 @@ Calling tasks is described in detail in the
 *Canvas*: Designing Workflows
 =============================
 
-We just learned how to call a task using the tasks ``delay`` method,
+You just learned how to call a task using the tasks ``delay`` method,
 and this is often all you need, but sometimes you may want to pass the
 signature of a task invocation to another process or as an argument to another
 function, for this Celery uses something called *subtasks*.
@@ -408,7 +408,7 @@ and this can be resolved when calling the subtask::
     >>> res.get()
     10
 
-Here we added the argument 8, which was prepended to the existing argument 2
+Here you added the argument 8, which was prepended to the existing argument 2
 forming a complete signature of ``add(8, 2)``.
 
 Keyword arguments can also be added later, these are then merged with any
@@ -430,8 +430,8 @@ As stated subtasks supports the calling API, which means that:
   to the arguments in the signature, and keyword arguments is merged with any
   existing keys.
 
-So this all seems very useful, but what can we actually do with these?
-To get to that we must introduce the canvas primitives...
+So this all seems very useful, but what can you actually do with these?
+To get to that I must introduce the canvas primitives...
 
 The Primitives
 --------------

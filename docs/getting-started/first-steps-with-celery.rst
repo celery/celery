@@ -127,7 +127,7 @@ application or just app in short.  Since this instance is used as
 the entry-point for everything you want to do in Celery, like creating tasks and
 managing workers, it must be possible for other modules to import it.
 
-In this tutorial we will keep everything contained in a single module,
+In this tutorial you will keep everything contained in a single module,
 but for larger projects you want to create
 a :ref:`dedicated module <project-layout>`.
 
@@ -146,22 +146,19 @@ Let's create the file :file:`tasks.py`:
 The first argument to :class:`~celery.app.Celery` is the name of the current module,
 this is needed so that names can be automatically generated, the second
 argument is the broker keyword argument which specifies the URL of the
-message broker we want to use.
-
-The broker argument specifies the URL of the broker we want to use,
-we use RabbitMQ here, which is already the default option,
-but see :ref:`celerytut-broker` above if you want to use something different,
+message broker you want to use, using RabbitMQ here, which is already the
+default option.  See :ref:`celerytut-broker` above for more choices,
 e.g. for Redis you can use ``redis://localhost``, or MongoDB:
 ``mongodb://localhost``.
 
-We defined a single task, called ``add``, which returns the sum of two numbers.
+You defined a single task, called ``add``, which returns the sum of two numbers.
 
 .. _celerytut-running-celeryd:
 
 Running the celery worker server
 ================================
 
-We now run the worker by executing our program with the ``worker``
+You now run the worker by executing our program with the ``worker``
 argument:
 
 .. code-block:: bash
@@ -192,7 +189,7 @@ There also several other commands available, and help is also available:
 Calling the task
 ================
 
-To call our task we can use the :meth:`~@Task.delay` method.
+To call our task you can use the :meth:`~@Task.delay` method.
 
 This is a handy shortcut to the :meth:`~@Task.apply_async`
 method which gives greater control of the task execution (see
@@ -225,7 +222,7 @@ built-in result backends to choose from: `SQLAlchemy`_/`Django`_ ORM,
 .. _`SQLAlchemy`: http://www.sqlalchemy.org/
 .. _`Django`: http://djangoproject.com
 
-For this example we will use the `amqp` result backend, which sends states
+For this example you will use the `amqp` result backend, which sends states
 as messages.  The backend is specified via the ``backend`` argument to
 :class:`@Celery`, (or via the :setting:`CELERY_RESULT_BACKEND` setting if
 you choose to use a configuration module)::
@@ -240,7 +237,7 @@ the message broker (a popular combination)::
 To read more about result backends please see :ref:`task-result-backends`.
 
 Now with the result backend configured, let's call the task again.
-This time we'll hold on to the :class:`~@AsyncResult` instance returned
+This time you'll hold on to the :class:`~@AsyncResult` instance returned
 when you call a task::
 
     >>> result = add.delay(4, 4)
@@ -251,7 +248,7 @@ has finished processing or not::
     >>> result.ready()
     False
 
-We can wait for the result to complete, but this is rarely used
+You can wait for the result to complete, but this is rarely used
 since it turns the asynchronous call into a synchronous one::
 
     >>> result.get(timeout=1)
@@ -264,7 +261,7 @@ the ``propagate`` argument::
     >>> result.get(propagate=True)
 
 
-If the task raised an exception we can also gain access to the
+If the task raised an exception you can also gain access to the
 original traceback::
 
     >>> result.traceback

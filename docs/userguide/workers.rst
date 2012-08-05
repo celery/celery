@@ -474,9 +474,9 @@ The same can be accomplished dynamically using the :meth:`@control.add_consumer`
     [{u'worker1.local': {u'ok': u"already consuming from u'foo'"}}]
 
 
-By now we have only used automatic queues, which is only using a queue name.
+By now I have only shown examples using automatic queues,
 If you need more control you can also specify the exchange, routing_key and
-other options::
+even other options::
 
     >>> myapp.control.add_consumer(
     ...     queue='baz',

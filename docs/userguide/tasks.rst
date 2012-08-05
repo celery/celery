@@ -306,7 +306,7 @@ Here's an example using ``retry``:
         except (Twitter.FailWhaleError, Twitter.LoginError) as exc:
             raise send_twitter_status.retry(exc=exc)
 
-Here we used the `exc` argument to pass the current exception to
+Here the `exc` argument was used to pass the current exception to
 :meth:`~@Task.retry`.  Both the exception and the traceback will
 be available in the task state (if a result backend is enabled).
 
@@ -689,7 +689,7 @@ Use :meth:`~@Task.update_state` to update a task's state::
                 meta={'current': i, 'total': len(filenames)})
 
 
-Here we created the state `"PROGRESS"`, which tells any application
+Here I created the state `"PROGRESS"`, which tells any application
 aware of this state that the task is currently in progress, and also where
 it is in the process by having `current` and `total` counts as part of the
 state metadata.  This can then be used to create e.g. progress bars.
@@ -949,7 +949,7 @@ task as :attr:`~@Task.abstract`:
 This way the task won't be registered, but any task inheriting from
 it will be.
 
-When tasks are sent, we don't send any actual function code, just the name
+When tasks are sent, no actual function code is sent with it, just the name
 of the task to execute.  When the worker then receives the message it can look
 up the name in its task registry to find the execution code.
 
@@ -1054,7 +1054,7 @@ Make your design asynchronous instead, for example by using *callbacks*.
         PageInfo.objects.create(url, info)
 
 
-Here we instead create a chain of tasks by linking together
+Here I instead created a chain of tasks by linking together
 different :func:`~celery.subtask`'s.
 You can read about chains and other powerful constructs
 at :ref:`designing-workflows`.
@@ -1226,8 +1226,8 @@ Let's take a real wold example; A blog where comments posted needs to be
 filtered for spam.  When the comment is created, the spam filter runs in the
 background, so the user doesn't have to wait for it to finish.
 
-We have a Django blog application allowing comments
-on blog posts.  We'll describe parts of the models/views and tasks for this
+I have a Django blog application allowing comments
+on blog posts.  I'll describe parts of the models/views and tasks for this
 application.
 
 blog/models.py
@@ -1257,8 +1257,8 @@ The comment model looks like this:
             verbose_name_plural = _('comments')
 
 
-In the view where the comment is posted, we first write the comment
-to the database, then we launch the spam filter task in the background.
+In the view where the comment is posted, I first write the comment
+to the database, then I launch the spam filter task in the background.
 
 .. _task-example-blog-views:
 
@@ -1301,12 +1301,12 @@ blog/views.py
         return render_to_response(template_name, context_instance=context)
 
 
-To filter spam in comments we use `Akismet`_, the service
+To filter spam in comments I use `Akismet`_, the service
 used to filter spam in comments posted to the free weblog platform
 `Wordpress`.  `Akismet`_ is free for personal use, but for commercial use you
 need to pay.  You have to sign up to their service to get an API key.
 
-To make API calls to `Akismet`_ we use the `akismet.py`_ library written by
+To make API calls to `Akismet`_ I use the `akismet.py`_ library written by
 `Michael Foord`_.
 
 .. _task-example-blog-tasks:
