@@ -9,11 +9,18 @@
 from __future__ import absolute_import
 
 import os
-if not os.environ.get('EVENTLET_NOPATCH'):
+
+EVENTLET_NOPATCH = int(os.environ.get('EVENTLET_NOPATCH', 0))
+EVENTLET_DBLOCK = int(os.environ.get('EVENTLET_NOBLOCK', 0))
+
+PATCHED = [0]
+if not EVENTLET_NOPATCH and not PATCHED[0]:
+    PATCHED[0] += 1
     import eventlet
     import eventlet.debug
     eventlet.monkey_patch()
-    eventlet.debug.hub_prevent_multiple_readers(False)
+    eventlet.debug.hub_prevent_multiple_readers(True)
+    eventlet.debug.hub_blocking_detection(EVENTLET_DBLOCK)
 
 from time import time
 

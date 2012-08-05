@@ -8,7 +8,7 @@
 """
 from __future__ import absolute_import
 
-from celery.utils.imports import symbol_by_name
+from celery.local import symbol_by_name
 
 ALIASES = {
     'processes': 'celery.concurrency.processes:TaskPool',
