@@ -581,7 +581,7 @@ Logging support now conforms better with best practices.
 
         logger = get_task_logger(__name__)
 
-        @celery.task()
+        @celery.task
         def add(x, y):
             logger.debug('Adding %r + %r' % (x, y))
             return x + y

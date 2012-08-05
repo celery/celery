@@ -459,7 +459,7 @@ the error callbacks take the id of the parent task as argument instead:
 
     from proj.celery import celery
 
-    @celery.task()
+    @celery.task
     def log_error(task_id):
         result = celery.AsyncResult(task_id)
         result.get(propagate=False)  # make sure result written.
@@ -676,11 +676,11 @@ already a standard function):
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     def add(x, y):
         return x + y
 
-    @celery.task()
+    @celery.task
     def tsum(numbers):
         return sum(numbers)
 
@@ -789,7 +789,7 @@ is the same as having a task doing:
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     def temp():
         return [xsum(range(10)), xsum(range(100))]
 
@@ -802,7 +802,7 @@ is the same as having a task doing:
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     def temp():
         return [add(i, i) for i in range(10)]
 

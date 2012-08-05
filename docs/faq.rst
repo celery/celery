@@ -627,7 +627,7 @@ How can I get the task id of the current task?
 
 **Answer**: The current id and more is available in the task request::
 
-    @celery.task()
+    @celery.task
     def mytask():
         cache.set(mytask.request.id, "Running")
 
@@ -673,7 +673,7 @@ Also, a common pattern is to add callbacks to tasks:
 
     logger = get_task_logger(__name__)
 
-    @celery.task()
+    @celery.task
     def add(x, y):
         return x + y
 
@@ -787,7 +787,7 @@ this is rarely the case. Imagine the following task:
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     def process_upload(filename, tmpfile):
         # Increment a file count stored in a database
         increment_file_counter()

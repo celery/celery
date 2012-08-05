@@ -293,7 +293,7 @@ time limit kills it:
     from myapp import celery
     from celery.exceptions import SoftTimeLimitExceeded
 
-    @celery.task()
+    @celery.task
     def mytask():
         try:
             do_work()
