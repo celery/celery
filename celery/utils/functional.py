@@ -62,7 +62,7 @@ class LRUCache(UserDict):
             self.data[key] = value
 
     def __iter__(self):
-        return self.data.iterkeys()
+        return iter(self.data)
 
     def _iterate_items(self):
         for k in self:

@@ -6,7 +6,7 @@
 Examples
 ========
 
-::
+.. code-block:: bash
 
     # Single worker with explicit name and events enabled.
     $ celeryd-multi start Leslie -E

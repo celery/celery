@@ -173,7 +173,7 @@ class DependencyGraph(object):
         fh.write('}\n')
 
     def __iter__(self):
-        return self.adjacent.iterkeys()
+        return iter(self.adjacent)
 
     def __getitem__(self, node):
         return self.adjacent[node]
@@ -262,11 +262,11 @@ class DictAttribute(object):
         return hasattr(self.obj, key)
 
     def _iterate_keys(self):
-        return vars(self.obj).iterkeys()
+        return iter(vars(self.obj))
     iterkeys = _iterate_keys
 
     def __iter__(self):
-        return self.iterkeys()
+        return self._iterate_keys()
 
     def _iterate_items(self):
         return vars(self.obj).iteritems()
@@ -278,7 +278,7 @@ class DictAttribute(object):
     else:
 
         def keys(self):
-            return list(self._iterate_keys())
+            return list(self)
 
         def items(self):
             return list(self._iterate_items())
@@ -346,7 +346,7 @@ class ConfigurationView(AttributeDictMixin):
         return repr(dict(self.iteritems()))
 
     def __iter__(self):
-        return self.iterkeys()
+        return self._iterate_keys()
 
     def _iter(self, op):
         # defaults must be first in the stream, so values in
@@ -354,7 +354,7 @@ class ConfigurationView(AttributeDictMixin):
         return chain(*[op(d) for d in reversed(self._order)])
 
     def _iterate_keys(self):
-        return uniq(self._iter(lambda d: d.iterkeys()))
+        return uniq(self._iter(lambda d: d))
     iterkeys = _iterate_keys
 
     def _iterate_items(self):
@@ -437,7 +437,7 @@ class LimitedSet(object):
         return iter(self._data)
 
     def __repr__(self):
-        return 'LimitedSet(%r)' % (self._data.keys(), )
+        return 'LimitedSet(%r)' % (list(self._data), )
 
     @property
     def chronologically(self):

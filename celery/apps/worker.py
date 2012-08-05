@@ -194,7 +194,7 @@ class Worker(configurated):
                 count, pluralize(count, 'message')))
 
     def tasklist(self, include_builtins=True):
-        tasks = self.app.tasks.keys()
+        tasks = self.app.tasks
         if not include_builtins:
             tasks = filter(lambda s: not s.startswith('celery.'), tasks)
         return '\n'.join('  . %s' % task for task in sorted(tasks))

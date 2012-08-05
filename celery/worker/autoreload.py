@@ -102,7 +102,7 @@ class StatMonitor(BaseMonitor):
             modified = dict((f, mt) for f, mt in self._mtimes()
                                 if self._maybe_modified(f, mt))
             if modified:
-                self.on_change(modified.keys())
+                self.on_change(modified)
                 self.modify_times.update(modified)
             time.sleep(self.interval)
 
@@ -232,7 +232,7 @@ class Autoreloader(bgThread):
         files.update(dict((module_file(sys.modules[m]), m)
                         for m in self.modules))
 
-        self._monitor = self.Monitor(files.keys(), self.on_change,
+        self._monitor = self.Monitor(files, self.on_change,
                 shutdown_event=self._is_shutdown, **self.options)
         self._hashes = dict([(f, file_hash(f)) for f in files])
 

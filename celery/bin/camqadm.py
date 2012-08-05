@@ -239,7 +239,7 @@ class AMQShell(cmd.Cmd):
     def do_help(self, *args):
         if not args:
             self.say(HELP_HEADER)
-            for cmd_name in self.amqp.keys():
+            for cmd_name in self.amqp:
                 self.display_command_help(cmd_name, short=True)
             self.say(EXAMPLE_TEXT)
         else:

@@ -16,6 +16,15 @@ from .base import KeyValueStoreBackend
 
 _imp = [None]
 
+REQUIRES_BACKEND = """\
+The memcached backend requires either pylibmc or python-memcached.\
+"""
+
+UNKNOWN_BACKEND = """\
+The cache backend %r is unknown,
+Please use one of the following backends instead: %s\
+"""
+
 
 def import_best_memcache():
     if _imp[0] is None:
@@ -27,9 +36,7 @@ def import_best_memcache():
             try:
                 import memcache  # noqa
             except ImportError:
-                raise ImproperlyConfigured(
-                    'Memcached backend requires either the pylibmc '
-                    'or memcache library')
+                raise ImproperlyConfigured(REQUIRES_BACKEND)
         _imp[0] = (is_pylibmc, memcache)
     return _imp[0]
 
@@ -90,10 +97,8 @@ class CacheBackend(KeyValueStoreBackend):
         try:
             self.Client = backends[self.backend]()
         except KeyError:
-            raise ImproperlyConfigured(
-                    'Unknown cache backend: %s. Please use one of the '
-                    'following backends: %s' % (self.backend,
-                                                ', '.join(backends.keys())))
+            raise ImproperlyConfigured(UNKNOWN_BACKEND % (
+                self.backend, ', '.join(backends)))
 
     def get(self, key):
         return self.client.get(key)

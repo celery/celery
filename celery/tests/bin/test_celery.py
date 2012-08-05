@@ -340,4 +340,4 @@ class test_main(AppCase):
     def test_main(self, Command):
         command = Command.return_value = Mock()
         main()
-        command.execute_from_commandline.assert_called_with()
+        command.execute_from_commandline.assert_called_with(None)

@@ -131,7 +131,7 @@ class Queues(dict):
 
     def select_remove(self, queue):
         if self._consume_from is None:
-            self.select_subset(k for k in self.keys() if k != queue)
+            self.select_subset(k for k in self if k != queue)
         else:
             self._consume_from.pop(queue, None)
 

@@ -162,7 +162,7 @@ class Command(BaseCommand):
 
     def say_remote_command_reply(self, replies):
         c = self.colored
-        node = replies.keys()[0]
+        node = iter(replies).next()  # <-- take first.
         reply = replies[node]
         status, preply = self.prettify(reply)
         self.say_chat('->', c.cyan(node, ': ') + status,
@@ -326,7 +326,7 @@ class list_(Command):
 
     def run(self, what=None, *_, **kw):
         topics = {'bindings': self.list_bindings}
-        available = ', '.join(topics.keys())
+        available = ', '.join(topics)
         if not what:
             raise Error('You must specify what to list (%s)' % available)
         if what not in topics:
@@ -401,7 +401,7 @@ class purge(Command):
 
     """
     def run(self, *args, **kwargs):
-        queues = len(self.app.amqp.queues.keys())
+        queues = len(self.app.amqp.queues)
         messages_removed = self.app.control.purge()
         if messages_removed:
             self.out('Purged %s %s from %s known task %s.' % (
@@ -712,7 +712,9 @@ class shell(Command):  # pragma: no cover
           xmap, xstarmap subtask, Task
         - all registered tasks.
 
-    Example Session::
+    Example Session:
+
+    .. code-block:: bash
 
         $ celery shell
 

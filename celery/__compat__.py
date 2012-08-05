@@ -187,7 +187,7 @@ def get_compat_module(pkg, name):
         fqdn = '.'.join([pkg.__name__, name])
         module = sys.modules[fqdn] = import_module(attrs)
         return module
-    attrs['__all__'] = attrs.keys()
+    attrs['__all__'] = list(attrs)
     return create_module(name, dict(attrs), pkg=pkg, prepare_attr=prepare)
 
 

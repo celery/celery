@@ -213,7 +213,7 @@ def dump_tasks(panel, taskinfoitems=None, **kwargs):
         return '%s [%s]' % (task.name, ' '.join(info))
 
     info = map(_extract_info, (tasks[task]
-                                    for task in sorted(tasks.keys())))
+                                    for task in sorted(tasks)))
     logger.debug('* Dump of currently registered tasks:\n%s', '\n'.join(info))
 
     return info
