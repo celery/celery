@@ -1,11 +1,10 @@
 from __future__ import absolute_import
 
-import signal
 import time
 
 from itertools import cycle
 
-from mock import Mock, patch
+from mock import Mock
 from nose import SkipTest
 
 from celery.utils.functional import noop

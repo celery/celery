@@ -9,20 +9,23 @@
 from __future__ import absolute_import
 
 import os
+import sys
 
 EVENTLET_NOPATCH = os.environ.get('EVENTLET_NOPATCH', False)
 EVENTLET_DBLOCK = int(os.environ.get('EVENTLET_NOBLOCK', 0))
 W_RACE = """\
 Celery module with %s imported before eventlet patched\
 """
+RACE_MODS = ('billiard.', 'celery.', 'kombu.')
 
-def _racedetect():
-    import sys
-    for mod in (mod for mod in sys.modules if mod.startswith('celery.')):
-            for side in ('thread', 'threading', 'socket'):
-                if getattr(mod, side, None):
-                    warnings.warn(RuntimeWarning(W_RACE % side))
-_racedetect()
+
+#: Warn if we couldn't patch early enough,
+#: and thread/socket depending celery modules have already been loaded.
+for mod in (mod for mod in sys.modules if mod.startswith(RACE_MODS)):
+    for side in ('thread', 'threading', 'socket'):
+        if getattr(mod, side, None):
+            import warnings
+            warnings.warn(RuntimeWarning(W_RACE % side))
 
 
 PATCHED = [0]
