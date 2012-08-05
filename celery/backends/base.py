@@ -58,7 +58,8 @@ class BaseBackend(object):
     #: If true the backend must implement :meth:`get_many`.
     supports_native_join = False
 
-    def __init__(self, app=None, serializer=None, max_cached_results=None, **kwargs):
+    def __init__(self, app=None, serializer=None, max_cached_results=None,
+            **kwargs):
         from celery.app import app_or_default
         self.app = app_or_default(app)
         self.serializer = serializer or self.app.conf.CELERY_RESULT_SERIALIZER
@@ -215,8 +216,8 @@ class BaseBackend(object):
 
     def reload_group_result(self, group_id):
         """Reload group result, even if it has been previously fetched."""
-        self._cache[group_id] = self.get_group_meta(group_id,
-                                                    cache=False)
+        self._cache[group_id] = self.get_group_meta(group_id, cache=False)
+
     def get_group_meta(self, group_id, cache=True):
         if cache:
             try:
