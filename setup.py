@@ -15,7 +15,7 @@ import os
 import sys
 import codecs
 
-CELERY_COMPAT_PROGRAMS = os.environ.get('CELERY_COMPAT_PROGRAMS')
+CELERY_COMPAT_PROGRAMS = int(os.environ.get('CELERY_COMPAT_PROGRAMS', 1))
 
 if sys.version_info < (2, 5):
     raise Exception('Celery requires Python 2.5 or higher.')
@@ -181,7 +181,7 @@ console_scripts = entrypoints['console_scripts'] = [
 
 if CELERY_COMPAT_PROGRAMS:
     console_scripts.extend([
-        'celeryd = celery.bin.celeryd:main',
+        'celeryd = celery.__main__:_compat_worker',
         'celerybeat = celery.bin.celerybeat:main',
         'camqadm = celery.bin.camqadm:main',
         'celeryev = celery.bin.celeryev:main',
