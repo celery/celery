@@ -13,10 +13,10 @@ import atexit
 import heapq
 import os
 import sys
+import threading
 
 from functools import wraps
 from itertools import count
-from threading import Condition, Event, Lock, Thread
 from time import time, sleep, mktime
 
 from datetime import datetime, timedelta
@@ -210,7 +210,7 @@ class Schedule(object):
         return map(heapq.heappop, [events] * len(events))
 
 
-class Timer(Thread):
+class Timer(threading.Thread):
     Entry = Entry
     Schedule = Schedule
 
@@ -231,11 +231,11 @@ class Timer(Thread):
                                                   max_interval=max_interval)
         self.on_tick = on_tick or self.on_tick
 
-        Thread.__init__(self)
-        self._is_shutdown = Event()
-        self._is_stopped = Event()
-        self.mutex = Lock()
-        self.not_empty = Condition(self.mutex)
+        threading.Thread.__init__(self)
+        self._is_shutdown = threading.Event()
+        self._is_stopped = threading.Event()
+        self.mutex = threading.Lock()
+        self.not_empty = threading.Condition(self.mutex)
         self.setDaemon(True)
         self.setName('Timer-%s' % (self._timer_count(), ))
 

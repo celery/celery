@@ -9,13 +9,13 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
+import threading
 import warnings
 
 from collections import deque
 from contextlib import contextmanager
 from copy import deepcopy
 from functools import wraps
-from threading import Lock
 
 from billiard.util import register_after_fork
 from kombu.clocks import LamportClock
@@ -77,7 +77,7 @@ class Celery(object):
         self._pending_defaults = deque()
 
         self.finalized = False
-        self._finalize_mutex = Lock()
+        self._finalize_mutex = threading.Lock()
         self._pending = deque()
         self._tasks = tasks
         if not isinstance(self._tasks, TaskRegistry):
