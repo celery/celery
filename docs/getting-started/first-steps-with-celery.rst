@@ -54,7 +54,9 @@ Detailed information about using RabbitMQ with Celery:
 .. _`RabbitMQ`: http://www.rabbitmq.com/
 
 If you are using Ubuntu or Debian install RabbitMQ by executing this
-command::
+command:
+
+.. code-block:: bash
 
     $ sudo apt-get install rabbitmq-server
 
@@ -111,7 +113,9 @@ Installing Celery
 =================
 
 Celery is on the Python Package Index (PyPI), so it can be installed
-with standard Python tools like ``pip`` or ``easy_install``::
+with standard Python tools like ``pip`` or ``easy_install``:
+
+.. code-block:: bash
 
     $ pip install celery
 
@@ -158,7 +162,9 @@ Running the celery worker server
 ================================
 
 We now run the worker by executing our program with the ``worker``
-argument::
+argument:
+
+.. code-block:: bash
 
     $ celery -A tasks worker --loglevel=info
 
@@ -167,11 +173,15 @@ background as a daemon.  To do this you need to use the tools provided
 by your platform, or something like `supervisord`_ (see :ref:`daemonizing`
 for more information).
 
-For a complete listing of the command line options available, do::
+For a complete listing of the command line options available, do:
+
+.. code-block:: bash
 
     $  celery worker --help
 
-There also several other commands available, and help is also available::
+There also several other commands available, and help is also available:
+
+.. code-block:: bash
 
     $ celery help
 
@@ -331,7 +341,9 @@ current directory or on the Python path, it could look like this:
     CELERY_ENABLE_UTC = True
 
 To verify that your configuration file works properly, and doesn't
-contain any syntax errors, you can try to import it::
+contain any syntax errors, you can try to import it:
+
+.. code-block:: bash
 
     $ python -m celeryconfig
 
@@ -362,7 +374,9 @@ instead, so that only 10 tasks of this type can be processed in a minute
 
 If you are using RabbitMQ, Redis or MongoDB as the
 broker then you can also direct the workers to set a new rate limit
-for the task at runtime::
+for the task at runtime:
+
+.. code-block:: bash
 
     $ celery control rate_limit tasks.add 10/m
     worker.example.com: OK

@@ -536,7 +536,9 @@ You can even convert these graphs to *dot* format::
     ...     res.parent.parent.graph.to_dot(fh)
 
 
-and create images::
+and create images:
+
+.. code-block:: bash
 
     $ dot -Tpng graph.dot -o graph.png
 

@@ -218,7 +218,9 @@ News
 
 
     Example using celeryctl to start consuming from queue "queue", in
-    exchange "exchange", of type "direct" using binding key "key"::
+    exchange "exchange", of type "direct" using binding key "key":
+
+    .. code-block:: bash
 
         $ celeryctl inspect add_consumer queue exchange direct key
         $ celeryctl inspect cancel_consumer queue
@@ -287,7 +289,9 @@ Important Notes
     :file:`platform.pyc`) file from your previous Celery installation.
 
     To do this use :program:`python` to find the location
-    of this module::
+    of this module:
+
+    .. code-block:: bash
 
         $ python
         >>> import celery.platform
@@ -295,7 +299,9 @@ Important Notes
         <module 'celery.platform' from '/opt/devel/celery/celery/platform.pyc'>
 
     Here the compiled module is in :file:`/opt/devel/celery/celery/`,
-    to remove the offending files do::
+    to remove the offending files do:
+
+    .. code-block:: bash
 
         $ rm -f /opt/devel/celery/celery/platform.py*
 
@@ -333,13 +339,17 @@ News
 
     To use the Django admin monitor you need to do the following:
 
-    1. Create the new database tables.
+    1. Create the new database tables:
 
-        $ python manage.py syncdb
+        .. code-block:: bash
 
-    2. Start the django-celery snapshot camera::
+            $ python manage.py syncdb
 
-        $ python manage.py celerycam
+    2. Start the django-celery snapshot camera:
+
+        .. code-block:: bash
+
+            $ python manage.py celerycam
 
     3. Open up the django admin to monitor your cluster.
 
@@ -388,9 +398,12 @@ News
   apply tasks and inspect the results of tasks.
 
     .. seealso::
+
         The :ref:`monitoring-celeryctl` section in the :ref:`guide`.
 
-    Some examples::
+    Some examples:
+
+    .. code-block:: bash
 
         $ celeryctl apply tasks.add -a '[2, 2]' --countdown=10
 
@@ -467,7 +480,9 @@ News
 
     A comma separated list of (task) modules to be imported.
 
-    Example::
+    Example:
+
+    .. code-block:: bash
 
         $ celeryd -I app1.tasks,app2.tasks
 
@@ -675,29 +690,39 @@ Experimental
 
 * celeryd-multi: Added daemonization support.
 
-    celeryd-multi can now be used to start, stop and restart worker nodes.
+    celeryd-multi can now be used to start, stop and restart worker nodes:
+
+    .. code-block:: bash
 
         $ celeryd-multi start jerry elaine george kramer
 
     This also creates PID files and log files (:file:`celeryd@jerry.pid`,
     ..., :file:`celeryd@jerry.log`. To specify a location for these files
     use the `--pidfile` and `--logfile` arguments with the `%n`
-    format::
+    format:
+
+    .. code-block:: bash
 
         $ celeryd-multi start jerry elaine george kramer \
                         --logfile=/var/log/celeryd@%n.log \
                         --pidfile=/var/run/celeryd@%n.pid
 
-    Stopping::
+    Stopping:
+
+    .. code-block:: bash
 
         $ celeryd-multi stop jerry elaine george kramer
 
     Restarting. The nodes will be restarted one by one as the old ones
-    are shutdown::
+    are shutdown:
+
+    .. code-block:: bash
 
         $ celeryd-multi restart jerry elaine george kramer
 
-    Killing the nodes (**WARNING**: Will discard currently executing tasks)::
+    Killing the nodes (**WARNING**: Will discard currently executing tasks):
+
+    .. code-block:: bash
 
         $ celeryd-multi kill jerry elaine george kramer
 

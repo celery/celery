@@ -70,7 +70,9 @@ you simply import this instance.
 Starting the worker
 -------------------
 
-The :program:`celery` program can be used to start the worker::
+The :program:`celery` program can be used to start the worker:
+
+.. code-block:: bash
 
     $ celery worker --app=proj -l info
 
@@ -124,7 +126,9 @@ and emulating priorities, all described in the :ref:`Routing Guide
 <guide-routing>`.
 
 You can get a complete list of command line arguments
-by passing in the `--help` flag::
+by passing in the `--help` flag:
+
+.. code-block:: bash
 
     $ celery worker --help
 
@@ -143,14 +147,18 @@ In production you will want to run the worker in the background, this is
 described in detail in the :ref:`daemonization tutorial <daemonizing>`.
 
 The daemonization scripts uses the :program:`celery multi` command to
-start one or more workers in the background::
+start one or more workers in the background:
+
+.. code-block:: bash
 
     $ celery multi start w1 -A proj -l info
     celeryd-multi v3.0.0 (Chiastic Slide)
     > Starting nodes...
         > w1.halcyon.local: OK
 
-You can restart it too::
+You can restart it too:
+
+.. code-block:: bash
 
     $ celery multi restart w1 -A proj -l info
     celeryd-multi v3.0.0 (Chiastic Slide)
@@ -163,7 +171,9 @@ You can restart it too::
     > Stopping nodes...
         > w1.halcyon.local: TERM -> 64052
 
-or stop it::
+or stop it:
+
+.. code-block:: bash
 
     $ celery multi stop -w1 -A proj -l info
 
@@ -176,7 +186,9 @@ or stop it::
 
 By default it will create pid and log files in the current directory,
 to protect against multiple workers launching on top of each other
-you are encouraged to put these in a dedicated directory::
+you are encouraged to put these in a dedicated directory:
+
+.. code-block:: bash
 
     $ mkdir -p /var/run/celery
     $ mkdir -p /var/log/celery
@@ -185,7 +197,9 @@ you are encouraged to put these in a dedicated directory::
 
 With the multi command you can start multiple workers, and there is a powerful
 command line syntax to specify arguments for different workers too,
-e.g::
+e.g:
+
+.. code-block:: bash
 
     $ celeryd multi start 10 -A proj -l info -Q:1-3 images,video -Q:4,5 data \
         -Q default -L:4,5 debug
@@ -204,7 +218,9 @@ is the name of the module, and the attribute name comes last.
 If a package name is specified instead it will automatically
 try to find a ``celery`` module in that package, and if the name
 is a module it will try to find a ``celery`` attribute in that module.
-This means that these are all equal::
+This means that these are all equal:
+
+.. code-block:: bash
 
     $ celery --app=proj
     $ celery --app=proj.celery:
@@ -552,14 +568,18 @@ with the ``queue`` argument to ``apply_async``::
     >>> add.apply_async((2, 2), queue='hipri')
 
 You can then make a worker consume from this queue by
-specifying the :option:`-Q` option::
+specifying the :option:`-Q` option:
+
+.. code-block:: bash
 
     $ celery -A proj worker -Q hipri
 
 You may specify multiple queues by using a comma separated list,
 for example you can make the worker consume from both the default
 queue, and the ``hipri`` queue, where
-the default queue is named ``celery`` for historical reasons::
+the default queue is named ``celery`` for historical reasons:
+
+.. code-block:: bash
 
     $ celery -A proj worker -Q hipri,celery
 
@@ -575,7 +595,9 @@ Remote Control
 If you're using RabbitMQ (AMQP), Redis or MongoDB as the broker then
 you can control and inspect the worker at runtime.
 
-For example you can see what tasks the worker is currently working on::
+For example you can see what tasks the worker is currently working on:
+
+.. code-block:: bash
 
     $ celery -A proj inspect active
 
@@ -584,7 +606,9 @@ control commands are received by every worker in the cluster.
 
 You can also specify one or more workers to act on the request
 using the :option:`--destination` option, which is a comma separated
-list of worker host names::
+list of worker host names:
+
+.. code-block:: bash
 
     $ celery -A proj inspect active --destination=worker1.example.com
 
@@ -594,35 +618,49 @@ to the request.
 The :program:`celery inspect` command contains commands that
 does not change anything in the worker, it only replies information
 and statistics about what is going on inside the worker.
-For a list of inspect commands you can execute::
+For a list of inspect commands you can execute:
+
+.. code-block:: bash
 
     $ celery -A proj inspect --help
 
 Then there is the :program:`celery control` command, which contains
-commands that actually changes things in the worker at runtime::
+commands that actually changes things in the worker at runtime:
+
+.. code-block:: bash
 
     $ celery -A proj control --help
 
 For example you can force workers to enable event messages (used
-for monitoring tasks and workers)::
+for monitoring tasks and workers):
+
+.. code-block:: bash
 
     $ celery -A proj control enable_events
 
 When events are enabled you can then start the event dumper
-to see what the workers are doing::
+to see what the workers are doing:
+
+.. code-block:: bash
 
     $ celery -A proj events --dump
 
-or you can start the curses interface::
+or you can start the curses interface:
+
+.. code-block:: bash
 
     $ celery -A proj events
 
-when you're finished monitoring you can disable events again::
+when you're finished monitoring you can disable events again:
+
+.. code-block:: bash
 
     $ celery -A proj control disable_events
 
 The :program:`celery status` command also uses remote control commands
-and shows a list of online workers in the cluster::
+and shows a list of online workers in the cluster:
+
+.. code-block:: bash
 
     $ celery -A proj status
 
@@ -639,7 +677,9 @@ converts that UTC time to local time.  If you wish to use
 a different timezone than the system timezone then you must
 configure that using the :setting:`CELERY_TIMEZONE` setting.
 
-To use custom timezones you also have to install the :mod:`pytz` library::
+To use custom timezones you also have to install the :mod:`pytz` library:
+
+.. code-block:: bash
 
     $ pip install pytz
 
@@ -659,7 +699,9 @@ for throughput then you should read the :ref:`Optimizing Guide
 <guide-optimizing>`.
 
 If you're using RabbitMQ then you should install the :mod:`librabbitmq`
-module, which is an AMQP client implemented in C::
+module, which is an AMQP client implemented in C:
+
+.. code-block:: bash
 
     $ pip install librabbitmq
 

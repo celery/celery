@@ -31,11 +31,15 @@ Workers
 :program:`celery` can also be used to inspect
 and manage worker nodes (and to some degree tasks).
 
-To list all the commands available do::
+To list all the commands available do:
+
+.. code-block:: bash
 
     $ celery help
 
-or to get help for a specific command do::
+or to get help for a specific command do:
+
+.. code-block:: bash
 
     $ celery <command> --help
 
@@ -53,12 +57,14 @@ Commands
   ``--force-bpython|-B``, or ``--force-python|-P``.
 
 * **status**: List active nodes in this cluster
-    ::
 
-    $ celery status
+    .. code-block:: bash
+
+            $ celery status
 
 * **result**: Show the result of a task
-    ::
+
+    .. code-block:: bash
 
         $ celery result -t tasks.add 4e196aa4-0141-4601-8138-7aa33db0f577
 
@@ -66,7 +72,8 @@ Commands
     task doesn't use a custom result backend.
 
 * **purge**: Purge messages from all configured task queues.
-    ::
+
+    .. code-block:: bash
 
         $ celery purge
 
@@ -75,14 +82,16 @@ Commands
         be permanently deleted!
 
 * **inspect active**: List active tasks
-    ::
+
+    .. code-block:: bash
 
         $ celery inspect active
 
     These are all the tasks that are currently being executed.
 
 * **inspect scheduled**: List scheduled ETA tasks
-    ::
+
+    .. code-block:: bash
 
         $ celery inspect scheduled
 
@@ -90,7 +99,8 @@ Commands
     `eta` or `countdown` argument set.
 
 * **inspect reserved**: List reserved tasks
-    ::
+
+    .. code-block:: bash
 
         $ celery inspect reserved
 
@@ -99,32 +109,38 @@ Commands
     with an eta).
 
 * **inspect revoked**: List history of revoked tasks
-    ::
+
+    .. code-block:: bash
 
         $ celery inspect revoked
 
 * **inspect registered**: List registered tasks
-    ::
+
+    .. code-block:: bash
 
         $ celery inspect registered
 
 * **inspect stats**: Show worker statistics
-    ::
+
+    .. code-block:: bash
 
         $ celery inspect stats
 
 * **control enable_events**: Enable events
-    ::
+
+    .. code-block:: bash
 
         $ celery control enable_events
 
 * **control disable_events**: Disable events
-    ::
+
+    .. code-block:: bash
 
         $ celery inspect disable_events
 
 * **migrate**: Migrate tasks from one broker to another (**EXPERIMENTAL**).
-  ::
+
+    .. code-block:: bash
 
         $ celery migrate redis://localhost amqp://localhost
 
@@ -146,7 +162,9 @@ Specifying destination nodes
 
 By default the inspect commands operates on all workers.
 You can specify a single, or a list of workers by using the
-`--destination` argument::
+`--destination` argument:
+
+.. code-block:: bash
 
     $ celery inspect -d w1,w2 reserved
 
@@ -180,11 +198,15 @@ More screenshots_:
 Usage
 ~~~~~
 
-Install Celery Flower: ::
+Install Celery Flower:
+
+.. code-block:: bash
 
     $ pip install flower
 
-Launch Celery Flower and open http://localhost:8008 in browser: ::
+Launch Celery Flower and open http://localhost:8008 in browser:
+
+.. code-block:: bash
 
     $ celery flower
 
@@ -218,11 +240,15 @@ but you won't see any data appearing until you start the snapshot camera.
 The camera takes snapshots of the events your workers sends at regular
 intervals, storing them in your database (See :ref:`monitoring-snapshots`).
 
-To start the camera run::
+To start the camera run:
+
+.. code-block:: bash
 
     $ python manage.py celerycam
 
-If you haven't already enabled the sending of events you need to do so::
+If you haven't already enabled the sending of events you need to do so:
+
+.. code-block:: bash
 
     $ python manage.py celery control enable_events
 
@@ -244,7 +270,9 @@ Shutter frequency
 By default the camera takes a snapshot every second, if this is too frequent
 or you want to have higher precision, then you can change this using the
 ``--frequency`` argument.  This is a float describing how often, in seconds,
-it should wake up to check if there are any new events::
+it should wake up to check if there are any new events:
+
+.. code-block:: bash
 
     $ python manage.py celerycam --frequency=3.0
 
@@ -307,18 +335,24 @@ camera in the same process.
 
 **Installing**
 
-Using :program:`pip`::
+Using :program:`pip`:
+
+.. code-block:: bash
 
     $ pip install -U django-celery
 
-or using :program:`easy_install`::
+or using :program:`easy_install`:
+
+.. code-block:: bash
 
     $ easy_install -U django-celery
 
 **Running**
 
 :program:`djcelerymon` reads configuration from your Celery configuration
-module, and sets up the Django environment using the same settings::
+module, and sets up the Django environment using the same settings:
+
+.. code-block:: bash
 
     $ djcelerymon
 
@@ -371,7 +405,9 @@ task and worker history.  You can inspect the result and traceback of tasks,
 and it also supports some management commands like rate limiting and shutting
 down workers.
 
-Starting::
+Starting:
+
+.. code-block:: bash
 
     $ celery events
 
@@ -381,15 +417,21 @@ You should see a screen like:
 
 
 `celery events` is also used to start snapshot cameras (see
-:ref:`monitoring-snapshots`::
+:ref:`monitoring-snapshots`:
+
+.. code-block:: bash
 
     $ celery events --camera=<camera-class> --frequency=1.0
 
-and it includes a tool to dump events to :file:`stdout`::
+and it includes a tool to dump events to :file:`stdout`:
+
+.. code-block:: bash
 
     $ celery events --dump
 
-For a complete list of options use ``--help``::
+For a complete list of options use ``--help``:
+
+.. code-block:: bash
 
     $ celery events --help
 
@@ -437,8 +479,9 @@ as manage users, virtual hosts and their permissions.
 Inspecting queues
 -----------------
 
-Finding the number of tasks in a queue::
+Finding the number of tasks in a queue:
 
+.. code-block:: bash
 
     $ rabbitmqctl list_queues name messages messages_ready \
                               messages_unacknowledged
@@ -451,11 +494,15 @@ not acknowledged yet (meaning it is in progress, or has been reserved).
 `messages` is the sum of ready and unacknowledged messages.
 
 
-Finding the number of workers currently consuming from a queue::
+Finding the number of workers currently consuming from a queue:
+
+.. code-block:: bash
 
     $ rabbitmqctl list_queues name consumers
 
-Finding the amount of memory allocated to a queue::
+Finding the amount of memory allocated to a queue:
+
+.. code-block:: bash
 
     $ rabbitmqctl list_queues name memory
 
@@ -476,11 +523,15 @@ the `redis-cli(1)` command to list lengths of queues.
 Inspecting queues
 -----------------
 
-Finding the number of tasks in a queue::
+Finding the number of tasks in a queue:
+
+.. code-block:: bash
 
     $ redis-cli -h HOST -p PORT -n DATABASE_NUMBER llen QUEUE_NAME
 
-The default queue is named `celery`. To get all available queues, invoke::
+The default queue is named `celery`. To get all available queues, invoke:
+
+.. code-block:: bash
 
     $ redis-cli -h HOST -p PORT -n DATABASE_NUMBER keys \*
 
@@ -547,7 +598,9 @@ write it to a database, send it by email or something else entirely.
 :program:`celery events` is then used to take snapshots with the camera,
 for example if you want to capture state every 2 seconds using the
 camera ``myapp.Camera`` you run :program:`celery events` with the following
-arguments::
+arguments:
+
+.. code-block:: bash
 
     $ celery events -c myapp.Camera --frequency=2.0
 

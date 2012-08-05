@@ -9,7 +9,9 @@
 Installation
 ============
 
-For the Amazon SQS support you have to install the `boto`_ library::
+For the Amazon SQS support you have to install the `boto`_ library:
+
+.. code-block:: bash
 
     $ pip install -U boto
 

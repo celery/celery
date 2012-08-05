@@ -656,7 +656,9 @@ Important Notes
             Waiting for client...
 
     If you telnet the port specified you will be presented
-    with a ``pdb`` shell::
+    with a ``pdb`` shell:
+
+    .. code-block:: bash
 
         $ telnet localhost 6900
         Connected to localhost.
@@ -699,7 +701,9 @@ Important Notes
         so it does not collide with older versions.
 
         If you would like to remove the old exchange you can do so
-        by executing the following command::
+        by executing the following command:
+
+        .. code-block:: bash
 
             $ camqadm exchange.delete celeryevent
 
@@ -707,7 +711,9 @@ Important Notes
   specified directly on the command line.
 
   Configuration options must appear after the last argument, separated
-  by two dashes::
+  by two dashes:
+
+  .. code-block:: bash
 
       $ celeryd -l info -I tasks -- broker.host=localhost broker.vhost=/app
 
@@ -908,7 +914,9 @@ News
 * The configuration module and loader to use can now be specified on
   the command line.
 
-    For example::
+    For example:
+
+    .. code-block:: bash
 
         $ celeryd --config=celeryconfig.py --loader=myloader.Loader
 

@@ -17,11 +17,15 @@
   include `auto_delete` and `durable`. This broke the AMQP backend.
 
   If you've already used the AMQP backend this means you have to
-  delete the previous definitions::
+  delete the previous definitions:
+
+  .. code-block:: bash
 
       $ camqadm exchange.delete celeryresults
 
-  or::
+  or:
+
+  .. code-block:: bash
 
       $ python manage.py camqadm exchange.delete celeryresults
 
@@ -493,9 +497,11 @@ Fixes
     .. warning::
 
         If you're using Celery with Django, you can't use `project.settings`
-        as the settings module name, but the following should work::
+        as the settings module name, but the following should work:
 
-        $ python manage.py celeryd --settings=settings
+        .. code-block:: bash
+
+            $ python manage.py celeryd --settings=settings
 
 * Execution: `.messaging.TaskPublisher.send_task` now
   incorporates all the functionality apply_async previously did.
@@ -519,14 +525,18 @@ Fixes
 * `camqadm`: This is a new utility for command line access to the AMQP API.
 
     Excellent for deleting queues/bindings/exchanges, experimentation and
-    testing::
+    testing:
+
+    .. code-block:: bash
 
         $ camqadm
         1> help
 
     Gives an interactive shell, type `help` for a list of commands.
 
-    When using Django, use the management command instead::
+    When using Django, use the management command instead:
+
+    .. code-block:: bash
 
         $ python manage.py camqadm
         1> help
@@ -691,14 +701,18 @@ Backward incompatible changes
     This means `celeryd` no longer schedules periodic tasks by default,
     but a new daemon has been introduced: `celerybeat`.
 
-    To launch the periodic task scheduler you have to run celerybeat::
+    To launch the periodic task scheduler you have to run celerybeat:
+
+    .. code-block:: bash
 
         $ celerybeat
 
     Make sure this is running on one server only, if you run it twice, all
     periodic tasks will also be executed twice.
 
-    If you only have one worker server you can embed it into celeryd like this::
+    If you only have one worker server you can embed it into celeryd like this:
+
+    .. code-block:: bash
 
         $ celeryd --beat # Embed celerybeat in celeryd.
 
@@ -1517,7 +1531,9 @@ arguments, so be sure to flush your task queue before you upgrade.
   To turn off this feature, set `SEND_CELERY_TASK_ERROR_EMAILS` to
   `False` in your `settings.py`. Thanks to Grégoire Cachet.
 
-* You can now run the celery daemon by using `manage.py`::
+* You can now run the celery daemon by using `manage.py`:
+
+  .. code-block:: bash
 
         $ python manage.py celeryd
 
@@ -1653,7 +1669,9 @@ arguments, so be sure to flush your task queue before you upgrade.
 * Improved API documentation
 
 * Now using the Sphinx documentation system, you can build
-  the html documentation by doing ::
+  the html documentation by doing:
+
+    .. code-block:: bash
 
         $ cd docs
         $ make html

@@ -11,7 +11,9 @@ Installation
 
 For the MongoDB support you have to install additional dependencies.
 You can install both Celery and these dependencies in one go using
-either the `celery-with-mongodb`_, or the `django-celery-with-mongodb` bundles::
+either the `celery-with-mongodb`_, or the `django-celery-with-mongodb` bundles:
+
+.. code-block:: bash
 
     $ pip install -U celery-with-mongodb
 

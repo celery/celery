@@ -50,7 +50,9 @@ information::
         Waiting for client...
 
 If you telnet the port specified you will be presented
-with a `pdb` shell::
+with a `pdb` shell:
+
+.. code-block:: bash
 
     $ telnet localhost 6900
     Connected to localhost.

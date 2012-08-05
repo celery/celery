@@ -63,9 +63,11 @@ race condition leading to an annoying warning.
     to be removed.
 
     The :program:`camqadm` command can be used to delete the
-    previous exchange::
+    previous exchange:
 
-        $ camqadm exchange.delete celeryresults
+    .. code-block:: bash
+
+            $ camqadm exchange.delete celeryresults
 
     As an alternative to deleting the old exchange you can
     configure a new name for the exchange::
@@ -237,7 +239,9 @@ implementations:
     Used if the :mod:`pyinotify` library is installed.
     If you are running on Linux this is the recommended implementation,
     to install the :mod:`pyinotify` library you have to run the following
-    command::
+    command:
+
+    .. code-block:: bash
 
         $ pip install pyinotify
 
@@ -249,7 +253,9 @@ implementations:
     expensive.
 
 You can force an implementation by setting the :envvar:`CELERYD_FSNOTIFY`
-environment variable::
+environment variable:
+
+.. code-block:: bash
 
     $ env CELERYD_FSNOTIFY=stat celeryd -l info --autoreload
 
@@ -371,7 +377,9 @@ In Other News
 - celerybeat can now be configured on the command line like celeryd.
 
   Additional configuration must be added at the end of the argument list
-  followed by ``--``, for example::
+  followed by ``--``, for example:
+
+  .. code-block:: bash
 
     $ celerybeat -l info -- celerybeat.max_loop_interval=10.0
 
@@ -419,7 +427,9 @@ In Other News
     Note that this is experimental and you should have a backup
     of the data before proceeding.
 
-    **Examples**::
+    **Examples**:
+
+    .. code-block:: bash
 
         $ celeryctl migrate redis://localhost amqp://localhost
         $ celeryctl migrate amqp://localhost//v1 amqp://localhost//v2

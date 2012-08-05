@@ -7,24 +7,32 @@ Configuring your Django project to use Celery
 
 You need four simple steps to use celery with your Django project.
 
-    1. Install the ``django-celery`` library::
+    1. Install the ``django-celery`` library:
 
-        $ pip install django-celery
+        .. code-block:: bash
 
-    2. Add the following lines to ``settings.py``::
+            $ pip install django-celery
 
-        import djcelery
-        djcelery.setup_loader()
+    2. Add the following lines to ``settings.py``:
+
+        .. code-block:: python
+
+            import djcelery
+            djcelery.setup_loader()
 
     3. Add ``djcelery`` to ``INSTALLED_APPS``.
 
     4. Create the celery database tables.
 
-        If you are using south_ for schema migrations, you'll want to::
+        If you are using south_ for schema migrations, you'll want to:
+
+        .. code-block:: bash
 
             $ python manage.py migrate djcelery
 
-        For those who are not using south, a normal ``syncdb`` will work::
+        For those who are not using south, a normal ``syncdb`` will work:
+
+        .. code-block:: bash
 
             $ python manage.py syncdb
 
@@ -63,7 +71,9 @@ to import these modules.
 
 For a simple demonstration create a new Django app called
 ``celerytest``.  To create this app you need to be in the directory
-of your Django project where ``manage.py`` is located and execute::
+of your Django project where ``manage.py`` is located and execute:
+
+.. code-block:: bash
 
     $ python manage.py startapp celerytest
 
@@ -88,12 +98,16 @@ Starting the worker process
 In a production environment you will want to run the worker in the background
 as a daemon - see :ref:`daemonizing` - but for testing and
 development it is useful to be able to start a worker instance by using the
-``celery worker`` manage command, much as you would use Django's runserver::
+``celery worker`` manage command, much as you would use Django's runserver:
+
+.. code-block:: bash
 
     $ python manage.py celery worker --loglevel=info
 
 For a complete listing of the command line options available,
-use the help command::
+use the help command:
+
+.. code-block:: bash
 
     $ python manage.py celery help
 

@@ -228,7 +228,9 @@ environment variable named :envvar:`CELERY_CONFIG_MODULE`:
     celery = Celery()
     celery.config_from_envvar('CELERY_CONFIG_MODULE')
 
-You can then specify the configuration module to use via the environment::
+You can then specify the configuration module to use via the environment:
+
+.. code-block:: bash
 
     $ CELERY_CONFIG_MODULE="celeryconfig.prod" celery worker -l info
 
@@ -363,7 +365,9 @@ so that everything also works in the module-based compatibility API
 
 In development you can set the :envvar:`CELERY_TRACE_APP`
 environment variable to raise an exception if the app
-chain breaks::
+chain breaks:
+
+.. code-block:: bash
 
     $ CELERY_TRACE_APP=1 celery worker -l info
 
