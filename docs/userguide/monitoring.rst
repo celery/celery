@@ -23,8 +23,8 @@ Workers
 .. _monitoring-celeryctl:
 
 
-``celery``: Management Command-line Utility
--------------------------------------------
+``celery``: Management Command-line Utilities
+---------------------------------------------
 
 .. versionadded:: 2.1
 
