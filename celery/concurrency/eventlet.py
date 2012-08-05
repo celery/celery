@@ -10,8 +10,20 @@ from __future__ import absolute_import
 
 import os
 
-EVENTLET_NOPATCH = int(os.environ.get('EVENTLET_NOPATCH', 0))
+EVENTLET_NOPATCH = os.environ.get('EVENTLET_NOPATCH', False)
 EVENTLET_DBLOCK = int(os.environ.get('EVENTLET_NOBLOCK', 0))
+W_RACE = """\
+Celery module with %s imported before eventlet patched\
+"""
+
+def _racedetect():
+    import sys
+    for mod in (mod for mod in sys.modules if mod.startswith('celery.')):
+            for side in ('thread', 'threading', 'socket'):
+                if getattr(mod, side, None):
+                    warnings.warn(RuntimeWarning(W_RACE % side))
+_racedetect()
+
 
 PATCHED = [0]
 if not EVENTLET_NOPATCH and not PATCHED[0]:
