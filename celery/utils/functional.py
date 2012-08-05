@@ -9,10 +9,10 @@
 from __future__ import absolute_import
 
 import operator
+import threading
 
 from functools import partial, wraps
 from itertools import islice
-from threading import Lock, RLock
 
 from kombu.utils import cached_property
 from kombu.utils.functional import promise, maybe_promise
@@ -35,7 +35,7 @@ class LRUCache(UserDict):
 
     def __init__(self, limit=None):
         self.limit = limit
-        self.mutex = RLock()
+        self.mutex = threading.RLock()
         self.data = OrderedDict()
 
     def __getitem__(self, key):
@@ -61,7 +61,7 @@ class LRUCache(UserDict):
             self.data[key] = value
 
     def __iter__(self):
-        return self.data.iterkeys()
+        return iter(self.data)
 
     def _iterate_items(self):
         for k in self:
@@ -101,7 +101,7 @@ def maybe_list(l):
 def memoize(maxsize=None, Cache=LRUCache):
 
     def _memoize(fun):
-        mutex = Lock()
+        mutex = threading.Lock()
         cache = Cache(limit=maxsize)
 
         @wraps(fun)

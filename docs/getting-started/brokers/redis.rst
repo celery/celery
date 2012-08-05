@@ -11,7 +11,9 @@ Installation
 
 For the Redis support you have to install additional dependencies.
 You can install both Celery and these dependencies in one go using
-either the `celery-with-redis`_, or the `django-celery-with-redis` bundles::
+either the `celery-with-redis`_, or the `django-celery-with-redis` bundles:
+
+.. code-block:: bash
 
     $ pip install -U celery-with-redis
 

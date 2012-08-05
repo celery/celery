@@ -53,7 +53,7 @@ the :meth:`~@Celery.task` decorator:
 
     from .models import User
 
-    @celery.task()
+    @celery.task
     def create_user(username, password):
         User.objects.create(username=username, password=password)
 
@@ -79,7 +79,7 @@ these can be specified as arguments to the decorator:
 
         from celery import task
 
-        @task()
+        @task
         def add(x, y):
             return x + y
 
@@ -92,7 +92,7 @@ these can be specified as arguments to the decorator:
 
     .. code-block:: python
 
-        @celery.task()
+        @celery.task
         @decorator2
         @decorator1
         def add(x, y):
@@ -139,7 +139,7 @@ if the module name is "tasks.py":
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     def add(x, y):
         return x + y
 
@@ -227,7 +227,7 @@ An example task accessing information in the context is:
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     def dump_context(x, y):
         print('Executing task id {0.id}, args: {0.args!r} kwargs: {0.kwargs!r}'.format(
                 dump_context.request))
@@ -239,11 +239,10 @@ An example task accessing information in the context is:
 
     from celery import current_task
 
-    @celery.task()
+    @celery.task
     def dump_context(x, y):
         print('Executing task id {0.id}, args: {0.args!r} kwargs: {0.kwargs!r}'.format(
                 current_task.request))
-
 
 .. _task-logging:
 
@@ -266,7 +265,7 @@ for all of your tasks at the top of your module:
 
     logger = get_task_logger(__name__)
 
-    @celery.task()
+    @celery.task
     def add(x, y):
         logger.info('Adding {0} + {1}'.format(x, y))
         return x + y
@@ -299,7 +298,7 @@ Here's an example using ``retry``:
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     def send_twitter_status(oauth, tweet):
         try:
             twitter = Twitter(oauth)
@@ -683,7 +682,7 @@ Use :meth:`~@Task.update_state` to update a task's state::
 
     from celery import current_task
 
-    @celery.task()
+    @celery.task
     def upload_files(filenames):
         for i, file in enumerate(filenames):
             current_task.update_state(state='PROGRESS',
@@ -765,7 +764,7 @@ As an example, the following code,
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     def add(x, y):
         return x + y
 
@@ -774,7 +773,7 @@ will do roughly this behind the scenes:
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     class AddTask(Task):
 
         def run(self, x, y):
@@ -1014,21 +1013,21 @@ Make your design asynchronous instead, for example by using *callbacks*.
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     def update_page_info(url):
         page = fetch_page.delay(url).get()
         info = parse_page.delay(url, page).get()
         store_page_info.delay(url, info)
 
-    @celery.task()
+    @celery.task
     def fetch_page(url):
         return myhttplib.get(url)
 
-    @celery.task()
+    @celery.task
     def parse_page(url, page):
         return myparser.parse_document(page)
 
-    @celery.task()
+    @celery.task
     def store_page_info(url, info):
         return PageInfo.objects.create(url, info)
 
@@ -1145,7 +1144,7 @@ that automatically expands some abbreviations in it:
         title = models.CharField()
         body = models.TextField()
 
-    @celery.task()
+    @celery.task
     def expand_abbreviations(article):
         article.body.replace('MyCorp', 'My Corporation')
         article.save()
@@ -1166,7 +1165,7 @@ re-fetch the article in the task body:
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     def expand_abbreviations(article_id):
         article = Article.objects.get(id=article_id)
         article.body.replace('MyCorp', 'My Corporation')
@@ -1327,7 +1326,7 @@ blog/tasks.py
     from blog.models import Comment
 
 
-    @celery.task()
+    @celery.task
     def spam_filter(comment_id, remote_addr=None):
         logger = spam_filter.get_logger()
         logger.info('Running spam filter for comment %s', comment_id)

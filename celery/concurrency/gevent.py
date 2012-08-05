@@ -9,7 +9,10 @@
 from __future__ import absolute_import
 
 import os
-if not os.environ.get('GEVENT_NOPATCH'):
+
+PATCHED = [0]
+if not os.environ.get('GEVENT_NOPATCH') and not PATCHED[0]:
+    PATCHED[0] += 1
     from gevent import monkey
     monkey.patch_all()
 

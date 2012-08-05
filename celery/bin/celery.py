@@ -83,7 +83,6 @@ def load_extension_commands(namespace='celery.commands'):
         return
 
     for ep in iter_entry_points(namespace):
-        _get_extension_classes().append(ep.name)
         sym = ':'.join([ep.module_name, ep.attrs[0]])
         try:
             cls = symbol_by_name(sym)
@@ -91,6 +90,7 @@ def load_extension_commands(namespace='celery.commands'):
             warnings.warn(
                 'Cannot load extension {0!r}: {1!r}'.format(sym, exc))
         else:
+            _get_extension_classes().append(ep.name)
             command(cls, name=ep.name)
 
 
@@ -169,7 +169,7 @@ class Command(BaseCommand):
 
     def say_remote_command_reply(self, replies):
         c = self.colored
-        node = replies.keys()[0]
+        node = iter(replies).next()  # <-- take first.
         reply = replies[node]
         status, preply = self.prettify(reply)
         self.say_chat('->', c.cyan(node, ': ') + status,
@@ -333,7 +333,7 @@ class list_(Command):
 
     def run(self, what=None, *_, **kw):
         topics = {'bindings': self.list_bindings}
-        available = ', '.join(topics.keys())
+        available = ', '.join(topics)
         if not what:
             raise Error('You must specify one of {0}'.format(available))
         if what not in topics:
@@ -411,7 +411,7 @@ class purge(Command):
     fmt_empty = 'No messages purged from {qnum} {queues}'
 
     def run(self, *args, **kwargs):
-        queues = len(self.app.amqp.queues.keys())
+        queues = len(self.app.amqp.queues)
         messages = self.app.control.purge()
         fmt = self.fmt_purged if messages else self.fmt_empty
         self.out(fmt.format(
@@ -717,7 +717,9 @@ class shell(Command):  # pragma: no cover
           xmap, xstarmap subtask, Task
         - all registered tasks.
 
-    Example Session::
+    Example Session:
+
+    .. code-block:: bash
 
         $ celery shell
 

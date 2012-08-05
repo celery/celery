@@ -25,7 +25,9 @@ configuration values.
 
     INSTALLED_APPS = ('djcelery.transport', )
 
-#. Sync your database schema::
+#. Sync your database schema:
+
+.. code-block:: bash
 
     $ python manage.py syncdb
 

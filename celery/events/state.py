@@ -19,8 +19,8 @@
 from __future__ import absolute_import
 
 import heapq
+import threading
 
-from threading import Lock
 from time import time
 
 from kombu.utils import kwdict
@@ -218,7 +218,7 @@ class State(object):
         self.event_callback = callback
         self.group_handlers = {'worker': self.worker_event,
                                'task': self.task_event}
-        self._mutex = Lock()
+        self._mutex = threading.Lock()
 
     def freeze_while(self, fun, *args, **kwargs):
         clear_after = kwargs.pop('clear_after', False)

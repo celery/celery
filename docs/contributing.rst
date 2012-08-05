@@ -296,19 +296,31 @@ First you need to fork the Celery repository, a good introduction to this
 is in the Github Guide: `Fork a Repo`_.
 
 After you have cloned the repository you should checkout your copy
-to a directory on your machine::
+to a directory on your machine:
+
+.. code-block:: bash
 
     $ git clone git@github.com:username/celery.git
 
 When the repository is cloned enter the directory to set up easy access
-to upstream changes::
+to upstream changes:
+
+.. code-block:: bash
 
     $ cd celery
+
+.. code-block:: bash
+
     $ git remote add upstream git://github.com/celery/celery.git
+
+.. code-block:: bash
+
     $ git fetch upstream
 
 If you need to pull in new changes from upstream you should
-always use the :option:`--rebase` option to ``git pull``::
+always use the :option:`--rebase` option to ``git pull``:
+
+.. code-block:: bash
 
     git pull --rebase upstream master
 
@@ -338,12 +350,16 @@ To run the Celery test suite you need to install a few dependencies.
 A complete list of the dependencies needed are located in
 :file:`requirements/test.txt`.
 
-Installing the test requirements::
+Installing the test requirements:
+
+.. code-block:: bash
 
     $ pip -E $VIRTUAL_ENV install -U -r requirements/test.txt
 
 When installation of dependencies is complete you can execute
-the test suite by calling ``nosetests``::
+the test suite by calling ``nosetests``:
+
+.. code-block:: bash
 
     $ nosetests
 
@@ -366,7 +382,9 @@ Some useful options to :program:`nosetests` are:
     Run with verbose output.
 
 If you want to run the tests for a single test file only
-you can do so like this::
+you can do so like this:
+
+.. code-block:: bash
 
     $ nosetests celery.tests.test_worker.test_worker_job
 
@@ -392,14 +410,18 @@ the steps outlined here: http://bit.ly/koJoso
 Calculating test coverage
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Code coverage in HTML::
+Code coverage in HTML:
+
+.. code-block:: bash
 
     $ nosetests --with-coverage3 --cover3-html
 
 The coverage output will then be located at
 :file:`celery/tests/cover/index.html`.
 
-Code coverage in XML (Cobertura-style)::
+Code coverage in XML (Cobertura-style):
+
+.. code-block:: bash
 
     $ nosetests --with-coverage3 --cover3-xml --cover3-xml-file=coverage.xml
 
@@ -413,12 +435,16 @@ Running the tests on all supported Python versions
 There is a ``tox`` configuration file in the top directory of the
 distribution.
 
-To run the tests for all supported Python versions simply execute::
+To run the tests for all supported Python versions simply execute:
+
+.. code-block:: bash
 
     $ tox
 
 If you only want to test specific Python versions use the :option:`-e`
-option::
+option:
+
+.. code-block:: bash
 
     $ tox -e py26
 
@@ -426,12 +452,16 @@ Building the documentation
 --------------------------
 
 To build the documentation you need to install the dependencies
-listed in :file:`requirements/docs.txt`::
+listed in :file:`requirements/docs.txt`:
+
+.. code-block:: bash
 
     $ pip -E $VIRTUAL_ENV install -U -r requirements/docs.txt
 
 After these dependencies are installed you should be able to
-build the docs by running::
+build the docs by running:
+
+.. code-block:: bash
 
     $ cd docs
     $ rm -rf .build
@@ -448,7 +478,9 @@ Verifying your contribution
 To use these tools you need to install a few dependencies.  These dependencies
 can be found in :file:`requirements/pkgutils.txt`.
 
-Installing the dependencies::
+Installing the dependencies:
+
+.. code-block:: bash
 
     $ pip -E $VIRTUAL_ENV install -U -r requirements/pkgutils.txt
 
@@ -456,12 +488,16 @@ pyflakes & PEP8
 ~~~~~~~~~~~~~~~
 
 To ensure that your changes conform to PEP8 and to run pyflakes
-execute::
+execute:
+
+.. code-block:: bash
 
     $ paver flake8
 
 To not return a negative exit code when this command fails use the
-:option:`-E` option, this can be convenient while developing::
+:option:`-E` option, this can be convenient while developing:
+
+.. code-block:: bash
 
     $ paver flake8 -E
 
@@ -469,7 +505,9 @@ API reference
 ~~~~~~~~~~~~~
 
 To make sure that all modules have a corresponding section in the API
-reference please execute::
+reference please execute:
+
+.. code-block:: bash
 
     $ paver autodoc
     $ paver verifyindex
@@ -481,18 +519,27 @@ located in :file:`docs/internals/reference/`.  If the module is public
 it should be located in :file:`docs/reference/`.
 
 For example if reference is missing for the module ``celery.worker.awesome``
-and this module is considered part of the public API, use the following steps::
+and this module is considered part of the public API, use the following steps:
+
+.. code-block:: bash
 
     $ cd docs/reference/
     $ cp celery.schedules.rst celery.worker.awesome.rst
+
+.. code-block:: bash
+
     $ vim celery.worker.awesome.rst
 
         # change every occurance of ``celery.schedules`` to
         # ``celery.worker.awesome``
 
+.. code-block:: bash
+
     $ vim index.rst
 
         # Add ``celery.worker.awesome`` to the index.
+
+.. code-block:: bash
 
     # Add the file to git
     $ git add celery.worker.awesome.rst
@@ -809,15 +856,21 @@ The version number must be updated two places:
 After you have changed these files you must render
 the :file:`README` files.  There is a script to convert sphinx syntax
 to generic reStructured Text syntax, and the paver task `readme`
-does this for you::
+does this for you:
+
+.. code-block:: bash
 
     $ paver readme
 
-Now commit the changes::
+Now commit the changes:
+
+.. code-block:: bash
 
     $ git commit -a -m "Bumps version to X.Y.Z"
 
-and make a new version tag::
+and make a new version tag:
+
+.. code-block:: bash
 
     $ git tag vX.Y.Z
     $ git push --tags

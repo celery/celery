@@ -56,14 +56,14 @@ class Dumper(object):
             return self.format_task_event(hostname, timestamp,
                                           type, task, event)
         fields = ', '.join('{0}={1}'.format(key, event[key])
-                        for key in sorted(event.keys()))
+                        for key in sorted(event))
         sep = fields and ':' or ''
         self.say('{0} [{1}] {2}{3} {4}'.format(hostname, timestamp,
                                             humanize_type(type), sep, fields))
 
     def format_task_event(self, hostname, timestamp, type, task, event):
         fields = ', '.join('{0}={1}'.format(key, event[key])
-                        for key in sorted(event.keys()))
+                        for key in sorted(event))
         sep = fields and ':' or ''
         self.say('{0} [{1}] {2}{3} {4} {5}'.format(hostname, timestamp,
                     humanize_type(type), sep, task, fields))

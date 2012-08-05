@@ -19,18 +19,24 @@ Starting the worker
     in the background.  See :ref:`daemonizing` for help
     detaching the worker using popular daemonization tools.
 
-You can start the worker in the foreground by executing the command::
+You can start the worker in the foreground by executing the command:
+
+.. code-block:: bash
 
     $ celery worker --app=app -l info
 
 For a full list of available command line options see
-:mod:`~celery.bin.celeryd`, or simply do::
+:mod:`~celery.bin.celeryd`, or simply do:
+
+.. code-block:: bash
 
     $ celery worker --help
 
 You can also start multiple workers on the same machine. If you do so
 be sure to give a unique name to each individual worker by specifying a
-host name with the :option:`--hostname|-n` argument::
+host name with the :option:`--hostname|-n` argument:
+
+.. code-block:: bash
 
     $ celery worker --loglevel=INFO --concurrency=10 -n worker1.%h
     $ celery worker --loglevel=INFO --concurrency=10 -n worker2.%h
@@ -69,7 +75,9 @@ option set).
 
 Also as processes can't override the :sig:`KILL` signal, the worker will
 not be able to reap its children, so make sure to do so manually.  This
-command usually does the trick::
+command usually does the trick:
+
+.. code-block:: bash
 
     $ ps auxww | grep 'celery worker' | awk '{print $2}' | xargs kill -9
 
@@ -79,7 +87,9 @@ Restarting the worker
 =====================
 
 Other than stopping then starting the worker to restart, you can also
-restart the worker using the :sig:`HUP` signal::
+restart the worker using the :sig:`HUP` signal:
+
+.. code-block:: bash
 
     $ kill -HUP $pid
 
@@ -296,7 +306,7 @@ time limit kills it:
     from myapp import celery
     from celery.exceptions import SoftTimeLimitExceeded
 
-    @celery.task()
+    @celery.task
     def mytask():
         try:
             do_work()
@@ -415,7 +425,9 @@ By default it will consume from all queues defined in the
 queue named ``celery``).
 
 You can specify what queues to consume from at startup,
-by giving a comma separated list of queues to the :option:`-Q` option::
+by giving a comma separated list of queues to the :option:`-Q` option:
+
+.. code-block:: bash
 
     $ celery worker -l info -Q foo,bar,baz
 
@@ -437,14 +449,18 @@ The :control:`add_consumer` control command will tell one or more workers
 to start consuming from a queue. This operation is idempotent.
 
 To tell all workers in the cluster to start consuming from a queue
-named "``foo``" you can use the :program:`celery control` program::
+named "``foo``" you can use the :program:`celery control` program:
+
+.. code-block:: bash
 
     $ celery control add_consumer foo
     -> worker1.local: OK
         started consuming from u'foo'
 
 If you want to specify a specific worker you can use the
-:option:`--destination`` argument::
+:option:`--destination`` argument:
+
+.. code-block:: bash
 
     $ celery control add_consumer foo -d worker1.local
 
@@ -484,18 +500,24 @@ You can cancel a consumer by queue name using the :control:`cancel_consumer`
 control command.
 
 To force all workers in the cluster to cancel consuming from a queue
-you can use the :program:`celery control` program::
+you can use the :program:`celery control` program:
+
+.. code-block:: bash
 
     $ celery control cancel_consumer foo
 
 The :option:`--destination` argument can be used to specify a worker, or a
-list of workers, to act on the command::
+list of workers, to act on the command:
+
+.. code-block:: bash
 
     $ celery control cancel_consumer foo -d worker1.local
 
 
 You can also cancel consumers programmatically using the
-:meth:`@control.cancel_consumer` method::
+:meth:`@control.cancel_consumer` method:
+
+.. code-block:: bash
 
     >>> myapp.control.cancel_consumer('foo', reply=True)
     [{u'worker1.local': {u'ok': u"no longer consuming from u'foo'"}}]
@@ -506,14 +528,18 @@ Queues: List of active queues
 -----------------------------
 
 You can get a list of queues that a worker consumes from by using
-the :control:`active_queues` control command::
+the :control:`active_queues` control command:
+
+.. code-block:: bash
 
     $ celery inspect active_queues
     [...]
 
 Like all other remote control commands this also supports the
 :option:`--destination` argument used to specify which workers should
-reply to the request::
+reply to the request:
+
+.. code-block:: bash
 
     $ celery inspect active_queues -d worker1.local
     [...]
@@ -563,7 +589,9 @@ implementations:
     Used if the :mod:`pyinotify` library is installed.
     If you are running on Linux this is the recommended implementation,
     to install the :mod:`pyinotify` library you have to run the following
-    command::
+    command:
+
+    .. code-block:: bash
 
         $ pip install pyinotify
 
@@ -575,7 +603,9 @@ implementations:
     expensive.
 
 You can force an implementation by setting the :envvar:`CELERYD_FSNOTIFY`
-environment variable::
+environment variable:
+
+.. code-block:: bash
 
     $ env CELERYD_FSNOTIFY=stat celery worker -l info --autoreload
 

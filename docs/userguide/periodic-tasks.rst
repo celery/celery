@@ -215,20 +215,26 @@ the :setting:`CELERY_TIMEZONE` setting:
 Starting the Scheduler
 ======================
 
-To start the :program:`celery beat` service::
+To start the :program:`celery beat` service:
+
+.. code-block:: bash
 
     $ celery beat
 
 You can also start embed `beat` inside the worker by enabling
 workers `-B` option, this is convenient if you only intend to
-use one worker node::
+use one worker node:
+
+.. code-block:: bash
 
     $ celery worker -B
 
 Beat needs to store the last run times of the tasks in a local database
 file (named `celerybeat-schedule` by default), so it needs access to
 write in the current directory, or alternatively you can specify a custom
-location for this file::
+location for this file:
+
+.. code-block:: bash
 
     $ celery beat -s /home/celery/var/run/celerybeat-schedule
 
@@ -248,7 +254,9 @@ which is simply keeping track of the last run times in a local database file
 (a :mod:`shelve`).
 
 `django-celery` also ships with a scheduler that stores the schedule in the
-Django database::
+Django database:
+
+.. code-block:: bash
 
     $ celery beat -S djcelery.schedulers.DatabaseScheduler
 

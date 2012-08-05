@@ -22,6 +22,8 @@ __all__ = [
 ]
 VERSION_BANNER = '{0} ({1})'.format(__version__, SERIES)
 
+# -eof meta-
+
 # This is for static analyzers
 Celery = object
 bugreport = lambda *a, **kw: None
@@ -37,8 +39,6 @@ subtask = lambda *a, **kw: None
 xmap = lambda *a, **kw: None
 xstarmap = lambda *a, **kw: None
 uuid = lambda: None
-
-# -eof meta-
 
 # Lazy loading
 from .__compat__ import recreate_module

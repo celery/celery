@@ -45,7 +45,7 @@ Whenever you define a task, that task will also be added to the local registry:
 
 .. code-block:: python
 
-    >>> @celery.task()
+    >>> @celery.task
     ... def add(x, y):
     ...     return x + y
 
@@ -76,7 +76,7 @@ For example here, where the tasks module is also used to start a worker:
     from celery import Celery
     celery = Celery()
 
-    @celery.task()
+    @celery.task
     def add(x, y): return x + y
 
     if __name__ == '__main__':
@@ -98,7 +98,7 @@ You can specify another name for the main module:
     >>> celery.main
     'tasks'
 
-    >>> @celery.task()
+    >>> @celery.task
     ... def add(x, y):
     ...     return x + y
 
@@ -228,7 +228,9 @@ environment variable named :envvar:`CELERY_CONFIG_MODULE`:
     celery = Celery()
     celery.config_from_envvar('CELERY_CONFIG_MODULE')
 
-You can then specify the configuration module to use via the environment::
+You can then specify the configuration module to use via the environment:
+
+.. code-block:: bash
 
     $ CELERY_CONFIG_MODULE="celeryconfig.prod" celery worker -l info
 
@@ -256,7 +258,7 @@ we use the task, or access an attribute (in this case :meth:`repr`):
 
 .. code-block:: python
 
-    >>> @celery.task()
+    >>> @celery.task
     >>> def add(x, y):
     ...    return x + y
 
@@ -363,7 +365,9 @@ so that everything also works in the module-based compatibility API
 
 In development you can set the :envvar:`CELERY_TRACE_APP`
 environment variable to raise an exception if the app
-chain breaks::
+chain breaks:
+
+.. code-block:: bash
 
     $ CELERY_TRACE_APP=1 celery worker -l info
 
@@ -468,7 +472,7 @@ by changing its :meth:`@Celery.Task` attribute:
     >>> celery.Task
     <unbound MyBaseTask>
 
-    >>> @x.task()
+    >>> @x.task
     ... def add(x, y):
     ...     return x + y
 

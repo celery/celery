@@ -461,7 +461,7 @@ the error callbacks take the id of the parent task as argument instead:
     import os
     from proj.celery import celery
 
-    @celery.task()
+    @celery.task
     def log_error(task_id):
         result = celery.AsyncResult(task_id)
         result.get(propagate=False)  # make sure result written.
@@ -538,7 +538,9 @@ You can even convert these graphs to *dot* format::
     ...     res.parent.parent.graph.to_dot(fh)
 
 
-and create images::
+and create images:
+
+.. code-block:: bash
 
     $ dot -Tpng graph.dot -o graph.png
 
@@ -676,11 +678,11 @@ already a standard function):
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     def add(x, y):
         return x + y
 
-    @celery.task()
+    @celery.task
     def tsum(numbers):
         return sum(numbers)
 
@@ -789,7 +791,7 @@ is the same as having a task doing:
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     def temp():
         return [xsum(range(10)), xsum(range(100))]
 
@@ -802,7 +804,7 @@ is the same as having a task doing:
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     def temp():
         return [add(i, i) for i in range(10)]
 

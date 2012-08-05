@@ -273,11 +273,15 @@ Documentation
   stricter equivalence checks.
 
     If you've already hit this problem you may have to delete the
-    declaration::
+    declaration:
+
+    .. code-block:: bash
 
         $ camqadm exchange.delete celerycrq
 
-    or::
+    or:
+
+    .. code-block:: bash
 
         $ python manage.py camqadm exchange.delete celerycrq
 
@@ -378,7 +382,9 @@ Documentation
 
 * Added experimental support for persistent revokes.
 
-    Use the `-S|--statedb` argument to celeryd to enable it::
+    Use the `-S|--statedb` argument to celeryd to enable it:
+
+    .. code-block:: bash
 
         $ celeryd --statedb=/var/run/celeryd
 
@@ -590,7 +596,9 @@ Backward incompatible changes
     allows conflicting declarations for the auto_delete and durable settings.
 
     If you've already used celery with this backend chances are you
-    have to delete the previous declaration::
+    have to delete the previous declaration:
+
+    .. code-block:: bash
 
         $ camqadm exchange.delete celeryresults
 
@@ -627,7 +635,9 @@ News
     .. figure:: ../images/celeryevshotsm.jpg
 
     If you run `celeryev` with the `-d` switch it will act as an event
-    dumper, simply dumping the events it receives to standard out::
+    dumper, simply dumping the events it receives to standard out:
+
+    .. code-block:: bash
 
         $ celeryev -d
         -> celeryev: starting capture...
@@ -729,7 +739,9 @@ News
                                "routing_key": "name}
 
    This feature is added for easily setting up routing using the `-Q`
-   option to `celeryd`::
+   option to `celeryd`:
+
+   .. code-block:: bash
 
        $ celeryd -Q video, image
 
@@ -872,7 +884,9 @@ News
     For example, if :setting:`CELERY_QUEUES` defines four
     queues: `image`, `video`, `data` and `default`, the following
     command would make celeryd only consume from the `image` and `video`
-    queues::
+    queues:
+
+    .. code-block:: bash
 
         $ celeryd -Q image,video
 
@@ -899,19 +913,27 @@ News
     and :envvar:`CELERY_LOADER` environment variables, so when `nosetests`
     imports that, the unit test environment is all set up.
 
-    Before you run the tests you need to install the test requirements::
+    Before you run the tests you need to install the test requirements:
+
+    .. code-block:: bash
 
         $ pip install -r requirements/test.txt
 
-    Running all tests::
+    Running all tests:
+
+    .. code-block:: bash
 
         $ nosetests
 
-    Specifying the tests to run::
+    Specifying the tests to run:
+
+    .. code-block:: bash
 
         $ nosetests celery.tests.test_task
 
-    Producing HTML coverage::
+    Producing HTML coverage:
+
+    .. code-block:: bash
 
         $ nosetests --with-coverage3
 
@@ -922,7 +944,9 @@ News
 * :mod:`celeryd-multi <celeryd.bin.celeryd_multi>`: Tool for shell scripts
   to start multiple workers.
 
- Some examples::
+    Some examples:
+
+    .. code-block:: bash
 
         # Advanced example with 10 workers:
         #   * Three of the workers processes the images and video queue

@@ -87,7 +87,7 @@ called `add`, returning the sum of two arguments:
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     def add(x, y):
         return x + y
 
@@ -144,7 +144,7 @@ This is an example error callback:
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     def error_handler(uuid):
         result = AsyncResult(uuid)
         exc = result.get(propagate=False)
@@ -462,7 +462,9 @@ Simple routing (name <-> name) is accomplished using the ``queue`` option::
     add.apply_async(queue='priority.high')
 
 You can then assign workers to the ``priority.high`` queue by using
-the workers :option:`-Q` argument::
+the workers :option:`-Q` argument:
+
+.. code-block:: bash
 
     $ celery worker -l info -Q celery,priority.high
 

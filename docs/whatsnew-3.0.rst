@@ -94,7 +94,9 @@ The workers remote control command exchanges has been renamed
 has been removed, and that makes it incompatible with earlier versions.
 
 You can manually delete the old exchanges if you want,
-using the :program:`celery amqp` command (previously called ``camqadm``)::
+using the :program:`celery amqp` command (previously called ``camqadm``):
+
+.. code-block:: bash
 
     $ celery amqp exchange.delete celeryd.pidbox
     $ celery amqp exchange.delete reply.celeryd.pidbox
@@ -123,10 +125,11 @@ New ``celery`` umbrella command
 All Celery's command line programs are now available from a single
 :program:`celery` umbrella command.
 
-You can see a list of subcommands and options by running::
+You can see a list of subcommands and options by running:
+
+.. code-block:: bash
 
     $ celery help
-
 
 Commands include:
 
@@ -162,7 +165,9 @@ The :mod:`celery.app.task` module is now a module instead of a package.
 
 The setup.py install script will try to remove the old package,
 but if that doesn't work for some reason you have to remove
-it manually.  This command helps::
+it manually.  This command helps:
+
+.. code-block:: bash
 
     $ rm -r $(dirname $(python -c '
         import celery;print(celery.__file__)'))/app/task/
@@ -295,7 +300,9 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
                 with open('graph.dot') as fh:
                     result.graph.to_dot(fh)
 
-            which can than be used to produce an image::
+            which can than be used to produce an image:
+
+            .. code-block:: bash
 
                 $ dot -Tpng graph.dot -o graph.png
 
@@ -466,7 +473,9 @@ stable and is now documented as part of the offical API.
         >>> celery.control.cancel_consumer(queue_name,
         ...     destination=['w1.example.com'])
 
-    or using the :program:`celery control` command::
+    or using the :program:`celery control` command:
+
+    .. code-block:: bash
 
         $ celery control -d w1.example.com add_consumer queue
         $ celery control -d w1.example.com cancel_consumer queue
@@ -488,7 +497,9 @@ stable and is now documented as part of the offical API.
         >>> celery.control.autoscale(max=10, min=5,
         ...     destination=['w1.example.com'])
 
-    or using the :program:`celery control` command::
+    or using the :program:`celery control` command:
+
+    .. code-block:: bash
 
         $ celery control -d w1.example.com autoscale 10 5
 
@@ -504,7 +515,9 @@ stable and is now documented as part of the offical API.
         >>> celery.control.pool_grow(2, destination=['w1.example.com'])
         >>> celery.contorl.pool_shrink(2, destination=['w1.example.com'])
 
-    or using the :program:`celery control` command::
+    or using the :program:`celery control` command:
+
+    .. code-block:: bash
 
         $ celery control -d w1.example.com pool_grow 2
         $ celery control -d w1.example.com pool_shrink 2
@@ -568,7 +581,7 @@ Logging support now conforms better with best practices.
 
         logger = get_task_logger(__name__)
 
-        @celery.task()
+        @celery.task
         def add(x, y):
             logger.debug('Adding %r + %r' % (x, y))
             return x + y
@@ -660,7 +673,9 @@ The :option:`--app` option now 'auto-detects'
 
 E.g. if you have a project named 'proj' where the
 celery app is located in 'from proj.celery import celery',
-then the following will be equivalent::
+then the following will be equivalent:
+
+.. code-block:: bash
 
         $ celery worker --app=proj
         $ celery worker --app=proj.celery:
@@ -743,13 +758,17 @@ In Other News
         >>> import celery
         >>> print(celery.bugreport())
 
-    - Using the ``celery`` command-line program::
+    - Using the ``celery`` command-line program:
 
-        $ celery report
+        .. code-block:: bash
 
-    - Get it from remote workers::
+            $ celery report
 
-        $ celery inspect report
+    - Get it from remote workers:
+
+        .. code-block:: bash
+
+            $ celery inspect report
 
 - Module ``celery.log`` moved to :mod:`celery.app.log`.
 

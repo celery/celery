@@ -130,7 +130,7 @@ class Worker(WorkController):
                 count, pluralize(count, 'message')))
 
     def tasklist(self, include_builtins=True):
-        tasks = self.app.tasks.keys()
+        tasks = self.app.tasks
         if not include_builtins:
             tasks = [t for t in tasks if not t.startswith('celery.')]
         return '\n'.join('  . {0}'.format(task) for task in sorted(tasks))

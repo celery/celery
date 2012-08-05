@@ -60,5 +60,4 @@ class configurated(object):
                 setattr(self, attr_name, attr_value)
 
     def confopts_as_dict(self):
-        return dict((key, getattr(self, key))
-                        for key in self.__confopts__.iterkeys())
+        return dict((key, getattr(self, key)) for key in self.__confopts__)

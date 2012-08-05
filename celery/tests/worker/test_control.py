@@ -155,8 +155,6 @@ class test_ControlPanel(Case):
         self.panel.handle('report')
 
     def test_active(self):
-        from celery.worker.job import TaskRequest
-
         r = TaskRequest(mytask.name, 'do re mi', (), {})
         state.active_requests.add(r)
         try:

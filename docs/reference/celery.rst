@@ -145,7 +145,7 @@ Application
 
         .. code-block:: python
 
-            @celery.task()
+            @celery.task
             def refresh_feed(url):
                 return ...
 

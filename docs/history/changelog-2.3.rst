@@ -284,6 +284,8 @@ News
 
     Example use:
 
+    .. code-block:: bash
+
         $ celeryd-multi start 4  -c 2  -- broker.host=amqp.example.com \
                                           broker.vhost=/               \
                                           celery.disable_rate_limits=yes
