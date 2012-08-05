@@ -74,13 +74,13 @@ def load_extension_commands(namespace='celery.commands'):
         return
 
     for ep in iter_entry_points(namespace):
-        _get_extension_classes().append(ep.name)
         sym = ':'.join([ep.module_name, ep.attrs[0]])
         try:
             cls = symbol_by_name(sym)
         except (ImportError, SyntaxError), exc:
             warnings.warn('Cannot load extension %r: %r' % (sym, exc))
         else:
+            _get_extension_classes().append(ep.name)
             command(cls, name=ep.name)
 
 
