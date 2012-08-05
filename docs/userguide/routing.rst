@@ -380,7 +380,7 @@ have executed so far.  Type ``help`` for a list of commands available.
 It also supports auto-completion, so you can start typing a command and then
 hit the `tab` key to show a list of possible matches.
 
-Let's create a queue we can send messages to:
+Let's create a queue you can send messages to:
 
 .. code-block:: bash
 
@@ -397,14 +397,16 @@ named ``testqueue``.  The queue is bound to the exchange using
 the routing key ``testkey``.
 
 From now on all messages sent to the exchange ``testexchange`` with routing
-key ``testkey`` will be moved to this queue.  We can send a message by
+key ``testkey`` will be moved to this queue.  You can send a message by
 using the ``basic.publish`` command::
 
     4> basic.publish 'This is a message!' testexchange testkey
     ok.
 
-Now that the message is sent we can retrieve it again.  We use the
-``basic.get``` command here, which polls for new messages on the queue.
+Now that the message is sent you can retrieve it again.  You can use the
+``basic.get``` command here, which polls for new messages on the queue
+(which is alright for maintainence tasks, for services you'd want to use
+``basic.consume`` instead)
 
 Pop a message off the queue::
 
@@ -429,12 +431,12 @@ This tag is used to acknowledge the message.  Also note that
 delivery tags are not unique across connections, so in another client
 the delivery tag `1` might point to a different message than in this channel.
 
-You can acknowledge the message we received using ``basic.ack``::
+You can acknowledge the message you received using ``basic.ack``::
 
     6> basic.ack 1
     ok.
 
-To clean up after our test session we should delete the entities we created::
+To clean up after our test session you should delete the entities you created::
 
     7> queue.delete testqueue
     ok. 0 messages deleted.

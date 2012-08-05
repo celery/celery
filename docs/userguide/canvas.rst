@@ -15,10 +15,11 @@ Subtasks
 
 .. versionadded:: 2.0
 
-We just learned how to call a task using the tasks ``delay`` method,
-and this is often all you need, but sometimes you may want to pass the
-signature of a task invocation to another process or as an argument to another
-function, for this Celery uses something called *subtasks*.
+You just learned how to call a task using the tasks ``delay`` method
+in the :ref:`calling <calling>` guide, and this is often all you need,
+but sometimes you may want to pass the signature of a task invocation to
+another process or as an argument to another function, for this Celery uses
+something called *subtasks*.
 
 A :func:`~celery.subtask` wraps the arguments, keyword arguments, and execution options
 of a single task invocation in a way such that it can be passed to functions
@@ -48,7 +49,7 @@ or even serialized and sent across the wire.
         >>> add.s(2, 2, debug=True)
         tasks.add(2, 2, debug=True)
 
-- From any subtask instance we can inspect the different fields::
+- From any subtask instance you can inspect the different fields::
 
         >>> s = add.subtask((2, 2), {'debug': True}, countdown=10)
         >>> s.args
@@ -133,7 +134,7 @@ so it's not possible to call the subtask with partial args/kwargs.
 
 .. note::
 
-    In this tutorial we sometimes use the prefix operator `~` to subtasks.
+    In this tutorial I sometimes use the prefix operator `~` to subtasks.
     You probably shouldn't use it in your production code, but it's a handy shortcut
     when experimenting in the Python shell::
 
@@ -158,7 +159,7 @@ to ``apply_async``::
 The callback will only be applied if the task exited successfully,
 and it will be applied with the return value of the parent task as argument.
 
-As we mentioned earlier, any arguments you add to `subtask`,
+As I mentioned earlier, any arguments you add to `subtask`,
 will be prepended to the arguments specified by the subtask itself!
 
 If you have the subtask::
@@ -255,7 +256,7 @@ Here's some examples:
 
 - Immutable subtasks
 
-    As we have learned signatures can be partial, so that arguments can be
+    Signatures can be partial so arguments can be
     added to the existing arguments, but you may not always want that,
     for example if you don't want the result of the previous task in a chain.
 
@@ -268,7 +269,7 @@ Here's some examples:
 
         >>> add.si(2, 2)
 
-    Now we can create a chain of independent tasks instead::
+    Now you can create a chain of independent tasks instead::
 
         >>> res = (add.si(2, 2), add.si(4, 4), add.s(8, 8))()
         >>> res.get()
@@ -282,7 +283,7 @@ Here's some examples:
 
 - Simple group
 
-    We can easily create a group of tasks to execute in parallel::
+    You can easily create a group of tasks to execute in parallel::
 
         >>> from celery import group
         >>> res = group(add.s(i, i) for i in xrange(10))()
@@ -305,7 +306,7 @@ Here's some examples:
             >>> g = group(add.s(i, i) for i in xrange(10))
             >>> g.apply_async()
 
-        This is useful because we can e.g. specify a time for the
+        This is useful because you can e.g. specify a time for the
         messages in the group to be called::
 
             >>> g.apply_async(countdown=10)
@@ -671,7 +672,7 @@ finished executing.
 Let's calculate the sum of the expression
 :math:`1 + 1 + 2 + 2 + 3 + 3 ... n + n` up to a hundred digits.
 
-First we need two tasks, :func:`add` and :func:`tsum` (:func:`sum` is
+First you need two tasks, :func:`add` and :func:`tsum` (:func:`sum` is
 already a standard function):
 
 .. code-block:: python
@@ -685,7 +686,7 @@ already a standard function):
         return sum(numbers)
 
 
-Now we can use a chord to calculate each addition step in parallel, and then
+Now you can use a chord to calculate each addition step in parallel, and then
 get the sum of the resulting numbers::
 
     >>> from celery import chord

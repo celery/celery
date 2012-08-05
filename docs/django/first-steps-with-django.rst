@@ -43,7 +43,7 @@ alternatives to choose from, see :ref:`celerytut-broker`.
 
 All settings mentioned in the Celery documentation should be added
 to your Django project's ``settings.py`` module. For example
-we can configure the :setting:`BROKER_URL` setting to specify
+you can configure the :setting:`BROKER_URL` setting to specify
 what broker to use::
 
     BROKER_URL = 'amqp://guest:guest@localhost:5672/'
@@ -115,7 +115,7 @@ Calling our task
 ================
 
 Now that the worker is running, open up a new terminal to actually
-call the task we defined::
+call the task you defined::
 
     >>> from celerytest.tasks import add
 

@@ -58,7 +58,7 @@ Whenever you define a task, that task will also be added to the local registry:
     >>> celery.tasks['__main__.add']
     <@task: __main__.add>
 
-and there we see that ``__main__`` again; whenever Celery is not able
+and there you see that ``__main__`` again; whenever Celery is not able
 to detect what module the function belongs to, it uses the main module
 name to generate the beginning of the task name.
 
@@ -254,7 +254,7 @@ of the task to happen either when the task is used, or after the
 application has been *finalized*,
 
 This example shows how the task is not created until
-we use the task, or access an attribute (in this case :meth:`repr`):
+you use the task, or access an attribute (in this case :meth:`repr`):
 
 .. code-block:: python
 
@@ -329,7 +329,7 @@ While it's possible to depend on the current app
 being set, the best practice is to always pass the app instance
 around to anything that needs it.
 
-We call this the "app chain", since it creates a chain
+I call this the "app chain", since it creates a chain
 of instances depending on the app being passed.
 
 The following example is considered bad practice:

@@ -316,7 +316,9 @@ By default monitor data for successful tasks will expire in 1 day,
 failed tasks in 3 days and pending tasks in 5 days.
 
 You can change the expiry times for each of these using
-adding the following settings to your :file:`settings.py`::
+adding the following settings to your :file:`settings.py`:
+
+.. code-block:: python
 
     from datetime import timedelta
 
@@ -588,7 +590,7 @@ Even a single worker can produce a huge amount of events, so storing
 the history of all events on disk may be very expensive.
 
 A sequence of events describes the cluster state in that time period,
-by taking periodic snapshots of this state we can keep all history, but
+by taking periodic snapshots of this state you can keep all history, but
 still only periodically write it to disk.
 
 To take snapshots you need a Camera class, with this you can define
@@ -638,7 +640,7 @@ See the API reference for :mod:`celery.events.state` to read more
 about state objects.
 
 Now you can use this cam with :program:`celery events` by specifying
-it with the `-c` option:
+it with the :option:`-c` option:
 
 .. code-block:: bash
 
@@ -667,7 +669,7 @@ Or you can use it programmatically like this:
 Real-time processing
 --------------------
 
-To process events in real-time we need the following
+To process events in real-time you need the following
 
 - An event consumer (this is the ``Receiver``)
 
@@ -686,8 +688,7 @@ To process events in real-time we need the following
   together as events come in, making sure timestamps are in sync, and so on.
 
 
-
-Combining these we can easily process events in real-time:
+Combining these you can easily process events in real-time:
 
 
 .. code-block:: python
@@ -714,11 +715,11 @@ Combining these we can easily process events in real-time:
 .. note::
 
     The wakeup argument to ``capture`` sends a signal to all workers
-    to force them to send a heartbeat.  This way we can immediately see
+    to force them to send a heartbeat.  This way you can immediately see
     workers when the monitor starts.
 
 
-We can listen to specific events by specifying the handlers:
+You can listen to specific events by specifying the handlers:
 
 .. code-block:: python
 
