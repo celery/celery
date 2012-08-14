@@ -611,6 +611,10 @@ class GroupResult(ResultSet):
     def serializable(self):
         return self.id, [r.serializable() for r in self.results]
 
+    @property
+    def children(self):
+        return self.results
+
     @classmethod
     def restore(self, id, backend=None):
         """Restore previously saved group result."""
