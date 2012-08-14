@@ -179,17 +179,30 @@ Celery Flower is a web based, real-time monitor and administration tool.
 Features
 ~~~~~~~~
 
-- Workers monitoring and management
-- Configuration viewer
-- Worker pool control
-- Broker options viewer
-- Queues management
-- Tasks execution statistics
-- Task viewer
+- Shutdown or restart workers
+- View workers status (completed, running tasks, etc.)
+- View worker pool options (timeouts, processes, etc.)
+- Control worker pool size
+- View message broker options
+- View active queues, add or cancel queues
+- View processed task stats by type
+- View currently running tasks
+- View scheduled tasks
+- View reserved and revoked tasks
+- Apply time and rate limits
+- View all active configuration options
+- View all tasks (by type, by worker, etc.)
+- View all task options (arguments, start time, runtime, etc.)
+- Revoke or terminate tasks
+- View real-time execution graphs
 
-**Screenshot**
+**Screenshots**
 
 .. figure:: ../images/dashboard.png
+   :width: 700px
+
+.. figure:: ../images/monitor.png
+   :width: 700px
 
 More screenshots_:
 
@@ -225,6 +238,7 @@ This can also be used if you're not using Celery with a Django project.
 *Screenshot*
 
 .. figure:: ../images/djangoceleryadmin2.jpg
+   :width: 700px
 
 .. _`django-celery`: http://pypi.python.org/pypi/django-celery
 
