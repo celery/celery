@@ -7,6 +7,7 @@ Dynamic Tasks
 Subtasks returned by dynamic tasks are executed right after the first
 task executes. As if they were in a chain.
 You can also return chains and chords, and they will be properly inserted.
+You can have chords in chords etc...
 
 This allows you to design a pipeline that can be completely dynamic, while
 benefiting from Celery's powerful idioms (subtasks, chains, chords...).
@@ -17,15 +18,16 @@ Usage example
 
 .. code-block:: python
 
-    from celery.contrib.dynamic import dynamic_task
+    import celery.contrib.dynamic
+    from celery.contrib.dynamic import dynamic_chord as chord
 
-    @dynamic_task
+    @app.dynamic_task
     def one(i):
         if i > 3:
             return two.s(i)
         return i + 1
 
-    @dynamic_task(ignore_result=True)
+    @app.dynamic_task(ignore_result=True)
     def two(i):
         return i + 2
 
