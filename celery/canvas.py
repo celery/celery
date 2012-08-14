@@ -166,7 +166,9 @@ class Signature(dict):
                     for link in maybe_list(self.options.get('link')) or []))))
 
     def __or__(self, other):
-        if isinstance(other, chain):
+        if not isinstance(self, chain) and isinstance(other, chain):
+            return chain((self,) + other.tasks)
+        elif isinstance(other, chain):
             return chain(*self.tasks + other.tasks)
         elif isinstance(other, Signature):
             if isinstance(self, chain):
