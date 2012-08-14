@@ -149,7 +149,7 @@ class AsyncResult(ResultBase):
             [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 
         """
-        for _, R in self.iterdeps():
+        for _, R in self.iterdeps(intermediate=intermediate):
             yield R, R.get(**kwargs)
 
     def get_leaf(self):
