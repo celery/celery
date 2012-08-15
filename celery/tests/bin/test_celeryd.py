@@ -621,8 +621,9 @@ class test_signal_handlers(AppCase):
             state.should_stop = False
 
     @disable_stdouts
+    @patch('atexit.register')
     @patch('os.fork')
-    def test_worker_restart_handler(self, fork):
+    def test_worker_restart_handler(self, fork, register):
         fork.return_value = 0
         if getattr(os, 'execv', None) is None:
             raise SkipTest('platform does not have excv')
@@ -637,10 +638,13 @@ class test_signal_handlers(AppCase):
             handlers = self.psig(cd.install_worker_restart_handler, worker)
             handlers['SIGHUP']('SIGHUP', object())
             self.assertTrue(state.should_stop)
+            self.assertTrue(register.called)
+            callback = register.call_args[0][0]
+            callback()
             self.assertTrue(argv)
             argv[:] = []
             fork.return_value = 1
-            handlers['SIGHUP']('SIGHUP', object())
+            callback()
             self.assertFalse(argv)
         finally:
             os.execv = execv

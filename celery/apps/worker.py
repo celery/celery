@@ -323,15 +323,19 @@ install_worker_int_handler = partial(
 )
 
 
+def _clone_current_worker():
+    if os.fork() == 0:
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+
+
 def install_worker_restart_handler(worker, sig='SIGHUP'):
 
     def restart_worker_sig_handler(signum, frame):
         """Signal handler restarting the current python program."""
         set_in_sighandler(True)
         safe_say('Restarting celeryd (%s)' % (' '.join(sys.argv), ))
-        pid = os.fork()
-        if pid == 0:
-            os.execv(sys.executable, [sys.executable] + sys.argv)
+        import atexit
+        atexit.register(_clone_current_worker)
         from celery.worker import state
         state.should_stop = True
     platforms.signals[sig] = restart_worker_sig_handler
