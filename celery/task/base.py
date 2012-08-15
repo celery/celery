@@ -21,8 +21,8 @@ from celery.utils.log import get_task_logger
 
 #: list of methods that must be classmethods in the old API.
 _COMPAT_CLASSMETHODS = (
-    'delay', 'apply_async', 'retry', 'apply',
-    'AsyncResult', 'subtask', 'push_request', 'pop_request')
+    'delay', 'apply_async', 'retry', 'apply', 'AsyncResult', 'subtask',
+)
 
 
 class Task(BaseTask):
