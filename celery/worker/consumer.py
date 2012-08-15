@@ -390,6 +390,7 @@ class Consumer(object):
             hb = self.amqheartbeat
             hbtick = connection.heartbeat_check
             on_poll_start = connection.transport.on_poll_start
+            on_poll_empty = connection.transport.on_poll_empty
             strategies = self.strategies
             drain_nowait = connection.drain_nowait
             on_task_callbacks = hub.on_task
@@ -444,6 +445,8 @@ class Consumer(object):
                             events = poll(poll_timeout)
                         except ValueError:  # Issue 882
                             return
+                        if not events:
+                            on_poll_empty()
                         for fileno, event in events or ():
                             try:
                                 if event & READ:
