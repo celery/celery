@@ -47,12 +47,3 @@ Results
 
 If you also want to store the state and return values of tasks in MongoDB,
 you should see :ref:`conf-mongodb-result-backend`.
-
-.. _broker-mongodb-limitations:
-
-Limitations
-===========
-
-The mongodb message transport currently does not support:
-
-    * Remote control commands (celeryctl, broadcast)

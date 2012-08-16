@@ -537,8 +537,8 @@ Result Backends
 ---------------
 
 Celery needs to store or send the states somewhere.  There are several
-built-in backends to choose from: SQLAlchemy/Django ORM, Memcached, Redis,
-RabbitMQ (amqp), MongoDB, Tokyo Tyrant and Redis -- or you can define your own.
+built-in backends to choose from: SQLAlchemy/Django ORM, Memcached,
+RabbitMQ (amqp), MongoDB, and Redis -- or you can define your own.
 
 No backend works well for every use case.
 You should read about the strengths and weaknesses of each backend, and choose
@@ -811,16 +811,36 @@ If you have a task,
 And you route every request to the same process, then it
 will keep state between requests.
 
-This can also be useful to keep cached resources::
+This can also be useful to cache resources,
+e.g. a base Task class that caches a database connection:
+
+.. code-block:: python
+
+    from celery import Task
 
     class DatabaseTask(Task):
+        abstract = True
         _db = None
 
         @property
         def db(self):
-            if self._db = None:
+            if self._db is None:
                 self._db = Database.connect()
             return self._db
+
+
+that can be added to tasks like this:
+
+.. code-block:: python
+
+
+    @celery.task(base=DatabaseTask)
+    def process_rows():
+        for row in self.db.table.all():
+            ...
+
+The ``db`` attribute of the ``process_rows`` task will then
+always stay the same in each process.
 
 Abstract classes
 ----------------

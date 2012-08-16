@@ -21,8 +21,8 @@ from celery.utils.log import get_task_logger
 
 #: list of methods that must be classmethods in the old API.
 _COMPAT_CLASSMETHODS = (
-    'delay', 'apply_async', 'retry', 'apply',
-    'AsyncResult', 'subtask', 'push_request', 'pop_request')
+    'delay', 'apply_async', 'retry', 'apply', 'AsyncResult', 'subtask',
+)
 
 
 class Task(BaseTask):
@@ -46,7 +46,7 @@ class Task(BaseTask):
     priority = None
     type = 'regular'
     disable_error_emails = False
-    accept_magic_kwargs = None  # get default from app
+    accept_magic_kwargs = False
 
     from_config = BaseTask.from_config + (
         ('exchange_type', 'CELERY_DEFAULT_EXCHANGE_TYPE'),
