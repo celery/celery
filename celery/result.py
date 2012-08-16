@@ -650,6 +650,7 @@ class TaskSetResult(GroupResult):
 
 class EagerResult(AsyncResult):
     """Result that we know has already been executed."""
+    task_name = None
 
     def __init__(self, id, ret_value, state, traceback=None):
         self.id = id
