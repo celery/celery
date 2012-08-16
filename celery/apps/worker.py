@@ -26,7 +26,7 @@ from celery.exceptions import SystemTerminate
 from celery.loaders.app import AppLoader
 from celery.utils import cry, isatty
 from celery.utils.imports import qualname
-from celery.utils.log import get_logger, set_in_sighandler
+from celery.utils.log import get_logger, in_sighandler, set_in_sighandler
 from celery.utils.text import pluralize
 from celery.worker import WorkController
 
@@ -215,8 +215,7 @@ def _shutdown_handler(worker, sig='TERM', how='Warm', exc=SystemExit,
         callback=None):
 
     def _handle_request(signum, frame):
-        set_in_sighandler(True)
-        try:
+        with in_sighandler():
             from celery.worker import state
             if current_process()._name == 'MainProcess':
                 if callback:
@@ -227,8 +226,6 @@ def _shutdown_handler(worker, sig='TERM', how='Warm', exc=SystemExit,
                                 'Cold': 'should_terminate'}[how], True)
             else:
                 raise exc()
-        finally:
-            set_in_sighandler(False)
     _handle_request.__name__ = 'worker_' + how
     platforms.signals[sig] = _handle_request
 install_worker_term_handler = partial(
@@ -274,11 +271,8 @@ def install_cry_handler():
 
     def cry_handler(signum, frame):
         """Signal handler logging the stacktrace of all active threads."""
-        set_in_sighandler(True)
-        try:
+        with in_sighandler():
             safe_say(cry())
-        finally:
-            set_in_sighandler(False)
     platforms.signals['SIGUSR1'] = cry_handler
 
 
@@ -287,12 +281,9 @@ def install_rdb_handler(envvar='CELERY_RDBSIG',
 
     def rdb_handler(signum, frame):
         """Signal handler setting a rdb breakpoint at the current frame."""
-        set_in_sighandler(True)
-        try:
+        with in_sighandler():
             from celery.contrib import rdb
             rdb.set_trace(frame)
-        finally:
-            set_in_sighandler(False)
     if os.environ.get(envvar):
         platforms.signals[sig] = rdb_handler
 
@@ -300,10 +291,7 @@ def install_rdb_handler(envvar='CELERY_RDBSIG',
 def install_HUP_not_supported_handler(worker, sig='SIGHUP'):
 
     def warn_on_HUP_handler(signum, frame):
-        set_in_sighandler(True)
-        try:
+        with in_sighandler():
             safe_say('{sig} not supported: Restarting with {sig} is '
                      'unstable on this platform!'.format(sig=sig))
-        finally:
-            set_in_sighandler(False)
     platforms.signals[sig] = warn_on_HUP_handler

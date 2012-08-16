@@ -14,6 +14,7 @@ import sys
 import threading
 import traceback
 
+from contextlib import contextmanager
 from billiard import current_process, util as mputil
 from kombu.log import get_logger as _get_logger, LOG_LEVELS
 
@@ -34,12 +35,19 @@ MP_LOG = os.environ.get('MP_LOG', False)
 base_logger = logger = _get_logger('celery')
 mp_logger = _get_logger('multiprocessing')
 
-in_sighandler = False
+_in_sighandler = False
 
 
 def set_in_sighandler(value):
-    global in_sighandler
-    in_sighandler = value
+    global _in_sighandler
+    _in_sighandler = value
+
+
+@contextmanager
+def in_sighandler():
+    set_in_sighandler(True)
+    yield
+    set_in_sighandler(False)
 
 
 def get_logger(name):
@@ -146,7 +154,7 @@ class LoggingProxy(object):
 
     def write(self, data):
         """Write message to logging object."""
-        if in_sighandler:
+        if _in_sighandler:
             print(safe_str(data), file=sys.__stderr__)
         if getattr(self._thread, 'recurse_protection', False):
             # Logger is logging back to this file, so stop recursing.
@@ -233,7 +241,7 @@ def _patch_logger_class():
                 _signal_safe = True
 
                 def log(self, *args, **kwargs):
-                    if in_sighandler:
+                    if _in_sighandler:
                         print('CANNOT LOG IN SIGHANDLER',  # noqa
                                 file=sys.__stderr__)
                         return
