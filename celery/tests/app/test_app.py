@@ -164,7 +164,8 @@ class test_App(Case):
 
         app = Celery(set_as_current=False, accept_magic_kwargs=True)
         timkX.bind(app)
-        self.assertTrue(timkX.accept_magic_kwargs)
+        # see #918
+        self.assertFalse(timkX.accept_magic_kwargs)
 
         from celery import Task as NewTask
 
