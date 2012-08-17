@@ -60,7 +60,7 @@ def find_nearest_pickleable_exception(exc):
         try:
             exc_args = getattr(exc, 'args', [])
             superexc = supercls(*exc_args)
-            pickle.dumps(superexc)
+            pickle.loads(pickle.dumps(superexc))
         except:
             pass
         else:
@@ -138,12 +138,7 @@ def get_pickleable_exception(exc):
     nearest = find_nearest_pickleable_exception(exc)
     if nearest:
         return nearest
-
-    try:
-        pickle.dumps(exc)
-    except Exception:
-        return UnpickleableExceptionWrapper.from_exception(exc)
-    return exc
+    return UnpickleableExceptionWrapper.from_exception(exc)
 
 
 def get_pickled_exception(exc):

@@ -20,6 +20,65 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 - `Task.apply_async` now supports timeout and soft_timeout arguments (Issue #802)
 - `App.control.Inspect.conf` can be used for inspecting worker configuration
 
+.. _version-3.0.6:
+
+3.0.6
+=====
+:release-date: 2012-09-XX XX:XX X.M BST
+
+- Now depends on billiard 2.7.3.12
+
+- Adds ``task_name`` attribute to ``EagerResult`` which is always
+  :const:`None` (Issue #907).
+
+- Old Task class in :mod:`celery.task` no longer accepts magic kwargs by
+  default (Issue #918).
+
+    A regression long ago disabled magic kwargs for these, and since
+    no one has complained about it we don't have any incentive to fix it now.
+
+- The ``inspect reserved`` control command did not work properly.
+
+- Should now play better with static analyzation tools by explicitly
+  specifying dynamically created attributes in the :mod:`celery` and
+  :mod:`celery.task` modules.
+
+- Terminating a task now results in
+  :exc:`~celery.exceptions.RevokedTaskError` instead of a ``WorkerLostError``.
+
+- ``AsyncResult.revoke`` now accepts ``terminate`` and ``signal`` arguments.
+
+- The ``task-revoked`` event now includes new fields: ``terminated``,
+  ``signum``, and ``expired``.
+
+- The argument to :class:`~celery.exceptions.TaskRevokedError` is now one
+  of the reasons ``revoked``, ``expired`` or ``terminated``.
+
+- Redis: Celery now tries to restore messages whenever there are no messages
+  in the queue.
+
+- Old Task class does no longer use classmethods for push_request and
+  pop_request  (Issue #912).
+
+- ``GroupResult`` now supports the ``children`` attribute (Issue #916).
+
+- ``AsyncResult.collect`` now respects the ``intermediate`` argument
+  (Issue #917).
+
+- Fixes example task in documentation (Issue #902).
+
+- Eventlet fixed so that the environment is patched as soon as possible.
+
+- eventlet: Now warns if celery related modules that depends on threads
+  are imported before eventlet is patched.
+
+- Improved event and camera examples in the monitoring guide.
+
+- Disables celery command setuptools entrypoints if the command can't be
+  loaded.
+
+- Fixed broken ``dump_request`` example in the tasks guide.
+
 .. _version-3.0.5:
 
 3.0.5

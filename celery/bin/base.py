@@ -295,7 +295,11 @@ class Command(object):
         return argv
 
     def find_app(self, app):
-        sym = self.symbol_by_name(app)
+        try:
+            sym = self.symbol_by_name(app)
+        except AttributeError:
+            # last part was not an attribute, but a module
+            sym = import_from_cwd(app)
         if isinstance(sym, ModuleType):
             if getattr(sym, '__path__', None):
                 return self.find_app('{0}.celery:'.format(

@@ -168,7 +168,8 @@ class BaseBackend(object):
     def store_result(self, task_id, result, status, traceback=None, **kwargs):
         """Update task state and result."""
         result = self.encode_result(result, status)
-        return self._store_result(task_id, result, status, traceback, **kwargs)
+        self._store_result(task_id, result, status, traceback, **kwargs)
+        return result
 
     def forget(self, task_id):
         self._cache.pop(task_id, None)
