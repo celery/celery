@@ -92,6 +92,15 @@ Our example task is pretty pointless, it just returns the sum of two
 arguments, but it will do for demonstration, and it is referred to in many
 parts of the Celery documentation.
 
+.. admonition:: Relative Imports
+
+    You have to consistent in how you import the task module, e.g. if
+    you have ``project.app`` in ``INSTALLED_APPS`` then you also
+    need to import the tasks ``from project.app`` or else the names
+    of the tasks will be different.
+
+    See :ref:`task-naming-relative-imports`
+
 Starting the worker process
 ===========================
 
