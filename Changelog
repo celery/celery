@@ -15,9 +15,29 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 =====
 :release-date: 2012-09-XX XX:XX X.M BST
 
+- Now depends on kombu 2.4.0
+
 - Now depends on billiard 2.7.3.12
 
-- Now depends on Kombu 2.4.0
+- Redis: Celery now tries to restore messages whenever there are no messages
+  in the queue.
+
+- Crontab schedules now properly respects :setting:`CELERY_TIMEZONE` setting.
+
+    It's important to note that crontab schedules uses UTC time by default
+    unless this setting is set.
+
+    Issue #904 and django-celery #150.
+
+- ``billiard.enable_forking`` is now only set by the processes pool.
+
+- The transport is now properly shown by :program:`celery report`
+  (Issue #913).
+
+- The `--app` argument now works if the last part is a module name
+  (Issue #921).
+
+- Fixed problem with unpickleable exceptions (billiard #12).
 
 - Adds ``task_name`` attribute to ``EagerResult`` which is always
   :const:`None` (Issue #907).
@@ -44,9 +64,6 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 
 - The argument to :class:`~celery.exceptions.TaskRevokedError` is now one
   of the reasons ``revoked``, ``expired`` or ``terminated``.
-
-- Redis: Celery now tries to restore messages whenever there are no messages
-  in the queue.
 
 - Old Task class does no longer use classmethods for push_request and
   pop_request  (Issue #912).

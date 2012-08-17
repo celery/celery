@@ -491,7 +491,6 @@ class crontab(schedule):
         return current_app.conf.CELERY_TIMEZONE
 
 
-
 def maybe_schedule(s, relative=False):
     if isinstance(s, int):
         s = timedelta(seconds=s)
