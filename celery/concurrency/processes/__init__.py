@@ -13,12 +13,14 @@ from __future__ import absolute_import
 
 import os
 
+from billiard import forking_enable
+from billiard.pool import Pool, RUN, CLOSE
+
 from celery import platforms
 from celery import signals
 from celery._state import set_default_app
 from celery.concurrency.base import BasePool
 from celery.task import trace
-from billiard.pool import Pool, RUN, CLOSE
 
 #: List of signals to reset when a child process starts.
 WORKER_SIGRESET = frozenset(['SIGTERM',
@@ -69,6 +71,7 @@ class TaskPool(BasePool):
         Will pre-fork all workers so they're ready to accept tasks.
 
         """
+        forking_enable(self.forking_enable)
         P = self._pool = self.Pool(processes=self.limit,
                                    initializer=process_initializer,
                                    **self.options)
