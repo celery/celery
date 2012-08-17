@@ -4,7 +4,7 @@
 
 .. image:: http://cloud.github.com/downloads/celery/celery/celery_128.png
 
-:Version: 3.0.5 (Chiastic Slide)
+:Version: 3.0.6 (Chiastic Slide)
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/celery/celery/
@@ -97,7 +97,7 @@ Celery is...
 
         celery = Celery('hello', broker='amqp://guest@localhost//')
 
-        @celery.task()
+        @celery.task
         def hello():
             return 'hello world'
 
