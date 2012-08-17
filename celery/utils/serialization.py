@@ -159,6 +159,12 @@ class UnpickleableExceptionWrapper(Exception):
 
 def get_pickleable_exception(exc):
     """Make sure exception is pickleable."""
+    try:
+        pickle.loads(pickle.dumps(exc))
+    except Exception:
+        pass
+    else:
+        return exc
     nearest = find_nearest_pickleable_exception(exc)
     if nearest:
         return nearest
