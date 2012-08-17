@@ -32,6 +32,7 @@ from celery.task.trace import (
 from celery.utils import fun_takes_kwargs
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
+from celery.utils.serialization import get_pickled_exception
 from celery.utils.text import truncate
 from celery.utils.timeutils import maybe_iso8601, timezone
 
@@ -361,8 +362,9 @@ class Request(object):
         self._log_error(exc_info)
 
     def _log_error(self, einfo):
+        einfo.exception = get_pickled_exception(einfo.exception)
         exception, traceback, exc_info, internal, sargs, skwargs = (
-            safe_repr(einfo.exception),
+            einfo.exception,
             safe_str(einfo.traceback),
             einfo.exc_info,
             einfo.internal,
