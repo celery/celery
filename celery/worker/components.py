@@ -13,7 +13,6 @@ import time
 
 from functools import partial
 
-from billiard import forking_enable
 from billiard.exceptions import WorkerLostError
 
 from celery.utils.log import get_logger
@@ -107,8 +106,8 @@ class Pool(bootsteps.StartStopComponent):
 
     def create(self, w, semaphore=None, max_restarts=None):
         threaded = not w.use_eventloop
-        forking_enable(not threaded or (w.no_execv or not w.force_execv))
         procs = w.min_concurrency
+        forking_enable = not threaded or (w.no_execv or not w.force_execv)
         if not threaded:
             semaphore = w.semaphore = BoundedSemaphore(procs)
             w._quick_acquire = w.semaphore.acquire
@@ -125,6 +124,7 @@ class Pool(bootsteps.StartStopComponent):
                             threads=threaded,
                             max_restarts=max_restarts,
                             allow_restart=allow_restart,
+                            forking_enable=forking_enable,
                             semaphore=semaphore)
         if w.hub:
             w.hub.on_init.append(partial(self.on_poll_init, pool))

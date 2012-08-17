@@ -56,10 +56,12 @@ class BasePool(object):
     #: only used by multiprocessing pool
     uses_semaphore = False
 
-    def __init__(self, limit=None, putlocks=True, **options):
+    def __init__(self, limit=None, putlocks=True, forking_enable=True,
+            **options):
         self.limit = limit
         self.putlocks = putlocks
         self.options = options
+        self.forking_enable = forking_enable
         self._does_debug = logger.isEnabledFor(logging.DEBUG)
 
     def on_start(self):

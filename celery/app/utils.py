@@ -52,6 +52,11 @@ class Settings(datastructures.ConfigurationView):
         return (os.environ.get('CELERY_BROKER_URL') or
                 self.first('BROKER_URL', 'BROKER_HOST'))
 
+    @property
+    def CELERY_TIMEZONE(self):
+        # this way we also support django's time zone.
+        return self.first('CELERY_TIMEZONE', 'TIME_ZONE')
+
     def without_defaults(self):
         """Returns the current configuration, but without defaults."""
         # the last stash is the default settings, so just skip that
@@ -131,10 +136,12 @@ def bugreport(app):
     import kombu
 
     try:
-        trans = app.connection().transport
-        driver_v = '{0}:{1}'.format(trans.driver_name, trans.driver_version())
+        conn = app.connection()
+        driver_v = '{0}:{1}'.format(conn.transport.driver_name,
+                                    conn.transport.driver_version())
+        transport = conn.transport_cls
     except Exception:
-        driver_v = ''
+        transport = driver_v = ''
 
     return BUGREPORT_INFO.format(
         system=_platform.system(),
@@ -145,7 +152,7 @@ def bugreport(app):
         billiard_v=billiard.__version__,
         py_v=_platform.python_version(),
         driver_v=driver_v,
-        transport=app.conf.BROKER_TRANSPORT or 'amqp',
+        transport=transport,
         results=app.conf.CELERY_RESULT_BACKEND or 'disabled',
         human_settings=app.conf.humanize(),
         loader=qualname(app.loader.__class__),

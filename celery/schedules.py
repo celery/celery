@@ -16,9 +16,10 @@ from dateutil.relativedelta import relativedelta
 
 from . import current_app
 from .utils import is_iterable
-from .utils.timeutils import (timedelta_seconds, weekday, maybe_timedelta,
-                              remaining, humanize_seconds, is_naive, to_utc,
-                              timezone)
+from .utils.timeutils import (
+    timedelta_seconds, weekday, maybe_timedelta, remaining,
+    humanize_seconds, timezone, maybe_make_aware
+)
 from .datastructures import AttributeDict
 
 CRON_PATTERN_INVALID = """\
@@ -48,12 +49,8 @@ class schedule(object):
         return (self.nowfun or current_app.now)()
 
     def remaining_estimate(self, last_run_at):
-        """Returns when the periodic task should run next as a timedelta."""
-        now = self.now()
-        if not is_naive(last_run_at):
-            now = to_utc(now)
         return remaining(last_run_at, self.run_every,
-                         relative=self.relative, now=now)
+                         self.relative, maybe_make_aware(self.now()))
 
     def is_due(self, last_run_at):
         """Returns tuple of two items `(is_due, next_time_to_run)`,
@@ -394,7 +391,10 @@ class crontab(schedule):
         self.day_of_week = self._expand_cronspec(day_of_week, 7)
         self.day_of_month = self._expand_cronspec(day_of_month, 31, 1)
         self.month_of_year = self._expand_cronspec(month_of_year, 12, 1)
-        self.nowfun = nowfun or current_app.now
+        self.nowfun = nowfun
+
+    def now(self):
+        return (self.nowfun or current_app.now)()
 
     def __repr__(self):
         return ('<crontab: %s %s %s %s %s (m/h/d/dM/MY)>' %
@@ -411,10 +411,10 @@ class crontab(schedule):
                                  self._orig_day_of_month,
                                  self._orig_month_of_year), None)
 
-    def remaining_estimate(self, last_run_at):
+    def remaining_estimate(self, last_run_at, tz=None):
         """Returns when the periodic task should run next as a timedelta."""
-        if not is_naive(last_run_at):
-            last_run_at = last_run_at.astimezone(timezone.utc)
+        tz = tz or self.tz
+        last_run_at = maybe_make_aware(last_run_at)
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
 
         execute_this_date = (last_run_at.month in self.month_of_year and
@@ -463,7 +463,8 @@ class crontab(schedule):
                     delta = self._delta_to_next(last_run_at,
                                                 next_hour, next_minute)
 
-        return remaining(last_run_at, delta, now=self.nowfun())
+        return remaining(timezone.to_local(last_run_at, tz),
+                         delta, timezone.to_local(self.now(), tz))
 
     def is_due(self, last_run_at):
         """Returns tuple of two items `(is_due, next_time_to_run)`,
@@ -476,7 +477,7 @@ class crontab(schedule):
         rem = timedelta_seconds(rem_delta)
         due = rem == 0
         if due:
-            rem_delta = self.remaining_estimate(last_run_at=self.nowfun())
+            rem_delta = self.remaining_estimate(self.now())
             rem = timedelta_seconds(rem_delta)
         return due, rem
 
@@ -488,6 +489,10 @@ class crontab(schedule):
                     other.hour == self.hour and
                     other.minute == self.minute)
         return other is self
+
+    @property
+    def tz(self):
+        return current_app.conf.CELERY_TIMEZONE
 
 
 def maybe_schedule(s, relative=False):
