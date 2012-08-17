@@ -131,10 +131,12 @@ def bugreport(app):
     import kombu
 
     try:
-        trans = app.connection().transport
-        driver_v = '%s:%s' % (trans.driver_name, trans.driver_version())
+        conn = app.connection()
+        driver_v = '%s:%s' % (conn.transport.driver_name,
+                              conn.transport.driver_version())
+        transport = conn.transport_cls
     except Exception:
-        driver_v = ''
+        transport = driver_v = ''
 
     return BUGREPORT_INFO % {
         'system': _platform.system(),
@@ -145,7 +147,7 @@ def bugreport(app):
         'billiard_v': billiard.__version__,
         'py_v': _platform.python_version(),
         'driver_v': driver_v,
-        'transport': app.conf.BROKER_TRANSPORT or 'amqp',
+        'transport': transport,
         'results': app.conf.CELERY_RESULT_BACKEND or 'disabled',
         'human_settings': app.conf.humanize(),
         'loader': qualname(app.loader.__class__),
