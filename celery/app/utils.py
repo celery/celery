@@ -52,6 +52,11 @@ class Settings(datastructures.ConfigurationView):
         return (os.environ.get('CELERY_BROKER_URL') or
                 self.first('BROKER_URL', 'BROKER_HOST'))
 
+    @property
+    def CELERY_TIMEZONE(self):
+        # this way we also support django's time zone.
+        return self.first('CELERY_TIMEZONE', 'TIME_ZONE')
+
     def without_defaults(self):
         """Returns the current configuration, but without defaults."""
         # the last stash is the default settings, so just skip that
