@@ -20,7 +20,6 @@ import traceback
 
 from functools import partial
 
-from billiard import forking_enable
 from billiard.exceptions import WorkerLostError
 from kombu.syn import detect_environment
 from kombu.utils.finalize import Finalize
@@ -145,8 +144,8 @@ class Pool(bootsteps.StartStopComponent):
 
     def create(self, w, semaphore=None, max_restarts=None):
         threaded = not w.use_eventloop
-        forking_enable(not threaded or (w.no_execv or not w.force_execv))
         procs = w.min_concurrency
+        forking_enable = not threaded or (w.no_execv or not w.force_execv)
         if not threaded:
             semaphore = w.semaphore = BoundedSemaphore(procs)
             max_restarts = 100
@@ -161,6 +160,7 @@ class Pool(bootsteps.StartStopComponent):
                             threads=threaded,
                             max_restarts=max_restarts,
                             allow_restart=allow_restart,
+                            forking_enable=forking_enable,
                             semaphore=semaphore)
         if w.hub:
             w.hub.on_init.append(partial(self.on_poll_init, pool))
