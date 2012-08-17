@@ -17,6 +17,8 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 
 - Now depends on billiard 2.7.3.12
 
+- Now depends on Kombu 2.4.0
+
 - Adds ``task_name`` attribute to ``EagerResult`` which is always
   :const:`None` (Issue #907).
 
