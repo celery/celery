@@ -40,6 +40,8 @@ except ImportError:  # pragma: no cover
     IGNORE_ERRORS = ()
 
 logger = get_logger(__name__)
+is_jython = sys.platform.startswith('java')
+is_pypy = hasattr(sys, 'pypy_version_info')
 
 
 def active_thread_count():
@@ -310,17 +312,23 @@ def _shutdown_handler(worker, sig='TERM', how='Warm', exc=SystemExit,
 install_worker_term_handler = partial(
     _shutdown_handler, sig='SIGTERM', how='Warm', exc=SystemExit,
 )
-install_worker_term_hard_handler = partial(
-    _shutdown_handler, sig='SIGQUIT', how='Cold', exc=SystemTerminate,
-)
+if not is_jython:
+    install_worker_term_hard_handler = partial(
+        _shutdown_handler, sig='SIGQUIT', how='Cold', exc=SystemTerminate,
+    )
+else:
+    install_worker_term_handler = lambda *a, **kw: None
 
 
 def on_SIGINT(worker):
     safe_say('celeryd: Hitting Ctrl+C again will terminate all running tasks!')
     install_worker_term_hard_handler(worker, sig='SIGINT')
-install_worker_int_handler = partial(
-    _shutdown_handler, sig='SIGINT', callback=on_SIGINT
-)
+if not is_jython:
+    install_worker_int_handler = partial(
+        _shutdown_handler, sig='SIGINT', callback=on_SIGINT
+    )
+else:
+    install_worker_int_handler = lambda *a, **kw: None
 
 
 def _clone_current_worker():
@@ -343,8 +351,6 @@ def install_worker_restart_handler(worker, sig='SIGHUP'):
 
 def install_cry_handler():
     # Jython/PyPy does not have sys._current_frames
-    is_jython = sys.platform.startswith('java')
-    is_pypy = hasattr(sys, 'pypy_version_info')
     if is_jython or is_pypy:  # pragma: no cover
         return
 
