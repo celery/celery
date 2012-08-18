@@ -118,6 +118,7 @@ from __future__ import absolute_import
 import sys
 
 from celery import concurrency
+from celery.bin import celeryd_detach as _detach
 from celery.bin.base import Command, Option
 from celery.utils.log import LOG_LEVELS, mlevel
 
@@ -128,9 +129,11 @@ class WorkerCommand(Command):
     enable_config_from_cmdline = True
     supports_args = False
 
-    def execute_from_commandline(self, argv=None):
-        if argv is None:
-            argv = list(sys.argv)
+    def execute_from_commandline(self, argv=None, dopts=['-D', '--detach']):
+        argv = list(sys.argv) if argv is None else argv
+        if any(arg in argv for arg in dopts):
+            argv = [arg for arg in argv if arg not in dopts]
+            return _detach.detached_celeryd().execute_from_commandline(argv)
         return super(WorkerCommand, self).execute_from_commandline(argv)
 
     def run(self, *args, **kwargs):
@@ -164,7 +167,6 @@ class WorkerCommand(Command):
                 default=conf.CELERYD_CONCURRENCY, type='int'),
             Option('-P', '--pool', default=conf.CELERYD_POOL, dest='pool_cls'),
             Option('--purge', '--discard', default=False, action='store_true'),
-            Option('-f', '--logfile', default=conf.CELERYD_LOG_FILE),
             Option('-l', '--loglevel', default=conf.CELERYD_LOG_LEVEL),
             Option('-n', '--hostname'),
             Option('-B', '--beat', action='store_true'),
@@ -183,11 +185,11 @@ class WorkerCommand(Command):
                 default=conf.CELERYD_MAX_TASKS_PER_CHILD, type='int'),
             Option('--queues', '-Q', default=[]),
             Option('--include', '-I', default=[]),
-            Option('--pidfile'),
             Option('--autoscale'),
             Option('--autoreload', action='store_true'),
             Option('--no-execv', action='store_true', default=False),
-        )
+            Option('-D', '--detach', action='store_true'),
+        ) + _detach.OPTION_LIST
 
 
 def main():
