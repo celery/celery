@@ -177,8 +177,8 @@ class Command(object):
         prog_name = os.path.basename(argv[0])
         return self.handle_argv(prog_name, argv[1:])
 
-    def run_from_argv(self, argv=None):
-        return self.execute_from_commandline(argv)
+    def run_from_argv(self, prog_name, argv=None):
+        return self.handle_argv(prog_name, sys.argv if argv is None else argv)
 
     def maybe_patch_concurrency(self, argv=None):
         argv = argv or sys.argv
