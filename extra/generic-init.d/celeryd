@@ -97,7 +97,7 @@ export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 
 
 stop_workers () {
-    $CELERYD_MULTI stopwait $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
+    $CELERYD_MULTI stop_verify $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
 }
 
 
