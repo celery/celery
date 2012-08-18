@@ -240,11 +240,16 @@ def create_pidlock(pidfile):
         pidlock = create_pidlock('/var/run/app.pid')
 
     """
+    pidlock = _create_pidlock(pidfile)
+    atexit.register(pidlock.release)
+    return pidlock
+
+
+def _create_pidlock(pidfile):
     pidlock = PIDFile(pidfile)
     if pidlock.is_locked() and not pidlock.remove_if_stale():
         raise SystemExit(PIDLOCKED.format(pidfile, pidlock.read_pid()))
     pidlock.acquire()
-    atexit.register(pidlock.release)
     return pidlock
 
 
@@ -320,8 +325,7 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
             # Now in detached child process with effective user set to nobody,
             # and we know that our logfile can be written to, and that
             # the pidfile is not locked.
-            pidlock = create_pidlock('/var/run/app.pid').acquire()
-            atexit.register(pidlock.release)
+            pidlock = create_pidlock('/var/run/app.pid')
 
             # Run the program
             program.run(logfile='/var/log/app.log')
@@ -341,7 +345,8 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
     # we need to know that we have access to the logfile.
     logfile and open(logfile, 'a').close()
     # Doesn't actually create the pidfile, but makes sure it's not stale.
-    pidfile and create_pidlock(pidfile)
+    if pidfile:
+        _create_pidlock(pidfile).release()
 
     return DaemonContext(umask=umask, workdir=workdir, fake=fake)
 
