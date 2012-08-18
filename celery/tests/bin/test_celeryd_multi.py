@@ -417,9 +417,9 @@ class test_MultiTool(Case):
         self.assertTrue(self.t.verbose)
         self.assertTrue(self.t.no_color)
 
-    def test_stop_verify(self):
+    def test_stopwait(self):
         self.t._stop_nodes = Mock()
-        self.t.stop_verify(['foo', 'bar', 'baz'], 'celeryd')
+        self.t.stopwait(['foo', 'bar', 'baz'], 'celeryd')
         self.assertEqual(self.t._stop_nodes.call_args[1]['retry'], 2)
 
     @patch('celery.bin.celeryd_multi.MultiTool')

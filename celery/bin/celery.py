@@ -248,6 +248,10 @@ class worker(Delegate):
     """
     Command = 'celery.bin.celeryd:WorkerCommand'
 
+    def run_from_argv(self, prog_name, argv):
+        self.target.maybe_detach(argv)
+        super(worker, self).run_from_argv(prog_name, argv)
+
 
 @command
 class events(Delegate):

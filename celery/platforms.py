@@ -272,7 +272,9 @@ class DaemonContext(object):
             os.chdir(self.workdir)
             os.umask(self.umask)
 
-            os.closerange(1, get_fdmax(default=2048))
+            for fd in reversed(range(get_fdmax(default=2048))):
+                with ignore_EBADF():
+                    os.close(fd)
             os.open(DAEMON_REDIRECT_TO, os.O_RDWR)
             os.dup2(0, 1)
             os.dup2(0, 2)

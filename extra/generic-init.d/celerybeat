@@ -24,7 +24,7 @@
 DEFAULT_PID_FILE="/var/run/celerybeat.pid"
 DEFAULT_LOG_FILE="/var/log/celerybeat.log"
 DEFAULT_LOG_LEVEL="INFO"
-DEFAULT_CELERYBEAT="celerybeat"
+DEFAULT_CELERYBEAT="celery beat"
 
 # /etc/init.d/ssh: start and stop the celery task worker daemon.
 

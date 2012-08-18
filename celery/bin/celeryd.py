@@ -130,12 +130,17 @@ class WorkerCommand(Command):
     enable_config_from_cmdline = True
     supports_args = False
 
-    def execute_from_commandline(self, argv=None, dopts=['-D', '--detach']):
+    def execute_from_commandline(self, argv=None):
+        self.maybe_detach(argv)
+        return super(WorkerCommand, self).execute_from_commandline(argv)
+
+    def maybe_detach(self, argv, dopts=['-D', '--detach']):
         argv = list(sys.argv) if argv is None else argv
         if any(arg in argv for arg in dopts):
             argv = [arg for arg in argv if arg not in dopts]
-            return _detach.detached_celeryd().execute_from_commandline(argv)
-        return super(WorkerCommand, self).execute_from_commandline(argv)
+            # never returns
+            _detach.detached_celeryd().execute_from_commandline(argv)
+            raise SystemExit(0)
 
     def run(self, hostname=None, pool_cls=None, loglevel=None,
             app=None, **kwargs):
