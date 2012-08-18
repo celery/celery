@@ -250,6 +250,7 @@ def _create_pidlock(pidfile):
     if pidlock.is_locked() and not pidlock.remove_if_stale():
         raise SystemExit(PIDLOCKED % (pidfile, pidlock.read_pid()))
     pidlock.acquire()
+    return pidlock
 
 
 class DaemonContext(object):
