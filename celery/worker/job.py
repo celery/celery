@@ -246,7 +246,7 @@ class Request(object):
             self._terminate_on_ack = pool, signal
 
     def _announce_revoked(self, reason, terminated, signum, expired):
-        self.send_event('task-revoked', uuid=self.id,
+        self.send_event('task-revoked',
                         terminated=terminated, signum=signum, expired=expired)
         if self.store_errors:
             self.task.backend.mark_as_revoked(self.id, reason)
@@ -271,7 +271,7 @@ class Request(object):
 
     def send_event(self, type, **fields):
         if self.eventer and self.eventer.enabled:
-            self.eventer.send(type, **fields)
+            self.eventer.send(type, uuid=self.id, **fields)
 
     def on_accepted(self, pid, time_accepted):
         """Handler called when task is accepted by worker pool."""
@@ -280,7 +280,7 @@ class Request(object):
         task_accepted(self)
         if not self.task.acks_late:
             self.acknowledge()
-        self.send_event('task-started', uuid=self.id, pid=pid)
+        self.send_event('task-started', pid=pid)
         if _does_debug:
             debug('Task accepted: %s[%s] pid:%r', self.name, self.id, pid)
         if self._terminate_on_ack is not None:
@@ -316,7 +316,7 @@ class Request(object):
         if self.eventer and self.eventer.enabled:
             now = time.time()
             runtime = self.time_start and (time.time() - self.time_start) or 0
-            self.send_event('task-succeeded', uuid=self.id,
+            self.send_event('task-succeeded',
                             result=safe_repr(ret_value), runtime=runtime)
 
         if _does_info:
@@ -332,7 +332,7 @@ class Request(object):
         if self.task.acks_late:
             self.acknowledge()
 
-        self.send_event('task-retried', uuid=self.id,
+        self.send_event('task-retried',
                          exception=safe_repr(exc_info.exception.exc),
                          traceback=safe_str(exc_info.traceback))
 
@@ -364,7 +364,7 @@ class Request(object):
     def _log_error(self, einfo):
         einfo.exception = get_pickled_exception(einfo.exception)
         exception, traceback, exc_info, internal, sargs, skwargs = (
-            einfo.exception,
+            safe_repr(einfo.exception),
             safe_str(einfo.traceback),
             einfo.exc_info,
             einfo.internal,
@@ -374,7 +374,7 @@ class Request(object):
         format = self.error_msg
         description = 'raised exception'
         severity = logging.ERROR
-        self.send_event('task-failed', uuid=self.id,
+        self.send_event('task-failed',
                          exception=exception,
                          traceback=traceback)
 
