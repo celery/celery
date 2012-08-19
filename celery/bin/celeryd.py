@@ -119,8 +119,8 @@ from __future__ import absolute_import
 import sys
 
 from celery import concurrency
-from celery.bin import celeryd_detach as _detach
-from celery.bin.base import Command, Option
+from celery.bin.base import Command, Option, daemon_options
+from celery.bin.celeryd_detach import detached_celeryd
 from celery.utils.log import LOG_LEVELS, mlevel
 
 
@@ -139,7 +139,7 @@ class WorkerCommand(Command):
         if any(arg in argv for arg in dopts):
             argv = [arg for arg in argv if arg not in dopts]
             # never returns
-            _detach.detached_celeryd().execute_from_commandline(argv)
+            detached_celeryd().execute_from_commandline(argv)
             raise SystemExit(0)
 
     def run(self, hostname=None, pool_cls=None, loglevel=None,
@@ -197,7 +197,7 @@ class WorkerCommand(Command):
             Option('--autoreload', action='store_true'),
             Option('--no-execv', action='store_true', default=False),
             Option('-D', '--detach', action='store_true'),
-        ) + _detach.OPTION_LIST
+        ) + daemon_options()
 
 
 def main():
