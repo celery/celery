@@ -10,8 +10,9 @@ from __future__ import absolute_import
 from __future__ import with_statement
 
 import anyjson
-import warnings
+import heapq
 import sys
+import warnings
 
 from importlib import import_module
 from pprint import pformat
@@ -80,7 +81,7 @@ def load_extension_commands(namespace='celery.commands'):
         except (ImportError, SyntaxError), exc:
             warnings.warn('Cannot load extension %r: %r' % (sym, exc))
         else:
-            _get_extension_classes().append(ep.name)
+            heapq.heappush(_get_extension_classes(), ep.name)
             command(cls, name=ep.name)
 
 
