@@ -97,7 +97,7 @@ import socket
 import sys
 
 from collections import defaultdict
-from future_builtins import map
+from itertools import imap
 from subprocess import Popen
 from time import sleep
 
@@ -427,7 +427,7 @@ def multi_args(p, cmd='celeryd', append='', prefix='', suffix=''):
         except ValueError:
             pass
         else:
-            names = list(map(str, range(1, noderange + 1)))
+            names = list(imap(str, range(1, noderange + 1)))
             prefix = 'celery'
     cmd = options.pop('--cmd', cmd)
     append = options.pop('--append', append)
@@ -528,19 +528,19 @@ def parse_ns_range(ns, ranges=False):
     for space in ',' in ns and ns.split(',') or [ns]:
         if ranges and '-' in space:
             start, stop = space.split('-')
-            x = list(map(str, range(int(start), int(stop) + 1)))
+            x = list(imap(str, range(int(start), int(stop) + 1)))
             ret.extend(x)
         else:
             ret.append(space)
     return ret
 
 
-def abbreviations(map):
+def abbreviations(mapping):
 
     def expand(S):
         ret = S
         if S is not None:
-            for short, long in map.items():
+            for short, long in mapping.items():
                 ret = ret.replace(short, long)
         return ret
 

@@ -12,7 +12,7 @@ import time
 
 from collections import deque
 from copy import copy
-from future_builtins import map
+from itertools import imap
 
 from . import current_app
 from . import states
@@ -392,7 +392,7 @@ class ResultSet(ResultBase):
         :returns: the number of tasks completed.
 
         """
-        return sum(map(int, (result.successful() for result in self.results)))
+        return sum(imap(int, (result.successful() for result in self.results)))
 
     def forget(self):
         """Forget about (and possible remove the result of) all the tasks."""

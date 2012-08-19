@@ -12,8 +12,6 @@
 """
 from __future__ import absolute_import
 
-from future_builtins import filter
-
 from celery.utils.functional import firstmethod, mpromise
 from celery.utils.imports import instantiate
 
@@ -22,7 +20,7 @@ _first_match_any = firstmethod('annotate_any')
 
 
 def resolve_all(anno, task):
-    return filter(None, (_first_match(anno, task), _first_match_any(anno)))
+    return (x for x in (_first_match(anno, task), _first_match_any(anno)) if x)
 
 
 class MapAnnotation(dict):

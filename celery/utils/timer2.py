@@ -15,15 +15,14 @@ import sys
 import threading
 
 from functools import wraps
-from future_builtins import map
-from itertools import count
+from itertools import count, imap
 from time import time, sleep, mktime
 
 from datetime import datetime, timedelta
 from kombu.log import get_logger
 
 VERSION = (1, 0, 0)
-__version__ = '.'.join(map(str, VERSION))
+__version__ = '.'.join(imap(str, VERSION))
 __author__ = 'Ask Solem'
 __contact__ = 'ask@celeryproject.org'
 __homepage__ = 'http://github.com/ask/timer2/'

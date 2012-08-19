@@ -13,9 +13,8 @@ import heapq
 import sys
 import warnings
 
-from future_builtins import map
-
 from importlib import import_module
+from itertools import imap
 from pprint import pformat
 
 from celery.platforms import EX_OK, EX_FAILURE, EX_UNAVAILABLE, EX_USAGE
@@ -524,7 +523,7 @@ class _RemoteControl(Command):
         destination = kwargs.get('destination')
         timeout = kwargs.get('timeout') or self.choices[method][0]
         if destination and isinstance(destination, basestring):
-            destination = list(map(str.strip, destination.split(',')))
+            destination = list(imap(str.strip, destination.split(',')))
 
         try:
             handler = getattr(self, method)

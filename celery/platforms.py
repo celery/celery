@@ -18,7 +18,7 @@ import signal as _signal
 import sys
 
 from contextlib import contextmanager
-from future_builtins import map
+from itertools import imap
 
 from .local import try_import
 
@@ -58,9 +58,9 @@ def pyimplementation():
     elif sys.platform.startswith('java'):
         return 'Jython ' + sys.platform
     elif hasattr(sys, 'pypy_version_info'):
-        v = '.'.join(map(str, sys.pypy_version_info[:3]))
+        v = '.'.join(imap(str, sys.pypy_version_info[:3]))
         if sys.pypy_version_info[3:]:
-            v += '-' + ''.join(map(str, sys.pypy_version_info[3:]))
+            v += '-' + ''.join(imap(str, sys.pypy_version_info[3:]))
         return 'PyPy ' + v
     else:
         return 'CPython'

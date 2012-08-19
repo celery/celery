@@ -15,8 +15,8 @@ import operator
 import sys
 
 from functools import reduce
-from future_builtins import map
 from importlib import import_module
+from itertools import imap
 from types import ModuleType
 
 from .local import Proxy
@@ -169,7 +169,7 @@ def recreate_module(name, compat_modules=(), by_module={}, direct={},
     cattrs = dict(_compat_modules=compat_modules,
                   _all_by_module=by_module, _direct=direct,
                   _object_origins=origins,
-                  __all__=tuple(set(reduce(operator.add, map(tuple, [
+                  __all__=tuple(set(reduce(operator.add, imap(tuple, [
                                 compat_modules, origins, direct, attrs])))))
     new_module = create_module(name, attrs, cls_attrs=cattrs, base=base)
     new_module.__dict__.update(dict((mod, get_compat_module(new_module, mod))

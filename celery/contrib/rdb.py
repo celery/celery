@@ -41,7 +41,7 @@ import os
 import socket
 import sys
 
-from future_builtins import map
+from itertools import imap
 from pdb import Pdb
 
 from billiard import current_process
@@ -95,7 +95,7 @@ class Rdb(Pdb):
         self.say(BANNER.format(self=self))
 
         self._client, address = self._sock.accept()
-        self.remote_addr = ':'.join(map(str, address))
+        self.remote_addr = ':'.join(imap(str, address))
         self.say(SESSION_STARTED.format(self=self))
         self._handle = sys.stdin = sys.stdout = self._client.makefile('rw')
         Pdb.__init__(self, completekey='tab',

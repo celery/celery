@@ -10,8 +10,7 @@
 from __future__ import absolute_import
 
 from collections import deque
-from future_builtins import map, zip
-from itertools import starmap
+from itertools import imap, izip, starmap
 
 from celery._state import get_current_worker_task
 from celery.utils import uuid
@@ -92,7 +91,7 @@ def add_map_task(app):
     @app.task(name='celery.map')
     def xmap(task, it):
         task = subtask(task).type
-        return list(map(task, it))
+        return list(imap(task, it))
     return xmap
 
 
@@ -161,7 +160,7 @@ def add_group_task(app):
                 return task, AsyncResult(tid)
 
             try:
-                tasks, res = list(zip(*[prepare_member(task)
+                tasks, res = list(izip(*[prepare_member(task)
                                                 for task in tasks]))
             except ValueError:  # tasks empty
                 tasks, res = [], []

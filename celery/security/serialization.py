@@ -10,7 +10,7 @@ from __future__ import absolute_import
 
 import base64
 
-from future_builtins import zip
+from itertools import izip
 from kombu.serialization import registry, encode, decode
 from kombu.utils.encoding import bytes_to_str, str_to_bytes
 
@@ -72,7 +72,7 @@ class SecureSerializer(object):
     def _unpack(self, payload, sep='\x00\x01',
             fields=('signer', 'signature', 'content_type',
                     'content_encoding', 'body')):
-        return dict(zip(fields, b64decode(payload).split(sep)))
+        return dict(izip(fields, b64decode(payload).split(sep)))
 
 
 def register_auth(key=None, cert=None, store=None, digest='sha1',

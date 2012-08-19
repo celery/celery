@@ -65,7 +65,7 @@ import sys
 import warnings
 
 from collections import defaultdict
-from future_builtins import zip
+from itertools import izip
 from optparse import OptionParser, IndentedHelpFormatter, make_option as Option
 from types import ModuleType
 
@@ -328,7 +328,7 @@ class Command(object):
         opts = {}
         for opt in self.preload_options:
             for t in (opt._long_opts, opt._short_opts):
-                opts.update(dict(zip(t, [opt.dest] * len(t))))
+                opts.update(dict(izip(t, [opt.dest] * len(t))))
         index = 0
         length = len(args)
         while index < length:

@@ -11,9 +11,8 @@
 """
 from __future__ import absolute_import
 
-from future_builtins import map
 from operator import itemgetter
-from itertools import chain as _chain
+from itertools import chain as _chain, imap
 
 from kombu.utils import fxrange, kwdict, reprcall
 
@@ -219,7 +218,7 @@ class chain(Signature):
         return chain(*d['kwargs']['tasks'], **kwdict(d['options']))
 
     def __repr__(self):
-        return ' | '.join(map(repr, self.tasks))
+        return ' | '.join(imap(repr, self.tasks))
 Signature.register_type(chain)
 
 

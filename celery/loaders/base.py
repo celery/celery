@@ -13,8 +13,8 @@ import importlib
 import os
 import re
 
-from future_builtins import map
 from datetime import datetime
+from itertools import imap
 
 from kombu.utils.encoding import safe_str
 
@@ -191,7 +191,7 @@ class BaseLoader(object):
                     raise ValueError('{0!r}: {1}'.format(ns_key, exc))
             return ns_key, value
 
-        return dict(map(getarg, args))
+        return dict(imap(getarg, args))
 
     def mail_admins(self, subject, body, fail_silently=False,
             sender=None, to=None, host=None, port=None,

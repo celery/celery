@@ -17,7 +17,7 @@ import time
 import sys
 
 from datetime import timedelta
-from future_builtins import map
+from itertools import imap
 
 from kombu import serialization
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
@@ -351,7 +351,7 @@ class KeyValueStoreBackend(BaseBackend):
             r = self._mget_to_results(self.mget([self.get_key_for_task(k)
                                                     for k in keys]), keys)
             self._cache.update(r)
-            ids ^= set(map(bytes_to_str, r))
+            ids ^= set(imap(bytes_to_str, r))
             for key, value in r.iteritems():
                 yield bytes_to_str(key), value
             if timeout and iterations * interval >= timeout:
