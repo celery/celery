@@ -9,8 +9,9 @@ The :program:`celery` umbrella command.
 from __future__ import absolute_import, print_function
 
 import anyjson
-import warnings
+import heapq
 import sys
+import warnings
 
 from future_builtins import map
 
@@ -90,7 +91,7 @@ def load_extension_commands(namespace='celery.commands'):
             warnings.warn(
                 'Cannot load extension {0!r}: {1!r}'.format(sym, exc))
         else:
-            _get_extension_classes().append(ep.name)
+            heapq.heappush(_get_extension_classes(), ep.name)
             command(cls, name=ep.name)
 
 
