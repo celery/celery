@@ -71,7 +71,7 @@ def add_unlock_chord_task(app):
     from celery import result as _res
 
     @app.task(name='celery.chord_unlock', max_retries=None,
-              default_retry_delay=1)
+              default_retry_delay=1, ignore_result=True)
     def unlock_chord(group_id, callback, interval=None, propagate=False,
             max_retries=None, result=None):
         if interval is None:
