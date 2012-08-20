@@ -288,7 +288,7 @@ class Command(object):
             os.environ['CELERY_CONFIG_MODULE'] = config_module
         if app:
             self.app = self.find_app(app)
-        else:
+        elif self.app is None:
             self.app = self.get_app(loader=loader)
         if self.enable_config_from_cmdline:
             argv = self.process_cmdline_config(argv)
