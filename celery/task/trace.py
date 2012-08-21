@@ -120,7 +120,7 @@ class TraceInfo(object):
             signals.task_failure.send(sender=task, task_id=req.id,
                                       exception=exc, args=req.args,
                                       kwargs=req.kwargs,
-                                      traceback=einfo.traceback,
+                                      traceback=einfo.tb,
                                       einfo=einfo)
             return einfo
         finally:
