@@ -543,7 +543,7 @@ class Consumer(object):
         self.actor_registry.clear()
     
     def reset_actor_nodes(self):
-        for actor, consumer in self.actor_registry:
+        for _, consumer in self.actor_registry.items():
             self.maybe_conn_error(consumer.cancel)
             consumer.consume()
     

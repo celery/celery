@@ -213,7 +213,7 @@ def dump_tasks(panel, taskinfoitems=None, **kwargs):
 
 @Panel.register
 def ping(panel, **kwargs):
-    return {'ok':'ihu-pong'}
+    return {'ok':'pong'}
 
 
 @Panel.register
