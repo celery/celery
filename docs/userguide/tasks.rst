@@ -839,7 +839,7 @@ that can be added to tasks like this:
 
     @celery.task(base=DatabaseTask)
     def process_rows():
-        for row in self.db.table.all():
+        for row in process_rows.db.table.all():
             ...
 
 The ``db`` attribute of the ``process_rows`` task will then
