@@ -18,6 +18,7 @@ from celery.utils import timeutils
 from celery.utils.compat import UserDict
 from celery.utils.log import get_logger
 from celery.utils import jsonify
+from celery.utils.imports import instantiate
 
 from . import state
 from .state import revoked
@@ -212,7 +213,7 @@ def dump_tasks(panel, taskinfoitems=None, **kwargs):
 
 @Panel.register
 def ping(panel, **kwargs):
-    return 'pong'
+    return {'ok':'ihu-pong'}
 
 
 @Panel.register
@@ -274,7 +275,16 @@ def active_queues(panel):
     return [dict(queue.as_dict(recurse=True))
                     for queue in panel.consumer.task_consumer.queues]
 
-
 @Panel.register
 def dump_conf(panel, **kwargs):
     return jsonify(dict(panel.app.conf))
+
+@Panel.register
+def start_actor(panel, name):
+    print name
+    return panel.consumer.add_actor(name)
+
+@Panel.register
+def stop_actor(panel, id):
+    #instantiate(name).stop()
+    return panel.consumer.stop_actor(id)

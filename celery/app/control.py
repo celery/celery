@@ -76,13 +76,12 @@ class Inspect(object):
 
     def ping(self):
         return self._request('ping')
-
+    
     def active_queues(self):
         return self._request('active_queues')
 
     def conf(self):
         return self._request('dump_conf')
-
 
 class Control(object):
     Mailbox = Mailbox
@@ -140,6 +139,10 @@ class Control(object):
         return self.broadcast('ping', reply=True, destination=destination,
                               timeout=timeout, **kwargs)
 
+    def start_actor(self, actor_name, destination = None, timeout = 1, **kwargs):
+        return self.broadcast('start_actor', name = actor_name, reply=True, destination=destination,
+                              timeout=timeout, **kwargs)
+        
     def rate_limit(self, task_name, rate_limit, destination=None, **kwargs):
         """Tell all (or specific) workers to set a new rate limit
         for task by type.

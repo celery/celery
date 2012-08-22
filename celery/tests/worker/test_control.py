@@ -468,3 +468,4 @@ class test_ControlPanel(Case):
             self.assertTrue(consumer.controller.pool.restart.called)
             self.assertTrue(_reload.called)
             self.assertFalse(_import.called)
+            
