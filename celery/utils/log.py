@@ -185,9 +185,6 @@ class LoggingProxy(object):
         """Always returns :const:`False`. Just here for file support."""
         return False
 
-    def fileno(self):
-        return None
-
 
 def ensure_process_aware_logger():
     """Make sure process name is recorded when loggers are used."""
