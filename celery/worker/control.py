@@ -18,7 +18,6 @@ from celery.utils import timeutils
 from celery.utils.compat import UserDict
 from celery.utils.log import get_logger
 from celery.utils import jsonify
-from celery.utils.imports import instantiate
 
 from . import state
 from .state import revoked
@@ -286,5 +285,4 @@ def start_actor(panel, name):
 
 @Panel.register
 def stop_actor(panel, id):
-    #instantiate(name).stop()
     return panel.consumer.stop_actor(id)

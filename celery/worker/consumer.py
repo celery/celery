@@ -584,7 +584,6 @@ class Consumer(object):
         :param message: The kombu message object.
 
         """
-        print 'I am in receive_message'
         try:
             name = body['task']
         except (KeyError, TypeError):
