@@ -31,8 +31,8 @@ or even serialized and sent across the wire.
         >>> subtask('tasks.add', args=(2, 2), countdown=10)
         tasks.add(2, 2)
 
-    This subtask has a signature of arity 2 (two arguments): ``(2, 2)``,
-    and sets the countdown execution option to 10.
+  This subtask has a signature of arity 2 (two arguments): ``(2, 2)``,
+  and sets the countdown execution option to 10.
 
 - or you can create one using the task's ``subtask`` method::
 
