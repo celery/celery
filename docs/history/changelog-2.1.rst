@@ -137,7 +137,7 @@ Fixes
 
     This has been fixed, and it is now released only once per task.
 
-* docs/configuration: Fixed typo `CELERYD_SOFT_TASK_TIME_LIMIT` ->
+* docs/configuration: Fixed typo `CELERYD_TASK_SOFT_TIME_LIMIT` ->
   :setting:`CELERYD_TASK_SOFT_TIME_LIMIT`.
 
     See issue #214

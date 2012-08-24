@@ -301,7 +301,7 @@ time limit kills it:
             clean_up_in_a_hurry()
 
 Time limits can also be set using the :setting:`CELERYD_TASK_TIME_LIMIT` /
-:setting:`CELERYD_SOFT_TASK_TIME_LIMIT` settings.
+:setting:`CELERYD_TASK_SOFT_TIME_LIMIT` settings.
 
 .. note::
 
