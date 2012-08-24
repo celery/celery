@@ -41,7 +41,7 @@ has been sent by providing the `sender` argument to
 
 .. code-block:: python
 
-    @task_sent.connect(task_sent_handler, sender='tasks.add')
+    @task_sent.connect(sender='tasks.add')
     def task_sent_handler(sender=None, task_id=None, task=None, args=None,
                           kwargs=None, \*\*kwds):
         print('Got signal task_sent for task id {0}'.format(task_id)

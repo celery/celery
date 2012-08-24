@@ -38,6 +38,7 @@ class ParseException(Exception):
 
 
 class schedule(object):
+    _app = None
     relative = False
 
     def __init__(self, run_every=None, relative=False, nowfun=None):
@@ -46,11 +47,11 @@ class schedule(object):
         self.nowfun = nowfun
 
     def now(self):
-        return (self.nowfun or current_app.now)()
+        return (self.nowfun or self.app.now)()
 
     def remaining_estimate(self, last_run_at):
         return remaining(last_run_at, self.run_every,
-                         self.relative, maybe_make_aware(self.now()))
+                         self.maybe_make_aware(self.now()), self.relative)
 
     def is_due(self, last_run_at):
         """Returns tuple of two items `(is_due, next_time_to_run)`,
@@ -80,11 +81,17 @@ class schedule(object):
             the django-celery database scheduler the value is 5 seconds.
 
         """
+        last_run_at = self.maybe_make_aware(last_run_at)
         rem_delta = self.remaining_estimate(last_run_at)
         rem = timedelta_seconds(rem_delta)
         if rem == 0:
             return True, self.seconds
         return False, rem
+
+    def maybe_make_aware(self, dt):
+        if self.app.conf.CELERY_ENABLE_UTC:
+            return maybe_make_aware(dt)
+        return dt
 
     def __repr__(self):
         return '<freq: {0.human_seconds}>'.format(self)
@@ -101,6 +108,16 @@ class schedule(object):
     @property
     def human_seconds(self):
         return humanize_seconds(self.seconds)
+
+    @property
+    def app(self):
+        if self._app is None:
+            self._app = current_app._get_current_object()
+        return self._app
+
+    @property
+    def tz(self):
+        return self.app.conf.CELERY_TIMEZONE
 
 
 class crontab_parser(object):
@@ -394,7 +411,7 @@ class crontab(schedule):
         self.nowfun = nowfun
 
     def now(self):
-        return (self.nowfun or current_app.now)()
+        return (self.nowfun or self.app.now)()
 
     def __repr__(self):
         return ('<crontab: %s %s %s %s %s (m/h/d/dM/MY)>' %
@@ -414,7 +431,7 @@ class crontab(schedule):
     def remaining_estimate(self, last_run_at, tz=None):
         """Returns when the periodic task should run next as a timedelta."""
         tz = tz or self.tz
-        last_run_at = maybe_make_aware(last_run_at)
+        last_run_at = self.maybe_make_aware(last_run_at)
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
 
         execute_this_date = (last_run_at.month in self.month_of_year and
@@ -473,6 +490,7 @@ class crontab(schedule):
         See :meth:`celery.schedules.schedule.is_due` for more information.
 
         """
+        last_run_at = self.maybe_make_aware(last_run_at)
         rem_delta = self.remaining_estimate(last_run_at)
         rem = timedelta_seconds(rem_delta)
         due = rem == 0
@@ -489,10 +507,6 @@ class crontab(schedule):
                     other.hour == self.hour and
                     other.minute == self.minute)
         return other is self
-
-    @property
-    def tz(self):
-        return current_app.conf.CELERY_TIMEZONE
 
 
 def maybe_schedule(s, relative=False):

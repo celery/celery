@@ -13,7 +13,7 @@ import sys
 import threading
 import traceback
 
-from kombu.syn import detect_environment
+from kombu.syn import _detect_environment
 
 from celery.local import Proxy
 
@@ -295,7 +295,7 @@ class _FastLocalStack(threading.local):
         except (AttributeError, IndexError):
             return None
 
-if detect_environment() == 'default' and not USE_PURE_LOCALS:
+if _detect_environment() == 'default' and not USE_PURE_LOCALS:
     LocalStack = _FastLocalStack
 else:
     # - See #706
