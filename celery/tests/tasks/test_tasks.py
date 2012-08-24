@@ -15,6 +15,7 @@ from celery.task import (
     periodic_task,
     PeriodicTask
 )
+from celery import current_app
 from celery.app import app_or_default
 from celery.exceptions import RetryTaskError
 from celery.execute import send_task
@@ -24,6 +25,10 @@ from celery.utils import uuid
 from celery.utils.timeutils import parse_iso8601, timedelta_seconds
 
 from celery.tests.utils import Case, with_eager_tasks, WhateverIO
+
+
+def now():
+    return current_app.now()
 
 
 def return_True(*args, **kwargs):
@@ -293,8 +298,8 @@ class test_tasks(Case):
 
         # With eta.
         presult2 = T1.apply_async(kwargs=dict(name='George Costanza'),
-                            eta=datetime.utcnow() + timedelta(days=1),
-                            expires=datetime.utcnow() + timedelta(days=2))
+                            eta=now() + timedelta(days=1),
+                            expires=now() + timedelta(days=2))
         self.assertNextTaskDataEqual(consumer, presult2, T1.name,
                 name='George Costanza', test_eta=True, test_expires=True)
 
@@ -531,12 +536,13 @@ class test_periodic_tasks(Case):
             type('Foo', (PeriodicTask, ), {'__module__': __name__})
 
     def test_remaining_estimate(self):
+        s = my_periodic.run_every
         self.assertIsInstance(
-            my_periodic.run_every.remaining_estimate(datetime.utcnow()),
+            s.remaining_estimate(s.maybe_make_aware(now())),
             timedelta)
 
     def test_is_due_not_due(self):
-        due, remaining = my_periodic.run_every.is_due(datetime.utcnow())
+        due, remaining = my_periodic.run_every.is_due(now())
         self.assertFalse(due)
         # This assertion may fail if executed in the
         # first minute of an hour, thus 59 instead of 60
@@ -545,7 +551,7 @@ class test_periodic_tasks(Case):
     def test_is_due(self):
         p = my_periodic
         due, remaining = p.run_every.is_due(
-                datetime.utcnow() - p.run_every.run_every)
+                now() - p.run_every.run_every)
         self.assertTrue(due)
         self.assertEqual(remaining,
                          timedelta_seconds(p.run_every.run_every))
@@ -905,7 +911,7 @@ class test_crontab_remaining_estimate(Case):
 class test_crontab_is_due(Case):
 
     def setUp(self):
-        self.now = datetime.utcnow()
+        self.now = now()
         self.next_minute = 60 - self.now.second - 1e-6 * self.now.microsecond
 
     def test_default_crontab_spec(self):

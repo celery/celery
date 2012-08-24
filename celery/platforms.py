@@ -40,8 +40,6 @@ IS_WINDOWS = SYSTEM == 'Windows'
 
 DAEMON_UMASK = 0
 DAEMON_WORKDIR = '/'
-DAEMON_REDIRECT_TO = getattr(os, 'devnull', '/dev/null')
-
 
 PIDFILE_FLAGS = os.O_CREAT | os.O_EXCL | os.O_WRONLY
 PIDFILE_MODE = ((os.R_OK | os.W_OK) << 6) | ((os.R_OK) << 3) | ((os.R_OK))
@@ -293,10 +291,6 @@ class DaemonContext(object):
 
             for fd in self.stdfds:
                 self.redirect_to_null(fileno(fd))
-
-            os.open(DAEMON_REDIRECT_TO, os.O_RDWR)
-            os.dup2(0, 1)
-            os.dup2(0, 2)
 
             self._is_open = True
     __enter__ = open
