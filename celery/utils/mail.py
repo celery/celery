@@ -10,6 +10,7 @@ from __future__ import absolute_import
 
 import sys
 import smtplib
+import socket
 import traceback
 import warnings
 
@@ -19,6 +20,15 @@ from .functional import maybe_list
 from .imports import symbol_by_name
 
 supports_timeout = sys.version_info >= (2, 6)
+
+_local_hostname = None
+
+
+def get_local_hostname():
+    global _local_hostname
+    if _local_hostname is None:
+        _local_hostname = socket.getfqdn()
+    return _local_hostname
 
 
 class SendmailWarning(UserWarning):
@@ -82,7 +92,8 @@ class Mailer(object):
 
     def _send(self, message, **kwargs):
         Client = smtplib.SMTP_SSL if self.use_ssl else smtplib.SMTP
-        client = Client(self.host, self.port, **kwargs)
+        client = Client(self.host, self.port,
+                        local_hostname=get_local_hostname(), **kwargs)
 
         if self.use_tls:
             client.ehlo()
@@ -93,7 +104,10 @@ class Mailer(object):
             client.login(self.user, self.password)
 
         client.sendmail(message.sender, message.to, str(message))
-        client.quit()
+        try:
+            client.quit()
+        except socket.sslerror:
+            client.close()
 
 
 class ErrorMail(object):
