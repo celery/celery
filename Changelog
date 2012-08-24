@@ -13,7 +13,7 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 
 3.0.7
 =====
-:release-date: 2012-09-24 05:00 P.M BST
+:release-date: 2012-08-24 05:00 P.M BST
 
 - Fixes several problems with periodic tasks and timezones (Issue #937).
 
@@ -65,7 +65,7 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 
 3.0.6
 =====
-:release-date: 2012-09-17 11:00 P.M BST
+:release-date: 2012-08-17 11:00 P.M BST
 
 - Now depends on kombu 2.4.0
 
