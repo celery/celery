@@ -763,7 +763,7 @@ News
         Hard time limit. The worker processing the task will be killed and
         replaced with a new one when this is exceeded.
 
-    * :setting:`CELERYD_SOFT_TASK_TIME_LIMIT`
+    * :setting:`CELERYD_TASK_SOFT_TIME_LIMIT`
 
         Soft time limit. The :exc:`~@SoftTimeLimitExceeded`
         exception will be raised when this is exceeded.  The task can catch

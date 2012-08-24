@@ -20,11 +20,63 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 - `Task.apply_async` now supports timeout and soft_timeout arguments (Issue #802)
 - `App.control.Inspect.conf` can be used for inspecting worker configuration
 
+.. _version-3.0.7:
+
+3.0.7
+=====
+:release-date: 2012-08-24 05:00 P.M BST
+
+- Fixes several problems with periodic tasks and timezones (Issue #937).
+
+- Now depends on kombu 2.4.2
+
+    - Redis: Fixes a race condition crash
+
+    - Fixes an infinite loop that could happen when retrying establishing
+      the broker connection.
+
+- Daemons now redirect standard file descriptors to /dev/null
+
+    Though by default the standard outs are also redirected
+    to the logger instead, but you can disable this by changing
+    the :setting:`CELERY_REDIRECT_STDOUTS` setting.
+
+- Fixes possible problems when eventlet/gevent is patched too late.
+
+- ``LoggingProxy`` no longer defines ``fileno()`` (Issue #928).
+
+- Results are now ignored for the chord unlock task.
+
+    Fix contributed by Steeve Morin.
+
+- Cassandra backend now works if result expiry is disabled.
+
+    Fix contributed by Steeve Morin.
+
+- The traceback object is now passed to signal handlers instead
+  of the string representation.
+
+    Fix contributed by Adam DePue.
+
+- Celery command: Extensions are now sorted by name.
+
+- A regression caused the ``task-failed`` event to be sent
+  with the exception object instead of its string representation.
+
+- The worker daemon would try to create the pid file before daemonizing
+  to catch errors, but this file was not immediately released (Issue #923).
+
+- Fixes Jython compatibility.
+
+- ``billiard.forking_enable`` was called by all pools not just the
+  processes pool, which would result in a useless warning if the billiard
+  C extensions were not installed.
+
 .. _version-3.0.6:
 
 3.0.6
 =====
-:release-date: 2012-09-17 11:00 P.M BST
+:release-date: 2012-08-17 11:00 P.M BST
 
 - Now depends on kombu 2.4.0
 
