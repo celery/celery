@@ -50,7 +50,7 @@ class schedule(object):
 
     def remaining_estimate(self, last_run_at):
         return remaining(last_run_at, self.run_every,
-                         self.relative, maybe_make_aware(self.now()))
+                         maybe_make_aware(self.now()), self.relative)
 
     def is_due(self, last_run_at):
         """Returns tuple of two items `(is_due, next_time_to_run)`,
