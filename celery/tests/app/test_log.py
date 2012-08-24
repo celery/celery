@@ -219,7 +219,6 @@ class test_default_logger(AppCase):
             p.flush()
             p.close()
             self.assertFalse(p.isatty())
-            self.assertIsNone(p.fileno())
 
     def test_logging_proxy_recurse_protection(self):
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,

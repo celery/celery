@@ -253,6 +253,13 @@ def _create_pidlock(pidfile):
     return pidlock
 
 
+def fileno(f):
+    try:
+        return f.fileno()
+    except AttributeError:
+        pass
+
+
 class DaemonContext(object):
     _is_open = False
     workdir = DAEMON_WORKDIR
@@ -263,6 +270,12 @@ class DaemonContext(object):
         self.workdir = workdir or self.workdir
         self.umask = self.umask if umask is None else umask
         self.fake = fake
+        self.stdfds = (sys.stdin, sys.stdout, sys.stderr)
+
+    def redirect_to_null(self, fd):
+        if fd:
+            dest = os.open(os.devnull, os.O_RDWR)
+            os.dup2(dest, fd)
 
     def open(self):
         if not self._is_open:
@@ -272,9 +285,14 @@ class DaemonContext(object):
             os.chdir(self.workdir)
             os.umask(self.umask)
 
+            preserve = [fileno(f) for f in self.stdfds if fileno(f)]
             for fd in reversed(range(get_fdmax(default=2048))):
-                with ignore_EBADF():
-                    os.close(fd)
+                if fd not in preserve:
+                    with ignore_EBADF():
+                        os.close(fd)
+
+            for fd in self.stdfds:
+                self.redirect_to_null(fileno(fd))
 
             os.open(DAEMON_REDIRECT_TO, os.O_RDWR)
             os.dup2(0, 1)
