@@ -13,8 +13,15 @@ import os
 PATCHED = [0]
 if not os.environ.get('GEVENT_NOPATCH') and not PATCHED[0]:
     PATCHED[0] += 1
-    from gevent import monkey
+    from gevent import monkey, version_info
     monkey.patch_all()
+    if version_info[0] == 0:
+        # Signals are not working along gevent in version prior 1.0
+        # and they are not monkey patch by monkey.patch_all()
+        from gevent import signal as _gevent_signal
+        _signal = __import__('signal')
+        _signal.signal = _gevent_signal
+
 
 from time import time
 
