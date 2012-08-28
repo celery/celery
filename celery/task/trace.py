@@ -66,10 +66,14 @@ def mro_lookup(cls, attr, stop=(), monkey_patched=[]):
     """
     for node in cls.mro():
         if node in stop:
-            attr = node.__dict__.get(attr)
-            module_origin = getattr(attr, '__module__', None)
-            if module_origin not in monkey_patched:
-                return node
+            try:
+                attr = node.__dict__[attr]
+                module_origin = attr.__module__
+            except (AttributeError, KeyError):
+                pass
+            else:
+                if module_origin not in monkey_patched:
+                    return node
             return
         if attr in node.__dict__:
             return node
