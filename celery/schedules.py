@@ -443,8 +443,8 @@ class crontab(schedule):
                                     last_run_at.minute < max(self.minute))
 
         if execute_this_hour:
-            next_minute = min(minute for minute in self.minute
-                                        if minute > last_run_at.minute)
+            next_minute = min([minute for minute in self.minute
+                                        if minute > last_run_at.minute] or self.minute)
             delta = relativedelta(minute=next_minute,
                                   second=0,
                                   microsecond=0)
