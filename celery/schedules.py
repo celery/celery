@@ -439,15 +439,12 @@ class crontab(schedule):
                                     dow_num in self.day_of_week)
 
         execute_this_hour = (execute_this_date and
-                                ((last_run_at.hour in self.hour and
-                                    last_run_at.minute < max(self.minute)) or 
-                                ((last_run_at.hour + 1) in self.hour and last_run_at.minute >= min(self.minute))))
+                                last_run_at.hour in self.hour and
+                                    last_run_at.minute < max(self.minute))
 
         if execute_this_hour:
-            # TODO need better code for that. For example, if now 16:36 and last_run_at is 16:30, next call will be
-            # at 17:35
-            next_minute = min([minute for minute in self.minute
-                                        if minute > last_run_at.minute] or self.minute)
+            next_minute = min(minute for minute in self.minute
+                                        if minute > last_run_at.minute)
             delta = relativedelta(minute=next_minute,
                                   second=0,
                                   microsecond=0)
@@ -457,8 +454,8 @@ class crontab(schedule):
                                 last_run_at.hour < max(self.hour))
 
             if execute_today:
-                next_hour = min(hour for hour in self.hour
-                                        if hour > last_run_at.hour)
+                next_hour = min([hour for hour in self.hour
+                                        if hour > last_run_at.hour] or self.hour)
                 delta = relativedelta(hour=next_hour,
                                       minute=next_minute,
                                       second=0,
