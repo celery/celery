@@ -292,17 +292,17 @@ class Worker(configurated):
 def _shutdown_handler(worker, sig='TERM', how='Warm', exc=SystemExit,
         callback=None):
 
-    def _handle_request(signum, frame):
+    def _handle_request(*args):
         set_in_sighandler(True)
         try:
             from celery.worker import state
             if current_process()._name == 'MainProcess':
                 if callback:
                     callback(worker)
-                safe_say('celeryd: %s shutdown (MainProcess)' % how)
-            if active_thread_count() > 1:
-                setattr(state, {'Warm': 'should_stop',
-                                'Cold': 'should_terminate'}[how], True)
+                    safe_say('celeryd: %s shutdown (MainProcess)' % how)
+                if active_thread_count() > 1:
+                    setattr(state, {'Warm': 'should_stop',
+                                    'Cold': 'should_terminate'}[how], True)
             else:
                 raise exc()
         finally:
@@ -338,7 +338,7 @@ def _clone_current_worker():
 
 def install_worker_restart_handler(worker, sig='SIGHUP'):
 
-    def restart_worker_sig_handler(signum, frame):
+    def restart_worker_sig_handler(*args):
         """Signal handler restarting the current python program."""
         set_in_sighandler(True)
         safe_say('Restarting celeryd (%s)' % (' '.join(sys.argv), ))
@@ -354,7 +354,7 @@ def install_cry_handler():
     if is_jython or is_pypy:  # pragma: no cover
         return
 
-    def cry_handler(signum, frame):
+    def cry_handler(*args):
         """Signal handler logging the stacktrace of all active threads."""
         set_in_sighandler(True)
         try:
@@ -367,10 +367,11 @@ def install_cry_handler():
 def install_rdb_handler(envvar='CELERY_RDBSIG',
                         sig='SIGUSR2'):  # pragma: no cover
 
-    def rdb_handler(signum, frame):
+    def rdb_handler(*args):
         """Signal handler setting a rdb breakpoint at the current frame."""
         set_in_sighandler(True)
         try:
+            _, frame = args
             from celery.contrib import rdb
             rdb.set_trace(frame)
         finally:
@@ -381,7 +382,7 @@ def install_rdb_handler(envvar='CELERY_RDBSIG',
 
 def install_HUP_not_supported_handler(worker, sig='SIGHUP'):
 
-    def warn_on_HUP_handler(signum, frame):
+    def warn_on_HUP_handler(*args):
         set_in_sighandler(True)
         try:
             safe_say('%(sig)s not supported: Restarting with %(sig)s is '
