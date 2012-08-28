@@ -179,7 +179,7 @@ py-celery at %%(hostname)s.
         self.task = task
         self.email_subject = kwargs.get('subject', self.subject)
         self.email_body = kwargs.get('body', self.body)
-        self.error_whitelist = getattr(task, 'error_whitelist')
+        self.error_whitelist = getattr(task, 'error_whitelist', None) or ()
 
     def should_send(self, context, exc):
         """Returns true or false depending on if a task error mail
