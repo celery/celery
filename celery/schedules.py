@@ -439,8 +439,9 @@ class crontab(schedule):
                                     dow_num in self.day_of_week)
 
         execute_this_hour = (execute_this_date and
-                                last_run_at.hour in self.hour and
-                                    last_run_at.minute < max(self.minute))
+                                ((last_run_at.hour in self.hour and
+                                    last_run_at.minute < max(self.minute)) or 
+                                ((last_run_at.hour + 1) in self.hour and last_run_at.minute >= min(self.minute))))
 
         if execute_this_hour:
             # TODO need better code for that. For example, if now 16:36 and last_run_at is 16:30, next call will be
