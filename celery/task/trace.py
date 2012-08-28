@@ -53,16 +53,23 @@ except AttributeError:
     pass
 
 
-def mro_lookup(cls, attr, stop=()):
+def mro_lookup(cls, attr, stop=(), monkey_patched=[]):
     """Returns the first node by MRO order that defines an attribute.
 
     :keyword stop: A list of types that if reached will stop the search.
+    :keyword monkey_patched: Use one of the stop classes if the attr's
+        module origin is not in this list, this to detect monkey patched
+        attributes.
 
     :returns None: if the attribute was not found.
 
     """
     for node in cls.mro():
         if node in stop:
+            attr = node.__dict__.get(attr)
+            module_origin = getattr(attr, '__module__', None)
+            if module_origin not in monkey_patched:
+                return node
             return
         if attr in node.__dict__:
             return node
@@ -71,7 +78,8 @@ def mro_lookup(cls, attr, stop=()):
 def task_has_custom(task, attr):
     """Returns true if the task or one of its bases
     defines ``attr`` (excluding the one in BaseTask)."""
-    return mro_lookup(task.__class__, attr, stop=(BaseTask, object))
+    return mro_lookup(task.__class__, attr, stop=(BaseTask, object),
+                      monkey_patched=['celery.app.task'])
 
 
 class TraceInfo(object):
