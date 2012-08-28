@@ -300,9 +300,9 @@ def _shutdown_handler(worker, sig='TERM', how='Warm', exc=SystemExit,
                 if callback:
                     callback(worker)
                     safe_say('celeryd: %s shutdown (MainProcess)' % how)
-                if active_thread_count() > 1:
-                    setattr(state, {'Warm': 'should_stop',
-                                    'Cold': 'should_terminate'}[how], True)
+            if active_thread_count() > 1:
+                setattr(state, {'Warm': 'should_stop',
+                                'Cold': 'should_terminate'}[how], True)
             else:
                 raise exc()
         finally:
