@@ -443,6 +443,8 @@ class crontab(schedule):
                                     last_run_at.minute < max(self.minute))
 
         if execute_this_hour:
+            # TODO need better code for that. For example, if now 16:36 and last_run_at is 16:30, next call will be
+            # at 17:35
             next_minute = min([minute for minute in self.minute
                                         if minute > last_run_at.minute] or self.minute)
             delta = relativedelta(minute=next_minute,
