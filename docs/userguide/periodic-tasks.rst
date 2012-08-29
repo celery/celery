@@ -22,6 +22,38 @@ at a time, otherwise you would end up with duplicate tasks.  Using
 a centralized approach means the schedule does not have to be synchronized,
 and the service can operate without using locks.
 
+.. _beat-timezones:
+
+Time Zones
+==========
+
+The periodic task schedules uses the UTC time zone by default,
+but you can change the time zone used using the :setting:`CELERY_TIMEZONE`
+setting.
+
+If you use a time zone other than UTC it's recommended to install the
+:mod:`pytz` library as this can improve the accuracy and keep your timezone
+specifications up to date:
+
+.. code-block:: bash
+
+    $ pip install -U pytz
+
+
+An example time zone could be `Europe/London`:
+
+.. code-block:: python
+
+    CELERY_TIMEZONE = 'Europe/London'
+
+.. admonition:: Changing the time zone
+
+The default scheduler (storing the schedule in the :file:`celerybeat-schedule`
+file) will automatically detect that the timezone has changed, and so will
+reset the schedule itself, but other schedulers may not be so smart (e.g. the
+Django database scheduler) and in that case you will have to reset the
+schedule manually.
+
 .. _beat-entries:
 
 Entries
@@ -43,6 +75,8 @@ Example: Run the `tasks.add` task every 30 seconds.
             'args': (16, 16)
         },
     }
+
+    CELERY_TIMEZONE = 'UTC'
 
 
 Using a :class:`~datetime.timedelta` for the schedule means the task will
