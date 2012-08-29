@@ -773,87 +773,137 @@ You can listen to specific events by specifying the handlers:
 .. _event-reference:
 
 Event Reference
----------------
+===============
 
 This list contains the events sent by the worker, and their arguments.
 
 .. _event-reference-task:
 
 Task Events
+-----------
+
+.. event:: task-sent
+
+task-sent
+~~~~~~~~~
+
+:signature: ``task-sent(uuid, name, args, kwargs, retries, eta, expires,
+              queue, exchange, routing_key)``
+
+Sent when a task message is published and
+the :setting:`CELERY_SEND_TASK_SENT_EVENT` setting is enabled.
+
+.. event:: task-received
+
+task-received
+~~~~~~~~~~~~~
+
+:signature: ``task-received(uuid, name, args, kwargs, retries, eta, hostname,
+              timestamp)``
+
+Sent when the worker receives a task.
+
+.. event:: task-started
+
+task-started
+~~~~~~~~~~~~
+
+:signature: ``task-started(uuid, hostname, timestamp, pid)``
+
+Sent just before the worker executes the task.
+
+.. event:: task-succeeded
+
+task-succeeded
+~~~~~~~~~~~~~~
+
+:signature: ``task-succeeded(uuid, result, runtime, hostname, timestamp)``
+
+Sent if the task executed successfully.
+
+Runtime is the time it took to execute the task using the pool.
+(Starting from the task is sent to the worker pool, and ending when the
+pool result handler callback is called).
+
+.. event:: task-failed
+
+task-failed
 ~~~~~~~~~~~
 
-* ``task-sent(uuid, name, args, kwargs, retries, eta, expires,
-  queue, exchange, routing_key)``
+:signature: ``task-failed(uuid, exception, traceback, hostname, timestamp)``
 
-   Sent when a task message is published and
-   the :setting:`CELERY_SEND_TASK_SENT_EVENT` setting is enabled.
+Sent if the execution of the task failed.
 
-* ``task-received(uuid, name, args, kwargs, retries, eta, hostname,
-  timestamp)``
+.. event:: task-revoked
 
-    Sent when the worker receives a task.
+task-revoked
+~~~~~~~~~~~~
 
-* ``task-started(uuid, hostname, timestamp, pid)``
+:signature: ``task-revoked(uuid, terminated, signum, expired)``
 
-    Sent just before the worker executes the task.
+Sent if the task has been revoked (Note that this is likely
+to be sent by more than one worker).
 
-* ``task-succeeded(uuid, result, runtime, hostname, timestamp)``
+- ``terminated`` is set to true if the task process was terminated,
+    and the ``signum`` field set to the signal used.
 
-    Sent if the task executed successfully.
+- ``expired`` is set to true if the task expired.
 
-    Runtime is the time it took to execute the task using the pool.
-    (Starting from the task is sent to the worker pool, and ending when the
-    pool result handler callback is called).
+.. event:: task-retried
 
-* ``task-failed(uuid, exception, traceback, hostname, timestamp)``
+task-retried
+~~~~~~~~~~~~
 
-    Sent if the execution of the task failed.
+:signature: ``task-retried(uuid, exception, traceback, hostname, timestamp)``
 
-* ``task-revoked(uuid, terminated, signum, expired)``
-
-    Sent if the task has been revoked (Note that this is likely
-    to be sent by more than one worker).
-
-    - ``terminated`` is set to true if the task process was terminated,
-      and the ``signum`` field set to the signal used.
-
-    - ``expired`` is set to true if the task expired.
-
-* ``task-retried(uuid, exception, traceback, hostname, timestamp)``
-
-    Sent if the task failed, but will be retried in the future.
+Sent if the task failed, but will be retried in the future.
 
 .. _event-reference-worker:
 
 Worker Events
+-------------
+
+.. event:: worker-online
+
+worker-online
 ~~~~~~~~~~~~~
 
-* ``worker-online(hostname, timestamp, freq, sw_ident, sw_ver, sw_sys)``
+:signature: ``worker-online(hostname, timestamp, freq, sw_ident, sw_ver, sw_sys)``
 
-    The worker has connected to the broker and is online.
+The worker has connected to the broker and is online.
 
-    * `hostname`: Hostname of the worker.
-    * `timestamp`: Event timestamp.
-    * `freq`: Heartbeat frequency in seconds (float).
-    * `sw_ident`: Name of worker software (e.g. ``py-celery``).
-    * `sw_ver`: Software version (e.g. 2.2.0).
-    * `sw_sys`: Operating System (e.g. Linux, Windows, Darwin).
+- `hostname`: Hostname of the worker.
+- `timestamp`: Event timestamp.
+- `freq`: Heartbeat frequency in seconds (float).
+- `sw_ident`: Name of worker software (e.g. ``py-celery``).
+- `sw_ver`: Software version (e.g. 2.2.0).
+- `sw_sys`: Operating System (e.g. Linux, Windows, Darwin).
 
-* ``worker-heartbeat(hostname, timestamp, freq, sw_ident, sw_ver, sw_sys,
-    active, processed)``
+.. event:: worker-heartbeat
 
-    Sent every minute, if the worker has not sent a heartbeat in 2 minutes,
-    it is considered to be offline.
+worker-heartbeat
+~~~~~~~~~~~~~~~~
 
-    * `hostname`: Hostname of the worker.
-    * `timestamp`: Event timestamp.
-    * `freq`: Heartbeat frequency in seconds (float).
-    * `sw_ident`: Name of worker software (e.g. ``py-celery``).
-    * `sw_ver`: Software version (e.g. 2.2.0).
-    * `sw_sys`: Operating System (e.g. Linux, Windows, Darwin).
-    * `active`: Number of currently executing tasks.
-    * `processed`: Total number of tasks processed by this worker.
+:signature: ``worker-heartbeat(hostname, timestamp, freq, sw_ident, sw_ver, sw_sys,
+              active, processed)``
 
-* ``worker-offline(hostname, timestamp, freq, sw_ident, sw_ver, sw_sys)``
+Sent every minute, if the worker has not sent a heartbeat in 2 minutes,
+it is considered to be offline.
 
-    The worker has disconnected from the broker.
+- `hostname`: Hostname of the worker.
+- `timestamp`: Event timestamp.
+- `freq`: Heartbeat frequency in seconds (float).
+- `sw_ident`: Name of worker software (e.g. ``py-celery``).
+- `sw_ver`: Software version (e.g. 2.2.0).
+- `sw_sys`: Operating System (e.g. Linux, Windows, Darwin).
+- `active`: Number of currently executing tasks.
+- `processed`: Total number of tasks processed by this worker.
+
+.. event:: worker-offline
+
+worker-offline
+~~~~~~~~~~~~~~
+
+:signature: ``worker-offline(hostname, timestamp, freq, sw_ident, sw_ver, sw_sys)``
+
+The worker has disconnected from the broker.
