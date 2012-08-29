@@ -839,10 +839,20 @@ Worker Events
     * `sw_ver`: Software version (e.g. 2.2.0).
     * `sw_sys`: Operating System (e.g. Linux, Windows, Darwin).
 
-* ``worker-heartbeat(hostname, timestamp, freq, sw_ident, sw_ver, sw_sys)``
+* ``worker-heartbeat(hostname, timestamp, freq, sw_ident, sw_ver, sw_sys,
+    active, processed)``
 
     Sent every minute, if the worker has not sent a heartbeat in 2 minutes,
     it is considered to be offline.
+
+    * `hostname`: Hostname of the worker.
+    * `timestamp`: Event timestamp.
+    * `freq`: Heartbeat frequency in seconds (float).
+    * `sw_ident`: Name of worker software (e.g. ``py-celery``).
+    * `sw_ver`: Software version (e.g. 2.2.0).
+    * `sw_sys`: Operating System (e.g. Linux, Windows, Darwin).
+    * `active`: Number of currently executing tasks.
+    * `processed`: Total number of tasks processed by this worker.
 
 * ``worker-offline(hostname, timestamp, freq, sw_ident, sw_ver, sw_sys)``
 
