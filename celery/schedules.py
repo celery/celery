@@ -466,7 +466,7 @@ class crontab(schedule):
                                   self._orig_month_of_year == '*')
                 if all_dom_moy:
                     next_day = min([day for day in self.day_of_week
-                                        if day > dow_num - 1] or
+                                        if day > dow_num] or
                                 self.day_of_week)
                     add_week = next_day == dow_num
 
