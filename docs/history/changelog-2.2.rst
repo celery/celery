@@ -881,7 +881,7 @@ News
 
 
 * The PID of the child worker process accepting a task is now sent as a field
-  with the `task-started` event.
+  with the :event:`task-started` event.
 
 * The following fields have been added to all events in the worker class:
 

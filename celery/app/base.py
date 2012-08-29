@@ -99,6 +99,15 @@ class Celery(object):
     def set_current(self):
         _tls.current_app = self
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        self.close()
+
+    def close(self):
+        self._maybe_close_pool()
+
     def on_init(self):
         """Optional callback called at init."""
         pass
@@ -319,6 +328,9 @@ class Celery(object):
         return s
 
     def _after_fork(self, obj_):
+        self._maybe_close_pool()
+
+    def _maybe_close_pool(self):
         if self._pool:
             self._pool.force_close_all()
             self._pool = None

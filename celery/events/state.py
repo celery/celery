@@ -54,17 +54,17 @@ class Worker(Element):
         self.heartbeats = []
 
     def on_online(self, timestamp=None, **kwargs):
-        """Callback for the `worker-online` event."""
+        """Callback for the :event:`worker-online` event."""
         self.update(**kwargs)
         self._heartpush(timestamp)
 
     def on_offline(self, **kwargs):
-        """Callback for the `worker-offline` event."""
+        """Callback for the :event:`worker-offline` event."""
         self.update(**kwargs)
         self.heartbeats = []
 
     def on_heartbeat(self, timestamp=None, **kwargs):
-        """Callback for the `worker-heartbeat` event."""
+        """Callback for the :event:`worker-heartbeat` event."""
         self.update(**kwargs)
         self._heartpush(timestamp)
 
@@ -95,8 +95,8 @@ class Task(Element):
     """Task State."""
 
     #: How to merge out of order events.
-    #: Disorder is detected by logical ordering (e.g. task-received must have
-    #: happened before a task-failed event).
+    #: Disorder is detected by logical ordering (e.g. :event:`task-received`
+    #: must have happened before a :event:`task-failed` event).
     #:
     #: A merge rule consists of a state and a list of fields to keep from
     #: that state. ``(RECEIVED, ('name', 'args')``, means the name and args
@@ -149,37 +149,37 @@ class Task(Element):
             super(Task, self).update(fields)
 
     def on_sent(self, timestamp=None, **fields):
-        """Callback for the ``task-sent`` event."""
+        """Callback for the :event:`task-sent` event."""
         self.sent = timestamp
         self.update(states.PENDING, timestamp, fields)
 
     def on_received(self, timestamp=None, **fields):
-        """Callback for the ``task-received`` event."""
+        """Callback for the :event:`task-received` event."""
         self.received = timestamp
         self.update(states.RECEIVED, timestamp, fields)
 
     def on_started(self, timestamp=None, **fields):
-        """Callback for the ``task-started`` event."""
+        """Callback for the :event:`task-started` event."""
         self.started = timestamp
         self.update(states.STARTED, timestamp, fields)
 
     def on_failed(self, timestamp=None, **fields):
-        """Callback for the ``task-failed`` event."""
+        """Callback for the :event:`task-failed` event."""
         self.failed = timestamp
         self.update(states.FAILURE, timestamp, fields)
 
     def on_retried(self, timestamp=None, **fields):
-        """Callback for the ``task-retried`` event."""
+        """Callback for the :event:`task-retried` event."""
         self.retried = timestamp
         self.update(states.RETRY, timestamp, fields)
 
     def on_succeeded(self, timestamp=None, **fields):
-        """Callback for the ``task-succeeded`` event."""
+        """Callback for the :event:`task-succeeded` event."""
         self.succeeded = timestamp
         self.update(states.SUCCESS, timestamp, fields)
 
     def on_revoked(self, timestamp=None, **fields):
-        """Callback for the ``task-revoked`` event."""
+        """Callback for the :event:`task-revoked` event."""
         self.revoked = timestamp
         self.update(states.REVOKED, timestamp, fields)
 

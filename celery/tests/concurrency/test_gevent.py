@@ -38,7 +38,9 @@ class test_gevent_patch(GeventCase):
     def test_is_patched(self):
         with mock_module(*gevent_modules):
             monkey_patched = []
+            import gevent
             from gevent import monkey
+            gevent.version_info = (1, 0, 0)
             prev_monkey_patch = monkey.patch_all
             monkey.patch_all = lambda: monkey_patched.append(True)
             prev_gevent = sys.modules.pop('celery.concurrency.gevent', None)

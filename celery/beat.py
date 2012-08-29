@@ -342,12 +342,16 @@ class PersistentScheduler(Scheduler):
         else:
             if '__version__' not in self._store:
                 self._store.clear()   # remove schedule at 2.2.2 upgrade.
-            if 'utc' not in self._store:
-                self._store.clear()   # remove schedule at 3.0.1 upgrade.
+            if 'tz' not in self._store:
+                self._store.clear()   # remove schedule at 3.0.8 upgrade
+        tz = self.app.conf.CELERY_TIMEZONE
+        current_tz = self._store.get('tz')
+        if current_tz is not None and current_tz != tz:
+            self._store_clear()   # Timezone changed, reset db!
         entries = self._store.setdefault('entries', {})
         self.merge_inplace(self.app.conf.CELERYBEAT_SCHEDULE)
         self.install_default_entries(self.schedule)
-        self._store.update(__version__=__version__, utc=True)
+        self._store.update(__version__=__version__, utc=True, tz=tz)
         self.sync()
         debug('Current schedule:\n' + '\n'.join(repr(entry)
                                     for entry in entries.itervalues()))

@@ -100,7 +100,7 @@ Fixes
 * Fixes case where the worker could become unresponsive because of tasks
   exceeding the hard time limit.
 
-* The ``task-sent`` event was missing from the event reference.
+* The :event:`task-sent` event was missing from the event reference.
 
 * ``ResultSet.iterate`` now returns results as they finish (Issue #459).
 

@@ -701,7 +701,7 @@ In Other News
         class Worker(celery.Worker):
             ...
 
-- New signal: :signal:`task-success`.
+- New signal: :signal:`task_success`.
 
 - Multiprocessing logs are now only emitted if the :envvar:`MP_LOG`
   environment variable is set.
@@ -774,7 +774,7 @@ In Other News
 
 - Module ``celery.task.control`` moved to :mod:`celery.app.control`.
 
-- New signal: :signal:`task-revoked`
+- New signal: :signal:`task_revoked`
 
     Sent in the main process when the task is revoked or terminated.
 

@@ -259,7 +259,7 @@ def _clone_current_worker():
 
 def install_worker_restart_handler(worker, sig='SIGHUP'):
 
-    def restart_worker_sig_handler(signum, frame):
+    def restart_worker_sig_handler(*args):
         """Signal handler restarting the current python program."""
         set_in_sighandler(True)
         safe_say('Restarting celeryd ({0})'.format(' '.join(sys.argv)))
@@ -275,7 +275,7 @@ def install_cry_handler():
     if is_jython or is_pypy:  # pragma: no cover
         return
 
-    def cry_handler(signum, frame):
+    def cry_handler(*args):
         """Signal handler logging the stacktrace of all active threads."""
         with in_sighandler():
             safe_say(cry())
@@ -285,9 +285,10 @@ def install_cry_handler():
 def install_rdb_handler(envvar='CELERY_RDBSIG',
                         sig='SIGUSR2'):  # pragma: no cover
 
-    def rdb_handler(signum, frame):
+    def rdb_handler(*args):
         """Signal handler setting a rdb breakpoint at the current frame."""
         with in_sighandler():
+            _, frame = args
             from celery.contrib import rdb
             rdb.set_trace(frame)
     if os.environ.get(envvar):

@@ -20,6 +20,46 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 - `Task.apply_async` now supports timeout and soft_timeout arguments (Issue #802)
 - `App.control.Inspect.conf` can be used for inspecting worker configuration
 
+.. _version-3.0.8:
+
+3.0.8
+=====
+:release-date: 2012-08-29 05:00 P.M BST
+
+- Now depends on Kombu 2.4.4
+
+- Fixed problem with amqplib and receiving larger message payloads
+  (Issue #922).
+
+    The problem would manifest itself as either the worker hanging,
+    or occasionally a ``Framing error`` exception appearing.
+
+    Users of the new ``pyamqp://`` transport must upgrade to
+    :mod:`amqp` 0.9.3.
+
+- Beat: Fixed another timezone bug with interval and crontab schedules
+  (Issue #943).
+
+- Beat: The schedule file is now automatically cleared if the timezone
+  is changed.
+
+    The schedule is also cleared when you upgrade to 3.0.8 from an earlier
+    version, this to register the initial timezone info.
+
+- Events: The :event:`worker-heartbeat` event now include processed and active
+  count fields.
+
+    Contributed by Mher Movsisyan.
+
+- Fixed error with error email and new task classes (Issue #931).
+
+- ``BaseTask.__call__`` is no longer optimized away if it has been monkey
+  patched.
+
+- Fixed shutdown issue when using gevent (Issue #911 & Issue #936).
+
+    Fix contributed by Thomas Meson.
+
 .. _version-3.0.7:
 
 3.0.7
@@ -35,7 +75,7 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
     - Fixes an infinite loop that could happen when retrying establishing
       the broker connection.
 
-- Daemons now redirect standard file descriptors to /dev/null
+- Daemons now redirect standard file descriptors to :file:`/dev/null`
 
     Though by default the standard outs are also redirected
     to the logger instead, but you can disable this by changing
@@ -60,7 +100,7 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 
 - Celery command: Extensions are now sorted by name.
 
-- A regression caused the ``task-failed`` event to be sent
+- A regression caused the :event:`task-failed` event to be sent
   with the exception object instead of its string representation.
 
 - The worker daemon would try to create the pid file before daemonizing
@@ -122,7 +162,7 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 
 - ``AsyncResult.revoke`` now accepts ``terminate`` and ``signal`` arguments.
 
-- The ``task-revoked`` event now includes new fields: ``terminated``,
+- The :event:`task-revoked` event now includes new fields: ``terminated``,
   ``signum``, and ``expired``.
 
 - The argument to :class:`~celery.exceptions.TaskRevokedError` is now one
@@ -429,7 +469,7 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
     - :func:`~celery.contrib.migrate.move_tasks`
     - :func:`~celery.contrib.migrate.move_task_by_id`
 
-- The task-sent event now contains ``exchange`` and ``routing_key``
+- The :event:`task-sent` event now contains ``exchange`` and ``routing_key``
   fields.
 
 - Fixes bug with installing on Python 3.
