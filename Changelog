@@ -17,6 +17,15 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 
 - Now depends on Kombu 2.4.4
 
+- Fixed problem with amqplib and receiving larger message payloads
+  (Issue #922).
+
+    The problem would manifest itself as either the worker hanging,
+    or occasionally a ``Framing error`` exception appearing.
+
+    Users of the new ``pyamqp://`` transport must upgrade to
+    :mod:`amqp` 0.9.3.
+
 - Beat: Fixed another timezone bug with interval and crontab schedules
   (Issue #943).
 
