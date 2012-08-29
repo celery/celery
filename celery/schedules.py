@@ -80,7 +80,7 @@ class schedule(object):
 
     def maybe_make_aware(self, dt):
         if self.app.conf.CELERY_ENABLE_UTC:
-            return maybe_make_aware(dt)
+            return maybe_make_aware(dt, self.tz)
         return dt
 
     def __repr__(self):
@@ -486,7 +486,6 @@ class crontab(schedule):
         See :meth:`celery.schedules.schedule.is_due` for more information.
 
         """
-        last_run_at = self.maybe_make_aware(last_run_at)
         rem_delta = self.remaining_estimate(last_run_at)
         rem = timedelta_seconds(rem_delta)
         due = rem == 0
