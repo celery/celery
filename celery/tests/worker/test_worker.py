@@ -463,8 +463,6 @@ class test_Consumer(Case):
         self.assertIs(self.ready_queue.get_nowait(), task)
 
     def test_receieve_message_eta_isoformat(self):
-        if sys.version_info < (2, 6):
-            raise SkipTest('test broken on Python 2.5')
         l = MyKombuConsumer(self.ready_queue, timer=self.timer)
         m = create_message(Mock(), task=foo_task.name,
                            eta=datetime.now().isoformat(),
