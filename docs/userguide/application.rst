@@ -274,7 +274,7 @@ you use the task, or access an attribute (in this case :meth:`repr`):
     >>> add.__evaluated__()
     True
 
-*Finalization* of the appq happens either explicitly by calling
+*Finalization* of the app happens either explicitly by calling
 :meth:`@Celery.finalize` -- or implicitly by accessing the :attr:`~@Celery.tasks`
 attribute.
 
