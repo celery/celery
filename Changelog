@@ -9,6 +9,37 @@
 
 If you're looking for versions prior to 3.x you should see :ref:`history`.
 
+.. _version-3.0.8:
+
+3.0.8
+=====
+:release-date: 2012-08-29 05:00 P.M BST
+
+- Now depends on Kombu 2.4.4
+
+- Beat: Fixed another timezone bug with interval and crontab schedules
+  (Issue #943).
+
+- Beat: The schedule file is now automatically cleared if the timezone
+  is changed.
+
+    The schedule is also cleared when you upgrade to 3.0.8 from an earlier
+    version, this to register the initial timezone info.
+
+- Events: The :event:`worker-heartbeat` event now include processed and active
+  count fields.
+
+    Contributed by Mher Movsisyan.
+
+- Fixed error with error email and new task classes (Issue #931).
+
+- ``BaseTask.__call__`` is no longer optimized away if it has been monkey
+  patched.
+
+- Fixed shutdown issue when using gevent (Issue #911 & Issue #936).
+
+    Fix contributed by Thomas Meson.
+
 .. _version-3.0.7:
 
 3.0.7
