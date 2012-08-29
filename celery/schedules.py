@@ -432,14 +432,14 @@ class crontab(schedule):
         """Returns when the periodic task should run next as a timedelta."""
         tz = tz or self.tz
         last_run_at = self.maybe_make_aware(last_run_at)
-        dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
+        dow_num = timezone.to_local(last_run_at, tz).isoweekday() % 7  # Sunday is day 0, not day 7
 
         execute_this_date = (last_run_at.month in self.month_of_year and
-                                last_run_at.day in self.day_of_month and
+                                timezone.to_local(last_run_at, tz).day in self.day_of_month and
                                     dow_num in self.day_of_week)
 
         execute_this_hour = (execute_this_date and
-                                last_run_at.hour in self.hour and
+                                timezone.to_local(last_run_at, tz).hour in self.hour and
                                     last_run_at.minute < max(self.minute))
 
         if execute_this_hour:
@@ -451,11 +451,11 @@ class crontab(schedule):
         else:
             next_minute = min(self.minute)
             execute_today = (execute_this_date and
-                                last_run_at.hour < max(self.hour))
+                                timezone.to_local(last_run_at, tz).hour < max(self.hour))
 
             if execute_today:
-                next_hour = min(hour for hour in self.hour
-                                        if hour > last_run_at.hour)
+                next_hour = min([hour for hour in self.hour
+                                        if hour > timezone.to_local(last_run_at, tz).hour] or self.hour)
                 delta = relativedelta(hour=next_hour,
                                       minute=next_minute,
                                       second=0,
