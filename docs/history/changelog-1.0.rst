@@ -813,9 +813,9 @@ News
     Excellent for monitoring tools, one is already in the making
     (http://github.com/celery/celerymon).
 
-    Current events include: worker-heartbeat,
+    Current events include: :event:`worker-heartbeat`,
     task-[received/succeeded/failed/retried],
-    worker-online, worker-offline.
+    :event:`worker-online`, :event:`worker-offline`.
 
 * You can now delete (revoke) tasks that has already been applied.
 

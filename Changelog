@@ -55,7 +55,7 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
     - Fixes an infinite loop that could happen when retrying establishing
       the broker connection.
 
-- Daemons now redirect standard file descriptors to /dev/null
+- Daemons now redirect standard file descriptors to :file:`/dev/null`
 
     Though by default the standard outs are also redirected
     to the logger instead, but you can disable this by changing
@@ -80,7 +80,7 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 
 - Celery command: Extensions are now sorted by name.
 
-- A regression caused the ``task-failed`` event to be sent
+- A regression caused the :event:`task-failed` event to be sent
   with the exception object instead of its string representation.
 
 - The worker daemon would try to create the pid file before daemonizing
@@ -142,7 +142,7 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 
 - ``AsyncResult.revoke`` now accepts ``terminate`` and ``signal`` arguments.
 
-- The ``task-revoked`` event now includes new fields: ``terminated``,
+- The :event:`task-revoked` event now includes new fields: ``terminated``,
   ``signum``, and ``expired``.
 
 - The argument to :class:`~celery.exceptions.TaskRevokedError` is now one
@@ -452,7 +452,7 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
     - :func:`~celery.contrib.migrate.move_tasks`
     - :func:`~celery.contrib.migrate.move_task_by_id`
 
-- The task-sent event now contains ``exchange`` and ``routing_key``
+- The :event:`task-sent` event now contains ``exchange`` and ``routing_key``
   fields.
 
 - Fixes bug with installing on Python 3.

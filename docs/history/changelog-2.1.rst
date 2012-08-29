@@ -101,7 +101,7 @@ Documentation
 Fixes
 -----
 
-* celeryd: Now sends the `task-retried` event for retried tasks.
+* celeryd: Now sends the :event:`task-retried` event for retried tasks.
 
 * celeryd: Now honors ignore result for
   :exc:`~@WorkerLostError` and timeout errors.
