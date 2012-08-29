@@ -40,7 +40,7 @@ reserved_requests = set()
 active_requests = set()
 
 #: count of tasks executed by the worker, sorted by type.
-total_count = defaultdict(lambda: 0)
+total_count = defaultdict(int)
 
 #: the list of currently revoked tasks.  Persistent if statedb set.
 revoked = LimitedSet(maxlen=REVOKES_MAX, expires=REVOKE_EXPIRES)
