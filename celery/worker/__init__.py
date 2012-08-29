@@ -18,7 +18,6 @@ import traceback
 from threading import Event
 
 from billiard import cpu_count
-from billiard.exceptions import WorkerLostError
 from kombu.syn import detect_environment
 from kombu.utils.finalize import Finalize
 
