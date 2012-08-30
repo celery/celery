@@ -32,7 +32,7 @@ from celery.exceptions import (
 from celery.task import trace
 from celery.utils import worker_direct
 from celery.utils.imports import qualname, reload_from_cwd
-from celery.utils.log import get_logger, mlevel
+from celery.utils.log import mlevel, worker_logger as logger
 
 from . import bootsteps
 from . import state
@@ -54,8 +54,6 @@ defined in the CELERY_QUEUES setting.
 If you want to automatically declare unknown queues you can
 enable the CELERY_CREATE_MISSING_QUEUES setting.
 """
-
-logger = get_logger(__name__)
 
 
 class Namespace(bootsteps.Namespace):

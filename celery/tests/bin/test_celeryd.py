@@ -165,8 +165,8 @@ class test_Worker(AppCase):
         worker.autoscale = 13, 10
         self.assertTrue(worker.startup_info())
 
-        worker = self.Worker(queues='foo,bar,baz,xuzzy,do,re,mi')
-        app = worker.app
+        app = Celery(set_as_current=False)
+        worker = self.Worker(app=app, queues='foo,bar,baz,xuzzy,do,re,mi')
         prev, app.loader = app.loader, Mock()
         try:
             app.loader.__module__ = 'acme.baked_beans'

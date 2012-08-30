@@ -15,14 +15,13 @@ from functools import partial
 
 from billiard.exceptions import WorkerLostError
 
-from celery.utils.log import get_logger
+from celery.utils.log import worker_logger as logger
 from celery.utils.timer2 import Schedule
 
 from . import bootsteps
 from .buckets import TaskBucket, FastQueue
 from .hub import Hub, BoundedSemaphore
 
-logger = get_logger(__name__)
 
 
 class Pool(bootsteps.StartStopComponent):

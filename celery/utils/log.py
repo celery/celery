@@ -56,6 +56,7 @@ def get_logger(name):
         l.parent = base_logger
     return l
 task_logger = get_logger('celery.task')
+worker_logger = get_logger('celery.worker')
 
 
 def get_task_logger(name):
