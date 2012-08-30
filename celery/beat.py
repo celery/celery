@@ -347,7 +347,7 @@ class PersistentScheduler(Scheduler):
         tz = self.app.conf.CELERY_TIMEZONE
         current_tz = self._store.get('tz')
         if current_tz is not None and current_tz != tz:
-            self._store_clear()   # Timezone changed, reset db!
+            self._store.clear()   # Timezone changed, reset db!
         entries = self._store.setdefault('entries', {})
         self.merge_inplace(self.app.conf.CELERYBEAT_SCHEDULE)
         self.install_default_entries(self.schedule)
