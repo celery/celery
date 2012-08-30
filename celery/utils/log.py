@@ -74,6 +74,8 @@ class ColorFormatter(logging.Formatter):
         self.use_color = use_color
 
     def formatException(self, ei):
+        if ei and not isinstance(ei, tuple):
+            ei = sys.exc_info()
         r = logging.Formatter.formatException(self, ei)
         if isinstance(r, str) and not is_py3k:
             return safe_str(r)
