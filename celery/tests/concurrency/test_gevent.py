@@ -28,7 +28,7 @@ class GeventCase(Case):
     @skip_if_pypy
     def setUp(self):
         try:
-            self.eventlet = __import__('gevent')
+            self.gevent = __import__('gevent')
         except ImportError:
             raise SkipTest(
                 'gevent not installed, skipping related tests.')
