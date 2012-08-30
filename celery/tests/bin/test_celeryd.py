@@ -53,11 +53,16 @@ def disable_stdouts(fun):
 
 class Worker(cd.Worker):
 
+    def __init__(self, *args, **kwargs):
+        super(Worker, self).__init__(*args, **kwargs)
+        self.redirect_stdouts = False
+
     def start(self, *args, **kwargs):
         self.on_start()
 
 
 class test_Worker(AppCase):
+
     Worker = Worker
 
     def teardown(self):
@@ -306,13 +311,13 @@ class test_Worker(AppCase):
     @disable_stdouts
     def test_platform_tweaks_osx(self):
 
-        class OSXWorker(self.Worker):
+        class OSXWorker(Worker):
             proxy_workaround_installed = False
 
             def osx_proxy_detection_workaround(self):
                 self.proxy_workaround_installed = True
 
-        worker = OSXWorker()
+        worker = OSXWorker(redirect_stdouts=False)
 
         def install_HUP_nosupport(controller):
             controller.hup_not_supported_installed = True
@@ -362,7 +367,6 @@ class test_Worker(AppCase):
 
         self.Worker().on_consumer_ready(object())
         self.assertTrue(worker_ready_sent[0])
-
 
 class test_funs(AppCase):
 
