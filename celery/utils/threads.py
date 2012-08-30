@@ -24,6 +24,11 @@ _Event = threading._Event
 active_count = (getattr(threading, 'active_count', None) or
                 threading.activeCount)
 
+try:
+    TIMEOUT_MAX = threading.TIMEOUT_MAX
+except AttributeError:
+    TIMEOUT_MAX = 1e10  # noqa
+
 
 class Event(_Event):
 
@@ -93,7 +98,7 @@ class bgThread(Thread):
         self._is_shutdown.set()
         self._is_stopped.wait()
         if self.is_alive():
-            self.join(1e100)
+            self.join(TIMEOUT_MAX)
 
 try:
     from greenlet import getcurrent as get_ident

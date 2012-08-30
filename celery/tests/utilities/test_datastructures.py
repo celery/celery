@@ -10,6 +10,7 @@ from celery.datastructures import (
     ConfigurationView,
     DependencyGraph,
 )
+from celery.utils.threads import TIMEOUT_MAX
 from celery.tests.utils import Case, WhateverIO
 
 
@@ -222,7 +223,7 @@ class test_LRUCache(Case):
             def stop(self):
                 self._is_shutdown.set()
                 self._is_stopped.wait()
-                self.join(1e10)
+                self.join(TIMEOUT_MAX)
 
         burglar = Burglar(x)
         burglar.start()
