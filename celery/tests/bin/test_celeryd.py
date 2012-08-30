@@ -384,6 +384,7 @@ class test_Worker(AppCase):
         self.Worker().on_consumer_ready(object())
         self.assertTrue(worker_ready_sent[0])
 
+
 class test_funs(AppCase):
 
     def test_active_thread_count(self):
