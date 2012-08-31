@@ -21,9 +21,9 @@ configuration values.
 
     BROKER_URL = 'django://'
 
-#. Add :mod:`djcelery.transport` to `INSTALLED_APPS`::
+#. Add :mod:`kombu.transport.django` to `INSTALLED_APPS`::
 
-    INSTALLED_APPS = ('djcelery.transport', )
+    INSTALLED_APPS = ('kombu.transport.django', )
 
 #. Sync your database schema:
 
