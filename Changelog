@@ -41,6 +41,16 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
         >>> from djcelery.models import PeriodicTask
         >>> PeriodicTask.objects.update(last_run_at=None)
 
+    You also have to do this if you change the timezone or
+    :setting:`CELERY_ENABLE_UTC` setting.
+
+- Note about the :setting:`CELERY_ENABLE_UTC` setting.
+
+    If you previously disabled this just to force periodic tasks to work with
+    your timezone, then you are now *encouraged to re-enable it*.
+
+- Now depends on Kombu 2.4.5 which fixes PyPy + Jython installation.
+
 - Fixed bug with timezones when :setting:`CELERY_ENABLE_UTC` is disabled
   (Issue #952).
 
