@@ -8,9 +8,12 @@
 """
 from __future__ import absolute_import
 
+import time as _time
 from itertools import izip
 
-from datetime import datetime, timedelta
+from kombu.utils import cached_property
+
+from datetime import datetime, timedelta, tzinfo
 from dateutil import tz
 from dateutil.parser import parse as parse_iso8601
 from kombu.utils import cached_property
@@ -40,6 +43,63 @@ TIME_UNITS = (('day',    60 * 60 * 24.0, lambda n: format(n, '.2f')),
               ('minute', 60.0,           lambda n: format(n, '.2f')),
               ('second', 1.0,            lambda n: format(n, '.2f')))
 
+ZERO = timedelta(0)
+
+_local_timezone = None
+
+
+class LocalTimezone(tzinfo):
+    """
+    Local time implementation taken from Python's docs.
+
+    Used only when pytz isn't available, and most likely inaccurate. If you're
+    having trouble with this class, don't waste your time, just install pytz.
+    """
+
+    def __init__(self):
+        # This code is moved in __init__ to execute it as late as possible
+        # See get_default_timezone().
+        self.STDOFFSET = timedelta(seconds=-_time.timezone)
+        if _time.daylight:
+            self.DSTOFFSET = timedelta(seconds=-_time.altzone)
+        else:
+            self.DSTOFFSET = self.STDOFFSET
+        self.DSTDIFF = self.DSTOFFSET - self.STDOFFSET
+        tzinfo.__init__(self)
+
+    def __repr__(self):
+        return "<LocalTimezone>"
+
+    def utcoffset(self, dt):
+        if self._isdst(dt):
+            return self.DSTOFFSET
+        else:
+            return self.STDOFFSET
+
+    def dst(self, dt):
+        if self._isdst(dt):
+            return self.DSTDIFF
+        else:
+            return ZERO
+
+    def tzname(self, dt):
+        return _time.tzname[self._isdst(dt)]
+
+    def _isdst(self, dt):
+        tt = (dt.year, dt.month, dt.day,
+              dt.hour, dt.minute, dt.second,
+              dt.weekday(), 0, 0)
+        stamp = _time.mktime(tt)
+        tt = _time.localtime(stamp)
+        return tt.tm_isdst > 0
+
+
+def _get_local_timezone():
+    global _local_timezone
+    if _local_timezone is None:
+        _local_timezone = LocalTimezone()
+    return _local_timezone
+
 
 class _Zone(object):
 
@@ -52,6 +112,11 @@ class _Zone(object):
         if is_naive(dt):
             dt = make_aware(dt, orig or self.utc)
         return localize(dt, self.tz_or_local(local))
+
+    def to_local_fallback(self, dt, *args, **kwargs):
+        if is_naive(dt):
+            return make_aware(dt, _get_local_timezone())
+        return localize(dt, _get_local_timezone())
 
     def get_timezone(self, zone):
         if isinstance(zone, basestring):

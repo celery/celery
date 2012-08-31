@@ -33,7 +33,8 @@ from .utils.timeutils import humanize_seconds
 from .utils.log import get_logger
 
 logger = get_logger(__name__)
-debug, info, error = logger.debug, logger.info, logger.error
+debug, info, error, warning = (logger.debug, logger.info,
+                               logger.error, logger.warning)
 
 DEFAULT_MAX_INTERVAL = 300  # 5 minutes
 
@@ -341,17 +342,31 @@ class PersistentScheduler(Scheduler):
                                                 writeback=True)
         else:
             if '__version__' not in self._store:
+                warning('Reset: Account for new __version__ field')
                 self._store.clear()   # remove schedule at 2.2.2 upgrade.
             if 'tz' not in self._store:
+                warning('Reset: Account for new tz field')
                 self._store.clear()   # remove schedule at 3.0.8 upgrade
+            if 'utc_enabled' not in self._store:
+                warning('Reset: Account for new utc_enabled field')
+                self._store.clear()   # remove schedule at 3.0.9 upgrade
+
         tz = self.app.conf.CELERY_TIMEZONE
-        current_tz = self._store.get('tz')
-        if current_tz is not None and current_tz != tz:
+        stored_tz = self._store.get('tz')
+        if stored_tz is not None and stored_tz != tz:
+            warning('Reset: Timezone changed from %r to %r', stored_tz, tz)
             self._store.clear()   # Timezone changed, reset db!
+        utc = self.app.conf.CELERY_ENABLE_UTC
+        stored_utc = self._store.get('utc_enabled')
+        if stored_utc is not None and stored_utc != utc:
+            choices = {True: 'enabled', False: 'disabled'}
+            warning('Reset: UTC changed from %s to %s',
+                    choices[stored_utc], choices[utc])
+            self._store.clear()   # UTC setting changed, reset db!
         entries = self._store.setdefault('entries', {})
         self.merge_inplace(self.app.conf.CELERYBEAT_SCHEDULE)
         self.install_default_entries(self.schedule)
-        self._store.update(__version__=__version__, utc=True, tz=tz)
+        self._store.update(__version__=__version__, tz=tz, utc_enabled=utc)
         self.sync()
         debug('Current schedule:\n' + '\n'.join(repr(entry)
                                     for entry in entries.itervalues()))

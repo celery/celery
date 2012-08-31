@@ -60,6 +60,10 @@ class Worker(cd.Worker):
     def start(self, *args, **kwargs):
         self.on_start()
 
+    def __init__(self, *args, **kwargs):
+        super(Worker, self).__init__(*args, **kwargs)
+        self.redirect_stdouts = False
+
 
 class test_Worker(AppCase):
 

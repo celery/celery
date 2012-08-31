@@ -20,6 +20,63 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 - `Task.apply_async` now supports timeout and soft_timeout arguments (Issue #802)
 - `App.control.Inspect.conf` can be used for inspecting worker configuration
 
+.. _version-3.0.9:
+
+3.0.9
+=====
+:release-date: 2012-08-31 06:00 P.M BST
+
+- Important note for users of Django and the database scheduler!
+
+    Recently a timezone issue has been fixed for periodic tasks,
+    but erroneous timezones could have already been stored in the
+    database, so for the fix to work you need to reset
+    the ``last_run_at`` fields.
+
+    You can do this by executing the following command:
+
+    .. code-block:: bash
+
+        $ python manage.py shell
+        >>> from djcelery.models import PeriodicTask
+        >>> PeriodicTask.objects.update(last_run_at=None)
+
+- Fixed bug with timezones when :setting:`CELERY_ENABLE_UTC` is disabled
+  (Issue #952).
+
+- Fixed a typo in the celerybeat upgrade mechanism (Issue #951).
+
+- Make sure the `exc_info` argument to logging is resolved (Issue #899).
+
+- Fixed problem with Python 3.2 and thread join timeout overflow (Issue #796).
+
+- A test case was occasionally broken for Python 2.5.
+
+- Unit test suite now passes for PyPy 1.9.
+
+- App instances now supports the with statement.
+
+    This calls the new :meth:`~celery.Celery.close` method at exit, which
+    cleans up after the app like closing pool connections.
+
+    Note that this is only necessary when dynamically creating apps,
+    e.g. for "temporary" apps.
+
+- Support for piping a subtask to a chain.
+
+    For example:
+
+    .. code-block:: python
+
+        pipe = sometask.s() | othertask.s()
+        new_pipe = mytask.s() | pipe
+
+    Contributed by Steve Morin.
+
+- Fixed problem with group results on non-pickle serializers.
+
+    Fix contributed by Steeve Morin.
+
 .. _version-3.0.8:
 
 3.0.8
