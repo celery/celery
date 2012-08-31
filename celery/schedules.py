@@ -12,7 +12,9 @@ from __future__ import absolute_import
 import re
 
 from datetime import datetime, timedelta
+
 from dateutil.relativedelta import relativedelta
+from kombu.utils import cached_property
 
 from . import current_app
 from .utils import is_iterable
@@ -28,7 +30,6 @@ class ParseException(Exception):
 
 
 class schedule(object):
-    _app = None
     relative = False
 
     def __init__(self, run_every=None, relative=False, nowfun=None):
@@ -79,7 +80,7 @@ class schedule(object):
         return False, rem
 
     def maybe_make_aware(self, dt):
-        if self.app.conf.CELERY_ENABLE_UTC:
+        if self.utc_enabled:
             return maybe_make_aware(dt, self.tz)
         return dt
 
@@ -99,15 +100,22 @@ class schedule(object):
     def human_seconds(self):
         return humanize_seconds(self.seconds)
 
-    @property
+    @cached_property
     def app(self):
-        if self._app is None:
-            self._app = current_app._get_current_object()
-        return self._app
+        return current_app._get_current_object()
 
-    @property
+    @cached_property
     def tz(self):
-        return self.app.conf.CELERY_TIMEZONE
+        return timezone.get_timezone(self.app.conf.CELERY_TIMEZONE)
+
+    @cached_property
+    def utc_enabled(self):
+        return self.app.conf.CELERY_ENABLE_UTC
+
+    @cached_property
+    def to_local(self):
+        return (timezone.to_local if self.utc_enabled
+                                  else timezone.to_local_fallback)
 
 
 class crontab_parser(object):
@@ -476,8 +484,8 @@ class crontab(schedule):
                     delta = self._delta_to_next(last_run_at,
                                                 next_hour, next_minute)
 
-        return remaining(timezone.to_local(last_run_at, tz),
-                         delta, timezone.to_local(self.now(), tz))
+        return remaining(self.to_local(last_run_at, tz),
+                         delta, self.to_local(self.now(), tz))
 
     def is_due(self, last_run_at):
         """Returns tuple of two items `(is_due, next_time_to_run)`,
