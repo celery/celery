@@ -120,6 +120,17 @@ use the help command:
 
     $ python manage.py celery help
 
+.. admonition:: Help, it's crashing!
+
+    If the worker crashes and spews out a lot of output when it starts
+    then you should try specifying the settings manually:
+
+    .. code-block:: bash
+
+        $ python manage.py celery worker --loglevel=info --settings=settings
+
+    This is usually happens when using older Django project layouts.
+
 Calling our task
 ================
 
