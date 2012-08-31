@@ -79,6 +79,17 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 
     Contributed by Mher Movsisyan.
 
+- Subtasks can now be piped with chains
+
+    For example:
+
+    .. code-block:: python
+
+        pipe = sometask.s() | othertask.s()
+        new_pipe = mytask.s() | pipe
+
+    Contributed by Steve Moorin.
+
 - Fixed error with error email and new task classes (Issue #931).
 
 - ``BaseTask.__call__`` is no longer optimized away if it has been monkey
