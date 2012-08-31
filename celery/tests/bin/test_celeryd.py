@@ -60,10 +60,6 @@ class Worker(cd.Worker):
     def start(self, *args, **kwargs):
         self.on_start()
 
-    def __init__(self, *args, **kwargs):
-        super(Worker, self).__init__(*args, **kwargs)
-        self.redirect_stdouts = False
-
 
 class test_Worker(AppCase):
 
@@ -371,6 +367,7 @@ class test_Worker(AppCase):
 
         self.Worker().on_consumer_ready(object())
         self.assertTrue(worker_ready_sent[0])
+
 
 class test_funs(AppCase):
 

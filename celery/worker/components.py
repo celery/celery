@@ -23,7 +23,6 @@ from .buckets import TaskBucket, FastQueue
 from .hub import Hub, BoundedSemaphore
 
 
-
 class Pool(bootsteps.StartStopComponent):
     """The pool component.
 

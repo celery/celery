@@ -11,9 +11,8 @@ from __future__ import absolute_import
 import time as _time
 from itertools import izip
 
-from kombu.utils import cached_property
-
 from datetime import datetime, timedelta, tzinfo
+
 from dateutil import tz
 from dateutil.parser import parse as parse_iso8601
 from kombu.utils import cached_property
