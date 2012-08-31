@@ -156,15 +156,7 @@ elif py_version[0:2] == (2, 5):
 
 # -*- Tests Requires -*-
 
-if is_py3k:
-    tests_require = reqs('test-py3k.txt')
-elif is_pypy:
-    tests_require = reqs('test-pypy.txt')
-else:
-    tests_require = reqs('test.txt')
-
-if py_version[0:2] == (2, 5):
-    tests_require.extend(reqs('test-py25.txt'))
+tests_require = reqs('test.txt')
 
 # -*- Long Description -*-
 
