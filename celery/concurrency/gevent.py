@@ -7,9 +7,9 @@
 
 """
 from __future__ import absolute_import
+from __future__ import with_statement
 
 import os
-import sys
 
 PATCHED = [0]
 if not os.environ.get('GEVENT_NOPATCH') and not PATCHED[0]:
@@ -30,8 +30,6 @@ except ImportError:
 
 from time import time
 
-from billiard.einfo import ExceptionInfo
-from billiard.exceptions import TimeLimitExceeded
 from celery.utils import timer2
 
 from .base import apply_target, BasePool
