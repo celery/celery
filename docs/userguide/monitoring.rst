@@ -217,7 +217,7 @@ Install Celery Flower:
 
     $ pip install flower
 
-Launch Celery Flower and open http://localhost:8008 in browser:
+Launch Celery Flower and open http://localhost:5555 in browser:
 
 .. code-block:: bash
 
