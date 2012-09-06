@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import logging
 import os
@@ -52,20 +51,18 @@ def disable_stdouts(fun):
     return disable
 
 
-class _WorkController(object):
+class Worker(cd.Worker):
 
     def __init__(self, *args, **kwargs):
-        pass
+        super(Worker, self).__init__(*args, **kwargs)
+        self.redirect_stdouts = False
 
-    def start(self):
-        pass
-
-
-class Worker(cd.Worker):
-    WorkController = _WorkController
+    def start(self, *args, **kwargs):
+        self.on_start()
 
 
 class test_Worker(AppCase):
+
     Worker = Worker
 
     def teardown(self):
@@ -74,15 +71,15 @@ class test_Worker(AppCase):
     @disable_stdouts
     def test_queues_string(self):
         celery = Celery(set_as_current=False)
-        worker = celery.Worker(queues='foo,bar,baz')
-        worker.init_queues()
-        self.assertEqual(worker.use_queues, ['foo', 'bar', 'baz'])
+        worker = celery.Worker()
+        worker.setup_queues('foo,bar,baz')
+        self.assertEqual(worker.queues, ['foo', 'bar', 'baz'])
         self.assertTrue('foo' in celery.amqp.queues)
 
     @disable_stdouts
     def test_cpu_count(self):
         celery = Celery(set_as_current=False)
-        with patch('celery.apps.worker.cpu_count') as cpu_count:
+        with patch('celery.worker.cpu_count') as cpu_count:
             cpu_count.side_effect = NotImplementedError()
             worker = celery.Worker(concurrency=None)
             self.assertEqual(worker.concurrency, 2)
@@ -147,14 +144,14 @@ class test_Worker(AppCase):
         try:
             w = self.Worker()
             w._isatty = False
-            w.run_worker()
+            w.on_start()
             for sig in 'SIGINT', 'SIGHUP', 'SIGTERM':
                 self.assertIn(sig, handlers)
 
             handlers.clear()
             w = self.Worker()
             w._isatty = True
-            w.run_worker()
+            w.on_start()
             for sig in 'SIGINT', 'SIGTERM':
                 self.assertIn(sig, handlers)
             self.assertNotIn('SIGHUP', handlers)
@@ -164,7 +161,7 @@ class test_Worker(AppCase):
     @disable_stdouts
     def test_startup_info(self):
         worker = self.Worker()
-        worker.run()
+        worker.on_start()
         self.assertTrue(worker.startup_info())
         worker.loglevel = logging.DEBUG
         self.assertTrue(worker.startup_info())
@@ -173,8 +170,8 @@ class test_Worker(AppCase):
         worker.autoscale = 13, 10
         self.assertTrue(worker.startup_info())
 
-        worker = self.Worker(queues='foo,bar,baz,xuzzy,do,re,mi')
-        app = worker.app
+        app = Celery(set_as_current=False)
+        worker = self.Worker(app=app, queues='foo,bar,baz,xuzzy,do,re,mi')
         prev, app.loader = app.loader, Mock()
         try:
             app.loader.__module__ = 'acme.baked_beans'
@@ -207,18 +204,10 @@ class test_Worker(AppCase):
 
     @disable_stdouts
     def test_run(self):
-        self.Worker().run()
-        self.Worker(purge=True).run()
+        self.Worker().on_start()
+        self.Worker(purge=True).on_start()
         worker = self.Worker()
-        worker.run()
-
-        prev, cd.IGNORE_ERRORS = cd.IGNORE_ERRORS, (KeyError, )
-        try:
-            worker.run_worker = Mock()
-            worker.run_worker.side_effect = KeyError()
-            worker.run()
-        finally:
-            cd.IGNORE_ERRORS = prev
+        worker.on_start()
 
     @disable_stdouts
     def test_purge_messages(self):
@@ -234,8 +223,8 @@ class test_Worker(AppCase):
                 'video': {'exchange': 'video',
                            'routing_key': 'video'}})
         try:
-            worker = self.Worker(queues=['video'])
-            worker.init_queues()
+            worker = self.Worker()
+            worker.setup_queues(['video'])
             self.assertIn('video', app.amqp.queues)
             self.assertIn('video', app.amqp.queues.consume_from)
             self.assertIn('celery', app.amqp.queues)
@@ -244,11 +233,11 @@ class test_Worker(AppCase):
             c.CELERY_CREATE_MISSING_QUEUES = False
             del(app.amqp.queues)
             with self.assertRaises(ImproperlyConfigured):
-                self.Worker(queues=['image']).init_queues()
+                self.Worker().setup_queues(['image'])
             del(app.amqp.queues)
             c.CELERY_CREATE_MISSING_QUEUES = True
-            worker = self.Worker(queues=['image'])
-            worker.init_queues()
+            worker = self.Worker()
+            worker.setup_queues(queues=['image'])
             self.assertIn('image', app.amqp.queues.consume_from)
             self.assertEqual(Queue('image', Exchange('image'),
                              routing_key='image'), app.amqp.queues['image'])
@@ -290,7 +279,7 @@ class test_Worker(AppCase):
             with self.assertWarnsRegex(RuntimeWarning,
                     r'superuser privileges is discouraged'):
                 worker = self.Worker()
-                worker.run()
+                worker.on_start()
         finally:
             os.getuid = prev
 
@@ -322,13 +311,13 @@ class test_Worker(AppCase):
     @disable_stdouts
     def test_platform_tweaks_osx(self):
 
-        class OSXWorker(self.Worker):
+        class OSXWorker(Worker):
             proxy_workaround_installed = False
 
             def osx_proxy_detection_workaround(self):
                 self.proxy_workaround_installed = True
 
-        worker = OSXWorker()
+        worker = OSXWorker(redirect_stdouts=False)
 
         def install_HUP_nosupport(controller):
             controller.hup_not_supported_installed = True
@@ -588,12 +577,9 @@ class test_signal_handlers(AppCase):
     @skip_if_pypy
     @skip_if_jython
     def test_worker_cry_handler(self, stderr):
-        if sys.version_info > (2, 5):
-            handlers = self.psig(cd.install_cry_handler)
-            self.assertIsNone(handlers['SIGUSR1']('SIGUSR1', object()))
-            self.assertTrue(stderr.write.called)
-        else:
-            raise SkipTest('Needs Python 2.5 or later')
+        handlers = self.psig(cd.install_cry_handler)
+        self.assertIsNone(handlers['SIGUSR1']('SIGUSR1', object()))
+        self.assertTrue(stderr.write.called)
 
     @disable_stdouts
     def test_worker_term_handler_only_stop_MainProcess(self):
@@ -621,8 +607,9 @@ class test_signal_handlers(AppCase):
             state.should_stop = False
 
     @disable_stdouts
+    @patch('atexit.register')
     @patch('os.fork')
-    def test_worker_restart_handler(self, fork):
+    def test_worker_restart_handler(self, fork, register):
         fork.return_value = 0
         if getattr(os, 'execv', None) is None:
             raise SkipTest('platform does not have excv')
@@ -637,10 +624,13 @@ class test_signal_handlers(AppCase):
             handlers = self.psig(cd.install_worker_restart_handler, worker)
             handlers['SIGHUP']('SIGHUP', object())
             self.assertTrue(state.should_stop)
+            self.assertTrue(register.called)
+            callback = register.call_args[0][0]
+            callback()
             self.assertTrue(argv)
             argv[:] = []
             fork.return_value = 1
-            handlers['SIGHUP']('SIGHUP', object())
+            callback()
             self.assertFalse(argv)
         finally:
             os.execv = execv

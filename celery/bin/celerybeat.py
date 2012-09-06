@@ -17,7 +17,7 @@ The :program:`celery beat` command.
 
     Path to the schedule database. Defaults to `celerybeat-schedule`.
     The extension '.db' may be appended to the filename.
-    Default is %(default)s.
+    Default is {default}.
 
 .. cmdoption:: -S, --scheduler
 
@@ -38,7 +38,6 @@ The :program:`celery beat` command.
     `ERROR`, `CRITICAL`, or `FATAL`.
 
 """
-from __future__ import with_statement
 from __future__ import absolute_import
 
 import os

@@ -8,11 +8,14 @@
 """
 from __future__ import absolute_import
 
-from kombu.utils import cached_property
+import time as _time
+from itertools import izip
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, tzinfo
+
 from dateutil import tz
 from dateutil.parser import parse as parse_iso8601
+from kombu.utils import cached_property
 
 from celery.exceptions import ImproperlyConfigured
 
@@ -25,7 +28,7 @@ except ImportError:     # pragma: no cover
 
 
 DAYNAMES = 'sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'
-WEEKDAYS = dict((name, dow) for name, dow in zip(DAYNAMES, range(7)))
+WEEKDAYS = dict(izip(DAYNAMES, range(7)))
 
 RATE_MODIFIER_MAP = {'s': lambda n: n,
                      'm': lambda n: n / 60.0,
@@ -34,10 +37,67 @@ RATE_MODIFIER_MAP = {'s': lambda n: n,
 
 HAVE_TIMEDELTA_TOTAL_SECONDS = hasattr(timedelta, 'total_seconds')
 
-TIME_UNITS = (('day', 60 * 60 * 24.0, lambda n: '%.2f' % n),
-              ('hour', 60 * 60.0, lambda n: '%.2f' % n),
-              ('minute', 60.0, lambda n: '%.2f' % n),
-              ('second', 1.0, lambda n: '%.2f' % n))
+TIME_UNITS = (('day',    60 * 60 * 24.0, lambda n: format(n, '.2f')),
+              ('hour',   60 * 60.0,      lambda n: format(n, '.2f')),
+              ('minute', 60.0,           lambda n: format(n, '.2f')),
+              ('second', 1.0,            lambda n: format(n, '.2f')))
+
+ZERO = timedelta(0)
+
+_local_timezone = None
+
+
+class LocalTimezone(tzinfo):
+    """
+    Local time implementation taken from Python's docs.
+
+    Used only when pytz isn't available, and most likely inaccurate. If you're
+    having trouble with this class, don't waste your time, just install pytz.
+    """
+
+    def __init__(self):
+        # This code is moved in __init__ to execute it as late as possible
+        # See get_default_timezone().
+        self.STDOFFSET = timedelta(seconds=-_time.timezone)
+        if _time.daylight:
+            self.DSTOFFSET = timedelta(seconds=-_time.altzone)
+        else:
+            self.DSTOFFSET = self.STDOFFSET
+        self.DSTDIFF = self.DSTOFFSET - self.STDOFFSET
+        tzinfo.__init__(self)
+
+    def __repr__(self):
+        return "<LocalTimezone>"
+
+    def utcoffset(self, dt):
+        if self._isdst(dt):
+            return self.DSTOFFSET
+        else:
+            return self.STDOFFSET
+
+    def dst(self, dt):
+        if self._isdst(dt):
+            return self.DSTDIFF
+        else:
+            return ZERO
+
+    def tzname(self, dt):
+        return _time.tzname[self._isdst(dt)]
+
+    def _isdst(self, dt):
+        tt = (dt.year, dt.month, dt.day,
+              dt.hour, dt.minute, dt.second,
+              dt.weekday(), 0, 0)
+        stamp = _time.mktime(tt)
+        tt = _time.localtime(stamp)
+        return tt.tm_isdst > 0
+
+
+def _get_local_timezone():
+    global _local_timezone
+    if _local_timezone is None:
+        _local_timezone = LocalTimezone()
+    return _local_timezone
 
 
 class _Zone(object):
@@ -48,8 +108,14 @@ class _Zone(object):
         return self.get_timezone(tzinfo)
 
     def to_local(self, dt, local=None, orig=None):
-        return dt.replace(tzinfo=orig or self.utc).astimezone(
-                    self.tz_or_local(local))
+        if is_naive(dt):
+            dt = make_aware(dt, orig or self.utc)
+        return localize(dt, self.tz_or_local(local))
+
+    def to_local_fallback(self, dt, *args, **kwargs):
+        if is_naive(dt):
+            return make_aware(dt, _get_local_timezone())
+        return localize(dt, _get_local_timezone())
 
     def get_timezone(self, zone):
         if isinstance(zone, basestring):
@@ -138,7 +204,6 @@ def remaining(start, ends_in, now=None, relative=False):
 
     """
     now = now or datetime.utcnow()
-
     end_date = start + ends_in
     if relative:
         end_date = delta_resolution(end_date, ends_in)
@@ -180,8 +245,8 @@ def humanize_seconds(secs, prefix=''):
     for unit, divider, formatter in TIME_UNITS:
         if secs >= divider:
             w = secs / divider
-            return '%s%s %s' % (prefix, formatter(w),
-                                pluralize(w, unit))
+            return '{0}{1} {2}'.format(prefix, formatter(w),
+                                       pluralize(w, unit))
     return 'now'
 
 
@@ -192,3 +257,43 @@ def maybe_iso8601(dt):
     if isinstance(dt, datetime):
         return dt
     return parse_iso8601(dt)
+
+
+def is_naive(dt):
+    """Returns :const:`True` if the datetime is naive
+    (does not have timezone information)."""
+    return dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None
+
+
+def make_aware(dt, tz):
+    """Sets the timezone for a datetime object."""
+    try:
+        localize = tz.localize
+    except AttributeError:
+        return dt.replace(tzinfo=tz)
+    else:
+        # works on pytz timezones
+        return localize(dt, is_dst=None)
+
+
+def localize(dt, tz):
+    """Convert aware datetime to another timezone."""
+    dt = dt.astimezone(tz)
+    try:
+        normalize = tz.normalize
+    except AttributeError:
+        return dt
+    else:
+        return normalize(dt)  # pytz
+
+
+def to_utc(dt):
+    """Converts naive datetime to UTC"""
+    return make_aware(dt, timezone.utc)
+
+
+def maybe_make_aware(dt, tz=None):
+    if is_naive(dt):
+        dt = to_utc(dt)
+    return localize(dt,
+        timezone.utc if tz is None else timezone.tz_or_local(tz))

@@ -11,42 +11,49 @@
 """
 from __future__ import absolute_import
 
-import atexit
-import logging
 import socket
 import sys
-import time
 import traceback
 
-from functools import partial
+from threading import Event
 
-from billiard import forking_enable
-from billiard.exceptions import WorkerLostError
+from billiard import cpu_count
 from kombu.syn import detect_environment
 from kombu.utils.finalize import Finalize
 
 from celery import concurrency as _concurrency
 from celery import platforms
+from celery import signals
 from celery.app import app_or_default, set_default_app
 from celery.app.abstract import configurated, from_config
-from celery.exceptions import SystemTerminate
+from celery.exceptions import (
+    ImproperlyConfigured, SystemTerminate, TaskRevokedError,
+)
 from celery.task import trace
-from celery.utils.functional import noop
+from celery.utils import worker_direct
 from celery.utils.imports import qualname, reload_from_cwd
-from celery.utils.log import get_logger
-from celery.utils.threads import Event
-from celery.utils.timer2 import Schedule
+from celery.utils.log import mlevel, worker_logger as logger
 
 from . import bootsteps
 from . import state
-from .buckets import TaskBucket, FastQueue
-from .hub import Hub, BoundedSemaphore
+
+try:
+    from greenlet import GreenletExit
+    IGNORE_ERRORS = (GreenletExit, )
+except ImportError:  # pragma: no cover
+    IGNORE_ERRORS = ()
 
 RUN = 0x1
 CLOSE = 0x2
 TERMINATE = 0x3
 
-logger = get_logger(__name__)
+UNKNOWN_QUEUE = """\
+Trying to select queue subset of {0!r}, but queue {1} is not
+defined in the CELERY_QUEUES setting.
+
+If you want to automatically declare unknown queues you can
+enable the CELERY_CREATE_MISSING_QUEUES setting.
+"""
 
 
 class Namespace(bootsteps.Namespace):
@@ -57,210 +64,14 @@ class Namespace(bootsteps.Namespace):
 
     """
     name = 'worker'
-    builtin_boot_steps = ('celery.worker.autoscale',
+    builtin_boot_steps = ('celery.worker.components',
+                          'celery.worker.autoscale',
                           'celery.worker.autoreload',
                           'celery.worker.consumer',
                           'celery.worker.mediator')
 
     def modules(self):
-        return (self.builtin_boot_steps
-              + self.app.conf.CELERYD_BOOT_STEPS)
-
-
-class Pool(bootsteps.StartStopComponent):
-    """The pool component.
-
-    Describes how to initialize the worker pool, and starts and stops
-    the pool during worker startup/shutdown.
-
-    Adds attributes:
-
-        * autoscale
-        * pool
-        * max_concurrency
-        * min_concurrency
-
-    """
-    name = 'worker.pool'
-    requires = ('queues', )
-
-    def __init__(self, w, autoscale=None, no_execv=False, **kwargs):
-        w.autoscale = autoscale
-        w.pool = None
-        w.max_concurrency = None
-        w.min_concurrency = w.concurrency
-        w.no_execv = no_execv
-        if w.autoscale:
-            w.max_concurrency, w.min_concurrency = w.autoscale
-
-    def on_poll_init(self, pool, hub):
-        apply_after = hub.timer.apply_after
-        apply_at = hub.timer.apply_at
-        on_soft_timeout = pool.on_soft_timeout
-        on_hard_timeout = pool.on_hard_timeout
-        maintain_pool = pool.maintain_pool
-        add_reader = hub.add_reader
-        remove = hub.remove
-        now = time.time
-
-        if not pool.did_start_ok():
-            raise WorkerLostError('Could not start worker processes')
-
-        # need to handle pool results before every task
-        # since multiple tasks can be received in a single poll()
-        hub.on_task.append(pool.maybe_handle_result)
-
-        hub.update_readers(pool.readers)
-        for handler, interval in pool.timers.iteritems():
-            hub.timer.apply_interval(interval * 1000.0, handler)
-
-        def on_timeout_set(R, soft, hard):
-
-            def _on_soft_timeout():
-                if hard:
-                    R._tref = apply_at(now() + (hard - soft),
-                                       on_hard_timeout, (R, ))
-                on_soft_timeout(R)
-            if soft:
-                R._tref = apply_after(soft * 1000.0, _on_soft_timeout)
-            elif hard:
-                R._tref = apply_after(hard * 1000.0,
-                                      on_hard_timeout, (R, ))
-
-        def on_timeout_cancel(result):
-            try:
-                result._tref.cancel()
-                delattr(result, '_tref')
-            except AttributeError:
-                pass
-
-        pool.init_callbacks(
-            on_process_up=lambda w: add_reader(w.sentinel, maintain_pool),
-            on_process_down=lambda w: remove(w.sentinel),
-            on_timeout_set=on_timeout_set,
-            on_timeout_cancel=on_timeout_cancel,
-        )
-
-    def create(self, w, semaphore=None, max_restarts=None):
-        threaded = not w.use_eventloop
-        forking_enable(not threaded or (w.no_execv or not w.force_execv))
-        procs = w.min_concurrency
-        if not threaded:
-            semaphore = w.semaphore = BoundedSemaphore(procs)
-            max_restarts = 100
-        pool = w.pool = self.instantiate(w.pool_cls, w.min_concurrency,
-                            initargs=(w.app, w.hostname),
-                            maxtasksperchild=w.max_tasks_per_child,
-                            timeout=w.task_time_limit,
-                            soft_timeout=w.task_soft_time_limit,
-                            putlocks=w.pool_putlocks and threaded,
-                            lost_worker_timeout=w.worker_lost_wait,
-                            threads=threaded,
-                            max_restarts=max_restarts,
-                            semaphore=semaphore)
-        if w.hub:
-            w.hub.on_init.append(partial(self.on_poll_init, pool))
-        return pool
-
-
-class Beat(bootsteps.StartStopComponent):
-    """Component used to embed a celerybeat process.
-
-    This will only be enabled if the ``beat``
-    argument is set.
-
-    """
-    name = 'worker.beat'
-
-    def __init__(self, w, beat=False, **kwargs):
-        self.enabled = w.beat = beat
-        w.beat = None
-
-    def create(self, w):
-        from celery.beat import EmbeddedService
-        b = w.beat = EmbeddedService(app=w.app,
-                                     schedule_filename=w.schedule_filename,
-                                     scheduler_cls=w.scheduler_cls)
-        return b
-
-
-class Queues(bootsteps.Component):
-    """This component initializes the internal queues
-    used by the worker."""
-    name = 'worker.queues'
-    requires = ('ev', )
-
-    def create(self, w):
-        w.start_mediator = True
-        if not w.pool_cls.rlimit_safe:
-            w.disable_rate_limits = True
-        if w.disable_rate_limits:
-            w.ready_queue = FastQueue()
-            if w.use_eventloop:
-                w.start_mediator = False
-                if w.pool_putlocks and w.pool_cls.uses_semaphore:
-                    w.ready_queue.put = w.process_task_sem
-                else:
-                    w.ready_queue.put = w.process_task
-            elif not w.pool_cls.requires_mediator:
-                # just send task directly to pool, skip the mediator.
-                w.ready_queue.put = w.process_task
-                w.start_mediator = False
-        else:
-            w.ready_queue = TaskBucket(task_registry=w.app.tasks)
-
-
-class EvLoop(bootsteps.StartStopComponent):
-    name = 'worker.ev'
-
-    def __init__(self, w, **kwargs):
-        w.hub = None
-
-    def include_if(self, w):
-        return w.use_eventloop
-
-    def create(self, w):
-        w.timer = Schedule(max_interval=10)
-        hub = w.hub = Hub(w.timer)
-        return hub
-
-
-class Timers(bootsteps.Component):
-    """This component initializes the internal timers used by the worker."""
-    name = 'worker.timers'
-    requires = ('pool', )
-
-    def include_if(self, w):
-        return not w.use_eventloop
-
-    def create(self, w):
-        if not w.timer_cls:
-            # Default Timer is set by the pool, as e.g. eventlet
-            # needs a custom implementation.
-            w.timer_cls = w.pool.Timer
-        w.timer = self.instantiate(w.pool.Timer,
-                                   max_interval=w.timer_precision,
-                                   on_timer_error=self.on_timer_error,
-                                   on_timer_tick=self.on_timer_tick)
-
-    def on_timer_error(self, exc):
-        logger.error('Timer error: %r', exc, exc_info=True)
-
-    def on_timer_tick(self, delay):
-        logger.debug('Timer wake-up! Next eta %s secs.', delay)
-
-
-class StateDB(bootsteps.Component):
-    """This component sets up the workers state db if enabled."""
-    name = 'worker.state-db'
-
-    def __init__(self, w, **kwargs):
-        self.enabled = w.state_db
-        w._persistence = None
-
-    def create(self, w):
-        w._persistence = state.Persistent(w.state_db)
-        atexit.register(w._persistence.save)
+        return self.builtin_boot_steps + self.app.conf.CELERYD_BOOT_STEPS
 
 
 class WorkController(configurated):
@@ -271,7 +82,7 @@ class WorkController(configurated):
 
     app = None
     concurrency = from_config()
-    loglevel = logging.ERROR
+    loglevel = from_config('log_level')
     logfile = from_config('log_file')
     send_events = from_config()
     pool_cls = from_config('pool')
@@ -287,6 +98,7 @@ class WorkController(configurated):
     task_soft_time_limit = from_config()
     max_tasks_per_child = from_config()
     pool_putlocks = from_config()
+    pool_restarts = from_config()
     force_execv = from_config()
     prefetch_multiplier = from_config()
     state_db = from_config()
@@ -295,9 +107,9 @@ class WorkController(configurated):
 
     _state = None
     _running = 0
+    pidlock = None
 
-    def __init__(self, loglevel=None, hostname=None, ready_callback=noop,
-            queues=None, app=None, pidfile=None, **kwargs):
+    def __init__(self, app=None, hostname=None, **kwargs):
         self.app = app_or_default(app or self.app)
         # all new threads start without a current app, so if an app is not
         # passed on to the thread it will fall back to the "default app",
@@ -307,38 +119,81 @@ class WorkController(configurated):
         # running in the same process.
         set_default_app(self.app)
         self.app.finalize()
-        trace._tasks = self.app._tasks
+        trace._tasks = self.app._tasks   # optimization
+        self.hostname = hostname or socket.gethostname()
+        self.on_before_init(**kwargs)
 
+        self._finalize = Finalize(self, self.stop, exitpriority=1)
         self._shutdown_complete = Event()
+        self.setup_instance(**self.prepare_args(**kwargs))
+
+    def on_before_init(self, **kwargs):
+        pass
+
+    def on_start(self):
+        pass
+
+    def on_consumer_ready(self, consumer):
+        pass
+
+    def setup_instance(self, queues=None, ready_callback=None,
+            pidfile=None, include=None, **kwargs):
+        self.pidfile = pidfile
+        self.app.loader.init_worker()
         self.setup_defaults(kwargs, namespace='celeryd')
-        self.app.select_queues(queues)  # select queues subset.
+        self.setup_queues(queues)
+        self.setup_includes(include)
+
+        # Set default concurrency
+        if not self.concurrency:
+            try:
+                self.concurrency = cpu_count()
+            except NotImplementedError:
+                self.concurrency = 2
 
         # Options
-        self.loglevel = loglevel or self.loglevel
-        self.hostname = hostname or socket.gethostname()
-        self.ready_callback = ready_callback
-        self._finalize = Finalize(self, self.stop, exitpriority=1)
-        self.pidfile = pidfile
-        self.pidlock = None
-        self.use_eventloop = (detect_environment() == 'default' and
-                              self.app.connection().is_evented and
-                              not self.app.IS_WINDOWS)
+        self.loglevel = mlevel(self.loglevel)
+        self.ready_callback = ready_callback or self.on_consumer_ready
+        self.use_eventloop = self.should_use_eventloop()
 
-        # Update celery_include to have all known task modules, so that we
-        # ensure all task modules are imported in case an execv happens.
-        task_modules = set(task.__class__.__module__
-                            for task in self.app.tasks.itervalues())
-        self.app.conf.CELERY_INCLUDE = tuple(
-            set(self.app.conf.CELERY_INCLUDE) | task_modules,
-        )
+        signals.worker_init.send(sender=self)
 
         # Initialize boot steps
         self.pool_cls = _concurrency.get_implementation(self.pool_cls)
         self.components = []
         self.namespace = Namespace(app=self.app).apply(self, **kwargs)
 
+    def setup_queues(self, queues):
+        if isinstance(queues, basestring):
+            queues = queues.split(',')
+        self.queues = queues
+        try:
+            self.app.select_queues(queues)
+        except KeyError as exc:
+            raise ImproperlyConfigured(
+                    UNKNOWN_QUEUE.format(queues, exc))
+        if self.app.conf.CELERY_WORKER_DIRECT:
+            self.app.amqp.queues.select_add(worker_direct(self.hostname))
+
+    def setup_includes(self, includes):
+        # Update celery_include to have all known task modules, so that we
+        # ensure all task modules are imported in case an execv happens.
+        inc = self.app.conf.CELERY_INCLUDE
+        if includes:
+            if isinstance(includes, basestring):
+                includes = includes.split(',')
+            inc = self.app.conf.CELERY_INCLUDE = tuple(inc) + tuple(includes)
+        self.include = includes
+        task_modules = set(task.__class__.__module__
+                            for task in self.app.tasks.itervalues())
+        self.app.conf.CELERY_INCLUDE = tuple(set(inc) | task_modules)
+
+    def prepare_args(self, **kwargs):
+        return kwargs
+
     def start(self):
         """Starts the workers main loop."""
+        self.on_start()
         self._state = self.RUN
         if self.pidfile:
             self.pidlock = platforms.create_pidlock(self.pidfile)
@@ -351,31 +206,40 @@ class WorkController(configurated):
                 logger.debug('%s OK!', qualname(component))
         except SystemTerminate:
             self.terminate()
-        except Exception, exc:
+        except Exception as exc:
             logger.error('Unrecoverable error: %r', exc,
                          exc_info=True)
             self.stop()
         except (KeyboardInterrupt, SystemExit):
             self.stop()
 
-        # Will only get here if running green,
-        # makes sure all greenthreads have exited.
-        self._shutdown_complete.wait()
+        try:
+            # Will only get here if running green,
+            # makes sure all greenthreads have exited.
+            self._shutdown_complete.wait()
+        except IGNORE_ERRORS:
+            pass
+    run = start   # XXX Compat
 
     def process_task_sem(self, req):
-        return self.semaphore.acquire(self.process_task, req)
+        return self._quick_acquire(self.process_task, req)
 
     def process_task(self, req):
         """Process task by sending it to the pool of workers."""
         try:
             req.execute_using_pool(self.pool)
-        except Exception, exc:
+        except TaskRevokedError:
+            try:
+                self._quick_release()   # Issue 877
+            except AttributeError:
+                pass
+        except Exception as exc:
             logger.critical('Internal error: %r\n%s',
                             exc, traceback.format_exc(), exc_info=True)
         except SystemTerminate:
             self.terminate()
             raise
-        except BaseException, exc:
+        except BaseException as exc:
             self.stop()
             raise exc
 
@@ -384,6 +248,10 @@ class WorkController(configurated):
             self.consumer.close()
         except AttributeError:
             pass
+
+    def should_use_eventloop(self):
+        return (detect_environment() == 'default' and
+                self.app.connection().is_evented and not self.app.IS_WINDOWS)
 
     def stop(self, in_sighandler=False):
         """Graceful shutdown of the worker server."""
@@ -402,6 +270,8 @@ class WorkController(configurated):
 
         if self._state in (self.CLOSE, self.TERMINATE):
             return
+
+        self.app.loader.shutdown_worker()
 
         if self.pool:
             self.pool.close()

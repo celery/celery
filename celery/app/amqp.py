@@ -14,6 +14,7 @@ from weakref import WeakValueDictionary
 from kombu import Connection, Consumer, Exchange, Producer, Queue
 from kombu.common import entry_to_queue
 from kombu.pools import ProducerPool
+from kombu.utils.encoding import safe_repr
 
 from celery import signals
 from celery.utils import cached_property, uuid
@@ -24,7 +25,8 @@ from . import routes as _routes
 
 #: Human readable queue declaration.
 QUEUE_FORMAT = """
-. %(name)s exchange:%(exchange)s(%(exchange_type)s) binding:%(routing_key)s
+. {0.name:<16} exchange={0.exchange.name}({0.exchange.type}) \
+key={0.routing_key}
 """
 
 
@@ -91,6 +93,8 @@ class Queues(dict):
     def add_compat(self, name, **options):
         # docs used to use binding_key as routing key
         options.setdefault('routing_key', options.get('binding_key'))
+        if options['routing_key'] is None:
+            options['routing_key'] = name
         q = self[name] = entry_to_queue(name, **options)
         return q
 
@@ -99,15 +103,19 @@ class Queues(dict):
         active = self.consume_from
         if not active:
             return ''
-        info = [QUEUE_FORMAT.strip() % {
-                    'name': (name + ':').ljust(12),
-                    'exchange': q.exchange.name,
-                    'exchange_type': q.exchange.type,
-                    'routing_key': q.routing_key}
-                        for name, q in sorted(active.iteritems())]
+        info = [QUEUE_FORMAT.strip().format(q)
+                    for _, q in sorted(active.iteritems())]
         if indent_first:
             return textindent('\n'.join(info), indent)
         return info[0] + '\n' + textindent('\n'.join(info[1:]), indent)
+
+    def select_add(self, queue, **kwargs):
+        """Add new task queue that will be consumed from even when
+        a subset has been selected using the :option:`-Q` option."""
+        q = self.add(queue, **kwargs)
+        if self._consume_from is not None:
+            self._consume_from[q.name] = q
+        return q
 
     def select_subset(self, wanted):
         """Sets :attr:`consume_from` by selecting a subset of the
@@ -120,7 +128,7 @@ class Queues(dict):
 
     def select_remove(self, queue):
         if self._consume_from is None:
-            self.select_subset(k for k in self.keys() if k != queue)
+            self.select_subset(k for k in self if k != queue)
         else:
             self._consume_from.pop(queue, None)
 
@@ -148,7 +156,7 @@ class TaskProducer(Producer):
         self.queues = self.app.amqp.queues  # shortcut
         super(TaskProducer, self).__init__(channel, exchange, *args, **kwargs)
 
-    def delay_task(self, task_name, task_args=None, task_kwargs=None,
+    def publish_task(self, task_name, task_args=None, task_kwargs=None,
             countdown=None, eta=None, task_id=None, group_id=None,
             taskset_id=None,  # compat alias to group_id
             expires=None, exchange=None, exchange_type=None,
@@ -156,10 +164,12 @@ class TaskProducer(Producer):
             queue=None, now=None, retries=0, chord=None, callbacks=None,
             errbacks=None, mandatory=None, priority=None, immediate=None,
             routing_key=None, serializer=None, delivery_mode=None,
-            compression=None, reply_to=None, **kwargs):
+            compression=None, reply_to=None, timeout=None, soft_timeout=None,
+            **kwargs):
         """Send task message."""
         retry = self.retry if retry is None else retry
         # merge default and custom policy
+        retry = self.retry if retry is None else retry
         _rp = (dict(self.retry_policy, **retry_policy) if retry_policy
                                                        else self.retry_policy)
         task_id = task_id or uuid()
@@ -177,6 +187,7 @@ class TaskProducer(Producer):
             expires = now + timedelta(seconds=expires)
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
+        timeouts = (timeout, soft_timeout)
 
         body = {'task': task_name,
                 'id': task_id,
@@ -189,6 +200,7 @@ class TaskProducer(Producer):
                 'callbacks': callbacks,
                 'errbacks': errbacks,
                 'reply_to': reply_to}
+                'timeouts': timeouts}
         group_id = group_id or taskset_id
         if group_id:
             body['taskset'] = group_id
@@ -205,15 +217,21 @@ class TaskProducer(Producer):
 
         signals.task_sent.send(sender=task_name, **body)
         if event_dispatcher:
+            exname = exchange or self.exchange
+            if isinstance(exname, Exchange):
+                exname = exname.name
             event_dispatcher.send('task-sent', uuid=task_id,
                                                name=task_name,
-                                               args=repr(task_args),
-                                               kwargs=repr(task_kwargs),
+                                               args=safe_repr(task_args),
+                                               kwargs=safe_repr(task_kwargs),
                                                retries=retries,
                                                eta=eta,
                                                expires=expires,
-                                               queue=queue)
+                                               queue=queue,
+                                               exchange=exname,
+                                               routing_key=routing_key)
         return task_id
+    delay_task = publish_task   # XXX Compat
 
 
 class TaskPublisher(TaskProducer):

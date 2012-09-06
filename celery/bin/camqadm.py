@@ -5,13 +5,14 @@ The :program:`celery amqp` command.
 .. program:: celery amqp
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import cmd
 import sys
 import shlex
 import pprint
 
+from functools import partial
 from itertools import count
 
 from amqplib import client_0_8 as amqp
@@ -35,9 +36,7 @@ Example:
     -> queue.delete myqueue yes no
 """
 
-
-def say(m, fh=sys.stderr):
-    fh.write('%s\n' % (m, ))
+say = partial(print, file=sys.stderr)
 
 
 class Spec(object):
@@ -100,11 +99,11 @@ class Spec(object):
             return response
         if callable(self.returns):
             return self.returns(response)
-        return self.returns % (response, )
+        return self.returns.format(response)
 
     def format_arg(self, name, type, default_value=None):
         if default_value is not None:
-            return '%s:%s' % (name, default_value)
+            return '{0}:{1}'.format(name, default_value)
         return name
 
     def format_signature(self):
@@ -121,7 +120,7 @@ def dump_message(message):
 
 
 def format_declare_queue(ret):
-    return 'ok. queue:%s messages:%s consumers:%s.' % ret
+    return 'ok. queue:{0} messages:{1} consumers:{2}.'.format(*ret)
 
 
 class AMQShell(cmd.Cmd):
@@ -145,7 +144,7 @@ class AMQShell(cmd.Cmd):
     """
     conn = None
     chan = None
-    prompt_fmt = '%d> '
+    prompt_fmt = '{self.counter}> '
     identchars = cmd.IDENTCHARS = '.'
     needs_reconnect = False
     counter = 1
@@ -176,9 +175,9 @@ class AMQShell(cmd.Cmd):
         'queue.delete': Spec(('queue', str),
                              ('if_unused', bool, 'no'),
                              ('if_empty', bool, 'no'),
-                             returns='ok. %d messages deleted.'),
+                             returns='ok. {0} messages deleted.'),
         'queue.purge': Spec(('queue', str),
-                            returns='ok. %d messages deleted.'),
+                            returns='ok. {0} messages deleted.'),
         'basic.get': Spec(('queue', str),
                           ('no_ack', bool, 'off'),
                           returns=dump_message),
@@ -200,10 +199,10 @@ class AMQShell(cmd.Cmd):
     def note(self, m):
         """Say something to the user. Disabled if :attr:`silent`."""
         if not self.silent:
-            say(m, fh=self.out)
+            say(m, file=self.out)
 
     def say(self, m):
-        say(m, fh=self.out)
+        say(m, file=self.out)
 
     def get_amqp_api_command(self, cmd, arglist):
         """With a command name and a list of arguments, convert the arguments
@@ -234,19 +233,19 @@ class AMQShell(cmd.Cmd):
 
     def display_command_help(self, cmd, short=False):
         spec = self.amqp[cmd]
-        self.say('%s %s' % (cmd, spec.format_signature()))
+        self.say('{0} {1}'.format(cmd, spec.format_signature()))
 
     def do_help(self, *args):
         if not args:
             self.say(HELP_HEADER)
-            for cmd_name in self.amqp.keys():
+            for cmd_name in self.amqp:
                 self.display_command_help(cmd_name, short=True)
             self.say(EXAMPLE_TEXT)
         else:
             self.display_command_help(args[0])
 
     def default(self, line):
-        self.say("unknown syntax: '%s'. how about some 'help'?" % line)
+        self.say("unknown syntax: {0!r}. how about some 'help'?".format(line))
 
     def get_names(self):
         return set(self.builtins) | set(self.amqp)
@@ -304,9 +303,9 @@ class AMQShell(cmd.Cmd):
             self.counter = self.inc_counter()
             try:
                 self.respond(self.dispatch(cmd, arg))
-            except (AttributeError, KeyError), exc:
+            except (AttributeError, KeyError) as exc:
                 self.default(line)
-            except Exception, exc:
+            except Exception as exc:
                 self.say(exc)
                 self.needs_reconnect = True
 
@@ -326,7 +325,7 @@ class AMQShell(cmd.Cmd):
 
     @property
     def prompt(self):
-        return self.prompt_fmt % self.counter
+        return self.prompt_fmt.format(self=self)
 
 
 class AMQPAdmin(object):
@@ -343,7 +342,7 @@ class AMQPAdmin(object):
         if conn:
             conn.close()
         conn = self.app.connection()
-        self.note('-> connecting to %s.' % conn.as_uri())
+        self.note('-> connecting to {0}.'.format(conn.as_uri()))
         conn.connect()
         self.note('-> connected.')
         return conn
@@ -360,7 +359,7 @@ class AMQPAdmin(object):
 
     def note(self, m):
         if not self.silent:
-            say(m, fh=self.out)
+            say(m, file=self.out)
 
 
 class AMQPAdminCommand(Command):

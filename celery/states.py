@@ -101,12 +101,19 @@ class state(str):
     def __le__(self, other):
         return self.compare(other, lambda a, b: a >= b, False)
 
+#: Task state is unknown (assumed pending since you know the id).
 PENDING = 'PENDING'
+#: Task was received by a worker.
 RECEIVED = 'RECEIVED'
+#: Task was started by a worker (:setting:`CELERY_TRACK_STARTED`).
 STARTED = 'STARTED'
+#: Task succeeded
 SUCCESS = 'SUCCESS'
+#: Task failed
 FAILURE = 'FAILURE'
+#: Task was revoked.
 REVOKED = 'REVOKED'
+#: Task is waiting for retry.
 RETRY = 'RETRY'
 
 READY_STATES = frozenset([SUCCESS, FAILURE, REVOKED])

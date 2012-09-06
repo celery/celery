@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 try:
     import unittest
@@ -34,8 +33,6 @@ from kombu.utils import nested
 from ..app import app_or_default
 from ..utils.compat import WhateverIO
 from ..utils.functional import noop
-
-from .compat import catch_warnings
 
 
 class Mock(mock.Mock):
@@ -88,7 +85,7 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
         for v in sys.modules.values():
             if getattr(v, '__warningregistry__', None):
                 v.__warningregistry__ = {}
-        self.warnings_manager = catch_warnings(record=True)
+        self.warnings_manager = warnings.catch_warnings(record=True)
         self.warnings = self.warnings_manager.__enter__()
         warnings.simplefilter('always', self.expected)
         return self
@@ -476,13 +473,23 @@ def mock_module(*names):
 
     mods = []
     for name in names:
-        prev[name] = sys.modules.get(name)
+        try:
+            prev[name] = sys.modules[name]
+        except KeyError:
+            pass
         mod = sys.modules[name] = MockModule(name)
         mods.append(mod)
-    yield mods
-    for name in names:
-        if prev[name]:
-            sys.modules[name] = prev[name]
+    try:
+        yield mods
+    finally:
+        for name in names:
+            try:
+                sys.modules[name] = prev[name]
+            except KeyError:
+                try:
+                    del(sys.modules[name])
+                except KeyError:
+                    pass
 
 
 @contextmanager

@@ -7,9 +7,9 @@
 .. contents::
     :local:
 
-.. _deprecations-v3.0:
+.. _deprecations-v4.0:
 
-Removals for version 3.0
+Removals for version 4.0
 ========================
 
 Old Task API
@@ -68,11 +68,28 @@ on the class, but have to instantiate the task first::
     >>> MyTask().delay()        # WORKS!
 
 
+TaskSet
+~~~~~~~
+
+TaskSet has been renamed to group and TaskSet will be removed in version 4.0.
+
+Old::
+
+    >>> from celery.task import TaskSet
+
+    >>> TaskSet(add.subtask((i, i)) for i in xrange(10)).apply_async()
+
+New::
+
+    >>> from celery import group
+    >>> group(add.s(i, i) for i in xrange(10))()
+
+
 Magic keyword arguments
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 The magic keyword arguments accepted by tasks will be removed
-in 3.0, so you should start rewriting any tasks
+in 4.0, so you should start rewriting any tasks
 using the ``celery.decorators`` module and depending
 on keyword arguments being passed to the task,
 for example::
@@ -83,13 +100,13 @@ for example::
     def add(x, y, task_id=None):
         print("My task id is %r" % (task_id, ))
 
-must be rewritten into::
+should be rewritten into::
 
     from celery import task
 
     @task()
     def add(x, y):
-        print("My task id is %r" % (add.request.id, ))
+        print("My task id is {0.request.id}".format(add))
 
 
 Task attributes
@@ -184,7 +201,6 @@ Settings
 ``BROKER_USER``                        :setting:`BROKER_URL`
 ``BROKER_PASSWORD``                    :setting:`BROKER_URL`
 ``BROKER_VHOST``                       :setting:`BROKER_URL`
-``BROKER_INSIST``                      *no alternative*
 =====================================  =====================================
 
 

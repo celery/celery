@@ -7,7 +7,6 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import glob
 import os
@@ -22,7 +21,7 @@ class Certificate(object):
 
     def __init__(self, cert):
         assert crypto is not None
-        with reraise_errors('Invalid certificate: %r'):
+        with reraise_errors('Invalid certificate: {0!r}'):
             self._cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert)
 
     def has_expired(self):
@@ -40,11 +39,11 @@ class Certificate(object):
 
     def get_id(self):
         """Serial number/issuer pair uniquely identifies a certificate"""
-        return '%s %s' % (self.get_issuer(), self.get_serial_number())
+        return '{0} {1}'.format(self.get_issuer(), self.get_serial_number())
 
     def verify(self, data, signature, digest):
         """Verifies the signature for string containing data."""
-        with reraise_errors('Bad signature: %r'):
+        with reraise_errors('Bad signature: {0!r}'):
             crypto.verify(self._cert, signature, data, digest)
 
 
@@ -64,11 +63,11 @@ class CertStore(object):
         try:
             return self._certs[id]
         except KeyError:
-            raise SecurityError('Unknown certificate: %r' % (id, ))
+            raise SecurityError('Unknown certificate: {0!r}'.format(id))
 
     def add_cert(self, cert):
         if cert.get_id() in self._certs:
-            raise SecurityError('Duplicate certificate: %r' % (id, ))
+            raise SecurityError('Duplicate certificate: {0!r}'.format(id))
         self._certs[cert.get_id()] = cert
 
 
@@ -84,5 +83,5 @@ class FSCertStore(CertStore):
                 cert = Certificate(f.read())
                 if cert.has_expired():
                     raise SecurityError(
-                        'Expired certificate: %r' % (cert.get_id(), ))
+                        'Expired certificate: {0!r}'.format(cert.get_id()))
                 self.add_cert(cert)

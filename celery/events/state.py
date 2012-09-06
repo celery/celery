@@ -17,11 +17,10 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import heapq
+import threading
 
-from threading import Lock
 from time import time
 
 from kombu.utils import kwdict
@@ -55,17 +54,17 @@ class Worker(Element):
         self.heartbeats = []
 
     def on_online(self, timestamp=None, **kwargs):
-        """Callback for the `worker-online` event."""
+        """Callback for the :event:`worker-online` event."""
         self.update(**kwargs)
         self._heartpush(timestamp)
 
     def on_offline(self, **kwargs):
-        """Callback for the `worker-offline` event."""
+        """Callback for the :event:`worker-offline` event."""
         self.update(**kwargs)
         self.heartbeats = []
 
     def on_heartbeat(self, timestamp=None, **kwargs):
-        """Callback for the `worker-heartbeat` event."""
+        """Callback for the :event:`worker-heartbeat` event."""
         self.update(**kwargs)
         self._heartpush(timestamp)
 
@@ -76,8 +75,11 @@ class Worker(Element):
                 self.heartbeats = self.heartbeats[self.heartbeat_max:]
 
     def __repr__(self):
-        return '<Worker: %s (%s)' % (self.hostname,
-                                     self.alive and 'ONLINE' or 'OFFLINE')
+        return '<Worker: {0.hostname} (0.status_string)'.format(self)
+
+    @property
+    def status_string(self):
+        return 'ONLINE' if self.alive else 'OFFLINE'
 
     @property
     def heartbeat_expires(self):
@@ -93,8 +95,8 @@ class Task(Element):
     """Task State."""
 
     #: How to merge out of order events.
-    #: Disorder is detected by logical ordering (e.g. task-received must have
-    #: happened before a task-failed event).
+    #: Disorder is detected by logical ordering (e.g. :event:`task-received`
+    #: must have happened before a :event:`task-failed` event).
     #:
     #: A merge rule consists of a state and a list of fields to keep from
     #: that state. ``(RECEIVED, ('name', 'args')``, means the name and args
@@ -105,7 +107,8 @@ class Task(Element):
 
     #: meth:`info` displays these fields by default.
     _info_fields = ('args', 'kwargs', 'retries', 'result',
-                    'eta', 'runtime', 'expires', 'exception')
+                    'eta', 'runtime', 'expires', 'exception',
+                    'exchange', 'routing_key')
 
     #: Default values.
     _defaults = dict(uuid=None, name=None, state=states.PENDING,
@@ -114,7 +117,7 @@ class Task(Element):
                      revoked=False, args=None, kwargs=None, eta=None,
                      expires=None, retries=None, worker=None, result=None,
                      exception=None, timestamp=None, runtime=None,
-                     traceback=None)
+                     traceback=None, exchange=None, routing_key=None)
 
     def __init__(self, **fields):
         super(Task, self).__init__(**dict(self._defaults, **fields))
@@ -146,37 +149,37 @@ class Task(Element):
             super(Task, self).update(fields)
 
     def on_sent(self, timestamp=None, **fields):
-        """Callback for the ``task-sent`` event."""
+        """Callback for the :event:`task-sent` event."""
         self.sent = timestamp
         self.update(states.PENDING, timestamp, fields)
 
     def on_received(self, timestamp=None, **fields):
-        """Callback for the ``task-received`` event."""
+        """Callback for the :event:`task-received` event."""
         self.received = timestamp
         self.update(states.RECEIVED, timestamp, fields)
 
     def on_started(self, timestamp=None, **fields):
-        """Callback for the ``task-started`` event."""
+        """Callback for the :event:`task-started` event."""
         self.started = timestamp
         self.update(states.STARTED, timestamp, fields)
 
     def on_failed(self, timestamp=None, **fields):
-        """Callback for the ``task-failed`` event."""
+        """Callback for the :event:`task-failed` event."""
         self.failed = timestamp
         self.update(states.FAILURE, timestamp, fields)
 
     def on_retried(self, timestamp=None, **fields):
-        """Callback for the ``task-retried`` event."""
+        """Callback for the :event:`task-retried` event."""
         self.retried = timestamp
         self.update(states.RETRY, timestamp, fields)
 
     def on_succeeded(self, timestamp=None, **fields):
-        """Callback for the ``task-succeeded`` event."""
+        """Callback for the :event:`task-succeeded` event."""
         self.succeeded = timestamp
         self.update(states.SUCCESS, timestamp, fields)
 
     def on_revoked(self, timestamp=None, **fields):
-        """Callback for the ``task-revoked`` event."""
+        """Callback for the :event:`task-revoked` event."""
         self.revoked = timestamp
         self.update(states.REVOKED, timestamp, fields)
 
@@ -185,14 +188,18 @@ class Task(Element):
 
     def info(self, fields=None, extra=[]):
         """Information about this task suitable for on-screen display."""
-        if fields is None:
-            fields = self._info_fields
-        return dict((key, getattr(self, key, None))
-                        for key in list(fields) + list(extra)
-                            if getattr(self, key, None) is not None)
+        fields = self._info_fields if fields is None else fields
+
+        def _keys():
+            for key in list(fields) + list(extra):
+                value = getattr(self, key, None)
+                if value is not None:
+                    yield key, value
+
+        return dict(_keys())
 
     def __repr__(self):
-        return '<Task: %s(%s) %s>' % (self.name, self.uuid, self.state)
+        return '<Task: {0.name}({0.uuid}) {0.state}>'.format(self)
 
     @property
     def ready(self):
@@ -211,7 +218,7 @@ class State(object):
         self.event_callback = callback
         self.group_handlers = {'worker': self.worker_event,
                                'task': self.task_event}
-        self._mutex = Lock()
+        self._mutex = threading.Lock()
 
     def freeze_while(self, fun, *args, **kwargs):
         clear_after = kwargs.pop('clear_after', False)
@@ -268,7 +275,7 @@ class State(object):
         hostname = fields.pop('hostname', None)
         if hostname:
             worker = self.get_or_create_worker(hostname)
-            handler = getattr(worker, 'on_%s' % type, None)
+            handler = getattr(worker, 'on_' + type, None)
             if handler:
                 handler(**fields)
 
@@ -278,7 +285,7 @@ class State(object):
         hostname = fields.pop('hostname')
         worker = self.get_or_create_worker(hostname)
         task = self.get_or_create_task(uuid)
-        handler = getattr(task, 'on_%s' % type, None)
+        handler = getattr(task, 'on_' + type, None)
         if type == 'received':
             self.task_count += 1
         if handler:
@@ -347,8 +354,8 @@ class State(object):
         return [w for w in self.workers.values() if w.alive]
 
     def __repr__(self):
-        return '<ClusterState: events=%s tasks=%s>' % (self.event_count,
-                                                       self.task_count)
+        return '<State: events={0.event_count} tasks={0.task_count}>' \
+                    .format(self)
 
 
 state = State()

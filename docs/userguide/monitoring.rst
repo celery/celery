@@ -23,19 +23,23 @@ Workers
 .. _monitoring-celeryctl:
 
 
-``celery``: Management Command-line Utility
--------------------------------------------
+``celery``: Management Command-line Utilities
+---------------------------------------------
 
 .. versionadded:: 2.1
 
 :program:`celery` can also be used to inspect
 and manage worker nodes (and to some degree tasks).
 
-To list all the commands available do::
+To list all the commands available do:
+
+.. code-block:: bash
 
     $ celery help
 
-or to get help for a specific command do::
+or to get help for a specific command do:
+
+.. code-block:: bash
 
     $ celery <command> --help
 
@@ -53,12 +57,14 @@ Commands
   ``--force-bpython|-B``, or ``--force-python|-P``.
 
 * **status**: List active nodes in this cluster
-    ::
 
-    $ celery status
+    .. code-block:: bash
+
+            $ celery status
 
 * **result**: Show the result of a task
-    ::
+
+    .. code-block:: bash
 
         $ celery result -t tasks.add 4e196aa4-0141-4601-8138-7aa33db0f577
 
@@ -66,7 +72,8 @@ Commands
     task doesn't use a custom result backend.
 
 * **purge**: Purge messages from all configured task queues.
-    ::
+
+    .. code-block:: bash
 
         $ celery purge
 
@@ -75,14 +82,16 @@ Commands
         be permanently deleted!
 
 * **inspect active**: List active tasks
-    ::
+
+    .. code-block:: bash
 
         $ celery inspect active
 
     These are all the tasks that are currently being executed.
 
 * **inspect scheduled**: List scheduled ETA tasks
-    ::
+
+    .. code-block:: bash
 
         $ celery inspect scheduled
 
@@ -90,7 +99,8 @@ Commands
     `eta` or `countdown` argument set.
 
 * **inspect reserved**: List reserved tasks
-    ::
+
+    .. code-block:: bash
 
         $ celery inspect reserved
 
@@ -99,32 +109,38 @@ Commands
     with an eta).
 
 * **inspect revoked**: List history of revoked tasks
-    ::
+
+    .. code-block:: bash
 
         $ celery inspect revoked
 
 * **inspect registered**: List registered tasks
-    ::
+
+    .. code-block:: bash
 
         $ celery inspect registered
 
 * **inspect stats**: Show worker statistics
-    ::
+
+    .. code-block:: bash
 
         $ celery inspect stats
 
-* **inspect enable_events**: Enable events
-    ::
+* **control enable_events**: Enable events
 
-        $ celery inspect enable_events
+    .. code-block:: bash
 
-* **inspect disable_events**: Disable events
-    ::
+        $ celery control enable_events
+
+* **control disable_events**: Disable events
+
+    .. code-block:: bash
 
         $ celery inspect disable_events
 
 * **migrate**: Migrate tasks from one broker to another (**EXPERIMENTAL**).
-  ::
+
+    .. code-block:: bash
 
         $ celery migrate redis://localhost amqp://localhost
 
@@ -146,10 +162,66 @@ Specifying destination nodes
 
 By default the inspect commands operates on all workers.
 You can specify a single, or a list of workers by using the
-`--destination` argument::
+`--destination` argument:
+
+.. code-block:: bash
 
     $ celery inspect -d w1,w2 reserved
 
+
+.. _monitoring-flower:
+
+Celery Flower: Web interface
+----------------------------
+
+Celery Flower is a web based, real-time monitor and administration tool.
+
+Features
+~~~~~~~~
+
+- Shutdown or restart workers
+- View workers status (completed, running tasks, etc.)
+- View worker pool options (timeouts, processes, etc.)
+- Control worker pool size
+- View message broker options
+- View active queues, add or cancel queues
+- View processed task stats by type
+- View currently running tasks
+- View scheduled tasks
+- View reserved and revoked tasks
+- Apply time and rate limits
+- View all active configuration options
+- View all tasks (by type, by worker, etc.)
+- View all task options (arguments, start time, runtime, etc.)
+- Revoke or terminate tasks
+- View real-time execution graphs
+
+**Screenshots**
+
+.. figure:: ../images/dashboard.png
+   :width: 700px
+
+.. figure:: ../images/monitor.png
+   :width: 700px
+
+More screenshots_:
+
+.. _screenshots: https://github.com/mher/flower/tree/master/docs/screenshots
+
+Usage
+~~~~~
+
+Install Celery Flower:
+
+.. code-block:: bash
+
+    $ pip install flower
+
+Launch Celery Flower and open http://localhost:8008 in browser:
+
+.. code-block:: bash
+
+    $ celery flower
 
 .. _monitoring-django-admin:
 
@@ -166,6 +238,7 @@ This can also be used if you're not using Celery with a Django project.
 *Screenshot*
 
 .. figure:: ../images/djangoceleryadmin2.jpg
+   :width: 700px
 
 .. _`django-celery`: http://pypi.python.org/pypi/django-celery
 
@@ -181,13 +254,17 @@ but you won't see any data appearing until you start the snapshot camera.
 The camera takes snapshots of the events your workers sends at regular
 intervals, storing them in your database (See :ref:`monitoring-snapshots`).
 
-To start the camera run::
+To start the camera run:
+
+.. code-block:: bash
 
     $ python manage.py celerycam
 
-If you haven't already enabled the sending of events you need to do so::
+If you haven't already enabled the sending of events you need to do so:
 
-    $ python manage.py celery inspect enable_events
+.. code-block:: bash
+
+    $ python manage.py celery control enable_events
 
 :Tip: You can enable events when the worker starts using the `-E` argument.
 
@@ -207,7 +284,9 @@ Shutter frequency
 By default the camera takes a snapshot every second, if this is too frequent
 or you want to have higher precision, then you can change this using the
 ``--frequency`` argument.  This is a float describing how often, in seconds,
-it should wake up to check if there are any new events::
+it should wake up to check if there are any new events:
+
+.. code-block:: bash
 
     $ python manage.py celerycam --frequency=3.0
 
@@ -226,6 +305,41 @@ The events also expire after some time, so the database doesn't fill up.
 Successful tasks are deleted after 1 day, failed tasks after 3 days,
 and tasks in other states after 5 days.
 
+.. _monitoring-django-reset:
+
+Resetting monitor data
+~~~~~~~~~~~~~~~~~~~~~~
+
+To reset the monitor data you need to clear out two models::
+
+    >>> from djcelery.models import WorkerState, TaskState
+
+    # delete worker history
+    >>> WorkerState.objects.all().delete()
+
+    # delete task history
+    >>> TaskState.objects.all().update(hidden=True)
+    >>> TaskState.objects.purge()
+
+.. _monitoring-django-expiration:
+
+Expiration
+~~~~~~~~~~
+
+By default monitor data for successful tasks will expire in 1 day,
+failed tasks in 3 days and pending tasks in 5 days.
+
+You can change the expiry times for each of these using
+adding the following settings to your :file:`settings.py`:
+
+.. code-block:: python
+
+    from datetime import timedelta
+
+    CELERYCAM_EXPIRE_SUCCESS = timedelta(hours=1)
+    CELERYCAM_EXPIRE_ERROR = timedelta(hours=2)
+    CELERYCAM_EXPIRE_PENDING = timedelta(hours=2)
+
 .. _monitoring-nodjango:
 
 Using outside of Django
@@ -237,18 +351,24 @@ camera in the same process.
 
 **Installing**
 
-Using :program:`pip`::
+Using :program:`pip`:
+
+.. code-block:: bash
 
     $ pip install -U django-celery
 
-or using :program:`easy_install`::
+or using :program:`easy_install`:
+
+.. code-block:: bash
 
     $ easy_install -U django-celery
 
 **Running**
 
 :program:`djcelerymon` reads configuration from your Celery configuration
-module, and sets up the Django environment using the same settings::
+module, and sets up the Django environment using the same settings:
+
+.. code-block:: bash
 
     $ djcelerymon
 
@@ -301,7 +421,9 @@ task and worker history.  You can inspect the result and traceback of tasks,
 and it also supports some management commands like rate limiting and shutting
 down workers.
 
-Starting::
+Starting:
+
+.. code-block:: bash
 
     $ celery events
 
@@ -311,15 +433,21 @@ You should see a screen like:
 
 
 `celery events` is also used to start snapshot cameras (see
-:ref:`monitoring-snapshots`::
+:ref:`monitoring-snapshots`:
+
+.. code-block:: bash
 
     $ celery events --camera=<camera-class> --frequency=1.0
 
-and it includes a tool to dump events to :file:`stdout`::
+and it includes a tool to dump events to :file:`stdout`:
+
+.. code-block:: bash
 
     $ celery events --dump
 
-For a complete list of options use ``--help``::
+For a complete list of options use ``--help``:
+
+.. code-block:: bash
 
     $ celery events --help
 
@@ -367,8 +495,9 @@ as manage users, virtual hosts and their permissions.
 Inspecting queues
 -----------------
 
-Finding the number of tasks in a queue::
+Finding the number of tasks in a queue:
 
+.. code-block:: bash
 
     $ rabbitmqctl list_queues name messages messages_ready \
                               messages_unacknowledged
@@ -381,11 +510,15 @@ not acknowledged yet (meaning it is in progress, or has been reserved).
 `messages` is the sum of ready and unacknowledged messages.
 
 
-Finding the number of workers currently consuming from a queue::
+Finding the number of workers currently consuming from a queue:
+
+.. code-block:: bash
 
     $ rabbitmqctl list_queues name consumers
 
-Finding the amount of memory allocated to a queue::
+Finding the amount of memory allocated to a queue:
+
+.. code-block:: bash
 
     $ rabbitmqctl list_queues name memory
 
@@ -406,11 +539,15 @@ the `redis-cli(1)` command to list lengths of queues.
 Inspecting queues
 -----------------
 
-Finding the number of tasks in a queue::
+Finding the number of tasks in a queue:
+
+.. code-block:: bash
 
     $ redis-cli -h HOST -p PORT -n DATABASE_NUMBER llen QUEUE_NAME
 
-The default queue is named `celery`. To get all available queues, invoke::
+The default queue is named `celery`. To get all available queues, invoke:
+
+.. code-block:: bash
 
     $ redis-cli -h HOST -p PORT -n DATABASE_NUMBER keys \*
 
@@ -467,7 +604,7 @@ Even a single worker can produce a huge amount of events, so storing
 the history of all events on disk may be very expensive.
 
 A sequence of events describes the cluster state in that time period,
-by taking periodic snapshots of this state we can keep all history, but
+by taking periodic snapshots of this state you can keep all history, but
 still only periodically write it to disk.
 
 To take snapshots you need a Camera class, with this you can define
@@ -477,7 +614,9 @@ write it to a database, send it by email or something else entirely.
 :program:`celery events` is then used to take snapshots with the camera,
 for example if you want to capture state every 2 seconds using the
 camera ``myapp.Camera`` you run :program:`celery events` with the following
-arguments::
+arguments:
+
+.. code-block:: bash
 
     $ celery events -c myapp.Camera --frequency=2.0
 
@@ -487,6 +626,11 @@ arguments::
 Custom Camera
 ~~~~~~~~~~~~~
 
+Cameras can be useful if you need to capture events and do something
+with those events at an interval.  For real-time event processing
+you should use :class:`@events.Receiver` directly, like in
+:ref:`event-real-time-example`.
+
 Here is an example camera, dumping the snapshot to screen:
 
 .. code-block:: python
@@ -495,112 +639,271 @@ Here is an example camera, dumping the snapshot to screen:
 
     from celery.events.snapshot import Polaroid
 
-
     class DumpCam(Polaroid):
 
         def on_shutter(self, state):
             if not state.event_count:
                 # No new events since last snapshot.
                 return
-            print('Workers: %s' % (pformat(state.workers, indent=4), ))
-            print('Tasks: %s' % (pformat(state.tasks, indent=4), ))
-            print('Total: %s events, %s tasks' % (
-                state.event_count, state.task_count))
+            print('Workers: {0}'.format(pformat(state.workers, indent=4)))
+            print('Tasks: {0}'.format(pformat(state.tasks, indent=4)))
+            print('Total: {0.event_count} events, %s {0.task_count}'.format(
+                state))
 
 See the API reference for :mod:`celery.events.state` to read more
 about state objects.
 
 Now you can use this cam with :program:`celery events` by specifying
-it with the `-c` option::
+it with the :option:`-c` option:
+
+.. code-block:: bash
 
     $ celery events -c myapp.DumpCam --frequency=2.0
 
-Or you can use it programmatically like this::
+Or you can use it programmatically like this:
 
-    from celery.events import EventReceiver
-    from celery.messaging import establish_connection
-    from celery.events.state import State
+.. code-block:: python
+
+    from celery import Celery
     from myapp import DumpCam
 
-    def main():
-        state = State()
-        with establish_connection() as connection:
-            recv = EventReceiver(connection, handlers={'*': state.event})
-            with DumpCam(state, freq=1.0):
+    def main(app, freq=1.0):
+        state = app.events.State()
+        with app.connection() as connection:
+            recv = app.events.Receiver(connection, handlers={'*': state.event})
+            with DumpCam(state, freq=freq):
                 recv.capture(limit=None, timeout=None)
 
     if __name__ == '__main__':
-        main()
+        celery = Celery(broker='amqp://guest@localhost//')
+        main(celery)
+
+.. _event-real-time-example:
+
+Real-time processing
+--------------------
+
+To process events in real-time you need the following
+
+- An event consumer (this is the ``Receiver``)
+
+- A set of handlers called when events come in.
+
+    You can have different handlers for each event type,
+    or a catch-all handler can be used ('*')
+
+- State (optional)
+
+  :class:`@events.State` is a convenient in-memory representation
+  of tasks and workers in the cluster that is updated as events come in.
+
+  It encapsulates solutions for many common things, like checking if a
+  worker is still alive (by verifying heartbeats), merging event fields
+  together as events come in, making sure timestamps are in sync, and so on.
+
+
+Combining these you can easily process events in real-time:
+
+
+.. code-block:: python
+
+
+    from celery import Celery
+
+
+    def monitor_events(app):
+        state = app.events.State()
+
+        def on_event(event):
+            state.event(event)   # <-- updates in-memory cluster state
+
+            print('Workers online: %r' % ', '.join(
+                worker for worker in state.workers if worker.alive
+            )
+
+        with app.connection() as connection:
+            recv = app.events.Receiver(connection, handlers={'*': on_event})
+            recv.capture(limit=None, timeout=None, wakeup=True)
+
+
+.. note::
+
+    The wakeup argument to ``capture`` sends a signal to all workers
+    to force them to send a heartbeat.  This way you can immediately see
+    workers when the monitor starts.
+
+
+You can listen to specific events by specifying the handlers:
+
+.. code-block:: python
+
+    from celery import Celery
+
+    def my_monitor(app):
+        state = app.events.State()
+
+        def announce_failed_tasks(event):
+            state.event(event)
+            task_id = event['uuid']
+
+            print('TASK FAILED: %s[%s] %s' % (
+                event['name'], task_id, state[task_id].info(), ))
+
+        def announce_dead_workers(event):
+            state.event(event)
+            hostname = event['hostname']
+
+            if not state.workers[hostname].alive:
+                print('Worker %s missed heartbeats' % (hostname, ))
+
+
+        with app.connection() as connection:
+            recv = app.events.Receiver(connection, handlers={
+                    'task-failed': announce_failed_tasks,
+                    'worker-heartbeat': announce_dead_workers,
+            })
+            recv.capture(limit=None, timeout=None, wakeup=True)
+
+    if __name__ == '__main__':
+        celery = Celery(broker='amqp://guest@localhost//')
+        my_monitor(celery)
+
 
 
 .. _event-reference:
 
 Event Reference
----------------
+===============
 
 This list contains the events sent by the worker, and their arguments.
 
 .. _event-reference-task:
 
 Task Events
+-----------
+
+.. event:: task-sent
+
+task-sent
+~~~~~~~~~
+
+:signature: ``task-sent(uuid, name, args, kwargs, retries, eta, expires,
+              queue, exchange, routing_key)``
+
+Sent when a task message is published and
+the :setting:`CELERY_SEND_TASK_SENT_EVENT` setting is enabled.
+
+.. event:: task-received
+
+task-received
+~~~~~~~~~~~~~
+
+:signature: ``task-received(uuid, name, args, kwargs, retries, eta, hostname,
+              timestamp)``
+
+Sent when the worker receives a task.
+
+.. event:: task-started
+
+task-started
+~~~~~~~~~~~~
+
+:signature: ``task-started(uuid, hostname, timestamp, pid)``
+
+Sent just before the worker executes the task.
+
+.. event:: task-succeeded
+
+task-succeeded
+~~~~~~~~~~~~~~
+
+:signature: ``task-succeeded(uuid, result, runtime, hostname, timestamp)``
+
+Sent if the task executed successfully.
+
+Runtime is the time it took to execute the task using the pool.
+(Starting from the task is sent to the worker pool, and ending when the
+pool result handler callback is called).
+
+.. event:: task-failed
+
+task-failed
 ~~~~~~~~~~~
 
-* ``task-sent(uuid, name, args, kwargs, retries, eta, expires, queue)``
+:signature: ``task-failed(uuid, exception, traceback, hostname, timestamp)``
 
-   Sent when a task message is published and
-   the :setting:`CELERY_SEND_TASK_SENT_EVENT` setting is enabled.
+Sent if the execution of the task failed.
 
-* ``task-received(uuid, name, args, kwargs, retries, eta, hostname,
-  timestamp)``
+.. event:: task-revoked
 
-    Sent when the worker receives a task.
+task-revoked
+~~~~~~~~~~~~
 
-* ``task-started(uuid, hostname, timestamp, pid)``
+:signature: ``task-revoked(uuid, terminated, signum, expired)``
 
-    Sent just before the worker executes the task.
+Sent if the task has been revoked (Note that this is likely
+to be sent by more than one worker).
 
-* ``task-succeeded(uuid, result, runtime, hostname, timestamp)``
+- ``terminated`` is set to true if the task process was terminated,
+    and the ``signum`` field set to the signal used.
 
-    Sent if the task executed successfully.
+- ``expired`` is set to true if the task expired.
 
-    Runtime is the time it took to execute the task using the pool.
-    (Starting from the task is sent to the worker pool, and ending when the
-    pool result handler callback is called).
+.. event:: task-retried
 
-* ``task-failed(uuid, exception, traceback, hostname, timestamp)``
+task-retried
+~~~~~~~~~~~~
 
-    Sent if the execution of the task failed.
+:signature: ``task-retried(uuid, exception, traceback, hostname, timestamp)``
 
-* ``task-revoked(uuid)``
-
-    Sent if the task has been revoked (Note that this is likely
-    to be sent by more than one worker).
-
-* ``task-retried(uuid, exception, traceback, hostname, timestamp)``
-
-    Sent if the task failed, but will be retried in the future.
+Sent if the task failed, but will be retried in the future.
 
 .. _event-reference-worker:
 
 Worker Events
+-------------
+
+.. event:: worker-online
+
+worker-online
 ~~~~~~~~~~~~~
 
-* ``worker-online(hostname, timestamp, freq, sw_ident, sw_ver, sw_sys)``
+:signature: ``worker-online(hostname, timestamp, freq, sw_ident, sw_ver, sw_sys)``
 
-    The worker has connected to the broker and is online.
+The worker has connected to the broker and is online.
 
-    * `hostname`: Hostname of the worker.
-    * `timestamp`: Event timestamp.
-    * `freq`: Heartbeat frequency in seconds (float).
-    * `sw_ident`: Name of worker software (e.g. ``py-celery``).
-    * `sw_ver`: Software version (e.g. 2.2.0).
-    * `sw_sys`: Operating System (e.g. Linux, Windows, Darwin).
+- `hostname`: Hostname of the worker.
+- `timestamp`: Event timestamp.
+- `freq`: Heartbeat frequency in seconds (float).
+- `sw_ident`: Name of worker software (e.g. ``py-celery``).
+- `sw_ver`: Software version (e.g. 2.2.0).
+- `sw_sys`: Operating System (e.g. Linux, Windows, Darwin).
 
-* ``worker-heartbeat(hostname, timestamp, freq, sw_ident, sw_ver, sw_sys)``
+.. event:: worker-heartbeat
 
-    Sent every minute, if the worker has not sent a heartbeat in 2 minutes,
-    it is considered to be offline.
+worker-heartbeat
+~~~~~~~~~~~~~~~~
 
-* ``worker-offline(hostname, timestamp, freq, sw_ident, sw_ver, sw_sys)``
+:signature: ``worker-heartbeat(hostname, timestamp, freq, sw_ident, sw_ver, sw_sys,
+              active, processed)``
 
-    The worker has disconnected from the broker.
+Sent every minute, if the worker has not sent a heartbeat in 2 minutes,
+it is considered to be offline.
+
+- `hostname`: Hostname of the worker.
+- `timestamp`: Event timestamp.
+- `freq`: Heartbeat frequency in seconds (float).
+- `sw_ident`: Name of worker software (e.g. ``py-celery``).
+- `sw_ver`: Software version (e.g. 2.2.0).
+- `sw_sys`: Operating System (e.g. Linux, Windows, Darwin).
+- `active`: Number of currently executing tasks.
+- `processed`: Total number of tasks processed by this worker.
+
+.. event:: worker-offline
+
+worker-offline
+~~~~~~~~~~~~~~
+
+:signature: ``worker-offline(hostname, timestamp, freq, sw_ident, sw_ver, sw_sys)``
+
+The worker has disconnected from the broker.

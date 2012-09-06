@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import socket
 
@@ -152,24 +151,18 @@ class test_EventReceiver(AppCase):
         connection = Mock()
         connection.transport_cls = 'memory'
         r = events.EventReceiver(connection, node_id='celery.tests')
-        events.EventReceiver.handlers['*'] = my_handler
-        try:
-            r._receive(message, object())
-            self.assertTrue(got_event[0])
-        finally:
-            events.EventReceiver.handlers = {}
+        r.handlers['*'] = my_handler
+        r._receive(message, object())
+        self.assertTrue(got_event[0])
 
     def test_itercapture(self):
         connection = self.app.connection()
         try:
             r = self.app.events.Receiver(connection, node_id='celery.tests')
             it = r.itercapture(timeout=0.0001, wakeup=False)
-            consumer = it.next()
-            self.assertTrue(consumer.queues)
-            self.assertEqual(consumer.callbacks[0], r._receive)
 
             with self.assertRaises(socket.timeout):
-                it.next()
+                next(it)
 
             with self.assertRaises(socket.timeout):
                 r.capture(timeout=0.00001)
@@ -195,7 +188,7 @@ class test_EventReceiver(AppCase):
             for ev in evs:
                 producer.send(ev)
             it = r.itercapture(limit=4, wakeup=True)
-            it.next()  # skip consumer (see itercapture)
+            next(it)  # skip consumer (see itercapture)
             list(it)
             self.assertEqual(events_received[0], 4)
         finally:

@@ -23,6 +23,7 @@ from celery import exceptions
 from celery import signals
 from celery.app import app_or_default
 from celery.datastructures import ExceptionInfo
+from celery.exceptions import TaskRevokedError
 from celery.platforms import signals as _signals
 from celery.task.trace import (
     trace_task,
@@ -31,6 +32,7 @@ from celery.task.trace import (
 from celery.utils import fun_takes_kwargs
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
+from celery.utils.serialization import get_pickled_exception
 from celery.utils.text import truncate
 from celery.utils.timeutils import maybe_iso8601, timezone
 
@@ -59,7 +61,6 @@ class Request(object):
     """A request for task execution."""
     __slots__ = ('app', 'name', 'id', 'args', 'kwargs',
                  'on_ack', 'delivery_info', 'hostname',
-                 'callbacks', 'errbacks',
                  'eventer', 'connection_errors',
                  'task', 'eta', 'expires',
                  'request_dict', 'acknowledged', 'success_msg',
@@ -130,8 +131,12 @@ class Request(object):
         self.delivery_info = {
             'exchange': delivery_info.get('exchange'),
             'routing_key': delivery_info.get('routing_key'),
+            'priority': delivery_info.get('priority'),
         }
 
+        # amqplib transport adds the channel here for some reason, so need
+        # to remove it.
+        self.delivery_info.pop('channel', None)
         self.request_dict = body
 
     @classmethod
@@ -149,7 +154,7 @@ class Request(object):
         See :meth:`celery.task.base.Task.run` for more information.
 
         Magic keyword arguments are deprecated and will be removed
-        in version 3.0.
+        in version 4.0.
 
         """
         kwargs = dict(self.kwargs)
@@ -172,10 +177,13 @@ class Request(object):
 
         :param pool: A :class:`celery.concurrency.base.TaskPool` instance.
 
+        :raises celery.exceptions.TaskRevokedError: if the task was revoked
+            and ignored.
+
         """
         task = self.task
         if self.revoked():
-            return
+            raise TaskRevokedError(self.id)
 
         hostname = self.hostname
         kwargs = self.kwargs
@@ -185,6 +193,9 @@ class Request(object):
         request.update({'hostname': hostname, 'is_eager': False,
                         'delivery_info': self.delivery_info,
                         'group': self.request_dict.get('taskset')})
+        timeout, soft_timeout = request.get('timeouts', (None, None))
+        timeout = timeout or task.time_limit
+        soft_timeout = soft_timeout or task.soft_time_limit
         result = pool.apply_async(trace_task_ret,
                                   args=(self.name, self.id,
                                         self.args, kwargs, request),
@@ -192,8 +203,8 @@ class Request(object):
                                   timeout_callback=self.on_timeout,
                                   callback=self.on_success,
                                   error_callback=self.on_failure,
-                                  soft_timeout=task.soft_time_limit,
-                                  timeout=task.time_limit)
+                                  soft_timeout=soft_timeout,
+                                  timeout=timeout)
         return result
 
     def execute(self, loglevel=None, logfile=None):
@@ -227,18 +238,25 @@ class Request(object):
         """If expired, mark the task as revoked."""
         if self.expires and datetime.now(self.tzlocal) > self.expires:
             revoked_tasks.add(self.id)
-            if self.store_errors:
-                self.task.backend.mark_as_revoked(self.id)
             return True
 
     def terminate(self, pool, signal=None):
         if self.time_start:
             signal = _signals.signum(signal or 'TERM')
             pool.terminate_job(self.worker_pid, signal)
-            send_revoked(self.task, signum=signal,
-                         terminated=True, expired=False)
+            self._announce_revoked('terminated', True, signal, False)
         else:
             self._terminate_on_ack = pool, signal
+
+    def _announce_revoked(self, reason, terminated, signum, expired):
+        self.send_event('task-revoked',
+                        terminated=terminated, signum=signum, expired=expired)
+        if self.store_errors:
+            self.task.backend.mark_as_revoked(self.id, reason)
+        self.acknowledge()
+        self._already_revoked = True
+        send_revoked(self.task, terminated=terminated,
+                     signum=signum, expired=expired)
 
     def revoked(self):
         """If revoked, skip task and mark state."""
@@ -249,17 +267,14 @@ class Request(object):
             expired = self.maybe_expire()
         if self.id in revoked_tasks:
             warn('Skipping revoked task: %s[%s]', self.name, self.id)
-            self.send_event('task-revoked', uuid=self.id)
-            self.acknowledge()
-            self._already_revoked = True
-            send_revoked(self.task, terminated=False,
-                         signum=None, expired=expired)
+            self._announce_revoked('expired' if expired else 'revoked',
+                False, None, expired)
             return True
         return False
 
     def send_event(self, type, **fields):
         if self.eventer and self.eventer.enabled:
-            self.eventer.send(type, **fields)
+            self.eventer.send(type, uuid=self.id, **fields)
 
     def on_accepted(self, pid, time_accepted):
         """Handler called when task is accepted by worker pool."""
@@ -268,7 +283,7 @@ class Request(object):
         task_accepted(self)
         if not self.task.acks_late:
             self.acknowledge()
-        self.send_event('task-started', uuid=self.id, pid=pid)
+        self.send_event('task-started', pid=pid)
         if _does_debug:
             debug('Task accepted: %s[%s] pid:%r', self.name, self.id, pid)
         if self._terminate_on_ack is not None:
@@ -304,7 +319,7 @@ class Request(object):
         if self.eventer and self.eventer.enabled:
             now = time.time()
             runtime = self.time_start and (time.time() - self.time_start) or 0
-            self.send_event('task-succeeded', uuid=self.id,
+            self.send_event('task-succeeded',
                             result=safe_repr(ret_value), runtime=runtime)
 
         if _does_info:
@@ -317,15 +332,17 @@ class Request(object):
 
     def on_retry(self, exc_info):
         """Handler called if the task should be retried."""
-        self.send_event('task-retried', uuid=self.id,
+        if self.task.acks_late:
+            self.acknowledge()
+
+        self.send_event('task-retried',
                          exception=safe_repr(exc_info.exception.exc),
                          traceback=safe_str(exc_info.traceback))
 
         if _does_info:
             info(self.retry_msg.strip(), {
                 'id': self.id, 'name': self.name,
-                'exc': safe_repr(exc_info.exception.exc)},
-                exc_info=exc_info.exc_info)
+                'exc': exc_info.exception})
 
     def on_failure(self, exc_info):
         """Handler called if the task raised an exception."""
@@ -348,6 +365,7 @@ class Request(object):
         self._log_error(exc_info)
 
     def _log_error(self, einfo):
+        einfo.exception = get_pickled_exception(einfo.exception)
         exception, traceback, exc_info, internal, sargs, skwargs = (
             safe_repr(einfo.exception),
             safe_str(einfo.traceback),
@@ -359,7 +377,7 @@ class Request(object):
         format = self.error_msg
         description = 'raised exception'
         severity = logging.ERROR
-        self.send_event('task-failed', uuid=self.id,
+        self.send_event('task-failed',
                          exception=exception,
                          traceback=traceback)
 
@@ -413,15 +431,14 @@ class Request(object):
                 'worker_pid': self.worker_pid}
 
     def __str__(self):
-        return '%s[%s]%s%s' % (
-                    self.name, self.id,
-                    ' eta:[%s]' % (self.eta, ) if self.eta else '',
-                    ' expires:[%s]' % (self.expires, ) if self.expires else '')
+        return '{0.name}[{0.id}]{1}{2}'.format(self,
+                ' eta:[{0}]'.format(self.eta) if self.eta else '',
+                ' expires:[{0}]'.format(self.expires) if self.expires else '')
     shortinfo = __str__
 
     def __repr__(self):
-        return '<%s %s: %s>' % (type(self).__name__, self.id,
-            reprcall(self.name, self.args, self.kwargs))
+        return '<{0} {1}: {2}>'.format(type(self).__name__, self.id,
+                reprcall(self.name, self.args, self.kwargs))
 
     @property
     def tzlocal(self):
@@ -434,19 +451,23 @@ class Request(object):
         return (not self.task.ignore_result
                  or self.task.store_errors_even_if_ignored)
 
-    def _compat_get_task_id(self):
+    @property
+    def task_id(self):
+        # XXX compat
         return self.id
 
-    def _compat_set_task_id(self, value):
+    @task_id.setter  # noqa
+    def task_id(self, value):
         self.id = value
-    task_id = property(_compat_get_task_id, _compat_set_task_id)
 
-    def _compat_get_task_name(self):
+    @property
+    def task_name(self):
+        # XXX compat
         return self.name
 
-    def _compat_set_task_name(self, value):
+    @task_name.setter  # noqa
+    def task_name(self, value):
         self.name = value
-    task_name = property(_compat_get_task_name, _compat_set_task_name)
 
 
 class TaskRequest(Request):

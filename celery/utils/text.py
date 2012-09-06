@@ -8,7 +8,8 @@
 """
 from __future__ import absolute_import
 
-import textwrap
+from itertools import ifilter, imap
+from textwrap import fill
 
 from pprint import pformat
 
@@ -18,15 +19,15 @@ def dedent_initial(s, n=4):
 
 
 def dedent(s, n=4):
-    return '\n'.join(map(dedent_initial, s.splitlines()))
+    return '\n'.join(imap(dedent_initial, s.splitlines()))
 
 
 def fill_paragraphs(s, width):
-    return '\n'.join(textwrap.fill(p, width) for p in s.split('\n'))
+    return '\n'.join(fill(p, width) for p in s.split('\n'))
 
 
 def join(l):
-    return '\n'.join(filter(None, l))
+    return '\n'.join(ifilter(None, l))
 
 
 def ensure_2lines(s):
@@ -73,8 +74,8 @@ def pluralize(n, text, suffix='s'):
 
 def pretty(value, width=80, nl_width=80, **kw):
     if isinstance(value, dict):
-        return '{\n %s' % (pformat(value, 4, nl_width)[1:])
+        return '{{\n {0}'.format(pformat(value, 4, nl_width)[1:])
     elif isinstance(value, tuple):
-        return '\n%s%s' % (' ' * 4, pformat(value, width=nl_width, **kw))
+        return '\n{0}{1}'.format(' ' * 4, pformat(value, width=nl_width, **kw))
     else:
         return pformat(value, width=width, **kw)

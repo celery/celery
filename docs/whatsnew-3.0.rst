@@ -1,67 +1,116 @@
-.. _whatsnew-2.6:
+.. _whatsnew-3.0:
 
-==========================
- What's new in Celery 2.6
-==========================
+===========================================
+ What's new in Celery 3.0 (Chiastic Slide)
+===========================================
 
-Celery aims to be a flexible and reliable, best-of-breed solution
-to process vast amounts of messages in a distributed fashion, while
-providing operations with the tools to maintain such a system.
+Celery is a simple, flexible and reliable distributed system to
+process vast amounts of messages, while providing operations with
+the tools required to maintain such a system.
+
+It's a task queue with focus on real-time processing, while also
+supporting task scheduling.
 
 Celery has a large and diverse community of users and contributors,
 you should come join us :ref:`on IRC <irc-channel>`
 or :ref:`our mailing-list <mailing-list>`.
 
-To read more about Celery you should visit our `website`_.
+To read more about Celery you should go read the :ref:`introduction <intro>`.
 
 While this version is backward compatible with previous versions
-it is important that you read the following section.
+it's important that you read the following section.
 
 If you use Celery in combination with Django you must also
-read the `django-celery changelog`_ and upgrade to `django-celery 2.6`_.
+read the `django-celery changelog`_ and upgrade to `django-celery 3.0`_.
 
 This version is officially supported on CPython 2.5, 2.6, 2.7, 3.2 and 3.3,
 as well as PyPy and Jython.
 
-.. topic:: Highlights
+Highlights
+==========
+
+.. topic:: Overview
 
     - A new and improved API, that is both simpler and more powerful.
 
-        Everyone should read the new :ref:`first-steps` tutorial,
-        and the new :ref:`next-steps` tutorial.
+        Everyone must read the new :ref:`first-steps` tutorial,
+        and the new :ref:`next-steps` tutorial.  Oh, and
+        why not reread the user guide while you're at it :)
 
-    - Documentation rewritten and updated to use the new API
+        There are no current plans to deprecate the old API,
+        so you don't have to be in a hurry to port your applications.
 
     - The worker is now thread-less, giving great performance improvements.
 
-    - This is the last version to support Python 2.5
-
     - The new "Canvas" makes it easy to define complex workflows.
+
+        Ever wanted to chain tasks together? This is possible, but
+        not just that, now you can even chain together groups and chords,
+        or even combine multiple chains.
+
+        Read more in the :ref:`Canvas <guide-canvas>` user guide.
+
+    - All of Celery's command line programs are now available from a single
+      :program:`celery` umbrella command.
+
+    - This is the last version to support Python 2.5.
+
+        Starting with Celery 3.1, Python 2.6 or later is required.
+
+    - Support for the new librabbitmq C client.
+
+        Celery will automatically use the :mod:`librabbitmq` module
+        if installed, which is a very fast and memory-optimized
+        replacement for the amqplib module.
+
+    - Redis support is more reliable with improved ack emulation.
+
+    - Celery now always uses UTC
+
+    - Over 600 commits, 30k additions/36k deletions.
+
+        In comparison 1.0➝ 2.0 had 18k additions/8k deletions.
 
 
 .. _`website`: http://celeryproject.org/
-.. _`django-celery changelog`: http://bit.ly/djcelery-26-changelog
-.. _`django-celery 2.6`: http://pypi.python.org/pypi/django-celery/
+.. _`django-celery changelog`:
+    http://github.com/celery/django-celery/tree/master/Changelog
+.. _`django-celery 3.0`: http://pypi.python.org/pypi/django-celery/
 
 .. contents::
     :local:
     :depth: 2
 
-.. _v260-important:
+.. _v300-important:
 
 Important Notes
 ===============
 
+Broadcast exchanges renamed
+---------------------------
+
+The workers remote control command exchanges has been renamed
+(a new pidbox name), this is because the ``auto_delete`` flag on the exchanges
+has been removed, and that makes it incompatible with earlier versions.
+
+You can manually delete the old exchanges if you want,
+using the :program:`celery amqp` command (previously called ``camqadm``):
+
+.. code-block:: bash
+
+    $ celery amqp exchange.delete celeryd.pidbox
+    $ celery amqp exchange.delete reply.celeryd.pidbox
+
 Eventloop
 ---------
 
-The worker is now running *without threads* when used with AMQP or Redis as a
-broker, resulting in::
+The worker is now running *without threads* when used with RabbitMQ (AMQP),
+or Redis as a broker, resulting in:
 
-    - Much better performance overall.
-    - Fixes several edge case race conditions.
-    - Sub-millisecond timer precision.
-    - Faster shutdown times.
+- Much better overall performance.
+- Fixes several edge case race conditions.
+- Sub-millisecond timer precision.
+- Faster shutdown times.
 
 The transports supported are:  ``amqplib``, ``librabbitmq``, and ``redis``
 Hopefully this can be extended to include additional broker transports
@@ -69,6 +118,29 @@ in the future.
 
 For increased reliability the :setting:`CELERY_FORCE_EXECV` setting is enabled
 by default if the eventloop is not used.
+
+New ``celery`` umbrella command
+-------------------------------
+
+All Celery's command line programs are now available from a single
+:program:`celery` umbrella command.
+
+You can see a list of subcommands and options by running:
+
+.. code-block:: bash
+
+    $ celery help
+
+Commands include:
+
+- ``celery worker``  (previously ``celeryd``).
+
+- ``celery beat``    (previously ``celerybeat``).
+
+- ``celery amqp``    (previously ``camqadm``).
+
+The old programs are still available (``celeryd``, ``celerybeat``, etc),
+but you are discouraged from using them.
 
 Now depends on :mod:`billiard`.
 -------------------------------
@@ -86,20 +158,85 @@ for the no-execv patch to work.
 - `django-celery #122 <http://github.com/celery/django-celery/issues/122`
 - `django-celery #124 <http://github.com/celery/django-celery/issues/122`
 
+:mod:`celery.app.task` no longer a package
+------------------------------------------
+
+The :mod:`celery.app.task` module is now a module instead of a package.
+
+The setup.py install script will try to remove the old package,
+but if that doesn't work for some reason you have to remove
+it manually.  This command helps:
+
+.. code-block:: bash
+
+    $ rm -r $(dirname $(python -c '
+        import celery;print(celery.__file__)'))/app/task/
+
+If you experience an error like ``ImportError: cannot import name _unpickle_task``,
+you just have to remove the old package and everything is fine.
+
 Last version to support Python 2.5
 ----------------------------------
 
-The 2.6 series will be last series to support Python 2.5.
+The 3.0 series will be last version to support Python 2.5,
+and starting from 3.1 Python 2.6 and later will be required.
 
 With several other distributions taking the step to discontinue
 Python 2.5 support, we feel that it is time too.
 
 Python 2.6 should be widely available at this point, and we urge
 you to upgrade, but if that is not possible you still have the option
-to continue using the Celery 2.6 series, and important bug fixes
-introduced in Celery 2.7 will be back-ported to Celery 2.6 upon request.
+to continue using the Celery 3.0, and important bug fixes
+introduced in Celery 3.1 will be back-ported to Celery 3.0 upon request.
 
-.. _v260-news:
+UTC timezone is now used
+------------------------
+
+This means that ETA/countdown in messages are not compatible with Celery
+versions prior to 2.5.
+
+You can disable UTC and revert back to old local time by setting
+the :setting:`CELERY_ENABLE_UTC` setting.
+
+Redis: Ack emulation improvements
+---------------------------------
+
+    Reducing the possibility of data loss.
+
+    Acks are now implemented by storing a copy of the message when the message
+    is consumed.  The copy is not removed until the consumer acknowledges
+    or rejects it.
+
+    This means that unacknowledged messages will be redelivered either
+    when the connection is closed, or when the visibility timeout is exceeded.
+
+    - Visibility timeout
+
+        This is a timeout for acks, so that if the consumer
+        does not ack the message within this time limit, the message
+        is redelivered to another consumer.
+
+        The timeout is set to one hour by default, but
+        can be changed by configuring a transport option::
+
+            BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 18000}  # 5 hours
+
+
+    .. note::
+
+        Messages that have not been acked will be redelivered
+        if the visibility timeout is exceeded, for Celery users
+        this means that ETA/countdown tasks that are scheduled to execute
+        with a time that exceeds the visibility timeout will be executed
+        twice (or more).  If you plan on using long ETA/countdowns you
+        should tweak the visibility timeout accordingly.
+
+    Setting a long timeout means that it will take a long time
+    for messages to be redelivered in the event of a power failure,
+    but if so happens you could temporarily set the visibility timeout lower
+    to flush out messages when you start up the systems again.
+
+.. _v300-news:
 
 News
 ====
@@ -163,11 +300,13 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
                 with open('graph.dot') as fh:
                     result.graph.to_dot(fh)
 
-            which can than be used to produce an image::
+            which can than be used to produce an image:
+
+            .. code-block:: bash
 
                 $ dot -Tpng graph.dot -o graph.png
 
-- A new special subtask called ``chain`` is also included::
+- A new special subtask called ``chain`` is also included:
 
     .. code-block:: python
 
@@ -198,17 +337,62 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
 
     Returns a flattened list of all dependencies (recursively)
 
+Redis: Priority support.
+------------------------
+
+The message's ``priority`` field is now respected by the Redis
+transport by having multiple lists for each named queue.
+The queues are then consumed by in order of priority.
+
+The priority field is a number in the range of 0 - 9, where
+0 is the default and highest priority.
+
+The priority range is collapsed into four steps by default, since it is
+unlikely that nine steps will yield more benefit than using four steps.
+The number of steps can be configured by setting the ``priority_steps``
+transport option, which must be a list of numbers in **sorted order**::
+
+    >>> BROKER_TRANSPORT_OPTIONS = {
+    ...     'priority_steps': [0, 2, 4, 6, 8, 9],
+    ... }
+
+Priorities implemented in this way is not as reliable as
+priorities on the server side, which is why
+the feature is nicknamed "quasi-priorities";
+**Using routing is still the suggested way of ensuring
+quality of service**, as client implemented priorities
+fall short in a number of ways, e.g. if the worker
+is busy with long running tasks, has prefetched many messages,
+or the queues are congested.
+
+Still, it is possible that using priorities in combination
+with routing can be more beneficial than using routing
+or priorities alone.  Experimentation and monitoring
+should be used to prove this.
+
+Contributed by Germán M. Bravo.
+
+Redis: Now cycles queues so that consuming is fair.
+---------------------------------------------------
+
+This ensures that a very busy queue won't block messages
+from other queues, and ensures that all queues have
+an equal chance of being consumed from.
+
+This used to be the case before, but the behavior was
+accidentally changed while switching to using blocking pop.
+
+
 `group`/`chord`/`chain` are now subtasks
 ----------------------------------------
-
-- The source code for these, including subtask, has been moved
-  to new module celery.canvas.
 
 - group is no longer an alias to TaskSet, but new alltogether,
   since it was very difficult to migrate the TaskSet class to become
   a subtask.
 
-- A new shortcut has been added to tasks::
+- A new shortcut has been added to tasks:
+
+    ::
 
         >>> task.s(arg1, arg2, kw=1)
 
@@ -220,7 +404,9 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
 
         >>> (add.s(2, 2), pow.s(2)).apply_async()
 
-- Subtasks can be "evaluated" using the ``~`` operator::
+- Subtasks can be "evaluated" using the ``~`` operator:
+
+    ::
 
         >>> ~add.s(2, 2)
         4
@@ -264,8 +450,11 @@ Tasks can now have callbacks and errbacks, and dependencies are recorded
                     tasks.add(8, 8),
                     tasks.add(9, 9)]) | tasks.pow(2)
 
-Additional control commands made public
----------------------------------------
+New remote control commands
+---------------------------
+
+These commands were previously experimental, but they have proven
+stable and is now documented as part of the offical API.
 
 - ``add_consumer``/``cancel_consumer``
 
@@ -284,7 +473,9 @@ Additional control commands made public
         >>> celery.control.cancel_consumer(queue_name,
         ...     destination=['w1.example.com'])
 
-    or using the :program:`celery control` command::
+    or using the :program:`celery control` command:
+
+    .. code-block:: bash
 
         $ celery control -d w1.example.com add_consumer queue
         $ celery control -d w1.example.com cancel_consumer queue
@@ -306,7 +497,9 @@ Additional control commands made public
         >>> celery.control.autoscale(max=10, min=5,
         ...     destination=['w1.example.com'])
 
-    or using the :program:`celery control` command::
+    or using the :program:`celery control` command:
+
+    .. code-block:: bash
 
         $ celery control -d w1.example.com autoscale 10 5
 
@@ -322,7 +515,9 @@ Additional control commands made public
         >>> celery.control.pool_grow(2, destination=['w1.example.com'])
         >>> celery.contorl.pool_shrink(2, destination=['w1.example.com'])
 
-    or using the :program:`celery control` command::
+    or using the :program:`celery control` command:
+
+    .. code-block:: bash
 
         $ celery control -d w1.example.com pool_grow 2
         $ celery control -d w1.example.com pool_shrink 2
@@ -341,7 +536,7 @@ Immutable subtasks
 ------------------
 
 ``subtask``'s can now be immutable, which means that the arguments
-will not be modified when applying callbacks::
+will not be modified when calling callbacks::
 
     >>> chain(add.s(2, 2), clear_static_electricity.si())
 
@@ -376,7 +571,7 @@ Logging support now conforms better with best practices.
       currently executing task.
 
 - In fact, ``task.get_logger`` is no longer recommended, it is better
-  to add module-level logger to your tasks module.
+  to add a module-level logger to your tasks module.
 
     For example, like this:
 
@@ -386,7 +581,7 @@ Logging support now conforms better with best practices.
 
         logger = get_task_logger(__name__)
 
-        @celery.task()
+        @celery.task
         def add(x, y):
             logger.debug('Adding %r + %r' % (x, y))
             return x + y
@@ -429,7 +624,7 @@ by default, it will first be bound (and configured) when
 a concrete subclass is created.
 
 This means that you can safely import and make task base classes,
-without also initializing the default app environment::
+without also initializing the app environment::
 
     from celery.task import Task
 
@@ -478,7 +673,9 @@ The :option:`--app` option now 'auto-detects'
 
 E.g. if you have a project named 'proj' where the
 celery app is located in 'from proj.celery import celery',
-then the following will be equivalent::
+then the following will be equivalent:
+
+.. code-block:: bash
 
         $ celery worker --app=proj
         $ celery worker --app=proj.celery:
@@ -504,7 +701,7 @@ In Other News
         class Worker(celery.Worker):
             ...
 
-- New signal: :signal:`task-success`.
+- New signal: :signal:`task_success`.
 
 - Multiprocessing logs are now only emitted if the :envvar:`MP_LOG`
   environment variable is set.
@@ -561,19 +758,23 @@ In Other News
         >>> import celery
         >>> print(celery.bugreport())
 
-    - Using the ``celery`` command-line program::
+    - Using the ``celery`` command-line program:
 
-        $ celery report
+        .. code-block:: bash
 
-    - Get it from remote workers::
+            $ celery report
 
-        $ celery inspect report
+    - Get it from remote workers:
+
+        .. code-block:: bash
+
+            $ celery inspect report
 
 - Module ``celery.log`` moved to :mod:`celery.app.log`.
 
 - Module ``celery.task.control`` moved to :mod:`celery.app.control`.
 
-- New signal: :signal:`task-revoked`
+- New signal: :signal:`task_revoked`
 
     Sent in the main process when the task is revoked or terminated.
 
@@ -583,7 +784,7 @@ In Other News
 
 - ``xmap(task, sequence)`` and ``xstarmap(task, sequence)``
 
-    Returns a list of the results applying the task to every item
+    Returns a list of the results applying the task function to every item
     in the sequence.
 
     Example::
@@ -617,7 +818,7 @@ In Other News
     Internally :attr:`@amqp.queues` is now a mapping of name/Queue instances,
     instead of converting on the fly.
 
-* Can now specify connection for :class:`@control.inspect`.
+- Can now specify connection for :class:`@control.inspect`.
 
     .. code-block:: python
 
@@ -626,71 +827,99 @@ In Other News
         i = celery.control.inspect(connection=Connection('redis://'))
         i.active_queues()
 
-* Module :mod:`celery.app.task` is now a module instead of a package.
-
-    The setup.py install script will try to remove the old package,
-    if that doesn't work for some reason you have to remove
-    it manually, you can do so by executing the command::
-
-        $ rm -r $(dirname $(python -c '
-            import celery;print(celery.__file__)'))/app/task/
-
-* :setting:`CELERY_FORCE_EXECV` is now enabled by default.
+- :setting:`CELERY_FORCE_EXECV` is now enabled by default.
 
     If the old behavior is wanted the setting can be set to False,
     or the new :option:`--no-execv` to :program:`celery worker`.
 
-* Deprecated module ``celery.conf`` has been removed.
+- Deprecated module ``celery.conf`` has been removed.
 
-* The :setting:`CELERY_TIMEZONE` now always require the :mod:`pytz`
+- The :setting:`CELERY_TIMEZONE` now always require the :mod:`pytz`
   library to be installed (exept if the timezone is set to `UTC`).
 
-* The Tokyo Tyrant backend has been removed and is no longer supported.
+- The Tokyo Tyrant backend has been removed and is no longer supported.
 
-* Now uses :func:`~kombu.common.maybe_declare` to cache queue declarations.
+- Now uses :func:`~kombu.common.maybe_declare` to cache queue declarations.
 
-* There is no longer a global default for the
+- There is no longer a global default for the
   :setting:`CELERYBEAT_MAX_LOOP_INTERVAL` setting, it is instead
   set by individual schedulers.
 
-* Worker: now truncates very long message bodies in error reports.
+- Worker: now truncates very long message bodies in error reports.
 
-* :envvar:`CELERY_BENCH` environment variable, will now also list
+- No longer deepcopies exceptions when trying to serialize errors.
+
+- :envvar:`CELERY_BENCH` environment variable, will now also list
   memory usage statistics at worker shutdown.
 
-* Worker: now only ever use a single timer for all timing needs,
+- Worker: now only ever use a single timer for all timing needs,
   and instead set different priorities.
+
+- An exceptions arguments are now safely pickled
+
+    Contributed by Matt Long.
+
+- Worker/Celerybeat no longer logs the startup banner.
+
+    Previously it would be logged with severity warning,
+    now it's only written to stdout.
+
+- The ``contrib/`` directory in the distribution has been renamed to
+  ``extra/``.
+
+- New signal: :signal:`task_revoked`
+
+- celery.contrib.migrate: Many improvements including
+  filtering, queue migration, and support for acking messages on the broker
+  migrating from.
+
+    Contributed by John Watson.
+
+- Worker: Prefetch count increments are now optimized and grouped together.
+
+- Worker: No longer calls ``consume`` on the remote control command queue
+  twice.
+
+    Probably didn't cause any problems, but was unecessary.
 
 Internals
 ---------
 
-* Compat modules are now generated dynamically upon use.
+- ``app.broker_connection`` is now ``app.connection``
+
+    Both names still work.
+
+- Compat modules are now generated dynamically upon use.
 
     These modules are ``celery.messaging``, ``celery.log``,
     ``celery.decorators`` and ``celery.registry``.
 
-* :mod:`celery.utils` refactored into multiple modules:
+- :mod:`celery.utils` refactored into multiple modules:
 
     :mod:`celery.utils.text`
     :mod:`celery.utils.imports`
     :mod:`celery.utils.functional`
 
-* Now using :mod:`kombu.utils.encoding` instead of
-  `:mod:`celery.utils.encoding`.
+- Now using :mod:`kombu.utils.encoding` instead of
+  :mod:`celery.utils.encoding`.
 
-* Renamed module ``celery.routes`` -> :mod:`celery.app.routes`.
+- Renamed module ``celery.routes`` -> :mod:`celery.app.routes`.
 
-* Renamed package ``celery.db`` -> :mod:`celery.backends.database`.
+- Renamed package ``celery.db`` -> :mod:`celery.backends.database`.
 
-* Renamed module ``celery.abstract`` -> :mod:`celery.worker.abstract`.
+- Renamed module ``celery.abstract`` -> :mod:`celery.worker.bootsteps`.
 
-* Command-line docs are now parsed from the module docstrings.
+- Command-line docs are now parsed from the module docstrings.
 
-* Test suite directory has been reorganized.
+- Test suite directory has been reorganized.
 
-* :program:`setup.py` now reads docs from the :file:`requirements/` directory.
+- :program:`setup.py` now reads docs from the :file:`requirements/` directory.
 
-.. _v260-experimental:
+- Celery commands no longer wraps output (Issue #700).
+
+    Contributed by Thomas Johansson.
+
+.. _v300-experimental:
 
 Experimental
 ============
@@ -717,7 +946,7 @@ to create tasks out of methods::
 
 See :mod:`celery.contrib.methods` for more information.
 
-.. _v260-unscheduled-removals:
+.. _v300-unscheduled-removals:
 
 Unscheduled Removals
 ====================
@@ -730,26 +959,39 @@ but these removals should have no major effect.
     - ``CELERYD_ETA_SCHEDULER`` -> ``CELERYD_TIMER``
     - ``CELERYD_ETA_SCHEDULER_PRECISION`` -> ``CELERYD_TIMER_PRECISION``
 
-.. _v260-deprecations:
+.. _v300-deprecations:
 
 Deprecations
 ============
 
 See the :ref:`deprecation-timeline`.
 
-The following undocumented API's has been moved:
+- The ``celery.backends.pyredis`` compat module has been removed.
 
-- ``control.inspect.add_consumer`` -> :meth:`@control.add_consumer`.
-- ``control.inspect.cancel_consumer`` -> :meth:`@control.cancel_consumer`.
-- ``control.inspect.enable_events`` -> :meth:`@control.enable_events`.
-- ``control.inspect.disable_events`` -> :meth:`@control.disable_events`.
+    Use :mod:`celery.backends.redis` instead!
 
-This way ``inspect()`` is only used for commands that do not
-modify anything, while idempotent control commands that make changes
-are on the control objects.
+- The following undocumented API's has been moved:
+
+    - ``control.inspect.add_consumer`` -> :meth:`@control.add_consumer`.
+    - ``control.inspect.cancel_consumer`` -> :meth:`@control.cancel_consumer`.
+    - ``control.inspect.enable_events`` -> :meth:`@control.enable_events`.
+    - ``control.inspect.disable_events`` -> :meth:`@control.disable_events`.
+
+    This way ``inspect()`` is only used for commands that do not
+    modify anything, while idempotent control commands that make changes
+    are on the control objects.
 
 Fixes
 =====
 
 - Retry sqlalchemy backend operations on DatabaseError/OperationalError
   (Issue #634)
+
+- Tasks that called ``retry`` was not acknowledged if acks late was enabled
+
+    Fix contributed by David Markey.
+
+- The message priority argument was not properly propagated to Kombu
+  (Issue #708).
+
+    Fix contributed by Eran Rundstein

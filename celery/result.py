@@ -7,7 +7,6 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import time
 
@@ -75,14 +74,20 @@ class AsyncResult(ResultBase):
         """Forget about (and possibly remove the result of) this task."""
         self.backend.forget(self.id)
 
-    def revoke(self, connection=None):
+    def revoke(self, connection=None, terminate=False, signal=None):
         """Send revoke signal to all workers.
 
         Any worker receiving the task, or having reserved the
         task, *must* ignore it.
 
+        :keyword terminate: Also terminate the process currently working
+            on the task (if any).
+        :keyword signal: Name of signal to send to process if terminate.
+            Default is TERM.
+
         """
-        self.app.control.revoke(self.id, connection=connection)
+        self.app.control.revoke(self.id, connection=connection,
+                                terminate=terminate, signal=signal)
 
     def get(self, timeout=None, propagate=True, interval=0.5):
         """Wait until task is ready, and return its result.
@@ -97,7 +102,7 @@ class AsyncResult(ResultBase):
         :keyword propagate: Re-raise exception if the task failed.
         :keyword interval: Time to wait (in seconds) before retrying to
            retrieve the result.  Note that this does not have any effect
-           when using the AMQP result store backend, as it does not
+           when using the amqp result store backend, as it does not
            use polling.
 
         :raises celery.exceptions.TimeoutError: if `timeout` is not
@@ -143,7 +148,7 @@ class AsyncResult(ResultBase):
             [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 
         """
-        for _, R in self.iterdeps():
+        for _, R in self.iterdeps(intermediate=intermediate):
             yield R, R.get(**kwargs)
 
     def get_leaf(self):
@@ -198,7 +203,7 @@ class AsyncResult(ResultBase):
         return hash(self.id)
 
     def __repr__(self):
-        return '<%s: %s>' % (self.__class__.__name__, self.id)
+        return '<{0}: {1}>'.format(type(self).__name__, self.id)
 
     def __eq__(self, other):
         if isinstance(other, AsyncResult):
@@ -217,10 +222,6 @@ class AsyncResult(ResultBase):
     def __reduce_args__(self):
         return self.id, self.backend, self.task_name, self.parent
 
-    def set_parent(self, parent):
-        self.parent = parent
-        return parent
-
     @cached_property
     def graph(self):
         return self.build_graph()
@@ -233,7 +234,7 @@ class AsyncResult(ResultBase):
     def children(self):
         children = self.backend.get_children(self.id)
         if children:
-            return map(from_serializable, children)
+            return [from_serializable(child) for child in children]
 
     @property
     def result(self):
@@ -281,12 +282,14 @@ class AsyncResult(ResultBase):
         return self.backend.get_status(self.id)
     status = state
 
-    def _get_task_id(self):
+    @property
+    def task_id(self):
+        """compat alias to :attr:`id`"""
         return self.id
 
-    def _set_task_id(self, id):
+    @task_id.setter  # noqa
+    def task_id(self, id):
         self.id = id
-    task_id = property(_get_task_id, _set_task_id)
 BaseAsyncResult = AsyncResult  # for backwards compatibility.
 
 
@@ -398,7 +401,7 @@ class ResultSet(ResultBase):
 
     def revoke(self, connection=None):
         """Revoke all tasks in the set."""
-        with self.app.default_connection(connection) as conn:
+        with self.app.connection_or_acquire(connection) as conn:
             for result in self.results:
                 result.revoke(connection=conn)
 
@@ -435,7 +438,7 @@ class ResultSet(ResultBase):
             time.sleep(interval)
             elapsed += interval
             if timeout and elapsed >= timeout:
-                raise TimeoutError("The operation timed out")
+                raise TimeoutError('The operation timed out')
 
     def get(self, timeout=None, propagate=True, interval=0.5):
         """See :meth:`join`
@@ -472,7 +475,7 @@ class ResultSet(ResultBase):
 
         :keyword interval: Time to wait (in seconds) before retrying to
                            retrieve a result from the set.  Note that this
-                           does not have any effect when using the AMQP
+                           does not have any effect when using the amqp
                            result store backend, as it does not use polling.
 
         :raises celery.exceptions.TimeoutError: if `timeout` is not
@@ -503,7 +506,7 @@ class ResultSet(ResultBase):
         Note that this does not support collecting the results
         for different task types using different backends.
 
-        This is currently only supported by the AMQP, Redis and cache
+        This is currently only supported by the amqp, Redis and cache
         result backends.
 
         """
@@ -519,7 +522,7 @@ class ResultSet(ResultBase):
         Note that this does not support collecting the results
         for different task types using different backends.
 
-        This is currently only supported by the AMQP, Redis and cache
+        This is currently only supported by the amqp, Redis and cache
         result backends.
 
         """
@@ -539,8 +542,8 @@ class ResultSet(ResultBase):
         return NotImplemented
 
     def __repr__(self):
-        return '<%s: %r>' % (self.__class__.__name__,
-                             [r.id for r in self.results])
+        return '<{0}: [{1}]>'.format(type(self).__name__,
+                                     ', '.join(r.id for r in self.results))
 
     @property
     def subtasks(self):
@@ -603,11 +606,15 @@ class GroupResult(ResultSet):
         return NotImplemented
 
     def __repr__(self):
-        return '<%s: %s %r>' % (self.__class__.__name__, self.id,
-                                [r.id for r in self.results])
+        return '<{0}: {1} [{2}]>'.format(type(self).__name__, self.id,
+                                         ', '.join(r.id for r in self.results))
 
     def serializable(self):
         return self.id, [r.serializable() for r in self.results]
+
+    @property
+    def children(self):
+        return self.results
 
     @classmethod
     def restore(self, id, backend=None):
@@ -634,16 +641,19 @@ class TaskSetResult(GroupResult):
         """Deprecated: Use ``len(r)``."""
         return len(self)
 
-    def _get_taskset_id(self):
+    @property
+    def taskset_id(self):
+        """compat alias to :attr:`self.id`"""
         return self.id
 
-    def _set_taskset_id(self, id):
+    @taskset_id.setter  # noqa
+    def taskset_id(self, id):
         self.id = id
-    taskset_id = property(_get_taskset_id, _set_taskset_id)
 
 
 class EagerResult(AsyncResult):
     """Result that we know has already been executed."""
+    task_name = None
 
     def __init__(self, id, ret_value, state, traceback=None):
         self.id = id
@@ -680,7 +690,7 @@ class EagerResult(AsyncResult):
         self._state = states.REVOKED
 
     def __repr__(self):
-        return "<EagerResult: %s>" % self.id
+        return '<EagerResult: {0.id}>'.format(self)
 
     @property
     def result(self):
@@ -697,3 +707,7 @@ class EagerResult(AsyncResult):
     def traceback(self):
         """The traceback if the task failed."""
         return self._traceback
+
+    @property
+    def supports_native_join(self):
+        return False

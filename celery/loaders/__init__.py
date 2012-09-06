@@ -23,13 +23,13 @@ def get_loader_cls(loader):
     return symbol_by_name(loader, LOADER_ALIASES)
 
 
-@deprecated(deprecation='2.5', removal='3.0',
+@deprecated(deprecation='2.5', removal='4.0',
         alternative='celery.current_app.loader')
 def current_loader():
     return current_app.loader
 
 
-@deprecated(deprecation='2.5', removal='3.0',
+@deprecated(deprecation='2.5', removal='4.0',
             alternative='celery.current_app.conf')
 def load_settings():
     return current_app.conf

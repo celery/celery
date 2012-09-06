@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 from celery.worker.hub import (
     DummyLock,
@@ -145,19 +144,18 @@ class test_Hub(Case):
                                          max_delay=32.321), 32.321)
 
         hub.timer._queue = [1]
-        hub.scheduler = Mock()
-        hub.scheduler.next.return_value = 3.743, None
+        hub.scheduler = iter([(3.743, None)])
         self.assertEqual(hub.fire_timers(), 3.743)
 
         e1, e2, e3 = Mock(), Mock(), Mock()
         entries = [e1, e2, e3]
 
         def se():
-            if entries:
-                return None, entries.pop()
-            return 3.982, None
-        hub.scheduler.next = Mock()
-        hub.scheduler.next.side_effect = se
+            while 1:
+                while entries:
+                    yield None, entries.pop()
+                yield 3.982, None
+        hub.scheduler = se()
 
         self.assertEqual(hub.fire_timers(max_timers=10), 3.982)
         hub.timer.apply_entry.assert_has_calls(map(call, [e3, e2, e1]))

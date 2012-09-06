@@ -12,11 +12,16 @@
 from __future__ import absolute_import
 
 import threading
+import weakref
 
 from celery.local import Proxy
 from celery.utils.threads import LocalStack
 
+#: Global default app used when no current app.
 default_app = None
+
+#: List of all app instances (weakrefs), must not be used directly.
+_apps = set()
 
 
 class _TLS(threading.local):
@@ -60,5 +65,26 @@ def get_current_worker_task():
             return task
 
 
+#: Proxy to current app.
 current_app = Proxy(get_current_app)
+
+#: Proxy to current task.
 current_task = Proxy(get_current_task)
+
+
+def _register_app(app):
+    _apps.add(weakref.ref(app))
+
+
+def _get_active_apps():
+    dirty = []
+    try:
+        for appref in _apps:
+            app = appref()
+            if app is None:
+                dirty.append(appref)
+            else:
+                yield app
+    finally:
+        while dirty:
+            _apps.discard(dirty.pop())

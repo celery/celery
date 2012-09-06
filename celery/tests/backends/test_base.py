@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import sys
 import types
@@ -17,8 +16,11 @@ from celery.utils.serialization import UnpickleableExceptionWrapper
 from celery.utils.serialization import get_pickleable_exception as gpe
 
 from celery import states
-from celery.backends.base import BaseBackend, KeyValueStoreBackend
-from celery.backends.base import BaseDictBackend, DisabledBackend
+from celery.backends.base import (
+    BaseBackend,
+    KeyValueStoreBackend,
+    DisabledBackend,
+)
 from celery.utils import uuid
 
 from celery.tests.utils import Case
@@ -49,53 +51,9 @@ class test_serialization(Case):
 
 class test_BaseBackend_interface(Case):
 
-    def test_get_status(self):
-        with self.assertRaises(NotImplementedError):
-            b.get_status('SOMExx-N0Nex1stant-IDxx-')
-
     def test__forget(self):
         with self.assertRaises(NotImplementedError):
-            b.forget('SOMExx-N0Nex1stant-IDxx-')
-
-    def test_get_children(self):
-        with self.assertRaises(NotImplementedError):
-            b.get_children('SOMExx-N0Nex1stant-IDxx-')
-
-    def test_store_result(self):
-        with self.assertRaises(NotImplementedError):
-            b.store_result('SOMExx-N0nex1stant-IDxx-', 42, states.SUCCESS)
-
-    def test_mark_as_started(self):
-        with self.assertRaises(NotImplementedError):
-            b.mark_as_started('SOMExx-N0nex1stant-IDxx-')
-
-    def test_reload_task_result(self):
-        with self.assertRaises(NotImplementedError):
-            b.reload_task_result('SOMExx-N0nex1stant-IDxx-')
-
-    def test_reload_group_result(self):
-        with self.assertRaises(NotImplementedError):
-            b.reload_group_result('SOMExx-N0nex1stant-IDxx-')
-
-    def test_get_result(self):
-        with self.assertRaises(NotImplementedError):
-            b.get_result('SOMExx-N0nex1stant-IDxx-')
-
-    def test_restore_group(self):
-        with self.assertRaises(NotImplementedError):
-            b.restore_group('SOMExx-N0nex1stant-IDxx-')
-
-    def test_delete_group(self):
-        with self.assertRaises(NotImplementedError):
-            b.delete_group('SOMExx-N0nex1stant-IDxx-')
-
-    def test_save_group(self):
-        with self.assertRaises(NotImplementedError):
-            b.save_group('SOMExx-N0nex1stant-IDxx-', 'blergh')
-
-    def test_get_traceback(self):
-        with self.assertRaises(NotImplementedError):
-            b.get_traceback('SOMExx-N0nex1stant-IDxx-')
+            b._forget('SOMExx-N0Nex1stant-IDxx-')
 
     def test_forget(self):
         with self.assertRaises(NotImplementedError):
@@ -164,7 +122,7 @@ class KVBackend(KeyValueStoreBackend):
 
     def __init__(self, *args, **kwargs):
         self.db = {}
-        super(KVBackend, self).__init__(KeyValueStoreBackend)
+        super(KVBackend, self).__init__()
 
     def get(self, key):
         return self.db.get(key)
@@ -182,10 +140,10 @@ class KVBackend(KeyValueStoreBackend):
         self.db.pop(key, None)
 
 
-class DictBackend(BaseDictBackend):
+class DictBackend(BaseBackend):
 
     def __init__(self, *args, **kwargs):
-        BaseDictBackend.__init__(self, *args, **kwargs)
+        BaseBackend.__init__(self, *args, **kwargs)
         self._data = {'can-delete': {'result': 'foo'}}
 
     def _restore_group(self, group_id):
@@ -200,7 +158,7 @@ class DictBackend(BaseDictBackend):
         self._data.pop(group_id, None)
 
 
-class test_BaseDictBackend(Case):
+class test_BaseBackend_dict(Case):
 
     def setUp(self):
         self.b = DictBackend()
@@ -218,13 +176,13 @@ class test_BaseDictBackend(Case):
         self.assertEqual(str(e), "'foo'")
 
     def test_save_group(self):
-        b = BaseDictBackend()
+        b = BaseBackend()
         b._save_group = Mock()
         b.save_group('foofoo', 'xxx')
         b._save_group.assert_called_with('foofoo', 'xxx')
 
     def test_forget_interface(self):
-        b = BaseDictBackend()
+        b = BaseBackend()
         with self.assertRaises(NotImplementedError):
             b.forget('foo')
 

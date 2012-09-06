@@ -103,7 +103,7 @@ This is an example configuration for those using `django-celery`::
     CELERYD_GROUP="celery"
 
     # Name of the projects settings module.
-    export DJANGO_SETTINGS_MODULE="settings"
+    export DJANGO_SETTINGS_MODULE="MyProject.settings"
 
 .. _generic-initd-celeryd-django-with-env-example:
 
@@ -145,7 +145,7 @@ environment's python interpreter::
     CELERYD_GROUP="celery"
 
     # Name of the projects settings module.
-    export DJANGO_SETTINGS_MODULE="settings"
+    export DJANGO_SETTINGS_MODULE="MyProject.settings"
 
 .. _generic-initd-celeryd-options:
 
@@ -274,17 +274,21 @@ This can reveal hints as to why the service won't start.
 Also you will see the commands generated, so you can try to run the celeryd
 command manually to read the resulting error output.
 
-For example my `sh -x` output does this::
+For example my `sh -x` output does this:
 
-    ++ start-stop-daemon --start --chdir /opt/Opal/release/opal --quiet \
+.. code-block:: bash
+
+    ++ start-stop-daemon --start --chdir /opt/App/release/app --quiet \
         --oknodo --background --make-pidfile --pidfile /var/run/celeryd.pid \
-        --exec /opt/Opal/release/opal/manage.py celeryd -- --time-limit=300 \
+        --exec /opt/App/release/app/manage.py celeryd -- --time-limit=300 \
         -f /var/log/celeryd.log -l INFO
 
 Run the celeryd command after `--exec` (without the `--`) to show the
-actual resulting output::
+actual resulting output:
 
-    $ /opt/Opal/release/opal/manage.py celeryd --time-limit=300 \
+.. code-block:: bash
+
+    $ /opt/App/release/app/manage.py celeryd --time-limit=300 \
         -f /var/log/celeryd.log -l INFO
 
 .. _daemon-supervisord:

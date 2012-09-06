@@ -6,13 +6,13 @@
     Custom types and data structures.
 
 """
-from __future__ import absolute_import
-from __future__ import with_statement
+from __future__ import absolute_import, print_function
 
 import sys
 import time
 
 from collections import defaultdict
+from functools import partial
 from itertools import chain
 
 from billiard.einfo import ExceptionInfo  # noqa
@@ -164,16 +164,17 @@ class DependencyGraph(object):
         :param fh: A file, or a file-like object to write the graph to.
 
         """
-        fh.write('digraph dependencies {\n')
+        P = partial(print, file=fh)
+        P('digraph dependencies {')
         for obj, adjacent in self.iteritems():
             if not adjacent:
-                fh.write(ws + '"%s"\n' % (obj, ))
+                P(ws + '"{0}"'.format(obj))
             for req in adjacent:
-                fh.write(ws + '"%s" -> "%s"\n' % (obj, req))
-        fh.write('}\n')
+                P(ws + '"{0}" -> "{1}"'.format(obj, req))
+        P('}')
 
     def __iter__(self):
-        return self.adjacent.iterkeys()
+        return iter(self.adjacent)
 
     def __getitem__(self, node):
         return self.adjacent[node]
@@ -191,11 +192,11 @@ class DependencyGraph(object):
     def __repr__(self):
         return '\n'.join(self.repr_node(N) for N in self)
 
-    def repr_node(self, obj, level=1):
-        output = ['%s(%s)' % (obj, self.valency_of(obj))]
+    def repr_node(self, obj, level=1, fmt='{0}({1})'):
+        output = [fmt.format(obj, self.valency_of(obj))]
         if obj in self:
             for other in self[obj]:
-                d = '%s(%s)' % (other, self.valency_of(other))
+                d = fmt.format(other, self.valency_of(other))
                 output.append('     ' * level + d)
                 output.extend(self.repr_node(other, level + 1).split('\n')[1:])
         return '\n'.join(output)
@@ -214,7 +215,8 @@ class AttributeDictMixin(object):
             return self[k]
         except KeyError:
             raise AttributeError(
-                "'%s' object has no attribute '%s'" % (type(self).__name__, k))
+                "{0!r} object has no attribute {1!r}".format(
+                    type(self).__name__, k))
 
     def __setattr__(self, key, value):
         """`d[key] = value -> d.key = value`"""
@@ -262,11 +264,11 @@ class DictAttribute(object):
         return hasattr(self.obj, key)
 
     def _iterate_keys(self):
-        return vars(self.obj).iterkeys()
+        return iter(vars(self.obj))
     iterkeys = _iterate_keys
 
     def __iter__(self):
-        return self.iterkeys()
+        return self._iterate_keys()
 
     def _iterate_items(self):
         return vars(self.obj).iteritems()
@@ -278,7 +280,7 @@ class DictAttribute(object):
     else:
 
         def keys(self):
-            return list(self._iterate_keys())
+            return list(self)
 
         def items(self):
             return list(self._iterate_items())
@@ -301,6 +303,10 @@ class ConfigurationView(AttributeDictMixin):
     def __init__(self, changes, defaults):
         self.__dict__.update(changes=changes, defaults=defaults,
                              _order=[changes] + defaults)
+
+    def add_defaults(self, d):
+        self.defaults.insert(0, d)
+        self._order.insert(1, d)
 
     def __getitem__(self, key):
         for d in self._order:
@@ -342,7 +348,7 @@ class ConfigurationView(AttributeDictMixin):
         return repr(dict(self.iteritems()))
 
     def __iter__(self):
-        return self.iterkeys()
+        return self._iterate_keys()
 
     def _iter(self, op):
         # defaults must be first in the stream, so values in
@@ -350,7 +356,7 @@ class ConfigurationView(AttributeDictMixin):
         return chain(*[op(d) for d in reversed(self._order)])
 
     def _iterate_keys(self):
-        return uniq(self._iter(lambda d: d.iterkeys()))
+        return uniq(self._iter(lambda d: d))
     iterkeys = _iterate_keys
 
     def _iterate_items(self):
@@ -433,7 +439,7 @@ class LimitedSet(object):
         return iter(self._data)
 
     def __repr__(self):
-        return 'LimitedSet(%r)' % (self._data.keys(), )
+        return 'LimitedSet({0!r})'.format(list(self._data))
 
     @property
     def chronologically(self):

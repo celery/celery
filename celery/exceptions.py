@@ -13,7 +13,7 @@ from billiard.exceptions import (  # noqa
 )
 
 UNREGISTERED_FMT = """\
-Task of kind %s is not registered, please make sure it's imported.\
+Task of kind {0} is not registered, please make sure it's imported.\
 """
 
 
@@ -41,7 +41,7 @@ class NotRegistered(KeyError):
     """The task is not registered."""
 
     def __repr__(self):
-        return UNREGISTERED_FMT % str(self)
+        return UNREGISTERED_FMT.format(self)
 
 
 class AlreadyRegistered(Exception):
@@ -59,9 +59,30 @@ class MaxRetriesExceededError(Exception):
 class RetryTaskError(Exception):
     """The task is to be retried later."""
 
-    def __init__(self, message, exc, *args, **kwargs):
-        self.exc = exc
-        Exception.__init__(self, message, exc, *args, **kwargs)
+    def __init__(self, message=None, exc=None, when=None, **kwargs):
+        from kombu.utils.encoding import safe_repr
+        self.message = message
+        if isinstance(exc, basestring):
+            self.exc, self.excs = None, exc
+        else:
+            self.exc, self.excs = exc, safe_repr(exc) if exc else None
+        self.when = when
+        Exception.__init__(self, exc, when, **kwargs)
+
+    def humanize(self):
+        if isinstance(self.when, int):
+            return 'in {0.when}s'.format(self)
+        return 'at {0.when}'.format(self)
+
+    def __str__(self):
+        if self.message:
+            return self.message
+        if self.excs:
+            return 'Retry {0}: {1!r}'.format(self.humanize(), self.excs)
+        return 'Retry {0}'.format(self.humanize())
+
+    def __reduce__(self):
+        return self.__class__, (self.message, self.excs, self.when)
 
 
 class TaskRevokedError(Exception):

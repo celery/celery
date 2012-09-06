@@ -9,7 +9,6 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import time
 import socket
@@ -19,7 +18,8 @@ from collections import deque
 from contextlib import contextmanager
 from copy import copy
 
-from kombu import eventloop, Exchange, Queue, Consumer, Producer
+from kombu import Exchange, Queue, Producer
+from kombu.mixins import ConsumerMixin
 from kombu.utils import cached_property
 
 from celery.app import app_or_default
@@ -132,7 +132,7 @@ class EventDispatcher(object):
                 try:
                     self.publisher.publish(event,
                                            routing_key=type.replace('-', '.'))
-                except Exception, exc:
+                except Exception as exc:
                     if not self.buffer_while_offline:
                         raise
                     self._outbound_buffer.append((type, fields, exc))
@@ -154,7 +154,7 @@ class EventDispatcher(object):
         self.publisher = None
 
 
-class EventReceiver(object):
+class EventReceiver(ConsumerMixin):
     """Capture events.
 
     :param connection: Connection to the broker.
@@ -165,14 +165,12 @@ class EventReceiver(object):
     handler.
 
     """
-    handlers = {}
 
     def __init__(self, connection, handlers=None, routing_key='#',
             node_id=None, app=None, queue_prefix='celeryev'):
         self.app = app_or_default(app)
         self.connection = connection
-        if handlers is not None:
-            self.handlers = handlers
+        self.handlers = {} if handlers is None else handlers
         self.routing_key = routing_key
         self.node_id = node_id or uuid()
         self.queue_prefix = queue_prefix
@@ -191,21 +189,17 @@ class EventReceiver(object):
         handler = self.handlers.get(type) or self.handlers.get('*')
         handler and handler(event)
 
-    @contextmanager
-    def consumer(self, wakeup=True):
-        """Create event consumer."""
-        consumer = Consumer(self.connection,
-                            queues=[self.queue], no_ack=True)
-        consumer.register_callback(self._receive)
-        with consumer:
-            if wakeup:
-                self.wakeup_workers(channel=consumer.channel)
-            yield consumer
+    def get_consumers(self, Consumer, channel):
+        return [Consumer(queues=[self.queue],
+                         callbacks=[self._receive], no_ack=True)]
+
+    def on_consume_ready(self, connection, channel, consumers,
+            wakeup=True, **kwargs):
+        if wakeup:
+            self.wakeup_workers(channel=channel)
 
     def itercapture(self, limit=None, timeout=None, wakeup=True):
-        with self.consumer(wakeup=wakeup) as consumer:
-            yield consumer
-            self.drain_events(limit=limit, timeout=timeout)
+        return self.consume(limit=limit, timeout=timeout, wakeup=wakeup)
 
     def capture(self, limit=None, timeout=None, wakeup=True):
         """Open up a consumer capturing events.
@@ -214,16 +208,12 @@ class EventReceiver(object):
         stop unless forced via :exc:`KeyboardInterrupt` or :exc:`SystemExit`.
 
         """
-        list(self.itercapture(limit=limit, timeout=timeout, wakeup=wakeup))
+        return list(self.consume(limit=limit, timeout=timeout, wakeup=wakeup))
 
     def wakeup_workers(self, channel=None):
         self.app.control.broadcast('heartbeat',
                                    connection=self.connection,
                                    channel=channel)
-
-    def drain_events(self, **kwargs):
-        for _ in eventloop(self.connection, **kwargs):
-            pass
 
     def _receive(self, body, message):
         type = body.pop('type').lower()

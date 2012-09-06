@@ -14,6 +14,7 @@ import os
 import re
 
 from datetime import datetime
+from itertools import imap
 
 from kombu.utils.encoding import safe_str
 
@@ -26,7 +27,7 @@ from celery.utils.functional import maybe_list
 BUILTIN_MODULES = frozenset()
 
 ERROR_ENVVAR_NOT_SET = (
-"""The environment variable %r is not set,
+"""The environment variable {0!r} is not set,
 and as such the configuration could not be loaded.
 Please set this variable and make it point to
 a configuration module.""")
@@ -44,6 +45,9 @@ class BaseLoader(object):
 
         * What happens when the worker starts?
             See :meth:`on_worker_init`.
+
+        * What happens when the worker shuts down?
+            See :meth:`on_worker_shutdown`.
 
         * What modules are imported to find tasks?
 
@@ -79,6 +83,11 @@ class BaseLoader(object):
         starts."""
         pass
 
+    def on_worker_shutdown(self):
+        """This method is called when the worker (:program:`celery worker`)
+        shuts down."""
+        pass
+
     def on_worker_process_init(self):
         """This method is called when a child process starts."""
         pass
@@ -107,6 +116,9 @@ class BaseLoader(object):
             self.import_default_modules()
             self.on_worker_init()
 
+    def shutdown_worker(self):
+        self.on_worker_shutdown()
+
     def init_worker_process(self):
         self.on_worker_process_init()
 
@@ -115,7 +127,8 @@ class BaseLoader(object):
         if not module_name:
             if silent:
                 return False
-            raise ImproperlyConfigured(self.error_envvar_not_set % module_name)
+            raise ImproperlyConfigured(
+                    self.error_envvar_not_set.format(module_name))
         return self.config_from_object(module_name, silent=silent)
 
     def config_from_object(self, obj, silent=False):
@@ -173,12 +186,12 @@ class BaseLoader(object):
             else:
                 try:
                     value = NAMESPACES[ns][key].to_python(value)
-                except ValueError, exc:
+                except ValueError as exc:
                     # display key name in error message.
-                    raise ValueError('%r: %s' % (ns_key, exc))
+                    raise ValueError('{0!r}: {1}'.format(ns_key, exc))
             return ns_key, value
 
-        return dict(map(getarg, args))
+        return dict(imap(getarg, args))
 
     def mail_admins(self, subject, body, fail_silently=False,
             sender=None, to=None, host=None, port=None,

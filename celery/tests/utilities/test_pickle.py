@@ -21,7 +21,7 @@ class test_Pickle(Case):
         exc = None
         try:
             raise RegularException('RegularException raised')
-        except RegularException, exc_:
+        except RegularException as exc_:
             exc = exc_
 
         pickled = pickle.dumps({'exception': exc})
@@ -37,7 +37,7 @@ class test_Pickle(Case):
         try:
             raise ArgOverrideException('ArgOverrideException raised',
                     status_code=100)
-        except ArgOverrideException, exc_:
+        except ArgOverrideException as exc_:
             exc = exc_
 
         pickled = pickle.dumps({'exception': exc})

@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import sys
 import types
@@ -51,7 +50,7 @@ class test_CacheBackend(Case):
     def test_mark_as_failure(self):
         try:
             raise KeyError('foo')
-        except KeyError, exception:
+        except KeyError as exception:
             self.tb.mark_as_failure(self.tid, exception)
             self.assertEqual(self.tb.get_status(self.tid), states.FAILURE)
             self.assertIsInstance(self.tb.get_result(self.tid), KeyError)

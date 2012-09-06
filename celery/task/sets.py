@@ -8,7 +8,6 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 from celery._state import get_current_worker_task
 from celery.app import app_or_default
@@ -38,15 +37,14 @@ class TaskSet(list):
         self.Publisher = Publisher or self.app.amqp.TaskProducer
         self.total = len(self)  # XXX compat
 
-    def apply_async(self, connection=None, connect_timeout=None,
-            publisher=None, taskset_id=None):
+    def apply_async(self, connection=None, publisher=None, taskset_id=None):
         """Apply TaskSet."""
         app = self.app
 
         if app.conf.CELERY_ALWAYS_EAGER:
             return self.apply(taskset_id=taskset_id)
 
-        with app.default_connection(connection, connect_timeout) as conn:
+        with app.connection_or_acquire(connection) as conn:
             setid = taskset_id or uuid()
             pub = publisher or self.Publisher(conn)
             results = self._async_results(setid, pub)
@@ -69,9 +67,10 @@ class TaskSet(list):
     def _sync_results(self, taskset_id):
         return [task.apply(taskset_id=taskset_id) for task in self]
 
-    def _get_tasks(self):
+    @property
+    def tasks(self):
         return self
 
-    def _set_tasks(self, tasks):
+    @tasks.setter  # noqa
+    def tasks(self, tasks):
         self[:] = tasks
-    tasks = property(_get_tasks, _set_tasks)

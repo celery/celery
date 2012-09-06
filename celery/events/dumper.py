@@ -7,7 +7,7 @@
     as they happen.  Think of it like a `tcpdump` for Celery events.
 
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import sys
 
@@ -31,17 +31,13 @@ def humanize_type(type):
         return type.lower().replace('-', ' ')
 
 
-def say(msg, out=sys.stdout):
-    out.write(msg + '\n')
-
-
 class Dumper(object):
 
     def __init__(self, out=sys.stdout):
         self.out = out
 
     def say(self, msg):
-        say(msg, out=self.out)
+        print(msg, file=self.out)
 
     def on_event(self, event):
         timestamp = datetime.utcfromtimestamp(event.pop('timestamp'))
@@ -50,7 +46,8 @@ class Dumper(object):
         if type.startswith('task-'):
             uuid = event.pop('uuid')
             if type in ('task-received', 'task-sent'):
-                task = TASK_NAMES[uuid] = '%s(%s) args=%s kwargs=%s' % (
+                task = TASK_NAMES[uuid] = '{0}({1}) args={2} kwargs={3}' \
+                    .format(
                         event.pop('name'), uuid,
                         event.pop('args'),
                         event.pop('kwargs'))
@@ -58,17 +55,17 @@ class Dumper(object):
                 task = TASK_NAMES.get(uuid, '')
             return self.format_task_event(hostname, timestamp,
                                           type, task, event)
-        fields = ', '.join('%s=%s' % (key, event[key])
-                        for key in sorted(event.keys()))
+        fields = ', '.join('{0}={1}'.format(key, event[key])
+                        for key in sorted(event))
         sep = fields and ':' or ''
-        self.say('%s [%s] %s%s %s' % (hostname, timestamp,
-                                      humanize_type(type), sep, fields))
+        self.say('{0} [{1}] {2}{3} {4}'.format(hostname, timestamp,
+                                            humanize_type(type), sep, fields))
 
     def format_task_event(self, hostname, timestamp, type, task, event):
-        fields = ', '.join('%s=%s' % (key, event[key])
-                        for key in sorted(event.keys()))
+        fields = ', '.join('{0}={1}'.format(key, event[key])
+                        for key in sorted(event))
         sep = fields and ':' or ''
-        self.say('%s [%s] %s%s %s %s' % (hostname, timestamp,
+        self.say('{0} [{1}] {2}{3} {4} {5}'.format(hostname, timestamp,
                     humanize_type(type), sep, task, fields))
 
 

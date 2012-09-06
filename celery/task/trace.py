@@ -53,16 +53,27 @@ except AttributeError:
     pass
 
 
-def mro_lookup(cls, attr, stop=()):
+def mro_lookup(cls, attr, stop=(), monkey_patched=[]):
     """Returns the first node by MRO order that defines an attribute.
 
     :keyword stop: A list of types that if reached will stop the search.
+    :keyword monkey_patched: Use one of the stop classes if the attr's
+        module origin is not in this list, this to detect monkey patched
+        attributes.
 
     :returns None: if the attribute was not found.
 
     """
     for node in cls.mro():
         if node in stop:
+            try:
+                attr = node.__dict__[attr]
+                module_origin = attr.__module__
+            except (AttributeError, KeyError):
+                pass
+            else:
+                if module_origin not in monkey_patched:
+                    return node
             return
         if attr in node.__dict__:
             return node
@@ -71,7 +82,8 @@ def mro_lookup(cls, attr, stop=()):
 def task_has_custom(task, attr):
     """Returns true if the task or one of its bases
     defines ``attr`` (excluding the one in BaseTask)."""
-    return mro_lookup(task.__class__, attr, stop=(BaseTask, object))
+    return mro_lookup(task.__class__, attr, stop=(BaseTask, object),
+                      monkey_patched=['celery.app.task'])
 
 
 class TraceInfo(object):
@@ -93,20 +105,16 @@ class TraceInfo(object):
 
     def handle_retry(self, task, store_errors=True):
         """Handle retry exception."""
-        # Create a simpler version of the RetryTaskError that stringifies
-        # the original exception instead of including the exception instance.
-        # This is for reporting the retry in logs, email etc, while
-        # guaranteeing pickleability.
+        # the exception raised is the RetryTaskError semi-predicate,
+        # and it's exc' attribute is the original exception raised (if any).
         req = task.request
         type_, _, tb = sys.exc_info()
         try:
-            exc = self.retval
-            message, orig_exc = exc.args
-            expanded_msg = '%s: %s' % (message, str(orig_exc))
-            einfo = ExceptionInfo((type_, type_(expanded_msg, None), tb))
+            pred = self.retval
+            einfo = ExceptionInfo((type_, pred, tb))
             if store_errors:
-                task.backend.mark_as_retry(req.id, orig_exc, einfo.traceback)
-            task.on_retry(exc, req.id, req.args, req.kwargs, einfo)
+                task.backend.mark_as_retry(req.id, pred.exc, einfo.traceback)
+            task.on_retry(pred.exc, req.id, req.args, req.kwargs, einfo)
             return einfo
         finally:
             del(tb)
@@ -114,7 +122,7 @@ class TraceInfo(object):
     def handle_failure(self, task, store_errors=True):
         """Handle exception."""
         req = task.request
-        _, type_, tb = sys.exc_info()
+        type_, _, tb = sys.exc_info()
         try:
             exc = self.retval
             einfo = ExceptionInfo((type_, get_pickleable_exception(exc), tb))
@@ -124,7 +132,7 @@ class TraceInfo(object):
             signals.task_failure.send(sender=task, task_id=req.id,
                                       exception=exc, args=req.args,
                                       kwargs=req.kwargs,
-                                      traceback=einfo.traceback,
+                                      traceback=einfo.tb,
                                       einfo=einfo)
             return einfo
         finally:
@@ -133,6 +141,28 @@ class TraceInfo(object):
 
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         Info=TraceInfo, eager=False, propagate=False):
+    """Builts a function that tracing the tasks execution; catches all
+    exceptions, and saves the state and result of the task execution
+    to the result backend.
+
+    If the call was successful, it saves the result to the task result
+    backend, and sets the task status to `"SUCCESS"`.
+
+    If the call raises :exc:`~celery.exceptions.RetryTaskError`, it extracts
+    the original exception, uses that as the result and sets the task status
+    to `"RETRY"`.
+
+    If the call results in an exception, it saves the exception as the task
+    result, and sets the task status to `"FAILURE"`.
+
+    Returns a function that takes the following arguments:
+
+        :param uuid: The unique id of the task.
+        :param args: List of positional args to pass on to the function.
+        :param kwargs: Keyword arguments mapping to pass on to the function.
+        :keyword request: Request dict.
+
+    """
     # If the task doesn't define a custom __call__ method
     # we optimize it away by simply calling the run method directly,
     # saving the extra method call and a line less in the stack trace.
@@ -193,11 +223,11 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 try:
                     R = retval = fun(*args, **kwargs)
                     state = SUCCESS
-                except RetryTaskError, exc:
+                except RetryTaskError as exc:
                     I = Info(RETRY, exc)
                     state, retval = I.state, I.retval
                     R = I.handle_error_state(task, eager=eager)
-                except Exception, exc:
+                except Exception as exc:
                     if propagate:
                         raise
                     I = Info(FAILURE, exc)
@@ -205,18 +235,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     R = I.handle_error_state(task, eager=eager)
                     [subtask(errback).apply_async((uuid, ))
                         for errback in task_request.errbacks or []]
-                except BaseException, exc:
+                except BaseException as exc:
                     raise
-                except:  # pragma: no cover
-                    # For Python2.5 where raising strings are still allowed
-                    # (but deprecated)
-                    if propagate:
-                        raise
-                    I = Info(FAILURE, None)
-                    state, retval = I.state, I.retval
-                    R = I.handle_error_state(task, eager=eager)
-                    [subtask(errback).apply_async((uuid, ))
-                        for errback in task_request.errbacks or []]
                 else:
                     # callback tasks must be applied before the result is
                     # stored, so that result.children is populated.
@@ -247,10 +267,10 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         loader_cleanup()
                     except (KeyboardInterrupt, SystemExit, MemoryError):
                         raise
-                    except Exception, exc:
+                    except Exception as exc:
                         _logger.error('Process cleanup failed: %r', exc,
                                       exc_info=True)
-        except Exception, exc:
+        except Exception as exc:
             if eager:
                 raise
             R = report_internal_error(task, exc)
@@ -264,7 +284,7 @@ def trace_task(task, uuid, args, kwargs, request={}, **opts):
         if task.__trace__ is None:
             task.__trace__ = build_tracer(task.name, task, **opts)
         return task.__trace__(uuid, args, kwargs, request)[0]
-    except Exception, exc:
+    except Exception as exc:
         return report_internal_error(task, exc)
 
 
@@ -284,7 +304,7 @@ def report_internal_error(task, exc):
         _value = task.backend.prepare_exception(exc)
         exc_info = ExceptionInfo((_type, _value, _tb), internal=True)
         warn(RuntimeWarning(
-            'Exception raised outside body: %r:\n%s' % (
+            'Exception raised outside body: {0!r}:\n{1}'.format(
                 exc, exc_info.traceback)))
         return exc_info
     finally:

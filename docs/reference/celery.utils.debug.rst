@@ -11,7 +11,7 @@ Sampling Memory Usage
 This module can be used to diagnose and sample the memory usage
 used by parts of your application.
 
-E.g to sample the memory usage of applying tasks you can do this:
+E.g to sample the memory usage of calling tasks you can do this:
 
 .. code-block:: python
 

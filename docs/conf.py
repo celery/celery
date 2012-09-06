@@ -71,10 +71,11 @@ intersphinx_mapping = {
         "http://kombu.readthedocs.org/en/latest/": None,
         "http://django-celery.readthedocs.org/en/latest": None,
         "http://cyme.readthedocs.org/en/latest": None,
+        "http://amqp.readthedocs.org/en/latest": None,
 }
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'trac'
+pygments_style = 'colorful'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -112,7 +113,7 @@ if False:
 # -- Options for Epub output ---------------------------------------------------
 
 # Bibliographic Dublin Core info.
-epub_title = 'Celery Manual, Version 2.6'
+epub_title = 'Celery Manual, Version 3.0'
 epub_author = 'Ask Solem'
 epub_publisher = 'Celery Project'
 epub_copyright = '2009-2012'
@@ -129,7 +130,7 @@ epub_scheme = 'ISBN'
 epub_identifier = 'celeryproject.org'
 
 # A unique identification for the text.
-epub_uid = 'Celery Manual, Version 2.6'
+epub_uid = 'Celery Manual, Version 3.0'
 
 # HTML files that should be inserted before the pages created by sphinx.
 # The format is a list of tuples containing the path and title.

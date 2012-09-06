@@ -7,23 +7,23 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import atexit
 import heapq
 import os
 import sys
-
-from functools import wraps
-from itertools import count
-from threading import Condition, Event, Lock, Thread
-from time import time, sleep, mktime
+import threading
 
 from datetime import datetime, timedelta
+from functools import wraps
+from itertools import count, imap
+from time import time, sleep, mktime
+
+from celery.utils.threads import TIMEOUT_MAX
 from kombu.log import get_logger
 
 VERSION = (1, 0, 0)
-__version__ = '.'.join(map(str, VERSION))
+__version__ = '.'.join(imap(str, VERSION))
 __author__ = 'Ask Solem'
 __contact__ = 'ask@celeryproject.org'
 __homepage__ = 'http://github.com/ask/timer2/'
@@ -51,14 +51,13 @@ class Entry(object):
         self.tref.cancelled = True
 
     def __repr__(self):
-        return '<TimerEntry: %s(*%r, **%r)' % (
+        return '<TimerEntry: {0}(*{1!r}, **{2!r})'.format(
                 self.fun.__name__, self.args, self.kwargs)
 
     if sys.version_info[0] == 3:  # pragma: no cover
 
         def __hash__(self):
-            return hash('|'.join(map(repr, (self.fun, self.args,
-                                            self.kwargs))))
+            return hash('{0.fun!r}|{0.args!r}|{0.kwargs!r}'.format(self))
 
         def __lt__(self, other):
             return hash(self) < hash(other)
@@ -90,7 +89,7 @@ class Schedule(object):
     def apply_entry(self, entry):
         try:
             entry()
-        except Exception, exc:
+        except Exception as exc:
             if not self.handle_error(exc):
                 logger.error('Error in timer: %r', exc, exc_info=True)
 
@@ -115,7 +114,7 @@ class Schedule(object):
         if isinstance(eta, datetime):
             try:
                 eta = to_timestamp(eta)
-            except OverflowError, exc:
+            except OverflowError as exc:
                 if not self.handle_error(exc):
                     raise
                 return
@@ -156,6 +155,10 @@ class Schedule(object):
         tref.fun = _reschedules
         tref._last_run = None
         return self.enter_after(msecs, tref, priority)
+
+    @property
+    def schedule(self):
+        return self
 
     def __iter__(self):
         """The iterator yields the time to sleep for between runs."""
@@ -203,10 +206,10 @@ class Schedule(object):
     @property
     def queue(self):
         events = list(self._queue)
-        return map(heapq.heappop, [events] * len(events))
+        return [heapq.heappop(x) for x in [events] * len(events)]
 
 
-class Timer(Thread):
+class Timer(threading.Thread):
     Entry = Entry
     Schedule = Schedule
 
@@ -226,18 +229,17 @@ class Timer(Thread):
         self.schedule = schedule or self.Schedule(on_error=on_error,
                                                   max_interval=max_interval)
         self.on_tick = on_tick or self.on_tick
-
-        Thread.__init__(self)
-        self._is_shutdown = Event()
-        self._is_stopped = Event()
-        self.mutex = Lock()
-        self.not_empty = Condition(self.mutex)
-        self.setDaemon(True)
-        self.setName('Timer-%s' % (self._timer_count(), ))
+        threading.Thread.__init__(self)
+        self._is_shutdown = threading.Event()
+        self._is_stopped = threading.Event()
+        self.mutex = threading.Lock()
+        self.not_empty = threading.Condition(self.mutex)
+        self.daemon = True
+        self.name = 'Timer-{0}'.format(self._timer_count())
 
     def _next_entry(self):
         with self.not_empty:
-            delay, entry = self.scheduler.next()
+            delay, entry = next(self.scheduler)
             if entry is None:
                 if delay is None:
                     self.not_empty.wait(1.0)
@@ -264,7 +266,7 @@ class Timer(Thread):
                 # we lost the race at interpreter shutdown,
                 # so gc collected built-in modules.
                 pass
-        except Exception, exc:
+        except Exception as exc:
             logger.error('Thread Timer crashed: %r', exc, exc_info=True)
             os._exit(1)
 
@@ -272,7 +274,7 @@ class Timer(Thread):
         if self.running:
             self._is_shutdown.set()
             self._is_stopped.wait()
-            self.join(1e10)
+            self.join(TIMEOUT_MAX)
             self.running = False
 
     def ensure_started(self):

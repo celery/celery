@@ -7,24 +7,32 @@ Configuring your Django project to use Celery
 
 You need four simple steps to use celery with your Django project.
 
-    1. Install the ``django-celery`` library::
+    1. Install the ``django-celery`` library:
 
-        $ pip install django-celery
+        .. code-block:: bash
 
-    2. Add the following lines to ``settings.py``::
+            $ pip install django-celery
 
-        import djcelery
-        djcelery.setup_loader()
+    2. Add the following lines to ``settings.py``:
+
+        .. code-block:: python
+
+            import djcelery
+            djcelery.setup_loader()
 
     3. Add ``djcelery`` to ``INSTALLED_APPS``.
 
     4. Create the celery database tables.
 
-        If you are using south_ for schema migrations, you'll want to::
+        If you are using south_ for schema migrations, you'll want to:
+
+        .. code-block:: bash
 
             $ python manage.py migrate djcelery
 
-        For those who are not using south, a normal ``syncdb`` will work::
+        For those who are not using south, a normal ``syncdb`` will work:
+
+        .. code-block:: bash
 
             $ python manage.py syncdb
 
@@ -35,7 +43,7 @@ alternatives to choose from, see :ref:`celerytut-broker`.
 
 All settings mentioned in the Celery documentation should be added
 to your Django project's ``settings.py`` module. For example
-we can configure the :setting:`BROKER_URL` setting to specify
+you can configure the :setting:`BROKER_URL` setting to specify
 what broker to use::
 
     BROKER_URL = 'amqp://guest:guest@localhost:5672/'
@@ -61,13 +69,15 @@ It is a common practice to put these in their own module named ``tasks.py``,
 and the worker will automatically go through the apps in ``INSTALLED_APPS``
 to import these modules.
 
-For a simple demonstration we can create a new Django app called
-``celerytest``.  To create this app you need to be in the directoryw
-of your Django project where ``manage.py`` is located and execute::
+For a simple demonstration create a new Django app called
+``celerytest``.  To create this app you need to be in the directory
+of your Django project where ``manage.py`` is located and execute:
+
+.. code-block:: bash
 
     $ python manage.py startapp celerytest
 
-After our new app has been created we can define our task by editing
+After the new app has been created, define a task by creating
 a new file called ``celerytest/tasks.py``:
 
 .. code-block:: python
@@ -79,30 +89,53 @@ a new file called ``celerytest/tasks.py``:
         return x + y
 
 Our example task is pretty pointless, it just returns the sum of two
-arguments, but it will do for demonstration, and it is referenced in many
+arguments, but it will do for demonstration, and it is referred to in many
 parts of the Celery documentation.
+
+.. admonition:: Relative Imports
+
+    You have to consistent in how you import the task module, e.g. if
+    you have ``project.app`` in ``INSTALLED_APPS`` then you also
+    need to import the tasks ``from project.app`` or else the names
+    of the tasks will be different.
+
+    See :ref:`task-naming-relative-imports`
 
 Starting the worker process
 ===========================
 
-You can start a worker instance by using the ``celery worker`` manage command::
+In a production environment you will want to run the worker in the background
+as a daemon - see :ref:`daemonizing` - but for testing and
+development it is useful to be able to start a worker instance by using the
+``celery worker`` manage command, much as you would use Django's runserver:
+
+.. code-block:: bash
 
     $ python manage.py celery worker --loglevel=info
 
-In production you probably want to run the worker in the
-background as a daemon, see `Running Celery as a daemon`_.
-For a complete listing of the command line options available, use the help command::
+For a complete listing of the command line options available,
+use the help command:
+
+.. code-block:: bash
 
     $ python manage.py celery help
 
-.. _`Running Celery as a Daemon`:
-    http://docs.celeryproject.org/en/latest/tutorials/daemonizing.html
+.. admonition:: Help, it's crashing!
+
+    If the worker crashes and spews out a lot of output when it starts
+    then you should try specifying the settings manually:
+
+    .. code-block:: bash
+
+        $ python manage.py celery worker --loglevel=info --settings=settings
+
+    This is usually happens when using older Django project layouts.
 
 Calling our task
 ================
 
-Now that the worker is running we can open up a new terminal to actually
-call our task::
+Now that the worker is running, open up a new terminal to actually
+call the task you defined::
 
     >>> from celerytest.tasks import add
 
@@ -121,18 +154,18 @@ the task should be processed see :ref:`guide-calling`.
     worker server must be able to import the task function.
 
 The task should now be processed by the worker you started earlier,
-and you can verify that by looking at the workers console output.
+and you can verify that by looking at the worker's console output.
 
-Applying a task returns an :class:`~celery.result.AsyncResult` instance,
+Calling a task returns an :class:`~celery.result.AsyncResult` instance,
 which can be used to check the state of the task, wait for the task to finish
 or get its return value (or if the task failed, the exception and traceback).
 
-By default django-celery stores this state in the Django database,
-you may consider choosing an alternate result backend or disabling
+By default django-celery stores this state in the Django database.
+You may consider choosing an alternate result backend or disabling
 states alltogether (see :ref:`task-result-backends`).
 
-To demonstrate how the results work we can call the task again,
-but this time keep the result instance returned::
+To demonstrate how the results work call the task again, but this time
+keep the result instance returned::
 
     >>> result = add.delay(4, 4)
     >>> result.ready() # returns True if the task has finished processing.
@@ -154,7 +187,7 @@ Where to go from here
 =====================
 
 To learn more you should read the `Celery User Guide`_, and the
-`Celery Documentation`_ in general
+`Celery Documentation`_ in general.
 
 
 .. _`Celery User Guide`: http://docs.celeryproject.org/en/latest/userguide/

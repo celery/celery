@@ -40,7 +40,7 @@ reserved_requests = set()
 active_requests = set()
 
 #: count of tasks executed by the worker, sorted by type.
-total_count = defaultdict(lambda: 0)
+total_count = defaultdict(int)
 
 #: the list of currently revoked tasks.  Persistent if statedb set.
 revoked = LimitedSet(maxlen=REVOKES_MAX, expires=REVOKE_EXPIRES)
@@ -65,6 +65,8 @@ def task_ready(request):
 
 
 C_BENCH = os.environ.get('C_BENCH') or os.environ.get('CELERY_BENCH')
+C_BENCH_EVERY = int(os.environ.get('C_BENCH_EVERY') or
+                    os.environ.get('CELERY_BENCH_EVERY') or 1000)
 if C_BENCH:  # pragma: no cover
     import atexit
 
@@ -76,7 +78,7 @@ if C_BENCH:  # pragma: no cover
     bench_first = None
     bench_start = None
     bench_last = None
-    bench_every = int(os.environ.get('CELERY_BENCH_EVERY', 1000))
+    bench_every = C_BENCH_EVERY
     bench_sample = []
     __reserved = task_reserved
     __ready = task_ready
@@ -85,9 +87,10 @@ if C_BENCH:  # pragma: no cover
         @atexit.register
         def on_shutdown():
             if bench_first is not None and bench_last is not None:
-                print('- Time spent in benchmark: %r' % (
-                    bench_last - bench_first))
-                print('- Avg: %s' % (sum(bench_sample) / len(bench_sample)))
+                print('- Time spent in benchmark: {0!r}'.format(
+                        bench_last - bench_first))
+                print('- Avg: {0}'.format(
+                        sum(bench_sample) / len(bench_sample)))
                 memdump()
 
     def task_reserved(request):  # noqa
@@ -111,7 +114,7 @@ if C_BENCH:  # pragma: no cover
             now = time()
             diff = now - bench_start
             print('- Time spent processing %s tasks (since first '
-                    'task received): ~%.4fs\n' % (bench_every, diff))
+                    'task received): ~{0:.4f}s\n'.format(bench_every, diff))
             sys.stdout.flush()
             bench_start = bench_last = now
             bench_sample.append(diff)

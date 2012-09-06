@@ -44,14 +44,18 @@ With this route enabled import feed tasks will be routed to the
 `"feeds"` queue, while all other tasks will be routed to the default queue
 (named `"celery"` for historical reasons).
 
-Now you can start server `z` to only process the feeds queue like this::
+Now you can start server `z` to only process the feeds queue like this:
 
-    (z)$ celery worker -Q feeds
+.. code-block:: bash
+
+    user@z:/$ celery worker -Q feeds
 
 You can specify as many queues as you want, so you can make this server
-process the default queue as well::
+process the default queue as well:
 
-    (z)$ celery worker -Q feeds,celery
+.. code-block:: bash
+
+    user@z:/$ celery worker -Q feeds,celery
 
 .. _routing-changing-default-queue:
 
@@ -142,19 +146,25 @@ You can also override this using the `routing_key` argument to
 
 
 To make server `z` consume from the feed queue exclusively you can
-start it with the ``-Q`` option::
+start it with the ``-Q`` option:
 
-    (z)$ celery worker -Q feed_tasks --hostname=z.example.com
+.. code-block:: bash
 
-Servers `x` and `y` must be configured to consume from the default queue::
+    user@z:/$ celery worker -Q feed_tasks --hostname=z.example.com
 
-    (x)$ celery worker -Q default --hostname=x.example.com
-    (y)$ celery worker -Q default --hostname=y.example.com
+Servers `x` and `y` must be configured to consume from the default queue:
+
+.. code-block:: bash
+
+    user@x:/$ celery worker -Q default --hostname=x.example.com
+    user@y:/$ celery worker -Q default --hostname=y.example.com
 
 If you want, you can even have your feed processing worker handle regular
-tasks as well, maybe in times when there's a lot of work to do::
+tasks as well, maybe in times when there's a lot of work to do:
 
-    (z)$ celery worker -Q feed_tasks,default --hostname=z.example.com
+.. code-block:: python
+
+    user@z:/$ celery worker -Q feed_tasks,default --hostname=z.example.com
 
 If you have another queue but on another exchange you want to add,
 just specify a custom exchange and exchange type:
@@ -356,7 +366,9 @@ queues or sending messages.  It can also be used for non-AMQP brokers,
 but different implementation may not implement all commands.
 
 You can write commands directly in the arguments to :program:`celery amqp`,
-or just start with no arguments to start it in shell-mode::
+or just start with no arguments to start it in shell-mode:
+
+.. code-block:: bash
 
     $ celery amqp
     -> connecting to amqp://guest@localhost:5672/.
@@ -368,8 +380,11 @@ have executed so far.  Type ``help`` for a list of commands available.
 It also supports auto-completion, so you can start typing a command and then
 hit the `tab` key to show a list of possible matches.
 
-Let's create a queue we can send messages to::
+Let's create a queue you can send messages to:
 
+.. code-block:: bash
+
+    $ celery amqp
     1> exchange.declare testexchange direct
     ok.
     2> queue.declare testqueue
@@ -382,14 +397,16 @@ named ``testqueue``.  The queue is bound to the exchange using
 the routing key ``testkey``.
 
 From now on all messages sent to the exchange ``testexchange`` with routing
-key ``testkey`` will be moved to this queue.  We can send a message by
+key ``testkey`` will be moved to this queue.  You can send a message by
 using the ``basic.publish`` command::
 
     4> basic.publish 'This is a message!' testexchange testkey
     ok.
 
-Now that the message is sent we can retrieve it again.  We use the
-``basic.get``` command here, which polls for new messages on the queue.
+Now that the message is sent you can retrieve it again.  You can use the
+``basic.get``` command here, which polls for new messages on the queue
+(which is alright for maintainence tasks, for services you'd want to use
+``basic.consume`` instead)
 
 Pop a message off the queue::
 
@@ -414,12 +431,12 @@ This tag is used to acknowledge the message.  Also note that
 delivery tags are not unique across connections, so in another client
 the delivery tag `1` might point to a different message than in this channel.
 
-You can acknowledge the message we received using ``basic.ack``::
+You can acknowledge the message you received using ``basic.ack``::
 
     6> basic.ack 1
     ok.
 
-To clean up after our test session we should delete the entities we created::
+To clean up after our test session you should delete the entities you created::
 
     7> queue.delete testqueue
     ok. 0 messages deleted.
@@ -449,8 +466,8 @@ One for video, one for images and one default queue for everything else:
 
     CELERY_QUEUES = (
         Queue('default', default_exchange, routing_key='default'),
-        Queue('videos', media_exchange', routing_key='media.video')
-        Queue('images', media_exchange', routing_key='media.image')
+        Queue('videos', media_exchange, routing_key='media.video')
+        Queue('images', media_exchange, routing_key='media.image')
     )
     CELERY_DEFAULT_QUEUE = 'default'
     CELERY_DEFAULT_EXCHANGE = 'default'
@@ -502,11 +519,15 @@ All you need to define a new router is to create a class with a
             return None
 
 If you return the ``queue`` key, it will expand with the defined settings of
-that queue in :setting:`CELERY_QUEUES`::
+that queue in :setting:`CELERY_QUEUES`:
+
+.. code-block:: javascript
 
     {'queue': 'video', 'routing_key': 'video.compress'}
 
-    becomes -->
+becomes -->
+
+.. code-block:: javascript
 
         {'queue': 'video',
          'exchange': 'video',
@@ -542,7 +563,8 @@ Broadcast
 ---------
 
 Celery can also support broadcast routing.
-Here is an example exchange ``bcast`` that uses this:
+Here is an example exchange ``broadcast_tasks`` that delivers
+copies of tasks to all workers connected to it:
 
 .. code-block:: python
 

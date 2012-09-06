@@ -31,7 +31,8 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 
 .. cmdoption:: -n, --hostname
 
-    Set custom hostname, e.g. 'foo.example.com'.
+    Set custom hostname, e.g. 'w1.%h'. Expands: %h (hostname),
+    %n (name) and %d, (domain).
 
 .. cmdoption:: -B, --beat
 
@@ -62,7 +63,7 @@ The :program:`celery worker` command (previously known as ``celeryd``)
 .. cmdoption:: -S, --statedb
 
     Path to the state database. The extension '.db' may
-    be appended to the filename. Default: %(default)s
+    be appended to the filename. Default: {default}
 
 .. cmdoption:: -E, --events
 
@@ -117,10 +118,9 @@ from __future__ import absolute_import
 
 import sys
 
-from billiard import freeze_support
-
 from celery import concurrency
-from celery.bin.base import Command, Option
+from celery.bin.base import Command, Option, daemon_options
+from celery.bin.celeryd_detach import detached_celeryd
 from celery.utils.log import LOG_LEVELS, mlevel
 
 
@@ -131,35 +131,42 @@ class WorkerCommand(Command):
     supports_args = False
 
     def execute_from_commandline(self, argv=None):
-        if argv is None:
-            argv = list(sys.argv)
-        try:
-            pool = argv[argv.index('-P') + 1]
-        except ValueError:
-            pass
-        else:
-            # set up eventlet/gevent environments ASAP.
-            concurrency.get_implementation(pool)
+        self.maybe_detach(argv)
         return super(WorkerCommand, self).execute_from_commandline(argv)
 
-    def run(self, *args, **kwargs):
-        kwargs.pop('app', None)
+    def maybe_detach(self, argv, dopts=['-D', '--detach']):
+        argv = list(sys.argv) if argv is None else argv
+        if any(arg in argv for arg in dopts):
+            argv = [arg for arg in argv if arg not in dopts]
+            # never returns
+            detached_celeryd().execute_from_commandline(argv)
+            raise SystemExit(0)
+
+    def run(self, hostname=None, pool_cls=None, loglevel=None,
+            app=None, **kwargs):
         # Pools like eventlet/gevent needs to patch libs as early
         # as possible.
-        kwargs['pool_cls'] = concurrency.get_implementation(
-                    kwargs.get('pool_cls') or self.app.conf.CELERYD_POOL)
+        pool_cls = (concurrency.get_implementation(pool_cls) or
+                    self.app.conf.CELERYD_POOL)
         if self.app.IS_WINDOWS and kwargs.get('beat'):
             self.die('-B option does not work on Windows.  '
                      'Please run celerybeat as a separate service.')
-        loglevel = kwargs.get('loglevel')
+        hostname = self.simple_format(hostname)
         if loglevel:
             try:
-                kwargs['loglevel'] = mlevel(loglevel)
+                loglevel = mlevel(loglevel)
             except KeyError:  # pragma: no cover
-                self.die('Unknown level %r. Please use one of %s.' % (
-                    loglevel, '|'.join(l for l in LOG_LEVELS.keys()
+                self.die('Unknown level {0!r}. Please use one of {1}.'.format(
+                    loglevel, '|'.join(l for l in LOG_LEVELS
                       if isinstance(l, basestring))))
-        return self.app.Worker(**kwargs).run()
+        return self.app.Worker(
+            hostname=hostname, pool_cls=pool_cls, loglevel=loglevel, **kwargs
+        ).start()
+
+    def with_pool_option(self, argv):
+        # this command support custom pools
+        # that may have to be loaded as early as possible.
+        return (['-P'], ['--pool'])
 
     def get_options(self):
         conf = self.app.conf
@@ -168,7 +175,6 @@ class WorkerCommand(Command):
                 default=conf.CELERYD_CONCURRENCY, type='int'),
             Option('-P', '--pool', default=conf.CELERYD_POOL, dest='pool_cls'),
             Option('--purge', '--discard', default=False, action='store_true'),
-            Option('-f', '--logfile', default=conf.CELERYD_LOG_FILE),
             Option('-l', '--loglevel', default=conf.CELERYD_LOG_LEVEL),
             Option('-n', '--hostname'),
             Option('-B', '--beat', action='store_true'),
@@ -187,11 +193,11 @@ class WorkerCommand(Command):
                 default=conf.CELERYD_MAX_TASKS_PER_CHILD, type='int'),
             Option('--queues', '-Q', default=[]),
             Option('--include', '-I', default=[]),
-            Option('--pidfile'),
             Option('--autoscale'),
             Option('--autoreload', action='store_true'),
             Option('--no-execv', action='store_true', default=False),
-        )
+            Option('-D', '--detach', action='store_true'),
+        ) + daemon_options()
 
 
 def main():
@@ -200,6 +206,7 @@ def main():
     # (see multiprocessing.forking.get_preparation_data())
     if __name__ != '__main__':  # pragma: no cover
         sys.modules['__main__'] = sys.modules[__name__]
+    from billiard import freeze_support
     freeze_support()
     worker = WorkerCommand()
     worker.execute_from_commandline()

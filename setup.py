@@ -1,37 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import os
-import sys
-import codecs
-
-if sys.version_info < (2, 5):
-    raise Exception('Celery requires Python 2.5 or higher.')
-
-try:
-    orig_path = sys.path[:]
-    for path in (os.path.curdir, os.getcwd()):
-        if path in sys.path:
-            sys.path.remove(path)
-    try:
-        import celery.app
-        import imp
-        import shutil
-        _, task_path, _ = imp.find_module('task', celery.app.__path__)
-        if task_path.endswith('/task'):
-            print('- force upgrading previous installation')
-            print('  - removing %r package...' % task_path)
-            try:
-                shutil.rmtree(os.path.abspath(task_path))
-            except Exception:
-                sys.stderr.write('Could not remove %r: %r\n' % (
-                    task_path, sys.exc_info[1]))
-    except ImportError:
-        print('Upgrade: no old version found.')
-    finally:
-        sys.path[:] = orig_path
-except ImportError:
-    pass
-
 
 try:
     from setuptools import setup, find_packages
@@ -42,6 +10,48 @@ except ImportError:
     use_setuptools()
     from setuptools import setup, find_packages           # noqa
     from setuptools.command.test import test              # noqa
+
+import os
+import sys
+import codecs
+
+CELERY_COMPAT_PROGRAMS = int(os.environ.get('CELERY_COMPAT_PROGRAMS', 1))
+
+if sys.version_info < (2, 6):
+    raise Exception('Celery 3.1 requires Python 2.6 or higher.')
+
+downgrade_packages = [
+    'celery.app.task',
+    'celery.concurrency.processes',
+]
+orig_path = sys.path[:]
+for path in (os.path.curdir, os.getcwd()):
+    if path in sys.path:
+        sys.path.remove(path)
+try:
+    import imp
+    import shutil
+    for pkg in downgrade_packages:
+        try:
+            parent, module = pkg.rsplit('.', 1)
+            print('- Trying to upgrade %r in %r' % (module, parent))
+            parent_mod = __import__(parent, None, None, [parent])
+            _, mod_path, _ = imp.find_module(module, parent_mod.__path__)
+            if mod_path.endswith('/' + module):
+                print('- force upgrading previous installation')
+                print('  - removing {0!r} package...'.format(mod_path))
+                try:
+                    shutil.rmtree(os.path.abspath(mod_path))
+                except Exception:
+                    sys.stderr.write('Could not remove {0!r}: {1!r}\n'.format(
+                        mod_path, sys.exc_info[1]))
+        except ImportError:
+            print('- upgrade %s: no old version found.' % module)
+except:
+    pass
+finally:
+    sys.path[:] = orig_path
+
 
 NAME = 'celery'
 entrypoints = {}
@@ -56,9 +66,11 @@ classes = """
     Topic :: Software Development :: Object Brokering
     Programming Language :: Python
     Programming Language :: Python :: 2
-    Programming Language :: Python :: 2.5
     Programming Language :: Python :: 2.6
     Programming Language :: Python :: 2.7
+    Programming Language :: Python :: 3
+    Programming Language :: Python :: 3.2
+    Programming Language :: Python :: 3.3
     Programming Language :: Python :: Implementation :: CPython
     Programming Language :: Python :: Implementation :: PyPy
     Programming Language :: Python :: Implementation :: Jython
@@ -145,20 +157,10 @@ if is_jython:
     install_requires.extend(reqs('jython.txt'))
 if py_version[0:2] == (2, 6):
     install_requires.extend(reqs('py26.txt'))
-elif py_version[0:2] == (2, 5):
-    install_requires.extend(reqs('py25.txt'))
 
 # -*- Tests Requires -*-
 
-if is_py3k:
-    tests_require = reqs('test-py3k.txt')
-elif is_pypy:
-    tests_require = reqs('test-pypy.txt')
-else:
-    tests_require = reqs('test.txt')
-
-if py_version[0:2] == (2, 5):
-    tests_require.extend(reqs('test-py25.txt'))
+tests_require = reqs('test.txt')
 
 # -*- Long Description -*-
 
@@ -170,14 +172,18 @@ else:
 # -*- Entry Points -*- #
 
 console_scripts = entrypoints['console_scripts'] = [
-        'celery = celery.bin.celery:main',
-        'celeryd = celery.bin.celeryd:main',
+    'celery = celery.__main__:main',
+]
+
+if CELERY_COMPAT_PROGRAMS:
+    console_scripts.extend([
+        'celeryd = celery.__main__:_compat_worker',
         'celerybeat = celery.bin.celerybeat:main',
         'camqadm = celery.bin.camqadm:main',
         'celeryev = celery.bin.celeryev:main',
         'celeryctl = celery.bin.celeryctl:main',
         'celeryd-multi = celery.bin.celeryd_multi:main',
-]
+    ])
 
 # bundles: Only relevant for Celery developers.
 entrypoints['bundle.bundles'] = ['celery = celery.contrib.bundles:bundles']

@@ -53,7 +53,7 @@ the :meth:`~@Celery.task` decorator:
 
     from .models import User
 
-    @celery.task()
+    @celery.task
     def create_user(username, password):
         User.objects.create(username=username, password=password)
 
@@ -79,7 +79,7 @@ these can be specified as arguments to the decorator:
 
         from celery import task
 
-        @task()
+        @task
         def add(x, y):
             return x + y
 
@@ -92,7 +92,7 @@ these can be specified as arguments to the decorator:
 
     .. code-block:: python
 
-        @celery.task()
+        @celery.task
         @decorator2
         @decorator1
         def add(x, y):
@@ -139,7 +139,7 @@ if the module name is "tasks.py":
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     def add(x, y):
         return x + y
 
@@ -219,16 +219,30 @@ The request defines the following attributes:
                 containing the exchange and routing key used to deliver this
                 task.  Used by e.g. :meth:`~@Task.retry`
                 to resend the task to the same destination queue.
+                Availability of keys in this dict depends on the
+                message broker used.
 
 
 An example task accessing information in the context is:
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     def dump_context(x, y):
-        print('Executing task id %r, args: %r kwargs: %r' % (
-            add.request.id, add.request.args, add.request.kwargs))
+        print('Executing task id {0.id}, args: {0.args!r} kwargs: {0.kwargs!r}'.format(
+                dump_context.request))
+
+
+:data:`~celery.current_task` can also be used:
+
+.. code-block:: python
+
+    from celery import current_task
+
+    @celery.task
+    def dump_context(x, y):
+        print('Executing task id {0.id}, args: {0.args!r} kwargs: {0.kwargs!r}'.format(
+                current_task.request))
 
 .. _task-logging:
 
@@ -251,9 +265,9 @@ for all of your tasks at the top of your module:
 
     logger = get_task_logger(__name__)
 
-    @celery.task()
+    @celery.task
     def add(x, y):
-        logger.info('Adding %s + %s' % (x, y))
+        logger.info('Adding {0} + {1}'.format(x, y))
         return x + y
 
 Celery uses the standard Python logger library,
@@ -284,15 +298,15 @@ Here's an example using ``retry``:
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     def send_twitter_status(oauth, tweet):
         try:
             twitter = Twitter(oauth)
             twitter.update_status(tweet)
-        except (Twitter.FailWhaleError, Twitter.LoginError), exc:
+        except (Twitter.FailWhaleError, Twitter.LoginError) as exc:
             raise send_twitter_status.retry(exc=exc)
 
-Here we used the `exc` argument to pass the current exception to
+Here the `exc` argument was used to pass the current exception to
 :meth:`~@Task.retry`.  Both the exception and the traceback will
 be available in the task state (if a result backend is enabled).
 
@@ -327,7 +341,7 @@ override this default.
     def add(x, y):
         try:
             ...
-        except Exception, exc:
+        except Exception as exc:
             raise add.retry(exc=exc, countdown=60)  # override the default and
                                                     # retry in 1 minute
 
@@ -523,8 +537,8 @@ Result Backends
 ---------------
 
 Celery needs to store or send the states somewhere.  There are several
-built-in backends to choose from: SQLAlchemy/Django ORM, Memcached, Redis,
-AMQP, MongoDB, Tokyo Tyrant and Redis -- or you can define your own.
+built-in backends to choose from: SQLAlchemy/Django ORM, Memcached,
+RabbitMQ (amqp), MongoDB, and Redis -- or you can define your own.
 
 No backend works well for every use case.
 You should read about the strengths and weaknesses of each backend, and choose
@@ -535,11 +549,11 @@ the most appropriate for your needs.
 
     :ref:`conf-result-backend`
 
-AMQP Result Backend
-~~~~~~~~~~~~~~~~~~~
+RabbitMQ Result Backend
+~~~~~~~~~~~~~~~~~~~~~~~
 
-The AMQP result backend is special as it does not actually *store* the states,
-but rather sends them as messages.  This is an important difference as it
+The RabbitMQ result backend (amqp) is special as it does not actually *store*
+the states, but rather sends them as messages.  This is an important difference as it
 means that a result *can only be retrieved once*; If you have two processes
 waiting for the same result, one of the processes will never receive the
 result!
@@ -548,8 +562,8 @@ Even with that limitation, it is an excellent choice if you need to receive
 state changes in real-time.  Using messaging means the client does not have to
 poll for new states.
 
-There are several other pitfalls you should be aware of when using the AMQP
-backend:
+There are several other pitfalls you should be aware of when using the
+RabbitMQ result backend:
 
 * Every new task creates a new queue on the server, with thousands of tasks
   the broker may be overloaded with queues and this will affect performance in
@@ -563,7 +577,7 @@ backend:
   expire after 1 day: if you have a very busy cluster you should lower
   this value.
 
-For a list of options supported by the AMQP result backend, please see
+For a list of options supported by the RabbitMQ result backend, please see
 :ref:`conf-amqp-result-backend`.
 
 
@@ -668,14 +682,14 @@ Use :meth:`~@Task.update_state` to update a task's state::
 
     from celery import current_task
 
-    @celery.task()
+    @celery.task
     def upload_files(filenames):
         for i, file in enumerate(filenames):
             current_task.update_state(state='PROGRESS',
                 meta={'current': i, 'total': len(filenames)})
 
 
-Here we created the state `"PROGRESS"`, which tells any application
+Here I created the state `"PROGRESS"`, which tells any application
 aware of this state that the task is currently in progress, and also where
 it is in the process by having `current` and `total` counts as part of the
 state metadata.  This can then be used to create e.g. progress bars.
@@ -750,7 +764,7 @@ As an example, the following code,
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     def add(x, y):
         return x + y
 
@@ -759,7 +773,7 @@ will do roughly this behind the scenes:
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     class AddTask(Task):
 
         def run(self, x, y):
@@ -797,16 +811,36 @@ If you have a task,
 And you route every request to the same process, then it
 will keep state between requests.
 
-This can also be useful to keep cached resources::
+This can also be useful to cache resources,
+e.g. a base Task class that caches a database connection:
+
+.. code-block:: python
+
+    from celery import Task
 
     class DatabaseTask(Task):
+        abstract = True
         _db = None
 
         @property
         def db(self):
-            if self._db = None:
+            if self._db is None:
                 self._db = Database.connect()
             return self._db
+
+
+that can be added to tasks like this:
+
+.. code-block:: python
+
+
+    @celery.task(base=DatabaseTask)
+    def process_rows():
+        for row in process_rows.db.table.all():
+            ...
+
+The ``db`` attribute of the ``process_rows`` task will then
+always stay the same in each process.
 
 Abstract classes
 ----------------
@@ -822,7 +856,7 @@ base class for new task types.
         abstract = True
 
         def after_return(self, *args, **kwargs):
-            print('Task returned: %r' % (self.request, ))
+            print('Task returned: {0!r}'.format(self.request)
 
 
     @celery.task(base=DebugTask)
@@ -935,7 +969,7 @@ task as :attr:`~@Task.abstract`:
 This way the task won't be registered, but any task inheriting from
 it will be.
 
-When tasks are sent, we don't send any actual function code, just the name
+When tasks are sent, no actual function code is sent with it, just the name
 of the task to execute.  When the worker then receives the message it can look
 up the name in its task registry to find the execution code.
 
@@ -999,21 +1033,21 @@ Make your design asynchronous instead, for example by using *callbacks*.
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     def update_page_info(url):
         page = fetch_page.delay(url).get()
         info = parse_page.delay(url, page).get()
         store_page_info.delay(url, info)
 
-    @celery.task()
+    @celery.task
     def fetch_page(url):
         return myhttplib.get(url)
 
-    @celery.task()
+    @celery.task
     def parse_page(url, page):
         return myparser.parse_document(page)
 
-    @celery.task()
+    @celery.task
     def store_page_info(url, info):
         return PageInfo.objects.create(url, info)
 
@@ -1040,7 +1074,7 @@ Make your design asynchronous instead, for example by using *callbacks*.
         PageInfo.objects.create(url, info)
 
 
-Here we instead create a chain of tasks by linking together
+Here I instead created a chain of tasks by linking together
 different :func:`~celery.subtask`'s.
 You can read about chains and other powerful constructs
 at :ref:`designing-workflows`.
@@ -1130,7 +1164,7 @@ that automatically expands some abbreviations in it:
         title = models.CharField()
         body = models.TextField()
 
-    @celery.task()
+    @celery.task
     def expand_abbreviations(article):
         article.body.replace('MyCorp', 'My Corporation')
         article.save()
@@ -1151,7 +1185,7 @@ re-fetch the article in the task body:
 
 .. code-block:: python
 
-    @celery.task()
+    @celery.task
     def expand_abbreviations(article_id):
         article = Article.objects.get(id=article_id)
         article.body.replace('MyCorp', 'My Corporation')
@@ -1212,8 +1246,8 @@ Let's take a real wold example; A blog where comments posted needs to be
 filtered for spam.  When the comment is created, the spam filter runs in the
 background, so the user doesn't have to wait for it to finish.
 
-We have a Django blog application allowing comments
-on blog posts.  We'll describe parts of the models/views and tasks for this
+I have a Django blog application allowing comments
+on blog posts.  I'll describe parts of the models/views and tasks for this
 application.
 
 blog/models.py
@@ -1243,8 +1277,8 @@ The comment model looks like this:
             verbose_name_plural = _('comments')
 
 
-In the view where the comment is posted, we first write the comment
-to the database, then we launch the spam filter task in the background.
+In the view where the comment is posted, I first write the comment
+to the database, then I launch the spam filter task in the background.
 
 .. _task-example-blog-views:
 
@@ -1287,12 +1321,12 @@ blog/views.py
         return render_to_response(template_name, context_instance=context)
 
 
-To filter spam in comments we use `Akismet`_, the service
+To filter spam in comments I use `Akismet`_, the service
 used to filter spam in comments posted to the free weblog platform
 `Wordpress`.  `Akismet`_ is free for personal use, but for commercial use you
 need to pay.  You have to sign up to their service to get an API key.
 
-To make API calls to `Akismet`_ we use the `akismet.py`_ library written by
+To make API calls to `Akismet`_ I use the `akismet.py`_ library written by
 `Michael Foord`_.
 
 .. _task-example-blog-tasks:
@@ -1312,14 +1346,14 @@ blog/tasks.py
     from blog.models import Comment
 
 
-    @celery.task()
+    @celery.task
     def spam_filter(comment_id, remote_addr=None):
         logger = spam_filter.get_logger()
-        logger.info('Running spam filter for comment %s' % comment_id)
+        logger.info('Running spam filter for comment %s', comment_id)
 
         comment = Comment.objects.get(pk=comment_id)
         current_domain = Site.objects.get_current().domain
-        akismet = Akismet(settings.AKISMET_KEY, 'http://%s' % domain)
+        akismet = Akismet(settings.AKISMET_KEY, 'http://{0}'.format(domain))
         if not akismet.verify_key():
             raise ImproperlyConfigured('Invalid AKISMET_KEY')
 

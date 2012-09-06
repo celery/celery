@@ -21,8 +21,8 @@ from celery.utils.log import get_task_logger
 
 #: list of methods that must be classmethods in the old API.
 _COMPAT_CLASSMETHODS = (
-    'delay', 'apply_async', 'retry', 'apply',
-    'AsyncResult', 'subtask', 'push_request', 'pop_request')
+    'delay', 'apply_async', 'retry', 'apply', 'AsyncResult', 'subtask',
+)
 
 
 class Task(BaseTask):
@@ -45,13 +45,12 @@ class Task(BaseTask):
     immediate = False
     priority = None
     type = 'regular'
-    error_whitelist = ()
     disable_error_emails = False
+    accept_magic_kwargs = False
 
     from_config = BaseTask.from_config + (
         ('exchange_type', 'CELERY_DEFAULT_EXCHANGE_TYPE'),
         ('delivery_mode', 'CELERY_DEFAULT_DELIVERY_MODE'),
-        ('error_whitelist', 'CELERY_TASK_ERROR_WHITELIST'),
     )
 
     # In old Celery the @task decorator didn't exist, so one would create
@@ -72,7 +71,7 @@ class Task(BaseTask):
         return get_task_logger(self.name)
 
     @classmethod
-    def establish_connection(self, connect_timeout=None):
+    def establish_connection(self):
         """Deprecated method used to get a broker connection.
 
         Should be replaced with :meth:`@Celery.connection`
@@ -88,11 +87,10 @@ class Task(BaseTask):
             with celery.connection() as conn:
                 ...
         """
-        return self._get_app().connection(
-                connect_timeout=connect_timeout)
+        return self._get_app().connection()
 
     def get_publisher(self, connection=None, exchange=None,
-            connect_timeout=None, exchange_type=None, **options):
+            exchange_type=None, **options):
         """Deprecated method to get the task publisher (now called producer).
 
         Should be replaced with :class:`@amqp.TaskProducer`:
@@ -107,7 +105,7 @@ class Task(BaseTask):
         exchange = self.exchange if exchange is None else exchange
         if exchange_type is None:
             exchange_type = self.exchange_type
-        connection = connection or self.establish_connection(connect_timeout)
+        connection = connection or self.establish_connection()
         return self._get_app().amqp.TaskProducer(connection,
                 exchange=exchange and Exchange(exchange, exchange_type),
                 routing_key=self.routing_key, **options)
@@ -174,7 +172,7 @@ def task(*args, **kwargs):
         def refresh_feed(url):
             try:
                 return Feed.objects.get(url=url).refresh()
-            except socket.error, exc:
+            except socket.error as exc:
                 refresh_feed.retry(exc=exc)
 
     Calling the resulting task:
@@ -209,7 +207,7 @@ def periodic_task(*args, **options):
                 def refresh_feed(url):
                     try:
                         return Feed.objects.get(url=url).refresh()
-                    except socket.error, exc:
+                    except socket.error as exc:
                         current.retry(exc=exc)
 
             Calling the resulting task:

@@ -12,7 +12,6 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import threading
 
@@ -138,7 +137,7 @@ class Autoscaler(bgThread):
             self.pool.shrink(n)
         except ValueError:
             debug("Autoscaler won't scale down: all processes busy.")
-        except Exception, exc:
+        except Exception as exc:
             error('Autoscaler: scale_down: %r', exc, exc_info=True)
 
     def info(self):

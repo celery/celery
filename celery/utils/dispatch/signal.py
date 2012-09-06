@@ -176,7 +176,7 @@ class Signal(object):  # pragma: no cover
         for receiver in self._live_receivers(_make_id(sender)):
             try:
                 response = receiver(signal=self, sender=sender, **named)
-            except Exception, err:
+            except Exception as err:
                 responses.append((receiver, err))
             else:
                 responses.append((receiver, response))
@@ -216,6 +216,6 @@ class Signal(object):  # pragma: no cover
                     del self.receivers[idx]
 
     def __repr__(self):
-        return '<Signal: %s>' % (self.__class__.__name__, )
+        return '<Signal: {0}>'.format(type(self).__name__)
 
     __str__ = __repr__

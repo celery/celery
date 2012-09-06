@@ -11,7 +11,9 @@ Installation
 
 For the MongoDB support you have to install additional dependencies.
 You can install both Celery and these dependencies in one go using
-either the `celery-with-mongodb`_, or the `django-celery-with-mongodb` bundles::
+either the `celery-with-mongodb`_, or the `django-celery-with-mongodb` bundles:
+
+.. code-block:: bash
 
     $ pip install -U celery-with-mongodb
 
@@ -45,12 +47,3 @@ Results
 
 If you also want to store the state and return values of tasks in MongoDB,
 you should see :ref:`conf-mongodb-result-backend`.
-
-.. _broker-mongodb-limitations:
-
-Limitations
-===========
-
-The mongodb message transport currently does not support:
-
-    * Remote control commands (celeryctl, broadcast)

@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import errno
 import signal
@@ -188,7 +187,7 @@ class test_MultiTool(Case):
         pipe.wait.return_value = 2
         self.assertEqual(self.t.waitexec(['-m', 'foo'], 'path'), 2)
         self.t.note.assert_called_with(
-                '* Child terminated with failure code 2')
+                '* Child terminated with errorcode 2')
 
         pipe.wait.return_value = 0
         self.assertFalse(self.t.waitexec(['-m', 'foo', 'path']))
@@ -418,9 +417,9 @@ class test_MultiTool(Case):
         self.assertTrue(self.t.verbose)
         self.assertTrue(self.t.no_color)
 
-    def test_stop_verify(self):
+    def test_stopwait(self):
         self.t._stop_nodes = Mock()
-        self.t.stop_verify(['foo', 'bar', 'baz'], 'celeryd')
+        self.t.stopwait(['foo', 'bar', 'baz'], 'celeryd')
         self.assertEqual(self.t._stop_nodes.call_args[1]['retry'], 2)
 
     @patch('celery.bin.celeryd_multi.MultiTool')

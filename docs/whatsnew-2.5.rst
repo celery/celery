@@ -50,11 +50,12 @@ this default or the default retry policy see
 :setting:`CELERY_TASK_PUBLISH_RETRY` and
 :setting:`CELERY_TASK_PUBLISH_RETRY_POLICY`.
 
-AMQP Result Backend: Exchange is no longer *auto delete*
---------------------------------------------------------
+Rabbit Result Backend: Exchange is no longer *auto delete*
+----------------------------------------------------------
 
-The exchange used for results used to have the *auto_delete* flag set,
-that could result in a race condition leading to an annoying warning.
+The exchange used for results in the Rabbit (AMQP) result backend
+used to have the *auto_delete* flag set, which could result in a
+race condition leading to an annoying warning.
 
 .. admonition:: For RabbitMQ users
 
@@ -62,9 +63,11 @@ that could result in a race condition leading to an annoying warning.
     to be removed.
 
     The :program:`camqadm` command can be used to delete the
-    previous exchange::
+    previous exchange:
 
-        $ camqadm exchange.delete celeryresults
+    .. code-block:: bash
+
+            $ camqadm exchange.delete celeryresults
 
     As an alternative to deleting the old exchange you can
     configure a new name for the exchange::
@@ -152,7 +155,7 @@ Deprecations
 
 * The :mod:`celery.decorators` module has changed status
   from pending deprecation to deprecated, and is scheduled for removal
-  in version 3.0.  The ``celery.task`` module must be used instead.
+  in version 4.0.  The ``celery.task`` module must be used instead.
 
 .. _v250-news:
 
@@ -236,7 +239,9 @@ implementations:
     Used if the :mod:`pyinotify` library is installed.
     If you are running on Linux this is the recommended implementation,
     to install the :mod:`pyinotify` library you have to run the following
-    command::
+    command:
+
+    .. code-block:: bash
 
         $ pip install pyinotify
 
@@ -248,7 +253,9 @@ implementations:
     expensive.
 
 You can force an implementation by setting the :envvar:`CELERYD_FSNOTIFY`
-environment variable::
+environment variable:
+
+.. code-block:: bash
 
     $ env CELERYD_FSNOTIFY=stat celeryd -l info --autoreload
 
@@ -340,9 +347,9 @@ In Other News
 
     Contributed by Dan McGee.
 
-- Adds Chord support for the AMQP backend
+- Adds Chord support for the Rabbit result backend (amqp)
 
-    The AMQP backend can now use the fallback chord solution.
+    The Rabbit result backend can now use the fallback chord solution.
 
 - Sending :sig:`QUIT` to celeryd will now cause it cold terminate.
 
@@ -370,7 +377,9 @@ In Other News
 - celerybeat can now be configured on the command line like celeryd.
 
   Additional configuration must be added at the end of the argument list
-  followed by ``--``, for example::
+  followed by ``--``, for example:
+
+  .. code-block:: bash
 
     $ celerybeat -l info -- celerybeat.max_loop_interval=10.0
 
@@ -418,7 +427,9 @@ In Other News
     Note that this is experimental and you should have a backup
     of the data before proceeding.
 
-    **Examples**::
+    **Examples**:
+
+    .. code-block:: bash
 
         $ celeryctl migrate redis://localhost amqp://localhost
         $ celeryctl migrate amqp://localhost//v1 amqp://localhost//v2

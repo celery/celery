@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import sys
 import socket
@@ -15,6 +14,7 @@ from celery.task import task
 from celery.utils import uuid
 from celery.utils.timer2 import Timer
 from celery.worker import WorkController as _WC
+from celery.worker import consumer
 from celery.worker import control
 from celery.worker import state
 from celery.worker.buckets import FastQueue
@@ -35,18 +35,15 @@ class WorkController(object):
     autoscaler = None
 
 
-class Consumer(object):
+class Consumer(consumer.Consumer):
 
     def __init__(self):
         self.ready_queue = FastQueue()
-        self.ready_queue.put(TaskRequest(mytask.name,
-                                         uuid(),
-                                         args=(2, 2),
-                                         kwargs={}))
         self.timer = Timer()
         self.app = current_app
         self.event_dispatcher = Mock()
         self.controller = WorkController()
+        self.task_consumer = Mock()
 
         from celery.concurrency.base import BasePool
         self.pool = BasePool(10)
@@ -158,8 +155,6 @@ class test_ControlPanel(Case):
         self.panel.handle('report')
 
     def test_active(self):
-        from celery.worker.job import TaskRequest
-
         r = TaskRequest(mytask.name, 'do re mi', (), {})
         state.active_requests.add(r)
         try:
@@ -249,16 +244,22 @@ class test_ControlPanel(Case):
         self.assertTrue(panel.handle('dump_schedule'))
 
     def test_dump_reserved(self):
+        from celery.worker import state
         consumer = Consumer()
-        panel = self.create_panel(consumer=consumer)
-        response = panel.handle('dump_reserved', {'safe': True})
-        self.assertDictContainsSubset({'name': mytask.name,
-                                       'args': (2, 2),
-                                       'kwargs': {},
-                                       'hostname': socket.gethostname()},
-                                       response[0])
-        consumer.ready_queue = FastQueue()
-        self.assertFalse(panel.handle('dump_reserved'))
+        state.reserved_requests.add(TaskRequest(mytask.name,
+                uuid(), args=(2, 2), kwargs={}))
+        try:
+            panel = self.create_panel(consumer=consumer)
+            response = panel.handle('dump_reserved', {'safe': True})
+            self.assertDictContainsSubset({'name': mytask.name,
+                                        'args': (2, 2),
+                                        'kwargs': {},
+                                        'hostname': socket.gethostname()},
+                                        response[0])
+            state.reserved_requests.clear()
+            self.assertFalse(panel.handle('dump_reserved'))
+        finally:
+            state.reserved_requests.clear()
 
     def test_rate_limit_when_disabled(self):
         app = current_app

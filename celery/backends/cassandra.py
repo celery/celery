@@ -23,12 +23,12 @@ from celery.exceptions import ImproperlyConfigured
 from celery.utils.log import get_logger
 from celery.utils.timeutils import maybe_timedelta, timedelta_seconds
 
-from .base import BaseDictBackend
+from .base import BaseBackend
 
 logger = get_logger(__name__)
 
 
-class CassandraBackend(BaseDictBackend):
+class CassandraBackend(BaseBackend):
     """Highly fault tolerant Cassandra backend.
 
     .. attribute:: servers
@@ -142,11 +142,11 @@ class CassandraBackend(BaseDictBackend):
             if self.detailed_mode:
                 meta['result'] = result
                 cf.insert(task_id, {date_done: self.encode(meta)},
-                          ttl=timedelta_seconds(self.expires))
+                          ttl=self.expires and timedelta_seconds(self.expires))
             else:
                 meta['result'] = self.encode(result)
                 cf.insert(task_id, meta,
-                          ttl=timedelta_seconds(self.expires))
+                          ttl=self.expires and timedelta_seconds(self.expires))
 
         return self._retry_on_error(_do_store)
 

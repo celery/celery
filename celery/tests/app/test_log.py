@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import sys
 import logging
@@ -219,7 +218,6 @@ class test_default_logger(AppCase):
             p.flush()
             p.close()
             self.assertFalse(p.isatty())
-            self.assertIsNone(p.fileno())
 
     def test_logging_proxy_recurse_protection(self):
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,

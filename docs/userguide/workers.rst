@@ -19,22 +19,41 @@ Starting the worker
     in the background.  See :ref:`daemonizing` for help
     detaching the worker using popular daemonization tools.
 
-You can start the worker in the foreground by executing the command::
+You can start the worker in the foreground by executing the command:
+
+.. code-block:: bash
 
     $ celery worker --app=app -l info
 
 For a full list of available command line options see
-:mod:`~celery.bin.celeryd`, or simply do::
+:mod:`~celery.bin.celeryd`, or simply do:
+
+.. code-block:: bash
 
     $ celery worker --help
 
 You can also start multiple workers on the same machine. If you do so
 be sure to give a unique name to each individual worker by specifying a
-host name with the :option:`--hostname|-n` argument::
+host name with the :option:`--hostname|-n` argument:
 
-    $ celery worker --loglevel=INFO --concurrency=10 -n worker1.example.com
-    $ celery worker --loglevel=INFO --concurrency=10 -n worker2.example.com
-    $ celery worker --loglevel=INFO --concurrency=10 -n worker3.example.com
+.. code-block:: bash
+
+    $ celery worker --loglevel=INFO --concurrency=10 -n worker1.%h
+    $ celery worker --loglevel=INFO --concurrency=10 -n worker2.%h
+    $ celery worker --loglevel=INFO --concurrency=10 -n worker3.%h
+
+The hostname argument can expand the following variables:
+
+    - ``%h``:  Hostname including domain name.
+    - ``%n``:  Hostname only.
+    - ``%d``:  Domain name only.
+
+E.g. if the current hostname is ``george.example.com`` then
+these will expand to:
+
+    - ``worker1.%h`` -> ``worker1.george.example.com``
+    - ``worker1.%n`` -> ``worker1.george``
+    - ``worker1.%d`` -> ``worker1.example.com``
 
 .. _worker-stopping:
 
@@ -56,7 +75,9 @@ option set).
 
 Also as processes can't override the :sig:`KILL` signal, the worker will
 not be able to reap its children, so make sure to do so manually.  This
-command usually does the trick::
+command usually does the trick:
+
+.. code-block:: bash
 
     $ ps auxww | grep 'celery worker' | awk '{print $2}' | xargs kill -9
 
@@ -66,7 +87,9 @@ Restarting the worker
 =====================
 
 Other than stopping then starting the worker to restart, you can also
-restart the worker using the :sig:`HUP` signal::
+restart the worker using the :sig:`HUP` signal:
+
+.. code-block:: bash
 
     $ kill -HUP $pid
 
@@ -159,7 +182,7 @@ to the number of destination hosts.
     The solo and threads pool supports remote control commands,
     but any task executing will block any waiting control command,
     so it is of limited use if the worker is very busy.  In that
-    case you must increase the timeout waitin for replies in the client.
+    case you must increase the timeout waiting for replies in the client.
 
 .. _worker-broadcast-fun:
 
@@ -248,7 +271,7 @@ argument to :program:`celery worker` or the :setting:`CELERYD_STATE_DB`
 setting.
 
 Note that remote control commands must be working for revokes to work.
-Remote control commands are only supported by the amqp, redis and mongodb
+Remote control commands are only supported by the RabbitMQ (amqp), Redis and MongDB
 transports at this point.
 
 .. _worker-time-limits:
@@ -283,7 +306,7 @@ time limit kills it:
     from myapp import celery
     from celery.exceptions import SoftTimeLimitExceeded
 
-    @celery.task()
+    @celery.task
     def mytask():
         try:
             do_work()
@@ -291,7 +314,7 @@ time limit kills it:
             clean_up_in_a_hurry()
 
 Time limits can also be set using the :setting:`CELERYD_TASK_TIME_LIMIT` /
-:setting:`CELERYD_SOFT_TASK_TIME_LIMIT` settings.
+:setting:`CELERYD_TASK_SOFT_TIME_LIMIT` settings.
 
 .. note::
 
@@ -378,7 +401,7 @@ based on load:
     - and starts removing processes when the workload is low.
 
 It's enabled by the :option:`--autoscale` option, which needs two
-numbers: the maximum and minumum number of pool processes::
+numbers: the maximum and minimum number of pool processes::
 
         --autoscale=AUTOSCALE
              Enable autoscaling by providing
@@ -390,6 +413,146 @@ You can also define your own rules for the autoscaler by subclassing
 :class:`~celery.worker.autoscaler.Autoscaler`.
 Some ideas for metrics include load average or the amount of memory available.
 You can specify a custom autoscaler with the :setting:`CELERYD_AUTOSCALER` setting.
+
+.. _worker-queues:
+
+Queues
+======
+
+A worker instance can consume from any number of queues.
+By default it will consume from all queues defined in the
+:setting:`CELERY_QUEUES` setting (which if not specified defaults to the
+queue named ``celery``).
+
+You can specify what queues to consume from at startup,
+by giving a comma separated list of queues to the :option:`-Q` option:
+
+.. code-block:: bash
+
+    $ celery worker -l info -Q foo,bar,baz
+
+If the queue name is defined in :setting:`CELERY_QUEUES` it will use that
+configuration, but if it's not defined in the list of queues Celery will
+automatically generate a new queue for you (depending on the
+:setting:`CELERY_CREATE_MISSING_QUEUES` option).
+
+You can also tell the worker to start and stop consuming from a queue at
+runtime using the remote control commands :control:`add_consumer` and
+:control:`cancel_consumer`.
+
+.. control:: add_consumer
+
+Queues: Adding consumers
+------------------------
+
+The :control:`add_consumer` control command will tell one or more workers
+to start consuming from a queue. This operation is idempotent.
+
+To tell all workers in the cluster to start consuming from a queue
+named "``foo``" you can use the :program:`celery control` program:
+
+.. code-block:: bash
+
+    $ celery control add_consumer foo
+    -> worker1.local: OK
+        started consuming from u'foo'
+
+If you want to specify a specific worker you can use the
+:option:`--destination`` argument:
+
+.. code-block:: bash
+
+    $ celery control add_consumer foo -d worker1.local
+
+The same can be accomplished dynamically using the :meth:`@control.add_consumer` method::
+
+    >>> myapp.control.add_consumer('foo', reply=True)
+    [{u'worker1.local': {u'ok': u"already consuming from u'foo'"}}]
+
+    >>> myapp.control.add_consumer('foo', reply=True,
+    ...                            destination=['worker1.local'])
+    [{u'worker1.local': {u'ok': u"already consuming from u'foo'"}}]
+
+
+By now I have only shown examples using automatic queues,
+If you need more control you can also specify the exchange, routing_key and
+even other options::
+
+    >>> myapp.control.add_consumer(
+    ...     queue='baz',
+    ...     exchange='ex',
+    ...     exchange_type='topic',
+    ...     routing_key='media.*',
+    ...     options={
+    ...         'queue_durable': False,
+    ...         'exchange_durable': False,
+    ...     },
+    ...     reply=True,
+    ...     destination=['worker1.local', 'worker2.local'])
+
+
+.. control:: cancel_consumer
+
+Queues: Cancelling consumers
+----------------------------
+
+You can cancel a consumer by queue name using the :control:`cancel_consumer`
+control command.
+
+To force all workers in the cluster to cancel consuming from a queue
+you can use the :program:`celery control` program:
+
+.. code-block:: bash
+
+    $ celery control cancel_consumer foo
+
+The :option:`--destination` argument can be used to specify a worker, or a
+list of workers, to act on the command:
+
+.. code-block:: bash
+
+    $ celery control cancel_consumer foo -d worker1.local
+
+
+You can also cancel consumers programmatically using the
+:meth:`@control.cancel_consumer` method:
+
+.. code-block:: bash
+
+    >>> myapp.control.cancel_consumer('foo', reply=True)
+    [{u'worker1.local': {u'ok': u"no longer consuming from u'foo'"}}]
+
+.. control:: active_queues
+
+Queues: List of active queues
+-----------------------------
+
+You can get a list of queues that a worker consumes from by using
+the :control:`active_queues` control command:
+
+.. code-block:: bash
+
+    $ celery inspect active_queues
+    [...]
+
+Like all other remote control commands this also supports the
+:option:`--destination` argument used to specify which workers should
+reply to the request:
+
+.. code-block:: bash
+
+    $ celery inspect active_queues -d worker1.local
+    [...]
+
+
+This can also be done programmatically by using the
+:meth:`@control.inspect.active_queues` method::
+
+    >>> myapp.inspect().active_queues()
+    [...]
+
+    >>> myapp.inspect(['worker1.local']).active_queues()
+    [...]
 
 .. _worker-autoreloading:
 
@@ -426,7 +589,9 @@ implementations:
     Used if the :mod:`pyinotify` library is installed.
     If you are running on Linux this is the recommended implementation,
     to install the :mod:`pyinotify` library you have to run the following
-    command::
+    command:
+
+    .. code-block:: bash
 
         $ pip install pyinotify
 
@@ -438,7 +603,9 @@ implementations:
     expensive.
 
 You can force an implementation by setting the :envvar:`CELERYD_FSNOTIFY`
-environment variable::
+environment variable:
+
+.. code-block:: bash
 
     $ env CELERYD_FSNOTIFY=stat celery worker -l info --autoreload
 
@@ -450,6 +617,8 @@ Pool Restart Command
 --------------------
 
 .. versionadded:: 2.5
+
+Requires the :setting:`CELERYD_POOL_RESTARTS` setting to be enabled.
 
 The remote control command :control:`pool_restart` sends restart requests to
 the workers child processes.  It is particularly useful for forcing

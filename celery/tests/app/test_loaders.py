@@ -1,8 +1,8 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import os
 import sys
+import warnings
 
 from mock import Mock, patch
 
@@ -20,7 +20,6 @@ from celery.utils.imports import NotAPackage
 from celery.utils.mail import SendmailWarning
 
 from celery.tests.utils import AppCase, Case
-from celery.tests.compat import catch_warnings
 
 
 class ObjectConfig(object):
@@ -160,7 +159,7 @@ class test_DefaultLoader(Case):
         self.assertTrue(l.wanted_module_item('Foo'))
         self.assertFalse(l.wanted_module_item('_FOO'))
         self.assertFalse(l.wanted_module_item('__FOO'))
-        self.assertFalse(l.wanted_module_item('foo'))
+        self.assertTrue(l.wanted_module_item('foo'))
 
     @patch('celery.loaders.default.find_module')
     def test_read_configuration_not_a_package(self, find_module):
@@ -237,7 +236,7 @@ class test_DefaultLoader(Case):
             def find_module(self, name):
                 raise ImportError(name)
 
-        with catch_warnings(record=True):
+        with warnings.catch_warnings(record=True):
             l = _Loader()
             self.assertDictEqual(l.conf, {})
             context_executed[0] = True

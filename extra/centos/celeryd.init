@@ -13,7 +13,7 @@
 # ============================================
 #
 # :Usage: /etc/init.d/${basename $0} {start|stop|restart|status}
-# :Configuration file: /etc/default/celeryd
+# :Configuration file: /etc/sysconfig/celeryd
 #
 # To implement separate init scripts, do NOT copy this script.  Instead,
 # symlink it.  I.e., if my new application, "little-worker" needs an init, I
@@ -21,9 +21,7 @@
 #
 #   ln -s /etc/init.d/celeryd /etc/init.d/little-worker
 #
-# You can then configure this by manipulating /etc/sysconfig/little-worker.  It
-# will still read defaults from /etc/defaults/celeryd, but everything can be
-# overriden by sysconfig.
+# You can then configure this by manipulating /etc/sysconfig/little-worker.
 #
 
 # Setting `prog` here allows you to symlink this init script, making it easy
@@ -37,8 +35,8 @@ prog="$(basename $0)"
 # on RHEL systems.
 [ -f "/etc/sysconfig/$prog" ] && . /etc/sysconfig/$prog
 
-CELERYD=${CELERYD:-"-m celery.bin.celeryd_detach"}
-CELERYD_MULTI=${CELERYD_MULTI:-"/usr/bin/celeryd-multi"}
+CELERYD=${CELERYD:-"-m celery worker --detach"}
+CELERY=${CELERY:-"/usr/bin/celery"}
 CELERYD_PID_FILE=${CELERYD_PID_FILE:-"/var/run/celeryd/$prog.pid"}
 CELERYD_LOG_FILE=${CELERYD_LOG_FILE:-"/var/log/celeryd/$prog.log"}
 CELERYD_LOG_LEVEL=${CELERYD_LOG_LEVEL:-"INFO"}
@@ -72,12 +70,12 @@ start_workers () {
     fi
 
     echo -n $"Starting $prog: "
-    $CELERYD_MULTI start $prog \
+    $CELERY multi start $prog \
                                --pidfile=$CELERYD_PID_FILE \
                                --logfile=$CELERYD_LOG_FILE \
                                --loglevel=$CELERYD_LOG_LEVEL \
                                --cmd="$CELERYD" \
-			                   --quiet \
+                                --quiet \
                                $CELERYD_OPTS
     RETVAL=$?
 
@@ -96,12 +94,12 @@ stop_workers () {
     # If we haven't ended, explicitly kill it!
     if [ ! -f $CELERYD_PID_FILE ] || [ ! -e /proc/$(cat $CELERYD_PID_FILE) ]; then
         failure
-	echo
+    echo
         return
     fi
 
     # First, try to nicely shut it down.
-    $CELERYD_MULTI stop $prog --pidfile=$CELERYD_PID_FILE --quiet
+    $CELERY stop $prog --pidfile=$CELERYD_PID_FILE --quiet
     RETVAL=$?
 
     # SLeep a few seconds. (this was part of the original script; we can't
@@ -111,7 +109,7 @@ stop_workers () {
 
     # If we haven't ended, explicitly kill it!
     if [ -f $CELERYD_PID_FILE ] && [ -e /proc/$(cat $CELERYD_PID_FILE) ]; then
-        $CELERYD_MULTI stop $prog -KILL --pidfile=$CELERYD_PID_FILE --quiet
+        $CELERY stop $prog -KILL --pidfile=$CELERYD_PID_FILE --quiet
     fi
 
     if [ "$RETVAL" == "0" ]; then

@@ -29,7 +29,7 @@ class BoundedSemaphore(object):
         >>> x = BoundedSemaphore(2)
 
         >>> def callback(i):
-        ...     print('HELLO %r' % i)
+        ...     print('HELLO {0!r}'.format(i))
 
         >>> x.acquire(callback, 1)
         HELLO 1
@@ -147,7 +147,7 @@ class Hub(object):
         delay = None
         if self.timer._queue:
             for i in xrange(max_timers):
-                delay, entry = self.scheduler.next()
+                delay, entry = next(self.scheduler)
                 if entry is None:
                     break
                 self.timer.apply_entry(entry)

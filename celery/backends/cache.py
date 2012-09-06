@@ -16,6 +16,15 @@ from .base import KeyValueStoreBackend
 
 _imp = [None]
 
+REQUIRES_BACKEND = """\
+The memcached backend requires either pylibmc or python-memcached.\
+"""
+
+UNKNOWN_BACKEND = """\
+The cache backend {0!r} is unknown,
+Please use one of the following backends instead: {1}\
+"""
+
 
 def import_best_memcache():
     if _imp[0] is None:
@@ -27,9 +36,7 @@ def import_best_memcache():
             try:
                 import memcache  # noqa
             except ImportError:
-                raise ImproperlyConfigured(
-                    'Memcached backend requires either the pylibmc '
-                    'or memcache library')
+                raise ImproperlyConfigured(REQUIRES_BACKEND)
         _imp[0] = (is_pylibmc, memcache)
     return _imp[0]
 
@@ -77,7 +84,7 @@ class CacheBackend(KeyValueStoreBackend):
     implements_incr = True
 
     def __init__(self, expires=None, backend=None, options={}, **kwargs):
-        super(CacheBackend, self).__init__(self, **kwargs)
+        super(CacheBackend, self).__init__(**kwargs)
 
         self.options = dict(self.app.conf.CELERY_CACHE_BACKEND_OPTIONS,
                             **options)
@@ -90,10 +97,8 @@ class CacheBackend(KeyValueStoreBackend):
         try:
             self.Client = backends[self.backend]()
         except KeyError:
-            raise ImproperlyConfigured(
-                    'Unknown cache backend: %s. Please use one of the '
-                    'following backends: %s' % (self.backend,
-                                                ', '.join(backends.keys())))
+            raise ImproperlyConfigured(UNKNOWN_BACKEND.format(
+                self.backend, ', '.join(backends)))
 
     def get(self, key):
         return self.client.get(key)
@@ -119,7 +124,7 @@ class CacheBackend(KeyValueStoreBackend):
 
     def __reduce__(self, args=(), kwargs={}):
         servers = ';'.join(self.servers)
-        backend = '%s://%s/' % (self.backend, servers)
+        backend = '{0}://{1}/'.format(self.backend, servers)
         kwargs.update(
             dict(backend=backend,
                  expires=self.expires,

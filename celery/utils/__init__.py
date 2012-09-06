@@ -6,18 +6,20 @@
     Utility functions.
 
 """
-from __future__ import absolute_import
-from __future__ import with_statement
+from __future__ import absolute_import, print_function
 
-import operator
+import os
 import sys
-import threading
 import traceback
 import warnings
+import types
+import datetime
 
 from functools import partial, wraps
 from inspect import getargspec
 from pprint import pprint
+
+from kombu import Exchange, Queue
 
 from celery.exceptions import CPendingDeprecationWarning, CDeprecationWarning
 from .compat import StringIO
@@ -25,15 +27,36 @@ from .compat import StringIO
 from .functional import noop
 
 PENDING_DEPRECATION_FMT = """
-    %(description)s is scheduled for deprecation in \
-    version %(deprecation)s and removal in version v%(removal)s. \
-    %(alternative)s
+    {description} is scheduled for deprecation in \
+    version {deprecation} and removal in version v{removal}. \
+    {alternative}
 """
 
 DEPRECATION_FMT = """
-    %(description)s is deprecated and scheduled for removal in
-    version %(removal)s. %(alternative)s
+    {description} is deprecated and scheduled for removal in
+    version {removal}. {alternative}
 """
+
+#: Billiard sets this when execv is enabled.
+#: We use it to find out the name of the original ``__main__``
+#: module, so that we can properly rewrite the name of the
+#: task to be that of ``App.main``.
+MP_MAIN_FILE = os.environ.get('MP_MAIN_FILE') or None
+
+#: Exchange for worker direct queues.
+WORKER_DIRECT_EXCHANGE = Exchange('C.dq')
+
+#: Format for worker direct queue names.
+WORKER_DIRECT_QUEUE_FORMAT = '{hostname}.dq'
+
+
+def worker_direct(hostname):
+    if isinstance(hostname, Queue):
+        return hostname
+    return Queue(WORKER_DIRECT_QUEUE_FORMAT.format(hostname=hostname),
+                 WORKER_DIRECT_EXCHANGE,
+                 hostname,
+                 auto_delete=True)
 
 
 def warn_deprecated(description=None, deprecation=None, removal=None,
@@ -42,9 +65,9 @@ def warn_deprecated(description=None, deprecation=None, removal=None,
            'deprecation': deprecation, 'removal': removal,
            'alternative': alternative}
     if deprecation is not None:
-        w = CPendingDeprecationWarning(PENDING_DEPRECATION_FMT % ctx)
+        w = CPendingDeprecationWarning(PENDING_DEPRECATION_FMT.format(**ctx))
     else:
-        w = CDeprecationWarning(DEPRECATION_FMT % ctx)
+        w = CDeprecationWarning(DEPRECATION_FMT.format(**ctx))
     warnings.warn(w)
 
 
@@ -104,11 +127,10 @@ def fun_takes_kwargs(fun, kwlist=[]):
         ['logfile', 'loglevel', 'task_id']
 
     """
-    argspec = getattr(fun, 'argspec', getargspec(fun))
-    args, _varargs, keywords, _defaults = argspec
-    if keywords != None:
+    S = getattr(fun, 'argspec', getargspec(fun))
+    if S.keywords != None:
         return kwlist
-    return filter(partial(operator.contains, args), kwlist)
+    return [kw for kw in kwlist if kw in S.args]
 
 
 def isatty(fh):
@@ -123,6 +145,8 @@ def cry():  # pragma: no cover
     From https://gist.github.com/737056
 
     """
+    import threading
+
     tmap = {}
     main_thread = None
     # get a map of threads by their ID so we can print their names
@@ -134,20 +158,21 @@ def cry():  # pragma: no cover
             main_thread = t
 
     out = StringIO()
-    sep = '=' * 49 + '\n'
+    P = partial(print, file=out)
+    sep = '=' * 49
     for tid, frame in sys._current_frames().iteritems():
         thread = tmap.get(tid, main_thread)
         if not thread:
             # skip old junk (left-overs from a fork)
             continue
-        out.write('%s\n' % (thread.getName(), ))
-        out.write(sep)
+        P('{0.name}'.format(thread))
+        P(sep)
         traceback.print_stack(frame, file=out)
-        out.write(sep)
-        out.write('LOCAL VARIABLES\n')
-        out.write(sep)
+        P(sep)
+        P('LOCAL VARIABLES')
+        P(sep)
         pprint(frame.f_locals, stream=out)
-        out.write('\n\n')
+        P('\n')
     return out.getvalue()
 
 
@@ -170,8 +195,57 @@ def strtobool(term, table={'false': False, 'no': False, '0': False,
         try:
             return table[term.lower()]
         except KeyError:
-            raise TypeError('Cannot coerce %r to type bool' % (term, ))
+            raise TypeError('Cannot coerce {0!r} to type bool'.format(term))
     return term
+
+
+def jsonify(obj):
+    """Transforms object making it suitable for json serialization"""
+    if isinstance(obj, (int, float, basestring, types.NoneType)):
+        return obj
+    elif isinstance(obj, (tuple, list)):
+        return [jsonify(o) for o in obj]
+    elif isinstance(obj, dict):
+        return dict((k, jsonify(v)) for k, v in obj.iteritems())
+    # See "Date Time String Format" in the ECMA-262 specification.
+    elif isinstance(obj, datetime.datetime):
+        r = obj.isoformat()
+        if obj.microsecond:
+            r = r[:23] + r[26:]
+        if r.endswith('+00:00'):
+            r = r[:-6] + 'Z'
+        return r
+    elif isinstance(obj, datetime.date):
+        return obj.isoformat()
+    elif isinstance(obj, datetime.time):
+        r = obj.isoformat()
+        if obj.microsecond:
+            r = r[:12]
+        return r
+    elif isinstance(obj, datetime.timedelta):
+        return str(obj)
+    else:
+        raise ValueError('Unsupported type: {0}'.format(type(obj)))
+
+
+def gen_task_name(app, name, module_name):
+    try:
+        module = sys.modules[module_name]
+    except KeyError:
+        # Fix for manage.py shell_plus (Issue #366)
+        module = None
+
+    if module is not None:
+        module_name = module.__name__
+        # - If the task module is used as the __main__ script
+        # - we need to rewrite the module part of the task name
+        # - to match App.main.
+        if MP_MAIN_FILE and module.__file__ == MP_MAIN_FILE:
+            # - see comment about :envvar:`MP_MAIN_FILE` above.
+            module_name = '__main__'
+    if module_name == '__main__' and app.main:
+        return '.'.join([app.main, name])
+    return '.'.join(filter(None, [module_name, name]))
 
 # ------------------------------------------------------------------------ #
 # > XXX Compat

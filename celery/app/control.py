@@ -8,7 +8,6 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 from kombu.pidbox import Mailbox
 from kombu.utils import cached_property
@@ -27,12 +26,13 @@ class Inspect(object):
     app = None
 
     def __init__(self, destination=None, timeout=1, callback=None,
-            connection=None, app=None):
+            connection=None, app=None, limit=None):
         self.app = app or self.app
         self.destination = destination
         self.timeout = timeout
         self.callback = callback
         self.connection = connection
+        self.limit = limit
 
     def _prepare(self, reply):
         if not reply:
@@ -49,6 +49,7 @@ class Inspect(object):
                                       destination=self.destination,
                                       callback=self.callback,
                                       connection=self.connection,
+                                      limit=self.limit,
                                       timeout=self.timeout, reply=True))
 
     def report(self):
@@ -69,8 +70,8 @@ class Inspect(object):
     def revoked(self):
         return self._request('dump_revoked')
 
-    def registered(self):
-        return self._request('dump_tasks')
+    def registered(self, *taskinfoitems):
+        return self._request('dump_tasks', taskinfoitems=taskinfoitems)
     registered_tasks = registered
 
     def ping(self):
@@ -79,13 +80,16 @@ class Inspect(object):
     def active_queues(self):
         return self._request('active_queues')
 
+    def conf(self):
+        return self._request('dump_conf')
+
 
 class Control(object):
     Mailbox = Mailbox
 
     def __init__(self, app=None):
         self.app = app_or_default(app)
-        self.mailbox = self.Mailbox('celeryd', type='fanout')
+        self.mailbox = self.Mailbox('celery', type='fanout')
 
     @cached_property
     def inspect(self):
@@ -100,7 +104,7 @@ class Control(object):
         :returns: the number of tasks discarded.
 
         """
-        with self.app.default_connection(connection) as conn:
+        with self.app.connection_or_acquire(connection) as conn:
             return self.app.amqp.TaskConsumer(conn).purge()
     discard_all = purge
 
@@ -155,7 +159,7 @@ class Control(object):
                               **kwargs)
 
     def add_consumer(self, queue, exchange=None, exchange_type='direct',
-            routing_key=None, **options):
+            routing_key=None, options=None, **kwargs):
         """Tell all (or specific) workers to start consuming from a new queue.
 
         Only the queue name is required as if only the queue is specified
@@ -172,14 +176,17 @@ class Control(object):
         :keyword exchange_type: Type of exchange (defaults to 'direct')
             command to, when empty broadcast to all workers.
         :keyword routing_key: Optional routing key.
+        :keyword options: Additional options as supported
+            by :meth:`kombu.entitiy.Queue.from_dict`.
 
         See :meth:`broadcast` for supported keyword arguments.
 
         """
         return self.broadcast('add_consumer',
-                arguments={'queue': queue, 'exchange': exchange,
-                           'exchange_type': exchange_type,
-                           'routing_key': routing_key}, **options)
+                arguments=dict({'queue': queue, 'exchange': exchange,
+                                'exchange_type': exchange_type,
+                                'routing_key': routing_key}, **options or {}),
+                **kwargs)
 
     def cancel_consumer(self, queue, **kwargs):
         """Tell all (or specific) workers to stop consuming from ``queue``.
@@ -247,7 +254,7 @@ class Control(object):
             received.
 
         """
-        with self.app.default_connection(connection) as conn:
+        with self.app.connection_or_acquire(connection) as conn:
             arguments = dict(arguments or {}, **extra_kwargs)
             return self.mailbox(conn)._broadcast(command, arguments,
                                                  destination, reply, timeout,

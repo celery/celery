@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import os
 
@@ -44,11 +43,10 @@ class test_Command(AppCase):
             Command().run()
 
     @patch('sys.stdout')
-    def test_parse_options_version_only(self, stdout):
+    def test_early_version(self, stdout):
         cmd = Command()
         with self.assertRaises(SystemExit):
-            cmd.parse_options('prog', ['--version'])
-        stdout.write.assert_called_with(cmd.version + '\n')
+            cmd.early_version(['--version'])
 
     def test_execute_from_commandline(self):
         cmd = MockCommand()

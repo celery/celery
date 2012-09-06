@@ -7,13 +7,12 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import operator
+import threading
 
 from functools import partial, wraps
 from itertools import islice
-from threading import Lock, RLock
 
 from kombu.utils import cached_property
 from kombu.utils.functional import promise, maybe_promise
@@ -36,7 +35,7 @@ class LRUCache(UserDict):
 
     def __init__(self, limit=None):
         self.limit = limit
-        self.mutex = RLock()
+        self.mutex = threading.RLock()
         self.data = OrderedDict()
 
     def __getitem__(self, key):
@@ -58,11 +57,11 @@ class LRUCache(UserDict):
         # remove least recently used key.
         with self.mutex:
             if self.limit and len(self.data) >= self.limit:
-                self.data.pop(iter(self.data).next())
+                self.data.pop(next(iter(self.data)))
             self.data[key] = value
 
     def __iter__(self):
-        return self.data.iterkeys()
+        return iter(self.data)
 
     def _iterate_items(self):
         for k in self:
@@ -102,7 +101,7 @@ def maybe_list(l):
 def memoize(maxsize=None, Cache=LRUCache):
 
     def _memoize(fun):
-        mutex = Lock()
+        mutex = threading.Lock()
         cache = Cache(limit=maxsize)
 
         @wraps(fun)
@@ -261,6 +260,3 @@ class _regen(UserList, list):
     @cached_property
     def data(self):
         return list(self.__it)
-
-    def __iter__(self):  # needed for Python 2.5
-        return iter(self.data)

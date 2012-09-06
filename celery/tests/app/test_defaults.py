@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import sys
 
@@ -34,7 +33,7 @@ class test_defaults(Case):
 
     def test_deprecated(self):
         source = Mock()
-        source.BROKER_INSIST = True
+        source.CELERYD_LOG_LEVEL = 2
         with patch('celery.utils.warn_deprecated') as warn:
             self.defaults.find_deprecated_settings(source)
             self.assertTrue(warn.called)

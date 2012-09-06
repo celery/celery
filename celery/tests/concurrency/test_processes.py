@@ -1,12 +1,10 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
-import signal
 import time
 
 from itertools import cycle
 
-from mock import Mock, patch
+from mock import Mock
 from nose import SkipTest
 
 from celery.utils.functional import noop
@@ -161,14 +159,10 @@ class test_TaskPool(Case):
         pool.apply_async(lambda x: x, (2, ), {})
 
     def test_terminate_job(self):
-
-        @patch('celery.concurrency.processes._kill')
-        def _do_test(_kill):
-            pool = TaskPool(10)
-            pool.terminate_job(1341)
-            _kill.assert_called_with(1341, signal.SIGTERM)
-
-        _do_test()
+        pool = TaskPool(10)
+        pool._pool = Mock()
+        pool.terminate_job(1341)
+        pool._pool.terminate_job.assert_called_with(1341, None)
 
     def test_grow_shrink(self):
         pool = TaskPool(10)

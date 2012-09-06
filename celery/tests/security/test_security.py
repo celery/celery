@@ -1,7 +1,9 @@
 """
 Keys and certificates for tests (KEY1 is a private key of CERT1, etc.)
 
-Generated with::
+Generated with:
+
+.. code-block:: bash
 
     $ openssl genrsa -des3 -passout pass:test -out key1.key 1024
     $ openssl req -new -key key1.key -out key1.csr -passin pass:test
@@ -13,7 +15,6 @@ Generated with::
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import __builtin__
 

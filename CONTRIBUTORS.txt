@@ -106,3 +106,16 @@ Dimitrios Kouzis-Loukas, 2012/06/13
 Steven Skoczen, 2012/06/17
 Loren Abrams, 2012/06/19
 Eran Rundstein, 2012/06/24
+John Watson, 2012/06/27
+Matt Long, 2012/07/04
+David Markey, 2012/07/05
+Jared Biel, 2012/07/05
+Jed Smith, 2012/07/08
+Łukasz Langa, 2012/07/10
+Rinat Shigapov, 2012/07/20
+Hynek Schlawack, 2012/07/23
+Paul McMillan, 2012/07/26
+Mitar, 2012/07/28
+Adam DePue, 2012/08/22
+Thomas Meson, 2012/08/28
+Daniel Lundin, 2012/08/30 

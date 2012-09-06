@@ -11,14 +11,13 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
+import celery
 import os
 import sys
 
 from optparse import OptionParser, BadOptionError
 
-from celery import __version__
 from celery.platforms import EX_FAILURE, detached
 from celery.utils.log import get_logger
 
@@ -73,9 +72,9 @@ class PartialOptionParser(OptionParser):
                 nargs = option.nargs
                 if len(rargs) < nargs:
                     if nargs == 1:
-                        self.error('%s option requires an argument' % opt)
+                        self.error('{0} requires an argument'.format(opt))
                     else:
-                        self.error('%s option requires %d arguments' % (
+                        self.error('{0} requires {1} arguments'.format(
                                     opt, nargs))
                 elif nargs == 1:
                     value = rargs.pop(0)
@@ -84,7 +83,7 @@ class PartialOptionParser(OptionParser):
                     del rargs[0:nargs]
 
             elif had_explicit_value:
-                self.error('%s option does not take a value' % opt)
+                self.error('{0} option does not take a value'.format(opt))
             else:
                 value = None
             option.process(opt, value, values, self)
@@ -104,7 +103,7 @@ class PartialOptionParser(OptionParser):
 class detached_celeryd(object):
     option_list = OPTION_LIST
     usage = '%prog [options] [celeryd options]'
-    version = __version__
+    version = celery.VERSION_BANNER
     description = ('Detaches Celery worker nodes.  See `celeryd --help` '
                    'for the list of supported worker arguments.')
     command = sys.executable
@@ -122,9 +121,9 @@ class detached_celeryd(object):
         parser = self.Parser(prog_name)
         options, values = parser.parse_args(argv)
         if options.logfile:
-            parser.leftovers.append('--logfile=%s' % (options.logfile, ))
+            parser.leftovers.append('--logfile={0}'.format(options.logfile))
         if options.pidfile:
-            parser.leftovers.append('--pidfile=%s' % (options.pidfile, ))
+            parser.leftovers.append('--pidfile={0}'.format(options.pidfile))
         return options, values, parser.leftovers
 
     def execute_from_commandline(self, argv=None):

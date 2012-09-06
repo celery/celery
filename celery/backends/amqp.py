@@ -9,7 +9,6 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import socket
 import threading
@@ -24,7 +23,7 @@ from celery import states
 from celery.exceptions import TimeoutError
 from celery.utils.log import get_logger
 
-from .base import BaseDictBackend
+from .base import BaseBackend
 
 logger = get_logger(__name__)
 
@@ -36,11 +35,11 @@ class BacklogLimitExceeded(Exception):
 def repair_uuid(s):
     # Historically the dashes in UUIDS are removed from AMQ entity names,
     # but there is no known reason to.  Hopefully we'll be able to fix
-    # this in v3.0.
+    # this in v4.0.
     return '%s-%s-%s-%s-%s' % (s[:8], s[8:12], s[12:16], s[16:20], s[20:])
 
 
-class AMQPBackend(BaseDictBackend):
+class AMQPBackend(BaseBackend):
     """Publishes results by sending messages."""
     Exchange = Exchange
     Queue = Queue
@@ -74,17 +73,9 @@ class AMQPBackend(BaseDictBackend):
         self.serializer = serializer or conf.CELERY_RESULT_SERIALIZER
         self.auto_delete = auto_delete
 
-        # AMQP_TASK_RESULT_EXPIRES setting is deprecated and will be
-        # removed in version 3.0.
-        dexpires = conf.CELERY_AMQP_TASK_RESULT_EXPIRES
-
         self.expires = None
-        if 'expires' in kwargs:
-            if kwargs['expires'] is not None:
-                self.expires = self.prepare_expires(kwargs['expires'])
-        else:
-            self.expires = self.prepare_expires(dexpires)
-
+        if 'expires' not in kwargs or kwargs['expires'] is not None:
+            self.expires = self.prepare_expires(kwargs.get('expires'))
         if self.expires:
             self.queue_arguments['x-expires'] = int(self.expires * 1000)
         self.mutex = threading.Lock()

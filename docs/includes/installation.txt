@@ -1,18 +1,56 @@
+.. _celery-installation:
+
+Installation
+============
+
 You can install Celery either via the Python Package Index (PyPI)
 or from source.
 
 To install using `pip`,::
 
-    $ pip install Celery
+    $ pip install -U Celery
 
 To install using `easy_install`,::
 
-    $ easy_install Celery
+    $ easy_install -U Celery
+
+.. _bundles:
+
+Bundles
+-------
+
+Celery also defines a group of bundles that can be used
+to install Celery and the dependencies for a given feature.
+
+The following bundles are available:
+
+:`celery-with-redis`_:
+    for using Redis as a broker.
+
+:`celery-with-mongodb`_:
+    for using MongoDB as a broker.
+
+:`django-celery-with-redis`_:
+    for Django, and using Redis as a broker.
+
+:`django-celery-with-mongodb`_:
+    for Django, and using MongoDB as a broker.
+
+.. _`celery-with-redis`:
+    http://pypi.python.org/pypi/celery-with-redis/
+.. _`celery-with-mongodb`:
+    http://pypi.python.org/pypi/celery-with-mongdb/
+.. _`django-celery-with-redis`:
+    http://pypi.python.org/pypi/django-celery-with-redis/
+.. _`django-celery-with-mongodb`:
+    http://pypi.python.org/pypi/django-celery-with-mongdb/
+
+.. _celery-installing-from-source:
 
 Downloading and installing from source
 --------------------------------------
 
-Download the latest version of `celery` from
+Download the latest version of Celery from
 http://pypi.python.org/pypi/celery/
 
 You can install it by doing the following,::
@@ -20,11 +58,28 @@ You can install it by doing the following,::
     $ tar xvfz celery-0.0.0.tar.gz
     $ cd celery-0.0.0
     $ python setup.py build
-    # python setup.py install # as root
+    # python setup.py install
+
+The last command must be executed as a privileged user if
+you are not currently using a virtualenv.
+
+.. _celery-installing-from-git:
 
 Using the development version
-------------------------------
+-----------------------------
 
 You can clone the repository by doing the following::
 
     $ git clone https://github.com/celery/celery
+    $ cd celery
+    $ python setup.py develop
+
+The development version will usually also depend on the development
+version of `kombu`_, the messaging framework Celery uses
+to send and receive messages, so you should also install that from git::
+
+    $ git clone https://github.com/celery/kombu
+    $ cd kombu
+    $ python setup.py develop
+
+.. _`kombu`: http://kombu.readthedocs.org/en/latest/

@@ -7,14 +7,15 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
+import threading
 import warnings
 
 from collections import deque
 from contextlib import contextmanager
 from copy import deepcopy
 from functools import wraps
+from operator import attrgetter
 
 from billiard.util import register_after_fork
 from kombu.clocks import LamportClock
@@ -24,7 +25,7 @@ from celery import platforms
 from celery.exceptions import AlwaysEagerIgnored
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
-from celery._state import _task_stack, _tls, get_current_app
+from celery._state import _task_stack, _tls, get_current_app, _register_app
 from celery.utils.functional import first
 from celery.utils.imports import instantiate, symbol_by_name
 
@@ -72,7 +73,11 @@ class Celery(object):
         self.registry_cls = symbol_by_name(self.registry_cls)
         self.accept_magic_kwargs = accept_magic_kwargs
 
+        self.configured = False
+        self._pending_defaults = deque()
+
         self.finalized = False
+        self._finalize_mutex = threading.Lock()
         self._pending = deque()
         self._tasks = tasks
         if not isinstance(self._tasks, TaskRegistry):
@@ -89,9 +94,19 @@ class Celery(object):
         if self.set_as_current:
             self.set_current()
         self.on_init()
+        _register_app(self)
 
     def set_current(self):
         _tls.current_app = self
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        self.close()
+
+    def close(self):
+        self._maybe_close_pool()
 
     def on_init(self):
         """Optional callback called at init."""
@@ -148,16 +163,24 @@ class Celery(object):
         return task
 
     def finalize(self):
-        if not self.finalized:
-            self.finalized = True
-            load_shared_tasks(self)
+        with self._finalize_mutex:
+            if not self.finalized:
+                self.finalized = True
+                load_shared_tasks(self)
 
-            pending = self._pending
-            while pending:
-                maybe_evaluate(pending.pop())
+                pending = self._pending
+                while pending:
+                    maybe_evaluate(pending.popleft())
 
-            for task in self._tasks.itervalues():
-                task.bind(self)
+                for task in self._tasks.itervalues():
+                    task.bind(self)
+
+    def add_defaults(self, fun):
+        if not callable(fun):
+            d, fun = fun, lambda: d
+        if self.configured:
+            return self.conf.add_defaults(fun())
+        self._pending_defaults.append(fun)
 
     def config_from_object(self, obj, silent=False):
         del(self.conf)
@@ -171,8 +194,10 @@ class Celery(object):
         self.conf.update(self.loader.cmdline_config_parser(argv, namespace))
 
     def send_task(self, name, args=None, kwargs=None, countdown=None,
-            eta=None, task_id=None, publisher=None, connection=None,
-            result_cls=None, expires=None, queues=None, **options):
+            eta=None, task_id=None, producer=None, connection=None,
+            result_cls=None, expires=None, queues=None, publisher=None,
+            **options):
+        producer = producer or publisher  # XXX compat
         if self.conf.CELERY_ALWAYS_EAGER:  # pragma: no cover
             warnings.warn(AlwaysEagerIgnored(
                 'CELERY_ALWAYS_EAGER has no effect on send_task'))
@@ -182,16 +207,15 @@ class Celery(object):
         options.setdefault('compression',
                            self.conf.CELERY_MESSAGE_COMPRESSION)
         options = router.route(options, name, args, kwargs)
-        with self.default_producer(publisher) as producer:
-            return result_cls(producer.delay_task(name, args, kwargs,
-                                                  task_id=task_id,
-                                                  countdown=countdown, eta=eta,
-                                                  expires=expires, **options))
+        with self.producer_or_acquire(producer) as producer:
+            return result_cls(producer.publish_task(name, args, kwargs,
+                        task_id=task_id,
+                        countdown=countdown, eta=eta,
+                        expires=expires, **options))
 
-    def connection(self, hostname=None, userid=None,
-            password=None, virtual_host=None, port=None, ssl=None,
-            insist=None, connect_timeout=None, transport=None,
-            transport_options=None, **kwargs):
+    def connection(self, hostname=None, userid=None, password=None,
+            virtual_host=None, port=None, ssl=None, connect_timeout=None,
+            transport=None, transport_options=None, heartbeat=None, **kwargs):
         conf = self.conf
         return self.amqp.Connection(
                     hostname or conf.BROKER_HOST,
@@ -200,29 +224,36 @@ class Celery(object):
                     virtual_host or conf.BROKER_VHOST,
                     port or conf.BROKER_PORT,
                     transport=transport or conf.BROKER_TRANSPORT,
-                    insist=self.either('BROKER_INSIST', insist),
                     ssl=self.either('BROKER_USE_SSL', ssl),
                     connect_timeout=self.either(
-                                'BROKER_CONNECTION_TIMEOUT', connect_timeout),
+                        'BROKER_CONNECTION_TIMEOUT', connect_timeout),
+                    heartbeat=heartbeat,
                     transport_options=dict(conf.BROKER_TRANSPORT_OPTIONS,
                                            **transport_options or {}))
     broker_connection = connection
 
     @contextmanager
-    def default_connection(self, connection=None, *args, **kwargs):
+    def connection_or_acquire(self, connection=None, pool=True,
+            *args, **kwargs):
         if connection:
             yield connection
         else:
-            with self.pool.acquire(block=True) as connection:
-                yield connection
+            if pool:
+                with self.pool.acquire(block=True) as connection:
+                    yield connection
+            else:
+                with self.connection() as connection:
+                    yield connection
+    default_connection = connection_or_acquire  # XXX compat
 
     @contextmanager
-    def default_producer(self, producer=None):
+    def producer_or_acquire(self, producer=None):
         if producer:
             yield producer
         else:
             with self.amqp.producer_pool.acquire(block=True) as producer:
                 yield producer
+    default_producer = producer_or_acquire  # XXX compat
 
     def with_default_connection(self, fun):
         """With any function accepting a `connection`
@@ -234,14 +265,14 @@ class Celery(object):
 
         **Deprecated**
 
-        Use ``with app.default_connection(connection)`` instead.
+        Use ``with app.connection_or_acquire(connection)`` instead.
 
         """
         @wraps(fun)
         def _inner(*args, **kwargs):
             connection = kwargs.pop('connection', None)
-            with self.default_connection(connection) as c:
-                return fun(*args, **dict(kwargs, connection=c))
+            with self.connection_or_acquire(connection) as c:
+                return fun(*args, connection=c, **kwargs)
         return _inner
 
     def prepare_config(self, c):
@@ -283,14 +314,23 @@ class Celery(object):
         return backend(app=self, url=url)
 
     def _get_config(self):
+        self.configured = True
         s = Settings({}, [self.prepare_config(self.loader.conf),
                              deepcopy(DEFAULTS)])
+
+        # load lazy config dict initializers.
+        pending = self._pending_defaults
+        while pending:
+            s.add_defaults(pending.popleft()())
         if self._preconf:
             for key, value in self._preconf.iteritems():
                 setattr(s, key, value)
         return s
 
     def _after_fork(self, obj_):
+        self._maybe_close_pool()
+
+    def _maybe_close_pool(self):
         if self._pool:
             self._pool.force_close_all()
             self._pool = None
@@ -328,11 +368,11 @@ class Celery(object):
         return type(name or Class.__name__, (Class, ), attrs)
 
     def _rgetattr(self, path):
-        return reduce(getattr, [self] + path.split('.'))
+        return attrgetter(path)(self)
 
     def __repr__(self):
-        return '<%s %s:0x%x>' % (self.__class__.__name__,
-                                 self.main or '__main__', id(self), )
+        return '<{0} {1}:0x{2:x}>'.format(
+            type(self).__name__, self.main or '__main__', id(self))
 
     def __reduce__(self):
         # Reduce only pickles the configuration changes,

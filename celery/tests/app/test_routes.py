@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 from functools import wraps
 
@@ -13,7 +12,7 @@ from celery.tests.utils import Case
 
 
 def Router(*args, **kwargs):
-    return routes.Router(*args, **dict(kwargs, app=current_app))
+    return routes.Router(*args, app=current_app, **kwargs)
 
 
 @task()

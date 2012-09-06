@@ -15,6 +15,8 @@ import shelve
 import sys
 import traceback
 
+from threading import Event, Thread
+
 from billiard import Process, ensure_multiprocessing
 from kombu.utils import reprcall
 from kombu.utils.functional import maybe_promise
@@ -27,12 +29,12 @@ from .app import app_or_default
 from .schedules import maybe_schedule, crontab
 from .utils import cached_property
 from .utils.imports import instantiate
-from .utils.threads import Event, Thread
 from .utils.timeutils import humanize_seconds
 from .utils.log import get_logger
 
 logger = get_logger(__name__)
-debug, info, error = logger.debug, logger.info, logger.error
+debug, info, error, warning = (logger.debug, logger.info,
+                               logger.error, logger.warning)
 
 DEFAULT_MAX_INTERVAL = 300  # 5 minutes
 
@@ -118,9 +120,8 @@ class ScheduleEntry(object):
         return vars(self).iteritems()
 
     def __repr__(self):
-        return ('<Entry: %s %s {%s}' % (self.name,
-                    reprcall(self.task, self.args or (), self.kwargs or {}),
-                    self.schedule))
+        return '<Entry: {0.name} {call} {0.schedule}'.format(self,
+            call=reprcall(self.task, self.args or (), self.kwargs or {}))
 
 
 class Scheduler(object):
@@ -174,7 +175,7 @@ class Scheduler(object):
             info('Scheduler: Sending due task %s', entry.task)
             try:
                 result = self.apply_async(entry, publisher=publisher)
-            except Exception, exc:
+            except Exception as exc:
                 error('Message Error: %s\n%s',
                       exc, traceback.format_stack(), exc_info=True)
             else:
@@ -203,7 +204,7 @@ class Scheduler(object):
                 (time.time() - self._last_sync) > self.sync_every)
 
     def reserve(self, entry):
-        new_entry = self.schedule[entry.name] = entry.next()
+        new_entry = self.schedule[entry.name] = next(entry)
         return new_entry
 
     def apply_async(self, entry, publisher=None, **kwargs):
@@ -222,10 +223,10 @@ class Scheduler(object):
                 result = self.send_task(entry.task, entry.args, entry.kwargs,
                                         publisher=publisher,
                                         **entry.options)
-        except Exception, exc:
+        except Exception as exc:
             raise SchedulingError, SchedulingError(
-                "Couldn't apply scheduled task %s: %s" % (
-                    entry.name, exc)), sys.exc_info()[2]
+                "Couldn't apply scheduled task {0.name}: {exc}".format(
+                    entry, exc)), sys.exc_info()[2]
         finally:
             if self.should_sync():
                 self._do_sync()
@@ -324,7 +325,7 @@ class PersistentScheduler(Scheduler):
         for suffix in self.known_suffixes:
             try:
                 os.remove(self.schedule_filename + suffix)
-            except OSError, exc:
+            except OSError as exc:
                 if exc.errno != errno.ENOENT:
                     raise
 
@@ -333,7 +334,7 @@ class PersistentScheduler(Scheduler):
             self._store = self.persistence.open(self.schedule_filename,
                                                 writeback=True)
             entries = self._store.setdefault('entries', {})
-        except Exception, exc:
+        except Exception as exc:
             error('Removing corrupted schedule file %r: %r',
                   self.schedule_filename, exc, exc_info=True)
             self._remove_db()
@@ -341,11 +342,31 @@ class PersistentScheduler(Scheduler):
                                                 writeback=True)
         else:
             if '__version__' not in self._store:
+                warning('Reset: Account for new __version__ field')
                 self._store.clear()   # remove schedule at 2.2.2 upgrade.
+            if 'tz' not in self._store:
+                warning('Reset: Account for new tz field')
+                self._store.clear()   # remove schedule at 3.0.8 upgrade
+            if 'utc_enabled' not in self._store:
+                warning('Reset: Account for new utc_enabled field')
+                self._store.clear()   # remove schedule at 3.0.9 upgrade
+
+        tz = self.app.conf.CELERY_TIMEZONE
+        stored_tz = self._store.get('tz')
+        if stored_tz is not None and stored_tz != tz:
+            warning('Reset: Timezone changed from %r to %r', stored_tz, tz)
+            self._store.clear()   # Timezone changed, reset db!
+        utc = self.app.conf.CELERY_ENABLE_UTC
+        stored_utc = self._store.get('utc_enabled')
+        if stored_utc is not None and stored_utc != utc:
+            choices = {True: 'enabled', False: 'disabled'}
+            warning('Reset: UTC changed from %s to %s',
+                    choices[stored_utc], choices[utc])
+            self._store.clear()   # UTC setting changed, reset db!
         entries = self._store.setdefault('entries', {})
         self.merge_inplace(self.app.conf.CELERYBEAT_SCHEDULE)
         self.install_default_entries(self.schedule)
-        self._store['__version__'] = __version__
+        self._store.update(__version__=__version__, tz=tz, utc_enabled=utc)
         self.sync()
         debug('Current schedule:\n' + '\n'.join(repr(entry)
                                     for entry in entries.itervalues()))
@@ -367,7 +388,7 @@ class PersistentScheduler(Scheduler):
 
     @property
     def info(self):
-        return '    . db -> %s' % (self.schedule_filename, )
+        return '    . db -> {self.schedule_filename}'.format(self=self)
 
 
 class Service(object):
@@ -384,6 +405,10 @@ class Service(object):
 
         self._is_shutdown = Event()
         self._is_stopped = Event()
+
+    def __reduce__(self):
+        return self.__class__, (self.max_interval, self.schedule_filename,
+                                self.scheduler_cls, self.app)
 
     def start(self, embedded_process=False):
         info('Celerybeat: Starting...')
@@ -470,7 +495,7 @@ def EmbeddedService(*args, **kwargs):
     """Return embedded clock service.
 
     :keyword thread: Run threaded instead of as a separate process.
-        Default is :const:`False`.
+        Uses :mod:`multiprocessing` by default, if available.
 
     """
     if kwargs.pop('thread', False) or _Process is None:

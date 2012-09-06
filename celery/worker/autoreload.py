@@ -6,7 +6,6 @@
     This module implements automatic module reloading
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import errno
 import hashlib
@@ -16,13 +15,14 @@ import sys
 import time
 
 from collections import defaultdict
+from threading import Event
 
 from kombu.utils import eventio
 
 from celery.platforms import ignore_EBADF
 from celery.utils.imports import module_file
 from celery.utils.log import get_logger
-from celery.utils.threads import bgThread, Event
+from celery.utils.threads import bgThread
 
 from .bootsteps import StartStopComponent
 
@@ -102,7 +102,7 @@ class StatMonitor(BaseMonitor):
             modified = dict((f, mt) for f, mt in self._mtimes()
                                 if self._maybe_modified(f, mt))
             if modified:
-                self.on_change(modified.keys())
+                self.on_change(modified)
                 self.modify_times.update(modified)
             time.sleep(self.interval)
 
@@ -232,7 +232,7 @@ class Autoreloader(bgThread):
         files.update(dict((module_file(sys.modules[m]), m)
                         for m in self.modules))
 
-        self._monitor = self.Monitor(files.keys(), self.on_change,
+        self._monitor = self.Monitor(files, self.on_change,
                 shutdown_event=self._is_shutdown, **self.options)
         self._hashes = dict([(f, file_hash(f)) for f in files])
 
@@ -249,7 +249,7 @@ class Autoreloader(bgThread):
         self.on_init()
         try:
             self._monitor.start()
-        except OSError, exc:
+        except OSError as exc:
             if exc.errno not in (errno.EINTR, errno.EAGAIN):
                 raise
 

@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import os
 
@@ -143,8 +142,8 @@ class test_App(Case):
         check.assert_called_with(foo)
 
     def test_task_sets_main_name_MP_MAIN_FILE(self):
-        from celery.app import task as _task
-        _task.MP_MAIN_FILE = __file__
+        from celery import utils as _utils
+        _utils.MP_MAIN_FILE = __file__
         try:
             app = Celery('xuzzy', set_as_current=False)
 
@@ -154,17 +153,26 @@ class test_App(Case):
 
             self.assertEqual(foo.name, 'xuzzy.foo')
         finally:
-            _task.MP_MAIN_FILE = None
+            _utils.MP_MAIN_FILE = None
 
     def test_base_task_inherits_magic_kwargs_from_app(self):
-        from celery.app.task import Task
+        from celery.task import Task as OldTask
 
-        class timkX(Task):
+        class timkX(OldTask):
             abstract = True
 
         app = Celery(set_as_current=False, accept_magic_kwargs=True)
         timkX.bind(app)
-        self.assertTrue(timkX.accept_magic_kwargs)
+        # see #918
+        self.assertFalse(timkX.accept_magic_kwargs)
+
+        from celery import Task as NewTask
+
+        class timkY(NewTask):
+            abstract = True
+
+        timkY.bind(app)
+        self.assertFalse(timkY.accept_magic_kwargs)
 
     def test_annotate_decorator(self):
         from celery.app.task import Task
@@ -205,7 +213,7 @@ class test_App(Case):
         def aawsX():
             pass
 
-        with patch('celery.app.amqp.TaskProducer.delay_task') as dt:
+        with patch('celery.app.amqp.TaskProducer.publish_task') as dt:
             aawsX.apply_async((4, 5))
             args = dt.call_args[0][1]
             self.assertEqual(args, ('hello', 4, 5))
@@ -298,7 +306,6 @@ class test_App(Case):
     def test_config_from_cmdline(self):
         cmdline = ['.always_eager=no',
                    '.result_backend=/dev/null',
-                   '.task_error_whitelist=(list)["a", "b", "c"]',
                    'celeryd.prefetch_multiplier=368',
                    '.foobarstring=(string)300',
                    '.foobarint=(int)300',
@@ -307,8 +314,6 @@ class test_App(Case):
         self.assertFalse(self.app.conf.CELERY_ALWAYS_EAGER)
         self.assertEqual(self.app.conf.CELERY_RESULT_BACKEND, '/dev/null')
         self.assertEqual(self.app.conf.CELERYD_PREFETCH_MULTIPLIER, 368)
-        self.assertListEqual(self.app.conf.CELERY_TASK_ERROR_WHITELIST,
-                             ['a', 'b', 'c'])
         self.assertEqual(self.app.conf.CELERY_FOOBARSTRING, '300')
         self.assertEqual(self.app.conf.CELERY_FOOBARINT, 300)
         self.assertDictEqual(self.app.conf.CELERY_RESULT_ENGINE_OPTIONS,
@@ -433,20 +438,20 @@ class test_App(Case):
             chan.close()
         assert conn.transport_cls == 'memory'
 
-        pub = self.app.amqp.TaskProducer(conn,
+        prod = self.app.amqp.TaskProducer(conn,
                 exchange=Exchange('foo_exchange'))
 
         dispatcher = Dispatcher()
-        self.assertTrue(pub.delay_task('footask', (), {},
-                                       exchange='moo_exchange',
-                                       routing_key='moo_exchange',
-                                       event_dispatcher=dispatcher))
+        self.assertTrue(prod.publish_task('footask', (), {},
+                                          exchange='moo_exchange',
+                                          routing_key='moo_exchange',
+                                          event_dispatcher=dispatcher))
         self.assertTrue(dispatcher.sent)
         self.assertEqual(dispatcher.sent[0][0], 'task-sent')
-        self.assertTrue(pub.delay_task('footask', (), {},
-                                       event_dispatcher=dispatcher,
-                                       exchange='bar_exchange',
-                                       routing_key='bar_exchange'))
+        self.assertTrue(prod.publish_task('footask', (), {},
+                                          event_dispatcher=dispatcher,
+                                          exchange='bar_exchange',
+                                          routing_key='bar_exchange'))
 
     def test_error_mail_sender(self):
         x = ErrorMail.subject % {'name': 'task_name',

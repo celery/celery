@@ -12,23 +12,15 @@
 from __future__ import absolute_import
 
 import os
-import platform
-import signal as _signal
+
+from billiard import forking_enable
+from billiard.pool import Pool, RUN, CLOSE
 
 from celery import platforms
 from celery import signals
 from celery._state import set_default_app
 from celery.concurrency.base import BasePool
 from celery.task import trace
-from billiard.pool import Pool, RUN, CLOSE
-
-if platform.system() == 'Windows':  # pragma: no cover
-    # On Windows os.kill calls TerminateProcess which cannot be
-    # handled by # any process, so this is needed to terminate the task
-    # *and its children* (if any).
-    from ._win import kill_processtree as _kill  # noqa
-else:
-    from os import kill as _kill                 # noqa
 
 #: List of signals to reset when a child process starts.
 WORKER_SIGRESET = frozenset(['SIGTERM',
@@ -79,6 +71,7 @@ class TaskPool(BasePool):
         Will pre-fork all workers so they're ready to accept tasks.
 
         """
+        forking_enable(self.forking_enable)
         P = self._pool = self.Pool(processes=self.limit,
                                    initializer=process_initializer,
                                    **self.options)
@@ -109,7 +102,7 @@ class TaskPool(BasePool):
             self._pool.close()
 
     def terminate_job(self, pid, signal=None):
-        _kill(pid, signal or _signal.SIGTERM)
+        return self._pool.terminate_job(pid, signal)
 
     def grow(self, n=1):
         return self._pool.grow(n)

@@ -49,6 +49,8 @@ Time and date settings
 CELERY_ENABLE_UTC
 ~~~~~~~~~~~~~~~~~
 
+.. versionadded:: 2.5
+
 If enabled dates and times in messages will be converted to use
 the UTC timezone.
 
@@ -56,7 +58,7 @@ Note that workers running Celery versions below 2.5 will assume a local
 timezone for all messages, so only enable if all workers have been
 upgraded.
 
-Disabled by default.  UTC will be enabled by default in version 3.0.
+Enabled by default since version 3.0.
 
 .. setting:: CELERY_TIMEZONE
 
@@ -74,7 +76,9 @@ If not set then the systems default local time zone is used.
 
     Celery requires the :mod:`pytz` library to be installed,
     when using custom time zones (other than UTC).  You can
-    install it using :program:`pip` or :program:`easy_install`::
+    install it using :program:`pip` or :program:`easy_install`:
+
+    .. code-block:: bash
 
         $ pip install pytz
 
@@ -117,7 +121,7 @@ You can change methods too, for example the ``on_failure`` handler:
 .. code-block:: python
 
     def my_on_failure(self, exc, task_id, args, kwargs, einfo):
-        print("Oh no! Task failed: %r" % (exc, ))
+        print("Oh no! Task failed: {0!r}".format(exc))
 
     CELERY_ANNOTATIONS = {"*": {"on_failure": my_on_failure}}
 
@@ -402,7 +406,9 @@ Configuring the backend URL
     The Redis backend requires the :mod:`redis` library:
     http://pypi.python.org/pypi/redis/
 
-    To install the redis package use `pip` or `easy_install`::
+    To install the redis package use `pip` or `easy_install`:
+
+    .. code-block:: bash
 
         $ pip install redis
 
@@ -507,7 +513,9 @@ Cassandra backend settings
     The Cassandra backend requires the :mod:`pycassa` library:
     http://pypi.python.org/pypi/pycassa/
 
-    To install the pycassa package use `pip` or `easy_install`::
+    To install the pycassa package use `pip` or `easy_install`:
+
+    .. code-block:: bash
 
         $ pip install pycassa
 
@@ -602,6 +610,32 @@ CELERY_ROUTES
 A list of routers, or a single router used to route tasks to queues.
 When deciding the final destination of a task the routers are consulted
 in order.  See :ref:`routers` for more information.
+
+.. setting:: CELERY_WORKER_DIRECT
+
+CELERY_WORKER_DIRECT
+~~~~~~~~~~~~~~~~~~~~
+
+This option enables so that every worker has a dedicated queue,
+so that tasks can be routed to specific workers.
+
+The queue name for each worker is automatically generated based on
+the worker hostname and a ``.dq`` suffix, using the ``C.dq`` exchange.
+
+For example the queue name for the worker with hostname ``w1.example.com``
+becomes::
+
+    w1.example.com.dq
+
+Then you can route the task to the task by specifying the hostname
+as the routung key and the ``C.dq`` exchange::
+
+    CELERY_ROUTES = {
+        'tasks.add': {'exchange': 'C.dq', 'routing_key': 'w1.example.com'}
+    }
+
+This setting is mandatory if you want to use the ``move_to_worker`` features
+of :mod:`celery.contrib.migrate`.
 
 .. setting:: CELERY_CREATE_MISSING_QUEUES
 
@@ -700,6 +734,28 @@ default is ``amqp``, but there are many other choices including
 It can also be a fully qualified path to your own transport implementation.
 
 See the Kombu documentation for more information about broker URLs.
+
+.. setting:: BROKER_HEARTBEAT
+
+BROKER_HEARTBEAT
+~~~~~~~~~~~~~~~~
+:transports supported: ``pyamqp``
+
+It's not always possible to detect connection loss in a timely
+manner using TCP/IP alone, so AMQP defines something called heartbeats
+that's is used both by the client and the broker to detect if
+a connection was closed.
+
+Heartbeats are currently only supported by the ``pyamqp://`` transport,
+and this requires the :mod:`amqp` module:
+
+.. code-block:: bash
+
+    $ pip install amqp
+
+The default heartbeat value is 10 seconds,
+the heartbeat will then be monitored at double the rate of the heartbeat value
+(so for the default 10 seconds, the heartbeat is checked every 5 seconds).
 
 .. setting:: BROKER_USE_SSL
 
@@ -1017,7 +1073,7 @@ Example:
 
     from celery.exceptions import SoftTimeLimitExceeded
 
-    @celery.task()
+    @celery.task
     def mytask():
         try:
             return do_work()
@@ -1189,7 +1245,7 @@ CELERY_SEND_TASK_SENT_EVENT
 
 .. versionadded:: 2.2
 
-If enabled, a `task-sent` event will be sent for every task so tasks can be
+If enabled, a :event:`task-sent` event will be sent for every task so tasks can be
 tracked before they are consumed by a worker.
 
 Disabled by default.
@@ -1381,6 +1437,16 @@ the built-in aliases: ``processes``, ``eventlet``, ``gevent``.
 
 Default is ``processes``.
 
+.. setting:: CELERYD_POOL_RESTARTS
+
+CELERYD_POOL_RESTARTS
+~~~~~~~~~~~~~~~~~~~~~
+
+If enabled the worker pool can be restarted using the
+:control:`pool_restart` remote control command.
+
+Disabled by default.
+
 .. setting:: CELERYD_AUTOSCALER
 
 CELERYD_AUTOSCALER
@@ -1500,135 +1566,3 @@ Default is `[%(asctime)s: %(levelname)s/%(processName)s] %(message)s`
 
 See the Python :mod:`logging` module for more information about log
 formats.
-
-.. _conf-deprecated:
-
-Deprecated Settings
--------------------
-
-These settings have been deprecated and should no longer used,
-as they will be removed in future versions.
-
-.. setting:: CELERY_AMQP_TASK_RESULT_EXPIRES
-
-CELERY_AMQP_TASK_RESULT_EXPIRES
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. deprecated:: 2.5
-
-The time in seconds of which the task result queues should expire.
-
-This setting is deprecated, and will be removed in version 3.0.
-Please use :setting:`CELERY_TASK_RESULT_EXPIRES` instead.
-
-.. note::
-
-    AMQP result expiration requires RabbitMQ versions 2.1.0 or higher.
-
-.. setting:: CELERY_TASK_ERROR_WHITELIST
-
-CELERY_TASK_ERROR_WHITELIST
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. deprecated:: 2.5
-
-A white list of exceptions to send error emails for.
-
-This option is pending deprecation and is scheduled for removal
-in version 3.0.
-
-.. setting:: CELERYD_LOG_FILE
-
-CELERYD_LOG_FILE
-~~~~~~~~~~~~~~~~
-
-.. deprecated:: 2.4
-
-This option is deprecated and is scheduled for removal in version 3.0.
-Please use the :option:`--logfile` argument instead.
-
-The default file name the worker daemon logs messages to.  Can be overridden
-using the :option:`--logfile` option to :mod:`~celery.bin.celeryd`.
-
-The default is :const:`None` (`stderr`)
-
-.. setting:: CELERYD_LOG_LEVEL
-
-CELERYD_LOG_LEVEL
-~~~~~~~~~~~~~~~~~
-
-.. deprecated:: 2.4
-
-This option is deprecated and is scheduled for removal in version 3.0.
-Please use the :option:`--loglevel` argument instead.
-
-Worker log level, can be one of :const:`DEBUG`, :const:`INFO`, :const:`WARNING`,
-:const:`ERROR` or :const:`CRITICAL`.
-
-Can also be set via the :option:`--loglevel` argument to
-:mod:`~celery.bin.celeryd`.
-
-See the :mod:`logging` module for more information.
-
-.. setting:: CELERYBEAT_LOG_FILE
-
-CELERYBEAT_LOG_FILE
-~~~~~~~~~~~~~~~~~~~
-
-.. deprecated:: 2.4
-
-This option is deprecated and is scheduled for removal in version 3.0.
-Please use the :option:`--logfile` argument instead.
-
-The default file name to log messages to.  Can be overridden using
-the `--logfile` option to :mod:`~celery.bin.celerybeat`.
-
-The default is :const:`None` (`stderr`).
-
-.. setting:: CELERYBEAT_LOG_LEVEL
-
-CELERYBEAT_LOG_LEVEL
-~~~~~~~~~~~~~~~~~~~~
-
-.. deprecated:: 2.4
-
-This option is deprecated and is scheduled for removal in version 3.0.
-Please use the :option:`--loglevel` argument instead.
-
-Logging level. Can be any of :const:`DEBUG`, :const:`INFO`, :const:`WARNING`,
-:const:`ERROR`, or :const:`CRITICAL`.
-
-Can also be set via the :option:`--loglevel` argument to
-:mod:`~celery.bin.celerybeat`.
-
-See the :mod:`logging` module for more information.
-
-.. setting:: CELERYMON_LOG_FILE
-
-CELERYMON_LOG_FILE
-~~~~~~~~~~~~~~~~~~
-
-.. deprecated:: 2.4
-
-This option is deprecated and is scheduled for removal in version 3.0.
-Please use the :option:`--logfile` argument instead.
-
-The default file name to log messages to.  Can be overridden using
-the :option:`--logfile` argument to `celerymon`.
-
-The default is :const:`None` (`stderr`)
-
-.. setting:: CELERYMON_LOG_LEVEL
-
-CELERYMON_LOG_LEVEL
-~~~~~~~~~~~~~~~~~~~
-
-.. deprecated:: 2.4
-
-This option is deprecated and is scheduled for removal in version 3.0.
-Please use the :option:`--loglevel` argument instead.
-
-Logging level. Can be any of :const:`DEBUG`, :const:`INFO`, :const:`WARNING`,
-:const:`ERROR`, or :const:`CRITICAL`.
-
-See the :mod:`logging` module for more information.

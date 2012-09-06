@@ -10,6 +10,8 @@ from __future__ import absolute_import
 
 import platform
 
+from functools import reduce
+
 from .encoding import safe_str
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)

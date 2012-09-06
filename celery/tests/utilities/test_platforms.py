@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import errno
 import os
@@ -297,12 +296,13 @@ if not current_app.IS_WINDOWS:
             finally:
                 platforms.resource = prev
 
-        @patch('celery.platforms.create_pidlock')
+        @patch('celery.platforms._create_pidlock')
         @patch('celery.platforms.signals')
         @patch('celery.platforms.maybe_drop_privileges')
         @patch('os.geteuid')
         @patch('__builtin__.open')
-        def test_default(self, open, geteuid, maybe_drop, signals, pidlock):
+        def test_default(self, open, geteuid, maybe_drop,
+                signals, pidlock):
             geteuid.return_value = 0
             context = detached(uid='user', gid='group')
             self.assertIsInstance(context, DaemonContext)
@@ -328,10 +328,11 @@ if not current_app.IS_WINDOWS:
         @patch('os.chdir')
         @patch('os.umask')
         @patch('os.close')
+        @patch('os.closerange')
         @patch('os.open')
         @patch('os.dup2')
-        def test_open(self, dup2, open, close, umask, chdir, _exit, setsid,
-                fork):
+        def test_open(self, dup2, open, close, closer, umask, chdir,
+                _exit, setsid, fork):
             x = DaemonContext(workdir='/opt/workdir')
 
             fork.return_value = 0
@@ -345,9 +346,7 @@ if not current_app.IS_WINDOWS:
 
             chdir.assert_called_with(x.workdir)
             umask.assert_called_with(x.umask)
-            open.assert_called_with(platforms.DAEMON_REDIRECT_TO, os.O_RDWR)
-            self.assertEqual(dup2.call_args_list[0], [(0, 1), {}])
-            self.assertEqual(dup2.call_args_list[1], [(0, 2), {}])
+            self.assertTrue(dup2.called)
 
             fork.reset_mock()
             fork.return_value = 1

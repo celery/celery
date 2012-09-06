@@ -29,7 +29,7 @@ from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.timeutils import maybe_timedelta
 
-from .base import BaseDictBackend
+from .base import BaseBackend
 
 
 class Bunch(object):
@@ -38,7 +38,7 @@ class Bunch(object):
         self.__dict__.update(kw)
 
 
-class MongoBackend(BaseDictBackend):
+class MongoBackend(BaseBackend):
     mongodb_host = 'localhost'
     mongodb_port = 27017
     mongodb_user = None

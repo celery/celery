@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 from pickle import loads, dumps
 from mock import Mock
@@ -248,7 +247,7 @@ class test_AsyncResult(AppCase):
 class test_ResultSet(AppCase):
 
     def test_resultset_repr(self):
-        self.assertTrue(repr(ResultSet(map(AsyncResult, [1, 2, 3]))))
+        self.assertTrue(repr(ResultSet(map(AsyncResult, ['1', '2', '3']))))
 
     def test_eq_other(self):
         self.assertFalse(ResultSet([1, 3, 3]) == 1)
@@ -380,7 +379,7 @@ class test_GroupResult(AppCase):
         ts = GroupResult(uuid(), [ar])
         it = iter(ts)
         with self.assertRaises(KeyError):
-            it.next()
+            next(it)
 
     def test_forget(self):
         subs = [MockAsyncResultSuccess(uuid()),
@@ -432,16 +431,16 @@ class test_GroupResult(AppCase):
         ar2 = MockAsyncResultSuccess(uuid())
         ts = GroupResult(uuid(), [ar, ar2])
         it = iter(ts)
-        self.assertEqual(it.next(), 42)
-        self.assertEqual(it.next(), 42)
+        self.assertEqual(next(it), 42)
+        self.assertEqual(next(it), 42)
 
     def test_iterate_eager(self):
         ar1 = EagerResult(uuid(), 42, states.SUCCESS)
         ar2 = EagerResult(uuid(), 42, states.SUCCESS)
         ts = GroupResult(uuid(), [ar1, ar2])
         it = iter(ts)
-        self.assertEqual(it.next(), 42)
-        self.assertEqual(it.next(), 42)
+        self.assertEqual(next(it), 42)
+        self.assertEqual(next(it), 42)
 
     def test_join_timeout(self):
         ar = MockAsyncResultSuccess(uuid())

@@ -7,10 +7,10 @@
 
 """
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import base64
 
+from itertools import izip
 from kombu.serialization import registry, encode, decode
 from kombu.utils.encoding import bytes_to_str, str_to_bytes
 
@@ -41,7 +41,7 @@ class SecureSerializer(object):
         """serialize data structure into string"""
         assert self._key is not None
         assert self._cert is not None
-        with reraise_errors('Unable to serialize: %r', (Exception, )):
+        with reraise_errors('Unable to serialize: {0!r}', (Exception, )):
             content_type, content_encoding, body = encode(
                     data, serializer=self._serializer)
             # What we sign is the serialized body, not the body itself.
@@ -55,7 +55,7 @@ class SecureSerializer(object):
     def deserialize(self, data):
         """deserialize data structure from string"""
         assert self._cert_store is not None
-        with reraise_errors('Unable to deserialize: %r', (Exception, )):
+        with reraise_errors('Unable to deserialize: {0!r}', (Exception, )):
             payload = self._unpack(data)
             signature, signer, body = (payload['signature'],
                                        payload['signer'],
@@ -72,7 +72,7 @@ class SecureSerializer(object):
     def _unpack(self, payload, sep='\x00\x01',
             fields=('signer', 'signature', 'content_type',
                     'content_encoding', 'body')):
-        return dict(zip(fields, b64decode(payload).split(sep)))
+        return dict(izip(fields, b64decode(payload).split(sep)))
 
 
 def register_auth(key=None, cert=None, store=None, digest='sha1',

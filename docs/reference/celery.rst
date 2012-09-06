@@ -83,6 +83,16 @@ Application
 
         Base task class for this app.
 
+    .. method:: Celery.close
+
+        Cleans-up after application, like closing any pool connections.
+        Only necessary for dynamically created apps for which you can
+        use the with statement::
+
+            with Celery(...) as app:
+                with app.connection() as conn:
+                    pass
+
     .. method:: Celery.bugreport
 
         Returns a string with information useful for the Celery core
@@ -114,6 +124,23 @@ Application
             >>> os.environ["CELERY_CONFIG_MODULE"] = "myapp.celeryconfig"
             >>> celery.config_from_envvar("CELERY_CONFIG_MODULE")
 
+    .. method:: Celery.add_defaults(d)
+
+        Add default configuration from dict ``d``.
+
+        If the argument is a callable function then it will be regarded
+        as a promise, and it won't be loaded until the configuration is
+        actually needed.
+
+        This method can be compared to::
+
+            >>> celery.conf.update(d)
+
+        with a difference that 1) no copy will be made and 2) the dict will
+        not be transferred when the worker spawns child processes, so
+        it's important that the same configuration happens at import time
+        when pickle restores the object on the other side.
+
     .. method:: Celery.start(argv=None)
 
         Run :program:`celery` using `argv`.
@@ -128,7 +155,7 @@ Application
 
         .. code-block:: python
 
-            @celery.task()
+            @celery.task
             def refresh_feed(url):
                 return ...
 
@@ -208,7 +235,7 @@ Application
 
         :returns :class:`kombu.connection.Connection`:
 
-    .. method:: Celery.default_connection(connection=None)
+    .. method:: Celery.connection_or_acquire(connection=None)
 
         For use within a with-statement to get a connection from the pool
         if one is not already provided.
@@ -216,6 +243,13 @@ Application
         :keyword connection: If not provided, then a connection will be
                              acquired from the connection pool.
 
+    .. method:: Celery.producer_or_acquire(producer=None)
+
+        For use within a with-statement to get a producer from the pool
+        if one is not already provided
+
+        :keyword producer: If not provided, then a producer will be
+                           acquired from the producer pool.
 
     .. method:: Celery.mail_admins(subject, body, fail_silently=False)
 
@@ -247,7 +281,7 @@ Application
 Grouping Tasks
 --------------
 
-.. class:: group(tasks=[])
+.. class:: group(task1[, task2[, task3[,... taskN]]])
 
     Creates a group of tasks to be executed in parallel.
 
@@ -276,13 +310,13 @@ Grouping Tasks
         >>> res.get()
         8
 
-    Applying a chain will return the result of the last task in the chain.
+    Calling a chain will return the result of the last task in the chain.
     You can get to the other tasks by following the ``result.parent``'s::
 
         >>> res.parent.get()
         4
 
-.. class:: chord(header)(body)
+.. class:: chord(header[, body])
 
     A chord consists of a header and a body.
     The header is a group of tasks that must complete before the callback is

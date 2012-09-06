@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import os
 import sys
@@ -28,7 +27,7 @@ class GeventCase(Case):
     @skip_if_pypy
     def setUp(self):
         try:
-            self.eventlet = __import__('gevent')
+            self.gevent = __import__('gevent')
         except ImportError:
             raise SkipTest(
                 'gevent not installed, skipping related tests.')
@@ -39,7 +38,9 @@ class test_gevent_patch(GeventCase):
     def test_is_patched(self):
         with mock_module(*gevent_modules):
             monkey_patched = []
+            import gevent
             from gevent import monkey
+            gevent.version_info = (1, 0, 0)
             prev_monkey_patch = monkey.patch_all
             monkey.patch_all = lambda: monkey_patched.append(True)
             prev_gevent = sys.modules.pop('celery.concurrency.gevent', None)
