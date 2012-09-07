@@ -377,8 +377,10 @@ class WorkController(configurated):
         try:
             req.execute_using_pool(self.pool)
         except TaskRevokedError:
-            if self.semaphore:  # (Issue #877)
-                self.semaphore.release()
+            try:
+                self._quick_release()   # Issue 877
+            except AttributeError:
+                pass
         except Exception, exc:
             logger.critical('Internal error: %r\n%s',
                             exc, traceback.format_exc(), exc_info=True)
