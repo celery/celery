@@ -25,6 +25,10 @@ from .utils.timeutils import (
 from .datastructures import AttributeDict
 
 
+def weak_bool(s):
+    return 0 if s == '0' else s
+
+
 class ParseException(Exception):
     """Raised by crontab_parser when the input can't be parsed."""
 
@@ -419,11 +423,11 @@ class crontab(schedule):
 
     def __repr__(self):
         return ('<crontab: %s %s %s %s %s (m/h/d/dM/MY)>' %
-                                            (self._orig_minute or '*',
-                                             self._orig_hour or '*',
-                                             self._orig_day_of_week or '*',
-                                             self._orig_day_of_month or '*',
-                                             self._orig_month_of_year or '*'))
+                        (weak_bool(self._orig_minute) or '*',
+                         weak_bool(self._orig_hour) or '*',
+                         weak_bool(self._orig_day_of_week) or '*',
+                         weak_bool(self._orig_day_of_month) or '*',
+                         weak_bool(self._orig_month_of_year) or '*'))
 
     def __reduce__(self):
         return (self.__class__, (self._orig_minute,
