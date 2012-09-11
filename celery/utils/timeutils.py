@@ -237,15 +237,20 @@ def weekday(name):
         raise KeyError(name)
 
 
-def humanize_seconds(secs, prefix=''):
+def humanize_seconds(secs, prefix='', sep=''):
     """Show seconds in human form, e.g. 60 is "1 minute", 7200 is "2
-    hours"."""
+    hours".
+
+    :keyword prefix: Can be used to add a preposition to the output,
+        e.g. 'in' will give 'in 1 second', but add nothing to 'now'.
+
+    """
     secs = float(secs)
     for unit, divider, formatter in TIME_UNITS:
         if secs >= divider:
             w = secs / divider
-            return '%s%s %s' % (prefix, formatter(w),
-                                pluralize(w, unit))
+            return '%s%s%s %s' % (prefix, sep, formatter(w),
+                                  pluralize(w, unit))
     return 'now'
 
 
