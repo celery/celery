@@ -14,10 +14,10 @@ from weakref import WeakValueDictionary
 from kombu import Connection, Consumer, Exchange, Producer, Queue
 from kombu.common import entry_to_queue
 from kombu.pools import ProducerPool
+from kombu.utils import cached_property, uuid
 from kombu.utils.encoding import safe_repr
 
 from celery import signals
-from celery.utils import cached_property, uuid
 from celery.utils.text import indent as textindent
 
 from . import app_or_default

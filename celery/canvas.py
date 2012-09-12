@@ -14,11 +14,10 @@ from __future__ import absolute_import
 from operator import itemgetter
 from itertools import chain as _chain
 
-from kombu.utils import fxrange, kwdict, reprcall
+from kombu.utils import cached_property, fxrange, kwdict, reprcall, uuid
 
 from celery import current_app
 from celery.local import Proxy
-from celery.utils import cached_property, uuid
 from celery.utils.compat import chain_from_iterable
 from celery.utils.functional import (
     maybe_list, is_list, regen,

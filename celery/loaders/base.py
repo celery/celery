@@ -15,11 +15,11 @@ import re
 
 from datetime import datetime
 
+from kombu.utils import cached_property
 from kombu.utils.encoding import safe_str
 
 from celery.datastructures import DictAttribute
 from celery.exceptions import ImproperlyConfigured
-from celery.utils import cached_property
 from celery.utils.imports import import_from_cwd, symbol_by_name
 from celery.utils.functional import maybe_list
 

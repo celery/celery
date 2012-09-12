@@ -16,18 +16,14 @@ import traceback
 from kombu.syn import _detect_environment
 
 from celery.local import Proxy
+from celery.utils.compat import THREAD_TIMEOUT_MAX
 
-USE_PURE_LOCALS = os.environ.get("USE_PURE_LOCALS")
+USE_PURE_LOCALS = os.environ.get('USE_PURE_LOCALS')
 
 _Thread = threading.Thread
 _Event = threading._Event
 active_count = (getattr(threading, 'active_count', None) or
                 threading.activeCount)
-
-try:
-    TIMEOUT_MAX = threading.TIMEOUT_MAX
-except AttributeError:
-    TIMEOUT_MAX = 1e10  # noqa
 
 
 class Event(_Event):
@@ -98,7 +94,7 @@ class bgThread(Thread):
         self._is_shutdown.set()
         self._is_stopped.wait()
         if self.is_alive():
-            self.join(TIMEOUT_MAX)
+            self.join(THREAD_TIMEOUT_MAX)
 
 try:
     from greenlet import getcurrent as get_ident

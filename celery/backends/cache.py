@@ -8,9 +8,10 @@
 """
 from __future__ import absolute_import
 
+from kombu.utils import cached_property
+
 from celery.datastructures import LRUCache
 from celery.exceptions import ImproperlyConfigured
-from celery.utils import cached_property
 
 from .base import KeyValueStoreBackend
 

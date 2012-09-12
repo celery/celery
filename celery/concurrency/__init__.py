@@ -8,7 +8,10 @@
 """
 from __future__ import absolute_import
 
-from celery.local import symbol_by_name
+# Import from kombu directly as it's used
+# early in the import stage, where celery.utils loads
+# too much (e.g. for eventlet patching)
+from kombu.utils import symbol_by_name
 
 ALIASES = {
     'processes': 'celery.concurrency.processes:TaskPool',

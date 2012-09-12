@@ -17,8 +17,9 @@ from itertools import islice
 
 from kombu.utils import cached_property
 from kombu.utils.functional import promise, maybe_promise
+from kombu.utils.compat import OrderedDict
 
-from .compat import UserDict, UserList, OrderedDict
+from .compat import UserDict, UserList
 
 KEYWORD_MARK = object()
 is_not_None = partial(operator.is_not, None)
