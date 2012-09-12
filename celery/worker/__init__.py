@@ -41,9 +41,13 @@ from . import state
 from .buckets import TaskBucket, FastQueue
 from .hub import Hub, BoundedSemaphore
 
+#: Worker states
 RUN = 0x1
 CLOSE = 0x2
 TERMINATE = 0x3
+
+#: Default socket timeout at shutdown.
+SHUTDOWN_SOCKET_TIMEOUT = 5.0
 
 logger = get_logger(__name__)
 
@@ -409,6 +413,8 @@ class WorkController(configurated):
 
     def _shutdown(self, warm=True):
         what = 'Stopping' if warm else 'Terminating'
+        socket_timeout = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(SHUTDOWN_SOCKET_TIMEOUT)  # Issue 975
 
         if self._state in (self.CLOSE, self.TERMINATE):
             return
@@ -439,6 +445,7 @@ class WorkController(configurated):
         if self.pidlock:
             self.pidlock.release()
         self._state = self.TERMINATE
+        socket.setdefaulttimeout(socket_timeout)
         self._shutdown_complete.set()
 
     def reload(self, modules=None, reload=False, reloader=None):
