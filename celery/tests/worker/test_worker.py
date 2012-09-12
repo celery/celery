@@ -634,6 +634,9 @@ class test_Consumer(Case):
             def channel(self):
                 return Mock()
 
+            def as_uri(self):
+                return 'dummy://'
+
             def drain_events(self, **kwargs):
                 if not self.calls:
                     self.calls += 1
