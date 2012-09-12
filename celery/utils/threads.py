@@ -13,12 +13,10 @@ import sys
 import threading
 import traceback
 
-from kombu.syn import _detect_environment
-
 from celery.local import Proxy
 from celery.utils.compat import THREAD_TIMEOUT_MAX
 
-USE_PURE_LOCALS = os.environ.get('USE_PURE_LOCALS')
+USE_FAST_LOCALS = os.environ.get('USE_FAST_LOCALS')
 
 _Thread = threading.Thread
 _Event = threading._Event
@@ -319,7 +317,7 @@ class _FastLocalStack(threading.local):
         except (AttributeError, IndexError):
             return None
 
-if _detect_environment() == 'default' and not USE_PURE_LOCALS:
+if USE_FAST_LOCALS:
     LocalStack = _FastLocalStack
 else:
     # - See #706

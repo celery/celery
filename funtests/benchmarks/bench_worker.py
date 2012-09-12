@@ -2,7 +2,10 @@ import os
 import sys
 import time
 
-os.environ['NOSETPS'] = 'yes'
+os.environ.update(
+    NOSETPS='yes',
+    USE_FAST_LOCALS='yes',
+)
 
 import anyjson
 JSONIMP = os.environ.get('JSONIMP')
