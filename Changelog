@@ -9,6 +9,14 @@
 
 If you're looking for versions prior to 3.x you should see :ref:`history`.
 
+.. _version-3.0.10:
+
+3.0.10
+======
+:release-date: TBA
+
+- Now depends on kombu 2.4.6
+
 .. _version-3.0.9:
 
 3.0.9
