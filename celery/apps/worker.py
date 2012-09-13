@@ -176,7 +176,7 @@ class Worker(configurated):
 
     def on_consumer_ready(self, consumer):
         signals.worker_ready.send(sender=consumer)
-        print('celery@%s has started.' % self.hostname)
+        print('celery@%s ready.' % self.hostname)
 
     def init_queues(self):
         try:
