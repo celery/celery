@@ -54,14 +54,6 @@ Message format
     will be expired when the message is received and the expiration date
     has been exceeded.
 
-* timeouts
-    :`tuple`:
-
-    .. versionadded:: 2.7
-
-    Task execution timeouts. This is a tuple of hard and soft timeouts.
-    Timeout values are `int` or `float`.
-
 Extensions
 ==========
 
@@ -106,6 +98,15 @@ to process it.
     .. versionadded:: 3.0
 
     A list of subtasks to apply if an error occurs while executing the task.
+
+* timeouts
+    :`tuple`:
+
+    .. versionadded:: 3.1
+
+    Task execution timeouts. This is a tuple of hard and soft timeouts.
+    Timeout values are `int` or `float`.
+
 
 Example message
 ===============
