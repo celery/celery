@@ -11,6 +11,7 @@
 """
 from __future__ import absolute_import
 
+from copy import deepcopy
 from operator import itemgetter
 from itertools import chain as _chain
 
@@ -116,10 +117,11 @@ class Signature(dict):
                 dict(self.kwargs, **kwargs) if kwargs else self.kwargs,
                 dict(self.options, **options) if options else self.options)
 
-    def clone(self, args=(), kwargs={}, **options):
-        args, kwargs, options = self._merge(args, kwargs, options)
-        s = Signature.from_dict({'task': self.task, 'args': args,
-                                 'kwargs': kwargs, 'options': options,
+    def clone(self, args=(), kwargs={}, **opts):
+        # need to deepcopy options so origins links etc. is not modified.
+        args, kwargs, opts = self._merge(args, kwargs, opts)
+        s = Signature.from_dict({'task': self.task, 'args': tuple(args),
+                                 'kwargs': kwargs, 'options': deepcopy(opts),
                                  'subtask_type': self.subtask_type,
                                  'immutable': self.immutable})
         s._type = self._type
