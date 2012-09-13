@@ -18,7 +18,7 @@ import traceback
 from threading import Event, Thread
 
 from billiard import Process, ensure_multiprocessing
-from kombu.utils import reprcall
+from kombu.utils import cached_property, reprcall
 from kombu.utils.functional import maybe_promise
 
 from . import __version__
@@ -27,7 +27,6 @@ from . import signals
 from . import current_app
 from .app import app_or_default
 from .schedules import maybe_schedule, crontab
-from .utils import cached_property
 from .utils.imports import instantiate
 from .utils.timeutils import humanize_seconds
 from .utils.log import get_logger

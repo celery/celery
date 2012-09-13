@@ -398,8 +398,10 @@ General
 
 .. attribute:: Task.rate_limit
 
-    Set the rate limit for this task type, i.e. how many times in
-    a given period of time is the task allowed to run.
+    Set the rate limit for this task type which limits the number of tasks
+    that can be run in a given time frame.  Tasks will still complete when
+    a rate limit is in effect, but it may take some time before it's allowed to
+    start.
 
     If this is :const:`None` no rate limit is in effect.
     If it is an integer, it is interpreted as "tasks per second".
@@ -699,8 +701,8 @@ state metadata.  This can then be used to create e.g. progress bars.
 Creating pickleable exceptions
 ------------------------------
 
-A little known Python fact is that exceptions must behave a certain
-way to support being pickled.
+A rarely known Python fact is that exceptions must conform to some
+simple rules to support being serialized by the pickle module.
 
 Tasks that raise exceptions that are not pickleable will not work
 properly when Pickle is used as the serializer.

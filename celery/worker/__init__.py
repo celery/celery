@@ -43,6 +43,7 @@ try:
 except ImportError:  # pragma: no cover
     IGNORE_ERRORS = ()
 
+#: Worker states
 RUN = 0x1
 CLOSE = 0x2
 TERMINATE = 0x3
@@ -54,6 +55,9 @@ defined in the CELERY_QUEUES setting.
 If you want to automatically declare unknown queues you can
 enable the CELERY_CREATE_MISSING_QUEUES setting.
 """
+
+#: Default socket timeout at shutdown.
+SHUTDOWN_SOCKET_TIMEOUT = 5.0
 
 
 class Namespace(bootsteps.Namespace):
@@ -267,6 +271,8 @@ class WorkController(configurated):
 
     def _shutdown(self, warm=True):
         what = 'Stopping' if warm else 'Terminating'
+        socket_timeout = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(SHUTDOWN_SOCKET_TIMEOUT)  # Issue 975
 
         if self._state in (self.CLOSE, self.TERMINATE):
             return
@@ -297,6 +303,7 @@ class WorkController(configurated):
         if self.pidlock:
             self.pidlock.release()
         self._state = self.TERMINATE
+        socket.setdefaulttimeout(socket_timeout)
         self._shutdown_complete.set()
 
     def reload(self, modules=None, reload=False, reloader=None):

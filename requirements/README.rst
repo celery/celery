@@ -14,10 +14,6 @@ Index
 
     Default requirements for Python 3.2+.
 
-* :file:`requirements/py26.txt`
-
-    Extra requirements needed to run on Python 2.6.
-
 * :file:`requirements/jython.txt`
 
     Extra requirements needed to run on Jython 2.5
@@ -47,15 +43,13 @@ Index
 
     Requirement file installing the current master branch of Celery and deps.
 
-
 Examples
 ========
 
-Running the tests using Python 2.6
-----------------------------------
+Running the tests
+-----------------
 
 ::
 
-    $ pip -E $VIRTUAL_ENV install -U -r requirements/default.txt
-    $ pip -E $VIRTUAL_ENV install -U -r requirements/test.txt
-
+    $ pip install -U -r requirements/default.txt
+    $ pip install -U -r requirements/test.txt

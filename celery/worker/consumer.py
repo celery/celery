@@ -111,6 +111,7 @@ Received and deleted unknown message. Wrong destination?!?
 
 The full contents of the message body was: %s
 """
+
 #: Error message for when an unregistered task is received.
 UNKNOWN_TASK_ERROR = """\
 Received unregistered task of type %s.
@@ -152,7 +153,7 @@ consumer: Cannot connect to %s: %s.
 """
 
 CONNECTION_RETRY = """\
-Trying again %(when)s...\
+Trying again {when}...\
 """
 
 CONNECTION_FAILOVER = """\
@@ -769,7 +770,7 @@ class Consumer(object):
             if getattr(conn, 'alt', None) and interval == 0:
                 next_step = CONNECTION_FAILOVER
             error(CONNECTION_ERROR, conn.as_uri(), exc,
-                  next_step % {'when': humanize_seconds(interval, 'in', ' ')})
+                  next_step.format(when=humanize_seconds(interval, 'in', ' ')))
 
         # remember that the connection is lazy, it won't establish
         # until it's needed.

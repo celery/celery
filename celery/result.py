@@ -14,13 +14,14 @@ from collections import deque
 from copy import copy
 from itertools import imap
 
+from kombu.utils import cached_property
+from kombu.utils.compat import OrderedDict
+
 from . import current_app
 from . import states
 from .app import app_or_default
 from .datastructures import DependencyGraph
 from .exceptions import IncompleteStream, TimeoutError
-from .utils import cached_property
-from .utils.compat import OrderedDict
 
 
 def from_serializable(r):

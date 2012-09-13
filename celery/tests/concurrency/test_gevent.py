@@ -111,9 +111,10 @@ class test_TasKPool(Case):
 class test_Timer(Case):
 
     def test_timer(self):
-        x = Timer()
-        x.ensure_started()
-        x.schedule = Mock()
-        x.start()
-        x.stop()
-        x.schedule.clear.assert_called_with()
+        with mock_module(*gevent_modules):
+            x = Timer()
+            x.ensure_started()
+            x.schedule = Mock()
+            x.start()
+            x.stop()
+            x.schedule.clear.assert_called_with()

@@ -20,6 +20,14 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 - `Task.apply_async` now supports timeout and soft_timeout arguments (Issue #802)
 - `App.control.Inspect.conf` can be used for inspecting worker configuration
 
+.. _version-3.0.10:
+
+3.0.10
+======
+:release-date: TBA
+
+- Now depends on kombu 2.4.6
+
 .. _version-3.0.9:
 
 3.0.9
