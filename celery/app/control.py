@@ -139,8 +139,11 @@ class Control(object):
         return self.broadcast('ping', reply=True, destination=destination,
                               timeout=timeout, **kwargs)
 
-    def start_actor(self, actor_name, destination = None, timeout = 1, **kwargs):
-        return self.broadcast('start_actor', name = actor_name, reply=True, destination=destination,
+    def start_actor(self, actor_name, actor_id = None, 
+                    destination = None, timeout = 1, **kwargs):
+        return self.broadcast('start_actor', name = actor_name, 
+                              actor_id = actor_id, 
+                              reply=True, destination=destination,
                               timeout=timeout, **kwargs)
         
     def rate_limit(self, task_name, rate_limit, destination=None, **kwargs):
