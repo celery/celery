@@ -914,17 +914,3 @@ The `-B` / `--beat` option to celeryd doesn't work?
 ----------------------------------------------------------------
 **Answer**: That's right. Run `celerybeat` and `celeryd` as separate
 services instead.
-
-.. _faq-windows-django-settings:
-
-`django-celery` can't find settings?
---------------------------------------
-
-**Answer**: You need to specify the :option:`--settings` argument to
-:program:`manage.py`:
-
-.. code-block:: bash
-
-    $ python manage.py celeryd start --settings=settings
-
-See http://bit.ly/bo9RSw

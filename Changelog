@@ -28,7 +28,49 @@ If you're looking for versions prior to 3.x you should see :ref:`history`.
 
 - Now depends on kombu 2.4.6
 
-.. _version-3.0.9:
+- Now depends on billiard 2.7.3.13
+
+    - Fixes crash at startup when using Django and pre-1.4 projects
+      (setup_environ).
+
+    - Hard time limits now sends the KILL signal shortly after TERM,
+      to terminate processes that have signal handlers blocked by C extensions.
+
+    - Billiard now installs even if the C extension cannot be built.
+
+        It's still recommended to build the C extension if you are using
+        a transport other than rabbitmq/redis (or use force_execv for some
+        other reason).
+
+    - Pool now sets a ``current_process().index`` attribute that can be used to create
+      as many log files as there are processes in the pool.
+
+- Worker: Fixed a bug where the request stack could be corrupted if
+  relative imports are used.
+
+    Problem usually manifested itself as an exception while trying to
+    send a failed task result (NoneType does not have id attribute).
+
+    Fix contributed by Sam Cooke.
+
+- ``subtask.clone`` now deepcopies options so that original subtask
+  is not modified when used in chains/groups etc.
+
+- Because of many bugs the fast local optimization has been disabled,
+  and can only be enabled by setting the :envvar:`USE_FAST_LOCALS` attribute.
+
+- Worker: Now sets a default socket timeout of 5 seconds at shutdown
+  so that broken socket reads do not hinder proper shutdown (Issue #975).
+
+- More fixes related to late eventlet/gevent patching.
+
+- Worker: Log messages when connection established and lost have been improved
+  so that they are more useful when used with the upcoming multiple broker
+  hostlist for failover that is coming in the next Kombu version.
+
+- The repr of a crontab schedule value of '0' should be '*'  (Issue #972).
+
+- gevent: Now supports hard time limits using ``gevent.Timeout`.
 
 3.0.9
 =====

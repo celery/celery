@@ -277,12 +277,13 @@ Configuration
 Celery, like a consumer appliance doesn't need much to be operated.
 It has an input and an output, where you must connect the input to a broker and maybe
 the output to a result backend if so wanted.  But if you look closely at the back
-there is a lid revealing lots of sliders, dials and buttons: this is the configuration.
+there's a lid revealing loads of sliders, dials and buttons: this is the configuration.
 
-The default configuration should be good enough for most uses, but there
-are many things to tweak so that Celery works just the way you want it to.
+The default configuration should be good enough for most uses, but there's
+many things to tweak so Celery works just the way you want it to.
 Reading about the options available is a good idea to get familiar with what
-can be configured, see the :ref:`configuration` reference.
+can be configured. You can read about the options in the the
+:ref:`configuration` reference.
 
 The configuration can be set on the app directly or by using a dedicated
 configuration module.
