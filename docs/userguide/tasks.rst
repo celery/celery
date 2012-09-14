@@ -390,6 +390,10 @@ General
     exception will be raised.  *NOTE:* You have to call :meth:`~@Task.retry`
     manually, as it will not automatically retry on exception..
 
+    The default value is 3.
+    A value of :const:`None` will disable the retry limit and the
+    task will retry forever until it succeeds.
+
 .. attribute:: Task.default_retry_delay
 
     Default time in seconds before a retry of the task
