@@ -151,8 +151,9 @@ def reqs(f):
     return filter(None, [strip_comments(l) for l in open(
         os.path.join(os.getcwd(), 'requirements', f)).readlines()])
 
-install_requires = reqs('default-py3k.txt' if is_py3k else 'default.txt')
-
+install_requires = reqs('default.txt')
+if is_py3k:
+    install_requires.extend(reqs('extra-py3k.txt'))
 if is_jython:
     install_requires.extend(reqs('jython.txt'))
 

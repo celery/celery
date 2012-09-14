@@ -10,9 +10,9 @@ Index
 
     Default requirements for Python 2.7+.
 
-* :file:`requirements/default-py3k.txt`
+* :file:`requirements/extra-py3k.txt`
 
-    Default requirements for Python 3.2+.
+    Extra requirements for Python 3.2+.
 
 * :file:`requirements/jython.txt`
 
@@ -45,6 +45,15 @@ Index
 
 Examples
 ========
+
+Installing requirements for running Python 3
+--------------------------------------------
+
+::
+
+    $ pip install -U -r requirements/default.txt
+    $ pip install -U -r requirements/extra-py3k.txt
+
 
 Running the tests
 -----------------
