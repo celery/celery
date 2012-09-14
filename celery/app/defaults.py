@@ -159,6 +159,7 @@ NAMESPACES = {
         'FORCE_EXECV': Option(True, type='bool'),
         'HIJACK_ROOT_LOGGER': Option(True, type='bool'),
         'CONSUMER': Option(type='string'),
+        'ACTORS_MANAGER':Option('celery.worker.actorsbootstrap.ActorsManager'),
         'LOG_FORMAT': Option(DEFAULT_PROCESS_LOG_FMT),
         'LOG_COLOR': Option(type='bool'),
         'LOG_LEVEL': Option('WARN', deprecate_by='2.4', remove_by='4.0',
