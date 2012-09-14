@@ -266,9 +266,9 @@ class Task(object):
         if not was_bound:
             self.annotate()
 
-        from celery.utils.threads import LocalStack
-        self.request_stack = LocalStack()
-        self.request_stack.push(Context())
+            from celery.utils.threads import LocalStack
+            self.request_stack = LocalStack()
+            self.request_stack.push(Context())
 
         # PeriodicTask uses this to add itself to the PeriodicTask schedule.
         self.on_bound(app)
