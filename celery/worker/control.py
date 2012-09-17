@@ -51,7 +51,6 @@ def revoke(panel, task_id, terminate=False, signal=None, **kwargs):
     logger.info('Task %s %s.', task_id, action)
     return {'ok': 'task {0} {1}'.format(task_id, action)}
 
-
 @Panel.register
 def report(panel):
     return {'ok': panel.app.bugreport()}
@@ -279,10 +278,9 @@ def dump_conf(panel, **kwargs):
     return jsonify(dict(panel.app.conf))
 
 @Panel.register
-def start_actor(panel, name):
-    print name
-    return panel.consumer.add_actor(name)
+def start_actor(panel, name, actor_id):
+    return panel.consumer.add_actor(name, actor_id)
 
 @Panel.register
-def stop_actor(panel, id):
-    return panel.consumer.stop_actor(id)
+def stop_actor(panel, actor_id):
+    return panel.consumer.stop_actor(actor_id)
