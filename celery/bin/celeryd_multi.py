@@ -104,7 +104,7 @@ from kombu.utils import cached_property
 from kombu.utils.encoding import from_utf8
 
 from celery import VERSION_BANNER
-from celery.platforms import PIDFile, shellsplit
+from celery.platforms import Pidfile, shellsplit
 from celery.utils import term
 from celery.utils.text import pluralize
 
@@ -298,7 +298,7 @@ class MultiTool(object):
             pid = None
             pidfile = expander(pidfile_template)
             try:
-                pid = PIDFile(pidfile).read_pid()
+                pid = Pidfile(pidfile).read_pid()
             except ValueError:
                 pass
             if pid:

@@ -45,7 +45,7 @@ PIDFILE_FLAGS = os.O_CREAT | os.O_EXCL | os.O_WRONLY
 PIDFILE_MODE = ((os.R_OK | os.W_OK) << 6) | ((os.R_OK) << 3) | ((os.R_OK))
 
 PIDLOCKED = """ERROR: Pidfile (%s) already exists.
-Seems we're already running? (PID: %s)"""
+Seems we're already running? (pid: %s)"""
 
 
 def pyimplementation():
@@ -104,8 +104,8 @@ def get_fdmax(default=None):
     return fdmax
 
 
-class PIDFile(object):
-    """PID lock file.
+class Pidfile(object):
+    """Pidfile
 
     This is the type returned by :func:`create_pidlock`.
 
@@ -141,20 +141,16 @@ class PIDFile(object):
     def read_pid(self):
         """Reads and returns the current pid."""
         with ignore_errno('ENOENT'):
-            fh = open(self.path, 'r')
+            with open(self.path, 'r') as fh:
+                line = fh.readline()
+                if line.strip() == line:  # must contain '\n'
+                    raise ValueError(
+                        'Partially written or invalid pidfile %r' % self.path)
 
-        try:
-            line = fh.readline()
-            if line.strip() == line:  # must contain '\n'
-                raise ValueError(
-                    'Partially written or invalid pidfile %r' % (self.path))
-        finally:
-            fh.close()
-
-        try:
-            return int(line.strip())
-        except ValueError:
-            raise ValueError('PID file %r contents invalid.' % self.path)
+                try:
+                    return int(line.strip())
+                except ValueError:
+                    raise ValueError('pidfile %r contents invalid.' % self.path)
 
     def remove(self):
         """Removes the lock."""
@@ -207,6 +203,7 @@ class PIDFile(object):
                     "Inconsistency: Pidfile content doesn't match at re-read")
         finally:
             rfh.close()
+PIDFile = Pidfile  # compat alias
 
 
 def create_pidlock(pidfile):
@@ -219,7 +216,7 @@ def create_pidlock(pidfile):
     The caller is responsible for releasing the lock before the program
     exits.
 
-    :returns: :class:`PIDFile`.
+    :returns: :class:`Pidfile`.
 
     **Example**:
 
@@ -234,7 +231,7 @@ def create_pidlock(pidfile):
 
 
 def _create_pidlock(pidfile):
-    pidlock = PIDFile(pidfile)
+    pidlock = Pidfile(pidfile)
     if pidlock.is_locked() and not pidlock.remove_if_stale():
         raise SystemExit(PIDLOCKED % (pidfile, pidlock.read_pid()))
     pidlock.acquire()
@@ -647,8 +644,7 @@ def ignore_errno(*errnos):
     try:
         yield
     except Exception, exc:
-        try:
-            if exc.errno not in errnos:
-                raise
-        except AttributeError:
+        if not hasattr(exc, 'errno'):
+            raise
+        if exc.errno not in errnos:
             raise

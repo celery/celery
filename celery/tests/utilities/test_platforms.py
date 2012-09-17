@@ -27,13 +27,13 @@ from celery.platforms import (
     detached,
     DaemonContext,
     create_pidlock,
-    PIDFile,
+    Pidfile,
     LockFailed,
     setgroups,
     _setgroups_hack
 )
 
-from celery.tests.utils import Case, WhateverIO, override_stdouts
+from celery.tests.utils import Case, WhateverIO, override_stdouts, mock_open
 
 
 class test_ignore_errno(Case):
@@ -362,11 +362,11 @@ if not current_app.IS_WINDOWS:
                 pass
             self.assertFalse(x._detach.called)
 
-    class test_PIDFile(Case):
+    class test_Pidfile(Case):
 
-        @patch('celery.platforms.PIDFile')
-        def test_create_pidlock(self, PIDFile):
-            p = PIDFile.return_value = Mock()
+        @patch('celery.platforms.Pidfile')
+        def test_create_pidlock(self, Pidfile):
+            p = Pidfile.return_value = Mock()
             p.is_locked.return_value = True
             p.remove_if_stale.return_value = False
             with self.assertRaises(SystemExit):
@@ -377,7 +377,7 @@ if not current_app.IS_WINDOWS:
             self.assertIs(ret, p)
 
         def test_context(self):
-            p = PIDFile('/var/pid')
+            p = Pidfile('/var/pid')
             p.write_pid = Mock()
             p.remove = Mock()
 
@@ -387,7 +387,7 @@ if not current_app.IS_WINDOWS:
             p.remove.assert_called_with()
 
         def test_acquire_raises_LockFailed(self):
-            p = PIDFile('/var/pid')
+            p = Pidfile('/var/pid')
             p.write_pid = Mock()
             p.write_pid.side_effect = OSError()
 
@@ -397,59 +397,54 @@ if not current_app.IS_WINDOWS:
 
         @patch('os.path.exists')
         def test_is_locked(self, exists):
-            p = PIDFile('/var/pid')
+            p = Pidfile('/var/pid')
             exists.return_value = True
             self.assertTrue(p.is_locked())
             exists.return_value = False
             self.assertFalse(p.is_locked())
 
-        @patch('__builtin__.open')
-        def test_read_pid(self, open_):
-            s = open_.return_value = WhateverIO()
-            s.write('1816\n')
-            s.seek(0)
-            p = PIDFile('/var/pid')
-            self.assertEqual(p.read_pid(), 1816)
+        def test_read_pid(self):
+            with mock_open() as s:
+                s.write('1816\n')
+                s.seek(0)
+                p = Pidfile('/var/pid')
+                self.assertEqual(p.read_pid(), 1816)
 
-        @patch('__builtin__.open')
-        def test_read_pid_partially_written(self, open_):
-            s = open_.return_value = WhateverIO()
-            s.write('1816')
-            s.seek(0)
-            p = PIDFile('/var/pid')
-            with self.assertRaises(ValueError):
-                p.read_pid()
+        def test_read_pid_partially_written(self):
+            with mock_open() as s:
+                s.write('1816')
+                s.seek(0)
+                p = Pidfile('/var/pid')
+                with self.assertRaises(ValueError):
+                    p.read_pid()
 
-        @patch('__builtin__.open')
-        def test_read_pid_raises_ENOENT(self, open_):
+        def test_read_pid_raises_ENOENT(self):
             exc = IOError()
             exc.errno = errno.ENOENT
-            open_.side_effect = exc
-            p = PIDFile('/var/pid')
-            self.assertIsNone(p.read_pid())
+            with mock_open(side_effect=exc):
+                p = Pidfile('/var/pid')
+                self.assertIsNone(p.read_pid())
 
-        @patch('__builtin__.open')
-        def test_read_pid_raises_IOError(self, open_):
+        def test_read_pid_raises_IOError(self):
             exc = IOError()
             exc.errno = errno.EAGAIN
-            open_.side_effect = exc
-            p = PIDFile('/var/pid')
-            with self.assertRaises(IOError):
-                p.read_pid()
+            with mock_open(side_effect=exc):
+                p = Pidfile('/var/pid')
+                with self.assertRaises(IOError):
+                    p.read_pid()
 
-        @patch('__builtin__.open')
-        def test_read_pid_bogus_pidfile(self, open_):
-            s = open_.return_value = WhateverIO()
-            s.write('eighteensixteen\n')
-            s.seek(0)
-            p = PIDFile('/var/pid')
-            with self.assertRaises(ValueError):
-                p.read_pid()
+        def test_read_pid_bogus_pidfile(self):
+            with mock_open() as s:
+                s.write('eighteensixteen\n')
+                s.seek(0)
+                p = Pidfile('/var/pid')
+                with self.assertRaises(ValueError):
+                    p.read_pid()
 
         @patch('os.unlink')
         def test_remove(self, unlink):
             unlink.return_value = True
-            p = PIDFile('/var/pid')
+            p = Pidfile('/var/pid')
             p.remove()
             unlink.assert_called_with(p.path)
 
@@ -458,7 +453,7 @@ if not current_app.IS_WINDOWS:
             exc = OSError()
             exc.errno = errno.ENOENT
             unlink.side_effect = exc
-            p = PIDFile('/var/pid')
+            p = Pidfile('/var/pid')
             p.remove()
             unlink.assert_called_with(p.path)
 
@@ -467,7 +462,7 @@ if not current_app.IS_WINDOWS:
             exc = OSError()
             exc.errno = errno.EACCES
             unlink.side_effect = exc
-            p = PIDFile('/var/pid')
+            p = Pidfile('/var/pid')
             p.remove()
             unlink.assert_called_with(p.path)
 
@@ -476,14 +471,14 @@ if not current_app.IS_WINDOWS:
             exc = OSError()
             exc.errno = errno.EAGAIN
             unlink.side_effect = exc
-            p = PIDFile('/var/pid')
+            p = Pidfile('/var/pid')
             with self.assertRaises(OSError):
                 p.remove()
             unlink.assert_called_with(p.path)
 
         @patch('os.kill')
         def test_remove_if_stale_process_alive(self, kill):
-            p = PIDFile('/var/pid')
+            p = Pidfile('/var/pid')
             p.read_pid = Mock()
             p.read_pid.return_value = 1816
             kill.return_value = 0
@@ -498,7 +493,7 @@ if not current_app.IS_WINDOWS:
         @patch('os.kill')
         def test_remove_if_stale_process_dead(self, kill):
             with override_stdouts():
-                p = PIDFile('/var/pid')
+                p = Pidfile('/var/pid')
                 p.read_pid = Mock()
                 p.read_pid.return_value = 1816
                 p.remove = Mock()
@@ -511,7 +506,7 @@ if not current_app.IS_WINDOWS:
 
         def test_remove_if_stale_broken_pid(self):
             with override_stdouts():
-                p = PIDFile('/var/pid')
+                p = Pidfile('/var/pid')
                 p.read_pid = Mock()
                 p.read_pid.side_effect = ValueError()
                 p.remove = Mock()
@@ -520,7 +515,7 @@ if not current_app.IS_WINDOWS:
                 p.remove.assert_called_with()
 
         def test_remove_if_stale_no_pidfile(self):
-            p = PIDFile('/var/pid')
+            p = Pidfile('/var/pid')
             p.read_pid = Mock()
             p.read_pid.return_value = None
             p.remove = Mock()
@@ -542,7 +537,7 @@ if not current_app.IS_WINDOWS:
             r.write('1816\n')
             r.seek(0)
 
-            p = PIDFile('/var/pid')
+            p = Pidfile('/var/pid')
             p.write_pid()
             w.seek(0)
             self.assertEqual(w.readline(), '1816\n')
@@ -569,7 +564,7 @@ if not current_app.IS_WINDOWS:
             r.write('11816\n')
             r.seek(0)
 
-            p = PIDFile('/var/pid')
+            p = Pidfile('/var/pid')
             with self.assertRaises(LockFailed):
                 p.write_pid()
 
