@@ -13,7 +13,7 @@ from celery import platforms
 from celery.platforms import (
     get_fdmax,
     shellsplit,
-    ignore_EBADF,
+    ignore_errno,
     set_process_title,
     signals,
     maybe_drop_privileges,
@@ -36,17 +36,17 @@ from celery.platforms import (
 from celery.tests.utils import Case, WhateverIO, override_stdouts
 
 
-class test_ignore_EBADF(Case):
+class test_ignore_errno(Case):
 
     def test_raises_EBADF(self):
-        with ignore_EBADF():
+        with ignore_errno('EBADF'):
             exc = OSError()
             exc.errno = errno.EBADF
             raise exc
 
     def test_otherwise(self):
         with self.assertRaises(OSError):
-            with ignore_EBADF():
+            with ignore_errno('EBADF'):
                 exc = OSError()
                 exc.errno = errno.ENOENT
                 raise exc

@@ -45,6 +45,8 @@ from pdb import Pdb
 
 from billiard import current_process
 
+from celery.platforms import ignore_errno
+
 default_port = 6899
 
 CELERY_RDB_HOST = os.environ.get('CELERY_RDB_HOST') or '127.0.0.1'
@@ -133,12 +135,8 @@ class Rdb(Pdb):
     def set_trace(self, frame=None):
         if frame is None:
             frame = _frame().f_back
-        try:
+        with ignore_errno(errno.ECONNRESET):
             Pdb.set_trace(self, frame)
-        except socket.error, exc:
-            # connection reset by peer.
-            if exc.errno != errno.ECONNRESET:
-                raise
 
     def set_quit(self):
         # this raises a BdbQuit exception that we are unable to catch.

@@ -18,17 +18,17 @@ import shlex
 import signal as _signal
 import sys
 
+from billiard import current_process
 from contextlib import contextmanager
 
 from .local import try_import
-
-from kombu.utils.limits import TokenBucket
 
 _setproctitle = try_import('setproctitle')
 resource = try_import('resource')
 pwd = try_import('pwd')
 grp = try_import('grp')
 
+# exitcodes
 EX_OK = getattr(os, 'EX_OK', 0)
 EX_FAILURE = 1
 EX_UNAVAILABLE = getattr(os, 'EX_UNAVAILABLE', 69)
@@ -43,8 +43,6 @@ DAEMON_WORKDIR = '/'
 
 PIDFILE_FLAGS = os.O_CREAT | os.O_EXCL | os.O_WRONLY
 PIDFILE_MODE = ((os.R_OK | os.W_OK) << 6) | ((os.R_OK) << 3) | ((os.R_OK))
-
-_setps_bucket = TokenBucket(0.5)  # 30/m, every 2 seconds
 
 PIDLOCKED = """ERROR: Pidfile (%s) already exists.
 Seems we're already running? (PID: %s)"""
@@ -142,12 +140,8 @@ class PIDFile(object):
 
     def read_pid(self):
         """Reads and returns the current pid."""
-        try:
+        with ignore_errno('ENOENT'):
             fh = open(self.path, 'r')
-        except IOError, exc:
-            if exc.errno == errno.ENOENT:
-                return
-            raise
 
         try:
             line = fh.readline()
@@ -164,12 +158,8 @@ class PIDFile(object):
 
     def remove(self):
         """Removes the lock."""
-        try:
+        with ignore_errno(errno.ENOENT, errno.EACCES):
             os.unlink(self.path)
-        except OSError, exc:
-            if exc.errno in (errno.ENOENT, errno.EACCES):
-                return
-            raise
 
     def remove_if_stale(self):
         """Removes the lock if the process is not running.
@@ -286,7 +276,7 @@ class DaemonContext(object):
             preserve = [fileno(f) for f in self.stdfds if fileno(f)]
             for fd in reversed(range(get_fdmax(default=2048))):
                 if fd not in preserve:
-                    with ignore_EBADF():
+                    with ignore_errno(errno.EBADF):
                         os.close(fd)
 
             for fd in self.stdfds:
@@ -625,19 +615,16 @@ if os.environ.get('NOSETPS'):  # pragma: no cover
         pass
 else:
 
-    def set_mp_process_title(progname, info=None, hostname=None,  # noqa
-            rate_limit=False):
+    def set_mp_process_title(progname, info=None, hostname=None):  # noqa
         """Set the ps name using the multiprocessing process name.
 
         Only works if :mod:`setproctitle` is installed.
 
         """
-        if not rate_limit or _setps_bucket.can_consume(1):
-            from billiard import current_process
-            if hostname:
-                progname = '%s@%s' % (progname, hostname.split('.')[0])
-            return set_process_title(
-                '%s:%s' % (progname, current_process().name), info=info)
+        if hostname:
+            progname = '%s@%s' % (progname, hostname.split('.')[0])
+        return set_process_title(
+            '%s:%s' % (progname, current_process().name), info=info)
 
 
 def shellsplit(s, posix=True):
@@ -648,10 +635,20 @@ def shellsplit(s, posix=True):
     return list(lexer)
 
 
+def get_errno(n):
+    if isinstance(n, basestring):
+        return getattr(errno, n)
+    return n
+
+
 @contextmanager
-def ignore_EBADF():
+def ignore_errno(*errnos):
+    errnos = [get_errno(errno) for errno in errnos]
     try:
         yield
-    except OSError, exc:
-        if exc.errno != errno.EBADF:
+    except Exception, exc:
+        try:
+            if exc.errno not in errnos:
+                raise
+        except AttributeError:
             raise

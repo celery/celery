@@ -8,7 +8,6 @@
 from __future__ import absolute_import
 from __future__ import with_statement
 
-import errno
 import hashlib
 import os
 import select
@@ -19,7 +18,7 @@ from collections import defaultdict
 
 from kombu.utils import eventio
 
-from celery.platforms import ignore_EBADF
+from celery.platforms import ignore_errno
 from celery.utils.imports import module_file
 from celery.utils.log import get_logger
 from celery.utils.threads import bgThread, Event
@@ -149,7 +148,7 @@ class KQueueMonitor(BaseMonitor):
         for f, fd in self.filemap.iteritems():
             if fd is not None:
                 poller.unregister(fd)
-                with ignore_EBADF():  # pragma: no cover
+                with ignore_errno('EBADF'):  # pragma: no cover
                     os.close(fd)
         self.filemap.clear()
         self.fdmap.clear()
@@ -247,11 +246,8 @@ class Autoreloader(bgThread):
 
     def body(self):
         self.on_init()
-        try:
+        with ignore_errno('EINTR', 'EAGAIN'):
             self._monitor.start()
-        except OSError, exc:
-            if exc.errno not in (errno.EINTR, errno.EAGAIN):
-                raise
 
     def _maybe_modified(self, f):
         digest = file_hash(f)
