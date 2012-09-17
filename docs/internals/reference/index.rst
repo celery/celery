@@ -9,6 +9,7 @@
     :maxdepth: 1
 
     celery.worker
+    celery.worker.components
     celery.worker.consumer
     celery.worker.job
     celery.worker.mediator
