@@ -546,6 +546,7 @@ class Task(object):
         if delivery_info:
             options.setdefault('exchange', delivery_info.get('exchange'))
             options.setdefault('routing_key', delivery_info.get('routing_key'))
+        options.setdefault('expires', request.expires)
 
         if not eta and countdown is None:
             countdown = self.default_retry_delay
