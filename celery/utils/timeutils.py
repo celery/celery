@@ -8,6 +8,7 @@
 """
 from __future__ import absolute_import
 
+import os
 import time as _time
 
 from kombu.utils import cached_property
@@ -24,6 +25,9 @@ try:
     import pytz
 except ImportError:     # pragma: no cover
     pytz = None         # noqa
+
+
+C_REMDEBUG = os.environ.get('C_REMDEBUG', False)
 
 
 DAYNAMES = 'sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'
@@ -128,7 +132,7 @@ class _Zone(object):
 
     @cached_property
     def local(self):
-        return tz.tzlocal()
+        return _get_local_timezone()
 
     @cached_property
     def utc(self):
@@ -188,7 +192,7 @@ def delta_resolution(dt, delta):
     return dt
 
 
-def remaining(start, ends_in, now=None, relative=False):
+def remaining(start, ends_in, now=None, relative=False, debug=False):
     """Calculate the remaining time for a start date and a timedelta.
 
     e.g. "how many seconds left for 30 seconds after start?"
@@ -206,7 +210,11 @@ def remaining(start, ends_in, now=None, relative=False):
     end_date = start + ends_in
     if relative:
         end_date = delta_resolution(end_date, ends_in)
-    return end_date - now
+    ret = end_date - now
+    if C_REMDEBUG:
+        print('rem: NOW:%s START:%s END_DATE:%s REM:%s' % (
+            now, start, end_date, ret))
+    return ret
 
 
 def rate(rate):

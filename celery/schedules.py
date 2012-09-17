@@ -25,7 +25,7 @@ from .utils.timeutils import (
 from .datastructures import AttributeDict
 
 
-def weak_bool(s):
+def _weak_bool(s):
     return 0 if s == '0' else s
 
 
@@ -116,10 +116,10 @@ class schedule(object):
     def utc_enabled(self):
         return self.app.conf.CELERY_ENABLE_UTC
 
-    @cached_property
-    def to_local(self):
-        return (timezone.to_local if self.utc_enabled
-                                  else timezone.to_local_fallback)
+    def to_local(self, dt):
+        if not self.utc_enabled:
+            return timezone.to_local_fallback(dt, self.tz)
+        return dt
 
 
 class crontab_parser(object):
@@ -423,11 +423,11 @@ class crontab(schedule):
 
     def __repr__(self):
         return ('<crontab: %s %s %s %s %s (m/h/d/dM/MY)>' %
-                        (weak_bool(self._orig_minute) or '*',
-                         weak_bool(self._orig_hour) or '*',
-                         weak_bool(self._orig_day_of_week) or '*',
-                         weak_bool(self._orig_day_of_month) or '*',
-                         weak_bool(self._orig_month_of_year) or '*'))
+                        (_weak_bool(self._orig_minute) or '*',
+                         _weak_bool(self._orig_hour) or '*',
+                         _weak_bool(self._orig_day_of_week) or '*',
+                         _weak_bool(self._orig_day_of_month) or '*',
+                         _weak_bool(self._orig_month_of_year) or '*'))
 
     def __reduce__(self):
         return (self.__class__, (self._orig_minute,
@@ -488,8 +488,9 @@ class crontab(schedule):
                     delta = self._delta_to_next(last_run_at,
                                                 next_hour, next_minute)
 
-        return remaining(self.to_local(last_run_at, tz),
-                         delta, self.to_local(self.now(), tz))
+        now = self.maybe_make_aware(self.now())
+        return remaining(self.to_local(last_run_at), delta,
+                         self.to_local(now))
 
     def is_due(self, last_run_at):
         """Returns tuple of two items `(is_due, next_time_to_run)`,
